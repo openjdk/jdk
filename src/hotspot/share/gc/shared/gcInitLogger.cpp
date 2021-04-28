@@ -29,6 +29,7 @@
 #include "logging/log.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 

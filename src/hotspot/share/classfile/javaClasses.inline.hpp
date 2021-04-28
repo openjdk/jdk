@@ -40,7 +40,7 @@ void java_lang_String::set_value_raw(oop string, typeArrayOop buffer) {
 }
 
 void java_lang_String::set_value(oop string, typeArrayOop buffer) {
-  string->obj_field_put(_value_offset, (oop)buffer);
+  string->obj_field_put(_value_offset, buffer);
 }
 
 bool java_lang_String::hash_is_set(oop java_string) {

@@ -695,7 +695,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
         }
     }
 
-    private final static class X11WindowSurfaceData extends X11SurfaceData {
+    private static final class X11WindowSurfaceData extends X11SurfaceData {
 
         private final int scale;
 
@@ -744,7 +744,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
         }
     }
 
-    private final static class X11PixmapSurfaceData extends X11SurfaceData {
+    private static final class X11PixmapSurfaceData extends X11SurfaceData {
 
         private final Image offscreenImage;
         private final int width;

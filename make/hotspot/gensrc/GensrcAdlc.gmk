@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,9 @@ ifeq ($(call check-jvm-feature, compiler2), true)
     ADLCFLAGS += -DAIX=1
   else ifeq ($(call isTargetOs, macosx), true)
     ADLCFLAGS += -D_ALLBSD_SOURCE=1 -D_GNU_SOURCE=1
+    ifeq ($(HOTSPOT_TARGET_CPU_ARCH), aarch64)
+      ADLCFLAGS += -DR18_RESERVED
+    endif
   else ifeq ($(call isTargetOs, windows), true)
     ifeq ($(call isTargetCpuBits, 64), true)
       ADLCFLAGS += -D_WIN64=1

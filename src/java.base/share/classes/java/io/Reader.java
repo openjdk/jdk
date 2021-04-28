@@ -184,12 +184,25 @@ public abstract class Reader implements Readable, Closeable {
      * @since 1.5
      */
     public int read(CharBuffer target) throws IOException {
-        int len = target.remaining();
-        char[] cbuf = new char[len];
-        int n = read(cbuf, 0, len);
-        if (n > 0)
-            target.put(cbuf, 0, n);
-        return n;
+        int nread;
+        if (target.hasArray()) {
+            char[] cbuf = target.array();
+            int pos = target.position();
+            int rem = target.limit() - pos;
+            if (rem <= 0)
+                return -1;
+            int off = target.arrayOffset() + pos;
+            nread = this.read(cbuf, off, rem);
+            if (nread > 0)
+                target.position(pos + nread);
+        } else {
+            int len = target.remaining();
+            char[] cbuf = new char[len];
+            nread = read(cbuf, 0, len);
+            if (nread > 0)
+                target.put(cbuf, 0, nread);
+        }
+        return nread;
     }
 
     /**
@@ -206,7 +219,7 @@ public abstract class Reader implements Readable, Closeable {
      * @throws     IOException  If an I/O error occurs
      */
     public int read() throws IOException {
-        char cb[] = new char[1];
+        char[] cb = new char[1];
         if (read(cb, 0, 1) == -1)
             return -1;
         else
@@ -231,7 +244,7 @@ public abstract class Reader implements Readable, Closeable {
      *
      * @throws      IOException  If an I/O error occurs
      */
-    public int read(char cbuf[]) throws IOException {
+    public int read(char[] cbuf) throws IOException {
         return read(cbuf, 0, cbuf.length);
     }
 
@@ -258,13 +271,13 @@ public abstract class Reader implements Readable, Closeable {
      *             or {@code len} is greater than {@code cbuf.length - off}
      * @throws     IOException  If an I/O error occurs
      */
-    public abstract int read(char cbuf[], int off, int len) throws IOException;
+    public abstract int read(char[] cbuf, int off, int len) throws IOException;
 
     /** Maximum skip-buffer size */
     private static final int maxSkipBufferSize = 8192;
 
     /** Skip buffer, null until allocated */
-    private char skipBuffer[] = null;
+    private char[] skipBuffer = null;
 
     /**
      * Skips characters.  This method will block until some characters are

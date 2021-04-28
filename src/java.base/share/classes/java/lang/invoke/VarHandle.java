@@ -1938,11 +1938,6 @@ public abstract class VarHandle implements Constable {
             if (am != null) return am;
             throw new IllegalArgumentException("No AccessMode value for method name " + methodName);
         }
-
-        @ForceInline
-        static MemberName getMemberName(int ordinal, VarForm vform) {
-            return vform.memberName_table[ordinal];
-        }
     }
 
     static final class AccessDescriptor {
@@ -2045,7 +2040,7 @@ public abstract class VarHandle implements Constable {
      * {@code false}.
      */
     public final boolean isAccessModeSupported(AccessMode accessMode) {
-        return AccessMode.getMemberName(accessMode.ordinal(), vform) != null;
+        return vform.getMemberNameOrNull(accessMode.ordinal()) != null;
     }
 
     /**
@@ -2068,8 +2063,7 @@ public abstract class VarHandle implements Constable {
      * @return a method handle bound to this VarHandle and the given access mode
      */
     public MethodHandle toMethodHandle(AccessMode accessMode) {
-        MemberName mn = AccessMode.getMemberName(accessMode.ordinal(), vform);
-        if (mn != null) {
+        if (isAccessModeSupported(accessMode)) {
             MethodHandle mh = getMethodHandle(accessMode.ordinal());
             return mh.bindTo(this);
         }

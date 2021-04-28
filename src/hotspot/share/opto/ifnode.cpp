@@ -1128,14 +1128,14 @@ void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGV
             for (uint j = 2; j < stack.size(); j++) {
               Node* n = stack.node_at(j);
               Node* clone = n->clone();
-              int rep = clone->replace_edge(init_n, new_n);
+              int rep = clone->replace_edge(init_n, new_n, igvn);
               assert(rep > 0, "can't find expected node?");
               clone = igvn->transform(clone);
               init_n = n;
               new_n = clone;
             }
             igvn->hash_delete(use);
-            int rep = use->replace_edge(init_n, new_n);
+            int rep = use->replace_edge(init_n, new_n, igvn);
             assert(rep > 0, "can't find expected node?");
             igvn->transform(use);
             if (init_n->outcnt() == 0) {
@@ -1364,7 +1364,7 @@ static Node *remove_useless_bool(IfNode *iff, PhaseGVN *phase) {
 
   Node* new_bol = (flip ? phase->transform( bol2->negate(phase) ) : bol2);
   assert(new_bol != iff->in(1), "must make progress");
-  iff->set_req(1, new_bol);
+  iff->set_req_X(1, new_bol, phase);
   // Intervening diamond probably goes dead
   phase->C->set_major_progress();
   return iff;

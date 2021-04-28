@@ -23,6 +23,7 @@
 */
 
 #include "precompiled.hpp"
+#include "cds/filemap.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -30,7 +31,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/klassFactory.hpp"
-#include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
@@ -216,7 +216,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
 #if INCLUDE_CDS
   if (Arguments::is_dumping_archive()) {
-    ClassLoader::record_result(result, stream, THREAD);
+    ClassLoader::record_result(THREAD, result, stream);
   }
 #endif // INCLUDE_CDS
 

@@ -195,7 +195,7 @@ void StatSampler::assert_system_property(const char* name, const char* value, TR
                          key_str,
                          CHECK);
 
-  oop value_oop = (oop)result.get_jobject();
+  oop value_oop = result.get_oop();
   assert(value_oop != NULL, "property must have a value");
 
   // convert Java String to utf8 string

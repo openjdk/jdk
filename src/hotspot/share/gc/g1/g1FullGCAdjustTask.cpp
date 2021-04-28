@@ -65,7 +65,7 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
     if (r->is_humongous()) {
       // Special handling for humongous regions to get somewhat better
       // work distribution.
-      oop obj = oop(r->humongous_start_region()->bottom());
+      oop obj = cast_to_oop(r->humongous_start_region()->bottom());
       obj->oop_iterate(&cl, MemRegion(r->bottom(), r->top()));
     } else if (!r->is_closed_archive() && !r->is_free()) {
       // Closed archive regions never change references and only contain

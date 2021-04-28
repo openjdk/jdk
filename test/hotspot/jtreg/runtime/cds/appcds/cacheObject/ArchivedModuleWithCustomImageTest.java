@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build sun.hotspot.WhiteBox
  * @compile CheckArchivedModuleApp.java
- * @run driver ClassFileInstaller -jar app.jar CheckArchivedModuleApp
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar CheckArchivedModuleApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run driver ArchivedModuleWithCustomImageTest
  */
 
@@ -41,6 +41,7 @@ import java.nio.file.Paths;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class ArchivedModuleWithCustomImageTest {
     private static final String JAVA_HOME = System.getProperty("java.home");

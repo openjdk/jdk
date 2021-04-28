@@ -23,7 +23,7 @@
 
 /*
  * @test TestInvalidCompileCommand
- * @bug 8263206
+ * @bug 8263206 8263353
  * @summary Regression tests of -XX:CompileCommand
  * @library /test/lib
  * @run driver compiler.oracle.TestInvalidCompileCommand
@@ -40,12 +40,40 @@ public class TestInvalidCompileCommand {
         {
             "-XX:CompileCommand=unknown",
             "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,CompileThresholdScaling,3.14",
+            "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,RepeatCompilation,3",
+            "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,VectorizeDebug,3",
+            "-version"
+        },
+        {
+            "-XX:CompileCommand=option,Test::test,ControlIntrinsic,-_maxD,-_minD",
+            "-version"
         }
     };
 
     private static final String[][] OUTPUTS = {
         {
             "Unrecognized option 'unknown'"
+        },
+        {
+            "Missing type 'double' before option 'CompileThresholdScaling'"
+        },
+        {
+            "Missing type 'intx' before option 'RepeatCompilation'"
+        },
+        {
+            "Missing type 'uintx' before option 'VectorizeDebug'"
+        },
+        {
+            "Missing type 'ccstrlist' before option 'ControlIntrinsic'"
         }
     };
 

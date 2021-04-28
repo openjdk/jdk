@@ -84,7 +84,7 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   // Mapping that includes the derived offset.
   // If the block is clean, returns the last address in the covered region.
   // If the block is < index 0, returns the start of the covered region.
-  HeapWord* offset_addr_for_block (jbyte* p) const {
+  HeapWord* offset_addr_for_block(jbyte* p) const {
     // We have to do this before the assert
     if (p < _raw_base) {
       return _covered_region.start();
@@ -144,10 +144,7 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   bool is_block_allocated(HeapWord* addr) {
     assert_covered_region_contains(addr);
     jbyte* block = block_for_addr(addr);
-    if (*block == clean_block)
-      return false;
-
-    return true;
+    return *block != clean_block;
   }
 
   // Return true if an object starts in the range of heap addresses.

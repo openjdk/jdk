@@ -471,7 +471,7 @@ void DCmdFactory::send_notification_internal(TRAPS) {
             vmSymbols::getDiagnosticCommandMBean_signature(),
             CHECK);
 
-    instanceOop m = (instanceOop) result.get_jobject();
+    instanceOop m = (instanceOop) result.get_oop();
     instanceHandle dcmd_mbean_h(THREAD, m);
 
     if (!dcmd_mbean_h->is_a(k)) {

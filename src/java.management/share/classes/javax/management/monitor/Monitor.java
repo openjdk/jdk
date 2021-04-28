@@ -253,7 +253,7 @@ public abstract class Monitor
      * automatically incremented when their size becomes greater than
      * their capacity.
      */
-    protected final static int capacityIncrement = 16;
+    protected static final int capacityIncrement = 16;
 
     /**
      * The number of valid components in the vector of observed objects.

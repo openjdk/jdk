@@ -83,14 +83,14 @@ public class DriverManager {
 
 
     // List of registered JDBC drivers
-    private final static CopyOnWriteArrayList<DriverInfo> registeredDrivers = new CopyOnWriteArrayList<>();
+    private static final CopyOnWriteArrayList<DriverInfo> registeredDrivers = new CopyOnWriteArrayList<>();
     private static volatile int loginTimeout = 0;
     private static volatile java.io.PrintWriter logWriter = null;
     private static volatile java.io.PrintStream logStream = null;
     // Used in println() to synchronize logWriter
-    private final static Object logSync = new Object();
+    private static final Object logSync = new Object();
     // Used in ensureDriversInitialized() to synchronize driversInitialized
-    private final static Object lockForInitDrivers = new Object();
+    private static final Object lockForInitDrivers = new Object();
     private static volatile boolean driversInitialized;
     private static final String JDBC_DRIVERS_PROPERTY = "jdbc.drivers";
 
@@ -102,7 +102,7 @@ public class DriverManager {
      * setting of the logging stream.
      * @since 1.3
      */
-    final static SQLPermission SET_LOG_PERMISSION =
+    static final SQLPermission SET_LOG_PERMISSION =
         new SQLPermission("setLog");
 
     /**
@@ -110,7 +110,7 @@ public class DriverManager {
      * un-register a registered JDBC driver.
      * @since 1.8
      */
-    final static SQLPermission DEREGISTER_DRIVER_PERMISSION =
+    static final SQLPermission DEREGISTER_DRIVER_PERMISSION =
         new SQLPermission("deregisterDriver");
 
     //--------------------------JDBC 2.0-----------------------------

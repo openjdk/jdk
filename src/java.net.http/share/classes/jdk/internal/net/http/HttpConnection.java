@@ -52,6 +52,7 @@ import jdk.internal.net.http.common.SequentialScheduler.DeferredCompleter;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Utils;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static jdk.internal.net.http.common.Utils.ProxyHeaders;
 
 /**
  * Wraps socket channel layer and takes care of SSL also.
@@ -351,14 +352,10 @@ abstract class HttpConnection implements Closeable {
     // Composes a new immutable HttpHeaders that combines the
     // user and system header but only keeps those headers that
     // start with "proxy-"
-    private static HttpHeaders proxyTunnelHeaders(HttpRequestImpl request) {
-        Map<String, List<String>> combined = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        combined.putAll(request.getSystemHeadersBuilder().map());
-        combined.putAll(request.headers().map()); // let user override system
-
-        // keep only proxy-* - and also strip authorization headers
-        // for disabled schemes
-        return HttpHeaders.of(combined, Utils.PROXY_TUNNEL_FILTER);
+    private static ProxyHeaders proxyTunnelHeaders(HttpRequestImpl request) {
+        HttpHeaders userHeaders = HttpHeaders.of(request.headers().map(), Utils.PROXY_TUNNEL_FILTER);
+        HttpHeaders systemHeaders = HttpHeaders.of(request.getSystemHeadersBuilder().map(), Utils.PROXY_TUNNEL_FILTER);
+        return new ProxyHeaders(userHeaders, systemHeaders);
     }
 
     /* Returns either a plain HTTP connection or a plain tunnelling connection

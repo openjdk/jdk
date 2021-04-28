@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,18 +48,35 @@ class ReservedSpace {
   ReservedSpace(char* base, size_t size, size_t alignment, bool special,
                 bool executable);
  protected:
+  // Helpers to clear and set members during initialization. Two members
+  // require special treatment:
+  //  * _fd_for_heap     - The fd is set once and should not be cleared
+  //                       even if the reservation has to be retried.
+  //  * _noaccess_prefix - Used for compressed heaps and updated after
+  //                       the reservation is initialized. Always set to
+  //                       0 during initialization.
+  void clear_members();
+  void initialize_members(char* base, size_t size, size_t alignment,
+                          bool special, bool executable);
+
   void initialize(size_t size, size_t alignment, bool large,
                   char* requested_address,
                   bool executable);
 
+  void reserve(size_t size, size_t alignment, bool large,
+               char* requested_address,
+               bool executable);
  public:
   // Constructor
   ReservedSpace();
-  // Initialize the reserved space with the given size. If preferred_page_size
-  // is set, use this as minimum page size/alignment. This may waste some space
-  // if the given size is not aligned to that value, as the reservation will be
+  // Initialize the reserved space with the given size. Depending on the size
+  // a suitable page size and alignment will be used.
+  explicit ReservedSpace(size_t size);
+  // Initialize the reserved space with the given size. The preferred_page_size
+  // is used as the minimum page size/alignment. This may waste some space if
+  // the given size is not aligned to that value, as the reservation will be
   // aligned up to the final alignment in this case.
-  ReservedSpace(size_t size, size_t preferred_page_size = 0);
+  ReservedSpace(size_t size, size_t preferred_page_size);
   ReservedSpace(size_t size, size_t alignment, bool large,
                 char* requested_address = NULL);
 
@@ -193,14 +210,6 @@ class VirtualSpace {
   // Reserved area
   char* low_boundary()  const { return _low_boundary; }
   char* high_boundary() const { return _high_boundary; }
-
-#if INCLUDE_AOT
-  // Set boundaries for code section in AOT library.
-  void set_low_boundary(char *p)  { _low_boundary = p; }
-  void set_high_boundary(char *p) { _high_boundary = p; }
-  void set_low(char *p)           { _low = p; }
-  void set_high(char *p)          { _high = p; }
-#endif
 
   bool special() const { return _special; }
 
