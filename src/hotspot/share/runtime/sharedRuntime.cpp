@@ -2441,9 +2441,10 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
   }
 
 #ifndef PRODUCT
-  const char* as_signature_string() {
+  // Reconstitutes the basic type arguments from the fingerprint,
+  // producing strings like LIJDF
+  const char* as_basic_args_string() {
     stringStream st;
-    st.print("(");
     bool long_prev = false;
     for (int i = length() - 1; i >= 0; i--) {
       uint val = (uint)value(i);
@@ -2467,7 +2468,6 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
           case T_FLOAT:  st.print("F");    break;
           case T_DOUBLE: st.print("D");    break;
           case T_VOID:   break;
-
           default: ShouldNotReachHere();
         }
       }
@@ -2475,7 +2475,6 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
     if (long_prev) {
       st.print("L");
     }
-    st.print(")");
     return st.as_string();
   }
 #endif // !product
@@ -2710,13 +2709,14 @@ void AdapterHandlerLibrary::initialize() {
     _int_arg_handler = create_adapter(int_arg_blob, 1, int_args, true);
     _obj_int_arg_handler = create_adapter(obj_int_arg_blob, 2, obj_int_args, true);
     _obj_obj_arg_handler = create_adapter(obj_obj_arg_blob, 2, obj_obj_args, true);
+
+    assert(no_arg_blob != NULL &&
+          obj_arg_blob != NULL &&
+          int_arg_blob != NULL &&
+          obj_int_arg_blob != NULL &&
+          obj_obj_arg_blob != NULL, "Initial adapters must be properly created");
   }
 
-  assert(no_arg_blob != NULL &&
-         obj_arg_blob != NULL &&
-         int_arg_blob != NULL &&
-         obj_int_arg_blob != NULL &&
-         obj_obj_arg_blob != NULL, "Initial adapters must be properly created");
 
   // Outside of the lock
   post_adapter_creation(no_arg_blob, _no_arg_handler);
@@ -2788,23 +2788,25 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
 
   ResourceMark rm;
   AdapterBlob* new_adapter = NULL;
+
+  // Fill in the signature array, for the calling-convention call.
+  int total_args_passed = method->size_of_parameters(); // All args on stack
+
+  BasicType stack_sig_bt[16];
+  BasicType* sig_bt = (total_args_passed <= 16) ? stack_sig_bt : NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
+
+  int i = 0;
+  if (!method->is_static())  // Pass in receiver first
+    sig_bt[i++] = T_OBJECT;
+  for (SignatureStream ss(method->signature()); !ss.at_return_type(); ss.next()) {
+    sig_bt[i++] = ss.type();  // Collect remaining bits of signature
+    if (ss.type() == T_LONG || ss.type() == T_DOUBLE)
+      sig_bt[i++] = T_VOID;   // Longs & doubles take 2 Java slots
+  }
+
   {
     MutexLocker mu(AdapterHandlerLibrary_lock);
 
-    // Fill in the signature array, for the calling-convention call.
-    int total_args_passed = method->size_of_parameters(); // All args on stack
-
-    BasicType stack_sig_bt[16];
-    BasicType* sig_bt = (total_args_passed <= 16) ? stack_sig_bt : NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
-
-    int i = 0;
-    if (!method->is_static())  // Pass in receiver first
-      sig_bt[i++] = T_OBJECT;
-    for (SignatureStream ss(method->signature()); !ss.at_return_type(); ss.next()) {
-      sig_bt[i++] = ss.type();  // Collect remaining bits of signature
-      if (ss.type() == T_LONG || ss.type() == T_DOUBLE)
-        sig_bt[i++] = T_VOID;   // Longs & doubles take 2 Java slots
-    }
     assert(i == total_args_passed, "");
 
     // Lookup method signature's fingerprint
@@ -2823,19 +2825,8 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
 #endif
       return entry;
     }
-    // StubRoutines::code2() is initialized after this function can be called. As a result,
-    // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated
-    // prior to StubRoutines::code2() being set. Checks refer to checks generated in an I2C
-    // stub that ensure that an I2C stub is called from an interpreter frame.
-    bool contains_all_checks = StubRoutines::code2() != NULL;
 
     entry = create_adapter(new_adapter, total_args_passed, sig_bt, /* allocate_code_blob */ true);
-
-    // Add the entry only if the entry contains all required checks (see sharedRuntime_xxx.cpp)
-    // The checks are inserted only if -XX:+VerifyAdapterCalls is specified.
-    if (contains_all_checks || !VerifyAdapterCalls) {
-      _adapters->add(entry);
-    }
   }
 
   // Outside of the lock
@@ -2849,6 +2840,13 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
                                                            int total_args_passed,
                                                            BasicType* sig_bt,
                                                            bool allocate_code_blob) {
+
+  // StubRoutines::code2() is initialized after this function can be called. As a result,
+  // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated
+  // prior to StubRoutines::code2() being set. Checks refer to checks generated in an I2C
+  // stub that ensure that an I2C stub is called from an interpreter frame.
+  bool contains_all_checks = StubRoutines::code2() != NULL;
+
   VMRegPair stack_regs[16];
   VMRegPair* regs = (total_args_passed <= 16) ? stack_regs : NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
 
@@ -2891,7 +2889,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
     ttyLocker ttyl;
     entry->print_adapter_on(tty);
     tty->print_cr("i2c argument handler #%d for: %s %s (%d bytes generated)",
-                  _adapters->number_of_entries(), fingerprint->as_signature_string(),
+                  _adapters->number_of_entries(), fingerprint->as_basic_args_string(),
                   fingerprint->as_string(), insts_size);
     tty->print_cr("c2i argument handler starts at %p", entry->get_c2i_entry());
     if (Verbose || PrintStubCode) {
@@ -2903,6 +2901,12 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
     }
   }
 #endif
+
+  // Add the entry only if the entry contains all required checks (see sharedRuntime_xxx.cpp)
+  // The checks are inserted only if -XX:+VerifyAdapterCalls is specified.
+  if (contains_all_checks || !VerifyAdapterCalls) {
+    _adapters->add(entry);
+  }
   return entry;
 }
 
