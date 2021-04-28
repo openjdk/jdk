@@ -62,7 +62,7 @@ static class_info classes[] = {
     { "Lnsk/jvmti/ClassPrepare/classprep001$TestInterface;", EXP_STATUS, 2, 1, 0 },
     { "Lnsk/jvmti/ClassPrepare/classprep001$TestClass;", EXP_STATUS, 3, 2, 1 }
 };
-// This classes are loaded on a different thread.
+// These classes are loaded on a different thread.
 // We should not get ClassPrepare events for them.
 static const class_info unexpectedClasses[] = {
     { "Lnsk/jvmti/ClassPrepare/classprep001$TestInterface2;", 0, 0, 0, 0 },
