@@ -159,10 +159,10 @@ public class HandleExceptionOnEDT
             }
         } finally {
             // dispose frame and dialog
-	    if (f != null && d != null) {
+            if (f != null && d != null) {
                 d.dispose();
                 f.dispose();
-	    }
-	}
+            }
+        }
     }
 }
