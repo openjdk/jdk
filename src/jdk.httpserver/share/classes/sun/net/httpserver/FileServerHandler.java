@@ -30,8 +30,9 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -171,7 +172,7 @@ public final class FileServerHandler implements HttpHandler {
     {
         var respHdrs = exchange.getResponseHeaders();
         respHdrs.set("Content-Type", mediaType(path.toString()));
-        respHdrs.set("Last-Modified", "Wed, 21 Oct 2015 07:28:00 GMT");
+        respHdrs.set("Last-Modified", getLastModified(path));
         if (writeBody) {
             exchange.sendResponseHeaders(200, Files.size(path));
             try (InputStream fis = Files.newInputStream(path);
@@ -189,7 +190,7 @@ public final class FileServerHandler implements HttpHandler {
     {
         var respHdrs = exchange.getResponseHeaders();
         respHdrs.set("Content-Type", "text/html; charset=UTF-8");
-        respHdrs.set("Last-Modified", "Wed, 21 Oct 2015 07:28:00 GMT");
+        respHdrs.set("Last-Modified", getLastModified(path));
         var body = dirListing(exchange, path);
         if (writeBody) {
             exchange.sendResponseHeaders(200, body.length());
@@ -228,6 +229,15 @@ public final class FileServerHandler implements HttpHandler {
                         + "\">" + sanitize.apply(uri, chars) + "</a></li>\n"));
         sb.append(closeHTML);
         return sb.toString();
+    }
+
+    // HTTP-Date as per (rfc5322). Example: Sun, 06 Nov 1994 08:49:37 GMT
+    static final DateTimeFormatter HTTP_DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss v");
+
+    static String getLastModified(Path path) throws IOException {
+        var fileTime = Files.getLastModifiedTime(path);
+        return fileTime.toInstant().atZone(ZoneId.of("GMT")).format(HTTP_DATE_FORMATTER);
     }
 
     static boolean isHiddenOrSymLink(Path path) {

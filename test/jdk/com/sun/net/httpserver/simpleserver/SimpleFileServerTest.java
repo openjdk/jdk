@@ -38,6 +38,8 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -77,6 +79,7 @@ public class SimpleFileServerTest {
     public void testFileGET() throws Exception {
         var root = Files.createDirectory(CWD.resolve("testFileGET"));
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
+        var lastModified = getlastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
         var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
@@ -88,7 +91,8 @@ public class SimpleFileServerTest {
             assertEquals(response.statusCode(), 200);
             assertEquals(response.body(), "some text");
             assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
-            assertEquals(response.headers().firstValue("content-length").get(),expectedLength);
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
         } finally {
             ss.stop(0);
         }
@@ -111,6 +115,7 @@ public class SimpleFileServerTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = Files.createDirectory(CWD.resolve("testDirectoryGET"));
         var file = Files.writeString(root.resolve("yFile.txt"), "some text", CREATE);
+        var lastModified = getlastModified(root);
 
         var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
         ss.start();
@@ -121,6 +126,7 @@ public class SimpleFileServerTest {
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), expectedBody);
         } finally {
             ss.stop(0);
@@ -131,6 +137,7 @@ public class SimpleFileServerTest {
     public void testFileHEAD() throws Exception {
         var root = Files.createDirectory(CWD.resolve("testFileHEAD"));
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
+        var lastModified = getlastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
         var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
@@ -143,6 +150,7 @@ public class SimpleFileServerTest {
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), "");
         } finally {
             ss.stop(0);
@@ -165,6 +173,7 @@ public class SimpleFileServerTest {
                 """.getBytes(UTF_8).length);
         var root = Files.createDirectory(CWD.resolve("testDirectoryHEAD"));
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
+        var lastModified = getlastModified(root);
 
         var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
         ss.start();
@@ -176,6 +185,7 @@ public class SimpleFileServerTest {
             assertEquals(response.statusCode(), 200);
             assertEquals(response.headers().firstValue("content-type").get(), "text/html; charset=UTF-8");
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.body(), "");
         } finally {
             ss.stop(0);
@@ -260,7 +270,7 @@ public class SimpleFileServerTest {
             assertTrue(iae.getMessage().contains("does not exist"));
         }
         {   // not readable
-            if (!Platform.isWindows()) {  // tested manually on Windows
+            if (!Platform.isWindows()) {  // not applicable to Windows
                                           // reason: cannot revoke an owner's read
                                           // access to a directory that was created
                                           // by that owner
@@ -297,5 +307,13 @@ public class SimpleFileServerTest {
 
     static URI uri(HttpServer server, String path) {
         return URI.create("http://localhost:%s/%s".formatted(server.getAddress().getPort(), path));
+    }
+
+    static final DateTimeFormatter HTTP_DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss v");
+
+    static String getlastModified(Path path) throws IOException {
+        return Files.getLastModifiedTime(path).toInstant().atZone(ZoneId.of("GMT"))
+                .format(HTTP_DATE_FORMATTER);
     }
 }

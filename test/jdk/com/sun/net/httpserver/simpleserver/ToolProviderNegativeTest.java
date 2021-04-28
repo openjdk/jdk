@@ -204,7 +204,7 @@ public class ToolProviderNegativeTest {
     @Test
     public void testRootNotReadable() throws IOException {
         Path root = Files.createDirectories(TEST_DIR.resolve("not/readable/dir"));
-        if (!Platform.isWindows()) {  // tested manually on Windows
+        if (!Platform.isWindows()) {  // not applicable to Windows
                                       // reason: cannot revoke an owner's read
                                       // access to a directory that was created
                                       // by that owner
