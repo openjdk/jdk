@@ -28,9 +28,9 @@
  * @summary Verify that box object is scalarized in case it is directly referenced by debug info.
  * @library /test/lib
  *
- * @run driver compiler.c2.TestEliminateBoxInDebugInfo
+ * @run driver compiler.eliminateAutobox.TestEliminateBoxInDebugInfo
  */
-package compiler.c2;
+package compiler.eliminateAutobox;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -38,8 +38,8 @@ import jdk.test.lib.process.ProcessTools;
 public class TestEliminateBoxInDebugInfo {
     public static void runTest() throws Exception {
         String[] arguments = {
-            "-XX:CompileCommand=compileonly,compiler/c2/TestEliminateBoxInDebugInfo$Test.foo",
-            "-XX:CompileCommand=dontinline,compiler/c2/TestEliminateBoxInDebugInfo$Test.black",
+            "-XX:CompileCommand=compileonly,compiler/eliminateAutobox/TestEliminateBoxInDebugInfo$Test.foo",
+            "-XX:CompileCommand=dontinline,compiler/eliminateAutobox/TestEliminateBoxInDebugInfo$Test.black",
             "-Xbatch",
             "-XX:+PrintEliminateAllocations",
             Test.class.getName()
