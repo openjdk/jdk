@@ -252,7 +252,7 @@ public class GCMBufferTest implements Cloneable {
 
     void test() throws Exception {
         int i = 1;
-        System.out.println("Algo: " + algo + " \tOps: " + ops.toString());
+        System.err.println("Algo: " + algo + " \tOps: " + ops.toString());
         for (Data data : dataSet) {
 
             // If incrementalSegments is enabled, run through that test only
@@ -264,31 +264,35 @@ public class GCMBufferTest implements Cloneable {
                 sizes = new int[ops.size()];
 
                 while (incrementSizes(data.pt.length)) {
-                    System.out.print("Encrypt:  Data Index: " + i + " \tSizes[ ");
+                    System.err.print("Encrypt:  Data Index: " + i + " \tSizes[ ");
                     for (int v : sizes) {
-                        System.out.print(v + " ");
+                        System.err.print(v + " ");
                     }
-                    System.out.println("]");
+                    System.err.println("]");
+                    System.err.flush();
                     encrypt(data);
                 }
                 Arrays.fill(sizes, 0);
 
                 while (incrementSizes(data.ct.length + data.tag.length)) {
-                    System.out.print("Decrypt:  Data Index: " + i + " \tSizes[ ");
+                    System.err.print("Decrypt:  Data Index: " + i + " \tSizes[ ");
                     for (int v : sizes) {
-                        System.out.print(v + " ");
+                        System.err.print(v + " ");
                     }
-                    System.out.println("]");
+                    System.err.println("]");
+                    System.err.flush();
                     decrypt(data);
                 }
 
             } else {
                 // Default test of 0 and 2 offset doing in place and different
                 // i/o buffers
-                System.out.println("Encrypt:  Data Index: " + i);
+                System.err.println("Encrypt:  Data Index: " + i);
+                System.err.flush();
                 encrypt(data);
 
-                System.out.println("Decrypt:  Data Index: " + i);
+                System.err.println("Decrypt:  Data Index: " + i);
+                System.err.flush();
                 decrypt(data);
             }
             i++;
@@ -306,16 +310,17 @@ public class GCMBufferTest implements Cloneable {
             data.tag.length);
 
         // Test different input/output buffers
-        System.out.println("\tinput len: " + input.length + "  inOfs " +
+        System.err.println("\tinput len: " + input.length + "  inOfs " +
             inOfs + "  outOfs " + outOfs + "  in/out buffer: different");
         crypto(true, data, input, output);
 
         // Test with in-place buffers
         if (same) {
-            System.out.println("\tinput len: " + input.length + "  inOfs " +
+            System.err.println("\tinput len: " + input.length + "  inOfs " +
             inOfs + "  outOfs " + outOfs + "  in/out buffer: in-place");
             cryptoSameBuffer(true, data, input, output);
         }
+        System.err.flush();
     }
 
     // Setup data for decryption
@@ -328,16 +333,17 @@ public class GCMBufferTest implements Cloneable {
         output = data.pt;
 
         // Test different input/output buffers
-        System.out.println("\tinput len: " + input.length + "  inOfs " +
+        System.err.println("\tinput len: " + input.length + "  inOfs " +
             inOfs + "  outOfs " + outOfs + "  in/out buffer: different");
         crypto(false, data, input, output);
 
         // Test with in-place buffers
         if (same) {
-            System.out.println("\tinput len: " + input.length + "  inOfs " +
+            System.err.println("\tinput len: " + input.length + "  inOfs " +
             inOfs + "  outOfs " + outOfs + "  in-place: same");
             cryptoSameBuffer(false, data, input, output);
         }
+        System.err.flush();
     }
 
     /**
@@ -631,7 +637,7 @@ public class GCMBufferTest implements Cloneable {
         GCMBufferTest t;
 
         initTest();
-
+/*
         // Test single byte array
         new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)).test();
         offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)));
@@ -714,11 +720,17 @@ public class GCMBufferTest implements Cloneable {
         new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).incrementalSegments().
             dataSet(0).test();
+
+ */
+        for (int x = 0; x < 10000; x++) {
+            new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT)).test();
+        }
+
         // Test update-update-doFinal with direct bytebuffers, incrementing through
         // every data size combination for the Data set 0
         new GCMBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
-            incrementalSegments().dataSet(0).test();
+            incrementalSegments().dataSet(0).differentBufferOnly().test();
 
     }
 

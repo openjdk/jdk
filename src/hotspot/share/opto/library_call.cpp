@@ -56,6 +56,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include <iostream>
 
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
@@ -6218,6 +6219,9 @@ bool LibraryCallKit::inline_ghash_processBlocksBB() {
   Node* state          = argument(4);
   Node* subkeyH        = argument(5);
 
+    std::cout << "state " << state;
+    std::cout << "subkeyH " << subkeyH;
+    std::cout << "ptr " << ptr << std::endl;
   ptr = ConvL2X(ptr);  // adjust Java long to machine word
   Node* base = _gvn.transform(new CastX2PNode(ptr));
   offset = ConvI2X(offset);
@@ -6232,6 +6236,10 @@ bool LibraryCallKit::inline_ghash_processBlocksBB() {
   assert(state_start, "state is NULL");
   Node* subkeyH_start  = array_element_address(subkeyH, intcon(0), T_LONG);
   assert(subkeyH_start, "subkeyH is NULL");
+
+    std::cout << "state2 " << state_start;
+    std::cout << "subkeyH2 " << subkeyH_start;
+    std::cout << "data_start " << data_start << std::endl;
 
   Node* ghash = make_runtime_call(RC_LEAF|RC_NO_FP,
                                   OptoRuntime::ghash_processBlocks_Type(),

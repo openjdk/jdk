@@ -330,7 +330,6 @@ final class CipherCore {
             } else {
                 totalLen = Math.addExact(totalLen, padding.padLength(totalLen));
             }
-            break;
         }
         return totalLen;
     }

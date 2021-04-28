@@ -5389,6 +5389,10 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ldrq(v0, Address(state));
     __ ldrq(v1, Address(subkeyH));
+ //   __ block_comment("data=");
+ //   __ block_comment("blocks =");
+ //   __ ldrq(v4, Address(data));
+ //   __ ldrw(r5, blocks);
 
     __ rev64(v0, __ T16B, v0);          // Bit-reverse words in state and subkeyH
     __ rbit(v0, __ T16B, v0);
