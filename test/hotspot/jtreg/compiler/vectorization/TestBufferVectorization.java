@@ -197,29 +197,15 @@ public class TestBufferVectorization {
         } else if (args.length == 1) {
             verify_vectors(args[0]);
         } else {
-            Test te;
-            switch (args[0]) {
-                case "array":
-                    te = new TestArray();
-                    break;
-                case "arrayOffset":
-                    te = new TestArrayOffset(offset);
-                    break;
-                case "buffer":
-                    te = new TestBuffer(buffer);
-                    break;
-                case "bufferHeap":
-                    te = new TestBuffer(heap_buffer_byte_to_int);
-                    break;
-                case "bufferDirect":
-                    te = new TestBuffer(direct_buffer_byte_to_int);
-                    break;
-                case "arrayView":
-                    te = new TestArrayView();
-                    break;
-                default:
-                    throw new RuntimeException(" Unknown test: " + args[0]);
-            }
+            Test te = switch (args[0]) {
+                case "array" -> new TestArray();
+                case "arrayOffset" -> new TestArrayOffset(offset);
+                case "buffer" -> new TestBuffer(buffer);
+                case "bufferHeap" -> new TestBuffer(heap_buffer_byte_to_int);
+                case "bufferDirect" -> new TestBuffer(direct_buffer_byte_to_int);
+                case "arrayView" -> new TestArrayView();
+                default -> throw new RuntimeException(" Unknown test: " + args[0]);
+            };
 
             te.init();
             for (int i = 0; i < ITER; i++) {
