@@ -1042,6 +1042,10 @@ WB_ENTRY(jboolean, WB_EnqueueInitializerForCompilation(JNIEnv* env, jobject o, j
   if (clinit == NULL) {
     return false;
   }
+  methodHandle mh(THREAD, clinit);
+  if (mh->method_holder()->is_not_initialized()) {
+    return false; // Bail out if not initialized
+  }
   return WhiteBox::compile_method(clinit, comp_level, InvocationEntryBci, THREAD);
 WB_END
 
