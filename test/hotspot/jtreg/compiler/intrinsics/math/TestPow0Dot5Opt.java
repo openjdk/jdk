@@ -43,17 +43,6 @@ public class TestPow0Dot5Opt {
     if (r1 != r2) {
       throw new RuntimeException("pow(" + a + ", 0.5), expected: " + r1 + ", actual: " + r2);
     }
-  }
-
-  public static void main(String[] args) throws Exception {
-    for (int i = 0; i < 10; i++) {
-      for (int j = 1; j < 100000; j++) {
-        test(j * 1.0);
-        test(1.0 / j);
-      }
-    }
-
-    test(0.0);
 
     // Special case: pow(+0.0, 0.5) = 0.0
     double r = Math.pow(+0.0, 0.5);
@@ -83,6 +72,15 @@ public class TestPow0Dot5Opt {
     r = Math.pow(Double.NaN, 0.5);
     if (!Double.isNaN(r)) {
       throw new RuntimeException("pow(NaN, 0.5), expected: NaN, actual: " + r);
+    }
+  }
+
+  public static void main(String[] args) throws Exception {
+    for (int i = 0; i < 10; i++) {
+      for (int j = 1; j < 100000; j++) {
+        test(j * 1.0);
+        test(1.0 / j);
+      }
     }
   }
 

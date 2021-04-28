@@ -1360,7 +1360,7 @@ source %{
 
     // r27 is not allocatable when compressed oops is on and heapbase is not
     // zero, compressed klass pointers doesn't use r27 after JDK-8234794
-    if (UseCompressedOops && (CompressedOops::ptrs_base() != NULL || UseAOT)) {
+    if (UseCompressedOops && (CompressedOops::ptrs_base() != NULL)) {
       _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
       _NO_SPECIAL_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
       _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);

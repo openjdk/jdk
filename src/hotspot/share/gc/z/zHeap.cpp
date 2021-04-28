@@ -429,7 +429,7 @@ void ZHeap::relocate() {
   _relocate.relocate(&_relocation_set);
 
   // Update statistics
-  ZStatHeap::set_at_relocate_end(_page_allocator.stats());
+  ZStatHeap::set_at_relocate_end(_page_allocator.stats(), _object_allocator.relocated());
 }
 
 void ZHeap::object_iterate(ObjectClosure* cl, bool visit_weaks) {
@@ -494,7 +494,7 @@ void ZHeap::print_extended_on(outputStream* st) const {
   }
 
   // Allow pages to be deleted
-  _page_allocator.enable_deferred_delete();
+  _page_allocator.disable_deferred_delete();
 }
 
 bool ZHeap::print_location(outputStream* st, uintptr_t addr) const {

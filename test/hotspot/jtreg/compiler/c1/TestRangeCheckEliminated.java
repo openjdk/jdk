@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +26,17 @@
  * @test
  * @bug 8263707
  * @summary Test range check for constant array and NewMultiArray is removed properly
+ * @author Hui Shi
+ *
  * @requires vm.debug == true & vm.compiler1.enabled
  *
  * @library /test/lib
- * @run main/othervm compiler.c1.TestRangeCheckEliminated
  *
- * @author Hui Shi
-*/
+ * @run driver compiler.c1.TestRangeCheckEliminated
+ */
 
 package compiler.c1;
 
-import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -48,8 +49,8 @@ public class TestRangeCheckEliminated {
             "-XX:TieredStopAtLevel=1",
             "-XX:+TraceRangeCheckElimination",
             "-XX:-BackgroundCompilation",
-            "compiler.c1.TestRangeCheckEliminated$test_constant_array"
-            };
+            test_constant_array.class.getName()
+         };
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(procArgs);
         String output = new OutputAnalyzer(pb.start()).getOutput();
@@ -67,8 +68,8 @@ public class TestRangeCheckEliminated {
             "-XX:TieredStopAtLevel=1",
             "-XX:+TraceRangeCheckElimination",
             "-XX:-BackgroundCompilation",
-            "compiler.c1.TestRangeCheckEliminated$test_multi_constant_array"
-            };
+            test_multi_constant_array.class.getName()
+        };
 
         pb = ProcessTools.createJavaProcessBuilder(procArgs);
         output = new OutputAnalyzer(pb.start()).getOutput();
@@ -86,8 +87,8 @@ public class TestRangeCheckEliminated {
             "-XX:TieredStopAtLevel=1",
             "-XX:+TraceRangeCheckElimination",
             "-XX:-BackgroundCompilation",
-            "compiler.c1.TestRangeCheckEliminated$test_multi_new_array"
-            };
+            test_multi_new_array.class.getName()
+         };
 
         pb = ProcessTools.createJavaProcessBuilder(procArgs);
         output = new OutputAnalyzer(pb.start()).getOutput();

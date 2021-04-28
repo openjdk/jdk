@@ -72,7 +72,6 @@ Mutex*   NonJavaThreadsList_lock      = NULL;
 Mutex*   NonJavaThreadsListSync_lock  = NULL;
 Monitor* CGC_lock                     = NULL;
 Monitor* STS_lock                     = NULL;
-Monitor* FullGCCount_lock             = NULL;
 Monitor* G1OldGCCount_lock            = NULL;
 Mutex*   Shared_DirtyCardQ_lock       = NULL;
 Mutex*   G1DetachedRefinementStats_lock = NULL;
@@ -212,7 +211,6 @@ void mutex_init() {
   def(CGC_lock                     , PaddedMonitor, special,     true,  _safepoint_check_never);      // coordinate between fore- and background GC
   def(STS_lock                     , PaddedMonitor, leaf,        true,  _safepoint_check_never);
 
-  def(FullGCCount_lock             , PaddedMonitor, leaf,        true,  _safepoint_check_never);      // in support of ExplicitGCInvokesConcurrent
   if (UseG1GC) {
     def(G1OldGCCount_lock          , PaddedMonitor, leaf,        true,  _safepoint_check_always);
 

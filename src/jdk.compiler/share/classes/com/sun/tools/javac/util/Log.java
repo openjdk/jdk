@@ -548,8 +548,8 @@ public class Log extends AbstractLog {
         private void getCodeRecursive(ListBuffer<String> buf, JCDiagnostic d) {
             buf.add(d.getCode());
             for (Object o : d.getArgs()) {
-                if (o instanceof JCDiagnostic) {
-                    getCodeRecursive(buf, (JCDiagnostic)o);
+                if (o instanceof JCDiagnostic diagnostic) {
+                    getCodeRecursive(buf, diagnostic);
                 }
             }
         }

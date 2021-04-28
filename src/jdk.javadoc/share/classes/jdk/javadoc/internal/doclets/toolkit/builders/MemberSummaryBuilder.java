@@ -413,9 +413,10 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 continue;
             }
 
-            List<Element> members = inheritedMembersFromMap.stream()
+            List<? extends Element> members = inheritedMembersFromMap.stream()
                     .filter(e -> utils.getEnclosingTypeElement(e) == inheritedClass)
-                    .collect(Collectors.toList());
+                    .toList();
+
             if (!members.isEmpty()) {
                 SortedSet<Element> inheritedMembers = new TreeSet<>(comparator);
                 inheritedMembers.addAll(members);

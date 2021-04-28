@@ -163,7 +163,7 @@ $(eval $(call DefineNativeToolchain, TOOLCHAIN_BUILD_LINK_CXX, \
 ################################################################################
 
 # Extensions of files handled by this macro.
-NATIVE_SOURCE_EXTENSIONS := %.s %.S %.c %.cpp %.cc %.m %.mm
+NATIVE_SOURCE_EXTENSIONS := %.S %.c %.cpp %.cc %.m %.mm
 
 # Replaces native source extensions with the object file extension in a string.
 # Param 1: the string containing source file names with extensions
@@ -349,47 +349,36 @@ define SetupCompileNativeFileBody
       $1_FLAGS := $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) $$($1_BASE_CFLAGS) \
           $$($1_OPT_CFLAGS) $$($1_CFLAGS) -c
       $1_COMPILER := $$($$($1_BASE)_CC)
-      $1_DEP_FLAG := $(GENDEPS_FLAGS)
     else ifneq ($$(filter %.m, $$($1_FILENAME)), )
       # Compile as an Objective-C file
       $1_FLAGS := -x objective-c $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) \
           $$($1_BASE_CFLAGS) $$($1_OPT_CFLAGS) $$($1_CFLAGS) -c
       $1_COMPILER := $$($$($1_BASE)_CC)
-      $1_DEP_FLAG := $(GENDEPS_FLAGS)
     else ifneq ($$(filter %.S, $$($1_FILENAME)), )
       # Compile as preprocessed assembler file
-      $1_FLAGS := $$($1_BASE_ASFLAGS)
+      $1_FLAGS := $(BASIC_ASFLAGS) $$($1_BASE_ASFLAGS)
       $1_COMPILER := $(AS)
-      $1_DEP_FLAG := $(GENDEPS_FLAGS)
-    else ifneq ($$(filter %.s, $$($1_FILENAME)), )
-      # Compile as non-preprocessed assembler file
-      $1_FLAGS := $$($1_BASE_ASFLAGS)
-      $1_COMPILER := $(AS)
-      $1_DEP_FLAG :=
     else ifneq ($$(filter %.cpp %.cc %.mm, $$($1_FILENAME)), )
       # Compile as a C++ or Objective-C++ file
       $1_FLAGS := $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) $$($1_BASE_CXXFLAGS) \
           $$($1_OPT_CXXFLAGS) $$($1_CXXFLAGS) -c
       $1_COMPILER := $$($$($1_BASE)_CXX)
-      $1_DEP_FLAG := $(GENDEPS_FLAGS)
     else
       $$(error Internal error in NativeCompilation.gmk: no compiler for file $$($1_FILENAME))
     endif
 
-    ifeq ($$(filter %.s, $$($1_FILENAME)), )
-      # And this is the dependency file for this obj file.
-      $1_DEPS_FILE := $$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_OBJ))
-      # The dependency target file lists all dependencies as empty targets to
-      # avoid make error "No rule to make target" for removed files
-      $1_DEPS_TARGETS_FILE := $$(patsubst %$(OBJ_SUFFIX),%.d.targets,$$($1_OBJ))
+    # And this is the dependency file for this obj file.
+    $1_DEPS_FILE := $$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_OBJ))
+    # The dependency target file lists all dependencies as empty targets to
+    # avoid make error "No rule to make target" for removed files
+    $1_DEPS_TARGETS_FILE := $$(patsubst %$(OBJ_SUFFIX),%.d.targets,$$($1_OBJ))
 
-      # Only try to load individual dependency information files if the global
-      # file hasn't been loaded (could happen if make was interrupted).
-      ifneq ($$($$($1_BASE)_DEPS_FILE_LOADED), true)
-        # Include previously generated dependency information. (if it exists)
-        -include $$($1_DEPS_FILE)
-        -include $$($1_DEPS_TARGETS_FILE)
-      endif
+    # Only try to load individual dependency information files if the global
+    # file hasn't been loaded (could happen if make was interrupted).
+    ifneq ($$($$($1_BASE)_DEPS_FILE_LOADED), true)
+      # Include previously generated dependency information. (if it exists)
+      -include $$($1_DEPS_FILE)
+      -include $$($1_DEPS_TARGETS_FILE)
     endif
 
     ifneq ($$(strip $$($1_CFLAGS) $$($1_CXXFLAGS) $$($1_OPTIMIZATION)), )
@@ -410,7 +399,7 @@ define SetupCompileNativeFileBody
 	$$(call MakeDir, $$(@D))
         ifneq ($(TOOLCHAIN_TYPE), microsoft)
 	  $$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
-	      $$($1_COMPILER) $$($1_DEP_FLAG) \
+	      $$($1_COMPILER) $$(GENDEPS_FLAGS) \
 	      $$(addsuffix .tmp, $$($1_DEPS_FILE)) \
 	      $$($1_COMPILE_OPTIONS)))
           ifneq ($$($1_DEPS_FILE), )
@@ -440,11 +429,13 @@ define SetupCompileNativeFileBody
 	    $(ECHO) >> $$($1_DEPS_FILE) ; \
 	    $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEPS_FILE) > $$($1_DEPS_TARGETS_FILE)
           else
-            # For assembler calls, no need to build dependency list.
+            # For assembler calls just create empty dependency lists
 	    $$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
 	        $$($1_COMPILER) $$($1_FLAGS) \
-	          $(CC_OUT_OPTION)$$($1_OBJ) -nologo -c -Ta $$($1_SRC_FILE) 2>&1 \
-	            | $(TR) -d '\r' | $(GREP) -v -e "Assembling:" || test "$$$$?" = "1" ;))
+	        $(CC_OUT_OPTION)$$($1_OBJ) -Ta $$($1_SRC_FILE))) \
+	        | $(TR) -d '\r' | $(GREP) -v -e "Assembling:" || test "$$$$?" = "1" ; \
+	    $(ECHO) > $$($1_DEPS_FILE) ; \
+	    $(ECHO) > $$($1_DEPS_TARGETS_FILE)
           endif
         endif
   endif
