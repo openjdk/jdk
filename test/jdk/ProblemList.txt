@@ -197,8 +197,6 @@ java/awt/Focus/8013611/JDK8013611.java 8175366 windows-all,macosx-all
 java/awt/Focus/6378278/InputVerifierTest.java 8198616 macosx-all
 java/awt/Focus/6382144/EndlessLoopTest.java 8198617 macosx-all
 java/awt/Focus/6981400/Test1.java 8029675 windows-all,macosx-all
-java/awt/Focus/8073453/AWTFocusTransitionTest.java 8136517 macosx-all
-java/awt/Focus/8073453/SwingFocusTransitionTest.java 8136517 macosx-all
 java/awt/Focus/6981400/Test3.java 8173264 generic-all
 java/awt/event/KeyEvent/ExtendedKeyCode/ExtendedKeyCodeTest.java 8169476 windows-all,macosx-all
 java/awt/event/KeyEvent/KeyChar/KeyCharTest.java 8169474,8224055 macosx-all,windows-all
