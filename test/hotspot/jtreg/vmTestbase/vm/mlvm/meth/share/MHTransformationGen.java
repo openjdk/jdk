@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,8 @@ public class MHTransformationGen {
     private static final Optional<MemoryPoolMXBean> NON_PROFILED_NMETHODS_POOL ;
 
     // Limit numbers are arbitrary, feel free to change if arguably necessary
-    private static final int NON_SEGMENTED_CACHE_ALLOWANCE = 2_000_000;
-    private static final int SEGMENTED_CACHE_ALLOWANCE = 1_000_000;
+    private static final int NON_SEGMENTED_CACHE_ALLOWANCE = 10_000_000;
+    private static final int SEGMENTED_CACHE_ALLOWANCE = 10_000_000;
 
     static {
         var pools = ManagementFactory.getMemoryPoolMXBeans();
