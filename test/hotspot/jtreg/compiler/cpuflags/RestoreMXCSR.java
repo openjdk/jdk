@@ -26,8 +26,7 @@
  * @bug 8020433
  * @summary Crash when using -XX:+RestoreMXCSROnJNICalls
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @requires vm.flagless
  *
  * @run driver compiler.cpuflags.RestoreMXCSR
  */
