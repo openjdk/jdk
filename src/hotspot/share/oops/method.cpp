@@ -620,11 +620,6 @@ void Method::compute_from_signature(Symbol* sig) {
   constMethod()->set_fingerprint(fp.fingerprint());
 }
 
-bool Method::is_empty_method() const {
-  return  code_size() == 1
-      && *code_base() == Bytecodes::_return;
-}
-
 bool Method::is_vanilla_constructor() const {
   // Returns true if this method is a vanilla constructor, i.e. an "<init>" "()V" method
   // which only calls the superclass vanilla constructor and possibly does stores of
