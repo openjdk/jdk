@@ -120,7 +120,7 @@ public class CompareKeys {
         for (Provider p : Security.getProviders()) {
             for (Provider.Service s : p.getServices()) {
                 // Ignore the algorithms from the list which require
-                // pre-initialisation to make the Test generic across algorithms.
+                // pre-initialization to make the Test generic across algorithms.
                 // SunMSCAPI provider is ignored too because of incompatibilty
                 // for serialization and with PKCS8EncodedKeySpec for certain
                 // algorithms like RSA.
