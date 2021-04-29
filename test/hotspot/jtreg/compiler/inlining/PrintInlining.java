@@ -27,6 +27,7 @@
  * @summary PrintInlining as compiler directive doesn't print virtual calls
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
+ * @requires vm.flagless
  *
  * @run driver compiler.inlining.PrintInlining
  */

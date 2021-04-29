@@ -26,6 +26,7 @@
  * @bug 8140650
  * @summary Method::is_accessor should cover getters and setters for all types
  * @library /test/lib
+ * @requires vm.flagless
  *
  * @run driver compiler.inlining.InlineAccessors
  */
