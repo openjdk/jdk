@@ -1247,7 +1247,6 @@ void PhaseCFG::verify() const {
         if (def && def != n) {
           Block* def_block = get_block_for_node(def);
           assert(def_block || def->is_Con(), "must have block; constants for debug info ok");
-          assert(!def->is_MachTemp() || def_block == block, "MachTemp should reside in same block");
           // Verify that all definitions dominate their uses (except for virtual
           // instructions merging multiple definitions).
           assert(n->is_Root() || n->is_Region() || n->is_Phi() || n->is_MachMerge() ||
