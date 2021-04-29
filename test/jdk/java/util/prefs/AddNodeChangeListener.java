@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
  /* @test
   * @bug  7160252 7197662
+  * @key intermittent
   * @summary Checks if events are delivered to a listener
   *          when a child node is added or removed
   * @run main/othervm -Djava.util.prefs.userRoot=. AddNodeChangeListener
@@ -30,15 +31,15 @@
 
 import java.util.prefs.*;
 
- public class AddNodeChangeListener {
+public class AddNodeChangeListener {
 
-     private static boolean failed = false;
-     private static Preferences userRoot, N2;
-     private static NodeChangeListenerAdd ncla;
+    private static final int SLEEP_ITRS = 10;
+    private static boolean failed = false;
+    private static Preferences userRoot, N2;
+    private static NodeChangeListenerAdd ncla;
 
-     public static void main(String[] args)
-         throws BackingStoreException, InterruptedException
-     {
+    public static void main(String[] args)
+             throws BackingStoreException, InterruptedException {
         userRoot = Preferences.userRoot();
         ncla = new NodeChangeListenerAdd();
         userRoot.addNodeChangeListener(ncla);
@@ -49,28 +50,61 @@ import java.util.prefs.*;
         //Should initate a child removed event
         removeNode();
 
-        if (failed)
+        if (failed) {
             throw new RuntimeException("Failed");
+        }
     }
 
     private static void addNode()
-        throws BackingStoreException, InterruptedException
-    {
+            throws BackingStoreException, InterruptedException {
         N2 = userRoot.node("N2");
         userRoot.flush();
-        Thread.sleep(3000);
-        if (ncla.getAddNumber() != 1)
-            failed = true;
+        int passItr = -1;
+
+        for (int i = 0; i < SLEEP_ITRS; i++) {
+            System.out.print("addNode sleep iteration " + i + "...");
+            Thread.sleep(3000);
+            System.out.println("done.");
+            if (ncla.getAddNumber() == 1) {
+                passItr = i;
+                break;
+            }
+        }
+        checkPassItr(passItr, "addNode()");
     }
 
     private static void removeNode()
-        throws BackingStoreException, InterruptedException
-    {
+            throws BackingStoreException, InterruptedException {
         N2.removeNode();
         userRoot.flush();
-        Thread.sleep(3000);
-        if (ncla.getAddNumber() != 0)
+        int passItr = -1;
+
+        for (int i = 0; i < SLEEP_ITRS; i++) {
+            System.out.print("removeNode sleep iteration " + i + "...");
+            Thread.sleep(3000);
+            System.out.println("done.");
+            if (ncla.getAddNumber() == 0) {
+                passItr = i;
+                break;
+            }
+        }
+        checkPassItr(passItr, "removeNode()");
+    }
+
+    /* If the listener wasn't notified on iteration 0, throw a RuntimeException
+     * with some contextual information
+     */
+    private static void checkPassItr(int itr, String methodName) {
+        if (itr == 0) {
+            System.out.println(methodName + " test passed");
+        } else {
             failed = true;
+            if (itr == -1) {
+                throw new RuntimeException("Failed in " + methodName + " - change listener never notified");
+            } else {
+                throw new RuntimeException("Failed in " + methodName + " - listener notified on iteration " + itr);
+            }
+        }
     }
 
     private static class NodeChangeListenerAdd implements NodeChangeListener {
@@ -90,4 +124,4 @@ import java.util.prefs.*;
             return totalNode;
         }
     }
- }
+}

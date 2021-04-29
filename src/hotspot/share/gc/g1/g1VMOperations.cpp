@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,9 @@
 void VM_G1CollectFull::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
-  _gc_succeeded = g1h->do_full_collection(true /* explicit_gc */, false /* clear_all_soft_refs */);
+  _gc_succeeded = g1h->do_full_collection(true  /* explicit_gc */,
+                                          false /* clear_all_soft_refs */,
+                                          false /* do_maximum_compaction */);
 }
 
 VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,

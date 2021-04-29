@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ TESTLIBRARY_SRC_DIR = ../../../../lib/jdk/test/lib
 TESTLIBRARY_SRC_FILES = $(TESTLIBRARY_SRC_DIR)/Asserts.java \
                         $(TESTLIBRARY_SRC_DIR)/JDKToolFinder.java \
                         $(TESTLIBRARY_SRC_DIR)/JDKToolLauncher.java \
+                        $(TESTLIBRARY_SRC_DIR)/NetworkConfiguration.java \
                         $(TESTLIBRARY_SRC_DIR)/Platform.java \
                         $(TESTLIBRARY_SRC_DIR)/Utils.java \
                         $(TESTLIBRARY_SRC_DIR)/process/OutputAnalyzer.java \
@@ -107,7 +108,7 @@ filelist: $(SRC_FILES)
 INIT: $(DIST_DIR)
 	$(shell if [ ! -d $(CLASSES_DIR) ]; then mkdir -p $(CLASSES_DIR); fi)
 
-install: clean_testbase testgroup testroot copytestlibrary copyaot $(DIST_JAR) cleantmp
+install: clean_testbase testgroup testroot copytestlibrary $(DIST_JAR) cleantmp
 	$(JAVA) --add-exports=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -ea -jar $(DIST_JAR) $(APPLICATION_ARGS)
 
 clean_testbase:
@@ -121,9 +122,6 @@ copytestlibrary: $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg
 	@cp -r src/jdk/test/lib/jittester/jtreg/*.java $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg
 	@cp -r $(TESTLIBRARY_SRC_DIR) $(TESTBASE_DIR)/jdk/test/
 
-copyaot: $(TESTBASE_DIR)/compiler/aot
-	@cp ../../compiler/aot/AotCompiler.java $(TESTBASE_DIR)/compiler/aot
-
 testgroup: $(TESTBASE_DIR)
 	@echo 'jittester_all = \' > $(TESTGROUP_FILE)
 	@echo '	/' >> $(TESTGROUP_FILE)
@@ -132,13 +130,9 @@ testgroup: $(TESTBASE_DIR)
 	@echo ' java_tests \' >> $(TESTGROUP_FILE)
 	@echo ' bytecode_tests' >> $(TESTGROUP_FILE)
 	@echo '' >> $(TESTGROUP_FILE)
-	@echo 'aot_tests = \' >> $(TESTGROUP_FILE)
-	@echo ' aot_bytecode_tests \' >> $(TESTGROUP_FILE)
-	@echo ' aot_java_tests' >> $(TESTGROUP_FILE)
-	@echo '' >> $(TESTGROUP_FILE)
 
 testroot: $(TESTBASE_DIR)
 	@echo 'groups=TEST.groups' > $(TESTROOT_FILE)
 
-$(TESTBASE_DIR) $(DIST_DIR) $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg $(TESTBASE_DIR)/compiler/aot:
+$(TESTBASE_DIR) $(DIST_DIR) $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg:
 	$(shell if [ ! -d $@ ]; then mkdir -p $@; fi)

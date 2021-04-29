@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,22 @@ address StubRoutines::x86::_upper_word_mask_addr = NULL;
 address StubRoutines::x86::_shuffle_byte_flip_mask_addr = NULL;
 address StubRoutines::x86::_k256_adr = NULL;
 address StubRoutines::x86::_vector_short_to_byte_mask = NULL;
+address StubRoutines::x86::_vector_int_to_byte_mask = NULL;
+address StubRoutines::x86::_vector_int_to_short_mask = NULL;
+address StubRoutines::x86::_vector_all_bits_set = NULL;
+address StubRoutines::x86::_vector_byte_shuffle_mask = NULL;
+address StubRoutines::x86::_vector_short_shuffle_mask = NULL;
+address StubRoutines::x86::_vector_int_shuffle_mask = NULL;
+address StubRoutines::x86::_vector_long_shuffle_mask = NULL;
 address StubRoutines::x86::_vector_float_sign_mask = NULL;
 address StubRoutines::x86::_vector_float_sign_flip = NULL;
 address StubRoutines::x86::_vector_double_sign_mask = NULL;
 address StubRoutines::x86::_vector_double_sign_flip = NULL;
 address StubRoutines::x86::_vector_byte_perm_mask = NULL;
 address StubRoutines::x86::_vector_long_sign_mask = NULL;
+address StubRoutines::x86::_vector_iota_indices = NULL;
+address StubRoutines::x86::_vector_32_bit_mask = NULL;
+address StubRoutines::x86::_vector_64_bit_mask = NULL;
 #ifdef _LP64
 address StubRoutines::x86::_k256_W_adr = NULL;
 address StubRoutines::x86::_k512_W_addr = NULL;

@@ -92,6 +92,7 @@ class CheckRestrictedPackage {
         final String pkgName = name.substring(0, i);
         final Module module = clazz.getModule();
         if (module != null && !module.isExported(pkgName)) {
+            // Classes in unexported packages of modules are always restricted
             return true;
         }
 

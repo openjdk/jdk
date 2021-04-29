@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciMethodBlocks.hpp"
 #include "ci/ciStreams.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "interpreter/bytecode.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
@@ -274,7 +276,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
 
   // direct recursive calls are skipped if they can be bound statically without introducing
   // dependencies and if parameters are passed at the same position as in the current method
-  // other calls are skipped if there are no unescaped arguments passed to them
+  // other calls are skipped if there are no non-escaped arguments passed to them
   bool directly_recursive = (method() == target) &&
                (code != Bytecodes::_invokevirtual || target->is_final_method() || state._stack[arg_base] .is_empty());
 
@@ -300,8 +302,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
   // determine actual method (use CHA if necessary)
   ciMethod* inline_target = NULL;
   if (target->is_loaded() && klass->is_loaded()
-      && (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))
-      && target->is_loaded()) {
+      && (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))) {
     if (code == Bytecodes::_invokestatic
         || code == Bytecodes::_invokespecial
         || (code == Bytecodes::_invokevirtual && target->is_final_method())) {
@@ -1204,8 +1205,8 @@ void BCEscapeAnalyzer::do_analysis() {
   iterate_blocks(arena);
 }
 
-vmIntrinsics::ID BCEscapeAnalyzer::known_intrinsic() {
-  vmIntrinsics::ID iid = method()->intrinsic_id();
+vmIntrinsicID BCEscapeAnalyzer::known_intrinsic() {
+  vmIntrinsicID iid = method()->intrinsic_id();
   if (iid == vmIntrinsics::_getClass ||
       iid == vmIntrinsics::_hashCode) {
     return iid;
@@ -1214,7 +1215,7 @@ vmIntrinsics::ID BCEscapeAnalyzer::known_intrinsic() {
   }
 }
 
-void BCEscapeAnalyzer::compute_escape_for_intrinsic(vmIntrinsics::ID iid) {
+void BCEscapeAnalyzer::compute_escape_for_intrinsic(vmIntrinsicID iid) {
   switch (iid) {
     case vmIntrinsics::_getClass:
       _return_local = false;
@@ -1293,7 +1294,7 @@ void BCEscapeAnalyzer::compute_escape_info() {
   int i;
   assert(!methodData()->has_escape_info(), "do not overwrite escape info");
 
-  vmIntrinsics::ID iid = known_intrinsic();
+  vmIntrinsicID iid = known_intrinsic();
 
   // check if method can be analyzed
   if (iid == vmIntrinsics::_none && (method()->is_abstract() || method()->is_native() || !method()->holder()->is_initialized()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ import jdk.internal.loader.ClassLoaderValue;
 import jdk.internal.loader.Loader;
 import jdk.internal.loader.LoaderPool;
 import jdk.internal.module.ServicesCatalog;
+import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.Stable;
 import sun.security.util.SecurityConstants;
 
 
@@ -142,15 +144,20 @@ import sun.security.util.SecurityConstants;
  * }</pre>
  *
  * @since 9
- * @spec JPMS
  * @see Module#getLayer()
  */
 
 public final class ModuleLayer {
 
-    // the empty layer
-    private static final ModuleLayer EMPTY_LAYER
-        = new ModuleLayer(Configuration.empty(), List.of(), null);
+    // the empty layer (may be initialized from the CDS archive)
+    private static @Stable ModuleLayer EMPTY_LAYER;
+    static {
+        CDS.initializeFromArchive(ModuleLayer.class);
+        if (EMPTY_LAYER == null) {
+            // create a new empty layer if there is no archived version.
+            EMPTY_LAYER = new ModuleLayer(Configuration.empty(), List.of(), null);
+        }
+    }
 
     // the configuration from which this layer was created
     private final Configuration cf;
@@ -193,7 +200,6 @@ public final class ModuleLayer {
      * should never be shared with untrusted code.
      *
      * @since 9
-     * @spec JPMS
      */
     public static final class Controller {
         private final ModuleLayer layer;
@@ -933,7 +939,9 @@ public final class ModuleLayer {
             servicesCatalog = this.servicesCatalog;
             if (servicesCatalog == null) {
                 servicesCatalog = ServicesCatalog.create();
-                nameToModule.values().forEach(servicesCatalog::register);
+                for (Module m : nameToModule.values()) {
+                    servicesCatalog.register(m);
+                }
                 this.servicesCatalog = servicesCatalog;
             }
         }

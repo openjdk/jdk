@@ -26,7 +26,6 @@
 #include "sun_lwawt_macosx_CCursorManager.h"
 
 #include <Cocoa/Cocoa.h>
-#include <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #include "GeomUtilities.h"
 #include "ThreadUtilities.h"
@@ -73,31 +72,33 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CCursorManager_nativeSetBuiltInCursor
 (JNIEnv *env, jclass class, jint type, jstring name)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
-    NSString *cursorName = JNFJavaToNSString(env, name);
+    NSString *cursorName = JavaStringToNSString(env, name);
     SEL cursorSelector = (type == sun_lwawt_macosx_CCursorManager_NAMED_CURSOR) ? lookupCursorSelectorForName(cursorName) : lookupCursorSelectorForType(type);
     if (cursorSelector == nil) {
         NSString *reason = [NSString stringWithFormat:@"unimplemented built-in cursor type: %d / %@", type, cursorName];
-        [JNFException raise:env as:kIllegalArgumentException reason:[reason UTF8String]];
+        JNU_ThrowIllegalArgumentException(env, [reason UTF8String]);
+        return;
     }
 
     if (![[NSCursor class] respondsToSelector:cursorSelector]) {
-        [JNFException raise:env as:kNoSuchMethodException reason:"missing NSCursor selector"];
+        JNU_ThrowByName(env, "java/lang/NoSuchMethodException", "missing NSCursor selector");
+        return;
     }
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         setCursorOnAppKitThread([[NSCursor class] performSelector:cursorSelector]);
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CCursorManager_nativeSetCustomCursor
 (JNIEnv *env, jclass class, jlong imgPtr, jdouble x, jdouble y)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     NSImage *image = (NSImage *)jlong_to_ptr(imgPtr);
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
@@ -107,7 +108,7 @@ JNF_COCOA_ENTER(env);
         [cursor release];
     }];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 JNIEXPORT jobject JNICALL
@@ -116,7 +117,7 @@ Java_sun_lwawt_macosx_CCursorManager_nativeGetCursorPosition
 {
     jobject jpt = NULL;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     CGEventRef event = CGEventCreate(NULL);
     CGPoint globalPos = CGEventGetLocation(event);
@@ -124,7 +125,7 @@ JNF_COCOA_ENTER(env);
 
     jpt = NSToJavaPoint(env, globalPos);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return jpt;
 }
@@ -134,7 +135,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CCursorManager_nativeSetAllowsCursorSetInBackground
 (JNIEnv *env, jclass class, jboolean allows)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     SEL allowsSetInBackground_SEL = @selector(javaSetAllowsCursorSetInBackground:);
     if ([[NSCursor class] respondsToSelector:allowsSetInBackground_SEL]) {
@@ -150,6 +151,6 @@ JNF_COCOA_ENTER(env);
         }];
     }
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
 }

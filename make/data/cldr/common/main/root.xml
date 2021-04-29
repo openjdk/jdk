@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -68,11 +68,11 @@ for derived annotations.
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-‐‒–⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample=",">[,،٫⹁、︐︑﹐﹑，､]</parseLenient>
 			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample=",">[,٫⹁︐﹐，]</parseLenient>
 			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
@@ -2953,6 +2953,7 @@ for derived annotations.
 			<percentSign>٪؜</percentSign>
 			<plusSign>؜+</plusSign>
 			<minusSign>؜-</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>اس</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>؉</perMille>
@@ -2967,6 +2968,7 @@ for derived annotations.
 			<percentSign>٪</percentSign>
 			<plusSign>‎+‎</plusSign>
 			<minusSign>‎-‎</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>×۱۰^</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>؉</perMille>
@@ -3038,6 +3040,7 @@ for derived annotations.
 			<percentSign>%</percentSign>
 			<plusSign>+</plusSign>
 			<minusSign>-</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -3654,12 +3657,12 @@ for derived annotations.
 		<currencyFormats numberSystem="latn">
 			<currencySpacing>
 				<beforeCurrency>
-					<currencyMatch>[:^S:]</currencyMatch>
+					<currencyMatch>[[:^S:]&amp;[:^Z:]]</currencyMatch>
 					<surroundingMatch>[:digit:]</surroundingMatch>
 					<insertBetween> </insertBetween>
 				</beforeCurrency>
 				<afterCurrency>
-					<currencyMatch>[:^S:]</currencyMatch>
+					<currencyMatch>[[:^S:]&amp;[:^Z:]]</currencyMatch>
 					<surroundingMatch>[:digit:]</surroundingMatch>
 					<insertBetween> </insertBetween>
 				</afterCurrency>
@@ -3760,6 +3763,12 @@ for derived annotations.
 			<alias source="locale" path="../currencyFormats[@numberSystem='latn']"/>
 		</currencyFormats>
 		<currencies>
+			<currency type="AFN">
+				<symbol alt="narrow">؋</symbol>
+			</currency>
+			<currency type="AMD">
+				<symbol alt="narrow">֏</symbol>
+			</currency>
 			<currency type="AOA">
 				<symbol alt="narrow">Kz</symbol>
 			</currency>
@@ -3769,6 +3778,9 @@ for derived annotations.
 			<currency type="AUD">
 				<symbol>A$</symbol>
 				<symbol alt="narrow">$</symbol>
+			</currency>
+			<currency type="AZN">
+				<symbol alt="narrow">₼</symbol>
 			</currency>
 			<currency type="BAM">
 				<symbol alt="narrow">KM</symbol>
@@ -3858,6 +3870,9 @@ for derived annotations.
 			</currency>
 			<currency type="GEL">
 				<symbol alt="narrow">₾</symbol>
+			</currency>
+			<currency type="GHS">
+				<symbol alt="narrow">GH₵</symbol>
 			</currency>
 			<currency type="GIP">
 				<symbol alt="narrow">£</symbol>
@@ -3981,6 +3996,7 @@ for derived annotations.
 				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="PHP">
+				<symbol>₱</symbol>
 				<symbol alt="narrow">₱</symbol>
 			</currency>
 			<currency type="PKR">
@@ -4070,7 +4086,7 @@ for derived annotations.
 				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="XOF">
-				<symbol>CFA</symbol>
+				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<symbol>CFPF</symbol>
@@ -4246,7 +4262,7 @@ for derived annotations.
 				<unitPrefixPattern>m{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-6">
-				<unitPrefixPattern>µ{0}</unitPrefixPattern>
+				<unitPrefixPattern>μ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-9">
 				<unitPrefixPattern>n{0}</unitPrefixPattern>
@@ -4295,6 +4311,30 @@ for derived annotations.
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -4387,7 +4427,7 @@ for derived annotations.
 				<displayName>kt</displayName>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mg/dL</displayName>
 				<unitPattern count="other">{0} mg/dL</unitPattern>
 			</unit>
@@ -4535,8 +4575,8 @@ for derived annotations.
 				<unitPattern count="other">{0} ms</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
-				<displayName>µs</displayName>
-				<unitPattern count="other">{0} µs</unitPattern>
+				<displayName>μs</displayName>
+				<unitPattern count="other">{0} μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>ns</displayName>
@@ -4567,8 +4607,7 @@ for derived annotations.
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<alias source="locale" path="../unit[@type='energy-kilocalorie']"/>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -4639,12 +4678,17 @@ for derived annotations.
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<alias source="locale" path="../unit[@type='graphics-pixel-per-centimeter']"/>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<alias source="locale" path="../unit[@type='graphics-pixel-per-inch']"/>
+			</unit>
+			<unit type="graphics-dot">
+				<alias source="locale" path="../unit[@type='graphics-pixel']"/>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -4670,8 +4714,8 @@ for derived annotations.
 				<unitPattern count="other">{0} mm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µm</displayName>
-				<unitPattern count="other">{0} µm</unitPattern>
+				<displayName>μm</displayName>
+				<unitPattern count="other">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>nm</displayName>
@@ -4739,6 +4783,14 @@ for derived annotations.
 				<displayName>lx</displayName>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<displayName>cd</displayName>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="other">{0} lm</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>L☉</displayName>
 				<unitPattern count="other">{0} L☉</unitPattern>
@@ -4762,8 +4814,8 @@ for derived annotations.
 				<unitPattern count="other">{0} mg</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName>µg</displayName>
-				<unitPattern count="other">{0} µg</unitPattern>
+				<displayName>μg</displayName>
+				<unitPattern count="other">{0} μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>tn</displayName>
@@ -4802,6 +4854,10 @@ for derived annotations.
 			<unit type="mass-solar-mass">
 				<displayName>M☉</displayName>
 				<unitPattern count="other">{0} M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>grain</displayName>
+				<unitPattern count="other">{0} grain</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -5020,6 +5076,34 @@ for derived annotations.
 				<displayName>bbl</displayName>
 				<unitPattern count="other">{0} bbl</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn Imp</displayName>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>drop</displayName>
+				<unitPattern count="other">{0} drop</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram fluid</displayName>
+				<unitPattern count="other">{0} dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>jigger</displayName>
+				<unitPattern count="other">{0} jigger</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>pinch</displayName>
+				<unitPattern count="other">{0} pinch</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>direction</displayName>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
@@ -5093,6 +5177,8 @@ for derived annotations.
 		<characterLabelPattern type="other">{0} — other</characterLabelPattern>
 		<characterLabelPattern type="scripts">scripts — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} strokes</characterLabelPattern>
+		<characterLabelPattern type="subscript">subscript {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">superscript {0}</characterLabelPattern>
 		<characterLabel type="activities">activity</characterLabel>
 		<characterLabel type="african_scripts">African script</characterLabel>
 		<characterLabel type="american_scripts">American script</characterLabel>

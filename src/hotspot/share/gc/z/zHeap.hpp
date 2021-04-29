@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #define SHARE_GC_Z_ZHEAP_HPP
 
 #include "gc/z/zAllocationFlags.hpp"
+#include "gc/z/zArray.hpp"
 #include "gc/z/zForwardingTable.hpp"
 #include "gc/z/zMark.hpp"
 #include "gc/z/zObjectAllocator.hpp"
-#include "gc/z/zPage.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zPageTable.hpp"
 #include "gc/z/zReferenceProcessor.hpp"
@@ -40,6 +40,8 @@
 #include "gc/z/zWorkers.hpp"
 
 class ThreadClosure;
+class ZPage;
+class ZRelocationSetSelector;
 
 class ZHeap {
   friend class VMStructs;
@@ -63,6 +65,8 @@ private:
   void flip_to_marked();
   void flip_to_remapped();
 
+  void free_empty_pages(ZRelocationSetSelector* selector, int bulk);
+
   void out_of_memory();
 
 public:
@@ -77,13 +81,8 @@ public:
   size_t max_capacity() const;
   size_t soft_max_capacity() const;
   size_t capacity() const;
-  size_t max_reserve() const;
-  size_t used_high() const;
-  size_t used_low() const;
   size_t used() const;
   size_t unused() const;
-  size_t allocated() const;
-  size_t reclaimed() const;
 
   size_t tlab_capacity() const;
   size_t tlab_used() const;
@@ -110,6 +109,7 @@ public:
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags);
   void undo_alloc_page(ZPage* page);
   void free_page(ZPage* page, bool reclaimed);
+  void free_pages(const ZArray<ZPage*>* pages, bool reclaimed);
 
   // Object allocation
   uintptr_t alloc_tlab(size_t size);
@@ -141,11 +141,13 @@ public:
 
   // Iteration
   void object_iterate(ObjectClosure* cl, bool visit_weaks);
+  ParallelObjectIterator* parallel_object_iterator(uint nworkers, bool visit_weaks);
   void pages_do(ZPageClosure* cl);
 
   // Serviceability
   void serviceability_initialize();
-  GCMemoryManager* serviceability_memory_manager();
+  GCMemoryManager* serviceability_cycle_memory_manager();
+  GCMemoryManager* serviceability_pause_memory_manager();
   MemoryPool* serviceability_memory_pool();
   ZServiceabilityCounters* serviceability_counters();
 

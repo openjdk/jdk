@@ -32,6 +32,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/monitorChunk.hpp"
@@ -350,7 +351,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print("Reconstructed expression %d (OBJECT): ", i);
-          oop o = (oop)(address)(*addr);
+          oop o = cast_to_oop((address)(*addr));
           if (o == NULL) {
             tty->print_cr("NULL");
           } else {
@@ -388,7 +389,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print("Reconstructed local %d (OBJECT): ", i);
-          oop o = (oop)(address)(*addr);
+          oop o = cast_to_oop((address)(*addr));
           if (o == NULL) {
             tty->print_cr("NULL");
           } else {

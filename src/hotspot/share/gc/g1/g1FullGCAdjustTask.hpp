@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/shared/parallelCleaning.hpp"
-#include "gc/shared/weakProcessorPhaseTimes.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "utilities/ticks.hpp"
 
@@ -39,7 +38,7 @@ class G1CollectedHeap;
 
 class G1FullGCAdjustTask : public G1FullGCTask {
   G1RootProcessor          _root_processor;
-  volatile uint            _references_done; // Atomic counter / bool
+  volatile bool            _references_done;
   WeakProcessor::Task      _weak_proc_task;
   HeapRegionClaimer        _hrclaimer;
   G1AdjustClosure          _adjust;

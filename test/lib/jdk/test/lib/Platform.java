@@ -109,6 +109,18 @@ public class Platform {
         return isOs("linux");
     }
 
+    public static boolean isBusybox(String tool) {
+        try {
+            Path toolpath = Paths.get(tool);
+            return !isWindows()
+                    && Files.isSymbolicLink(toolpath)
+                    && Paths.get("/bin/busybox")
+                        .equals(Files.readSymbolicLink(toolpath));
+        } catch (IOException ignore) {
+            return false;
+        }
+    }
+
     public static boolean isOSX() {
         return isOs("mac");
     }
@@ -214,6 +226,9 @@ public class Platform {
      * on this platform.
      */
     public static boolean hasSA() {
+        if (isZero()) {
+            return false; // SA is not enabled.
+        }
         if (isAix()) {
             return false; // SA not implemented.
         } else if (isLinux()) {

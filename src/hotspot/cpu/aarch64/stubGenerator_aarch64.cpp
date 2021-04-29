@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,12 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "atomic_aarch64.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -36,6 +40,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -488,11 +493,10 @@ class StubGenerator: public StubCodeGenerator {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address,
                          SharedRuntime::exception_handler_for_return_address),
                     rthread, c_rarg1);
-    if (UseSVE > 0 ) {
-      // Reinitialize the ptrue predicate register, in case the external runtime
-      // call clobbers ptrue reg, as we may return to SVE compiled code.
-      __ reinitialize_ptrue();
-    }
+    // Reinitialize the ptrue predicate register, in case the external runtime
+    // call clobbers ptrue reg, as we may return to SVE compiled code.
+    __ reinitialize_ptrue();
+
     // we should not really care that lr is no longer the callee
     // address. we saved the value the handler needs in r19 so we can
     // just copy it to r3. however, the C2 handler will push its own
@@ -610,6 +614,16 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void array_overlap_test(Label& L_no_overlap, Address::sxtw sf) { __ b(L_no_overlap); }
+
+  // Generate indices for iota vector.
+  address generate_iota_indices(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0706050403020100, relocInfo::none);
+    __ emit_data64(0x0F0E0D0C0B0A0908, relocInfo::none);
+    return start;
+  }
 
   // The inner part of zero_words().  This is the bulk operation,
   // zeroing words in blocks, possibly using DC ZVA to do it.  The
@@ -1084,10 +1098,10 @@ class StubGenerator: public StubCodeGenerator {
                    Register count, Register tmp, int step) {
     copy_direction direction = step < 0 ? copy_backwards : copy_forwards;
     bool is_backwards = step < 0;
-    int granularity = uabs(step);
+    unsigned int granularity = uabs(step);
     const Register t0 = r3, t1 = r4;
 
-    // <= 96 bytes do inline. Direction doesn't matter because we always
+    // <= 80 (or 96 for SIMD) bytes do inline. Direction doesn't matter because we always
     // load all the data before writing anything
     Label copy4, copy8, copy16, copy32, copy80, copy_big, finish;
     const Register t2 = r5, t3 = r6, t4 = r7, t5 = r8;
@@ -1142,9 +1156,32 @@ class StubGenerator: public StubCodeGenerator {
     // (96 bytes if SIMD because we do 32 byes per instruction)
     __ bind(copy80);
     if (UseSIMDForMemoryOps) {
-      __ ld4(v0, v1, v2, v3, __ T16B, Address(s, 0));
+      __ ldpq(v0, v1, Address(s, 0));
+      __ ldpq(v2, v3, Address(s, 32));
+      // Unaligned pointers can be an issue for copying.
+      // The issue has more chances to happen when granularity of data is
+      // less than 4(sizeof(jint)). Pointers for arrays of jint are at least
+      // 4 byte aligned. Pointers for arrays of jlong are 8 byte aligned.
+      // The most performance drop has been seen for the range 65-80 bytes.
+      // For such cases using the pair of ldp/stp instead of the third pair of
+      // ldpq/stpq fixes the performance issue.
+      if (granularity < sizeof (jint)) {
+        Label copy96;
+        __ cmp(count, u1(80/granularity));
+        __ br(Assembler::HI, copy96);
+        __ ldp(t0, t1, Address(send, -16));
+
+        __ stpq(v0, v1, Address(d, 0));
+        __ stpq(v2, v3, Address(d, 32));
+        __ stp(t0, t1, Address(dend, -16));
+        __ b(finish);
+
+        __ bind(copy96);
+      }
       __ ldpq(v4, v5, Address(send, -32));
-      __ st4(v0, v1, v2, v3, __ T16B, Address(d, 0));
+
+      __ stpq(v0, v1, Address(d, 0));
+      __ stpq(v2, v3, Address(d, 32));
       __ stpq(v4, v5, Address(dend, -32));
     } else {
       __ ldp(t0, t1, Address(s, 0));
@@ -1286,7 +1323,7 @@ class StubGenerator: public StubCodeGenerator {
       = MacroAssembler::call_clobbered_registers() - rscratch1;
     __ mov(rscratch1, (uint64_t)0xdeadbeef);
     __ orr(rscratch1, rscratch1, rscratch1, Assembler::LSL, 32);
-    for (RegSetIterator it = clobbered.begin(); *it != noreg; ++it) {
+    for (RegSetIterator<> it = clobbered.begin(); *it != noreg; ++it) {
       __ mov(*it, rscratch1);
     }
 #endif
@@ -1295,21 +1332,21 @@ class StubGenerator: public StubCodeGenerator {
 
   // Scan over array at a for count oops, verifying each one.
   // Preserves a and count, clobbers rscratch1 and rscratch2.
-  void verify_oop_array (size_t size, Register a, Register count, Register temp) {
+  void verify_oop_array (int size, Register a, Register count, Register temp) {
     Label loop, end;
     __ mov(rscratch1, a);
     __ mov(rscratch2, zr);
     __ bind(loop);
     __ cmp(rscratch2, count);
     __ br(Assembler::HS, end);
-    if (size == (size_t)wordSize) {
+    if (size == wordSize) {
       __ ldr(temp, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ verify_oop(temp);
     } else {
-      __ ldrw(r16, Address(a, rscratch2, Address::lsl(exact_log2(size))));
+      __ ldrw(temp, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ decode_heap_oop(temp); // calls verify_oop
     }
-    __ add(rscratch2, rscratch2, size);
+    __ add(rscratch2, rscratch2, 1);
     __ b(loop);
     __ bind(end);
   }
@@ -1327,13 +1364,13 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   // Side Effects:
   //   disjoint_int_copy_entry is set to the no-overlap entry point
   //   used by generate_conjoint_int_oop_copy().
   //
-  address generate_disjoint_copy(size_t size, bool aligned, bool is_oop, address *entry,
+  address generate_disjoint_copy(int size, bool aligned, bool is_oop, address *entry,
                                   const char *name, bool dest_uninitialized = false) {
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
     RegSet saved_reg = RegSet::of(s, d, count);
@@ -1397,9 +1434,9 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
-  address generate_conjoint_copy(size_t size, bool aligned, bool is_oop, address nooverlap_target,
+  address generate_conjoint_copy(int size, bool aligned, bool is_oop, address nooverlap_target,
                                  address *entry, const char *name,
                                  bool dest_uninitialized = false) {
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
@@ -1562,7 +1599,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   // Side Effects:
   //   disjoint_int_copy_entry is set to the no-overlap entry point
@@ -1586,7 +1623,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   address generate_conjoint_int_copy(bool aligned, address nooverlap_target,
                                      address *entry, const char *name,
@@ -1650,7 +1687,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_disjoint_oop_copy(bool aligned, address *entry,
                                      const char *name, bool dest_uninitialized) {
     const bool is_oop = true;
-    const size_t size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
+    const int size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
     return generate_disjoint_copy(size, aligned, is_oop, entry, name, dest_uninitialized);
   }
 
@@ -1668,7 +1705,7 @@ class StubGenerator: public StubCodeGenerator {
                                      address nooverlap_target, address *entry,
                                      const char *name, bool dest_uninitialized) {
     const bool is_oop = true;
-    const size_t size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
+    const int size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
     return generate_conjoint_copy(size, aligned, is_oop, nooverlap_target, entry,
                                   name, dest_uninitialized);
   }
@@ -3299,6 +3336,225 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - byte[]  source+offset
+  //   c_rarg1   - byte[]   SHA.state
+  //   c_rarg2   - int     digest_length
+  //   c_rarg3   - int     offset
+  //   c_rarg4   - int     limit
+  //
+  address generate_sha3_implCompress(bool multi_block, const char *name) {
+    static const uint64_t round_consts[24] = {
+      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
+      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
+      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
+      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
+      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
+      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
+      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
+      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Register buf           = c_rarg0;
+    Register state         = c_rarg1;
+    Register digest_length = c_rarg2;
+    Register ofs           = c_rarg3;
+    Register limit         = c_rarg4;
+
+    Label sha3_loop, rounds24_loop;
+    Label sha3_512, sha3_384_or_224, sha3_256;
+
+    __ stpd(v8, v9, __ pre(sp, -64));
+    __ stpd(v10, v11, Address(sp, 16));
+    __ stpd(v12, v13, Address(sp, 32));
+    __ stpd(v14, v15, Address(sp, 48));
+
+    // load state
+    __ add(rscratch1, state, 32);
+    __ ld1(v0, v1, v2,  v3,  __ T1D, state);
+    __ ld1(v4, v5, v6,  v7,  __ T1D, __ post(rscratch1, 32));
+    __ ld1(v8, v9, v10, v11, __ T1D, __ post(rscratch1, 32));
+    __ ld1(v12, v13, v14, v15, __ T1D, __ post(rscratch1, 32));
+    __ ld1(v16, v17, v18, v19, __ T1D, __ post(rscratch1, 32));
+    __ ld1(v20, v21, v22, v23, __ T1D, __ post(rscratch1, 32));
+    __ ld1(v24, __ T1D, rscratch1);
+
+    __ BIND(sha3_loop);
+
+    // 24 keccak rounds
+    __ movw(rscratch2, 24);
+
+    // load round_constants base
+    __ lea(rscratch1, ExternalAddress((address) round_consts));
+
+    // load input
+    __ ld1(v25, v26, v27, v28, __ T8B, __ post(buf, 32));
+    __ ld1(v29, v30, v31, __ T8B, __ post(buf, 24));
+    __ eor(v0, __ T8B, v0, v25);
+    __ eor(v1, __ T8B, v1, v26);
+    __ eor(v2, __ T8B, v2, v27);
+    __ eor(v3, __ T8B, v3, v28);
+    __ eor(v4, __ T8B, v4, v29);
+    __ eor(v5, __ T8B, v5, v30);
+    __ eor(v6, __ T8B, v6, v31);
+
+    // digest_length == 64, SHA3-512
+    __ tbnz(digest_length, 6, sha3_512);
+
+    __ ld1(v25, v26, v27, v28, __ T8B, __ post(buf, 32));
+    __ ld1(v29, v30, __ T8B, __ post(buf, 16));
+    __ eor(v7, __ T8B, v7, v25);
+    __ eor(v8, __ T8B, v8, v26);
+    __ eor(v9, __ T8B, v9, v27);
+    __ eor(v10, __ T8B, v10, v28);
+    __ eor(v11, __ T8B, v11, v29);
+    __ eor(v12, __ T8B, v12, v30);
+
+    // digest_length == 28, SHA3-224;  digest_length == 48, SHA3-384
+    __ tbnz(digest_length, 4, sha3_384_or_224);
+
+    // SHA3-256
+    __ ld1(v25, v26, v27, v28, __ T8B, __ post(buf, 32));
+    __ eor(v13, __ T8B, v13, v25);
+    __ eor(v14, __ T8B, v14, v26);
+    __ eor(v15, __ T8B, v15, v27);
+    __ eor(v16, __ T8B, v16, v28);
+    __ b(rounds24_loop);
+
+    __ BIND(sha3_384_or_224);
+    __ tbz(digest_length, 2, rounds24_loop); // bit 2 cleared? SHA-384
+
+    // SHA3-224
+    __ ld1(v25, v26, v27, v28, __ T8B, __ post(buf, 32));
+    __ ld1(v29, __ T8B, __ post(buf, 8));
+    __ eor(v13, __ T8B, v13, v25);
+    __ eor(v14, __ T8B, v14, v26);
+    __ eor(v15, __ T8B, v15, v27);
+    __ eor(v16, __ T8B, v16, v28);
+    __ eor(v17, __ T8B, v17, v29);
+    __ b(rounds24_loop);
+
+    __ BIND(sha3_512);
+    __ ld1(v25, v26, __ T8B, __ post(buf, 16));
+    __ eor(v7, __ T8B, v7, v25);
+    __ eor(v8, __ T8B, v8, v26);
+
+    __ BIND(rounds24_loop);
+    __ subw(rscratch2, rscratch2, 1);
+
+    __ eor3(v29, __ T16B, v4, v9, v14);
+    __ eor3(v26, __ T16B, v1, v6, v11);
+    __ eor3(v28, __ T16B, v3, v8, v13);
+    __ eor3(v25, __ T16B, v0, v5, v10);
+    __ eor3(v27, __ T16B, v2, v7, v12);
+    __ eor3(v29, __ T16B, v29, v19, v24);
+    __ eor3(v26, __ T16B, v26, v16, v21);
+    __ eor3(v28, __ T16B, v28, v18, v23);
+    __ eor3(v25, __ T16B, v25, v15, v20);
+    __ eor3(v27, __ T16B, v27, v17, v22);
+
+    __ rax1(v30, __ T2D, v29, v26);
+    __ rax1(v26, __ T2D, v26, v28);
+    __ rax1(v28, __ T2D, v28, v25);
+    __ rax1(v25, __ T2D, v25, v27);
+    __ rax1(v27, __ T2D, v27, v29);
+
+    __ eor(v0, __ T16B, v0, v30);
+    __ xar(v29, __ T2D, v1,  v25, (64 - 1));
+    __ xar(v1,  __ T2D, v6,  v25, (64 - 44));
+    __ xar(v6,  __ T2D, v9,  v28, (64 - 20));
+    __ xar(v9,  __ T2D, v22, v26, (64 - 61));
+    __ xar(v22, __ T2D, v14, v28, (64 - 39));
+    __ xar(v14, __ T2D, v20, v30, (64 - 18));
+    __ xar(v31, __ T2D, v2,  v26, (64 - 62));
+    __ xar(v2,  __ T2D, v12, v26, (64 - 43));
+    __ xar(v12, __ T2D, v13, v27, (64 - 25));
+    __ xar(v13, __ T2D, v19, v28, (64 - 8));
+    __ xar(v19, __ T2D, v23, v27, (64 - 56));
+    __ xar(v23, __ T2D, v15, v30, (64 - 41));
+    __ xar(v15, __ T2D, v4,  v28, (64 - 27));
+    __ xar(v28, __ T2D, v24, v28, (64 - 14));
+    __ xar(v24, __ T2D, v21, v25, (64 - 2));
+    __ xar(v8,  __ T2D, v8,  v27, (64 - 55));
+    __ xar(v4,  __ T2D, v16, v25, (64 - 45));
+    __ xar(v16, __ T2D, v5,  v30, (64 - 36));
+    __ xar(v5,  __ T2D, v3,  v27, (64 - 28));
+    __ xar(v27, __ T2D, v18, v27, (64 - 21));
+    __ xar(v3,  __ T2D, v17, v26, (64 - 15));
+    __ xar(v25, __ T2D, v11, v25, (64 - 10));
+    __ xar(v26, __ T2D, v7,  v26, (64 - 6));
+    __ xar(v30, __ T2D, v10, v30, (64 - 3));
+
+    __ bcax(v20, __ T16B, v31, v22, v8);
+    __ bcax(v21, __ T16B, v8,  v23, v22);
+    __ bcax(v22, __ T16B, v22, v24, v23);
+    __ bcax(v23, __ T16B, v23, v31, v24);
+    __ bcax(v24, __ T16B, v24, v8,  v31);
+
+    __ ld1r(v31, __ T2D, __ post(rscratch1, 8));
+
+    __ bcax(v17, __ T16B, v25, v19, v3);
+    __ bcax(v18, __ T16B, v3,  v15, v19);
+    __ bcax(v19, __ T16B, v19, v16, v15);
+    __ bcax(v15, __ T16B, v15, v25, v16);
+    __ bcax(v16, __ T16B, v16, v3,  v25);
+
+    __ bcax(v10, __ T16B, v29, v12, v26);
+    __ bcax(v11, __ T16B, v26, v13, v12);
+    __ bcax(v12, __ T16B, v12, v14, v13);
+    __ bcax(v13, __ T16B, v13, v29, v14);
+    __ bcax(v14, __ T16B, v14, v26, v29);
+
+    __ bcax(v7, __ T16B, v30, v9,  v4);
+    __ bcax(v8, __ T16B, v4,  v5,  v9);
+    __ bcax(v9, __ T16B, v9,  v6,  v5);
+    __ bcax(v5, __ T16B, v5,  v30, v6);
+    __ bcax(v6, __ T16B, v6,  v4,  v30);
+
+    __ bcax(v3, __ T16B, v27, v0,  v28);
+    __ bcax(v4, __ T16B, v28, v1,  v0);
+    __ bcax(v0, __ T16B, v0,  v2,  v1);
+    __ bcax(v1, __ T16B, v1,  v27, v2);
+    __ bcax(v2, __ T16B, v2,  v28, v27);
+
+    __ eor(v0, __ T16B, v0, v31);
+
+    __ cbnzw(rscratch2, rounds24_loop);
+
+    if (multi_block) {
+      // block_size =  200 - 2 * digest_length, ofs += block_size
+      __ add(ofs, ofs, 200);
+      __ sub(ofs, ofs, digest_length, Assembler::LSL, 1);
+
+      __ cmp(ofs, limit);
+      __ br(Assembler::LE, sha3_loop);
+      __ mov(c_rarg0, ofs); // return ofs
+    }
+
+    __ st1(v0, v1, v2,  v3,  __ T1D, __ post(state, 32));
+    __ st1(v4, v5, v6,  v7,  __ T1D, __ post(state, 32));
+    __ st1(v8, v9, v10, v11, __ T1D, __ post(state, 32));
+    __ st1(v12, v13, v14, v15, __ T1D, __ post(state, 32));
+    __ st1(v16, v17, v18, v19, __ T1D, __ post(state, 32));
+    __ st1(v20, v21, v22, v23, __ T1D, __ post(state, 32));
+    __ st1(v24, __ T1D, state);
+
+    __ ldpd(v14, v15, Address(sp, 48));
+    __ ldpd(v12, v13, Address(sp, 32));
+    __ ldpd(v10, v11, Address(sp, 16));
+    __ ldpd(v8, v9, __ post(sp, 64));
+
+    __ ret(lr);
+
+    return start;
+  }
+
   // Safefetch stubs.
   void generate_safefetch(const char* name, int size, address* entry,
                           address* fault_pc, address* continuation_pc) {
@@ -3734,6 +3990,238 @@ class StubGenerator: public StubCodeGenerator {
     __ enter();
     __ mul_add(out, in, offset, len, k);
     __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Arguments:
+  //
+  // Input:
+  //   c_rarg0   - newArr address
+  //   c_rarg1   - oldArr address
+  //   c_rarg2   - newIdx
+  //   c_rarg3   - shiftCount
+  //   c_rarg4   - numIter
+  //
+  address generate_bigIntegerRightShift() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this,  "StubRoutines", "bigIntegerRightShiftWorker");
+    address start = __ pc();
+
+    Label ShiftSIMDLoop, ShiftTwoLoop, ShiftThree, ShiftTwo, ShiftOne, Exit;
+
+    Register newArr        = c_rarg0;
+    Register oldArr        = c_rarg1;
+    Register newIdx        = c_rarg2;
+    Register shiftCount    = c_rarg3;
+    Register numIter       = c_rarg4;
+    Register idx           = numIter;
+
+    Register newArrCur     = rscratch1;
+    Register shiftRevCount = rscratch2;
+    Register oldArrCur     = r13;
+    Register oldArrNext    = r14;
+
+    FloatRegister oldElem0        = v0;
+    FloatRegister oldElem1        = v1;
+    FloatRegister newElem         = v2;
+    FloatRegister shiftVCount     = v3;
+    FloatRegister shiftVRevCount  = v4;
+
+    __ cbz(idx, Exit);
+
+    __ add(newArr, newArr, newIdx, Assembler::LSL, 2);
+
+    // left shift count
+    __ movw(shiftRevCount, 32);
+    __ subw(shiftRevCount, shiftRevCount, shiftCount);
+
+    // numIter too small to allow a 4-words SIMD loop, rolling back
+    __ cmp(numIter, (u1)4);
+    __ br(Assembler::LT, ShiftThree);
+
+    __ dup(shiftVCount,    __ T4S, shiftCount);
+    __ dup(shiftVRevCount, __ T4S, shiftRevCount);
+    __ negr(shiftVCount,   __ T4S, shiftVCount);
+
+    __ BIND(ShiftSIMDLoop);
+
+    // Calculate the load addresses
+    __ sub(idx, idx, 4);
+    __ add(oldArrNext, oldArr, idx, Assembler::LSL, 2);
+    __ add(newArrCur,  newArr, idx, Assembler::LSL, 2);
+    __ add(oldArrCur,  oldArrNext, 4);
+
+    // Load 4 words and process
+    __ ld1(oldElem0,  __ T4S,  Address(oldArrCur));
+    __ ld1(oldElem1,  __ T4S,  Address(oldArrNext));
+    __ ushl(oldElem0, __ T4S,  oldElem0, shiftVCount);
+    __ ushl(oldElem1, __ T4S,  oldElem1, shiftVRevCount);
+    __ orr(newElem,   __ T16B, oldElem0, oldElem1);
+    __ st1(newElem,   __ T4S,  Address(newArrCur));
+
+    __ cmp(idx, (u1)4);
+    __ br(Assembler::LT, ShiftTwoLoop);
+    __ b(ShiftSIMDLoop);
+
+    __ BIND(ShiftTwoLoop);
+    __ cbz(idx, Exit);
+    __ cmp(idx, (u1)1);
+    __ br(Assembler::EQ, ShiftOne);
+
+    // Calculate the load addresses
+    __ sub(idx, idx, 2);
+    __ add(oldArrNext, oldArr, idx, Assembler::LSL, 2);
+    __ add(newArrCur,  newArr, idx, Assembler::LSL, 2);
+    __ add(oldArrCur,  oldArrNext, 4);
+
+    // Load 2 words and process
+    __ ld1(oldElem0,  __ T2S, Address(oldArrCur));
+    __ ld1(oldElem1,  __ T2S, Address(oldArrNext));
+    __ ushl(oldElem0, __ T2S, oldElem0, shiftVCount);
+    __ ushl(oldElem1, __ T2S, oldElem1, shiftVRevCount);
+    __ orr(newElem,   __ T8B, oldElem0, oldElem1);
+    __ st1(newElem,   __ T2S, Address(newArrCur));
+    __ b(ShiftTwoLoop);
+
+    __ BIND(ShiftThree);
+    __ tbz(idx, 1, ShiftOne);
+    __ tbz(idx, 0, ShiftTwo);
+    __ ldrw(r10,  Address(oldArr, 12));
+    __ ldrw(r11,  Address(oldArr, 8));
+    __ lsrvw(r10, r10, shiftCount);
+    __ lslvw(r11, r11, shiftRevCount);
+    __ orrw(r12,  r10, r11);
+    __ strw(r12,  Address(newArr, 8));
+
+    __ BIND(ShiftTwo);
+    __ ldrw(r10,  Address(oldArr, 8));
+    __ ldrw(r11,  Address(oldArr, 4));
+    __ lsrvw(r10, r10, shiftCount);
+    __ lslvw(r11, r11, shiftRevCount);
+    __ orrw(r12,  r10, r11);
+    __ strw(r12,  Address(newArr, 4));
+
+    __ BIND(ShiftOne);
+    __ ldrw(r10,  Address(oldArr, 4));
+    __ ldrw(r11,  Address(oldArr));
+    __ lsrvw(r10, r10, shiftCount);
+    __ lslvw(r11, r11, shiftRevCount);
+    __ orrw(r12,  r10, r11);
+    __ strw(r12,  Address(newArr));
+
+    __ BIND(Exit);
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Arguments:
+  //
+  // Input:
+  //   c_rarg0   - newArr address
+  //   c_rarg1   - oldArr address
+  //   c_rarg2   - newIdx
+  //   c_rarg3   - shiftCount
+  //   c_rarg4   - numIter
+  //
+  address generate_bigIntegerLeftShift() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this,  "StubRoutines", "bigIntegerLeftShiftWorker");
+    address start = __ pc();
+
+    Label ShiftSIMDLoop, ShiftTwoLoop, ShiftThree, ShiftTwo, ShiftOne, Exit;
+
+    Register newArr        = c_rarg0;
+    Register oldArr        = c_rarg1;
+    Register newIdx        = c_rarg2;
+    Register shiftCount    = c_rarg3;
+    Register numIter       = c_rarg4;
+
+    Register shiftRevCount = rscratch1;
+    Register oldArrNext    = rscratch2;
+
+    FloatRegister oldElem0        = v0;
+    FloatRegister oldElem1        = v1;
+    FloatRegister newElem         = v2;
+    FloatRegister shiftVCount     = v3;
+    FloatRegister shiftVRevCount  = v4;
+
+    __ cbz(numIter, Exit);
+
+    __ add(oldArrNext, oldArr, 4);
+    __ add(newArr, newArr, newIdx, Assembler::LSL, 2);
+
+    // right shift count
+    __ movw(shiftRevCount, 32);
+    __ subw(shiftRevCount, shiftRevCount, shiftCount);
+
+    // numIter too small to allow a 4-words SIMD loop, rolling back
+    __ cmp(numIter, (u1)4);
+    __ br(Assembler::LT, ShiftThree);
+
+    __ dup(shiftVCount,     __ T4S, shiftCount);
+    __ dup(shiftVRevCount,  __ T4S, shiftRevCount);
+    __ negr(shiftVRevCount, __ T4S, shiftVRevCount);
+
+    __ BIND(ShiftSIMDLoop);
+
+    // load 4 words and process
+    __ ld1(oldElem0,  __ T4S,  __ post(oldArr, 16));
+    __ ld1(oldElem1,  __ T4S,  __ post(oldArrNext, 16));
+    __ ushl(oldElem0, __ T4S,  oldElem0, shiftVCount);
+    __ ushl(oldElem1, __ T4S,  oldElem1, shiftVRevCount);
+    __ orr(newElem,   __ T16B, oldElem0, oldElem1);
+    __ st1(newElem,   __ T4S,  __ post(newArr, 16));
+    __ sub(numIter,   numIter, 4);
+
+    __ cmp(numIter, (u1)4);
+    __ br(Assembler::LT, ShiftTwoLoop);
+    __ b(ShiftSIMDLoop);
+
+    __ BIND(ShiftTwoLoop);
+    __ cbz(numIter, Exit);
+    __ cmp(numIter, (u1)1);
+    __ br(Assembler::EQ, ShiftOne);
+
+    // load 2 words and process
+    __ ld1(oldElem0,  __ T2S,  __ post(oldArr, 8));
+    __ ld1(oldElem1,  __ T2S,  __ post(oldArrNext, 8));
+    __ ushl(oldElem0, __ T2S,  oldElem0, shiftVCount);
+    __ ushl(oldElem1, __ T2S,  oldElem1, shiftVRevCount);
+    __ orr(newElem,   __ T8B,  oldElem0, oldElem1);
+    __ st1(newElem,   __ T2S,  __ post(newArr, 8));
+    __ sub(numIter,   numIter, 2);
+    __ b(ShiftTwoLoop);
+
+    __ BIND(ShiftThree);
+    __ ldrw(r10,  __ post(oldArr, 4));
+    __ ldrw(r11,  __ post(oldArrNext, 4));
+    __ lslvw(r10, r10, shiftCount);
+    __ lsrvw(r11, r11, shiftRevCount);
+    __ orrw(r12,  r10, r11);
+    __ strw(r12,  __ post(newArr, 4));
+    __ tbz(numIter, 1, Exit);
+    __ tbz(numIter, 0, ShiftOne);
+
+    __ BIND(ShiftTwo);
+    __ ldrw(r10,  __ post(oldArr, 4));
+    __ ldrw(r11,  __ post(oldArrNext, 4));
+    __ lslvw(r10, r10, shiftCount);
+    __ lsrvw(r11, r11, shiftRevCount);
+    __ orrw(r12,  r10, r11);
+    __ strw(r12,  __ post(newArr, 4));
+
+    __ BIND(ShiftOne);
+    __ ldrw(r10,  Address(oldArr));
+    __ ldrw(r11,  Address(oldArrNext));
+    __ lslvw(r10, r10, shiftCount);
+    __ lsrvw(r11, r11, shiftRevCount);
+    __ orrw(r12,  r10, r11);
+    __ strw(r12,  Address(newArr));
+
+    __ BIND(Exit);
     __ ret(lr);
 
     return start;
@@ -4942,6 +5430,615 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void generate_base64_encode_simdround(Register src, Register dst,
+        FloatRegister codec, u8 size) {
+
+    FloatRegister in0  = v4,  in1  = v5,  in2  = v6;
+    FloatRegister out0 = v16, out1 = v17, out2 = v18, out3 = v19;
+    FloatRegister ind0 = v20, ind1 = v21, ind2 = v22, ind3 = v23;
+
+    Assembler::SIMD_Arrangement arrangement = size == 16 ? __ T16B : __ T8B;
+
+    __ ld3(in0, in1, in2, arrangement, __ post(src, 3 * size));
+
+    __ ushr(ind0, arrangement, in0,  2);
+
+    __ ushr(ind1, arrangement, in1,  2);
+    __ shl(in0,   arrangement, in0,  6);
+    __ orr(ind1,  arrangement, ind1, in0);
+    __ ushr(ind1, arrangement, ind1, 2);
+
+    __ ushr(ind2, arrangement, in2,  4);
+    __ shl(in1,   arrangement, in1,  4);
+    __ orr(ind2,  arrangement, in1,  ind2);
+    __ ushr(ind2, arrangement, ind2, 2);
+
+    __ shl(ind3,  arrangement, in2,  2);
+    __ ushr(ind3, arrangement, ind3, 2);
+
+    __ tbl(out0,  arrangement, codec,  4, ind0);
+    __ tbl(out1,  arrangement, codec,  4, ind1);
+    __ tbl(out2,  arrangement, codec,  4, ind2);
+    __ tbl(out3,  arrangement, codec,  4, ind3);
+
+    __ st4(out0,  out1, out2, out3, arrangement, __ post(dst, 4 * size));
+  }
+
+   /**
+   *  Arguments:
+   *
+   *  Input:
+   *  c_rarg0   - src_start
+   *  c_rarg1   - src_offset
+   *  c_rarg2   - src_length
+   *  c_rarg3   - dest_start
+   *  c_rarg4   - dest_offset
+   *  c_rarg5   - isURL
+   *
+   */
+  address generate_base64_encodeBlock() {
+
+    static const char toBase64[64] = {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+    };
+
+    static const char toBase64URL[64] = {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "encodeBlock");
+    address start = __ pc();
+
+    Register src   = c_rarg0;  // source array
+    Register soff  = c_rarg1;  // source start offset
+    Register send  = c_rarg2;  // source end offset
+    Register dst   = c_rarg3;  // dest array
+    Register doff  = c_rarg4;  // position for writing to dest array
+    Register isURL = c_rarg5;  // Base64 or URL chracter set
+
+    // c_rarg6 and c_rarg7 are free to use as temps
+    Register codec  = c_rarg6;
+    Register length = c_rarg7;
+
+    Label ProcessData, Process48B, Process24B, Process3B, SIMDExit, Exit;
+
+    __ add(src, src, soff);
+    __ add(dst, dst, doff);
+    __ sub(length, send, soff);
+
+    // load the codec base address
+    __ lea(codec, ExternalAddress((address) toBase64));
+    __ cbz(isURL, ProcessData);
+    __ lea(codec, ExternalAddress((address) toBase64URL));
+
+    __ BIND(ProcessData);
+
+    // too short to formup a SIMD loop, roll back
+    __ cmp(length, (u1)24);
+    __ br(Assembler::LT, Process3B);
+
+    __ ld1(v0, v1, v2, v3, __ T16B, Address(codec));
+
+    __ BIND(Process48B);
+    __ cmp(length, (u1)48);
+    __ br(Assembler::LT, Process24B);
+    generate_base64_encode_simdround(src, dst, v0, 16);
+    __ sub(length, length, 48);
+    __ b(Process48B);
+
+    __ BIND(Process24B);
+    __ cmp(length, (u1)24);
+    __ br(Assembler::LT, SIMDExit);
+    generate_base64_encode_simdround(src, dst, v0, 8);
+    __ sub(length, length, 24);
+
+    __ BIND(SIMDExit);
+    __ cbz(length, Exit);
+
+    __ BIND(Process3B);
+    //  3 src bytes, 24 bits
+    __ ldrb(r10, __ post(src, 1));
+    __ ldrb(r11, __ post(src, 1));
+    __ ldrb(r12, __ post(src, 1));
+    __ orrw(r11, r11, r10, Assembler::LSL, 8);
+    __ orrw(r12, r12, r11, Assembler::LSL, 8);
+    // codec index
+    __ ubfmw(r15, r12, 18, 23);
+    __ ubfmw(r14, r12, 12, 17);
+    __ ubfmw(r13, r12, 6,  11);
+    __ andw(r12,  r12, 63);
+    // get the code based on the codec
+    __ ldrb(r15, Address(codec, r15, Address::uxtw(0)));
+    __ ldrb(r14, Address(codec, r14, Address::uxtw(0)));
+    __ ldrb(r13, Address(codec, r13, Address::uxtw(0)));
+    __ ldrb(r12, Address(codec, r12, Address::uxtw(0)));
+    __ strb(r15, __ post(dst, 1));
+    __ strb(r14, __ post(dst, 1));
+    __ strb(r13, __ post(dst, 1));
+    __ strb(r12, __ post(dst, 1));
+    __ sub(length, length, 3);
+    __ cbnz(length, Process3B);
+
+    __ BIND(Exit);
+    __ ret(lr);
+
+    return start;
+  }
+
+  void generate_base64_decode_simdround(Register src, Register dst,
+        FloatRegister codecL, FloatRegister codecH, int size, Label& Exit) {
+
+    FloatRegister in0  = v16, in1  = v17,  in2 = v18,  in3 = v19;
+    FloatRegister out0 = v20, out1 = v21, out2 = v22;
+
+    FloatRegister decL0 = v23, decL1 = v24, decL2 = v25, decL3 = v26;
+    FloatRegister decH0 = v28, decH1 = v29, decH2 = v30, decH3 = v31;
+
+    Label NoIllegalData, ErrorInLowerHalf, StoreLegalData;
+
+    Assembler::SIMD_Arrangement arrangement = size == 16 ? __ T16B : __ T8B;
+
+    __ ld4(in0, in1, in2, in3, arrangement, __ post(src, 4 * size));
+
+    // we need unsigned saturating substract, to make sure all input values
+    // in range [0, 63] will have 0U value in the higher half lookup
+    __ uqsubv(decH0, __ T16B, in0, v27);
+    __ uqsubv(decH1, __ T16B, in1, v27);
+    __ uqsubv(decH2, __ T16B, in2, v27);
+    __ uqsubv(decH3, __ T16B, in3, v27);
+
+    // lower half lookup
+    __ tbl(decL0, arrangement, codecL, 4, in0);
+    __ tbl(decL1, arrangement, codecL, 4, in1);
+    __ tbl(decL2, arrangement, codecL, 4, in2);
+    __ tbl(decL3, arrangement, codecL, 4, in3);
+
+    // higher half lookup
+    __ tbx(decH0, arrangement, codecH, 4, decH0);
+    __ tbx(decH1, arrangement, codecH, 4, decH1);
+    __ tbx(decH2, arrangement, codecH, 4, decH2);
+    __ tbx(decH3, arrangement, codecH, 4, decH3);
+
+    // combine lower and higher
+    __ orr(decL0, arrangement, decL0, decH0);
+    __ orr(decL1, arrangement, decL1, decH1);
+    __ orr(decL2, arrangement, decL2, decH2);
+    __ orr(decL3, arrangement, decL3, decH3);
+
+    // check illegal inputs, value larger than 63 (maximum of 6 bits)
+    __ cmhi(decH0, arrangement, decL0, v27);
+    __ cmhi(decH1, arrangement, decL1, v27);
+    __ cmhi(decH2, arrangement, decL2, v27);
+    __ cmhi(decH3, arrangement, decL3, v27);
+    __ orr(in0, arrangement, decH0, decH1);
+    __ orr(in1, arrangement, decH2, decH3);
+    __ orr(in2, arrangement, in0,   in1);
+    __ umaxv(in3, arrangement, in2);
+    __ umov(rscratch2, in3, __ B, 0);
+
+    // get the data to output
+    __ shl(out0,  arrangement, decL0, 2);
+    __ ushr(out1, arrangement, decL1, 4);
+    __ orr(out0,  arrangement, out0,  out1);
+    __ shl(out1,  arrangement, decL1, 4);
+    __ ushr(out2, arrangement, decL2, 2);
+    __ orr(out1,  arrangement, out1,  out2);
+    __ shl(out2,  arrangement, decL2, 6);
+    __ orr(out2,  arrangement, out2,  decL3);
+
+    __ cbz(rscratch2, NoIllegalData);
+
+    // handle illegal input
+    __ umov(r10, in2, __ D, 0);
+    if (size == 16) {
+      __ cbnz(r10, ErrorInLowerHalf);
+
+      // illegal input is in higher half, store the lower half now.
+      __ st3(out0, out1, out2, __ T8B, __ post(dst, 24));
+
+      __ umov(r10, in2,  __ D, 1);
+      __ umov(r11, out0, __ D, 1);
+      __ umov(r12, out1, __ D, 1);
+      __ umov(r13, out2, __ D, 1);
+      __ b(StoreLegalData);
+
+      __ BIND(ErrorInLowerHalf);
+    }
+    __ umov(r11, out0, __ D, 0);
+    __ umov(r12, out1, __ D, 0);
+    __ umov(r13, out2, __ D, 0);
+
+    __ BIND(StoreLegalData);
+    __ tbnz(r10, 5, Exit); // 0xff indicates illegal input
+    __ strb(r11, __ post(dst, 1));
+    __ strb(r12, __ post(dst, 1));
+    __ strb(r13, __ post(dst, 1));
+    __ lsr(r10, r10, 8);
+    __ lsr(r11, r11, 8);
+    __ lsr(r12, r12, 8);
+    __ lsr(r13, r13, 8);
+    __ b(StoreLegalData);
+
+    __ BIND(NoIllegalData);
+    __ st3(out0, out1, out2, arrangement, __ post(dst, 3 * size));
+  }
+
+
+   /**
+   *  Arguments:
+   *
+   *  Input:
+   *  c_rarg0   - src_start
+   *  c_rarg1   - src_offset
+   *  c_rarg2   - src_length
+   *  c_rarg3   - dest_start
+   *  c_rarg4   - dest_offset
+   *  c_rarg5   - isURL
+   *
+   */
+  address generate_base64_decodeBlock() {
+
+    // The SIMD part of this Base64 decode intrinsic is based on the algorithm outlined
+    // on http://0x80.pl/articles/base64-simd-neon.html#encoding-quadwords, in section
+    // titled "Base64 decoding".
+
+    // Non-SIMD lookup tables are mostly dumped from fromBase64 array used in java.util.Base64,
+    // except the trailing character '=' is also treated illegal value in this instrinsic. That
+    // is java.util.Base64.fromBase64['='] = -2, while fromBase(URL)64ForNoSIMD['='] = 255 here.
+    static const uint8_t fromBase64ForNoSIMD[256] = {
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
+       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
+       15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u, 255u,
+      255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
+       41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+    };
+
+    static const uint8_t fromBase64URLForNoSIMD[256] = {
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
+       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
+       15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,  63u,
+      255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
+       41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+    };
+
+    // A legal value of base64 code is in range [0, 127].  We need two lookups
+    // with tbl/tbx and combine them to get the decode data. The 1st table vector
+    // lookup use tbl, out of range indices are set to 0 in destination. The 2nd
+    // table vector lookup use tbx, out of range indices are unchanged in
+    // destination. Input [64..126] is mapped to index [65, 127] in second lookup.
+    // The value of index 64 is set to 0, so that we know that we already get the
+    // decoded data with the 1st lookup.
+    static const uint8_t fromBase64ForSIMD[128] = {
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
+       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+        0u, 255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,
+       14u,  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,
+      255u, 255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,
+       40u,  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u,
+    };
+
+    static const uint8_t fromBase64URLForSIMD[128] = {
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
+       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+        0u, 255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,
+       14u,  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,
+       63u, 255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,
+       40u,  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u,
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "decodeBlock");
+    address start = __ pc();
+
+    Register src   = c_rarg0;  // source array
+    Register soff  = c_rarg1;  // source start offset
+    Register send  = c_rarg2;  // source end offset
+    Register dst   = c_rarg3;  // dest array
+    Register doff  = c_rarg4;  // position for writing to dest array
+    Register isURL = c_rarg5;  // Base64 or URL character set
+
+    Register length = send;    // reuse send as length of source data to process
+
+    Register simd_codec   = c_rarg6;
+    Register nosimd_codec = c_rarg7;
+
+    Label ProcessData, Process64B, Process32B, Process4B, SIMDEnter, SIMDExit, Exit;
+
+    __ enter();
+
+    __ add(src, src, soff);
+    __ add(dst, dst, doff);
+
+    __ mov(doff, dst);
+
+    __ sub(length, send, soff);
+    __ bfm(length, zr, 0, 1);
+
+    __ lea(nosimd_codec, ExternalAddress((address) fromBase64ForNoSIMD));
+    __ cbz(isURL, ProcessData);
+    __ lea(nosimd_codec, ExternalAddress((address) fromBase64URLForNoSIMD));
+
+    __ BIND(ProcessData);
+    __ mov(rscratch1, length);
+    __ cmp(length, (u1)144); // 144 = 80 + 64
+    __ br(Assembler::LT, Process4B);
+
+    // In the MIME case, the line length cannot be more than 76
+    // bytes (see RFC 2045). This is too short a block for SIMD
+    // to be worthwhile, so we use non-SIMD here.
+    __ movw(rscratch1, 79);
+
+    __ BIND(Process4B);
+    __ ldrw(r14, __ post(src, 4));
+    __ ubfxw(r10, r14, 0,  8);
+    __ ubfxw(r11, r14, 8,  8);
+    __ ubfxw(r12, r14, 16, 8);
+    __ ubfxw(r13, r14, 24, 8);
+    // get the de-code
+    __ ldrb(r10, Address(nosimd_codec, r10, Address::uxtw(0)));
+    __ ldrb(r11, Address(nosimd_codec, r11, Address::uxtw(0)));
+    __ ldrb(r12, Address(nosimd_codec, r12, Address::uxtw(0)));
+    __ ldrb(r13, Address(nosimd_codec, r13, Address::uxtw(0)));
+    // error detection, 255u indicates an illegal input
+    __ orrw(r14, r10, r11);
+    __ orrw(r15, r12, r13);
+    __ orrw(r14, r14, r15);
+    __ tbnz(r14, 7, Exit);
+    // recover the data
+    __ lslw(r14, r10, 10);
+    __ bfiw(r14, r11, 4, 6);
+    __ bfmw(r14, r12, 2, 5);
+    __ rev16w(r14, r14);
+    __ bfiw(r13, r12, 6, 2);
+    __ strh(r14, __ post(dst, 2));
+    __ strb(r13, __ post(dst, 1));
+    // non-simd loop
+    __ subsw(rscratch1, rscratch1, 4);
+    __ br(Assembler::GT, Process4B);
+
+    // if exiting from PreProcess80B, rscratch1 == -1;
+    // otherwise, rscratch1 == 0.
+    __ cbzw(rscratch1, Exit);
+    __ sub(length, length, 80);
+
+    __ lea(simd_codec, ExternalAddress((address) fromBase64ForSIMD));
+    __ cbz(isURL, SIMDEnter);
+    __ lea(simd_codec, ExternalAddress((address) fromBase64URLForSIMD));
+
+    __ BIND(SIMDEnter);
+    __ ld1(v0, v1, v2, v3, __ T16B, __ post(simd_codec, 64));
+    __ ld1(v4, v5, v6, v7, __ T16B, Address(simd_codec));
+    __ mov(rscratch1, 63);
+    __ dup(v27, __ T16B, rscratch1);
+
+    __ BIND(Process64B);
+    __ cmp(length, (u1)64);
+    __ br(Assembler::LT, Process32B);
+    generate_base64_decode_simdround(src, dst, v0, v4, 16, Exit);
+    __ sub(length, length, 64);
+    __ b(Process64B);
+
+    __ BIND(Process32B);
+    __ cmp(length, (u1)32);
+    __ br(Assembler::LT, SIMDExit);
+    generate_base64_decode_simdround(src, dst, v0, v4, 8, Exit);
+    __ sub(length, length, 32);
+    __ b(Process32B);
+
+    __ BIND(SIMDExit);
+    __ cbz(length, Exit);
+    __ movw(rscratch1, length);
+    __ b(Process4B);
+
+    __ BIND(Exit);
+    __ sub(c_rarg0, dst, doff);
+
+    __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
+#ifdef LINUX
+
+  // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
+  //
+  // If LSE is in use, generate LSE versions of all the stubs. The
+  // non-LSE versions are in atomic_aarch64.S.
+
+  // class AtomicStubMark records the entry point of a stub and the
+  // stub pointer which will point to it. The stub pointer is set to
+  // the entry point when ~AtomicStubMark() is called, which must be
+  // after ICache::invalidate_range. This ensures safe publication of
+  // the generated code.
+  class AtomicStubMark {
+    address _entry_point;
+    aarch64_atomic_stub_t *_stub;
+    MacroAssembler *_masm;
+  public:
+    AtomicStubMark(MacroAssembler *masm, aarch64_atomic_stub_t *stub) {
+      _masm = masm;
+      __ align(32);
+      _entry_point = __ pc();
+      _stub = stub;
+    }
+    ~AtomicStubMark() {
+      *_stub = (aarch64_atomic_stub_t)_entry_point;
+    }
+  };
+
+  // NB: For memory_order_conservative we need a trailing membar after
+  // LSE atomic operations but not a leading membar.
+  //
+  // We don't need a leading membar because a clause in the Arm ARM
+  // says:
+  //
+  //   Barrier-ordered-before
+  //
+  //   Barrier instructions order prior Memory effects before subsequent
+  //   Memory effects generated by the same Observer. A read or a write
+  //   RW1 is Barrier-ordered-before a read or a write RW 2 from the same
+  //   Observer if and only if RW1 appears in program order before RW 2
+  //   and [ ... ] at least one of RW 1 and RW 2 is generated by an atomic
+  //   instruction with both Acquire and Release semantics.
+  //
+  // All the atomic instructions {ldaddal, swapal, casal} have Acquire
+  // and Release semantics, therefore we don't need a leading
+  // barrier. However, there is no corresponding Barrier-ordered-after
+  // relationship, therefore we need a trailing membar to prevent a
+  // later store or load from being reordered with the store in an
+  // atomic instruction.
+  //
+  // This was checked by using the herd7 consistency model simulator
+  // (http://diy.inria.fr/) with this test case:
+  //
+  // AArch64 LseCas
+  // { 0:X1=x; 0:X2=y; 1:X1=x; 1:X2=y; }
+  // P0 | P1;
+  // LDR W4, [X2] | MOV W3, #0;
+  // DMB LD       | MOV W4, #1;
+  // LDR W3, [X1] | CASAL W3, W4, [X1];
+  //              | DMB ISH;
+  //              | STR W4, [X2];
+  // exists
+  // (0:X3=0 /\ 0:X4=1)
+  //
+  // If X3 == 0 && X4 == 1, the store to y in P1 has been reordered
+  // with the store to x in P1. Without the DMB in P1 this may happen.
+  //
+  // At the time of writing we don't know of any AArch64 hardware that
+  // reorders stores in this way, but the Reference Manual permits it.
+
+  void gen_cas_entry(Assembler::operand_size size,
+                     atomic_memory_order order) {
+    Register prev = r3, ptr = c_rarg0, compare_val = c_rarg1,
+      exchange_val = c_rarg2;
+    bool acquire, release;
+    switch (order) {
+      case memory_order_relaxed:
+        acquire = false;
+        release = false;
+        break;
+      default:
+        acquire = true;
+        release = true;
+        break;
+    }
+    __ mov(prev, compare_val);
+    __ lse_cas(prev, exchange_val, ptr, size, acquire, release, /*not_pair*/true);
+    if (order == memory_order_conservative) {
+      __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    }
+    if (size == Assembler::xword) {
+      __ mov(r0, prev);
+    } else {
+      __ movw(r0, prev);
+    }
+    __ ret(lr);
+  }
+
+  void gen_ldaddal_entry(Assembler::operand_size size) {
+    Register prev = r2, addr = c_rarg0, incr = c_rarg1;
+    __ ldaddal(size, incr, prev, addr);
+    __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    if (size == Assembler::xword) {
+      __ mov(r0, prev);
+    } else {
+      __ movw(r0, prev);
+    }
+    __ ret(lr);
+  }
+
+  void gen_swpal_entry(Assembler::operand_size size) {
+    Register prev = r2, addr = c_rarg0, incr = c_rarg1;
+    __ swpal(size, incr, prev, addr);
+    __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    if (size == Assembler::xword) {
+      __ mov(r0, prev);
+    } else {
+      __ movw(r0, prev);
+    }
+    __ ret(lr);
+  }
+
+  void generate_atomic_entry_points() {
+    if (! UseLSE) {
+      return;
+    }
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "atomic entry points");
+    address first_entry = __ pc();
+
+    // All memory_order_conservative
+    AtomicStubMark mark_fetch_add_4(_masm, &aarch64_atomic_fetch_add_4_impl);
+    gen_ldaddal_entry(Assembler::word);
+    AtomicStubMark mark_fetch_add_8(_masm, &aarch64_atomic_fetch_add_8_impl);
+    gen_ldaddal_entry(Assembler::xword);
+
+    AtomicStubMark mark_xchg_4(_masm, &aarch64_atomic_xchg_4_impl);
+    gen_swpal_entry(Assembler::word);
+    AtomicStubMark mark_xchg_8_impl(_masm, &aarch64_atomic_xchg_8_impl);
+    gen_swpal_entry(Assembler::xword);
+
+    // CAS, memory_order_conservative
+    AtomicStubMark mark_cmpxchg_1(_masm, &aarch64_atomic_cmpxchg_1_impl);
+    gen_cas_entry(MacroAssembler::byte, memory_order_conservative);
+    AtomicStubMark mark_cmpxchg_4(_masm, &aarch64_atomic_cmpxchg_4_impl);
+    gen_cas_entry(MacroAssembler::word, memory_order_conservative);
+    AtomicStubMark mark_cmpxchg_8(_masm, &aarch64_atomic_cmpxchg_8_impl);
+    gen_cas_entry(MacroAssembler::xword, memory_order_conservative);
+
+    // CAS, memory_order_relaxed
+    AtomicStubMark mark_cmpxchg_1_relaxed
+      (_masm, &aarch64_atomic_cmpxchg_1_relaxed_impl);
+    gen_cas_entry(MacroAssembler::byte, memory_order_relaxed);
+    AtomicStubMark mark_cmpxchg_4_relaxed
+      (_masm, &aarch64_atomic_cmpxchg_4_relaxed_impl);
+    gen_cas_entry(MacroAssembler::word, memory_order_relaxed);
+    AtomicStubMark mark_cmpxchg_8_relaxed
+      (_masm, &aarch64_atomic_cmpxchg_8_relaxed_impl);
+    gen_cas_entry(MacroAssembler::xword, memory_order_relaxed);
+
+    ICache::invalidate_range(first_entry, __ pc() - first_entry);
+  }
+#endif // LINUX
+
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
   // oop and initiates normal exception dispatching in this
@@ -5024,13 +6121,10 @@ class StubGenerator: public StubCodeGenerator {
     oop_maps->add_gc_map(the_pc - start, map);
 
     __ reset_last_Java_frame(true);
-    __ maybe_isb();
 
-    if (UseSVE > 0) {
-      // Reinitialize the ptrue predicate register, in case the external runtime
-      // call clobbers ptrue reg, as we may return to SVE compiled code.
-      __ reinitialize_ptrue();
-    }
+    // Reinitialize the ptrue predicate register, in case the external runtime
+    // call clobbers ptrue reg, as we may return to SVE compiled code.
+    __ reinitialize_ptrue();
 
     __ leave();
 
@@ -5069,7 +6163,7 @@ class StubGenerator: public StubCodeGenerator {
 
       // Register allocation
 
-      RegSetIterator regs = (RegSet::range(r0, r26) - r18_tls).begin();
+      RegSetIterator<> regs = (RegSet::range(r0, r26) - r18_tls).begin();
       Pa_base = *regs;       // Argument registers
       if (squaring)
         Pb_base = Pa_base;
@@ -5958,6 +7052,8 @@ class StubGenerator: public StubCodeGenerator {
                                                 SharedRuntime::
                                                 throw_NullPointerException_at_call));
 
+    StubRoutines::aarch64::_vector_iota_indices    = generate_iota_indices("iota_indices");
+
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
@@ -5993,6 +7089,11 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_mulAdd = generate_mulAdd();
     }
 
+    if (UseSIMDForBigIntegerShiftIntrinsics) {
+      StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
+      StubRoutines::_bigIntegerLeftShiftWorker  = generate_bigIntegerLeftShift();
+    }
+
     if (UseMontgomeryMultiplyIntrinsic) {
       StubCodeMark mark(this, "StubRoutines", "montgomeryMultiply");
       MontgomeryMultiplyGenerator g(_masm, /*squaring*/false);
@@ -6011,6 +7112,11 @@ class StubGenerator: public StubCodeGenerator {
     // generate GHASH intrinsics code
     if (UseGHASHIntrinsics) {
       StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
+    }
+
+    if (UseBASE64Intrinsics) {
+        StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
+        StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
     }
 
     // data cache line writeback
@@ -6036,11 +7142,21 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(false, "sha512_implCompress");
       StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(true,  "sha512_implCompressMB");
     }
+    if (UseSHA3Intrinsics) {
+      StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(false,   "sha3_implCompress");
+      StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(true,    "sha3_implCompressMB");
+    }
 
     // generate Adler32 intrinsics code
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
+
+#ifdef LINUX
+
+    generate_atomic_entry_points();
+
+#endif // LINUX
 
     StubRoutines::aarch64::set_completed();
   }
@@ -6062,3 +7178,30 @@ void StubGenerator_generate(CodeBuffer* code, bool all) {
   }
   StubGenerator g(code, all);
 }
+
+
+#ifdef LINUX
+
+// Define pointers to atomic stubs and initialize them to point to the
+// code in atomic_aarch64.S.
+
+#define DEFAULT_ATOMIC_OP(OPNAME, SIZE, RELAXED)                                \
+  extern "C" uint64_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _default_impl \
+    (volatile void *ptr, uint64_t arg1, uint64_t arg2);                 \
+  aarch64_atomic_stub_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _impl \
+    = aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _default_impl;
+
+DEFAULT_ATOMIC_OP(fetch_add, 4, )
+DEFAULT_ATOMIC_OP(fetch_add, 8, )
+DEFAULT_ATOMIC_OP(xchg, 4, )
+DEFAULT_ATOMIC_OP(xchg, 8, )
+DEFAULT_ATOMIC_OP(cmpxchg, 1, )
+DEFAULT_ATOMIC_OP(cmpxchg, 4, )
+DEFAULT_ATOMIC_OP(cmpxchg, 8, )
+DEFAULT_ATOMIC_OP(cmpxchg, 1, _relaxed)
+DEFAULT_ATOMIC_OP(cmpxchg, 4, _relaxed)
+DEFAULT_ATOMIC_OP(cmpxchg, 8, _relaxed)
+
+#undef DEFAULT_ATOMIC_OP
+
+#endif // LINUX

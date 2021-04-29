@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1FullCollector.hpp"
+#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCAdjustTask.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
@@ -35,6 +37,7 @@
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.hpp"
@@ -103,29 +106,40 @@ uint G1FullCollector::calc_active_workers() {
   return worker_count;
 }
 
-G1FullCollector::G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool clear_soft_refs) :
+G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
+                                 bool explicit_gc,
+                                 bool clear_soft_refs,
+                                 bool do_maximum_compaction) :
     _heap(heap),
-    _scope(heap->g1mm(), explicit_gc, clear_soft_refs),
+    _scope(heap->g1mm(), explicit_gc, clear_soft_refs, do_maximum_compaction),
     _num_workers(calc_active_workers()),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
     _preserved_marks_set(true),
     _serial_compaction_point(),
-    _is_alive(heap->concurrent_mark()->next_mark_bitmap()),
+    _is_alive(this, heap->concurrent_mark()->next_mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
     _always_subject_to_discovery(),
-    _is_subject_mutator(heap->ref_processor_stw(), &_always_subject_to_discovery) {
+    _is_subject_mutator(heap->ref_processor_stw(), &_always_subject_to_discovery),
+    _region_attr_table() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   _preserved_marks_set.init(_num_workers);
   _markers = NEW_C_HEAP_ARRAY(G1FullGCMarker*, _num_workers, mtGC);
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
+
+  _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_regions(), mtGC);
+  for (uint j = 0; j < heap->max_regions(); j++) {
+    _live_stats[j].clear();
+  }
+
   for (uint i = 0; i < _num_workers; i++) {
-    _markers[i] = new G1FullGCMarker(i, _preserved_marks_set.get(i), mark_bitmap());
+    _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i), _live_stats);
     _compaction_points[i] = new G1FullGCCompactionPoint();
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
+  _region_attr_table.initialize(heap->reserved(), HeapRegion::GrainBytes);
 }
 
 G1FullCollector::~G1FullCollector() {
@@ -135,7 +149,21 @@ G1FullCollector::~G1FullCollector() {
   }
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
+  FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
 }
+
+class PrepareRegionsClosure : public HeapRegionClosure {
+  G1FullCollector* _collector;
+
+public:
+  PrepareRegionsClosure(G1FullCollector* collector) : _collector(collector) { }
+
+  bool do_heap_region(HeapRegion* hr) {
+    G1CollectedHeap::heap()->prepare_region_for_full_compaction(hr);
+    _collector->before_marking_update_attribute_table(hr);
+    return false;
+  }
+};
 
 void G1FullCollector::prepare_collection() {
   _heap->policy()->record_full_collection_start();
@@ -148,6 +176,9 @@ void G1FullCollector::prepare_collection() {
 
   _heap->gc_prologue(true);
   _heap->prepare_heap_for_full_collection();
+
+  PrepareRegionsClosure cl(this);
+  _heap->heap_region_iterate(&cl);
 
   reference_processor()->enable_discovery();
   reference_processor()->setup_policy(scope()->should_clear_soft_refs());
@@ -184,6 +215,10 @@ void G1FullCollector::complete_collection() {
 
   BiasedLocking::restore_marks();
 
+  _heap->concurrent_mark()->swap_mark_bitmaps();
+  // Prepare the bitmap for the next (potentially concurrent) marking.
+  _heap->concurrent_mark()->clear_next_bitmap(_heap->workers());
+
   _heap->prepare_heap_for_mutators();
 
   _heap->policy()->record_full_collection_end();
@@ -192,6 +227,20 @@ void G1FullCollector::complete_collection() {
   _heap->verify_after_full_collection();
 
   _heap->print_heap_after_full_collection(scope()->heap_transition());
+}
+
+void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
+  if (hr->is_free()) {
+    // Set as Invalid by default.
+    _region_attr_table.verify_is_invalid(hr->hrm_index());
+  } else if (hr->is_closed_archive()) {
+    _region_attr_table.set_skip_marking(hr->hrm_index());
+  } else if (hr->is_pinned()) {
+    _region_attr_table.set_skip_compacting(hr->hrm_index());
+  } else {
+    // Everything else should be compacted.
+    _region_attr_table.set_compacting(hr->hrm_index());
+  }
 }
 
 void G1FullCollector::phase1_mark_live_objects() {

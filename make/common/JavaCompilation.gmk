@@ -177,6 +177,12 @@ define SetupJavaCompilationBody
     $$(error Must specify BIN (in $1))
   endif
 
+  ifneq ($$($1_MODULE), )
+    $1_MODULE_SUBDIR := /$$($1_MODULE)
+  endif
+
+  $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
+
   ifeq ($$($1_SMALL_JAVA), )
     # If unspecified, default to true
     $1_SMALL_JAVA := true
@@ -202,24 +208,42 @@ define SetupJavaCompilationBody
       # If unspecified, default to the new jdk we're building
       $1_TARGET_RELEASE := $$(TARGET_RELEASE_BOOTJDK)
     endif
+  else ifeq ($$($1_COMPILER), buildjdk)
+    $1_JAVAC_CMD := $$(BUILD_JAVAC)
+
+    ifeq ($$($1_TARGET_RELEASE), )
+      # If unspecified, default to the new jdk we're building
+      $1_TARGET_RELEASE := $$(TARGET_RELEASE_NEWJDK)
+    endif
   else ifeq ($$($1_COMPILER), interim)
     # Use java server if it is enabled, and the user does not want a specialized
     # class path.
     ifeq ($$(ENABLE_JAVAC_SERVER)+$$($1_CLASSPATH), true+)
       $1_JAVAC := $$(INTERIM_LANGTOOLS_ARGS) -m jdk.compiler.interim/com.sun.tools.sjavac.Main
 
-      # How to launch the server. This must use JAVA_DETACH, which is the "big" java
-      # with an ability to detach from fixpath (on Windows)
-      # This will be executed by the client, if needed.
-      $1_JAVAC_SERVER_CMD := $$(JAVA_DETACH) $$($1_JAVA_FLAGS) $$($1_JAVAC)
-      $1_ESCAPED_CMD := $$(subst $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_JAVAC_SERVER_CMD))))
+      # Create a configuration file with the needed information for the javac
+      # server to function properly.
+      $1_JAVAC_SERVER_CONFIG := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$$($1_SAFE_NAME)-server.conf
 
-      # The port file contains the tcp/ip on which the server listens
+      # The portfile contains the tcp/ip on which the server listens
       # and the cookie necessary to talk to the server.
-      $1_JAVA_SERVER_FLAGS := --server:portfile=$$(JAVAC_SERVER_DIR)/server.port,sjavac=$$($1_ESCAPED_CMD)
+      $1_JAVAC_PORT_FILE := $$(call FixPath, $$(JAVAC_SERVER_DIR)/server.port)
 
-      # Always use small to launch client
-      $1_JAVAC_CMD := $$(JAVA_SMALL) $$($1_JAVA_FLAGS) $$($1_JAVAC) $$($1_JAVA_SERVER_FLAGS)
+      # The servercmd specifies how to launch the server. This will be executed
+      # by the client, if needed.
+      $1_JAVAC_SERVER_CMD := $$(call FixPath, $$(JAVA) $$($1_JAVA_FLAGS) $$($1_JAVAC))
+
+      $1_CONFIG_VARDEPS := $$($1_JAVAC_PORT_FILE) $$($1_JAVAC_SERVER_CMD)
+      $1_CONFIG_VARDEPS_FILE := $$(call DependOnVariable, $1_CONFIG_VARDEPS, \
+          $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1.config_vardeps)
+
+      $$($1_JAVAC_SERVER_CONFIG): $$($1_CONFIG_VARDEPS_FILE)
+	$(ECHO) portfile=$$($1_JAVAC_PORT_FILE) > $$@
+	$(ECHO) servercmd=$$($1_JAVAC_SERVER_CMD) >> $$@
+
+      # Always use small java to launch client
+      $1_JAVAC_CMD := $$(JAVA_SMALL) $$($1_JAVA_FLAGS) $$($1_JAVAC) \
+          --server:conf=$$($1_JAVAC_SERVER_CONFIG)
     else
       # No javac server
       $1_JAVAC := $$(INTERIM_LANGTOOLS_ARGS) -m jdk.compiler.interim/com.sun.tools.javac.Main
@@ -245,7 +269,7 @@ define SetupJavaCompilationBody
   # Tell javac to do exactly as told and no more
   PARANOIA_FLAGS := -implicit:none -Xprefer:source -XDignore.symbol.file=true -encoding ascii
 
-  $1_FLAGS += -g -Xlint:all --doclint-format html5 $$($1_TARGET_RELEASE) $$(PARANOIA_FLAGS) $$(JAVA_WARNINGS_ARE_ERRORS)
+  $1_FLAGS += -g -Xlint:all $$($1_TARGET_RELEASE) $$(PARANOIA_FLAGS) $$(JAVA_WARNINGS_ARE_ERRORS)
   $1_FLAGS += $$($1_JAVAC_FLAGS)
 
   ifneq ($$($1_DISABLED_WARNINGS), )
@@ -254,10 +278,6 @@ define SetupJavaCompilationBody
 
   ifneq ($$($1_CLASSPATH), )
     $1_FLAGS += -cp $$(call PathList, $$($1_CLASSPATH))
-  endif
-
-  ifneq ($$($1_MODULE), )
-    $1_MODULE_SUBDIR := /$$($1_MODULE)
   endif
 
   # Make sure the dirs exist, or that one of the EXTRA_FILES, that may not
@@ -304,9 +324,11 @@ define SetupJavaCompilationBody
   ifneq ($$($1_KEEP_DUPS), true)
     # Remove duplicate source files by keeping the first found of each duplicate.
     # This allows for automatic overrides with custom or platform specific versions
-    # source files.
+    # source files. Need to call DoubleDollar as we have java classes with '$' in
+    # their names.
     $1_SRCS := $$(strip $$(foreach s, $$($1_SRCS), \
-        $$(eval relative_src := $$(call remove-prefixes, $$($1_SRC), $$(s))) \
+        $$(eval relative_src := $$(call remove-prefixes, $$($1_SRC), \
+            $$(call DoubleDollar, $$(s)))) \
         $$(if $$($1_$$(relative_src)), \
           , \
           $$(eval $1_$$(relative_src) := 1) $$(s))))
@@ -322,9 +344,6 @@ define SetupJavaCompilationBody
       $$(error No source files found for $1)
     endif
   else
-
-    $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
-
     # All files below META-INF are always copied.
     $1_ALL_COPIES := $$(filter $$(addsuffix /META-INF%,$$($1_SRC)),$$($1_ALL_SRCS))
     # Find all files to be copied from source to bin.
@@ -433,7 +452,7 @@ define SetupJavaCompilationBody
 
     # Do the actual compilation
     $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_FILELIST) $$($1_DEPENDS) \
-        $$($1_VARDEPS_FILE) $$($1_EXTRA_DEPS)
+        $$($1_VARDEPS_FILE) $$($1_EXTRA_DEPS) $$($1_JAVAC_SERVER_CONFIG)
 		$$(call MakeDir, $$(@D))
 		$$(call ExecuteWithLog, $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$$($1_SAFE_NAME)_batch, \
 		    $$($1_JAVAC_CMD) $$($1_FLAGS) \

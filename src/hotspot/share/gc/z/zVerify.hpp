@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,25 +26,24 @@
 
 #include "memory/allocation.hpp"
 
+class frame;
 class ZPageAllocator;
 
 class ZVerify : public AllStatic {
 private:
-  template <typename RootsIterator> static void roots();
-
-  static void roots_strong();
+  static void roots_strong(bool verify_fixed);
   static void roots_weak();
-  static void roots_concurrent_strong();
-  static void roots_concurrent_weak();
 
-  static void roots(bool verify_weaks);
   static void objects(bool verify_weaks);
-  static void roots_and_objects(bool verify_weaks);
 
 public:
   static void before_zoperation();
   static void after_mark();
   static void after_weak_processing();
+
+  static void verify_thread_head_bad(JavaThread* thread) NOT_DEBUG_RETURN;
+  static void verify_thread_frames_bad(JavaThread* thread) NOT_DEBUG_RETURN;
+  static void verify_frame_bad(const frame& fr, RegisterMap& register_map) NOT_DEBUG_RETURN;
 };
 
 class ZVerifyViewsFlip {

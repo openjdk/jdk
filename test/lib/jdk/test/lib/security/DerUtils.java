@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package jdk.test.lib.security;
 import jdk.test.lib.Asserts;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerValue;
+import sun.security.util.KnownOIDs;
 import sun.security.util.ObjectIdentifier;
 
 import java.io.IOException;
@@ -97,6 +98,15 @@ public class DerUtils {
     public static void checkAlg(byte[] der, String location,
             ObjectIdentifier expected) throws Exception {
         Asserts.assertEQ(innerDerValue(der, location).getOID(), expected);
+    }
+
+    /**
+     * Ensures that the inner DerValue is the expected ObjectIdentifier.
+     */
+    public static void checkAlg(byte[] der, String location,
+            KnownOIDs expected) throws Exception {
+        Asserts.assertEQ(innerDerValue(der, location).getOID(),
+                ObjectIdentifier.of(expected));
     }
 
     /**

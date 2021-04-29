@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,11 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "ci/ciUtilities.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_x86.hpp"
@@ -39,6 +42,7 @@
 #include "register_x86.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_x86.inline.hpp"
@@ -69,7 +73,7 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   push(thread);
 #endif // _LP64
 
-  int call_offset;
+  int call_offset = -1;
   if (!align_stack) {
     set_last_Java_frame(thread, noreg, rbp, NULL);
   } else {
@@ -133,6 +137,8 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   if (metadata_result->is_valid()) {
     get_vm_result_2(metadata_result, thread);
   }
+
+  assert(call_offset >= 0, "Should be set");
   return call_offset;
 }
 
@@ -172,8 +178,8 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 #ifdef _LP64
   // if there is any conflict use the stack
   if (arg1 == c_rarg2 || arg1 == c_rarg3 ||
-      arg2 == c_rarg1 || arg1 == c_rarg3 ||
-      arg3 == c_rarg1 || arg1 == c_rarg2) {
+      arg2 == c_rarg1 || arg2 == c_rarg3 ||
+      arg3 == c_rarg1 || arg3 == c_rarg2) {
     push(arg3);
     push(arg2);
     push(arg1);
@@ -716,12 +722,12 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   default:  ShouldNotReachHere();
   }
 
-#if !defined(_LP64) && defined(TIERED)
-  if (UseSSE < 2) {
+#if !defined(_LP64) && defined(COMPILER2)
+  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_jvmci()) {
     // C2 can leave the fpu stack dirty
     __ empty_FPU_stack();
   }
-#endif // !_LP64 && TIERED
+#endif // !_LP64 && COMPILER2
 
   // verify that only rax, and rdx is valid at this time
   __ invalidate_registers(false, true, true, false, true, true);

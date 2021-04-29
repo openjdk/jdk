@@ -117,7 +117,7 @@ private:
     _tag = tag;
   }
 
-  // Private constructor used static constants
+  // Private constructor used for static constants
   HeapRegionType(Tag t) : _tag(t) { hrt_assert_is_valid(_tag); }
 
 public:

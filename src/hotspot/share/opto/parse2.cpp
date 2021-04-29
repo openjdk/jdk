@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "ci/ciMethodData.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -83,6 +83,9 @@ void Parse::array_store(BasicType bt) {
   if (stopped())  return;     // guaranteed null or range check
   if (bt == T_OBJECT) {
     array_store_check();
+    if (stopped()) {
+      return;
+    }
   }
   Node* val;                  // Oop to store
   if (big_val) {
@@ -232,7 +235,7 @@ Node* Parse::jump_if_join(Node* iffalse, Node* iftrue) {
 static const int never_reached = INT_MAX;
 
 //------------------------------helper for tableswitch-------------------------
-void Parse::jump_if_true_fork(IfNode *iff, int dest_bci_if_true, int prof_table_index, bool unc) {
+void Parse::jump_if_true_fork(IfNode *iff, int dest_bci_if_true, bool unc) {
   // True branch, use existing map info
   { PreserveJVMState pjvms(this);
     Node *iftrue  = _gvn.transform( new IfTrueNode (iff) );
@@ -245,7 +248,6 @@ void Parse::jump_if_true_fork(IfNode *iff, int dest_bci_if_true, int prof_table_
                     "taken always");
     } else {
       assert(dest_bci_if_true != never_reached, "inconsistent dest");
-      profile_switch_case(prof_table_index);
       merge_new_path(dest_bci_if_true);
     }
   }
@@ -255,7 +257,7 @@ void Parse::jump_if_true_fork(IfNode *iff, int dest_bci_if_true, int prof_table_
   set_control( iffalse );
 }
 
-void Parse::jump_if_false_fork(IfNode *iff, int dest_bci_if_true, int prof_table_index, bool unc) {
+void Parse::jump_if_false_fork(IfNode *iff, int dest_bci_if_true, bool unc) {
   // True branch, use existing map info
   { PreserveJVMState pjvms(this);
     Node *iffalse  = _gvn.transform( new IfFalseNode (iff) );
@@ -268,7 +270,6 @@ void Parse::jump_if_false_fork(IfNode *iff, int dest_bci_if_true, int prof_table
                     "taken never");
     } else {
       assert(dest_bci_if_true != never_reached, "inconsistent dest");
-      profile_switch_case(prof_table_index);
       merge_new_path(dest_bci_if_true);
     }
   }
@@ -278,7 +279,7 @@ void Parse::jump_if_false_fork(IfNode *iff, int dest_bci_if_true, int prof_table
   set_control( iftrue );
 }
 
-void Parse::jump_if_always_fork(int dest_bci, int prof_table_index, bool unc) {
+void Parse::jump_if_always_fork(int dest_bci, bool unc) {
   // False branch, use existing map and control()
   if (unc) {
     repush_if_args();
@@ -288,7 +289,6 @@ void Parse::jump_if_always_fork(int dest_bci, int prof_table_index, bool unc) {
                   "taken never");
   } else {
     assert(dest_bci != never_reached, "inconsistent dest");
-    profile_switch_case(prof_table_index);
     merge_new_path(dest_bci);
   }
 }
@@ -303,34 +303,28 @@ extern "C" {
 }
 
 
-// Default value for methodData switch indexing. Must be a negative value to avoid
-// conflict with any legal switch index.
-#define NullTableIndex -1
-
 class SwitchRange : public StackObj {
   // a range of integers coupled with a bci destination
   jint _lo;                     // inclusive lower limit
   jint _hi;                     // inclusive upper limit
   int _dest;
-  int _table_index;             // index into method data table
   float _cnt;                   // how many times this range was hit according to profiling
 
 public:
   jint lo() const              { return _lo;   }
   jint hi() const              { return _hi;   }
   int  dest() const            { return _dest; }
-  int  table_index() const     { return _table_index; }
   bool is_singleton() const    { return _lo == _hi; }
   float cnt() const            { return _cnt; }
 
-  void setRange(jint lo, jint hi, int dest, int table_index, float cnt) {
+  void setRange(jint lo, jint hi, int dest, float cnt) {
     assert(lo <= hi, "must be a non-empty range");
-    _lo = lo, _hi = hi; _dest = dest; _table_index = table_index; _cnt = cnt;
+    _lo = lo, _hi = hi; _dest = dest; _cnt = cnt;
     assert(_cnt >= 0, "");
   }
-  bool adjoinRange(jint lo, jint hi, int dest, int table_index, float cnt, bool trim_ranges) {
+  bool adjoinRange(jint lo, jint hi, int dest, float cnt, bool trim_ranges) {
     assert(lo <= hi, "must be a non-empty range");
-    if (lo == _hi+1 && table_index == _table_index) {
+    if (lo == _hi+1) {
       // see merge_ranges() comment below
       if (trim_ranges) {
         if (cnt == 0) {
@@ -360,14 +354,14 @@ public:
     return false;
   }
 
-  void set (jint value, int dest, int table_index, float cnt) {
-    setRange(value, value, dest, table_index, cnt);
+  void set (jint value, int dest, float cnt) {
+    setRange(value, value, dest, cnt);
   }
-  bool adjoin(jint value, int dest, int table_index, float cnt, bool trim_ranges) {
-    return adjoinRange(value, value, dest, table_index, cnt, trim_ranges);
+  bool adjoin(jint value, int dest, float cnt, bool trim_ranges) {
+    return adjoinRange(value, value, dest, cnt, trim_ranges);
   }
   bool adjoin(SwitchRange& other) {
-    return adjoinRange(other._lo, other._hi, other._dest, other._table_index, other._cnt, false);
+    return adjoinRange(other._lo, other._hi, other._dest, other._cnt, false);
   }
 
   void print() {
@@ -418,14 +412,13 @@ static void merge_ranges(SwitchRange* ranges, int& rp) {
   for (int j = 0; j <= rp; j++) {
     SwitchRange& r = ranges[j];
     if (r.cnt() == 0 && r.dest() != never_reached) {
-      r.setRange(r.lo(), r.hi(), never_reached, r.table_index(), r.cnt());
+      r.setRange(r.lo(), r.hi(), never_reached, r.cnt());
     }
   }
 }
 
 //-------------------------------do_tableswitch--------------------------------
 void Parse::do_tableswitch() {
-  Node* lookup = pop();
   // Get information about tableswitch
   int default_dest = iter().get_dest_table(0);
   int lo_index     = iter().get_int_table(1);
@@ -435,6 +428,7 @@ void Parse::do_tableswitch() {
   if (len < 1) {
     // If this is a backward branch, add safepoint
     maybe_add_safepoint(default_dest);
+    pop(); // the effect of the instruction execution on the operand stack
     merge(default_dest);
     return;
   }
@@ -447,7 +441,7 @@ void Parse::do_tableswitch() {
       profile = (ciMultiBranchData*)data;
     }
   }
-  bool trim_ranges = !method_data_update() && !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 
   // generate decision tree, using trichotomy when possible
   int rnum = len+2;
@@ -459,19 +453,18 @@ void Parse::do_tableswitch() {
     if (profile != NULL) {
       cnt = profile->default_count() / (hi_index != max_jint ? 2 : 1);
     }
-    ranges[++rp].setRange(min_jint, lo_index-1, default_dest, NullTableIndex, cnt);
+    ranges[++rp].setRange(min_jint, lo_index-1, default_dest, cnt);
   }
   for (int j = 0; j < len; j++) {
     jint match_int = lo_index+j;
     int  dest      = iter().get_dest_table(j+3);
     makes_backward_branch |= (dest <= bci());
-    int  table_index = method_data_update() ? j : NullTableIndex;
     uint cnt = 1;
     if (profile != NULL) {
       cnt = profile->count_at(j);
     }
-    if (rp < 0 || !ranges[rp].adjoin(match_int, dest, table_index, cnt, trim_ranges)) {
-      ranges[++rp].set(match_int, dest, table_index, cnt);
+    if (rp < 0 || !ranges[rp].adjoin(match_int, dest, cnt, trim_ranges)) {
+      ranges[++rp].set(match_int, dest, cnt);
     }
   }
   jint highest = lo_index+(len-1);
@@ -481,8 +474,8 @@ void Parse::do_tableswitch() {
     if (profile != NULL) {
       cnt = profile->default_count() / (lo_index != min_jint ? 2 : 1);
     }
-    if (!ranges[rp].adjoinRange(highest+1, max_jint, default_dest, NullTableIndex, cnt, trim_ranges)) {
-      ranges[++rp].setRange(highest+1, max_jint, default_dest, NullTableIndex, cnt);
+    if (!ranges[rp].adjoinRange(highest+1, max_jint, default_dest, cnt, trim_ranges)) {
+      ranges[++rp].setRange(highest+1, max_jint, default_dest, cnt);
     }
   }
   assert(rp < len+2, "not too many ranges");
@@ -492,22 +485,24 @@ void Parse::do_tableswitch() {
   }
 
   // Safepoint in case if backward branch observed
-  if( makes_backward_branch && UseLoopSafepoints )
+  if (makes_backward_branch && UseLoopSafepoints) {
     add_safepoint();
+  }
 
+  Node* lookup = pop(); // lookup value
   jump_switch_ranges(lookup, &ranges[0], &ranges[rp]);
 }
 
 
 //------------------------------do_lookupswitch--------------------------------
 void Parse::do_lookupswitch() {
-  Node *lookup = pop();         // lookup value
   // Get information about lookupswitch
   int default_dest = iter().get_dest_table(0);
   int len          = iter().get_int_table(1);
 
   if (len < 1) {    // If this is a backward branch, add safepoint
     maybe_add_safepoint(default_dest);
+    pop(); // the effect of the instruction execution on the operand stack
     merge(default_dest);
     return;
   }
@@ -520,7 +515,7 @@ void Parse::do_lookupswitch() {
       profile = (ciMultiBranchData*)data;
     }
   }
-  bool trim_ranges = !method_data_update() && !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 
   // generate decision tree, using trichotomy when possible
   jint* table = NEW_RESOURCE_ARRAY(jint, len*3);
@@ -543,7 +538,7 @@ void Parse::do_lookupswitch() {
     }
     prev = match_int+1;
   }
-  if (prev-1 != max_jint) {
+  if (prev != min_jint) {
     defaults += (float)max_jint - prev + 1;
   }
   float default_cnt = 1;
@@ -560,23 +555,22 @@ void Parse::do_lookupswitch() {
     int  dest        = table[3*j+1];
     int  cnt         = table[3*j+2];
     int  next_lo     = rp < 0 ? min_jint : ranges[rp].hi()+1;
-    int  table_index = method_data_update() ? j : NullTableIndex;
     makes_backward_branch |= (dest <= bci());
     float c = default_cnt * ((float)match_int - next_lo);
-    if (match_int != next_lo && (rp < 0 || !ranges[rp].adjoinRange(next_lo, match_int-1, default_dest, NullTableIndex, c, trim_ranges))) {
+    if (match_int != next_lo && (rp < 0 || !ranges[rp].adjoinRange(next_lo, match_int-1, default_dest, c, trim_ranges))) {
       assert(default_dest != never_reached, "sentinel value for dead destinations");
-      ranges[++rp].setRange(next_lo, match_int-1, default_dest, NullTableIndex, c);
+      ranges[++rp].setRange(next_lo, match_int-1, default_dest, c);
     }
-    if (rp < 0 || !ranges[rp].adjoin(match_int, dest, table_index, cnt, trim_ranges)) {
+    if (rp < 0 || !ranges[rp].adjoin(match_int, dest, cnt, trim_ranges)) {
       assert(dest != never_reached, "sentinel value for dead destinations");
-      ranges[++rp].set(match_int, dest, table_index, cnt);
+      ranges[++rp].set(match_int, dest, cnt);
     }
   }
   jint highest = table[3*(len-1)];
   assert(ranges[rp].hi() == highest, "");
   if (highest != max_jint &&
-      !ranges[rp].adjoinRange(highest+1, max_jint, default_dest, NullTableIndex, default_cnt * ((float)max_jint - highest), trim_ranges)) {
-    ranges[++rp].setRange(highest+1, max_jint, default_dest, NullTableIndex, default_cnt * ((float)max_jint - highest));
+      !ranges[rp].adjoinRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - highest), trim_ranges)) {
+    ranges[++rp].setRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - highest));
   }
   assert(rp < rnum, "not too many ranges");
 
@@ -585,9 +579,11 @@ void Parse::do_lookupswitch() {
   }
 
   // Safepoint in case backward branch observed
-  if (makes_backward_branch && UseLoopSafepoints)
+  if (makes_backward_branch && UseLoopSafepoints) {
     add_safepoint();
+  }
 
+  Node *lookup = pop(); // lookup value
   jump_switch_ranges(lookup, &ranges[0], &ranges[rp]);
 }
 
@@ -735,7 +731,7 @@ void Parse::linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchR
         shift++;
         if (i > 0 && i < nr-1) {
           SwitchRange prev = lo[i-1];
-          prev.setRange(prev.lo(), sr->hi(), prev.dest(), prev.table_index(), prev.cnt());
+          prev.setRange(prev.lo(), sr->hi(), prev.dest(), prev.cnt());
           if (prev.adjoin(lo[i+1])) {
             shift++;
             i++;
@@ -762,7 +758,7 @@ void Parse::linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchR
     Node* cmp = _gvn.transform(new CmpUNode(val, _gvn.intcon(most_freq.hi() - most_freq.lo())));
     Node* tst = _gvn.transform(new BoolNode(cmp, BoolTest::le));
     IfNode* iff = create_and_map_if(control(), tst, if_prob(most_freq.cnt(), total_cnt), if_cnt(most_freq.cnt()));
-    jump_if_true_fork(iff, most_freq.dest(), most_freq.table_index(), false);
+    jump_if_true_fork(iff, most_freq.dest(), false);
 
     sub += most_freq.cnt() / total_cnt;
     extra += 1 - sub;
@@ -777,9 +773,6 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
 
   // Are jumptables supported
   if (!Matcher::has_match_rule(Op_Jump))  return false;
-
-  // Don't make jump table if profiling
-  if (method_data_update())  return false;
 
   bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 
@@ -858,7 +851,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
     Node*   cmp = _gvn.transform(new CmpUNode(key_val, size));
     Node*   tst = _gvn.transform(new BoolNode(cmp, BoolTest::ge));
     IfNode* iff = create_and_map_if(control(), tst, if_prob(trimmed_cnt, total), if_cnt(trimmed_cnt));
-    jump_if_true_fork(iff, default_dest, NullTableIndex, trim_ranges && trimmed_cnt == 0);
+    jump_if_true_fork(iff, default_dest, trim_ranges && trimmed_cnt == 0);
 
     total -= trimmed_cnt;
   }
@@ -870,10 +863,16 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
 
   // Clean the 32-bit int into a real 64-bit offset.
   // Otherwise, the jint value 0 might turn into an offset of 0x0800000000.
-  const TypeInt* ikeytype = TypeInt::make(0, num_cases, Type::WidenMin);
   // Make I2L conversion control dependent to prevent it from
   // floating above the range check during loop optimizations.
-  key_val = C->conv_I2X_index(&_gvn, key_val, ikeytype, control());
+  // Do not use a narrow int type here to prevent the data path from dying
+  // while the control path is not removed. This can happen if the type of key_val
+  // is later known to be out of bounds of [0, num_cases] and therefore a narrow cast
+  // would be replaced by TOP while C2 is not able to fold the corresponding range checks.
+  // Set _carry_dependency for the cast to avoid being removed by IGVN.
+#ifdef _LP64
+  key_val = C->constrained_convI2L(&_gvn, key_val, TypeInt::INT, control(), true /* carry_dependency */);
+#endif
 
   // Shift the value by wordsize so we have an index into the table, rather
   // than a switch value
@@ -918,7 +917,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
       {
         PreserveJVMState pjvms(this);
         set_control(input);
-        jump_if_always_fork(r->dest(), r->table_index(), trim_ranges && r->cnt() == 0);
+        jump_if_always_fork(r->dest(), trim_ranges && r->cnt() == 0);
       }
     }
   }
@@ -930,7 +929,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
 //----------------------------jump_switch_ranges-------------------------------
 void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, int switch_depth) {
   Block* switch_block = block();
-  bool trim_ranges = !method_data_update() && !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 
   if (switch_depth == 0) {
     // Do special processing for the top-level call.
@@ -971,13 +970,13 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
       lo++;
     }
     if (lo->lo() < min_val)  {
-      lo->setRange(min_val, lo->hi(), lo->dest(), lo->table_index(), lo->cnt());
+      lo->setRange(min_val, lo->hi(), lo->dest(), lo->cnt());
     }
     while (hi->lo() > max_val) {
       hi--;
     }
     if (hi->hi() > max_val) {
-      hi->setRange(hi->lo(), max_val, hi->dest(), hi->table_index(), hi->cnt());
+      hi->setRange(hi->lo(), max_val, hi->dest(), hi->cnt());
     }
 
     linear_search_switch_ranges(key_val, lo, hi);
@@ -986,13 +985,13 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
 #ifndef PRODUCT
   if (switch_depth == 0) {
     _max_switch_depth = 0;
-    _est_switch_depth = log2_intptr((hi-lo+1)-1)+1;
+    _est_switch_depth = log2i_graceful((hi - lo + 1) - 1) + 1;
   }
 #endif
 
   assert(lo <= hi, "must be a non-empty set of ranges");
   if (lo == hi) {
-    jump_if_always_fork(lo->dest(), lo->table_index(), trim_ranges && lo->cnt() == 0);
+    jump_if_always_fork(lo->dest(), trim_ranges && lo->cnt() == 0);
   } else {
     assert(lo->hi() == (lo+1)->lo()-1, "contiguous ranges");
     assert(hi->lo() == (hi-1)->hi()+1, "contiguous ranges");
@@ -1030,7 +1029,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
 
     if (mid->is_singleton()) {
       IfNode *iff_ne = jump_if_fork_int(key_val, test_val, BoolTest::ne, 1-if_prob(mid->cnt(), total_cnt), if_cnt(mid->cnt()));
-      jump_if_false_fork(iff_ne, mid->dest(), mid->table_index(), trim_ranges && mid->cnt() == 0);
+      jump_if_false_fork(iff_ne, mid->dest(), trim_ranges && mid->cnt() == 0);
 
       // Special Case:  If there are exactly three ranges, and the high
       // and low range each go to the same place, omit the "gt" test,
@@ -1059,7 +1058,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
 
       // if there is a higher range, test for it and process it:
       if (mid == hi) {
-        jump_if_true_fork(iff_ge, mid->dest(), mid->table_index(), trim_ranges && cnt == 0);
+        jump_if_true_fork(iff_ge, mid->dest(), trim_ranges && cnt == 0);
       } else {
         Node *iftrue  = _gvn.transform( new IfTrueNode(iff_ge) );
         Node *iffalse = _gvn.transform( new IfFalseNode(iff_ge) );
@@ -1076,7 +1075,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
       if (mid->is_singleton()) {
         jump_switch_ranges(key_val, lo+1, hi, switch_depth+1);
       } else {
-        jump_if_always_fork(lo->dest(), lo->table_index(), trim_ranges && lo->cnt() == 0);
+        jump_if_always_fork(lo->dest(), trim_ranges && lo->cnt() == 0);
       }
     } else {
       jump_switch_ranges(key_val, lo, mid-1, switch_depth+1);
@@ -1211,9 +1210,6 @@ void Parse::do_jsr() {
   int return_bci = iter().next_bci();
   int jsr_bci    = (bc() == Bytecodes::_jsr) ? iter().get_dest() : iter().get_far_dest();
 
-  // Update method data
-  profile_taken_branch(jsr_bci);
-
   // The way we do things now, there is only one successor block
   // for the jsr, because the target code is cloned by ciTypeFlow.
   Block* target = successor_for_bci(jsr_bci);
@@ -1235,7 +1231,6 @@ void Parse::do_ret() {
   assert(block()->num_successors() == 1, "a ret can only go one place now");
   Block* target = block()->successor_at(0);
   assert(!target->is_ready(), "our arrival must be expected");
-  profile_ret(target->flow()->start());
   int pnum = target->next_path_num();
   merge_common(target, pnum);
 }
@@ -1447,11 +1442,6 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
       tty->print_cr("Never-taken edge stops compilation at bci %d", bci());
     }
     repush_if_args(); // to gather stats on loop
-    // We need to mark this branch as taken so that if we recompile we will
-    // see that it is possible. In the tiered system the interpreter doesn't
-    // do profiling and by the time we get to the lower tier from the interpreter
-    // the path may be cold again. Make sure it doesn't look untaken
-    profile_taken_branch(target_bci, !ProfileInterpreter);
     uncommon_trap(Deoptimization::Reason_unreached,
                   Deoptimization::Action_reinterpret,
                   NULL, "cold");
@@ -1485,8 +1475,6 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
         branch_block->next_path_num();
       }
     } else {                    // Path is live.
-      // Update method data
-      profile_taken_branch(target_bci);
       adjust_map_after_if(btest, c, prob, branch_block, next_block);
       if (!stopped()) {
         merge(target_bci);
@@ -1505,8 +1493,6 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
       next_block->next_path_num();
     }
   } else  {                     // Path is live.
-    // Update method data
-    profile_not_taken_branch();
     adjust_map_after_if(BoolTest(btest).negate(), c, 1.0-prob,
                         next_block, branch_block);
   }
@@ -1528,11 +1514,6 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
       tty->print_cr("Never-taken edge stops compilation at bci %d", bci());
     }
     repush_if_args(); // to gather stats on loop
-    // We need to mark this branch as taken so that if we recompile we will
-    // see that it is possible. In the tiered system the interpreter doesn't
-    // do profiling and by the time we get to the lower tier from the interpreter
-    // the path may be cold again. Make sure it doesn't look untaken
-    profile_taken_branch(target_bci, !ProfileInterpreter);
     uncommon_trap(Deoptimization::Reason_unreached,
                   Deoptimization::Action_reinterpret,
                   NULL, "cold");
@@ -1607,8 +1588,6 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
         branch_block->next_path_num();
       }
     } else {
-      // Update method data
-      profile_taken_branch(target_bci);
       adjust_map_after_if(taken_btest, c, prob, branch_block, next_block);
       if (!stopped()) {
         merge(target_bci);
@@ -1626,8 +1605,6 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
       next_block->next_path_num();
     }
   } else {
-    // Update method data
-    profile_not_taken_branch();
     adjust_map_after_if(untaken_btest, c, untaken_prob,
                         next_block, branch_block);
   }
@@ -2373,7 +2350,7 @@ void Parse::do_one_bytecode() {
     if (Matcher::convL2FSupported()) {
       a = pop_pair();
       b = _gvn.transform( new ConvL2FNode(a));
-      // For i486.ad, FILD doesn't restrict precision to 24 or 53 bits.
+      // For x86_32.ad, FILD doesn't restrict precision to 24 or 53 bits.
       // Rather than storing the result into an FP register then pushing
       // out to memory to round, the machine instruction that implements
       // ConvL2D is responsible for rounding.
@@ -2388,7 +2365,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_l2d:
     a = pop_pair();
     b = _gvn.transform( new ConvL2DNode(a));
-    // For i486.ad, rounding is always necessary (see _l2f above).
+    // For x86_32.ad, rounding is always necessary (see _l2f above).
     // c = dprecision_rounding(b);
     c = _gvn.transform(b);
     push_pair(c);
@@ -2615,19 +2592,18 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_i2b:
     // Sign extend
     a = pop();
-    a = _gvn.transform( new LShiftINode(a,_gvn.intcon(24)) );
-    a = _gvn.transform( new RShiftINode(a,_gvn.intcon(24)) );
-    push( a );
+    a = Compile::narrow_value(T_BYTE, a, NULL, &_gvn, true);
+    push(a);
     break;
   case Bytecodes::_i2s:
     a = pop();
-    a = _gvn.transform( new LShiftINode(a,_gvn.intcon(16)) );
-    a = _gvn.transform( new RShiftINode(a,_gvn.intcon(16)) );
-    push( a );
+    a = Compile::narrow_value(T_SHORT, a, NULL, &_gvn, true);
+    push(a);
     break;
   case Bytecodes::_i2c:
     a = pop();
-    push( _gvn.transform( new AndINode(a,_gvn.intcon(0xFFFF)) ) );
+    a = Compile::narrow_value(T_CHAR, a, NULL, &_gvn, true);
+    push(a);
     break;
 
   case Bytecodes::_i2f:
@@ -2690,9 +2666,6 @@ void Parse::do_one_bytecode() {
 
     // If this is a backwards branch in the bytecodes, add Safepoint
     maybe_add_safepoint(target_bci);
-
-    // Update method data
-    profile_taken_branch(target_bci);
 
     // Merge the current control into the target basic block
     merge(target_bci);

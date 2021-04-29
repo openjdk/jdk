@@ -28,46 +28,53 @@
 #include "utilities/debug.hpp"
 
 template <typename T>
-inline ZListNode<T>::ZListNode(ZListNode* next, ZListNode* prev) :
-    _next(next),
-    _prev(prev) {}
-
-template <typename T>
-inline void ZListNode<T>::set_unused() {
-  _next = NULL;
-  _prev = NULL;
-}
-
-template <typename T>
-inline ZListNode<T>::ZListNode() {
-  set_unused();
-}
+inline ZListNode<T>::ZListNode() :
+    _next(this),
+    _prev(this) {}
 
 template <typename T>
 inline ZListNode<T>::~ZListNode() {
-  set_unused();
+  verify_links_unlinked();
 }
 
 template <typename T>
-inline bool ZListNode<T>::is_unused() const {
-  return _next == NULL && _prev == NULL;
+inline void ZListNode<T>::verify_links() const {
+  assert(_next->_prev == this, "Corrupt list node");
+  assert(_prev->_next == this, "Corrupt list node");
 }
 
 template <typename T>
-inline void ZList<T>::verify() const {
-  assert(_head._next->_prev == &_head, "List corrupt");
-  assert(_head._prev->_next == &_head, "List corrupt");
+inline void ZListNode<T>::verify_links_linked() const {
+  assert(_next != this, "Should be in a list");
+  assert(_prev != this, "Should be in a list");
+  verify_links();
+}
+
+template <typename T>
+inline void ZListNode<T>::verify_links_unlinked() const {
+  assert(_next == this, "Should not be in a list");
+  assert(_prev == this, "Should not be in a list");
+}
+
+template <typename T>
+inline void ZList<T>::verify_head() const {
+  _head.verify_links();
 }
 
 template <typename T>
 inline void ZList<T>::insert(ZListNode<T>* before, ZListNode<T>* node) {
-  verify();
+  verify_head();
 
-  assert(node->is_unused(), "Already in a list");
+  before->verify_links();
+  node->verify_links_unlinked();
+
   node->_prev = before;
   node->_next = before->_next;
   before->_next = node;
   node->_next->_prev = node;
+
+  before->verify_links_linked();
+  node->verify_links_linked();
 
   _size++;
 }
@@ -84,20 +91,20 @@ inline T* ZList<T>::cast_to_outer(ZListNode<T>* node) const {
 
 template <typename T>
 inline ZList<T>::ZList() :
-    _head(&_head, &_head),
+    _head(),
     _size(0) {
-  verify();
+  verify_head();
 }
 
 template <typename T>
 inline size_t ZList<T>::size() const {
-  verify();
+  verify_head();
   return _size;
 }
 
 template <typename T>
 inline bool ZList<T>::is_empty() const {
-  return _size == 0;
+  return size() == 0;
 }
 
 template <typename T>
@@ -112,15 +119,27 @@ inline T* ZList<T>::last() const {
 
 template <typename T>
 inline T* ZList<T>::next(T* elem) const {
-  verify();
-  ZListNode<T>* next = cast_to_inner(elem)->_next;
+  verify_head();
+
+  ZListNode<T>* const node = cast_to_inner(elem);
+  node->verify_links_linked();
+
+  ZListNode<T>* const next = node->_next;
+  next->verify_links_linked();
+
   return (next == &_head) ? NULL : cast_to_outer(next);
 }
 
 template <typename T>
 inline T* ZList<T>::prev(T* elem) const {
-  verify();
-  ZListNode<T>* prev = cast_to_inner(elem)->_prev;
+  verify_head();
+
+  ZListNode<T>* const node = cast_to_inner(elem);
+  node->verify_links_linked();
+
+  ZListNode<T>* const prev = node->_prev;
+  prev->verify_links_linked();
+
   return (prev == &_head) ? NULL : cast_to_outer(prev);
 }
 
@@ -146,19 +165,24 @@ inline void ZList<T>::insert_after(T* after, T* elem) {
 
 template <typename T>
 inline void ZList<T>::remove(T* elem) {
-  verify();
+  verify_head();
 
   ZListNode<T>* const node = cast_to_inner(elem);
-  assert(!node->is_unused(), "Not in a list");
+  node->verify_links_linked();
 
   ZListNode<T>* const next = node->_next;
   ZListNode<T>* const prev = node->_prev;
-  assert(next->_prev == node, "List corrupt");
-  assert(prev->_next == node, "List corrupt");
+  next->verify_links_linked();
+  prev->verify_links_linked();
 
-  prev->_next = next;
+  node->_next = prev->_next;
+  node->_prev = next->_prev;
+  node->verify_links_unlinked();
+
   next->_prev = prev;
-  node->set_unused();
+  prev->_next = next;
+  next->verify_links();
+  prev->verify_links();
 
   _size--;
 }
@@ -181,28 +205,6 @@ inline T* ZList<T>::remove_last() {
   }
 
   return elem;
-}
-
-template <typename T>
-inline void ZList<T>::transfer(ZList<T>* list) {
-  verify();
-
-  if (!list->is_empty()) {
-    list->_head._next->_prev = _head._prev;
-    list->_head._prev->_next = _head._prev->_next;
-
-    _head._prev->_next = list->_head._next;
-    _head._prev = list->_head._prev;
-
-    list->_head._next = &list->_head;
-    list->_head._prev = &list->_head;
-
-    _size += list->_size;
-    list->_size = 0;
-
-    list->verify();
-    verify();
-  }
 }
 
 template <typename T, bool Forward>
@@ -231,17 +233,5 @@ inline bool ZListRemoveIteratorImpl<T, Forward>::next(T** elem) {
   *elem = Forward ? _list->remove_first() : _list->remove_last();
   return *elem != NULL;
 }
-
-template <typename T>
-inline ZListIterator<T>::ZListIterator(const ZList<T>* list) :
-    ZListIteratorImpl<T, ZLIST_FORWARD>(list) {}
-
-template <typename T>
-inline ZListReverseIterator<T>::ZListReverseIterator(const ZList<T>* list) :
-    ZListIteratorImpl<T, ZLIST_REVERSE>(list) {}
-
-template <typename T>
-inline ZListRemoveIterator<T>::ZListRemoveIterator(ZList<T>* list) :
-    ZListRemoveIteratorImpl<T, ZLIST_FORWARD>(list) {}
 
 #endif // SHARE_GC_Z_ZLIST_INLINE_HPP

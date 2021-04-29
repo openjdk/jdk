@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.reflect.Array;
@@ -53,7 +54,9 @@ class Invokers {
             INV_EXACT          =  0,  // MethodHandles.exactInvoker
             INV_GENERIC        =  1,  // MethodHandles.invoker (generic invocation)
             INV_BASIC          =  2,  // MethodHandles.basicInvoker
-            INV_LIMIT          =  3;
+            VH_INV_EXACT       =  3,  // MethodHandles.varHandleExactInvoker
+            VH_INV_GENERIC     =  VH_INV_EXACT   + VarHandle.AccessMode.values().length,  // MethodHandles.varHandleInvoker
+            INV_LIMIT          =  VH_INV_GENERIC + VarHandle.AccessMode.values().length;
 
     /** Compute and cache information common to all collecting adapters
      *  that implement members of the erasure-family of the given erased type.
@@ -100,14 +103,20 @@ class Invokers {
 
     /*non-public*/
     MethodHandle varHandleMethodInvoker(VarHandle.AccessMode ak) {
-        // TODO cache invoker
-        return makeVarHandleMethodInvoker(ak, false);
+        boolean isExact = false;
+        MethodHandle invoker = cachedVHInvoker(isExact, ak);
+        if (invoker != null)  return invoker;
+        invoker = makeVarHandleMethodInvoker(ak, isExact);
+        return setCachedVHInvoker(isExact, ak, invoker);
     }
 
     /*non-public*/
     MethodHandle varHandleMethodExactInvoker(VarHandle.AccessMode ak) {
-        // TODO cache invoker
-        return makeVarHandleMethodInvoker(ak, true);
+        boolean isExact = true;
+        MethodHandle invoker = cachedVHInvoker(isExact, ak);
+        if (invoker != null)  return invoker;
+        invoker = makeVarHandleMethodInvoker(ak, isExact);
+        return setCachedVHInvoker(isExact, ak, invoker);
     }
 
     private MethodHandle cachedInvoker(int idx) {
@@ -119,6 +128,16 @@ class Invokers {
         MethodHandle prev = invokers[idx];
         if (prev != null)  return prev;
         return invokers[idx] = invoker;
+    }
+
+    private MethodHandle cachedVHInvoker(boolean isExact, VarHandle.AccessMode ak) {
+        int baseIndex = (isExact ? VH_INV_EXACT : VH_INV_GENERIC);
+        return cachedInvoker(baseIndex + ak.ordinal());
+    }
+
+    private MethodHandle setCachedVHInvoker(boolean isExact, VarHandle.AccessMode ak, final MethodHandle invoker) {
+        int baseIndex = (isExact ? VH_INV_EXACT : VH_INV_GENERIC);
+        return setCachedInvoker(baseIndex + ak.ordinal(), invoker);
     }
 
     private MethodHandle makeExactOrGeneralInvoker(boolean isExact) {
@@ -138,7 +157,7 @@ class Invokers {
         MethodType mtype = targetType;
         MethodType invokerType = mtype.insertParameterTypes(0, VarHandle.class);
 
-        LambdaForm lform = varHandleMethodInvokerHandleForm(ak, mtype, isExact);
+        LambdaForm lform = varHandleMethodInvokerHandleForm(mtype, isExact);
         VarHandle.AccessDescriptor ad = new VarHandle.AccessDescriptor(mtype, ak.at.ordinal(), ak.ordinal());
         MethodHandle invoker = BoundMethodHandle.bindSingle(invokerType, lform, ad);
 
@@ -345,20 +364,22 @@ class Invokers {
     }
 
 
-    static MemberName varHandleInvokeLinkerMethod(VarHandle.AccessMode ak, MethodType mtype) {
-        LambdaForm lform;
-        if (mtype.parameterSlotCount() <= MethodType.MAX_MH_ARITY - MH_LINKER_ARG_APPENDED) {
-            lform = varHandleMethodGenericLinkerHandleForm(ak, mtype);
-        } else {
-            // TODO
+    static MemberName varHandleInvokeLinkerMethod(MethodType mtype) {
+        if (mtype.parameterSlotCount() > MethodType.MAX_MH_ARITY - MH_LINKER_ARG_APPENDED) {
             throw newInternalError("Unsupported parameter slot count " + mtype.parameterSlotCount());
         }
+        LambdaForm lform = varHandleMethodGenericLinkerHandleForm(mtype);
         return lform.vmentry;
     }
 
-    private static LambdaForm varHandleMethodGenericLinkerHandleForm(VarHandle.AccessMode ak,
-            MethodType mtype) {
-        // TODO Cache form?
+    private static LambdaForm varHandleMethodGenericLinkerHandleForm(MethodType mtype) {
+        mtype = mtype.basicType();  // normalize Z to I, String to Object, etc.
+
+        int which = MethodTypeForm.LF_VH_GEN_LINKER;
+        LambdaForm lform = mtype.form().cachedLambdaForm(which);
+        if (lform != null) {
+            return lform;
+        }
 
         final int THIS_VH      = 0;
         final int ARG_BASE     = THIS_VH + 1;
@@ -395,19 +416,26 @@ class Invokers {
         MethodType outCallType = mtype.insertParameterTypes(0, VarHandle.class)
                 .basicType();
         names[LINKER_CALL] = new Name(outCallType, outArgs);
-        LambdaForm lform = new LambdaForm(ARG_LIMIT + 1, names, VARHANDLE_LINKER);
+        lform = new LambdaForm(ARG_LIMIT + 1, names, VARHANDLE_LINKER);
         if (LambdaForm.debugNames()) {
-            String name = ak.methodName() + ":VarHandle_invoke_MT_" +
-                    shortenSignature(basicTypeSignature(mtype));
+            String name = "VarHandle_invoke_MT_" + shortenSignature(basicTypeSignature(mtype));
             LambdaForm.associateWithDebugName(lform, name);
         }
         lform.compileToBytecode();
+
+        lform = mtype.form().setCachedLambdaForm(which, lform);
+
         return lform;
     }
 
-    private static LambdaForm varHandleMethodInvokerHandleForm(VarHandle.AccessMode ak,
-            MethodType mtype, boolean isExact) {
-        // TODO Cache form?
+    private static LambdaForm varHandleMethodInvokerHandleForm(MethodType mtype, boolean isExact) {
+        mtype = mtype.basicType();  // normalize Z to I, String to Object, etc.
+
+        int which = (isExact ? MethodTypeForm.LF_VH_EX_INVOKER : MethodTypeForm.LF_VH_GEN_INVOKER);
+        LambdaForm lform = mtype.form().cachedLambdaForm(which);
+        if (lform != null) {
+            return lform;
+        }
 
         final int THIS_MH      = 0;
         final int CALL_VH      = THIS_MH + 1;
@@ -447,32 +475,36 @@ class Invokers {
         }
 
         MethodType outCallType = mtype.insertParameterTypes(0, VarHandle.class)
-                .basicType();
+                                      .basicType();
         names[LINKER_CALL] = new Name(outCallType, outArgs);
         Kind kind = isExact ? VARHANDLE_EXACT_INVOKER : VARHANDLE_INVOKER;
-        LambdaForm lform = new LambdaForm(ARG_LIMIT, names, kind);
+        lform = new LambdaForm(ARG_LIMIT, names, kind);
         if (LambdaForm.debugNames()) {
-            String name = ak.methodName() +
-                    (isExact ? ":VarHandle_exactInvoker_" : ":VarHandle_invoker_") +
-                    shortenSignature(basicTypeSignature(mtype));
+            String name = (isExact ? "VarHandle_exactInvoker_" : "VarHandle_invoker_") + shortenSignature(basicTypeSignature(mtype));
             LambdaForm.associateWithDebugName(lform, name);
         }
         lform.prepare();
+
+        lform = mtype.form().setCachedLambdaForm(which, lform);
+
         return lform;
     }
 
     @ForceInline
     /*non-public*/
+    @Hidden
     static MethodHandle checkVarHandleGenericType(VarHandle handle, VarHandle.AccessDescriptor ad) {
+        if (handle.hasInvokeExactBehavior() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
+            throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.type) + " but found "
+                    + ad.symbolicMethodTypeExact);
+        }
         // Test for exact match on invoker types
         // TODO match with erased types and add cast of return value to lambda form
         MethodHandle mh = handle.getMethodHandle(ad.mode);
-        if (mh.type() == ad.symbolicMethodTypeInvoker) {
-            return mh;
-        }
-        else {
+        if (mh.type() != ad.symbolicMethodTypeInvoker) {
             return mh.asType(ad.symbolicMethodTypeInvoker);
         }
+        return mh;
     }
 
     @ForceInline
@@ -590,21 +622,17 @@ class Invokers {
     @ForceInline
     /*non-public*/
     static void checkCustomized(MethodHandle mh) {
-        if (MethodHandleImpl.isCompileConstant(mh)) return;
-        if (mh.form.customized == null) {
-            maybeCustomize(mh);
+        if (MethodHandleImpl.isCompileConstant(mh)) {
+            return; // no need to customize a MH when the instance is known to JIT
+        }
+        if (mh.form.customized == null) { // fast approximate check that the underlying form is already customized
+            maybeCustomize(mh); // marked w/ @DontInline
         }
     }
 
     @DontInline
-    /*non-public*/
     static void maybeCustomize(MethodHandle mh) {
-        byte count = mh.customizationCount;
-        if (count >= CUSTOMIZE_THRESHOLD) {
-            mh.customize();
-        } else {
-            mh.customizationCount = (byte)(count+1);
-        }
+        mh.maybeCustomize();
     }
 
     // Local constant functions:

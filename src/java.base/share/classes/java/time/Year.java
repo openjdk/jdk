@@ -119,12 +119,12 @@ import java.util.Objects;
  * For most applications written today, the ISO-8601 rules are entirely suitable.
  * However, any application that makes use of historical dates, and requires them
  * to be accurate will find the ISO-8601 approach unsuitable.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code Year} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -132,6 +132,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class Year
         implements Temporal, TemporalAdjuster, Comparable<Year>, Serializable {
 
@@ -495,8 +496,8 @@ public final class Year
      */
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
+        if (field instanceof ChronoField chronoField) {
+            switch (chronoField) {
                 case YEAR_OF_ERA: return (year < 1 ? 1 - year : year);
                 case YEAR: return year;
                 case ERA: return (year < 1 ? 0 : 1);
@@ -618,10 +619,9 @@ public final class Year
      */
     @Override
     public Year with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            f.checkValidValue(newValue);
-            switch (f) {
+        if (field instanceof ChronoField chronoField) {
+            chronoField.checkValidValue(newValue);
+            switch (chronoField) {
                 case YEAR_OF_ERA: return Year.of((int) (year < 1 ? 1 - newValue : newValue));
                 case YEAR: return Year.of((int) newValue);
                 case ERA: return (getLong(ERA) == newValue ? this : Year.of(1 - year));
@@ -707,8 +707,8 @@ public final class Year
      */
     @Override
     public Year plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            switch ((ChronoUnit) unit) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            switch (chronoUnit) {
                 case YEARS: return plusYears(amountToAdd);
                 case DECADES: return plusYears(Math.multiplyExact(amountToAdd, 10));
                 case CENTURIES: return plusYears(Math.multiplyExact(amountToAdd, 100));
@@ -913,9 +913,9 @@ public final class Year
     @Override
     public long until(Temporal endExclusive, TemporalUnit unit) {
         Year end = Year.from(endExclusive);
-        if (unit instanceof ChronoUnit) {
+        if (unit instanceof ChronoUnit chronoUnit) {
             long yearsUntil = ((long) end.year) - year;  // no overflow
-            switch ((ChronoUnit) unit) {
+            switch (chronoUnit) {
                 case YEARS: return yearsUntil;
                 case DECADES: return yearsUntil / 10;
                 case CENTURIES: return yearsUntil / 100;

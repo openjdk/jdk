@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,14 @@
 
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/java.hpp"
@@ -89,7 +92,7 @@ void HotSpotJVMCI::compute_offset(int &dest_offset, Klass* klass, const char* na
 
 #ifndef PRODUCT
 static void check_resolve_method(const char* call_type, Klass* resolved_klass, Symbol* method_name, Symbol* method_signature, TRAPS) {
-  Method* method;
+  Method* method = NULL;
   LinkInfo link_info(resolved_klass, method_name, method_signature, NULL, LinkInfo::AccessCheck::skip, LinkInfo::LoaderConstraintCheck::skip);
   if (strcmp(call_type, "call_static") == 0) {
     method = LinkResolver::resolve_static_call_or_null(link_info);
@@ -384,7 +387,7 @@ class ThrowableInitDumper : public SymbolClosure {
     Klass* k = SystemDictionary::resolve_or_null(name, CHECK_EXIT);
     if (k != NULL && k->is_instance_klass()) {
       InstanceKlass* iklass = InstanceKlass::cast(k);
-      if (iklass->is_subclass_of(SystemDictionary::Throwable_klass()) && iklass->is_public() && !iklass->is_abstract()) {
+      if (iklass->is_subclass_of(vmClasses::Throwable_klass()) && iklass->is_public() && !iklass->is_abstract()) {
         const char* class_name = NULL;
         Array<Method*>* methods = iklass->methods();
         for (int i = 0; i < methods->length(); i++) {

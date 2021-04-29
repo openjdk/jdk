@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,13 @@
 
 package sun.jvm.hotspot.debugger.remote;
 
+import java.io.*;
 import java.rmi.*;
 import java.rmi.server.*;
+import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.tools.*;
 
 /** The implementation of the RemoteDebugger interface. This
     delegates to a local debugger */
@@ -35,7 +38,7 @@ import sun.jvm.hotspot.debugger.*;
 public class RemoteDebuggerServer extends UnicastRemoteObject
   implements RemoteDebugger {
 
-  private transient Debugger debugger;
+  private transient JVMDebugger debugger;
 
   /** This is the required no-arg constructor */
   public RemoteDebuggerServer() throws RemoteException {
@@ -44,14 +47,14 @@ public class RemoteDebuggerServer extends UnicastRemoteObject
 
   /** This is the constructor used on the machine where the debuggee
    process lies that accepts an RMI connector port */
-  public RemoteDebuggerServer(Debugger debugger, int port) throws RemoteException {
+  public RemoteDebuggerServer(JVMDebugger debugger, int port) throws RemoteException {
     super(port);
     this.debugger = debugger;
   }
 
   /** This is the constructor used on the machine where the debuggee
    process lies */
-  public RemoteDebuggerServer(Debugger debugger) throws RemoteException {
+  public RemoteDebuggerServer(JVMDebugger debugger) throws RemoteException {
     this(debugger, 0);
   }
 
@@ -174,5 +177,24 @@ public class RemoteDebuggerServer extends UnicastRemoteObject
      } else {
         return debugger.getThreadForThreadId(addrOrId);
      }
+  }
+
+  @Override
+  public String execCommandOnServer(String command, Map<String, Object> options) throws RemoteException {
+    ByteArrayOutputStream bout = new ByteArrayOutputStream();
+    try (var out = new PrintStream(bout)) {
+      if (command.equals("pmap")) {
+        (new PMap(debugger)).run(out, debugger);
+      } else if (command.equals("pstack")) {
+        PStack pstack = new PStack(debugger);
+        pstack.setVerbose(false);
+        pstack.setConcurrentLocks((boolean)options.get("concurrentLocks"));
+        pstack.run(out, debugger);
+      } else {
+        throw new DebuggerException(command + " is not supported in this debugger");
+      }
+    }
+
+    return bout.toString();
   }
 }

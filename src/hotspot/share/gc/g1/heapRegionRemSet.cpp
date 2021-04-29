@@ -39,6 +39,7 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 const char* HeapRegionRemSet::_state_strings[] =  {"Untracked", "Updating", "Complete"};
 const char* HeapRegionRemSet::_short_state_strings[] =  {"UNTRA", "UPDAT", "CMPLT"};
@@ -83,7 +84,7 @@ OtherRegionsTable::OtherRegionsTable(Mutex* m) :
 
   if (_max_fine_entries == 0) {
     assert(_mod_max_fine_entries_mask == 0, "Both or none.");
-    size_t max_entries_log = (size_t)log2_long((jlong)G1RSetRegionEntries);
+    size_t max_entries_log = (size_t)log2i(G1RSetRegionEntries);
     _max_fine_entries = (size_t)1 << max_entries_log;
     _mod_max_fine_entries_mask = _max_fine_entries - 1;
 
@@ -144,6 +145,13 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   PerRegionTable* prt = find_region_table(ind, from_hr);
   if (prt == NULL) {
     MutexLocker x(_m, Mutex::_no_safepoint_check_flag);
+
+    // Rechecking if the region is coarsened, while holding the lock.
+    if (is_region_coarsened(from_hrm_ind)) {
+      assert(contains_reference_locked(from), "We just found " PTR_FORMAT " in the Coarse table", p2i(from));
+      return;
+    }
+
     // Confirm that it's really not there...
     prt = find_region_table(ind, from_hr);
     if (prt == NULL) {
@@ -158,6 +166,8 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
         assert(contains_reference_locked(from), "We just added " PTR_FORMAT " to the Sparse table", p2i(from));
         return;
       }
+
+      // Sparse PRT returned overflow (sparse table is full)
 
       if (_n_fine_entries == _max_fine_entries) {
         prt = delete_region_table(num_added_by_coarsening);

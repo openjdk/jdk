@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcArguments.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shenandoah/shenandoahArguments.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -47,7 +48,7 @@ void ShenandoahArguments::initialize() {
 
   FLAG_SET_DEFAULT(ShenandoahSATBBarrier,            false);
   FLAG_SET_DEFAULT(ShenandoahLoadRefBarrier,         false);
-  FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, false);
+  FLAG_SET_DEFAULT(ShenandoahIUBarrier,              false);
   FLAG_SET_DEFAULT(ShenandoahCASBarrier,             false);
   FLAG_SET_DEFAULT(ShenandoahCloneBarrier,           false);
 
@@ -110,10 +111,6 @@ void ShenandoahArguments::initialize() {
     }
   }
 
-  if (FLAG_IS_DEFAULT(ParallelRefProcEnabled)) {
-    FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
-  }
-
   if (ShenandoahRegionSampling && FLAG_IS_DEFAULT(PerfDataMemorySize)) {
     // When sampling is enabled, max out the PerfData memory to get more
     // Shenandoah data in, including Matrix.
@@ -133,7 +130,7 @@ void ShenandoahArguments::initialize() {
   if (ShenandoahVerifyOptoBarriers &&
           (!FLAG_IS_DEFAULT(ShenandoahSATBBarrier)            ||
            !FLAG_IS_DEFAULT(ShenandoahLoadRefBarrier)         ||
-           !FLAG_IS_DEFAULT(ShenandoahStoreValEnqueueBarrier) ||
+           !FLAG_IS_DEFAULT(ShenandoahIUBarrier)              ||
            !FLAG_IS_DEFAULT(ShenandoahCASBarrier)             ||
            !FLAG_IS_DEFAULT(ShenandoahCloneBarrier)
           )) {
@@ -158,14 +155,6 @@ void ShenandoahArguments::initialize() {
   // If class unloading is disabled, no unloading for concurrent cycles as well.
   if (!ClassUnloading) {
     FLAG_SET_DEFAULT(ClassUnloadingWithConcurrentMark, false);
-  }
-
-  // AOT is not supported yet
-  if (UseAOT) {
-    if (!FLAG_IS_DEFAULT(UseAOT)) {
-      warning("Shenandoah does not support AOT at this moment, disabling UseAOT");
-    }
-    FLAG_SET_DEFAULT(UseAOT, false);
   }
 
   // TLAB sizing policy makes resizing decisions before each GC cycle. It averages

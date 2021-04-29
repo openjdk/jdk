@@ -44,7 +44,7 @@ import java.util.Arrays;
 
 import static org.junit.Assert.*;
 
-public class MethodHandlesPermuteArgumentsTest extends MethodHandlesTest {
+public class MethodHandlesPermuteArgumentsTest extends test.java.lang.invoke.MethodHandlesTest {
 
     @Test // SLOW
     public void testPermuteArguments() throws Throwable {
@@ -58,6 +58,13 @@ public class MethodHandlesPermuteArgumentsTest extends MethodHandlesTest {
         if (CAN_TEST_LIGHTLY)  return;
         testPermuteArguments(4, Integer.class, 2, String.class, 0);
         testPermuteArguments(6, Integer.class, 0, null, 30);
+
+        testBadReorderArrayLength();
+        testBadReorderIndex();
+        testReturnTypeMismatch();
+        testReorderTypeMismatch();
+
+        testPermuteWithEmpty();
     }
 
     public void testPermuteArguments(int max, Class<?> type1, int t2c, Class<?> type2, int dilution) throws Throwable {
@@ -190,5 +197,64 @@ public class MethodHandlesPermuteArgumentsTest extends MethodHandlesTest {
             System.out.println("bad args:  "+result);
         }
         assertEquals(expected, result);
+    }
+
+    public void testBadReorderArrayLength() throws Throwable {
+        MethodHandle mh = MethodHandles.empty(MethodType.methodType(void.class, int.class, int.class, String.class));
+        MethodType newType = MethodType.methodType(void.class, int.class, String.class);
+        assertThrows(() -> MethodHandles.permuteArguments(mh, newType, 0, 1),
+                IllegalArgumentException.class, ".*old type parameter count and reorder array length do not match.*");
+    }
+
+    public void testBadReorderIndex() throws Throwable {
+        MethodHandle mh = MethodHandles.empty(MethodType.methodType(void.class, int.class, int.class, String.class));
+        MethodType newType = MethodType.methodType(void.class, int.class, String.class);
+        assertThrows(() -> MethodHandles.permuteArguments(mh, newType, 0, 0, 2),
+                IllegalArgumentException.class, ".*index is out of bounds for new type.*");
+        assertThrows(() -> MethodHandles.permuteArguments(mh, newType, 0, 0, -1),
+                IllegalArgumentException.class, ".*index is out of bounds for new type.*");
+    }
+
+    public void testReturnTypeMismatch() throws Throwable {
+        MethodHandle mh = MethodHandles.empty(MethodType.methodType(void.class, int.class, int.class, String.class));
+        MethodType newType = MethodType.methodType(int.class, int.class, String.class);
+        assertThrows(() -> MethodHandles.permuteArguments(mh, newType, 0, 0, 1),
+                IllegalArgumentException.class, ".*return types do not match.*");
+    }
+
+    public void testReorderTypeMismatch() throws Throwable {
+        MethodHandle mh = MethodHandles.empty(MethodType.methodType(void.class, int.class, int.class, String.class));
+        MethodType newType = MethodType.methodType(void.class, double.class, String.class);
+        assertThrows(() -> MethodHandles.permuteArguments(mh, newType, 0, 0, 1),
+                IllegalArgumentException.class, ".*parameter types do not match after reorder.*");
+    }
+
+    // for JDK-8255531
+    private void testPermuteWithEmpty() {
+        MethodHandle mh = MethodHandles.empty(MethodType.methodType(void.class, int.class, int.class));
+        MethodHandles.permuteArguments(mh, MethodType.methodType(void.class, int.class), 0, 0);
+    }
+
+    private interface RunnableX {
+        void run() throws Throwable;
+    }
+
+    private static void assertThrows(RunnableX r, Class<?> exceptionClass, String messagePattern) throws Throwable {
+        try {
+            r.run();
+            fail("Exception expected");
+        } catch (Throwable e) {
+            if (exceptionClass.isInstance(e)) {
+                assertMatches(e.getMessage(), messagePattern);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    private static void assertMatches(String str, String pattern) {
+        if (!str.matches(pattern)) {
+            throw new AssertionError("'" + str + "' did not match the pattern '" + pattern + "'.");
+        }
     }
 }

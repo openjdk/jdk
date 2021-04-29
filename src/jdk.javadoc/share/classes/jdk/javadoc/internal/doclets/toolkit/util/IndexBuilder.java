@@ -163,12 +163,18 @@ public class IndexBuilder {
     public void add(IndexItem item) {
         Objects.requireNonNull(item);
 
-        itemsByFirstChar.computeIfAbsent(keyCharacter(item.getLabel()),
+        if (item.isElementItem() || item.isTagItem()) {
+            // don't put summary-page items in the A-Z index:
+            // they are listed separately, at the top of the index page
+            itemsByFirstChar.computeIfAbsent(keyCharacter(item.getLabel()),
                     c -> new TreeSet<>(mainComparator))
-                .add(item);
+                    .add(item);
+        }
 
         itemsByCategory.computeIfAbsent(item.getCategory(),
-                    c -> new TreeSet<>(mainComparator))
+                    c -> new TreeSet<>(c == IndexItem.Category.TYPES
+                            ? makeTypeSearchIndexComparator()
+                            : makeGenericSearchIndexComparator()))
                 .add(item);
     }
 
@@ -184,7 +190,7 @@ public class IndexBuilder {
     }
 
     /**
-     * Returns a list of index keys.
+     * Returns a sorted list of the first characters of the labels of index items.
      */
     public List<Character> getFirstCharacters() {
         return new ArrayList<>(itemsByFirstChar.keySet());
@@ -210,7 +216,7 @@ public class IndexBuilder {
     public SortedSet<IndexItem> getItems(DocTree.Kind kind) {
         Objects.requireNonNull(kind);
         return itemsByCategory.getOrDefault(IndexItem.Category.TAGS, Collections.emptySortedSet()).stream()
-                .filter(i -> i.getDocTree().getKind() == kind)
+                .filter(i -> i.isKind(kind))
                 .collect(Collectors.toCollection(() -> new TreeSet<>(mainComparator)));
     }
 
@@ -340,4 +346,28 @@ public class IndexBuilder {
         };
     }
 
+    /**
+     * Returns a Comparator for IndexItems in the types category of the search index.
+     * Items are compared by short name, falling back to the main comparator if names are equal.
+     *
+     * @return a Comparator
+     */
+    public Comparator<IndexItem> makeTypeSearchIndexComparator() {
+        Comparator<IndexItem> simpleNameComparator =
+                (ii1, ii2) -> utils.compareStrings(ii1.getSimpleName(), ii2.getSimpleName());
+        return simpleNameComparator.thenComparing(mainComparator);
+    }
+
+    /**
+     * Returns a Comparator for IndexItems in the modules, packages, members, and search tags
+     * categories of the search index.
+     * Items are compared by label, falling back to the main comparator if names are equal.
+     *
+     * @return a Comparator
+     */
+    public Comparator<IndexItem> makeGenericSearchIndexComparator() {
+        Comparator<IndexItem> labelComparator =
+                (ii1, ii2) -> utils.compareStrings(ii1.getLabel(), ii2.getLabel());
+        return labelComparator.thenComparing(mainComparator);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,6 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      *         allow creation of a class loader.
      *
      * @since 9
-     * @spec JPMS
      */
     public URLClassLoader(String name,
                           URL[] urls,
@@ -237,7 +236,6 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      *         creation of a class loader.
      *
      * @since 9
-     * @spec JPMS
      */
     public URLClassLoader(String name, URL[] urls, ClassLoader parent,
                           URLStreamHandlerFactory factory) {
@@ -290,8 +288,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
             }
             URLConnection urlc = url.openConnection();
             InputStream is = urlc.getInputStream();
-            if (urlc instanceof JarURLConnection) {
-                JarURLConnection juc = (JarURLConnection)urlc;
+            if (urlc instanceof JarURLConnection juc) {
                 JarFile jar = juc.getJarFile();
                 synchronized (closeables) {
                     if (!closeables.containsKey(jar)) {
@@ -531,7 +528,6 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @return      the newly defined {@code Package} object
      *
      * @revised 9
-     * @spec JPMS
      */
     protected Package definePackage(String name, Manifest man, URL url) {
         String specTitle = null, specVersion = null, specVendor = null;

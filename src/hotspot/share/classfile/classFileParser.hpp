@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,7 @@ class ClassFileParser {
                                   ConstantPool* cp,
                                   TRAPS);
 
-  void prepend_host_package_name(const InstanceKlass* unsafe_anonymous_host, TRAPS);
+  void prepend_host_package_name(Thread* current, const InstanceKlass* unsafe_anonymous_host);
   void fix_unsafe_anonymous_class_name(TRAPS);
 
   void fill_instance_klass(InstanceKlass* ik, bool cf_changed_in_CFLH,
@@ -228,7 +228,7 @@ class ClassFileParser {
 
   void create_combined_annotations(TRAPS);
   void apply_parsed_class_attributes(InstanceKlass* k);  // update k
-  void apply_parsed_class_metadata(InstanceKlass* k, int fields_count, TRAPS);
+  void apply_parsed_class_metadata(InstanceKlass* k, int fields_count);
   void clear_class_metadata();
 
   // Constant pool parsing
@@ -317,7 +317,11 @@ class ClassFileParser {
                                                         int length,
                                                         TRAPS);
 
+  // Check for circularity in InnerClasses attribute.
+  bool check_inner_classes_circularity(const ConstantPool* cp, int length, TRAPS);
+
   u2   parse_classfile_inner_classes_attribute(const ClassFileStream* const cfs,
+                                               const ConstantPool* cp,
                                                const u1* const inner_classes_attribute_start,
                                                bool parsed_enclosingmethod_attribute,
                                                u2 enclosing_method_class_index,
@@ -345,7 +349,7 @@ class ClassFileParser {
                                   ClassAnnotationCollector* parsed_annotations,
                                   TRAPS);
 
-  void parse_classfile_synthetic_attribute(TRAPS);
+  void parse_classfile_synthetic_attribute();
   void parse_classfile_signature_attribute(const ClassFileStream* const cfs, TRAPS);
   void parse_classfile_bootstrap_methods_attribute(const ClassFileStream* const cfs,
                                                    ConstantPool* cp,
@@ -374,8 +378,18 @@ class ClassFileParser {
                              const char* signature,
                              TRAPS) const;
 
+  void classfile_icce_error(const char* msg,
+                            const Klass* k,
+                            TRAPS) const;
+
+  void classfile_ucve_error(const char* msg,
+                            const Symbol* class_name,
+                            u2 major,
+                            u2 minor,
+                            TRAPS) const;
+
   inline void guarantee_property(bool b, const char* msg, TRAPS) const {
-    if (!b) { classfile_parse_error(msg, CHECK); }
+    if (!b) { classfile_parse_error(msg, THREAD); return; }
   }
 
   void report_assert_property_failure(const char* msg, TRAPS) const PRODUCT_RETURN;
@@ -420,14 +434,14 @@ class ClassFileParser {
                                  const char* msg,
                                  int index,
                                  TRAPS) const {
-    if (!b) { classfile_parse_error(msg, index, CHECK); }
+    if (!b) { classfile_parse_error(msg, index, THREAD); return; }
   }
 
   inline void guarantee_property(bool b,
                                  const char* msg,
                                  const char *name,
                                  TRAPS) const {
-    if (!b) { classfile_parse_error(msg, name, CHECK); }
+    if (!b) { classfile_parse_error(msg, name, THREAD); return; }
   }
 
   inline void guarantee_property(bool b,
@@ -435,7 +449,7 @@ class ClassFileParser {
                                  int index,
                                  const char *name,
                                  TRAPS) const {
-    if (!b) { classfile_parse_error(msg, index, name, CHECK); }
+    if (!b) { classfile_parse_error(msg, index, name, THREAD); return; }
   }
 
   void throwIllegalSignature(const char* type,
@@ -460,12 +474,20 @@ class ClassFileParser {
                                      const Symbol* signature,
                                      TRAPS) const;
 
+  void verify_class_version(u2 major, u2 minor, Symbol* class_name, TRAPS);
+
   void verify_legal_class_modifiers(jint flags, TRAPS) const;
   void verify_legal_field_modifiers(jint flags, bool is_interface, TRAPS) const;
   void verify_legal_method_modifiers(jint flags,
                                      bool is_interface,
                                      const Symbol* name,
                                      TRAPS) const;
+
+  void check_super_class_access(const InstanceKlass* this_klass,
+                                TRAPS);
+
+  void check_super_interface_access(const InstanceKlass* this_klass,
+                                    TRAPS);
 
   const char* skip_over_field_signature(const char* signature,
                                         bool void_ok,

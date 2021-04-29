@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.security.Provider;
 public class Providers {
 
     private static final ThreadLocal<ProviderList> threadLists =
-        new InheritableThreadLocal<>();
+        new ThreadLocal<>();
 
     // number of threads currently using thread-local provider lists
     // tracked to allow an optimization if == 0
@@ -150,6 +150,7 @@ public class Providers {
         } else {
             changeThreadProviderList(newList);
         }
+        JCAUtil.clearDefSecureRandom();
     }
 
     /**
@@ -205,7 +206,7 @@ public class Providers {
 
     /**
      * Methods to manipulate the thread local provider list. It is for use by
-     * JAR verification (see above) and the SunJSSE FIPS mode only.
+     * JAR verification (see above).
      *
      * It should be used as follows:
      *

@@ -44,7 +44,8 @@ class ZeroInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_abstract_entry();
   address generate_math_entry(AbstractInterpreter::MethodKind kind);
   address generate_empty_entry();
-  address generate_accessor_entry();
+  address generate_getter_entry();
+  address generate_setter_entry();
   address generate_Reference_get_entry();
 
  public:

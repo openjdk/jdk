@@ -103,12 +103,12 @@ import java.time.temporal.ValueRange;
  * to create new HijrahDate instances.
  * Alternatively, the {@link #withVariant} method can be used to convert
  * to a new HijrahChronology.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code HijrahDate} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -116,6 +116,7 @@ import java.time.temporal.ValueRange;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class HijrahDate
         extends ChronoLocalDateImpl<HijrahDate>
         implements ChronoLocalDate, Serializable {
@@ -393,12 +394,11 @@ public final class HijrahDate
 
     @Override
     public HijrahDate with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
+        if (field instanceof ChronoField chronoField) {
             // not using checkValidIntValue so EPOCH_DAY and PROLEPTIC_MONTH work
-            chrono.range(f).checkValidValue(newValue, f);    // TODO: validate value
+            chrono.range(chronoField).checkValidValue(newValue, chronoField);    // TODO: validate value
             int nvalue = (int) newValue;
-            switch (f) {
+            switch (chronoField) {
                 case DAY_OF_WEEK: return plusDays(newValue - getDayOfWeek());
                 case ALIGNED_DAY_OF_WEEK_IN_MONTH: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_MONTH));
                 case ALIGNED_DAY_OF_WEEK_IN_YEAR: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_YEAR));
@@ -627,14 +627,11 @@ public final class HijrahDate
         if (this == obj) {
             return true;
         }
-        if (obj instanceof HijrahDate) {
-            HijrahDate otherDate = (HijrahDate) obj;
-            return prolepticYear == otherDate.prolepticYear
+        return (obj instanceof HijrahDate otherDate)
+                && prolepticYear == otherDate.prolepticYear
                 && this.monthOfYear == otherDate.monthOfYear
                 && this.dayOfMonth == otherDate.dayOfMonth
                 && getChronology().equals(otherDate.getChronology());
-        }
-        return false;
     }
 
     /**

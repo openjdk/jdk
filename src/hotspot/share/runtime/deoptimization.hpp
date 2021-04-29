@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_DEOPTIMIZATION_HPP
 #define SHARE_RUNTIME_DEOPTIMIZATION_HPP
 
+#include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/frame.hpp"
 
@@ -41,6 +42,7 @@ template<class E> class GrowableArray;
 
 class Deoptimization : AllStatic {
   friend class VMStructs;
+  friend class EscapeBarrier;
 
  public:
   // What condition caused the deoptimization?
@@ -134,7 +136,8 @@ class Deoptimization : AllStatic {
     Unpack_exception            = 1, // exception is pending
     Unpack_uncommon_trap        = 2, // redo last byte code (C2 only)
     Unpack_reexecute            = 3, // reexecute bytecode (C1 only)
-    Unpack_LIMIT                = 4
+    Unpack_none                 = 4, // not deoptimizing the frame, just reallocating/relocking for JVMTI
+    Unpack_LIMIT                = 5
   };
 
 #if INCLUDE_JVMCI
@@ -152,20 +155,29 @@ class Deoptimization : AllStatic {
   // Revoke biased locks at deopt.
   static void revoke_from_deopt_handler(JavaThread* thread, frame fr, RegisterMap* map);
 
+  static void revoke_for_object_deoptimization(JavaThread* deoptee_thread, frame fr,
+                                               RegisterMap* map, JavaThread* thread);
+
  public:
   // Deoptimizes a frame lazily. Deopt happens on return to the frame.
   static void deoptimize(JavaThread* thread, frame fr, DeoptReason reason = Reason_constraint);
 
 #if INCLUDE_JVMCI
   static address deoptimize_for_missing_exception_handler(CompiledMethod* cm);
-  static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, TRAPS);
 #endif
+
+  static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, TRAPS);
 
   private:
   // Does the actual work for deoptimizing a single frame
   static void deoptimize_single_frame(JavaThread* thread, frame fr, DeoptReason reason);
 
 #if COMPILER2_OR_JVMCI
+  // Deoptimize objects, that is reallocate and relock them, just before they
+  // escape through JVMTI.  The given vframes cover one physical frame.
+  static bool deoptimize_objects_internal(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk,
+                                          bool& realloc_failures);
+
  public:
 
   // Support for restoring non-escaping objects
@@ -173,7 +185,8 @@ class Deoptimization : AllStatic {
   static void reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type);
   static void reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj);
   static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal);
-  static void relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaThread* thread, bool realloc_failures);
+  static bool relock_objects(JavaThread* thread, GrowableArray<MonitorInfo*>* monitors,
+                             JavaThread* deoptee_thread, frame& fr, int exec_mode, bool realloc_failures);
   static void pop_frames_failed_reallocs(JavaThread* thread, vframeArray* array);
   NOT_PRODUCT(static void print_objects(GrowableArray<ScopeValue*>* objects, bool realloc_failures);)
 #endif // COMPILER2_OR_JVMCI
@@ -260,7 +273,7 @@ class Deoptimization : AllStatic {
   // deoptimized frame.
   // @argument thread.     Thread where stub_frame resides.
   // @see OptoRuntime::deoptimization_fetch_unroll_info_C
-  static UnrollBlock* fetch_unroll_info(JavaThread* thread, int exec_mode);
+  static UnrollBlock* fetch_unroll_info(JavaThread* current, int exec_mode);
 
   //** Unpacks vframeArray onto execution stack
   // Called by assembly stub after execution has returned to
@@ -285,9 +298,9 @@ class Deoptimization : AllStatic {
 
   //** Performs an uncommon trap for compiled code.
   // The top most compiler frame is converted into interpreter frames
-  static UnrollBlock* uncommon_trap(JavaThread* thread, jint unloaded_class_index, jint exec_mode);
+  static UnrollBlock* uncommon_trap(JavaThread* current, jint unloaded_class_index, jint exec_mode);
   // Helper routine that enters the VM and may block
-  static void uncommon_trap_inner(JavaThread* thread, jint unloaded_class_index);
+  static void uncommon_trap_inner(JavaThread* current, jint unloaded_class_index);
 
   //** Deoptimizes the frame identified by id.
   // Only called from VMDeoptimizeFrame
@@ -452,7 +465,7 @@ class Deoptimization : AllStatic {
   // class loading support for uncommon trap
   static void load_class_by_index(const constantPoolHandle& constant_pool, int index, TRAPS);
 
-  static UnrollBlock* fetch_unroll_info_helper(JavaThread* thread, int exec_mode);
+  static UnrollBlock* fetch_unroll_info_helper(JavaThread* current, int exec_mode);
 
   static DeoptAction _unloaded_action; // == Action_reinterpret;
   static const char* _trap_reason_name[];
@@ -464,6 +477,7 @@ class Deoptimization : AllStatic {
  public:
   static void update_method_data_from_interpreter(MethodData* trap_mdo, int trap_bci, int reason);
 };
+
 
 class DeoptimizationMarker : StackObj {  // for profiling
   static bool _is_active;

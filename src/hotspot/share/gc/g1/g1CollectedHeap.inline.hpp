@@ -35,6 +35,7 @@
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "runtime/atomic.hpp"
 
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
   return _policy->phase_times();
@@ -64,13 +65,13 @@ size_t G1CollectedHeap::desired_plab_sz(G1HeapRegionAttr dest) {
 // Inline functions for G1CollectedHeap
 
 // Return the region with the given index. It assumes the index is valid.
-inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm->at(index); }
+inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at(index); }
 
 // Return the region with the given index, or NULL if unmapped. It assumes the index is valid.
-inline HeapRegion* G1CollectedHeap::region_at_or_null(uint index) const { return _hrm->at_or_null(index); }
+inline HeapRegion* G1CollectedHeap::region_at_or_null(uint index) const { return _hrm.at_or_null(index); }
 
 inline HeapRegion* G1CollectedHeap::next_region_in_humongous(HeapRegion* hr) const {
-  return _hrm->next_region_in_humongous(hr);
+  return _hrm.next_region_in_humongous(hr);
 }
 
 inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
@@ -81,7 +82,7 @@ inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
 }
 
 inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
-  return _hrm->reserved().start() + index * HeapRegion::GrainWords;
+  return _hrm.reserved().start() + index * HeapRegion::GrainWords;
 }
 
 template <class T>
@@ -90,7 +91,7 @@ inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
   assert(is_in_reserved((const void*) addr),
          "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
          p2i((void*)addr), p2i(reserved().start()), p2i(reserved().end()));
-  return _hrm->addr_to_region((HeapWord*)(void*) addr);
+  return _hrm.addr_to_region((HeapWord*)(void*) addr);
 }
 
 template <class T>
@@ -188,6 +189,18 @@ void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
+bool G1CollectedHeap::evacuation_failed() const {
+  return num_regions_failed_evacuation() > 0;
+}
+
+uint G1CollectedHeap::num_regions_failed_evacuation() const {
+  return Atomic::load(&_num_regions_failed_evacuation);
+}
+
+void G1CollectedHeap::notify_region_failed_evacuation() {
+  Atomic::inc(&_num_regions_failed_evacuation, memory_order_relaxed);
+}
+
 #ifndef PRODUCT
 // Support for G1EvacuationFailureALot
 
@@ -282,7 +295,7 @@ inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const HeapRegion* hr) const {
-   return !is_marked_next(obj) && !hr->is_archive();
+   return !is_marked_next(obj) && !hr->is_closed_archive();
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
@@ -290,12 +303,12 @@ inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
 }
 
 inline void G1CollectedHeap::set_humongous_reclaim_candidate(uint region, bool value) {
-  assert(_hrm->at(region)->is_starts_humongous(), "Must start a humongous object");
+  assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
   _humongous_reclaim_candidates.set_candidate(region, value);
 }
 
 inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
-  assert(_hrm->at(region)->is_starts_humongous(), "Must start a humongous object");
+  assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
   return _humongous_reclaim_candidates.is_candidate(region);
 }
 

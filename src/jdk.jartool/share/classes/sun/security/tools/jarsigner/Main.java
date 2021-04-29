@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -955,9 +955,10 @@ public class Main {
                             SignerInfo si = p7.getSignerInfos()[0];
                             X509Certificate signer = si.getCertificate(p7);
                             String digestAlg = digestMap.get(s);
-                            String sigAlg = AlgorithmId.makeSigAlg(
-                                    si.getDigestAlgorithmId().getName(),
-                                    si.getDigestEncryptionAlgorithmId().getName());
+                            String sigAlg = SignerInfo.makeSigAlg(
+                                    si.getDigestAlgorithmId(),
+                                    si.getDigestEncryptionAlgorithmId(),
+                                    si.getAuthenticatedAttributes() == null);
                             PublicKey key = signer.getPublicKey();
                             PKCS7 tsToken = si.getTsToken();
                             if (tsToken != null) {
@@ -968,9 +969,10 @@ public class Main {
                                 TimestampToken tsTokenInfo = new TimestampToken(encTsTokenInfo);
                                 PublicKey tsKey = tsSigner.getPublicKey();
                                 String tsDigestAlg = tsTokenInfo.getHashAlgorithm().getName();
-                                String tsSigAlg = AlgorithmId.makeSigAlg(
-                                        tsSi.getDigestAlgorithmId().getName(),
-                                        tsSi.getDigestEncryptionAlgorithmId().getName());
+                                String tsSigAlg = SignerInfo.makeSigAlg(
+                                        tsSi.getDigestAlgorithmId(),
+                                        tsSi.getDigestEncryptionAlgorithmId(),
+                                        tsSi.getAuthenticatedAttributes() == null);
                                 Calendar c = Calendar.getInstance(
                                         TimeZone.getTimeZone("UTC"),
                                         Locale.getDefault(Locale.Category.FORMAT));
@@ -1399,6 +1401,35 @@ public class Main {
         }
     }
 
+    private static String checkWeakKey(PublicKey key) {
+        int kLen = KeyUtil.getKeySize(key);
+        if (DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
+            if (LEGACY_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
+                if (kLen >= 0) {
+                    return String.format(rb.getString("key.bit"), kLen);
+                } else {
+                    return rb.getString("unknown.size");
+                }
+            } else {
+                return String.format(rb.getString("key.bit.weak"), kLen);
+            }
+        } else {
+           return String.format(rb.getString("key.bit.disabled"), kLen);
+        }
+    }
+
+    private static String checkWeakAlg(String alg) {
+        if (DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, alg, null)) {
+            if (LEGACY_CHECK.permits(SIG_PRIMITIVE_SET, alg, null)) {
+                return alg;
+            } else {
+                return String.format(rb.getString("with.weak"), alg);
+            }
+        } else {
+            return String.format(rb.getString("with.disabled"), alg);
+        }
+    }
+
     private static MessageFormat validityTimeForm = null;
     private static MessageFormat notYetTimeForm = null;
     private static MessageFormat expiredTimeForm = null;
@@ -1442,12 +1473,31 @@ public class Main {
         }
 
         if (x509Cert != null) {
+            PublicKey key = x509Cert.getPublicKey();
+            String sigalg = x509Cert.getSigAlgName();
 
-            certStr.append("\n").append(tab).append("[");
-
+            // Process the certificate in the signer's cert chain to see if
+            // weak algorithms are used, and provide warnings as needed.
             if (trustedCerts.contains(x509Cert)) {
+                // If the cert is trusted, only check its key size, but not its
+                // signature algorithm.
+                certStr.append("\n").append(tab)
+                        .append("Signature algorithm: ")
+                        .append(sigalg)
+                        .append(rb.getString("COMMA"))
+                        .append(checkWeakKey(key));
+
+                certStr.append("\n").append(tab).append("[");
                 certStr.append(rb.getString("trusted.certificate"));
             } else {
+                certStr.append("\n").append(tab)
+                        .append("Signature algorithm: ")
+                        .append(checkWeakAlg(sigalg))
+                        .append(rb.getString("COMMA"))
+                        .append(checkWeakKey(key));
+
+                certStr.append("\n").append(tab).append("[");
+
                 Date notAfter = x509Cert.getNotAfter();
                 try {
                     boolean printValidity = true;
@@ -1598,7 +1648,7 @@ public class Main {
 
     /**
      * Maps certificates (as keys) to alias names associated in the keystore
-     * {@link #store} (as values).
+     * {@link #keystore} (as values).
      */
     Hashtable<Certificate, String> storeHash = new Hashtable<>();
 
@@ -1725,7 +1775,7 @@ public class Main {
             tsaURI = new URI(tsaUrl);
         } else if (tsaAlias != null) {
             tsaCert = getTsaCert(tsaAlias);
-            tsaURI = TimestampedSigner.getTimestampingURI(tsaCert);
+            tsaURI = PKCS7.getTimestampingURI(tsaCert);
         }
 
         if (tsaURI != null) {
@@ -1830,7 +1880,8 @@ public class Main {
         // validate it.
         try (JarFile check = new JarFile(signedJarFile)) {
             PKCS7 p7 = new PKCS7(check.getInputStream(check.getEntry(
-                    "META-INF/" + sigfile + "." + privateKey.getAlgorithm())));
+                    "META-INF/" + sigfile + "."
+                            + SignatureFileVerifier.getBlockExtension(privateKey))));
             Timestamp ts = null;
             try {
                 SignerInfo si = p7.getSignerInfos()[0];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.beans.Transient;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
@@ -178,9 +179,10 @@ public class ScrollPane extends Container implements Accessible {
      */
     private boolean wheelScrollingEnabled = defaultWheelScroll;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 7956609840827222915L;
 
     /**
@@ -683,6 +685,7 @@ public class ScrollPane extends Container implements Accessible {
      * @param  s the {@code ObjectOutputStream} to write
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         // 4352819: We only need this degenerate writeObject to make
         // it safe for future versions of this class to write optional
@@ -701,6 +704,7 @@ public class ScrollPane extends Container implements Accessible {
      *         returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -738,6 +742,10 @@ public class ScrollPane extends Container implements Accessible {
      */
     class PeerFixer implements AdjustmentListener, java.io.Serializable
     {
+        /**
+         * Use serialVersionUID from JDK 1.1.1 for interoperability.
+         */
+        @Serial
         private static final long serialVersionUID = 1043664721353696630L;
 
         PeerFixer(ScrollPane scroller) {
@@ -803,9 +811,10 @@ public class ScrollPane extends Container implements Accessible {
      */
     protected class AccessibleAWTScrollPane extends AccessibleAWTContainer
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 6100703663886637L;
 
         /**
@@ -826,53 +835,4 @@ public class ScrollPane extends Container implements Accessible {
 
     } // class AccessibleAWTScrollPane
 
-}
-
-/*
- * In JDK 1.1.1, the pkg private class java.awt.PeerFixer was moved to
- * become an inner class of ScrollPane, which broke serialization
- * for ScrollPane objects using JDK 1.1.
- * Instead of moving it back out here, which would break all JDK 1.1.x
- * releases, we keep PeerFixer in both places. Because of the scoping rules,
- * the PeerFixer that is used in ScrollPane will be the one that is the
- * inner class. This pkg private PeerFixer class below will only be used
- * if the Java 2 platform is used to deserialize ScrollPane objects that were serialized
- * using JDK1.1
- */
-class PeerFixer implements AdjustmentListener, java.io.Serializable {
-    /*
-     * serialVersionUID
-     */
-    private static final long serialVersionUID = 7051237413532574756L;
-
-    PeerFixer(ScrollPane scroller) {
-        this.scroller = scroller;
-    }
-
-    /**
-     * Invoked when the value of the adjustable has changed.
-     */
-    @SuppressWarnings("deprecation")
-    public void adjustmentValueChanged(AdjustmentEvent e) {
-        Adjustable adj = e.getAdjustable();
-        int value = e.getValue();
-        ScrollPanePeer peer = (ScrollPanePeer) scroller.peer;
-        if (peer != null) {
-            peer.setValue(adj, value);
-        }
-
-        Component c = scroller.getComponent(0);
-        switch(adj.getOrientation()) {
-        case Adjustable.VERTICAL:
-            c.move(c.getLocation().x, -(value));
-            break;
-        case Adjustable.HORIZONTAL:
-            c.move(-(value), c.getLocation().y);
-            break;
-        default:
-            throw new IllegalArgumentException("Illegal adjustable orientation");
-        }
-    }
-
-    private ScrollPane scroller;
 }

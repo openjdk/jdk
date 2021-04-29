@@ -681,6 +681,23 @@ ordering, which may differ from (may be stronger than) sequentially
 consistent.  There are algorithms in HotSpot that are believed to rely
 on that ordering.
 
+### Uniform Initialization
+
+The use of _uniform initialization_
+([n2672](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2672.htm)),
+also known as _brace initialization_, is permitted.
+
+Some relevant sections from cppreference.com:
+
+* [initialization](https://en.cppreference.com/w/cpp/language/initialization)
+* [value initialization](https://en.cppreference.com/w/cpp/language/value_initialization)
+* [direct initialization](https://en.cppreference.com/w/cpp/language/direct_initialization)
+* [list initialization](https://en.cppreference.com/w/cpp/language/list_initialization)
+* [aggregate initialization](https://en.cppreference.com/w/cpp/language/aggregate_initialization)
+
+Although related, the use of `std::initializer_list` remains forbidden, as
+part of the avoidance of the C++ Standard Library in HotSpot code.
+
 ### Additional Permitted Features
 
 * `constexpr`
@@ -730,8 +747,17 @@ on that ordering.
 ([n3206](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm)),
 ([n3272](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm))
 
+* `override` virtual specifiers for virtual functions
+([n2928](http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2928.htm)),
+([n3206](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm)),
+([n3272](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm))
+
 * Local and unnamed types as template parameters
 ([n2657](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2657.htm))
+
+* Range-based `for` loops
+([n2930](http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2930.html))
+([range-for](https://en.cppreference.com/w/cpp/language/range-for))
 
 ### Excluded Features
 
@@ -791,9 +817,6 @@ in HotSpot code because of the "no implicit boolean" guideline.)
 
 This list is incomplete; it serves to explicitly call out some
 features that have not yet been discussed.
-
-* `overrides` virtual specifiers for virtual functions 
-([n3272](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm))
 
 * Trailing return type syntax for functions 
 ([n2541](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm))

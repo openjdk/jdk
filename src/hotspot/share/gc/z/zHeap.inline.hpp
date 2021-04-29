@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,10 @@
 #define SHARE_GC_Z_ZHEAP_INLINE_HPP
 
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zMark.inline.hpp"
-#include "gc/z/zOop.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "utilities/debug.hpp"
@@ -82,7 +80,7 @@ inline uintptr_t ZHeap::alloc_object(size_t size) {
 }
 
 inline uintptr_t ZHeap::alloc_object_for_relocation(size_t size) {
-  uintptr_t addr = _object_allocator.alloc_object_for_relocation(size);
+  const uintptr_t addr = _object_allocator.alloc_object_for_relocation(&_page_table, size);
   assert(ZAddress::is_good_or_null(addr), "Bad address");
   return addr;
 }
@@ -102,13 +100,7 @@ inline uintptr_t ZHeap::relocate_object(uintptr_t addr) {
   }
 
   // Relocate object
-  const bool retained = forwarding->retain_page();
-  const uintptr_t new_addr = _relocate.relocate_object(forwarding, addr);
-  if (retained) {
-    forwarding->release_page();
-  }
-
-  return new_addr;
+  return _relocate.relocate_object(forwarding, ZAddress::good(addr));
 }
 
 inline uintptr_t ZHeap::remap_object(uintptr_t addr) {
@@ -122,7 +114,7 @@ inline uintptr_t ZHeap::remap_object(uintptr_t addr) {
   }
 
   // Forward object
-  return _relocate.forward_object(forwarding, addr);
+  return _relocate.forward_object(forwarding, ZAddress::good(addr));
 }
 
 inline bool ZHeap::is_alloc_stalled() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,8 +272,7 @@ public class ClassReader {
         Source source = Source.instance(context);
         preview = Preview.instance(context);
         allowModules     = Feature.MODULES.allowedInSource(source);
-        allowRecords = (!preview.isPreview(Feature.RECORDS) || preview.isEnabled()) &&
-                Feature.RECORDS.allowedInSource(source);
+        allowRecords = Feature.RECORDS.allowedInSource(source);
         allowSealedTypes = (!preview.isPreview(Feature.SEALED_CLASSES) || preview.isEnabled()) &&
                 Feature.SEALED_CLASSES.allowedInSource(source);
 
@@ -830,7 +829,7 @@ public class ClassReader {
                            // ignore ConstantValue attribute if type is not primitive or String
                            return;
                     }
-                    if (v instanceof Integer && !var.type.getTag().checkRange((Integer) v)) {
+                    if (v instanceof Integer intVal && !var.type.getTag().checkRange(intVal)) {
                         throw badClassFile("bad.constant.range", v, var, var.type);
                     }
                     var.setData(v);
@@ -1206,7 +1205,16 @@ public class ClassReader {
                     if (sym.kind == TYP) {
                         sym.flags_field |= RECORD;
                     }
-                    bp = bp + attrLen;
+                    int componentCount = nextChar();
+                    ListBuffer<RecordComponent> components = new ListBuffer<>();
+                    for (int i = 0; i < componentCount; i++) {
+                        Name name = poolReader.getName(nextChar());
+                        Type type = poolReader.getType(nextChar());
+                        RecordComponent c = new RecordComponent(name, type, sym);
+                        readAttrs(c, AttributeKind.MEMBER);
+                        components.add(c);
+                    }
+                    ((ClassSymbol) sym).setRecordComponents(components.toList());
                 }
             },
             new AttributeReader(names.PermittedSubclasses, V59, CLASS_ATTRIBUTE) {
@@ -1421,9 +1429,8 @@ public class ClassReader {
             else if (proxy.type.tsym.flatName() == syms.profileType.tsym.flatName()) {
                 if (profile != Profile.DEFAULT) {
                     for (Pair<Name, Attribute> v : proxy.values) {
-                        if (v.fst == names.value && v.snd instanceof Attribute.Constant) {
-                            Attribute.Constant c = (Attribute.Constant)v.snd;
-                            if (c.type == syms.intType && ((Integer)c.value) > profile.value) {
+                        if (v.fst == names.value && v.snd instanceof Attribute.Constant constant) {
+                            if (constant.type == syms.intType && ((Integer) constant.value) > profile.value) {
                                 sym.flags_field |= NOT_IN_PROFILE;
                             }
                         }
@@ -1431,7 +1438,7 @@ public class ClassReader {
                 }
             } else if (proxy.type.tsym.flatName() == syms.previewFeatureInternalType.tsym.flatName()) {
                 sym.flags_field |= PREVIEW_API;
-                setFlagIfAttributeTrue(proxy, sym, names.essentialAPI, PREVIEW_ESSENTIAL_API);
+                setFlagIfAttributeTrue(proxy, sym, names.reflective, PREVIEW_REFLECTIVE);
             } else {
                 if (proxy.type.tsym == syms.annotationTargetType.tsym) {
                     target = proxy;
@@ -1442,7 +1449,7 @@ public class ClassReader {
                     setFlagIfAttributeTrue(proxy, sym, names.forRemoval, DEPRECATED_REMOVAL);
                 }  else if (proxy.type.tsym == syms.previewFeatureType.tsym) {
                     sym.flags_field |= PREVIEW_API;
-                    setFlagIfAttributeTrue(proxy, sym, names.essentialAPI, PREVIEW_ESSENTIAL_API);
+                    setFlagIfAttributeTrue(proxy, sym, names.reflective, PREVIEW_REFLECTIVE);
                 }
                 proxies.append(proxy);
             }
@@ -1452,9 +1459,8 @@ public class ClassReader {
     //where:
         private void setFlagIfAttributeTrue(CompoundAnnotationProxy proxy, Symbol sym, Name attribute, long flag) {
             for (Pair<Name, Attribute> v : proxy.values) {
-                if (v.fst == attribute && v.snd instanceof Attribute.Constant) {
-                    Attribute.Constant c = (Attribute.Constant)v.snd;
-                    if (c.type == syms.booleanType && ((Integer)c.value) != 0) {
+                if (v.fst == attribute && v.snd instanceof Attribute.Constant constant) {
+                    if (constant.type == syms.booleanType && ((Integer) constant.value) != 0) {
                         sym.flags_field |= flag;
                     }
                 }
@@ -1507,9 +1513,6 @@ public class ClassReader {
     }
 
     Type readTypeOrClassSymbol(int i) {
-        // support preliminary jsr175-format class files
-        if (poolReader.hasTag(i, CONSTANT_Class))
-            return poolReader.getClass(i).type;
         return readTypeToProxy(i);
     }
     Type readTypeToProxy(int i) {
@@ -2046,12 +2049,12 @@ public class ClassReader {
         }
 
         Type resolvePossibleProxyType(Type t) {
-            if (t instanceof ProxyType) {
+            if (t instanceof ProxyType proxyType) {
                 Assert.check(requestingOwner.owner.kind == MDL);
                 ModuleSymbol prevCurrentModule = currentModule;
                 currentModule = (ModuleSymbol) requestingOwner.owner;
                 try {
-                    return ((ProxyType) t).resolve();
+                    return proxyType.resolve();
                 } finally {
                     currentModule = prevCurrentModule;
                 }
@@ -2120,9 +2123,8 @@ public class ClassReader {
                     if (attr.type.tsym == syms.deprecatedType.tsym) {
                         sym.flags_field |= (DEPRECATED | DEPRECATED_ANNOTATION);
                         Attribute forRemoval = attr.member(names.forRemoval);
-                        if (forRemoval instanceof Attribute.Constant) {
-                            Attribute.Constant c = (Attribute.Constant) forRemoval;
-                            if (c.type == syms.booleanType && ((Integer) c.value) != 0) {
+                        if (forRemoval instanceof Attribute.Constant constant) {
+                            if (constant.type == syms.booleanType && ((Integer) constant.value) != 0) {
                                 sym.flags_field |= DEPRECATED_REMOVAL;
                             }
                         }
@@ -2578,10 +2580,12 @@ public class ClassReader {
         majorVersion = nextChar();
         int maxMajor = Version.MAX().major;
         int maxMinor = Version.MAX().minor;
+        boolean previewClassFile =
+                minorVersion == ClassFile.PREVIEW_MINOR_VERSION;
         if (majorVersion > maxMajor ||
             majorVersion * 1000 + minorVersion <
             Version.MIN().major * 1000 + Version.MIN().minor) {
-            if (majorVersion == (maxMajor + 1))
+            if (majorVersion == (maxMajor + 1) && !previewClassFile)
                 log.warning(Warnings.BigMajorVersion(currentClassFile,
                                                      majorVersion,
                                                      maxMajor));
@@ -2593,7 +2597,7 @@ public class ClassReader {
                                    Integer.toString(maxMinor));
         }
 
-        if (minorVersion == ClassFile.PREVIEW_MINOR_VERSION) {
+        if (previewClassFile) {
             if (!preview.isEnabled()) {
                 log.error(preview.disabledError(currentClassFile, majorVersion));
             } else {
@@ -2804,12 +2808,8 @@ public class ClassReader {
         public boolean equals(Object other) {
             if (this == other)
                 return true;
-
-            if (!(other instanceof SourceFileObject))
-                return false;
-
-            SourceFileObject o = (SourceFileObject) other;
-            return name.equals(o.name);
+            return (other instanceof SourceFileObject sourceFileObject)
+                    && name.equals(sourceFileObject.name);
         }
 
         @Override

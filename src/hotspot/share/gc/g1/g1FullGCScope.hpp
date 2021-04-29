@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "memory/allocation.hpp"
+#include "memory/resourceArea.hpp"
 #include "services/memoryService.hpp"
 
 class GCMemoryManager;
@@ -52,9 +53,13 @@ class G1FullGCScope : public StackObj {
   ClearedAllSoftRefs      _soft_refs;
   G1MonitoringScope       _monitoring_scope;
   G1HeapTransition        _heap_transition;
+  size_t                  _region_compaction_threshold;
 
 public:
-  G1FullGCScope(G1MonitoringSupport* monitoring_support, bool explicit_gc, bool clear_soft);
+  G1FullGCScope(G1MonitoringSupport* monitoring_support,
+                bool explicit_gc,
+                bool clear_soft,
+                bool do_maximal_compaction);
   ~G1FullGCScope();
 
   bool is_explicit_gc();
@@ -63,6 +68,7 @@ public:
   STWGCTimer* timer();
   G1FullGCTracer* tracer();
   G1HeapTransition* heap_transition();
+  size_t region_compaction_threshold();
 };
 
 #endif // SHARE_GC_G1_G1FULLGCSCOPE_HPP

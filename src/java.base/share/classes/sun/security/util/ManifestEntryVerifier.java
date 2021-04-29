@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,12 @@ package sun.security.util;
 
 import java.security.*;
 import java.io.*;
-import java.security.CodeSigner;
 import java.util.*;
 import java.util.jar.*;
 
-import java.util.Base64;
-
 import sun.security.jca.Providers;
+import sun.security.util.DisabledAlgorithmConstraints;
+import sun.security.util.JarConstraintsParameters;
 
 /**
  * This class is used to verify each entry in a jar file with its
@@ -202,20 +201,37 @@ public class ManifestEntryVerifier {
             throw new SecurityException("digest missing for " + name);
         }
 
-        if (signers != null)
+        if (signers != null) {
             return signers;
+        }
+
+        JarConstraintsParameters params =
+            getParams(verifiedSigners, sigFileSigners);
 
         for (int i=0; i < digests.size(); i++) {
 
-            MessageDigest digest  = digests.get(i);
+            MessageDigest digest = digests.get(i);
+            if (params != null) {
+                try {
+                    params.setExtendedExceptionMsg(JarFile.MANIFEST_NAME,
+                        name + " entry");
+                    DisabledAlgorithmConstraints.jarConstraints()
+                           .permits(digest.getAlgorithm(), params);
+                } catch (GeneralSecurityException e) {
+                    if (debug != null) {
+                        debug.println("Digest algorithm is restricted: " + e);
+                    }
+                    return null;
+                }
+            }
             byte [] manHash = manifestHashes.get(i);
             byte [] theHash = digest.digest();
 
             if (debug != null) {
                 debug.println("Manifest Entry: " +
                                    name + " digest=" + digest.getAlgorithm());
-                debug.println("  manifest " + toHex(manHash));
-                debug.println("  computed " + toHex(theHash));
+                debug.println("  manifest " + HexFormat.of().formatHex(manHash));
+                debug.println("  computed " + HexFormat.of().formatHex(theHash));
                 debug.println();
             }
 
@@ -232,24 +248,36 @@ public class ManifestEntryVerifier {
         return signers;
     }
 
-    // for the toHex function
-    private static final char[] hexc =
-            {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
     /**
-     * convert a byte array to a hex string for debugging purposes
-     * @param data the binary data to be converted to a hex string
-     * @return an ASCII hex string
+     * Get constraints parameters for JAR. The constraints should be
+     * checked against all code signers. Returns the parameters,
+     * or null if the signers for this entry have already been checked.
      */
+    private JarConstraintsParameters getParams(
+            Map<String, CodeSigner[]> verifiedSigners,
+            Map<String, CodeSigner[]> sigFileSigners) {
 
-    static String toHex(byte[] data) {
-
-        StringBuilder sb = new StringBuilder(data.length*2);
-
-        for (int i=0; i<data.length; i++) {
-            sb.append(hexc[(data[i] >>4) & 0x0f]);
-            sb.append(hexc[data[i] & 0x0f]);
+        // verifiedSigners is usually preloaded with the Manifest's signers.
+        // If verifiedSigners contains the Manifest, then it will have all of
+        // the signers of the JAR. But if it doesn't then we need to fallback
+        // and check verifiedSigners to see if the signers of this entry have
+        // been checked already.
+        if (verifiedSigners.containsKey(JarFile.MANIFEST_NAME)) {
+            if (verifiedSigners.size() > 1) {
+                // this means we already checked it previously
+                return null;
+            } else {
+                return new JarConstraintsParameters(
+                    verifiedSigners.get(JarFile.MANIFEST_NAME));
+            }
+        } else {
+            CodeSigner[] signers = sigFileSigners.get(name);
+            if (verifiedSigners.containsValue(signers)) {
+                return null;
+            } else {
+                return new JarConstraintsParameters(signers);
+            }
         }
-        return sb.toString();
     }
-
 }
+

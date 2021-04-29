@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ volatile uint         ThreadsSMRSupport::_deleted_thread_time_max = 0;
 volatile uint         ThreadsSMRSupport::_deleted_thread_times = 0;
 
 // The bootstrap list is empty and cannot be freed.
-ThreadsList ThreadsSMRSupport::_bootstrap_list = ThreadsList(0);
+ThreadsList ThreadsSMRSupport::_bootstrap_list{0};
 
 // This is the VM's current "threads list" and it contains all of
 // the JavaThreads the VM considers to be alive at this moment in
@@ -282,6 +282,9 @@ class ScanHazardPtrGatherProtectedThreadsClosure : public ThreadClosure {
       if (thread->cmpxchg_threads_hazard_ptr(NULL, current_list) == current_list) return;
     }
 
+    guarantee(ThreadsList::is_valid(current_list), "current_list="
+              INTPTR_FORMAT " is not valid!", p2i(current_list));
+
     // The current JavaThread has a hazard ptr (ThreadsList reference)
     // which might be _java_thread_list or it might be an older
     // ThreadsList that has been removed but not freed. In either case,
@@ -294,6 +297,10 @@ class ScanHazardPtrGatherProtectedThreadsClosure : public ThreadClosure {
 
 // Closure to gather hazard ptrs (ThreadsList references) into a hash table.
 //
+// Since this closure gathers hazard ptrs that may be tagged, this hash
+// table of hazard ptrs should only be used for value comparison and not
+// traversal of the ThreadsList.
+//
 class ScanHazardPtrGatherThreadsListClosure : public ThreadClosure {
  private:
   ThreadScanHashtable *_table;
@@ -304,18 +311,23 @@ class ScanHazardPtrGatherThreadsListClosure : public ThreadClosure {
     assert_locked_or_safepoint(Threads_lock);
 
     if (thread == NULL) return;
-    ThreadsList *threads = thread->get_threads_hazard_ptr();
-    if (threads == NULL) {
-      return;
+    ThreadsList *hazard_ptr = thread->get_threads_hazard_ptr();
+    if (hazard_ptr == NULL) return;
+    if (!Thread::is_hazard_ptr_tagged(hazard_ptr)) {
+      // We only validate hazard_ptrs that are not tagged since a tagged
+      // hazard ptr can be deleted at any time.
+      guarantee(ThreadsList::is_valid(hazard_ptr), "hazard_ptr=" INTPTR_FORMAT
+                " for thread=" INTPTR_FORMAT " is not valid!", p2i(hazard_ptr),
+                p2i(thread));
     }
     // In this closure we always ignore the tag that might mark this
     // hazard ptr as not yet verified. If we happen to catch an
     // unverified hazard ptr that is subsequently discarded (not
     // published), then the only side effect is that we might keep a
     // to-be-deleted ThreadsList alive a little longer.
-    threads = Thread::untag_hazard_ptr(threads);
-    if (!_table->has_entry((void*)threads)) {
-      _table->add_entry((void*)threads);
+    hazard_ptr = Thread::untag_hazard_ptr(hazard_ptr);
+    if (!_table->has_entry((void*)hazard_ptr)) {
+      _table->add_entry((void*)hazard_ptr);
     }
   }
 };
@@ -355,6 +367,27 @@ class ScanHazardPtrPrintMatchingThreadsClosure : public ThreadClosure {
   }
 };
 
+// Closure to validate hazard ptrs.
+//
+class ValidateHazardPtrsClosure : public ThreadClosure {
+ public:
+  ValidateHazardPtrsClosure() {};
+
+  virtual void do_thread(Thread* thread) {
+    assert_locked_or_safepoint(Threads_lock);
+
+    if (thread == NULL) return;
+    ThreadsList *hazard_ptr = thread->get_threads_hazard_ptr();
+    if (hazard_ptr == NULL) return;
+    // If the hazard ptr is unverified, then ignore it since it could
+    // be deleted at any time now.
+    if (Thread::is_hazard_ptr_tagged(hazard_ptr)) return;
+    guarantee(ThreadsList::is_valid(hazard_ptr), "hazard_ptr=" INTPTR_FORMAT
+              " for thread=" INTPTR_FORMAT " is not valid!", p2i(hazard_ptr),
+              p2i(thread));
+  }
+};
+
 // Closure to determine if the specified JavaThread is found by
 // threads_do().
 //
@@ -384,7 +417,7 @@ void SafeThreadsListPtr::acquire_stable_list() {
   _previous = _thread->_threads_list_ptr;
   _thread->_threads_list_ptr = this;
 
-  if (_thread->get_threads_hazard_ptr() == NULL) {
+  if (_thread->get_threads_hazard_ptr() == NULL && _previous == NULL) {
     // The typical case is first.
     acquire_stable_list_fast_path();
     return;
@@ -403,7 +436,7 @@ void SafeThreadsListPtr::acquire_stable_list_fast_path() {
   ThreadsList* threads;
 
   // Stable recording of a hazard ptr for SMR. This code does not use
-  // locks so its use of the _smr_java_thread_list & _threads_hazard_ptr
+  // locks so its use of the _java_thread_list & _threads_hazard_ptr
   // fields is racy relative to code that uses those fields with locks.
   // OrderAccess and Atomic functions are used to deal with those races.
   //
@@ -419,7 +452,7 @@ void SafeThreadsListPtr::acquire_stable_list_fast_path() {
     ThreadsList* unverified_threads = Thread::tag_hazard_ptr(threads);
     _thread->set_threads_hazard_ptr(unverified_threads);
 
-    // If _smr_java_thread_list has changed, we have lost a race with
+    // If _java_thread_list has changed, we have lost a race with
     // Threads::add() or Threads::remove() and have to try again.
     if (ThreadsSMRSupport::get_java_thread_list() != threads) {
       continue;
@@ -451,8 +484,6 @@ void SafeThreadsListPtr::acquire_stable_list_fast_path() {
 //
 void SafeThreadsListPtr::acquire_stable_list_nested_path() {
   assert(_thread != NULL, "sanity check");
-  assert(_thread->get_threads_hazard_ptr() != NULL,
-         "cannot have a NULL regular hazard ptr when acquiring a nested hazard ptr");
 
   // The thread already has a hazard ptr (ThreadsList ref) so we need
   // to create a nested ThreadsListHandle with the current ThreadsList
@@ -466,9 +497,14 @@ void SafeThreadsListPtr::acquire_stable_list_nested_path() {
   if (EnableThreadSMRStatistics) {
     _thread->inc_nested_threads_hazard_ptr_cnt();
   }
-  current_list->inc_nested_handle_cnt();
-  _previous->_has_ref_count = true;  // promote SafeThreadsListPtr to be reference counted
-  _thread->_threads_hazard_ptr = NULL;  // clear the hazard ptr so we can go through the fast path below
+  if (!_previous->_has_ref_count) {
+    // Promote the thread's current SafeThreadsListPtr to be reference counted.
+    current_list->inc_nested_handle_cnt();
+    _previous->_has_ref_count = true;
+  }
+  // Clear the hazard ptr so we can go through the fast path below and
+  // acquire a nested stable ThreadsList.
+  _thread->set_threads_hazard_ptr(NULL);
 
   if (EnableThreadSMRStatistics && _thread->nested_threads_hazard_ptr_cnt() > ThreadsSMRSupport::_nested_thread_list_max) {
     ThreadsSMRSupport::_nested_thread_list_max = _thread->nested_threads_hazard_ptr_cnt();
@@ -488,23 +524,30 @@ void SafeThreadsListPtr::release_stable_list() {
   assert(_thread->_threads_list_ptr == this, "sanity check");
   _thread->_threads_list_ptr = _previous;
 
-  if (_has_ref_count) {
-    // If a SafeThreadsListPtr has been promoted to use reference counting
-    // due to nesting of ThreadsListHandles, then the reference count must be
-    // decremented, at which point it may be freed. The forgotten value of
-    // the list no longer matters at this point and should already be NULL.
-    assert(_thread->get_threads_hazard_ptr() == NULL, "sanity check");
+  // We're releasing either a leaf or nested ThreadsListHandle. In either
+  // case, we set this thread's hazard ptr back to NULL and we do it before
+  // _nested_handle_cnt is decremented below.
+  _thread->set_threads_hazard_ptr(NULL);
+  if (_previous != NULL) {
+    // The ThreadsListHandle being released is a nested ThreadsListHandle.
     if (EnableThreadSMRStatistics) {
       _thread->dec_nested_threads_hazard_ptr_cnt();
     }
+    // The previous ThreadsList is stable because the _nested_handle_cnt is
+    // > 0, but we cannot safely make it this thread's hazard ptr again.
+    // The protocol for installing and verifying a ThreadsList as a
+    // thread's hazard ptr is handled by acquire_stable_list_fast_path().
+    // And that protocol cannot be properly done with a ThreadsList that
+    // might not be the current system ThreadsList.
+    assert(_previous->_list->_nested_handle_cnt > 0, "must be > zero");
+  }
+  if (_has_ref_count) {
+    // This thread created a nested ThreadsListHandle after the current
+    // ThreadsListHandle so we had to protect this ThreadsList with a
+    // ref count. We no longer need that protection.
     _list->dec_nested_handle_cnt();
 
     log_debug(thread, smr)("tid=" UINTX_FORMAT ": SafeThreadsListPtr::release_stable_list: delete nested list pointer to ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(_list));
-  } else {
-    // The normal case: a leaf ThreadsListHandle. This merely requires setting
-    // the thread hazard ptr back to NULL.
-    assert(_thread->get_threads_hazard_ptr() != NULL, "sanity check");
-    _thread->set_threads_hazard_ptr(NULL);
   }
 
   // After releasing the hazard ptr, other threads may go ahead and
@@ -516,6 +559,10 @@ void SafeThreadsListPtr::release_stable_list() {
     // An exiting thread might be waiting in smr_delete(); we need to
     // check with delete_lock to be sure.
     ThreadsSMRSupport::release_stable_list_wake_up(_has_ref_count);
+    guarantee(_previous == NULL || ThreadsList::is_valid(_previous->_list),
+              "_previous->_list=" INTPTR_FORMAT
+              " is not valid after calling release_stable_list_wake_up!",
+              p2i(_previous->_list));
   }
 }
 
@@ -540,8 +587,7 @@ void SafeThreadsListPtr::verify_hazard_ptr_scanned() {
     return;
   }
 
-  if (VMError::is_error_reported() &&
-      VMError::get_first_error_tid() == os::current_thread_id()) {
+  if (VMError::is_error_reported_in_current_thread()) {
     // If there is an error reported by this thread it may use ThreadsList even
     // if it's unsafe.
     return;
@@ -572,18 +618,34 @@ void SafeThreadsListPtr::verify_hazard_ptr_scanned() {
 #endif
 }
 
-// 'entries + 1' so we always have at least one entry.
-ThreadsList::ThreadsList(int entries) :
-  _length(entries),
-  _next_list(NULL),
-  _threads(NEW_C_HEAP_ARRAY(JavaThread*, entries + 1, mtThread)),
-  _nested_handle_cnt(0)
-{
-  *(JavaThread**)(_threads + entries) = NULL;  // Make sure the extra entry is NULL.
+// Shared singleton data for all ThreadsList(0) instances.
+// Used by _bootstrap_list to avoid static init time heap allocation.
+// No real entries, just the final NULL terminator.
+static JavaThread* const empty_threads_list_data[1] = {};
+
+// Result has 'entries + 1' elements, with the last being the NULL terminator.
+static JavaThread* const* make_threads_list_data(int entries) {
+  if (entries == 0) {
+    return empty_threads_list_data;
+  }
+  JavaThread** data = NEW_C_HEAP_ARRAY(JavaThread*, entries + 1, mtThread);
+  data[entries] = NULL;         // Make sure the final entry is NULL.
+  return data;
 }
 
+ThreadsList::ThreadsList(int entries) :
+  _magic(THREADS_LIST_MAGIC),
+  _length(entries),
+  _next_list(NULL),
+  _threads(make_threads_list_data(entries)),
+  _nested_handle_cnt(0)
+{}
+
 ThreadsList::~ThreadsList() {
-  FREE_C_HEAP_ARRAY(JavaThread*, _threads);
+  if (_threads != empty_threads_list_data) {
+    FREE_C_HEAP_ARRAY(JavaThread*, _threads);
+  }
+  _magic = 0xDEADBEEF;
 }
 
 // Add a JavaThread to a ThreadsList. The returned ThreadsList is a
@@ -855,6 +917,9 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
     log_debug(thread, smr)("tid=" UINTX_FORMAT ": ThreadsSMRSupport::free_list: threads=" INTPTR_FORMAT " is not freed.", os::current_thread_id(), p2i(threads));
   }
 
+  ValidateHazardPtrsClosure validate_cl;
+  threads_do(&validate_cl);
+
   delete scan_table;
 }
 
@@ -1069,8 +1134,9 @@ void ThreadsSMRSupport::log_statistics() {
 
 // Print SMR info for a thread to a given output stream.
 void ThreadsSMRSupport::print_info_on(const Thread* thread, outputStream* st) {
-  if (thread->_threads_hazard_ptr != NULL) {
-    st->print(" _threads_hazard_ptr=" INTPTR_FORMAT, p2i(thread->_threads_hazard_ptr));
+  ThreadsList* hazard_ptr = thread->get_threads_hazard_ptr();
+  if (hazard_ptr != NULL) {
+    st->print(" _threads_hazard_ptr=" INTPTR_FORMAT, p2i(hazard_ptr));
   }
   if (EnableThreadSMRStatistics && thread->_threads_list_ptr != NULL) {
     // The count is only interesting if we have a _threads_list_ptr.
@@ -1093,70 +1159,87 @@ void ThreadsSMRSupport::print_info_on(const Thread* thread, outputStream* st) {
 
 // Print Threads class SMR info.
 void ThreadsSMRSupport::print_info_on(outputStream* st) {
-  // Only grab the Threads_lock if we don't already own it and if we
-  // are not reporting an error.
-  // Note: Not grabbing the Threads_lock during error reporting is
-  // dangerous because the data structures we want to print can be
-  // freed concurrently. However, grabbing the Threads_lock during
-  // error reporting can be equally dangerous since this thread might
-  // block during error reporting or a nested error could leave the
-  // Threads_lock held. The classic no win scenario.
-  //
-  MutexLocker ml((Threads_lock->owned_by_self() || VMError::is_error_reported()) ? NULL : Threads_lock);
+  bool needs_unlock = false;
+  if (Threads_lock->try_lock_without_rank_check()) {
+    // We were able to grab the Threads_lock which makes things safe for
+    // this call, but if we are error reporting, then a nested error
+    // could happen with the Threads_lock held.
+    needs_unlock = true;
+  }
 
-  st->print_cr("Threads class SMR info:");
-  st->print_cr("_java_thread_list=" INTPTR_FORMAT ", length=%u, "
-               "elements={", p2i(_java_thread_list),
-               _java_thread_list->length());
-  print_info_elements_on(st, _java_thread_list);
-  st->print_cr("}");
-  if (_to_delete_list != NULL) {
-    st->print_cr("_to_delete_list=" INTPTR_FORMAT ", length=%u, "
-                 "elements={", p2i(_to_delete_list),
-                 _to_delete_list->length());
-    print_info_elements_on(st, _to_delete_list);
+  ThreadsList* saved_threads_list = NULL;
+  {
+    ThreadsListHandle tlh;  // make the current ThreadsList safe for reporting
+    saved_threads_list = tlh.list();  // save for later comparison
+
+    st->print_cr("Threads class SMR info:");
+    st->print_cr("_java_thread_list=" INTPTR_FORMAT ", length=%u, elements={",
+                 p2i(saved_threads_list), saved_threads_list->length());
+    print_info_elements_on(st, saved_threads_list);
     st->print_cr("}");
-    for (ThreadsList *t_list = _to_delete_list->next_list();
-         t_list != NULL; t_list = t_list->next_list()) {
-      st->print("next-> " INTPTR_FORMAT ", length=%u, "
-                "elements={", p2i(t_list), t_list->length());
-      print_info_elements_on(st, t_list);
+  }
+
+  if (_to_delete_list != NULL) {
+    if (Threads_lock->owned_by_self()) {
+      // Only safe if we have the Threads_lock.
+      st->print_cr("_to_delete_list=" INTPTR_FORMAT ", length=%u, elements={",
+                   p2i(_to_delete_list), _to_delete_list->length());
+      print_info_elements_on(st, _to_delete_list);
       st->print_cr("}");
+      for (ThreadsList *t_list = _to_delete_list->next_list();
+           t_list != NULL; t_list = t_list->next_list()) {
+        st->print("next-> " INTPTR_FORMAT ", length=%u, elements={",
+                  p2i(t_list), t_list->length());
+        print_info_elements_on(st, t_list);
+        st->print_cr("}");
+      }
+    } else {
+      st->print_cr("_to_delete_list=" INTPTR_FORMAT, p2i(_to_delete_list));
+      st->print_cr("Skipping _to_delete_list fields and contents for safety.");
     }
   }
-  if (!EnableThreadSMRStatistics) {
-    return;
+  if (EnableThreadSMRStatistics) {
+    st->print_cr("_java_thread_list_alloc_cnt=" UINT64_FORMAT ", "
+                 "_java_thread_list_free_cnt=" UINT64_FORMAT ", "
+                 "_java_thread_list_max=%u, "
+                 "_nested_thread_list_max=%u",
+                 _java_thread_list_alloc_cnt,
+                 _java_thread_list_free_cnt,
+                 _java_thread_list_max,
+                 _nested_thread_list_max);
+    if (_tlh_cnt > 0) {
+      st->print_cr("_tlh_cnt=%u"
+                   ", _tlh_times=%u"
+                   ", avg_tlh_time=%0.2f"
+                   ", _tlh_time_max=%u",
+                   _tlh_cnt, _tlh_times,
+                   ((double) _tlh_times / _tlh_cnt),
+                   _tlh_time_max);
+    }
+    if (_deleted_thread_cnt > 0) {
+      st->print_cr("_deleted_thread_cnt=%u"
+                   ", _deleted_thread_times=%u"
+                   ", avg_deleted_thread_time=%0.2f"
+                   ", _deleted_thread_time_max=%u",
+                   _deleted_thread_cnt, _deleted_thread_times,
+                   ((double) _deleted_thread_times / _deleted_thread_cnt),
+                   _deleted_thread_time_max);
+    }
+    st->print_cr("_delete_lock_wait_cnt=%u, _delete_lock_wait_max=%u",
+                 _delete_lock_wait_cnt, _delete_lock_wait_max);
+    st->print_cr("_to_delete_list_cnt=%u, _to_delete_list_max=%u",
+                 _to_delete_list_cnt, _to_delete_list_max);
   }
-  st->print_cr("_java_thread_list_alloc_cnt=" UINT64_FORMAT ", "
-               "_java_thread_list_free_cnt=" UINT64_FORMAT ", "
-               "_java_thread_list_max=%u, "
-               "_nested_thread_list_max=%u",
-               _java_thread_list_alloc_cnt,
-               _java_thread_list_free_cnt,
-               _java_thread_list_max,
-               _nested_thread_list_max);
-  if (_tlh_cnt > 0) {
-    st->print_cr("_tlh_cnt=%u"
-                 ", _tlh_times=%u"
-                 ", avg_tlh_time=%0.2f"
-                 ", _tlh_time_max=%u",
-                 _tlh_cnt, _tlh_times,
-                 ((double) _tlh_times / _tlh_cnt),
-                 _tlh_time_max);
+  if (needs_unlock) {
+    Threads_lock->unlock();
+  } else {
+    if (_java_thread_list != saved_threads_list) {
+      st->print_cr("The _java_thread_list has changed from " INTPTR_FORMAT
+                   " to " INTPTR_FORMAT
+                   " so some of the above information may be stale.",
+                   p2i(saved_threads_list), p2i(_java_thread_list));
+    }
   }
-  if (_deleted_thread_cnt > 0) {
-    st->print_cr("_deleted_thread_cnt=%u"
-                 ", _deleted_thread_times=%u"
-                 ", avg_deleted_thread_time=%0.2f"
-                 ", _deleted_thread_time_max=%u",
-                 _deleted_thread_cnt, _deleted_thread_times,
-                 ((double) _deleted_thread_times / _deleted_thread_cnt),
-                 _deleted_thread_time_max);
-  }
-  st->print_cr("_delete_lock_wait_cnt=%u, _delete_lock_wait_max=%u",
-               _delete_lock_wait_cnt, _delete_lock_wait_max);
-  st->print_cr("_to_delete_list_cnt=%u, _to_delete_list_max=%u",
-               _to_delete_list_cnt, _to_delete_list_max);
 }
 
 // Print ThreadsList elements (4 per line).

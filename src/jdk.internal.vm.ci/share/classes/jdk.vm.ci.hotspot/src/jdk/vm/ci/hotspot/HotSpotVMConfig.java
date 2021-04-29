@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package jdk.vm.ci.hotspot;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
+import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.services.Services;
 import jdk.internal.misc.Unsafe;
 
@@ -46,6 +47,9 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     HotSpotVMConfig(HotSpotVMConfigStore store) {
         super(store);
+
+        int speculationLengthBits = getConstant("JVMCINMethodData::SPECULATION_LENGTH_BITS", Integer.class);
+        JVMCIError.guarantee(HotSpotSpeculationEncoding.LENGTH_BITS == speculationLengthBits, "%d != %d", HotSpotSpeculationEncoding.LENGTH_BITS, speculationLengthBits);
     }
 
     /**
@@ -173,12 +177,12 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int methodDataSize = getFieldOffset("MethodData::_size", Integer.class, "int");
     final int methodDataDataSize = getFieldOffset("MethodData::_data_size", Integer.class, "int");
     final int methodDataOopDataOffset = getFieldOffset("MethodData::_data[0]", Integer.class, "intptr_t");
-    final int methodDataOopTrapHistoryOffset = getFieldOffset("MethodData::_trap_hist._array[0]", Integer.class, "u1");
+    final int methodDataOopTrapHistoryOffset = getFieldOffset("MethodData::_compiler_counters._trap_hist._array[0]", Integer.class, "u1");
     final int methodDataIRSizeOffset = getFieldOffset("MethodData::_jvmci_ir_size", Integer.class, "int");
 
-    final int methodDataDecompiles = getFieldOffset("MethodData::_nof_decompiles", Integer.class, "uint");
-    final int methodDataOverflowRecompiles = getFieldOffset("MethodData::_nof_overflow_recompiles", Integer.class, "uint");
-    final int methodDataOverflowTraps = getFieldOffset("MethodData::_nof_overflow_traps", Integer.class, "uint");
+    final int methodDataDecompiles = getFieldOffset("MethodData::_compiler_counters._nof_decompiles", Integer.class, "uint");
+    final int methodDataOverflowRecompiles = getFieldOffset("MethodData::_compiler_counters._nof_overflow_recompiles", Integer.class, "uint");
+    final int methodDataOverflowTraps = getFieldOffset("MethodData::_compiler_counters._nof_overflow_traps", Integer.class, "uint");
 
     final int nmethodCompLevelOffset = getFieldOffset("nmethod::_comp_level", Integer.class, "int");
 
@@ -251,6 +255,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int jvmConstantMethodHandleInError = getConstant("JVM_CONSTANT_MethodHandleInError", Integer.class);
     final int jvmConstantMethodType = getConstant("JVM_CONSTANT_MethodType", Integer.class);
     final int jvmConstantMethodTypeInError = getConstant("JVM_CONSTANT_MethodTypeInError", Integer.class);
+    final int jvmConstantDynamic = getConstant("JVM_CONSTANT_Dynamic", Integer.class);
+    final int jvmConstantDynamicInError = getConstant("JVM_CONSTANT_DynamicInError", Integer.class);
     final int jvmConstantInvokeDynamic = getConstant("JVM_CONSTANT_InvokeDynamic", Integer.class);
 
     final int jvmConstantExternalMax = getConstant("JVM_CONSTANT_ExternalMax", Integer.class);
@@ -259,7 +265,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int heapWordSize = getConstant("HeapWordSize", Integer.class);
 
-    final long vmSymbolsSymbols = getFieldAddress("vmSymbols::_symbols[0]", "Symbol*");
+    final long symbolVmSymbols = getFieldAddress("Symbol::_vm_symbols[0]", "Symbol*");
     final int vmSymbolsFirstSID = getConstant("vmSymbols::FIRST_SID", Integer.class);
     final int vmSymbolsSIDLimit = getConstant("vmSymbols::SID_LIMIT", Integer.class);
 
@@ -277,7 +283,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
         HotSpotJVMCIRuntime runtime = runtime();
         assert vmSymbolsFirstSID <= index && index < vmSymbolsSIDLimit : "index " + index + " is out of bounds";
         int offset = index * Unsafe.ADDRESS_SIZE;
-        return runtime.getCompilerToVM().getSymbol(UNSAFE.getAddress(vmSymbolsSymbols + offset));
+        return runtime.getCompilerToVM().getSymbol(UNSAFE.getAddress(symbolVmSymbols + offset));
     }
 
     final int universeBaseVtableSize = getFieldValue("CompilerToVM::Data::Universe_base_vtable_size", Integer.class, "int");

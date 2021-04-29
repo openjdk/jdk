@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,25 +29,24 @@
 
 package sun.java2d.loops;
 
-import java.awt.image.BufferedImage;
 import java.awt.AlphaComposite;
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.StringTokenizer;
+
 import sun.awt.image.BufImgSurfaceData;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.SurfaceData;
 import sun.java2d.pipe.Region;
-import java.lang.reflect.Field;
-import java.util.StringTokenizer;
-import java.util.Iterator;
-import java.util.HashMap;
-import java.util.Map;
-import java.io.PrintStream;
-import java.io.OutputStream;
-import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -312,9 +311,18 @@ public abstract class GraphicsPrimitive {
                 destType.equals(other.destType));
     }
 
-    public abstract GraphicsPrimitive makePrimitive(SurfaceType srctype,
-                                                    CompositeType comptype,
-                                                    SurfaceType dsttype);
+    /**
+     * Produces specific primitive loop if the current object is registered as a
+     * general loop, otherwise the {@code InternalError} is thrown.
+     *
+     * @see GraphicsPrimitiveMgr#registerGeneral
+     */
+    protected GraphicsPrimitive makePrimitive(SurfaceType srctype,
+                                              CompositeType comptype,
+                                              SurfaceType dsttype) {
+        throw new InternalError("%s not implemented for %s, comp: %s, dst: %s".
+                formatted(getClass().getName(), srctype, comptype, dsttype));
+    }
 
     public abstract GraphicsPrimitive traceWrap();
 

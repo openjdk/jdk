@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@
 // Entry macro to transition from JNI to VM state.
 
 #define WB_ENTRY(result_type, header) JNI_ENTRY(result_type, header) \
-  ClearPendingJniExcCheck _clearCheck(env);
+  ClearPendingJniExcCheck _clearCheck(env); \
+  MACOS_AARCH64_ONLY(ThreadWXEnable _wx(WXWrite, thread));
 
 #define WB_END JNI_END
 

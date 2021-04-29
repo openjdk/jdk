@@ -210,6 +210,11 @@ final class StringLatin1 {
             // Note: fromIndex might be near -1>>>1.
             return -1;
         }
+        return indexOfChar(value, ch, fromIndex, max);
+    }
+
+    @IntrinsicCandidate
+    private static int indexOfChar(byte[] value, int ch, int fromIndex, int max) {
         byte c = (byte)ch;
         for (int i = fromIndex; i < max; i++) {
             if (value[i] == c) {
@@ -638,7 +643,7 @@ final class StringLatin1 {
         return (right != value.length) ? newString(value, 0, right) : null;
     }
 
-    private final static class LinesSpliterator implements Spliterator<String> {
+    private static final class LinesSpliterator implements Spliterator<String> {
         private byte[] value;
         private int index;        // current index, modified on advance/split
         private final int fence;  // one past last index

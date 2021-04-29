@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
+#include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
@@ -42,13 +43,6 @@ private:
 public:
   ShenandoahPeriodicTask(ShenandoahControlThread* thread) :
           PeriodicTask(100), _thread(thread) {}
-  virtual void task();
-};
-
-// Periodic task to flush SATB buffers periodically.
-class ShenandoahPeriodicSATBFlushTask : public PeriodicTask {
-public:
-  ShenandoahPeriodicSATBFlushTask() : PeriodicTask(ShenandoahSATBBufferFlushInterval) {}
   virtual void task();
 };
 
@@ -76,7 +70,6 @@ private:
   Monitor _alloc_failure_waiters_lock;
   Monitor _gc_waiters_lock;
   ShenandoahPeriodicTask _periodic_task;
-  ShenandoahPeriodicSATBFlushTask _periodic_satb_flush_task;
   ShenandoahPeriodicPacerNotify _periodic_pacer_notify_task;
 
 public:
@@ -91,7 +84,7 @@ private:
   ShenandoahSharedFlag _do_counters_update;
   ShenandoahSharedFlag _force_counters_update;
   GCCause::Cause       _requested_gc_cause;
-  ShenandoahHeap::ShenandoahDegenPoint _degen_point;
+  ShenandoahGC::ShenandoahDegenPoint _degen_point;
 
   shenandoah_padding(0);
   volatile size_t _allocs_seen;
@@ -99,10 +92,10 @@ private:
   volatile size_t _gc_id;
   shenandoah_padding(2);
 
-  bool check_cancellation_or_degen(ShenandoahHeap::ShenandoahDegenPoint point);
+  bool check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point);
   void service_concurrent_normal_cycle(GCCause::Cause cause);
   void service_stw_full_cycle(GCCause::Cause cause);
-  void service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahHeap::ShenandoahDegenPoint point);
+  void service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);
   void service_uncommit(double shrink_before, size_t shrink_until);
 
   bool try_set_alloc_failure_gc();

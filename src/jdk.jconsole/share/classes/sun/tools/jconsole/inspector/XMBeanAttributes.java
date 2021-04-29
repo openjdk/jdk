@@ -83,7 +83,7 @@ public class XMBeanAttributes extends XTable {
     final Logger LOGGER =
             System.getLogger(XMBeanAttributes.class.getPackage().getName());
 
-    private final static String[] columnNames =
+    private static final String[] columnNames =
     {Messages.NAME,
      Messages.VALUE};
 

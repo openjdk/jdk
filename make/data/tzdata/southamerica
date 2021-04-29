@@ -71,7 +71,7 @@
 # I am sending modifications to the Argentine time zone table...
 # AR was chosen because they are the ISO letters that represent Argentina.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Arg	1930	only	-	Dec	 1	0:00	1:00	-
 Rule	Arg	1931	only	-	Apr	 1	0:00	0	-
 Rule	Arg	1931	only	-	Oct	15	0:00	1:00	-
@@ -792,7 +792,7 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 # From Paul Eggert (2013-10-17):
 # For now, assume western Amazonas will change as well.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 # Decree 20,466 <http://pcdsh01.on.br/HV20466.htm> (1931-10-01)
 # Decree 21,896 <http://pcdsh01.on.br/HV21896.htm> (1932-01-10)
 Rule	Brazil	1931	only	-	Oct	 3	11:00	1:00	-
@@ -1281,7 +1281,7 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # For now, assume that they will not revert,
 # since they have extended the expiration date once already.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Chile	1927	1931	-	Sep	 1	0:00	1:00	-
 Rule	Chile	1928	1932	-	Apr	 1	0:00	0	-
 Rule	Chile	1968	only	-	Nov	 3	4:00u	1:00	-
@@ -1381,7 +1381,7 @@ Zone Antarctica/Palmer	0	-	-00	1965
 # Milne gives 4:56:16.4 for Bogotá time in 1899; round to nearest.  He writes,
 # "A variation of fifteen minutes in the public clocks of Bogota is not rare."
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	CO	1992	only	-	May	 3	0:00	1:00	-
 Rule	CO	1993	only	-	Apr	 4	0:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -1441,7 +1441,7 @@ Link	America/Curacao	America/Kralendijk	# Caribbean Netherlands
 # (Not one step back), the clocks went back in 1993 and the experiment was not
 # repeated.  For now, assume transitions were at 00:00 local time country-wide.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Ecuador	1992	only	-	Nov	28	0:00	1:00	-
 Rule	Ecuador	1993	only	-	Feb	 5	0:00	0	-
 #
@@ -1535,7 +1535,7 @@ Zone Pacific/Galapagos	-5:58:24 -	LMT	1931 # Puerto Baquerizo Moreno
 # For now we will assume permanent -03 for the Falklands
 # until advised differently (to apply for 2012 and beyond, after the 2011
 # experiment was apparently successful.)
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Falk	1937	1938	-	Sep	lastSun	0:00	1:00	-
 Rule	Falk	1938	1942	-	Mar	Sun>=19	0:00	0	-
 Rule	Falk	1939	only	-	Oct	1	0:00	1:00	-
@@ -1581,7 +1581,7 @@ Zone	America/Guyana	-3:52:40 -	LMT	1915 Mar    # Georgetown
 # No time of the day is established for the adjustment, so people normally
 # adjust their clocks at 0 hour of the given dates.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Para	1975	1988	-	Oct	 1	0:00	1:00	-
 Rule	Para	1975	1978	-	Mar	 1	0:00	0	-
 Rule	Para	1979	1991	-	Apr	 1	0:00	0	-
@@ -1674,7 +1674,7 @@ Zone America/Asuncion	-3:50:40 -	LMT	1890
 # From Paul Eggert (2006-03-22):
 # Shanks & Pottenger don't have this transition.  Assume 1986 was like 1987.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Peru	1938	only	-	Jan	 1	0:00	1:00	-
 Rule	Peru	1938	only	-	Apr	 1	0:00	0	-
 Rule	Peru	1938	1939	-	Sep	lastSun	0:00	1:00	-
@@ -1770,7 +1770,7 @@ Link America/Port_of_Spain America/Tortola	# Virgin Islands (UK)
 # https://www.impo.com.uy/diariooficial/1926/03/10/2
 # https://www.impo.com.uy/diariooficial/1926/03/18/2
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Uruguay	1923	1925	-	Oct	 1	 0:00	0:30	-
 Rule	Uruguay	1924	1926	-	Apr	 1	 0:00	0	-
 # From Tim Parenti (2018-02-15):

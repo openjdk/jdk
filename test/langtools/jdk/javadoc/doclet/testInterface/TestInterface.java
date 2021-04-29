@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4682448 4947464 5029946 8025633 8026567 8035473 8139101 8175200
-             8186332 8186703 8182765 8187288
+             8186332 8186703 8182765 8187288 8261976
  * @summary  Verify that the public modifier does not show up in the
  *           documentation for public methods, as recommended by the JLS.
  *           If A implements I and B extends A, B should be in the list of
@@ -61,17 +61,17 @@ public class TestInterface extends JavadocTester {
     @Test
     public void test() {
         javadoc("-d", "out",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
 
         checkOutput("pkg/Interface.html", true,
                 """
-                    <div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="member-name">method</span>()</div>""",
+                    <div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="element-name">method</span>()</div>""",
                 """
                     <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
-                    span class="return-type">int</span>&nbsp;<span class="member-name">field</span><\
-                    /div>""",
+                    span class="return-type">int</span>&nbsp;<span class="element-name">field</span></div>""",
                 // Make sure known implementing class list is correct and omits type parameters.
                 """
                     <dl class="notes">
@@ -129,24 +129,27 @@ public class TestInterface extends JavadocTester {
                     <section class="detail" id="f">
                     <h3>f</h3>
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
-                    <span class="return-type">int</span>&nbsp;<span class="member-name">f</span></di\
-                    v>
+                    <span class="return-type">int</span>&nbsp;<span class="element-name">f</span></div>
                     <div class="block">A hider field</div>""",
 
                 """
-                    <td class="col-first"><code>static void</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href="#m()">m</a></span>()</code></th>
-                    <td class="col-last">
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab1 method-summary-table-tab4"><code>static void</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-\
+                    tab1 method-summary-table-tab4"><code><a href="#m()" class="member-name-link">m<\
+                    /a>()</code></div>
+                    <div class="col-last even-row-color method-summary-table method-summary-table-ta\
+                    b1 method-summary-table-tab4">
                     <div class="block">A hider method</div>
-                    </td>
+                    </div>
                     """,
 
                 """
                     <section class="detail" id="staticMethod()">
                     <h3>staticMethod</h3>
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
-                    <span class="return-type">void</span>&nbsp;<span class="member-name">staticMetho\
-                    d</span>()</div>
+                    <span class="return-type">void</span>&nbsp;<span class="element-name">staticMethod</span\
+                    >()</div>
                     <div class="block"><span class="descfrm-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="InterfaceWithStaticMembers.html#staticMethod()">Inter\
                     faceWithStaticMembers</a></code></span></div>
@@ -155,8 +158,9 @@ public class TestInterface extends JavadocTester {
 
         checkOutput("pkg/ClassWithStaticMembers.InnerClass.html", true,
                 """
-                    <pre>public static class <span class="type-name-label">ClassWithStaticMembers.InnerClass</span>
-                    extends java.lang.Object</pre>
+                    <div class="type-signature"><span class="modifiers">public static class </span><\
+                    span class="element-name type-name-label">ClassWithStaticMembers.InnerClass</span>
+                    <span class="extends-implements">extends java.lang.Object</span></div>
                     <div class="block">A hider inner class</div>""");
     }
 
@@ -187,7 +191,7 @@ public class TestInterface extends JavadocTester {
         checkOutput("pkg2/Spliterator.OfDouble.html", true,
             // Ensure the correct type parameters are displayed correctly
             """
-                <h2 id="nested.classes.inherited.from.class.pkg2.Spliterator">Nested classes/int\
+                <h2 id="nested-classes-inherited-from-class-pkg2.Spliterator">Nested classes/int\
                 erfaces inherited from interface&nbsp;pkg2.<a href="Spliterator.html" title="int\
                 erface in pkg2">Spliterator</a></h2>
                 <code><a href="Spliterator.OfDouble.html" title="interface in pkg2">Spliterator.\

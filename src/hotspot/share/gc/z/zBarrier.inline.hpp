@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 #ifndef SHARE_GC_Z_ZBARRIER_INLINE_HPP
 #define SHARE_GC_Z_ZBARRIER_INLINE_HPP
 
-#include "classfile/javaClasses.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.hpp"
 #include "gc/z/zOop.inline.hpp"
@@ -242,18 +241,6 @@ inline void ZBarrier::load_barrier_on_oop_array(volatile oop* p, size_t length) 
   }
 }
 
-// ON_WEAK barriers should only ever be applied to j.l.r.Reference.referents.
-inline void verify_on_weak(volatile oop* referent_addr) {
-#ifdef ASSERT
-  if (referent_addr != NULL) {
-    uintptr_t base = (uintptr_t)referent_addr - java_lang_ref_Reference::referent_offset();
-    oop obj = cast_to_oop(base);
-    assert(oopDesc::is_oop(obj), "Verification failed for: ref " PTR_FORMAT " obj: " PTR_FORMAT, (uintptr_t)referent_addr, base);
-    assert(java_lang_ref_Reference::is_referent_field(obj, java_lang_ref_Reference::referent_offset()), "Sanity");
-  }
-#endif
-}
-
 inline oop ZBarrier::load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o) {
   verify_on_weak(p);
 
@@ -275,6 +262,11 @@ inline oop ZBarrier::load_barrier_on_phantom_oop_field_preloaded(volatile oop* p
 inline void ZBarrier::load_barrier_on_root_oop_field(oop* p) {
   const oop o = *p;
   root_barrier<is_good_or_null_fast_path, load_barrier_on_oop_slow_path>(p, o);
+}
+
+inline void ZBarrier::load_barrier_on_invisible_root_oop_field(oop* p) {
+  const oop o = *p;
+  root_barrier<is_good_or_null_fast_path, load_barrier_on_invisible_root_oop_slow_path>(p, o);
 }
 
 //
@@ -400,24 +392,6 @@ inline void ZBarrier::mark_barrier_on_oop_array(volatile oop* p, size_t length, 
   for (volatile const oop* const end = p + length; p < end; p++) {
     mark_barrier_on_oop_field(p, finalizable);
   }
-}
-
-inline void ZBarrier::mark_barrier_on_root_oop_field(oop* p) {
-  const oop o = *p;
-  root_barrier<is_good_or_null_fast_path, mark_barrier_on_root_oop_slow_path>(p, o);
-}
-
-inline void ZBarrier::mark_barrier_on_invisible_root_oop_field(oop* p) {
-  const oop o = *p;
-  root_barrier<is_good_or_null_fast_path, mark_barrier_on_invisible_root_oop_slow_path>(p, o);
-}
-
-//
-// Relocate barrier
-//
-inline void ZBarrier::relocate_barrier_on_root_oop_field(oop* p) {
-  const oop o = *p;
-  root_barrier<is_good_or_null_fast_path, relocate_barrier_on_root_oop_slow_path>(p, o);
 }
 
 #endif // SHARE_GC_Z_ZBARRIER_INLINE_HPP

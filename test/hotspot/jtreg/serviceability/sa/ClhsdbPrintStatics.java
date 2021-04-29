@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,13 +59,7 @@ public class ClhsdbPrintStatics {
                     "Abstract_VM_Version::_vm_major_version",
                     "ClassLoaderDataGraph::_head",
                     "JNIHandles::_weak_global_handles", "PerfMemory::_top",
-                    "ObjectSynchronizer::g_block_list",
                     "java_lang_Class::_oop_size_offset"));
-            expStrMap.put("printstatics SystemDictionary", List.of(
-                    "Static fields of SystemDictionary",
-                    "SystemDictionary::Class_klass_knum",
-                    "SystemDictionary::ClassLoader_klass_knum",
-                    "SystemDictionary::Object_klass_knum"));
             expStrMap.put("printstatics Threads", List.of(
                     "Static fields of Threads",
                     "_number_of_threads", "_number_of_non_daemon_threads"));

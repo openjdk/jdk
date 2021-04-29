@@ -25,13 +25,10 @@
 
 package jdk.jfr.internal;
 
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -70,7 +67,7 @@ public final class MetadataLoader {
     private final Type PERIOD_TYPE = TypeLibrary.createAnnotationType(Period.class);
 
     // <Event>, <Type> and <Relation>
-    private final static class TypeElement {
+    private static final class TypeElement {
         private final List<FieldElement> fields;
         private final String name;
         private final String label;
@@ -81,6 +78,7 @@ public final class MetadataLoader {
         private final boolean startTime;
         private final boolean stackTrace;
         private final boolean cutoff;
+        private final boolean throttle;
         private final boolean isEvent;
         private final boolean isRelation;
         private final boolean experimental;
@@ -101,6 +99,7 @@ public final class MetadataLoader {
             startTime = dis.readBoolean();
             period = dis.readUTF();
             cutoff = dis.readBoolean();
+            throttle = dis.readBoolean();
             experimental = dis.readBoolean();
             id = dis.readLong();
             isEvent = dis.readBoolean();
@@ -303,6 +302,9 @@ public final class MetadataLoader {
                 }
                 if (t.cutoff) {
                     aes.add(new AnnotationElement(Cutoff.class, Cutoff.INFINITY));
+                }
+                if (t.throttle) {
+                    aes.add(new AnnotationElement(Throttle.class, Throttle.DEFAULT));
                 }
             }
             if (t.experimental) {

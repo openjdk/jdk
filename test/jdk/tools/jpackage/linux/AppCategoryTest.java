@@ -46,8 +46,9 @@ import jdk.jpackage.test.PackageType;
  * @library ../helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
+ * @build AppCategoryTest
  * @requires (os.family == "linux")
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m AppCategoryTest
  */
 public class AppCategoryTest {

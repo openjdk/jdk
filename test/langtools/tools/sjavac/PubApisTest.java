@@ -23,13 +23,12 @@
 
  /*
  * @test
- * @bug 8241312
+ * @bug 8241312 8246774
  * @summary test for com.sun.tools.sjavac.comp.PubAPIs and com.sun.tools.sjavac.comp.PubapiVisitor
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.util
  *          jdk.compiler/com.sun.tools.sjavac.comp
  *          jdk.compiler/com.sun.tools.sjavac.pubapi
- * @run main PubApisTest
  */
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.util.Context;
@@ -48,8 +47,7 @@ public class PubApisTest {
 
     public static void main(String[] args) throws Throwable {
         javax.tools.JavaCompiler c = ToolProvider.getSystemJavaCompiler();
-        JavacTask t = (JavacTask) c.getTask(null, null, null,
-                List.of("--enable-preview", "-source", Integer.toString(Runtime.version().feature())), null,
+        JavacTask t = (JavacTask) c.getTask(null, null, null, null, null,
                 List.of(new SimpleJavaFileObject(URI.create("TestClass.java"), JavaFileObject.Kind.SOURCE) {
             @Override
             public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {

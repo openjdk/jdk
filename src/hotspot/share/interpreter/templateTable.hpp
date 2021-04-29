@@ -235,7 +235,6 @@ class TemplateTable: AllStatic {
   static void float_cmp (int unordered_result);
   static void double_cmp(int unordered_result);
 
-  static void count_calls(Register method, Register temp);
   static void branch(bool is_jsr, bool is_wide);
   static void if_0cmp   (Condition cc);
   static void if_icmp   (Condition cc);

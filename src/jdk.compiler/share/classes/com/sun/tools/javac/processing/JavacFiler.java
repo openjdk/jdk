@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,6 +275,13 @@ public class JavacFiler implements Filer, Closeable {
             this.fileObject = fileObject;
         }
 
+        @Override
+        public void write(byte b[], int off, int len) throws IOException {
+            Objects.checkFromIndexSize(off, len, b.length);
+            out.write(b, off, len);
+        }
+
+        @Override
         public synchronized void close() throws IOException {
             if (!closed) {
                 closed = true;
@@ -312,6 +319,7 @@ public class JavacFiler implements Filer, Closeable {
             this.fileObject = fileObject;
         }
 
+        @Override
         public synchronized void close() throws IOException {
             if (!closed) {
                 closed = true;
@@ -534,18 +542,17 @@ public class JavacFiler implements Filer, Closeable {
                                          relativeName.toString(), null);
         checkFileReopening(fileObject, true);
 
-        if (fileObject instanceof JavaFileObject)
-            return new FilerOutputJavaFileObject(msym, null, (JavaFileObject)fileObject);
+        if (fileObject instanceof JavaFileObject javaFileObject)
+            return new FilerOutputJavaFileObject(msym, null, javaFileObject);
         else
             return new FilerOutputFileObject(msym, null, fileObject);
     }
 
     private void locationCheck(JavaFileManager.Location location) {
-        if (location instanceof StandardLocation) {
-            StandardLocation stdLoc = (StandardLocation) location;
-            if (!stdLoc.isOutputLocation())
+        if (location instanceof StandardLocation standardLocation) {
+            if (!standardLocation.isOutputLocation())
                 throw new IllegalArgumentException("Resource creation not supported in location " +
-                                                   stdLoc);
+                                                    standardLocation);
         }
     }
 
@@ -881,9 +888,8 @@ public class JavacFiler implements Filer, Closeable {
          * subject to annotation processing.
          */
         if ((typeName != null)) {
-            if (!(fileObject instanceof JavaFileObject))
+            if (!(fileObject instanceof JavaFileObject javaFileObject))
                 throw new AssertionError("JavaFileObject not found for " + fileObject);
-            JavaFileObject javaFileObject = (JavaFileObject)fileObject;
             switch(javaFileObject.getKind()) {
             case SOURCE:
                 generatedSourceNames.add(typeName);

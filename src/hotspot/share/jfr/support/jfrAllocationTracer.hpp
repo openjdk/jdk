@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,12 @@
 
 #include "memory/allocation.hpp"
 
-class JfrThreadLocal;
+class Klass;
+class Thread;
 
 class JfrAllocationTracer : public StackObj {
- private:
-  JfrThreadLocal* _tl;
  public:
-  JfrAllocationTracer(HeapWord* obj, size_t alloc_size, Thread* thread);
-  ~JfrAllocationTracer();
+  JfrAllocationTracer(const Klass* klass, HeapWord* obj, size_t alloc_size, bool outside_tlab, Thread* thread);
 };
 
 #endif // SHARE_JFR_SUPPORT_JFRALLOCATIONTRACER_HPP

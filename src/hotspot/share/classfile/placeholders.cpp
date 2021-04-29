@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,161 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/placeholders.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "oops/oop.inline.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
+#include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/hashtable.inline.hpp"
+
+// SeenThread objects represent list of threads that are
+// currently performing a load action on a class.
+// For class circularity, set before loading a superclass.
+// For bootclasssearchpath, set before calling load_instance_class.
+// Defining must be single threaded on a class/classloader basis
+// For DEFINE_CLASS, the head of the queue owns the
+// define token and the rest of the threads wait to return the
+// result the first thread gets.
+class SeenThread: public CHeapObj<mtInternal> {
+private:
+   Thread *_thread;
+   SeenThread* _stnext;
+   SeenThread* _stprev;
+public:
+   SeenThread(Thread *thread) {
+       _thread = thread;
+       _stnext = NULL;
+       _stprev = NULL;
+   }
+   Thread* thread()                const { return _thread;}
+   void set_thread(Thread *thread) { _thread = thread; }
+
+   SeenThread* next()              const { return _stnext;}
+   void set_next(SeenThread *seen) { _stnext = seen; }
+   void set_prev(SeenThread *seen) { _stprev = seen; }
+
+  void print_action_queue(outputStream* st) {
+    SeenThread* seen = this;
+    while (seen != NULL) {
+      seen->thread()->print_value_on(st);
+      st->print(", ");
+      seen = seen->next();
+    }
+  }
+};
+
+SeenThread* PlaceholderEntry::actionToQueue(PlaceholderTable::classloadAction action) {
+  SeenThread* queuehead = NULL;
+  switch (action) {
+    case PlaceholderTable::LOAD_INSTANCE:
+       queuehead = _loadInstanceThreadQ;
+       break;
+    case PlaceholderTable::LOAD_SUPER:
+       queuehead = _superThreadQ;
+       break;
+    case PlaceholderTable::DEFINE_CLASS:
+       queuehead = _defineThreadQ;
+       break;
+    default: Unimplemented();
+  }
+  return queuehead;
+}
+
+void PlaceholderEntry::set_threadQ(SeenThread* seenthread, PlaceholderTable::classloadAction action) {
+  switch (action) {
+    case PlaceholderTable::LOAD_INSTANCE:
+       _loadInstanceThreadQ = seenthread;
+       break;
+    case PlaceholderTable::LOAD_SUPER:
+       _superThreadQ = seenthread;
+       break;
+    case PlaceholderTable::DEFINE_CLASS:
+       _defineThreadQ = seenthread;
+       break;
+    default: Unimplemented();
+  }
+  return;
+}
+
+// Doubly-linked list of Threads per action for class/classloader pair
+// Class circularity support: links in thread before loading superclass
+// bootstrap loader support:  links in a thread before load_instance_class
+// definers: use as queue of define requestors, including owner of
+// define token. Appends for debugging of requestor order
+void PlaceholderEntry::add_seen_thread(Thread* thread, PlaceholderTable::classloadAction action) {
+  assert_lock_strong(SystemDictionary_lock);
+  SeenThread* threadEntry = new SeenThread(thread);
+  SeenThread* seen = actionToQueue(action);
+
+  assert(action != PlaceholderTable::LOAD_INSTANCE || seen == NULL,
+         "Only one LOAD_INSTANCE allowed at a time");
+
+  if (seen == NULL) {
+    set_threadQ(threadEntry, action);
+    return;
+  }
+  SeenThread* next;
+  while ((next = seen->next()) != NULL) {
+    seen = next;
+  }
+  seen->set_next(threadEntry);
+  threadEntry->set_prev(seen);
+  return;
+}
+
+bool PlaceholderEntry::check_seen_thread(Thread* thread, PlaceholderTable::classloadAction action) {
+  assert_lock_strong(SystemDictionary_lock);
+  SeenThread* threadQ = actionToQueue(action);
+  SeenThread* seen = threadQ;
+  while (seen) {
+    if (thread == seen->thread()) {
+      return true;
+    }
+    seen = seen->next();
+  }
+  return false;
+}
+
+// returns true if seenthreadQ is now empty
+// Note, caller must ensure probe still exists while holding
+// SystemDictionary_lock
+// ignores if cleanup has already been done
+// if found, deletes SeenThread
+bool PlaceholderEntry::remove_seen_thread(Thread* thread, PlaceholderTable::classloadAction action) {
+  assert_lock_strong(SystemDictionary_lock);
+  SeenThread* threadQ = actionToQueue(action);
+  SeenThread* seen = threadQ;
+  SeenThread* prev = NULL;
+  while (seen) {
+    if (thread == seen->thread()) {
+      if (prev) {
+        prev->set_next(seen->next());
+      } else {
+        set_threadQ(seen->next(), action);
+      }
+      if (seen->next()) {
+        seen->next()->set_prev(prev);
+      }
+      delete seen;
+      break;
+    }
+    prev = seen;
+    seen = seen->next();
+  }
+  return (actionToQueue(action) == NULL);
+}
+
 
 // Placeholder methods
 
 PlaceholderEntry* PlaceholderTable::new_entry(int hash, Symbol* name,
                                               ClassLoaderData* loader_data,
-                                              bool havesupername,
                                               Symbol* supername) {
   PlaceholderEntry* entry = (PlaceholderEntry*)Hashtable<Symbol*, mtClass>::new_entry(hash, name);
   // Hashtable with Symbol* literal must increment and decrement refcount.
   name->increment_refcount();
   entry->set_loader_data(loader_data);
-  entry->set_havesupername(havesupername);
   entry->set_supername(supername);
   entry->set_superThreadQ(NULL);
   entry->set_loadInstanceThreadQ(NULL);
@@ -53,7 +193,7 @@ void PlaceholderTable::free_entry(PlaceholderEntry* entry) {
   // decrement Symbol refcount here because Hashtable doesn't.
   entry->literal()->decrement_refcount();
   if (entry->supername() != NULL) entry->supername()->decrement_refcount();
-  Hashtable<Symbol*, mtClass>::free_entry(entry);
+  BasicHashtable<mtClass>::free_entry(entry);
 }
 
 
@@ -61,26 +201,29 @@ void PlaceholderTable::free_entry(PlaceholderEntry* entry) {
 // All threads examining the placeholder table must hold the
 // SystemDictionary_lock, so we don't need special precautions
 // on store ordering here.
-void PlaceholderTable::add_entry(int index, unsigned int hash,
-                                 Symbol* class_name, ClassLoaderData* loader_data,
-                                 bool havesupername, Symbol* supername){
+PlaceholderEntry* PlaceholderTable::add_entry(unsigned int hash,
+                                              Symbol* class_name, ClassLoaderData* loader_data,
+                                              Symbol* supername){
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(class_name != NULL, "adding NULL obj");
 
   // Both readers and writers are locked so it's safe to just
   // create the placeholder and insert it in the list without a membar.
-  PlaceholderEntry* entry = new_entry(hash, class_name, loader_data, havesupername, supername);
-  add_entry(index, entry);
+  PlaceholderEntry* entry = new_entry(hash, class_name, loader_data, supername);
+  int index = hash_to_index(hash);
+  Hashtable<Symbol*, mtClass>::add_entry(index, entry);
+  return entry;
 }
 
 
 // Remove a placeholder object.
-void PlaceholderTable::remove_entry(int index, unsigned int hash,
+void PlaceholderTable::remove_entry(unsigned int hash,
                                     Symbol* class_name,
                                     ClassLoaderData* loader_data) {
   assert_locked_or_safepoint(SystemDictionary_lock);
+  int index = hash_to_index(hash);
   PlaceholderEntry** p = bucket_addr(index);
-  while (*p) {
+  while (*p != NULL) {
     PlaceholderEntry *probe = *p;
     if (probe->hash() == hash && probe->equals(class_name, loader_data)) {
       // Delete entry
@@ -92,11 +235,12 @@ void PlaceholderTable::remove_entry(int index, unsigned int hash,
   }
 }
 
-PlaceholderEntry* PlaceholderTable::get_entry(int index, unsigned int hash,
-                                       Symbol* class_name,
-                                       ClassLoaderData* loader_data) {
+PlaceholderEntry* PlaceholderTable::get_entry(unsigned int hash,
+                                              Symbol* class_name,
+                                              ClassLoaderData* loader_data) {
   assert_locked_or_safepoint(SystemDictionary_lock);
 
+  int index = hash_to_index(hash);
   for (PlaceholderEntry *place_probe = bucket(index);
                          place_probe != NULL;
                          place_probe = place_probe->next()) {
@@ -108,36 +252,55 @@ PlaceholderEntry* PlaceholderTable::get_entry(int index, unsigned int hash,
   return NULL;
 }
 
-Symbol* PlaceholderTable::find_entry(int index, unsigned int hash,
-                                       Symbol* class_name,
-                                       ClassLoaderData* loader_data) {
-  PlaceholderEntry* probe = get_entry(index, hash, class_name, loader_data);
-  return (probe? probe->klassname(): (Symbol*)NULL);
+Symbol* PlaceholderTable::find_entry(unsigned int hash,
+                                     Symbol* class_name,
+                                     ClassLoaderData* loader_data) {
+  PlaceholderEntry* probe = get_entry(hash, class_name, loader_data);
+  return (probe != NULL ? probe->klassname() : NULL);
 }
 
-  // find_and_add returns probe pointer - old or new
-  // If no entry exists, add a placeholder entry
-  // If entry exists, reuse entry
-  // For both, push SeenThread for classloadAction
-  // if havesupername: this is used for circularity for instanceklass loading
-PlaceholderEntry* PlaceholderTable::find_and_add(int index, unsigned int hash,
+static const char* action_to_string(PlaceholderTable::classloadAction action) {
+  switch (action) {
+  case PlaceholderTable::LOAD_INSTANCE: return "LOAD_INSTANCE";
+  case PlaceholderTable::LOAD_SUPER:    return "LOAD_SUPER";
+  case PlaceholderTable::DEFINE_CLASS:  return "DEFINE_CLASS";
+ }
+ return "";
+}
+
+inline void log(PlaceholderEntry* entry, const char* function, PlaceholderTable::classloadAction action) {
+  if (log_is_enabled(Debug, class, load, placeholders)) {
+    LogTarget(Debug, class, load, placeholders) lt;
+    ResourceMark rm;
+    LogStream ls(lt);
+    ls.print("%s %s ", function, action_to_string(action));
+    entry->print_entry(&ls);
+  }
+}
+
+// find_and_add returns probe pointer - old or new
+// If no entry exists, add a placeholder entry
+// If entry exists, reuse entry
+// For both, push SeenThread for classloadAction
+// If LOAD_SUPER, this is used for circularity detection for instanceklass loading.
+PlaceholderEntry* PlaceholderTable::find_and_add(unsigned int hash,
                                                  Symbol* name,
                                                  ClassLoaderData* loader_data,
                                                  classloadAction action,
                                                  Symbol* supername,
                                                  Thread* thread) {
-  PlaceholderEntry* probe = get_entry(index, hash, name, loader_data);
+  assert(action != LOAD_SUPER || supername != NULL, "must have a super class name");
+  PlaceholderEntry* probe = get_entry(hash, name, loader_data);
   if (probe == NULL) {
     // Nothing found, add place holder
-    add_entry(index, hash, name, loader_data, (action == LOAD_SUPER), supername);
-    probe = get_entry(index, hash, name, loader_data);
+    probe = add_entry(hash, name, loader_data, supername);
   } else {
     if (action == LOAD_SUPER) {
-      probe->set_havesupername(true);
       probe->set_supername(supername);
     }
   }
-  if (probe) probe->add_seen_thread(thread, action);
+  probe->add_seen_thread(thread, action);
+  log(probe, "find_and_add", action);
   return probe;
 }
 
@@ -155,18 +318,19 @@ PlaceholderEntry* PlaceholderTable::find_and_add(int index, unsigned int hash,
 // Note: you can be in both placeholders and systemDictionary
 // Therefore - must always check SD first
 // Ignores the case where entry is not found
-void PlaceholderTable::find_and_remove(int index, unsigned int hash,
+void PlaceholderTable::find_and_remove(unsigned int hash,
                                        Symbol* name, ClassLoaderData* loader_data,
                                        classloadAction action,
                                        Thread* thread) {
     assert_locked_or_safepoint(SystemDictionary_lock);
-    PlaceholderEntry *probe = get_entry(index, hash, name, loader_data);
+    PlaceholderEntry *probe = get_entry(hash, name, loader_data);
     if (probe != NULL) {
+       log(probe, "find_and_remove", action);
        probe->remove_seen_thread(thread, action);
        // If no other threads using this entry, and this thread is not using this entry for other states
        if ((probe->superThreadQ() == NULL) && (probe->loadInstanceThreadQ() == NULL)
           && (probe->defineThreadQ() == NULL) && (probe->definer() == NULL)) {
-         remove_entry(index, hash, name, loader_data);
+         remove_entry(hash, name, loader_data);
        }
     }
   }
@@ -234,3 +398,5 @@ void PlaceholderTable::print_on(outputStream* st) const {
     }
   }
 }
+
+void PlaceholderTable::print() const { return print_on(tty); }

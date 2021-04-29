@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,14 @@
 
 
 #include "precompiled.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/symbol.hpp"
@@ -39,6 +40,8 @@
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/utf8.hpp"
+
+Symbol* Symbol::_vm_symbols[vmSymbols::number_of_symbols()];
 
 uint32_t Symbol::pack_hash_and_refcount(short hash, int refcount) {
   STATIC_ASSERT(PERM_REFCOUNT == ((1 << 16) - 1));
@@ -417,3 +420,9 @@ bool Symbol::is_valid(Symbol* s) {
 
 // SymbolTable prints this in its statistics
 NOT_PRODUCT(size_t Symbol::_total_count = 0;)
+
+#ifndef PRODUCT
+bool Symbol::is_valid_id(vmSymbolID vm_symbol_id) {
+  return vmSymbols::is_valid_id(vm_symbol_id);
+}
+#endif

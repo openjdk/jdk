@@ -93,15 +93,30 @@
 # Australian Antarctica Division informed us that Casey changed time
 # zone to UTC+11 in "the morning of 22nd October 2016".
 
+# From Steffen Thorsen (2020-10-02, as corrected):
+# Based on information we have received from the Australian Antarctic
+# Division, Casey station and Macquarie Island station will move to Tasmanian
+# daylight savings time on Sunday 4 October. This will take effect from 0001
+# hrs on Sunday 4 October 2020 and will mean Casey and Macquarie Island will
+# be on the same time zone as Hobart.  Some past dates too for this 3 hour
+# time change back and forth between UTC+8 and UTC+11 for Casey:
+# - 2018 Oct  7 4:00 - 2019 Mar 17 3:00 - 2019 Oct  4 3:00 - 2020 Mar  8 3:00
+# and now - 2020 Oct  4 0:01
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Antarctica/Casey	0	-	-00	1969
-			8:00	-	+08	2009 Oct 18  2:00
+Zone Antarctica/Casey	 0	-	-00	1969
+			 8:00	-	+08	2009 Oct 18  2:00
 			11:00	-	+11	2010 Mar  5  2:00
-			8:00	-	+08	2011 Oct 28  2:00
+			 8:00	-	+08	2011 Oct 28  2:00
 			11:00	-	+11	2012 Feb 21 17:00u
-			8:00	-	+08	2016 Oct 22
+			 8:00	-	+08	2016 Oct 22
 			11:00	-	+11	2018 Mar 11  4:00
-			8:00	-	+08
+			 8:00	-	+08	2018 Oct  7  4:00
+			11:00	-	+11	2019 Mar 17  3:00
+			 8:00	-	+08	2019 Oct  4  3:00
+			11:00	-	+11	2020 Mar  8  3:00
+			 8:00	-	+08	2020 Oct  4  0:01
+			11:00	-	+11
 Zone Antarctica/Davis	0	-	-00	1957 Jan 13
 			7:00	-	+07	1964 Nov
 			0	-	-00	1969 Feb
@@ -247,7 +262,7 @@ Zone Antarctica/Syowa	0	-	-00	1957 Jan 29
 # suggested by Bengt-Inge Larsson comment them out for now, and approximate
 # with only UTC and CEST.  Uncomment them when 2014b is more prevalent.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 #Rule	Troll	2005	max	-	Mar	 1	1:00u	1:00	+01
 Rule	Troll	2005	max	-	Mar	lastSun	1:00u	2:00	+02
 #Rule	Troll	2005	max	-	Oct	lastSun	1:00u	1:00	+01

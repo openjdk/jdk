@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1086,8 +1086,8 @@ public class JavaCompiler {
                 for (List<JCTree> defs = unit.defs;
                      defs.nonEmpty();
                      defs = defs.tail) {
-                    if (defs.head instanceof JCClassDecl)
-                        cdefs.append((JCClassDecl)defs.head);
+                    if (defs.head instanceof JCClassDecl classDecl)
+                        cdefs.append(classDecl);
                 }
             }
             rootClasses = cdefs.toList();
@@ -1577,8 +1577,8 @@ public class JavaCompiler {
                 //emit standard Java source file, only for compilation
                 //units enumerated explicitly on the command line
                 JCClassDecl cdef = (JCClassDecl)env.tree;
-                if (untranslated instanceof JCClassDecl &&
-                    rootClasses.contains((JCClassDecl)untranslated)) {
+                if (untranslated instanceof JCClassDecl classDecl &&
+                    rootClasses.contains(classDecl)) {
                     results.add(new Pair<>(env, cdef));
                 }
                 return;
@@ -1816,17 +1816,21 @@ public class JavaCompiler {
                 names.dispose();
             names = null;
 
+            FatalError fatalError = null;
             for (Closeable c: closeables) {
                 try {
                     c.close();
                 } catch (IOException e) {
-                    // When javac uses JDK 7 as a baseline, this code would be
-                    // better written to set any/all exceptions from all the
-                    // Closeables as suppressed exceptions on the FatalError
-                    // that is thrown.
-                    JCDiagnostic msg = diagFactory.fragment(Fragments.FatalErrCantClose);
-                    throw new FatalError(msg, e);
+                    if (fatalError == null) {
+                        JCDiagnostic msg = diagFactory.fragment(Fragments.FatalErrCantClose);
+                        fatalError = new FatalError(msg, e);
+                    } else {
+                        fatalError.addSuppressed(e);
+                    }
                 }
+            }
+            if (fatalError != null) {
+                throw fatalError;
             }
             closeables = List.nil();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.lang.ref;
 
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * Phantom reference objects, which are enqueued after the collector
@@ -59,6 +60,15 @@ public class PhantomReference<T> extends Reference<T> {
     public T get() {
         return null;
     }
+
+    /* Override the implementation of Reference.refersTo.
+     * Phantom references are weaker than finalization, so the referent
+     * access needs to be handled differently for garbage collectors that
+     * do reference processing concurrently.
+     */
+    @Override
+    @IntrinsicCandidate
+    native final boolean refersTo0(Object o);
 
     /**
      * Creates a new phantom reference that refers to the given object and

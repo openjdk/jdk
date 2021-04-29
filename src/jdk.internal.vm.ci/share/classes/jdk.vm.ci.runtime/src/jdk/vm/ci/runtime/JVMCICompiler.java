@@ -33,4 +33,15 @@ public interface JVMCICompiler {
      * install it in the code cache if the compilation is successful.
      */
     CompilationRequestResult compileMethod(CompilationRequest request);
+
+    /**
+     * Determines if this compiler supports the {@code gcIdentifier} garbage collector. The default
+     * implementation of this method returns true as that is the effective answer given by a
+     * {@link JVMCICompiler} before this method was added.
+     *
+     * @param gcIdentifier a VM dependent GC identifier
+     */
+    default boolean isGCSupported(int gcIdentifier) {
+        return true;
+    }
 }

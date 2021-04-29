@@ -190,7 +190,7 @@ public abstract class PKCS11Test {
                     test.enableSM = true;
                 } else {
                     throw new RuntimeException("Unknown Command, use 'sm' as "
-                            + "first arguemtn to enable security manager");
+                            + "first argument to enable security manager");
                 }
             }
             if (test.enableSM) {
@@ -853,7 +853,7 @@ public abstract class PKCS11Test {
                         + "please check if JIB jar is present in classpath.");
             } else {
                 throw new RuntimeException("Fetch artifact failed: " + clazz
-                        + "\nPlease make sure the artifact is available.");
+                        + "\nPlease make sure the artifact is available.", e);
             }
         }
         Policy.setPolicy(null); // Clear the policy created by JIB if any

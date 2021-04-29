@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,6 @@ class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
 class ThreadClosure;
 
-PRAGMA_DIAG_PUSH
-// warning C4522: multiple assignment operators specified
-PRAGMA_DISABLE_MSVC_WARNING(4522)
-
 // This is a container class for either an oop or a continuation address for
 // mark stack entries. Both are pushed onto the mark stack.
 class G1TaskQueueEntry {
@@ -76,7 +72,7 @@ public:
 
   oop obj() const {
     assert(!is_array_slice(), "Trying to read array slice " PTR_FORMAT " as oop", p2i(_holder));
-    return (oop)_holder;
+    return cast_to_oop(_holder);
   }
 
   HeapWord* slice() const {
@@ -88,8 +84,6 @@ public:
   bool is_array_slice() const { return ((uintptr_t)_holder & ArraySliceBit) != 0; }
   bool is_null() const { return _holder == NULL; }
 };
-
-PRAGMA_DIAG_POP
 
 typedef GenericTaskQueue<G1TaskQueueEntry, mtGC> G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
@@ -374,8 +368,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   void report_object_count(bool mark_completed);
 
-  void swap_mark_bitmaps();
-
   void reclaim_empty_regions();
 
   // After reclaiming empty regions, update heap sizes.
@@ -465,11 +457,15 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // means that this region does not be scanned during the rebuilding remembered
   // set phase at all.
   HeapWord* volatile* _top_at_rebuild_starts;
+  // True when Remark pause selected regions for rebuilding.
+  bool _needs_remembered_set_rebuild;
 public:
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
-  // Liveness of the given region as determined by concurrent marking, i.e. the amount of
+  // Live words in the given region as determined by concurrent marking, i.e. the amount of
   // live words between bottom and nTAMS.
-  size_t liveness(uint region) const { return _region_mark_stats[region]._live_words; }
+  size_t live_words(uint region) const { return _region_mark_stats[region]._live_words; }
+  // Returns the liveness value in bytes.
+  size_t live_bytes(uint region) const { return live_words(region) * HeapWordSize; }
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
@@ -539,8 +535,8 @@ public:
   // to be called concurrently to the mutator. It will yield to safepoint requests.
   void cleanup_for_next_mark();
 
-  // Clear the previous marking bitmap during safepoint.
-  void clear_prev_bitmap(WorkGang* workers);
+  // Clear the next marking bitmap during safepoint.
+  void clear_next_bitmap(WorkGang* workers);
 
   // These two methods do the work that needs to be done at the start and end of the
   // concurrent start pause.
@@ -562,6 +558,8 @@ public:
   void preclean();
 
   void remark();
+
+  void swap_mark_bitmaps();
 
   void cleanup();
   // Mark in the previous bitmap. Caution: the prev bitmap is usually read-only, so use
@@ -601,6 +599,9 @@ public:
 private:
   // Rebuilds the remembered sets for chosen regions in parallel and concurrently to the application.
   void rebuild_rem_set_concurrently();
+
+  uint needs_remembered_set_rebuild() const { return _needs_remembered_set_rebuild; }
+
 };
 
 // A class representing a marking task.
@@ -616,10 +617,6 @@ private:
     // Initial value for the hash seed, used in the work stealing code
     init_hash_seed                = 17
   };
-
-  // Number of entries in the per-task stats entry. This seems enough to have a very
-  // low cache miss rate.
-  static const uint RegionMarkStatsCacheSize = 1024;
 
   G1CMObjArrayProcessor       _objArray_processor;
 

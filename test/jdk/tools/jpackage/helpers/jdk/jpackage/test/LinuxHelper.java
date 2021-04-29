@@ -38,7 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.incubator.jpackage.internal.IOUtils;
+import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 
@@ -51,7 +51,7 @@ public class LinuxHelper {
     public static String getPackageName(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.LINUX);
         return cmd.getArgumentValue("--linux-package-name",
-                () -> cmd.name().toLowerCase());
+                () -> cmd.installerName().toLowerCase());
     }
 
     public static Path getDesktopFile(JPackageCommand cmd) {
@@ -282,8 +282,8 @@ public class LinuxHelper {
                     actualCriticalRuntimePaths);
         } else {
             // AppImagePackageTest.testEmpty() will have no dependencies,
-            // but will have more then 0 and less than 1K content size.
-            checkPrerequisites = packageSize > 1;
+            // but will have more then 0 and less than 5K content size when --icon is used.
+            checkPrerequisites = packageSize > 5;
         }
 
         List<String> prerequisites = LinuxHelper.getPrerequisitePackages(cmd);

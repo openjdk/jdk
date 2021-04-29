@@ -51,7 +51,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @summary jpackage create image and package with custom icons for the main and additional launcher
  * @library ../helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile IconTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=IconTest
@@ -220,7 +220,7 @@ public class IconTest {
             case DefaultIcon:
                 lookupString = String.format(
                         "Using default package resource %s [icon] (add %s%s to the resource-dir to customize)",
-                        LauncherIconVerifier.getDefaultIcon().getFileName(),
+                        "JavaApp" + TKit.ICON_SUFFIX,
                         launcherName, TKit.ICON_SUFFIX);
                 break;
 

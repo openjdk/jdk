@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,8 +321,8 @@ class Exceptions {
   THREAD); if (HAS_PENDING_EXCEPTION) {    \
     oop ex = PENDING_EXCEPTION;            \
     CLEAR_PENDING_EXCEPTION;               \
-    ex->print();                           \
-    ShouldNotReachHere();                  \
+    DEBUG_ONLY(ex->print();)               \
+    assert(false, "CATCH");                \
   } (void)(0
 
 // ExceptionMark is a stack-allocated helper class for local exception handling.
@@ -331,22 +331,26 @@ class Exceptions {
 class ExceptionMark {
  private:
   Thread* _thread;
+  inline void check_no_pending_exception();
 
  public:
-  ExceptionMark(Thread*& thread);
+  ExceptionMark();
+  ExceptionMark(Thread* thread);
   ~ExceptionMark();
+
+  Thread* thread() {
+    return _thread;
+  }
 };
-
-
 
 // Use an EXCEPTION_MARK for 'local' exceptions. EXCEPTION_MARK makes sure that no
 // pending exception exists upon entering its scope and tests that no pending exception
 // exists when leaving the scope.
 
-// See also preserveException.hpp for PRESERVE_EXCEPTION_MARK macro,
+// See also preserveException.hpp for PreserveExceptionMark
 // which preserves pre-existing exceptions and does not allow new
 // exceptions.
 
-#define EXCEPTION_MARK                           Thread* THREAD = NULL; ExceptionMark __em(THREAD);
+#define EXCEPTION_MARK                           ExceptionMark __em; Thread* THREAD = __em.thread();
 
 #endif // SHARE_UTILITIES_EXCEPTIONS_HPP

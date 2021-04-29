@@ -54,8 +54,6 @@ define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 // (For _228_jack 16/16 is 2% better than 4/4, 16/4, 32/32, 32/16, or 16/32.)
 //define_pd_global(intx, OptoLoopAlignment,            16);  // = 4*wordSize
 define_pd_global(intx, RegisterCostAreaRatio,        16000);
-define_pd_global(bool, UseTLAB,                      true);
-define_pd_global(bool, ResizeTLAB,                   true);
 define_pd_global(intx, LoopUnrollLimit,              60); // Design center runs on 1.3.1
 define_pd_global(intx, LoopPercentProfileLimit,      10);
 define_pd_global(intx, MinJumpTableSize,             16);
@@ -101,9 +99,6 @@ define_pd_global(uintx, CodeCacheMinBlockLength,     6);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed
-
-// Heap related flags
-define_pd_global(size_t, MetaspaceSize,              ScaleForWordSize(16*M));
 
 // Ergonomics related flags
 define_pd_global(bool, NeverActAsServerClassMachine, false);

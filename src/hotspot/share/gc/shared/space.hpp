@@ -173,8 +173,7 @@ class Space: public CHeapObj<mtGC> {
   // operate. ResourceArea allocated.
   virtual DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
                                              CardTable::PrecisionStyle precision,
-                                             HeapWord* boundary,
-                                             bool parallel);
+                                             HeapWord* boundary);
 
   // If "p" is in the space, returns the address of the start of the
   // "block" that contains "p".  We say "block" instead of "object" since
@@ -560,7 +559,6 @@ class ContiguousSpace: public CompactibleSpace {
   // Allocation (return NULL if full)
   virtual HeapWord* allocate(size_t word_size);
   virtual HeapWord* par_allocate(size_t word_size);
-  HeapWord* allocate_aligned(size_t word_size);
 
   // Iteration
   void oop_iterate(OopIterateClosure* cl);
@@ -589,8 +587,7 @@ class ContiguousSpace: public CompactibleSpace {
   // Override.
   DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
                                      CardTable::PrecisionStyle precision,
-                                     HeapWord* boundary,
-                                     bool parallel);
+                                     HeapWord* boundary);
 
   // Apply "blk->do_oop" to the addresses of all reference fields in objects
   // starting with the _saved_mark_word, which was noted during a generation's

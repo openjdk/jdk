@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8215038 8239487 8240476
+ * @bug 8215038 8239487 8240476 8253559
  * @summary Add a page that lists all system properties
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -63,7 +63,7 @@ public class TestSystemPropertyPage extends JavadocTester {
 
         checkOutput("index-all.html", true,
                 """
-                    <a href="system-properties.html">System Properties</a>""");
+                    <a href="system-properties.html">System&nbsp;Properties</a>""");
 
         checkOutput("system-properties.html", true,
                 """
@@ -78,36 +78,19 @@ public class TestSystemPropertyPage extends JavadocTester {
                     </div>""",
 
                 """
-                    <table class="summary-table">
-                    <caption><span>System Properties Summary</span></caption>
-                    <thead>
-                    <tr>
-                    <th class="col-first" scope="col">Property</th>
-                    <th class="col-last" scope="col">Referenced In</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr class="alt-color">
-                    <th class="col-first" scope="row">user.address</th>
-                    <td class="col-last">
-                    <div class="block"><code><a href="pkg2/B.html#user.address">class pkg2.B</a></co\
-                    de>, <a href="pkg1/doc-files/WithTitle.html#user.address"><code>package pkg1: </\
-                    code>Example Title</a></div>
-                    </td>
-                    </tr>
-                    <tr class="row-color">
-                    <th class="col-first" scope="row">user.name</th>
-                    <td class="col-last">
-                    <div class="block"><a href="index.html#user.name">Overview</a>, <code><a href="p\
-                    kg1/A.html#user.name">class pkg1.A</a></code>, <a href="pkg1/doc-files/WithEmpty\
-                    Title.html#user.name"><code>package pkg1: </code>WithEmptyTitle.html</a>, <a hre\
-                    f="pkg1/doc-files/WithTitle.html#user.name"><code>package pkg1: </code>Example T\
-                    itle</a>, <a href="pkg1/doc-files/WithoutTitle.html#user.name"><code>package pkg\
-                    1: </code>WithoutTitle.html</a></div>
-                    </td>
-                    </tr>
-                    </tbody>
-                    </table>""");
+                    <div class="caption"><span>System Properties Summary</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Property</div>
+                    <div class="table-header col-last">Referenced In</div>
+                    <div class="col-first even-row-color">user.address</div>
+                    <div class="col-last even-row-color">
+                    <div class="block"><code><a href="pkg2/B.html#user.address">class pkg2.B</a></code>, <a href="pkg1/doc-files/WithTitle.html#user.address"><code>package pkg1: </code>Example Title</a></div>
+                    </div>
+                    <div class="col-first odd-row-color">user.name</div>
+                    <div class="col-last odd-row-color">
+                    <div class="block"><a href="index.html#user.name">Overview</a>, <code><a href="pkg1/A.html#user.name">class pkg1.A</a></code>, <a href="pkg1/doc-files/WithEmptyTitle.html#user.name"><code>package pkg1: </code>WithEmptyTitle.html</a>, <a href="pkg1/doc-files/WithTitle.html#user.name"><code>package pkg1: </code>Example Title</a>, <a href="pkg1/doc-files/WithoutTitle.html#user.name"><code>package pkg1: </code>WithoutTitle.html</a></div>
+                    </div>
+                    </div>""");
     }
 
     /*

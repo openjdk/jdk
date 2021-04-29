@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,9 +160,6 @@ AWT_ASSERT_APPKIT_THREAD;
     [super finishLaunching];
 
     [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
-
-    // inform any interested parties that the AWT has arrived and is pumping
-    [[NSNotificationCenter defaultCenter] postNotificationName:JNFRunLoopDidStartNotification object:self];
 }
 
 - (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center
@@ -271,7 +268,7 @@ AWT_ASSERT_APPKIT_THREAD;
 // HACK BEGIN
     // The following is necessary to make the java process behave like a
     // proper foreground application...
-    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         ProcessSerialNumber psn;
         GetCurrentProcess(&psn);
         TransformProcessType(&psn, kProcessTransformToForegroundApplication);
@@ -326,14 +323,15 @@ AWT_ASSERT_APPKIT_THREAD;
 + (void) runAWTLoopWithApp:(NSApplication*)app {
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
 
-    // Make sure that when we run in AWTRunLoopMode we don't exit randomly
-    [[NSRunLoop currentRunLoop] addPort:[NSPort port] forMode:[JNFRunLoop javaRunLoopMode]];
+    // Make sure that when we run in javaRunLoopMode we don't exit randomly
+    [[NSRunLoop currentRunLoop] addPort:[NSPort port] forMode:[ThreadUtilities javaRunLoopMode]];
 
     do {
         @try {
             [app run];
         } @catch (NSException* e) {
             NSLog(@"Apple AWT Startup Exception: %@", [e description]);
+            NSLog(@"Apple AWT Startup Exception callstack: %@", [e callStackSymbols]);
             NSLog(@"Apple AWT Restarting Native Event Thread");
 
             [app stop:app];

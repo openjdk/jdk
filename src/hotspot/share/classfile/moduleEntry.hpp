@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,8 @@
 #define SHARE_CLASSFILE_MODULEENTRY_HPP
 
 #include "jni.h"
-#include "classfile/classLoaderData.hpp"
-#include "classfile/vmSymbols.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.hpp"
@@ -48,6 +45,7 @@
 #define JAVA_BASE_NAME_LEN 9
 
 template <class T> class Array;
+class ClassLoaderData;
 class MetaspaceClosure;
 class ModuleClosure;
 
@@ -77,7 +75,7 @@ private:
   bool _must_walk_reads;               // walk module's reads list at GC safepoints to purge out dead modules
   bool _is_open;                       // whether the packages in the module are all unqualifiedly exported
   bool _is_patched;                    // whether the module is patched via --patch-module
-  CDS_JAVA_HEAP_ONLY(narrowOop _archived_module_narrow_oop;)
+  CDS_JAVA_HEAP_ONLY(int _archived_module_index;)
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
   enum {MODULE_READS_SIZE = 101};      // Initial size of list of modules that the module can read.
@@ -114,11 +112,7 @@ public:
   void             set_shared_protection_domain(ClassLoaderData *loader_data, Handle pd);
 
   ClassLoaderData* loader_data() const                 { return _loader_data; }
-
-  void set_loader_data(ClassLoaderData* cld) {
-    assert(!cld->has_class_mirror_holder(), "Unexpected has_class_mirror_holder cld");
-    _loader_data = cld;
-  }
+  void set_loader_data(ClassLoaderData* cld);
 
   Symbol*          version() const                     { return _version; }
   void             set_version(Symbol* version);
@@ -202,7 +196,8 @@ public:
   static Array<ModuleEntry*>* write_growable_array(GrowableArray<ModuleEntry*>* array);
   static GrowableArray<ModuleEntry*>* restore_growable_array(Array<ModuleEntry*>* archived_array);
   void load_from_archive(ClassLoaderData* loader_data);
-  void restore_archive_oops(ClassLoaderData* loader_data);
+  void restore_archived_oops(ClassLoaderData* loader_data);
+  void clear_archived_oops();
 #endif
 };
 

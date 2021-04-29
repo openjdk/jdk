@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -63,7 +62,7 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
   // mirror creation fails, loaded_classes_do() doesn't find
   // an array class without a mirror.
   null_loader_data->add_class(ak);
-
+  JFR_ONLY(ASSIGN_PRIMITIVE_CLASS_ID(ak);)
   return ak;
 }
 
@@ -204,7 +203,7 @@ Klass* TypeArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
   if (or_null) {
     return h_ak->array_klass_or_null(n);
   }
-  THREAD->check_possible_safepoint();
+  THREAD->as_Java_thread()->check_possible_safepoint();
   return h_ak->array_klass(n, THREAD);
 }
 

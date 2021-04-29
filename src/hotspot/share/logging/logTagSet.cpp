@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,19 +121,48 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
     ret = os::vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, args);
   } else {
     // Buffer too small. Just call printf to find out the length for realloc below.
-    ret = os::vsnprintf(buf, sizeof(buf), fmt, args);
+    ret = os::vsnprintf(nullptr, 0, fmt, args);
   }
+
   assert(ret >= 0, "Log message buffer issue");
-  if ((size_t)ret >= sizeof(buf)) {
-    size_t newbuf_len = prefix_len + ret + 1;
-    char* newbuf = NEW_C_HEAP_ARRAY(char, newbuf_len, mtLogging);
-    prefix_len = _write_prefix(newbuf, newbuf_len);
-    ret = os::vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
-    assert(ret >= 0, "Log message buffer issue");
-    log(level, newbuf);
-    FREE_C_HEAP_ARRAY(char, newbuf);
-  } else {
+  if (ret < 0) {
+    // Error, just log contents in buf.
     log(level, buf);
+    log(level, "Log message buffer issue");
+    va_end(saved_args);
+    return;
+  }
+
+
+  size_t newbuf_len = (size_t)ret + prefix_len + 1; // total bytes needed including prefix.
+  if (newbuf_len <= sizeof(buf)) {
+    log(level, buf);
+  } else {
+    // Buffer too small, allocate a large enough buffer using malloc/free to avoid circularity.
+    char* newbuf = (char*)::malloc(newbuf_len * sizeof(char));
+    if (newbuf != nullptr) {
+      prefix_len = _write_prefix(newbuf, newbuf_len);
+      ret = os::vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
+      assert(ret >= 0, "Log message newbuf issue");
+      // log the contents in newbuf even with error happened.
+      log(level, newbuf);
+      if (ret < 0) {
+        log(level, "Log message newbuf issue");
+      }
+      ::free(newbuf);
+    } else {
+      // Native OOM, use buf to output the least message. At this moment buf is full of either
+      // truncated prefix or truncated prefix + string. Put trunc_msg at the end of buf.
+      const char* trunc_msg = "..(truncated), native OOM";
+      const size_t ltr = strlen(trunc_msg) + 1;
+      ret = os::snprintf(buf + sizeof(buf) - ltr, ltr, "%s", trunc_msg);
+      assert(ret >= 0, "Log message buffer issue");
+      // log the contents in newbuf even with error happened.
+      log(level, buf);
+      if (ret < 0) {
+        log(level, "Log message buffer issue under OOM");
+      }
+    }
   }
   va_end(saved_args);
 }

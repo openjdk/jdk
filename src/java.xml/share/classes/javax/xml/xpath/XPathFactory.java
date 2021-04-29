@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,62 +122,11 @@ public abstract class XPathFactory {
     }
 
     /**
-    * <p>Get a new {@code XPathFactory} instance using the specified object model.</p>
-    *
-    * <p>To find a {@code XPathFactory} object,
-    * this method looks the following places in the following order where "the class loader" refers to the context class loader:</p>
-    * <ol>
-    *   <li>
-    *     <p>
-    *     If the system property {@link #DEFAULT_PROPERTY_NAME} + ":uri" is present,
-    *     where uri is the parameter to this method, then its value is read as a class name.
-    *     The method will try to create a new instance of this class by using the class loader,
-    *     and returns it if it is successfully created.
-    *   </li>
-    *   <li>
-    *     <p>
-    *     Use the configuration file "jaxp.properties". The file is in standard
-    *     {@link java.util.Properties} format and typically located in the
-    *     conf directory of the Java installation. It contains the fully qualified
-    *     name of the implementation class with the key being the system property
-    *     defined above.
-    *     <p>
-    *     The jaxp.properties file is read only once by the JAXP implementation
-    *     and its values are then cached for future use.  If the file does not exist
-    *     when the first attempt is made to read from it, no further attempts are
-    *     made to check for its existence.  It is not possible to change the value
-    *     of any property in jaxp.properties after it has been read for the first time.
-    *   </li>
-    *   <li>
-    *     <p>
-    *     Use the service-provider loading facility, defined by the
-    *     {@link java.util.ServiceLoader} class, to attempt to locate and load an
-    *     implementation of the service using the {@linkplain
-    *     java.util.ServiceLoader#load(java.lang.Class) default loading mechanism}:
-    *     the service-provider loading facility will use the {@linkplain
-    *     java.lang.Thread#getContextClassLoader() current thread's context class loader}
-    *     to attempt to load the service. If the context class
-    *     loader is null, the {@linkplain
-    *     ClassLoader#getSystemClassLoader() system class loader} will be used.
-    *     <br>
-    *     Each potential service provider is required to implement the method
-    *     {@link #isObjectModelSupported(String objectModel)}.
-    *     The first service provider found that supports the specified object
-    *     model is returned.
-    *     <br>
-    *     In case of {@link java.util.ServiceConfigurationError} an
-    *     {@link XPathFactoryConfigurationException} will be thrown.
-    *   </li>
-    *   <li>
-    *     <p>
-    *     Platform default {@code XPathFactory} is located in a platform
-    *     specific way.
-    *     There must be a {@linkplain #newDefaultInstance() platform default}
-    *     {@code XPathFactory} for the W3C DOM, i.e.
-    *     {@link #DEFAULT_OBJECT_MODEL_URI}.
-    *   </li>
-    * </ol>
-    * <p>If everything fails, an {@code XPathFactoryConfigurationException} will be thrown.
+    * Obtains a new {@code XPathFactory} instance using the specified object model.
+    * This method uses the
+    * <a href="../../../module-summary.html#LookupMechanism">JAXP Lookup Mechanism</a>
+    * to determine and load the {@code XPathFactory} implementation that supports
+    * the specified object model.
     *
     * <p>Tip for Trouble-shooting:
     * <p>See {@link java.util.Properties#load(java.io.InputStream)} for exactly how a property file is parsed.

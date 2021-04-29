@@ -115,12 +115,12 @@ import java.util.Objects;
  * For most applications written today, the ISO-8601 rules are entirely suitable.
  * However, any application that makes use of historical dates, and requires them
  * to be accurate will find the ISO-8601 approach unsuitable.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code YearMonth} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -128,6 +128,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class YearMonth
         implements Temporal, TemporalAdjuster, Comparable<YearMonth>, Serializable {
 
@@ -484,8 +485,8 @@ public final class YearMonth
      */
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
+        if (field instanceof ChronoField chronoField) {
+            switch (chronoField) {
                 case MONTH_OF_YEAR: return month;
                 case PROLEPTIC_MONTH: return getProlepticMonth();
                 case YEAR_OF_ERA: return (year < 1 ? 1 - year : year);
@@ -681,10 +682,9 @@ public final class YearMonth
      */
     @Override
     public YearMonth with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            f.checkValidValue(newValue);
-            switch (f) {
+        if (field instanceof ChronoField chronoField) {
+            chronoField.checkValidValue(newValue);
+            switch (chronoField) {
                 case MONTH_OF_YEAR: return withMonth((int) newValue);
                 case PROLEPTIC_MONTH: return plusMonths(newValue - getProlepticMonth());
                 case YEAR_OF_ERA: return withYear((int) (year < 1 ? 1 - newValue : newValue));
@@ -804,8 +804,8 @@ public final class YearMonth
      */
     @Override
     public YearMonth plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            switch ((ChronoUnit) unit) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            switch (chronoUnit) {
                 case MONTHS: return plusMonths(amountToAdd);
                 case YEARS: return plusYears(amountToAdd);
                 case DECADES: return plusYears(Math.multiplyExact(amountToAdd, 10));
@@ -1045,9 +1045,9 @@ public final class YearMonth
     @Override
     public long until(Temporal endExclusive, TemporalUnit unit) {
         YearMonth end = YearMonth.from(endExclusive);
-        if (unit instanceof ChronoUnit) {
+        if (unit instanceof ChronoUnit chronoUnit) {
             long monthsUntil = end.getProlepticMonth() - getProlepticMonth();  // no overflow
-            switch ((ChronoUnit) unit) {
+            switch (chronoUnit) {
                 case MONTHS: return monthsUntil;
                 case YEARS: return monthsUntil / 12;
                 case DECADES: return monthsUntil / 120;
@@ -1167,11 +1167,9 @@ public final class YearMonth
         if (this == obj) {
             return true;
         }
-        if (obj instanceof YearMonth) {
-            YearMonth other = (YearMonth) obj;
-            return year == other.year && month == other.month;
-        }
-        return false;
+        return (obj instanceof YearMonth other)
+                && year == other.year
+                && month == other.month;
     }
 
     /**

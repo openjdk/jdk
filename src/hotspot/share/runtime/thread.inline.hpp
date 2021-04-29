@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +26,15 @@
 #ifndef SHARE_RUNTIME_THREAD_INLINE_HPP
 #define SHARE_RUNTIME_THREAD_INLINE_HPP
 
+#include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
+
+#if defined(__APPLE__) && defined(AARCH64)
+#include "runtime/os.hpp"
+#endif
 
 inline void Thread::set_suspend_flag(SuspendFlags f) {
   uint32_t flags;
@@ -53,17 +57,17 @@ inline void Thread::set_has_async_exception() {
 inline void Thread::clear_has_async_exception() {
   clear_suspend_flag(_has_async_exception);
 }
-inline void Thread::set_critical_native_unlock() {
-  set_suspend_flag(_critical_native_unlock);
-}
-inline void Thread::clear_critical_native_unlock() {
-  clear_suspend_flag(_critical_native_unlock);
-}
 inline void Thread::set_trace_flag() {
   set_suspend_flag(_trace_flag);
 }
 inline void Thread::clear_trace_flag() {
   clear_suspend_flag(_trace_flag);
+}
+inline void Thread::set_obj_deopt_flag() {
+  set_suspend_flag(_obj_deopt);
+}
+inline void Thread::clear_obj_deopt_flag() {
+  clear_suspend_flag(_obj_deopt);
 }
 
 inline jlong Thread::cooked_allocated_bytes() {
@@ -86,7 +90,7 @@ inline ThreadsList* Thread::cmpxchg_threads_hazard_ptr(ThreadsList* exchange_val
   return (ThreadsList*)Atomic::cmpxchg(&_threads_hazard_ptr, compare_value, exchange_value);
 }
 
-inline ThreadsList* Thread::get_threads_hazard_ptr() {
+inline ThreadsList* Thread::get_threads_hazard_ptr() const {
   return (ThreadsList*)Atomic::load_acquire(&_threads_hazard_ptr);
 }
 
@@ -94,19 +98,26 @@ inline void Thread::set_threads_hazard_ptr(ThreadsList* new_list) {
   Atomic::release_store_fence(&_threads_hazard_ptr, new_list);
 }
 
-inline void JavaThread::set_ext_suspended() {
-  set_suspend_flag (_ext_suspended);
-}
-inline void JavaThread::clear_ext_suspended() {
-  clear_suspend_flag(_ext_suspended);
+#if defined(__APPLE__) && defined(AARCH64)
+inline void Thread::init_wx() {
+  assert(this == Thread::current(), "should only be called for current thread");
+  assert(!_wx_init, "second init");
+  _wx_state = WXWrite;
+  os::current_thread_enable_wx(_wx_state);
+  DEBUG_ONLY(_wx_init = true);
 }
 
-inline void JavaThread::set_external_suspend() {
-  set_suspend_flag(_external_suspend);
+inline WXMode Thread::enable_wx(WXMode new_state) {
+  assert(this == Thread::current(), "should only be called for current thread");
+  assert(_wx_init, "should be inited");
+  WXMode old = _wx_state;
+  if (_wx_state != new_state) {
+    _wx_state = new_state;
+    os::current_thread_enable_wx(new_state);
+  }
+  return old;
 }
-inline void JavaThread::clear_external_suspend() {
-  clear_suspend_flag(_external_suspend);
-}
+#endif // __APPLE__ && AARCH64
 
 inline void JavaThread::set_pending_async_exception(oop e) {
   _pending_async_exception = e;
@@ -166,81 +177,23 @@ inline void JavaThread::set_done_attaching_via_jni() {
   OrderAccess::fence();
 }
 
-inline bool JavaThread::stack_guard_zone_unused() {
-  return _stack_guard_state == stack_guard_unused;
-}
-
-inline bool JavaThread::stack_yellow_reserved_zone_disabled() {
-  return _stack_guard_state == stack_guard_yellow_reserved_disabled;
-}
-
-inline bool JavaThread::stack_reserved_zone_disabled() {
-  return _stack_guard_state == stack_guard_reserved_disabled;
-}
-
-inline size_t JavaThread::stack_available(address cur_sp) {
-  // This code assumes java stacks grow down
-  address low_addr; // Limit on the address for deepest stack depth
-  if (_stack_guard_state == stack_guard_unused) {
-    low_addr = stack_end();
-  } else {
-    low_addr = stack_reserved_zone_base();
-  }
-  return cur_sp > low_addr ? cur_sp - low_addr : 0;
-}
-
-inline bool JavaThread::stack_guards_enabled() {
-#ifdef ASSERT
-  if (os::uses_stack_guard_pages() &&
-      !(DisablePrimordialThreadGuardPages && os::is_primordial_thread())) {
-    assert(_stack_guard_state != stack_guard_unused, "guard pages must be in use");
-  }
-#endif
-  return _stack_guard_state == stack_guard_enabled;
-}
-
-// The release make sure this store is done after storing the handshake
-// operation or global state
-inline void JavaThread::set_polling_page_release(void* poll_value) {
-  Atomic::release_store(polling_page_addr(), poll_value);
-}
-
-// Caller is responsible for using a memory barrier if needed.
-inline void JavaThread::set_polling_page(void* poll_value) {
-  *polling_page_addr() = poll_value;
-}
-
-// The aqcquire make sure reading of polling page is done before
-// the reading the handshake operation or the global state
-inline volatile void* JavaThread::get_polling_page() {
-  return Atomic::load_acquire(polling_page_addr());
-}
-
 inline bool JavaThread::is_exiting() const {
   // Use load-acquire so that setting of _terminated by
   // JavaThread::exit() is seen more quickly.
-  TerminatedTypes l_terminated = (TerminatedTypes)
-      Atomic::load_acquire((volatile jint *) &_terminated);
+  TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
   return l_terminated == _thread_exiting || check_is_terminated(l_terminated);
 }
 
 inline bool JavaThread::is_terminated() const {
   // Use load-acquire so that setting of _terminated by
   // JavaThread::exit() is seen more quickly.
-  TerminatedTypes l_terminated = (TerminatedTypes)
-      Atomic::load_acquire((volatile jint *) &_terminated);
+  TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
   return check_is_terminated(l_terminated);
 }
 
 inline void JavaThread::set_terminated(TerminatedTypes t) {
   // use release-store so the setting of _terminated is seen more quickly
-  Atomic::release_store((volatile jint *) &_terminated, (jint) t);
-}
-
-// special for Threads::remove() which is static:
-inline void JavaThread::set_terminated_value() {
-  // use release-store so the setting of _terminated is seen more quickly
-  Atomic::release_store((volatile jint *) &_terminated, (jint) _thread_terminated);
+  Atomic::release_store(&_terminated, t);
 }
 
 // Allow tracking of class initialization monitor use

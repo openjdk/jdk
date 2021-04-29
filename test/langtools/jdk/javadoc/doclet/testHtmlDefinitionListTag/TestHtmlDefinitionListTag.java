@@ -49,6 +49,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     public void test_Comment_Deprecated() {
         javadoc("-Xdoclint:none",
                 "-d", "out-1",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg1");
         checkExit(Exit.OK);
@@ -61,6 +62,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         javadoc("-Xdoclint:none",
                 "-d", "out-2",
                 "-nocomment",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg1");
         checkExit(Exit.OK);
@@ -73,6 +75,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         javadoc("-Xdoclint:none",
                 "-d", "out-3",
                 "-nodeprecated",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg1");
         checkExit(Exit.OK);
@@ -87,6 +90,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 "-d", "out-4",
                 "-nocomment",
                 "-nodeprecated",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg1");
         checkExit(Exit.OK);
@@ -102,9 +106,9 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         // for default value.
         checkOutput("pkg1/C1.html", true,
                 """
-                    <pre>public class <span class="type-name-label">C1</span>
-                    extends java.lang.Object
-                    implements java.io.Serializable</pre>""");
+                    <div class="type-signature"><span class="modifiers">public class </span><span class="element-name type-name-label">C1</span>
+                    <span class="extends-implements">extends java.lang.Object
+                    implements java.io.Serializable</span></div>""");
         checkOutput("pkg1/C4.html", true,
                 """
                     <dl class="notes">
@@ -334,15 +338,14 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         checkOutput("pkg1/C1.html", expectFound,
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">void</span>&nbsp;<span class="member-name">readObject</span>(\
-                    )
+                    lass="return-type">void</span>&nbsp;<span class="element-name">readObject</span>()
                                     throws <span class="exceptions">java.io.IOException</span></div>
                     </section>
                     </li>""");
 
         checkOutput("pkg1/C2.html", expectFound,
                 """
-                    <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="member-name">C2</span>()</div>
+                    <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">C2</span>()</div>
                     </section>
                     </li>""");
 
@@ -350,8 +353,8 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 """
                     <div class="member-signature"><span class="modifiers">public static final</span>\
                     &nbsp;<span class="return-type"><a href="C1.ModalExclusionType.html" title="enum\
-                     in pkg1">C1.ModalExclusionType</a></span>&nbsp;<span class="member-name">APPLIC\
-                    ATION_EXCLUDE</span></div>
+                     class in pkg1">C1.ModalExclusionType</a></span>&nbsp;<span class="element-name">APPLICATION_E\
+                    XCLUDE</span></div>
                     </section>
                     </li>""");
 

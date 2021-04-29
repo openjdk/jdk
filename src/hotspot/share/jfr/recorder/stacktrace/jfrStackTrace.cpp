@@ -134,7 +134,7 @@ void JfrStackFrame::write(JfrCheckpointWriter& cpw) const {
 class vframeStreamSamples : public vframeStreamCommon {
  public:
   // constructor that starts with sender of frame fr (top_frame)
-  vframeStreamSamples(JavaThread *jt, frame fr, bool stop_at_java_call_stub) : vframeStreamCommon(jt) {
+  vframeStreamSamples(JavaThread *jt, frame fr, bool stop_at_java_call_stub) : vframeStreamCommon(jt, false /* process_frames */) {
     _stop_at_java_call_stub = stop_at_java_call_stub;
     _frame = fr;
 
@@ -200,13 +200,20 @@ bool JfrStackTrace::record_thread(JavaThread& thread, frame& frame) {
     } else {
       bci = st.bci();
     }
+
+    intptr_t* frame_id = st.frame_id();
+    st.samples_next();
+    if (type == JfrStackFrame::FRAME_JIT && !st.at_end() && frame_id == st.frame_id()) {
+      // This frame and the caller frame are both the same physical
+      // frame, so this frame is inlined into the caller.
+      type = JfrStackFrame::FRAME_INLINE;
+    }
+
     const int lineno = method->line_number_from_bci(bci);
-    // Can we determine if it's inlined?
     _hash = (_hash * 31) + mid;
     _hash = (_hash * 31) + bci;
     _hash = (_hash * 31) + type;
     _frames[count] = JfrStackFrame(mid, bci, type, lineno, method->method_holder());
-    st.samples_next();
     count++;
   }
 
@@ -233,7 +240,7 @@ void JfrStackTrace::resolve_linenos() const {
 
 bool JfrStackTrace::record_safe(JavaThread* thread, int skip) {
   assert(thread == Thread::current(), "Thread stack needs to be walkable");
-  vframeStream vfs(thread);
+  vframeStream vfs(thread, false /* stop_at_java_call_stub */, false /* process_frames */);
   u4 count = 0;
   _reached_root = true;
   for (int i = 0; i < skip; i++) {
@@ -259,11 +266,18 @@ bool JfrStackTrace::record_safe(JavaThread* thread, int skip) {
     else {
       bci = vfs.bci();
     }
+    intptr_t* frame_id = vfs.frame_id();
+    vfs.next();
+    if (type == JfrStackFrame::FRAME_JIT && !vfs.at_end() && frame_id == vfs.frame_id()) {
+      // This frame and the caller frame are both the same physical
+      // frame, so this frame is inlined into the caller.
+      type = JfrStackFrame::FRAME_INLINE;
+    }
+
     _hash = (_hash * 31) + mid;
     _hash = (_hash * 31) + bci;
     _hash = (_hash * 31) + type;
     _frames[count] = JfrStackFrame(mid, bci, type, method->method_holder());
-    vfs.next();
     count++;
   }
 

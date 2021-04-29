@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,11 @@ public:
   // Supplied function to return the additive identity type
   virtual const Type *add_id() const = 0;
 
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return false;
+  }
+  static AddNode* make(Node* in1, Node* in2, BasicType bt);
 };
 
 //------------------------------AddINode---------------------------------------
@@ -81,6 +86,10 @@ public:
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return bt == T_INT;
+  }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -95,6 +104,10 @@ public:
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
+  virtual bool operates_on(BasicType bt, bool signed_int) const {
+    assert(bt == T_INT || bt == T_LONG, "unsupported");
+    return bt == T_LONG;
+  }
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
@@ -199,6 +212,7 @@ public:
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeInt::ZERO; }
   virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type *Value(PhaseGVN *phase) const;
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -211,6 +225,7 @@ public:
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeLong::ZERO; }
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual const Type *Value(PhaseGVN *phase) const;
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
@@ -279,6 +294,30 @@ public:
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+};
+
+//------------------------------MaxLNode---------------------------------------
+// MAXimum of 2 longs.
+class MaxLNode : public MaxNode {
+public:
+  MaxLNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring(const Type*, const Type*) const { return TypeLong::LONG; }
+  virtual const Type *add_id() const { return TypeLong::make(min_jlong); }
+  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+//------------------------------MinLNode---------------------------------------
+// MINimum of 2 longs.
+class MinLNode : public MaxNode {
+public:
+  MinLNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring(const Type*, const Type*) const { return TypeLong::LONG; }
+  virtual const Type *add_id() const { return TypeLong::make(max_jlong); }
+  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
 };
 
 //------------------------------MaxFNode---------------------------------------

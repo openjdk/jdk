@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 
 #include "asm/assembler.inline.hpp"
 #include "oops/compressedOops.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
@@ -102,8 +103,7 @@ class MacroAssembler: public Assembler {
  virtual void check_and_handle_popframe(Register java_thread);
  virtual void check_and_handle_earlyret(Register java_thread);
 
-  void safepoint_poll(Label& slow_path);
-  void safepoint_poll_acquire(Label& slow_path);
+  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
   // Biased locking support
   // lock_reg and obj_reg must be loaded up with the appropriate values.
@@ -475,8 +475,8 @@ public:
   void push(RegSet regs, Register stack) { if (regs.bits()) push(regs.bits(), stack); }
   void pop(RegSet regs, Register stack) { if (regs.bits()) pop(regs.bits(), stack); }
 
-  void push_fp(RegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
-  void pop_fp(RegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
+  void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
+  void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
 
   static RegSet call_clobbered_registers();
 
@@ -527,6 +527,7 @@ public:
   void mov(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {
     orr(Vd, T, Vn, Vn);
   }
+
 
 public:
 
@@ -968,7 +969,9 @@ public:
 
   void verify_sve_vector_length();
   void reinitialize_ptrue() {
-    sve_ptrue(ptrue, B);
+    if (UseSVE > 0) {
+      sve_ptrue(ptrue, B);
+    }
   }
   void verify_ptrue();
 
@@ -1014,10 +1017,6 @@ public:
   // Check for reserved stack access in method being exited (for JIT)
   void reserved_stack_check();
 
-  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
-                                                Register tmp,
-                                                int offset);
-
   // Arithmetics
 
   void addptr(const Address &dst, int32_t src);
@@ -1042,6 +1041,8 @@ public:
 
   void atomic_xchg(Register prev, Register newv, Register addr);
   void atomic_xchgw(Register prev, Register newv, Register addr);
+  void atomic_xchgl(Register prev, Register newv, Register addr);
+  void atomic_xchglw(Register prev, Register newv, Register addr);
   void atomic_xchgal(Register prev, Register newv, Register addr);
   void atomic_xchgalw(Register prev, Register newv, Register addr);
 
@@ -1063,13 +1064,27 @@ public:
 private:
   void compare_eq(Register rn, Register rm, enum operand_size size);
 
+#ifdef ASSERT
+  // Template short-hand support to clean-up after a failed call to trampoline
+  // call generation (see trampoline_call() below),  when a set of Labels must
+  // be reset (before returning).
+  template<typename Label, typename... More>
+  void reset_labels(Label &lbl, More&... more) {
+    lbl.reset(); reset_labels(more...);
+  }
+  template<typename Label>
+  void reset_labels(Label &lbl) {
+    lbl.reset();
+  }
+#endif
+
 public:
   // Calls
 
-  address trampoline_call(Address entry, CodeBuffer *cbuf = NULL);
+  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
 
   static bool far_branches() {
-    return ReservedCodeCacheSize > branch_range || UseAOT;
+    return ReservedCodeCacheSize > branch_range;
   }
 
   // Jumps that can reach anywhere in the code cache.
@@ -1231,7 +1246,6 @@ public:
 
   address read_polling_page(Register r, relocInfo::relocType rtype);
   void get_polling_page(Register dest, relocInfo::relocType rtype);
-  address fetch_and_read_polling_page(Register r, relocInfo::relocType rtype);
 
   // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
   void update_byte_crc32(Register crc, Register val, Register table);
@@ -1239,24 +1253,24 @@ public:
         Register table0, Register table1, Register table2, Register table3,
         bool upper = false);
 
-  void has_negatives(Register ary1, Register len, Register result);
+  address has_negatives(Register ary1, Register len, Register result);
 
-  void arrays_equals(Register a1, Register a2, Register result, Register cnt1,
-                     Register tmp1, Register tmp2, Register tmp3, int elem_size);
+  address arrays_equals(Register a1, Register a2, Register result, Register cnt1,
+                        Register tmp1, Register tmp2, Register tmp3, int elem_size);
 
   void string_equals(Register a1, Register a2, Register result, Register cnt1,
                      int elem_size);
 
   void fill_words(Register base, Register cnt, Register value);
   void zero_words(Register base, uint64_t cnt);
-  void zero_words(Register ptr, Register cnt);
+  address zero_words(Register ptr, Register cnt);
   void zero_dcache_blocks(Register base, Register cnt);
 
   static const int zero_words_block_size;
 
-  void byte_array_inflate(Register src, Register dst, Register len,
-                          FloatRegister vtmp1, FloatRegister vtmp2,
-                          FloatRegister vtmp3, Register tmp4);
+  address byte_array_inflate(Register src, Register dst, Register len,
+                             FloatRegister vtmp1, FloatRegister vtmp2,
+                             FloatRegister vtmp3, Register tmp4);
 
   void char_array_compress(Register src, Register dst, Register len,
                            FloatRegister tmp1Reg, FloatRegister tmp2Reg,
@@ -1307,8 +1321,9 @@ public:
                        Register zlen, Register tmp1, Register tmp2, Register tmp3,
                        Register tmp4, Register tmp5, Register tmp6, Register tmp7);
   void mul_add(Register out, Register in, Register offs, Register len, Register k);
-  // ISB may be needed because of a safepoint
-  void maybe_isb() { isb(); }
+
+  // Place an ISB after code may have been modified due to a safepoint.
+  void safepoint_isb();
 
 private:
   // Return the effective address r + (r1 << ext) + offset.
@@ -1384,6 +1399,11 @@ public:
   }
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
+
+private:
+  // Check the current thread doesn't need a cross modify fence.
+  void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
+
 };
 
 #ifdef ASSERT

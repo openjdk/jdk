@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144903 8177466 8191842 8211694 8213725 8239536
+ * @bug 8144903 8177466 8191842 8211694 8213725 8239536 8257236 8252409
  * @summary Tests for EvaluationState.variables
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -38,6 +38,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import javax.tools.Diagnostic;
 
+import jdk.jshell.MethodSnippet;
 import jdk.jshell.Snippet;
 import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.VarSnippet;
@@ -400,6 +401,13 @@ public class VariablesTest extends KullaTesting {
         assertEval("r15a.add(\"a\");");
         assertEval("var r15b = r15a.get(0);");
         assertEval("r15b", "\"a\"");
+        assertEval("class Z { }");
+        assertEval("var r16a = new Z();");
+        assertEval("var r16b = (Runnable) () -> {int r16b_; int r16b__;};");
+        assertEval("class $ { }");
+        assertEval("var r16c = new $();");
+        assertEval("$ r16d() { return null; }");
+        assertEval("var r16d = r16d();");
     }
 
     public void test8191842() {
@@ -410,10 +418,14 @@ public class VariablesTest extends KullaTesting {
 
     public void lvtiRecompileDependentsWithIntersectionTypes() {
         assertEval("<Z extends Runnable & CharSequence> Z get1() { return null; }", added(VALID));
-        VarSnippet var = varKey(assertEval("var i1 = get1();", added(VALID)));
+        assertEval("var i1 = get1();", added(VALID));
+        MethodSnippet get2 = methodKey(assertEval("<Z extends Runnable & Stream> Z get2() { return null; }",
+            ste(MAIN_SNIPPET, NONEXISTENT, RECOVERABLE_NOT_DEFINED, false, null)));
         assertEval("import java.util.stream.*;", added(VALID),
-                                                 ste(var, VALID, VALID, true, MAIN_SNIPPET));
+                                                 ste(get2, RECOVERABLE_NOT_DEFINED, VALID, true, MAIN_SNIPPET));
         assertEval("void t1() { i1.run(); i1.length(); }", added(VALID));
+        assertEval("var i2 = get2();", added(VALID));
+        assertEval("void t2() { i2.run(); i2.count(); }", added(VALID));
     }
 
     public void arrayInit() {
@@ -598,4 +610,11 @@ public class VariablesTest extends KullaTesting {
                 .remoteVMOptions("--class-path", tpath)
                 .compilerOptions("--class-path", tpath));
     }
+
+    public void varIntersection() {
+        assertEval("interface Marker {}");
+        assertEval("var v = (Marker & Runnable) () -> {};", added(VALID));
+        assertEval("v.run()");
+    }
+
 }

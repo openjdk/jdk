@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,8 @@
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "memory/iterator.hpp"
-#include "memory/metaspaceGCThresholdUpdater.hpp"
+#include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/referenceType.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
@@ -122,27 +123,28 @@ void JfrThreadGroupConstant::serialize(JfrCheckpointWriter& writer) {
   JfrThreadGroup::serialize(writer);
 }
 
-static const char* flag_value_origin_to_string(JVMFlag::Flags origin) {
+static const char* flag_value_origin_to_string(JVMFlagOrigin origin) {
   switch (origin) {
-    case JVMFlag::DEFAULT: return "Default";
-    case JVMFlag::COMMAND_LINE: return "Command line";
-    case JVMFlag::ENVIRON_VAR: return "Environment variable";
-    case JVMFlag::CONFIG_FILE: return "Config file";
-    case JVMFlag::MANAGEMENT: return "Management";
-    case JVMFlag::ERGONOMIC: return "Ergonomic";
-    case JVMFlag::ATTACH_ON_DEMAND: return "Attach on demand";
-    case JVMFlag::INTERNAL: return "Internal";
-    case JVMFlag::JIMAGE_RESOURCE: return "JImage resource";
+    case JVMFlagOrigin::DEFAULT: return "Default";
+    case JVMFlagOrigin::COMMAND_LINE: return "Command line";
+    case JVMFlagOrigin::ENVIRON_VAR: return "Environment variable";
+    case JVMFlagOrigin::CONFIG_FILE: return "Config file";
+    case JVMFlagOrigin::MANAGEMENT: return "Management";
+    case JVMFlagOrigin::ERGONOMIC: return "Ergonomic";
+    case JVMFlagOrigin::ATTACH_ON_DEMAND: return "Attach on demand";
+    case JVMFlagOrigin::INTERNAL: return "Internal";
+    case JVMFlagOrigin::JIMAGE_RESOURCE: return "JImage resource";
     default: ShouldNotReachHere(); return "";
   }
 }
 
 void FlagValueOriginConstant::serialize(JfrCheckpointWriter& writer) {
-  static const u4 nof_entries = JVMFlag::LAST_VALUE_ORIGIN + 1;
-  writer.write_count(nof_entries);
-  for (u4 i = 0; i < nof_entries; ++i) {
-    writer.write_key(i);
-    writer.write(flag_value_origin_to_string((JVMFlag::Flags)i));
+  constexpr EnumRange<JVMFlagOrigin> range{};
+  writer.write_count(static_cast<u4>(range.size()));
+
+  for (JVMFlagOrigin origin : range) {
+    writer.write_key(static_cast<u4>(origin));
+    writer.write(flag_value_origin_to_string(origin));
   }
 }
 

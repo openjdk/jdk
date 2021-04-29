@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public:
 //           macro body starts here -------------------+
 //                                                     |
 //                                                     v
-#define FLAG_LIMIT_DEFINE(      type, name, ...)       ); constexpr JVMTypedFlagLimit<type> limit_##name(0
+#define FLAG_LIMIT_DEFINE(      type, name, ...)       ); constexpr JVMTypedFlagLimit<type> limit_##name(JVMFlag::TYPE_##type
 #define FLAG_LIMIT_DEFINE_DUMMY(type, name, ...)       ); constexpr DummyLimit nolimit_##name(0
 #define FLAG_LIMIT_PTR(         type, name, ...)       ), LimitGetter<type>::get_limit(&limit_##name, 0
 #define FLAG_LIMIT_PTR_NONE(    type, name, ...)       ), LimitGetter<type>::no_limit(0
