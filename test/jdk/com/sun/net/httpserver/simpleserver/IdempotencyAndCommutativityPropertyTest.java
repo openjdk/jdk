@@ -81,9 +81,11 @@ public class IdempotencyAndCommutativityPropertyTest {
     );
 
     private enum REQUEST {
-        //GET, HEAD, UNKNOWN;
-        GET, HEAD;
-        //UNKNOWN;
+        GET, HEAD, UNKNOWN; //2([UNKNOWN=]):
+         //HEAD,GET, UNKNOWN; //([UNKNOWN=]):
+        //UNKNOWN, HEAD,GET;
+       // GET, HEAD;
+       // UNKNOWN; // [UNKNOWN=aFile.txt])
 
         static List<String> asList() {
             return Arrays.asList(REQUEST.values()).stream().map(REQUEST::name).collect(Collectors.toList());
@@ -195,7 +197,7 @@ public class IdempotencyAndCommutativityPropertyTest {
     }
 
     static HttpServer createNoOutputWildcardBoundServer(Path root) {
-        return SimpleFileServer.createFileServer(WILDCARD_ADDR, root, SimpleFileServer.OutputLevel.NONE);
+        return SimpleFileServer.createFileServer(WILDCARD_ADDR, root, SimpleFileServer.OutputLevel.INFO);
     }
 
     static HttpClient createClient() {
