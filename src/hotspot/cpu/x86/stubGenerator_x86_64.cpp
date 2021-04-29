@@ -5791,7 +5791,6 @@ address generate_avx_ghash_processBlocks() {
   }
 
 
-//Xubo
   /***
    *  Arguments:
    *
@@ -5811,9 +5810,6 @@ address generate_avx_ghash_processBlocks() {
       StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
 
       address start = __ pc();
-      // Win64: rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
-      // Unix:  rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)
-      // rscratch1: r10
 
       const int LIMIT = 5552;
       const int BASE = 65521;
@@ -5856,43 +5852,43 @@ address generate_avx_ghash_processBlocks() {
       __ push(r13);
       __ vmovdqu(yshuf0, ExternalAddress((address) StubRoutines::x86::_adler32_shuf0_table));
       __ vmovdqu(yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_shuf1_table));
-      __ mov(data, c_rarg1); //data
-      __ mov(size, c_rarg2); //length
+      __ movptr(data, c_rarg1); //data
+      __ movl(size, c_rarg2); //length
       __ movl(b_d, init_d); //adler
       __ shrl(b_d, 16);
       __ andl(init_d, 0xFFFF);
-      __ cmpq(size, 32);
+      __ cmpl(size, 32);
       __ jcc(Assembler::below, LT64);
       __ movdl(xa, init_d); //vmovd - 32bit
       __ vpxor(yb, yb, yb, Assembler::AVX_256bit);
 
       __ BIND(SLOOP1);
       __ movl(s, LIMIT);
-      __ cmpq(s, size);
-      __ cmovq(Assembler::above, s, size); // s = min(size, LIMIT)
+      __ cmpl(s, size);
+      __ cmovl(Assembler::above, s, size); // s = min(size, LIMIT)
       __ lea(end, Address(s, data, Address::times_1, -CHUNKSIZE_M1));
       __ cmpq(data, end);
       __ jcc(Assembler::aboveEqual, SKIP_LOOP_1A);
 
       __ BIND(SLOOP1A);
       __ vbroadcastf128(ydata, Address(data, 0), Assembler::AVX_256bit);
-      __ addq(data, CHUNKSIZE);
+      __ addptr(data, CHUNKSIZE);
       __ vpshufb(ydata0, ydata, yshuf0, Assembler::AVX_256bit);
       __ vpaddd(ya, ya, ydata0, Assembler::AVX_256bit);
       __ vpaddd(yb, yb, ya, Assembler::AVX_256bit);
       __ vpshufb(ydata1, ydata, yshuf1, Assembler::AVX_256bit);
       __ vpaddd(ya, ya, ydata1, Assembler::AVX_256bit);
       __ vpaddd(yb, yb, ya, Assembler::AVX_256bit);
-      __ cmpq(data, end);
+      __ cmpptr(data, end);
       __ jcc(Assembler::below, SLOOP1A);
 
       __ BIND(SKIP_LOOP_1A);
-      __ addq(end, CHUNKSIZE_M1);
-      __ testq(s, CHUNKSIZE_M1);
+      __ addptr(end, CHUNKSIZE_M1);
+      __ testl(s, CHUNKSIZE_M1);
       __ jcc(Assembler::notEqual, DO_FINAL);
 
       // either we're done, or we just did LIMIT
-      __ subq(size, s);
+      __ subl(size, s);
 
       // reduce
       __ vpslld(yb, yb, 3, Assembler::AVX_256bit); //b is scaled by 8
@@ -5920,13 +5916,13 @@ address generate_avx_ghash_processBlocks() {
 
       __ vpsubd(xb, xb, xsa, Assembler::AVX_128bit);
       __ movdl(rax, xb);
-      __ addq(rax, b_d);
+      __ addl(rax, b_d);
       __ xorl(rdx, rdx);
       __ movl(rcx, BASE);
       __ divl(rcx); // divide edx:eax by ecx, quot->eax, rem->edx
       __ movl(b_d, rdx);
 
-      __ testq(size, size);
+      __ testl(size, size);
       __ jcc(Assembler::zero, FINISH);
 
       // continue loop
@@ -5943,7 +5939,7 @@ address generate_avx_ghash_processBlocks() {
       __ BIND(LT64);
       __ movl(a_d, init_d);
       __ lea(end, Address(data, size, Address::times_1));
-      __ testq(size, size);
+      __ testl(size, size);
       __ jcc(Assembler::notZero, FINAL_LOOP);
       __ jmp(ZERO_SIZE);
 
@@ -5974,9 +5970,9 @@ address generate_avx_ghash_processBlocks() {
       __ BIND(FINAL_LOOP);
       __ movzbl(rax, Address(data, 0)); //movzx   eax, byte[data]
       __ addl(a_d, rax);
-      __ incq(data);
+      __ incl(data);
       __ addl(b_d, a_d);
-      __ cmpq(data, end);
+      __ cmpptr(data, end);
       __ jcc(Assembler::below, FINAL_LOOP);
 
       __ BIND(ZERO_SIZE);
@@ -6968,7 +6964,7 @@ address generate_avx_ghash_processBlocks() {
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
     }
 
-    if (VM_Version::supports_sse2() && UseAdler32Intrinsics) {
+    if (VM_Version::supports_avx2() && UseAdler32Intrinsics) {
        StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
 
