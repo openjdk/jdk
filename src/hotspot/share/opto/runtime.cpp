@@ -1377,7 +1377,11 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
   // deoptimized frame
 
   if (nm != NULL) {
+#if defined(__APPLE__) && defined(AARCH64)
     RegisterMap map(current, false /* update_map */, false /* process_frames */);
+#else
+    RegisterMap map(current, false /* update_map */);
+#endif
     frame caller = current->last_frame().sender(&map);
 #ifdef ASSERT
     assert(caller.is_compiled_frame(), "must be");
