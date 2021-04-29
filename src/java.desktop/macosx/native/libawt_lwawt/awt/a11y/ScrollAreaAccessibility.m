@@ -32,12 +32,7 @@
  */
 @implementation ScrollAreaAccessibility
 
-- (NSString * _Nonnull)accessibilityRole
-{
-    return NSAccessibilityScrollAreaRole;
-}
-
-- (NSArray * _Nullable)accessibilityContents
+- (NSArray * _Nullable)accessibilityContentsAttribute
 {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     NSArray *children = [JavaComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:JAVA_AX_ALL_CHILDREN allowIgnored:YES];
@@ -54,8 +49,61 @@
             [(NSMutableArray *)contents addObject:aElement];
         }
     }
-
     return contents;
 }
 
+- (id _Nullable)getScrollBarwithOrientation:(enum NSAccessibilityOrientation)orientation
+{
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+
+    NSArray *children = [JavaComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:JAVA_AX_ALL_CHILDREN allowIgnored:YES];
+    if ([children count] <= 0) return nil;
+
+    // The scroll bars are in the children.
+    JavaComponentAccessibility *aElement;
+    NSEnumerator *enumerator = [children objectEnumerator];
+    while ((aElement = (JavaComponentAccessibility *)[enumerator nextObject])) {
+        if ([[aElement accessibilityRoleAttribute] isEqualToString:NSAccessibilityScrollBarRole]) {
+            jobject elementAxContext = [aElement axContextWithEnv:env];
+            if (orientation == NSAccessibilityOrientationHorizontal) {
+                if (isHorizontal(env, elementAxContext, fComponent)) {
+                    (*env)->DeleteLocalRef(env, elementAxContext);
+                    return aElement;
+                }
+            } else if (orientation == NSAccessibilityOrientationVertical) {
+                if (isVertical(env, elementAxContext, fComponent)) {
+                    (*env)->DeleteLocalRef(env, elementAxContext);
+                    return aElement;
+                }
+            } else {
+                (*env)->DeleteLocalRef(env, elementAxContext);
+            }
+        }
+    }
+    return nil;
+}
+
+- (NSString * _Nonnull)accessibilityRole
+{
+    NSLog(@"accessibilityRole called");
+    return NSAccessibilityScrollAreaRole;
+}
+
+- (NSArray * _Nullable)accessibilityContents
+{
+    NSLog(@"accessibilityContents called");
+    return [self accessibilityContentsAttribute];
+}
+
+- (id _Nullable)accessibilityHorizontalScrollBar
+{
+    NSLog(@"Horizontal scrollbar called");
+    return [self getScrollBarwithOrientation:NSAccessibilityOrientationHorizontal];
+}
+
+- (id _Nullable)accessibilityVerticalScrollBar
+{
+    NSLog(@"Vertical scrollbar called");
+    return [self getScrollBarwithOrientation:NSAccessibilityOrientationVertical];
+}
 @end
