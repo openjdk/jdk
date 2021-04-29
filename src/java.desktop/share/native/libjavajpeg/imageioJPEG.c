@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -670,8 +670,17 @@ static void imageio_dispose(j_common_ptr info) {
         info->err = NULL;
         if (info->is_decompressor) {
             j_decompress_ptr dinfo = (j_decompress_ptr) info;
+#ifdef __GNUC__
+// GCC might falsely detect that `dinfo` is allocated as `j_compress_ptr`.
+// See JDK-8266171 for more details.
+_Pragma("GCC diagnostic push")
+_Pragma("GCC diagnostic ignored \"-Warray-bounds\"")
+#endif
             free(dinfo->src);
             dinfo->src = NULL;
+#ifdef __GNUC__
+_Pragma("GCC diagnostic pop")
+#endif
         } else {
             j_compress_ptr cinfo = (j_compress_ptr) info;
             free(cinfo->dest);
