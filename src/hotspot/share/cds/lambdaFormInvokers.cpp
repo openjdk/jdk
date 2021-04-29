@@ -79,12 +79,22 @@ void LambdaFormInvokers::append(char* line) {
   _lambdaform_lines->append(line);
 }
 
-void LambdaFormInvokers::regenerate_holder_classes() {
+#define HANDLE_IF_HAS_EXCEPTION                                                                         \
+  if (HAS_PENDING_EXCEPTION) {                                                                          \
+    if (!PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {                                \
+      log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),                             \
+                     java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));\
+      CLEAR_PENDING_EXCEPTION;                                                                          \
+    }                                                                                                   \
+    return;                                                                                             \
+  }
+
+void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
     log_info(cds)("Nothing to regenerate for holder classes");
     return;
   }
-  JavaThread* THREAD = JavaThread::current();
+
   ResourceMark rm(THREAD);
 
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
@@ -110,12 +120,7 @@ void LambdaFormInvokers::regenerate_holder_classes() {
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result, cds_klass, method, signrs, list_lines, THREAD);
 
-  if (HAS_PENDING_EXCEPTION) {
-    log_info(cds)("%s: %s", THREAD->pending_exception()->klass()->external_name(),
-                            java_lang_String::as_utf8_string(java_lang_Throwable::message(THREAD->pending_exception())));
-    CLEAR_PENDING_EXCEPTION;
-    return;
-  }
+  HANDLE_IF_HAS_EXCEPTION;
 
   objArrayHandle h_array(THREAD, (objArrayOop)result.get_oop());
   int sz = h_array->length();
@@ -129,21 +134,11 @@ void LambdaFormInvokers::regenerate_holder_classes() {
     char *class_name = java_lang_String::as_utf8_string(h_name());
     int len = h_bytes->length();
     // make a copy of class bytes so GC will not affect us.
-    char *buf = resource_allocate_bytes(THREAD, len, AllocFailStrategy::RETURN_NULL);
-    if (buf == nullptr) {
-      log_info(cds)("Out of memory when reloading class %s, quit", class_name);
-      return;
-    }
+    char *buf = NEW_RESOURCE_ARRAY(char, len);
     memcpy(buf, (char*)h_bytes->byte_at_addr(0), len);
     ClassFileStream st((u1*)buf, len, NULL, ClassFileStream::verify);
     reload_class(class_name, st, THREAD);
-
-    if (HAS_PENDING_EXCEPTION) {
-      log_info(cds)("Exception happened: %s", PENDING_EXCEPTION->klass()->name()->as_C_string());
-      log_info(cds)("Could not create InstanceKlass for class %s", class_name);
-      CLEAR_PENDING_EXCEPTION;
-      return;
-    }
+    HANDLE_IF_HAS_EXCEPTION;
   }
 }
 
@@ -179,7 +174,7 @@ void LambdaFormInvokers::reload_class(char* name, ClassFileStream& st, TRAPS) {
   // exclude the existing class from dump
   SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass));
   SystemDictionaryShared::init_dumptime_info(result);
-  log_info(cds, lambda)("Replaced class %s, old: %p  new: %p", name, klass, result);
+  log_debug(cds, lambda)("Replaced class %s, old: %p  new: %p", name, klass, result);
 }
 
 void LambdaFormInvokers::dump_static_archive_invokers() {

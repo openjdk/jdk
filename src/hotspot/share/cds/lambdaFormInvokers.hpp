@@ -34,13 +34,15 @@ template <class T> class Array;
 class LambdaFormInvokers : public AllStatic {
  private:
   static GrowableArrayCHeap<char*, mtClassShared>* _lambdaform_lines;
-  static void reload_class(char* name, ClassFileStream& st, TRAPS);
-  // for storing LF form lines in read only table.
+  // for storing LF form lines (LF_RESOLVE only) in read only table.
   static Array<Array<char>*>* _static_archive_invokers;
+  static void reload_class(char* name, ClassFileStream& st, TRAPS);
  public:
   static void append(char* line);
   static void append_filtered(char* line);
-  static void regenerate_holder_classes();
+  // All exceptions except for OOM will be suppressed in the fucntion, the
+  // non-OOM failure should not affect normal archiving.
+  static void regenerate_holder_classes(TRAPS);
   static GrowableArrayCHeap<char*, mtClassShared>* lambdaform_lines() {
     return _lambdaform_lines;
   }

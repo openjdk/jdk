@@ -744,7 +744,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
 
   if (LambdaFormInvokers::lambdaform_lines() != NULL) {
     log_info(cds)("Regenerate MethodHandle Holder classes...");
-    LambdaFormInvokers::regenerate_holder_classes();
+    LambdaFormInvokers::regenerate_holder_classes(CHECK);
     log_info(cds)("Regenerate MethodHandle Holder classes done.");
   }
 
