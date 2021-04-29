@@ -24,11 +24,11 @@
 /*
  * @test
  * @bug 8264395
- * @summary testing of WB::enqueueInitializerForCompilation()
- * @library /test/lib /
+ * @summary testing compilation of the class initializer of a class that is not initialized yet
+ * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *      -XX:+WhiteBoxAPI compiler.whitebox.TestEnqueueInitializerForCompilation
  */
 
@@ -43,15 +43,6 @@ public class TestEnqueueInitializerForCompilation {
     }
 
     static class LongWrapper {
-        final static LongWrapper ZERO = new LongWrapper(0);
-        private long val;
-
-        LongWrapper(long val) {
-            this.val = val;
-        }
-
-        static LongWrapper wrap(long val) {
-            return (val == 0L) ? ZERO : new LongWrapper(val);
-        }
+        final static LongWrapper ZERO = new LongWrapper();
     }
 }
