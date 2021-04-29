@@ -803,7 +803,6 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   Label L_POW;
 
   assert_different_registers(tmp1, tmp2, eax, ecx, edx);
-  jmp(start);
   address HIGHSIGMASK = (address)_HIGHSIGMASK;
   address LOG2_E = (address)_LOG2_E;
   address coeff = (address)_coeff_pow;
