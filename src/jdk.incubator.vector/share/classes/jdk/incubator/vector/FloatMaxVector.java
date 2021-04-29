@@ -770,6 +770,8 @@ final class FloatMaxVector extends FloatVector {
         return super.fromArray0Template(a, offset);  // specialize
     }
 
+
+
     @ForceInline
     @Override
     final

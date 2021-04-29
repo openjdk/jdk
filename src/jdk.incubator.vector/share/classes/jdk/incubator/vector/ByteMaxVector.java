@@ -775,6 +775,14 @@ final class ByteMaxVector extends ByteVector {
         return super.fromArray0Template(a, offset);  // specialize
     }
 
+
+    @ForceInline
+    @Override
+    final
+    ByteVector fromBooleanArray0(boolean[] a, int offset) {
+        return super.fromBooleanArray0Template(a, offset);  // specialize
+    }
+
     @ForceInline
     @Override
     final

@@ -565,7 +565,14 @@ public abstract class VectorOperators {
     public static final Comparison GT = compare("GT", ">",  VectorSupport.BT_gt, VO_ALL);
     /** Compare {@code a>=b}. */
     public static final Comparison GE = compare("GE", ">=", VectorSupport.BT_ge, VO_ALL);
-    // FIXME: add unsigned comparisons
+    /** Unsigned compare {@code a<b}.  Integral only. */
+    public static final Comparison UNSIGNED_LT = compare("UNSIGNED_LT", "<",  VectorSupport.BT_ult, VO_NOFP);
+    /** Unsigned compare {@code a<=b}.  Integral only. */
+    public static final Comparison UNSIGNED_LE = compare("UNSIGNED_LE", "<=", VectorSupport.BT_ule, VO_NOFP);
+    /** Unsigned compare {@code a>b}.  Integral only. */
+    public static final Comparison UNSIGNED_GT = compare("UNSIGNED_GT", ">",  VectorSupport.BT_ugt, VO_NOFP);
+    /** Unsigned compare {@code a>=b}.  Integral only. */
+    public static final Comparison UNSIGNED_GE = compare("UNSIGNED_GE", ">=", VectorSupport.BT_uge, VO_NOFP);
 
     // Conversion operators
 
