@@ -2605,11 +2605,11 @@ void TemplateTable::_return(TosState state) {
     Label no_safepoint;
     NOT_PRODUCT(__ block_comment("Thread-local Safepoint poll"));
 #ifdef _LP64
-    __ testb(Address(r15_thread, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
+    __ testb(Address(r15_thread, JavaThread::polling_word_offset()), SafepointMechanism::poll_bit());
 #else
     const Register thread = rdi;
     __ get_thread(thread);
-    __ testb(Address(thread, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
+    __ testb(Address(thread, JavaThread::polling_word_offset()), SafepointMechanism::poll_bit());
 #endif
     __ jcc(Assembler::zero, no_safepoint);
     __ push(state);

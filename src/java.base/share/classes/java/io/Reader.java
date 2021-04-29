@@ -188,9 +188,7 @@ public abstract class Reader implements Readable, Closeable {
         if (target.hasArray()) {
             char[] cbuf = target.array();
             int pos = target.position();
-            int rem = target.limit() - pos;
-            if (rem <= 0)
-                return -1;
+            int rem = Math.max(target.limit() - pos, 0);
             int off = target.arrayOffset() + pos;
             nread = this.read(cbuf, off, rem);
             if (nread > 0)

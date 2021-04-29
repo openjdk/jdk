@@ -347,6 +347,23 @@ hotspot_cds_relocation = \
   serviceability/sa \
  -runtime/cds/DeterministicDump.java
 
+hotspot_cds_verify_shared_spaces = \
+  runtime/cds/appcds/ArchiveRelocationTest.java \
+  runtime/cds/appcds/BootClassPathMismatch.java \
+  runtime/cds/appcds/HelloTest.java \
+  runtime/cds/appcds/VerifierTest_0.java \
+  runtime/cds/appcds/dynamicArchive/BasicLambdaTest.java \
+  runtime/cds/appcds/dynamicArchive/DynamicArchiveRelocationTest.java \
+  runtime/cds/appcds/dynamicArchive/HelloDynamic.java \
+  runtime/cds/appcds/dynamicArchive/LinkClassTest.java \
+  runtime/cds/appcds/dynamicArchive/MismatchedBaseArchive.java \
+  runtime/cds/appcds/customLoader/HelloCustom.java \
+  runtime/cds/appcds/customLoader/LoaderSegregationTest.java \
+  runtime/cds/appcds/javaldr/ArrayTest.java \
+  runtime/cds/appcds/jigsaw/modulepath/ExportModule.java \
+  runtime/cds/appcds/jvmti/dumpingWithAgent/DumpingWithJavaAgent.java \
+  runtime/cds/appcds/sharedStrings/SharedStringsBasic.java
+
 # needs -nativepath:<output>/images/test/hotspot/jtreg/native/
 hotspot_metaspace = \
   gtest/MetaspaceGtests.java \
