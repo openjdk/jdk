@@ -28,6 +28,7 @@
  * @summary Test range check for constant array and NewMultiArray is removed properly
  * @author Hui Shi
  *
+ * @requires vm.flagless
  * @requires vm.debug == true & vm.compiler1.enabled
  *
  * @library /test/lib

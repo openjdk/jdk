@@ -2516,6 +2516,8 @@ ATTRIBUTE_ALIGNED(16) juint _static_const_table_pow[] =
 };
 
 ATTRIBUTE_ALIGNED(8) double _DOUBLE2 = 2.0;
+ATTRIBUTE_ALIGNED(8) double _DOUBLE0 = 0.0;
+ATTRIBUTE_ALIGNED(8) double _DOUBLE0DOT5 = 0.5;
 
 //registers,
 // input: xmm0, xmm1
@@ -2540,12 +2542,14 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   Label L_2TAG_PACKET_48_0_2, L_2TAG_PACKET_49_0_2, L_2TAG_PACKET_50_0_2, L_2TAG_PACKET_51_0_2;
   Label L_2TAG_PACKET_52_0_2, L_2TAG_PACKET_53_0_2, L_2TAG_PACKET_54_0_2, L_2TAG_PACKET_55_0_2;
   Label L_2TAG_PACKET_56_0_2, L_2TAG_PACKET_57_0_2, L_2TAG_PACKET_58_0_2, start;
-  Label L_NOT_DOUBLE2;
+  Label L_NOT_DOUBLE2, L_NOT_DOUBLE0DOT5;
 
   assert_different_registers(tmp, eax, ecx, edx);
 
   address static_const_table_pow = (address)_static_const_table_pow;
   address DOUBLE2 = (address) &_DOUBLE2;
+  address DOUBLE0 = (address) &_DOUBLE0;
+  address DOUBLE0DOT5 = (address) &_DOUBLE0DOT5;
 
   bind(start);
   subl(rsp, 120);
@@ -2562,6 +2566,19 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   jmp(L_2TAG_PACKET_21_0_2);
 
   bind(L_NOT_DOUBLE2);
+  // Special case: pow(x, 0.5) => sqrt(x)
+  ucomisd(xmm1, ExternalAddress(DOUBLE0DOT5)); // For pow(x, y), check whether y == 0.5
+  jccb(Assembler::notEqual, L_NOT_DOUBLE0DOT5);
+  jccb(Assembler::parity, L_NOT_DOUBLE0DOT5);
+  ucomisd(xmm0, ExternalAddress(DOUBLE0));
+  // According to the API specs, pow(-0.0, 0.5) = 0.0 and sqrt(-0.0) = -0.0.
+  // So pow(-0.0, 0.5) shouldn't be replaced with sqrt(-0.0).
+  // -0.0/+0.0 are both excluded since floating-point comparison doesn't distinguish -0.0 from +0.0.
+  jccb(Assembler::belowEqual, L_NOT_DOUBLE0DOT5); // pow(x, 0.5) => sqrt(x) only for x > 0.0
+  sqrtsd(xmm0, xmm0);
+  jmp(L_2TAG_PACKET_21_0_2);
+
+  bind(L_NOT_DOUBLE0DOT5);
   xorpd(xmm2, xmm2);
   movl(eax, 16368);
   pinsrw(xmm2, eax, 3);
