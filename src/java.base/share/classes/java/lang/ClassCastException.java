@@ -30,7 +30,7 @@ package java.lang;
  * to a subclass of which it is not an instance. For example, the
  * following code generates a {@code ClassCastException}:
  * <blockquote><pre>
- *     Object x = new Integer(0);
+ *     Object x = Integer.valueOf(0);
  *     System.out.println((String)x);
  * </pre></blockquote>
  *
