@@ -288,6 +288,8 @@ public final class FileServerHandler implements HttpHandler {
                 exchange.setAttribute("path", "could not resolve request URI");
                 handleNotFound(exchange);
             }
+        } finally {
+            exchange.close();
         }
     }
 }
