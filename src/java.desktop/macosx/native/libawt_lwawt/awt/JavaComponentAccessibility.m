@@ -45,13 +45,6 @@
 #import "JNIUtilities.h"
 #import "AWTView.h"
 
-
-// these constants are duplicated in CAccessibility.java
-#define JAVA_AX_ALL_CHILDREN (-1)
-#define JAVA_AX_SELECTED_CHILDREN (-2)
-#define JAVA_AX_VISIBLE_CHILDREN (-3)
-// If the value is >=0, it's an index
-
 // GET* macros defined in JavaAccessibilityUtilities.h, so they can be shared.
 static jclass sjc_CAccessibility = NULL;
 
@@ -120,7 +113,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 @end
 
 
-@interface ScrollAreaAccessibility : JavaComponentAccessibility {
+@interface ScrollAreaAccessibility_Old : JavaComponentAccessibility {
 
 }
 - (NSArray *)initializeAttributeNamesWithEnv:(JNIEnv *)env;
@@ -389,7 +382,7 @@ static NSObject *sAttributeNamesLOCK = nil;
         } else if ([javaRole isEqualToString:@"table"]) {
             newChild = [TableAccessibility alloc];
         } else if ([javaRole isEqualToString:@"scrollpane"]) {
-            newChild = [ScrollAreaAccessibility alloc];
+            newChild = [ScrollAreaAccessibility_Old alloc];
         } else {
             NSString *nsRole = [sRoles objectForKey:javaRole];
             if ([nsRole isEqualToString:NSAccessibilityStaticTextRole] ||
@@ -1883,7 +1876,7 @@ static BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component);
 @end
 
 
-@implementation ScrollAreaAccessibility
+@implementation ScrollAreaAccessibility_Old
 
 - (NSArray *)initializeAttributeNamesWithEnv:(JNIEnv *)env
 {
