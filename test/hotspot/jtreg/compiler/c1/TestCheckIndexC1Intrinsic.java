@@ -132,8 +132,16 @@ public class TestCheckIndexC1Intrinsic {
         Preconditions.checkIndex(i, 99999L, null);
     }
 
+    static void check9(int i) {
+        Preconditions.checkIndex(i, i + 1, null);
+    }
+
+    static void check10(long i) {
+        Preconditions.checkIndex(i, i + 1L, null);
+    }
+
     public static void main(String... args) {
-        for (int i = 0; i < 1_0000; i++) {
+        for (int i = 0; i < 10_000; i++) {
             check0();
 
             check1(i);
@@ -145,6 +153,9 @@ public class TestCheckIndexC1Intrinsic {
             check6((long) i);
             check7(i);
             check8((long) i);
+
+            check9(i);
+            check10((long)i);
         }
     }
 }
