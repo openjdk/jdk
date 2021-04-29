@@ -37,12 +37,12 @@ public final class IllegalNativeAccessChecker {
     private final boolean allowAllUnnamedModules;
 
     private IllegalNativeAccessChecker(Set<String> allowedModuleNames, boolean allowAllUnnamedModules) {
-        this.allowedModuleNames = Collections.unmodifiableSet(allowedModuleNames);
+        this.allowedModuleNames = allowedModuleNames;
         this.allowAllUnnamedModules = allowAllUnnamedModules;
     }
 
     // system-wide IllegalNativeAccessChecker
-    private static volatile IllegalNativeAccessChecker checker;
+    private static IllegalNativeAccessChecker checker;
 
     static Collection<String> enableNativeAccessModules() {
         return checker().allowedModuleNames;
@@ -52,6 +52,9 @@ public final class IllegalNativeAccessChecker {
         return checker().allowAllUnnamedModules;
     }
 
+    /**
+     * This method is invoked during module bootstrap; we can assume only one thread gets here.
+     */
     private static IllegalNativeAccessChecker checker() {
         if (checker == null) {
             Set<String> allowedModuleNames = new HashSet<>();

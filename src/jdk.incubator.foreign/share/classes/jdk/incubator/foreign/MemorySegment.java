@@ -85,7 +85,7 @@ import java.util.stream.Stream;
  * {@link MemorySegment#mapFile(Path, long, long, FileChannel.MapMode, ResourceScope)}. Such native memory segments are
  * called <em>mapped memory segments</em>; mapped memory segments are associated with an underlying file descriptor.
  * <p>
- * Contents of mapped memory segments can be {@link #force() persisted} and {@link #load() loaded} to and from the underlying file;
+ * Contents of mapped memory segments can be {@linkplain #force() persisted} and {@linkplain #load() loaded} to and from the underlying file;
  * these capabilities are suitable replacements for some of the functionality in the {@link java.nio.MappedByteBuffer} class.
  * Note that, while it is possible to map a segment into a byte buffer (see {@link MemorySegment#asByteBuffer()}),
  * and then call e.g. {@link java.nio.MappedByteBuffer#force()} that way, this can only be done when the source segment
@@ -314,7 +314,7 @@ public interface MemorySegment extends Addressable {
      * Is this a native segment? Returns true if this segment is a native memory segment,
      * created using the {@link #allocateNative(long, ResourceScope)} (and related) factory, or a buffer segment
      * derived from a direct {@link java.nio.ByteBuffer} using the {@link #ofByteBuffer(ByteBuffer)} factory,
-     * or if this is a {@link #isMapped() mapped} segment.
+     * or if this is a {@linkplain #isMapped() mapped} segment.
      * @return {@code true} if this segment is native segment.
      */
     boolean isNative();
@@ -365,7 +365,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * <p>
      * The result of a bulk copy is unspecified if, in the uncommon case, the source segment and this segment
      * do not overlap, but refer to overlapping regions of the same backing storage using different addresses.
-     * For example, this may occur if the same file is {@link MemorySegment#mapFile mapped} to two segments.
+     * For example, this may occur if the same file is {@linkplain MemorySegment#mapFile mapped} to two segments.
      *
      * @param src the source segment.
      * @throws IndexOutOfBoundsException if {@code src.byteSize() > this.byteSize()}.
@@ -379,8 +379,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
     /**
      * Finds and returns the offset, in bytes, of the first mismatch between
      * this segment and a given other segment. The offset is relative to the
-     * {@link #address() base address} of each segment and will be in the
-     * range of 0 (inclusive) up to the {@link #byteSize() size} (in bytes) of
+     * {@linkplain #address() base address} of each segment and will be in the
+     * range of 0 (inclusive) up to the {@linkplain #byteSize() size} (in bytes) of
      * the smaller memory segment (exclusive).
      * <p>
      * If the two segments share a common prefix then the returned offset is
@@ -583,7 +583,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * <p>
      * If the buffer is {@link ByteBuffer#isReadOnly() read-only}, the resulting segment will also be
      * {@link ByteBuffer#isReadOnly() read-only}. The scope associated with this segment can either be the
-     * {@link ResourceScope#globalScope() global} resource scope, in case the buffer has been created independently,
+     * {@linkplain ResourceScope#globalScope() global} resource scope, in case the buffer has been created independently,
      * or to some other (possibly closeable) resource scope, in case the buffer has been obtained using {@link #asByteBuffer()}.
      * <p>
      * The resulting memory segment keeps a reference to the backing buffer, keeping it <em>reachable</em>.
@@ -597,7 +597,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new confined array memory segment that models the memory associated with a given heap-allocated byte array.
-     * The returned segment's resource scope is set to the {@link ResourceScope#globalScope() global} resource scope.
+     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -608,7 +608,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new confined array memory segment that models the memory associated with a given heap-allocated char array.
-     * The returned segment's resource scope is set to the {@link ResourceScope#globalScope() global} resource scope.
+     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -619,7 +619,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new confined array memory segment that models the memory associated with a given heap-allocated short array.
-     * The returned segment's resource scope is set to the {@link ResourceScope#globalScope() global} resource scope.
+     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -630,7 +630,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new confined array memory segment that models the memory associated with a given heap-allocated int array.
-     * The returned segment's resource scope is set to the {@link ResourceScope#globalScope() global} resource scope.
+     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -641,7 +641,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new confined array memory segment that models the memory associated with a given heap-allocated float array.
-     * The returned segment's resource scope is set to the {@link ResourceScope#globalScope() global} resource scope.
+     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -652,7 +652,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new confined array memory segment that models the memory associated with a given heap-allocated long array.
-     * The returned segment's resource scope is set to the {@link ResourceScope#globalScope() global} resource scope.
+     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -663,7 +663,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new confined array memory segment that models the memory associated with a given heap-allocated double array.
-     * The returned segment's resource scope is set to the {@link ResourceScope#globalScope() global} resource scope.
+     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -812,6 +812,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @return a memory segment whose base address is {@link MemoryAddress#NULL} and whose size is {@link Long#MAX_VALUE}.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     @CallerSensitive
     static MemorySegment globalNativeSegment() {

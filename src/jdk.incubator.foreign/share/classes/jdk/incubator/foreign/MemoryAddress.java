@@ -40,10 +40,10 @@ import java.lang.ref.Cleaner;
  * Given an address, it is possible to compute its offset relative to a given segment, which can be useful
  * when performing memory dereference operations using a memory access var handle (see {@link MemoryHandles}).
  * <p>
- * A memory address is associated with a {@link ResourceScope resource scope}; the resource scope determines the
+ * A memory address is associated with a {@linkplain ResourceScope resource scope}; the resource scope determines the
  * lifecycle of the memory address, and whether the address can be used from multiple threads. Memory addresses
- * obtained from {@link #ofLong(long) numeric values}, or from native code, are associated with the
- * {@link ResourceScope#globalScope() global resource scope}. Memory addresses obtained from segments
+ * obtained from {@linkplain #ofLong(long) numeric values}, or from native code, are associated with the
+ * {@linkplain ResourceScope#globalScope() global resource scope}. Memory addresses obtained from segments
  * are associated with the same scope as the segment from which they have been obtained.
  * <p>
  * All implementations of this interface must be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>;
@@ -99,7 +99,7 @@ public interface MemoryAddress extends Addressable {
      * @return the offset of this memory address into the given segment.
      * @param segment the segment relative to which this address offset should be computed
      * @throws IllegalArgumentException if {@code segment} is not compatible with this address; this can happen, for instance,
-     * when {@code segment} models an heap memory region, while this address is a {@link #isNative() native} address.
+     * when {@code segment} models an heap memory region, while this address is a {@linkplain #isNative() native} address.
      */
     long segmentOffset(MemorySegment segment);
 
@@ -132,7 +132,10 @@ public interface MemoryAddress extends Addressable {
      * @throws IllegalStateException if either the scope associated with this address or the provided scope
      * have been already closed, or if access occurs from a thread other than the thread owning either
      * scopes.
-     * @throws UnsupportedOperationException if this address is not a {@link #isNative() native} address.
+     * @throws UnsupportedOperationException if this address is not a {@linkplain #isNative() native} address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     MemorySegment asSegment(long bytesSize, ResourceScope scope);
 
@@ -163,7 +166,10 @@ public interface MemoryAddress extends Addressable {
      * @throws IllegalStateException if either the scope associated with this address or the provided scope
      * have been already closed, or if access occurs from a thread other than the thread owning either
      * scopes.
-     * @throws UnsupportedOperationException if this address is not a {@link #isNative() native} address.
+     * @throws UnsupportedOperationException if this address is not a {@linkplain #isNative() native} address.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     MemorySegment asSegment(long bytesSize, Runnable cleanupAction, ResourceScope scope);
 
@@ -176,7 +182,7 @@ public interface MemoryAddress extends Addressable {
     /**
      * Returns the raw long value associated with this native memory address.
      * @return The raw long value associated with this native memory address.
-     * @throws UnsupportedOperationException if this memory address is not a {@link #isNative() native} address.
+     * @throws UnsupportedOperationException if this memory address is not a {@linkplain #isNative() native} address.
      * @throws IllegalStateException if the scope associated with this segment has been already closed,
      * or if access occurs from a thread other than the thread owning either segment.
      */
@@ -206,13 +212,13 @@ public interface MemoryAddress extends Addressable {
 
     /**
      * The native memory address instance modelling the {@code NULL} address, associated
-     * with the {@link ResourceScope#globalScope() global} resource scope.
+     * with the {@linkplain ResourceScope#globalScope() global} resource scope.
      */
     MemoryAddress NULL = new MemoryAddressImpl(null, 0L);
 
     /**
      * Obtain a native memory address instance from given long address. The returned address is associated
-     * with the {@link ResourceScope#globalScope() global} resource scope.
+     * with the {@linkplain ResourceScope#globalScope() global} resource scope.
      * @param value the long address.
      * @return the new memory address instance.
      */

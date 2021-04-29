@@ -497,7 +497,7 @@ public interface MemoryLayout extends Constable {
     }
 
     /**
-     * Creates a method handle which, given a memory segment, returns a {@link MemorySegment#asSlice(long,long) slice}
+     * Creates a method handle which, given a memory segment, returns a {@linkplain MemorySegment#asSlice(long,long) slice}
      * corresponding to the layout selected by a given layout path, where the path is considered rooted in this layout.
      *
      * <p>The returned method handle has a return type of {@code MemorySegment}, features a {@code MemorySegment}

@@ -215,12 +215,12 @@ MemoryAddress comparFunc = CLinker.getInstance().upcallStub(
  * sequence of steps which will allow foreign code to call {@code intCompareHandle} according to the rules specified
  * by the platform C ABI. The lifecycle of the memory address returned by
  * {@link jdk.incubator.foreign.CLinker#upcallStub(java.lang.invoke.MethodHandle, jdk.incubator.foreign.FunctionDescriptor, jdk.incubator.foreign.ResourceScope)}
- * is tied to the {@link jdk.incubator.foreign.ResourceScope resource scope} parameter passed to that method.
+ * is tied to the {@linkplain jdk.incubator.foreign.ResourceScope resource scope} parameter passed to that method.
  *
  * <a id="restricted"></a>
  * <h2>Restricted methods</h2>
  * Some methods in this package are considered <em>restricted</em>. Restricted methods are typically used to bind native
- * foreign data and/or functions to first-class Java API elements which can then be used directly by client. For instance
+ * foreign data and/or functions to first-class Java API elements which can then be used directly by clients. For instance
  * the restricted method {@link jdk.incubator.foreign.MemoryAddress#asSegment(long, ResourceScope)} can be used to create
  * a fresh segment with given spatial bounds out of a native address.
  * <p>
@@ -230,7 +230,7 @@ MemoryAddress comparFunc = CLinker.getInstance().upcallStub(
  * memory when attempting to dereference said segment. For these reasons, it is crucial for code that calls a restricted method
  * to never pass arguments that might cause incorrect binding of foreign data and/or functions to a Java API.
  * <p>
- * Access to restricted methods is <em>disabled</em> by default; to enable restricted methods, the JVM command line option
+ * Access to restricted methods is <em>disabled</em> by default; to enable restricted methods, the command line option
  * {@code --enable-native-access} must mention the name of the caller's module.
  */
 package jdk.incubator.foreign;
