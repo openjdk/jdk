@@ -782,8 +782,6 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, bool concurrent
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
   update_rs_length_prediction();
-
-  // Is this the right place? Should it be in the below?
   update_survival_estimates_for_next_collection();
 
   // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
