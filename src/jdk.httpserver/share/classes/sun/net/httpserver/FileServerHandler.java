@@ -277,9 +277,9 @@ public final class FileServerHandler implements HttpHandler {
                 exchange.setAttribute("path", path);  // store path for output filter
                 if (!Files.exists(path) || isHiddenOrSymLink(path))
                     handleNotFound(exchange);
-                if (!path.startsWith(root) || !Files.isReadable(path))
+                else if (!path.startsWith(root) || !Files.isReadable(path))
                     handleForbidden(exchange);
-                if (exchange.getRequestMethod().equals("HEAD")) {
+                else if (exchange.getRequestMethod().equals("HEAD")) {
                     handleHEAD(exchange, path);
                 } else {
                     handleGET(exchange, path);
