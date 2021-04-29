@@ -382,7 +382,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
           // Input node resides in the same block. Needs to get hoisted, too.
           // We only expect nodes without further inputs, like MachTemp or load Base.
           assert(temp->req() == 0 || (temp->req() == 1 && temp->in(0) == (Node*)C->root()),
-        		 "need for recursive hoisting not expected");
+                 "need for recursive hoisting not expected");
           valb->find_remove(temp);
           block->add_inst(temp);
           map_node_to_block(temp, block);
