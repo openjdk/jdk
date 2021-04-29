@@ -81,9 +81,12 @@ public class IdempotencyAndCommutativityPropertyTest {
     );
 
     private enum REQUEST {
-        GET, HEAD, UNKNOWN; //2([UNKNOWN=]):
-         //HEAD,GET, UNKNOWN; //([UNKNOWN=]):
+        //GET, HEAD, UNKNOWN; //([UNKNOWN=])
+        //GET, UNKNOWN,HEAD ; //[UNKNOWN=])
+        //HEAD, UNKNOWN,GET ; //[UNKNOWN=])
+         //HEAD,GET, UNKNOWN; //([UNKNOWN=])
         //UNKNOWN, HEAD,GET;
+        UNKNOWN, GET,HEAD; //UNKNOWN=aFile.txt]
        // GET, HEAD;
        // UNKNOWN; // [UNKNOWN=aFile.txt])
 
