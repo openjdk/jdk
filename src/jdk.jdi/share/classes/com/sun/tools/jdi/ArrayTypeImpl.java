@@ -81,21 +81,8 @@ public class ArrayTypeImpl extends ReferenceTypeImpl
         return new ArrayList<>(0);   // arrays don't have methods
     }
 
-    /*
-     * Find the type object, if any, of a component type of this array.
-     * The component type does not have to be immediate; e.g. this method
-     * can be used to find the component Foo of Foo[][]. This method takes
-     * advantage of the property that an array and its component must have
-     * the same class loader. Since array set operations don't have an
-     * implicit enclosing type like field and variable set operations,
-     * this method is sometimes needed for proper type checking.
-     */
-    Type findComponentType(String signature) throws ClassNotLoadedException {
-        return findType(signature);
-    }
-
     public Type componentType() throws ClassNotLoadedException {
-        return findComponentType(componentSignature());
+        return findType(componentSignature());
     }
 
     static boolean isComponentAssignable(Type destination, Type source) {
