@@ -2435,7 +2435,7 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
     stringStream st;
     st.print("0x");
     for (int i = 0; i < length(); i++) {
-      st.print("%08x", value(i));
+      st.print("%x", value(i));
     }
     return st.as_string();
   }
@@ -2446,12 +2446,14 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
   const char* as_basic_args_string() {
     stringStream st;
     bool long_prev = false;
-    for (int i = length() - 1; i >= 0; i--) {
-      uint val = (uint)value(i);
+    for (int i = 0; i < length(); i++) {
+      unsigned val = (unsigned)value(i);
+      // args are packed so that first/lower arguments are in the highest
+      // bits of each int value, so iterate from highest to the lowest
       for (int j = 32 - _basic_type_bits; j >= 0; j -= _basic_type_bits) {
-        uint v = (val >> j) & _basic_type_mask;
+        unsigned v = (val >> j) & _basic_type_mask;
         if (v == 0) {
-          assert(st.size() == 1, "Only allow zeroes at end");
+          assert(i == length() - 1, "Only expect zeroes in the last word");
           continue;
         }
         if (long_prev) {
@@ -2880,7 +2882,10 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
   new_adapter = AdapterBlob::create(&buffer);
   NOT_PRODUCT(int insts_size = buffer.insts_size());
   if (new_adapter == NULL) {
-    fatal("No memory to create adapter");
+    // CodeCache is full, disable compilation
+    // Ought to log this but compile log is only per compile thread
+    // and we're some non descript Java thread.
+    return NULL;
   }
   entry->relocate(new_adapter->content_begin());
 #ifndef PRODUCT
