@@ -55,7 +55,7 @@ void Mutex::check_safepoint_state(Thread* thread) {
            name());
 
     // Also check NoSafepointVerifier, and thread state is _thread_in_vm
-    thread->check_for_valid_safepoint_state();
+    thread->as_Java_thread()->check_for_valid_safepoint_state();
   } else {
     // If initialized with safepoint_check_never, a NonJavaThread should never ask to safepoint check either.
     assert(_safepoint_check_required != _safepoint_check_never,
@@ -419,23 +419,6 @@ bool Mutex::contains(Mutex* locks, Mutex* lock) {
   return false;
 }
 
-// NSV implied with locking allow_vm_block or !safepoint_check locks.
-void Mutex::no_safepoint_verifier(Thread* thread, bool enable) {
-  // The tty_lock is special because it is released for the safepoint by
-  // the safepoint mechanism.
-  if (this == tty_lock) {
-    return;
-  }
-
-  if (_allow_vm_block) {
-    if (enable) {
-      thread->_no_safepoint_count++;
-    } else {
-      thread->_no_safepoint_count--;
-    }
-  }
-}
-
 // Called immediately after lock acquisition or release as a diagnostic
 // to track the lock-set of the thread.
 // Rather like an EventListener for _owner (:>).
@@ -463,7 +446,11 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
     new_owner->_owned_locks = this;
 
     // NSV implied with locking allow_vm_block flag.
-    no_safepoint_verifier(new_owner, true);
+    // The tty_lock is special because it is released for the safepoint by
+    // the safepoint mechanism.
+    if (new_owner->is_Java_thread() && _allow_vm_block && this != tty_lock) {
+      new_owner->as_Java_thread()->inc_no_safepoint_count();
+    }
 
   } else {
     // the thread is releasing this lock
@@ -498,7 +485,9 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
     _next = NULL;
 
     // ~NSV implied with locking allow_vm_block flag.
-    no_safepoint_verifier(old_owner, false);
+    if (old_owner->is_Java_thread() && _allow_vm_block && this != tty_lock) {
+      old_owner->as_Java_thread()->dec_no_safepoint_count();
+    }
   }
 }
 #endif // ASSERT

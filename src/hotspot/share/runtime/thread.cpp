@@ -260,7 +260,6 @@ Thread::Thread() {
 
   // plain initialization
   debug_only(_owned_locks = NULL;)
-  NOT_PRODUCT(_no_safepoint_count = 0;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
@@ -268,10 +267,6 @@ Thread::Thread() {
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
   _current_pending_raw_monitor = NULL;
-
-#ifdef ASSERT
-  _visited_for_critical_count = false;
-#endif
 
   _suspend_flags = 0;
 
@@ -719,38 +714,6 @@ void Thread::print_owned_locks_on(outputStream* st) const {
     }
   }
 }
-
-// Checks safepoint allowed and clears unhandled oops at potential safepoints.
-void Thread::check_possible_safepoint() {
-  if (!is_Java_thread()) return;
-
-  if (_no_safepoint_count > 0) {
-    print_owned_locks();
-    assert(false, "Possible safepoint reached by thread that does not allow it");
-  }
-#ifdef CHECK_UNHANDLED_OOPS
-  // Clear unhandled oops in JavaThreads so we get a crash right away.
-  clear_unhandled_oops();
-#endif // CHECK_UNHANDLED_OOPS
-}
-
-void Thread::check_for_valid_safepoint_state() {
-  if (!is_Java_thread()) return;
-
-  // Check NoSafepointVerifier, which is implied by locks taken that can be
-  // shared with the VM thread.  This makes sure that no locks with allow_vm_block
-  // are held.
-  check_possible_safepoint();
-
-  if (this->as_Java_thread()->thread_state() != _thread_in_vm) {
-    fatal("LEAF method calling lock?");
-  }
-
-  if (GCALotAtAllSafepoints) {
-    // We could enter a safepoint here and thus have a gc
-    InterfaceSupport::check_gc_alot();
-  }
-}
 #endif // ASSERT
 
 // We had to move these methods here, because vm threads get into ObjectSynchronizer::enter
@@ -1043,6 +1006,36 @@ bool JavaThread::resize_all_jvmci_counters(int new_size) {
 
 #endif // INCLUDE_JVMCI
 
+#ifdef ASSERT
+// Checks safepoint allowed and clears unhandled oops at potential safepoints.
+void JavaThread::check_possible_safepoint() {
+  if (_no_safepoint_count > 0) {
+    print_owned_locks();
+    assert(false, "Possible safepoint reached by thread that does not allow it");
+  }
+#ifdef CHECK_UNHANDLED_OOPS
+  // Clear unhandled oops in JavaThreads so we get a crash right away.
+  clear_unhandled_oops();
+#endif // CHECK_UNHANDLED_OOPS
+}
+
+void JavaThread::check_for_valid_safepoint_state() {
+  // Check NoSafepointVerifier, which is implied by locks taken that can be
+  // shared with the VM thread.  This makes sure that no locks with allow_vm_block
+  // are held.
+  check_possible_safepoint();
+
+  if (thread_state() != _thread_in_vm) {
+    fatal("LEAF method calling lock?");
+  }
+
+  if (GCALotAtAllSafepoints) {
+    // We could enter a safepoint here and thus have a gc
+    InterfaceSupport::check_gc_alot();
+  }
+}
+#endif // ASSERT
+
 // A JavaThread is a normal Java thread
 
 JavaThread::JavaThread() :
@@ -1066,6 +1059,10 @@ JavaThread::JavaThread() :
 
   _thread_state(_thread_new),
   _saved_exception_pc(nullptr),
+#ifdef ASSERT
+  _no_safepoint_count(0),
+  _visited_for_critical_count(false),
+#endif
 
   _terminated(_not_terminated),
   _in_deopt_handler(0),

@@ -487,12 +487,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   FileMapInfo::check_nonempty_dir_in_shared_path_table();
 
   NOT_PRODUCT(SystemDictionary::verify();)
-  // The following guarantee is meant to ensure that no loader constraints
-  // exist yet, since the constraints table is not shared.  This becomes
-  // more important now that we don't re-initialize vtables/itables for
-  // shared classes at runtime, where constraints were previously created.
-  guarantee(SystemDictionary::constraints()->number_of_entries() == 0,
-            "loader constraints are not saved");
 
   // At this point, many classes have been loaded.
   // Gather systemDictionary classes in a global array and do everything to

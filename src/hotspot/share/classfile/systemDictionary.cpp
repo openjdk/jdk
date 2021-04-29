@@ -87,7 +87,6 @@
 #include "jfr/jfr.hpp"
 #endif
 
-LoaderConstraintTable* SystemDictionary::_loader_constraints  = NULL;
 ResolutionErrorTable*  SystemDictionary::_resolution_errors   = NULL;
 SymbolPropertyTable*   SystemDictionary::_invoke_method_table = NULL;
 ProtectionDomainCacheTable*   SystemDictionary::_pd_cache_table = NULL;
@@ -98,14 +97,18 @@ OopHandle   SystemDictionary::_java_platform_loader;
 // Default ProtectionDomainCacheSize value
 const int defaultProtectionDomainCacheSize = 1009;
 
-const int _loader_constraint_size = 107;                     // number of entries in constraint table
 const int _resolution_error_size  = 107;                     // number of entries in resolution error table
 const int _invoke_method_size     = 139;                     // number of entries in invoke method table
 
 // Hashtable holding placeholders for classes being loaded.
 const int _placeholder_table_size = 1009;
-PlaceholderTable* _placeholders   = NULL;
+static PlaceholderTable* _placeholders   = NULL;
 static PlaceholderTable*   placeholders() { return _placeholders; }
+
+// Constraints on class loaders
+const int _loader_constraint_size = 107;                     // number of entries in constraint table
+static LoaderConstraintTable*  _loader_constraints;
+static LoaderConstraintTable* constraints() { return _loader_constraints; }
 
 // ----------------------------------------------------------------------------
 // Java-level SystemLoader and PlatformLoader
