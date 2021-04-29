@@ -26,8 +26,11 @@
  * @bug 8257531
  * @summary Test vectorization for Buffer operations.
  * @library /test/lib /
+ *
+ * @requires vm.flagless
  * @requires vm.compiler2.enabled & vm.debug == true
  * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ *
  * @run driver compiler.vectorization.TestBufferVectorization array
  * @run driver compiler.vectorization.TestBufferVectorization arrayOffset
  * @run driver compiler.vectorization.TestBufferVectorization buffer
