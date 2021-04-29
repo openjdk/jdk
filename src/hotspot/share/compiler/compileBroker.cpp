@@ -653,7 +653,9 @@ void CompileBroker::compilation_init_phase1(Thread* THREAD) {
       }
       if (FLAG_IS_DEFAULT(JVMCIHostThreads)) {
       } else {
+#ifdef COMPILER1
         _c1_count = JVMCIHostThreads;
+#endif // COMPILER1
       }
     }
   }

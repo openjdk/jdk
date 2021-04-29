@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,6 @@ public class InstanceKlass extends Klass {
   private static int MISC_HAS_NONSTATIC_CONCRETE_METHODS;
   private static int MISC_DECLARES_NONSTATIC_CONCRETE_METHODS;
   private static int MISC_HAS_BEEN_REDEFINED;
-  private static int MISC_HAS_PASSED_FINGERPRINT_CHECK;
   private static int MISC_IS_SCRATCH_CLASS;
   private static int MISC_IS_SHARED_BOOT_CLASS;
   private static int MISC_IS_SHARED_PLATFORM_CLASS;
@@ -134,7 +133,6 @@ public class InstanceKlass extends Klass {
     MISC_HAS_NONSTATIC_CONCRETE_METHODS      = db.lookupIntConstant("InstanceKlass::_misc_has_nonstatic_concrete_methods").intValue();
     MISC_DECLARES_NONSTATIC_CONCRETE_METHODS = db.lookupIntConstant("InstanceKlass::_misc_declares_nonstatic_concrete_methods").intValue();
     MISC_HAS_BEEN_REDEFINED           = db.lookupIntConstant("InstanceKlass::_misc_has_been_redefined").intValue();
-    MISC_HAS_PASSED_FINGERPRINT_CHECK = db.lookupIntConstant("InstanceKlass::_misc_has_passed_fingerprint_check").intValue();
     MISC_IS_SCRATCH_CLASS             = db.lookupIntConstant("InstanceKlass::_misc_is_scratch_class").intValue();
     MISC_IS_SHARED_BOOT_CLASS         = db.lookupIntConstant("InstanceKlass::_misc_is_shared_boot_class").intValue();
     MISC_IS_SHARED_PLATFORM_CLASS     = db.lookupIntConstant("InstanceKlass::_misc_is_shared_platform_class").intValue();
@@ -288,9 +286,6 @@ public class InstanceKlass extends Klass {
     if (isUnsafeAnonymous()) {
       size += wordLength;
     }
-    if (hasStoredFingerprint()) {
-      size += 8; // uint64_t
-    }
     return alignSize(size);
   }
 
@@ -300,26 +295,6 @@ public class InstanceKlass extends Klass {
 
   public boolean isUnsafeAnonymous() {
     return (getMiscFlags() & MISC_IS_UNSAFE_ANONYMOUS) != 0;
-  }
-
-  public static boolean shouldStoreFingerprint() {
-    VM vm = VM.getVM();
-    if (vm.getCommandLineBooleanFlag("EnableJVMCI") && !vm.getCommandLineBooleanFlag("UseJVMCICompiler")) {
-      return true;
-    }
-    if (vm.getCommandLineBooleanFlag("DumpSharedSpaces")) {
-      return true;
-    }
-    return false;
-  }
-
-  public boolean hasStoredFingerprint() {
-    // has_stored_fingerprint() @ instanceKlass.cpp can return true only if INCLUDE_AOT is
-    // set during compilation.
-    if (!VM.getVM().hasAOT()) {
-      return false;
-    }
-    return shouldStoreFingerprint() || isShared();
   }
 
   public static long getHeaderSize() { return headerSize; }

@@ -50,7 +50,6 @@ tools/javac/annotations/typeAnnotations/referenceinfos/Lambda.java              
 tools/javac/annotations/typeAnnotations/referenceinfos/NestedTypes.java         8057687    generic-all    emit correct byte code an attributes for type annotations
 tools/javac/warnings/suppress/TypeAnnotations.java                              8057683    generic-all    improve ordering of errors with type annotations
 tools/javac/modules/SourceInSymlinkTest.java                                    8180263    windows-all    fails when run on a subst drive
-tools/javac/options/BCPOrSystemNotSpecified.java                                8231179    windows-all    fails when creating a test bootclasspath
 
 ###########################################################################
 #

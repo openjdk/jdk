@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,28 @@
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zSyscall_linux.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
+static bool numa_memory_id(void* addr, uint32_t* id) {
+  return ZSyscall::get_mempolicy((int*)id, NULL, 0, addr, MPOL_F_NODE | MPOL_F_ADDR) != -1;
+}
+
+static bool is_numa_supported() {
+  // Test if syscall is available
+  uint32_t dummy = 0;
+  const bool available = numa_memory_id(&dummy, &dummy);
+
+  if (!available && !FLAG_IS_DEFAULT(UseNUMA)) {
+    warning("NUMA support disabled, system call get_mempolicy not available");
+  }
+
+  return available;
+}
+
 void ZNUMA::pd_initialize() {
-  _enabled = UseNUMA;
+  _enabled = UseNUMA && is_numa_supported();
 }
 
 uint32_t ZNUMA::count() {
@@ -59,7 +76,7 @@ uint32_t ZNUMA::memory_id(uintptr_t addr) {
 
   uint32_t id = (uint32_t)-1;
 
-  if (ZSyscall::get_mempolicy((int*)&id, NULL, 0, (void*)addr, MPOL_F_NODE | MPOL_F_ADDR) == -1) {
+  if (!numa_memory_id((void*)addr, &id)) {
     ZErrno err;
     fatal("Failed to get NUMA id for memory at " PTR_FORMAT " (%s)", addr, err.to_string());
   }

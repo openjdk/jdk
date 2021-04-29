@@ -27,7 +27,6 @@
 #include "cds/archiveUtils.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/metaspaceShared.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -467,8 +466,7 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
                                        parser.itable_size(),
                                        nonstatic_oop_map_size(parser.total_oop_map_count()),
                                        parser.is_interface(),
-                                       parser.is_unsafe_anonymous(),
-                                       should_store_fingerprint(is_hidden_or_anonymous));
+                                       parser.is_unsafe_anonymous());
 
   const Symbol* const class_name = parser.class_name();
   assert(class_name != NULL, "invariant");
@@ -1147,9 +1145,6 @@ void InstanceKlass::initialize_impl(TRAPS) {
   }
 
 
-  // Look for aot compiled methods for this klass, including class initializer.
-  AOTLoader::load_for_klass(this, THREAD);
-
   // Step 8
   {
     DTRACE_CLASSINIT_PROBE_WAIT(clinit, -1, wait);
@@ -1432,11 +1427,9 @@ void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
   }
 }
 
-Klass* InstanceKlass::array_klass_impl(bool or_null, int n, TRAPS) {
+Klass* InstanceKlass::array_klass(int n, TRAPS) {
   // Need load-acquire for lock-free read
   if (array_klasses_acquire() == NULL) {
-    if (or_null) return NULL;
-
     ResourceMark rm(THREAD);
     JavaThread *jt = THREAD->as_Java_thread();
     {
@@ -1451,16 +1444,27 @@ Klass* InstanceKlass::array_klass_impl(bool or_null, int n, TRAPS) {
       }
     }
   }
-  // _this will always be set at this point
+  // array_klasses() will always be set at this point
   ObjArrayKlass* oak = array_klasses();
-  if (or_null) {
-    return oak->array_klass_or_null(n);
-  }
   return oak->array_klass(n, THREAD);
 }
 
-Klass* InstanceKlass::array_klass_impl(bool or_null, TRAPS) {
-  return array_klass_impl(or_null, 1, THREAD);
+Klass* InstanceKlass::array_klass_or_null(int n) {
+  // Need load-acquire for lock-free read
+  ObjArrayKlass* oak = array_klasses_acquire();
+  if (oak == NULL) {
+    return NULL;
+  } else {
+    return oak->array_klass_or_null(n);
+  }
+}
+
+Klass* InstanceKlass::array_klass(TRAPS) {
+  return array_klass(1, THREAD);
+}
+
+Klass* InstanceKlass::array_klass_or_null() {
+  return array_klass_or_null(1);
 }
 
 static int call_class_initializer_counter = 0;   // for debugging
@@ -2370,77 +2374,6 @@ void InstanceKlass::clean_method_data() {
       MutexLocker ml(SafepointSynchronize::is_at_safepoint() ? NULL : mdo->extra_data_lock());
       mdo->clean_method_data(/*always_clean*/false);
     }
-  }
-}
-
-bool InstanceKlass::supers_have_passed_fingerprint_checks() {
-  if (java_super() != NULL && !java_super()->has_passed_fingerprint_check()) {
-    ResourceMark rm;
-    log_trace(class, fingerprint)("%s : super %s not fingerprinted", external_name(), java_super()->external_name());
-    return false;
-  }
-
-  Array<InstanceKlass*>* local_interfaces = this->local_interfaces();
-  if (local_interfaces != NULL) {
-    int length = local_interfaces->length();
-    for (int i = 0; i < length; i++) {
-      InstanceKlass* intf = local_interfaces->at(i);
-      if (!intf->has_passed_fingerprint_check()) {
-        ResourceMark rm;
-        log_trace(class, fingerprint)("%s : interface %s not fingerprinted", external_name(), intf->external_name());
-        return false;
-      }
-    }
-  }
-
-  return true;
-}
-
-bool InstanceKlass::should_store_fingerprint(bool is_hidden_or_anonymous) {
-#if INCLUDE_AOT
-  // We store the fingerprint into the InstanceKlass only in the following 2 cases:
-  if (CalculateClassFingerprint) {
-    // (1) We are running AOT to generate a shared library.
-    return true;
-  }
-  if (Arguments::is_dumping_archive()) {
-    // (2) We are running -Xshare:dump or -XX:ArchiveClassesAtExit to create a shared archive
-    return true;
-  }
-  if (UseAOT && is_hidden_or_anonymous) {
-    // (3) We are using AOT code from a shared library and see a hidden or unsafe anonymous class
-    return true;
-  }
-#endif
-
-  // In all other cases we might set the _misc_has_passed_fingerprint_check bit,
-  // but do not store the 64-bit fingerprint to save space.
-  return false;
-}
-
-bool InstanceKlass::has_stored_fingerprint() const {
-#if INCLUDE_AOT
-  return should_store_fingerprint() || is_shared();
-#else
-  return false;
-#endif
-}
-
-uint64_t InstanceKlass::get_stored_fingerprint() const {
-  address adr = adr_fingerprint();
-  if (adr != NULL) {
-    return (uint64_t)Bytes::get_native_u8(adr); // adr may not be 64-bit aligned
-  }
-  return 0;
-}
-
-void InstanceKlass::store_fingerprint(uint64_t fingerprint) {
-  address adr = adr_fingerprint();
-  if (adr != NULL) {
-    Bytes::put_native_u8(adr, (u8)fingerprint); // adr may not be 64-bit aligned
-
-    ResourceMark rm;
-    log_trace(class, fingerprint)("stored as " PTR64_FORMAT " for class %s", fingerprint, external_name());
   }
 }
 

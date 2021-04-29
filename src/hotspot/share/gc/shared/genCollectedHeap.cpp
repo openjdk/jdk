@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
@@ -255,28 +254,9 @@ size_t GenCollectedHeap::max_capacity() const {
 // Update the _full_collections_completed counter
 // at the end of a stop-world full GC.
 unsigned int GenCollectedHeap::update_full_collections_completed() {
-  MonitorLocker ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
   assert(_full_collections_completed <= _total_full_collections,
          "Can't complete more collections than were started");
   _full_collections_completed = _total_full_collections;
-  ml.notify_all();
-  return _full_collections_completed;
-}
-
-// Update the _full_collections_completed counter, as appropriate,
-// at the end of a concurrent GC cycle. Note the conditional update
-// below to allow this method to be called by a concurrent collector
-// without synchronizing in any manner with the VM thread (which
-// may already have initiated a STW full collection "concurrently").
-unsigned int GenCollectedHeap::update_full_collections_completed(unsigned int count) {
-  MonitorLocker ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
-  assert((_full_collections_completed <= _total_full_collections) &&
-         (count <= _total_full_collections),
-         "Can't complete more collections than were started");
-  if (count > _full_collections_completed) {
-    _full_collections_completed = count;
-    ml.notify_all();
-  }
   return _full_collections_completed;
 }
 
@@ -809,11 +789,6 @@ void GenCollectedHeap::process_roots(ScanningOption so,
 
   Threads::oops_do(strong_roots, roots_from_code_p);
 
-#if INCLUDE_AOT
-  if (UseAOT) {
-    AOTLoader::oops_do(strong_roots);
-  }
-#endif
   OopStorageSet::strong_oops_do(strong_roots);
 
   if (so & SO_ScavengeCodeCache) {

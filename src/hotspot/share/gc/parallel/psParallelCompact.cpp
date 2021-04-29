@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -411,13 +410,6 @@ print_initial_summary_data(ParallelCompactData& summary_data,
 }
 #endif  // #ifndef PRODUCT
 
-#ifdef  ASSERT
-size_t add_obj_count;
-size_t add_obj_size;
-size_t mark_bitmap_count;
-size_t mark_bitmap_size;
-#endif  // #ifdef ASSERT
-
 ParallelCompactData::ParallelCompactData() :
   _region_start(NULL),
   DEBUG_ONLY(_region_end(NULL) COMMA)
@@ -537,9 +529,6 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
   const size_t beg_region = obj_ofs >> Log2RegionSize;
   // end_region is inclusive
   const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
-
-  DEBUG_ONLY(Atomic::inc(&add_obj_count);)
-  DEBUG_ONLY(Atomic::add(&add_obj_size, len);)
 
   if (beg_region == end_region) {
     // All in one region.
@@ -991,9 +980,6 @@ void PSParallelCompact::pre_compact()
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   _space_info[from_space_id].set_space(heap->young_gen()->from_space());
   _space_info[to_space_id].set_space(heap->young_gen()->to_space());
-
-  DEBUG_ONLY(add_obj_count = add_obj_size = 0;)
-  DEBUG_ONLY(mark_bitmap_count = mark_bitmap_size = 0;)
 
   // Increment the invocation count
   heap->increment_total_collections(true);
@@ -1611,19 +1597,6 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
 {
   GCTraceTime(Info, gc, phases) tm("Summary Phase", &_gc_timer);
 
-#ifdef ASSERT
-  log_develop_debug(gc, marking)(
-      "add_obj_count=" SIZE_FORMAT " "
-      "add_obj_bytes=" SIZE_FORMAT,
-      add_obj_count,
-      add_obj_size * HeapWordSize);
-  log_develop_debug(gc, marking)(
-      "mark_bitmap_count=" SIZE_FORMAT " "
-      "mark_bitmap_bytes=" SIZE_FORMAT,
-      mark_bitmap_count,
-      mark_bitmap_size * HeapWordSize);
-#endif // ASSERT
-
   // Quick summarization of each space into itself, to see how much is live.
   summarize_spaces_quick();
 
@@ -2011,7 +1984,6 @@ static void mark_from_roots_work(ParallelRootType::Value root_type, uint worker_
     case ParallelRootType::code_cache:
       // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
       //ScavengableNMethods::scavengable_nmethods_do(CodeBlobToOopClosure(&mark_and_push_closure));
-      AOTLoader::oops_do(&mark_and_push_closure);
       break;
 
     case ParallelRootType::sentinel:
@@ -2218,7 +2190,6 @@ class PSAdjustTask final : public AbstractGangTask {
 
   enum PSAdjustSubTask {
     PSAdjustSubTask_code_cache,
-    PSAdjustSubTask_aot,
     PSAdjustSubTask_old_ref_process,
     PSAdjustSubTask_young_ref_process,
 
@@ -2261,9 +2232,6 @@ public:
     if (_sub_tasks.try_claim_task(PSAdjustSubTask_code_cache)) {
       CodeBlobToOopClosure adjust_code(&adjust, CodeBlobToOopClosure::FixRelocations);
       CodeCache::blobs_do(&adjust_code);
-    }
-    if (_sub_tasks.try_claim_task(PSAdjustSubTask_aot)) {
-      AOT_ONLY(AOTLoader::oops_do(&adjust);)
     }
     if (_sub_tasks.try_claim_task(PSAdjustSubTask_old_ref_process)) {
       PSParallelCompact::ref_processor()->weak_oops_do(&adjust);

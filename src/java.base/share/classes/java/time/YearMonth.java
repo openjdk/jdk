@@ -682,10 +682,9 @@ public final class YearMonth
      */
     @Override
     public YearMonth with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            f.checkValidValue(newValue);
-            switch (f) {
+        if (field instanceof ChronoField chronoField) {
+            chronoField.checkValidValue(newValue);
+            switch (chronoField) {
                 case MONTH_OF_YEAR: return withMonth((int) newValue);
                 case PROLEPTIC_MONTH: return plusMonths(newValue - getProlepticMonth());
                 case YEAR_OF_ERA: return withYear((int) (year < 1 ? 1 - newValue : newValue));
