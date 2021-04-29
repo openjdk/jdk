@@ -66,13 +66,13 @@ G1BatchedGangTask::G1BatchedGangTask(const char* name, G1GCPhaseTimes* phase_tim
   _parallel_tasks() {
 }
 
-uint G1BatchedGangTask::num_busy_workers() const {
+uint G1BatchedGangTask::num_workers_estimate() const {
   double sum = 0.0;
   for (G1AbstractSubTask* task : _serial_tasks) {
-    sum += task->num_busy_workers();
+    sum += task->worker_cost();
   }
   for (G1AbstractSubTask* task : _parallel_tasks) {
-    sum += task->num_busy_workers();
+    sum += task->worker_cost();
   }
   return ceil(sum);
 }

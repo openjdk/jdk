@@ -91,7 +91,7 @@ public:
     FREE_C_HEAP_ARRAY(bool, _do_work_called_by);
   }
 
-  double num_busy_workers() const override {
+  double worker_cost() const override {
     check_and_inc_phase(1);
     return 1.0;
   }
@@ -121,8 +121,8 @@ public:
     verify_do_work_called_by(1);
   }
 
-  double num_busy_workers() const override {
-    G1TestSubTask::num_busy_workers();
+  double worker_cost() const override {
+    G1TestSubTask::worker_cost();
     return 1.0;
   }
 };
@@ -134,8 +134,8 @@ public:
     verify_do_work_called_by(_max_workers);
   }
 
-  double num_busy_workers() const override {
-    G1TestSubTask::num_busy_workers();
+  double worker_cost() const override {
+    G1TestSubTask::worker_cost();
     return 2.0;
   }
 };
@@ -150,7 +150,7 @@ public:
 
 TEST_VM(G1BatchedGangTask, check) {
   G1TestBatchedGangTask task;
-  uint tasks = task.num_busy_workers();
+  uint tasks = task.num_workers_estimate();
   ASSERT_EQ(tasks, 3u);
   task.set_max_workers(G1BatchedGangTaskWorkers::MaxWorkers);
   G1BatchedGangTaskWorkers::run_task(&task);

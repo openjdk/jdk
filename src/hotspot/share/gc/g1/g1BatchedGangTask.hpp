@@ -63,7 +63,7 @@ public:
   // How many workers (threads) would this task be able to keep busy for at least
   // as long as to amortize worker startup costs.
   // Called by G1BatchedGangTask to determine total number of workers.
-  virtual double num_busy_workers() const = 0;
+  virtual double worker_cost() const = 0;
 
   // Called by G1BatchedGangTask to provide information about the the maximum
   // number of workers for all subtasks after it has been determined.
@@ -136,8 +136,9 @@ protected:
 public:
   void work(uint worker_id) override;
 
-  // How many workers can this gang task keep busy and could be started.
-  uint num_busy_workers() const;
+  // How many workers can this gang task keep busy and should be started for
+  // "optimal" performance.
+  uint num_workers_estimate() const;
   // Informs the G1AbstractSubTasks about that we will start execution with the
   // given number of workers.
   void set_max_workers(uint max_workers);
