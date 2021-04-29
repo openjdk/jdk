@@ -28,12 +28,12 @@
  * @library /test/lib /
  * @requires vm.compiler2.enabled & vm.debug == true
  * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
- * @run main compiler.vectorization.TestBufferVectorization array
- * @run main compiler.vectorization.TestBufferVectorization arrayOffset
- * @run main compiler.vectorization.TestBufferVectorization buffer
- * @run main compiler.vectorization.TestBufferVectorization bufferHeap
- * @run main compiler.vectorization.TestBufferVectorization bufferDirect
- * @run main compiler.vectorization.TestBufferVectorization arrayView
+ * @run driver compiler.vectorization.TestBufferVectorization array
+ * @run driver compiler.vectorization.TestBufferVectorization arrayOffset
+ * @run driver compiler.vectorization.TestBufferVectorization buffer
+ * @run driver compiler.vectorization.TestBufferVectorization bufferHeap
+ * @run driver compiler.vectorization.TestBufferVectorization bufferDirect
+ * @run driver compiler.vectorization.TestBufferVectorization arrayView
  */
 
 package compiler.vectorization;
@@ -45,6 +45,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -194,52 +195,29 @@ public class TestBufferVectorization {
     public static void main(String[] args) {
         if (args.length == 0) {
             throw new RuntimeException(" Missing test name: array, arrayOffset, buffer, bufferHeap, bufferDirect, arrayView");
+        } else if (args.length == 1) {
+            verify_vectors(args[0]);
+        } else {
+            Test te = switch (args[0]) {
+                case "array" -> new TestArray();
+                case "arrayOffset" -> new TestArrayOffset(offset);
+                case "buffer" -> new TestBuffer(buffer);
+                case "bufferHeap" -> new TestBuffer(heap_buffer_byte_to_int);
+                case "bufferDirect" -> new TestBuffer(direct_buffer_byte_to_int);
+                case "arrayView" -> new TestArrayView();
+                default -> throw new RuntimeException(" Unknown test: " + args[0]);
+            };
+
+            te.init();
+            for (int i = 0; i < ITER; i++) {
+                te.run();
+            }
+            te.verify();
         }
 
-        Test te;
-        switch (args[0]) {
-            case "array":
-                te = new TestArray();
-                break;
-            case "arrayOffset":
-                te = new TestArrayOffset(offset);
-                break;
-            case "buffer":
-                te = new TestBuffer(buffer);
-                break;
-            case "bufferHeap":
-                te = new TestBuffer(heap_buffer_byte_to_int);
-                break;
-            case "bufferDirect":
-                te = new TestBuffer(direct_buffer_byte_to_int);
-                break;
-            case "arrayView":
-                te = new TestArrayView();
-                break;
-            default:
-                throw new RuntimeException(" Unknown test: " + args[0]);
-        }
-
-        te.init();
-        for (int i = 0; i < ITER; i++) {
-            te.run();
-        }
-        te.verify();
-
-        if (args.length == 1) {
-            verify_vectors(te, args[0]);
-        }
     }
 
-    static void verify_vectors(Test t, String testName) {
-        if (testName.equals("bufferDirect")) {
-            return; // bufferDirect uses Unsafe memory accesses which are not vectorized currently
-        }
-
-        if (testName.equals("bufferHeap") && (arch.equals("x86") || arch.equals("i386"))) {
-            return; // bufferHeap uses Long type for memory accesses which are not vectorized in 32-bit VM
-        }
-
+    static void verify_vectors(String testName) {
         ProcessBuilder pb;
         OutputAnalyzer out;
         try {
@@ -247,15 +225,25 @@ public class TestBufferVectorization {
                                                        "-XX:+TraceNewVectors",
                                                        "compiler.vectorization.TestBufferVectorization",
                                                        testName,
-                                                       "skip_verify");
+                                                       "run");
             out = new OutputAnalyzer(pb.start());
         } catch (Exception e) {
             throw new RuntimeException(" Exception launching Java process: " + e);
         }
+
+        out.shouldHaveExitValue(0);
+
+        if (testName.equals("bufferDirect")) {
+            return; // bufferDirect uses Unsafe memory accesses which are not vectorized currently
+        }
+
+        if (testName.equals("bufferHeap") && (Platform.is32bit())) {
+            return; // bufferHeap uses Long type for memory accesses which are not vectorized in 32-bit VM
+        }
+
         out.shouldContain("ReplicateI");
         out.shouldContain("LoadVector");
         out.shouldContain("AddVI");
         out.shouldContain("StoreVector");
-        out.shouldHaveExitValue(0);
     }
 }
