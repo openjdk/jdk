@@ -23,6 +23,7 @@
  */
 #ifndef SHARE_LOGGING_ASYNC_FLUSHER_HPP
 #define SHARE_LOGGING_ASYNC_FLUSHER_HPP
+#include "logging/log.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logFileOutput.hpp"
 #include "logging/logMessageBuffer.hpp"
@@ -80,31 +81,25 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
 };
 
 class AsyncLogMessage {
-  LogFileOutput& _output;
-  mutable char* _message;
-  LogDecorators _decorators;
-  LogLevelType _level;
-  const LogTagSet& _tagset;
+  LogFileOutput&   _output;
+  LogDecorations*  _decorations;
+  char*            _message;
 
 public:
   AsyncLogMessage(LogFileOutput& output, const LogDecorations& decorations, const char* msg)
-    : _output(output), _decorators(output.decorators()),
-    _level(decorations.get_level()), _tagset(decorations.get_logTagSet()) {
+    : _output(output) {
+    _decorations = new LogDecorations(decorations);
       // allow to fail here, then _message is NULL
-      _message = os::strdup(msg, mtLogging);
-    }
-
-  ~AsyncLogMessage() {
-    if (_message != NULL) {
-      os::free(_message);
-      _message = NULL;
-    }
+    _message = os::strdup(msg, mtLogging);
   }
 
-  AsyncLogMessage(const AsyncLogMessage& o)
-    :_output(o._output), _decorators(o._decorators), _level(o._level), _tagset(o._tagset) {
-    _message = o._message;
-    o._message = NULL; // transfer the ownership of _message to this
+  void destroy() {
+    delete _decorations;
+    _decorations = NULL;
+
+    if (_message != NULL) {
+      os::free(_message);
+    }
   }
 
   void writeback();
@@ -152,6 +147,10 @@ class LogAsyncFlusher : public NonJavaThread {
   void enqueue_impl(const AsyncLogMessage& msg);
   static void writeback(const LinkedList<AsyncLogMessage>& logs);
   void run() override;
+  void pre_run() override {
+    NonJavaThread::pre_run();
+    log_debug(logging, thread)("starting AsyncLog Thread tid = " INTX_FORMAT, os::current_thread_id());
+  }
   char* name() const override { return (char*)"AsyncLog Thread"; }
 
  public:

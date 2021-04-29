@@ -28,7 +28,7 @@
 #include "logging/logTagSet.hpp"
 
 // Temporary object containing the necessary data for a log call's decorations (timestamps, etc).
-class LogDecorations {
+class LogDecorations : public CHeapObj<mtLogging> {
  public:
   static const int DecorationsBufferSize = 256;
  private:
@@ -45,9 +45,11 @@ class LogDecorations {
   DECORATOR_LIST
 #undef DECORATOR
 
+  LogDecorations& operator=(const LogDecorations& o) = delete;
  public:
   LogDecorations(LogLevelType level, const LogTagSet& tagset, const LogDecorators& decorators);
   LogDecorations(LogLevelType level, const LogDecorators& decorators);
+  LogDecorations(const LogDecorations& o);
 
   void set_level(LogLevelType level) {
     _level = level;

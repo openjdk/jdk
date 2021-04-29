@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,4 +229,23 @@ TEST(LogDecorations, identifiers) {
     // Verify value
     EXPECT_EQ(ids[i].expected, strtol(reported, NULL, 10));
   }
+}
+
+TEST(LogDecorations, copyctor) {
+  LogDecorators decorator_selection;
+  ASSERT_TRUE(decorator_selection.parse("uptime,tid,level"));
+  LogDecorations decorations(LogLevel::Info, tagset, decorator_selection);
+
+  const char* saved_tid    = decorations.decoration(LogDecorators::tid_decorator);
+  const char* saved_uptime = decorations.decoration(LogDecorators::uptime_decorator);
+  const char* saved_level  = decorations.decoration(LogDecorators::level_decorator);
+
+  LogDecorations copy(decorations);
+  EXPECT_STREQ(saved_tid, copy.decoration(LogDecorators::tid_decorator));
+  EXPECT_STREQ(saved_uptime, copy.decoration(LogDecorators::uptime_decorator));
+  // level is special
+  EXPECT_EQ(saved_level, copy.decoration(LogDecorators::level_decorator));
+
+  EXPECT_EQ(NULL, copy.decoration(LogDecorators::tags_decorator));
+  EXPECT_EQ(NULL, copy.decoration(LogDecorators::hostname_decorator));
 }

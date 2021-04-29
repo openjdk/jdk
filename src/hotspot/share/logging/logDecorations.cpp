@@ -43,6 +43,26 @@ LogDecorations::LogDecorations(LogLevelType level, const LogDecorators &decorato
   create_decorations(decorators);
 }
 
+LogDecorations::LogDecorations(const LogDecorations& o)
+    : _level(o._level), _tagset(o._tagset) {
+  size_t sz = 0;
+  for (int i = 0; i < LogDecorators::Count; ++i) {
+    if (o._decoration_offset[i] != NULL) {
+      sz += strlen(o._decoration_offset[i]) + 1;
+    }
+  }
+
+  // safe to call with sz = 0
+  memcpy(_decorations_buffer, o._decorations_buffer, sz);
+  for (int i = 0; i < LogDecorators::Count; ++i) {
+    if (o._decoration_offset[i] != NULL) {
+      _decoration_offset[i] = (o._decoration_offset[i] - o._decorations_buffer) + _decorations_buffer;
+    } else {
+      _decoration_offset[i] = NULL;
+    }
+  }
+}
+
 const char* LogDecorations::host_name() {
   const char* host_name = Atomic::load_acquire(&_host_name);
   if (host_name == NULL) {

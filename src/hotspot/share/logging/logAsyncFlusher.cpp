@@ -30,9 +30,8 @@
 
 void AsyncLogMessage::writeback() {
   if (_message != NULL) {
-    // should cache this object somehow
-    LogDecorations decorations(_level, _tagset, _decorators);
-    _output.write_blocking(decorations, _message);
+    assert(_decorations != NULL, "sanity check");
+    _output.write_blocking(*_decorations, _message);
   }
 }
 
@@ -124,6 +123,7 @@ void LogAsyncFlusher::writeback(const LinkedList<AsyncLogMessage>& logs) {
   while (!it.is_empty()) {
     AsyncLogMessage* e = it.next();
     e->writeback();
+    e->destroy();
   }
 }
 
