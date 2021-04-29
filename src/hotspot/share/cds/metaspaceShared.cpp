@@ -99,8 +99,8 @@ bool MetaspaceShared::_use_full_module_graph = true;
 //
 //     bm  - bitmap for relocating the above 7 regions.
 //
-// The rw, and ro regions are linearly allocated, in the order of rw->ro.
-// These regions are aligned with MetaspaceShared::reserved_space_alignment().
+// The rw and ro regions are linearly allocated, in the order of rw->ro.
+// These regions are aligned with MetaspaceShared::core_region_alignment().
 //
 // These 2 regions are populated in the following steps:
 // [0] All classes are loaded in MetaspaceShared::preload_classes(). All metadata are
