@@ -30,7 +30,7 @@ import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
- * @bug 8264208
+ * @bug 8264208 8265918
  * @summary Tests Console.charset() method. "expect" command in Windows/Cygwin
  *          does not work as expected. Ignoring tests on Windows.
  * @requires (os.family == "linux") | (os.family == "mac")
@@ -38,7 +38,6 @@ import jdk.test.lib.process.ProcessTools;
  * @run main CharsetTest en_US.ISO8859-1 ISO-8859-1
  * @run main CharsetTest en_US.US-ASCII US-ASCII
  * @run main CharsetTest en_US.UTF-8 UTF-8
- * @run main CharsetTest en_US.FOO ignored
  */
 public class CharsetTest {
     public static void main(String... args) throws Throwable {
