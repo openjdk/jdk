@@ -30,7 +30,8 @@
 
 void AsyncLogMessage::writeback() {
   if (_message != NULL) {
-    LogDecorations decorations(_level, _tagset, _decorations_ref);
+    // should cache this object somehow
+    LogDecorations decorations(_level, _tagset, _decorators);
     _output.write_blocking(decorations, _message);
   }
 }

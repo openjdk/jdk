@@ -33,18 +33,12 @@
 const char* volatile LogDecorations::_host_name = NULL;
 
 LogDecorations::LogDecorations(LogLevelType level, const LogTagSet &tagset, const LogDecorators &decorators)
-    : _level(level), _tagset(&tagset), _ref(nullptr) {
+    : _level(level), _tagset(&tagset) {
   create_decorations(decorators);
 }
 
-LogDecorations::LogDecorations(LogLevelType level, const LogTagSet &tagset, LogDecorationsRef& ref)
-    : _level(level), _tagset(&tagset), _ref(&ref) {
-  assert(ref._refcnt > 0, "pass in an invalid LogDecorationsRef.");
-  ++(*_ref);
-}
-
 LogDecorations::LogDecorations(LogLevelType level, const LogDecorators &decorators)
-    : _level(level), _tagset(nullptr), _ref(nullptr) {
+    : _level(level), _tagset(nullptr) {
   assert(!decorators.is_decorator(LogDecorators::tags_decorator), "_tagset can't be NULL");
   create_decorations(decorators);
 }
@@ -154,35 +148,4 @@ char* LogDecorations::create_tags_decoration(char* pos) {
 char* LogDecorations::create_hostname_decoration(char* pos) {
   int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), "%s", host_name());
   ASSERT_AND_RETURN(written, pos)
-}
-
-LogDecorationsRef LogDecorationsRef::NoneRef = {};
-
-LogDecorationsRef& LogDecorations::ref() const {
-  if (_ref == nullptr) {
-    size_t sz = 0;
-
-    for (int i = 0; i < LogDecorators::Count; ++i) {
-      if (_decoration_offset[i] != NULL) {
-        sz += strlen(_decoration_offset[i]) + 1;
-      }
-    }
-
-    if (sz == 0) { // decorators == 'none'
-      return ++LogDecorationsRef::NoneRef;
-    }
-
-    _ref = new LogDecorationsRef();
-    _ref->_decorations_buffer = NEW_C_HEAP_ARRAY(char, sz, mtLogging);
-    memcpy(_ref->_decorations_buffer, _decorations_buffer, sz);
-    for (int i = 0; i < LogDecorators::Count; ++i) {
-      if (_decoration_offset[i] != NULL) {
-        _ref->_decoration_offset[i] = (_decoration_offset[i] - _decorations_buffer) + _ref->_decorations_buffer;
-      } else {
-        _ref->_decoration_offset[i] = NULL;
-      }
-    }
-  }
-
-  return ++(*_ref);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,46 +229,4 @@ TEST(LogDecorations, identifiers) {
     // Verify value
     EXPECT_EQ(ids[i].expected, strtol(reported, NULL, 10));
   }
-}
-
-TEST_VM(LogDecorations, ref) {
-  LogDecorators decorator_selection;
-  ASSERT_TRUE(decorator_selection.parse("tid,uptime,level"));
-  LogDecorations decorations(LogLevel::Info, tagset, decorator_selection);
-  const char* saved_tid    = decorations.decoration(LogDecorators::tid_decorator);
-  const char* saved_uptime = decorations.decoration(LogDecorators::uptime_decorator);
-  const char* saved_level  = decorations.decoration(LogDecorators::level_decorator);
-  LogDecorationsRef& ref = decorations.ref();
-
-  // test refcnt
-  EXPECT_EQ(ref.refcnt(), (size_t)1);
-  ++ref;
-  EXPECT_EQ(ref.refcnt(), (size_t)2);
-  --ref;
-  EXPECT_EQ(ref.refcnt(), (size_t)1);
-
-  // test contents
-  EXPECT_STREQ(decorations.decoration(LogDecorators::tid_decorator), saved_tid);
-  EXPECT_NE(decorations.decoration(LogDecorators::tid_decorator), saved_tid);
-  EXPECT_STREQ(decorations.decoration(LogDecorators::uptime_decorator), saved_uptime);
-  EXPECT_NE(decorations.decoration(LogDecorators::uptime_decorator), saved_uptime);
-  EXPECT_STREQ(decorations.decoration(LogDecorators::level_decorator), saved_level);
-  // level is special.
-  EXPECT_EQ(decorations.decoration(LogDecorators::level_decorator), saved_level);
-}
-
-TEST_VM(LogDecorations, ref_none) {
-  LogDecorators decorator_selection;
-  ASSERT_TRUE(decorator_selection.parse("none"));
-  LogDecorations decorations(LogLevel::Info, tagset, decorator_selection);
-  LogDecorationsRef& ref = decorations.ref();
-
-  EXPECT_EQ(&ref, &LogDecorationsRef::NoneRef);
-  EXPECT_EQ(ref.refcnt(), (size_t)1);
-  --ref;
-
-  EXPECT_EQ(NULL, decorations.decoration(LogDecorators::tid_decorator));
-  EXPECT_EQ(NULL, decorations.decoration(LogDecorators::uptime_decorator));
-  // level is special
-  EXPECT_EQ(LogLevel::name(LogLevel::Info), decorations.decoration(LogDecorators::level_decorator));
 }

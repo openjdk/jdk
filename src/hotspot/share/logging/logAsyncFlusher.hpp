@@ -23,7 +23,6 @@
  */
 #ifndef SHARE_LOGGING_ASYNC_FLUSHER_HPP
 #define SHARE_LOGGING_ASYNC_FLUSHER_HPP
-#include "logging/log.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logFileOutput.hpp"
 #include "logging/logMessageBuffer.hpp"
@@ -83,21 +82,19 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
 class AsyncLogMessage {
   LogFileOutput& _output;
   mutable char* _message;
-  LogDecorationsRef& _decorations_ref;
+  LogDecorators _decorators;
   LogLevelType _level;
   const LogTagSet& _tagset;
 
 public:
   AsyncLogMessage(LogFileOutput& output, const LogDecorations& decorations, const char* msg)
-    : _output(output), _decorations_ref(decorations.ref()),
+    : _output(output), _decorators(output.decorators()),
     _level(decorations.get_level()), _tagset(decorations.get_logTagSet()) {
       // allow to fail here, then _message is NULL
       _message = os::strdup(msg, mtLogging);
-      ++_decorations_ref;
     }
 
   ~AsyncLogMessage() {
-    --_decorations_ref;
     if (_message != NULL) {
       os::free(_message);
       _message = NULL;
@@ -105,10 +102,9 @@ public:
   }
 
   AsyncLogMessage(const AsyncLogMessage& o)
-    :_output(o._output), _decorations_ref(o._decorations_ref), _level(o._level), _tagset(o._tagset) {
+    :_output(o._output), _decorators(o._decorators), _level(o._level), _tagset(o._tagset) {
     _message = o._message;
     o._message = NULL; // transfer the ownership of _message to this
-    ++_decorations_ref;
   }
 
   void writeback();
@@ -156,10 +152,6 @@ class LogAsyncFlusher : public NonJavaThread {
   void enqueue_impl(const AsyncLogMessage& msg);
   static void writeback(const LinkedList<AsyncLogMessage>& logs);
   void run() override;
-  void pre_run() override {
-    NonJavaThread::pre_run();
-    log_debug(logging, thread)("starting AsyncLog Thread tid = " INTX_FORMAT, os::current_thread_id());
-  }
   char* name() const override { return (char*)"AsyncLog Thread"; }
 
  public:
