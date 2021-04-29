@@ -55,21 +55,25 @@ public class TestCheckIndexC1Intrinsic {
         Asserts.assertEquals((int)res, 0);
         try {
             Preconditions.checkIndex(1, 1, null);
+            throw new AssertionError("Expected IndexOutOfBoundsException not thrown");
         } catch (IndexOutOfBoundsException e) {
             // got it!
         }
         try {
             Preconditions.checkIndex(Integer.MIN_VALUE, -1, null);
+            throw new AssertionError("Expected IndexOutOfBoundsException not thrown");
         } catch (IndexOutOfBoundsException e) {
             // got it!
         }
         try {
             Preconditions.checkIndex(Integer.MIN_VALUE, Integer.MIN_VALUE, null);
+            throw new AssertionError("Expected IndexOutOfBoundsException not thrown");
         } catch (IndexOutOfBoundsException e) {
             // got it!
         }
         try {
             Preconditions.checkIndex(Long.MAX_VALUE, Long.MAX_VALUE, null);
+            throw new AssertionError("Expected IndexOutOfBoundsException not thrown");
         } catch (IndexOutOfBoundsException e) {
             // got it!
         }
@@ -78,7 +82,8 @@ public class TestCheckIndexC1Intrinsic {
 
         try {
             // read fields
-            Preconditions.checkIndex(limit + 1, limit, (s, integers) -> new MyException("Reason:" + s +"::" + integers));
+            Preconditions.checkIndex(limit + 1, limit, (s, integers) -> new MyException("Reason:" + s + "::" + integers));
+            throw new AssertionError("Expected IndexOutOfBoundsException not thrown");
         } catch(MyException e){
             // got it!
         }
@@ -104,7 +109,7 @@ public class TestCheckIndexC1Intrinsic {
         try {
             Preconditions.checkIndex(i, 9999, null);
         } catch (IndexOutOfBoundsException e) {
-            // got it!
+            Asserts.assertTrue(i == 9999);
         }
     }
 
@@ -112,7 +117,7 @@ public class TestCheckIndexC1Intrinsic {
         try {
             Preconditions.checkIndex(i, 9999L, null);
         } catch (IndexOutOfBoundsException e) {
-            // got it!
+            Asserts.assertTrue(i == 9999L);
         }
     }
 
