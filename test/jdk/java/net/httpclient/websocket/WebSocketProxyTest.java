@@ -175,8 +175,8 @@ public class WebSocketProxyTest {
     static String diagnose(List<byte[]> a, List<byte[]> b) {
         var actual = ofBytes(a);
         var expected = ofBytes(b);
-        var problem = actual.equals(expected) ? "match" : "differ";
-        return "%s and %s %s".formatted(actual, expected, problem);
+        var message = actual.equals(expected) ? "match" : "differ";
+        return "%s and %s %s".formatted(actual, expected, message);
     }
 
     @Test(dataProvider = "servers")
