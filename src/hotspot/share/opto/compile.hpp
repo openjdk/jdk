@@ -922,6 +922,7 @@ class Compile : public Phase {
   void              identify_useful_nodes(Unique_Node_List &useful);
   void              update_dead_node_list(Unique_Node_List &useful);
   void              remove_useless_nodes (Unique_Node_List &useful);
+
   void              remove_useless_node(Node* dead);
 
   // Record this CallGenerator for inlining at the end of parsing.
