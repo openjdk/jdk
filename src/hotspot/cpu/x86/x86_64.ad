@@ -1847,40 +1847,34 @@ encode %{
     //  [REX_B]
     //    f:   f7 f9                   idiv   $div
     // 0000000000000011 <done>:
+    MacroAssembler _masm(&cbuf);
+    Label normal;
+    Label done;
 
     // cmp    $0x80000000,%eax
-    emit_opcode(cbuf, 0x3d);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x80);
+    __ cmp(as_Register(RAX_enc), 0x80000000);
 
     // jne    e <normal>
-    emit_opcode(cbuf, 0x75);
-    emit_d8(cbuf, $div$$reg < 8 ? 0x07 : 0x08);
+    __ jccb(Assembler::notEqual, normal);
 
     // xor    %edx,%edx
-    emit_opcode(cbuf, 0x33);
-    emit_d8(cbuf, 0xD2);
+    __ xorl(as_Register(RDX_enc), as_Register(RDX_enc));
 
     // cmp    $0xffffffffffffffff,%ecx
-    if ($div$$reg >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
-    }
-    emit_opcode(cbuf, 0x83);
-    emit_rm(cbuf, 0x3, 0x7, $div$$reg & 7);
-    emit_d8(cbuf, 0xFF);
+    __ cmpl($div$$Register, -1);
 
     // je     11 <done>
-    emit_opcode(cbuf, 0x74);
-    emit_d8(cbuf, $div$$reg < 8 ? 0x03 : 0x04);
+    __ jccb(Assembler::equal, done);
 
     // <normal>
     // cltd
-    emit_opcode(cbuf, 0x99);
+    __ bind(normal);
+    __ cdql();
 
-    // idivl (note: must be emitted by the user of this rule)
+    // idivl
     // <done>
+    __ idivl($div$$Register);
+    __ bind(done);
   %}
 
   enc_class cdqq_enc(no_rax_rdx_RegL div)
@@ -1909,49 +1903,37 @@ encode %{
     //   17:   48 99                   cqto
     //   19:   48 f7 f9                idiv   $div
     // 000000000000001c <done>:
+    MacroAssembler _masm(&cbuf);
+    Label normal;
+    Label done;
 
     // mov    $0x8000000000000000,%rdx
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0xBA);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x00);
-    emit_d8(cbuf, 0x80);
+    __ mov64(as_Register(RDX_enc), 0x8000000000000000);
 
     // cmp    %rdx,%rax
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0x39);
-    emit_d8(cbuf, 0xD0);
+    __ cmpq(as_Register(RAX_enc), as_Register(RDX_enc));
 
     // jne    17 <normal>
-    emit_opcode(cbuf, 0x75);
-    emit_d8(cbuf, 0x08);
+    __ jccb(Assembler::notEqual, normal);
 
     // xor    %edx,%edx
-    emit_opcode(cbuf, 0x33);
-    emit_d8(cbuf, 0xD2);
+    __ xorl(as_Register(RDX_enc), as_Register(RDX_enc));
 
     // cmp    $0xffffffffffffffff,$div
-    emit_opcode(cbuf, $div$$reg < 8 ? Assembler::REX_W : Assembler::REX_WB);
-    emit_opcode(cbuf, 0x83);
-    emit_rm(cbuf, 0x3, 0x7, $div$$reg & 7);
-    emit_d8(cbuf, 0xFF);
+    __ cmpq($div$$Register, -1);
 
     // je     1e <done>
-    emit_opcode(cbuf, 0x74);
-    emit_d8(cbuf, 0x05);
+    __ jccb(Assembler::equal, done);
 
     // <normal>
     // cqto
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0x99);
+    __ bind(normal);
+    __ cdqq();
 
     // idivq (note: must be emitted by the user of this rule)
     // <done>
+    __ idivq($div$$Register);
+    __ bind(done);
   %}
 
   // Opcde enc_class for 8/32 bit immediate instructions with sign-extension
@@ -8388,9 +8370,7 @@ instruct divI_rReg(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
     "normal: cdql\n\t"
             "idivl   $div\n"
     "done:"        %}
-  ins_encode %{
-    __ corrected_idivl($div$$Register);
-  %}
+  ins_encode(cdql_enc(div));
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
@@ -8410,9 +8390,7 @@ instruct divL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
     "normal: cdqq\n\t"
             "idivq   $div\n"
     "done:"        %}
-  ins_encode %{
-    __ corrected_idivq($div$$Register);
-  %}
+  ins_encode(cdqq_enc(div));
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
@@ -8432,9 +8410,7 @@ instruct divModI_rReg_divmod(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
     "normal: cdql\n\t"
             "idivl   $div\n"
     "done:"        %}
-  ins_encode %{
-    __ corrected_idivl($div$$Register);
-  %}
+  ins_encode(cdql_enc(div));
   ins_pipe(pipe_slow);
 %}
 
@@ -8455,9 +8431,7 @@ instruct divModL_rReg_divmod(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
     "normal: cdqq\n\t"
             "idivq   $div\n"
     "done:"        %}
-  ins_encode %{
-    __ corrected_idivq($div$$Register);
-  %}
+  ins_encode(cdqq_enc(div));
   ins_pipe(pipe_slow);
 %}
 
@@ -8540,9 +8514,7 @@ instruct modI_rReg(rdx_RegI rdx, rax_RegI rax, no_rax_rdx_RegI div,
     "normal: cdql\n\t"
             "idivl   $div\n"
     "done:"        %}
-  ins_encode %{
-    __ corrected_idivl($div$$Register);
-  %}
+  ins_encode(cdql_enc(div));
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
@@ -8562,9 +8534,7 @@ instruct modL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div,
     "normal: cdqq\n\t"
             "idivq   $div\n"
     "done:"        %}
-  ins_encode %{
-    __ corrected_idivq($div$$Register);
-  %}
+  ins_encode(cdqq_enc(div));
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
