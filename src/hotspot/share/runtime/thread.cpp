@@ -263,9 +263,6 @@ Thread::Thread() {
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
-  _current_pending_monitor = NULL;
-  _current_pending_monitor_is_from_java = true;
-  _current_waiting_monitor = NULL;
   _current_pending_raw_monitor = NULL;
 
   _suspend_flags = 0;
@@ -275,10 +272,6 @@ Thread::Thread() {
   _hashStateY = 842502087;
   _hashStateZ = 0x8767;    // (int)(3579807591LL & 0xffff) ;
   _hashStateW = 273326509;
-
-  _OnTrap   = 0;
-  _Stalled  = 0;
-  _TypeTag  = 0x2BAD;
 
   // Many of the following fields are effectively final - immutable
   // Note that nascent threads can't use the Native Monitor-Mutex
@@ -1052,6 +1045,11 @@ JavaThread::JavaThread() :
   _callee_target(nullptr),
   _vm_result(nullptr),
   _vm_result_2(nullptr),
+
+  _current_pending_monitor(NULL),
+  _current_pending_monitor_is_from_java(true),
+  _current_waiting_monitor(NULL),
+  _Stalled(0),
 
   _monitor_chunks(nullptr),
   _special_runtime_exit_condition(_no_async_condition),
