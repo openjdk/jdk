@@ -172,6 +172,13 @@ public class WebSocketProxyTest {
         return bytes.stream().map(bytes::new).toList();
     }
 
+    static String diagnose(List<byte[]> a, List<byte[]> b) {
+        var actual = ofBytes(a);
+        var expected = ofBytes(b);
+        var problem = actual.equals(expected) ? "match" : "differ";
+        return "%s and %s %s".formatted(actual, expected, problem);
+    }
+
     @Test(dataProvider = "servers")
     public void simpleAggregatingBinaryMessages
             (Function<int[],DummySecureWebSocketServer> serverSupplier,
@@ -260,7 +267,7 @@ public class WebSocketProxyTest {
                     .join();
 
             List<byte[]> a = actual.join();
-            assertEquals(ofBytes(a), ofBytes(expected));
+            assertEquals(ofBytes(a), ofBytes(expected), diagnose(a, expected));
         }
     }
 
