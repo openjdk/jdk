@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8261137
+ * @requires vm.flagless
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Verify that box object is scalarized in case it is directly referenced by debug info.
  * @library /test/lib
