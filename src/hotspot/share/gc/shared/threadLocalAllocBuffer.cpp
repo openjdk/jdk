@@ -106,8 +106,7 @@ void ThreadLocalAllocBuffer::accumulate_and_reset_statistics(ThreadLocalAllocSta
                                    _gc_waste,
                                    _slow_refill_waste);
   } else {
-    assert(_number_of_refills == 0 &&
-           _slow_refill_waste == 0 && _gc_waste          == 0,
+    assert(_number_of_refills == 0 && _slow_refill_waste == 0 && _gc_waste == 0,
            "tlab stats == 0");
   }
 
