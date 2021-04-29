@@ -942,6 +942,7 @@ public final class Main {
                 storetype = keyStore.getType();
             } else {
                 keyStore = KeyStore.getInstance(storetype);
+                // storePass might be null here, will probably prompt later
                 keyStore.load(ksStream, storePass);
             }
             if (storetype.equalsIgnoreCase("pkcs12")) {
@@ -995,10 +996,8 @@ public final class Main {
                 if (inplaceImport) {
                     keyStore.load(null, storePass);
                 } else {
+                    // both ksStream and storePass could be null
                     keyStore.load(ksStream, storePass);
-                }
-                if (ksStream != null) {
-                    ksStream.close();
                 }
             }
         }
@@ -1096,9 +1095,10 @@ public final class Main {
             if (nullStream) {
                 keyStore.load(null, storePass);
             } else if (ksStream != null) {
-                ksStream = new FileInputStream(ksfile);
-                keyStore.load(ksStream, storePass);
-                ksStream.close();
+                // Reload with user-provided password
+                try (FileInputStream fis = new FileInputStream(ksfile)) {
+                    keyStore.load(fis, storePass);
+                }
             }
         }
 
