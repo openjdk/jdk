@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,10 @@ private:
   volatile uintptr_t _end;
   volatile bool      _high_usage;
 
-  void expand();
+  size_t size() const;
+
+  size_t expand_space();
+  size_t shrink_space();
 
   uintptr_t alloc_space(size_t size);
   uintptr_t expand_and_alloc_space(size_t size);

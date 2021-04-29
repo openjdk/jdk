@@ -55,10 +55,72 @@ ZMarkStackSpace::ZMarkStackSpace() :
 
   // Register mark stack space start
   ZMarkStackSpaceStart = _start;
+
+  // Prime space
+  _end += expand_space();
 }
 
 bool ZMarkStackSpace::is_initialized() const {
   return _start != 0;
+}
+
+size_t ZMarkStackSpace::size() const {
+  return _end - _start;
+}
+
+static bool is_high_usage(size_t size) {
+  // Consider usage to be high if we've used more than a 8th of the available space.
+  // The available space (controlled by ZMarkStackSpaceLimit) is by default 8G, so
+  // the high usage threshold will by default be 1G. The vast majority of workloads
+  // will use a few hundred megabytes of space at most, so hitting the high usage
+  // limit should be a rare event. At the same time, workloads that do see excessive
+  // mark stack usage will typically see continuous mark stack space growth until
+  // the high usage limit it hit, so setting the high usage limit too high will in
+  // those situations just waste memory.
+  return size > (ZMarkStackSpaceLimit / 8);
+}
+
+size_t ZMarkStackSpace::expand_space() {
+  const size_t expand_size = ZMarkStackSpaceExpandSize;
+  const size_t old_size = size();
+  const size_t new_size = old_size + expand_size;
+
+  if (new_size > ZMarkStackSpaceLimit) {
+    // Expansion limit reached. This is a fatal error since we
+    // currently can't recover from running out of mark stack space.
+    fatal("Mark stack space exhausted. Use -XX:ZMarkStackSpaceLimit=<size> to increase the "
+          "maximum number of bytes allocated for mark stacks. Current limit is " SIZE_FORMAT "M.",
+          ZMarkStackSpaceLimit / M);
+  }
+
+  if (!_high_usage && is_high_usage(new_size)) {
+    Atomic::store(&_high_usage, true);
+  }
+
+  log_debug(gc, marking)("Expanding mark stack space: " SIZE_FORMAT "M->" SIZE_FORMAT "M (%s Usage)",
+                         old_size / M, new_size / M, _high_usage ? "High" : "Low");
+
+  // Expand
+  os::commit_memory_or_exit((char*)_end, expand_size, false /* executable */, "Mark stack space");
+
+  return expand_size;
+}
+
+size_t ZMarkStackSpace::shrink_space() {
+  const size_t old_size = size();
+  const size_t new_size = ZMarkStackSpaceExpandSize;
+  const size_t shrink_size = old_size - new_size;
+
+  if (shrink_size > 0) {
+    // Shrink
+    log_debug(gc, marking)("Shrinking mark stack space: " SIZE_FORMAT "M->" SIZE_FORMAT "M",
+                           old_size / M, new_size / M);
+
+    const uintptr_t shrink_start = _end - shrink_size;
+    os::uncommit_memory((char*)shrink_start, shrink_size, false /* executable */);
+  }
+
+  return shrink_size;
 }
 
 uintptr_t ZMarkStackSpace::alloc_space(size_t size) {
@@ -92,28 +154,8 @@ uintptr_t ZMarkStackSpace::expand_and_alloc_space(size_t size) {
     return addr;
   }
 
-  // Check expansion limit
-  const size_t expand_size = ZMarkStackSpaceExpandSize;
-  const size_t old_size = _end - _start;
-  const size_t new_size = old_size + expand_size;
-  if (new_size > ZMarkStackSpaceLimit) {
-    // Expansion limit reached. This is a fatal error since we
-    // currently can't recover from running out of mark stack space.
-    fatal("Mark stack space exhausted. Use -XX:ZMarkStackSpaceLimit=<size> to increase the "
-          "maximum number of bytes allocated for mark stacks. Current limit is " SIZE_FORMAT "M.",
-          ZMarkStackSpaceLimit / M);
-  }
-
-  // Set high usage flag if we've used more than a 8th of the available space
-  if (!_high_usage && new_size > ZMarkStackSpaceLimit / 8) {
-    Atomic::store(&_high_usage, true);
-  }
-
-  log_debug(gc, marking)("Expanding mark stack space: " SIZE_FORMAT "M->" SIZE_FORMAT "M (%s Usage)",
-                         old_size / M, new_size / M, _high_usage ? "High" : "Low");
-
   // Expand
-  os::commit_memory_or_exit((char*)_end, expand_size, false /* executable */, "Mark stack space");
+  const size_t expand_size = expand_space();
 
   // Increment top before end to make sure another
   // thread can't steal out newly expanded space.
@@ -124,6 +166,8 @@ uintptr_t ZMarkStackSpace::expand_and_alloc_space(size_t size) {
 }
 
 uintptr_t ZMarkStackSpace::alloc(size_t size) {
+  assert(size <= ZMarkStackSpaceExpandSize, "Invalid size");
+
   const uintptr_t addr = alloc_space(size);
   if (addr != 0) {
     return addr;
@@ -133,9 +177,9 @@ uintptr_t ZMarkStackSpace::alloc(size_t size) {
 }
 
 void ZMarkStackSpace::free() {
-  os::uncommit_memory((char*)_start, _end - _start, false /* executable */);
-  _end = _top = _start;
-  _high_usage = false;
+  _top = _start;
+  _end -= shrink_space();
+  _high_usage = is_high_usage(size());
 }
 
 ZMarkStackAllocator::ZMarkStackAllocator() :
