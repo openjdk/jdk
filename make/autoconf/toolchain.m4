@@ -664,18 +664,12 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     UTIL_LOOKUP_TOOLCHAIN_PROGS(LD, link)
     TOOLCHAIN_VERIFY_LINK_BINARY(LD)
     LDCXX="$LD"
-    # jaotc being a windows program expects the linker to be supplied with exe suffix.but without
-    # fixpath
-    LD_JAOTC="${LD##$FIXPATH }"
   else
     # All other toolchains use the compiler to link.
     LD="$CC"
     LDCXX="$CXX"
-    # jaotc expects 'ld' as the linker rather than the compiler.
-    UTIL_LOOKUP_TOOLCHAIN_PROGS(LD_JAOTC, ld)
   fi
   AC_SUBST(LD)
-  AC_SUBST(LD_JAOTC)
   # FIXME: it should be CXXLD, according to standard (cf CXXCPP)
   AC_SUBST(LDCXX)
 
@@ -696,8 +690,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
     AS="$CC -c"
   else
-    # On windows, the assember is "ml.exe"
-    UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml)
+    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
+      # On 64 bit windows, the assember is "ml64.exe"
+      UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml64)
+    else
+      # otherwise, the assember is "ml.exe"
+      UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml)
+    fi
   fi
   AC_SUBST(AS)
 
@@ -879,7 +878,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
 
       # On windows, the assember is "ml.exe". We currently don't need this so
       # do not require.
-      UTIL_LOOKUP_PROGS(BUILD_AS, ml, [$VS_PATH])
+      if test "x$OPENJDK_BUILD_CPU_BITS" = "x64"; then
+        # On 64 bit windows, the assember is "ml64.exe"
+        UTIL_LOOKUP_PROGS(BUILD_AS, ml64, [$VS_PATH])
+      else
+        # otherwise the assember is "ml.exe"
+        UTIL_LOOKUP_PROGS(BUILD_AS, ml, [$VS_PATH])
+      fi
 
       # On windows, the ar tool is lib.exe (used to create static libraries).
       # We currently don't need this so do not require.

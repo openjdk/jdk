@@ -1444,7 +1444,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _cm_thread(NULL),
   _cr(NULL),
   _task_queues(NULL),
-  _evacuation_failed(false),
+  _num_regions_failed_evacuation(0),
   _evacuation_failed_info_array(NULL),
   _preserved_marks_set(true /* in_c_heap */),
 #ifndef PRODUCT
@@ -3087,8 +3087,16 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
 }
 
 void G1CollectedHeap::remove_self_forwarding_pointers(G1RedirtyCardsQueueSet* rdcqs) {
-  G1ParRemoveSelfForwardPtrsTask rsfp_task(rdcqs);
-  workers()->run_task(&rsfp_task);
+  uint num_workers = MIN2(workers()->active_workers(), num_regions_failed_evacuation());
+
+  G1ParRemoveSelfForwardPtrsTask cl(rdcqs);
+  log_debug(gc, ergo)("Running %s using %u workers for %u failed regions",
+                      cl.name(), num_workers, num_regions_failed_evacuation());
+  workers()->run_task(&cl, num_workers);
+
+  assert(cl.num_failed_regions() == num_regions_failed_evacuation(),
+         "Removed regions %u inconsistent with expected %u",
+         cl.num_failed_regions(), num_regions_failed_evacuation());
 }
 
 void G1CollectedHeap::restore_after_evac_failure(G1RedirtyCardsQueueSet* rdcqs) {
@@ -3101,10 +3109,6 @@ void G1CollectedHeap::restore_after_evac_failure(G1RedirtyCardsQueueSet* rdcqs) 
 }
 
 void G1CollectedHeap::preserve_mark_during_evac_failure(uint worker_id, oop obj, markWord m) {
-  if (!_evacuation_failed) {
-    _evacuation_failed = true;
-  }
-
   _evacuation_failed_info_array[worker_id].register_copy_failure(obj->size());
   _preserved_marks_set.get(worker_id)->push_if_necessary(obj, m);
 }
@@ -3658,7 +3662,7 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
   _bytes_used_during_gc = 0;
 
   _expand_heap_after_alloc_failure = true;
-  _evacuation_failed = false;
+  Atomic::store(&_num_regions_failed_evacuation, 0u);
 
   // Disable the hot card cache.
   _hot_card_cache->reset_hot_cache_claimed_index();

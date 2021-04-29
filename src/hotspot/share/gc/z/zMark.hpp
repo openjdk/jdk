@@ -71,10 +71,8 @@ private:
                                    ZMarkThreadLocalStacks* stacks,
                                    ZMarkCache* cache,
                                    T* timeout);
-  template <typename T> bool drain_and_flush(ZMarkStripe* stripe,
-                                             ZMarkThreadLocalStacks* stacks,
-                                             ZMarkCache* cache,
-                                             T* timeout);
+  bool try_steal_local(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
+  bool try_steal_global(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
   bool try_steal(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
   void idle() const;
   bool flush(bool at_safepoint);
