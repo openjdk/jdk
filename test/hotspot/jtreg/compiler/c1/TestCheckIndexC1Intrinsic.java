@@ -90,34 +90,65 @@ public class TestCheckIndexC1Intrinsic {
     }
 
     static void check1(int i) {
+        boolean trigger = false;
         try {
             Preconditions.checkIndex(i, 9999, (s, integers) -> new RuntimeException("ex"));
         } catch (RuntimeException e) {
             Asserts.assertTrue("ex".equals(e.getMessage()));
+            trigger = true;
+        } finally {
+            if (trigger) {
+                Asserts.assertTrue(i == 9999L);
+            } else {
+                Asserts.assertTrue(i != 9999L);
+            }
         }
     }
 
     static void check2(long i) {
+        boolean trigger = false;
         try {
             Preconditions.checkIndex(i, 9999L, (s, integers) -> new RuntimeException("ex"));
         } catch (RuntimeException e) {
             Asserts.assertTrue("ex".equals(e.getMessage()));
+            trigger = true;
+        } finally {
+            if (trigger) {
+                Asserts.assertTrue(i == 9999L);
+            } else {
+                Asserts.assertTrue(i != 9999L);
+            }
         }
     }
 
     static void check3(int i) {
+        boolean trigger = false;
         try {
             Preconditions.checkIndex(i, 9999, null);
         } catch (IndexOutOfBoundsException e) {
             Asserts.assertTrue(i == 9999);
+            trigger = true;
+        } finally {
+            if (trigger) {
+                Asserts.assertTrue(i == 9999L);
+            } else {
+                Asserts.assertTrue(i != 9999L);
+            }
         }
     }
 
     static void check4(long i) {
+        boolean trigger = false;
         try {
             Preconditions.checkIndex(i, 9999L, null);
         } catch (IndexOutOfBoundsException e) {
-            Asserts.assertTrue(i == 9999L);
+            trigger = true;
+        } finally {
+            if (trigger) {
+                Asserts.assertTrue(i == 9999L);
+            } else {
+                Asserts.assertTrue(i != 9999L);
+            }
         }
     }
 
