@@ -26,6 +26,7 @@
 #include "asm/macroAssembler.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -1773,7 +1774,8 @@ __ BIND(L_exit);
 address StubGenerator::generate_disjoint_long_oop_copy(bool aligned, bool is_oop, address *entry,
                                                        const char *name, bool dest_uninitialized) {
 #if COMPILER2_OR_JVMCI
-  if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
+  // TODO: Vectorize avx3 arraycopy for ZGC
+  if (!(UseZGC && is_oop) && VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
      return generate_disjoint_copy_avx3_masked(entry, "jlong_disjoint_arraycopy_avx3", 3,
                                                aligned, is_oop, dest_uninitialized);
   }
@@ -1884,7 +1886,8 @@ address StubGenerator::generate_conjoint_long_oop_copy(bool aligned, bool is_oop
                                                        address *entry, const char *name,
                                                        bool dest_uninitialized) {
 #if COMPILER2_OR_JVMCI
-  if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
+  // TODO: Vectorize avx3 arraycopy for ZGC
+  if (!(UseZGC && is_oop) && VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
      return generate_conjoint_copy_avx3_masked(entry, "jlong_conjoint_arraycopy_avx3", 3,
                                                nooverlap_target, aligned, is_oop, dest_uninitialized);
   }
@@ -2141,13 +2144,17 @@ address StubGenerator::generate_checkcast_copy(const char *name, address *entry,
   __ align(OptoLoopAlignment);
 
   __ BIND(L_store_element);
-  __ store_heap_oop(to_element_addr, rax_oop, noreg, noreg, noreg, AS_RAW);  // store the oop
+  if (UseZGC) {
+    __ store_heap_oop(to_element_addr, rax_oop, r10, r11, noreg, IN_HEAP | (dest_uninitialized ? IS_DEST_UNINITIALIZED : 0));  // store the oop
+  } else {
+    __ store_heap_oop(to_element_addr, rax_oop, noreg, noreg, noreg, AS_RAW);  // store the oop
+  }
   __ increment(count);               // increment the count toward zero
   __ jcc(Assembler::zero, L_do_card_marks);
 
   // ======== loop entry is here ========
   __ BIND(L_load_element);
-  __ load_heap_oop(rax_oop, from_element_addr, noreg, noreg, AS_RAW); // load the oop
+  __ load_heap_oop(rax_oop, from_element_addr, r11, noreg); // load the oop
   __ testptr(rax_oop, rax_oop);
   __ jcc(Assembler::zero, L_store_element);
 

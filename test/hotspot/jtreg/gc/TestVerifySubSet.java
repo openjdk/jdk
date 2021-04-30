@@ -26,6 +26,10 @@ package gc;
 /* @test TestVerifySubSet.java
  * @bug 8072725
  * @summary Test VerifySubSet option
+ * @comment Generational ZGC can't use the generic Universe::verify
+ *          because there's no guarantee that we will ever have
+ *          a stable snapshot where all roots can be verified.
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main gc.TestVerifySubSet

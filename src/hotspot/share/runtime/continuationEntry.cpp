@@ -90,11 +90,6 @@ void ContinuationEntry::flush_stack_processing(JavaThread* thread) const {
   maybe_flush_stack_processing(thread, (intptr_t*)((uintptr_t)entry_sp() + ContinuationEntry::size()));
 }
 
-void ContinuationEntry::setup_oopmap(OopMap* map) {
-  map->set_oop(VMRegImpl::stack2reg(in_bytes(cont_offset())  / VMRegImpl::stack_slot_size));
-  map->set_oop(VMRegImpl::stack2reg(in_bytes(chunk_offset()) / VMRegImpl::stack_slot_size));
-}
-
 #ifndef PRODUCT
 void ContinuationEntry::describe(FrameValues& values, int frame_no) const {
   address usp = (address)this;

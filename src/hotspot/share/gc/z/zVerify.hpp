@@ -27,32 +27,29 @@
 #include "memory/allStatic.hpp"
 
 class frame;
+class ZForwarding;
 class ZPageAllocator;
 
 class ZVerify : public AllStatic {
 private:
-  static void roots_strong(bool verify_fixed);
+  static void roots_strong(bool verify_after_old_mark);
   static void roots_weak();
 
   static void objects(bool verify_weaks);
+  static void threads_start_processing();
+
+  static void after_relocation_internal(ZForwarding* forwarding);
 
 public:
   static void before_zoperation();
   static void after_mark();
   static void after_weak_processing();
 
-  static void verify_thread_head_bad(JavaThread* thread) NOT_DEBUG_RETURN;
-  static void verify_thread_frames_bad(JavaThread* thread) NOT_DEBUG_RETURN;
-  static void verify_frame_bad(const frame& fr, RegisterMap& register_map) NOT_DEBUG_RETURN;
-};
+  static void before_relocation(ZForwarding* forwarding);
+  static void after_relocation(ZForwarding* forwarding);
+  static void after_scan(ZForwarding* forwarding);
 
-class ZVerifyViewsFlip {
-private:
-  const ZPageAllocator* const _allocator;
-
-public:
-  ZVerifyViewsFlip(const ZPageAllocator* allocator);
-  ~ZVerifyViewsFlip();
+  static void on_color_flip();
 };
 
 #endif // SHARE_GC_Z_ZVERIFY_HPP

@@ -38,7 +38,7 @@
 //  |     | | |
 //  |     | | * 0-0 Non-Blocking Flag (1-bit)
 //  |     | |
-//  |     | * 1-1 Worker Relocation Flag (1-bit)
+//  |     | * 1-1 GC Relocation Flag (1-bit)
 //  |     |
 //  |     * 2-2 Low Address Flag (1-bit)
 //  |
@@ -48,7 +48,7 @@
 class ZAllocationFlags {
 private:
   typedef ZBitField<uint8_t, bool, 0, 1> field_non_blocking;
-  typedef ZBitField<uint8_t, bool, 1, 1> field_worker_relocation;
+  typedef ZBitField<uint8_t, bool, 1, 1> field_gc_relocation;
   typedef ZBitField<uint8_t, bool, 2, 1> field_low_address;
 
   uint8_t _flags;
@@ -61,8 +61,8 @@ public:
     _flags |= field_non_blocking::encode(true);
   }
 
-  void set_worker_relocation() {
-    _flags |= field_worker_relocation::encode(true);
+  void set_gc_relocation() {
+    _flags |= field_gc_relocation::encode(true);
   }
 
   void set_low_address() {
@@ -73,8 +73,8 @@ public:
     return field_non_blocking::decode(_flags);
   }
 
-  bool worker_relocation() const {
-    return field_worker_relocation::decode(_flags);
+  bool gc_relocation() const {
+    return field_gc_relocation::decode(_flags);
   }
 
   bool low_address() const {

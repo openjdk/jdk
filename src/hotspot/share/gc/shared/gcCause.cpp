@@ -129,11 +129,11 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _z_allocation_stall:
       return "Allocation Stall";
 
-    case _z_proactive:
-      return "Proactive";
-
     case _z_high_usage:
       return "High Usage";
+
+    case _z_proactive:
+      return "Proactive";
 
     case _last_gc_cause:
       return "ILLEGAL VALUE - last gc cause - ILLEGAL VALUE";

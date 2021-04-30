@@ -26,6 +26,7 @@
 #include "asm/macroAssembler.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -152,7 +153,14 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register val,
                          DecoratorSet decorators = 0) {
   assert(val == noreg || val == rax, "parameter is just for looks");
-  __ store_heap_oop(dst, val, rdx, rbx, LP64_ONLY(r8) NOT_LP64(rsi), decorators);
+  if (UseZGC) {
+    __ store_heap_oop(dst, val,
+                      NOT_LP64(rdx) LP64_ONLY(rscratch2),
+                      NOT_LP64(rbx) LP64_ONLY(r9),
+                      NOT_LP64(rsi) LP64_ONLY(r8), decorators);
+  } else {
+    __ store_heap_oop(dst, val, rdx, rbx, LP64_ONLY(r8) NOT_LP64(rsi), decorators);
+  }
 }
 
 static void do_oop_load(InterpreterMacroAssembler* _masm,

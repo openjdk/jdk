@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,42 +21,37 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZTHREAD_INLINE_HPP
-#define SHARE_GC_Z_ZTHREAD_INLINE_HPP
+#ifndef SHARE_GC_Z_ZCONTINUATION_HPP
+#define SHARE_GC_Z_ZCONTINUATION_HPP
 
-#include "gc/z/zThread.hpp"
+#include "memory/allStatic.hpp"
+#include "memory/iterator.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-#include "utilities/debug.hpp"
+class OopClosure;
+class ZHeap;
 
-inline void ZThread::ensure_initialized() {
-  if (!_initialized) {
-    initialize();
-  }
-}
+class ZContinuation : public AllStatic {
+public:
+  static bool requires_barriers(const ZHeap* heap, stackChunkOop chunk);
 
-inline uintptr_t ZThread::id() {
-  ensure_initialized();
-  return _id;
-}
+  static oop load_oop(stackChunkOop chunk, void* addr);
 
-inline bool ZThread::is_vm() {
-  ensure_initialized();
-  return _is_vm;
-}
+  class ZColorStackOopClosure : public OopClosure {
+  private:
+    uintptr_t _color;
 
-inline bool ZThread::is_java() {
-  ensure_initialized();
-  return _is_java;
-}
+  public:
+    ZColorStackOopClosure(stackChunkOop chunk);
+    virtual void do_oop(oop* p) override;
+    virtual void do_oop(narrowOop* p) override;
+  };
 
-inline bool ZThread::is_worker() {
-  ensure_initialized();
-  return _is_worker;
-}
+  class ZUncolorStackOopClosure : public OopClosure {
+  public:
+    virtual void do_oop(oop* p) override;
+    virtual void do_oop(narrowOop* p) override;
+  };
+};
 
-inline uint ZThread::worker_id() {
-  assert(has_worker_id(), "Worker id not initialized");
-  return _worker_id;
-}
-
-#endif // SHARE_GC_Z_ZTHREAD_INLINE_HPP
+#endif // SHARE_GC_Z_ZCONTINUATION_HPP

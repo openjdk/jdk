@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zMapper_windows.hpp"
 #include "gc/z/zSyscall_windows.hpp"
 #include "logging/log.hpp"
@@ -59,10 +60,10 @@
   fatal(msg ": " PTR_FORMAT " " SIZE_FORMAT "M (%d)", \
         (addr), (size) / M, GetLastError())
 
-uintptr_t ZMapper::reserve(uintptr_t addr, size_t size) {
+zaddress_unsafe ZMapper::reserve(zaddress_unsafe addr, size_t size) {
   void* const res = ZSyscall::VirtualAlloc2(
     GetCurrentProcess(),                   // Process
-    (void*)addr,                           // BaseAddress
+    (void*)untype(addr),                   // BaseAddress
     size,                                  // Size
     MEM_RESERVE | MEM_RESERVE_PLACEHOLDER, // AllocationType
     PAGE_NOACCESS,                         // PageProtection
@@ -71,19 +72,19 @@ uintptr_t ZMapper::reserve(uintptr_t addr, size_t size) {
     );
 
   // Caller responsible for error handling
-  return (uintptr_t)res;
+  return to_zaddress_unsafe((uintptr_t)res);
 }
 
-void ZMapper::unreserve(uintptr_t addr, size_t size) {
+void ZMapper::unreserve(zaddress_unsafe addr, size_t size) {
   const bool res = ZSyscall::VirtualFreeEx(
     GetCurrentProcess(), // hProcess
-    (void*)addr,         // lpAddress
+    (void*)untype(addr), // lpAddress
     size,                // dwSize
     MEM_RELEASE          // dwFreeType
     );
 
   if (!res) {
-    fatal_error("Failed to unreserve memory", addr, size);
+    fatal_error("Failed to unreserve memory", untype(addr), size);
   }
 }
 
@@ -223,14 +224,14 @@ HANDLE ZMapper::create_shared_awe_section() {
   return section;
 }
 
-uintptr_t ZMapper::reserve_for_shared_awe(HANDLE awe_section, uintptr_t addr, size_t size) {
+zaddress_unsafe ZMapper::reserve_for_shared_awe(HANDLE awe_section, zaddress_unsafe addr, size_t size) {
   MEM_EXTENDED_PARAMETER parameter = { 0 };
   parameter.Type = MemExtendedParameterUserPhysicalHandle;
   parameter.Handle = awe_section;
 
   void* const res = ZSyscall::VirtualAlloc2(
     GetCurrentProcess(),        // Process
-    (void*)addr,                // BaseAddress
+    (void*)untype(addr),        // BaseAddress
     size,                       // Size
     MEM_RESERVE | MEM_PHYSICAL, // AllocationType
     PAGE_READWRITE,             // PageProtection
@@ -239,25 +240,25 @@ uintptr_t ZMapper::reserve_for_shared_awe(HANDLE awe_section, uintptr_t addr, si
     );
 
   // Caller responsible for error handling
-  return (uintptr_t)res;
+  return to_zaddress_unsafe((uintptr_t)res);
 }
 
-void ZMapper::unreserve_for_shared_awe(uintptr_t addr, size_t size) {
+void ZMapper::unreserve_for_shared_awe(zaddress_unsafe addr, size_t size) {
   bool res = VirtualFree(
-    (void*)addr, // lpAddress
-    0,           // dwSize
-    MEM_RELEASE  // dwFreeType
+    (void*)untype(addr), // lpAddress
+    0,                   // dwSize
+    MEM_RELEASE          // dwFreeType
     );
 
   if (!res) {
     fatal("Failed to unreserve memory: " PTR_FORMAT " " SIZE_FORMAT "M (%d)",
-          addr, size / M, GetLastError());
+          untype(addr), size / M, GetLastError());
   }
 }
 
-void ZMapper::split_placeholder(uintptr_t addr, size_t size) {
+void ZMapper::split_placeholder(zaddress_unsafe addr, size_t size) {
   const bool res = VirtualFree(
-    (void*)addr,                           // lpAddress
+    (void*)untype(addr),                   // lpAddress
     size,                                  // dwSize
     MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER // dwFreeType
     );
@@ -267,9 +268,9 @@ void ZMapper::split_placeholder(uintptr_t addr, size_t size) {
   }
 }
 
-void ZMapper::coalesce_placeholders(uintptr_t addr, size_t size) {
+void ZMapper::coalesce_placeholders(zaddress_unsafe addr, size_t size) {
   const bool res = VirtualFree(
-    (void*)addr,                            // lpAddress
+    (void*)untype(addr),                    // lpAddress
     size,                                   // dwSize
     MEM_RELEASE | MEM_COALESCE_PLACEHOLDERS // dwFreeType
     );
@@ -279,11 +280,11 @@ void ZMapper::coalesce_placeholders(uintptr_t addr, size_t size) {
   }
 }
 
-void ZMapper::map_view_replace_placeholder(HANDLE file_handle, uintptr_t file_offset, uintptr_t addr, size_t size) {
+void ZMapper::map_view_replace_placeholder(HANDLE file_handle, uintptr_t file_offset, zaddress_unsafe addr, size_t size) {
   void* const res = ZSyscall::MapViewOfFile3(
     file_handle,             // FileMapping
     GetCurrentProcess(),     // ProcessHandle
-    (void*)addr,             // BaseAddress
+    (void*)untype(addr),     // BaseAddress
     file_offset,             // Offset
     size,                    // ViewSize
     MEM_REPLACE_PLACEHOLDER, // AllocationType
@@ -297,10 +298,10 @@ void ZMapper::map_view_replace_placeholder(HANDLE file_handle, uintptr_t file_of
   }
 }
 
-void ZMapper::unmap_view_preserve_placeholder(uintptr_t addr, size_t size) {
+void ZMapper::unmap_view_preserve_placeholder(zaddress_unsafe addr, size_t size) {
   const bool res = ZSyscall::UnmapViewOfFile2(
     GetCurrentProcess(),     // ProcessHandle
-    (void*)addr,             // BaseAddress
+    (void*)untype(addr),     // BaseAddress
     MEM_PRESERVE_PLACEHOLDER // UnmapFlags
     );
 

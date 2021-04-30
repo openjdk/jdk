@@ -273,6 +273,7 @@ class relocInfo {
     data_prefix_tag         = 15, // tag for a prefix (carries data arguments)
     post_call_nop_type      = 16, // A tag for post call nop relocations
     entry_guard_type        = 17, // A tag for an nmethod entry barrier guard value
+    barrier_type            = 18, // GC barrier data
     type_mask               = 31  // A mask which selects only the above values
   };
 
@@ -314,6 +315,7 @@ class relocInfo {
     visitor(trampoline_stub) \
     visitor(post_call_nop) \
     visitor(entry_guard) \
+    visitor(barrier) \
 
 
  public:
@@ -790,9 +792,10 @@ class Relocation {
  protected:
   short*   data()         const { return binding()->data(); }
   int      datalen()      const { return binding()->datalen(); }
-  int      format()       const { return binding()->format(); }
 
  public:
+  int      format()       const { return binding()->format(); }
+
   relocInfo::relocType type()              const { return _rtype; }
 
   // is it a call instruction?
@@ -1025,6 +1028,29 @@ class metadata_Relocation : public DataRelocation {
   Metadata**   metadata_addr();                  // addr or &pool[jint_data]
   Metadata*    metadata_value();                 // *metadata_addr
   // Note:  metadata_value transparently converts Universe::non_metadata_word to NULL.
+};
+
+class barrier_Relocation : public DataRelocation {
+
+ public:
+  // The uninitialized value used before the relocation has been patched.
+  // Code assumes that the unpatched value is zero.
+  static const int16_t unpatched = 0;
+
+  static RelocationHolder spec() {
+    RelocationHolder rh = newHolder();
+    new(rh) barrier_Relocation();
+    return rh;
+  }
+
+ private:
+  friend class RelocIterator;
+  barrier_Relocation() : DataRelocation(relocInfo::barrier_type) { }
+
+ public:
+  virtual int offset()                  { ShouldNotReachHere(); return 0; }
+  virtual address value()               { ShouldNotReachHere(); return NULL; }
+  virtual void set_value(address value) { ShouldNotReachHere(); }
 };
 
 

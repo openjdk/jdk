@@ -67,17 +67,22 @@ public class TestDeoptOOM {
 
     static LinkedList ll;
 
-    static void consume_all_memory() {
-        int size = 128 * 1024 * 1024;
-        while(size > 0) {
-            try {
-                while(true) {
-                    ll = new LinkedList(ll, size);
-                }
-            } catch(OutOfMemoryError oom) {
+    static void alloc_in_chunks(int size) {
+        try {
+            while(true) {
+                ll = new LinkedList(ll, size);
             }
-            size = size / 2;
+        } catch(OutOfMemoryError oom) {
         }
+    }
+
+    static void consume_all_memory() {
+        // O(MiB) allocations
+        alloc_in_chunks(1024*1024);
+        // O(KiB) allocations
+        alloc_in_chunks(1024);
+        // O(B) allocations
+        alloc_in_chunks(1);
     }
 
     static void free_memory() {

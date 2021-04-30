@@ -473,6 +473,33 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
+void os::print_nth_register_info(outputStream *st, int n, const void *context) {
+  if (context == NULL || n < 0 || n >= print_nth_register_info_max_index()) {
+    return;
+  }
+
+  const ucontext_t *uc = (const ucontext_t*)context;
+  switch (n) {
+  case 0:
+    st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.iar);
+    break;
+  case 1:
+    st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.lr);
+    break;
+  case 2:
+    st->print("sp ="); print_location(st, (intptr_t)os::Aix::ucontext_get_sp(uc));
+    break;
+  default:
+    st->print("r%-2d=", n-3);
+    print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.gpr[n-3]);
+    break;
+  }
+}
+
+int os::print_nth_register_info_max_index() {
+  return 32 /* r0-r32 */ + 3 /* pc, lr, sp */;
+}
+
 void os::print_register_info(outputStream *st, const void *context) {
   if (context == NULL) return;
 

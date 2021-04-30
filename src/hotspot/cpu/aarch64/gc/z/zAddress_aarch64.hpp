@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,46 +21,14 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZMESSAGEPORT_HPP
-#define SHARE_GC_Z_ZMESSAGEPORT_HPP
+#ifndef CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_HPP
+#define CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_HPP
 
-#include "gc/z/zFuture.hpp"
-#include "gc/z/zList.hpp"
-#include "runtime/mutex.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-template <typename T> class ZMessageRequest;
+const size_t ZPointerLoadShift = 16;
 
-template <typename T>
-class ZMessagePort {
-private:
-  typedef ZMessageRequest<T> Request;
+size_t ZPlatformAddressOffsetBits();
+size_t ZPlatformAddressHeapBaseShift();
 
-  mutable Monitor _monitor;
-  bool            _has_message;
-  T               _message;
-  uint64_t        _seqnum;
-  ZList<Request>  _queue;
-
-public:
-  ZMessagePort();
-
-  bool is_busy() const;
-
-  void send_sync(const T& message);
-  void send_async(const T& message);
-
-  T receive();
-  void ack();
-};
-
-class ZRendezvousPort {
-private:
-  ZMessagePort<bool> _port;
-
-public:
-  void signal();
-  void wait();
-  void ack();
-};
-
-#endif // SHARE_GC_Z_ZMESSAGEPORT_HPP
+#endif // CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_HPP
