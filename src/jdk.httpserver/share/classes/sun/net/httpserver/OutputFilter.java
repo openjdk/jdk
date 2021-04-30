@@ -66,6 +66,9 @@ public final class OutputFilter extends Filter {
     }
 
     public static OutputFilter create(OutputStream os, OutputLevel outputLevel) {
+        if (outputLevel.equals(OutputLevel.NONE)) {
+            throw new IllegalArgumentException("Not a valid outputLevel: " + outputLevel);
+        }
         return new OutputFilter(os, outputLevel);
     }
 

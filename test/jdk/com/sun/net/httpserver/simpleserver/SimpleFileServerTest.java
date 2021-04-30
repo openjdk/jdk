@@ -82,7 +82,7 @@ public class SimpleFileServerTest {
         var lastModified = getlastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -117,7 +117,7 @@ public class SimpleFileServerTest {
         var file = Files.writeString(root.resolve("yFile.txt"), "some text", CREATE);
         var lastModified = getlastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -140,7 +140,7 @@ public class SimpleFileServerTest {
         var lastModified = getlastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -175,7 +175,7 @@ public class SimpleFileServerTest {
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
         var lastModified = getlastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -196,7 +196,7 @@ public class SimpleFileServerTest {
     public void testNotFound() throws Exception {
         var root = Files.createDirectory(CWD.resolve("testNotFound"));
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -291,7 +291,7 @@ public class SimpleFileServerTest {
     public void testXss() throws Exception {
         var root = Files.createDirectory(CWD.resolve("testXss"));
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();

@@ -101,8 +101,8 @@ final class SimpleFileServerImpl {
                     }
                     case "-b" -> addr = InetAddress.getByName(optionArg = options.next());
                     case "-d" -> root = Path.of(optionArg = options.next());
-                    case "-o" -> outputLevel = (optionArg = options.next()).equals("none") ? null
-                                : Enum.valueOf(OutputLevel.class, optionArg.toUpperCase(Locale.ROOT));
+                    case "-o" -> outputLevel = Enum.valueOf(OutputLevel.class,
+                            (optionArg = options.next()).toUpperCase(Locale.ROOT));
                     case "-p" -> port = Integer.parseInt(optionArg = options.next());
                     default -> throw new AssertionError();
                 }
@@ -125,8 +125,7 @@ final class SimpleFileServerImpl {
         // configure and start server
         try {
             var socketAddr = new InetSocketAddress(addr, port);
-            var server = outputLevel == null ? SimpleFileServer.createFileServer(socketAddr, root)
-                    : SimpleFileServer.createFileServer(socketAddr, root, outputLevel);
+            var server = SimpleFileServer.createFileServer(socketAddr, root, outputLevel);
             server.setExecutor(Executors.newSingleThreadExecutor());
             server.start();
             printStartMessage(root, server.getAddress().getAddress(), server.getAddress().getPort());

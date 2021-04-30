@@ -128,6 +128,10 @@ public final class SimpleFileServer {
      * processing exchanges.
      */
     public enum OutputLevel {
+        /**
+         * Used to specify no log message output level.
+         */
+        NONE,
 
         /**
          * Used to specify the informative log message output level.
@@ -168,8 +172,9 @@ public final class SimpleFileServer {
      * {@link #createFileHandler(Path) createFileHandler(root)}.
      *
      * <p> An output level can be given to print log messages relating to the
-     * exchanges handled by the server. The log messages are printed to
-     * {@code System.out}.
+     * exchanges handled by the server. The log messages, if any, are printed to
+     * {@code System.out}. If {@link OutputLevel#NONE OutputLevel.NONE} is
+     * given, no log messages are printed.
      *
      * @param addr        the address to listen on
      * @param root        the root of the directory to be served, must be an absolute path
@@ -188,36 +193,10 @@ public final class SimpleFileServer {
         Objects.requireNonNull(outputLevel);
         try {
             var handler = FileServerHandler.create(root, MIME_TABLE);
-            return HttpServer.create(addr, 0, "/", handler, OutputFilter.create(System.out, outputLevel));
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe);
-        }
-    }
-
-    /**
-     * Creates a <i>file server</i> the serves files from a given path on the
-     * file-system.
-     *
-     * <p> The server is configured with an initial handler that maps the
-     * URI path "/" to a <i>file handler</i>. The initial handler is a <i>file
-     * handler</i> created as if by an invocation of
-     * {@link #createFileHandler(Path) createFileHandler(root)}.
-     *
-     * @param addr        the address to listen on
-     * @param root        the root of the directory to be served, must be an absolute path
-     * @return an HttpServer
-     * @throws IllegalArgumentException if root is not absolute, not a directory,
-     *         does not exist, or is not readable
-     * @throws UncheckedIOException if an I/O error occurs
-     * @throws NullPointerException if any argument is null
-     */
-    public static HttpServer createFileServer(InetSocketAddress addr,
-                                              Path root) {
-        Objects.requireNonNull(addr);
-        Objects.requireNonNull(root);
-        try {
-            var handler = FileServerHandler.create(root, MIME_TABLE);
-            return HttpServer.create(addr, 0, "/", handler);
+            if (outputLevel.equals(OutputLevel.NONE))
+                return HttpServer.create(addr, 0, "/", handler);
+            else
+                return HttpServer.create(addr, 0, "/", handler, OutputFilter.create(System.out, outputLevel));
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
@@ -263,10 +242,15 @@ public final class SimpleFileServer {
      * HttpExchange exchanges}. The log messages are printed to the given
      * {@code OutputStream}.
      *
+     * @apiNote To not output any log messages it is recommended to not use a
+     * filter.
+     *
      * @param out         the stream to print to
      * @param outputLevel the output level
      * @return a Filter
-     * @throws NullPointerException if any argument is null
+     * @throws IllegalArgumentException if {@link OutputLevel#NONE OutputLevel.NONE}
+     *                                  is given
+     * @throws NullPointerException     if any argument is null
      */
     // TODO: since we're using an output stream, we should clarity the charset
     //       used or accept a PrintStream
