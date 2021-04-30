@@ -24,12 +24,12 @@
 #ifndef SHARE_GC_Z_ZUNCOMMITTER_HPP
 #define SHARE_GC_Z_ZUNCOMMITTER_HPP
 
-#include "gc/shared/concurrentGCThread.hpp"
 #include "gc/z/zLock.hpp"
+#include "gc/z/zThread.hpp"
 
-class ZPageAllocation;
+class ZPageAllocator;
 
-class ZUncommitter : public ConcurrentGCThread {
+class ZUncommitter : public ZThread {
 private:
   ZPageAllocator* const  _page_allocator;
   mutable ZConditionLock _lock;
@@ -39,8 +39,8 @@ private:
   bool should_continue() const;
 
 protected:
-  virtual void run_service();
-  virtual void stop_service();
+  virtual void run_thread();
+  virtual void terminate();
 
 public:
   ZUncommitter(ZPageAllocator* page_allocator);

@@ -27,7 +27,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
 
-class ZLock {
+class ZLock : public CHeapObj<mtGC> {
 private:
   PlatformMutex _lock;
 
@@ -52,7 +52,7 @@ public:
   bool is_owned() const;
 };
 
-class ZConditionLock {
+class ZConditionLock : public CHeapObj<mtGC> {
 private:
   PlatformMonitor _lock;
 

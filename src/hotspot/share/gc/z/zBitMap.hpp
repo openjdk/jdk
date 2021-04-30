@@ -26,6 +26,12 @@
 
 #include "utilities/bitMap.hpp"
 
+class ZMovableBitMap : public CHeapBitMap {
+public:
+  ZMovableBitMap();
+  ZMovableBitMap(ZMovableBitMap&& bitmap);
+};
+
 class ZBitMap : public CHeapBitMap {
 private:
   static bm_word_t bit_mask_pair(idx_t bit);
@@ -35,6 +41,7 @@ private:
 
 public:
   ZBitMap(idx_t size_in_bits);
+  ZBitMap(const ZBitMap& other);
 
   bool par_set_bit_pair(idx_t bit, bool finalizable, bool& inc_live);
 };
