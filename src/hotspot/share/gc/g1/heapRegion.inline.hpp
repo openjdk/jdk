@@ -205,8 +205,8 @@ inline void HeapRegion::reset_compacted_after_full_gc() {
   reset_after_full_gc_common();
 }
 
-inline void HeapRegion::reset_not_compacted_after_full_gc() {
-  assert(!is_free(), "should not have compacted free region");
+inline void HeapRegion::reset_skip_compacting_after_full_gc() {
+  assert(!is_free(), "must be");
 
   assert(compaction_top() == bottom(),
          "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,

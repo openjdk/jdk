@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,9 @@ class ReservedSpace {
                   char* requested_address,
                   bool executable);
 
+  void reserve(size_t size, size_t alignment, bool large,
+               char* requested_address,
+               bool executable);
  public:
   // Constructor
   ReservedSpace();
@@ -207,14 +210,6 @@ class VirtualSpace {
   // Reserved area
   char* low_boundary()  const { return _low_boundary; }
   char* high_boundary() const { return _high_boundary; }
-
-#if INCLUDE_AOT
-  // Set boundaries for code section in AOT library.
-  void set_low_boundary(char *p)  { _low_boundary = p; }
-  void set_high_boundary(char *p) { _high_boundary = p; }
-  void set_low(char *p)           { _low = p; }
-  void set_high(char *p)          { _high = p; }
-#endif
 
   bool special() const { return _special; }
 

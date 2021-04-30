@@ -247,15 +247,13 @@
   start_class(JavaConstant, jdk_vm_ci_meta_JavaConstant)                                                      \
     static_object_field(JavaConstant, ILLEGAL, "Ljdk/vm/ci/meta/PrimitiveConstant;")                          \
     static_object_field(JavaConstant, NULL_POINTER, "Ljdk/vm/ci/meta/JavaConstant;")                          \
-    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, JavaConstant, forFloat, forFloat_signature, (JVMCIObject kind, jlong value, JVMCI_TRAPS)) \
-    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, JavaConstant, forDouble, forDouble_signature, (JVMCIObject kind, jlong value, JVMCI_TRAPS)) \
+    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, JavaConstant, forPrimitive, forPrimitive_signature, (JVMCIObject kind, jlong value, JVMCI_TRAPS)) \
   end_class                                                                                                   \
   start_class(ResolvedJavaMethod, jdk_vm_ci_meta_ResolvedJavaMethod)                                          \
   end_class                                                                                                   \
   start_class(PrimitiveConstant, jdk_vm_ci_meta_PrimitiveConstant)                                            \
     object_field(PrimitiveConstant, kind, "Ljdk/vm/ci/meta/JavaKind;")                                        \
     long_field(PrimitiveConstant, primitive)                                                                  \
-    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, PrimitiveConstant, forTypeChar, forTypeChar_signature, (JVMCIObject kind, jlong value, JVMCI_TRAPS)) \
   end_class                                                                                                   \
   start_class(RawConstant, jdk_vm_ci_meta_RawConstant)                                                        \
   end_class                                                                                                   \
