@@ -55,15 +55,7 @@ public interface Metrics {
      * @return Metrics object or null if not supported on this platform.
      */
     public static Metrics systemMetrics() {
-        try {
-            Class<?> c = Class.forName("jdk.internal.platform.CgroupMetrics");
-            Method m = c.getMethod("getInstance");
-            return (Metrics) m.invoke(null);
-        } catch (ClassNotFoundException e) {
-            return null;
-        } catch (ReflectiveOperationException e) {
-            throw new InternalError(e);
-        }
+        return SystemMetrics.instance(); 
     }
 
     /**
