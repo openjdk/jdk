@@ -705,11 +705,13 @@ void vm_shutdown_during_initialization(const char* error, const char* message) {
 }
 
 JDK_Version JDK_Version::_current;
-const char* JDK_Version::_java_version;
-const char* JDK_Version::_runtime_name;
-const char* JDK_Version::_runtime_version;
-const char* JDK_Version::_runtime_vendor_version;
-const char* JDK_Version::_runtime_vendor_vm_bug_url;
+
+// All version information is set at build/configure time
+const char* JDK_Version::_java_version = VERSION_SHORT;
+const char* JDK_Version::_runtime_name = VERSION_RUNTIME_NAME;
+const char* JDK_Version::_runtime_version = VERSION_STRING;
+const char* JDK_Version::_runtime_vendor_version = VENDOR_VERSION_STRING;
+const char* JDK_Version::_runtime_vendor_vm_bug_url = VENDOR_URL_VM_BUG;
 
 void JDK_Version::initialize() {
   assert(!_current.is_valid(), "Don't initialize twice");

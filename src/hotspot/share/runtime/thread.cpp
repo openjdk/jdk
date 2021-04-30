@@ -781,35 +781,6 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
                                       JavaThreadStatus::RUNNABLE);
 }
 
-static char java_version[64] = "";
-static char java_runtime_name[128] = "";
-static char java_runtime_version[128] = "";
-static char java_runtime_vendor_version[128] = "";
-static char java_runtime_vendor_vm_bug_url[128] = "";
-
-// Extract version and vendor specific information.
-static const char* get_java_version_info(InstanceKlass* ik,
-                                         Symbol* field_name,
-                                         char* buffer,
-                                         int buffer_size) {
-  fieldDescriptor fd;
-  bool found = ik != NULL &&
-               ik->find_local_field(field_name,
-                                    vmSymbols::string_signature(), &fd);
-  if (found) {
-    oop name_oop = ik->java_mirror()->obj_field(fd.offset());
-    if (name_oop == NULL) {
-      return NULL;
-    }
-    const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        buffer,
-                                                        buffer_size);
-    return name;
-  } else {
-    return NULL;
-  }
-}
-
 // General purpose hook into Java code, run once when the VM is initialized.
 // The Java library method itself may be changed independently from the VM.
 static void call_postVMInitHook(TRAPS) {
@@ -2663,27 +2634,6 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
 
   // Phase 1 of the system initialization in the library, java.lang.System class initialization
   call_initPhase1(CHECK);
-
-  // get the Java runtime name, version, and vendor info after java.lang.System is initialized
-  InstanceKlass* ik = SystemDictionary::find_instance_klass(vmSymbols::java_lang_VersionProps(),
-                                                            Handle(), Handle());
-
-  JDK_Version::set_java_version(get_java_version_info(ik, vmSymbols::java_version_name(),
-                                                      java_version, sizeof(java_version)));
-
-  JDK_Version::set_runtime_name(get_java_version_info(ik, vmSymbols::java_runtime_name_name(),
-                                                      java_runtime_name, sizeof(java_runtime_name)));
-
-  JDK_Version::set_runtime_version(get_java_version_info(ik, vmSymbols::java_runtime_version_name(),
-                                                         java_runtime_version, sizeof(java_runtime_version)));
-
-  JDK_Version::set_runtime_vendor_version(get_java_version_info(ik, vmSymbols::java_runtime_vendor_version_name(),
-                                                                java_runtime_vendor_version,
-                                                                sizeof(java_runtime_vendor_version)));
-
-  JDK_Version::set_runtime_vendor_vm_bug_url(get_java_version_info(ik, vmSymbols::java_runtime_vendor_vm_bug_url_name(),
-                                                                   java_runtime_vendor_vm_bug_url,
-                                                                   sizeof(java_runtime_vendor_vm_bug_url)));
 
   // an instance of OutOfMemory exception has been allocated earlier
   initialize_class(vmSymbols::java_lang_OutOfMemoryError(), CHECK);

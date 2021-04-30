@@ -70,6 +70,10 @@ CFLAGS_VM_VERSION := \
     -DCPU='"$(OPENJDK_TARGET_CPU_VM_VERSION)"' \
     #
 
+CFLAGS_JDK_VERSION := \
+    $(VERSION_CFLAGS) \
+    -DVERSION_RUNTIME_NAME='"$(RUNTIME_NAME)"'
+
 ifneq ($(HOTSPOT_BUILD_TIME), )
   CFLAGS_VM_VERSION += -DHOTSPOT_BUILD_TIME='"$(HOTSPOT_BUILD_TIME)"'
 endif
@@ -149,6 +153,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     CFLAGS := $(JVM_CFLAGS), \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
+    java.cpp_CXXFLAGS := $(CFLAGS_JDK_VERSION), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang), \
     DISABLED_WARNINGS_xlc := $(DISABLED_WARNINGS_xlc), \

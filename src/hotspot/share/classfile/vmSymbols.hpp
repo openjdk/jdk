@@ -146,14 +146,6 @@
   template(jdk_internal_loader_ClassLoaders_AppClassLoader,      "jdk/internal/loader/ClassLoaders$AppClassLoader")      \
   template(jdk_internal_loader_ClassLoaders_PlatformClassLoader, "jdk/internal/loader/ClassLoaders$PlatformClassLoader") \
                                                                                                   \
-  /* Java runtime version access */                                                               \
-  template(java_lang_VersionProps,                    "java/lang/VersionProps")                   \
-  template(java_version_name,                         "java_version")                             \
-  template(java_runtime_name_name,                    "java_runtime_name")                        \
-  template(java_runtime_version_name,                 "java_runtime_version")                     \
-  template(java_runtime_vendor_version_name,          "VENDOR_VERSION")                           \
-  template(java_runtime_vendor_vm_bug_url_name,       "VENDOR_URL_VM_BUG")                        \
-                                                                                                  \
   /* system initialization */                                                                     \
   template(initPhase1_name,                           "initPhase1")                               \
   template(initPhase2_name,                           "initPhase2")                               \
