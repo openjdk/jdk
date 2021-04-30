@@ -5811,189 +5811,21 @@ address generate_avx_ghash_processBlocks() {
 
       address start = __ pc();
 
-      const int LIMIT = 5552;
-      const int BASE = 65521;
-      const int CHUNKSIZE =  16;
-      const int CHUNKSIZE_M1 = CHUNKSIZE - 1;
-
-      const Register init_d = c_rarg0; //init adler
       const Register data = r9;
       const Register size = r10;
-      const Register s = r11;
-      const Register a_d = r12; //r12d
-      const Register b_d = r8; //r8d
-      const Register end = r13;
 
-      const XMMRegister ya = xmm0;
-      const XMMRegister yb = xmm1;
-      const XMMRegister ydata0 = xmm2;
-      const XMMRegister ydata1 = xmm3;
-      const XMMRegister ysa = xmm4;
-      const XMMRegister ydata = ysa;
-      const XMMRegister ytmp0 = ydata0;
-      const XMMRegister ytmp1 = ydata1;
-      const XMMRegister ytmp2 = xmm5;
-      const XMMRegister xa = xmm0;
-      const XMMRegister xb = xmm1;
-      const XMMRegister xtmp0 = xmm2;
-      const XMMRegister xtmp1 = xmm3;
-      const XMMRegister xsa = xmm4;
-      const XMMRegister xtmp2 = xmm5;
       const XMMRegister yshuf0 = xmm6;
       const XMMRegister yshuf1 = xmm7;
-      assert_different_registers(init_d, c_rarg1, c_rarg2, data, size, s, a_d, b_d, end, rax);
-
-      Label SLOOP1, SLOOP1A, SKIP_LOOP_1A, FINISH, LT64, DO_FINAL, FINAL_LOOP, ZERO_SIZE, END;
+      assert_different_registers(c_rarg0, c_rarg1, c_rarg2, data, size);
 
       BLOCK_COMMENT("Entry:");
       __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-      __ push(r12);
-      __ push(r13);
       __ vmovdqu(yshuf0, ExternalAddress((address) StubRoutines::x86::_adler32_shuf0_table));
       __ vmovdqu(yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_shuf1_table));
       __ movptr(data, c_rarg1); //data
       __ movl(size, c_rarg2); //length
-      __ movl(b_d, init_d); //adler
-      __ shrl(b_d, 16);
-      __ andl(init_d, 0xFFFF);
-      __ cmpl(size, 32);
-      __ jcc(Assembler::below, LT64);
-      __ movdl(xa, init_d); //vmovd - 32bit
-      __ vpxor(yb, yb, yb, Assembler::AVX_256bit);
-
-      __ BIND(SLOOP1);
-      __ movl(s, LIMIT);
-      __ cmpl(s, size);
-      __ cmovl(Assembler::above, s, size); // s = min(size, LIMIT)
-      __ lea(end, Address(s, data, Address::times_1, -CHUNKSIZE_M1));
-      __ cmpq(data, end);
-      __ jcc(Assembler::aboveEqual, SKIP_LOOP_1A);
-
-      __ BIND(SLOOP1A);
-      __ vbroadcastf128(ydata, Address(data, 0), Assembler::AVX_256bit);
-      __ addptr(data, CHUNKSIZE);
-      __ vpshufb(ydata0, ydata, yshuf0, Assembler::AVX_256bit);
-      __ vpaddd(ya, ya, ydata0, Assembler::AVX_256bit);
-      __ vpaddd(yb, yb, ya, Assembler::AVX_256bit);
-      __ vpshufb(ydata1, ydata, yshuf1, Assembler::AVX_256bit);
-      __ vpaddd(ya, ya, ydata1, Assembler::AVX_256bit);
-      __ vpaddd(yb, yb, ya, Assembler::AVX_256bit);
-      __ cmpptr(data, end);
-      __ jcc(Assembler::below, SLOOP1A);
-
-      __ BIND(SKIP_LOOP_1A);
-      __ addptr(end, CHUNKSIZE_M1);
-      __ testl(s, CHUNKSIZE_M1);
-      __ jcc(Assembler::notEqual, DO_FINAL);
-
-      // either we're done, or we just did LIMIT
-      __ subl(size, s);
-
-      // reduce
-      __ vpslld(yb, yb, 3, Assembler::AVX_256bit); //b is scaled by 8
-      __ vpmulld(ysa, ya, ExternalAddress((address) StubRoutines::x86::_adler32_ascale_table), Assembler::AVX_256bit); //need scratch register??
-
-      // compute horizontal sums of ya, yb, ysa
-      __ vextracti128(xtmp0, ya, 1);
-      __ vextracti128(xtmp1, yb, 1);
-      __ vextracti128(xtmp2, ysa, 1);
-      __ vpaddd(xa, xa, xtmp0, Assembler::AVX_256bit);
-      __ vpaddd(xb, xb, xtmp1, Assembler::AVX_256bit);
-      __ vpaddd(xsa, xsa, xtmp2, Assembler::AVX_256bit);
-      __ vphaddd(xa, xa, xa, Assembler::AVX_128bit);
-      __ vphaddd(xb, xb, xb, Assembler::AVX_128bit);
-      __ vphaddd(xsa, xsa, xsa, Assembler::AVX_128bit);
-      __ vphaddd(xa, xa, xa, Assembler::AVX_128bit);
-      __ vphaddd(xb, xb, xb, Assembler::AVX_128bit);
-      __ vphaddd(xsa, xsa, xsa, Assembler::AVX_128bit);
-
-      __ movdl(rax, xa);
-      __ xorl(rdx, rdx);
-      __ movl(rcx, BASE);
-      __ divl(rcx); // divide edx:eax by ecx, quot->eax, rem->edx
-      __ movl(a_d, rdx);
-
-      __ vpsubd(xb, xb, xsa, Assembler::AVX_128bit);
-      __ movdl(rax, xb);
-      __ addl(rax, b_d);
-      __ xorl(rdx, rdx);
-      __ movl(rcx, BASE);
-      __ divl(rcx); // divide edx:eax by ecx, quot->eax, rem->edx
-      __ movl(b_d, rdx);
-
-      __ testl(size, size);
-      __ jcc(Assembler::zero, FINISH);
-
-      // continue loop
-      __ movdl(xa, a_d);
-      __ vpxor(yb, yb, yb, Assembler::AVX_256bit);
-      __ jmp(SLOOP1);
-
-      __ BIND(FINISH);
-      __ movl(rax, b_d);
-      __ shll(rax, 16);
-      __ orl(rax, a_d);
-      __ jmp(END);
-
-      __ BIND(LT64);
-      __ movl(a_d, init_d);
-      __ lea(end, Address(data, size, Address::times_1));
-      __ testl(size, size);
-      __ jcc(Assembler::notZero, FINAL_LOOP);
-      __ jmp(ZERO_SIZE);
-
-      // handle remaining 1...15 bytes
-      __ BIND(DO_FINAL);
-      // reduce
-      __ vpslld(yb, yb, 3, Assembler::AVX_256bit); //b is scaled by 8
-      __ vpmulld(ysa, ya, ExternalAddress((address) StubRoutines::x86::_adler32_ascale_table), Assembler::AVX_256bit); //scaled a
-
-      __ vextracti128(xtmp0, ya, 1);
-      __ vextracti128(xtmp1, yb, 1);
-      __ vextracti128(xtmp2, ysa, 1);
-      __ vpaddd(xa, xa, xtmp0, Assembler::AVX_128bit);
-      __ vpaddd(xb, xb, xtmp1, Assembler::AVX_128bit);
-      __ vpaddd(xsa, xsa, xtmp2, Assembler::AVX_128bit);
-      __ vphaddd(xa, xa, xa, Assembler::AVX_128bit);
-      __ vphaddd(xb, xb, xb, Assembler::AVX_128bit);
-      __ vphaddd(xsa, xsa, xsa, Assembler::AVX_128bit);
-      __ vphaddd(xa, xa, xa, Assembler::AVX_128bit);
-      __ vphaddd(xb, xb, xb, Assembler::AVX_128bit);
-      __ vphaddd(xsa, xsa, xsa, Assembler::AVX_128bit);
-      __ vpsubd(xb, xb, xsa, Assembler::AVX_128bit);
-
-      __ movdl(a_d, xa);
-      __ movdl(rax, xb);
-      __ addl(b_d, rax);
-
-      __ BIND(FINAL_LOOP);
-      __ movzbl(rax, Address(data, 0)); //movzx   eax, byte[data]
-      __ addl(a_d, rax);
-      __ incl(data);
-      __ addl(b_d, a_d);
-      __ cmpptr(data, end);
-      __ jcc(Assembler::below, FINAL_LOOP);
-
-      __ BIND(ZERO_SIZE);
-
-      __ movl(rax, a_d);
-      __ xorl(rdx, rdx);
-      __ movl(rcx, BASE);
-      __ divl(rcx); // div ecx -- divide edx:eax by ecx, quot->eax, rem->edx
-      __ movl(a_d, rdx);
-
-      __ movl(rax, b_d);
-      __ xorl(rdx, rdx);
-      __ movl(rcx, BASE);
-      __ divl(rcx); // divide edx:eax by ecx, quot->eax, rem->edx
-      __ shll(rdx, 16);
-      __ orl(rdx, a_d);
-      __ movl(rax, rdx);
-
-      __ BIND(END);
-      __ pop(r13);
-      __ pop(r12);
+      __ updateBytesAdler32(c_rarg0, data, size, yshuf0, yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_ascale_table));
       __ leave();
       __ ret(0);
       return start;
