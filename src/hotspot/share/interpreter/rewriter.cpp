@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
 #include "memory/metadataFactory.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
@@ -568,10 +568,12 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
 }
 
 void Rewriter::rewrite(InstanceKlass* klass, TRAPS) {
+#if INCLUDE_CDS
   if (klass->is_shared()) {
     assert(!klass->is_rewritten(), "rewritten shared classes cannot be rewritten again");
     assert(MetaspaceShared::is_old_class(klass), "only shared old classes aren't rewritten");
   }
+#endif // INCLUDE_CDS
   ResourceMark rm(THREAD);
   constantPoolHandle cpool(THREAD, klass->constants());
   Rewriter     rw(klass, cpool, klass->methods(), CHECK);

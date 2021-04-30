@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,298 +28,60 @@
  * @test
  * @bug 8148108
  * @summary Disable Diffie-Hellman keys less than 1024 bits
+ * @library /javax/net/ssl/templates
  * @run main/othervm -Djdk.tls.ephemeralDHKeySize=legacy LegacyDHEKeyExchange
  */
 
-import java.io.*;
-import javax.net.ssl.*;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSocket;
+import java.util.concurrent.CountDownLatch;
 
-public class LegacyDHEKeyExchange {
+public class LegacyDHEKeyExchange extends SSLSocketTemplate{
 
-    /*
-     * =============================================================
-     * Set the various variables needed for the tests, then
-     * specify what tests to run on each side.
-     */
+    private final CountDownLatch connDoneLatch = new CountDownLatch(2);
 
-    /*
-     * Should we run the client or server in a separate thread?
-     * Both sides can throw exceptions, but do you have a preference
-     * as to which side should be the main thread.
-     */
-    static boolean separateServerThread = false;
+    private static final int LINGER_TIMEOUT = 30; // in seconds
 
-    /*
-     * Where do we find the keystores?
-     */
-    static String pathToStores = "../../../../javax/net/ssl/etc";
-    static String keyStoreFile = "keystore";
-    static String trustStoreFile = "truststore";
-    static String passwd = "passphrase";
-
-    /*
-     * Is the server ready to serve?
-     */
-    volatile static boolean serverReady = false;
-
-    /*
-     * Turn on SSL debugging?
-     */
-    static boolean debug = false;
-
-    /*
-     * If the client or server is doing some kind of object creation
-     * that the other side depends on, and that thread prematurely
-     * exits, you may experience a hang.  The test harness will
-     * terminate all hung threads after its timeout has expired,
-     * currently 3 minutes by default, but you might try to be
-     * smart about it....
-     */
-
-    /*
-     * Define the server side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    void doServerSide() throws Exception {
-        SSLServerSocketFactory sslssf =
-            (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-        SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
-
-        serverPort = sslServerSocket.getLocalPort();
-
-        /*
-         * Signal Client, we're ready for his connect.
-         */
-        serverReady = true;
-
-        try (SSLSocket sslSocket = (SSLSocket)sslServerSocket.accept()) {
-            InputStream sslIS = sslSocket.getInputStream();
-            OutputStream sslOS = sslSocket.getOutputStream();
-
-            sslIS.read();
-            sslOS.write(85);
-            sslOS.flush();
-
-            throw new Exception(
-                "Leagcy DH keys (< 1024) should be restricted");
+    @Override
+    protected void runServerApplication(SSLSocket socket) throws Exception {
+        try {
+            super.runServerApplication(socket);
+            throw new Exception("Legacy DH keys (< 1024) should be restricted");
         } catch (SSLHandshakeException she) {
-            // ignore, client should terminate the connection
+            String expectedExMsg = "Received fatal alert: insufficient_security";
+            if (!expectedExMsg.equals(she.getMessage())) {
+                throw she;
+            }
+            System.out.println("Expected exception thrown in server");
         } finally {
-            sslServerSocket.close();
+            connDoneLatch.countDown();
+            connDoneLatch.await();
         }
     }
 
-    /*
-     * Define the client side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to true
-     * to avoid infinite hangs.
-     */
-    void doClientSide() throws Exception {
-
-        /*
-         * Wait for server to get started.
-         */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
-
-        SSLSocketFactory sslsf =
-            (SSLSocketFactory) SSLSocketFactory.getDefault();
-        SSLSocket sslSocket = (SSLSocket)
-            sslsf.createSocket("localhost", serverPort);
-
+    @Override
+    protected void runClientApplication(SSLSocket socket) throws Exception {
         String[] suites = new String [] {"TLS_DHE_RSA_WITH_AES_128_CBC_SHA"};
-        sslSocket.setEnabledCipherSuites(suites);
+        socket.setEnabledCipherSuites(suites);
+        socket.setSoLinger(true, LINGER_TIMEOUT);
 
         try {
-            InputStream sslIS = sslSocket.getInputStream();
-            OutputStream sslOS = sslSocket.getOutputStream();
-
-            sslOS.write(280);
-            sslOS.flush();
-            sslIS.read();
-
-            throw new Exception("Leagcy DH keys (< 1024) should be restricted");
+            super.runClientApplication(socket);
+            throw new Exception("Legacy DH keys (< 1024) should be restricted");
         } catch (SSLHandshakeException she) {
-            // ignore, should be caused by algorithm constraints
+            String expectedExMsg = "DH ServerKeyExchange does not comply to" +
+                    " algorithm constraints";
+            if (!expectedExMsg.equals(she.getMessage())) {
+                throw she;
+            }
+            System.out.println("Expected exception thrown in client");
         } finally {
-            sslSocket.close();
+            connDoneLatch.countDown();
+            connDoneLatch.await();
         }
     }
-
-    /*
-     * =============================================================
-     * The remainder is just support stuff
-     */
-
-    // use any free port by default
-    volatile int serverPort = 0;
-
-    volatile Exception serverException = null;
-    volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
-        String keyFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + keyStoreFile;
-        String trustFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + trustStoreFile;
-
-        System.setProperty("javax.net.ssl.keyStore", keyFilename);
-        System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.trustStore", trustFilename);
-        System.setProperty("javax.net.ssl.trustStorePassword", passwd);
-
-        if (debug) {
-            System.setProperty("javax.net.debug", "all");
-        }
-
-        /*
-         * Start the tests.
-         */
-        new LegacyDHEKeyExchange();
-    }
-
-    Thread clientThread = null;
-    Thread serverThread = null;
-
-    /*
-     * Primary constructor, used to drive remainder of the test.
-     *
-     * Fork off the other side, then do your work.
-     */
-    LegacyDHEKeyExchange() throws Exception {
-        Exception startException = null;
-        try {
-            if (separateServerThread) {
-                startServer(true);
-                startClient(false);
-            } else {
-                startClient(true);
-                startServer(false);
-            }
-        } catch (Exception e) {
-            startException = e;
-        }
-
-        /*
-         * Wait for other side to close down.
-         */
-        if (separateServerThread) {
-            if (serverThread != null) {
-                serverThread.join();
-            }
-        } else {
-            if (clientThread != null) {
-                clientThread.join();
-            }
-        }
-
-        /*
-         * When we get here, the test is pretty much over.
-         * Which side threw the error?
-         */
-        Exception local;
-        Exception remote;
-
-        if (separateServerThread) {
-            remote = serverException;
-            local = clientException;
-        } else {
-            remote = clientException;
-            local = serverException;
-        }
-
-        Exception exception = null;
-
-        /*
-         * Check various exception conditions.
-         */
-        if ((local != null) && (remote != null)) {
-            // If both failed, return the curthread's exception.
-            local.initCause(remote);
-            exception = local;
-        } else if (local != null) {
-            exception = local;
-        } else if (remote != null) {
-            exception = remote;
-        } else if (startException != null) {
-            exception = startException;
-        }
-
-        /*
-         * If there was an exception *AND* a startException,
-         * output it.
-         */
-        if (exception != null) {
-            if (exception != startException && startException != null) {
-                exception.addSuppressed(startException);
-            }
-            throw exception;
-        }
-
-        // Fall-through: no exception to throw!
-    }
-
-    void startServer(boolean newThread) throws Exception {
-        if (newThread) {
-            serverThread = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        doServerSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our server thread just died.
-                         *
-                         * Release the client, if not active already...
-                         */
-                        System.err.println("Server died...");
-                        serverReady = true;
-                        serverException = e;
-                    }
-                }
-            };
-            serverThread.start();
-        } else {
-            try {
-                doServerSide();
-            } catch (Exception e) {
-                serverException = e;
-            } finally {
-                serverReady = true;
-            }
-        }
-    }
-
-    void startClient(boolean newThread) throws Exception {
-        if (newThread) {
-            clientThread = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        doClientSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our client thread just died.
-                         */
-                        System.err.println("Client died...");
-                        clientException = e;
-                    }
-                }
-            };
-            clientThread.start();
-        } else {
-            try {
-                doClientSide();
-            } catch (Exception e) {
-                clientException = e;
-            }
-        }
+        new LegacyDHEKeyExchange().run();
     }
 }
