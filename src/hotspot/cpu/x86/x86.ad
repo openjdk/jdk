@@ -7516,6 +7516,18 @@ instruct vstoreMask8B_evex(vec dst, vec src, immI_8 size) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct vmaskcast(vec dst) %{
+  predicate((vector_length(n) == vector_length(n->in(1))) &&
+            (vector_length_in_bytes(n) == vector_length_in_bytes(n->in(1))));
+  match(Set dst (VectorMaskCast dst));
+  ins_cost(0);
+  format %{ "vector_mask_cast $dst" %}
+  ins_encode %{
+    // empty
+  %}
+  ins_pipe(empty);
+%}
+
 //-------------------------------- Load Iota Indices ----------------------------------
 
 instruct loadIotaIndices(vec dst, immI_0 src, rRegP scratch) %{

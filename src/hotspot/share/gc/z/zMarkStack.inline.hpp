@@ -219,6 +219,17 @@ inline void ZMarkThreadLocalStacks::install(ZMarkStripeSet* stripes,
   *stackp = stack;
 }
 
+inline ZMarkStack* ZMarkThreadLocalStacks::steal(ZMarkStripeSet* stripes,
+                                                 ZMarkStripe* stripe) {
+  ZMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
+  ZMarkStack* const stack = *stackp;
+  if (stack != NULL) {
+    *stackp = NULL;
+  }
+
+  return stack;
+}
+
 inline bool ZMarkThreadLocalStacks::push(ZMarkStackAllocator* allocator,
                                          ZMarkStripeSet* stripes,
                                          ZMarkStripe* stripe,
