@@ -178,7 +178,7 @@ public final class StaticProperty {
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
      *
-     * @return the {@code user.name} system property
+     * @return the {@code jdk.serialFilter} system property
      */
     public static String jdkSerialFilter() {
         return JDK_SERIAL_FILTER;
