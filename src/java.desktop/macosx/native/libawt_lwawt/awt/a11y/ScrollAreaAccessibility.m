@@ -85,25 +85,21 @@
 
 - (NSString * _Nonnull)accessibilityRole
 {
-    NSLog(@"accessibilityRole called");
     return NSAccessibilityScrollAreaRole;
 }
 
 - (NSArray * _Nullable)accessibilityContents
 {
-    NSLog(@"accessibilityContents called");
     return [self accessibilityContentsAttribute];
 }
 
 - (id _Nullable)accessibilityHorizontalScrollBar
 {
-    NSLog(@"Horizontal scrollbar called");
     return [self getScrollBarwithOrientation:NSAccessibilityOrientationHorizontal];
 }
 
 - (id _Nullable)accessibilityVerticalScrollBar
 {
-    NSLog(@"Vertical scrollbar called");
     return [self getScrollBarwithOrientation:NSAccessibilityOrientationVertical];
 }
 @end
