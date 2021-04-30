@@ -156,7 +156,8 @@ static void initTemplatePipelineDescriptors() {
         }
 
         _clipShapeSize = MTLSizeMake(0, 0, 1);
-        _clipShapeOrigin = MTLOriginMake(0, 0, 0);
+        // Use out of bounds origin to correctly calculate shape boundaries
+        _clipShapeOrigin = MTLOriginMake((NSUInteger) dstOps->width, (NSUInteger) dstOps->height, 0);
 
         MTLRenderPassDescriptor* clearPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
         // set color buffer properties
@@ -310,6 +311,7 @@ static void initTemplatePipelineDescriptors() {
             clearPassDescriptor.stencilAttachment.texture = _stencilTextureRef;
             clearPassDescriptor.stencilAttachment.clearStencil = 0;
             clearPassDescriptor.stencilAttachment.loadAction = MTLLoadActionClear;
+            clearPassDescriptor.stencilAttachment.storeAction = MTLStoreActionStore;
 
             id<MTLCommandBuffer> commandBuf = [_mtlc createCommandBuffer];
             id <MTLRenderCommandEncoder> clearEncoder = [commandBuf renderCommandEncoderWithDescriptor:clearPassDescriptor];

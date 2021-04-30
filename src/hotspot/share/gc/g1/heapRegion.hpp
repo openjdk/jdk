@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,8 +170,8 @@ public:
 
   // Update heap region that has been compacted to be consistent after Full GC.
   void reset_compacted_after_full_gc();
-  // Update pinned heap region (not compacted) to be consistent after Full GC.
-  void reset_not_compacted_after_full_gc();
+  // Update skip-compacting heap region to be consistent after Full GC.
+  void reset_skip_compacting_after_full_gc();
 
   // All allocated blocks are occupied by objects in a HeapRegion
   bool block_is_obj(const HeapWord* p) const;
@@ -207,7 +207,7 @@ private:
   HeapRegion* _humongous_start_region;
 
   // True iff an attempt to evacuate an object in the region failed.
-  bool _evacuation_failed;
+  volatile bool _evacuation_failed;
 
   static const uint InvalidCSetIndex = UINT_MAX;
 
@@ -293,7 +293,6 @@ public:
   void initialize(bool clear_space = false, bool mangle_space = SpaceDecorator::Mangle);
 
   static int    LogOfHRGrainBytes;
-  static int    LogOfHRGrainWords;
   static int    LogCardsPerRegion;
 
   static size_t GrainBytes;
@@ -316,11 +315,10 @@ public:
   static size_t max_region_size();
   static size_t min_region_size_in_words();
 
-  // It sets up the heap region size (GrainBytes / GrainWords), as
-  // well as other related fields that are based on the heap region
-  // size (LogOfHRGrainBytes / LogOfHRGrainWords /
-  // CardsPerRegion). All those fields are considered constant
-  // throughout the JVM's execution, therefore they should only be set
+  // It sets up the heap region size (GrainBytes / GrainWords), as well as
+  // other related fields that are based on the heap region size
+  // (LogOfHRGrainBytes / CardsPerRegion). All those fields are considered
+  // constant throughout the JVM's execution, therefore they should only be set
   // up once during initialization time.
   static void setup_heap_region_size(size_t max_heap_size);
 
@@ -497,16 +495,13 @@ public:
   void clear_cardtable();
 
   // Returns the "evacuation_failed" property of the region.
-  bool evacuation_failed() { return _evacuation_failed; }
+  inline bool evacuation_failed() const;
 
-  // Sets the "evacuation_failed" property of the region.
-  void set_evacuation_failed(bool b) {
-    _evacuation_failed = b;
+  // Sets the "evacuation_failed" property of the region, returning true if this
+  // has been the first call, false otherwise.
+  inline bool set_evacuation_failed();
 
-    if (b) {
-      _next_marked_bytes = 0;
-    }
-  }
+  inline void reset_evacuation_failed();
 
   // Notify the region that we are about to start processing
   // self-forwarded objects during evac failure handling.

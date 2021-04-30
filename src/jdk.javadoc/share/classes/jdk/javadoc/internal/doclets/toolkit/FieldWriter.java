@@ -75,7 +75,7 @@ public interface FieldWriter extends MemberWriter {
      * Adds the preview output for the given member.
      *
      * @param member the member being documented
-     * @param annotationDocTree content tree to which the preview information will be added
+     * @param contentTree content tree to which the preview information will be added
      */
     void addPreview(VariableElement member, Content contentTree);
 
