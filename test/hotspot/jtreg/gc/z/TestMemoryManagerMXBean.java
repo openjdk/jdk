@@ -50,9 +50,9 @@ public class TestMemoryManagerMXBean {
 
             System.out.println("MemoryManager: " + memoryManagerName);
 
-            if (memoryManagerName.equals("ZGC Cycles")) {
+            if (memoryManagerName.equals("ZGC Young Cycles") || memoryManagerName.equals("ZGC Old Cycles")) {
                 zgcCyclesMemoryManagers++;
-            } else if (memoryManagerName.equals("ZGC Pauses")) {
+            } else if (memoryManagerName.equals("ZGC Young Pauses") || memoryManagerName.equals("ZGC Old Pauses")) {
                 zgcPausesMemoryManagers++;
             }
 
@@ -61,29 +61,29 @@ public class TestMemoryManagerMXBean {
 
                 System.out.println("   MemoryPool:   " + memoryPoolName);
 
-                if (memoryPoolName.equals("ZHeap")) {
-                    if (memoryManagerName.equals("ZGC Cycles")) {
+                if (memoryPoolName.equals("ZYoungGeneration") || memoryPoolName.equals("ZOldGeneration")) {
+                    if (memoryManagerName.equals("ZGC Young Cycles") || memoryManagerName.equals("ZGC Old Cycles")) {
                         zgcCyclesMemoryPools++;
-                    } else if (memoryManagerName.equals("ZGC Pauses")) {
+                    } else if (memoryManagerName.equals("ZGC Young Pauses") || memoryManagerName.equals("ZGC Old Pauses")) {
                         zgcPausesMemoryPools++;
                     }
                 }
             }
         }
 
-        if (zgcCyclesMemoryManagers != 1) {
+        if (zgcCyclesMemoryManagers != 2) {
             throw new Exception("Unexpected number of cycle MemoryManagers");
         }
 
-        if (zgcPausesMemoryManagers != 1) {
+        if (zgcPausesMemoryManagers != 2) {
             throw new Exception("Unexpected number of pause MemoryManagers");
         }
 
-        if (zgcCyclesMemoryPools != 1) {
+        if (zgcCyclesMemoryPools != 2) {
             throw new Exception("Unexpected number of cycle MemoryPools");
         }
 
-        if (zgcPausesMemoryPools != 1) {
+        if (zgcPausesMemoryPools != 2) {
             throw new Exception("Unexpected number of pause MemoryPools");
         }
     }

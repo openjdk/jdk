@@ -85,14 +85,14 @@ static void register_jfr_type_serializers() {
 
 #endif // INCLUDE_JFR
 
-ZTracer* ZTracer::_tracer = NULL;
+ZYoungTracer::ZYoungTracer() :
+    YoungGCTracer(ZYoung, false /* uses_tenuring_threshold */) {
+}
 
-ZTracer::ZTracer() :
-    GCTracer(Z) {}
+ZOldTracer::ZOldTracer() :
+    OldGCTracer(ZOld) {}
 
 void ZTracer::initialize() {
-  assert(_tracer == NULL, "Already initialized");
-  _tracer = new (ResourceObj::C_HEAP, mtGC) ZTracer();
   JFR_ONLY(register_jfr_type_serializers());
 }
 
@@ -123,6 +123,19 @@ void ZTracer::send_thread_phase(const char* name, const Ticks& start, const Tick
   NoSafepointVerifier nsv;
 
   EventZThreadPhase e(UNTIMED);
+  if (e.should_commit()) {
+    e.set_gcId(GCId::current_or_undefined());
+    e.set_name(name);
+    e.set_starttime(start);
+    e.set_endtime(end);
+    e.commit();
+  }
+}
+
+void ZTracer::send_thread_event(const char* name, const Ticks& start, const Ticks& end) {
+  NoSafepointVerifier nsv;
+
+  EventZThreadEvent e(UNTIMED);
   if (e.should_commit()) {
     e.set_gcId(GCId::current_or_undefined());
     e.set_name(name);

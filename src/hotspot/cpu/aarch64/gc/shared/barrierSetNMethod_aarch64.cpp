@@ -26,6 +26,7 @@
 #include "code/codeCache.hpp"
 #include "code/nativeInst.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -37,8 +38,17 @@
 class NativeNMethodBarrier: public NativeInstruction {
   address instruction_address() const { return addr_at(0); }
 
+  int guard_offset() {
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    if (bs_asm->nmethod_code_patching()) {
+      return 4 * 15;
+    } else {
+      return 4 * 10;
+    }
+  }
+
   int *guard_addr() {
-    return reinterpret_cast<int*>(instruction_address() + 10 * 4);
+    return reinterpret_cast<int*>(instruction_address() + guard_offset());
   }
 
 public:
@@ -60,31 +70,36 @@ struct CheckInsn {
   const char *name;
 };
 
-static const struct CheckInsn barrierInsn[] = {
-  { 0xff000000, 0x18000000, "ldr (literal)" },
-  { 0xfffff0ff, 0xd50330bf, "dmb" },
-  { 0xffc00000, 0xb9400000, "ldr"},
-  { 0x7f20001f, 0x6b00001f, "cmp"},
-  { 0xff00001f, 0x54000000, "b.eq"},
-  { 0xff800000, 0xd2800000, "mov"},
-  { 0xff800000, 0xf2800000, "movk"},
-  { 0xff800000, 0xf2800000, "movk"},
-  { 0xfffffc1f, 0xd63f0000, "blr"},
-  { 0xfc000000, 0x14000000, "b"}
-};
-
 // The encodings must match the instructions emitted by
 // BarrierSetAssembler::nmethod_entry_barrier. The matching ignores the specific
 // register numbers and immediate values in the encoding.
 void NativeNMethodBarrier::verify() const {
   intptr_t addr = (intptr_t) instruction_address();
-  for(unsigned int i = 0; i < sizeof(barrierInsn)/sizeof(struct CheckInsn); i++ ) {
-    uint32_t inst = *((uint32_t*) addr);
-    if ((inst & barrierInsn[i].mask) != barrierInsn[i].bits) {
-      tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", addr, inst);
-      fatal("not an %s instruction.", barrierInsn[i].name);
+  BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+  if (bs_asm->nmethod_code_patching()) {
+    // TODO: Write something like below. For now, trust me on this one.
+  } else {
+    static const struct CheckInsn barrierInsn[] = {
+      { 0xff000000, 0x18000000, "ldr (literal)" },
+      { 0xfffff0ff, 0xd50330bf, "dmb" },
+      { 0xffc00000, 0xb9400000, "ldr"},
+      { 0x7f20001f, 0x6b00001f, "cmp"},
+      { 0xff00001f, 0x54000000, "b.eq"},
+      { 0xff800000, 0xd2800000, "mov"},
+      { 0xff800000, 0xf2800000, "movk"},
+      { 0xff800000, 0xf2800000, "movk"},
+      { 0xfffffc1f, 0xd63f0000, "blr"},
+      { 0xfc000000, 0x14000000, "b"}
+    };
+
+    for(unsigned int i = 0; i < sizeof(barrierInsn)/sizeof(struct CheckInsn); i++ ) {
+      uint32_t inst = *((uint32_t*) addr);
+      if ((inst & barrierInsn[i].mask) != barrierInsn[i].bits) {
+        tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", addr, inst);
+        fatal("not an %s instruction.", barrierInsn[i].name);
+      }
+      addr +=4;
     }
-    addr +=4;
   }
 }
 
@@ -131,26 +146,40 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
 // NativeNMethodCmpBarrier::verify() will immediately complain when it does
 // not find the expected native instruction at this offset, which needs updating.
 // Note that this offset is invariant of PreserveFramePointer.
-
-static const int entry_barrier_offset = -4 * 11;
+static int entry_barrier_offset() {
+  BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+  if (bs_asm->nmethod_code_patching()) {
+    return -4 * 16;
+  } else {
+    return -4 * 11;
+  }
+}
 
 static NativeNMethodBarrier* native_nmethod_barrier(nmethod* nm) {
-  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset;
+  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset();
   NativeNMethodBarrier* barrier = reinterpret_cast<NativeNMethodBarrier*>(barrier_address);
   debug_only(barrier->verify());
   return barrier;
 }
 
-void BarrierSetNMethod::disarm(nmethod* nm) {
+void BarrierSetNMethod::disarm_with_value(nmethod* nm, int value) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
 
+  // The patching epoch is incremented before the nmethod is disarmed. Disarming
+  // is performed with a release store. In the nmethod entry barrier, the values
+  // are read in the opposite order, such that the load of the nmethod guard
+  // acquires the patching epoch. This way, the guard is guaranteed to block
+  // entries to the nmethod, until it has safely published the requirement for
+  // further fencing by mutators, before they are allowed to enter.
+  BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs_asm->increment_patching_epoch();
+
   // Disarms the nmethod guard emitted by BarrierSetAssembler::nmethod_entry_barrier.
   // Symmetric "LDR; DMB ISHLD" is in the nmethod barrier.
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
-
-  barrier->set_value(disarmed_value());
+  barrier->set_value(value);
 }
 
 bool BarrierSetNMethod::is_armed(nmethod* nm) {
@@ -160,4 +189,13 @@ bool BarrierSetNMethod::is_armed(nmethod* nm) {
 
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
   return barrier->get_value() != disarmed_value();
+}
+
+int BarrierSetNMethod::arm_value(nmethod* nm) {
+  if (!supports_entry_barrier(nm)) {
+    return 0;
+  }
+
+  NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
+  return barrier->get_value();
 }

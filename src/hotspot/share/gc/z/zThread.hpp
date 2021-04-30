@@ -38,6 +38,7 @@ private:
   static THREAD_LOCAL bool      _is_vm;
   static THREAD_LOCAL bool      _is_java;
   static THREAD_LOCAL bool      _is_worker;
+  static THREAD_LOCAL bool      _coordinator_is_suspendible_thread;
   static THREAD_LOCAL uint      _worker_id;
 
   static void initialize();
@@ -55,6 +56,8 @@ public:
   static bool is_vm();
   static bool is_java();
   static bool is_worker();
+  static void set_coordinator_is_suspendible_thread(bool value);
+  static bool coordinator_is_suspendible_thread();
   static uint worker_id();
 };
 

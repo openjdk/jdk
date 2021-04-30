@@ -447,6 +447,16 @@
     <Field type="string" name="name" label="Name" />
   </Event>
 
+  <Event name="GCPhaseConcurrentLevel2" category="Java Virtual Machine, GC, Phases" label="GC Phase Concurrent Level 2" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
+  <Event name="GCPhaseConcurrentLevel3" category="Java Virtual Machine, GC, Phases" label="GC Phase Concurrent Level 3" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
   <Event name="GCPhaseParallel" category="Java Virtual Machine, GC, Phases" label="GC Phase Parallel"
          startTime="true" thread="true" description="GC phases for parallel workers">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
@@ -1030,6 +1040,11 @@
   </Event>
 
   <Event name="ZThreadPhase" category="Java Virtual Machine, GC, Detailed" label="ZGC Thread Phase" thread="true" experimental="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
+  <Event name="ZThreadEvent" category="Java Virtual Machine, GC, Detailed" label="ZGC Thread Event" thread="true" experimental="true">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
     <Field type="string" name="name" label="Name" />
   </Event>

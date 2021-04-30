@@ -26,10 +26,14 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zCollector.inline.hpp"
+#include "gc/z/zCollectorId.hpp"
 #include "gc/z/zFuture.inline.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
+#include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageAllocator.inline.hpp"
 #include "gc/z/zPageCache.hpp"
 #include "gc/z/zSafeDelete.inline.hpp"
@@ -46,10 +50,52 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-static const ZStatCounter       ZCounterAllocationRate("Memory", "Allocation Rate", ZStatUnitBytesPerSecond);
+static const ZStatCounter       ZCounterMutatorAllocationRate("Memory", "Allocation Rate", ZStatUnitBytesPerSecond);
 static const ZStatCounter       ZCounterPageCacheFlush("Memory", "Page Cache Flush", ZStatUnitBytesPerSecond);
 static const ZStatCounter       ZCounterDefragment("Memory", "Defragment", ZStatUnitOpsPerSecond);
 static const ZStatCriticalPhase ZCriticalPhaseAllocationStall("Allocation Stall");
+
+ZSafePageRecycle::ZSafePageRecycle(ZPageAllocator* page_allocator) :
+    _page_allocator(page_allocator),
+    _unsafe_to_recycle() {}
+
+void ZSafePageRecycle::activate() {
+  _unsafe_to_recycle.activate();
+}
+
+void ZSafePageRecycle::deactivate() {
+  auto delete_function = [&](ZPage* page) {
+    _page_allocator->safe_destroy_page(page);
+  };
+
+  _unsafe_to_recycle.deactivate_and_apply(delete_function);
+}
+
+ZPage* ZSafePageRecycle::register_and_clone_if_activated(ZPage* page) {
+  if (!_unsafe_to_recycle.is_activated()) {
+    // The page has no concurrent readers.
+    // Recycle original page.
+    return page;
+  }
+
+  // The page could have concurrent readers.
+  // It would be unsafe to recycle this page at this point.
+
+  // As soon as the page is added to _unsafe_to_recycle, it
+  // must not be used again. Hence, the extra double-checked
+  // locking to only clone the page if it is believed to be
+  // unsafe to recycle the page.
+  ZPage* const cloned_page = page->clone_limited();
+  if (!_unsafe_to_recycle.add_if_activated(page)) {
+    // It became safe to recycle the page after the is_activated check
+    delete cloned_page;
+    return page;
+  }
+
+  // The original page has been registered to be deleted by another thread.
+  // Recycle the cloned page.
+  return cloned_page;
+}
 
 enum ZPageAllocationStall {
   ZPageAllocationStallSuccess,
@@ -70,18 +116,22 @@ private:
   ZList<ZPage>                  _pages;
   ZListNode<ZPageAllocation>    _node;
   ZFuture<ZPageAllocationStall> _stall_result;
+  ZGenerationId const           _generation;
+  ZCollector* const             _collector;
 
 public:
-  ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags) :
+  ZPageAllocation(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation, ZCollector* collector) :
       _type(type),
       _size(size),
       _flags(flags),
-      _seqnum(ZGlobalSeqNum),
+      _seqnum(ZHeap::heap()->old_collector()->seqnum()),
       _flushed(0),
       _committed(0),
       _pages(),
       _node(),
-      _stall_result() {}
+      _stall_result(),
+      _generation(generation),
+      _collector(collector) {}
 
   uint8_t type() const {
     return _type;
@@ -126,10 +176,21 @@ public:
   void satisfy(ZPageAllocationStall result) {
     _stall_result.set(result);
   }
+
+  ZGenerationId generation_id() const {
+    return _generation;
+  }
+
+  bool gc_relocation() const {
+    return _flags.gc_relocation();
+  }
+
+  ZCollector* collector() const {
+    return _collector;
+  }
 };
 
-ZPageAllocator::ZPageAllocator(ZWorkers* workers,
-                               size_t min_capacity,
+ZPageAllocator::ZPageAllocator(size_t min_capacity,
                                size_t initial_capacity,
                                size_t max_capacity) :
     _lock(),
@@ -137,20 +198,18 @@ ZPageAllocator::ZPageAllocator(ZWorkers* workers,
     _virtual(max_capacity),
     _physical(max_capacity),
     _min_capacity(min_capacity),
+    _initial_capacity(initial_capacity),
     _max_capacity(max_capacity),
     _current_max_capacity(max_capacity),
     _capacity(0),
     _claimed(0),
     _used(0),
-    _used_high(0),
-    _used_low(0),
-    _reclaimed(0),
     _stalled(),
     _nstalled(0),
-    _satisfied(),
     _unmapper(new ZUnmapper(this)),
     _uncommitter(new ZUncommitter(this)),
-    _safe_delete(),
+    _safe_destroy(),
+    _safe_recycle(this),
     _initialized(false) {
 
   if (!_virtual.is_initialized() || !_physical.is_initialized()) {
@@ -173,24 +232,22 @@ ZPageAllocator::ZPageAllocator(ZWorkers* workers,
   // Check if uncommit should and can be enabled
   _physical.try_enable_uncommit(min_capacity, max_capacity);
 
-  // Pre-map initial capacity
-  if (!prime_cache(workers, initial_capacity)) {
-    log_error_p(gc)("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", initial_capacity / M);
-    return;
-  }
-
   // Successfully initialized
   _initialized = true;
+}
+
+bool ZPageAllocator::is_initialized() const {
+  return _initialized;
 }
 
 class ZPreTouchTask : public ZTask {
 private:
   const ZPhysicalMemoryManager* const _physical;
-  volatile uintptr_t                  _start;
-  const uintptr_t                     _end;
+  volatile zoffset                    _start;
+  const zoffset                       _end;
 
 public:
-  ZPreTouchTask(const ZPhysicalMemoryManager* physical, uintptr_t start, uintptr_t end) :
+  ZPreTouchTask(const ZPhysicalMemoryManager* physical, zoffset start, zoffset end) :
       ZTask("ZPreTouchTask"),
       _physical(physical),
       _start(start),
@@ -200,7 +257,7 @@ public:
     for (;;) {
       // Get granule offset
       const size_t size = ZGranuleSize;
-      const uintptr_t offset = Atomic::fetch_and_add(&_start, size);
+      const zoffset offset = to_zoffset(Atomic::fetch_and_add((uintptr_t*)&_start, size));
       if (offset >= _end) {
         // Done
         break;
@@ -214,11 +271,10 @@ public:
 
 bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   ZAllocationFlags flags;
-
   flags.set_non_blocking();
   flags.set_low_address();
 
-  ZPage* const page = alloc_page(ZPageTypeLarge, size, flags);
+  ZPage* const page = alloc_page(ZPageTypeLarge, size, flags, ZGenerationId::young, ZPageAge::eden, NULL /* collector */);
   if (page == NULL) {
     return false;
   }
@@ -234,8 +290,8 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
   return true;
 }
 
-bool ZPageAllocator::is_initialized() const {
-  return _initialized;
+size_t ZPageAllocator::initial_capacity() const {
+  return _initial_capacity;
 }
 
 size_t ZPageAllocator::min_capacity() const {
@@ -269,23 +325,20 @@ size_t ZPageAllocator::unused() const {
   return unused > 0 ? (size_t)unused : 0;
 }
 
-ZPageAllocatorStats ZPageAllocator::stats() const {
+ZPageAllocatorStats ZPageAllocator::stats(ZCollector* collector) const {
+  ZGeneration* generation = ZHeap::heap()->generation(collector->id());
   ZLocker<ZLock> locker(&_lock);
   return ZPageAllocatorStats(_min_capacity,
                              _max_capacity,
                              soft_max_capacity(),
                              _capacity,
                              _used,
-                             _used_high,
-                             _used_low,
-                             _reclaimed);
-}
-
-void ZPageAllocator::reset_statistics() {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  _reclaimed = 0;
-  _used_high = _used_low = _used;
-  _nstalled = 0;
+                             collector->used_high(),
+                             collector->used_low(),
+                             generation->used(),
+                             collector->reclaimed(),
+                             collector->promoted(),
+                             collector->relocated());
 }
 
 size_t ZPageAllocator::increase_capacity(size_t size) {
@@ -322,34 +375,40 @@ void ZPageAllocator::decrease_capacity(size_t size, bool set_max_capacity) {
   }
 }
 
-void ZPageAllocator::increase_used(size_t size, bool worker_relocation) {
-  if (worker_relocation) {
-    // Allocating a page for the purpose of worker relocation has
-    // a negative contribution to the number of reclaimed bytes.
-    _reclaimed -= size;
+void ZPageAllocator::increase_used(size_t size, bool gc_relocation, ZCollector* collector, ZGenerationId id) {
+  ZHeap::heap()->generation(id)->increase_used(size);
+
+  if (gc_relocation) {
+    if (ZHeap::heap()->collector(id) == collector) {
+      // Allocating a page for the purpose of GC relocation has
+      // a negative contribution to the number of reclaimed bytes,
+      // as long as the movement is within the same generation.
+      collector->increase_relocated(size);
+    } else {
+      // Allocating a page for the purpose of GC relocation into
+      // a different generation, has a positive contribution to
+      // the number of promoted bytes.
+      collector->increase_promoted(size);
+    }
   }
 
   // Update atomically since we have concurrent readers
   const size_t used = Atomic::add(&_used, size);
-  if (used > _used_high) {
-    _used_high = used;
-  }
+  ZHeap::heap()->young_collector()->update_used(used);
+  ZHeap::heap()->old_collector()->update_used(used);
 }
 
-void ZPageAllocator::decrease_used(size_t size, bool reclaimed) {
-  // Only pages explicitly released with the reclaimed flag set
-  // counts as reclaimed bytes. This flag is true when we release
-  // a page after relocation, and is false when we release a page
-  // to undo an allocation.
+void ZPageAllocator::decrease_used(size_t size, bool reclaimed, ZGenerationId id) {
+  ZHeap::heap()->generation(id)->decrease_used(size);
+
   if (reclaimed) {
-    _reclaimed += size;
+    ZHeap::heap()->collector(id)->increase_reclaimed(size);
   }
 
   // Update atomically since we have concurrent readers
   const size_t used = Atomic::sub(&_used, size);
-  if (used < _used_low) {
-    _used_low = used;
-  }
+  ZHeap::heap()->young_collector()->update_used(used);
+  ZHeap::heap()->old_collector()->update_used(used);
 }
 
 bool ZPageAllocator::commit_page(ZPage* page) {
@@ -376,6 +435,11 @@ void ZPageAllocator::unmap_page(const ZPage* page) const {
   _physical.unmap(page->start(), page->size());
 }
 
+void ZPageAllocator::safe_destroy_page(ZPage* page) {
+  // Destroy page safely
+  _safe_destroy.schedule_delete(page);
+}
+
 void ZPageAllocator::destroy_page(ZPage* page) {
   // Free virtual memory
   _virtual.free(page->virtual_memory());
@@ -383,8 +447,8 @@ void ZPageAllocator::destroy_page(ZPage* page) {
   // Free physical memory
   _physical.free(page->physical_memory());
 
-  // Delete page safely
-  _safe_delete(page);
+  // Destroy page safely
+  safe_destroy_page(page);
 }
 
 bool ZPageAllocator::is_alloc_allowed(size_t size) const {
@@ -431,7 +495,7 @@ bool ZPageAllocator::alloc_page_common(ZPageAllocation* allocation) {
   }
 
   // Updated used statistics
-  increase_used(size, flags.worker_relocation());
+  increase_used(size, allocation->gc_relocation(), allocation->collector(), allocation->generation_id());
 
   // Success
   return true;
@@ -456,28 +520,21 @@ bool ZPageAllocator::alloc_page_stall(ZPageAllocation* allocation) {
 
   do {
     // Start asynchronous GC
-    ZCollectedHeap::heap()->collect(GCCause::_z_allocation_stall);
+    ZCollectedHeap::heap()->collect(GCCause::_z_major_allocation_stall);
 
     // Wait for allocation to complete, fail or request a GC
     result = allocation->wait();
   } while (result == ZPageAllocationStallStartGC);
 
   {
-    //
-    // We grab the lock here for two different reasons:
-    //
-    // 1) Guard deletion of underlying semaphore. This is a workaround for
+    // Guard deletion of underlying semaphore. This is a workaround for
     // a bug in sem_post() in glibc < 2.21, where it's not safe to destroy
     // the semaphore immediately after returning from sem_wait(). The
     // reason is that sem_post() can touch the semaphore after a waiting
     // thread have returned from sem_wait(). To avoid this race we are
     // forcing the waiting thread to acquire/release the lock held by the
     // posting thread. https://sourceware.org/bugzilla/show_bug.cgi?id=12674
-    //
-    // 2) Guard the list of satisfied pages.
-    //
     ZLocker<ZLock> locker(&_lock);
-    _satisfied.remove(allocation);
   }
 
   // Send event
@@ -566,7 +623,7 @@ bool ZPageAllocator::should_defragment(const ZPage* page) const {
   // fight address space fragmentation we remap such pages to a lower address, if
   // a lower address is available.
   return page->type() == ZPageTypeSmall &&
-         page->start() >= _virtual.reserved() / 2 &&
+         page->start() >= to_zoffset(_virtual.reserved() / 2) &&
          page->start() > _virtual.lowest_available_address();
 }
 
@@ -633,32 +690,11 @@ ZPage* ZPageAllocator::alloc_page_finalize(ZPageAllocation* allocation) {
   return NULL;
 }
 
-void ZPageAllocator::alloc_page_failed(ZPageAllocation* allocation) {
-  ZLocker<ZLock> locker(&_lock);
-
-  size_t freed = 0;
-
-  // Free any allocated/flushed pages
-  ZListRemoveIterator<ZPage> iter(allocation->pages());
-  for (ZPage* page; iter.next(&page);) {
-    freed += page->size();
-    free_page_inner(page, false /* reclaimed */);
-  }
-
-  // Adjust capacity and used to reflect the failed capacity increase
-  const size_t remaining = allocation->size() - freed;
-  decrease_used(remaining, false /* reclaimed */);
-  decrease_capacity(remaining, true /* set_max_capacity */);
-
-  // Try satisfy stalled allocations
-  satisfy_stalled();
-}
-
-ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags) {
+ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZGenerationId generation_id, ZPageAge age, ZCollector* collector) {
   EventZPageAllocation event;
 
 retry:
-  ZPageAllocation allocation(type, size, flags);
+  ZPageAllocation allocation(type, size, flags, generation_id, collector);
 
   // Allocate one or more pages from the page cache. If the allocation
   // succeeds but the returned pages don't cover the complete allocation,
@@ -674,23 +710,23 @@ retry:
   if (page == NULL) {
     // Failed to commit or map. Clean up and retry, in the hope that
     // we can still allocate by flushing the page cache (more aggressively).
-    alloc_page_failed(&allocation);
+    free_pages_alloc_failed(&allocation);
     goto retry;
   }
 
   // Reset page. This updates the page's sequence number and must
   // be done after we potentially blocked in a safepoint (stalled)
   // where the global sequence number was updated.
-  page->reset();
+  page->reset(generation_id, age, ZPageResetType::Allocation);
 
-  // Update allocation statistics. Exclude worker relocations to avoid
+  // Update allocation statistics. Exclude gc relocations to avoid
   // artificial inflation of the allocation rate during relocation.
-  if (!flags.worker_relocation() && is_init_completed()) {
+  if (!flags.gc_relocation() && is_init_completed()) {
     // Note that there are two allocation rate counters, which have
     // different purposes and are sampled at different frequencies.
     const size_t bytes = page->size();
-    ZStatInc(ZCounterAllocationRate, bytes);
-    ZStatInc(ZStatAllocRate::counter(), bytes);
+    ZStatInc(ZCounterMutatorAllocationRate, bytes);
+    ZStatInc(ZStatMutatorAllocRate::counter(), bytes);
   }
 
   // Send event
@@ -717,15 +753,11 @@ void ZPageAllocator::satisfy_stalled() {
     // Note that we must dequeue the allocation request first, since
     // it will immediately be deallocated once it has been satisfied.
     _stalled.remove(allocation);
-    _satisfied.insert_last(allocation);
     allocation->satisfy(ZPageAllocationStallSuccess);
   }
 }
 
-void ZPageAllocator::free_page_inner(ZPage* page, bool reclaimed) {
-  // Update used statistics
-  decrease_used(page->size(), reclaimed);
-
+void ZPageAllocator::recycle_page(ZPage* page) {
   // Set time when last used
   page->set_last_used();
 
@@ -734,23 +766,71 @@ void ZPageAllocator::free_page_inner(ZPage* page, bool reclaimed) {
 }
 
 void ZPageAllocator::free_page(ZPage* page, bool reclaimed) {
+  const ZGenerationId generation_id = page->generation_id();
+  ZPage* const to_recycle = _safe_recycle.register_and_clone_if_activated(page);
+
   ZLocker<ZLock> locker(&_lock);
 
+  // Update used statistics
+  decrease_used(to_recycle->size(), reclaimed, generation_id);
+
   // Free page
-  free_page_inner(page, reclaimed);
+  recycle_page(to_recycle);
 
   // Try satisfy stalled allocations
   satisfy_stalled();
 }
 
-void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages, bool reclaimed) {
+void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages, bool gc_relocation) {
+  ZArray<ZPage*> to_recycle;
+
+  size_t generation_used[2] = {0, 0};
+
+  ZArrayIterator<ZPage*> pages_iter(pages);
+  for (ZPage* page; pages_iter.next(&page);) {
+    generation_used[(int)page->generation_id()] += page->size();
+    to_recycle.push(_safe_recycle.register_and_clone_if_activated(page));
+  }
+
   ZLocker<ZLock> locker(&_lock);
 
+  decrease_used(generation_used[(int)ZGenerationId::young], gc_relocation, ZGenerationId::young);
+  decrease_used(generation_used[(int)ZGenerationId::old], gc_relocation, ZGenerationId::old);
+
   // Free pages
-  ZArrayIterator<ZPage*> iter(pages);
+  ZArrayIterator<ZPage*> iter(&to_recycle);
   for (ZPage* page; iter.next(&page);) {
-    free_page_inner(page, reclaimed);
+    recycle_page(page);
   }
+
+  // Try satisfy stalled allocations
+  satisfy_stalled();
+}
+
+void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
+  ZArray<ZPage*> to_recycle;
+
+  ZListRemoveIterator<ZPage> allocation_pages_iter(allocation->pages());
+  for (ZPage* page; allocation_pages_iter.next(&page);) {
+    assert(page->generation_id() == allocation->generation_id(), "Must be the same generation");
+    to_recycle.push(_safe_recycle.register_and_clone_if_activated(page));
+  }
+
+  ZLocker<ZLock> locker(&_lock);
+
+  size_t freed = 0;
+
+  // Free any allocated/flushed pages
+  ZArrayIterator<ZPage*> iter(&to_recycle);
+  for (ZPage* page; iter.next(&page);) {
+    freed += page->size();
+    recycle_page(page);
+  }
+
+  // Adjust capacity and used to reflect the failed capacity increase
+  const size_t remaining = allocation->size() - freed;
+  decrease_used(remaining, false /* reclaimed */, allocation->generation_id());
+  decrease_capacity(remaining, true /* set_max_capacity */);
 
   // Try satisfy stalled allocations
   satisfy_stalled();
@@ -758,16 +838,12 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages, bool reclaimed) {
 
 size_t ZPageAllocator::uncommit(uint64_t* timeout) {
   // We need to join the suspendible thread set while manipulating capacity and
-  // used, to make sure GC safepoints will have a consistent view. However, when
-  // ZVerifyViews is enabled we need to join at a broader scope to also make sure
-  // we don't change the address good mask after pages have been flushed, and
-  // thereby made invisible to pages_do(), but before they have been unmapped.
-  SuspendibleThreadSetJoiner joiner(ZVerifyViews);
+  // used, to make sure GC safepoints will have a consistent view.
   ZList<ZPage> pages;
   size_t flushed;
 
   {
-    SuspendibleThreadSetJoiner joiner(!ZVerifyViews);
+    SuspendibleThreadSetJoiner joiner;
     ZLocker<ZLock> locker(&_lock);
 
     // Never uncommit below min capacity. We flush out and uncommit chunks at
@@ -798,7 +874,7 @@ size_t ZPageAllocator::uncommit(uint64_t* timeout) {
   }
 
   {
-    SuspendibleThreadSetJoiner joiner(!ZVerifyViews);
+    SuspendibleThreadSetJoiner joiner;
     ZLocker<ZLock> locker(&_lock);
 
     // Adjust claimed and capacity to reflect the uncommit
@@ -809,57 +885,44 @@ size_t ZPageAllocator::uncommit(uint64_t* timeout) {
   return flushed;
 }
 
-void ZPageAllocator::enable_deferred_delete() const {
-  _safe_delete.enable_deferred_delete();
+void ZPageAllocator::enable_safe_destroy() const {
+  _safe_destroy.enable_deferred_delete();
 }
 
-void ZPageAllocator::disable_deferred_delete() const {
-  _safe_delete.disable_deferred_delete();
+void ZPageAllocator::disable_safe_destroy() const {
+  _safe_destroy.disable_deferred_delete();
 }
 
-void ZPageAllocator::debug_map_page(const ZPage* page) const {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  _physical.debug_map(page->start(), page->physical_memory());
+void ZPageAllocator::enable_safe_recycle() const {
+  _safe_recycle.activate();
 }
 
-void ZPageAllocator::debug_unmap_page(const ZPage* page) const {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  _physical.debug_unmap(page->start(), page->size());
-}
-
-void ZPageAllocator::pages_do(ZPageClosure* cl) const {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-
-  ZListIterator<ZPageAllocation> iter_satisfied(&_satisfied);
-  for (ZPageAllocation* allocation; iter_satisfied.next(&allocation);) {
-    ZListIterator<ZPage> iter_pages(allocation->pages());
-    for (ZPage* page; iter_pages.next(&page);) {
-      cl->do_page(page);
-    }
-  }
-
-  _cache.pages_do(cl);
+void ZPageAllocator::disable_safe_recycle() const {
+  _safe_recycle.deactivate();
 }
 
 bool ZPageAllocator::has_alloc_stalled() const {
   return Atomic::load(&_nstalled) != 0;
 }
 
+void ZPageAllocator::reset_alloc_stalled() {
+  return Atomic::store(&_nstalled, uint64_t(0));
+}
+
 void ZPageAllocator::check_out_of_memory() {
   ZLocker<ZLock> locker(&_lock);
 
   // Fail allocation requests that were enqueued before the
-  // last GC cycle started, otherwise start a new GC cycle.
+  // last GC started, otherwise start a new GC.
   for (ZPageAllocation* allocation = _stalled.first(); allocation != NULL; allocation = _stalled.first()) {
-    if (allocation->seqnum() == ZGlobalSeqNum) {
-      // Start a new GC cycle, keep allocation requests enqueued
+    if (allocation->seqnum() == ZHeap::heap()->old_collector()->seqnum()) {
+      // Start a new GC, keep allocation requests enqueued
       allocation->satisfy(ZPageAllocationStallStartGC);
       return;
     }
 
     // Out of memory, fail allocation request
     _stalled.remove(allocation);
-    _satisfied.insert_last(allocation);
     allocation->satisfy(ZPageAllocationStallFailed);
   }
 }

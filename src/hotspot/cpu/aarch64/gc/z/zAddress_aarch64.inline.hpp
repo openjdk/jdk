@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,17 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZOOP_INLINE_HPP
-#define SHARE_GC_Z_ZOOP_INLINE_HPP
+#ifndef CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_INLINE_HPP
+#define CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_INLINE_HPP
 
-#include "gc/z/zOop.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-inline oop ZOop::from_address(uintptr_t addr) {
-  return cast_to_oop(addr);
+inline uintptr_t ZPointer::remap_bits(uintptr_t colored) {
+  return (colored ^ ZPointerRemappedMask) & ZPointerRemappedMask;
 }
 
-inline uintptr_t ZOop::to_address(oop o) {
-  return cast_from_oop<uintptr_t>(o);
+inline constexpr int ZPointer::load_shift_lookup(uintptr_t value) {
+  return ZPointerLoadShift;
 }
 
-#endif // SHARE_GC_Z_ZOOP_INLINE_HPP
+#endif // CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_INLINE_HPP

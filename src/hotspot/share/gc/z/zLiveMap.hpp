@@ -24,7 +24,9 @@
 #ifndef SHARE_GC_Z_ZLIVEMAP_HPP
 #define SHARE_GC_Z_ZLIVEMAP_HPP
 
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zBitMap.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "memory/allocation.hpp"
 
 class ObjectClosure;
@@ -63,28 +65,36 @@ private:
 
   bool claim_segment(BitMap::idx_t segment);
 
-  void reset(size_t index);
+  void reset(ZGenerationId generation_id, size_t index);
   void reset_segment(BitMap::idx_t segment);
 
-  void iterate_segment(ObjectClosure* cl, BitMap::idx_t segment, uintptr_t page_start, size_t page_object_alignment_shift);
+  size_t do_object(ObjectClosure* cl, zaddress addr) const;
+
+  template <typename Function>
+  void iterate_segment(BitMap::idx_t segment, Function function);
 
 public:
   ZLiveMap(uint32_t size);
+  ZLiveMap(const ZLiveMap& other);
 
   void reset();
   void resize(uint32_t size);
 
-  bool is_marked() const;
+  bool is_marked(ZGenerationId generation_id) const;
 
   uint32_t live_objects() const;
   size_t live_bytes() const;
 
-  bool get(size_t index) const;
-  bool set(size_t index, bool finalizable, bool& inc_live);
+  bool get(ZGenerationId generation_id, size_t index) const;
+  bool set(ZGenerationId generation_id, size_t index, bool finalizable, bool& inc_live);
 
   void inc_live(uint32_t objects, size_t bytes);
 
-  void iterate(ObjectClosure* cl, uintptr_t page_start, size_t page_object_alignment_shift);
+  template <typename Function>
+  void iterate(ZGenerationId generation_id, Function function);
+
+  size_t find_base_bit(size_t index);
+  size_t find_base_bit(size_t start, size_t end);
 };
 
 #endif // SHARE_GC_Z_ZLIVEMAP_HPP

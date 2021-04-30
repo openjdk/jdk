@@ -71,6 +71,13 @@ void ClassLoaderDataGraph::clear_claimed_marks(int claim) {
     cld->clear_claim(claim);
   }
 }
+
+void ClassLoaderDataGraph::verify_claimed_marks_not(int claim) {
+ for (ClassLoaderData* cld = Atomic::load_acquire(&_head); cld != NULL; cld = cld->next()) {
+    cld->verify_not_claimed(claim);
+  }
+}
+
 // Class iterator used by the compiler.  It gets some number of classes at
 // a safepoint to decay invocation counters on the methods.
 class ClassLoaderDataGraphKlassIteratorStatic {

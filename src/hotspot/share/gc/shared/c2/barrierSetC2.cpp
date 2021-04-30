@@ -101,7 +101,8 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     }
 
     store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), access.type(),
-                                     access.addr().type(), mo, requires_atomic_access, unaligned, mismatched, unsafe);
+                                 access.addr().type(), mo, requires_atomic_access, unaligned,
+                                 mismatched, unsafe, access.barrier_data());
   } else {
     assert(!requires_atomic_access, "not yet supported");
     assert(access.is_opt_access(), "either parse or opt access");
@@ -119,6 +120,9 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     }
     if (mismatched) {
       st->set_mismatched_access();
+    }
+    if (access.barrier_data() != 0) {
+      st->set_barrier_data(access.barrier_data());
     }
     store = gvn.transform(st);
     if (store == st) {
@@ -360,7 +364,7 @@ void C2Access::fixup_decorators() {
     _decorators |= MO_RELAXED; // Force the MO_RELAXED decorator with AlwaysAtomicAccess
   }
 
-  _decorators = AccessInternal::decorator_fixup(_decorators);
+  _decorators = AccessInternal::decorator_fixup(_decorators, _type);
 
   if (is_read && !is_write && anonymous) {
     // To be valid, unsafe loads may depend on other conditions than

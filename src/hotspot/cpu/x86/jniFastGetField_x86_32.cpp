@@ -92,7 +92,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
                                             // rdx is data dependent on rcx.
   __ movptr(rax, Address(rsp, 3*wordSize));  // jfieldID
 
-  __ clear_jweak_tag(rdx);
+  __ clear_jobject_tag(rdx);
 
   __ movptr(rdx, Address(rdx, 0));           // *obj
   __ shrptr (rax, 2);                         // offset
@@ -213,7 +213,7 @@ address JNI_FastGetField::generate_fast_get_long_field() {
                                             // rdx is data dependent on rcx.
   __ movptr(rsi, Address(rsp, 4*wordSize));  // jfieldID
 
-  __ clear_jweak_tag(rdx);
+  __ clear_jobject_tag(rdx);
 
   __ movptr(rdx, Address(rdx, 0));           // *obj
   __ shrptr(rsi, 2);                         // offset
@@ -305,7 +305,7 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
                                             // rdx is data dependent on rcx.
   __ movptr(rax, Address(rsp, 3*wordSize));  // jfieldID
 
-  __ clear_jweak_tag(rdx);
+  __ clear_jobject_tag(rdx);
 
   __ movptr(rdx, Address(rdx, 0));           // *obj
   __ shrptr(rax, 2);                         // offset

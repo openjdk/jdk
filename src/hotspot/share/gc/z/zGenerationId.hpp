@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,46 +21,14 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZMESSAGEPORT_HPP
-#define SHARE_GC_Z_ZMESSAGEPORT_HPP
+#ifndef SHARE_GC_Z_ZGENERATIONID_HPP
+#define SHARE_GC_Z_ZGENERATIONID_HPP
 
-#include "gc/z/zFuture.hpp"
-#include "gc/z/zList.hpp"
-#include "runtime/mutex.hpp"
+#include <cstdint>
 
-template <typename T> class ZMessageRequest;
-
-template <typename T>
-class ZMessagePort {
-private:
-  typedef ZMessageRequest<T> Request;
-
-  mutable Monitor _monitor;
-  bool            _has_message;
-  T               _message;
-  uint64_t        _seqnum;
-  ZList<Request>  _queue;
-
-public:
-  ZMessagePort();
-
-  bool is_busy() const;
-
-  void send_sync(const T& message);
-  void send_async(const T& message);
-
-  T receive();
-  void ack();
+enum class ZGenerationId : uint8_t {
+  young,
+  old
 };
 
-class ZRendezvousPort {
-private:
-  ZMessagePort<bool> _port;
-
-public:
-  void signal();
-  void wait();
-  void ack();
-};
-
-#endif // SHARE_GC_Z_ZMESSAGEPORT_HPP
+#endif // SHARE_GC_Z_ZGENERATIONID_HPP

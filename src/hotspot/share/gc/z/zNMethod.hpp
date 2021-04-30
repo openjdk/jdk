@@ -25,6 +25,8 @@
 #define SHARE_GC_Z_ZNMETHOD_HPP
 
 #include "memory/allocation.hpp"
+#include "oops/accessDecorators.hpp"
+#include "oops/oopsHierarchy.hpp"
 
 class nmethod;
 class NMethodClosure;
@@ -48,19 +50,22 @@ public:
   static bool is_armed(nmethod* nm);
   static void disarm(nmethod* nm);
 
+  static void nmethod_patch_barriers(nmethod* nm);
+
   static void nmethod_oops_do(nmethod* nm, OopClosure* cl);
   static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl);
 
-  static void nmethod_oops_barrier(nmethod* nm);
-
-  static void nmethods_do_begin();
-  static void nmethods_do_end();
-  static void nmethods_do(NMethodClosure* cl);
+  static void nmethods_do_begin(bool secondary);
+  static void nmethods_do_end(bool secondary);
+  static void nmethods_do(bool secondary, NMethodClosure* cl);
 
   static ZReentrantLock* lock_for_nmethod(nmethod* nm);
 
   static void unlink(ZWorkers* workers, bool unloading_occurred);
   static void purge(ZWorkers* workers);
+
+  static uintptr_t color(nmethod* nm);
+  static oop load_oop(oop* p, DecoratorSet decorators);
 };
 
 #endif // SHARE_GC_Z_ZNMETHOD_HPP

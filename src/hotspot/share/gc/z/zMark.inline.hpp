@@ -27,7 +27,9 @@
 #include "gc/z/zMark.hpp"
 
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zCollector.inline.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
+#include "gc/z/zMarkTerminate.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zThreadLocalData.hpp"
@@ -43,9 +45,9 @@
 // root processing has called ClassLoaderDataGraph::clear_claimed_marks(),
 // since it otherwise would interact badly with claiming of CLDs.
 
-template <bool gc_thread, bool follow, bool finalizable, bool publish>
-inline void ZMark::mark_object(uintptr_t addr) {
-  assert(ZAddress::is_marked(addr), "Should be marked");
+template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
+inline void ZMark::mark_object(zaddress addr) {
+  assert(oopDesc::is_oop(to_oop(addr)), "Should be oop");
 
   ZPage* const page = _page_table->get(addr);
   if (page->is_allocating()) {
@@ -64,17 +66,28 @@ inline void ZMark::mark_object(uintptr_t addr) {
     }
   } else {
     // Don't push if already marked
-    if (page->is_object_marked<finalizable>(addr)) {
+    if (page->is_object_marked(addr, finalizable)) {
       // Already marked
       return;
     }
   }
 
+  if (resurrect) {
+    _terminate.set_resurrected(true);
+  }
+
   // Push
-  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::stacks(Thread::current());
-  ZMarkStripe* const stripe = _stripes.stripe_for_addr(addr);
-  ZMarkStackEntry entry(addr, !mark_before_push, inc_live, follow, finalizable);
+  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _collector->id());
+  ZMarkStripe* const stripe = _stripes.stripe_for_addr(untype(addr));
+  ZMarkStackEntry entry(untype(ZAddress::offset(addr)), !mark_before_push, inc_live, follow, finalizable);
+
+  assert(ZHeap::heap()->is_young(addr) == _collector->is_young(), "Phase/object mismatch");
+
   stacks->push(&_allocator, &_stripes, stripe, entry, publish);
+}
+
+inline void ZMark::mark_follow_invisible_root(zaddress addr, size_t size) {
+  follow_array((uintptr_t)addr, size, false /* finalizable */);
 }
 
 #endif // SHARE_GC_Z_ZMARK_INLINE_HPP

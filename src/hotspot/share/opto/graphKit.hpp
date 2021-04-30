@@ -572,13 +572,15 @@ class GraphKit : public Phase {
                         bool require_atomic_access = false,
                         bool unaligned = false,
                         bool mismatched = false,
-                        bool unsafe = false) {
+                        bool unsafe = false,
+                        int barrier_data = 0) {
     // This version computes alias_index from an address type
     assert(adr_type != NULL, "use other store_to_memory factory");
     return store_to_memory(ctl, adr, val, bt,
                            C->get_alias_index(adr_type),
                            mo, require_atomic_access,
-                           unaligned, mismatched, unsafe);
+                           unaligned, mismatched, unsafe,
+                           barrier_data);
   }
   // This is the base version which is given alias index
   // Return the new StoreXNode
@@ -588,7 +590,8 @@ class GraphKit : public Phase {
                         bool require_atomic_access = false,
                         bool unaligned = false,
                         bool mismatched = false,
-                        bool unsafe = false);
+                        bool unsafe = false,
+                        int barrier_data = 0);
 
   // Perform decorated accesses
 

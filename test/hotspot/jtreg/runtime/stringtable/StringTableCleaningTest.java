@@ -81,9 +81,9 @@ public class StringTableCleaningTest {
     // All G1 pauses except Cleanup do weak reference clearing.
     private static final String g1Suffix = "Pause(?! Cleanup)";
 
-    // Suffix for ZGC.
-    private static final String zStartSuffix = "Garbage Collection (.*)$";
-    private static final String zEndSuffix = "Garbage Collection (.*) .*->.*$";
+    // Suffix for ZGC. Only major collections clean the string table.
+    private static final String zStartSuffix = "Garbage Collection \\(Major.*\\)$";
+    private static final String zEndSuffix = "Garbage Collection \\(Major.*\\) .*->.*$";
 
     // Suffix for Shenandoah.
     private static final String shenSuffix = "Concurrent weak roots";

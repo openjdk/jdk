@@ -27,6 +27,7 @@
 
 #include "classfile/javaClasses.hpp"
 
+#include "gc/shared/gc_globals.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
@@ -142,6 +143,10 @@ oop java_lang_ref_Reference::unknown_referent_no_keepalive(oop ref) {
 }
 
 void java_lang_ref_Reference::clear_referent(oop ref) {
+  HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(ref, _referent_offset, nullptr);
+}
+
+void java_lang_ref_Reference::clear_referent_raw(oop ref) {
   ref->obj_field_put_raw(_referent_offset, nullptr);
 }
 

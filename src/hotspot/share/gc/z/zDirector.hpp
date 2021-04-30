@@ -27,19 +27,16 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/z/zMetronome.hpp"
 
-class ZDriver;
-
 class ZDirector : public ConcurrentGCThread {
 private:
-  ZDriver* const _driver;
-  ZMetronome     _metronome;
+  ZMetronome _metronome;
 
 protected:
   virtual void run_service();
   virtual void stop_service();
 
 public:
-  ZDirector(ZDriver* driver);
+  ZDirector();
 };
 
 #endif // SHARE_GC_Z_ZDIRECTOR_HPP

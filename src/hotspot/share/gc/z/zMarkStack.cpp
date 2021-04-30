@@ -28,14 +28,20 @@
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-ZMarkStripe::ZMarkStripe() :
-    _published(),
-    _overflowed() {}
+ZMarkStripe::ZMarkStripe(uintptr_t base) :
+    _published(base),
+    _overflowed(base) {}
 
-ZMarkStripeSet::ZMarkStripeSet() :
+ZMarkStripeSet::ZMarkStripeSet(uintptr_t base) :
     _nstripes(0),
     _nstripes_mask(0),
-    _stripes() {}
+    _stripes() {
+
+  // Re-construct array elements with the correct base
+  for (size_t i = 0; i < ARRAY_SIZE(_stripes); i++) {
+    _stripes[i] = ZMarkStripe(base);
+  }
+}
 
 void ZMarkStripeSet::set_nstripes(size_t nstripes) {
   assert(is_power_of_2(nstripes), "Must be a power of two");

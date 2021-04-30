@@ -25,28 +25,36 @@
 #define SHARE_GC_Z_ZTRACER_HPP
 
 #include "gc/shared/gcTrace.hpp"
+#include "gc/z/zCollectorId.hpp"
 
 class ZStatCounter;
 class ZStatPhase;
 class ZStatSampler;
 
-class ZTracer : public GCTracer {
+class ZTracer : AllStatic {
 private:
-  static ZTracer* _tracer;
-
-  ZTracer();
-
-  void send_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
-  void send_stat_sampler(const ZStatSampler& sampler, uint64_t value);
-  void send_thread_phase(const char* name, const Ticks& start, const Ticks& end);
+  static void send_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
+  static void send_stat_sampler(const ZStatSampler& sampler, uint64_t value);
+  static void send_thread_phase(const char* name, const Ticks& start, const Ticks& end);
+  static void send_thread_event(const char* name, const Ticks& start, const Ticks& end);
 
 public:
-  static ZTracer* tracer();
   static void initialize();
 
-  void report_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
-  void report_stat_sampler(const ZStatSampler& sampler, uint64_t value);
-  void report_thread_phase(const char* name, const Ticks& start, const Ticks& end);
+  static void report_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
+  static void report_stat_sampler(const ZStatSampler& sampler, uint64_t value);
+  static void report_thread_phase(const char* name, const Ticks& start, const Ticks& end);
+  static void report_thread_event(const char* name, const Ticks& start, const Ticks& end);
+};
+
+class ZYoungTracer : public YoungGCTracer {
+public:
+  ZYoungTracer();
+};
+
+class ZOldTracer : public OldGCTracer {
+public:
+  ZOldTracer();
 };
 
 class ZTraceThreadPhase : public StackObj {
@@ -57,6 +65,17 @@ private:
 public:
   ZTraceThreadPhase(const char* name);
   ~ZTraceThreadPhase();
+};
+
+// For temporary measurement during development
+class ZTraceThreadEvent : public StackObj {
+private:
+  const Ticks       _start;
+  const char* const _name;
+
+public:
+  ZTraceThreadEvent(const char* name);
+  ~ZTraceThreadEvent();
 };
 
 #endif // SHARE_GC_Z_ZTRACER_HPP

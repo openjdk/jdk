@@ -28,6 +28,8 @@
 #include "oops/arrayKlass.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 
+#include <algorithm>
+
 ZObjArrayAllocator::ZObjArrayAllocator(Klass* klass, size_t word_size, int length, Thread* thread) :
     ObjArrayAllocator(klass, word_size, length, false /* do_zero */, thread) {}
 
@@ -35,31 +37,60 @@ oop ZObjArrayAllocator::finish(HeapWord* mem) const {
   // Initialize object header and length field
   ObjArrayAllocator::finish(mem);
 
-  // Keep the array alive across safepoints through an invisible
-  // root. Invisible roots are not visited by the heap itarator
-  // and the marking logic will not attempt to follow its elements.
-  ZThreadLocalData::set_invisible_root(_thread, (oop*)&mem);
-
   // A max segment size of 64K was chosen because microbenchmarking
   // suggested that it offered a good trade-off between allocation
   // time and time-to-safepoint
   const size_t segment_max = ZUtils::bytes_to_words(64 * K);
-  const size_t skip = arrayOopDesc::header_size(ArrayKlass::cast(_klass)->element_type());
-  size_t remaining = _word_size - skip;
+  const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
+  const size_t skip = arrayOopDesc::header_size(element_type);
+  const size_t payload_size = _word_size - skip;
+  size_t processed = 0;
+  const bool segmented = payload_size >= segment_max;
+  const bool color_payload = is_reference_type(element_type) && segmented;
 
-  while (remaining > 0) {
+  markWord mark = cast_to_oop(mem)->mark();
+  bool yielded = false;
+
+  while (processed < payload_size) {
     // Clear segment
+    const size_t remaining = payload_size - processed;
     const size_t segment = MIN2(remaining, segment_max);
-    Copy::zero_to_words(mem + (_word_size - remaining), segment);
-    remaining -= segment;
+    uintptr_t* const start = (uintptr_t*)(mem + skip + processed);
+    uintptr_t* const end = start + segment;
+    // Usually, the young marking code has the responsibility to color
+    // raw nulls, before they end up in the old generation. However, the
+    // invisible roots are hidden from the marking code, and therefore
+    // we must color the nulls already here in the initialization. The
+    // color we choose must be store bad for any subsequent stores, regardless
+    // of how many GC flips later it will arrive. That's why we OR in 11
+    // in the remembered bits, similar to how forgotten old oops also have 11,
+    // for the very same reason.
+    const uintptr_t fill_value = color_payload ? (ZPointerStoreGoodMask | ZPointerRememberedMask) : 0;
+    std::fill_n(start, segment, fill_value);
+    processed += segment;
 
-    if (remaining > 0) {
-      // Safepoint
-      ThreadBlockInVM tbivm(JavaThread::cast(_thread));
+    if (processed < payload_size) {
+      // Keep the array alive across safepoints through an invisible
+      // root. Invisible roots are not visited by the heap iterator
+      // and the marking logic will not attempt to follow its elements.
+      // Relocation and remembered set code know how to dodge iterating
+      // over such objects.
+      yielded = true;
+      cast_to_oop(mem)->set_mark(mark.set_marked());
+      ZThreadLocalData::set_invisible_root(_thread, (oop*)&mem);
+      {
+        // Safepoint
+        ThreadBlockInVM tbivm(JavaThread::cast(_thread));
+      }
+      ZThreadLocalData::clear_invisible_root(_thread);
     }
   }
 
-  ZThreadLocalData::clear_invisible_root(_thread);
+  if (yielded) {
+    // We restore the initial mark word, signalling that this is no longer
+    // an invisible root.
+    cast_to_oop(mem)->release_set_mark(mark);
+  }
 
   return cast_to_oop(mem);
 }

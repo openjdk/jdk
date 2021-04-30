@@ -42,8 +42,14 @@
           "Maximum number of bytes allocated for mark stacks")              \
           range(32*M, 1024*G)                                               \
                                                                             \
-  product(double, ZCollectionInterval, 0,                                   \
+  product(double, ZCollectionIntervalMinor, -1,                             \
+          "Force Minor GC at a fixed time interval (in seconds)")           \
+                                                                            \
+  product(double, ZCollectionIntervalMajor, -1,                             \
           "Force GC at a fixed time interval (in seconds)")                 \
+                                                                            \
+  product(bool, ZCollectionIntervalOnly, false,                             \
+          "Only use timers for GC heuristics")                              \
                                                                             \
   product(bool, ZProactive, true,                                           \
           "Enable proactive GC cycles")                                     \
@@ -51,9 +57,29 @@
   product(bool, ZUncommit, true,                                            \
           "Uncommit unused memory")                                         \
                                                                             \
+  product(bool, ZPrefetchStores, false,                                     \
+          "Prefetch stores")                                                \
+                                                                            \
+  product(bool, ZBufferStoreBarriers, true,                                 \
+          "Buffer store barriers")                                          \
+                                                                            \
   product(uintx, ZUncommitDelay, 5 * 60,                                    \
           "Uncommit memory if it has been unused for the specified "        \
           "amount of time (in seconds)")                                    \
+                                                                            \
+  product(uintx, ZIndexDistributorStrategy, 0,                              \
+          "Strategy used to distribute indices to parallel workers "        \
+          "0: Claim tree "                                                  \
+          "1: Simple Striped ")                                             \
+                                                                            \
+  product(uintx, ZRelocateRemsetStrategy, 0,                                \
+          "Strategy used to add remset entries to promoted objects "        \
+          "0: Add for all fields during relocation "                        \
+          "1: Filter and remapping during relocation "                      \
+          "2: Filter and remapping after relocation ")                      \
+          /* This flag exists so that these approaches can be evaluated */  \
+          /* 0 - 1: Unclear if one is better than the other */              \
+          /* 2: has been shown to be very expensive */                      \
                                                                             \
   product(uint, ZStatisticsInterval, 10, DIAGNOSTIC,                        \
           "Time between statistics print outs (in seconds)")                \
@@ -61,9 +87,6 @@
                                                                             \
   product(bool, ZStressRelocateInPlace, false, DIAGNOSTIC,                  \
           "Always relocate pages in-place")                                 \
-                                                                            \
-  product(bool, ZVerifyViews, false, DIAGNOSTIC,                            \
-          "Verify heap view accesses")                                      \
                                                                             \
   product(bool, ZVerifyRoots, trueInDebug, DIAGNOSTIC,                      \
           "Verify roots")                                                   \

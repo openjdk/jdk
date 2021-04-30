@@ -29,6 +29,7 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -56,8 +57,8 @@ static inline intptr_t derived_pointer_value(derived_pointer p) {
   return static_cast<intptr_t>(p);
 }
 
-static inline derived_pointer to_derived_pointer(oop obj) {
-  return static_cast<derived_pointer>(cast_from_oop<intptr_t>(obj));
+static inline derived_pointer to_derived_pointer(intptr_t obj) {
+  return static_cast<derived_pointer>(obj);
 }
 
 static inline intptr_t operator-(derived_pointer p, derived_pointer p1) {
@@ -224,7 +225,7 @@ static void process_derived_oop(oop* base, derived_pointer* derived, OopClosure*
   // All derived pointers must be processed before the base pointer of any derived pointer is processed.
   // Otherwise, if two derived pointers use the same base, the second derived pointer will get an obscured
   // offset, if the base pointer is processed in the first derived pointer.
-  derived_pointer derived_base = to_derived_pointer(*base);
+  derived_pointer derived_base = to_derived_pointer(*reinterpret_cast<intptr_t*>(base));
   intptr_t offset = *derived - derived_base;
   *derived = derived_base;
   oop_fn->do_oop((oop*)derived);
@@ -310,7 +311,8 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
       // implicit null check is used in compiled code.
       // The narrow_oop_base could be NULL or be the address
       // of the page below heap depending on compressed oops mode.
-      if (base_loc != NULL && *base_loc != NULL && !CompressedOops::is_base(*base_loc)) {
+      // FIXME: Remove the ugly hacks
+      if (base_loc != NULL && *(intptr_t*)base_loc != 0 && (UseZGC || !CompressedOops::is_base(*base_loc))) {
         derived_oop_fn(base_loc, derived_loc, oop_fn);
       }
     }
@@ -327,7 +329,7 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
       // be missing?
       guarantee(loc != NULL, "missing saved register");
       if ( omv.type() == OopMapValue::oop_value ) {
-        oop val = *loc;
+        void* val = *(void**)loc;
         if (val == NULL || CompressedOops::is_base(val)) {
           // Ignore NULL oops and decoded NULL narrow oops which
           // equal to CompressedOops::base() when a narrow oop
@@ -720,7 +722,7 @@ void DerivedPointerTable::add(derived_pointer* derived_loc, oop *base_loc) {
   assert(*derived_loc != base_loc_as_derived_pointer, "location already added");
   assert(Entry::_list != NULL, "list must exist");
   assert(is_active(), "table must be active here");
-  intptr_t offset = *derived_loc - to_derived_pointer(*base_loc);
+  intptr_t offset = *derived_loc - to_derived_pointer(*reinterpret_cast<intptr_t*>(base_loc));
   // This assert is invalid because derived pointers can be
   // arbitrarily far away from their base.
   // assert(offset >= -1000000, "wrong derived pointer info");
@@ -751,7 +753,7 @@ void DerivedPointerTable::update_pointers() {
     oop base = **reinterpret_cast<oop**>(derived_loc);
     assert(Universe::heap()->is_in_or_null(base), "must be an oop");
 
-    derived_pointer derived_base = to_derived_pointer(base);
+    derived_pointer derived_base = to_derived_pointer(cast_from_oop<intptr_t>(base));
     *derived_loc = derived_base + offset;
     assert(*derived_loc - derived_base == offset, "sanity check");
 

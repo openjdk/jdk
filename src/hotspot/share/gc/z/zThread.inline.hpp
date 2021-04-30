@@ -54,6 +54,18 @@ inline bool ZThread::is_worker() {
   return _is_worker;
 }
 
+inline void ZThread::set_coordinator_is_suspendible_thread(bool value) {
+  ensure_initialized();
+  assert(_is_worker, "Should only be called from worker");
+  _coordinator_is_suspendible_thread = value;
+}
+
+inline bool ZThread::coordinator_is_suspendible_thread() {
+  ensure_initialized();
+  assert(_is_worker, "Should only be called from worker");
+  return _coordinator_is_suspendible_thread;
+}
+
 inline uint ZThread::worker_id() {
   assert(has_worker_id(), "Worker id not initialized");
   return _worker_id;

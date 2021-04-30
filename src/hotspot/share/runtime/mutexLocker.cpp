@@ -221,6 +221,7 @@ static void add_mutex(Mutex* var) {
 void mutex_init() {
   def(tty_lock                     , PaddedMutex  , tty);      // allow to lock in VM
 
+  // FIXME: Used to be access - 1
   def(STS_lock                     , PaddedMonitor, nosafepoint);
 
   if (UseG1GC) {

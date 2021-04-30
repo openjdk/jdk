@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZRELOCATIONSETSELECTOR_HPP
 
 #include "gc/z/zArray.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "memory/allocation.hpp"
 
 class ZPage;
@@ -71,13 +72,14 @@ private:
   const size_t                     _object_size_limit;
   const size_t                     _fragmentation_limit;
   ZArray<ZPage*>                   _live_pages;
+  ZArray<ZPage*>                   _not_selected_pages;
   size_t                           _forwarding_entries;
   ZRelocationSetSelectorGroupStats _stats;
 
   bool is_disabled();
   bool is_selectable();
   void semi_sort();
-  void select_inner();
+  void select_inner(ZGenerationId generation_id);
 
 public:
   ZRelocationSetSelectorGroup(const char* name,
@@ -87,9 +89,11 @@ public:
 
   void register_live_page(ZPage* page);
   void register_empty_page(ZPage* page);
-  void select();
+  void select(ZGenerationId generation_id);
 
-  const ZArray<ZPage*>* selected() const;
+  const ZArray<ZPage*>* live_pages() const;
+  const ZArray<ZPage*>* selected_pages() const;
+  const ZArray<ZPage*>* not_selected_pages() const;
   size_t forwarding_entries() const;
 
   const ZRelocationSetSelectorGroupStats& stats() const;
@@ -116,10 +120,14 @@ public:
   const ZArray<ZPage*>* empty_pages() const;
   void clear_empty_pages();
 
-  void select();
+  void select(ZGenerationId generation_id);
 
-  const ZArray<ZPage*>* small() const;
-  const ZArray<ZPage*>* medium() const;
+  const ZArray<ZPage*>* selected_small() const;
+  const ZArray<ZPage*>* selected_medium() const;
+
+  const ZArray<ZPage*>* not_selected_small() const;
+  const ZArray<ZPage*>* not_selected_medium() const;
+  const ZArray<ZPage*>* not_selected_large() const;
   size_t forwarding_entries() const;
 
   ZRelocationSetSelectorStats stats() const;

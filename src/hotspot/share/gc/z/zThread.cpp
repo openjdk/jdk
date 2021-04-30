@@ -32,6 +32,7 @@ THREAD_LOCAL uintptr_t ZThread::_id;
 THREAD_LOCAL bool      ZThread::_is_vm;
 THREAD_LOCAL bool      ZThread::_is_java;
 THREAD_LOCAL bool      ZThread::_is_worker;
+THREAD_LOCAL bool      ZThread::_coordinator_is_suspendible_thread;
 THREAD_LOCAL uint      ZThread::_worker_id;
 
 void ZThread::initialize() {
@@ -42,6 +43,7 @@ void ZThread::initialize() {
   _is_vm = thread->is_VM_thread();
   _is_java = thread->is_Java_thread();
   _is_worker = false;
+  _coordinator_is_suspendible_thread = false;
   _worker_id = (uint)-1;
 }
 

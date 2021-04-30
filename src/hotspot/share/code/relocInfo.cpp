@@ -27,6 +27,8 @@
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -382,7 +384,6 @@ void metadata_Relocation::pack_data_to(CodeSection* dest) {
 void metadata_Relocation::unpack_data() {
   unpack_2_ints(_metadata_index, _offset);
 }
-
 
 void virtual_call_Relocation::pack_data_to(CodeSection* dest) {
   short*  p     = (short*) dest->locs_end();

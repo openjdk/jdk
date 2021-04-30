@@ -62,6 +62,16 @@ public:
   void apply(CLDClosure* cl);
 };
 
+class ZWeakCLDsIterator {
+public:
+  void apply(CLDClosure* cl);
+};
+
+class ZAllCLDsIterator {
+public:
+  void apply(CLDClosure* cl);
+};
+
 class ZJavaThreadsIterator {
 private:
   ThreadsListHandle _threads;
@@ -76,26 +86,67 @@ public:
 };
 
 class ZNMethodsIterator {
+private:
+  const bool _enabled;
+  const bool _secondary;
+
 public:
-  ZNMethodsIterator();
+  ZNMethodsIterator(bool enabled, bool secondary);
   ~ZNMethodsIterator();
 
   void apply(NMethodClosure* cl);
 };
 
-class ZRootsIterator {
+class ZNMethodsStrongIterator : public ZNMethodsIterator {
+public:
+  ZNMethodsStrongIterator() : ZNMethodsIterator(!ClassUnloading /* enabled */, false /* secondary */) {}
+};
+
+class ZNMethodsWeakIterator : public ZNMethodsIterator {
+public:
+  ZNMethodsWeakIterator() : ZNMethodsIterator(true /* enabled */, true /* secondary */) {}
+};
+
+class ZNMethodsAllIterator : public ZNMethodsIterator {
+public:
+  ZNMethodsAllIterator() : ZNMethodsIterator(true /* enabled */, true /* secondary */) {}
+};
+
+class ZColoredRootsStrongIterator {
 private:
   ZParallelApply<ZStrongOopStorageSetIterator> _oop_storage_set;
   ZParallelApply<ZStrongCLDsIterator>          _class_loader_data_graph;
-  ZParallelApply<ZJavaThreadsIterator>         _java_threads;
-  ZParallelApply<ZNMethodsIterator>            _nmethods;
 
 public:
-  ZRootsIterator(int cld_claim);
-
   void apply(OopClosure* cl,
-             CLDClosure* cld_cl,
-             ThreadClosure* thread_cl,
+             CLDClosure* cld_cl);
+};
+
+class ZUncoloredRootsStrongIterator {
+private:
+  ZParallelApply<ZJavaThreadsIterator>         _java_threads;
+  ZParallelApply<ZNMethodsStrongIterator>      _nmethods;
+
+public:
+  void apply(ThreadClosure* thread_cl,
+             NMethodClosure* nm_cl);
+};
+
+class ZUncoloredRootsWeakIterator {
+private:
+  ZParallelApply<ZNMethodsWeakIterator>        _nmethods;
+
+public:
+  void apply(NMethodClosure* nm_cl);
+};
+
+class ZUncoloredRootsAllIterator {
+private:
+  ZParallelApply<ZJavaThreadsIterator>         _java_threads;
+  ZParallelApply<ZNMethodsAllIterator>         _nmethods;
+
+public:
+  void apply(ThreadClosure* thread_cl,
              NMethodClosure* nm_cl);
 };
 
@@ -119,6 +170,26 @@ public:
   void apply(OopClosure* cl);
 
   void report_num_dead();
+};
+
+class ZColoredRootsWeakIterator {
+  ZParallelApply<ZWeakOopStorageSetIterator> _weak_oop_storage_set;
+  ZParallelApply<ZWeakCLDsIterator>          _weak_class_loader_data_graph;
+
+public:
+  void apply(OopClosure* cl,
+             CLDClosure* cld_cl);
+};
+
+class ZColoredRootsAllIterator {
+private:
+  ZParallelApply<ZStrongOopStorageSetIterator> _strong_oop_storage_set;
+  ZParallelApply<ZWeakOopStorageSetIterator>   _weak_oop_storage_set;
+  ZParallelApply<ZAllCLDsIterator>             _all_class_loader_data_graph;
+
+public:
+  void apply(OopClosure* cl,
+             CLDClosure* cld_cl);
 };
 
 #endif // SHARE_GC_Z_ZROOTSITERATOR_HPP

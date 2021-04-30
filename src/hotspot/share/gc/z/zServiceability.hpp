@@ -31,11 +31,15 @@
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
 
+class ZGeneration;
 class ZServiceabilityCounters;
 
 class ZServiceabilityMemoryPool : public CollectedMemoryPool {
+private:
+  const ZGeneration* const _generation;
+
 public:
-  ZServiceabilityMemoryPool(size_t min_capacity, size_t max_capacity);
+  ZServiceabilityMemoryPool(const char* name, const ZGeneration* generation, size_t min_capacity, size_t max_capacity);
 
   virtual size_t used_in_bytes();
   virtual MemoryUsage get_memory_usage();
@@ -50,21 +54,29 @@ public:
 
 class ZServiceability {
 private:
+  const size_t                 _initial_capacity;
   const size_t                 _min_capacity;
   const size_t                 _max_capacity;
-  ZServiceabilityMemoryPool    _memory_pool;
-  ZServiceabilityMemoryManager _cycle_memory_manager;
-  ZServiceabilityMemoryManager _pause_memory_manager;
+  ZServiceabilityMemoryPool    _young_memory_pool;
+  ZServiceabilityMemoryPool    _old_memory_pool;
+  ZServiceabilityMemoryManager _young_cycle_memory_manager;
+  ZServiceabilityMemoryManager _old_cycle_memory_manager;
+  ZServiceabilityMemoryManager _young_pause_memory_manager;
+  ZServiceabilityMemoryManager _old_pause_memory_manager;
   ZServiceabilityCounters*     _counters;
 
 public:
-  ZServiceability(size_t min_capacity, size_t max_capacity);
+  ZServiceability(size_t initial_capacity,
+                  size_t min_capacity,
+                  size_t max_capacity,
+                  const ZGeneration* young_generation,
+                  const ZGeneration* old_generation);
 
   void initialize();
 
-  MemoryPool* memory_pool();
-  GCMemoryManager* cycle_memory_manager();
-  GCMemoryManager* pause_memory_manager();
+  MemoryPool* memory_pool(ZGenerationId generation_id);
+  GCMemoryManager* cycle_memory_manager(ZCollectorId collector_id);
+  GCMemoryManager* pause_memory_manager(ZCollectorId collector_id);
   ZServiceabilityCounters* counters();
 };
 
@@ -73,17 +85,18 @@ private:
   TraceMemoryManagerStats _memory_manager_stats;
 
 public:
-  ZServiceabilityCycleTracer();
+  ZServiceabilityCycleTracer(ZCollectorId collector_id);
 };
 
 class ZServiceabilityPauseTracer : public StackObj {
 private:
+  const ZCollectorId      _collector_id;
   SvcGCMarker             _svc_gc_marker;
   TraceCollectorStats     _counters_stats;
   TraceMemoryManagerStats _memory_manager_stats;
 
 public:
-  ZServiceabilityPauseTracer();
+  ZServiceabilityPauseTracer(ZCollectorId collector_id);
   ~ZServiceabilityPauseTracer();
 };
 

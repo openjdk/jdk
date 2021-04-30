@@ -67,8 +67,11 @@ inline void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
   const size_t live = page->live_bytes();
   const size_t garbage = size - live;
 
-  if (garbage > _fragmentation_limit) {
+  // check against fragmentation limit
+  if (type != ZPageTypeLarge && garbage > _fragmentation_limit) {
     _live_pages.append(page);
+  } else if (page->is_young()) {
+    _not_selected_pages.append(page);
   }
 
   _stats._npages++;
@@ -84,8 +87,12 @@ inline void ZRelocationSetSelectorGroup::register_empty_page(ZPage* page) {
   _stats._empty += size;
 }
 
-inline const ZArray<ZPage*>* ZRelocationSetSelectorGroup::selected() const {
+inline const ZArray<ZPage*>* ZRelocationSetSelectorGroup::selected_pages() const {
   return &_live_pages;
+}
+
+inline const ZArray<ZPage*>* ZRelocationSetSelectorGroup::not_selected_pages() const {
+  return &_not_selected_pages;
 }
 
 inline size_t ZRelocationSetSelectorGroup::forwarding_entries() const {
@@ -97,6 +104,8 @@ inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorGroup::stat
 }
 
 inline void ZRelocationSetSelector::register_live_page(ZPage* page) {
+  page->log_msg(" (relocation candidate)");
+
   const uint8_t type = page->type();
 
   if (type == ZPageTypeSmall) {
@@ -109,6 +118,8 @@ inline void ZRelocationSetSelector::register_live_page(ZPage* page) {
 }
 
 inline void ZRelocationSetSelector::register_empty_page(ZPage* page) {
+  page->log_msg(" (relocation empty)");
+
   const uint8_t type = page->type();
 
   if (type == ZPageTypeSmall) {
@@ -146,12 +157,24 @@ inline size_t ZRelocationSetSelector::relocate() const {
   return _small.stats().relocate() + _medium.stats().relocate() + _large.stats().relocate();
 }
 
-inline const ZArray<ZPage*>* ZRelocationSetSelector::small() const {
-  return _small.selected();
+inline const ZArray<ZPage*>* ZRelocationSetSelector::selected_small() const {
+  return _small.selected_pages();
 }
 
-inline const ZArray<ZPage*>* ZRelocationSetSelector::medium() const {
-  return _medium.selected();
+inline const ZArray<ZPage*>* ZRelocationSetSelector::selected_medium() const {
+  return _medium.selected_pages();
+}
+
+inline const ZArray<ZPage*>* ZRelocationSetSelector::not_selected_small() const {
+  return _small.not_selected_pages();
+}
+
+inline const ZArray<ZPage*>* ZRelocationSetSelector::not_selected_medium() const {
+  return _medium.not_selected_pages();
+}
+
+inline const ZArray<ZPage*>* ZRelocationSetSelector::not_selected_large() const {
+  return _large.not_selected_pages();
 }
 
 inline size_t ZRelocationSetSelector::forwarding_entries() const {

@@ -26,6 +26,7 @@
 
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.hpp"
+#include "gc/z/zMarkStack.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ZMarkStackSpace {
@@ -48,16 +49,17 @@ public:
 
   bool is_initialized() const;
 
+  uintptr_t start() const;
   size_t size() const;
 
   uintptr_t alloc(size_t size);
   void free();
 };
 
-class ZMarkStackAllocator {
+class ZMarkStackAllocator : public CHeapObj<mtGC> {
 private:
-  ZCACHE_ALIGNED ZMarkStackMagazineList _freelist;
   ZCACHE_ALIGNED ZMarkStackSpace        _space;
+  ZCACHE_ALIGNED ZMarkStackMagazineList _freelist;
 
   ZMarkStackMagazine* create_magazine_from_space(uintptr_t addr, size_t size);
 
@@ -66,6 +68,7 @@ public:
 
   bool is_initialized() const;
 
+  uintptr_t start() const;
   size_t size() const;
 
   ZMarkStackMagazine* alloc_magazine();

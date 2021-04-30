@@ -33,7 +33,6 @@ class nmethod;
 
 class BarrierSetNMethod: public CHeapObj<mtGC> {
   void deoptimize(nmethod* nm, address* return_addr_ptr);
-  int disarmed_value() const;
 
 public:
   bool supports_entry_barrier(nmethod* nm);
@@ -46,7 +45,9 @@ public:
   bool nmethod_osr_entry_barrier(nmethod* nm);
   bool is_armed(nmethod* nm);
   void disarm(nmethod* nm);
+  void disarm_with_value(nmethod* nm, int value);
+  int arm_value(nmethod* nm);
+  int disarmed_value() const;
 };
-
 
 #endif // SHARE_GC_SHARED_BARRIERSETNMETHOD_HPP
