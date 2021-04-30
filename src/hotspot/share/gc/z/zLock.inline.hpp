@@ -45,7 +45,7 @@ inline void ZLock::unlock() {
 
 inline ZReentrantLock::ZReentrantLock() :
     _lock(),
-    _owner(NULL),
+    _owner(nullptr),
     _count(0) {}
 
 inline void ZReentrantLock::lock() {
@@ -67,7 +67,7 @@ inline void ZReentrantLock::unlock() {
   _count--;
 
   if (_count == 0) {
-    Atomic::store(&_owner, (Thread*)NULL);
+    Atomic::store(&_owner, (Thread*)nullptr);
     _lock.unlock();
   }
 }
@@ -105,14 +105,14 @@ inline void ZConditionLock::notify_all() {
 template <typename T>
 inline ZLocker<T>::ZLocker(T* lock) :
     _lock(lock) {
-  if (_lock != NULL) {
+  if (_lock != nullptr) {
     _lock->lock();
   }
 }
 
 template <typename T>
 inline ZLocker<T>::~ZLocker() {
-  if (_lock != NULL) {
+  if (_lock != nullptr) {
     _lock->unlock();
   }
 }

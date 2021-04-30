@@ -30,7 +30,7 @@
 class ZAddressSpaceLimit : public AllStatic {
 public:
   static size_t mark_stack();
-  static size_t heap_view();
+  static size_t heap();
 };
 
 #endif // SHARE_GC_Z_ZADDRESSSPACELIMIT_HPP

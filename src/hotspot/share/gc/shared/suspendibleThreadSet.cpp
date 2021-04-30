@@ -91,7 +91,6 @@ void SuspendibleThreadSet::yield_slow() {
 }
 
 void SuspendibleThreadSet::synchronize() {
-  assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
   if (ConcGCYieldTimeout > 0) {
     _suspend_all_start = os::elapsedTime();
   }
@@ -126,7 +125,6 @@ void SuspendibleThreadSet::synchronize() {
 }
 
 void SuspendibleThreadSet::desynchronize() {
-  assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
   MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
   assert(should_yield(), "STS not synchronizing");
   assert(is_synchronized(), "STS not synchronized");
