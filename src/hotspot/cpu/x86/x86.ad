@@ -2119,6 +2119,10 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
     mstack.push(m, Visit);
     return true;
   }
+  if (is_vshift_con_pattern(n, m)) { // ShiftV src (ShiftCntV con)
+    mstack.push(m, Visit);           // m = ShiftCntV
+    return true;
+  }
   return false;
 }
 
