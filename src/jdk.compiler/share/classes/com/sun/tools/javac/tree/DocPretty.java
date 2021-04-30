@@ -520,8 +520,8 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
                 print(" ");
                 print(attrs, " ");
                 DocTree last = node.getAttributes().get(attrs.size() - 1);
-                if (node.isSelfClosing() && last instanceof AttributeTree
-                        && ((AttributeTree) last).getValueKind() == ValueKind.UNQUOTED)
+                if (node.isSelfClosing() && last instanceof AttributeTree attributeTree
+                        && attributeTree.getValueKind() == ValueKind.UNQUOTED)
                     print(" ");
             }
             if (node.isSelfClosing())
