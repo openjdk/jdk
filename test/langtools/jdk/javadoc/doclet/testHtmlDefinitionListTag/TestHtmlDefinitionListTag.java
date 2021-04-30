@@ -221,7 +221,6 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                      <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
                     </div>
                     <div class="block">This field indicates whether the C1 is undecorated.</div>
-                    &nbsp;
                     <dl class="notes">
                     <dt>Since:</dt>
                     <dd>1.4</dd>
@@ -235,6 +234,8 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     </div>
                     <div class="block">Reads the object stream.</div>
                     <dl class="notes">
+                    <dt>Parameters:</dt>
+                    <dd><code>s</code> - ObjectInputStream</dd>
                     <dt>Throws:</dt>
                     <dd><code>java.io.IOException</code></dd>
                     </dl>""",
@@ -310,7 +311,6 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                      <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
                     </div>
                     <div class="block">This field indicates whether the C1 is undecorated.</div>
-                    &nbsp;
                     <dl class="notes">
                     <dt>Since:</dt>
                     <dd>1.4</dd>
@@ -324,6 +324,8 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     </div>
                     <div class="block">Reads the object stream.</div>
                     <dl class="notes">
+                    <dt>Parameters:</dt>
+                    <dd><code>s</code> - ObjectInputStream</dd>
                     <dt>Throws:</dt>
                     <dd><code>java.io.IOException</code></dd>
                     </dl>""",

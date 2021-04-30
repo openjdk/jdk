@@ -493,7 +493,7 @@ public class Utils {
     }
 
     @SuppressWarnings("preview")
-    public String modifiersToString(Element e, boolean trailingSpace) {
+    public String modifiersToString(Element e) {
         SortedSet<Modifier> modifiers = new TreeSet<>(e.getModifiers());
         modifiers.remove(NATIVE);
         modifiers.remove(STRICTFP);
@@ -541,9 +541,6 @@ public class Utils {
 
             String finalString(String s) {
                 append(s);
-                if (trailingSpace) {
-                    sb.append(" ");
-                }
                 return sb.toString();
             }
 

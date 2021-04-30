@@ -92,27 +92,44 @@ public class Signatures {
     static class TypeSignature {
 
         private final TypeElement typeElement;
-        private final ClassWriterImpl classWriter;
+        private final HtmlDocletWriter writer;
         private final Utils utils;
         private final HtmlConfiguration configuration;
-        private Content modifiers;
+        private final Content modifiers;
 
-        TypeSignature(TypeElement typeElement, ClassWriterImpl classWriter) {
+        private static final Set<String> previewModifiers
+                = Set.of("sealed", "non-sealed");
+
+        TypeSignature(TypeElement typeElement, HtmlDocletWriter writer) {
             this.typeElement = typeElement;
-            this.classWriter = classWriter;
-            this.utils = classWriter.utils;
-            this.configuration = classWriter.configuration;
-        }
+            this.writer = writer;
+            this.utils = writer.utils;
+            this.configuration = writer.configuration;
+            this.modifiers = new ContentBuilder();
 
-        public TypeSignature setModifiers(Content modifiers) {
-            this.modifiers = modifiers;
-            return this;
+            String mods = utils.modifiersToString(typeElement);
+            String sep = null;
+            for (String modifiersPart : mods.split(" ")) {
+                if (sep != null) {
+                    modifiers.add(sep);
+                }
+                if (previewModifiers.contains(modifiersPart)) {
+                    modifiers.add(modifiersPart);
+                    modifiers.add(HtmlTree.SUP(writer.links.createLink(
+                            writer.htmlIds.forPreviewSection(typeElement),
+                            writer.contents.previewMark)));
+                } else {
+                    modifiers.add(modifiersPart);
+                }
+                sep = " ";
+            }
+            modifiers.add(" ");
         }
 
         @SuppressWarnings("preview")
         public Content toContent() {
             Content content = new ContentBuilder();
-            Content annotationInfo = classWriter.getAnnotationInfo(typeElement, true);
+            Content annotationInfo = writer.getAnnotationInfo(typeElement, true);
             if (!annotationInfo.isEmpty()) {
                 content.add(HtmlTree.SPAN(HtmlStyle.annotations, annotationInfo));
             }
@@ -120,8 +137,8 @@ public class Signatures {
 
             HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
             Content className = Text.of(utils.getSimpleName(typeElement));
-            if (classWriter.options.linkSource()) {
-                classWriter.addSrcLink(typeElement, className, nameSpan);
+            if (writer.options.linkSource()) {
+                writer.addSrcLink(typeElement, className, nameSpan);
             } else {
                 nameSpan.addStyle(HtmlStyle.typeNameLabel).add(className);
             }
@@ -129,7 +146,7 @@ public class Signatures {
                     HtmlLinkInfo.Kind.CLASS_SIGNATURE, typeElement);
             //Let's not link to ourselves in the signature.
             linkInfo.linkToSelf = false;
-            nameSpan.add(classWriter.getTypeParameterLinks(linkInfo));
+            nameSpan.add(writer.getTypeParameterLinks(linkInfo));
             content.add(nameSpan);
 
             if (utils.isRecord(typeElement)) {
@@ -143,7 +160,7 @@ public class Signatures {
                     if (superclass != null) {
                         content.add(DocletConstants.NL);
                         extendsImplements.add("extends ");
-                        Content link = classWriter.getLink(new HtmlLinkInfo(configuration,
+                        Content link = writer.getLink(new HtmlLinkInfo(configuration,
                                 HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
                                 superclass));
                         extendsImplements.add(link);
@@ -164,7 +181,7 @@ public class Signatures {
                         } else {
                             extendsImplements.add(", ");
                         }
-                        Content link = classWriter.getLink(new HtmlLinkInfo(configuration,
+                        Content link = writer.getLink(new HtmlLinkInfo(configuration,
                                 HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
                                 type));
                         extendsImplements.add(link);
@@ -186,21 +203,21 @@ public class Signatures {
                         content.add(DocletConstants.NL);
                         permitsSpan.add("permits");
                         Content link =
-                                classWriter.links.createLink(classWriter.htmlIds.forPreviewSection(typeElement),
-                                                             classWriter.contents.previewMark);
+                                writer.links.createLink(writer.htmlIds.forPreviewSection(typeElement),
+                                        writer.contents.previewMark);
                         permitsSpan.add(HtmlTree.SUP(link));
                         permitsSpan.add(" ");
                         isFirst = false;
                     } else {
                         permitsSpan.add(", ");
                     }
-                    Content link = classWriter.getLink(new HtmlLinkInfo(configuration,
+                    Content link = writer.getLink(new HtmlLinkInfo(configuration,
                             HtmlLinkInfo.Kind.PERMITTED_SUBCLASSES,
                             type));
                     permitsSpan.add(link);
                 }
                 if (linkablePermits.size() < permits.size()) {
-                    Content c = Text.of(classWriter.resources.getText("doclet.not.exhaustive"));
+                    Content c = Text.of(writer.resources.getText("doclet.not.exhaustive"));
                     permitsSpan.add(" ");
                     permitsSpan.add(HtmlTree.SPAN(HtmlStyle.permitsNote, c));
                 }
@@ -216,9 +233,9 @@ public class Signatures {
             String sep = "";
             for (RecordComponentElement e : typeElement.getRecordComponents()) {
                 content.add(sep);
-                classWriter.getAnnotations(e.getAnnotationMirrors(), false)
+                writer.getAnnotations(e.getAnnotationMirrors(), false)
                         .forEach(a -> { content.add(a).add(" "); });
-                Content link = classWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.RECORD_COMPONENT,
+                Content link = writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.RECORD_COMPONENT,
                         e.asType()));
                 content.add(link);
                 content.add(Entity.NO_BREAK_SPACE);
