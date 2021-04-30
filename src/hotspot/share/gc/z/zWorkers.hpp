@@ -25,24 +25,45 @@
 #define SHARE_GC_Z_ZWORKERS_HPP
 
 #include "gc/shared/workerThread.hpp"
+#include "gc/z/zGenerationId.hpp"
+#include "gc/z/zLock.hpp"
+#include "gc/z/zStat.hpp"
 
 class ThreadClosure;
+class ZRestartableTask;
+class ZStatCycle;
+class ZStatWorkers;
 class ZTask;
 
 class ZWorkers {
 private:
-  WorkerThreads _workers;
+  WorkerThreads       _workers;
+  const char* const   _generation_name;
+  ZLock               _resize_lock;
+  volatile uint       _requested_nworkers;
+  bool                _is_active;
+  ZStatWorkers* const _stats;
 
 public:
-  ZWorkers();
+  ZWorkers(ZGenerationId id, ZStatWorkers* stats);
 
+  bool is_active() const;
   uint active_workers() const;
   void set_active_workers(uint nworkers);
+  void set_active();
+  void set_inactive();
 
   void run(ZTask* task);
+  void run(ZRestartableTask* task);
   void run_all(ZTask* task);
 
   void threads_do(ThreadClosure* tc) const;
+
+  // Worker resizing
+  ZLock* resizing_lock();
+  void request_resize_workers(uint nworkers);
+
+  bool should_worker_resize();
 };
 
 #endif // SHARE_GC_Z_ZWORKERS_HPP

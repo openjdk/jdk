@@ -25,11 +25,17 @@
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
+#include "gc/z/zBarrierSetStackChunk.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zThreadLocalData.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/registerMap.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "gc/z/c1/zBarrierSetC1.hpp"
@@ -46,6 +52,7 @@ ZBarrierSet::ZBarrierSet() :
                make_barrier_set_c1<ZBarrierSetC1>(),
                make_barrier_set_c2<ZBarrierSetC2>(),
                new ZBarrierSetNMethod(),
+               new ZBarrierSetStackChunk(),
                BarrierSet::FakeRtti(BarrierSet::ZBarrierSet)) {}
 
 ZBarrierSetAssembler* ZBarrierSet::assembler() {
@@ -78,18 +85,46 @@ void ZBarrierSet::on_thread_destroy(Thread* thread) {
 }
 
 void ZBarrierSet::on_thread_attach(Thread* thread) {
-  // Set thread local address bad mask
-  ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
+  // Set thread local masks
+  ZThreadLocalData::set_load_bad_mask(thread, ZPointerLoadBadMask);
+  ZThreadLocalData::set_load_good_mask(thread, ZPointerLoadGoodMask);
+  ZThreadLocalData::set_mark_bad_mask(thread, ZPointerMarkBadMask);
+  ZThreadLocalData::set_store_bad_mask(thread, ZPointerStoreBadMask);
+  ZThreadLocalData::set_store_good_mask(thread, ZPointerStoreGoodMask);
+  ZThreadLocalData::set_nmethod_disarmed(thread, ZPointerStoreGoodMask);
   if (thread->is_Java_thread()) {
     JavaThread* const jt = JavaThread::cast(thread);
     StackWatermark* const watermark = new ZStackWatermark(jt);
     StackWatermarkSet::add_watermark(jt, watermark);
+    ZThreadLocalData::store_barrier_buffer(jt)->initialize();
   }
 }
 
 void ZBarrierSet::on_thread_detach(Thread* thread) {
   // Flush and free any remaining mark stacks
-  ZHeap::heap()->mark_flush_and_free(thread);
+  ZGeneration::young()->mark_flush_and_free(thread);
+  ZGeneration::old()->mark_flush_and_free(thread);
+}
+
+void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
+  if (ZHeap::heap()->is_old(to_zaddress(new_obj))) {
+    RegisterMap reg_map(thread, RegisterMap::UpdateMap::skip,
+                                RegisterMap::ProcessFrames::include,
+                                RegisterMap::WalkContinuation::skip);
+    frame runtime_frame = thread->last_frame();
+    assert(runtime_frame.is_runtime_frame(), "must be runtime frame");
+    frame caller_frame = runtime_frame.sender(&reg_map);
+    assert(caller_frame.is_compiled_frame(), "must be compiled");
+    nmethod* nm = caller_frame.cb()->as_nmethod();
+    if (nm->is_compiled_by_c2()) {
+      // We promised C2 that its allocations would end up in young gen. This object
+      // breaks that promise. Take a few steps in the interpreter instead, which has
+      // no such assumptions about where an object resides.
+      if (!caller_frame.is_deoptimized_frame()) {
+        Deoptimization::deoptimize_frame(thread, caller_frame.id());
+      }
+    }
+  }
 }
 
 void ZBarrierSet::print_on(outputStream* st) const {

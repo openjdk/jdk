@@ -33,7 +33,8 @@
     // the two lowest offset bits can always be discarded.
     offset_unit        =  4,
     // Must be at least 1 for RelocInfo::narrow_oop_in_const.
-    format_width       =  1
+    // Must be at least 2 for ZGC GC barrier patching.
+    format_width       =  2
   };
 
  public:

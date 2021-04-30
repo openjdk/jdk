@@ -1450,6 +1450,7 @@ class StubGenerator: public StubCodeGenerator {
     __ b(finish);
 
     if (granularity < 8) {
+      // TODO: Interface primitives for completeness?
       // 4..7 bytes
       __ bind(copy8);
       __ tbz(count, 2 - exact_log2(granularity), copy4);
@@ -2076,11 +2077,11 @@ class StubGenerator: public StubCodeGenerator {
 #endif //ASSERT
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_CHECKCAST | ARRAYCOPY_DISJOINT;
-    bool is_oop = true;
-    int element_size = UseCompressedOops ? 4 : 8;
     if (dest_uninitialized) {
       decorators |= IS_DEST_UNINITIALIZED;
     }
+    bool is_oop = true;
+    int element_size = UseCompressedOops ? 4 : 8;
 
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, is_oop, from, to, count, wb_pre_saved_regs);
@@ -8286,7 +8287,6 @@ OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
   __ sub(sp, sp, (int)ContinuationEntry::size()); // place Continuation metadata
 
   OopMap* map = new OopMap(((int)ContinuationEntry::size() + wordSize)/ VMRegImpl::stack_slot_size, 0 /* arg_slots*/);
-  ContinuationEntry::setup_oopmap(map);
 
   __ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
   __ str(rscratch1, Address(sp, ContinuationEntry::parent_offset()));

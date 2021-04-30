@@ -64,7 +64,7 @@ void ZThreadLocalAllocBuffer::publish_statistics() {
 }
 
 static void fixup_address(HeapWord** p) {
-  *p = (HeapWord*)ZAddress::good_or_null((uintptr_t)*p);
+  *p = (HeapWord*)*p;
 }
 
 void ZThreadLocalAllocBuffer::retire(JavaThread* thread, ThreadLocalAllocStats* stats) {

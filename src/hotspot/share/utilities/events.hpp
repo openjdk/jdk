@@ -223,6 +223,9 @@ class Events : AllStatic {
   // A log for VM Operations
   static StringEventLog* _vm_operations;
 
+    // A log for ZGC phase switches
+  static StringEventLog* _zgc_phase_switch;
+
   // A log for internal exception related messages, like internal
   // throws and implicit exceptions.
   static ExceptionsEventLog* _exceptions;
@@ -258,6 +261,8 @@ class Events : AllStatic {
 
   static void log_vm_operation(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
+  static void log_zgc_phase_switch(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
+
   // Log exception related message
   static void log_exception(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
   static void log_exception(Thread* thread, Handle h_exception, const char* message, const char* file, int line);
@@ -290,6 +295,15 @@ inline void Events::log_vm_operation(Thread* thread, const char* format, ...) {
     va_list ap;
     va_start(ap, format);
     _vm_operations->logv(thread, format, ap);
+    va_end(ap);
+  }
+}
+
+inline void Events::log_zgc_phase_switch(const char* format, ...) {
+  if (LogEvents && _zgc_phase_switch != NULL) {
+    va_list ap;
+    va_start(ap, format);
+    _zgc_phase_switch->logv(NULL /* thread */, format, ap);
     va_end(ap);
   }
 }
@@ -468,6 +482,7 @@ class EventMarkBase : public StackObj {
   void log_start(const char* format, va_list argp) ATTRIBUTE_PRINTF(2, 0);
   void log_end();
 
+ public:
   EventMarkBase(EventLogFunction log_function);
 };
 

@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZROOTSITERATOR_HPP
 
 #include "gc/shared/oopStorageSetParState.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/threadSMR.hpp"
@@ -36,8 +37,8 @@ private:
   volatile bool _completed;
 
 public:
-  ZParallelApply() :
-      _iter(),
+  ZParallelApply(ZGenerationIdOptional generation) :
+      _iter(generation),
       _completed(false) {}
 
   template <typename ClosureType>
@@ -48,77 +49,196 @@ public:
   }
 };
 
-class ZStrongOopStorageSetIterator {
+class ZOopStorageSetIteratorStrong {
+private:
   OopStorageSetStrongParState<true /* concurrent */, false /* is_const */> _iter;
+  const ZGenerationIdOptional _generation;
 
 public:
-  ZStrongOopStorageSetIterator();
+  ZOopStorageSetIteratorStrong(ZGenerationIdOptional generation) :
+      _iter(),
+      _generation(generation) {}
 
   void apply(OopClosure* cl);
 };
 
-class ZStrongCLDsIterator {
+class ZOopStorageSetIteratorWeak {
+private:
+  OopStorageSetWeakParState<true /* concurrent */, false /* is_const */> _iter;
+  const ZGenerationIdOptional _generation;
+
 public:
+  ZOopStorageSetIteratorWeak(ZGenerationIdOptional generation) :
+      _iter(),
+      _generation(generation) {}
+
+  void apply(OopClosure* cl);
+
+  void report_num_dead();
+};
+
+class ZCLDsIteratorStrong {
+private:
+  const ZGenerationIdOptional _generation;
+
+public:
+  ZCLDsIteratorStrong(ZGenerationIdOptional generation) :
+      _generation(generation) {}
+
+  void apply(CLDClosure* cl);
+};
+
+class ZCLDsIteratorWeak {
+private:
+  const ZGenerationIdOptional _generation;
+
+public:
+  ZCLDsIteratorWeak(ZGenerationIdOptional generation) :
+      _generation(generation) {}
+
+  void apply(CLDClosure* cl);
+};
+
+class ZCLDsIteratorAll {
+private:
+  const ZGenerationIdOptional _generation;
+
+public:
+  ZCLDsIteratorAll(ZGenerationIdOptional generation) :
+      _generation(generation) {}
+
   void apply(CLDClosure* cl);
 };
 
 class ZJavaThreadsIterator {
 private:
-  ThreadsListHandle _threads;
-  volatile uint     _claimed;
+  ThreadsListHandle           _threads;
+  volatile uint               _claimed;
+  const ZGenerationIdOptional _generation;
 
   uint claim();
 
 public:
-  ZJavaThreadsIterator();
+  ZJavaThreadsIterator(ZGenerationIdOptional generation) :
+      _threads(),
+      _claimed(0),
+      _generation(generation) {}
 
   void apply(ThreadClosure* cl);
 };
 
-class ZNMethodsIterator {
-public:
-  ZNMethodsIterator();
-  ~ZNMethodsIterator();
+class ZNMethodsIteratorImpl {
+private:
+  const bool                  _enabled;
+  const bool                  _secondary;
+  const ZGenerationIdOptional _generation;
 
+protected:
+  ZNMethodsIteratorImpl(ZGenerationIdOptional generation, bool enabled, bool secondary);
+  ~ZNMethodsIteratorImpl();
+
+public:
   void apply(NMethodClosure* cl);
 };
 
-class ZRootsIterator {
+class ZNMethodsIteratorStrong : public ZNMethodsIteratorImpl {
+public:
+  ZNMethodsIteratorStrong(ZGenerationIdOptional generation) :
+      ZNMethodsIteratorImpl(generation, !ClassUnloading /* enabled */, false /* secondary */) {}
+};
+
+class ZNMethodsIteratorWeak : public ZNMethodsIteratorImpl {
+public:
+  ZNMethodsIteratorWeak(ZGenerationIdOptional generation) :
+      ZNMethodsIteratorImpl(generation, true /* enabled */, true /* secondary */) {}
+};
+
+class ZNMethodsIteratorAll : public ZNMethodsIteratorImpl {
+public:
+  ZNMethodsIteratorAll(ZGenerationIdOptional generation) :
+      ZNMethodsIteratorImpl(generation, true /* enabled */, true /* secondary */) {}
+};
+
+class ZRootsIteratorStrongUncolored {
 private:
-  ZParallelApply<ZStrongOopStorageSetIterator> _oop_storage_set;
-  ZParallelApply<ZStrongCLDsIterator>          _class_loader_data_graph;
-  ZParallelApply<ZJavaThreadsIterator>         _java_threads;
-  ZParallelApply<ZNMethodsIterator>            _nmethods;
+  ZParallelApply<ZJavaThreadsIterator>    _java_threads;
+  ZParallelApply<ZNMethodsIteratorStrong> _nmethods_strong;
 
 public:
-  ZRootsIterator(int cld_claim);
+  ZRootsIteratorStrongUncolored(ZGenerationIdOptional generation) :
+      _java_threads(generation),
+      _nmethods_strong(generation) {}
 
-  void apply(OopClosure* cl,
-             CLDClosure* cld_cl,
-             ThreadClosure* thread_cl,
+  void apply(ThreadClosure* thread_cl,
              NMethodClosure* nm_cl);
 };
 
-class ZWeakOopStorageSetIterator {
+class ZRootsIteratorWeakUncolored {
 private:
-  OopStorageSetWeakParState<true /* concurrent */, false /* is_const */> _iter;
+  ZParallelApply<ZNMethodsIteratorWeak> _nmethods_weak;
 
 public:
-  ZWeakOopStorageSetIterator();
+  ZRootsIteratorWeakUncolored(ZGenerationIdOptional generation) :
+      _nmethods_weak(generation) {}
+
+  void apply(NMethodClosure* nm_cl);
+};
+
+class ZRootsIteratorAllUncolored {
+private:
+  ZParallelApply<ZJavaThreadsIterator> _java_threads;
+  ZParallelApply<ZNMethodsIteratorAll> _nmethods_all;
+
+public:
+  ZRootsIteratorAllUncolored(ZGenerationIdOptional generation) :
+      _java_threads(generation),
+      _nmethods_all(generation) {}
+
+  void apply(ThreadClosure* thread_cl,
+             NMethodClosure* nm_cl);
+};
+
+class ZRootsIteratorStrongColored {
+private:
+  ZParallelApply<ZOopStorageSetIteratorStrong> _oop_storage_set_strong;
+  ZParallelApply<ZCLDsIteratorStrong>          _clds_strong;
+
+public:
+  ZRootsIteratorStrongColored(ZGenerationIdOptional generation) :
+      _oop_storage_set_strong(generation),
+      _clds_strong(generation) {}
+
+  void apply(OopClosure* cl,
+             CLDClosure* cld_cl);
+};
+
+class ZRootsIteratorWeakColored {
+private:
+  ZParallelApply<ZOopStorageSetIteratorWeak> _oop_storage_set_weak;
+
+public:
+  ZRootsIteratorWeakColored(ZGenerationIdOptional generation) :
+      _oop_storage_set_weak(generation) {}
 
   void apply(OopClosure* cl);
 
   void report_num_dead();
 };
 
-class ZWeakRootsIterator {
+class ZRootsIteratorAllColored {
 private:
-  ZParallelApply<ZWeakOopStorageSetIterator> _oop_storage_set;
+  ZParallelApply<ZOopStorageSetIteratorStrong> _oop_storage_set_strong;
+  ZParallelApply<ZOopStorageSetIteratorWeak>   _oop_storage_set_weak;
+  ZParallelApply<ZCLDsIteratorAll>             _clds_all;
 
 public:
-  void apply(OopClosure* cl);
+  ZRootsIteratorAllColored(ZGenerationIdOptional generation) :
+      _oop_storage_set_strong(generation),
+      _oop_storage_set_weak(generation),
+      _clds_all(generation) {}
 
-  void report_num_dead();
+  void apply(OopClosure* cl,
+             CLDClosure* cld_cl);
 };
 
 #endif // SHARE_GC_Z_ZROOTSITERATOR_HPP

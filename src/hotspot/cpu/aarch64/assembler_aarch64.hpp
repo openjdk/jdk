@@ -424,7 +424,7 @@ class Address {
 
   Register base() const {
     guarantee((_mode == base_plus_offset || _mode == base_plus_offset_reg
-               || _mode == post || _mode == post_reg),
+               || _mode == post || _mode == post_reg || _mode == pre),
               "wrong mode");
     return _base;
   }

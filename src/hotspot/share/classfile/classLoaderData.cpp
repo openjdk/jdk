@@ -281,6 +281,10 @@ void ClassLoaderData::clear_claim(int claim) {
   }
 }
 
+void ClassLoaderData::verify_not_claimed(int claim) {
+  assert((_claim & claim) == 0, "Found a problem: %d", _claim);
+}
+
 bool ClassLoaderData::try_claim(int claim) {
   for (;;) {
     int old_claim = Atomic::load(&_claim);

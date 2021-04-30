@@ -31,28 +31,16 @@ class ZPageAllocator;
 
 class ZVerify : public AllStatic {
 private:
-  static void roots_strong(bool verify_fixed);
+  static void roots_strong(bool verify_after_old_mark);
   static void roots_weak();
 
   static void objects(bool verify_weaks);
+  static void threads_start_processing();
 
 public:
   static void before_zoperation();
   static void after_mark();
   static void after_weak_processing();
-
-  static void verify_thread_head_bad(JavaThread* thread) NOT_DEBUG_RETURN;
-  static void verify_thread_frames_bad(JavaThread* thread) NOT_DEBUG_RETURN;
-  static void verify_frame_bad(const frame& fr, RegisterMap& register_map) NOT_DEBUG_RETURN;
-};
-
-class ZVerifyViewsFlip {
-private:
-  const ZPageAllocator* const _allocator;
-
-public:
-  ZVerifyViewsFlip(const ZPageAllocator* allocator);
-  ~ZVerifyViewsFlip();
 };
 
 #endif // SHARE_GC_Z_ZVERIFY_HPP

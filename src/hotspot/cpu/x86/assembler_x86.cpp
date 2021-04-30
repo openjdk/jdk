@@ -6028,8 +6028,11 @@ void Assembler::testw(Register dst, int16_t imm16) {
 }
 
 void Assembler::testl(Address dst, int32_t imm32) {
+  if (imm32 >= 0 && is8bit(imm32)) {
+    testb(dst, imm32);
+    return;
+  }
   InstructionMark im(this);
-  prefix(dst);
   emit_int8((unsigned char)0xF7);
   emit_operand(as_Register(0), dst, 4);
   emit_int32(imm32);

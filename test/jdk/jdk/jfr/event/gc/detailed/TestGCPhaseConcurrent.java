@@ -35,7 +35,7 @@ import jdk.test.lib.jfr.Events;
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
  * @requires vm.hasJFR & vm.gc.Z
- * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent
+ * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent Z
  */
 
 /**
@@ -43,14 +43,20 @@ import jdk.test.lib.jfr.Events;
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
  * @requires vm.hasJFR & vm.gc.Shenandoah
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent Shenandoah
  */
 public class TestGCPhaseConcurrent {
     public static void main(String[] args) throws Exception {
+      boolean usesZGC = args[0].equals("Z");
+
         try (Recording recording = new Recording()) {
             // Activate the event we are interested in and start recording
             recording.enable(EventNames.GCPhaseConcurrent);
             recording.enable(EventNames.GCPhaseConcurrentLevel1);
+            if (usesZGC) {
+              recording.enable(EventNames.GCPhaseConcurrentLevel2);
+              recording.enable(EventNames.GCPhaseConcurrentLevel3);
+            }
             recording.start();
 
             // Run GC to get concurrent phases
@@ -63,6 +69,10 @@ public class TestGCPhaseConcurrent {
             Events.hasEvents(events);
             Events.hasEvent(events, EventNames.GCPhaseConcurrent);
             Events.hasEvent(events, EventNames.GCPhaseConcurrentLevel1);
+            if (usesZGC) {
+              Events.hasEvent(events, EventNames.GCPhaseConcurrentLevel2);
+              Events.hasEvent(events, EventNames.GCPhaseConcurrentLevel3);
+            }
 
             for (RecordedEvent event : events) {
                 System.out.println("Event:" + event);
