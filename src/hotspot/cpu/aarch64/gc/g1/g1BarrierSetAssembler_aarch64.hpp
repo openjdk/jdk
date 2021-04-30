@@ -45,7 +45,8 @@ protected:
                             Register obj,
                             Register pre_val,
                             Register thread,
-                            Register tmp,
+                            Register tmp1,
+                            Register tmp2,
                             bool tosca_live,
                             bool expand_call);
 

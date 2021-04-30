@@ -219,8 +219,12 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
   // Print a hint as to the underlying integer representation. This can be wrong for
   // pointers on an LP64 machine
 #ifdef _LP64
-  if (is_reference_type(ft) && UseCompressedOops) {
-    st->print(" (%x)", obj->int_field(offset()));
+  if (is_reference_type(ft)) {
+    if (UseCompressedOops) {
+      st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));
+    } else {
+      st->print(" (" PTR_FORMAT ")", obj->long_field(offset()));
+    }
   }
   else // <- intended
 #endif

@@ -282,7 +282,7 @@ void DiscoveredListIterator::make_referent_alive() {
 }
 
 void DiscoveredListIterator::clear_referent() {
-  java_lang_ref_Reference::clear_referent(_current_discovered);
+  java_lang_ref_Reference::clear_referent_raw(_current_discovered);
 }
 
 void DiscoveredListIterator::enqueue() {

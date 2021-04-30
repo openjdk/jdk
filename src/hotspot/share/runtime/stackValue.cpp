@@ -41,18 +41,6 @@
 class RegisterMap;
 class SmallRegisterMap;
 
-
-template <typename OopT>
-static oop read_oop_local(OopT* p) {
-  // We can't do a native access directly from p because load barriers
-  // may self-heal. If that happens on a base pointer for compressed oops,
-  // then there will be a crash later on. Only the stack watermark API is
-  // allowed to heal oops, because it heals derived pointers before their
-  // corresponding base pointers.
-  oop obj = RawAccess<>::oop_load(p);
-  return NativeAccess<>::oop_load(&obj);
-}
-
 template StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv);
 template StackValue* StackValue::create_stack_value(const frame* fr, const SmallRegisterMap* reg_map, ScopeValue* sv);
 
@@ -61,11 +49,84 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMapT* 
   return create_stack_value(sv, stack_value_address(fr, reg_map, sv), reg_map);
 }
 
-template StackValue* StackValue::create_stack_value(ScopeValue*, address, const RegisterMap*);
-template StackValue* StackValue::create_stack_value(ScopeValue*, address, const SmallRegisterMap*);
+static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
+  if (addr == nullptr) {
+    return nullptr;
+  }
+
+  if (UseCompressedOops) {
+    // When compressed oops is enabled, an oop location may
+    // contain narrow oop values - we deal with that here
+
+    if (chunk != NULL && chunk->has_bitmap()) {
+      // Transformed stack chunk with narrow oops
+      return chunk->load_oop((narrowOop*)addr);
+    }
+
+#ifdef _LP64
+    if (CompressedOops::is_base(*(void**)addr)) {
+      // Compiled code may produce decoded oop = narrow_oop_base
+      // when a narrow oop implicit null check is used.
+      // The narrow_oop_base could be NULL or be the address
+      // of the page below heap. Use NULL value for both cases.
+      return nullptr;
+    }
+#endif
+  }
+
+  if (chunk != NULL) {
+    // Load oop from chunk
+    return chunk->load_oop((oop*)addr);
+  }
+
+  // Load oop from stack
+  return *(oop*)addr;
+}
+
+static oop oop_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_register) {
+  assert(UseCompressedOops, "Narrow oops should not exist");
+  assert(addr != nullptr, "Not expecting null address");
+  narrowOop* narrow_addr;
+  if (is_register) {
+    // The callee has no clue whether the register holds an int,
+    // long or is unused.  He always saves a long.  Here we know
+    // a long was saved, but we only want an int back.  Narrow the
+    // saved long to the int that the JVM wants.  We can't just
+    // use narrow_oop_cast directly, because we don't know what
+    // the high bits of the value might be.
+    narrow_addr = ((narrowOop*)addr) BIG_ENDIAN_ONLY(+ 1);
+  } else {
+    narrow_addr = (narrowOop*)addr;
+  }
+
+  if (chunk != NULL) {
+    // Load oop from chunk
+    return chunk->load_oop(narrow_addr);
+  }
+
+  // Load oop from stack
+  return CompressedOops::decode(*narrow_addr);
+}
+
+StackValue* StackValue::create_stack_value_from_oop_location(stackChunkOop chunk, void* addr) {
+  oop val = oop_from_oop_location(chunk, addr);
+  assert(oopDesc::is_oop_or_null(val), "bad oop found at " INTPTR_FORMAT " in_cont: %d compressed: %d",
+         p2i(addr), chunk != NULL, chunk != NULL && chunk->has_bitmap() && UseCompressedOops);
+  Handle h(Thread::current(), val); // Wrap a handle around the oop
+  return new StackValue(h);
+}
+
+StackValue* StackValue::create_stack_value_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_register) {
+  oop val = oop_from_narrowOop_location(chunk, addr, is_register);
+  assert(oopDesc::is_oop_or_null(val), "bad oop found at " INTPTR_FORMAT " in_cont: %d compressed: %d",
+         p2i(addr), chunk != NULL, chunk != NULL && chunk->has_bitmap() && UseCompressedOops);
+  Handle h(Thread::current(), val); // Wrap a handle around the oop
+  return new StackValue(h);
+}
 
 template<typename RegisterMapT>
 StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, const RegisterMapT* reg_map) {
+  stackChunkOop chunk = reg_map->stack_chunk()();
   if (sv->is_location()) {
     // Stack or register value
     Location loc = ((LocationValue *)sv)->location();
@@ -111,51 +172,11 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
     case Location::lng:
       // Long   value in an aligned adjacent pair
       return new StackValue(*(intptr_t*)value_addr);
-    case Location::narrowoop: {
-      assert(UseCompressedOops, "");
-      union { intptr_t p; narrowOop noop;} value;
-      value.p = (intptr_t) CONST64(0xDEADDEAFDEADDEAF);
-      if (loc.is_register()) {
-        // The callee has no clue whether the register holds an int,
-        // long or is unused.  He always saves a long.  Here we know
-        // a long was saved, but we only want an int back.  Narrow the
-        // saved long to the int that the JVM wants.  We can't just
-        // use narrow_oop_cast directly, because we don't know what
-        // the high bits of the value might be.
-        static_assert(sizeof(narrowOop) == sizeof(juint), "size mismatch");
-        juint narrow_value = (juint) *(julong*)value_addr;
-        value.noop = CompressedOops::narrow_oop_cast(narrow_value);
-      } else {
-        value.noop = *(narrowOop*) value_addr;
-      }
-      // Decode narrowoop
-      oop val = read_oop_local(&value.noop);
-      Handle h(Thread::current(), val); // Wrap a handle around the oop
-      return new StackValue(h);
-    }
+    case Location::narrowoop:
+      return create_stack_value_from_narrowOop_location(reg_map->stack_chunk()(), (void*)value_addr, loc.is_register());
 #endif
-    case Location::oop: {
-      oop val;
-      if (reg_map->in_cont() && reg_map->stack_chunk()->has_bitmap() && UseCompressedOops) {
-        val = CompressedOops::decode(*(narrowOop*)value_addr);
-      } else {
-        val = *(oop *)value_addr;
-      }
-#ifdef _LP64
-      if (CompressedOops::is_base(val)) {
-         // Compiled code may produce decoded oop = narrow_oop_base
-         // when a narrow oop implicit null check is used.
-         // The narrow_oop_base could be NULL or be the address
-         // of the page below heap. Use NULL value for both cases.
-         val = (oop)NULL;
-      }
-#endif
-      val = read_oop_local(&val);
-      assert(oopDesc::is_oop_or_null(val), "bad oop found at " INTPTR_FORMAT " in_cont: %d compressed: %d",
-        p2i(value_addr), reg_map->in_cont(), reg_map->in_cont() && reg_map->stack_chunk()->has_bitmap() && UseCompressedOops);
-      Handle h(Thread::current(), val); // Wrap a handle around the oop
-      return new StackValue(h);
-    }
+    case Location::oop:
+      return create_stack_value_from_oop_location(reg_map->stack_chunk()(), (void*)value_addr);
     case Location::addr: {
       loc.print_on(tty);
       ShouldNotReachHere(); // both C1 and C2 now inline jsrs

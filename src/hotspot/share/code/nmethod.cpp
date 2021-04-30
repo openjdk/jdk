@@ -44,6 +44,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -1064,7 +1065,8 @@ void nmethod::fix_oop_relocations(address begin, address end, bool initialize_im
       oop_Relocation* reloc = iter.oop_reloc();
       if (initialize_immediates && reloc->oop_is_immediate()) {
         oop* dest = reloc->oop_addr();
-        initialize_immediate_oop(dest, cast_from_oop<jobject>(*dest));
+        jobject obj = *reinterpret_cast<jobject*>(dest);
+        initialize_immediate_oop(dest, obj);
       }
       // Refresh the oop-related bits of this instruction.
       reloc->fix_oop_relocation();
@@ -1413,14 +1415,16 @@ oop nmethod::oop_at(int index) const {
   if (index == 0) {
     return NULL;
   }
-  return NativeAccess<AS_NO_KEEPALIVE>::oop_load(oop_addr_at(index));
+
+  return NMethodAccess<AS_NO_KEEPALIVE>::oop_load(oop_addr_at(index));
 }
 
 oop nmethod::oop_at_phantom(int index) const {
   if (index == 0) {
     return NULL;
   }
-  return NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(oop_addr_at(index));
+
+  return NMethodAccess<ON_PHANTOM_OOP_REF>::oop_load(oop_addr_at(index));
 }
 
 //

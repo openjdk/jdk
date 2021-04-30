@@ -112,13 +112,13 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   // Thus, there's nothing to do here.
 }
 
-void BarrierSetNMethod::disarm(nmethod* nm) {
+void BarrierSetNMethod::disarm_with_value(nmethod* nm, int value) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
 
   NativeNMethodBarrier* barrier = get_nmethod_barrier(nm);
-  barrier->release_set_guard_value(disarmed_value());
+  barrier->release_set_guard_value(value);
 }
 
 void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
@@ -137,4 +137,13 @@ bool BarrierSetNMethod::is_armed(nmethod* nm) {
 
   NativeNMethodBarrier* barrier = get_nmethod_barrier(nm);
   return barrier->get_guard_value() != disarmed_value();
+}
+
+int BarrierSetNMethod::arm_value(nmethod* nm) {
+  if (!supports_entry_barrier(nm)) {
+    return 0;
+  }
+
+  NativeNMethodBarrier* barrier = get_nmethod_barrier(nm);
+  return barrier->get_guard_value();
 }

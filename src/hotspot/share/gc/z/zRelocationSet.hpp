@@ -26,8 +26,12 @@
 
 #include "gc/z/zArray.hpp"
 #include "gc/z/zForwardingAllocator.hpp"
+#include "gc/z/zLock.hpp"
 
 class ZForwarding;
+class ZGeneration;
+class ZPage;
+class ZPageAllocator;
 class ZRelocationSetSelector;
 class ZWorkers;
 
@@ -35,16 +39,26 @@ class ZRelocationSet {
   template <bool> friend class ZRelocationSetIteratorImpl;
 
 private:
-  ZWorkers*            _workers;
+  ZGeneration*         _generation;
   ZForwardingAllocator _allocator;
   ZForwarding**        _forwardings;
   size_t               _nforwardings;
+  ZLock                _promotion_lock;
+  ZArray<ZPage*>       _flip_promoted_pages;
+  ZArray<ZPage*>       _in_place_relocate_promoted_pages;
+
+  ZWorkers* workers() const;
 
 public:
-  ZRelocationSet(ZWorkers* workers);
+  ZRelocationSet(ZGeneration* generation);
 
   void install(const ZRelocationSetSelector* selector);
-  void reset();
+  void reset(ZPageAllocator* page_allocator);
+  ZGeneration* generation() const;
+  ZArray<ZPage*>* flip_promoted_pages();
+
+  void register_flip_promoted(const ZArray<ZPage*>& pages);
+  void register_in_place_relocate_promoted(ZPage* page);
 };
 
 template <bool Parallel>

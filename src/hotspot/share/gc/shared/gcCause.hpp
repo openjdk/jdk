@@ -87,8 +87,8 @@ class GCCause : public AllStatic {
     _z_warmup,
     _z_allocation_rate,
     _z_allocation_stall,
-    _z_proactive,
     _z_high_usage,
+    _z_proactive,
 
     _last_gc_cause
   };
@@ -105,7 +105,7 @@ class GCCause : public AllStatic {
             cause == GCCause::_heap_dump);
   }
 
-  // Causes for collection of the tenured gernation
+  // Causes for collection of the tenured generation
   inline static bool is_tenured_allocation_failure_gc(GCCause::Cause cause) {
     // _adaptive_size_policy for a full collection after a young GC
     // _allocation_failure is the generic cause a collection which could result

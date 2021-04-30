@@ -690,7 +690,6 @@ class MacroAssembler: public Assembler {
 
   // Access heap oop, handle encoding and GC barriers.
   // Some GC barriers call C so use needs_frame = true if an extra frame is needed at the current call site.
- private:
   inline void access_store_at(BasicType type, DecoratorSet decorators,
                               Register base, RegisterOrConstant ind_or_offs, Register val,
                               Register tmp1, Register tmp2, Register tmp3,

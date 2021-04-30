@@ -332,22 +332,11 @@ static StackValue* create_stack_value_from_oop_map(const InterpreterOopMap& oop_
                                                    const intptr_t* const addr,
                                                    stackChunkOop chunk) {
 
-  assert(index >= 0 &&
-         index < oop_mask.number_of_entries(), "invariant");
+  assert(index >= 0 && index < oop_mask.number_of_entries(), "invariant");
 
   // categorize using oop_mask
   if (oop_mask.is_oop(index)) {
-    oop obj = NULL;
-    if (addr != NULL) {
-      if (chunk != NULL) {
-        obj = (chunk->has_bitmap() && UseCompressedOops) ? (oop)HeapAccess<>::oop_load((narrowOop*)addr) : HeapAccess<>::oop_load((oop*)addr);
-      } else {
-        obj = *(oop*)addr;
-      }
-    }
-    // reference (oop) "r"
-    Handle h(Thread::current(), obj);
-    return new StackValue(h);
+    return StackValue::create_stack_value_from_oop_location(chunk, (void*)addr);
   }
   // value (integer) "v"
   return new StackValue(addr != NULL ? *addr : 0);

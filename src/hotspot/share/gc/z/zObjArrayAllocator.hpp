@@ -27,10 +27,13 @@
 #include "gc/shared/memAllocator.hpp"
 
 class ZObjArrayAllocator : public ObjArrayAllocator {
-public:
-  ZObjArrayAllocator(Klass* klass, size_t word_size, int length, Thread* thread);
+private:
+  virtual oop initialize(HeapWord* mem) const override;
 
-  virtual oop finish(HeapWord* mem) const;
+  void yield_for_safepoint() const;
+
+public:
+  ZObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero, Thread* thread);
 };
 
 #endif // SHARE_GC_Z_ZOBJARRAYALLOCATOR_HPP
