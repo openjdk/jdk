@@ -29,7 +29,6 @@
  *   to getThreadInfo() and ThreadInfo.getLockOwnerName() until the thread
  *   has exited.
  * @requires vm.jvmti
- * @library /test/lib
  * @run main/othervm/native -agentlib:getLockOwnerName getLockOwnerName
  */
 
