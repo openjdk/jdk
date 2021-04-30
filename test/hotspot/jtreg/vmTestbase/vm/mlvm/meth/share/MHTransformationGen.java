@@ -89,7 +89,7 @@ public class MHTransformationGen {
         // |       1        |   100-200 K   |  400-500 K |
         // |      10        |    1 - 2 M    |    5-6 M   |
         //
-        // Those numbers are approximate (since threes are generated randomly and the total consumption
+        // Those numbers are approximate (since trees are generated randomly and the total consumption
         // between checks depends on how threads are aligned - for example, if all threads finish up their
         // cycles approximately at one time, the consumption increase will be the highest, like with a
         // resonance's amplitude)
