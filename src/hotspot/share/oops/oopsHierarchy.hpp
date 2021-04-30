@@ -169,6 +169,10 @@ template <typename T> inline T cast_from_oop(oop o) {
   return (T)(CHECK_UNHANDLED_OOPS_ONLY((oopDesc*))o);
 }
 
+inline intptr_t p2i(narrowOop o) {
+  return static_cast<intptr_t>(o);
+}
+
 // The metadata hierarchy is separate from the oop hierarchy
 
 //      class MetaspaceObj

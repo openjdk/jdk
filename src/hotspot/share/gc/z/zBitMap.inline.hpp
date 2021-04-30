@@ -30,8 +30,23 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 
+
+inline ZMovableBitMap::ZMovableBitMap() :
+    CHeapBitMap(mtGC) {}
+
+inline ZMovableBitMap::ZMovableBitMap(ZMovableBitMap&& bitmap) :
+    CHeapBitMap(mtGC) {
+  update(bitmap.map(), bitmap.size());
+  bitmap.update(nullptr, 0);
+}
+
 inline ZBitMap::ZBitMap(idx_t size_in_bits) :
     CHeapBitMap(size_in_bits, mtGC, false /* clear */) {}
+
+inline ZBitMap::ZBitMap(const ZBitMap& other) :
+    CHeapBitMap(other.size(), mtGC, false /* clear */) {
+  memcpy(map(), other.map(), size_in_bytes());
+}
 
 inline BitMap::bm_word_t ZBitMap::bit_mask_pair(idx_t bit) {
   assert(bit_in_word(bit) < BitsPerWord - 1, "Invalid bit index");

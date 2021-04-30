@@ -24,36 +24,125 @@
 #ifndef SHARE_GC_Z_ZPAGETABLE_HPP
 #define SHARE_GC_Z_ZPAGETABLE_HPP
 
+#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zGranuleMap.hpp"
+#include "gc/z/zIndexDistributor.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/bitMap.hpp"
 
+class ZForwarding;
 class ZPage;
+class ZPageAllocator;
+class ZPageTable;
+
+class ZOldPagesParallelIterator {
+private:
+  ZPageTable* const      _page_table;
+  volatile BitMap::idx_t _claimed;
+
+public:
+  ZOldPagesParallelIterator(ZPageTable* page_table);
+
+  bool next(ZPage** page_addr);
+};
 
 class ZPageTable {
   friend class VMStructs;
+  friend class ZOldGenerationPagesSafeIterator;
   friend class ZPageTableIterator;
+  friend class ZPageTableParallelIterator;
+  friend class ZOldPagesParallelIterator;
 
 private:
   ZGranuleMap<ZPage*> _map;
 
+  // Optimization aid for faster old pages iteration
+  struct FoundOld {
+    CHeapBitMap   _allocated_bitmap_0;
+    CHeapBitMap   _allocated_bitmap_1;
+    BitMap* const _bitmaps[2];
+    int           _current;
+
+    FoundOld();
+
+    void flip();
+    void clear_previous();
+
+    void register_page(ZPage* page);
+
+    BitMap* current_bitmap();
+    BitMap* previous_bitmap();
+  } _found_old;
+
 public:
   ZPageTable();
 
-  ZPage* get(uintptr_t addr) const;
+  ZPage* get(zaddress addr) const;
+  ZPage* get(volatile zpointer* p) const;
+
+  ZPage* at(size_t index) const;
 
   void insert(ZPage* page);
   void remove(ZPage* page);
+  void replace(ZPage* old_page, ZPage* new_page);
+
+  // Old pages iteration optimization aid
+  void flip_found_old_sets();
+  void clear_found_old_previous_set();
+  void register_found_old(ZPage* page);
+  ZOldPagesParallelIterator old_pages_parallel_iterator();
 };
 
 class ZPageTableIterator : public StackObj {
 private:
-  ZGranuleMapIterator<ZPage*> _iter;
-  ZPage*                      _prev;
+  ZGranuleMapIterator<ZPage*, false> _iter;
+  ZPage*                              _prev;
 
 public:
-  ZPageTableIterator(const ZPageTable* page_table);
+  ZPageTableIterator(const ZPageTable* table);
 
   bool next(ZPage** page);
+};
+
+class ZPageTableParallelIterator : public StackObj {
+  const ZPageTable* _table;
+  ZIndexDistributor _index_distributor;
+
+public:
+  ZPageTableParallelIterator(const ZPageTable* table);
+
+  template <typename Function>
+  void do_pages(Function function);
+};
+
+class ZGenerationPagesIterator : public StackObj {
+private:
+  ZPageTableIterator _iterator;
+  ZGenerationId      _generation_id;
+  ZPageAllocator*    _page_allocator;
+
+public:
+  ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator);
+  ~ZGenerationPagesIterator();
+
+  bool next(ZPage** page);
+
+  template <typename Function>
+  void yield(Function function);
+};
+
+class ZGenerationPagesParallelIterator : public StackObj {
+private:
+  ZPageTableParallelIterator _iterator;
+  ZGenerationId              _generation_id;
+  ZPageAllocator*            _page_allocator;
+
+public:
+  ZGenerationPagesParallelIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator);
+  ~ZGenerationPagesParallelIterator();
+
+  template <typename Function>
+  void do_pages(Function function);
 };
 
 #endif // SHARE_GC_Z_ZPAGETABLE_HPP
