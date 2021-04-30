@@ -48,17 +48,25 @@ public class FileServerHandlerTest {
 
     @DataProvider
     public Object[][] requestMethods() {
-        var l = List.of("POST", "PUT", "GARBAGE");
+        var l = List.of("POST", "PUT");
         return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
     }
 
     @Test(dataProvider = "requestMethods")
-    public void testBadRequestMethod(String requestMethod) throws Exception {
+    public void testNotAllowedRequestMethod(String requestMethod) throws Exception {
         var handler = SimpleFileServer.createFileHandler(CWD);
         var exchange = new MethodHttpExchange(requestMethod);
         handler.handle(exchange);
         assertEquals(exchange.rCode, 405);
         assertEquals(exchange.getResponseHeaders().getFirst("allow"), "HEAD, GET");
+    }
+
+    @Test
+    public void testBadRequestMethod() throws Exception {
+        var handler = SimpleFileServer.createFileHandler(CWD);
+        var exchange = new MethodHttpExchange("GARBAGE");
+        handler.handle(exchange);
+        assertEquals(exchange.rCode, 400);
     }
 
     static class MethodHttpExchange extends StubHttpExchange {

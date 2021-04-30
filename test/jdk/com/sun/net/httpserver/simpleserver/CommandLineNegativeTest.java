@@ -171,7 +171,7 @@ public class CommandLineNegativeTest {
         simpleserver(JAVA, "-m", "jdk.httpserver", "-d", file)
                 .resultChecker(r ->
                         assertContains(r.output, "Error: server config failed: "
-                                + "Path not a directory: " + file)
+                                + "Path is not a directory: " + file)
                 );
     }
 

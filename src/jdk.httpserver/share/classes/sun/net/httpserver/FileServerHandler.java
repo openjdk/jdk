@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
@@ -54,17 +55,21 @@ public final class FileServerHandler implements HttpHandler {
     private final Path root;
     private final Function<String, String> mimeTable;
     private static final List<String> SUPPORTED_METHODS = List.of("HEAD", "GET");
+    private static final List<String> UNSUPPORTED_METHODS = List.of("POST", "PUT", "DELETE", "TRACE", "OPTIONS");
 
     private FileServerHandler(Path root, Function<String, String> mimeTable) {
         root = root.normalize();
         if (!Files.exists(root))
             throw new IllegalArgumentException("Path does not exist: " + root);
-        if (!Files.isDirectory(root))
-            throw new IllegalArgumentException("Path not a directory: " + root);
         if (!root.isAbsolute())
             throw new IllegalArgumentException("Path is not absolute: " + root);
+        if (!Files.isDirectory(root))
+            throw new IllegalArgumentException("Path is not a directory: " + root);
         if (!Files.isReadable(root))
             throw new IllegalArgumentException("Path is not readable: " + root);
+        if (root.getFileSystem() != FileSystems.getDefault())
+            throw new IllegalArgumentException("Path is not associated with " +
+                    "the system-default file system: " + root);
         this.root = root;
         this.mimeTable = mimeTable;
     }
@@ -72,8 +77,17 @@ public final class FileServerHandler implements HttpHandler {
     public static HttpHandler create(Path root, Function<String, String> mimeTable)
         throws IOException
     {
+        var fallbackHandler =
+                HttpHandlers.handleOrElse(r -> UNSUPPORTED_METHODS.contains(r.getRequestMethod()),
+                FileServerHandler::handleNotAllowed, FileServerHandler::handleBadRequest);
         return HttpHandlers.handleOrElse(r -> SUPPORTED_METHODS.contains(r.getRequestMethod()),
-                new FileServerHandler(root, mimeTable), FileServerHandler::handleNotAllowed);
+                new FileServerHandler(root, mimeTable), fallbackHandler);
+    }
+
+    static void handleBadRequest(HttpExchange exchange) throws IOException {
+        try (exchange) {
+            exchange.sendResponseHeaders(400, -1);
+        }
     }
 
     static void handleNotAllowed(HttpExchange exchange) throws IOException {
@@ -274,7 +288,7 @@ public final class FileServerHandler implements HttpHandler {
             discardRequestBody(exchange);
             Path path = mapToPath(exchange, root);
             if (path != null) {
-                exchange.setAttribute("path", path);  // store path for output filter
+                exchange.setAttribute("request-path", path);  // store for OutputFilter
                 if (!Files.exists(path) || isHiddenOrSymLink(path))
                     handleNotFound(exchange);
                 else if (!path.startsWith(root) || !Files.isReadable(path))
@@ -285,7 +299,7 @@ public final class FileServerHandler implements HttpHandler {
                     handleGET(exchange, path);
                 }
             } else {
-                exchange.setAttribute("path", "could not resolve request URI");
+                exchange.setAttribute("request-path", "could not resolve request URI");
                 handleNotFound(exchange);
             }
         } finally {

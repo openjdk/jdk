@@ -49,9 +49,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * <p> The fields rfc931, authuser and bytes are not captured in the implementation
  * and are always represented as '-'.
  *
- * <p> If the outputLevel is VERBOSE, the output additionally includes the request
- * and response headers of the exchange, and the absolute path of the resource
- * requested.
+ * <p> If the outputLevel is VERBOSE, the output additionally includes the
+ * absolute path of the resource requested, if it has been
+ * {@linkplain HttpExchange#setAttribute(String, Object) provided} via the
+ * attribute {@code "request-path"}, as well as the request and response headers
+ * of the exchange.
  */
 public final class OutputFilter extends Filter {
     private static final DateTimeFormatter FORMATTER =
@@ -85,7 +87,9 @@ public final class OutputFilter extends Filter {
         printStream.println(s);
 
         if (outputLevel.equals(OutputLevel.VERBOSE)) {
-            printStream.println("Resource requested: " + e.getAttribute("path"));
+            var requestPath = e.getAttribute("request-path");
+            if (requestPath != null)
+                printStream.println("Resource requested: " + requestPath);
             logHeaders(">", e.getRequestHeaders());
             logHeaders("<", e.getResponseHeaders());
         }

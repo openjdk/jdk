@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.URLConnection;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.Function;
@@ -180,8 +181,9 @@ public final class SimpleFileServer {
      * @param root        the root of the directory to be served, must be an absolute path
      * @param outputLevel the log message output level
      * @return an HttpServer
-     * @throws IllegalArgumentException if root is not absolute, not a directory,
-     *         does not exist, or is not readable
+     * @throws IllegalArgumentException if root does not exist, is not absolute,
+     *         is not a directory, is not readable, or is not associated with
+     *         the {@linkplain FileSystems#getDefault system-default file system}
      * @throws UncheckedIOException if an I/O error occurs
      * @throws NullPointerException if any argument is null
      */
@@ -223,8 +225,9 @@ public final class SimpleFileServer {
      *
      * @param root the root directory to be served, must be an absolute path
      * @return a file handler
-     * @throws IllegalArgumentException if root is not absolute, not a directory,
-     *         does not exist, or is not readably
+     * @throws IllegalArgumentException if root does not exist, is not absolute,
+     *         is not a directory, is not readable, or is not associated with
+     *         the {@linkplain FileSystems#getDefault system-default file system}
      * @throws UncheckedIOException if an I/O error occurs
      * @throws NullPointerException if the argument is null
      */

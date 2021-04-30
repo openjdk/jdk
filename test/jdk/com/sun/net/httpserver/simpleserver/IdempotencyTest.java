@@ -74,7 +74,7 @@ public class IdempotencyTest {
         }
         root = Files.createDirectory(CWD.resolve("testDirectory"));
         file = Files.writeString(root.resolve(FILE_NAME), "some text", CREATE);
-        server = SimpleFileServer.createFileServer(WILDCARD_ADDR, root);
+        server = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, SimpleFileServer.OutputLevel.NONE);
         server.start();
     }
 
