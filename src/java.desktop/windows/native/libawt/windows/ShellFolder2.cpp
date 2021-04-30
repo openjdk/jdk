@@ -1151,11 +1151,11 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getSystemIcon
 /*
  * Class:     sun_awt_shell_Win32ShellFolder2
  * Method:    getIconResource
- * Signature: (Ljava/lang/String;IIIZ)J
+ * Signature: (Ljava/lang/String;III)J
  */
 JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconResource
     (JNIEnv* env, jclass cls, jstring libName, jint iconID,
-     jint cxDesired, jint cyDesired, jboolean useVGAColors)
+     jint cxDesired, jint cyDesired)
 {
     const char *pLibName = env->GetStringUTFChars(libName, NULL);
     JNU_CHECK_EXCEPTION_RETURN(env, 0);
@@ -1164,10 +1164,9 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconResource
         env->ReleaseStringUTFChars(libName, pLibName);
     }
     if (libHandle != NULL) {
-        UINT fuLoad = (useVGAColors && !IS_WINXP) ? LR_VGACOLOR : 0;
         return ptr_to_jlong(LoadImage(libHandle, MAKEINTRESOURCE(iconID),
                                       IMAGE_ICON, cxDesired, cyDesired,
-                                      fuLoad));
+                                      0));
     }
     return 0;
 }

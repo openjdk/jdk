@@ -1009,9 +1009,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     // Returns an icon from the Windows system icon list in the form of an HICON
     private static native long getSystemIcon(int iconID);
     private static native long getIconResource(String libName, int iconID,
-                                               int cxDesired, int cyDesired,
-                                               boolean useVGAColors);
-                                               // Note: useVGAColors is ignored on XP and later
+                                               int cxDesired, int cyDesired);
 
     // Return the bits from an HICON.  This has a side effect of setting
     // the imageHash variable for efficient caching / comparing.
@@ -1031,7 +1029,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         return pIShellIcon;
     }
 
-    private static Image makeIcon(long hIcon, int size) {
+    private static Image makeIcon(long hIcon) {
         if (hIcon != 0L && hIcon != -1L) {
             // Get the bits.  This has the side effect of setting the imageHash value for this object.
             final int[] iconBits = getIconBits(hIcon);
@@ -1084,7 +1082,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                                 newIcon = imageCache.get(Integer.valueOf(index));
                                 if (newIcon == null) {
                                     long hIcon = getIcon(getAbsolutePath(), getLargeIcon);
-                                    newIcon = makeIcon(hIcon, getLargeIcon ? LARGE_ICON_SIZE : SMALL_ICON_SIZE);
+                                    newIcon = makeIcon(hIcon);
                                     disposeIcon(hIcon);
                                     if (newIcon != null) {
                                         imageCache.put(Integer.valueOf(index), newIcon);
@@ -1100,16 +1098,15 @@ final class Win32ShellFolder2 extends ShellFolder {
                                     newIcon2 = imageCache.get(Integer.valueOf(index));
                                     if (newIcon2 == null) {
                                         long hIcon = getIcon(getAbsolutePath(), !getLargeIcon);
-                                        newIcon2 = makeIcon(hIcon, getLargeIcon ? SMALL_ICON_SIZE
-                                                : LARGE_ICON_SIZE);
+                                        newIcon2 = makeIcon(hIcon);
                                         disposeIcon(hIcon);
                                     }
                                 }
 
                                 if (newIcon2 != null) {
                                     Map<Integer, Image> bothIcons = new HashMap<>(2);
-                                    bothIcons.put(getLargeIcon? LARGE_ICON_SIZE : SMALL_ICON_SIZE, newIcon);
-                                    bothIcons.put(getLargeIcon? SMALL_ICON_SIZE : LARGE_ICON_SIZE, newIcon2);
+                                    bothIcons.put(getLargeIcon ? LARGE_ICON_SIZE : SMALL_ICON_SIZE, newIcon);
+                                    bothIcons.put(getLargeIcon ? SMALL_ICON_SIZE : LARGE_ICON_SIZE, newIcon2);
                                     newIcon = new MultiResolutionIconImage(getLargeIcon ? LARGE_ICON_SIZE
                                             : SMALL_ICON_SIZE, bothIcons);
                                 }
@@ -1146,7 +1143,7 @@ final class Win32ShellFolder2 extends ShellFolder {
             int start = size > MAX_QUALITY_ICON ? ICON_RESOLUTIONS.length - 1 : 0;
             int increment = size > MAX_QUALITY_ICON ? -1 : 1;
             int end = size > MAX_QUALITY_ICON ? -1 : ICON_RESOLUTIONS.length;
-            for (int i = start; i != end; i+=increment) {
+            for (int i = start; i != end; i += increment) {
                 int s = ICON_RESOLUTIONS[i];
                 if (size < MIN_QUALITY_ICON || size > MAX_QUALITY_ICON
                         || (s >= size/2 && s <= size*2)) {
@@ -1165,7 +1162,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                             }
                         }
                     }
-                    newIcon = makeIcon(hIcon, s);
+                    newIcon = makeIcon(hIcon);
                     disposeIcon(hIcon);
 
                     multiResolutionIcon.put(s, newIcon);
@@ -1183,7 +1180,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      */
     static Image getSystemIcon(SystemIcon iconType) {
         long hIcon = getSystemIcon(iconType.getIconID());
-        Image icon = makeIcon(hIcon, LARGE_ICON_SIZE);
+        Image icon = makeIcon(hIcon);
         disposeIcon(hIcon);
         return icon;
     }
@@ -1192,16 +1189,12 @@ final class Win32ShellFolder2 extends ShellFolder {
      * Gets an icon from the Windows system icon list as an {@code Image}
      */
     static Image getShell32Icon(int iconID, int size) {
-        boolean useVGAColors = true; // Will be ignored on XP and later
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         String shellIconBPP = (String)toolkit.getDesktopProperty("win.icon.shellIconBPP");
-        if (shellIconBPP != null) {
-            useVGAColors = shellIconBPP.equals("4");
-        }
 
-        long hIcon = getIconResource("shell32.dll", iconID, size, size, useVGAColors);
+        long hIcon = getIconResource("shell32.dll", iconID, size, size);
         if (hIcon != 0) {
-            Image icon = makeIcon(hIcon, size);
+            Image icon = makeIcon(hIcon);
             disposeIcon(hIcon);
             return icon;
         }
@@ -1419,7 +1412,7 @@ final class Win32ShellFolder2 extends ShellFolder {
             // We only care about width since we don't support non-rectangular icons
             int w = (int) width;
             int retindex = 0;
-            for (Integer i: resolutionVariants.keySet()) {
+            for (Integer i : resolutionVariants.keySet()) {
                 if (retVal == null || dist > Math.abs(i - w)
                         || (dist == Math.abs(i - w) && i > retindex)) {
                     retindex = i;

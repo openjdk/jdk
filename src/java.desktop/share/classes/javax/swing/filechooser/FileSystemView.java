@@ -257,11 +257,11 @@ public abstract class FileSystemView {
     }
 
    /**
-    * Icon for a file, directory, or folder as it would be displayed in
-    * a system file browser for the requested size.
+    * Returns an icon for a file, directory, or folder as it would be displayed
+    * in a system file browser for the requested size.
     * <p>
     * The default implementation gets information from the
-    * <code>ShellFolder</code> class. Whenever possible, the icon
+    * {@code ShellFolder} class. Whenever possible, the icon
     * returned will be a multi-resolution icon image,
     * which will allow better scaling with different
     * magnification factors.
@@ -273,7 +273,7 @@ public abstract class FileSystemView {
     * </pre>
     *
     * @param f a <code>File</code> object
-    * @param size width and height of the icon in pixels
+    * @param size width and height of the icon in virtual pixels
     * @return an icon as it would be displayed by a native file chooser
     * or null if invalid parameters are passed such as pointer to a
     * non-existing file.
