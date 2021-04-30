@@ -69,7 +69,7 @@ size_t ZMarkStackSpace::size() const {
 }
 
 static bool is_high_usage(size_t size) {
-  // Consider usage to be high if we've used more than a 8th of the available space.
+  // Consider usage to be high if we've used more than one 8th of the available space.
   // The available space (controlled by ZMarkStackSpaceLimit) is by default 8G, so
   // the high usage threshold will by default be 1G. The vast majority of workloads
   // will use a few hundred megabytes of space at most, so hitting the high usage
@@ -98,7 +98,7 @@ size_t ZMarkStackSpace::expand_space() {
   }
 
   log_debug(gc, marking)("Expanding mark stack space: " SIZE_FORMAT "M->" SIZE_FORMAT "M (%s Usage)",
-                         old_size / M, new_size / M, _high_usage ? "High" : "Low");
+                         old_size / M, new_size / M, _high_usage ? "High" : "Normal");
 
   // Expand
   os::commit_memory_or_exit((char*)_end, expand_size, false /* executable */, "Mark stack space");
