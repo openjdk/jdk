@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,46 +21,37 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZMESSAGEPORT_HPP
-#define SHARE_GC_Z_ZMESSAGEPORT_HPP
+#ifndef SHARE_GC_Z_ZCONTINUATION_HPP
+#define SHARE_GC_Z_ZCONTINUATION_HPP
 
-#include "gc/z/zFuture.hpp"
-#include "gc/z/zList.hpp"
-#include "runtime/mutex.hpp"
+#include "memory/allStatic.hpp"
+#include "memory/iterator.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-template <typename T> class ZMessageRequest;
+class OopClosure;
+class ZHeap;
 
-template <typename T>
-class ZMessagePort {
-private:
-  typedef ZMessageRequest<T> Request;
-
-  mutable Monitor _monitor;
-  bool            _has_message;
-  T               _message;
-  uint64_t        _seqnum;
-  ZList<Request>  _queue;
-
+class ZContinuation : public AllStatic {
 public:
-  ZMessagePort();
+  static bool requires_barriers(const ZHeap* heap, stackChunkOop chunk);
 
-  bool is_busy() const;
+  static oop load_oop(stackChunkOop chunk, void* addr);
 
-  void send_sync(const T& message);
-  void send_async(const T& message);
+  class ZColorStackOopClosure : public OopClosure {
+  private:
+    uintptr_t _color;
 
-  T receive();
-  void ack();
+  public:
+    ZColorStackOopClosure(stackChunkOop chunk);
+    virtual void do_oop(oop* p) override;
+    virtual void do_oop(narrowOop* p) override;
+  };
+
+  class ZUncolorStackOopClosure : public OopClosure {
+  public:
+    virtual void do_oop(oop* p) override;
+    virtual void do_oop(narrowOop* p) override;
+  };
 };
 
-class ZRendezvousPort {
-private:
-  ZMessagePort<bool> _port;
-
-public:
-  void signal();
-  void wait();
-  void ack();
-};
-
-#endif // SHARE_GC_Z_ZMESSAGEPORT_HPP
+#endif // SHARE_GC_Z_ZCONTINUATION_HPP

@@ -52,17 +52,27 @@ void ZParallelApply<Iterator>::apply(ClosureType* cl) {
   }
 }
 
-ZStrongOopStorageSetIterator::ZStrongOopStorageSetIterator() :
+ZOopStorageSetIteratorStrong::ZOopStorageSetIteratorStrong() :
     _iter() {}
 
-void ZStrongOopStorageSetIterator::apply(OopClosure* cl) {
+void ZOopStorageSetIteratorStrong::apply(OopClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsOopStorageSet);
   _iter.oops_do(cl);
 }
 
-void ZStrongCLDsIterator::apply(CLDClosure* cl) {
+void ZCLDsIteratorStrong::apply(CLDClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
   ClassLoaderDataGraph::always_strong_cld_do(cl);
+}
+
+void ZCLDsIteratorWeak::apply(CLDClosure* cl) {
+  ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
+  ClassLoaderDataGraph::roots_cld_do(NULL /* strong */, cl /* weak */);
+}
+
+void ZCLDsIteratorAll::apply(CLDClosure* cl) {
+  ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
+  ClassLoaderDataGraph::cld_do(cl);
 }
 
 ZJavaThreadsIterator::ZJavaThreadsIterator() :
@@ -86,57 +96,71 @@ void ZJavaThreadsIterator::apply(ThreadClosure* cl) {
   }
 }
 
-ZNMethodsIterator::ZNMethodsIterator() {
-  if (!ClassUnloading) {
-    ZNMethod::nmethods_do_begin();
+ZNMethodsIteratorImpl::ZNMethodsIteratorImpl(bool enabled, bool secondary)
+    : _enabled(enabled), _secondary(secondary) {
+  if (_enabled) {
+    ZNMethod::nmethods_do_begin(secondary);
   }
 }
 
-ZNMethodsIterator::~ZNMethodsIterator() {
-  if (!ClassUnloading) {
-    ZNMethod::nmethods_do_end();
+ZNMethodsIteratorImpl::~ZNMethodsIteratorImpl() {
+  if (_enabled) {
+    ZNMethod::nmethods_do_end(_secondary);
   }
 }
 
-void ZNMethodsIterator::apply(NMethodClosure* cl) {
+void ZNMethodsIteratorImpl::apply(NMethodClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsCodeCache);
-  ZNMethod::nmethods_do(cl);
+  ZNMethod::nmethods_do(_secondary, cl);
 }
 
-ZRootsIterator::ZRootsIterator(int cld_claim) {
-  if (cld_claim != ClassLoaderData::_claim_none) {
-    ClassLoaderDataGraph::clear_claimed_marks(cld_claim);
-  }
+void ZRootsIteratorStrongColored::apply(OopClosure* cl,
+                                  CLDClosure* cld_cl) {
+  _oop_storage_set_strong.apply(cl);
+  _clds_strong.apply(cld_cl);
 }
 
-void ZRootsIterator::apply(OopClosure* cl,
-                           CLDClosure* cld_cl,
-                           ThreadClosure* thread_cl,
-                           NMethodClosure* nm_cl) {
-  _oop_storage_set.apply(cl);
-  _class_loader_data_graph.apply(cld_cl);
+void ZRootsIteratorStrongUncolored::apply(ThreadClosure* thread_cl,
+                                          NMethodClosure* nm_cl) {
   _java_threads.apply(thread_cl);
   if (!ClassUnloading) {
-    _nmethods.apply(nm_cl);
+    _nmethods_strong.apply(nm_cl);
   }
 }
 
-ZWeakOopStorageSetIterator::ZWeakOopStorageSetIterator() :
+void ZRootsIteratorWeakUncolored::apply(NMethodClosure* nm_cl) {
+  _nmethods_weak.apply(nm_cl);
+}
+
+ZOopStorageSetIteratorWeak::ZOopStorageSetIteratorWeak() :
     _iter() {}
 
-void ZWeakOopStorageSetIterator::apply(OopClosure* cl) {
+void ZOopStorageSetIteratorWeak::apply(OopClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentWeakRootsOopStorageSet);
   _iter.oops_do(cl);
 }
 
-void ZWeakOopStorageSetIterator::report_num_dead() {
+void ZOopStorageSetIteratorWeak::report_num_dead() {
   _iter.report_num_dead();
 }
 
-void ZWeakRootsIterator::report_num_dead() {
-  _oop_storage_set.iter().report_num_dead();
+void ZRootsIteratorWeakColored::report_num_dead() {
+  _oop_storage_set_weak.iter().report_num_dead();
 }
 
-void ZWeakRootsIterator::apply(OopClosure* cl) {
-  _oop_storage_set.apply(cl);
+void ZRootsIteratorWeakColored::apply(OopClosure* cl) {
+  _oop_storage_set_weak.apply(cl);
+}
+
+void ZRootsIteratorAllColored::apply(OopClosure* cl,
+                                     CLDClosure* cld_cl) {
+  _oop_storage_set_strong.apply(cl);
+  _oop_storage_set_weak.apply(cl);
+  _clds_all.apply(cld_cl);
+}
+
+void ZRootsIteratorAllUncolored::apply(ThreadClosure* thread_cl,
+                                       NMethodClosure* nm_cl) {
+  _java_threads.apply(thread_cl);
+  _nmethods_all.apply(nm_cl);
 }

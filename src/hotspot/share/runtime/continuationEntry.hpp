@@ -120,9 +120,9 @@ public:
     return sp;
   }
 
-  inline oop cont_oop() const;
-  inline oop scope() const;
-  inline static oop cont_oop_or_null(const ContinuationEntry* ce);
+  inline oop cont_oop(const JavaThread* thread) const;
+  inline oop scope(const JavaThread* thread) const;
+  inline static oop cont_oop_or_null(const ContinuationEntry* ce, const JavaThread* thread);
 
   bool is_virtual_thread() const { return _flags != 0; }
 

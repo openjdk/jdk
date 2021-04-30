@@ -27,6 +27,7 @@
 
 #include "classfile/javaClasses.hpp"
 
+#include "gc/shared/gc_globals.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "logging/log.hpp"
@@ -150,6 +151,10 @@ oop java_lang_ref_Reference::unknown_referent_no_keepalive(oop ref) {
 }
 
 void java_lang_ref_Reference::clear_referent(oop ref) {
+  HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(ref, _referent_offset, nullptr);
+}
+
+void java_lang_ref_Reference::clear_referent_raw(oop ref) {
   ref->obj_field_put_raw(_referent_offset, nullptr);
 }
 
@@ -273,13 +278,13 @@ inline void jdk_internal_vm_StackChunk::set_parent(oop chunk, oop value) {
 }
 
 template<typename P>
-inline bool jdk_internal_vm_StackChunk::is_parent_null(oop chunk) {
-  return (oop)RawAccess<>::oop_load(chunk->field_addr<P>(_parent_offset)) == NULL;
-}
-
-template<typename P>
 inline void jdk_internal_vm_StackChunk::set_parent_raw(oop chunk, oop value) {
   RawAccess<>::oop_store(chunk->field_addr<P>(_parent_offset), value);
+}
+
+template<DecoratorSet decorators>
+inline void jdk_internal_vm_StackChunk::set_parent_access(oop chunk, oop value) {
+  chunk->obj_field_put_access<decorators>(_parent_offset, value);
 }
 
 inline oop jdk_internal_vm_StackChunk::cont(oop chunk) {
@@ -291,13 +296,13 @@ inline void jdk_internal_vm_StackChunk::set_cont(oop chunk, oop value) {
 }
 
 template<typename P>
-inline oop jdk_internal_vm_StackChunk::cont_raw(oop chunk) {
-  return (oop)RawAccess<>::oop_load(chunk->field_addr<P>(_cont_offset));
-}
-
-template<typename P>
 inline void jdk_internal_vm_StackChunk::set_cont_raw(oop chunk, oop value) {
   RawAccess<>::oop_store(chunk->field_addr<P>(_cont_offset), value);
+}
+
+template<DecoratorSet decorators>
+inline void jdk_internal_vm_StackChunk::set_cont_access(oop chunk, oop value) {
+  chunk->obj_field_put_access<decorators>(_cont_offset, value);
 }
 
 inline int jdk_internal_vm_StackChunk::size(oop chunk) {

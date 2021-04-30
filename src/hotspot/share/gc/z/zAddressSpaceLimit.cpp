@@ -46,8 +46,8 @@ size_t ZAddressSpaceLimit::mark_stack() {
   return align_up(limit, ZMarkStackSpaceExpandSize);
 }
 
-size_t ZAddressSpaceLimit::heap_view() {
-  // Allow all heap views to occupy 50% of the address space
-  const size_t limit = address_space_limit() / MaxVirtMemFraction / ZHeapViews;
+size_t ZAddressSpaceLimit::heap() {
+  // Allow the heap to occupy 50% of the address space
+  const size_t limit = address_space_limit() / MaxVirtMemFraction;
   return align_up(limit, ZGranuleSize);
 }

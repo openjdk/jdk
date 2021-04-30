@@ -46,7 +46,9 @@ class JNIHandles : AllStatic {
   static OopStorage* weak_global_handles();
 
   inline static bool is_jweak(jobject handle);
+  inline static bool is_global(jobject handle);
   inline static oop* jobject_ptr(jobject handle); // NOT jweak!
+  inline static oop* global_ptr(jobject handle);
   inline static oop* jweak_ptr(jobject handle);
 
   template <DecoratorSet decorators, bool external_guard> inline static oop resolve_impl(jobject handle);
@@ -70,7 +72,11 @@ class JNIHandles : AllStatic {
   static const uintptr_t weak_tag_size = 1;
   static const uintptr_t weak_tag_alignment = (1u << weak_tag_size);
   static const uintptr_t weak_tag_mask = weak_tag_alignment - 1;
+  static const uintptr_t tag_size = 2;
+  static const uintptr_t tag_alignment = (1u << tag_size);
+  static const uintptr_t tag_mask = tag_alignment - 1;
   static const int weak_tag_value = 1;
+  static const int global_tag_value = 2;
 
   // Resolve handle into oop
   inline static oop resolve(jobject handle);

@@ -185,15 +185,6 @@ bool LIR_Opr::is_oop() const {
 
 void LIR_Op2::verify() const {
 #ifdef ASSERT
-  switch (code()) {
-    case lir_xchg:
-      break;
-
-    default:
-      assert(!result_opr()->is_register() || !result_opr()->is_oop_register(),
-             "can't produce oops from arith");
-  }
-
   if (TwoOperandLIRForm) {
 
 #ifdef ASSERT
@@ -1140,12 +1131,6 @@ void LIR_List::set_cmp_oprs(LIR_Op* op) {
       op->as_Op4()->set_in_opr3(_cmp_opr1);
       op->as_Op4()->set_in_opr4(_cmp_opr2);
       break;
-#if INCLUDE_ZGC
-    case lir_zloadbarrier_test:
-      _cmp_opr1 = FrameMap::as_opr(t1);
-      _cmp_opr2 = LIR_OprFact::intConst(0);
-      break;
-#endif
     default:
       break;
   }
@@ -1905,6 +1890,7 @@ void LIR_Op::print_condition(outputStream* out, LIR_Condition cond) {
     case lir_cond_greaterEqual:    out->print("[GE]");      break;
     case lir_cond_greater:         out->print("[GT]");      break;
     case lir_cond_belowEqual:      out->print("[BE]");      break;
+    case lir_cond_above:           out->print("[A]");       break;
     case lir_cond_aboveEqual:      out->print("[AE]");      break;
     case lir_cond_always:          out->print("[AL]");      break;
     default:                       out->print("[%d]",cond); break;

@@ -85,9 +85,6 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
   bool unsafe = (decorators & C2_UNSAFE_ACCESS) != 0;
   bool requires_atomic_access = (decorators & MO_UNORDERED) == 0;
 
-  bool in_native = (decorators & IN_NATIVE) != 0;
-  assert(!in_native || (unsafe && !access.is_oop()), "not supported yet");
-
   MemNode::MemOrd mo = access.mem_node_mo();
 
   Node* store;
@@ -102,7 +99,8 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     }
 
     store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), bt,
-                                 access.addr().type(), mo, requires_atomic_access, unaligned, mismatched, unsafe);
+                                 access.addr().type(), mo, requires_atomic_access, unaligned,
+                                 mismatched, unsafe, access.barrier_data());
   } else {
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
@@ -119,6 +117,9 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     }
     if (mismatched) {
       st->set_mismatched_access();
+    }
+    if (access.barrier_data() != 0) {
+      st->set_barrier_data(access.barrier_data());
     }
     store = gvn.transform(st);
     if (store == st) {
@@ -143,8 +144,6 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   bool unknown_control = (decorators & C2_UNKNOWN_CONTROL_LOAD) != 0;
   bool unsafe = (decorators & C2_UNSAFE_ACCESS) != 0;
   bool immutable = (decorators & C2_IMMUTABLE_MEMORY) != 0;
-
-  bool in_native = (decorators & IN_NATIVE) != 0;
 
   MemNode::MemOrd mo = access.mem_node_mo();
   LoadNode::ControlDependency dep = unknown_control ? LoadNode::UnknownControl : LoadNode::DependsOnlyOnTest;
@@ -358,7 +357,7 @@ void C2Access::fixup_decorators() {
     _decorators |= MO_RELAXED; // Force the MO_RELAXED decorator with AlwaysAtomicAccess
   }
 
-  _decorators = AccessInternal::decorator_fixup(_decorators);
+  _decorators = AccessInternal::decorator_fixup(_decorators, _type);
 
   if (is_read && !is_write && anonymous) {
     // To be valid, unsafe loads may depend on other conditions than

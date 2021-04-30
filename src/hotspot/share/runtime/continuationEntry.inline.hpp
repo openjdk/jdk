@@ -27,21 +27,46 @@
 
 #include "runtime/continuationEntry.hpp"
 
-#include "oops/access.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "memory/universe.hpp"
+#include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/thread.hpp"
 
 #include CPU_HEADER_INLINE(continuationEntry)
 
-inline oop ContinuationEntry::cont_oop() const {
-  oop snapshot = _cont;
-  return NativeAccess<>::oop_load(&snapshot);
+inline bool is_stack_watermark_processed(const JavaThread* thread, const void* addr) {
+  StackWatermark* sw = StackWatermarkSet::get(const_cast<JavaThread*>(thread), StackWatermarkKind::gc);
+
+  if (sw == nullptr) {
+    // No stale processing without stack watermarks
+    return true;
+  }
+
+  if (!sw->processing_started()) {
+    return false;
+  }
+
+  uintptr_t watermark = sw->watermark();
+  if (watermark == 0) {
+    // completed
+    return true;
+  }
+
+  return uintptr_t(addr) <= watermark;
 }
 
-inline oop ContinuationEntry::cont_oop_or_null(const ContinuationEntry* ce) {
-  return ce == nullptr ? nullptr : ce->cont_oop();
+inline oop ContinuationEntry::cont_oop(const JavaThread* thread) const {
+  assert(!Universe::heap()->is_in((void*)&_cont), "Should not be in the heap");
+  assert(is_stack_watermark_processed(thread != nullptr ? thread : JavaThread::current(), &_cont), "Not processed");
+  return *(oop*)&_cont;
 }
 
-inline oop ContinuationEntry::scope() const {
-  return Continuation::continuation_scope(cont_oop());
+inline oop ContinuationEntry::cont_oop_or_null(const ContinuationEntry* ce, const JavaThread* thread) {
+  return ce == nullptr ? nullptr : ce->cont_oop(thread);
+}
+
+inline oop ContinuationEntry::scope(const JavaThread* thread) const {
+  return Continuation::continuation_scope(cont_oop(thread));
 }
 
 #endif // SHARE_VM_RUNTIME_CONTINUATIONENTRY_INLINE_HPP

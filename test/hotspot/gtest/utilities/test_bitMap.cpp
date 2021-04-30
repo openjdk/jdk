@@ -165,6 +165,117 @@ TEST_VM(BitMap, reinitialize) {
   BitMapTest::testReinitialize(BitMapTest::BITMAP_SIZE);
 }
 
+class BitMapTestClosure : public BitMapClosure {
+private:
+  size_t* _sequence;
+  size_t  _length;
+  size_t  _index;
+
+public:
+  BitMapTestClosure(size_t* sequence, size_t length) : _sequence(sequence), _length(length), _index(length) {}
+
+  virtual bool do_bit(BitMap::idx_t bit) {
+    if (_index == 0) {
+      // Went too far
+      return false;
+    }
+    if (_sequence[--_index] != bit) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool all_visited() {
+    return _index == 0;
+  }
+};
+
+class BitMapTestIterateReverse {
+public:
+  static void test_with_lambda(size_t size, size_t* seq, size_t seq_length) {
+    ResourceMark rm;
+    ResourceBitMap bm(size, true /* clear */);
+
+    // Fill in the bits
+    for (size_t i = 0; i < seq_length; i++) {
+      bm.set_bit(seq[i]);
+    }
+
+    // Iterate over the bits
+    size_t index = seq_length;
+
+    auto lambda = [&](BitMap::idx_t bit) -> bool {
+      if (index == 0) {
+        // Went too far
+        return false;
+      }
+      if (seq[--index] != bit) {
+        return false;
+      }
+
+      return true;
+    };
+
+    bool val = bm.iterate_reverse_f(lambda, 0, bm.size() - 1);
+
+    ASSERT_TRUE(val) << "Failed";
+
+    ASSERT_TRUE(index == 0) << "Not all visited";
+  }
+
+  static void test(size_t size, size_t* seq, size_t seq_length) {
+    test_with_lambda(size, seq, seq_length);
+
+    ResourceMark rm;
+    ResourceBitMap bm(size, true /* clear */);
+
+    // Fill in the bits
+    for (size_t i = 0; i < seq_length; i++) {
+      bm.set_bit(seq[i]);
+    }
+
+    // Iterate over the bits
+    BitMapTestClosure cl(seq, seq_length);
+    bool val = bm.iterate_reverse(&cl, 0, bm.size()-1);
+    ASSERT_TRUE(val) << "Failed";
+
+    ASSERT_TRUE(cl.all_visited()) << "Not all visited";
+  }
+};
+
+TEST_VM(BitMap, iterate_reverse) {
+  const size_t word_size = sizeof(BitMap::bm_word_t) * BitsPerByte;
+  const size_t size = 4 * word_size;
+
+  // With no bits set
+  {
+    BitMapTestIterateReverse::test(size, NULL, 0);
+  }
+
+  // With end-points set
+  {
+    size_t seq[] = {0, 2, 6, 31, 61, 131, size - 1};
+    BitMapTestIterateReverse::test(size, seq, ARRAY_SIZE(seq));
+  }
+
+  // Without end-points set
+  {
+    size_t seq[] = {1, 2, 6, 31, 61, 131, size - 2};
+    BitMapTestIterateReverse::test(size, seq, ARRAY_SIZE(seq));
+  }
+
+  // With all bits set
+  {
+    size_t* seq = (size_t*)os::malloc(size * sizeof(size_t), mtTest);
+    for (size_t i = 0; i < size; i++) {
+      seq[i] = i;
+    }
+    BitMapTestIterateReverse::test(size, seq, size);
+    os::free(seq);
+  }
+}
+
 #ifdef ASSERT
 
 TEST_VM(BitMap, print_on) {
@@ -174,3 +285,4 @@ TEST_VM(BitMap, print_on) {
 }
 
 #endif
+

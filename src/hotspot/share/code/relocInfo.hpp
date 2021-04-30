@@ -269,6 +269,7 @@ class relocInfo {
     runtime_call_w_cp_type  = 14, // Runtime call which may load its target from the constant pool
     data_prefix_tag         = 15, // tag for a prefix (carries data arguments)
     post_call_nop_type      = 16, // A tag for post call nop relocations
+    barrier_type            = 17, // GC barrier data
     type_mask               = 31  // A mask which selects only the above values
   };
 
@@ -309,6 +310,7 @@ class relocInfo {
     visitor(section_word) \
     visitor(trampoline_stub) \
     visitor(post_call_nop) \
+    visitor(barrier) \
 
 
  public:
@@ -785,9 +787,10 @@ class Relocation {
  protected:
   short*   data()         const { return binding()->data(); }
   int      datalen()      const { return binding()->datalen(); }
-  int      format()       const { return binding()->format(); }
 
  public:
+  int      format()       const { return binding()->format(); }
+
   relocInfo::relocType type()              const { return _rtype; }
 
   // is it a call instruction?
@@ -944,7 +947,7 @@ class oop_Relocation : public DataRelocation {
 
   void verify_oop_relocation();
 
-  address value()  { return cast_from_oop<address>(*oop_addr()); }
+  address value()  { return *reinterpret_cast<address*>(oop_addr()); }
 
   bool oop_is_immediate()  { return oop_index() == 0; }
 
@@ -1007,6 +1010,29 @@ class metadata_Relocation : public DataRelocation {
   Metadata**   metadata_addr();                  // addr or &pool[jint_data]
   Metadata*    metadata_value();                 // *metadata_addr
   // Note:  metadata_value transparently converts Universe::non_metadata_word to NULL.
+};
+
+class barrier_Relocation : public DataRelocation {
+
+ public:
+  // The uninitialized value used before the relocation has been patched.
+  // Code assumes that the unpatched value is zero.
+  static const int16_t unpatched = 0;
+
+  static RelocationHolder spec() {
+    RelocationHolder rh = newHolder();
+    new(rh) barrier_Relocation();
+    return rh;
+  }
+
+ private:
+  friend class RelocIterator;
+  barrier_Relocation() : DataRelocation(relocInfo::barrier_type) { }
+
+ public:
+  virtual int offset()                  { ShouldNotReachHere(); return 0; }
+  virtual address value()               { ShouldNotReachHere(); return NULL; }
+  virtual void set_value(address value) { ShouldNotReachHere(); }
 };
 
 

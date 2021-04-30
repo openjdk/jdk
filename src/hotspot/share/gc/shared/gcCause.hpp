@@ -89,8 +89,8 @@ class GCCause : public AllStatic {
     _z_warmup,
     _z_allocation_rate,
     _z_allocation_stall,
-    _z_proactive,
     _z_high_usage,
+    _z_proactive,
 
     _last_gc_cause
   };
@@ -107,7 +107,7 @@ class GCCause : public AllStatic {
             cause == GCCause::_heap_dump);
   }
 
-  // Causes for collection of the tenured gernation
+  // Causes for collection of the tenured generation
   inline static bool is_tenured_allocation_failure_gc(GCCause::Cause cause) {
     assert(cause != GCCause::_old_generation_too_full_to_scavenge &&
            cause != GCCause::_old_generation_expanded_on_last_scavenge,

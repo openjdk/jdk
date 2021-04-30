@@ -79,9 +79,6 @@ bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) 
   // We update the poll value in case of a disarm, to reduce false positives.
   update_poll_values(thread);
 
-  // We are now about to avoid processing and thus no cross modify fence will be executed.
-  // In case a safepoint happened, while being blocked, we execute it here.
-  OrderAccess::cross_modify_fence();
   return false;
 }
 

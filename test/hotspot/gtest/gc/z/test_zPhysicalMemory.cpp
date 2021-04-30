@@ -26,8 +26,8 @@
 #include "unittest.hpp"
 
 TEST(ZPhysicalMemoryTest, copy) {
-  const ZPhysicalMemorySegment seg0(0, 100, true);
-  const ZPhysicalMemorySegment seg1(200, 100, true);
+  const ZPhysicalMemorySegment seg0(zoffset(0), 100, true);
+  const ZPhysicalMemorySegment seg1(zoffset(200), 100, true);
 
   ZPhysicalMemory pmem0;
   pmem0.add_segment(seg0);
@@ -52,13 +52,13 @@ TEST(ZPhysicalMemoryTest, copy) {
 }
 
 TEST(ZPhysicalMemoryTest, add) {
-  const ZPhysicalMemorySegment seg0(0, 1, true);
-  const ZPhysicalMemorySegment seg1(1, 1, true);
-  const ZPhysicalMemorySegment seg2(2, 1, true);
-  const ZPhysicalMemorySegment seg3(3, 1, true);
-  const ZPhysicalMemorySegment seg4(4, 1, true);
-  const ZPhysicalMemorySegment seg5(5, 1, true);
-  const ZPhysicalMemorySegment seg6(6, 1, true);
+  const ZPhysicalMemorySegment seg0(zoffset(0), 1, true);
+  const ZPhysicalMemorySegment seg1(zoffset(1), 1, true);
+  const ZPhysicalMemorySegment seg2(zoffset(2), 1, true);
+  const ZPhysicalMemorySegment seg3(zoffset(3), 1, true);
+  const ZPhysicalMemorySegment seg4(zoffset(4), 1, true);
+  const ZPhysicalMemorySegment seg5(zoffset(5), 1, true);
+  const ZPhysicalMemorySegment seg6(zoffset(6), 1, true);
 
   ZPhysicalMemory pmem0;
   EXPECT_EQ(pmem0.nsegments(), 0);
@@ -116,9 +116,9 @@ TEST(ZPhysicalMemoryTest, add) {
 TEST(ZPhysicalMemoryTest, remove) {
   ZPhysicalMemory pmem;
 
-  pmem.add_segment(ZPhysicalMemorySegment(10, 10, true));
-  pmem.add_segment(ZPhysicalMemorySegment(30, 10, true));
-  pmem.add_segment(ZPhysicalMemorySegment(50, 10, true));
+  pmem.add_segment(ZPhysicalMemorySegment(zoffset(10), 10, true));
+  pmem.add_segment(ZPhysicalMemorySegment(zoffset(30), 10, true));
+  pmem.add_segment(ZPhysicalMemorySegment(zoffset(50), 10, true));
   EXPECT_EQ(pmem.nsegments(), 3);
   EXPECT_EQ(pmem.size(), 30u);
   EXPECT_FALSE(pmem.is_null());
@@ -132,9 +132,9 @@ TEST(ZPhysicalMemoryTest, remove) {
 TEST(ZPhysicalMemoryTest, split) {
   ZPhysicalMemory pmem;
 
-  pmem.add_segment(ZPhysicalMemorySegment(0, 10, true));
-  pmem.add_segment(ZPhysicalMemorySegment(10, 10, true));
-  pmem.add_segment(ZPhysicalMemorySegment(30, 10, true));
+  pmem.add_segment(ZPhysicalMemorySegment(zoffset(0), 10, true));
+  pmem.add_segment(ZPhysicalMemorySegment(zoffset(10), 10, true));
+  pmem.add_segment(ZPhysicalMemorySegment(zoffset(30), 10, true));
   EXPECT_EQ(pmem.nsegments(), 2);
   EXPECT_EQ(pmem.size(), 30u);
 
@@ -159,10 +159,10 @@ TEST(ZPhysicalMemoryTest, split) {
 
 TEST(ZPhysicalMemoryTest, split_committed) {
   ZPhysicalMemory pmem0;
-  pmem0.add_segment(ZPhysicalMemorySegment(0, 10, true));
-  pmem0.add_segment(ZPhysicalMemorySegment(10, 10, false));
-  pmem0.add_segment(ZPhysicalMemorySegment(20, 10, true));
-  pmem0.add_segment(ZPhysicalMemorySegment(30, 10, false));
+  pmem0.add_segment(ZPhysicalMemorySegment(zoffset(0), 10, true));
+  pmem0.add_segment(ZPhysicalMemorySegment(zoffset(10), 10, false));
+  pmem0.add_segment(ZPhysicalMemorySegment(zoffset(20), 10, true));
+  pmem0.add_segment(ZPhysicalMemorySegment(zoffset(30), 10, false));
   EXPECT_EQ(pmem0.nsegments(), 4);
   EXPECT_EQ(pmem0.size(), 40u);
 

@@ -146,7 +146,7 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
                 if (useZGC) {
                     // Add options to force eager class unloading.
                     cmdLine = TestCommon.concat(cmdLine, "-cp", loaderJar,
-                                                "-XX:+UseZGC", "-XX:ZCollectionInterval=0.01",
+                                                "-XX:+UseZGC", "-XX:ZCollectionIntervalMajor=0.01",
                                                 loaderMainClass, appJar);
                     setBaseArchiveOptions("-XX:+UseZGC", "-Xlog:cds");
                 } else {

@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
@@ -97,14 +98,14 @@ void ZPhysicalMemoryBacking::warn_commit_limits(size_t max_capacity) const {
   // Does nothing
 }
 
-bool ZPhysicalMemoryBacking::commit_inner(size_t offset, size_t length) const {
-  assert(is_aligned(offset, os::vm_page_size()), "Invalid offset");
+bool ZPhysicalMemoryBacking::commit_inner(zoffset offset, size_t length) const {
+  assert(is_aligned(untype(offset), os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
   log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
-                      offset / M, (offset + length) / M, length / M);
+                      untype(offset) / M, untype(offset) + length / M, length / M);
 
-  const uintptr_t addr = _base + offset;
+  const uintptr_t addr = _base + untype(offset);
   const void* const res = mmap((void*)addr, length, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   if (res == MAP_FAILED) {
     ZErrno err;
@@ -116,7 +117,7 @@ bool ZPhysicalMemoryBacking::commit_inner(size_t offset, size_t length) const {
   return true;
 }
 
-size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) const {
+size_t ZPhysicalMemoryBacking::commit(zoffset offset, size_t length) const {
   // Try to commit the whole region
   if (commit_inner(offset, length)) {
     // Success
@@ -124,8 +125,8 @@ size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) const {
   }
 
   // Failed, try to commit as much as possible
-  size_t start = offset;
-  size_t end = offset + length;
+  zoffset start = offset;
+  zoffset end = offset + length;
 
   for (;;) {
     length = align_down((end - start) / 2, ZGranuleSize);
@@ -144,14 +145,14 @@ size_t ZPhysicalMemoryBacking::commit(size_t offset, size_t length) const {
   }
 }
 
-size_t ZPhysicalMemoryBacking::uncommit(size_t offset, size_t length) const {
-  assert(is_aligned(offset, os::vm_page_size()), "Invalid offset");
+size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) const {
+  assert(is_aligned(untype(offset), os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
   log_trace(gc, heap)("Uncommitting memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
-                      offset / M, (offset + length) / M, length / M);
+                      untype(offset) / M, untype(offset) + length / M, length / M);
 
-  const uintptr_t start = _base + offset;
+  const uintptr_t start = _base + untype(offset);
   const void* const res = mmap((void*)start, length, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, -1, 0);
   if (res == MAP_FAILED) {
     ZErrno err;
@@ -162,18 +163,18 @@ size_t ZPhysicalMemoryBacking::uncommit(size_t offset, size_t length) const {
   return length;
 }
 
-void ZPhysicalMemoryBacking::map(uintptr_t addr, size_t size, uintptr_t offset) const {
-  const ZErrno err = mremap(_base + offset, addr, size);
+void ZPhysicalMemoryBacking::map(zaddress_unsafe addr, size_t size, zoffset offset) const {
+  const ZErrno err = mremap(_base + untype(offset), untype(addr), size);
   if (err) {
     fatal("Failed to remap memory (%s)", err.to_string());
   }
 }
 
-void ZPhysicalMemoryBacking::unmap(uintptr_t addr, size_t size) const {
+void ZPhysicalMemoryBacking::unmap(zaddress_unsafe addr, size_t size) const {
   // Note that we must keep the address space reservation intact and just detach
   // the backing memory. For this reason we map a new anonymous, non-accessible
   // and non-reserved page over the mapping instead of actually unmapping.
-  const void* const res = mmap((void*)addr, size, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, -1, 0);
+  const void* const res = mmap((void*)untype(addr), size, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, -1, 0);
   if (res == MAP_FAILED) {
     ZErrno err;
     fatal("Failed to map memory (%s)", err.to_string());

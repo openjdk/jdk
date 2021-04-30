@@ -26,10 +26,18 @@
 #include "gc/z/zThreadLocalData.hpp"
 #include "runtime/javaThread.hpp"
 
-Address ZBarrierSetAssemblerBase::address_bad_mask_from_thread(Register thread) {
-  return Address(thread, ZThreadLocalData::address_bad_mask_offset());
+Address ZBarrierSetAssemblerBase::load_bad_mask_from_thread(Register thread) {
+  return Address(thread, ZThreadLocalData::load_bad_mask_offset());
 }
 
-Address ZBarrierSetAssemblerBase::address_bad_mask_from_jni_env(Register env) {
-  return Address(env, ZThreadLocalData::address_bad_mask_offset() - JavaThread::jni_environment_offset());
+Address ZBarrierSetAssemblerBase::mark_bad_mask_from_thread(Register thread) {
+  return Address(thread, ZThreadLocalData::mark_bad_mask_offset());
+}
+
+Address ZBarrierSetAssemblerBase::load_bad_mask_from_jni_env(Register env) {
+  return Address(env, ZThreadLocalData::load_bad_mask_offset() - JavaThread::jni_environment_offset());
+}
+
+Address ZBarrierSetAssemblerBase::mark_bad_mask_from_jni_env(Register env) {
+  return Address(env, ZThreadLocalData::mark_bad_mask_offset() - JavaThread::jni_environment_offset());
 }

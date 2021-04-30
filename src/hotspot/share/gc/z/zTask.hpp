@@ -50,4 +50,10 @@ public:
   virtual void work() = 0;
 };
 
+class ZRestartableTask : public ZTask {
+public:
+  ZRestartableTask(const char* name);
+  virtual void resize_workers(uint nworkers);
+};
+
 #endif // SHARE_GC_Z_ZTASK_HPP
