@@ -79,16 +79,6 @@ void LambdaFormInvokers::append(char* line) {
   _lambdaform_lines->append(line);
 }
 
-#define HANDLE_IF_HAS_EXCEPTION                                                                         \
-  if (HAS_PENDING_EXCEPTION) {                                                                          \
-    if (!PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {                                \
-      log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),                             \
-                     java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));\
-      CLEAR_PENDING_EXCEPTION;                                                                          \
-    }                                                                                                   \
-    return;                                                                                             \
-  }
-
 void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
     log_info(cds)("Nothing to regenerate for holder classes");
@@ -120,7 +110,19 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result, cds_klass, method, signrs, list_lines, THREAD);
 
-  HANDLE_IF_HAS_EXCEPTION;
+  if (HAS_PENDING_EXCEPTION) {
+    if (!PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
+      log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+                     java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+      if (DumpSharedSpaces) {
+        log_error(cds)("Failed to generate LambdaForm holder classes. Is your classlist out of date?");
+      } else {
+        log_error(cds)("Failed to generate LambdaForm holder classes. Was the base archive generated with an outdated classlist?");
+      }
+      CLEAR_PENDING_EXCEPTION;
+    }
+    return;
+  }
 
   objArrayHandle h_array(THREAD, (objArrayOop)result.get_oop());
   int sz = h_array->length();
@@ -138,7 +140,6 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
     memcpy(buf, (char*)h_bytes->byte_at_addr(0), len);
     ClassFileStream st((u1*)buf, len, NULL, ClassFileStream::verify);
     reload_class(class_name, st, THREAD);
-    HANDLE_IF_HAS_EXCEPTION;
   }
 }
 
