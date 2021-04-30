@@ -304,10 +304,12 @@ public abstract class Charset$Coder$ {
 #end[encoder]
         implReplaceWith(this.replacement);
 #if[encoder]
-        ByteBuffer bb = ByteBuffer.wrap(this.replacement);
-        CharBuffer cb = CharBuffer.wrap(replacementChars);
-        CoderResult cr = checkReplacement(bb, cb);
-        if (!cr.isUnderflow()) replacementChars[0] = '\uFFFD';
+        if (maxBytesPerChar > 3.0) {
+            ByteBuffer bb = ByteBuffer.wrap(this.replacement);
+            CharBuffer cb = CharBuffer.wrap(replacementChars);
+            CoderResult cr = checkReplacement(bb, cb);
+            if (!cr.isUnderflow()) replacementChars[0] = '\uFFFD';
+        }
 #end[encoder]
         return this;
     }
@@ -627,18 +629,24 @@ public abstract class Charset$Coder$ {
 
             if (action == CodingErrorAction.REPLACE) {
 #if[encoder]
-                CoderResult crTemp;
-                if (replacementChars[0] == '\uFFFD'
-                    && !unmappableCharacterAction.equals(CodingErrorAction.REPLACE)) {
-                    CodingErrorAction currentAction = unmappableCharacterAction;
-                    onUnmappableCharacter(CodingErrorAction.REPLACE);
-                    crTemp = encodeLoop(CharBuffer.wrap(replacementChars), out);
-                    onUnmappableCharacter(currentAction);
+                if (maxBytesPerChar > 3.0) {
+                    CoderResult crTemp;
+                    if (replacementChars[0] == '\uFFFD'
+                        && !unmappableCharacterAction.equals(CodingErrorAction.REPLACE)) {
+                        CodingErrorAction currentAction = unmappableCharacterAction;
+                        onUnmappableCharacter(CodingErrorAction.REPLACE);
+                        crTemp = encodeLoop(CharBuffer.wrap(replacementChars), out);
+                        onUnmappableCharacter(currentAction);
+                    } else {
+                        crTemp = encodeLoop(CharBuffer.wrap(replacementChars), out);
+                    }
+                    if (crTemp.isOverflow()) return crTemp;
+                    if (crTemp.isError()) {
+                        if (out.remaining() < replacement.length)
+                            return CoderResult.OVERFLOW;
+                        out.put(replacement);
+                    }
                 } else {
-                    crTemp = encodeLoop(CharBuffer.wrap(replacementChars), out);
-                }
-                if (crTemp.isOverflow()) return crTemp;
-                if (crTemp.isError()) {
                     if (out.remaining() < replacement.length)
                         return CoderResult.OVERFLOW;
                     out.put(replacement);

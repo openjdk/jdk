@@ -71,10 +71,20 @@ public class StatefulEncoder {
         }
     }
 
-    private static void checkEncode(Charset cs, char[] chsA, char[] chsB) {
+    private static void checkEncode(Charset cs, char[] chsA, char[] chsB, byte[] repl) {
         CharsetEncoder ce = cs.newEncoder()
                               .onMalformedInput(CodingErrorAction.REPLACE)
                               .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        if (repl != null) {
+            try {
+                ce.replaceWith(repl);
+            } catch (IllegalArgumentException iae) {
+                System.err.println(cs+":");
+                for (byte b: repl) System.err.printf("\\x%02X", (int)b&0xFF);
+                System.err.println(":"+iae);
+                return;
+            }
+        }
         try {
             ce.reset();
             ByteBuffer bbA = ce.encode(CharBuffer.wrap(chsA));
@@ -106,17 +116,34 @@ public class StatefulEncoder {
                     char[] replChsA = new char[2];
                     char[] replChsB = new char[2];
                     replChsA[1] = '\uD800';
-                    replChsB[1] = replStr.length() > 1 ? '\uFFFD' : replStr.charAt(0);
                     replChsA[0] = ' ';
                     replChsB[0] = ' ';
+                    replChsB[1] = replStr.length() > 1 ? '\uFFFD' : replStr.charAt(0);
                     checkGetBytes(cs, replChsA, replChsB);
                     checkGetBytes1(cs, replChsA, replChsB);
-                    checkEncode(cs, replChsA, replChsB);
+                    checkEncode(cs, replChsA, replChsB, null);
+                    if (ce.canEncode('?')) {
+                        replChsB[1] = '?';
+                        checkEncode(cs, replChsA, replChsB, "?".getBytes(cs));
+                    }
+                    if (ce.canEncode('\uff1f')) {
+                        replChsB[1] = '\uff1f';
+                        checkEncode(cs, replChsA, replChsB, "\uff1f".getBytes(cs));
+                    }
                     replChsA[0] = '\u3000';
                     replChsB[0] = '\u3000';
+                    replChsB[1] = replStr.length() > 1 ? '\uFFFD' : replStr.charAt(0);
                     checkGetBytes(cs, replChsA, replChsB);
                     checkGetBytes1(cs, replChsA, replChsB);
-                    checkEncode(cs, replChsA, replChsB);
+                    checkEncode(cs, replChsA, replChsB, null);
+                    if (ce.canEncode('?')) {
+                        replChsB[1] = '?';
+                        checkEncode(cs, replChsA, replChsB, "?".getBytes(cs));
+                    }
+                    if (ce.canEncode('\uff1f')) {
+                        replChsB[1] = '\uff1f';
+                        checkEncode(cs, replChsA, replChsB, "\uff1f".getBytes(cs));
+                    }
                 }
             }
         }
