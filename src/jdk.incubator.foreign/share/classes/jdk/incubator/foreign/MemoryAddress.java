@@ -28,6 +28,8 @@ package jdk.incubator.foreign;
 
 import jdk.internal.foreign.MemoryAddressImpl;
 import jdk.internal.ref.CleanerFactory;
+import jdk.internal.reflect.CallerSensitive;
+
 import java.lang.ref.Cleaner;
 
 /**
@@ -137,6 +139,7 @@ public interface MemoryAddress extends Addressable {
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
+    @CallerSensitive
     MemorySegment asSegment(long bytesSize, ResourceScope scope);
 
     /**
@@ -171,6 +174,7 @@ public interface MemoryAddress extends Addressable {
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
+    @CallerSensitive
     MemorySegment asSegment(long bytesSize, Runnable cleanupAction, ResourceScope scope);
 
     /**

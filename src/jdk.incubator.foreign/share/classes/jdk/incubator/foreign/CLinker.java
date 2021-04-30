@@ -153,6 +153,7 @@ public interface CLinker {
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
+    @CallerSensitive
     MethodHandle downcallHandle(Addressable symbol, MethodType type, FunctionDescriptor function);
 
     /**
@@ -179,6 +180,7 @@ public interface CLinker {
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
+    @CallerSensitive
     MethodHandle downcallHandle(Addressable symbol, SegmentAllocator allocator, MethodType type, FunctionDescriptor function);
 
     /**
@@ -206,6 +208,7 @@ public interface CLinker {
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
+    @CallerSensitive
     MethodHandle downcallHandle(MethodType type, FunctionDescriptor function);
 
     /**
@@ -231,6 +234,7 @@ public interface CLinker {
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
+    @CallerSensitive
     MemoryAddress upcallStub(MethodHandle target, FunctionDescriptor function, ResourceScope scope);
 
     /**

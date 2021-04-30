@@ -90,6 +90,7 @@ public interface LibraryLookup {
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
+    @CallerSensitive
     Optional<MemorySegment> lookup(String name, MemoryLayout layout);
 
     /**
