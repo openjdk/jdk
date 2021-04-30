@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -654,8 +654,7 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
     if (events & POLLIN) {
         FD_SET(fd, &rd);
     }
-    if (events & POLLOUT ||
-        events & POLLCONN) {
+    if (events & POLLOUT) {
         FD_SET(fd, &wr);
     }
     FD_SET(fd, &ex);
@@ -768,7 +767,7 @@ Java_sun_nio_ch_Net_pollnvalValue(JNIEnv *env, jclass this)
 JNIEXPORT jshort JNICALL
 Java_sun_nio_ch_Net_pollconnValue(JNIEnv *env, jclass this)
 {
-    return (jshort)POLLCONN;
+    return (jshort)POLLOUT;
 }
 
 JNIEXPORT jint JNICALL
@@ -785,4 +784,19 @@ Java_sun_nio_ch_Net_sendOOB(JNIEnv* env, jclass this, jobject fdo, jbyte b)
     } else {
         return n;
     }
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_Net_discardOOB(JNIEnv* env, jclass clazz, jobject fdo)
+{
+    char data[8];
+    jboolean discarded = JNI_FALSE;
+    int n;
+    do {
+        n = recv(fdval(env, fdo), (char*)&data, sizeof(data), MSG_OOB);
+        if (n > 0) {
+            discarded = JNI_TRUE;
+        }
+    } while (n > 0);
+    return discarded;
 }

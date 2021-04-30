@@ -415,7 +415,7 @@ class WindowsSelectorImpl extends SelectorImpl {
                 SelectableChannel sc = ski.channel();
                 if (isExceptFds && (sc instanceof SocketChannelImpl)
                         && ((SocketChannelImpl) sc).isNetSocket()
-                        && discardUrgentData(desc)) {
+                        && Net.discardOOB(ski.getFD())) {
                     continue;
                 }
 
@@ -510,8 +510,6 @@ class WindowsSelectorImpl extends SelectorImpl {
     }
 
     private native void resetWakeupSocket0(int wakeupSourceFd);
-
-    private native boolean discardUrgentData(int fd);
 
     // We increment this counter on each call to updateSelectedKeys()
     // each entry in  SubSelector.fdsMap has a memorized value of
