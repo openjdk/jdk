@@ -333,7 +333,7 @@
     <Field type="uint" name="numberOfRegions" label="Number of Regions" />
   </Event>
 
-  <Event name="GarbageCollection" category="Java Virtual Machine, GC, Collector" label="Garbage Collection" description="Garbage collection performed by the JVM">
+  <Event name="GarbageCollection" category="Java Virtual Machine, GC, Collector" label="Garbage Collection" description="Garbage collection performed by the JVM" thread="true">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="GCName" name="name" label="Name" description="The name of the Garbage Collector" />
     <Field type="GCCause" name="cause" label="Cause" description="The reason for triggering this Garbage Collection" />
@@ -535,6 +535,11 @@
   </Event>
 
   <Event name="GCPhaseConcurrentLevel1" category="Java Virtual Machine, GC, Phases" label="GC Phase Concurrent Level 1" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
+  <Event name="GCPhaseConcurrentLevel2" category="Java Virtual Machine, GC, Phases" label="GC Phase Concurrent Level 2" thread="true">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="string" name="name" label="Name" />
   </Event>
@@ -1071,6 +1076,15 @@
     <Field type="uint" name="newRatio" label="New Ratio" description="The size of the young generation relative to the tenured generation" />
   </Event>
 
+  <Event name="ZYoungGarbageCollection" category="Java Virtual Machine, GC, Collector" label="ZGC Young Garbage Collection" description="Extra information specific to ZGC Young Garbage Collections" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="uint" name="tenuringThreshold" label="Tenuring Threshold" />
+  </Event>
+
+  <Event name="ZOldGarbageCollection" category="Java Virtual Machine, GC, Collector" label="ZGC Old Garbage Collection" description="Extra information specific to ZGC Old Garbage Collections" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+  </Event>
+
   <Event name="ZAllocationStall" category="Java Virtual Machine, GC, Detailed" label="ZGC Allocation Stall" description="Time spent waiting for memory to become available" thread="true">
     <Field type="ZPageTypeType" name="type" label="Type" />
     <Field type="ulong" contentType="bytes" name="size" label="Size" />
@@ -1093,9 +1107,10 @@
 
   <Event name="ZRelocationSetGroup" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set Group" thread="true">
     <Field type="ZPageTypeType" name="type" label="Type" />
-    <Field type="ulong" name="pages" label="Pages" />
+    <Field type="ulong" name="candidatePages" label="Candidate Pages" />
     <Field type="ulong" contentType="bytes" name="total" label="Total" />
     <Field type="ulong" contentType="bytes" name="empty" label="Empty" />
+    <Field type="ulong" name="selectedPages" label="Selected Pages" />
     <Field type="ulong" contentType="bytes" name="relocate" label="Relocate" />
   </Event>
 
