@@ -248,7 +248,7 @@ public class TestSealedTypes extends JavadocTester {
                 "package p; public sealed class A permits B,C,D { }",
                 "package p; public final  class B extends A { }",
                 "package p; public final  class C extends A { }",
-                "package p; sealed class D extends A permits D1, D2 { }",
+                "package p;        sealed class D extends A permits D1, D2 { }",
                 "package p; public final  class D1 extends D { }",
                 "package p; public final  class D2 extends D { }");
 
