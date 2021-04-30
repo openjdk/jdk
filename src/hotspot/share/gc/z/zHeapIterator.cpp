@@ -22,18 +22,21 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
+#include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeapIterator.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethod.hpp"
-#include "gc/z/zOop.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -56,17 +59,31 @@ private:
   ZHeapIteratorQueue* const      _queue;
   ZHeapIteratorArrayQueue* const _array_queue;
   const uint                     _worker_id;
-  ZStatTimerDisable              _timer_disable;
+  ObjectClosure*                 _object_cl;
+  OopFieldClosure*               _field_cl;
 
 public:
-  ZHeapIteratorContext(ZHeapIterator* iter, uint worker_id) :
+  ZHeapIteratorContext(ZHeapIterator* iter, ObjectClosure* object_cl, OopFieldClosure* field_cl, uint worker_id) :
       _iter(iter),
       _queue(_iter->_queues.queue(worker_id)),
       _array_queue(_iter->_array_queues.queue(worker_id)),
-      _worker_id(worker_id) {}
+      _worker_id(worker_id),
+      _object_cl(object_cl),
+      _field_cl(field_cl) {}
+
+  void visit_field(oop base, oop* p) const {
+    if (_field_cl != NULL) {
+      _field_cl->do_field(base, p);
+    }
+  }
+
+  void visit_object(oop obj) const {
+    _object_cl->do_object(obj);
+  }
 
   void mark_and_push(oop obj) const {
     if (_iter->mark_object(obj)) {
+      visit_object(obj);
       _queue->push(obj);
     }
   }
@@ -97,7 +114,7 @@ public:
 };
 
 template <bool Weak>
-class ZHeapIteratorRootOopClosure : public OopClosure {
+class ZHeapIteratorColoredRootOopClosure : public OopClosure {
 private:
   const ZHeapIteratorContext& _context;
 
@@ -110,10 +127,36 @@ private:
   }
 
 public:
-  ZHeapIteratorRootOopClosure(const ZHeapIteratorContext& context) :
+  ZHeapIteratorColoredRootOopClosure(const ZHeapIteratorContext& context) :
       _context(context) {}
 
   virtual void do_oop(oop* p) {
+    _context.visit_field(NULL, p);
+    const oop obj = load_oop(p);
+    _context.mark_and_push(obj);
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
+class ZHeapIteratorUncoloredRootOopClosure : public OopClosure {
+private:
+  const ZHeapIteratorContext& _context;
+
+  oop load_oop(oop* p) {
+    const oop o = Atomic::load(p);
+    assert_is_valid(to_zaddress(o));
+    return RawAccess<>::oop_load(p);
+  }
+
+public:
+  ZHeapIteratorUncoloredRootOopClosure(const ZHeapIteratorContext& context) :
+      _context(context) {}
+
+  virtual void do_oop(oop* p) {
+    _context.visit_field(NULL, p);
     const oop obj = load_oop(p);
     _context.mark_and_push(obj);
   }
@@ -150,6 +193,7 @@ public:
   }
 
   virtual void do_oop(oop* p) {
+    _context.visit_field(_base, p);
     const oop obj = load_oop(p);
     _context.mark_and_push(obj);
   }
@@ -198,13 +242,13 @@ public:
 
 ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
     _visit_weaks(visit_weaks),
-    _timer_disable(),
     _bitmaps(ZAddressOffsetMax),
     _bitmaps_lock(),
     _queues(nworkers),
     _array_queues(nworkers),
-    _roots(ClassLoaderData::_claim_other),
-    _weak_roots(),
+    _roots_colored(ZGenerationIdOptional::none),
+    _roots_uncolored(ZGenerationIdOptional::none),
+    _roots_weak_colored(ZGenerationIdOptional::none),
     _terminator(nworkers, &_queues) {
 
   // Create queues
@@ -246,14 +290,14 @@ static size_t object_index_max() {
 }
 
 static size_t object_index(oop obj) {
-  const uintptr_t addr = ZOop::to_address(obj);
-  const uintptr_t offset = ZAddress::offset(addr);
+  const zaddress addr = to_zaddress(obj);
+  const zoffset offset = ZAddress::offset(addr);
   const uintptr_t mask = ZGranuleSize - 1;
-  return (offset & mask) >> ZObjectAlignmentSmallShift;
+  return (untype(offset) & mask) >> ZObjectAlignmentSmallShift;
 }
 
 ZHeapIteratorBitMap* ZHeapIterator::object_bitmap(oop obj) {
-  const uintptr_t offset = ZAddress::offset(ZOop::to_address(obj));
+  const zoffset offset = ZAddress::offset(to_zaddress(obj));
   ZHeapIteratorBitMap* bitmap = _bitmaps.get_acquire(offset);
   if (bitmap == NULL) {
     ZLocker<ZLock> locker(&_bitmaps_lock);
@@ -278,7 +322,7 @@ bool ZHeapIterator::mark_object(oop obj) {
   return bitmap->try_set_bit(index);
 }
 
-typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_other> ZHeapIteratorCLDCLosure;
+typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_other> ZHeapIteratorCLDClosure;
 
 class ZHeapIteratorNMethodClosure : public NMethodClosure {
 private:
@@ -317,20 +361,26 @@ public:
 };
 
 void ZHeapIterator::push_strong_roots(const ZHeapIteratorContext& context) {
-  ZHeapIteratorRootOopClosure<false /* Weak */> cl(context);
-  ZHeapIteratorCLDCLosure cld_cl(&cl);
-  ZHeapIteratorNMethodClosure nm_cl(&cl);
-  ZHeapIteratorThreadClosure thread_cl(&cl, &nm_cl);
+  {
+    ZHeapIteratorColoredRootOopClosure<false /* Weak */> cl(context);
+    ZHeapIteratorCLDClosure cld_cl(&cl);
 
-  _roots.apply(&cl,
-               &cld_cl,
-               &thread_cl,
-               &nm_cl);
+    _roots_colored.apply(&cl,
+                         &cld_cl);
+  }
+
+  {
+    ZHeapIteratorUncoloredRootOopClosure cl(context);
+    ZHeapIteratorNMethodClosure nm_cl(&cl);
+    ZHeapIteratorThreadClosure thread_cl(&cl, &nm_cl);
+    _roots_uncolored.apply(&thread_cl,
+                           &nm_cl);
+  }
 }
 
 void ZHeapIterator::push_weak_roots(const ZHeapIteratorContext& context) {
-  ZHeapIteratorRootOopClosure<true  /* Weak */> cl(context);
-  _weak_roots.apply(&cl);
+  ZHeapIteratorColoredRootOopClosure<true  /* Weak */> cl(context);
+  _roots_weak_colored.apply(&cl);
 }
 
 template <bool VisitWeaks>
@@ -344,7 +394,7 @@ void ZHeapIterator::push_roots(const ZHeapIteratorContext& context) {
 template <bool VisitReferents>
 void ZHeapIterator::follow_object(const ZHeapIteratorContext& context, oop obj) {
   ZHeapIteratorOopClosure<VisitReferents> cl(context, obj);
-  obj->oop_iterate(&cl);
+  ZIterator::oop_iterate(obj, &cl);
 }
 
 void ZHeapIterator::follow_array(const ZHeapIteratorContext& context, oop obj) {
@@ -370,14 +420,11 @@ void ZHeapIterator::follow_array_chunk(const ZHeapIteratorContext& context, cons
 
   // Follow array chunk
   ZHeapIteratorOopClosure<false /* VisitReferents */> cl(context, obj);
-  obj->oop_iterate_range(&cl, start, end);
+  ZIterator::oop_iterate_range(obj, &cl, start, end);
 }
 
 template <bool VisitWeaks>
-void ZHeapIterator::visit_and_follow(const ZHeapIteratorContext& context, ObjectClosure* cl, oop obj) {
-  // Visit
-  cl->do_object(obj);
-
+void ZHeapIterator::follow(const ZHeapIteratorContext& context, oop obj) {
   // Follow
   if (obj->is_objArray()) {
     follow_array(context, obj);
@@ -387,13 +434,13 @@ void ZHeapIterator::visit_and_follow(const ZHeapIteratorContext& context, Object
 }
 
 template <bool VisitWeaks>
-void ZHeapIterator::drain(const ZHeapIteratorContext& context, ObjectClosure* cl) {
+void ZHeapIterator::drain(const ZHeapIteratorContext& context) {
   ObjArrayTask array;
   oop obj;
 
   do {
     while (context.pop(obj)) {
-      visit_and_follow<VisitWeaks>(context, cl, obj);
+      follow<VisitWeaks>(context, obj);
     }
 
     if (context.pop_array(array)) {
@@ -403,37 +450,47 @@ void ZHeapIterator::drain(const ZHeapIteratorContext& context, ObjectClosure* cl
 }
 
 template <bool VisitWeaks>
-void ZHeapIterator::steal(const ZHeapIteratorContext& context, ObjectClosure* cl) {
+void ZHeapIterator::steal(const ZHeapIteratorContext& context) {
   ObjArrayTask array;
   oop obj;
 
   if (context.steal_array(array)) {
     follow_array_chunk(context, array);
   } else if (context.steal(obj)) {
-    visit_and_follow<VisitWeaks>(context, cl, obj);
+    follow<VisitWeaks>(context, obj);
   }
 }
 
 template <bool VisitWeaks>
-void ZHeapIterator::drain_and_steal(const ZHeapIteratorContext& context, ObjectClosure* cl) {
+void ZHeapIterator::drain_and_steal(const ZHeapIteratorContext& context) {
   do {
-    drain<VisitWeaks>(context, cl);
-    steal<VisitWeaks>(context, cl);
+    drain<VisitWeaks>(context);
+    steal<VisitWeaks>(context);
   } while (!context.is_drained() || !_terminator.offer_termination());
 }
 
 template <bool VisitWeaks>
-void ZHeapIterator::object_iterate_inner(const ZHeapIteratorContext& context, ObjectClosure* object_cl) {
+void ZHeapIterator::object_iterate_inner(const ZHeapIteratorContext& context) {
   push_roots<VisitWeaks>(context);
-  drain_and_steal<VisitWeaks>(context, object_cl);
+  drain_and_steal<VisitWeaks>(context);
 }
 
-void ZHeapIterator::object_iterate(ObjectClosure* cl, uint worker_id) {
-  ZHeapIteratorContext context(this, worker_id);
+void ZHeapIterator::object_iterate(ObjectClosure* object_cl, uint worker_id) {
+  const ZHeapIteratorContext context(this, object_cl, NULL /* field_cl */, worker_id);
 
   if (_visit_weaks) {
-    object_iterate_inner<true /* VisitWeaks */>(context, cl);
+    object_iterate_inner<true /* VisitWeaks */>(context);
   } else {
-    object_iterate_inner<false /* VisitWeaks */>(context, cl);
+    object_iterate_inner<false /* VisitWeaks */>(context);
+  }
+}
+
+void ZHeapIterator::object_and_field_iterate(ObjectClosure* object_cl, OopFieldClosure* field_cl, uint worker_id) {
+  const ZHeapIteratorContext context(this, object_cl, field_cl, worker_id);
+
+  if (_visit_weaks) {
+    object_iterate_inner<true /* VisitWeaks */>(context);
+  } else {
+    object_iterate_inner<false /* VisitWeaks */>(context);
   }
 }

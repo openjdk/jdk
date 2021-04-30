@@ -945,7 +945,9 @@ class StubGenerator: public StubCodeGenerator {
   void copy_memory(DecoratorSet decorators, BasicType type, bool is_aligned,
                    Register s, Register d, Register count, Register tmp, int step) {
     if (UseRVV) {
-      return copy_memory_v(s, d, count, tmp, step);
+      // TODO: add gc barriers when copying oops
+      if (UseZGC && !is_reference_type(type))
+        return copy_memory_v(s, d, count, tmp, step);
     }
 
     bool is_backwards = step < 0;
@@ -3732,7 +3734,7 @@ class StubGenerator: public StubCodeGenerator {
       framesize // inclusive of return address
     };
 
-    const int insts_size = 512;
+    const int insts_size = 1024;
     const int locs_size  = 64;
 
     CodeBuffer code(name, insts_size, locs_size);
@@ -3971,7 +3973,7 @@ class StubGenerator: public StubCodeGenerator {
       framesize // inclusive of return address
     };
 
-    int insts_size = 512;
+    int insts_size = 1024;
     int locs_size = 64;
     CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
     OopMapSet* oop_maps = new OopMapSet();

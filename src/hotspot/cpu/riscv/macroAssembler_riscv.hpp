@@ -689,6 +689,7 @@ public:
   void la(Register Rd, const address dest);
   void la(Register Rd, const Address &adr);
 
+  void li16u(Register Rd, int32_t imm);
   void li32(Register Rd, int32_t imm);
   void li64(Register Rd, int64_t imm);
   void li  (Register Rd, int64_t imm);  // optimized load immediate
