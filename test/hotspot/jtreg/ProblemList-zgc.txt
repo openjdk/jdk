@@ -63,3 +63,4 @@ serviceability/sa/TestSysProps.java                           8220624   generic-
 serviceability/sa/sadebugd/DebugdConnectTest.java             8220624   generic-all
 serviceability/sa/sadebugd/DisableRegistryTest.java           8220624   generic-all
 vmTestbase/jit/escape/AdaptiveBlocking/AdaptiveBlocking001/AdaptiveBlocking001.java 8260303 windows-x64
+runtime/stringtable/StringTableCleaningTest.java              8266056   linux-aarch64

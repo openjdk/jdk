@@ -347,7 +347,7 @@ address ArchiveBuilder::reserve_buffer() {
     vm_direct_exit(0);
   }
 
-  // buffer_bottom is the lowest address of the 3 core regions (mc, rw, ro) when
+  // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
   // we are copying the class metadata into the buffer.
   address buffer_bottom = (address)rs.base();
   log_info(cds)("Reserved output buffer space at " PTR_FORMAT " [" SIZE_FORMAT " bytes]",
@@ -778,11 +778,11 @@ void ArchiveBuilder::relocate_klass_ptr(oop o) {
   o->set_narrow_klass(nk);
 }
 
-// RelocateBufferToRequested --- Relocate all the pointers in mc/rw/ro,
+// RelocateBufferToRequested --- Relocate all the pointers in rw/ro,
 // so that the archive can be mapped to the "requested" location without runtime relocation.
 //
 // - See ArchiveBuilder header for the definition of "buffer", "mapped" and "requested"
-// - ArchivePtrMarker::ptrmap() marks all the pointers in the mc/rw/ro regions
+// - ArchivePtrMarker::ptrmap() marks all the pointers in the rw/ro regions
 // - Every pointer must have one of the following values:
 //   [a] NULL:
 //       No relocation is needed. Remove this pointer from ptrmap so we don't need to
@@ -885,12 +885,12 @@ void ArchiveBuilder::relocate_to_requested() {
 // consistency, we log everything using runtime addresses.
 class ArchiveBuilder::CDSMapLogger : AllStatic {
   static intx buffer_to_runtime_delta() {
-    // Translate the buffers used by the MC/RW/RO regions to their eventual (requested) locations
+    // Translate the buffers used by the RW/RO regions to their eventual (requested) locations
     // at runtime.
     return ArchiveBuilder::current()->buffer_to_requested_delta();
   }
 
-  // mc/rw/ro regions only
+  // rw/ro regions only
   static void write_dump_region(const char* name, DumpRegion* region) {
     address region_base = address(region->base());
     address region_top  = address(region->top());

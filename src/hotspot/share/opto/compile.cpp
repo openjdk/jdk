@@ -287,13 +287,6 @@ void Compile::gvn_replace_by(Node* n, Node* nn) {
 }
 
 
-static inline bool not_a_node(const Node* n) {
-  if (n == NULL)                   return true;
-  if (((intptr_t)n & 1) != 0)      return true;  // uninitialized, etc.
-  if (*(address*)n == badAddress)  return true;  // kill by Node::destruct
-  return false;
-}
-
 // Identify all nodes that are reachable from below, useful.
 // Use breadth-first pass that records state in a Unique_Node_List,
 // recursive traversal is slower.

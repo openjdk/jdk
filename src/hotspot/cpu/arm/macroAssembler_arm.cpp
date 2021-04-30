@@ -1898,13 +1898,13 @@ void MacroAssembler::resolve(DecoratorSet decorators, Register obj) {
 }
 
 void MacroAssembler::safepoint_poll(Register tmp1, Label& slow_path) {
-  ldr_u32(tmp1, Address(Rthread, Thread::polling_word_offset()));
+  ldr_u32(tmp1, Address(Rthread, JavaThread::polling_word_offset()));
   tst(tmp1, exact_log2(SafepointMechanism::poll_bit()));
   b(slow_path, eq);
 }
 
 void MacroAssembler::get_polling_page(Register dest) {
-  ldr(dest, Address(Rthread, Thread::polling_page_offset()));
+  ldr(dest, Address(Rthread, JavaThread::polling_page_offset()));
 }
 
 void MacroAssembler::read_polling_page(Register dest, relocInfo::relocType rtype) {

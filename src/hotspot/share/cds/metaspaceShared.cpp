@@ -99,8 +99,8 @@ bool MetaspaceShared::_use_full_module_graph = true;
 //
 //     bm  - bitmap for relocating the above 7 regions.
 //
-// The rw, and ro regions are linearly allocated, in the order of rw->ro.
-// These regions are aligned with MetaspaceShared::reserved_space_alignment().
+// The rw and ro regions are linearly allocated, in the order of rw->ro.
+// These regions are aligned with MetaspaceShared::core_region_alignment().
 //
 // These 2 regions are populated in the following steps:
 // [0] All classes are loaded in MetaspaceShared::preload_classes(). All metadata are
@@ -487,12 +487,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   FileMapInfo::check_nonempty_dir_in_shared_path_table();
 
   NOT_PRODUCT(SystemDictionary::verify();)
-  // The following guarantee is meant to ensure that no loader constraints
-  // exist yet, since the constraints table is not shared.  This becomes
-  // more important now that we don't re-initialize vtables/itables for
-  // shared classes at runtime, where constraints were previously created.
-  guarantee(SystemDictionary::constraints()->number_of_entries() == 0,
-            "loader constraints are not saved");
 
   // At this point, many classes have been loaded.
   // Gather systemDictionary classes in a global array and do everything to

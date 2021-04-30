@@ -1200,6 +1200,15 @@ public:
   // cannot lock it (like the mirror).
   // It has to be an object not a Mutex because it's held through java calls.
   oop init_lock() const;
+
+  // Returns the array class for the n'th dimension
+  virtual Klass* array_klass(int n, TRAPS);
+  virtual Klass* array_klass_or_null(int n);
+
+  // Returns the array class with this class as element type
+  virtual Klass* array_klass(TRAPS);
+  virtual Klass* array_klass_or_null();
+
 private:
   void fence_and_clear_init_lock();
 
@@ -1210,12 +1219,6 @@ private:
   void eager_initialize_impl                     ();
   /* jni_id_for_impl for jfieldID only */
   JNIid* jni_id_for_impl                         (int offset);
-
-  // Returns the array class for the n'th dimension
-  Klass* array_klass_impl(bool or_null, int n, TRAPS);
-
-  // Returns the array class with this class as element type
-  Klass* array_klass_impl(bool or_null, TRAPS);
 
   // find a local method (returns NULL if not found)
   Method* find_method_impl(const Symbol* name,
