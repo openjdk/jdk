@@ -5821,8 +5821,8 @@ address generate_avx_ghash_processBlocks() {
       BLOCK_COMMENT("Entry:");
       __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-      __ vmovdqu(yshuf0, ExternalAddress((address) StubRoutines::x86::_adler32_shuf0_table));
-      __ vmovdqu(yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_shuf1_table));
+      __ vmovdqu(yshuf0, ExternalAddress((address) StubRoutines::x86::_adler32_shuf0_table), r9);
+      __ vmovdqu(yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_shuf1_table), r9);
       __ movptr(data, c_rarg1); //data
       __ movl(size, c_rarg2); //length
       __ updateBytesAdler32(c_rarg0, data, size, yshuf0, yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_ascale_table));

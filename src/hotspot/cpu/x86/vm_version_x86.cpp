@@ -898,6 +898,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
+#ifdef _LP64
   if (supports_avx2() && UseAdler32Intrinsics) {
     if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
       UseAdler32Intrinsics = true;
@@ -907,6 +908,12 @@ void VM_Version::get_processor_features() {
       warning("Adler32 Intrinsics requires avx2 instructions (not available on this CPU)");
     FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
   }
+#else
+  if (UseAdler32Intrinsics) {
+    warning("Adler32Intrinsics not available on this CPU.");
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
+#endif
 
   if (supports_sse4_2() && supports_clmul()) {
     if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {

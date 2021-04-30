@@ -3245,7 +3245,6 @@ void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, Address src, int 
 }
 
 void MacroAssembler::vpmulld(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg) {
-  // Used in sign-bit flipping with aligned address.
   assert((UseAVX > 0), "SSE mode requires address alignment 16 bytes");
   if (reachable(src)) {
     Assembler::vpmulld(dst, nds, as_Address(src), vector_len);

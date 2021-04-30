@@ -29,7 +29,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "macroAssembler_x86.hpp"
 
-
+#ifdef _LP64
 void MacroAssembler::updateBytesAdler32(Register init_d, Register data, Register size, XMMRegister yshuf0, XMMRegister yshuf1, ExternalAddress ascaletab)
 {
       const int LIMIT = 5552;
@@ -206,4 +206,4 @@ void MacroAssembler::updateBytesAdler32(Register init_d, Register data, Register
       pop(r13);
       pop(r12);
   }
-
+#endif
