@@ -42,13 +42,19 @@ public class TestNestHostErrorWithMultiThread {
 
     Runnable test = new Test(runLatch, startLatch);
 
-    new Thread(test).start();
-    new Thread(test).start();
+    Thread t1 = new Thread(test);
+    Thread t2 = new Thread(test);
+
+    t1.start();
+    t2.start();
 
     try {
       // waiting thread creation
       startLatch.await();
       runLatch.countDown();
+
+      t1.join();
+      t2.join();
     } catch (InterruptedException e) {
       throw new Error("Unexpected interrupt");
     }
