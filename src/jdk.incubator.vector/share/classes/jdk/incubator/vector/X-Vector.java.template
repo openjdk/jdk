@@ -2252,9 +2252,9 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> BlendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
+        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
         iota = iotaShuffle(origin, 1, true);
-        return (($abstractvectortype$)v1).rearrange(iota).blend(this.rearrange(iota), BlendMask);
+        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -2282,9 +2282,9 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     $abstractvectortype$ sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> BlendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
+        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
         iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), BlendMask);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -2303,10 +2303,10 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> BlendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+        VectorMask<$Boxtype$> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
                                                                   (broadcast(($type$)(origin))));
         iota = iotaShuffle(-origin, 1, true);
-        return (($abstractvectortype$)w).blend(this.rearrange(iota), BlendMask);
+        return that.blend(this.rearrange(iota), blendMask);
     }
 
     /*package-private*/
@@ -2343,10 +2343,10 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     unsliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> BlendMask = iota.toVector().compare(VectorOperators.GE,
+        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.GE,
                                                                   (broadcast(($type$)(origin))));
         iota = iotaShuffle(-origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), BlendMask);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
     private ArrayIndexOutOfBoundsException

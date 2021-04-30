@@ -1908,9 +1908,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Float> iota = iotaShuffle();
-        VectorMask<Float> BlendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((float)(length() - origin))));
+        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((float)(length() - origin))));
         iota = iotaShuffle(origin, 1, true);
-        return ((FloatVector)v1).rearrange(iota).blend(this.rearrange(iota), BlendMask);
+        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -1938,9 +1938,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
     FloatVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Float> iota = iotaShuffle();
-        VectorMask<Float> BlendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((float)(length() - origin))));
+        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((float)(length() - origin))));
         iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), BlendMask);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -1959,10 +1959,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Float> iota = iotaShuffle();
-        VectorMask<Float> BlendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+        VectorMask<Float> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
                                                                   (broadcast((float)(origin))));
         iota = iotaShuffle(-origin, 1, true);
-        return ((FloatVector)w).blend(this.rearrange(iota), BlendMask);
+        return that.blend(this.rearrange(iota), blendMask);
     }
 
     /*package-private*/
@@ -1999,10 +1999,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
     unsliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Float> iota = iotaShuffle();
-        VectorMask<Float> BlendMask = iota.toVector().compare(VectorOperators.GE,
+        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.GE,
                                                                   (broadcast((float)(origin))));
         iota = iotaShuffle(-origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), BlendMask);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
     private ArrayIndexOutOfBoundsException

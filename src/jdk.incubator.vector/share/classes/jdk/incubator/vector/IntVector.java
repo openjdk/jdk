@@ -1982,9 +1982,9 @@ public abstract class IntVector extends AbstractVector<Integer> {
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Integer> iota = iotaShuffle();
-        VectorMask<Integer> BlendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((int)(length() - origin))));
+        VectorMask<Integer> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((int)(length() - origin))));
         iota = iotaShuffle(origin, 1, true);
-        return ((IntVector)v1).rearrange(iota).blend(this.rearrange(iota), BlendMask);
+        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -2012,9 +2012,9 @@ public abstract class IntVector extends AbstractVector<Integer> {
     IntVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Integer> iota = iotaShuffle();
-        VectorMask<Integer> BlendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((int)(length() - origin))));
+        VectorMask<Integer> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((int)(length() - origin))));
         iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), BlendMask);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -2033,10 +2033,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Integer> iota = iotaShuffle();
-        VectorMask<Integer> BlendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+        VectorMask<Integer> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
                                                                   (broadcast((int)(origin))));
         iota = iotaShuffle(-origin, 1, true);
-        return ((IntVector)w).blend(this.rearrange(iota), BlendMask);
+        return that.blend(this.rearrange(iota), blendMask);
     }
 
     /*package-private*/
@@ -2073,10 +2073,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
     unsliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Integer> iota = iotaShuffle();
-        VectorMask<Integer> BlendMask = iota.toVector().compare(VectorOperators.GE,
+        VectorMask<Integer> blendMask = iota.toVector().compare(VectorOperators.GE,
                                                                   (broadcast((int)(origin))));
         iota = iotaShuffle(-origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), BlendMask);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
     private ArrayIndexOutOfBoundsException
