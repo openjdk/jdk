@@ -422,6 +422,11 @@
       <setting name="threshold">0 ms</setting>
     </event>
 
+    <event name="jdk.GCPhaseConcurrentLevel2">
+      <setting name="enabled" control="gc-enabled-high">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
     <event name="jdk.GCReferenceStatistics">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
@@ -827,6 +832,16 @@
     </event>
 
     <event name="jdk.ZUnmap">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.ZYoungGarbageCollection">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.ZOldGarbageCollection">
       <setting name="enabled">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>

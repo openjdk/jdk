@@ -22,16 +22,32 @@
  */
 
 /*
+ * @test id=ZDebug
+ * @key randomness
+ * @bug 8059022 8271855
+ * @modules java.base/jdk.internal.misc:+open
+ * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
+ * @requires vm.gc.Z & vm.debug
+ * @library /test/lib
+ * @run main/othervm -XX:+UseZGC
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+ZVerifyOops -XX:ZCollectionInterval=1
+ *                   -XX:-CreateCoredumpOnCrash
+ *                   -XX:CompileCommand=dontinline,*::mergeImpl*
+ *                   compiler.gcbarriers.UnsafeIntrinsicsTest
+ */
+
+/*
  * @test id=Z
  * @key randomness
  * @bug 8059022 8271855
  * @modules java.base/jdk.internal.misc:+open
  * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
- * @requires vm.gc.Z
+ * @requires vm.gc.Z & !vm.debug
  * @library /test/lib
  * @run main/othervm -XX:+UseZGC
  *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+ZVerifyViews -XX:ZCollectionInterval=1
+ *                   -XX:ZCollectionInterval=1
  *                   -XX:-CreateCoredumpOnCrash
  *                   -XX:CompileCommand=dontinline,*::mergeImpl*
  *                   compiler.gcbarriers.UnsafeIntrinsicsTest
@@ -289,7 +305,7 @@ class Runner implements Runnable {
     private Node mergeImplLoad(Node startNode, Node expectedNext, Node head) {
         // Atomic load version
         Node temp = (Node) UNSAFE.getReference(startNode, offset);
-        UNSAFE.storeFence(); // Make all new Node fields visible to concurrent readers.
+        UNSAFE.storeFence(); // We need the contents of the published node to be released
         startNode.setNext(head);
         return temp;
     }
