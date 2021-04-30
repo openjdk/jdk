@@ -539,6 +539,16 @@
     <Field type="string" name="name" label="Name" />
   </Event>
 
+  <Event name="GCPhaseConcurrentLevel2" category="Java Virtual Machine, GC, Phases" label="GC Phase Concurrent Level 2" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
+  <Event name="GCPhaseConcurrentLevel3" category="Java Virtual Machine, GC, Phases" label="GC Phase Concurrent Level 3" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
   <Event name="GCPhaseParallel" category="Java Virtual Machine, GC, Phases" label="GC Phase Parallel"
          startTime="true" thread="true" description="GC phases for parallel workers">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
@@ -1093,9 +1103,10 @@
 
   <Event name="ZRelocationSetGroup" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set Group" thread="true">
     <Field type="ZPageTypeType" name="type" label="Type" />
-    <Field type="ulong" name="pages" label="Pages" />
+    <Field type="ulong" name="candidatePages" label="Candidate Pages" />
     <Field type="ulong" contentType="bytes" name="total" label="Total" />
     <Field type="ulong" contentType="bytes" name="empty" label="Empty" />
+    <Field type="ulong" name="selectedPages" label="Selected Pages" />
     <Field type="ulong" contentType="bytes" name="relocate" label="Relocate" />
   </Event>
 

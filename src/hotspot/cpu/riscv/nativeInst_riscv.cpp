@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,12 @@ bool NativeInstruction::is_movptr_at(address instr) {
           is_jalr_at(instr + instruction_size * 5) ||
           is_load_at(instr + instruction_size * 5)) && // Addi/Jalr/Load
          check_movptr_data_dependency(instr);
+}
+
+bool NativeInstruction::is_li16u_at(address instr) {
+  return is_lui_at(instr) && // lui
+         is_srli_at(instr + instruction_size) && // srli
+         check_li16u_data_dependency(instr);
 }
 
 bool NativeInstruction::is_li32_at(address instr) {

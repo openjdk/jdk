@@ -26,7 +26,7 @@
 
 #include "gc/z/zUtils.hpp"
 
-#include "gc/z/zOop.inline.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -42,17 +42,17 @@ inline size_t ZUtils::words_to_bytes(size_t size_in_words) {
   return size_in_words << LogBytesPerWord;
 }
 
-inline size_t ZUtils::object_size(uintptr_t addr) {
-  return words_to_bytes(ZOop::from_address(addr)->size());
+inline size_t ZUtils::object_size(zaddress addr) {
+  return words_to_bytes(to_oop(addr)->size());
 }
 
-inline void ZUtils::object_copy_disjoint(uintptr_t from, uintptr_t to, size_t size) {
-  Copy::aligned_disjoint_words((HeapWord*)from, (HeapWord*)to, bytes_to_words(size));
+inline void ZUtils::object_copy_disjoint(zaddress from, zaddress to, size_t size) {
+  Copy::aligned_disjoint_words((HeapWord*)untype(from), (HeapWord*)untype(to), bytes_to_words(size));
 }
 
-inline void ZUtils::object_copy_conjoint(uintptr_t from, uintptr_t to, size_t size) {
+inline void ZUtils::object_copy_conjoint(zaddress from, zaddress to, size_t size) {
   if (from != to) {
-    Copy::aligned_conjoint_words((HeapWord*)from, (HeapWord*)to, bytes_to_words(size));
+    Copy::aligned_conjoint_words((HeapWord*)untype(from), (HeapWord*)untype(to), bytes_to_words(size));
   }
 }
 
