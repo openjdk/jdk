@@ -1981,11 +1981,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
     ShortVector sliceTemplate(int origin, Vector<Short> v1) {
         ShortVector that = (ShortVector) v1;
         that.check(this);
-        Objects.checkIndex(origin, length());
-        VectorShuffle<Short> Iota = iotaShuffle();
-        VectorMask<Short> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((short)(length() - origin))));
-        Iota = iotaShuffle(origin, 1, true);
-        return ((ShortVector)v1).rearrange(Iota).blend(this.rearrange(Iota), BlendMask);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Short> iota = iotaShuffle();
+        VectorMask<Short> BlendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((short)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return ((ShortVector)v1).rearrange(iota).blend(this.rearrange(iota), BlendMask);
     }
 
     /**
@@ -2011,11 +2011,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
     final
     @ForceInline
     ShortVector sliceTemplate(int origin) {
-        Objects.checkIndex(origin, length());
-        VectorShuffle<Short> Iota = iotaShuffle();
-        VectorMask<Short> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((short)(length() - origin))));
-        Iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(Iota), BlendMask);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Short> iota = iotaShuffle();
+        VectorMask<Short> BlendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((short)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), BlendMask);
     }
 
     /**
@@ -2032,12 +2032,12 @@ public abstract class ShortVector extends AbstractVector<Short> {
     unsliceTemplate(int origin, Vector<Short> w, int part) {
         ShortVector that = (ShortVector) w;
         that.check(this);
-        Objects.checkIndex(origin, length());
-        VectorShuffle<Short> Iota = iotaShuffle();
-        VectorMask<Short> BlendMask = Iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Short> iota = iotaShuffle();
+        VectorMask<Short> BlendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
                                                                   (broadcast((short)(origin))));
-        Iota = iotaShuffle(-origin, 1, true);
-        return ((ShortVector)w).blend(this.rearrange(Iota), BlendMask);
+        iota = iotaShuffle(-origin, 1, true);
+        return ((ShortVector)w).blend(this.rearrange(iota), BlendMask);
     }
 
     /*package-private*/
@@ -2072,12 +2072,12 @@ public abstract class ShortVector extends AbstractVector<Short> {
     @ForceInline
     ShortVector
     unsliceTemplate(int origin) {
-        Objects.checkIndex(origin, length());
-        VectorShuffle<Short> Iota = iotaShuffle();
-        VectorMask<Short> BlendMask = Iota.toVector().compare(VectorOperators.GE,
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Short> iota = iotaShuffle();
+        VectorMask<Short> BlendMask = iota.toVector().compare(VectorOperators.GE,
                                                                   (broadcast((short)(origin))));
-        Iota = iotaShuffle(-origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(Iota), BlendMask);
+        iota = iotaShuffle(-origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), BlendMask);
     }
 
     private ArrayIndexOutOfBoundsException
