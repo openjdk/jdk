@@ -68,7 +68,7 @@ public class TestPLABEvacuationFailure {
             "failure wasted"));
 
     private static final String[] COMMON_OPTIONS = {
-        "-Xlog:gc=debug,gc+plab=debug",
+        "-Xlog:gc=debug,gc+phases=trace",
         "-XX:+UseG1GC",
         "-XX:InitiatingHeapOccupancyPercent=100",
         "-XX:-G1UseAdaptiveIHOP",
@@ -81,11 +81,11 @@ public class TestPLABEvacuationFailure {
 
     public static void main(String[] args) throws Throwable {
         // ParallelGCBufferWastePct, PLAB Size, ParallelGCBufferWastePct, MaxHeapSize, is plab fixed.
-//        runTest(10, 1024, 3, 16, true);
-//        runTest(15, 2048, 4, 256, true);
-//        runTest(20, 65536, 7, 128, false);
-//        runTest(25, 1024, 3, 16, true);
-//        runTest(30, 16384, 7, 256, false);
+        runTest(10, 1024, 3, 16, true);
+        runTest(15, 2048, 4, 256, true);
+        runTest(20, 65536, 7, 128, false);
+        runTest(25, 1024, 3, 16, true);
+        runTest(30, 16384, 7, 256, false);
         runTest(10, 65536, 4, 32, false);
     }
 
@@ -115,7 +115,7 @@ public class TestPLABEvacuationFailure {
             System.out.println(appPlabEvacFailureOutput);
             throw new RuntimeException("Expect exit code 0.");
         }
-        System.out.println(appPlabEvacFailureOutput);
+
         // Get list of GC ID on evacuation failure
         evacuationFailureIDs = getGcIdPlabEvacFailures(out);
         logParser = new LogParser(appPlabEvacFailureOutput);
