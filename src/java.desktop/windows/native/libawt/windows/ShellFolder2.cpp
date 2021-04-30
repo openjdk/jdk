@@ -980,7 +980,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
             if (size < 24) {
                 size = 16;
             }
-            hres = pIcon->Extract(szBuf, index, &hIcon, NULL, (16 << 16) + size);
+            hres = pIcon->Extract(szBuf, index, &hIcon, NULL, size);
         } else if (hres == E_PENDING) {
             pIcon->Release();
             return E_PENDING;
