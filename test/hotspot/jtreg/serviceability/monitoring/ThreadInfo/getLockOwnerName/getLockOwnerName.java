@@ -27,10 +27,9 @@
  * @summary The test checks that ThreadInfo.getLockOwnerName() returns a
  *   non-null string for a blocked thread and then makes repeated calls
  *   to getThreadInfo() and ThreadInfo.getLockOwnerName() until the thread
- *    has exited.
+ *   has exited.
  * @requires vm.jvmti
  * @library /test/lib
- * @compile getLockOwnerName.java
  * @run main/othervm/native -agentlib:getLockOwnerName getLockOwnerName
  */
 
@@ -186,7 +185,7 @@ public class getLockOwnerName {
 
                 while (testState != TS_BLOCKER_RUNNING) {
                     try {
-                        barrierLaunch.wait(0);  // wait until it is running
+                        barrierLaunch.wait();  // wait until it is running
                     } catch (InterruptedException ex) {
                     }
                 }
@@ -199,7 +198,7 @@ public class getLockOwnerName {
 
                 while (testState != TS_CONTENDER_RUNNING) {
                     try {
-                        barrierLaunch.wait(0);  // wait until it is running
+                        barrierLaunch.wait();  // wait until it is running
                     } catch (InterruptedException ex) {
                     }
                 }
@@ -212,7 +211,7 @@ public class getLockOwnerName {
 
                 while (testState != TS_RELEASER_RUNNING) {
                     try {
-                        barrierLaunch.wait(0);  // wait until it is running
+                        barrierLaunch.wait();  // wait until it is running
                     } catch (InterruptedException ex) {
                     }
                 }
@@ -344,7 +343,7 @@ class getLockOwnerNameWorker extends Thread {
                     while (getLockOwnerName.testState != getLockOwnerName.TS_DONE_BLOCKING) {
                         try {
                             // wait for main to tell us when to exit threadLock
-                            getLockOwnerName.barrierBlocker.wait(0);
+                            getLockOwnerName.barrierBlocker.wait();
                         } catch (InterruptedException ex) {
                         }
                     }
@@ -393,7 +392,7 @@ class getLockOwnerNameWorker extends Thread {
                 while (getLockOwnerName.testState != getLockOwnerName.TS_READY_TO_RELEASE) {
                     try {
                         // wait for main to tell us when to continue
-                        getLockOwnerName.barrierReleaser.wait(0);
+                        getLockOwnerName.barrierReleaser.wait();
                     } catch (InterruptedException ex) {
                     }
                 }
