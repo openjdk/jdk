@@ -59,6 +59,8 @@ public class StringTableCleaningTest {
         subargs.add(Tester.class.getName());
         subargs.addAll(Arrays.asList(args));
         OutputAnalyzer output = ProcessTools.executeTestJvm(subargs);
+        output.outputTo(System.out);
+        output.errorTo(System.out);
         output.shouldHaveExitValue(0);
         checkOutput(output);
     }
@@ -82,7 +84,8 @@ public class StringTableCleaningTest {
     private static final String g1Suffix = "Pause(?! Cleanup)";
 
     // Suffix for ZGC.
-    private static final String zSuffix = "Garbage Collection";
+    private static final String zStartSuffix = "Garbage Collection (.*)$";
+    private static final String zEndSuffix = "Garbage Collection (.*) .*->.*$";
 
     // Suffix for Shenandoah.
     private static final String shenSuffix = "Concurrent weak roots";
@@ -93,7 +96,7 @@ public class StringTableCleaningTest {
         } else if (GC.G1.isSelected()) {
             return gcStartPrefix + g1Suffix;
         } else if (GC.Z.isSelected()) {
-            return gcStartPrefix + zSuffix;
+            return gcStartPrefix + zStartSuffix;
         } else if (GC.Shenandoah.isSelected()) {
             return gcStartPrefix + shenSuffix;
         } else {
@@ -107,7 +110,7 @@ public class StringTableCleaningTest {
         } else if (GC.G1.isSelected()) {
             return gcEndPrefix + g1Suffix;
         } else if (GC.Z.isSelected()) {
-            return gcEndPrefix + zSuffix;
+            return gcEndPrefix + zEndSuffix;
         } else if (GC.Shenandoah.isSelected()) {
             return gcEndPrefix + shenSuffix;
         } else {
@@ -183,7 +186,7 @@ public class StringTableCleaningTest {
                 fail("Two Starts: " + gcStart + ", " + i);
             }
         }
-        return fail("Missing Callback for Start: " + gcStart);
+        return -1;
     }
 
     // Search the lines for the first GC end log line in lines, starting
