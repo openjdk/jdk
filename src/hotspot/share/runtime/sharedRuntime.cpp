@@ -2775,6 +2775,48 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_simple_adapter(const methodHandl
   return NULL;
 }
 
+class AdapterSignatureIterator : public SignatureIterator {
+ private:
+  BasicType stack_sig_bt[16];
+  BasicType* sig_bt;
+  int index;
+
+ public:
+  AdapterSignatureIterator(Symbol* signature,
+                           fingerprint_t fingerprint,
+                           bool is_static,
+                           int total_args_passed) :
+    SignatureIterator(signature, fingerprint),
+    index(0)
+  {
+    sig_bt = (total_args_passed <= 16) ? stack_sig_bt : NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
+    if (!is_static) { // Pass in receiver first
+      sig_bt[index++] = T_OBJECT;
+    }
+    do_parameters_on(this);
+  }
+
+  BasicType* basic_types() {
+    return sig_bt;
+  }
+
+#ifdef ASSERT
+  int slots() {
+    return index;
+  }
+#endif
+
+ private:
+
+  friend class SignatureIterator;  // so do_parameters_on can call do_type
+  void do_type(BasicType type) {
+    sig_bt[index++] = type;
+    if (type == T_LONG || type == T_DOUBLE) {
+      sig_bt[index++] = T_VOID; // Longs & doubles take 2 Java slots
+    }
+  }
+};
+
 AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& method) {
   // Use customized signature handler.  Need to lock around updates to
   // the AdapterHandlerTable (it is not safe for concurrent readers
@@ -2794,22 +2836,12 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
   // Fill in the signature array, for the calling-convention call.
   int total_args_passed = method->size_of_parameters(); // All args on stack
 
-  BasicType stack_sig_bt[16];
-  BasicType* sig_bt = (total_args_passed <= 16) ? stack_sig_bt : NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
-
-  int i = 0;
-  if (!method->is_static())  // Pass in receiver first
-    sig_bt[i++] = T_OBJECT;
-  for (SignatureStream ss(method->signature()); !ss.at_return_type(); ss.next()) {
-    sig_bt[i++] = ss.type();  // Collect remaining bits of signature
-    if (ss.type() == T_LONG || ss.type() == T_DOUBLE)
-      sig_bt[i++] = T_VOID;   // Longs & doubles take 2 Java slots
-  }
-
+  AdapterSignatureIterator si(method->signature(), method->constMethod()->fingerprint(), method->is_static(), total_args_passed);
+  BasicType* sig_bt = si.basic_types();
   {
     MutexLocker mu(AdapterHandlerLibrary_lock);
 
-    assert(i == total_args_passed, "");
+    assert(si.slots() == total_args_passed, "");
 
     // Lookup method signature's fingerprint
     entry = _adapters->lookup(total_args_passed, sig_bt);
