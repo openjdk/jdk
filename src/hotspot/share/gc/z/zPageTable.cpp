@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zGlobals.hpp"
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
@@ -33,7 +33,7 @@ ZPageTable::ZPageTable() :
     _map(ZAddressOffsetMax) {}
 
 void ZPageTable::insert(ZPage* page) {
-  const uintptr_t offset = page->start();
+  const zoffset offset = page->start();
   const size_t size = page->size();
 
   // Make sure a newly created page is
@@ -45,9 +45,43 @@ void ZPageTable::insert(ZPage* page) {
 }
 
 void ZPageTable::remove(ZPage* page) {
-  const uintptr_t offset = page->start();
+  const zoffset offset = page->start();
   const size_t size = page->size();
 
   assert(_map.get(offset) == page, "Invalid entry");
   _map.put(offset, size, NULL);
+}
+
+void ZPageTable::replace(ZPage* old_page, ZPage* new_page) {
+  const zoffset offset = old_page->start();
+  const size_t size = old_page->size();
+
+  assert(_map.get(offset) == old_page, "Invalid entry");
+  _map.release_put(offset, size, new_page);
+}
+
+ZGenerationPagesParallelIterator::ZGenerationPagesParallelIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator) :
+    _iterator(page_table),
+    _generation_id(id),
+    _page_allocator(page_allocator) {
+  _page_allocator->enable_safe_destroy();
+  _page_allocator->enable_safe_recycle();
+}
+
+ZGenerationPagesParallelIterator::~ZGenerationPagesParallelIterator() {
+  _page_allocator->disable_safe_recycle();
+  _page_allocator->disable_safe_destroy();
+}
+
+ZGenerationPagesIterator::ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator) :
+    _iterator(page_table),
+    _generation_id(id),
+    _page_allocator(page_allocator) {
+  _page_allocator->enable_safe_destroy();
+  _page_allocator->enable_safe_recycle();
+}
+
+ZGenerationPagesIterator::~ZGenerationPagesIterator() {
+  _page_allocator->disable_safe_recycle();
+  _page_allocator->disable_safe_destroy();
 }

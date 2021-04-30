@@ -38,13 +38,26 @@ inline bool JNIHandles::is_jweak(jobject handle) {
   return (reinterpret_cast<uintptr_t>(handle) & weak_tag_mask) != 0;
 }
 
+inline bool JNIHandles::is_global(jobject handle) {
+  return (reinterpret_cast<uintptr_t>(handle) & global_tag_value) == global_tag_value;
+}
+
 inline oop* JNIHandles::jobject_ptr(jobject handle) {
   assert(!is_jweak(handle), "precondition");
+  assert(!is_global(handle), "precondition");
   return reinterpret_cast<oop*>(handle);
+}
+
+inline oop* JNIHandles::global_ptr(jobject handle) {
+  assert(is_global(handle), "precondition");
+  assert(!is_jweak(handle), "precondition");
+  char* ptr = reinterpret_cast<char*>(handle) - global_tag_value;
+  return reinterpret_cast<oop*>(ptr);
 }
 
 inline oop* JNIHandles::jweak_ptr(jobject handle) {
   assert(is_jweak(handle), "precondition");
+  assert(!is_global(handle), "precondition");
   char* ptr = reinterpret_cast<char*>(handle) - weak_tag_value;
   return reinterpret_cast<oop*>(ptr);
 }
@@ -57,8 +70,13 @@ inline oop JNIHandles::resolve_impl(jobject handle) {
   oop result;
   if (is_jweak(handle)) {       // Unlikely
     result = NativeAccess<ON_PHANTOM_OOP_REF|decorators>::oop_load(jweak_ptr(handle));
+  } else if (is_global(handle)) {
+    result = NativeAccess<decorators>::oop_load(global_ptr(handle));
+    // Construction of jobjects canonicalize a null value into a null
+    // jobject, so for non-jweak the pointee should never be null.
+    assert(external_guard || result != NULL, "Invalid JNI handle");
   } else {
-    result = NativeAccess<decorators>::oop_load(jobject_ptr(handle));
+    result = *jobject_ptr(handle);
     // Construction of jobjects canonicalize a null value into a null
     // jobject, so for non-jweak the pointee should never be null.
     assert(external_guard || result != NULL, "Invalid JNI handle");
@@ -98,7 +116,8 @@ inline oop JNIHandles::resolve_non_null(jobject handle) {
 inline void JNIHandles::destroy_local(jobject handle) {
   if (handle != NULL) {
     assert(!is_jweak(handle), "Invalid JNI local handle");
-    NativeAccess<>::oop_store(jobject_ptr(handle), (oop)NULL);
+    assert(!is_global(handle), "Invalid JNI local handle");
+    *jobject_ptr(handle) = NULL;
   }
 }
 

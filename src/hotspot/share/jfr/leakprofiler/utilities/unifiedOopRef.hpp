@@ -36,12 +36,14 @@ struct UnifiedOopRef {
 
   bool is_narrow() const;
   bool is_native() const;
+  bool is_non_barriered() const;
   bool is_null() const;
 
   oop dereference() const;
 
   static UnifiedOopRef encode_in_native(const narrowOop* ref);
   static UnifiedOopRef encode_in_native(const oop* ref);
+  static UnifiedOopRef encode_non_barriered(const oop* ref);
   static UnifiedOopRef encode_in_heap(const oop* ref);
   static UnifiedOopRef encode_in_heap(const narrowOop* ref);
   static UnifiedOopRef encode_null();

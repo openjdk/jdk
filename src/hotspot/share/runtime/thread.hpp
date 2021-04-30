@@ -240,6 +240,7 @@ class Thread: public ThreadShadow {
 
  private:
   DEBUG_ONLY(bool _suspendible_thread;)
+  DEBUG_ONLY(bool _indirectly_suspendible_thread;)
 
  public:
   // Determines if a heap allocation failure will be retried
@@ -251,15 +252,13 @@ class Thread: public ThreadShadow {
   virtual bool in_retryable_allocation() const { return false; }
 
 #ifdef ASSERT
-  void set_suspendible_thread() {
-    _suspendible_thread = true;
-  }
+  void set_suspendible_thread()   { _suspendible_thread = true; }
+  void clear_suspendible_thread() { _suspendible_thread = false; }
+  bool is_suspendible_thread()    { return _suspendible_thread; }
 
-  void clear_suspendible_thread() {
-    _suspendible_thread = false;
-  }
-
-  bool is_suspendible_thread() { return _suspendible_thread; }
+  void set_indirectly_suspendible_thread()   { _indirectly_suspendible_thread = true; }
+  void clear_indirectly_suspendible_thread() { _indirectly_suspendible_thread = false; }
+  bool is_indirectly_suspendible_thread()    { return _indirectly_suspendible_thread; }
 #endif
 
  private:
@@ -1214,6 +1213,11 @@ private:
 
   // Support for thread handshake operations
   HandshakeState _handshake;
+
+#ifdef AARCH64
+  size_t _isb_epoch;
+#endif
+
  public:
   HandshakeState* handshake_state() { return &_handshake; }
 
@@ -1351,6 +1355,9 @@ private:
   static ByteSize extentLocalCache_offset()       { return byte_offset_of(JavaThread, _extentLocalCache); }
 
   // For assembly stub generation
+#ifdef AARCH64
+  static ByteSize isb_epoch_offset()             { return byte_offset_of(JavaThread, _isb_epoch); }
+#endif
   static ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj); }
   static ByteSize vthread_offset()               { return byte_offset_of(JavaThread, _vthread); }
   static ByteSize jni_environment_offset()       { return byte_offset_of(JavaThread, _jni_environment); }

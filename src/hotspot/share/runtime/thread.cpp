@@ -217,6 +217,7 @@ Thread::Thread() {
   set_stack_size(0);
   set_lgrp_id(-1);
   DEBUG_ONLY(clear_suspendible_thread();)
+  DEBUG_ONLY(clear_indirectly_suspendible_thread();)
 
   // allocated data structures
   set_osthread(NULL);
@@ -1087,6 +1088,9 @@ JavaThread::JavaThread() :
   _held_monitor_count(0),
 
   _handshake(this),
+#ifdef AARCH64
+  _isb_epoch(0),
+#endif
 
   _popframe_preserved_args(nullptr),
   _popframe_preserved_args_size(0),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,38 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZOOP_HPP
-#define SHARE_GC_Z_ZOOP_HPP
+#ifndef SHARE_GC_Z_ZALLOCATOR_INLINE_HPP
+#define SHARE_GC_Z_ZALLOCATOR_INLINE_HPP
 
-#include "memory/allStatic.hpp"
-#include "oops/oopsHierarchy.hpp"
+#include "gc/z/zAllocator.hpp"
+#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zHeap.hpp"
 
-class ZOop : public AllStatic {
-public:
-  static oop from_address(uintptr_t addr);
-  static uintptr_t to_address(oop o);
-};
+inline ZAllocatorEden* ZAllocator::eden() {
+  return _eden;
+}
 
-#endif // SHARE_GC_Z_ZOOP_HPP
+inline ZAllocatorForRelocation* ZAllocator::relocation(ZPageAge page_age) {
+  return _relocation[static_cast<uint>(page_age) - 1];
+}
+
+inline ZAllocatorForRelocation* ZAllocator::old() {
+  return relocation(ZPageAge::old);
+}
+
+inline zaddress ZAllocatorEden::alloc_tlab(size_t size) {
+  guarantee(size <= ZHeap::heap()->max_tlab_size(), "TLAB too large");
+  return _object_allocator.alloc_object(size);
+}
+
+inline zaddress ZAllocatorEden::alloc_object(size_t size) {
+  zaddress addr = _object_allocator.alloc_object(size);
+
+  if (is_null(addr)) {
+    ZHeap::heap()->out_of_memory();
+  }
+
+  return addr;
+}
+
+#endif // SHARE_GC_Z_ZALLOCATOR_INLINE_HPP

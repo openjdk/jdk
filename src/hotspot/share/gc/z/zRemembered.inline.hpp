@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,25 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZOOP_INLINE_HPP
-#define SHARE_GC_Z_ZOOP_INLINE_HPP
+#ifndef SHARE_GC_Z_ZREMEMBERED_INLINE_HPP
+#define SHARE_GC_Z_ZREMEMBERED_INLINE_HPP
 
-#include "gc/z/zOop.hpp"
+#include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zHeap.inline.hpp"
+#include "gc/z/zPage.inline.hpp"
+#include "gc/z/zPageTable.inline.hpp"
+#include "gc/z/zRemembered.hpp"
 
-inline oop ZOop::from_address(uintptr_t addr) {
-  return cast_to_oop(addr);
+inline void ZRemembered::remember(volatile zpointer* p) const {
+  ZPage* page = _page_table->get(p);
+  assert(page != NULL,  "Page missing in page table");
+  page->remember(p);
 }
 
-inline uintptr_t ZOop::to_address(oop o) {
-  return cast_from_oop<uintptr_t>(o);
+inline bool ZRemembered::is_remembered(volatile zpointer* p) const {
+  ZPage* page = _page_table->get(p);
+  assert(page != NULL,  "Page missing in page table");
+  return page->is_remembered(p);
 }
 
-#endif // SHARE_GC_Z_ZOOP_INLINE_HPP
+#endif // SHARE_GC_Z_ZREMEMBERED_INLINE_HPP
