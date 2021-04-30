@@ -24,6 +24,8 @@
 #ifndef SHARE_GC_Z_Z_GLOBALS_HPP
 #define SHARE_GC_Z_Z_GLOBALS_HPP
 
+#include "zPageAge.hpp"
+
 #define GC_Z_FLAGS(develop,                                                 \
                    develop_pd,                                              \
                    product,                                                 \
@@ -35,15 +37,27 @@
   product(double, ZAllocationSpikeTolerance, 2.0,                           \
           "Allocation spike tolerance factor")                              \
                                                                             \
-  product(double, ZFragmentationLimit, 25.0,                                \
+  product(double, ZFragmentationLimit, 5.0,                                 \
           "Maximum allowed heap fragmentation")                             \
+                                                                            \
+  product(double, ZYoungCompactionLimit, 25.0,                              \
+          "Maximum allowed garbage in young pages")                         \
                                                                             \
   product(size_t, ZMarkStackSpaceLimit, 8*G,                                \
           "Maximum number of bytes allocated for mark stacks")              \
           range(32*M, 1024*G)                                               \
                                                                             \
-  product(double, ZCollectionInterval, 0,                                   \
+  product(double, ZCollectionInterval, -1,                                  \
+          "Backwards compatible alias for ZCollectionIntervalMajor")        \
+                                                                            \
+  product(double, ZCollectionIntervalMinor, -1,                             \
+          "Force Minor GC at a fixed time interval (in seconds)")           \
+                                                                            \
+  product(double, ZCollectionIntervalMajor, -1,                             \
           "Force GC at a fixed time interval (in seconds)")                 \
+                                                                            \
+  product(bool, ZCollectionIntervalOnly, false,                             \
+          "Only use timers for GC heuristics")                              \
                                                                             \
   product(bool, ZProactive, true,                                           \
           "Enable proactive GC cycles")                                     \
@@ -51,9 +65,23 @@
   product(bool, ZUncommit, true,                                            \
           "Uncommit unused memory")                                         \
                                                                             \
+  product(bool, ZBufferStoreBarriers, true, DIAGNOSTIC,                     \
+          "Buffer store barriers")                                          \
+                                                                            \
+  product(uint, ZYoungGCThreads, 0, DIAGNOSTIC,                             \
+          "Number of GC threads for the young generation")                  \
+                                                                            \
+  product(uint, ZOldGCThreads, 0, DIAGNOSTIC,                               \
+          "Number of GC threads for the old generation")                    \
+                                                                            \
   product(uintx, ZUncommitDelay, 5 * 60,                                    \
           "Uncommit memory if it has been unused for the specified "        \
           "amount of time (in seconds)")                                    \
+                                                                            \
+  product(uintx, ZIndexDistributorStrategy, 0, DIAGNOSTIC,                  \
+          "Strategy used to distribute indices to parallel workers "        \
+          "0: Claim tree "                                                  \
+          "1: Simple Striped ")                                             \
                                                                             \
   product(uint, ZStatisticsInterval, 10, DIAGNOSTIC,                        \
           "Time between statistics print outs (in seconds)")                \
@@ -62,8 +90,8 @@
   product(bool, ZStressRelocateInPlace, false, DIAGNOSTIC,                  \
           "Always relocate pages in-place")                                 \
                                                                             \
-  product(bool, ZVerifyViews, false, DIAGNOSTIC,                            \
-          "Verify heap view accesses")                                      \
+  product(bool, ZVerifyRemembered, trueInDebug, DIAGNOSTIC,                 \
+          "Verify remembered sets")                                         \
                                                                             \
   product(bool, ZVerifyRoots, trueInDebug, DIAGNOSTIC,                      \
           "Verify roots")                                                   \
@@ -71,11 +99,18 @@
   product(bool, ZVerifyObjects, false, DIAGNOSTIC,                          \
           "Verify objects")                                                 \
                                                                             \
+  develop(bool, ZVerifyOops, false,                                         \
+          "Verify accessed oops")                                           \
+                                                                            \
   product(bool, ZVerifyMarking, trueInDebug, DIAGNOSTIC,                    \
           "Verify marking stacks")                                          \
                                                                             \
   product(bool, ZVerifyForwarding, false, DIAGNOSTIC,                       \
-          "Verify forwarding tables")
+          "Verify forwarding tables")                                       \
+                                                                            \
+  product(int, ZTenuringThreshold, -1, DIAGNOSTIC,                          \
+          "Young generation tenuring threshold, -1 for dynamic computation")\
+          range(-1, static_cast<int>(ZPageAgeMax))
 
 // end of GC_Z_FLAGS
 

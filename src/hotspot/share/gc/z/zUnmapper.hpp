@@ -24,14 +24,14 @@
 #ifndef SHARE_GC_Z_ZUNMAPPER_HPP
 #define SHARE_GC_Z_ZUNMAPPER_HPP
 
-#include "gc/shared/concurrentGCThread.hpp"
 #include "gc/z/zList.hpp"
 #include "gc/z/zLock.hpp"
+#include "gc/z/zThread.hpp"
 
 class ZPage;
 class ZPageAllocator;
 
-class ZUnmapper : public ConcurrentGCThread {
+class ZUnmapper : public ZThread {
 private:
   ZPageAllocator* const _page_allocator;
   ZConditionLock        _lock;
@@ -42,8 +42,8 @@ private:
   void do_unmap_and_destroy_page(ZPage* page) const;
 
 protected:
-  virtual void run_service();
-  virtual void stop_service();
+  virtual void run_thread();
+  virtual void terminate();
 
 public:
   ZUnmapper(ZPageAllocator* page_allocator);

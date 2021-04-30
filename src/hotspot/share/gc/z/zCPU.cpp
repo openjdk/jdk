@@ -32,12 +32,12 @@
 #define ZCPU_UNKNOWN_AFFINITY ((Thread*)-1)
 #define ZCPU_UNKNOWN_SELF     ((Thread*)-2)
 
-PaddedEnd<ZCPU::ZCPUAffinity>* ZCPU::_affinity = NULL;
+PaddedEnd<ZCPU::ZCPUAffinity>* ZCPU::_affinity = nullptr;
 THREAD_LOCAL Thread*           ZCPU::_self     = ZCPU_UNKNOWN_SELF;
 THREAD_LOCAL uint32_t          ZCPU::_cpu      = 0;
 
 void ZCPU::initialize() {
-  assert(_affinity == NULL, "Already initialized");
+  assert(_affinity == nullptr, "Already initialized");
   const uint32_t ncpus = count();
 
   _affinity = PaddedArray<ZCPUAffinity, mtGC>::create_unfreeable(ncpus);

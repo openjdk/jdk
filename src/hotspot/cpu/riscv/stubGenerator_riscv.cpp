@@ -3731,7 +3731,7 @@ class StubGenerator: public StubCodeGenerator {
       framesize // inclusive of return address
     };
 
-    const int insts_size = 512;
+    const int insts_size = 1024;
     const int locs_size  = 64;
 
     CodeBuffer code(name, insts_size, locs_size);
@@ -3970,7 +3970,7 @@ class StubGenerator: public StubCodeGenerator {
       framesize // inclusive of return address
     };
 
-    int insts_size = 512;
+    int insts_size = 1024;
     int locs_size = 64;
     CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
     OopMapSet* oop_maps = new OopMapSet();

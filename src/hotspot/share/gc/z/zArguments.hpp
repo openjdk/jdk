@@ -30,6 +30,7 @@ class CollectedHeap;
 
 class ZArguments : public GCArguments {
 private:
+  void select_max_gc_threads();
   virtual void initialize_alignments();
 
   virtual void initialize();

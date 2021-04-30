@@ -41,7 +41,11 @@ GCName GCConfiguration::young_collector() const {
     return ParallelScavenge;
   }
 
-  if (UseZGC || UseShenandoahGC) {
+  if (UseZGC) {
+    return ZMinor;
+  }
+
+  if (UseShenandoahGC) {
     return NA;
   }
 
@@ -58,7 +62,7 @@ GCName GCConfiguration::old_collector() const {
   }
 
   if (UseZGC) {
-    return Z;
+    return ZMajor;
   }
 
   if (UseShenandoahGC) {

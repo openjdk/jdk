@@ -27,7 +27,6 @@
 #include "code/icBuffer.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/z/zGlobals.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethodData.hpp"
@@ -45,12 +44,13 @@
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-ZNMethodTableEntry* ZNMethodTable::_table = NULL;
+ZNMethodTableEntry* ZNMethodTable::_table = nullptr;
 size_t ZNMethodTable::_size = 0;
 size_t ZNMethodTable::_nregistered = 0;
 size_t ZNMethodTable::_nunregistered = 0;
 ZNMethodTableIteration ZNMethodTable::_iteration;
-ZSafeDeleteNoLock<ZNMethodTableEntry[]> ZNMethodTable::_safe_delete;
+ZNMethodTableIteration ZNMethodTable::_iteration_secondary;
+ZSafeDelete<ZNMethodTableEntry[]> ZNMethodTable::_safe_delete(false /* locked */);
 
 size_t ZNMethodTable::first_index(const nmethod* nm, size_t size) {
   assert(is_power_of_2(size), "Invalid size");
@@ -130,7 +130,7 @@ void ZNMethodTable::rebuild(size_t new_size) {
   }
 
   // Free old table
-  _safe_delete(_table);
+  _safe_delete.schedule_delete(_table);
 
   // Install new table
   _table = new_table;
@@ -167,6 +167,12 @@ void ZNMethodTable::rebuild_if_needed() {
   }
 }
 
+ZNMethodTableIteration* ZNMethodTable::iteration(bool secondary) {
+  return secondary
+      ? &_iteration_secondary
+      : &_iteration;
+}
+
 size_t ZNMethodTable::registered_nmethods() {
   return _nregistered;
 }
@@ -193,13 +199,13 @@ void ZNMethodTable::register_nmethod(nmethod* nm) {
 void ZNMethodTable::wait_until_iteration_done() {
   assert(CodeCache_lock->owned_by_self(), "Lock must be held");
 
-  while (_iteration.in_progress()) {
+  while (_iteration.in_progress() || _iteration_secondary.in_progress()) {
     CodeCache_lock->wait_without_safepoint_check();
   }
 }
 
 void ZNMethodTable::unregister_nmethod(nmethod* nm) {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // Remove entry
   unregister_entry(_table, _size, nm);
@@ -207,21 +213,21 @@ void ZNMethodTable::unregister_nmethod(nmethod* nm) {
   _nregistered--;
 }
 
-void ZNMethodTable::nmethods_do_begin() {
+void ZNMethodTable::nmethods_do_begin(bool secondary) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // Do not allow the table to be deleted while iterating
   _safe_delete.enable_deferred_delete();
 
   // Prepare iteration
-  _iteration.nmethods_do_begin(_table, _size);
+  iteration(secondary)->nmethods_do_begin(_table, _size);
 }
 
-void ZNMethodTable::nmethods_do_end() {
+void ZNMethodTable::nmethods_do_end(bool secondary) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // Finish iteration
-  _iteration.nmethods_do_end();
+  iteration(secondary)->nmethods_do_end();
 
   // Allow the table to be deleted
   _safe_delete.disable_deferred_delete();
@@ -230,6 +236,6 @@ void ZNMethodTable::nmethods_do_end() {
   CodeCache_lock->notify_all();
 }
 
-void ZNMethodTable::nmethods_do(NMethodClosure* cl) {
-  _iteration.nmethods_do(cl);
+void ZNMethodTable::nmethods_do(bool secondary, NMethodClosure* cl) {
+  iteration(secondary)->nmethods_do(cl);
 }
