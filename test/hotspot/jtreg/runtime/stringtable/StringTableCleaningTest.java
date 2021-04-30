@@ -59,8 +59,6 @@ public class StringTableCleaningTest {
         subargs.add(Tester.class.getName());
         subargs.addAll(Arrays.asList(args));
         OutputAnalyzer output = ProcessTools.executeTestJvm(subargs);
-        output.outputTo(System.out);
-        output.errorTo(System.out);
         output.shouldHaveExitValue(0);
         checkOutput(output);
     }
