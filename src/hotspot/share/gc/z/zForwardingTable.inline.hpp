@@ -30,30 +30,35 @@
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
+#include "gc/z/zIndexDistributor.inline.hpp"
 #include "utilities/debug.hpp"
 
 inline ZForwardingTable::ZForwardingTable() :
     _map(ZAddressOffsetMax) {}
 
-inline ZForwarding* ZForwardingTable::get(uintptr_t addr) const {
-  assert(!ZAddress::is_null(addr), "Invalid address");
+inline ZForwarding* ZForwardingTable::at(size_t index) const {
+  return _map.at(index);
+}
+
+inline ZForwarding* ZForwardingTable::get(zaddress_unsafe addr) const {
+  assert(!is_null(addr), "Invalid address");
   return _map.get(ZAddress::offset(addr));
 }
 
 inline void ZForwardingTable::insert(ZForwarding* forwarding) {
-  const uintptr_t offset = forwarding->start();
+  const zoffset offset = forwarding->start();
   const size_t size = forwarding->size();
 
-  assert(_map.get(offset) == NULL, "Invalid entry");
+  assert(_map.get(offset) == nullptr, "Invalid entry");
   _map.put(offset, size, forwarding);
 }
 
 inline void ZForwardingTable::remove(ZForwarding* forwarding) {
-  const uintptr_t offset = forwarding->start();
+  const zoffset offset = forwarding->start();
   const size_t size = forwarding->size();
 
   assert(_map.get(offset) == forwarding, "Invalid entry");
-  _map.put(offset, size, NULL);
+  _map.put(offset, size, nullptr);
 }
 
 #endif // SHARE_GC_Z_ZFORWARDINGTABLE_INLINE_HPP

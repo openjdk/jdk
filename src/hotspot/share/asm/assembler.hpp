@@ -242,6 +242,7 @@ class AbstractAssembler : public ResourceObj  {
   };
   friend class InstructionMark;
 
+ public:
   // count size of instructions which are skipped from inline heuristics
   class InlineSkippedInstructionsCounter: public StackObj {
    private:
@@ -254,6 +255,8 @@ class AbstractAssembler : public ResourceObj  {
       _assm->register_skipped(_assm->pc() - _start);
     }
   };
+
+ protected:
 #ifdef ASSERT
   // Make it return true on platforms which need to verify
   // instruction boundaries for some operations.

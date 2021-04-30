@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
 #ifndef CPU_RISCV_GC_Z_ZGLOBALS_RISCV_HPP
 #define CPU_RISCV_GC_Z_ZGLOBALS_RISCV_HPP
 
-const size_t ZPlatformHeapViews        = 3;
-const size_t ZPlatformCacheLineSize    = 64;
+#include "utilities/globalDefinitions.hpp"
 
-size_t ZPlatformAddressOffsetBits();
-size_t ZPlatformAddressMetadataShift();
+const size_t ZPlatformCacheLineSize    = 64;
 
 #endif // CPU_RISCV_GC_Z_ZGLOBALS_RISCV_HPP

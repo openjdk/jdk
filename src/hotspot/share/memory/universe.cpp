@@ -1219,6 +1219,11 @@ void Universe::calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boun
   _verify_oop_bits = bits;
 }
 
+void Universe::set_verify_data(uintptr_t mask, uintptr_t bits) {
+  _verify_oop_mask = mask;
+  _verify_oop_bits = bits;
+}
+
 // Oop verification (see MacroAssembler::verify_oop)
 
 uintptr_t Universe::verify_oop_mask() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,30 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZOOP_INLINE_HPP
-#define SHARE_GC_Z_ZOOP_INLINE_HPP
+#ifndef SHARE_GC_Z_ZPAGEAGE_HPP
+#define SHARE_GC_Z_ZPAGEAGE_HPP
 
-#include "gc/z/zOop.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-inline oop ZOop::from_address(uintptr_t addr) {
-  return cast_to_oop(addr);
-}
+enum class ZPageAge : uint8_t {
+  eden,
+  survivor1,
+  survivor2,
+  survivor3,
+  survivor4,
+  survivor5,
+  survivor6,
+  survivor7,
+  survivor8,
+  survivor9,
+  survivor10,
+  survivor11,
+  survivor12,
+  survivor13,
+  survivor14,
+  old
+};
 
-inline uintptr_t ZOop::to_address(oop o) {
-  return cast_from_oop<uintptr_t>(o);
-}
+constexpr uint ZPageAgeMax = static_cast<uint>(ZPageAge::old);
 
-#endif // SHARE_GC_Z_ZOOP_INLINE_HPP
+#endif // SHARE_GC_Z_ZPAGEAGE_HPP

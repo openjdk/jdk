@@ -43,16 +43,16 @@ inline void ZMarkCacheEntry::inc_live(ZPage* page, size_t bytes) {
 }
 
 inline void ZMarkCacheEntry::evict() {
-  if (_page != NULL) {
+  if (_page != nullptr) {
     // Write cached data out to page
     _page->inc_live(_objects, _bytes);
-    _page = NULL;
+    _page = nullptr;
   }
 }
 
 inline void ZMarkCache::inc_live(ZPage* page, size_t bytes) {
   const size_t mask = ZMarkCacheSize - 1;
-  const size_t index = (page->start() >> _shift) & mask;
+  const size_t index = (untype(page->start()) >> _shift) & mask;
   _cache[index].inc_live(page, bytes);
 }
 
