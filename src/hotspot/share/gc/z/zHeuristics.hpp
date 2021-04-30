@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZHEURISTICS_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ZHeuristics : public AllStatic {
 public:
@@ -36,6 +37,9 @@ public:
 
   static uint nparallel_workers();
   static uint nconcurrent_workers();
+
+  static size_t significant_heap_overhead();
+  static size_t significant_young_overhead();
 };
 
 #endif // SHARE_GC_Z_ZHEURISTICS_HPP

@@ -34,6 +34,7 @@
 #include "gc/z/zThreadLocalData.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
@@ -59,51 +60,9 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
                                    Register dst,
                                    Address src,
                                    Register tmp1,
-                                   Register tmp2) {
-  if (!ZBarrierSet::barrier_needed(decorators, type)) {
-    // Barrier not needed
-    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
-    return;
-  }
-
-  assert_different_registers(t1, src.base());
-  assert_different_registers(t0, t1, dst);
-
-  Label done;
-
-  // Load bad mask into temp register.
-  __ la(t0, src);
-  __ ld(t1, address_bad_mask_from_thread(xthread));
-  __ ld(dst, Address(t0));
-
-  // Test reference against bad mask. If mask bad, then we need to fix it up.
-  __ andr(t1, dst, t1);
-  __ beqz(t1, done);
-
-  __ enter();
-
-  __ push_call_clobbered_registers_except(RegSet::of(dst));
-
-  if (c_rarg0 != dst) {
-    __ mv(c_rarg0, dst);
-  }
-
-  __ mv(c_rarg1, t0);
-
-  __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators), 2);
-
-  // Make sure dst has the return value.
-  if (dst != x10) {
-    __ mv(dst, x10);
-  }
-
-  __ pop_call_clobbered_registers_except(RegSet::of(dst));
-  __ leave();
-
-  __ bind(done);
+                                   Register tmp_thread) {
+  Unimplemented();
 }
-
-#ifdef ASSERT
 
 void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                                     DecoratorSet decorators,
@@ -113,32 +72,8 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                                     Register tmp1,
                                     Register tmp2,
                                     Register tmp3) {
-  // Verify value
-  if (is_reference_type(type)) {
-    // Note that src could be noreg, which means we
-    // are storing null and can skip verification.
-    if (val != noreg) {
-      Label done;
-
-      // tmp1, tmp2 and tmp3 are often set to noreg.
-      RegSet savedRegs = RegSet::of(t0);
-      __ push_reg(savedRegs, sp);
-
-      __ ld(t0, address_bad_mask_from_thread(xthread));
-      __ andr(t0, val, t0);
-      __ beqz(t0, done);
-      __ stop("Verify oop store failed");
-      __ should_not_reach_here();
-      __ bind(done);
-      __ pop_reg(savedRegs, sp);
-    }
-  }
-
-  // Store value
-  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, noreg);
+  Unimplemented();
 }
-
-#endif // ASSERT
 
 void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
                                               DecoratorSet decorators,
@@ -147,32 +82,61 @@ void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
                                               Register dst,
                                               Register count,
                                               RegSet saved_regs) {
-  if (!is_oop) {
-    // Barrier not needed
-    return;
-  }
+  Unimplemented();
+}
 
-  BLOCK_COMMENT("ZBarrierSetAssembler::arraycopy_prologue {");
+void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                  DecoratorSet decorators,
+                  BasicType type,
+                  size_t bytes,
+                  Register dst1,
+                  Register dst2,
+                  Address src,
+                  Register tmp) {
+  Unimplemented();
+}
 
-  assert_different_registers(src, count, t0);
+void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                  DecoratorSet decorators,
+                  BasicType type,
+                  size_t bytes,
+                  Address dst,
+                  Register src1,
+                  Register src2,
+                  Register tmp1,
+                  Register tmp2,
+                  Register tmp3) {
+  Unimplemented();
+}
 
-  __ push_reg(saved_regs, sp);
 
-  if (count == c_rarg0 && src == c_rarg1) {
-    // exactly backwards!!
-    __ xorr(c_rarg0, c_rarg0, c_rarg1);
-    __ xorr(c_rarg1, c_rarg0, c_rarg1);
-    __ xorr(c_rarg0, c_rarg0, c_rarg1);
-  } else {
-    __ mv(c_rarg0, src);
-    __ mv(c_rarg1, count);
-  }
+void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                  DecoratorSet decorators,
+                  BasicType type,
+                  size_t bytes,
+                  FloatRegister dst1,
+                  FloatRegister dst2,
+                  Address src,
+                  Register tmp1,
+                  Register tmp2,
+                  FloatRegister vec_tmp) {
+  Unimplemented();
+}
 
-  __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_array_addr(), 2);
-
-  __ pop_reg(saved_regs, sp);
-
-  BLOCK_COMMENT("} ZBarrierSetAssembler::arraycopy_prologue");
+void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                  DecoratorSet decorators,
+                  BasicType type,
+                  size_t bytes,
+                  Address dst,
+                  FloatRegister src1,
+                  FloatRegister src2,
+                  Register tmp1,
+                  Register tmp2,
+                  Register tmp3,
+                  FloatRegister vec_tmp1,
+                  FloatRegister vec_tmp2,
+                  FloatRegister vec_tmp3) {
+  Unimplemented();
 }
 
 void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
@@ -180,25 +144,15 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
                                                          Register robj,
                                                          Register tmp,
                                                          Label& slowpath) {
-  BLOCK_COMMENT("ZBarrierSetAssembler::try_resolve_jobject_in_native {");
+  Unimplemented();
+}
 
-  assert_different_registers(jni_env, robj, tmp);
+void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  Unimplemented();
+}
 
-  // Resolve jobject
-  BarrierSetAssembler::try_resolve_jobject_in_native(masm, jni_env, robj, tmp, slowpath);
-
-  // Compute the offset of address bad mask from the field of jni_environment
-  long int bad_mask_relative_offset = (long int) (in_bytes(ZThreadLocalData::address_bad_mask_offset()) -
-                                                  in_bytes(JavaThread::jni_environment_offset()));
-
-  // Load the address bad mask
-  __ ld(tmp, Address(jni_env, bad_mask_relative_offset));
-
-  // Check address bad mask
-  __ andr(tmp, robj, tmp);
-  __ bnez(tmp, slowpath);
-
-  BLOCK_COMMENT("} ZBarrierSetAssembler::try_resolve_jobject_in_native");
+void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
+  Unimplemented();
 }
 
 #ifdef COMPILER2
@@ -330,25 +284,12 @@ public:
 #define __ masm->
 
 void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, ZLoadBarrierStubC2* stub) const {
-  BLOCK_COMMENT("ZLoadBarrierStubC2");
+  Unimplemented();
+}
 
-  // Stub entry
-  __ bind(*stub->entry());
-
-  {
-    ZSaveLiveRegisters save_live_registers(masm, stub);
-    ZSetupArguments setup_arguments(masm, stub);
-
-    Address target(stub->slow_path());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la_patchable(t0, target, offset);
-      __ jalr(x1, t0, offset);
-    });
-  }
-
-  // Stub exit
-  __ j(*stub->continuation());
+void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm,
+                                    ZStoreBarrierStubC2* stub) const {
+  Unimplemented();
 }
 
 #undef __
@@ -359,67 +300,30 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
 #undef __
 #define __ ce->masm()->
 
+
+void ZBarrierSetAssembler::generate_c1_color(LIR_Assembler* ce, LIR_Opr ref) const {
+  Unimplemented();
+}
+
+void ZBarrierSetAssembler::generate_c1_uncolor(LIR_Assembler* ce, LIR_Opr ref) const {
+  Unimplemented();
+}
+
 void ZBarrierSetAssembler::generate_c1_load_barrier_test(LIR_Assembler* ce,
                                                          LIR_Opr ref) const {
-  assert_different_registers(xthread, ref->as_register(), t1);
-  __ ld(t1, address_bad_mask_from_thread(xthread));
-  __ andr(t1, t1, ref->as_register());
+  Unimplemented();
+}
+
+void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
+                                                    LIR_Opr ref,
+                                                    ZLoadBarrierStubC1* stub,
+                                                    bool on_non_strong) const {
+  Unimplemented();
 }
 
 void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
                                                          ZLoadBarrierStubC1* stub) const {
-  // Stub entry
-  __ bind(*stub->entry());
-
-  Register ref = stub->ref()->as_register();
-  Register ref_addr = noreg;
-  Register tmp = noreg;
-
-  if (stub->tmp()->is_valid()) {
-    // Load address into tmp register
-    ce->leal(stub->ref_addr(), stub->tmp());
-    ref_addr = tmp = stub->tmp()->as_pointer_register();
-  } else {
-    // Address already in register
-    ref_addr = stub->ref_addr()->as_address_ptr()->base()->as_pointer_register();
-  }
-
-  assert_different_registers(ref, ref_addr, noreg);
-
-  // Save x10 unless it is the result or tmp register
-  // Set up SP to accommodate parameters and maybe x10.
-  if (ref != x10 && tmp != x10) {
-    __ sub(sp, sp, 32);
-    __ sd(x10, Address(sp, 16));
-  } else {
-    __ sub(sp, sp, 16);
-  }
-
-  // Setup arguments and call runtime stub
-  ce->store_parameter(ref_addr, 1);
-  ce->store_parameter(ref, 0);
-
-  __ far_call(stub->runtime_stub());
-
-  // Verify result
-  __ verify_oop(x10);
-
-
-  // Move result into place
-  if (ref != x10) {
-    __ mv(ref, x10);
-  }
-
-  // Restore x10 unless it is the result or tmp register
-  if (ref != x10 && tmp != x10) {
-    __ ld(x10, Address(sp, 16));
-    __ add(sp, sp, 32);
-  } else {
-    __ add(sp, sp, 16);
-  }
-
-  // Stub exit
-  __ j(*stub->continuation());
+  Unimplemented();
 }
 
 #undef __
@@ -427,19 +331,31 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
 void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* sasm,
                                                                  DecoratorSet decorators) const {
-  __ prologue("zgc_load_barrier stub", false);
+  Unimplemented();
+}
 
-  __ push_call_clobbered_registers_except(RegSet::of(x10));
+#undef __
+#define __ ce->masm()->
 
-  // Setup arguments
-  __ load_parameter(0, c_rarg0);
-  __ load_parameter(1, c_rarg1);
+void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
+                                                     LIR_Address* addr,
+                                                     LIR_Opr new_zaddress,
+                                                     LIR_Opr new_zpointer,
+                                                     ZStoreBarrierStubC1* stub) const {
+  Unimplemented();
+}
 
-  __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators), 2);
+void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
+                                                          ZStoreBarrierStubC1* stub) const {
+  Unimplemented();
+}
 
-  __ pop_call_clobbered_registers_except(RegSet::of(x10));
+#undef __
+#define __ sasm->
 
-  __ epilogue();
+void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
+                                                                  bool self_healing) const {
+  Unimplemented();
 }
 
 #undef __
