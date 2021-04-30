@@ -32,8 +32,10 @@
 #include "gc/z/zRuntimeWorkers.hpp"
 #include "memory/metaspace.hpp"
 
-class ZDirector;
-class ZDriver;
+class ZDirectorMajor;
+class ZDirectorMinor;
+class ZDriverMajor;
+class ZDriverMinor;
 class ZStat;
 
 class ZCollectedHeap : public CollectedHeap {
@@ -44,10 +46,15 @@ private:
   ZBarrierSet       _barrier_set;
   ZInitialize       _initialize;
   ZHeap             _heap;
-  ZDirector*        _director;
-  ZDriver*          _driver;
+  ZDirectorMinor*   _director_minor;
+  ZDirectorMajor*   _director_major;
+  ZDriverMinor*     _driver_minor;
+  ZDriverMajor*     _driver_major;
   ZStat*            _stat;
   ZRuntimeWorkers   _runtime_workers;
+
+
+
 
   virtual HeapWord* allocate_new_tlab(size_t min_size,
                                       size_t requested_size,
@@ -97,7 +104,12 @@ public:
   virtual void object_iterate(ObjectClosure* cl);
   virtual ParallelObjectIterator* parallel_object_iterator(uint nworkers);
 
+  virtual void pin_object(JavaThread* thread, oop obj);
+  virtual void unpin_object(JavaThread* thread, oop obj);
+
   virtual void keep_alive(oop obj);
+
+  virtual bool contains_null(const oop* p);
 
   virtual void register_nmethod(nmethod* nm);
   virtual void unregister_nmethod(nmethod* nm);

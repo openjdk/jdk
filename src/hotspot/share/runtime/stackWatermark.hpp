@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_STACKWATERMARK_HPP
 #define SHARE_RUNTIME_STACKWATERMARK_HPP
 
+#include "gc/z/zBarrierSetNMethod.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/stackWatermarkKind.hpp"
@@ -134,6 +135,7 @@ public:
 
   uintptr_t watermark();
   uintptr_t last_processed();
+  uintptr_t last_processed_raw();
 
   bool processing_started() const;
   bool processing_started_acquire() const;

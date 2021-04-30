@@ -24,13 +24,16 @@
 #ifndef SHARE_GC_Z_ZFORWARDING_INLINE_HPP
 #define SHARE_GC_Z_ZFORWARDING_INLINE_HPP
 
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zAttachedArray.inline.hpp"
 #include "gc/z/zForwarding.hpp"
 #include "gc/z/zForwardingAllocator.inline.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zHeap.hpp"
+#include "gc/z/zIterator.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
+#include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
@@ -57,16 +60,26 @@ inline ZForwarding::ZForwarding(ZPage* page, size_t nentries) :
     _object_alignment_shift(page->object_alignment_shift()),
     _entries(nentries),
     _page(page),
+    _generation_id(page->generation_id()),
+    _claimed(false),
     _ref_lock(),
     _ref_count(1),
     _ref_abort(false),
-    _in_place(false) {}
+    _in_place(false),
+    _remset_scanned(false),
+    _in_place_thread(NULL),
+    _in_place_old_top(),
+    _detached_page(NULL) {}
 
 inline uint8_t ZForwarding::type() const {
   return _page->type();
 }
 
-inline uintptr_t ZForwarding::start() const {
+inline ZGenerationId ZForwarding::generation_id() const {
+  return _generation_id;
+}
+
+inline zoffset ZForwarding::start() const {
   return _virtual.start();
 }
 
@@ -78,12 +91,72 @@ inline size_t ZForwarding::object_alignment_shift() const {
   return _object_alignment_shift;
 }
 
+template <typename Function>
+inline void ZForwarding::object_iterate_f(Function function) {
+  ZObjectClosure<Function> cl(function);
+  object_iterate(&cl);
+}
+
 inline void ZForwarding::object_iterate(ObjectClosure *cl) {
   return _page->object_iterate(cl);
 }
 
-inline void ZForwarding::set_in_place() {
-  _in_place = true;
+template <typename Function>
+inline void ZForwarding::object_iterate_forwarded_via_livemap(Function function) {
+  assert(!in_place(), "Not allowed to use livemap iteration");
+
+  object_iterate_f([&](oop obj) {
+    // Find to-object
+    zaddress_unsafe from_addr = to_zaddress_unsafe(obj);
+    zaddress to_addr = this->find(from_addr);
+    oop to_obj = to_oop(to_addr);
+
+    // Apply function
+    function(to_obj);
+  });
+}
+
+template <typename Function>
+inline void ZForwarding::object_iterate_forwarded_via_table(Function function) {
+  for (ZForwardingCursor i = 0; i < _entries.length(); i++) {
+    const ZForwardingEntry entry = at(&i);
+    if (!entry.populated()) {
+      // Skip empty entries
+      continue;
+    }
+
+    // Find to-object
+    zoffset to_offset = to_zoffset(entry.to_offset());
+    zaddress to_addr = ZOffset::address(to_offset);
+    oop to_obj = to_oop(to_addr);
+
+    // Apply function
+    function(to_obj);
+  }
+}
+
+template <typename Function>
+inline void ZForwarding::object_iterate_forwarded(Function function) {
+  if (in_place()) {
+    // The original objects are not available anymore, can't use the livemap
+    object_iterate_forwarded_via_table(function);
+  } else {
+    object_iterate_forwarded_via_livemap(function);
+  }
+}
+
+template <typename Function>
+void ZForwarding::oops_do_in_forwarded(Function function) {
+  object_iterate_forwarded([&](oop to_obj) {
+    z_basic_oop_iterate(to_obj, function);
+  });
+}
+
+template <typename Function>
+void ZForwarding::oops_do_in_forwarded_via_table(Function function) {
+  object_iterate_forwarded_via_table([&](oop to_obj) {
+    z_basic_oop_iterate(to_obj, function);
+  });
 }
 
 inline bool ZForwarding::in_place() const {
@@ -113,6 +186,13 @@ inline ZForwardingEntry ZForwarding::next(ZForwardingCursor* cursor) const {
   return at(cursor);
 }
 
+inline zaddress ZForwarding::find(zaddress_unsafe addr) {
+  const uintptr_t from_index = (ZAddress::offset(addr) - start()) >> object_alignment_shift();
+  ZForwardingCursor cursor;
+  const ZForwardingEntry entry = find(from_index, &cursor);
+  return entry.populated() ? ZOffset::address(to_zoffset(entry.to_offset())) : zaddress::null;
+}
+
 inline ZForwardingEntry ZForwarding::find(uintptr_t from_index, ZForwardingCursor* cursor) const {
   // Reading entries in the table races with the atomic CAS done for
   // insertion into the table. This is safe because each entry is at
@@ -131,8 +211,8 @@ inline ZForwardingEntry ZForwarding::find(uintptr_t from_index, ZForwardingCurso
   return entry;
 }
 
-inline uintptr_t ZForwarding::insert(uintptr_t from_index, uintptr_t to_offset, ZForwardingCursor* cursor) {
-  const ZForwardingEntry new_entry(from_index, to_offset);
+inline zoffset ZForwarding::insert(uintptr_t from_index, zoffset to_offset, ZForwardingCursor* cursor) {
+  const ZForwardingEntry new_entry(from_index, untype(to_offset));
   const ZForwardingEntry old_entry; // Empty
 
   for (;;) {
@@ -147,12 +227,20 @@ inline uintptr_t ZForwarding::insert(uintptr_t from_index, uintptr_t to_offset, 
     while (entry.populated()) {
       if (entry.from_index() == from_index) {
         // Match found, return already inserted address
-        return entry.to_offset();
+        return to_zoffset(entry.to_offset());
       }
 
       entry = next(cursor);
     }
   }
+}
+
+inline bool ZForwarding::get_and_set_remset_scanned() {
+  if (_remset_scanned) {
+    return true;
+  }
+  _remset_scanned = true;
+  return false;
 }
 
 #endif // SHARE_GC_Z_ZFORWARDING_INLINE_HPP

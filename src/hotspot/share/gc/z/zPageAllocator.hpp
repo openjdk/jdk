@@ -34,11 +34,28 @@
 #include "gc/z/zVirtualMemory.hpp"
 
 class ThreadClosure;
+class ZCycle;
 class ZPageAllocation;
 class ZPageAllocatorStats;
 class ZWorkers;
 class ZUncommitter;
 class ZUnmapper;
+
+class ZPageRecycle {
+public:
+  static void immediate_delete(ZPage* page);
+  static void deferred_delete(ZPage* page);
+  static void deferring_deletion(ZPage* page);
+};
+
+class ZSafePageRecycle : public ZSafeDeleteImpl<ZPage, ZPageRecycle> {
+private:
+  ZLock _lock;
+
+public:
+  ZSafePageRecycle() :
+    ZSafeDeleteImpl(&_lock) {}
+};
 
 class ZPageAllocator {
   friend class VMStructs;
@@ -51,19 +68,18 @@ private:
   ZVirtualMemoryManager      _virtual;
   ZPhysicalMemoryManager     _physical;
   const size_t               _min_capacity;
+  const size_t               _initial_capacity;
   const size_t               _max_capacity;
   volatile size_t            _current_max_capacity;
   volatile size_t            _capacity;
   volatile size_t            _claimed;
   volatile size_t            _used;
-  size_t                     _used_high;
-  size_t                     _used_low;
-  ssize_t                    _reclaimed;
   ZList<ZPageAllocation>     _stalled;
   ZList<ZPageAllocation>     _satisfied;
   ZUnmapper*                 _unmapper;
   ZUncommitter*              _uncommitter;
-  mutable ZSafeDelete<ZPage> _safe_delete;
+  mutable ZSafeDelete<ZPage> _safe_destroy;
+  mutable ZSafePageRecycle   _safe_recycle;
   bool                       _initialized;
 
   bool prime_cache(ZWorkers* workers, size_t size);
@@ -71,8 +87,8 @@ private:
   size_t increase_capacity(size_t size);
   void decrease_capacity(size_t size, bool set_max_capacity);
 
-  void increase_used(size_t size, bool relocation);
-  void decrease_used(size_t size, bool reclaimed);
+  void increase_used(size_t size, ZCycle* cycle);
+  void decrease_used(size_t size, ZCycle* cycle);
 
   bool commit_page(ZPage* page);
   void uncommit_page(ZPage* page);
@@ -94,17 +110,16 @@ private:
 
   void satisfy_stalled();
 
-  void free_page_inner(ZPage* page, bool reclaimed);
+  void free_page_inner(ZPage* page, ZCycle* cycle);
 
   size_t uncommit(uint64_t* timeout);
 
 public:
-  ZPageAllocator(ZWorkers* workers,
-                 size_t min_capacity,
+  ZPageAllocator(size_t min_capacity,
                  size_t initial_capacity,
                  size_t max_capacity);
 
-  bool is_initialized() const;
+  bool initialize_heap(ZWorkers* workers);
 
   size_t min_capacity() const;
   size_t max_capacity() const;
@@ -113,24 +128,22 @@ public:
   size_t used() const;
   size_t unused() const;
 
-  ZPageAllocatorStats stats() const;
+  ZPageAllocatorStats stats(ZCycle* cycle) const;
 
-  void reset_statistics();
+  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCycle* cycle);
+  void recycle_page(ZPage* page);
+  void safe_destroy_page(ZPage* page);
+  void free_page(ZPage* page, ZCycle* cycle);
+  void free_pages(const ZArray<ZPage*>* pages, ZCycle* cycle);
 
-  ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags);
-  void free_page(ZPage* page, bool reclaimed);
-  void free_pages(const ZArray<ZPage*>* pages, bool reclaimed);
+  void enable_deferred_destroy() const;
+  void disable_deferred_destroy() const;
 
-  void enable_deferred_delete() const;
-  void disable_deferred_delete() const;
-
-  void debug_map_page(const ZPage* page) const;
-  void debug_unmap_page(const ZPage* page) const;
+  void enable_deferred_recycle() const;
+  void disable_deferred_recycle() const;
 
   bool is_alloc_stalled() const;
   void check_out_of_memory();
-
-  void pages_do(ZPageClosure* cl) const;
 
   void threads_do(ThreadClosure* tc) const;
 };

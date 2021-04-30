@@ -37,7 +37,7 @@ private:
   void run(ZTask* task, uint nworkers);
 
 public:
-  ZWorkers();
+  ZWorkers(const char* name);
 
   uint nparallel() const;
   uint nparallel_no_boost() const;

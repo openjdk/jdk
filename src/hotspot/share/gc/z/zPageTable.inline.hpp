@@ -28,13 +28,17 @@
 #include "gc/z/zGranuleMap.inline.hpp"
 #include "gc/z/zPageTable.hpp"
 
-inline ZPage* ZPageTable::get(uintptr_t addr) const {
-  assert(!ZAddress::is_null(addr), "Invalid address");
+inline ZPage* ZPageTable::get(zaddress addr) const {
+  assert(!is_null(addr), "Invalid address");
   return _map.get(ZAddress::offset(addr));
 }
 
-inline ZPageTableIterator::ZPageTableIterator(const ZPageTable* page_table) :
-    _iter(&page_table->_map),
+inline ZPage* ZPageTable::get(volatile zpointer* p) const {
+  return get(to_zaddress((uintptr_t)p));
+}
+
+inline ZPageTableIterator::ZPageTableIterator(const ZPageTable* table) :
+    _iter(&table->_map),
     _prev(NULL) {}
 
 inline bool ZPageTableIterator::next(ZPage** page) {
@@ -47,6 +51,16 @@ inline bool ZPageTableIterator::next(ZPage** page) {
   }
 
   // No more pages
+  return false;
+}
+
+inline bool ZGenerationPagesIterator::next(ZPage** page) {
+  while (_iterator.next(page)) {
+    if ((*page)->generation_id() == _generation_id) {
+      return true;
+    }
+  }
+
   return false;
 }
 

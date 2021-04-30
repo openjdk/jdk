@@ -22,10 +22,15 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zStat.hpp"
+#include "gc/z/zThread.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"
+#include "logging/log.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
 
 //
@@ -46,6 +51,39 @@
 //
 
 static const ZStatCriticalPhase ZCriticalPhaseRelocationStall("Relocation Stall");
+
+bool ZForwarding::claim() {
+  return Atomic::cmpxchg(&_claimed, false, true) == false;
+}
+
+void ZForwarding::set_in_place_relocation() {
+  log_info(gc, reloc)("In-place relocation for ZPage*: " PTR_FORMAT " [" PTR_FORMAT ", " PTR_FORMAT "]",
+                      p2i(_page), untype(_page->start()), untype(_page->end()));
+  _in_place = true;
+
+  // Support for ZHeap::is_in checks of from-space objects
+  // in a page that is in-place relocating
+  Atomic::store(&_in_place_thread, Thread::current());
+  _in_place_old_top = _page->top();
+}
+
+void ZForwarding::clear_in_place_relocation() {
+  assert(_in_place, "Must be an in-place relocated page");
+  // Leave _in_place intact - it's needed later
+
+  Atomic::store(&_in_place_thread, (Thread*)nullptr);
+
+  log_info(gc)("In-place clear before top: " PTR_FORMAT " after top: " PTR_FORMAT, untype(_in_place_old_top), untype(_page->top()));
+
+  _in_place_old_top = zoffset(0);
+
+  // TODO: Consider calling _livemap.reset() to complete the reset_in_place_relocation
+}
+
+bool ZForwarding::is_below_in_place_relocation_top(zoffset offset) const {
+  // Only the relocating thread is allowed to know about the old relocation top.
+  return Atomic::load(&_in_place_thread) == Thread::current() && offset < _in_place_old_top;
+}
 
 bool ZForwarding::retain_page() {
   for (;;) {
@@ -70,7 +108,7 @@ bool ZForwarding::retain_page() {
   }
 }
 
-ZPage* ZForwarding::claim_page() {
+ZPage* ZForwarding::claim_page_for_in_place_relocation() {
   for (;;) {
     const int32_t ref_count = Atomic::load(&_ref_count);
     assert(ref_count > 0, "Invalid state");
@@ -88,6 +126,9 @@ ZPage* ZForwarding::claim_page() {
         _ref_lock.wait();
       }
     }
+
+    set_in_place_relocation();
+    _page->reset_for_in_place_relocation();
 
     return _page;
   }
@@ -132,12 +173,8 @@ void ZForwarding::release_page() {
 
 bool ZForwarding::wait_page_released() const {
   if (Atomic::load_acquire(&_ref_count) != 0) {
+    ZStatTimerFIXME timer(ZCriticalPhaseRelocationStall);
     ZLocker<ZConditionLock> locker(&_ref_lock);
-    if (_ref_abort) {
-      return false;
-    }
-
-    ZStatTimer timer(ZCriticalPhaseRelocationStall);
     while (Atomic::load_acquire(&_ref_count) != 0) {
       if (_ref_abort) {
         return false;
@@ -160,9 +197,13 @@ ZPage* ZForwarding::detach_page() {
   }
 
   // Detach and return page
-  ZPage* const page = _page;
+  _detached_page = _page;
   _page = NULL;
-  return page;
+  return _detached_page;
+}
+
+ZPage* ZForwarding::page() {
+  return _page;
 }
 
 void ZForwarding::abort_page() {
@@ -202,7 +243,7 @@ void ZForwarding::verify() const {
       guarantee(entry.to_offset() != other.to_offset(), "Duplicate to");
     }
 
-    const uintptr_t to_addr = ZAddress::good(entry.to_offset());
+    const zaddress to_addr = ZOffset::address(to_zoffset(entry.to_offset()));
     const size_t size = ZUtils::object_size(to_addr);
     const size_t aligned_size = align_up(size, _page->object_alignment());
     live_bytes += aligned_size;

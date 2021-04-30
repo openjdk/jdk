@@ -27,10 +27,12 @@
 #include "gc/z/zGranuleMap.hpp"
 #include "memory/allocation.hpp"
 
+class ZForwarding;
 class ZPage;
 
 class ZPageTable {
   friend class VMStructs;
+  friend class ZOldGenerationPagesSafeIterator;
   friend class ZPageTableIterator;
 
 private:
@@ -39,10 +41,12 @@ private:
 public:
   ZPageTable();
 
-  ZPage* get(uintptr_t addr) const;
+  ZPage* get(zaddress addr) const;
+  ZPage* get(volatile zpointer* p) const;
 
   void insert(ZPage* page);
   void remove(ZPage* page);
+  void replace(ZPage* old_page, ZPage* new_page);
 };
 
 class ZPageTableIterator : public StackObj {
@@ -51,7 +55,20 @@ private:
   ZPage*                      _prev;
 
 public:
-  ZPageTableIterator(const ZPageTable* page_table);
+  ZPageTableIterator(const ZPageTable* table);
+
+  bool next(ZPage** page);
+};
+
+class ZGenerationPagesIterator : public StackObj {
+private:
+  ZPageTableIterator _iterator;
+  ZGenerationId      _generation_id;
+  ZPageAllocator*    _page_allocator;
+
+public:
+  ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId generation, ZPageAllocator* page_allocator);
+  ~ZGenerationPagesIterator();
 
   bool next(ZPage** page);
 };

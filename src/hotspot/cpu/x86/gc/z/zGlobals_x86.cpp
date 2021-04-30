@@ -144,6 +144,6 @@ size_t ZPlatformAddressOffsetBits() {
   return clamp(address_offset_bits, min_address_offset_bits, max_address_offset_bits);
 }
 
-size_t ZPlatformAddressMetadataShift() {
+size_t ZPlatformAddressHeapBaseShift() {
   return ZPlatformAddressOffsetBits();
 }

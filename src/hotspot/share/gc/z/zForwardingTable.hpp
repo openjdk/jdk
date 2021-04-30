@@ -29,16 +29,30 @@
 class ZForwarding;
 
 class ZForwardingTable {
+  friend class ZOldGenerationPagesSafeIterator;
+  friend class ZForwardingTableIterator;
+
 private:
   ZGranuleMap<ZForwarding*> _map;
 
 public:
   ZForwardingTable();
 
-  ZForwarding* get(uintptr_t addr) const;
+  ZForwarding* get(zaddress_unsafe addr) const;
 
   void insert(ZForwarding* forwarding);
   void remove(ZForwarding* forwarding);
+};
+
+class ZForwardingTableIterator : public StackObj {
+private:
+  ZGranuleMapIterator<ZForwarding*> _iter;
+  ZForwarding*                      _prev;
+
+public:
+  ZForwardingTableIterator(const ZForwardingTable* table);
+
+  bool next(ZForwarding** forwarding);
 };
 
 #endif // SHARE_GC_Z_ZFORWARDINGTABLE_HPP

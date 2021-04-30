@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZMEMORY_HPP
 #define SHARE_GC_Z_ZMEMORY_HPP
 
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zList.hpp"
 #include "gc/z/zLock.hpp"
 #include "memory/allocation.hpp"
@@ -32,15 +33,15 @@ class ZMemory : public CHeapObj<mtGC> {
   friend class ZList<ZMemory>;
 
 private:
-  uintptr_t          _start;
-  uintptr_t          _end;
+  zoffset            _start;
+  zoffset            _end;
   ZListNode<ZMemory> _node;
 
 public:
-  ZMemory(uintptr_t start, size_t size);
+  ZMemory(zoffset start, size_t size);
 
-  uintptr_t start() const;
-  uintptr_t end() const;
+  zoffset start() const;
+  zoffset end() const;
   size_t size() const;
 
   void shrink_from_front(size_t size);
@@ -70,7 +71,7 @@ private:
   ZList<ZMemory> _freelist;
   Callbacks      _callbacks;
 
-  ZMemory* create(uintptr_t start, size_t size);
+  ZMemory* create(zoffset start, size_t size);
   void destroy(ZMemory* area);
   void shrink_from_front(ZMemory* area, size_t size);
   void shrink_from_back(ZMemory* area, size_t size);
@@ -82,12 +83,12 @@ public:
 
   void register_callbacks(const Callbacks& callbacks);
 
-  uintptr_t alloc_from_front(size_t size);
-  uintptr_t alloc_from_front_at_most(size_t size, size_t* allocated);
-  uintptr_t alloc_from_back(size_t size);
-  uintptr_t alloc_from_back_at_most(size_t size, size_t* allocated);
+  zoffset alloc_from_front(size_t size);
+  zoffset alloc_from_front_at_most(size_t size, size_t* allocated);
+  zoffset alloc_from_back(size_t size);
+  zoffset alloc_from_back_at_most(size_t size, size_t* allocated);
 
-  void free(uintptr_t start, size_t size);
+  void free(zoffset start, size_t size);
 };
 
 #endif // SHARE_GC_Z_ZMEMORY_HPP

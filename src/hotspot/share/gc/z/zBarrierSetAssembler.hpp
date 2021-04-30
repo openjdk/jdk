@@ -29,8 +29,15 @@
 
 class ZBarrierSetAssemblerBase : public BarrierSetAssembler {
 public:
-  static Address address_bad_mask_from_thread(Register thread);
-  static Address address_bad_mask_from_jni_env(Register env);
+  static Address address_load_good_mask_from_thread(Register thread);
+  static Address address_load_bad_mask_from_thread(Register thread);
+  static Address address_mark_bad_mask_from_thread(Register thread);
+  static Address address_store_good_mask_from_thread(Register thread);
+  static Address address_store_bad_mask_from_thread(Register thread);
+  static Address address_uncolor_mask_from_thread(Register thread);
+  static Address address_load_bad_mask_from_jni_env(Register env);
+  static Address address_mark_bad_mask_from_jni_env(Register env);
+  static Address address_uncolor_mask_from_jni_env(Register env);
 };
 
 #include CPU_HEADER(gc/z/zBarrierSetAssembler)

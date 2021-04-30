@@ -42,7 +42,10 @@
           "Maximum number of bytes allocated for mark stacks")              \
           range(32*M, 1024*G)                                               \
                                                                             \
-  product(double, ZCollectionInterval, 0,                                   \
+  product(double, ZCollectionIntervalMinor, 1,                              \
+          "Force Minor GC at a fixed time interval (in seconds)")           \
+                                                                            \
+  product(double, ZCollectionIntervalMajor, 5,                              \
           "Force GC at a fixed time interval (in seconds)")                 \
                                                                             \
   product(bool, ZProactive, true,                                           \
@@ -50,6 +53,12 @@
                                                                             \
   product(bool, ZUncommit, true,                                            \
           "Uncommit unused memory")                                         \
+                                                                            \
+  product(bool, ZPrefetchStores, false,                                     \
+          "Prefetch stores")                                                \
+                                                                            \
+  product(bool, ZBufferStoreBarriers, true,                                 \
+          "Buffer store barriers")                                          \
                                                                             \
   product(uintx, ZUncommitDelay, 5 * 60,                                    \
           "Uncommit memory if it has been unused for the specified "        \
@@ -61,9 +70,6 @@
                                                                             \
   product(bool, ZStressRelocateInPlace, false, DIAGNOSTIC,                  \
           "Always relocate pages in-place")                                 \
-                                                                            \
-  product(bool, ZVerifyViews, false, DIAGNOSTIC,                            \
-          "Verify heap view accesses")                                      \
                                                                             \
   product(bool, ZVerifyRoots, trueInDebug, DIAGNOSTIC,                      \
           "Verify roots")                                                   \

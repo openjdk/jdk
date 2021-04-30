@@ -1365,7 +1365,7 @@ class JNIGlobalsDumper : public OopClosure {
 };
 
 void JNIGlobalsDumper::do_oop(oop* obj_p) {
-  oop o = *obj_p;
+  oop o = NativeAccess<AS_NO_KEEPALIVE>::oop_load(obj_p);
 
   // ignore these
   if (o == NULL) return;

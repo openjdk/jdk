@@ -23,15 +23,19 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zTask.hpp"
-#include "gc/z/zThread.hpp"
+#include "gc/z/zThread.inline.hpp"
 
 ZTask::GangTask::GangTask(ZTask* ztask, const char* name) :
     AbstractGangTask(name),
-    _ztask(ztask) {}
+    _ztask(ztask),
+    DEBUG_ONLY(_coordinator_is_suspendible_thread(Thread::current()->is_suspendible_thread()))
+    NOT_DEBUG(_coordinator_is_suspendible_thread(false)) {}
 
 void ZTask::GangTask::work(uint worker_id) {
   ZThread::set_worker_id(worker_id);
+  ZThread::set_coordinator_is_suspendible_thread(_coordinator_is_suspendible_thread);
   _ztask->work();
+  ZThread::set_coordinator_is_suspendible_thread(false);
   ZThread::clear_worker_id();
 }
 

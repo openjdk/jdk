@@ -28,7 +28,24 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/z/zMetronome.hpp"
 
-class ZDirector : public ConcurrentGCThread {
+class ZDirectorMinor : public ConcurrentGCThread {
+private:
+  static const double one_in_1000;
+
+  ZMetronome   _metronome;
+
+  bool rule_timer() const;
+  GCCause::Cause make_gc_decision() const;
+
+protected:
+  virtual void run_service();
+  virtual void stop_service();
+
+public:
+  ZDirectorMinor();
+};
+
+class ZDirectorMajor : public ConcurrentGCThread {
 private:
   static const double one_in_1000;
 
@@ -49,7 +66,7 @@ protected:
   virtual void stop_service();
 
 public:
-  ZDirector();
+  ZDirectorMajor();
 };
 
 #endif // SHARE_GC_Z_ZDIRECTOR_HPP

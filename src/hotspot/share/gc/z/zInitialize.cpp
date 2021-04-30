@@ -28,7 +28,9 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeuristics.hpp"
 #include "gc/z/zInitialize.hpp"
+#include "gc/z/zJNICritical.hpp"
 #include "gc/z/zLargePages.hpp"
+#include "gc/z/zMarkStackAllocator.hpp"
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zThreadLocalAllocBuffer.hpp"
@@ -43,7 +45,7 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
                      VM_Version::jdk_debug_level());
 
   // Early initialization
-  ZAddress::initialize();
+  ZGlobalsPointers::initialize();
   ZNUMA::initialize();
   ZCPU::initialize();
   ZStatValue::initialize();
@@ -52,6 +54,8 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
   ZLargePages::initialize();
   ZHeuristics::set_medium_page_size();
   ZBarrierSet::set_barrier_set(barrier_set);
+  ZMarkStackAllocator::initialize();
+  ZJNICritical::initialize();
 
   pd_initialize();
 }

@@ -60,8 +60,6 @@ public:
   size_t flush_for_uncommit(size_t requested, ZList<ZPage>* to, uint64_t* timeout);
 
   void set_last_commit();
-
-  void pages_do(ZPageClosure* cl) const;
 };
 
 #endif // SHARE_GC_Z_ZPAGECACHE_HPP

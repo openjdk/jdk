@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZMARK_HPP
 #define SHARE_GC_Z_ZMARK_HPP
 
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zMarkStack.hpp"
 #include "gc/z/zMarkStackAllocator.hpp"
 #include "gc/z/zMarkStackEntry.hpp"
@@ -32,6 +33,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class Thread;
+class ZCycle;
 class ZMarkCache;
 class ZPageTable;
 class ZWorkers;
@@ -39,10 +41,19 @@ class ZWorkers;
 class ZMark {
   friend class ZMarkTask;
 
+public:
+  static const bool Follow      = true;
+  static const bool DontFollow  = false;
+
+  static const bool Strong      = false;
+  static const bool Finalizable = true;
+
+  static const bool Publish     = true;
+  static const bool Overflow    = false;
+
 private:
-  ZWorkers* const     _workers;
+  ZCycle* const       _cycle;
   ZPageTable* const   _page_table;
-  ZMarkStackAllocator _allocator;
   ZMarkStripeSet      _stripes;
   ZMarkTerminate      _terminate;
   volatile bool       _work_terminateflush;
@@ -54,9 +65,11 @@ private:
   size_t              _ncontinue;
   uint                _nworkers;
 
+  ZMarkStackAllocator* allocator();
+
   size_t calculate_nstripes(uint nworkers) const;
 
-  bool is_array(uintptr_t addr) const;
+  bool is_array(zaddress addr) const;
   void push_partial_array(uintptr_t addr, size_t size, bool finalizable);
   void follow_small_array(uintptr_t addr, size_t size, bool finalizable);
   void follow_large_array(uintptr_t addr, size_t size, bool finalizable);
@@ -64,7 +77,7 @@ private:
   void follow_partial_array(ZMarkStackEntry entry, bool finalizable);
   void follow_array_object(objArrayOop obj, bool finalizable);
   void follow_object(oop obj, bool finalizable);
-  bool try_mark_object(ZMarkCache* cache, uintptr_t addr, bool finalizable);
+  bool try_mark_object(ZMarkCache* cache, zaddress addr, bool finalizable);
   void mark_and_follow(ZMarkCache* cache, ZMarkStackEntry entry);
 
   template <typename T> bool drain(ZMarkStripe* stripe,
@@ -82,6 +95,7 @@ private:
   bool try_complete();
   bool try_end();
 
+  ZWorkers* workers() const;
   void prepare_work();
   void finish_work();
 
@@ -97,14 +111,14 @@ private:
   void verify_all_stacks_empty() const;
 
 public:
-  ZMark(ZWorkers* workers, ZPageTable* page_table);
+  ZMark(ZCycle* cycle, ZPageTable* page_table);
 
-  bool is_initialized() const;
-
-  template <bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
+  template <bool follow, bool finalizable, bool publish> void mark_object(zaddress addr);
+  void mark_follow_invisible_root(zaddress addr, size_t size);
 
   void start();
-  void mark(bool initial);
+  void mark_roots();
+  void mark_follow();
   bool end();
 
   void flush_and_free();

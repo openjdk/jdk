@@ -46,6 +46,9 @@ private:
   void install(ZForwarding* forwarding, volatile size_t* next) {
     const size_t index = Atomic::fetch_and_add(next, 1u);
     assert(index < _nforwardings, "Invalid index");
+
+    forwarding->page()->log_msg(" (relocation selected)");
+
     _forwardings[index] = forwarding;
   }
 
@@ -62,10 +65,10 @@ public:
       ZTask("ZRelocationSetInstallTask"),
       _allocator(allocator),
       _forwardings(NULL),
-      _nforwardings(selector->small()->length() + selector->medium()->length()),
-      _small_iter(selector->small()),
-      _medium_iter(selector->medium()),
-      _small_next(selector->medium()->length()),
+      _nforwardings(selector->selected_small()->length() + selector->selected_medium()->length()),
+      _small_iter(selector->selected_small()),
+      _medium_iter(selector->selected_medium()),
+      _small_next(selector->selected_medium()->length()),
       _medium_next(0) {
 
     // Reset the allocator to have room for the relocation
@@ -106,22 +109,34 @@ public:
   }
 };
 
-ZRelocationSet::ZRelocationSet(ZWorkers* workers) :
-    _workers(workers),
+ZRelocationSet::ZRelocationSet(ZCycle* cycle) :
+    _cycle(cycle),
     _allocator(),
     _forwardings(NULL),
     _nforwardings(0) {}
 
+ZWorkers* ZRelocationSet::workers() const {
+  return _cycle->workers();
+}
+
+ZCycle* ZRelocationSet::cycle() const {
+  return _cycle;
+}
+
+ZArray<ZPage*>* ZRelocationSet::promoted_pages() {
+  return &_promoted_pages;
+}
+
 void ZRelocationSet::install(const ZRelocationSetSelector* selector) {
   // Install relocation set
   ZRelocationSetInstallTask task(&_allocator, selector);
-  _workers->run_concurrent(&task);
+  workers()->run_concurrent(&task);
 
   _forwardings = task.forwardings();
   _nforwardings = task.nforwardings();
 
   // Update statistics
-  ZStatRelocation::set_at_install_relocation_set(_allocator.size());
+  _cycle->stat_relocation()->set_at_install_relocation_set(_allocator.size());
 }
 
 void ZRelocationSet::reset() {
@@ -132,4 +147,18 @@ void ZRelocationSet::reset() {
   }
 
   _nforwardings = 0;
+
+  for (int i = 0; i < _promoted_pages.length(); i++) {
+    // Delete non-relocating promoted pages from last cycle
+    ZPage* page = _promoted_pages.at(i);
+    ZHeap::heap()->safe_destroy_page(page);
+  }
+
+  _promoted_pages.clear();
+}
+
+void ZRelocationSet::register_promoted_page(ZPage* page) {
+  ZLocker<ZLock> locker(&_promotion_lock);
+  assert(!_promoted_pages.contains(page), "no duplicates allowed");
+  _promoted_pages.append(page);
 }

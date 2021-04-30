@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZGRANULEMAP_HPP
 #define SHARE_GC_Z_ZGRANULEMAP_HPP
 
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zArray.hpp"
 #include "memory/allocation.hpp"
 
@@ -31,23 +32,26 @@ template <typename T>
 class ZGranuleMap {
   friend class VMStructs;
   template <typename> friend class ZGranuleMapIterator;
+  friend class ZForwardingTableIterator;
+  friend class ZOldGenerationPagesSafeIterator;
 
 private:
   const size_t _size;
   T* const     _map;
 
-  size_t index_for_offset(uintptr_t offset) const;
+  size_t index_for_offset(zoffset offset) const;
 
 public:
   ZGranuleMap(size_t max_offset);
   ~ZGranuleMap();
 
-  T get(uintptr_t offset) const;
-  void put(uintptr_t offset, T value);
-  void put(uintptr_t offset, size_t size, T value);
+  T get(zoffset offset) const;
+  void put(zoffset offset, T value);
+  void put(zoffset offset, size_t size, T value);
 
-  T get_acquire(uintptr_t offset) const;
-  void release_put(uintptr_t offset, T value);
+  T get_acquire(zoffset offset) const;
+  void release_put(zoffset offset, T value);
+  void release_put(zoffset offset, size_t size, T value);
 };
 
 template <typename T>

@@ -35,8 +35,8 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentRootsOopStorageSet("Concurrent Roots OopStorageSet");
-static const ZStatSubPhase ZSubPhaseConcurrentRootsClassLoaderDataGraph("Concurrent Roots ClassLoaderDataGraph");
+static const ZStatSubPhase ZSubPhaseConcurrentRootsOopStorageSet("Concurrent Roots Colored OopStorageSet");
+static const ZStatSubPhase ZSubPhaseConcurrentRootsClassLoaderDataGraph("Concurrent Roots Colored ClassLoaderDataGraph");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsJavaThreads("Concurrent Roots JavaThreads");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsCodeCache("Concurrent Roots CodeCache");
 static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsOopStorageSet("Concurrent Weak Roots OopStorageSet");
@@ -56,13 +56,23 @@ ZStrongOopStorageSetIterator::ZStrongOopStorageSetIterator() :
     _iter() {}
 
 void ZStrongOopStorageSetIterator::apply(OopClosure* cl) {
-  ZStatTimer timer(ZSubPhaseConcurrentRootsOopStorageSet);
+  ZStatTimerFIXME timer(ZSubPhaseConcurrentRootsOopStorageSet);
   _iter.oops_do(cl);
 }
 
 void ZStrongCLDsIterator::apply(CLDClosure* cl) {
-  ZStatTimer timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
+  ZStatTimerFIXME timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
   ClassLoaderDataGraph::always_strong_cld_do(cl);
+}
+
+void ZWeakCLDsIterator::apply(CLDClosure* cl) {
+  ZStatTimerFIXME timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
+  ClassLoaderDataGraph::roots_cld_do(NULL /* strong */, cl /* weak */);
+}
+
+void ZAllCLDsIterator::apply(CLDClosure* cl) {
+  ZStatTimerFIXME timer(ZSubPhaseConcurrentRootsClassLoaderDataGraph);
+  ClassLoaderDataGraph::cld_do(cl);
 }
 
 ZJavaThreadsIterator::ZJavaThreadsIterator() :
@@ -74,7 +84,7 @@ uint ZJavaThreadsIterator::claim() {
 }
 
 void ZJavaThreadsIterator::apply(ThreadClosure* cl) {
-  ZStatTimer timer(ZSubPhaseConcurrentRootsJavaThreads);
+  ZStatTimerFIXME timer(ZSubPhaseConcurrentRootsJavaThreads);
 
   // The resource mark is needed because interpreter oop maps are
   // not reused in concurrent mode. Instead, they are temporary and
@@ -86,46 +96,47 @@ void ZJavaThreadsIterator::apply(ThreadClosure* cl) {
   }
 }
 
-ZNMethodsIterator::ZNMethodsIterator() {
-  if (!ClassUnloading) {
-    ZNMethod::nmethods_do_begin();
+ZNMethodsIterator::ZNMethodsIterator(bool enabled, bool secondary)
+    : _enabled(enabled), _secondary(secondary) {
+  if (_enabled) {
+    ZNMethod::nmethods_do_begin(secondary);
   }
 }
 
 ZNMethodsIterator::~ZNMethodsIterator() {
-  if (!ClassUnloading) {
-    ZNMethod::nmethods_do_end();
+  if (_enabled) {
+    ZNMethod::nmethods_do_end(_secondary);
   }
 }
 
 void ZNMethodsIterator::apply(NMethodClosure* cl) {
-  ZStatTimer timer(ZSubPhaseConcurrentRootsCodeCache);
-  ZNMethod::nmethods_do(cl);
+  ZStatTimerFIXME timer(ZSubPhaseConcurrentRootsCodeCache);
+  ZNMethod::nmethods_do(_secondary, cl);
 }
 
-ZRootsIterator::ZRootsIterator(int cld_claim) {
-  if (cld_claim != ClassLoaderData::_claim_none) {
-    ClassLoaderDataGraph::clear_claimed_marks(cld_claim);
-  }
-}
-
-void ZRootsIterator::apply(OopClosure* cl,
-                           CLDClosure* cld_cl,
-                           ThreadClosure* thread_cl,
-                           NMethodClosure* nm_cl) {
+void ZColoredRootsStrongIterator::apply(OopClosure* cl,
+                                  CLDClosure* cld_cl) {
   _oop_storage_set.apply(cl);
   _class_loader_data_graph.apply(cld_cl);
+}
+
+void ZUncoloredRootsStrongIterator::apply(ThreadClosure* thread_cl,
+                                          NMethodClosure* nm_cl) {
   _java_threads.apply(thread_cl);
   if (!ClassUnloading) {
     _nmethods.apply(nm_cl);
   }
 }
 
+void ZUncoloredRootsWeakIterator::apply(NMethodClosure* nm_cl) {
+  _nmethods.apply(nm_cl);
+}
+
 ZWeakOopStorageSetIterator::ZWeakOopStorageSetIterator() :
     _iter() {}
 
 void ZWeakOopStorageSetIterator::apply(OopClosure* cl) {
-  ZStatTimer timer(ZSubPhaseConcurrentWeakRootsOopStorageSet);
+  ZStatTimerFIXME timer(ZSubPhaseConcurrentWeakRootsOopStorageSet);
   _iter.oops_do(cl);
 }
 
@@ -139,4 +150,23 @@ void ZWeakRootsIterator::report_num_dead() {
 
 void ZWeakRootsIterator::apply(OopClosure* cl) {
   _oop_storage_set.apply(cl);
+}
+
+void ZColoredRootsWeakIterator::apply(OopClosure* cl,
+                                      CLDClosure* cld_cl) {
+  _weak_oop_storage_set.apply(cl);
+  _weak_class_loader_data_graph.apply(cld_cl);
+}
+
+void ZColoredRootsAllIterator::apply(OopClosure* cl,
+                                     CLDClosure* cld_cl) {
+  _strong_oop_storage_set.apply(cl);
+  _weak_oop_storage_set.apply(cl);
+  _all_class_loader_data_graph.apply(cld_cl);
+}
+
+void ZUncoloredRootsAllIterator::apply(ThreadClosure* thread_cl,
+                                       NMethodClosure* nm_cl) {
+  _java_threads.apply(thread_cl);
+  _nmethods.apply(nm_cl);
 }

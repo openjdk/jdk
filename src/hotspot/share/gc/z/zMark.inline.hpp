@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZMARK_INLINE_HPP
 
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zCycle.inline.hpp"
 #include "gc/z/zMark.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zThreadLocalData.hpp"
@@ -32,13 +33,19 @@
 #include "utilities/debug.hpp"
 
 template <bool follow, bool finalizable, bool publish>
-inline void ZMark::mark_object(uintptr_t addr) {
-  assert(ZAddress::is_marked(addr), "Should be marked");
-  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::stacks(Thread::current());
-  ZMarkStripe* const stripe = _stripes.stripe_for_addr(addr);
-  ZMarkStackEntry entry(addr, follow, finalizable);
+inline void ZMark::mark_object(zaddress addr) {
+  assert(oopDesc::is_oop(to_oop(addr)), "Should be oop");
+  ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _cycle->cycle_id());
+  ZMarkStripe* const stripe = _stripes.stripe_for_addr(untype(addr));
+  ZMarkStackEntry entry(untype(ZAddress::offset(addr)), follow, finalizable);
 
-  stacks->push(&_allocator, &_stripes, stripe, entry, publish);
+  assert(ZHeap::heap()->is_young(addr) == (_cycle->cycle_id() == ZCycleId::_minor), "Phase/object mismatch");
+
+  stacks->push(allocator(), &_stripes, stripe, entry, publish);
+}
+
+inline void ZMark::mark_follow_invisible_root(zaddress addr, size_t size) {
+  follow_array((uintptr_t)addr, size, false /* finalizable */);
 }
 
 #endif // SHARE_GC_Z_ZMARK_INLINE_HPP

@@ -25,6 +25,7 @@
 /* @test
  * @bug 8167409
  * @requires (os.arch != "aarch64") & (os.arch != "arm") & (vm.flavor != "zero")
+ * @requires vm.opt.final.CriticalJNINatives
  * @run main/othervm/native -Xcomp -XX:+CriticalJNINatives compiler.runtime.criticalnatives.argumentcorruption.CheckLongArgs
  */
 package compiler.runtime.criticalnatives.argumentcorruption;

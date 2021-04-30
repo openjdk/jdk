@@ -29,7 +29,7 @@
 #include "gc/z/zWorkers.inline.hpp"
 #include "runtime/java.hpp"
 
-class ZWorkersInitializeTask : public ZTask {
+class ZWorkersInitializeTask : public AbstractGangTask {
 private:
   const uint     _nworkers;
   uint           _started;
@@ -37,12 +37,12 @@ private:
 
 public:
   ZWorkersInitializeTask(uint nworkers) :
-      ZTask("ZWorkersInitializeTask"),
+      AbstractGangTask("ZWorkersInitializeTask"),
       _nworkers(nworkers),
       _started(0),
       _lock() {}
 
-  virtual void work() {
+  virtual void work(uint /* worker_id */) {
     // Register as worker
     ZThread::set_worker();
 
@@ -59,9 +59,9 @@ public:
   }
 };
 
-ZWorkers::ZWorkers() :
+ZWorkers::ZWorkers(const char* name) :
     _boost(false),
-    _workers("ZWorker",
+    _workers(name,
              nworkers(),
              true /* are_GC_task_threads */,
              true /* are_ConcurrentGC_threads */) {
@@ -77,7 +77,7 @@ ZWorkers::ZWorkers() :
 
   // Execute task to register threads as workers
   ZWorkersInitializeTask task(nworkers());
-  run(&task, nworkers());
+  _workers.run_task(&task, nworkers());
 }
 
 void ZWorkers::set_boost(bool boost) {

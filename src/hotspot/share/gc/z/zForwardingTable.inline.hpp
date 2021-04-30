@@ -32,15 +32,15 @@
 #include "utilities/debug.hpp"
 
 inline ZForwardingTable::ZForwardingTable() :
-    _map(ZAddressOffsetMax) {}
+    _map(ZAddressOffsetMaxSize) {}
 
-inline ZForwarding* ZForwardingTable::get(uintptr_t addr) const {
-  assert(!ZAddress::is_null(addr), "Invalid address");
+inline ZForwarding* ZForwardingTable::get(zaddress_unsafe addr) const {
+  assert(!is_null(addr), "Invalid address");
   return _map.get(ZAddress::offset(addr));
 }
 
 inline void ZForwardingTable::insert(ZForwarding* forwarding) {
-  const uintptr_t offset = forwarding->start();
+  const zoffset offset = forwarding->start();
   const size_t size = forwarding->size();
 
   assert(_map.get(offset) == NULL, "Invalid entry");
@@ -48,11 +48,28 @@ inline void ZForwardingTable::insert(ZForwarding* forwarding) {
 }
 
 inline void ZForwardingTable::remove(ZForwarding* forwarding) {
-  const uintptr_t offset = forwarding->start();
+  const zoffset offset = forwarding->start();
   const size_t size = forwarding->size();
 
   assert(_map.get(offset) == forwarding, "Invalid entry");
   _map.put(offset, size, NULL);
+}
+
+inline ZForwardingTableIterator::ZForwardingTableIterator(const ZForwardingTable* table) :
+    _iter(&table->_map),
+    _prev(NULL) {}
+
+inline bool ZForwardingTableIterator::next(ZForwarding** forwarding) {
+  for (ZForwarding* entry; _iter.next(&entry);) {
+    if (entry != NULL && entry != _prev) {
+      // Next forwarding found
+      *forwarding = _prev = entry;
+      return true;
+    }
+  }
+
+  // No more forwardings
+  return false;
 }
 
 #endif // SHARE_GC_Z_ZFORWARDINGTABLE_INLINE_HPP

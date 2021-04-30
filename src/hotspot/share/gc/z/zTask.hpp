@@ -32,6 +32,7 @@ private:
   class GangTask : public AbstractGangTask {
   private:
     ZTask* const _ztask;
+    const bool   _coordinator_is_suspendible_thread;
 
   public:
     GangTask(ZTask* ztask, const char* name);

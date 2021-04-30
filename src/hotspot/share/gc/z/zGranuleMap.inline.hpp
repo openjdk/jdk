@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZGRANULEMAP_INLINE_HPP
 #define SHARE_GC_Z_ZGRANULEMAP_INLINE_HPP
 
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.hpp"
@@ -45,26 +46,27 @@ inline ZGranuleMap<T>::~ZGranuleMap() {
 }
 
 template <typename T>
-inline size_t ZGranuleMap<T>::index_for_offset(uintptr_t offset) const {
-  const size_t index = offset >> ZGranuleSizeShift;
+inline size_t ZGranuleMap<T>::index_for_offset(zoffset offset) const {
+  const size_t index = untype(offset) >> ZGranuleSizeShift;
   assert(index < _size, "Invalid index");
+
   return index;
 }
 
 template <typename T>
-inline T ZGranuleMap<T>::get(uintptr_t offset) const {
+inline T ZGranuleMap<T>::get(zoffset offset) const {
   const size_t index = index_for_offset(offset);
   return _map[index];
 }
 
 template <typename T>
-inline void ZGranuleMap<T>::put(uintptr_t offset, T value) {
+inline void ZGranuleMap<T>::put(zoffset offset, T value) {
   const size_t index = index_for_offset(offset);
   _map[index] = value;
 }
 
 template <typename T>
-inline void ZGranuleMap<T>::put(uintptr_t offset, size_t size, T value) {
+inline void ZGranuleMap<T>::put(zoffset offset, size_t size, T value) {
   assert(is_aligned(size, ZGranuleSize), "Misaligned");
 
   const size_t start_index = index_for_offset(offset);
@@ -75,15 +77,21 @@ inline void ZGranuleMap<T>::put(uintptr_t offset, size_t size, T value) {
 }
 
 template <typename T>
-inline T ZGranuleMap<T>::get_acquire(uintptr_t offset) const {
+inline T ZGranuleMap<T>::get_acquire(zoffset offset) const {
   const size_t index = index_for_offset(offset);
   return Atomic::load_acquire(_map + index);
 }
 
 template <typename T>
-inline void ZGranuleMap<T>::release_put(uintptr_t offset, T value) {
+inline void ZGranuleMap<T>::release_put(zoffset offset, T value) {
   const size_t index = index_for_offset(offset);
   Atomic::release_store(_map + index, value);
+}
+
+template <typename T>
+inline void ZGranuleMap<T>::release_put(zoffset offset, size_t size, T value) {
+  OrderAccess::release();
+  put(offset, size, value);
 }
 
 template <typename T>

@@ -24,9 +24,6 @@
 #include "precompiled.hpp"
 #include "gc/z/zGlobals.hpp"
 
-uint32_t   ZGlobalPhase                = ZPhaseRelocate;
-uint32_t   ZGlobalSeqNum               = 1;
-
 size_t     ZPageSizeMediumShift;
 size_t     ZPageSizeMedium;
 
@@ -38,42 +35,35 @@ int        ZObjectAlignmentMediumShift;
 const int& ZObjectAlignmentSmall       = MinObjAlignmentInBytes;
 int        ZObjectAlignmentMedium;
 
-uintptr_t  ZAddressGoodMask;
-uintptr_t  ZAddressBadMask;
-uintptr_t  ZAddressWeakBadMask;
+uintptr_t  ZAddressLoadGoodMask;
+uintptr_t  ZAddressLoadBadMask;
+size_t     ZAddressLoadShift;
 
-static uint32_t* ZAddressCalculateBadMaskHighOrderBitsAddr() {
-  const uintptr_t addr = reinterpret_cast<uintptr_t>(&ZAddressBadMask);
-  return reinterpret_cast<uint32_t*>(addr + ZAddressBadMaskHighOrderBitsOffset);
+uintptr_t  ZAddressMarkGoodMask;
+uintptr_t  ZAddressMarkBadMask;
+
+uintptr_t  ZAddressStoreGoodMask;
+uintptr_t  ZAddressStoreBadMask;
+
+uintptr_t  ZAddressVectorLoadBadMask[8];
+uintptr_t  ZAddressVectorStoreBadMask[8];
+uintptr_t  ZAddressVectorUncolorMask[8];
+uintptr_t  ZAddressVectorStoreGoodMask[8];
+
+static uint32_t* ZAddressCalculateStoreGoodMaskLowOrderBitsAddr() {
+  const uintptr_t addr = reinterpret_cast<uintptr_t>(&ZAddressStoreGoodMask);
+  return reinterpret_cast<uint32_t*>(addr + ZAddressStoreGoodMaskLowOrderBitsOffset);
 }
 
-uint32_t*  ZAddressBadMaskHighOrderBitsAddr = ZAddressCalculateBadMaskHighOrderBitsAddr();
+uint32_t*  ZAddressStoreGoodMaskLowOrderBitsAddr = ZAddressCalculateStoreGoodMaskLowOrderBitsAddr();
 
-size_t     ZAddressOffsetBits;
-uintptr_t  ZAddressOffsetMask;
-size_t     ZAddressOffsetMax;
+size_t     ZAddressHeapBaseShift;
+size_t     ZAddressHeapBase;
 
-size_t     ZAddressMetadataShift;
-uintptr_t  ZAddressMetadataMask;
-
-uintptr_t  ZAddressMetadataMarked;
-uintptr_t  ZAddressMetadataMarked0;
-uintptr_t  ZAddressMetadataMarked1;
-uintptr_t  ZAddressMetadataRemapped;
-uintptr_t  ZAddressMetadataFinalizable;
-
-const char* ZGlobalPhaseToString() {
-  switch (ZGlobalPhase) {
-  case ZPhaseMark:
-    return "Mark";
-
-  case ZPhaseMarkCompleted:
-    return "MarkCompleted";
-
-  case ZPhaseRelocate:
-    return "Relocate";
-
-  default:
-    return "Unknown";
-  }
-}
+uintptr_t  ZAddressRemapped;
+uintptr_t  ZAddressRemappedMinorMask;
+uintptr_t  ZAddressRemappedMajorMask;
+uintptr_t  ZAddressMarkedMinor;
+uintptr_t  ZAddressMarkedMajor;
+uintptr_t  ZAddressFinalizable;
+uintptr_t  ZAddressRemembered;

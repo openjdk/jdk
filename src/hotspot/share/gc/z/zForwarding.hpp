@@ -26,6 +26,7 @@
 
 #include "gc/z/zAttachedArray.hpp"
 #include "gc/z/zForwardingEntry.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zLock.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 
@@ -46,15 +47,28 @@ private:
   const size_t           _object_alignment_shift;
   const AttachedArray    _entries;
   ZPage*                 _page;
+  ZGenerationId          _generation_id;
+  volatile bool          _claimed;
   mutable ZConditionLock _ref_lock;
   volatile int32_t       _ref_count;
   bool                   _ref_abort;
   bool                   _in_place;
+  bool                   _remset_scanned;
+
+  // Debugging
+  volatile Thread*       _in_place_thread;
+  zoffset                _in_place_old_top;
+  ZPage*                 _detached_page;
 
   ZForwardingEntry* entries() const;
   ZForwardingEntry at(ZForwardingCursor* cursor) const;
   ZForwardingEntry first(uintptr_t from_index, ZForwardingCursor* cursor) const;
   ZForwardingEntry next(ZForwardingCursor* cursor) const;
+
+  template <typename Function>
+  void object_iterate_forwarded_via_livemap(Function function);
+  template <typename Function>
+  void object_iterate_forwarded_via_table(Function function);
 
   ZForwarding(ZPage* page, size_t nentries);
 
@@ -63,25 +77,50 @@ public:
   static ZForwarding* alloc(ZForwardingAllocator* allocator, ZPage* page);
 
   uint8_t type() const;
-  uintptr_t start() const;
+  ZGenerationId generation_id() const;
+  zoffset start() const;
   size_t size() const;
   size_t object_alignment_shift() const;
+
+  // Visit from-objects
+  template <typename Function>
+  void object_iterate_f(Function function);
   void object_iterate(ObjectClosure *cl);
 
+  // Visit to-objects
+  template <typename Function>
+  void object_iterate_forwarded(Function function);
+
+  template <typename Function>
+  void oops_do_in_forwarded(Function function);
+
+  template <typename Function>
+  void oops_do_in_forwarded_via_table(Function function);
+
+  bool claim();
+
+  void set_in_place_relocation();
+  void clear_in_place_relocation();
+  bool is_below_in_place_relocation_top(zoffset addr) const;
+
   bool retain_page();
-  ZPage* claim_page();
+  ZPage* claim_page_for_in_place_relocation();
   void release_page();
   bool wait_page_released() const;
   ZPage* detach_page();
+  ZPage* page();
   void abort_page();
 
-  void set_in_place();
   bool in_place() const;
 
+  zaddress find(zaddress_unsafe addr);
+
   ZForwardingEntry find(uintptr_t from_index, ZForwardingCursor* cursor) const;
-  uintptr_t insert(uintptr_t from_index, uintptr_t to_offset, ZForwardingCursor* cursor);
+  zoffset insert(uintptr_t from_index, zoffset to_offset, ZForwardingCursor* cursor);
 
   void verify() const;
+
+  bool get_and_set_remset_scanned();
 };
 
 #endif // SHARE_GC_Z_ZFORWARDING_HPP

@@ -42,28 +42,28 @@ private:
   ZPerWorker<Counters> _encountered_count;
   ZPerWorker<Counters> _discovered_count;
   ZPerWorker<Counters> _enqueued_count;
-  ZPerWorker<oop>      _discovered_list;
-  ZContended<oop>      _pending_list;
-  oop*                 _pending_list_tail;
+  ZPerWorker<zpointer> _discovered_list;
+  ZContended<zpointer> _pending_list;
+  zpointer*            _pending_list_tail;
 
-  bool is_inactive(oop reference, oop referent, ReferenceType type) const;
+  bool is_inactive(zaddress reference, oop referent, ReferenceType type) const;
   bool is_strongly_live(oop referent) const;
-  bool is_softly_live(oop reference, ReferenceType type) const;
+  bool is_softly_live(zaddress reference, ReferenceType type) const;
 
-  bool should_discover(oop reference, ReferenceType type) const;
-  bool should_drop(oop reference, ReferenceType type) const;
-  void keep_alive(oop reference, ReferenceType type) const;
-  void make_inactive(oop reference, ReferenceType type) const;
+  bool should_discover(zaddress reference, ReferenceType type) const;
+  bool try_make_inactive(zaddress reference, ReferenceType type) const;
 
-  void discover(oop reference, ReferenceType type);
+  void discover(zaddress reference, ReferenceType type);
 
-  oop drop(oop reference, ReferenceType type);
-  oop* keep(oop reference, ReferenceType type);
+  zpointer drop(zaddress reference, ReferenceType type);
+  zpointer* keep(zaddress reference, ReferenceType type);
 
-  bool is_empty() const;
+  void verify_empty() const;
 
   void work();
   void collect_statistics();
+
+  zpointer swap_pending_list(zpointer pending_list);
 
 public:
   ZReferenceProcessor(ZWorkers* workers);
@@ -74,6 +74,8 @@ public:
   virtual bool discover_reference(oop reference, ReferenceType type);
   void process_references();
   void enqueue_references();
+
+  void verify_pending_references();
 };
 
 #endif // SHARE_GC_Z_ZREFERENCEPROCESSOR_HPP

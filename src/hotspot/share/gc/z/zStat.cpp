@@ -588,7 +588,8 @@ void ZStatMMU::print() {
 //
 // Stat phases
 //
-ConcurrentGCTimer ZStatPhase::_timer;
+ConcurrentGCTimer ZStatPhase::_timer_minor;
+ConcurrentGCTimer ZStatPhase::_timer_major;
 
 ZStatPhase::ZStatPhase(const char* group, const char* name) :
     _sampler(group, name, ZStatUnitTime) {}
@@ -619,19 +620,16 @@ void ZStatPhase::log_end(LogTargetHandle log, const Tickspan& duration, bool thr
   }
 }
 
-ConcurrentGCTimer* ZStatPhase::timer() {
-  return &_timer;
-}
-
 const char* ZStatPhase::name() const {
   return _sampler.name();
 }
 
-ZStatPhaseCycle::ZStatPhaseCycle(const char* name) :
-    ZStatPhase("Collector", name) {}
+ZStatPhaseCycle::ZStatPhaseCycle(ZCycleId cycle_id, const char* name) :
+    ZStatPhase("Collector", name),
+    _cycle_id(cycle_id) {}
 
-void ZStatPhaseCycle::register_start(const Ticks& start) const {
-  timer()->register_gc_start(start);
+void ZStatPhaseCycle::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+  timer->register_gc_start(start);
 
   ZTracer::tracer()->report_gc_start(ZCollectedHeap::heap()->gc_cause(), start);
 
@@ -642,36 +640,38 @@ void ZStatPhaseCycle::register_start(const Ticks& start) const {
                        GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
 }
 
-void ZStatPhaseCycle::register_end(const Ticks& start, const Ticks& end) const {
+void ZStatPhaseCycle::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
   if (ZAbort::should_abort()) {
     log_info(gc)("Garbage Collection (%s) Aborted",
                  GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
     return;
   }
 
-  timer()->register_gc_end(end);
+  timer->register_gc_end(end);
 
   ZCollectedHeap::heap()->print_heap_after_gc();
   ZCollectedHeap::heap()->trace_heap_after_gc(ZTracer::tracer());
 
-  ZTracer::tracer()->report_gc_end(end, timer()->time_partitions());
+  ZTracer::tracer()->report_gc_end(end, timer->time_partitions());
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
+  ZCycle* cycle = ZHeap::heap()->get_cycle(_cycle_id);
+
   ZStatLoad::print();
   ZStatMMU::print();
-  ZStatMark::print();
+  cycle->stat_mark()->print();
   ZStatNMethods::print();
   ZStatMetaspace::print();
   ZStatReferences::print();
-  ZStatRelocation::print();
-  ZStatHeap::print();
+  cycle->stat_relocation()->print();
+  cycle->stat_heap()->print();
 
   log_info(gc)("Garbage Collection (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
                GCCause::to_string(ZCollectedHeap::heap()->gc_cause()),
-               ZSIZE_ARGS(ZStatHeap::used_at_mark_start()),
-               ZSIZE_ARGS(ZStatHeap::used_at_relocate_end()));
+               ZSIZE_ARGS(cycle->stat_heap()->used_at_mark_start()),
+               ZSIZE_ARGS(cycle->stat_heap()->used_at_relocate_end()));
 }
 
 Tickspan ZStatPhasePause::_max;
@@ -683,15 +683,15 @@ const Tickspan& ZStatPhasePause::max() {
   return _max;
 }
 
-void ZStatPhasePause::register_start(const Ticks& start) const {
-  timer()->register_gc_pause_start(name(), start);
+void ZStatPhasePause::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+  timer->register_gc_pause_start(name(), start);
 
   LogTarget(Debug, gc, phases, start) log;
   log_start(log);
 }
 
-void ZStatPhasePause::register_end(const Ticks& start, const Ticks& end) const {
-  timer()->register_gc_pause_end(end);
+void ZStatPhasePause::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
+  timer->register_gc_pause_end(end);
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
@@ -711,19 +711,19 @@ void ZStatPhasePause::register_end(const Ticks& start, const Ticks& end) const {
 ZStatPhaseConcurrent::ZStatPhaseConcurrent(const char* name) :
     ZStatPhase("Phase", name) {}
 
-void ZStatPhaseConcurrent::register_start(const Ticks& start) const {
-  timer()->register_gc_concurrent_start(name(), start);
+void ZStatPhaseConcurrent::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+  timer->register_gc_concurrent_start(name(), start);
 
   LogTarget(Debug, gc, phases, start) log;
   log_start(log);
 }
 
-void ZStatPhaseConcurrent::register_end(const Ticks& start, const Ticks& end) const {
+void ZStatPhaseConcurrent::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
   if (ZAbort::should_abort()) {
     return;
   }
 
-  timer()->register_gc_concurrent_end(end);
+  timer->register_gc_concurrent_end(end);
 
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
@@ -735,12 +735,12 @@ void ZStatPhaseConcurrent::register_end(const Ticks& start, const Ticks& end) co
 ZStatSubPhase::ZStatSubPhase(const char* name) :
     ZStatPhase("Subphase", name) {}
 
-void ZStatSubPhase::register_start(const Ticks& start) const {
+void ZStatSubPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   LogTarget(Debug, gc, phases, start) log;
   log_start(log, true /* thread */);
 }
 
-void ZStatSubPhase::register_end(const Ticks& start, const Ticks& end) const {
+void ZStatSubPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
   if (ZAbort::should_abort()) {
     return;
   }
@@ -759,12 +759,12 @@ ZStatCriticalPhase::ZStatCriticalPhase(const char* name, bool verbose) :
     _counter("Critical", name, ZStatUnitOpsPerSecond),
     _verbose(verbose) {}
 
-void ZStatCriticalPhase::register_start(const Ticks& start) const {
+void ZStatCriticalPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   LogTarget(Debug, gc, start) log;
   log_start(log, true /* thread */);
 }
 
-void ZStatCriticalPhase::register_end(const Ticks& start, const Ticks& end) const {
+void ZStatCriticalPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
   ZTracer::tracer()->report_thread_phase(name(), start, end);
 
   const Tickspan duration = end - start;
@@ -779,6 +779,12 @@ void ZStatCriticalPhase::register_end(const Ticks& start, const Ticks& end) cons
     log_end(log, duration, true /* thread */);
   }
 }
+
+ZStatTimerMinor::ZStatTimerMinor(const ZStatPhase& phase) :
+    ZStatTimer(ZHeap::heap()->minor_cycle()->timer(), phase) {}
+
+ZStatTimerMajor::ZStatTimerMajor(const ZStatPhase& phase) :
+    ZStatTimer(ZHeap::heap()->major_cycle()->timer(), phase) {}
 
 //
 // Stat timer
@@ -1055,10 +1061,12 @@ public:
 //
 // Stat cycle
 //
-uint64_t  ZStatCycle::_nwarmup_cycles = 0;
-Ticks     ZStatCycle::_start_of_last;
-Ticks     ZStatCycle::_end_of_last;
-NumberSeq ZStatCycle::_normalized_duration(0.7 /* alpha */);
+ZStatCycle::ZStatCycle() :
+    _nwarmup_cycles(0),
+    _start_of_last(),
+    _end_of_last(),
+    _normalized_duration(0.7 /* alpha */) {
+}
 
 void ZStatCycle::at_start() {
   _start_of_last = Ticks::now();
@@ -1067,7 +1075,7 @@ void ZStatCycle::at_start() {
 void ZStatCycle::at_end(GCCause::Cause cause, double boost_factor) {
   _end_of_last = Ticks::now();
 
-  if (cause == GCCause::_z_warmup) {
+  if (cause == GCCause::_z_major_warmup) {
     _nwarmup_cycles++;
   }
 
@@ -1120,11 +1128,13 @@ void ZStatLoad::print() {
 //
 // Stat mark
 //
-size_t ZStatMark::_nstripes;
-size_t ZStatMark::_nproactiveflush;
-size_t ZStatMark::_nterminateflush;
-size_t ZStatMark::_ntrycomplete;
-size_t ZStatMark::_ncontinue;
+ZStatMark::ZStatMark() :
+    _nstripes(),
+    _nproactiveflush(),
+    _nterminateflush(),
+    _ntrycomplete(),
+    _ncontinue() {
+}
 
 void ZStatMark::set_at_mark_start(size_t nstripes) {
   _nstripes = nstripes;
@@ -1157,10 +1167,12 @@ void ZStatMark::print() {
 //
 // Stat relocation
 //
-ZRelocationSetSelectorStats ZStatRelocation::_selector_stats;
-size_t                      ZStatRelocation::_forwarding_usage;
-size_t                      ZStatRelocation::_small_in_place_count;
-size_t                      ZStatRelocation::_medium_in_place_count;
+ZStatRelocation::ZStatRelocation() :
+    _selector_stats(),
+    _forwarding_usage(),
+    _small_in_place_count(),
+    _medium_in_place_count() {
+}
 
 void ZStatRelocation::set_at_select_relocation_set(const ZRelocationSetSelectorStats& selector_stats) {
   _selector_stats = selector_stats;
@@ -1271,10 +1283,6 @@ void ZStatReferences::print() {
 // Stat heap
 //
 ZStatHeap::ZAtInitialize ZStatHeap::_at_initialize;
-ZStatHeap::ZAtMarkStart ZStatHeap::_at_mark_start;
-ZStatHeap::ZAtMarkEnd ZStatHeap::_at_mark_end;
-ZStatHeap::ZAtRelocateStart ZStatHeap::_at_relocate_start;
-ZStatHeap::ZAtRelocateEnd ZStatHeap::_at_relocate_end;
 
 size_t ZStatHeap::capacity_high() {
   return MAX4(_at_mark_start.capacity,
@@ -1452,3 +1460,4 @@ void ZStatHeap::print() {
                      .left(ZTABLE_ARGS_NA)
                      .end());
 }
+

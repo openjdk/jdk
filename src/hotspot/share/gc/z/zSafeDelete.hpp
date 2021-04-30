@@ -29,6 +29,17 @@
 #include "metaprogramming/removeExtent.hpp"
 
 template <typename T>
+class ZDeleteFunction {
+private:
+  typedef typename RemoveExtent<T>::type ItemT;
+
+public:
+  static void immediate_delete(ItemT* item);
+  static void deferred_delete(ItemT* item);
+  static void deferring_deletion(ItemT* item);
+};
+
+template <typename T, typename DeleteT = ZDeleteFunction<T>>
 class ZSafeDeleteImpl {
 private:
   typedef typename RemoveExtent<T>::type ItemT;
@@ -38,7 +49,6 @@ private:
   ZArray<ItemT*> _deferred;
 
   bool deferred_delete(ItemT* item);
-  void immediate_delete(ItemT* item);
 
 public:
   ZSafeDeleteImpl(ZLock* lock);

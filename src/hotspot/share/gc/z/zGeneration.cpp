@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,42 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZOOP_HPP
-#define SHARE_GC_Z_ZOOP_HPP
+#include "gc/z/zGeneration.hpp"
 
-#include "memory/allocation.hpp"
-#include "oops/oopsHierarchy.hpp"
+ZGeneration::ZGeneration(ZGenerationId generation_id) :
+    _generation_id(generation_id),
+    _object_allocator() {
+}
 
-class ZOop : public AllStatic {
-public:
-  static oop from_address(uintptr_t addr);
-  static uintptr_t to_address(oop o);
-};
+void ZGeneration::retire_pages() {
+  _object_allocator.retire_pages();
+}
 
-#endif // SHARE_GC_Z_ZOOP_HPP
+size_t ZGeneration::used() const {
+  return _object_allocator.used();
+}
+
+size_t ZGeneration::remaining() const {
+  return _object_allocator.remaining();
+}
+
+size_t ZGeneration::relocated() const {
+  return _object_allocator.relocated();
+}
+
+ZYoungGeneration::ZYoungGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator) :
+    ZGeneration(ZGenerationId::young),
+    _remember(page_table, page_allocator) {
+}
+
+void ZYoungGeneration::flip_remembered_set() {
+  _remember.flip();
+}
+
+void ZYoungGeneration::scan_remembered() {
+  _remember.scan();
+}
+
+ZOldGeneration::ZOldGeneration() :
+  ZGeneration(ZGenerationId::old) {
+}

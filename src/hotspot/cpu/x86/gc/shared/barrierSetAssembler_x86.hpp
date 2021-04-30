@@ -47,7 +47,14 @@ public:
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                        Register dst, Address src, Register tmp1, Register tmp_thread);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                        Address dst, Register val, Register tmp1, Register tmp2);
+                        Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
+
+  virtual void copy_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                       size_t bytes, Address dst, Address src, Register tmp1, Register tmp2);
+
+  virtual void copy_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                       size_t bytes, Address dst, Address src, Register tmp1, Register tmp2,
+                       XMMRegister xmm_tmp1, XMMRegister xmm_tmp2, bool forward);
 
 #ifndef _LP64
   virtual void obj_equals(MacroAssembler* masm,

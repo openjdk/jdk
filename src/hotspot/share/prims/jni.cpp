@@ -2797,91 +2797,89 @@ JNI_ENTRY(void, jni_GetStringUTFRegion(JNIEnv *env, jstring string, jsize start,
   }
 JNI_END
 
-static oop lock_gc_or_pin_object(JavaThread* thread, jobject obj) {
-  if (Universe::heap()->supports_object_pinning()) {
-    const oop o = JNIHandles::resolve_non_null(obj);
-    return Universe::heap()->pin_object(thread, o);
-  } else {
-    GCLocker::lock_critical(thread);
-    return JNIHandles::resolve_non_null(obj);
-  }
-}
-
-static void unlock_gc_or_unpin_object(JavaThread* thread, jobject obj) {
-  if (Universe::heap()->supports_object_pinning()) {
-    const oop o = JNIHandles::resolve_non_null(obj);
-    return Universe::heap()->unpin_object(thread, o);
-  } else {
-    GCLocker::unlock_critical(thread);
-  }
-}
 
 JNI_ENTRY(void*, jni_GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboolean *isCopy))
  HOTSPOT_JNI_GETPRIMITIVEARRAYCRITICAL_ENTRY(env, array, (uintptr_t *) isCopy);
-  if (isCopy != NULL) {
-    *isCopy = JNI_FALSE;
-  }
-  oop a = lock_gc_or_pin_object(thread, array);
+  Handle a(thread, JNIHandles::resolve_non_null(array));
   assert(a->is_array(), "just checking");
+
+  // Pin object
+  Universe::heap()->pin_object(thread, a());
+
   BasicType type;
   if (a->is_objArray()) {
     type = T_OBJECT;
   } else {
     type = TypeArrayKlass::cast(a->klass())->element_type();
   }
-  void* ret = arrayOop(a)->base(type);
- HOTSPOT_JNI_GETPRIMITIVEARRAYCRITICAL_RETURN(ret);
+  void* ret = arrayOop(a())->base(type);
+  if (isCopy != NULL) {
+    *isCopy = JNI_FALSE;
+  }
+
+  HOTSPOT_JNI_GETPRIMITIVEARRAYCRITICAL_RETURN(ret);
   return ret;
 JNI_END
 
 
 JNI_ENTRY(void, jni_ReleasePrimitiveArrayCritical(JNIEnv *env, jarray array, void *carray, jint mode))
   HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_ENTRY(env, array, carray, mode);
-  unlock_gc_or_unpin_object(thread, array);
-HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_RETURN();
+  // Unpin object
+  Universe::heap()->unpin_object(thread, JNIHandles::resolve_non_null(array));
+  HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_RETURN();
 JNI_END
 
 
 JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jboolean *isCopy))
   HOTSPOT_JNI_GETSTRINGCRITICAL_ENTRY(env, string, (uintptr_t *) isCopy);
-  oop s = lock_gc_or_pin_object(thread, string);
-  typeArrayOop s_value = java_lang_String::value(s);
-  bool is_latin1 = java_lang_String::is_latin1(s);
-  if (isCopy != NULL) {
-    *isCopy = is_latin1 ? JNI_TRUE : JNI_FALSE;
-  }
+  Handle s(thread, JNIHandles::resolve_non_null(string));
+  typeArrayHandle s_value(thread, java_lang_String::value(s()));
+  bool is_latin1 = java_lang_String::is_latin1(s());
   jchar* ret;
-  if (!is_latin1) {
-    ret = (jchar*) s_value->base(T_CHAR);
-  } else {
-    // Inflate latin1 encoded string to UTF16
-    int s_len = java_lang_String::length(s, s_value);
-    ret = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
-    /* JNI Specification states return NULL on OOM */
+
+  if (is_latin1) {
+    // Inflate latin1 encoded string into zero terminated UTF16 buffer.
+    // JNI Specification states we should return NULL if we can't allocate
+    // a new buffer.
+    int s_len = java_lang_String::length(s(), s_value());
+    ret = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);
     if (ret != NULL) {
       for (int i = 0; i < s_len; i++) {
         ret[i] = ((jchar) s_value->byte_at(i)) & 0xff;
       }
       ret[s_len] = 0;
     }
+    if (isCopy != NULL) {
+      *isCopy = (ret != NULL) ? JNI_TRUE : JNI_FALSE;
+    }
+  } else {
+    // Pin value array
+    Universe::heap()->pin_object(thread, s_value());
+    ret = (jchar*) s_value->base(T_CHAR);
+    if (isCopy != NULL) {
+      *isCopy = JNI_FALSE;
+    }
   }
- HOTSPOT_JNI_GETSTRINGCRITICAL_RETURN((uint16_t *) ret);
+
+  HOTSPOT_JNI_GETSTRINGCRITICAL_RETURN((uint16_t *) ret);
   return ret;
 JNI_END
 
 
 JNI_ENTRY(void, jni_ReleaseStringCritical(JNIEnv *env, jstring str, const jchar *chars))
   HOTSPOT_JNI_RELEASESTRINGCRITICAL_ENTRY(env, str, (uint16_t *) chars);
-  // The str and chars arguments are ignored for UTF16 strings
   oop s = JNIHandles::resolve_non_null(str);
   bool is_latin1 = java_lang_String::is_latin1(s);
+
   if (is_latin1) {
     // For latin1 string, free jchar array allocated by earlier call to GetStringCritical.
     // This assumes that ReleaseStringCritical bookends GetStringCritical.
     FREE_C_HEAP_ARRAY(jchar, chars);
+  } else {
+    // Unpin value array
+    Universe::heap()->unpin_object(thread, java_lang_String::value(s));
   }
-  unlock_gc_or_unpin_object(thread, str);
-HOTSPOT_JNI_RELEASESTRINGCRITICAL_RETURN();
+  HOTSPOT_JNI_RELEASESTRINGCRITICAL_RETURN();
 JNI_END
 
 

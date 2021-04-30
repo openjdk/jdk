@@ -29,6 +29,6 @@ const size_t ZPlatformHeapViews        = 3;
 const size_t ZPlatformCacheLineSize    = 64;
 
 size_t ZPlatformAddressOffsetBits();
-size_t ZPlatformAddressMetadataShift();
+size_t ZPlatformAddressHeapBaseShift();
 
 #endif // CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,36 @@
 
 #include "precompiled.hpp"
 #include "code/nmethod.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethod.hpp"
+#include "gc/z/zResurrection.inline.hpp"
 #include "gc/z/zThreadLocalData.hpp"
+#include "gc/z/zUncoloredRoot.inline.hpp"
 #include "logging/log.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 
 bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
   log_trace(nmethod, barrier)("Entered critical zone for %p", nm);
 
+  log_debug(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (try)", p2i(nm));
+
   if (!is_armed(nm)) {
+    log_debug(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (disarmed)", p2i(nm));
     // Some other thread got here first and healed the oops
     // and disarmed the nmethod.
     return true;
   }
 
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
+
   if (nm->is_unloading()) {
+    log_debug(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (unloading)", p2i(nm));
     // We don't need to take the lock when unlinking nmethods from
     // the Method, because it is only concurrently unlinked by
     // the entry barrier, which acquires the per nmethod lock.
@@ -52,8 +64,16 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return false;
   }
 
+  // Heal barriers
+  ZNMethod::nmethod_patch_barriers(nm);
+
   // Heal oops
-  ZNMethod::nmethod_oops_barrier(nm);
+  ZUncoloredRootProcessOopClosure cl(ZNMethod::color(nm));
+  ZNMethod::nmethod_oops_do_inner(nm, &cl);
+
+  uintptr_t prev_color = ZNMethod::color(nm);
+  uintptr_t new_color = *(int*)ZAddressStoreGoodMaskLowOrderBitsAddr;
+  log_debug(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (complete) [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, new_color);
 
   // Disarm
   disarm(nm);
@@ -62,7 +82,7 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 }
 
 int* ZBarrierSetNMethod::disarmed_value_address() const {
-  return (int*)ZAddressBadMaskHighOrderBitsAddr;
+  return (int*)ZAddressStoreGoodMaskLowOrderBitsAddr;
 }
 
 ByteSize ZBarrierSetNMethod::thread_disarmed_offset() const {

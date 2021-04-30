@@ -14,30 +14,30 @@ define zpo
     set $obj = (oopDesc*)($arg0)
 
     printf "Oop:   0x%016llx\tState: ", (uintptr_t)$obj
-    if ((uintptr_t)$obj & (uintptr_t)ZAddressGoodMask)
+    if ((uintptr_t)$obj & (uintptr_t)ZAddressStoreGoodMask)
         printf "Good "
-        if ((uintptr_t)$obj & (uintptr_t)ZAddressMetadataRemapped)
+        if ((uintptr_t)$obj & (uintptr_t)ZAddressRemapped)
             printf "(Remapped)"
         else
-            if ((uintptr_t)$obj & (uintptr_t)ZAddressMetadataMarked)
-                printf "(Marked)"
+            if ((uintptr_t)$obj & (uintptr_t)ZAddressMarkedMajor)
+                printf "(MarkedMajor)"
             else
                 printf "(Unknown)"
             end
         end
     else
         printf "Bad "
-        if ((uintptr_t)ZAddressGoodMask & (uintptr_t)ZAddressMetadataMarked)
+        if ((uintptr_t)ZAddressStoreGoodMask & (uintptr_t)ZAddressMarkedMajor)
             # Should be marked
-            if ((uintptr_t)$obj & (uintptr_t)ZAddressMetadataRemapped)
+            if ((uintptr_t)$obj & (uintptr_t)ZAddressRemapped)
                 printf "(Not Marked, Remapped)"
             else
                 printf "(Not Marked, Not Remapped)"
             end
         else
-            if ((uintptr_t)ZAddressGoodMask & (uintptr_t)ZAddressMetadataRemapped)
+            if ((uintptr_t)ZAddressStoreGoodMask & (uintptr_t)ZAddressRemapped)
                 # Should be remapped
-                if ((uintptr_t)$obj & (uintptr_t)ZAddressMetadataMarked)
+                if ((uintptr_t)$obj & (uintptr_t)ZAddressMarkedMajor)
                     printf "(Marked, Not Remapped)"
                 else
                     printf "(Not Marked, Not Remapped)"
@@ -129,20 +129,97 @@ define zmarked
     end
 end
 
+define z_print_phase
+  if $arg0 == ZPhase::Relocate
+    printf "Relocate"
+  else
+    if $arg0 == ZPhase::Mark
+      printf "Mark"
+    else
+      if $arg0 == ZPhase::MarkComplete
+	printf "MarkComplete"
+      else
+	printf "Unknown"
+      end
+    end
+  end
+end
+
+define z_print_cycle
+  printf "%u", $arg0->_seqnum
+  printf "/"
+  z_print_phase $arg0->_phase
+end
+
+define zz
+  printf "Major: "
+  z_print_cycle ZHeap::_heap->_major_cycle
+
+  printf " | "
+
+  printf "Minor: "
+  z_print_cycle ZHeap::_heap->_minor_cycle
+
+  printf "\n"
+end
+
 # Print heap information
 define zph
     printf "Heap\n"
-    printf "     GlobalPhase:       %u\n", ZGlobalPhase
-    printf "     GlobalSeqNum:      %u\n", ZGlobalSeqNum
+    printf "     Minor Phase:       %u\n", ZHeap::_heap->_minor_cycle->_phase
+    printf "     Major Phase:       %u\n", ZHeap::_heap->_major_cycle->_phase
+    printf "     Minor SeqNum:      %u\n", ZHeap::_heap->_minor_cycle->_phase
+    printf "     Major SeqNum:      %u\n", ZHeap::_heap->_major_cycle->_phase
     printf "     Offset Max:        %-15llu (0x%llx)\n", ZAddressOffsetMax, ZAddressOffsetMax
     printf "     Page Size Small:   %-15llu (0x%llx)\n", ZPageSizeSmall, ZPageSizeSmall
     printf "     Page Size Medium:  %-15llu (0x%llx)\n", ZPageSizeMedium, ZPageSizeMedium
     printf "Metadata Bits\n"
-    printf "     Good:              0x%016llx\n", ZAddressGoodMask
-    printf "     Bad:               0x%016llx\n", ZAddressBadMask
-    printf "     WeakBad:           0x%016llx\n", ZAddressWeakBadMask
-    printf "     Marked:            0x%016llx\n", ZAddressMetadataMarked
-    printf "     Remapped:          0x%016llx\n", ZAddressMetadataRemapped
+    printf "     Good:              0x%016llx\n", ZAddressStoreGoodMask
+    printf "     Bad:               0x%016llx\n", ZAddressStoreBadMask
+    printf "     MarkedMinor:       0x%016llx\n", ZAddressMarkedMinor
+    printf "     MarkedMajor:       0x%016llx\n", ZAddressMarkedMajor
+    printf "     Remapped:          0x%016llx\n", ZAddressRemapped
+end
+
+define print_bits
+  set $value=$arg0
+  set $bits=$arg1
+
+  set $bit=0
+    while ($bit < $bits)
+	set $bit_pos = (1ull << ($bits - 1 - $bit))
+	printf "%d", ($arg0 & $bit_pos) != 0
+  	set $bit = $bit + 1
+  end
+
+  printf " <%lX>", $value
+end
+
+define print_bits8
+  print_bits $arg0 8
+end
+
+define print_s_bits8
+  printf $arg0
+  print_bits8 $arg1
+end
+
+# Print metadata information
+define zpm
+    printf          "Metadata Load Bits  "
+    print_s_bits8 "\n     Mask:          " ZAddressLoadMetadataMask
+    print_s_bits8 "\n     Good:          " ZAddressLoadGoodMask
+    print_s_bits8 "\n     Remapped:      " ZAddressRemapped
+    print_s_bits8 "\n     Bad:           " ZAddressLoadBadMask
+    printf        "\n                    "
+    printf        "\nMetadata Store Bits "
+    print_s_bits8 "\n     Mask:          " ZAddressStoreMetadataMask
+    print_s_bits8 "\n     Good:          " ZAddressStoreGoodMask
+    print_s_bits8 "\n     Bad:           " ZAddressStoreBadMask
+    print_s_bits8 "\n     MarkedMinor:   " ZAddressMarkedMinor
+    print_s_bits8 "\n     MarkedMajor:   " ZAddressMarkedMajor
+    print_s_bits8 "\n     Finalizable:   " ZAddressFinalizable
+    printf        "\n"
 end
 
 # End of file
