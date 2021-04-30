@@ -27,8 +27,9 @@
 #include "gc/z/zBarrier.hpp"
 
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zOop.inline.hpp"
+#include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zResurrection.inline.hpp"
+#include "gc/z/zThread.inline.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
 
@@ -66,7 +67,7 @@
 //
 // PHASE VIEW
 //
-// ZPhaseMark
+// ZPhase::Mark
 //   Load & Mark
 //     Marked(N)         <- Marked(N - 1)
 //                       <- Finalizable(N - 1)
@@ -82,7 +83,7 @@
 //     Remapped(N - 1)   <- Marked(N - 1)
 //                       <- Finalizable(N - 1)
 //
-// ZPhaseMarkCompleted (Resurrection blocked)
+// ZPhase::MarkComplete (Resurrection blocked)
 //   Load & Load(ON_WEAK/PHANTOM_OOP_REF | AS_NO_KEEPALIVE) & KeepAlive
 //     Marked(N)         <- Marked(N - 1)
 //                       <- Finalizable(N - 1)
@@ -93,18 +94,17 @@
 //     Remapped(N - 1)   <- Marked(N - 1)
 //                       <- Finalizable(N - 1)
 //
-// ZPhaseMarkCompleted (Resurrection unblocked)
+// ZPhase::MarkComplete (Resurrection unblocked)
 //   Load
 //     Marked(N)         <- Finalizable(N)
 //
-// ZPhaseRelocate
+// ZPhase::Relocate
 //   Load & Load(AS_NO_KEEPALIVE)
 //     Remapped(N)       <- Marked(N)
 //                       <- Finalizable(N)
 
-template <ZBarrierFastPath fast_path>
-inline void ZBarrier::self_heal(volatile oop* p, uintptr_t addr, uintptr_t heal_addr) {
-  if (heal_addr == 0) {
+inline void ZBarrier::self_heal(ZBarrierFastPath fast_path, volatile zpointer* p, zpointer ptr, zpointer heal_ptr, bool allow_null) {
+  if (!allow_null && is_null_assert_load_good(heal_ptr) && !is_null_any(ptr)) {
     // Never heal with null since it interacts badly with reference processing.
     // A mutator clearing an oop would be similar to calling Reference.clear(),
     // which would make the reference non-discoverable or silently dropped
@@ -112,18 +112,26 @@ inline void ZBarrier::self_heal(volatile oop* p, uintptr_t addr, uintptr_t heal_
     return;
   }
 
-  assert(!fast_path(addr), "Invalid self heal");
-  assert(fast_path(heal_addr), "Invalid self heal");
+  assert_is_valid(ptr);
+  assert_is_valid(heal_ptr);
+  assert(!fast_path(ptr), "Invalid self heal");
+  assert(fast_path(heal_ptr), "Invalid self heal");
+
+  assert(ZPointer::is_remapped(heal_ptr), "invariant");
 
   for (;;) {
+    if (ptr == zpointer::null) {
+      assert(!ZHeap::heap()->is_in(uintptr_t(p)) || !ZHeap::heap()->is_old(zaddress(uintptr_t(p))), "No raw null in old");
+    }
+
     // Heal
-    const uintptr_t prev_addr = Atomic::cmpxchg((volatile uintptr_t*)p, addr, heal_addr);
-    if (prev_addr == addr) {
+    const zpointer prev_ptr = Atomic::cmpxchg(p, ptr, heal_ptr);
+    if (prev_ptr == ptr) {
       // Success
       return;
     }
 
-    if (fast_path(prev_addr)) {
+    if (fast_path(prev_ptr)) {
       // Must not self heal
       return;
     }
@@ -131,258 +139,314 @@ inline void ZBarrier::self_heal(volatile oop* p, uintptr_t addr, uintptr_t heal_
     // The oop location was healed by another barrier, but still needs upgrading.
     // Re-apply healing to make sure the oop is not left with weaker (remapped or
     // finalizable) metadata bits than what this barrier tried to apply.
-    assert(ZAddress::offset(prev_addr) == ZAddress::offset(heal_addr), "Invalid offset");
-    addr = prev_addr;
+    ptr = prev_ptr;
   }
 }
 
-template <ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path>
-inline oop ZBarrier::barrier(volatile oop* p, oop o) {
-  const uintptr_t addr = ZOop::to_address(o);
-
-  // Fast path
-  if (fast_path(addr)) {
-    return ZOop::from_address(addr);
+inline zaddress ZBarrier::make_load_good(zpointer o) {
+  if (is_null_any(o)) {
+    return zaddress::null;
   }
 
-  // Slow path
-  const uintptr_t good_addr = slow_path(addr);
+  if (ZPointer::is_load_good_or_null(o)) {
+    return ZPointer::uncolor(o);
+  }
 
+  return relocate_or_remap(ZPointer::uncolor_unsafe(o), ZHeap::heap()->remap_cycle(o));
+}
+
+inline zaddress ZBarrier::make_load_good_no_relocate(zpointer o) {
+  if (is_null_any(o)) {
+    return zaddress::null;
+  }
+
+  if (ZPointer::is_load_good_or_null(o)) {
+    return ZPointer::uncolor(o);
+  }
+
+  return remap(ZPointer::uncolor_unsafe(o), ZHeap::heap()->remap_cycle(o));
+}
+
+
+#define z_assert_is_barrier_safe()                                                                                                  \
+  assert(!Thread::current()->is_ConcurrentGC_thread() ||                           /* Need extra checks for ConcurrentGCThreads */  \
+         Thread::current()->is_suspendible_thread() ||                             /* Thread prevents safepoints */                 \
+         (ZThread::is_worker() && ZThread::coordinator_is_suspendible_thread()) || /* Coordinator thread prevents safepoints */     \
+         SafepointSynchronize::is_at_safepoint(),                                  /* Is at safepoint */                            \
+         "Shouldn't perform load barrier");
+
+template <typename ZBarrierSlowPath>
+inline zaddress ZBarrier::barrier(ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path, ZBarrierColor color, volatile zpointer* p, zpointer o, bool allow_null) {
+  z_assert_is_barrier_safe();
+
+  // Fast path
+  if (fast_path(o)) {
+    return ZPointer::uncolor(o);
+  }
+
+  // Make load good
+  const zaddress load_good_addr = make_load_good(o);
+
+  // Slow path
+  const zaddress good_addr = slow_path(load_good_addr);
+
+  // Self heal
   if (p != NULL) {
-    self_heal<fast_path>(p, addr, good_addr);
+    // Color
+    const zpointer good_ptr = color(good_addr, o);
+
+    assert(!is_null(good_ptr), "Always block raw null");
+
+    self_heal(fast_path, p, o, good_ptr, allow_null);
   }
 
-  return ZOop::from_address(good_addr);
+  return good_addr;
 }
 
-template <ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path>
-inline oop ZBarrier::weak_barrier(volatile oop* p, oop o) {
-  const uintptr_t addr = ZOop::to_address(o);
+inline void ZBarrier::remap_minor_relocated(volatile zpointer* p, zpointer o) {
+  assert(ZPointer::is_major_load_good(o), "Should be load good");
+  assert(!ZPointer::is_minor_load_good(o), "Should be load good");
 
-  // Fast path
-  if (fast_path(addr)) {
-    // Return the good address instead of the weak good address
-    // to ensure that the currently active heap view is used.
-    return ZOop::from_address(ZAddress::good_or_null(addr));
-  }
+  // Make load good
+  const zaddress load_good_addr = make_load_good_no_relocate(o);
 
-  // Slow path
-  const uintptr_t good_addr = slow_path(addr);
+  // Color
+  const zpointer good_ptr = ZAddress::load_good(load_good_addr,  o);
 
-  if (p != NULL) {
-    // The slow path returns a good/marked address or null, but we never mark
-    // oops in a weak load barrier so we always heal with the remapped address.
-    self_heal<fast_path>(p, addr, ZAddress::remapped_or_null(good_addr));
-  }
+  assert(!is_null(good_ptr), "Always block raw null");
 
-  return ZOop::from_address(good_addr);
+  self_heal(is_load_good_fast_path, p, o, good_ptr, false /* allow_null */);
 }
 
-template <ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path>
-inline void ZBarrier::root_barrier(oop* p, oop o) {
-  const uintptr_t addr = ZOop::to_address(o);
-
-  // Fast path
-  if (fast_path(addr)) {
-    return;
-  }
-
-  // Slow path
-  const uintptr_t good_addr = slow_path(addr);
-
-  // Non-atomic healing helps speed up root scanning. This is safe to do
-  // since we are always healing roots in a safepoint, or under a lock,
-  // which ensures we are never racing with mutators modifying roots while
-  // we are healing them. It's also safe in case multiple GC threads try
-  // to heal the same root if it is aligned, since they would always heal
-  // the root in the same way and it does not matter in which order it
-  // happens. For misaligned oops, there needs to be mutual exclusion.
-  *p = ZOop::from_address(good_addr);
+inline zpointer ZBarrier::load_atomic(volatile zpointer* p) {
+  zpointer ptr = Atomic::load(p);
+  assert_is_valid(ptr);
+  return ptr;
 }
 
-inline bool ZBarrier::is_good_or_null_fast_path(uintptr_t addr) {
-  return ZAddress::is_good_or_null(addr);
+//
+// Fast paths
+//
+
+inline bool ZBarrier::is_load_good_fast_path(zpointer ptr) {
+  return ZPointer::is_load_good(ptr);
 }
 
-inline bool ZBarrier::is_weak_good_or_null_fast_path(uintptr_t addr) {
-  return ZAddress::is_weak_good_or_null(addr);
+inline bool ZBarrier::is_mark_good_fast_path(zpointer ptr) {
+  return ZPointer::is_mark_good(ptr);
 }
 
-inline bool ZBarrier::is_marked_or_null_fast_path(uintptr_t addr) {
-  return ZAddress::is_marked_or_null(addr);
+inline bool ZBarrier::is_store_good_fast_path(zpointer ptr) {
+  return ZPointer::is_store_good(ptr);
 }
 
-inline bool ZBarrier::during_mark() {
-  return ZGlobalPhase == ZPhaseMark;
+inline bool ZBarrier::is_mark_minor_good_fast_path(zpointer ptr) {
+  return ZPointer::is_load_good(ptr) && ZPointer::is_marked_minor(ptr);
 }
 
-inline bool ZBarrier::during_relocate() {
-  return ZGlobalPhase == ZPhaseRelocate;
+inline bool ZBarrier::is_finalizable_good_fast_path(zpointer ptr) {
+  return ZPointer::is_load_good(ptr) && ZPointer::is_marked_any_major(ptr);
+}
+
+//
+// Color functions
+//
+
+inline zpointer color_load_good(zaddress new_addr, zpointer old_ptr) {
+  return ZAddress::load_good(new_addr, old_ptr);
+}
+
+inline zpointer color_finalizable_good(zaddress new_addr, zpointer old_ptr) {
+  return ZAddress::finalizable_good(new_addr, old_ptr);
+}
+
+inline zpointer color_mark_good(zaddress new_addr, zpointer old_ptr) {
+  return ZAddress::mark_good(new_addr, old_ptr);
+}
+
+inline zpointer color_mark_minor_good(zaddress new_addr, zpointer old_ptr) {
+  return ZAddress::mark_minor_good(new_addr, old_ptr);
+}
+
+inline zpointer color_store_good(zaddress new_addr, zpointer old_ptr) {
+  return ZAddress::store_good(new_addr);
 }
 
 //
 // Load barrier
 //
-inline oop ZBarrier::load_barrier_on_oop(oop o) {
-  return load_barrier_on_oop_field_preloaded((oop*)NULL, o);
-}
 
-inline oop ZBarrier::load_barrier_on_oop_field(volatile oop* p) {
-  const oop o = Atomic::load(p);
+inline zaddress ZBarrier::load_barrier_on_oop_field(volatile zpointer* p) {
+  const zpointer o = load_atomic(p);
   return load_barrier_on_oop_field_preloaded(p, o);
 }
 
-inline oop ZBarrier::load_barrier_on_oop_field_preloaded(volatile oop* p, oop o) {
-  return barrier<is_good_or_null_fast_path, load_barrier_on_oop_slow_path>(p, o);
+inline zaddress ZBarrier::load_barrier_on_oop_field_preloaded(volatile zpointer* p, zpointer o) {
+  auto slow_path = [](zaddress addr) -> zaddress {
+    return addr;
+  };
+
+  return barrier(is_load_good_fast_path, slow_path, color_load_good, p, o);
 }
 
-inline void ZBarrier::load_barrier_on_oop_array(volatile oop* p, size_t length) {
-  for (volatile const oop* const end = p + length; p < end; p++) {
-    load_barrier_on_oop_field(p);
-  }
+inline zaddress ZBarrier::keep_alive_load_barrier_on_oop_field_preloaded(volatile zpointer* p, zpointer o) {
+  return barrier(is_mark_good_fast_path, keep_alive_slow_path, color_mark_good, p, o);
 }
 
-inline oop ZBarrier::load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o) {
+//
+// Load barrier on non-strong oop refs
+//
+
+inline zaddress ZBarrier::load_barrier_on_weak_oop_field_preloaded(volatile zpointer* p, zpointer o) {
   verify_on_weak(p);
 
   if (ZResurrection::is_blocked()) {
-    return barrier<is_good_or_null_fast_path, weak_load_barrier_on_weak_oop_slow_path>(p, o);
+    return blocking_keep_alive_load_barrier_on_weak_oop_field_preloaded(p, o);
   }
 
-  return load_barrier_on_oop_field_preloaded(p, o);
+  return keep_alive_load_barrier_on_oop_field_preloaded(p, o);
 }
 
-inline oop ZBarrier::load_barrier_on_phantom_oop_field_preloaded(volatile oop* p, oop o) {
+inline zaddress ZBarrier::load_barrier_on_phantom_oop_field_preloaded(volatile zpointer* p, zpointer o) {
   if (ZResurrection::is_blocked()) {
-    return barrier<is_good_or_null_fast_path, weak_load_barrier_on_phantom_oop_slow_path>(p, o);
+    return blocking_keep_alive_load_barrier_on_phantom_oop_field_preloaded(p, o);
   }
 
-  return load_barrier_on_oop_field_preloaded(p, o);
+  return keep_alive_load_barrier_on_oop_field_preloaded(p, o);
 }
 
-inline void ZBarrier::load_barrier_on_root_oop_field(oop* p) {
-  const oop o = *p;
-  root_barrier<is_good_or_null_fast_path, load_barrier_on_oop_slow_path>(p, o);
-}
-
-inline void ZBarrier::load_barrier_on_invisible_root_oop_field(oop* p) {
-  const oop o = *p;
-  root_barrier<is_good_or_null_fast_path, load_barrier_on_invisible_root_oop_slow_path>(p, o);
-}
-
-//
-// Weak load barrier
-//
-inline oop ZBarrier::weak_load_barrier_on_oop_field(volatile oop* p) {
-  assert(!ZResurrection::is_blocked(), "Should not be called during resurrection blocked phase");
-  const oop o = Atomic::load(p);
-  return weak_load_barrier_on_oop_field_preloaded(p, o);
-}
-
-inline oop ZBarrier::weak_load_barrier_on_oop_field_preloaded(volatile oop* p, oop o) {
-  return weak_barrier<is_weak_good_or_null_fast_path, weak_load_barrier_on_oop_slow_path>(p, o);
-}
-
-inline oop ZBarrier::weak_load_barrier_on_weak_oop(oop o) {
-  return weak_load_barrier_on_weak_oop_field_preloaded((oop*)NULL, o);
-}
-
-inline oop ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o) {
+inline zaddress ZBarrier::no_keep_alive_load_barrier_on_weak_oop_field_preloaded(volatile zpointer* p, zpointer o) {
   verify_on_weak(p);
 
   if (ZResurrection::is_blocked()) {
-    return barrier<is_good_or_null_fast_path, weak_load_barrier_on_weak_oop_slow_path>(p, o);
+    return blocking_load_barrier_on_weak_oop_field_preloaded(p, o);
   }
 
-  return weak_load_barrier_on_oop_field_preloaded(p, o);
+  // Normal load barrier doesn't keep the object alive
+  return load_barrier_on_oop_field_preloaded(p, o);
 }
 
-inline oop ZBarrier::weak_load_barrier_on_phantom_oop(oop o) {
-  return weak_load_barrier_on_phantom_oop_field_preloaded((oop*)NULL, o);
-}
-
-inline oop ZBarrier::weak_load_barrier_on_phantom_oop_field_preloaded(volatile oop* p, oop o) {
+inline zaddress ZBarrier::no_keep_alive_load_barrier_on_phantom_oop_field_preloaded(volatile zpointer* p, zpointer o) {
   if (ZResurrection::is_blocked()) {
-    return barrier<is_good_or_null_fast_path, weak_load_barrier_on_phantom_oop_slow_path>(p, o);
+    return blocking_load_barrier_on_phantom_oop_field_preloaded(p, o);
   }
 
-  return weak_load_barrier_on_oop_field_preloaded(p, o);
+  // Normal load barrier doesn't keep the object alive
+  return load_barrier_on_oop_field_preloaded(p, o);
+}
+
+inline zaddress ZBarrier::blocking_keep_alive_load_barrier_on_weak_oop_field_preloaded(volatile zpointer* p, zpointer o) {
+  return barrier(is_mark_good_fast_path, blocking_keep_alive_on_weak_slow_path, color_mark_good, p, o);
+}
+
+inline zaddress ZBarrier::blocking_keep_alive_load_barrier_on_phantom_oop_field_preloaded(volatile zpointer* p, zpointer o) {
+  return barrier(is_mark_good_fast_path, blocking_keep_alive_on_phantom_slow_path, color_mark_good, p, o);
+}
+
+inline zaddress ZBarrier::blocking_load_barrier_on_weak_oop_field_preloaded(volatile zpointer* p, zpointer o) {
+  return barrier(is_mark_good_fast_path, blocking_load_barrier_on_weak_slow_path, color_mark_good, p, o);
+}
+
+inline zaddress ZBarrier::blocking_load_barrier_on_phantom_oop_field_preloaded(volatile zpointer* p, zpointer o) {
+  return barrier(is_mark_good_fast_path, blocking_load_barrier_on_phantom_slow_path, color_mark_good, p, o);
 }
 
 //
-// Is alive barrier
+// Clean barrier
 //
-inline bool ZBarrier::is_alive_barrier_on_weak_oop(oop o) {
-  // Check if oop is logically non-null. This operation
-  // is only valid when resurrection is blocked.
+
+inline bool ZBarrier::clean_barrier_on_weak_oop_field(volatile zpointer* p) {
   assert(ZResurrection::is_blocked(), "Invalid phase");
-  return weak_load_barrier_on_weak_oop(o) != NULL;
+  const zpointer o = load_atomic(p);
+  return is_null(barrier(is_mark_good_fast_path, blocking_load_barrier_on_weak_slow_path, color_mark_good, p, o, true /* allow_null */));
 }
 
-inline bool ZBarrier::is_alive_barrier_on_phantom_oop(oop o) {
-  // Check if oop is logically non-null. This operation
-  // is only valid when resurrection is blocked.
+inline bool ZBarrier::clean_barrier_on_phantom_oop_field(volatile zpointer* p) {
   assert(ZResurrection::is_blocked(), "Invalid phase");
-  return weak_load_barrier_on_phantom_oop(o) != NULL;
+  const zpointer o = load_atomic(p);
+  return is_null(barrier(is_mark_good_fast_path, blocking_load_barrier_on_phantom_slow_path, color_mark_good, p, o, true /* allow_null */));
 }
 
-//
-// Keep alive barrier
-//
-inline void ZBarrier::keep_alive_barrier_on_weak_oop_field(volatile oop* p) {
-  // This operation is only valid when resurrection is blocked.
+inline bool ZBarrier::clean_barrier_on_final_oop_field(volatile zpointer* p) {
   assert(ZResurrection::is_blocked(), "Invalid phase");
-  const oop o = Atomic::load(p);
-  barrier<is_good_or_null_fast_path, keep_alive_barrier_on_weak_oop_slow_path>(p, o);
-}
 
-inline void ZBarrier::keep_alive_barrier_on_phantom_oop_field(volatile oop* p) {
-  // This operation is only valid when resurrection is blocked.
-  assert(ZResurrection::is_blocked(), "Invalid phase");
-  const oop o = Atomic::load(p);
-  barrier<is_good_or_null_fast_path, keep_alive_barrier_on_phantom_oop_slow_path>(p, o);
-}
+  // The referent in a FinalReference should never be cleared by the GC. Instead
+  // it should just be healed (as if it was a phantom oop) and this function should
+  // return true if the object pointer to by the referent is not strongly reachable.
+  const zpointer o = load_atomic(p);
 
-inline void ZBarrier::keep_alive_barrier_on_phantom_root_oop_field(oop* p) {
-  // This operation is only valid when resurrection is blocked.
-  assert(ZResurrection::is_blocked(), "Invalid phase");
-  const oop o = *p;
-  root_barrier<is_good_or_null_fast_path, keep_alive_barrier_on_phantom_oop_slow_path>(p, o);
-}
+  const zaddress addr = barrier(is_mark_good_fast_path, blocking_load_barrier_on_phantom_slow_path, color_mark_good, p, o);
+  assert(!is_null(addr), "Should be finalizable marked");
 
-inline void ZBarrier::keep_alive_barrier_on_oop(oop o) {
-  const uintptr_t addr = ZOop::to_address(o);
-  assert(ZAddress::is_good(addr), "Invalid address");
-
-  if (during_mark()) {
-    keep_alive_barrier_on_oop_slow_path(addr);
-  }
+  return is_null(blocking_load_barrier_on_weak_slow_path(addr));
 }
 
 //
 // Mark barrier
 //
-inline void ZBarrier::mark_barrier_on_oop_field(volatile oop* p, bool finalizable) {
-  const oop o = Atomic::load(p);
+inline void ZBarrier::mark_barrier_on_oop_field(volatile zpointer* p, bool finalizable) {
+  const zpointer o = load_atomic(p);
 
   if (finalizable) {
-    barrier<is_marked_or_null_fast_path, mark_barrier_on_finalizable_oop_slow_path>(p, o);
+    // During marking, we mark through already marked oops to avoid having
+    // some large part of the object graph hidden behind a pushed, but not
+    // yet flushed, entry on a mutator mark stack. Always marking through
+    // allows the GC workers to proceed through the object graph even if a
+    // mutator touched an oop first, which in turn will reduce the risk of
+    // having to flush mark stacks multiple times to terminate marking.
+    //
+    // However, when doing finalizable marking we don't always want to mark
+    // through. First, marking through an already strongly marked oop would
+    // be wasteful, since we will then proceed to do finalizable marking on
+    // an object which is, or will be, marked strongly. Second, marking
+    // through an already finalizable marked oop would also be wasteful,
+    // since such oops can never end up on a mutator mark stack and can
+    // therefore not hide some part of the object graph from GC workers.
+
+    // Make the oop finalizable marked/good, instead of normal marked/good.
+    // This is needed because an object might first becomes finalizable
+    // marked by the GC, and then loaded by a mutator thread. In this case,
+    // the mutator thread must be able to tell that the object needs to be
+    // strongly marked. The finalizable bit in the oop exists to make sure
+    // that a load of a finalizable marked oop will fall into the barrier
+    // slow path so that we can mark the object as strongly reachable.
+    barrier(is_finalizable_good_fast_path, mark_finalizable_slow_path, color_finalizable_good, p, o);
   } else {
-    const uintptr_t addr = ZOop::to_address(o);
-    if (ZAddress::is_good(addr)) {
-      // Mark through good oop
-      mark_barrier_on_oop_slow_path(addr);
-    } else {
-      // Mark through bad oop
-      barrier<is_good_or_null_fast_path, mark_barrier_on_oop_slow_path>(p, o);
-    }
+    barrier(is_mark_good_fast_path, mark_slow_path, color_mark_good, p, o);
   }
 }
 
-inline void ZBarrier::mark_barrier_on_oop_array(volatile oop* p, size_t length, bool finalizable) {
-  for (volatile const oop* const end = p + length; p < end; p++) {
-    mark_barrier_on_oop_field(p, finalizable);
-  }
+inline void ZBarrier::mark_barrier_on_young_oop_field(volatile zpointer* p) {
+  const zpointer o = load_atomic(p);
+  barrier(is_store_good_fast_path, mark_slow_path, color_store_good, p, o);
+}
+
+//
+// Mark barrier
+//
+inline zaddress ZBarrier::mark_minor_good_barrier_on_oop_field(volatile zpointer* p) {
+  zpointer o = load_atomic(p);
+  return barrier(is_mark_minor_good_fast_path, mark_minor_slow_path, color_mark_minor_good, p, o);
+}
+
+//
+// Store barrier
+//
+
+inline void ZBarrier::store_barrier_on_heap_oop_field(volatile zpointer* p, bool heal) {
+  const zpointer prev = load_atomic(p);
+
+  auto slow_path = [=](zaddress addr) -> zaddress {
+    return ZBarrier::keep_alive_and_remember_slow_path(p, addr, prev, heal);
+  };
+
+  barrier(is_store_good_fast_path, slow_path, color_store_good, (heal ? p : NULL), prev);
+}
+
+inline void ZBarrier::store_barrier_on_native_oop_field(volatile zpointer* p, bool heal) {
+  zpointer prev = load_atomic(p);
+
+  barrier(is_store_good_fast_path, keep_alive_slow_path, color_store_good, (heal ? p : NULL), prev);
 }
 
 #endif // SHARE_GC_Z_ZBARRIER_INLINE_HPP

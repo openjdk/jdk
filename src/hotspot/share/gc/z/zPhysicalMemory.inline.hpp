@@ -30,20 +30,20 @@
 #include "utilities/debug.hpp"
 
 inline ZPhysicalMemorySegment::ZPhysicalMemorySegment() :
-    _start(UINTPTR_MAX),
-    _end(UINTPTR_MAX),
+    _start(zoffset(UINTPTR_MAX)),
+    _end(zoffset(UINTPTR_MAX)),
     _committed(false) {}
 
-inline ZPhysicalMemorySegment::ZPhysicalMemorySegment(uintptr_t start, size_t size, bool committed) :
+inline ZPhysicalMemorySegment::ZPhysicalMemorySegment(zoffset start, size_t size, bool committed) :
     _start(start),
     _end(start + size),
     _committed(committed) {}
 
-inline uintptr_t ZPhysicalMemorySegment::start() const {
+inline zoffset ZPhysicalMemorySegment::start() const {
   return _start;
 }
 
-inline uintptr_t ZPhysicalMemorySegment::end() const {
+inline zoffset ZPhysicalMemorySegment::end() const {
   return _end;
 }
 

@@ -120,23 +120,35 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _shenandoah_upgrade_to_full_gc:
       return "Upgrade To Full GC";
 
-    case _z_timer:
-      return "Timer";
+    case _z_minor_timer:
+      return "Minor Timer";
 
-    case _z_warmup:
-      return "Warmup";
+    case _z_minor_allocation_rate:
+      return "Minor Allocation Rate";
 
-    case _z_allocation_rate:
-      return "Allocation Rate";
+    case _z_minor_before_major:
+      return "Minor Before Major";
 
-    case _z_allocation_stall:
-      return "Allocation Stall";
+    case _z_minor_inside_major:
+      return "Minor Inside Major";
 
-    case _z_proactive:
-      return "Proactive";
+    case _z_major_timer:
+      return "Major Timer";
 
-    case _z_high_usage:
-      return "High Usage";
+    case _z_major_warmup:
+      return "Major Warmup";
+
+    case _z_major_allocation_rate:
+      return "Major Allocation Rate";
+
+    case _z_major_allocation_stall:
+      return "Major Allocation Stall";
+
+    case _z_major_proactive:
+      return "Major Proactive";
+
+    case _z_major_high_usage:
+      return "Major High Usage";
 
     case _last_gc_cause:
       return "ILLEGAL VALUE - last gc cause - ILLEGAL VALUE";

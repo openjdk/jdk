@@ -49,6 +49,7 @@ size_t ZNMethodTable::_size = 0;
 size_t ZNMethodTable::_nregistered = 0;
 size_t ZNMethodTable::_nunregistered = 0;
 ZNMethodTableIteration ZNMethodTable::_iteration;
+ZNMethodTableIteration ZNMethodTable::_iteration_secondary;
 ZSafeDeleteNoLock<ZNMethodTableEntry[]> ZNMethodTable::_safe_delete;
 
 size_t ZNMethodTable::first_index(const nmethod* nm, size_t size) {
@@ -166,6 +167,12 @@ void ZNMethodTable::rebuild_if_needed() {
   }
 }
 
+ZNMethodTableIteration* ZNMethodTable::iteration(bool secondary) {
+  return secondary
+      ? &_iteration_secondary
+      : &_iteration;
+}
+
 size_t ZNMethodTable::registered_nmethods() {
   return _nregistered;
 }
@@ -192,7 +199,7 @@ void ZNMethodTable::register_nmethod(nmethod* nm) {
 void ZNMethodTable::wait_until_iteration_done() {
   assert(CodeCache_lock->owned_by_self(), "Lock must be held");
 
-  while (_iteration.in_progress()) {
+  while (_iteration.in_progress() || _iteration_secondary.in_progress()) {
     CodeCache_lock->wait_without_safepoint_check();
   }
 }
@@ -206,21 +213,21 @@ void ZNMethodTable::unregister_nmethod(nmethod* nm) {
   _nregistered--;
 }
 
-void ZNMethodTable::nmethods_do_begin() {
+void ZNMethodTable::nmethods_do_begin(bool secondary) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // Do not allow the table to be deleted while iterating
   _safe_delete.enable_deferred_delete();
 
   // Prepare iteration
-  _iteration.nmethods_do_begin(_table, _size);
+  iteration(secondary)->nmethods_do_begin(_table, _size);
 }
 
-void ZNMethodTable::nmethods_do_end() {
+void ZNMethodTable::nmethods_do_end(bool secondary) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // Finish iteration
-  _iteration.nmethods_do_end();
+  iteration(secondary)->nmethods_do_end();
 
   // Allow the table to be deleted
   _safe_delete.disable_deferred_delete();
@@ -229,6 +236,6 @@ void ZNMethodTable::nmethods_do_end() {
   CodeCache_lock->notify_all();
 }
 
-void ZNMethodTable::nmethods_do(NMethodClosure* cl) {
-  _iteration.nmethods_do(cl);
+void ZNMethodTable::nmethods_do(bool secondary, NMethodClosure* cl) {
+  iteration(secondary)->nmethods_do(cl);
 }

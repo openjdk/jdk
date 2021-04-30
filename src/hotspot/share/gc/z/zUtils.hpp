@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZUTILS_HPP
 #define SHARE_GC_Z_ZUTILS_HPP
 
+#include "gc/z/zAddress.hpp"
 #include "memory/allocation.hpp"
 
 class ZUtils : public AllStatic {
@@ -36,9 +37,9 @@ public:
   static size_t words_to_bytes(size_t size_in_words);
 
   // Object
-  static size_t object_size(uintptr_t addr);
-  static void object_copy_disjoint(uintptr_t from, uintptr_t to, size_t size);
-  static void object_copy_conjoint(uintptr_t from, uintptr_t to, size_t size);
+  static size_t object_size(zaddress addr);
+  static void object_copy_disjoint(zaddress from, zaddress to, size_t size);
+  static void object_copy_conjoint(zaddress from, zaddress to, size_t size);
 };
 
 #endif // SHARE_GC_Z_ZUTILS_HPP

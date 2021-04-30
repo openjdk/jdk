@@ -103,7 +103,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 }
 
 void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                   Address dst, Register val, Register tmp1, Register tmp2) {
+                                   Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
   bool is_not_null = (decorators & IS_NOT_NULL) != 0;
@@ -195,9 +195,40 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   }
 }
 
+void BarrierSetAssembler::copy_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                  size_t bytes, Address dst, Address src, Register tmp1, Register tmp2) {
+  assert(bytes <= 8, "can only deal with non-vector registers");
+  if (bytes == 1) {
+    __ movb(tmp1, src);
+    __ movb(dst, tmp1);
+  } else if (bytes == 2) {
+    __ movw(tmp1, src);
+    __ movw(dst, tmp1);
+  } else if (bytes == 4) {
+    __ movl(tmp1, src);
+    __ movl(dst, tmp1);
+  } else if (bytes == 8) {
+    __ movq(tmp1, src);
+    __ movq(dst, tmp1);
+  }
+}
+
+void BarrierSetAssembler::copy_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                  size_t bytes, Address dst, Address src, Register tmp1, Register tmp2,
+                                  XMMRegister xmm_tmp1, XMMRegister xmm_tmp2, bool forward) {
+  assert(bytes > 8, "can only deal with vector registers");
+  if (bytes == 16) {
+    __ movdqu(xmm_tmp1, src);
+    __ movdqu(dst, xmm_tmp1);
+  } else if (bytes == 32) {
+    __ vmovdqu(xmm_tmp1, src);
+    __ vmovdqu(dst, xmm_tmp1);
+  }
+}
+
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
-  __ clear_jweak_tag(obj);
+  __ clear_jobject_tag(obj);
   __ movptr(obj, Address(obj, 0));
 }
 

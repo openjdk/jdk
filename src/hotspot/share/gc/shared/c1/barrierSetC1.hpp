@@ -76,7 +76,7 @@ public:
             LIRAddressOpr base, LIRAddressOpr offset, BasicType type,
             CodeEmitInfo* patch_emit_info = NULL, CodeEmitInfo* access_emit_info = NULL) :
     _gen(gen),
-    _decorators(AccessInternal::decorator_fixup(decorators)),
+    _decorators(AccessInternal::decorator_fixup(decorators, type)),
     _base(base),
     _offset(offset),
     _type(type),

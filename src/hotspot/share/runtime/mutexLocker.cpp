@@ -211,7 +211,7 @@ void mutex_init() {
   def(tty_lock                     , PaddedMutex  , tty,         true,  _safepoint_check_never);      // allow to lock in VM
 
   def(CGC_lock                     , PaddedMonitor, special,     true,  _safepoint_check_never);      // coordinate between fore- and background GC
-  def(STS_lock                     , PaddedMonitor, leaf,        true,  _safepoint_check_never);
+  def(STS_lock                     , PaddedMonitor, access - 1,  true,  _safepoint_check_never);
 
   if (UseG1GC) {
     def(G1OldGCCount_lock          , PaddedMonitor, leaf,        true,  _safepoint_check_always);

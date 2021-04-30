@@ -88,8 +88,16 @@ void ZArguments::initialize() {
   }
 #endif
 
+  // CriticalJNINatives not supported
+  FLAG_SET_DEFAULT(CriticalJNINatives, false);
+
   // CompressedOops not supported
   FLAG_SET_DEFAULT(UseCompressedOops, false);
+
+  // More events
+  if (FLAG_IS_DEFAULT(LogEventsBufferEntries)) {
+    FLAG_SET_DEFAULT(LogEventsBufferEntries, 250);
+  }
 
   // Verification before startup and after exit not (yet) supported
   FLAG_SET_DEFAULT(VerifyDuringStartup, false);
@@ -99,6 +107,13 @@ void ZArguments::initialize() {
     FLAG_SET_DEFAULT(ZVerifyRoots, true);
     FLAG_SET_DEFAULT(ZVerifyObjects, true);
   }
+
+#ifdef ASSERT
+  // This check slows down testing too much. Turn it off for now.
+  if (FLAG_IS_DEFAULT(VerifyDependencies)) {
+    FLAG_SET_DEFAULT(VerifyDependencies, false);
+  }
+#endif
 }
 
 size_t ZArguments::heap_virtual_to_physical_ratio() {

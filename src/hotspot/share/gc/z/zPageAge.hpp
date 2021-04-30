@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,15 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZOOP_HPP
-#define SHARE_GC_Z_ZOOP_HPP
+#ifndef SHARE_GC_Z_ZPAGEAGE_HPP
+#define SHARE_GC_Z_ZPAGEAGE_HPP
 
-#include "memory/allocation.hpp"
-#include "oops/oopsHierarchy.hpp"
+#include <cstdint>
 
-class ZOop : public AllStatic {
-public:
-  static oop from_address(uintptr_t addr);
-  static uintptr_t to_address(oop o);
+enum class ZPageAge : uint8_t {
+  eden,
+  survivor,
+  old
 };
 
-#endif // SHARE_GC_Z_ZOOP_HPP
+#endif // SHARE_GC_Z_ZPAGEAGE_HPP

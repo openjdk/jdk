@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,30 +26,70 @@
 
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "gc/z/zMessagePort.hpp"
+#include "gc/z/zDriverPort.hpp"
+#include "gc/z/zLock.hpp"
 
-class VM_ZOperation;
-
-class ZDriverRequest {
+class ZDriverMinor : public ConcurrentGCThread {
 private:
-  GCCause::Cause _cause;
-  uint           _nworkers;
+  ZDriverPort    _port;
+  ZConditionLock _lock;
+  bool           _active;
+  bool           _blocked;
+  bool           _await;
+
+  template <typename T> bool pause();
+
+  void active();
+  void inactive();
+
+  void pause_mark_start();
+  void concurrent_mark();
+  bool pause_mark_end();
+  void concurrent_mark_continue();
+  void concurrent_mark_free();
+  void concurrent_reset_relocation_set();
+  void concurrent_select_relocation_set();
+  void pause_relocate_start();
+  void concurrent_relocate();
+
+  void gc(const ZDriverRequest& request);
+
+protected:
+  virtual void run_service();
+  virtual void stop_service();
 
 public:
-  ZDriverRequest();
-  ZDriverRequest(GCCause::Cause cause);
-  ZDriverRequest(GCCause::Cause cause, uint nworkers);
+  ZDriverMinor();
 
-  bool operator==(const ZDriverRequest& other) const;
+  void block();
+  void unblock();
+  void start();
+  void await();
 
-  GCCause::Cause cause() const;
-  uint nworkers() const;
+  bool is_busy() const;
+
+  bool is_active();
+
+  void collect(const ZDriverRequest& request);
 };
 
-class ZDriver : public ConcurrentGCThread {
+class ZDriverMajor : public ConcurrentGCThread {
 private:
-  ZMessagePort<ZDriverRequest> _gc_cycle_port;
-  ZRendezvousPort              _gc_locker_port;
+  ZDriverPort         _port;
+  ZConditionLock      _lock;
+  bool                _active;
+  bool                _promote_all;
+  ZDriverMinor* const _minor;
+
+  bool should_minor_before_major();
+  void minor_block();
+  void minor_unblock();
+  void minor_start();
+  void minor_await();
+
+  void active();
+  void inactive();
+  void stop_aggressive_promotion();
 
   template <typename T> bool pause();
 
@@ -64,6 +104,7 @@ private:
   void concurrent_select_relocation_set();
   void pause_relocate_start();
   void concurrent_relocate();
+  void concurrent_roots_remap();
 
   void check_out_of_memory();
 
@@ -74,9 +115,12 @@ protected:
   virtual void stop_service();
 
 public:
-  ZDriver();
+  ZDriverMajor(ZDriverMinor* minor);
 
   bool is_busy() const;
+
+  bool is_active();
+  bool promote_all();
 
   void collect(const ZDriverRequest& request);
 };

@@ -37,6 +37,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
@@ -2122,10 +2123,10 @@ void LIRGenerator::do_UnsafeGet(UnsafeGet* x) {
     LIR_Opr offset = off.result();
 #endif
     LIR_Address* addr = new LIR_Address(src.result(), offset, type);
-    if (type == T_LONG || type == T_DOUBLE) {
-      __ move(addr, result);
+    if (is_reference_type(type)) {
+      __ move_wide(addr, result);
     } else {
-      access_load(IN_NATIVE, type, LIR_OprFact::address(addr), result);
+      __ move(addr, result);
     }
   }
 }
@@ -2878,17 +2879,35 @@ void LIRGenerator::do_IfOp(IfOp* x) {
 void LIRGenerator::do_getEventWriter(Intrinsic* x) {
   LabelObj* L_end = new LabelObj();
 
-  // FIXME T_ADDRESS should actually be T_METADATA but it can't because the
-  // meaning of these two is mixed up (see JDK-8026837).
-  LIR_Address* jobj_addr = new LIR_Address(getThreadPointer(),
-                                           in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR),
-                                           T_ADDRESS);
   LIR_Opr result = rlock_result(x);
   __ move(LIR_OprFact::oopConst(NULL), result);
-  LIR_Opr jobj = new_register(T_METADATA);
+
+  // NULL check
+  {
+    // FIXME T_ADDRESS should actually be T_METADATA but it can't because the
+    // meaning of these two is mixed up (see JDK-8026837).
+    LIR_Address* jobj_addr = new LIR_Address(getThreadPointer(),
+        in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR),
+        T_ADDRESS);
+
+    LIR_Opr jobj = new_register(T_METADATA);
+    __ move_wide(jobj_addr, jobj);
+    __ cmp(lir_cond_equal, jobj, LIR_OprFact::metadataConst(0));
+    __ branch(lir_cond_equal, L_end->label());
+  }
+
+  // jobj is a global JNI handle, which is tagged - remove the tag
+
+  // Can't use T_ADDRESS for logical_xor. Re-read as T_LONG or T_INT.
+  LIR_Address* jobj_addr = new LIR_Address(getThreadPointer(),
+                                                  in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR),
+                                                  LP64_ONLY(T_LONG) NOT_LP64(T_INT));
+
+  LIR_Opr jobj = new_pointer_register();
   __ move_wide(jobj_addr, jobj);
-  __ cmp(lir_cond_equal, jobj, LIR_OprFact::metadataConst(0));
-  __ branch(lir_cond_equal, L_end->label());
+  __ logical_xor(jobj, LIR_OprFact::intptrConst(JNIHandles::global_tag_value), jobj);
+
+  // Load the oop
 
   access_load(IN_NATIVE, T_OBJECT, LIR_OprFact::address(new LIR_Address(jobj, T_OBJECT)), result);
 

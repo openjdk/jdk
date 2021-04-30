@@ -24,7 +24,9 @@
 #ifndef SHARE_GC_Z_ZOBJECTALLOCATOR_HPP
 #define SHARE_GC_Z_ZOBJECTALLOCATOR_HPP
 
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zAllocationFlags.hpp"
+#include "gc/z/zPageAge.hpp"
 #include "gc/z/zValue.hpp"
 
 class ZPage;
@@ -32,6 +34,8 @@ class ZPageTable;
 
 class ZObjectAllocator {
 private:
+  ZGenerationId      _generation_id;
+  ZPageAge           _age;
   const bool         _use_per_cpu_shared_small_pages;
   ZPerCPU<size_t>    _used;
   ZPerCPU<size_t>    _undone;
@@ -43,7 +47,7 @@ private:
   ZPage** shared_small_page_addr();
   ZPage* const* shared_small_page_addr() const;
 
-  void register_alloc_for_relocation(const ZPageTable* page_table, uintptr_t addr, size_t size);
+  void register_alloc_for_relocation(const ZPage* page, zaddress addr, size_t size);
   void register_undo_alloc_for_relocation(const ZPage* page, size_t size);
 
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags);
@@ -51,23 +55,23 @@ private:
 
   // Allocate an object in a shared page. Allocate and
   // atomically install a new page if necessary.
-  uintptr_t alloc_object_in_shared_page(ZPage** shared_page,
-                                        uint8_t page_type,
-                                        size_t page_size,
-                                        size_t size,
-                                        ZAllocationFlags flags);
+  zaddress alloc_object_in_shared_page(ZPage** shared_page,
+                                       uint8_t page_type,
+                                       size_t page_size,
+                                       size_t size,
+                                       ZAllocationFlags flags);
 
-  uintptr_t alloc_large_object(size_t size, ZAllocationFlags flags);
-  uintptr_t alloc_medium_object(size_t size, ZAllocationFlags flags);
-  uintptr_t alloc_small_object(size_t size, ZAllocationFlags flags);
-  uintptr_t alloc_object(size_t size, ZAllocationFlags flags);
+  zaddress alloc_large_object(size_t size, ZAllocationFlags flags);
+  zaddress alloc_medium_object(size_t size, ZAllocationFlags flags);
+  zaddress alloc_small_object(size_t size, ZAllocationFlags flags);
+  zaddress alloc_object(size_t size, ZAllocationFlags flags);
 
 public:
-  ZObjectAllocator();
+  ZObjectAllocator(ZGenerationId generation_id, ZPageAge age);
 
-  uintptr_t alloc_object(size_t size);
-  uintptr_t alloc_object_for_relocation(const ZPageTable* page_table, size_t size);
-  void undo_alloc_object_for_relocation(ZPage* page, uintptr_t addr, size_t size);
+  zaddress alloc_object(size_t size);
+  zaddress alloc_object_for_relocation(size_t size);
+  void undo_alloc_object_for_relocation(ZPage* page, zaddress addr, size_t size);
 
   size_t used() const;
   size_t remaining() const;

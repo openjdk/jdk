@@ -507,9 +507,7 @@ public:
 //
 public:
   // Shenandoah supports per-object (per-region) pinning
-  bool supports_object_pinning() const { return true; }
-
-  oop pin_object(JavaThread* thread, oop obj);
+  void pin_object(JavaThread* thread, oop obj);
   void unpin_object(JavaThread* thread, oop obj);
 
   void sync_pinned_region_status();

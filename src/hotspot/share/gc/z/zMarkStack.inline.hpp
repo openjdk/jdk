@@ -26,8 +26,8 @@
 
 #include "gc/z/zMarkStack.hpp"
 
-#include "utilities/debug.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
 
 template <typename T, size_t S>
 inline ZStack<T, S>::ZStack() :

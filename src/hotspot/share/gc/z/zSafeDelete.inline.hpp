@@ -31,24 +31,7 @@
 #include "utilities/debug.hpp"
 
 template <typename T>
-ZSafeDeleteImpl<T>::ZSafeDeleteImpl(ZLock* lock) :
-    _lock(lock),
-    _enabled(0),
-    _deferred() {}
-
-template <typename T>
-bool ZSafeDeleteImpl<T>::deferred_delete(ItemT* item) {
-  ZLocker<ZLock> locker(_lock);
-  if (_enabled > 0) {
-    _deferred.append(item);
-    return true;
-  }
-
-  return false;
-}
-
-template <typename T>
-void ZSafeDeleteImpl<T>::immediate_delete(ItemT* item) {
+void ZDeleteFunction<T>::immediate_delete(ItemT* item) {
   if (IsArray<T>::value) {
     delete [] item;
   } else {
@@ -57,13 +40,40 @@ void ZSafeDeleteImpl<T>::immediate_delete(ItemT* item) {
 }
 
 template <typename T>
-void ZSafeDeleteImpl<T>::enable_deferred_delete() {
+void ZDeleteFunction<T>::deferred_delete(ItemT* item) {
+  immediate_delete(item);
+}
+
+template <typename T>
+void ZDeleteFunction<T>::deferring_deletion(ItemT* item) {
+}
+
+template <typename T, typename DeleteT>
+ZSafeDeleteImpl<T, DeleteT>::ZSafeDeleteImpl(ZLock* lock) :
+    _lock(lock),
+    _enabled(0),
+    _deferred() {}
+
+template <typename T, typename DeleteT>
+bool ZSafeDeleteImpl<T, DeleteT>::deferred_delete(ItemT* item) {
+  ZLocker<ZLock> locker(_lock);
+  if (_enabled > 0) {
+    DeleteT::deferring_deletion(item);
+    _deferred.append(item);
+    return true;
+  }
+
+  return false;
+}
+
+template <typename T, typename DeleteT>
+void ZSafeDeleteImpl<T, DeleteT>::enable_deferred_delete() {
   ZLocker<ZLock> locker(_lock);
   _enabled++;
 }
 
-template <typename T>
-void ZSafeDeleteImpl<T>::disable_deferred_delete() {
+template <typename T, typename DeleteT>
+void ZSafeDeleteImpl<T, DeleteT>::disable_deferred_delete() {
   ZArray<ItemT*> deferred;
 
   {
@@ -76,14 +86,14 @@ void ZSafeDeleteImpl<T>::disable_deferred_delete() {
 
   ZArrayIterator<ItemT*> iter(&deferred);
   for (ItemT* item; iter.next(&item);) {
-    immediate_delete(item);
+    DeleteT::deferred_delete(item);
   }
 }
 
-template <typename T>
-void ZSafeDeleteImpl<T>::operator()(ItemT* item) {
+template <typename T, typename DeleteT>
+void ZSafeDeleteImpl<T, DeleteT>::operator()(ItemT* item) {
   if (!deferred_delete(item)) {
-    immediate_delete(item);
+    DeleteT::immediate_delete(item);
   }
 }
 

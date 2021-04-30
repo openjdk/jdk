@@ -26,10 +26,38 @@
 #include "gc/z/zThreadLocalData.hpp"
 #include "runtime/thread.hpp"
 
-Address ZBarrierSetAssemblerBase::address_bad_mask_from_thread(Register thread) {
-  return Address(thread, ZThreadLocalData::address_bad_mask_offset());
+Address ZBarrierSetAssemblerBase::address_load_good_mask_from_thread(Register thread) {
+  return Address(thread, ZThreadLocalData::address_load_good_mask_offset());
 }
 
-Address ZBarrierSetAssemblerBase::address_bad_mask_from_jni_env(Register env) {
-  return Address(env, ZThreadLocalData::address_bad_mask_offset() - JavaThread::jni_environment_offset());
+Address ZBarrierSetAssemblerBase::address_load_bad_mask_from_thread(Register thread) {
+  return Address(thread, ZThreadLocalData::address_load_bad_mask_offset());
+}
+
+Address ZBarrierSetAssemblerBase::address_mark_bad_mask_from_thread(Register thread) {
+  return Address(thread, ZThreadLocalData::address_mark_bad_mask_offset());
+}
+
+Address ZBarrierSetAssemblerBase::address_store_good_mask_from_thread(Register thread) {
+  return Address(thread, ZThreadLocalData::address_store_good_mask_offset());
+}
+
+Address ZBarrierSetAssemblerBase::address_store_bad_mask_from_thread(Register thread) {
+  return Address(thread, ZThreadLocalData::address_store_bad_mask_offset());
+}
+
+Address ZBarrierSetAssemblerBase::address_uncolor_mask_from_thread(Register thread) {
+  return Address(thread, ZThreadLocalData::address_uncolor_mask_offset());
+}
+
+Address ZBarrierSetAssemblerBase::address_load_bad_mask_from_jni_env(Register env) {
+  return Address(env, ZThreadLocalData::address_load_bad_mask_offset() - JavaThread::jni_environment_offset());
+}
+
+Address ZBarrierSetAssemblerBase::address_mark_bad_mask_from_jni_env(Register env) {
+  return Address(env, ZThreadLocalData::address_mark_bad_mask_offset() - JavaThread::jni_environment_offset());
+}
+
+Address ZBarrierSetAssemblerBase::address_uncolor_mask_from_jni_env(Register env) {
+  return Address(env, ZThreadLocalData::address_uncolor_mask_offset() - JavaThread::jni_environment_offset());
 }

@@ -27,7 +27,6 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zNMethod.hpp"
-#include "gc/z/zOop.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zResurrection.hpp"
 #include "gc/z/zRootsIterator.hpp"
@@ -49,23 +48,76 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
 
-#define BAD_OOP_ARG(o, p)   "Bad oop " PTR_FORMAT " found at " PTR_FORMAT, p2i(o), p2i(p)
+#define BAD_OOP_ARG(o, p)   "Bad oop " PTR_FORMAT " found at " PTR_FORMAT, untype(o), p2i(p)
 
-static void z_verify_oop(oop* p) {
-  const oop o = RawAccess<>::oop_load(p);
-  if (o != NULL) {
-    const uintptr_t addr = ZOop::to_address(o);
-    guarantee(ZAddress::is_good(addr), BAD_OOP_ARG(o, p));
-    guarantee(oopDesc::is_oop(ZOop::from_address(addr)), BAD_OOP_ARG(o, p));
+static bool z_is_null_relaxed(zpointer o) {
+  const uintptr_t color_mask = ZAddressAllMetadataMask | ZAddressReservedMask;
+  return (untype(o) & ~color_mask) == 0;
+}
+
+static void z_verify_old_oop(zpointer* p) {
+  zpointer o = *p;
+  assert(o != zpointer::null, "Old should not contain raw null");
+  if (!z_is_null_relaxed(o)) {
+    if (!ZPointer::is_mark_good(o)) {
+      // Old to old pointers are allowed to have bad minor bits
+      guarantee(ZPointer::is_marked_major(o),  BAD_OOP_ARG(o, p));
+      guarantee(ZHeap::heap()->page(zaddress(uintptr_t(p)))->is_old(), BAD_OOP_ARG(o, p));
+    } else {
+      zaddress addr = ZPointer::uncolor(o);
+      if (ZHeap::heap()->is_young(addr)) {
+        assert(ZHeap::heap()->is_remembered(p), "Must be remembered");
+      } else {
+        assert(ZPointer::is_store_good(o) || (uintptr_t(o) & ZAddressRememberedMask) == ZAddressRememberedMask, "Must be remembered");
+      }
+      guarantee(oopDesc::is_oop(to_oop(addr)), BAD_OOP_ARG(o, p));
+    }
   }
 }
 
-static void z_verify_possibly_weak_oop(oop* p) {
-  const oop o = RawAccess<>::oop_load(p);
-  if (o != NULL) {
-    const uintptr_t addr = ZOop::to_address(o);
-    guarantee(ZAddress::is_good(addr) || ZAddress::is_finalizable_good(addr), BAD_OOP_ARG(o, p));
-    guarantee(oopDesc::is_oop(ZOop::from_address(ZAddress::good(addr))), BAD_OOP_ARG(o, p));
+static void z_verify_young_oop(zpointer* p) {
+  zpointer o = *p;
+  if (!z_is_null_relaxed(o)) {
+    guarantee(ZHeap::heap()->page(zaddress(uintptr_t(p)))->is_young(), BAD_OOP_ARG(o, p));
+    guarantee(ZPointer::is_marked_minor(o),  BAD_OOP_ARG(o, p));
+
+    if (ZPointer::is_load_good(o)) {
+      guarantee(oopDesc::is_oop(to_oop(ZPointer::uncolor(o))), BAD_OOP_ARG(o, p));
+    }
+  }
+}
+
+static void z_verify_root_oop_object(zaddress o, void* p) {
+  guarantee(oopDesc::is_oop(to_oop(o)), BAD_OOP_ARG(o, p));
+}
+
+static void z_verify_root_oop(zpointer* p) {
+  assert(!ZHeap::heap()->is_in((uintptr_t)p), "Roots shouldn't be in heap");
+  zpointer o = *p;
+  if (!z_is_null_relaxed(o)) {
+    guarantee(ZPointer::is_marked_major(o), BAD_OOP_ARG(o, p));
+    //z_verify_root_oop_object(ZPointer::uncolor(o), p);
+    z_verify_root_oop_object(ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o), p);
+  }
+}
+
+static void z_verify_uncolored_root_oop(zaddress* p) {
+  assert(!ZHeap::heap()->is_in((uintptr_t)p), "Roots shouldn't be in heap");
+  zaddress o = *p;
+  if (!is_null(o)) {
+    z_verify_root_oop_object(o, p);
+  }
+}
+
+static void z_verify_possibly_weak_oop(zpointer* p) {
+  zpointer o = *p;
+  if (!z_is_null_relaxed(o)) {
+    //guarantee(ZPointer::is_store_good(o) || ZPointer::is_marked_finalizable(o), BAD_OOP_ARG(o, p));
+    guarantee(ZPointer::is_marked_major(o) || ZPointer::is_marked_finalizable(o), BAD_OOP_ARG(o, p));
+
+    const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o);
+    guarantee(ZHeap::heap()->is_young(addr) || ZHeap::heap()->is_object_live(addr), BAD_OOP_ARG(o, p));
+    guarantee(oopDesc::is_oop(to_oop(addr)), BAD_OOP_ARG(o, p));
   }
 }
 
@@ -77,30 +129,67 @@ public:
   ZVerifyRootClosure(bool verify_fixed) :
       _verify_fixed(verify_fixed) {}
 
-  virtual void do_oop(oop* p) {
-    if (_verify_fixed) {
-      z_verify_oop(p);
+  bool verify_fixed() const {
+    return _verify_fixed;
+  }
+};
+
+class ZVerifyColoredRootClosure : public ZVerifyRootClosure {
+public:
+  ZVerifyColoredRootClosure(bool verify_fixed) :
+      ZVerifyRootClosure(verify_fixed) {}
+
+  virtual void do_oop(oop* p_) {
+    zpointer* p = (zpointer*)p_;
+    if (verify_fixed()) {
+      z_verify_root_oop(p);
     } else {
       // Don't know the state of the oop.
-      oop obj = *p;
-      obj = NativeAccess<AS_NO_KEEPALIVE>::oop_load(&obj);
-      z_verify_oop(&obj);
+      zpointer o = *p;
+      if (!z_is_null_relaxed(o) && is_valid(o)) {
+        // colored root
+        oop obj = NativeAccess<AS_NO_KEEPALIVE>::oop_load(p_);
+        z_verify_root_oop_object(to_zaddress(obj), p);
+      }
     }
   }
 
   virtual void do_oop(narrowOop*) {
     ShouldNotReachHere();
   }
+};
 
-  bool verify_fixed() const {
-    return _verify_fixed;
+class ZVerifyUncoloredRootClosure : public ZVerifyRootClosure {
+public:
+  ZVerifyUncoloredRootClosure(bool verify_fixed) :
+      ZVerifyRootClosure(verify_fixed) {}
+
+  virtual void do_oop(oop* p_) {
+    zaddress* p = (zaddress*)p_;
+    if (verify_fixed()) {
+      z_verify_uncolored_root_oop(p);
+    } else {
+      fatal("Unimplemented");
+#if 0
+      // Don't know the state of the oop.
+      oop obj = *p;
+      if (obj != NULL && ZOop::is_valid_zaddress(obj)) {
+        ZUncoloredRoot::remap(&obj);
+        z_verify_root_oop_object(to_zaddress(obj), p);
+      }
+#endif
+    }
+  }
+
+  virtual void do_oop(narrowOop*) {
+    ShouldNotReachHere();
   }
 };
 
 class ZVerifyCodeBlobClosure : public CodeBlobToOopClosure {
 public:
-  ZVerifyCodeBlobClosure(ZVerifyRootClosure* _cl) :
-      CodeBlobToOopClosure(_cl, false /* fix_relocations */) {}
+  ZVerifyCodeBlobClosure(ZVerifyRootClosure* cl) :
+      CodeBlobToOopClosure(cl, false /* fix_relocations */) {}
 
   virtual void do_code_blob(CodeBlob* cb) {
     CodeBlobToOopClosure::do_code_blob(cb);
@@ -138,10 +227,11 @@ public:
 
   void do_oop(oop* p) {
     if (_verifying_bad_frames) {
-      const oop obj = *p;
-      guarantee(!ZAddress::is_good(ZOop::to_address(obj)), BAD_OOP_ARG(obj, p));
+      const zaddress prev = *(zaddress*)p;
+      guarantee(!is_valid(prev), BAD_OOP_ARG(prev, p));
+    } else {
+      _cl->do_oop(p);
     }
-    _cl->do_oop(p);
   }
 
   void do_oop(narrowOop* p) {
@@ -177,22 +267,50 @@ public:
   }
 };
 
-class ZVerifyOopClosure : public ClaimMetadataVisitingOopIterateClosure {
+class ZVerifyOldOopClosure : public BasicOopIterateClosure {
 private:
   const bool _verify_weaks;
 
 public:
-  ZVerifyOopClosure(bool verify_weaks) :
-      ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_other),
+  ZVerifyOldOopClosure(bool verify_weaks) :
       _verify_weaks(verify_weaks) {}
 
-  virtual void do_oop(oop* p) {
+  virtual void do_oop(oop* p_) {
+    zpointer* p = (zpointer*)p_;
     if (_verify_weaks) {
       z_verify_possibly_weak_oop(p);
     } else {
       // We should never encounter finalizable oops through strong
       // paths. This assumes we have only visited strong roots.
-      z_verify_oop(p);
+      z_verify_old_oop(p);
+    }
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+
+  virtual ReferenceIterationMode reference_iteration_mode() {
+    return _verify_weaks ? DO_FIELDS : DO_FIELDS_EXCEPT_REFERENT;
+  }
+};
+
+class ZVerifyYoungOopClosure : public BasicOopIterateClosure {
+private:
+  const bool _verify_weaks;
+
+public:
+  ZVerifyYoungOopClosure(bool verify_weaks) : _verify_weaks(verify_weaks) {}
+
+  virtual void do_oop(oop* p_) {
+    zpointer* p = (zpointer*)p_;
+    if (_verify_weaks) {
+      //z_verify_possibly_weak_oop(p);
+      z_verify_young_oop(p);
+    } else {
+      // We should never encounter finalizable oops through strong
+      // paths. This assumes we have only visited strong roots.
+      z_verify_young_oop(p);
     }
   }
 
@@ -216,15 +334,22 @@ public:
       _cl(cl) {}
 
   virtual void do_thread(Thread* thread) {
+    JavaThread* const jt = JavaThread::cast(thread);
+    ZStackWatermark* watermark = StackWatermarkSet::get<ZStackWatermark>(jt, StackWatermarkKind::gc);
+    if (!watermark->processing_started_acquire()) {
+      return;
+    }
+
     thread->oops_do_no_frames(_cl, NULL);
 
-    JavaThread* const jt = JavaThread::cast(thread);
     if (!jt->has_last_Java_frame()) {
       return;
     }
 
-    ZVerifyStack verify_stack(_cl, jt);
-    verify_stack.verify_frames();
+    if (watermark->processing_completed_acquire()) {
+      ZVerifyStack verify_stack(_cl, jt);
+      verify_stack.verify_frames();
+    }
   }
 };
 
@@ -257,35 +382,99 @@ void ZVerify::roots_strong(bool verify_fixed) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
-  ZVerifyRootClosure cl(verify_fixed);
-  ZVerifyCLDClosure cld_cl(&cl);
-  ZVerifyThreadClosure thread_cl(&cl);
-  ZVerifyNMethodClosure nm_cl(&cl, verify_fixed);
+  {
+    ZVerifyColoredRootClosure cl(verify_fixed);
+    ZVerifyCLDClosure cld_cl(&cl);
 
-  ZRootsIterator iter(ClassLoaderData::_claim_none);
-  iter.apply(&cl,
-             &cld_cl,
-             &thread_cl,
-             &nm_cl);
+    ZColoredRootsStrongIterator iter;
+    iter.apply(&cl,
+               &cld_cl);
+  }
+  // FIXME: Only verify_fixed == true supported right now
+  if (verify_fixed) {
+    ZVerifyUncoloredRootClosure cl(verify_fixed);
+    ZVerifyThreadClosure thread_cl(&cl);
+    ZVerifyNMethodClosure nm_cl(&cl, verify_fixed);
+
+    ZUncoloredRootsStrongIterator iter;
+    iter.apply(&thread_cl,
+               &nm_cl);
+  }
 }
 
 void ZVerify::roots_weak() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
-  ZVerifyRootClosure cl(true /* verify_fixed */);
+  ZVerifyColoredRootClosure cl(true /* verify_fixed */);
   ZWeakRootsIterator iter;
   iter.apply(&cl);
 }
 
+zaddress zverify_broken_object = zaddress::null;
+
+class ZVerifyObjectClosure : public ObjectClosure, public OopFieldClosure {
+private:
+  const bool         _verify_weaks;
+
+  zaddress           _visited_base;
+  volatile zpointer* _visited_p;
+  zpointer           _visited_p_pre_loaded;
+
+public:
+  ZVerifyObjectClosure(bool verify_weaks) :
+      _verify_weaks(verify_weaks),
+      _visited_base(),
+      _visited_p(),
+      _visited_p_pre_loaded() {}
+
+  bool check_object(zaddress addr) {
+    if (ZHeap::heap()->is_object_live(addr)) {
+      return true;
+    }
+
+    tty->print_cr("ZVerify found dead object: " PTR_FORMAT " at p: " PTR_FORMAT " ptr: " PTR_FORMAT, untype(addr), p2i((void*)_visited_p), untype(_visited_p_pre_loaded));
+    to_oop(addr)->print();
+    tty->print_cr("--- From --- ");
+    if (_visited_base != zaddress::null) {
+      to_oop(_visited_base)->print();
+    }
+    tty->cr();
+
+    if (zverify_broken_object == zaddress::null) {
+      zverify_broken_object = addr;
+    }
+
+    return false;
+  }
+
+  virtual void do_object(oop obj) {
+    const zaddress addr = to_zaddress(obj);
+    if (ZHeap::heap()->is_old(addr)) {
+      if (check_object(addr)) {
+        ZVerifyOldOopClosure cl(_verify_weaks);
+        obj->oop_iterate(&cl);
+      }
+    } else {
+
+    }
+  }
+
+  virtual void do_field(oop base, oop* p) {
+    _visited_base = to_zaddress(base);
+    _visited_p = (volatile zpointer*)p;
+    _visited_p_pre_loaded = Atomic::load(_visited_p);
+  }
+};
+
 void ZVerify::objects(bool verify_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  assert(ZGlobalPhase == ZPhaseMarkCompleted, "Invalid phase");
+  assert(ZHeap::heap()->minor_cycle()->phase() == ZPhase::MarkComplete ||
+         ZHeap::heap()->major_cycle()->phase() == ZPhase::MarkComplete, "Invalid phase");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
-  ZVerifyOopClosure cl(verify_weaks);
-  ObjectToOopClosure object_cl(&cl);
-  ZHeap::heap()->object_iterate(&object_cl, verify_weaks);
+  ZVerifyObjectClosure object_cl(verify_weaks);
+  ZHeap::heap()->object_and_field_iterate(&object_cl, &object_cl, verify_weaks);
 }
 
 void ZVerify::before_zoperation() {
@@ -304,6 +493,7 @@ void ZVerify::after_mark() {
   }
   if (ZVerifyObjects) {
     objects(false /* verify_weaks */);
+    guarantee(zverify_broken_object == zaddress::null, "Verification failed");
   }
 }
 
@@ -319,48 +509,14 @@ void ZVerify::after_weak_processing() {
   }
 }
 
-template <bool Map>
-class ZPageDebugMapOrUnmapClosure : public ZPageClosure {
-private:
-  const ZPageAllocator* const _allocator;
-
-public:
-  ZPageDebugMapOrUnmapClosure(const ZPageAllocator* allocator) :
-      _allocator(allocator) {}
-
-  void do_page(const ZPage* page) {
-    if (Map) {
-      _allocator->debug_map_page(page);
-    } else {
-      _allocator->debug_unmap_page(page);
-    }
-  }
-};
-
-ZVerifyViewsFlip::ZVerifyViewsFlip(const ZPageAllocator* allocator) :
-    _allocator(allocator) {
-  if (ZVerifyViews) {
-    // Unmap all pages
-    ZPageDebugMapOrUnmapClosure<false /* Map */> cl(_allocator);
-    ZHeap::heap()->pages_do(&cl);
-  }
-}
-
-ZVerifyViewsFlip::~ZVerifyViewsFlip() {
-  if (ZVerifyViews) {
-    // Map all pages
-    ZPageDebugMapOrUnmapClosure<true /* Map */> cl(_allocator);
-    ZHeap::heap()->pages_do(&cl);
-  }
-}
-
 #ifdef ASSERT
 
 class ZVerifyBadOopClosure : public OopClosure {
 public:
   virtual void do_oop(oop* p) {
     const oop o = *p;
-    assert(!ZAddress::is_good(ZOop::to_address(o)), "Should not be good: " PTR_FORMAT, p2i(o));
+    // Can't verify much more than this
+    assert(is_valid(to_zaddress(o)), "Not a valid uncolored pointer");
   }
 
   virtual void do_oop(narrowOop* p) {
@@ -395,17 +551,6 @@ void ZVerify::verify_frame_bad(const frame& fr, RegisterMap& register_map) {
 void ZVerify::verify_thread_head_bad(JavaThread* jt) {
   ZVerifyBadOopClosure verify_cl;
   jt->oops_do_no_frames(&verify_cl, NULL);
-}
-
-void ZVerify::verify_thread_frames_bad(JavaThread* jt) {
-  if (jt->has_last_Java_frame()) {
-    ZVerifyBadOopClosure verify_cl;
-    StackWatermarkProcessingMark swpm(Thread::current());
-    // Traverse the execution stack
-    for (StackFrameStream fst(jt, true /* update */, false /* process_frames */); !fst.is_done(); fst.next()) {
-      fst.current()->oops_do(&verify_cl, NULL /* code_cl */, fst.register_map(), DerivedPointerIterationMode::_ignore);
-    }
-  }
 }
 
 #endif // ASSERT

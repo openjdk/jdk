@@ -52,7 +52,7 @@ public:
   bool is_owned() const;
 };
 
-class ZConditionLock {
+class ZConditionLock : public CHeapObj<mtGC> {
 private:
   os::PlatformMonitor _lock;
 

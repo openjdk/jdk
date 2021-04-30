@@ -51,6 +51,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "prims/unsafe.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -2914,7 +2915,11 @@ bool LibraryCallKit::inline_native_getEventWriter() {
 
   Node* jobj_is_not_null = _gvn.transform(new IfFalseNode(iff_jobj_null));
   set_control(jobj_is_not_null);
-  Node* res = access_load(jobj, TypeInstPtr::NOTNULL, T_OBJECT,
+
+  // jobj is a global JNI handle, which is tagged - remove the tag
+  Node* jobj_no_tag = basic_plus_adr(top(), jobj, -JNIHandles::global_tag_value);
+
+  Node* res = access_load(jobj_no_tag, TypeInstPtr::NOTNULL, T_OBJECT,
                           IN_NATIVE | C2_CONTROL_DEPENDENT_LOAD);
   result_rgn->init_req(_normal_path, control());
   result_val->init_req(_normal_path, res);

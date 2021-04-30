@@ -56,6 +56,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -210,7 +211,7 @@ int ClassLoaderData::ChunkedHandleList::count() const {
 
 inline void ClassLoaderData::ChunkedHandleList::oops_do_chunk(OopClosure* f, Chunk* c, const juint size) {
   for (juint i = 0; i < size; i++) {
-    if (c->_data[i] != NULL) {
+    if (!Universe::heap()->contains_null(&c->_data[i])) {
       f->do_oop(&c->_data[i]);
     }
   }
@@ -280,6 +281,10 @@ void ClassLoaderData::clear_claim(int claim) {
       return;
     }
   }
+}
+
+void ClassLoaderData::verify_not_claimed(int claim) {
+  assert((_claim & claim) == 0, "Found a problem: %d", _claim);
 }
 
 bool ClassLoaderData::try_claim(int claim) {

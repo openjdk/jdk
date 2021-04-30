@@ -34,6 +34,8 @@
 
 uintptr_t ZMarkStackSpaceStart;
 
+ZMarkStackAllocator* ZMarkStackAllocator::_instance = NULL;
+
 ZMarkStackSpace::ZMarkStackSpace() :
     _expand_lock(),
     _start(0),
@@ -167,6 +169,15 @@ uintptr_t ZMarkStackSpace::alloc(size_t size) {
 void ZMarkStackSpace::free() {
   _end -= shrink_space();
   _top = _start;
+}
+
+void ZMarkStackAllocator::initialize() {
+  assert(_instance == NULL, "Should only initialize once");
+  _instance = new ZMarkStackAllocator();
+}
+
+ZMarkStackAllocator* ZMarkStackAllocator::instance() {
+  return _instance;
 }
 
 ZMarkStackAllocator::ZMarkStackAllocator() :

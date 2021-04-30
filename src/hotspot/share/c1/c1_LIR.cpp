@@ -186,16 +186,6 @@ bool LIR_OprDesc::is_oop() const {
 
 void LIR_Op2::verify() const {
 #ifdef ASSERT
-  switch (code()) {
-    case lir_cmove:
-    case lir_xchg:
-      break;
-
-    default:
-      assert(!result_opr()->is_register() || !result_opr()->is_oop_register(),
-             "can't produce oops from arith");
-  }
-
   if (TwoOperandLIRForm) {
 
 #ifdef ASSERT
@@ -1845,6 +1835,7 @@ void LIR_Op::print_condition(outputStream* out, LIR_Condition cond) {
     case lir_cond_greaterEqual:    out->print("[GE]");      break;
     case lir_cond_greater:         out->print("[GT]");      break;
     case lir_cond_belowEqual:      out->print("[BE]");      break;
+    case lir_cond_above:           out->print("[A]");       break;
     case lir_cond_aboveEqual:      out->print("[AE]");      break;
     case lir_cond_always:          out->print("[AL]");      break;
     default:                       out->print("[%d]",cond); break;

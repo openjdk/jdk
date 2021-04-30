@@ -23,237 +23,315 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zOop.inline.hpp"
-#include "gc/z/zThread.inline.hpp"
+#include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 
-template <bool finalizable>
-bool ZBarrier::should_mark_through(uintptr_t addr) {
-  // Finalizable marked oops can still exists on the heap after marking
-  // has completed, in which case we just want to convert this into a
-  // good oop and not push it on the mark stack.
-  if (!during_mark()) {
-    assert(ZAddress::is_marked(addr), "Should be marked");
-    assert(ZAddress::is_finalizable(addr), "Should be finalizable");
-    return false;
+static bool during_minor_mark() {
+  return ZHeap::heap()->minor_cycle()->phase() == ZPhase::Mark;
+}
+
+static bool during_major_mark() {
+  return ZHeap::heap()->major_cycle()->phase() == ZPhase::Mark;
+}
+
+#ifdef ASSERT
+static bool during_any_mark() {
+  return during_minor_mark() || during_major_mark();
+}
+#endif
+
+static bool matches_mark_phase(zaddress addr) {
+  if (is_null(addr)) {
+    return true;
   }
 
-  // During marking, we mark through already marked oops to avoid having
-  // some large part of the object graph hidden behind a pushed, but not
-  // yet flushed, entry on a mutator mark stack. Always marking through
-  // allows the GC workers to proceed through the object graph even if a
-  // mutator touched an oop first, which in turn will reduce the risk of
-  // having to flush mark stacks multiple times to terminate marking.
-  //
-  // However, when doing finalizable marking we don't always want to mark
-  // through. First, marking through an already strongly marked oop would
-  // be wasteful, since we will then proceed to do finalizable marking on
-  // an object which is, or will be, marked strongly. Second, marking
-  // through an already finalizable marked oop would also be wasteful,
-  // since such oops can never end up on a mutator mark stack and can
-  // therefore not hide some part of the object graph from GC workers.
-  if (finalizable) {
-    return !ZAddress::is_marked(addr);
+  if (ZHeap::heap()->is_young(addr)) {
+    if (during_minor_mark()) {
+      return true;
+    }
+  } else {
+    if (during_major_mark()) {
+      return true;
+    }
   }
 
-  // Mark through
-  return true;
+  return false;
+}
+
+zaddress ZBarrier::relocate_or_remap(zaddress_unsafe addr, ZCycle* cycle) {
+  return cycle->relocate_or_remap_object(addr);
+}
+
+zaddress ZBarrier::remap(zaddress_unsafe addr, ZCycle* cycle) {
+  return cycle->remap_object(addr);
 }
 
 template <bool gc_thread, bool follow, bool finalizable, bool publish>
-uintptr_t ZBarrier::mark(uintptr_t addr) {
-  uintptr_t good_addr;
+static void mark(zaddress addr) {
+  // FIXME: Maybe rely on earlier null-filtering
+  if (is_null(addr)) {
+    return;
+  }
 
-  if (ZAddress::is_marked(addr)) {
-    // Already marked, but try to mark though anyway
-    good_addr = ZAddress::good(addr);
-  } else if (ZAddress::is_remapped(addr)) {
-    // Already remapped, but also needs to be marked
-    good_addr = ZAddress::good(addr);
+  assert(during_minor_mark() || during_major_mark(), "Should only be called during marking");
+
+  // Don't push an already marked object to the mark stack. This helps
+  // reduce mark stack usage when many oops point to the same object.
+  if (finalizable) {
+    if (ZHeap::heap()->is_object_live(addr)) {
+      // Already marked
+      return;
+    }
   } else {
-    // Needs to be both remapped and marked
-    good_addr = remap(addr);
+    if (ZHeap::heap()->is_object_strongly_live(addr)) {
+      // Already marked
+      return;
+    }
   }
 
   // Mark
-  if (should_mark_through<finalizable>(addr)) {
-    ZHeap::heap()->mark_object<gc_thread, follow, finalizable, publish>(good_addr);
+  ZHeap::heap()->mark_object<gc_thread, follow, finalizable, publish>(addr);
+}
+
+template <bool follow,bool publish>
+static void mark_minor(zaddress addr) {
+  // FIXME: Maybe rely on earlier null-filtering
+  if (is_null(addr)) {
+    return;
   }
 
-  if (finalizable) {
-    // Make the oop finalizable marked/good, instead of normal marked/good.
-    // This is needed because an object might first becomes finalizable
-    // marked by the GC, and then loaded by a mutator thread. In this case,
-    // the mutator thread must be able to tell that the object needs to be
-    // strongly marked. The finalizable bit in the oop exists to make sure
-    // that a load of a finalizable marked oop will fall into the barrier
-    // slow path so that we can mark the object as strongly reachable.
-    return ZAddress::finalizable_good(good_addr);
+  assert(during_minor_mark(), "Should only be called during marking");
+
+  // Don't push an already marked object to the mark stack. This helps
+  // reduce mark stack usage when many oops point to the same object.
+  if (ZHeap::heap()->is_object_strongly_live(addr)) {
+    // Already marked
+    return;
   }
 
-  return good_addr;
+  // Mark
+  ZHeap::heap()->mark_minor_object<follow, publish>(addr);
 }
 
-uintptr_t ZBarrier::remap(uintptr_t addr) {
-  assert(!ZAddress::is_good(addr), "Should not be good");
-  assert(!ZAddress::is_weak_good(addr), "Should not be weak good");
-  return ZHeap::heap()->remap_object(addr);
-}
-
-uintptr_t ZBarrier::relocate(uintptr_t addr) {
-  assert(!ZAddress::is_good(addr), "Should not be good");
-  assert(!ZAddress::is_weak_good(addr), "Should not be weak good");
-  return ZHeap::heap()->relocate_object(addr);
-}
-
-uintptr_t ZBarrier::relocate_or_mark(uintptr_t addr) {
-  return during_relocate() ? relocate(addr) : mark<AnyThread, Follow, Strong, Publish>(addr);
-}
-
-uintptr_t ZBarrier::relocate_or_mark_no_follow(uintptr_t addr) {
-  return during_relocate() ? relocate(addr) : mark<AnyThread, DontFollow, Strong, Publish>(addr);
-}
-
-uintptr_t ZBarrier::relocate_or_remap(uintptr_t addr) {
-  return during_relocate() ? relocate(addr) : remap(addr);
-}
-
-//
-// Load barrier
-//
-uintptr_t ZBarrier::load_barrier_on_oop_slow_path(uintptr_t addr) {
-  return relocate_or_mark(addr);
-}
-
-uintptr_t ZBarrier::load_barrier_on_invisible_root_oop_slow_path(uintptr_t addr) {
-  return relocate_or_mark_no_follow(addr);
-}
-
-void ZBarrier::load_barrier_on_oop_fields(oop o) {
-  assert(ZAddress::is_good(ZOop::to_address(o)), "Should be good");
-  ZLoadBarrierOopClosure cl;
-  o->oop_iterate(&cl);
+void ZBarrier::keep_alive(zaddress addr) {
+  if (matches_mark_phase(addr)) {
+    mark<ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+  }
 }
 
 //
 // Weak load barrier
 //
-uintptr_t ZBarrier::weak_load_barrier_on_oop_slow_path(uintptr_t addr) {
-  return ZAddress::is_weak_good(addr) ? ZAddress::good(addr) : relocate_or_remap(addr);
-}
 
-uintptr_t ZBarrier::weak_load_barrier_on_weak_oop_slow_path(uintptr_t addr) {
-  const uintptr_t good_addr = weak_load_barrier_on_oop_slow_path(addr);
-  if (ZHeap::heap()->is_object_strongly_live(good_addr)) {
-    return good_addr;
+zaddress ZBarrier::is_object_strongly_live_filter_slow_path(zaddress addr) {
+  if (is_null(addr)) {
+    return zaddress::null;
   }
 
-  // Not strongly live
-  return 0;
-}
-
-uintptr_t ZBarrier::weak_load_barrier_on_phantom_oop_slow_path(uintptr_t addr) {
-  const uintptr_t good_addr = weak_load_barrier_on_oop_slow_path(addr);
-  if (ZHeap::heap()->is_object_live(good_addr)) {
-    return good_addr;
+  if (!ZHeap::heap()->is_object_strongly_live(addr)) {
+    return zaddress::null;
   }
 
-  // Not live
-  return 0;
+  // Strongly live
+  return addr;
+}
+
+zaddress ZBarrier::is_old_object_strongly_live_filter_slow_path(zaddress addr) {
+  if (is_null(addr)) {
+    return zaddress::null;
+  }
+
+  if (ZHeap::heap()->is_old(addr) && !ZHeap::heap()->is_object_strongly_live(addr)) {
+    return zaddress::null;
+  }
+
+  // Strongly live
+  return addr;
+}
+
+zaddress ZBarrier::blocking_keep_alive_on_weak_slow_path(zaddress addr) {
+  if (is_null(addr)) {
+    return zaddress::null;
+  }
+
+  if (ZHeap::heap()->is_old(addr)) {
+    if (!ZHeap::heap()->is_object_strongly_live(addr)) {
+      return zaddress::null;
+    }
+  } else {
+    // Young gen objects are never blocked, need to keep alive
+    keep_alive(addr);
+  }
+
+
+  // Strongly live
+  return addr;
+}
+
+zaddress ZBarrier::blocking_keep_alive_on_phantom_slow_path(zaddress addr) {
+  if (is_null(addr)) {
+    return zaddress::null;
+  }
+
+  if (ZHeap::heap()->is_old(addr)) {
+    if (!ZHeap::heap()->is_object_live(addr)) {
+      return zaddress::null;
+    }
+  } else {
+    // Young gen objects are never blocked, need to keep alive
+    keep_alive(addr);
+  }
+
+  // Strongly live
+  return addr;
+}
+
+zaddress ZBarrier::blocking_load_barrier_on_weak_slow_path(zaddress addr) {
+  if (is_null(addr)) {
+    return zaddress::null;
+  }
+
+  if (ZHeap::heap()->is_old(addr)) {
+    if (!ZHeap::heap()->is_object_strongly_live(addr)) {
+      return zaddress::null;
+    }
+  } else {
+    // Young objects are never considered non-strong
+    // Note: Should not need to keep object alive in this operation,
+    //       but the barrier colors the pointer mark good, so we need
+    //       to mark the object accordingly.
+    keep_alive(addr);
+  }
+
+  return addr;
+}
+
+zaddress ZBarrier::blocking_load_barrier_on_phantom_slow_path(zaddress addr) {
+  if (is_null(addr)) {
+    return zaddress::null;
+  }
+
+  if (ZHeap::heap()->is_old(addr)) {
+    if (!ZHeap::heap()->is_object_live(addr)) {
+      return zaddress::null;
+    }
+  } else {
+    // Young objects are never considered non-strong
+    // Note: Should not need to keep object alive in this operation,
+    //       but the barrier colors the pointer mark good, so we need
+    //       to mark the object accordingly.
+    keep_alive(addr);
+  }
+
+  return addr;
+}
+
+zaddress ZBarrier::is_object_live_filter_slow_path(zaddress addr) {
+  if (is_null(addr)) {
+    return zaddress::null;
+  }
+
+  if (!ZHeap::heap()->is_object_live(addr)) {
+    return zaddress::null;
+  }
+
+  // Live
+  return addr;
+}
+
+zaddress ZBarrier::is_old_object_live_filter_slow_path(zaddress addr) {
+  if (is_null(addr)) {
+    return zaddress::null;
+  }
+
+  if (ZHeap::heap()->is_old(addr) && !ZHeap::heap()->is_object_live(addr)) {
+    return zaddress::null;
+  }
+
+  // Live
+  return addr;
 }
 
 //
-// Keep alive barrier
+// Clean barrier
 //
-uintptr_t ZBarrier::keep_alive_barrier_on_oop_slow_path(uintptr_t addr) {
-  assert(during_mark(), "Invalid phase");
 
-  // Mark
-  return mark<AnyThread, Follow, Strong, Overflow>(addr);
-}
+zaddress ZBarrier::verify_old_object_live_slow_path(zaddress addr) {
+  // Verify that the object was indeed alive
+  assert(ZHeap::heap()->is_young(addr) || ZHeap::heap()->is_object_live(addr), "Should be live");
 
-uintptr_t ZBarrier::keep_alive_barrier_on_weak_oop_slow_path(uintptr_t addr) {
-  const uintptr_t good_addr = weak_load_barrier_on_oop_slow_path(addr);
-  assert(ZHeap::heap()->is_object_strongly_live(good_addr), "Should be live");
-  return good_addr;
-}
-
-uintptr_t ZBarrier::keep_alive_barrier_on_phantom_oop_slow_path(uintptr_t addr) {
-  const uintptr_t good_addr = weak_load_barrier_on_oop_slow_path(addr);
-  assert(ZHeap::heap()->is_object_live(good_addr), "Should be live");
-  return good_addr;
+  return addr;
 }
 
 //
 // Mark barrier
 //
-uintptr_t ZBarrier::mark_barrier_on_oop_slow_path(uintptr_t addr) {
-  assert(during_mark(), "Invalid phase");
-  assert(ZThread::is_worker(), "Invalid thread");
+
+zaddress ZBarrier::mark_slow_path(zaddress addr) {
+  assert(during_any_mark(), "Invalid phase");
 
   // Mark
-  return mark<GCThread, Follow, Strong, Overflow>(addr);
+  mark<ZMark::GCThread, ZMark::Follow, ZMark::Strong, ZMark::Overflow>(addr);
+
+  return addr;
 }
 
-uintptr_t ZBarrier::mark_barrier_on_finalizable_oop_slow_path(uintptr_t addr) {
-  assert(during_mark(), "Invalid phase");
-  assert(ZThread::is_worker(), "Invalid thread");
+zaddress ZBarrier::mark_minor_slow_path(zaddress addr) {
+  assert(during_minor_mark(), "Invalid phase");
 
   // Mark
-  return mark<GCThread, Follow, Finalizable, Overflow>(addr);
+  mark_minor<ZMark::Follow, ZMark::Overflow>(addr);
+
+  return addr;
 }
 
-//
-// Narrow oop variants, never used.
-//
-oop ZBarrier::load_barrier_on_oop_field(volatile narrowOop* p) {
-  ShouldNotReachHere();
-  return NULL;
+zaddress ZBarrier::mark_finalizable_slow_path(zaddress addr) {
+  assert(during_any_mark(), "Invalid phase");
+
+  // Mark
+  mark<ZMark::GCThread, ZMark::Follow, ZMark::Finalizable, ZMark::Overflow>(addr);
+
+  return addr;
 }
 
-oop ZBarrier::load_barrier_on_oop_field_preloaded(volatile narrowOop* p, oop o) {
-  ShouldNotReachHere();
-  return NULL;
+void ZBarrier::remember(volatile zpointer* p) {
+  ZHeap::heap()->remember_filtered(p);
 }
 
-void ZBarrier::load_barrier_on_oop_array(volatile narrowOop* p, size_t length) {
-  ShouldNotReachHere();
+void ZBarrier::keep_alive_and_remember(volatile zpointer* p, zaddress addr) {
+  keep_alive(addr);
+  remember(p);
 }
 
-oop ZBarrier::load_barrier_on_weak_oop_field_preloaded(volatile narrowOop* p, oop o) {
-  ShouldNotReachHere();
-  return NULL;
+zaddress ZBarrier::keep_alive_and_remember_slow_path(volatile zpointer* p, zaddress addr, zpointer prev, bool heal) {
+  ZStoreBarrierBuffer* buffer = ZStoreBarrierBuffer::buffer_for_store(heal);
+
+  if (buffer != NULL) {
+    // Buffer store barriers whenever possible
+    buffer->add(p, prev);
+  } else {
+    keep_alive_and_remember(p, addr);
+  }
+
+  return addr;
 }
 
-oop ZBarrier::load_barrier_on_phantom_oop_field_preloaded(volatile narrowOop* p, oop o) {
-  ShouldNotReachHere();
-  return NULL;
-}
+zaddress ZBarrier::keep_alive_slow_path(zaddress addr) {
+  keep_alive(addr);
 
-oop ZBarrier::weak_load_barrier_on_oop_field_preloaded(volatile narrowOop* p, oop o) {
-  ShouldNotReachHere();
-  return NULL;
-}
-
-oop ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile narrowOop* p, oop o) {
-  ShouldNotReachHere();
-  return NULL;
-}
-
-oop ZBarrier::weak_load_barrier_on_phantom_oop_field_preloaded(volatile narrowOop* p, oop o) {
-  ShouldNotReachHere();
-  return NULL;
+  return addr;
 }
 
 #ifdef ASSERT
 
 // ON_WEAK barriers should only ever be applied to j.l.r.Reference.referents.
-void ZBarrier::verify_on_weak(volatile oop* referent_addr) {
+void ZBarrier::verify_on_weak(volatile zpointer* referent_addr) {
   if (referent_addr != NULL) {
     uintptr_t base = (uintptr_t)referent_addr - java_lang_ref_Reference::referent_offset();
     oop obj = cast_to_oop(base);
@@ -263,11 +341,3 @@ void ZBarrier::verify_on_weak(volatile oop* referent_addr) {
 }
 
 #endif
-
-void ZLoadBarrierOopClosure::do_oop(oop* p) {
-  ZBarrier::load_barrier_on_oop_field(p);
-}
-
-void ZLoadBarrierOopClosure::do_oop(narrowOop* p) {
-  ShouldNotReachHere();
-}

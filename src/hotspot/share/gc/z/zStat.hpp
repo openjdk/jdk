@@ -28,16 +28,17 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/z/zMetronome.hpp"
+#include "gc/z/zRelocationSetSelector.hpp"
 #include "logging/logHandle.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/ticks.hpp"
 
+enum class ZCycleId;
 class ZPage;
 class ZPageAllocatorStats;
 class ZRelocationSetSelectorGroupStats;
-class ZRelocationSetSelectorStats;
 class ZStatSampler;
 class ZStatSamplerHistory;
 struct ZStatCounterData;
@@ -204,10 +205,10 @@ public:
 // Stat phases
 //
 class ZStatPhase {
-private:
-  static ConcurrentGCTimer _timer;
-
 protected:
+  static ConcurrentGCTimer _timer_minor;
+  static ConcurrentGCTimer _timer_major;
+
   const ZStatSampler _sampler;
 
   ZStatPhase(const char* group, const char* name);
@@ -216,20 +217,21 @@ protected:
   void log_end(LogTargetHandle log, const Tickspan& duration, bool thread = false) const;
 
 public:
-  static ConcurrentGCTimer* timer();
-
   const char* name() const;
 
-  virtual void register_start(const Ticks& start) const = 0;
-  virtual void register_end(const Ticks& start, const Ticks& end) const = 0;
+  virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const = 0;
+  virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const = 0;
 };
 
 class ZStatPhaseCycle : public ZStatPhase {
-public:
-  ZStatPhaseCycle(const char* name);
+private:
+  const ZCycleId _cycle_id;
 
-  virtual void register_start(const Ticks& start) const;
-  virtual void register_end(const Ticks& start, const Ticks& end) const;
+public:
+  ZStatPhaseCycle(ZCycleId cycle_id, const char* name);
+
+  virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
+  virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;
 };
 
 class ZStatPhasePause : public ZStatPhase {
@@ -241,24 +243,24 @@ public:
 
   static const Tickspan& max();
 
-  virtual void register_start(const Ticks& start) const;
-  virtual void register_end(const Ticks& start, const Ticks& end) const;
+  virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
+  virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;
 };
 
 class ZStatPhaseConcurrent : public ZStatPhase {
 public:
   ZStatPhaseConcurrent(const char* name);
 
-  virtual void register_start(const Ticks& start) const;
-  virtual void register_end(const Ticks& start, const Ticks& end) const;
+  virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
+  virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;
 };
 
 class ZStatSubPhase : public ZStatPhase {
 public:
   ZStatSubPhase(const char* name);
 
-  virtual void register_start(const Ticks& start) const;
-  virtual void register_end(const Ticks& start, const Ticks& end) const;
+  virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
+  virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;
 };
 
 class ZStatCriticalPhase : public ZStatPhase {
@@ -269,8 +271,8 @@ private:
 public:
   ZStatCriticalPhase(const char* name, bool verbose = true);
 
-  virtual void register_start(const Ticks& start) const;
-  virtual void register_end(const Ticks& start, const Ticks& end) const;
+  virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
+  virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;
 };
 
 //
@@ -296,26 +298,47 @@ public:
 
 class ZStatTimer : public StackObj {
 private:
-  const bool        _enabled;
-  const ZStatPhase& _phase;
-  const Ticks       _start;
+  const bool         _enabled;
+  ConcurrentGCTimer* _timer;
+  const ZStatPhase&  _phase;
+  const Ticks        _start;
 
 public:
-  ZStatTimer(const ZStatPhase& phase) :
+  ZStatTimer(ConcurrentGCTimer* timer, const ZStatPhase& phase) :
       _enabled(!ZStatTimerDisable::is_active()),
+      _timer(timer),
       _phase(phase),
       _start(Ticks::now()) {
     if (_enabled) {
-      _phase.register_start(_start);
+      _phase.register_start(_timer, _start);
     }
   }
 
   ~ZStatTimer() {
     if (_enabled) {
       const Ticks end = Ticks::now();
-      _phase.register_end(_start, end);
+      _phase.register_end(_timer, _start, end);
     }
   }
+};
+
+class ZStatTimerMinor : public ZStatTimer {
+public:
+  ZStatTimerMinor(const ZStatPhase& phase);
+};
+
+class ZStatTimerMajor : public ZStatTimer {
+public:
+  ZStatTimerMajor(const ZStatPhase& phase);
+};
+
+// FIXME: These sub-phases should belong somewhere.
+class ZStatTimerFIXME : public ZStatTimer {
+private:
+  ConcurrentGCTimer _temp_timer;
+public:
+  ZStatTimerFIXME(const ZStatPhase& phase) :
+      ZStatTimer(&_temp_timer, phase) {}
 };
 
 //
@@ -326,9 +349,9 @@ void ZStatInc(const ZStatCounter& counter, uint64_t increment = 1);
 void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment = 1);
 
 //
-// Stat allocation rate
+// Stat mutator allocation rate
 //
-class ZStatAllocRate : public AllStatic {
+class ZStatMutatorAllocRate : public AllStatic {
 private:
   static const ZStatUnsampledCounter _counter;
   static TruncatedSeq                _samples;
@@ -369,29 +392,31 @@ public:
 //
 // Stat cycle
 //
-class ZStatCycle : public AllStatic {
+class ZStatCycle {
 private:
-  static uint64_t  _nwarmup_cycles;
-  static Ticks     _start_of_last;
-  static Ticks     _end_of_last;
-  static NumberSeq _serial_time;
-  static NumberSeq _parallelizable_time;
-  static uint      _last_active_workers;
+  uint64_t  _nwarmup_cycles;
+  Ticks     _start_of_last;
+  Ticks     _end_of_last;
+  NumberSeq _serial_time;
+  NumberSeq _parallelizable_time;
+  uint      _last_active_workers;
 
 public:
-  static void at_start();
-  static void at_end(GCCause::Cause cause, uint active_workers);
+  ZStatCycle();
 
-  static bool is_warm();
-  static uint64_t nwarmup_cycles();
+  void at_start();
+  void at_end(GCCause::Cause cause, uint active_workers);
 
-  static bool is_time_trustable();
-  static const AbsSeq& serial_time();
-  static const AbsSeq& parallelizable_time();
+  bool is_warm();
+  uint64_t nwarmup_cycles();
 
-  static uint last_active_workers();
+  bool is_time_trustable();
+  const AbsSeq& serial_time();
+  const AbsSeq& parallelizable_time();
 
-  static double time_since_last();
+  uint last_active_workers();
+
+  double time_since_last();
 };
 
 //
@@ -420,46 +445,50 @@ public:
 //
 // Stat mark
 //
-class ZStatMark : public AllStatic {
+class ZStatMark {
 private:
-  static size_t _nstripes;
-  static size_t _nproactiveflush;
-  static size_t _nterminateflush;
-  static size_t _ntrycomplete;
-  static size_t _ncontinue;
-  static size_t _mark_stack_usage;
+  size_t _nstripes;
+  size_t _nproactiveflush;
+  size_t _nterminateflush;
+  size_t _ntrycomplete;
+  size_t _ncontinue;
+  size_t _mark_stack_usage;
 
 public:
-  static void set_at_mark_start(size_t nstripes);
-  static void set_at_mark_end(size_t nproactiveflush,
-                              size_t nterminateflush,
-                              size_t ntrycomplete,
-                              size_t ncontinue);
-  static void set_at_mark_free(size_t mark_stack_usage);
+  ZStatMark();
 
-  static void print();
+  void set_at_mark_start(size_t nstripes);
+  void set_at_mark_end(size_t nproactiveflush,
+                       size_t nterminateflush,
+                       size_t ntrycomplete,
+                       size_t ncontinue);
+  void set_at_mark_free(size_t mark_stack_usage);
+
+  void print();
 };
 
 //
 // Stat relocation
 //
-class ZStatRelocation : public AllStatic {
+class ZStatRelocation {
 private:
-  static ZRelocationSetSelectorStats _selector_stats;
-  static size_t                      _forwarding_usage;
-  static size_t                      _small_in_place_count;
-  static size_t                      _medium_in_place_count;
+  ZRelocationSetSelectorStats _selector_stats;
+  size_t                      _forwarding_usage;
+  size_t                      _small_in_place_count;
+  size_t                      _medium_in_place_count;
 
-  static void print(const char* name,
-                    const ZRelocationSetSelectorGroupStats& selector_group,
-                    size_t in_place_count);
+  void print(const char* name,
+             const ZRelocationSetSelectorGroupStats& selector_group,
+             size_t in_place_count);
 
 public:
-  static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& selector_stats);
-  static void set_at_install_relocation_set(size_t forwarding_usage);
-  static void set_at_relocate_end(size_t small_in_place_count, size_t medium_in_place_count);
+  ZStatRelocation();
 
-  static void print();
+  void set_at_select_relocation_set(const ZRelocationSetSelectorStats& selector_stats);
+  void set_at_install_relocation_set(size_t forwarding_usage);
+  void set_at_relocate_end(size_t small_in_place_count, size_t medium_in_place_count);
+
+  void print();
 };
 
 //
@@ -504,21 +533,21 @@ public:
 //
 // Stat heap
 //
-class ZStatHeap : public AllStatic {
+class ZStatHeap {
 private:
   static struct ZAtInitialize {
     size_t min_capacity;
     size_t max_capacity;
   } _at_initialize;
 
-  static struct ZAtMarkStart {
+  struct ZAtMarkStart {
     size_t soft_max_capacity;
     size_t capacity;
     size_t free;
     size_t used;
   } _at_mark_start;
 
-  static struct ZAtMarkEnd {
+  struct ZAtMarkEnd {
     size_t capacity;
     size_t free;
     size_t used;
@@ -527,7 +556,7 @@ private:
     size_t garbage;
   } _at_mark_end;
 
-  static struct ZAtRelocateStart {
+  struct ZAtRelocateStart {
     size_t capacity;
     size_t free;
     size_t used;
@@ -536,7 +565,7 @@ private:
     size_t reclaimed;
   } _at_relocate_start;
 
-  static struct ZAtRelocateEnd {
+  struct ZAtRelocateEnd {
     size_t capacity;
     size_t capacity_high;
     size_t capacity_low;
@@ -551,25 +580,26 @@ private:
     size_t reclaimed;
   } _at_relocate_end;
 
-  static size_t capacity_high();
-  static size_t capacity_low();
-  static size_t free(size_t used);
-  static size_t allocated(size_t used, size_t reclaimed);
-  static size_t garbage(size_t reclaimed);
+  size_t capacity_high();
+  size_t capacity_low();
+  size_t free(size_t used);
+  size_t allocated(size_t used, size_t reclaimed);
+  size_t garbage(size_t reclaimed);
 
 public:
-  static void set_at_initialize(const ZPageAllocatorStats& stats);
-  static void set_at_mark_start(const ZPageAllocatorStats& stats);
-  static void set_at_mark_end(const ZPageAllocatorStats& stats);
-  static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
-  static void set_at_relocate_start(const ZPageAllocatorStats& stats);
-  static void set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated);
+  void set_at_initialize(const ZPageAllocatorStats& stats);
+  void set_at_mark_start(const ZPageAllocatorStats& stats);
+  void set_at_mark_end(const ZPageAllocatorStats& stats);
+  void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
+  void set_at_relocate_start(const ZPageAllocatorStats& stats);
+  void set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated);
 
   static size_t max_capacity();
-  static size_t used_at_mark_start();
-  static size_t used_at_relocate_end();
+  size_t used_at_mark_start();
+  size_t live_at_mark_end();
+  size_t used_at_relocate_end();
 
-  static void print();
+  void print();
 };
 
 #endif // SHARE_GC_Z_ZSTAT_HPP

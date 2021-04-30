@@ -74,4 +74,8 @@ inline uint32_t ZHash::address_to_uint32(uintptr_t key) {
   return uint32_to_uint32((uint32_t)(key >> 3));
 }
 
+inline uint32_t ZHash::offset_to_uint32(zoffset key) {
+  return address_to_uint32(untype(key));
+}
+
 #endif // SHARE_GC_Z_ZHASH_INLINE_HPP

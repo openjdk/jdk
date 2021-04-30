@@ -83,12 +83,17 @@ class GCCause : public AllStatic {
     _shenandoah_concurrent_gc,
     _shenandoah_upgrade_to_full_gc,
 
-    _z_timer,
-    _z_warmup,
-    _z_allocation_rate,
-    _z_allocation_stall,
-    _z_proactive,
-    _z_high_usage,
+    _z_minor_timer,
+    _z_minor_allocation_rate,
+    _z_minor_before_major,
+    _z_minor_inside_major,
+
+    _z_major_timer,
+    _z_major_warmup,
+    _z_major_allocation_rate,
+    _z_major_allocation_stall,
+    _z_major_proactive,
+    _z_major_high_usage,
 
     _last_gc_cause
   };

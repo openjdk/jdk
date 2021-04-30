@@ -27,23 +27,65 @@
 #include "gc/z/zRelocationSet.hpp"
 
 class ZForwarding;
+class ZGeneration;
 class ZWorkers;
+
+class ZRelocateQueue {
+private:
+  ZConditionLock       _lock;
+  ZArray<ZForwarding*> _queue;
+  uint                 _nworkers;
+  uint                 _nsynchronized;
+  bool                 _synchronize;
+  volatile int         _needs_attention;
+
+  bool needs_attention() const;
+  void inc_needs_attention();
+  void dec_needs_attention();
+
+  bool is_enabled() const;
+
+public:
+  ZRelocateQueue();
+
+  void join(uint nworkers);
+  void leave();
+
+  void add(ZForwarding* forwarding);
+  bool poll(ZForwarding** forwarding, bool* synchronized);
+  void clear();
+
+  void synchronize();
+  void desynchronize();
+};
 
 class ZRelocate {
   friend class ZRelocateTask;
 
 private:
-  ZWorkers* const _workers;
+  ZCycle* const  _cycle;
+  ZRelocateQueue _queue;
 
+  ZWorkers* workers() const;
   void work(ZRelocationSetParallelIterator* iter);
 
 public:
-  ZRelocate(ZWorkers* workers);
+  ZRelocate(ZCycle* cycle);
 
-  uintptr_t relocate_object(ZForwarding* forwarding, uintptr_t from_addr) const;
-  uintptr_t forward_object(ZForwarding* forwarding, uintptr_t from_addr) const;
+  void start();
+
+  static void add_remset(volatile zpointer* p);
+  static void add_remset_for_fields(volatile zaddress addr);
+
+  zaddress relocate_object(ZForwarding* forwarding, zaddress_unsafe from_addr);
+  zaddress forward_object(ZForwarding* forwarding, zaddress_unsafe from_addr);
 
   void relocate(ZRelocationSet* relocation_set);
+
+  void promote_pages(const ZArray<ZPage*>* pages);
+
+  void synchronize();
+  void desynchronize();
 };
 
 #endif // SHARE_GC_Z_ZRELOCATE_HPP

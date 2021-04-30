@@ -44,7 +44,7 @@ public:
       _started(0),
       _lock() {}
 
-  virtual void work(uint worker_id) {
+  virtual void work(uint /* worker_id */) {
     // Register as worker
     ZThread::set_worker();
 
@@ -61,8 +61,8 @@ public:
   }
 };
 
-ZWorkers::ZWorkers() :
-    _workers("ZWorker",
+ZWorkers::ZWorkers(const char* name) :
+    _workers(name,
              UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads),
              true /* are_GC_task_threads */,
              true /* are_ConcurrentGC_threads */) {

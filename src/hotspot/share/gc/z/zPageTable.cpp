@@ -30,10 +30,10 @@
 #include "utilities/debug.hpp"
 
 ZPageTable::ZPageTable() :
-    _map(ZAddressOffsetMax) {}
+    _map(ZAddressOffsetMaxSize) {}
 
 void ZPageTable::insert(ZPage* page) {
-  const uintptr_t offset = page->start();
+  const zoffset offset = page->start();
   const size_t size = page->size();
 
   // Make sure a newly created page is
@@ -45,9 +45,43 @@ void ZPageTable::insert(ZPage* page) {
 }
 
 void ZPageTable::remove(ZPage* page) {
-  const uintptr_t offset = page->start();
+  const zoffset offset = page->start();
   const size_t size = page->size();
 
   assert(_map.get(offset) == page, "Invalid entry");
   _map.put(offset, size, NULL);
+}
+
+void ZPageTable::replace(ZPage* old_page, ZPage* new_page) {
+  const zoffset offset = old_page->start();
+  const size_t size = old_page->size();
+
+  assert(_map.get(offset) == old_page, "Invalid entry");
+  _map.release_put(offset, size, new_page);
+}
+
+ZGenerationPagesParallelIterator::ZGenerationPagesParallelIterator(const ZPageTable* page_table, ZGenerationId generation, ZPageAllocator* page_allocator) :
+    _iterator(page_table),
+    _generation_id(generation),
+    _page_allocator(page_allocator) {
+  _page_allocator->enable_deferred_destroy();
+  _page_allocator->enable_deferred_recycle();
+}
+
+ZGenerationPagesParallelIterator::~ZGenerationPagesParallelIterator() {
+  _page_allocator->disable_deferred_recycle();
+  _page_allocator->disable_deferred_destroy();
+}
+
+ZGenerationPagesIterator::ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId generation, ZPageAllocator* page_allocator) :
+    _iterator(page_table),
+    _generation_id(generation),
+    _page_allocator(page_allocator) {
+  _page_allocator->enable_deferred_destroy();
+  _page_allocator->enable_deferred_recycle();
+}
+
+ZGenerationPagesIterator::~ZGenerationPagesIterator() {
+  _page_allocator->disable_deferred_recycle();
+  _page_allocator->disable_deferred_destroy();
 }

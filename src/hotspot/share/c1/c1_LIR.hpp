@@ -1001,6 +1001,7 @@ enum LIR_Condition {
   , lir_cond_greaterEqual
   , lir_cond_greater
   , lir_cond_belowEqual
+  , lir_cond_above
   , lir_cond_aboveEqual
   , lir_cond_always
   , lir_cond_unknown = -1

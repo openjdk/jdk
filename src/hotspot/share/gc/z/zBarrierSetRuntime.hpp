@@ -35,10 +35,10 @@ private:
   static oopDesc* load_barrier_on_oop_field_preloaded(oopDesc* o, oop* p);
   static oopDesc* load_barrier_on_weak_oop_field_preloaded(oopDesc* o, oop* p);
   static oopDesc* load_barrier_on_phantom_oop_field_preloaded(oopDesc* o, oop* p);
-  static oopDesc* weak_load_barrier_on_oop_field_preloaded(oopDesc* o, oop* p);
-  static oopDesc* weak_load_barrier_on_weak_oop_field_preloaded(oopDesc* o, oop* p);
-  static oopDesc* weak_load_barrier_on_phantom_oop_field_preloaded(oopDesc* o, oop* p);
-  static void load_barrier_on_oop_array(oop* p, size_t length);
+  static oopDesc* no_keepalive_load_barrier_on_weak_oop_field_preloaded(oopDesc* o, oop* p);
+  static oopDesc* no_keepalive_load_barrier_on_phantom_oop_field_preloaded(oopDesc* o, oop* p);
+  static void store_barrier_on_oop_field_with_healing(oop* p);
+  static void store_barrier_on_oop_field_without_healing(oop* p);
   static void clone(oopDesc* src, oopDesc* dst, size_t size);
 
 public:
@@ -46,10 +46,10 @@ public:
   static address load_barrier_on_oop_field_preloaded_addr();
   static address load_barrier_on_weak_oop_field_preloaded_addr();
   static address load_barrier_on_phantom_oop_field_preloaded_addr();
-  static address weak_load_barrier_on_oop_field_preloaded_addr();
-  static address weak_load_barrier_on_weak_oop_field_preloaded_addr();
-  static address weak_load_barrier_on_phantom_oop_field_preloaded_addr();
-  static address load_barrier_on_oop_array_addr();
+  static address no_keepalive_load_barrier_on_weak_oop_field_preloaded_addr();
+  static address no_keepalive_load_barrier_on_phantom_oop_field_preloaded_addr();
+  static address store_barrier_on_oop_field_with_healing_addr();
+  static address store_barrier_on_oop_field_without_healing_addr();
   static address clone_addr();
 };
 

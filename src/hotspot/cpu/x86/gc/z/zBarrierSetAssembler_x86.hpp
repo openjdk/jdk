@@ -33,17 +33,28 @@
 class MacroAssembler;
 
 #ifdef COMPILER1
+class CodeStub;
+class LIR_Address;
 class LIR_Assembler;
 class LIR_OprDesc;
 typedef LIR_OprDesc* LIR_Opr;
 class StubAssembler;
 class ZLoadBarrierStubC1;
+class ZStoreBarrierStubC1;
 #endif // COMPILER1
 
 #ifdef COMPILER2
+class MachNode;
 class Node;
 class ZLoadBarrierStubC2;
+class ZStoreBarrierStubC2;
 #endif // COMPILER2
+
+const int ZBarrierRelocationFormatLoadGoodBeforeShl = 0;
+const int ZBarrierRelocationFormatMarkBadAfterTest  = 1;
+const int ZBarrierRelocationFormatStoreGoodAfterCmp = 2;
+const int ZBarrierRelocationFormatStoreBadAfterTest = 3;
+const int ZBarrierRelocationFormatStoreGoodAfterOr  = 4;
 
 class ZBarrierSetAssembler : public ZBarrierSetAssemblerBase {
 public:
@@ -55,15 +66,35 @@ public:
                        Register tmp1,
                        Register tmp_thread);
 
-#ifdef ASSERT
   virtual void store_at(MacroAssembler* masm,
                         DecoratorSet decorators,
                         BasicType type,
                         Address dst,
                         Register src,
                         Register tmp1,
-                        Register tmp2);
-#endif // ASSERT
+                        Register tmp2,
+                        Register tmp3);
+
+  virtual void copy_at(MacroAssembler* masm,
+                       DecoratorSet decorators,
+                       BasicType type,
+                       size_t bytes,
+                       Address dst,
+                       Address src,
+                       Register tmp1,
+                       Register tmp2);
+
+  virtual void copy_at(MacroAssembler* masm,
+                       DecoratorSet decorators,
+                       BasicType type,
+                       size_t bytes,
+                       Address dst,
+                       Address src,
+                       Register tmp1,
+                       Register tmp2,
+                       XMMRegister xmm_tmp1,
+                       XMMRegister xmm_tmp2,
+                       bool forward);
 
   virtual void arraycopy_prologue(MacroAssembler* masm,
                                   DecoratorSet decorators,
@@ -79,8 +110,21 @@ public:
                                              Label& slowpath);
 
 #ifdef COMPILER1
-  void generate_c1_load_barrier_test(LIR_Assembler* ce,
-                                     LIR_Opr ref) const;
+  void generate_c1_store_barrier(LIR_Assembler* ce,
+                                 LIR_Address* addr,
+                                 LIR_Opr new_zaddress,
+                                 LIR_Opr new_zpointer,
+                                 ZStoreBarrierStubC1* stub) const;
+
+  void generate_c1_store_barrier_stub(LIR_Assembler* ce,
+                                      ZStoreBarrierStubC1* stub) const;
+
+  void generate_uncolor(LIR_Assembler* ce, LIR_Opr ref) const;
+
+  void generate_c1_load_barrier(LIR_Assembler* ce,
+                                LIR_Opr ref,
+                                ZLoadBarrierStubC1* stub,
+                                bool on_non_strong) const;
 
   void generate_c1_load_barrier_stub(LIR_Assembler* ce,
                                      ZLoadBarrierStubC1* stub) const;
@@ -95,7 +139,29 @@ public:
 
   void generate_c2_load_barrier_stub(MacroAssembler* masm,
                                      ZLoadBarrierStubC2* stub) const;
+  void generate_c2_store_barrier_stub(MacroAssembler* masm,
+                                      ZStoreBarrierStubC2* stub) const;
+  void prefetch_stores(MacroAssembler* masm, const MachNode* node, Register base);
 #endif // COMPILER2
+
+  void store_barrier_fast(MacroAssembler* masm,
+                          Address ref_addr,
+                          Register rnew_persistent,
+                          Register rnew_transient,
+                          bool in_nmethod,
+                          bool is_atomic,
+                          Label& medium_path,
+                          Label& medium_path_continuation) const;
+
+  void store_barrier_medium(MacroAssembler* masm,
+                            Address ref_addr,
+                            Register tmp,
+                            bool is_atomic,
+                            Label& medium_path_continuation,
+                            Label& slow_path,
+                            Label& slow_path_continuation) const;
+
+  void patch_barrier_relocation(address addr, int format);
 };
 
 #endif // CPU_X86_GC_Z_ZBARRIERSETASSEMBLER_X86_HPP

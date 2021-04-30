@@ -128,7 +128,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
 }
 
 void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                                Address dst, Register val, Register tmp1, Register tmp2) {
+                                                Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool in_heap = (decorators & IN_HEAP) != 0;
 
   bool is_array = (decorators & IS_ARRAY) != 0;
@@ -137,7 +137,7 @@ void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorS
 
   bool needs_post_barrier = val != noreg && in_heap;
 
-  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, noreg, noreg);
+  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, noreg, noreg, noreg);
   if (needs_post_barrier) {
     // flatten object address if needed
     if (!precise || (dst.index() == noreg && dst.disp() == 0)) {

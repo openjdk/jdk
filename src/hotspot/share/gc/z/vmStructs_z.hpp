@@ -41,16 +41,11 @@ public:
 
   ZGlobalsForVMStructs();
 
-  uint32_t* _ZGlobalPhase;
-
-  uint32_t* _ZGlobalSeqNum;
-
   uintptr_t* _ZAddressOffsetMask;
   uintptr_t* _ZAddressMetadataMask;
   uintptr_t* _ZAddressMetadataFinalizable;
   uintptr_t* _ZAddressGoodMask;
   uintptr_t* _ZAddressBadMask;
-  uintptr_t* _ZAddressWeakBadMask;
 
   const int* _ZObjectAlignmentSmallShift;
   const int* _ZObjectAlignmentSmall;
@@ -62,14 +57,11 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
 
 #define VM_STRUCTS_ZGC(nonstatic_field, volatile_nonstatic_field, static_field)                      \
   static_field(ZGlobalsForVMStructs,            _instance_p,          ZGlobalsForVMStructs*)         \
-  nonstatic_field(ZGlobalsForVMStructs,         _ZGlobalPhase,        uint32_t*)                     \
-  nonstatic_field(ZGlobalsForVMStructs,         _ZGlobalSeqNum,       uint32_t*)                     \
   nonstatic_field(ZGlobalsForVMStructs,         _ZAddressOffsetMask,  uintptr_t*)                    \
   nonstatic_field(ZGlobalsForVMStructs,         _ZAddressMetadataMask, uintptr_t*)                   \
   nonstatic_field(ZGlobalsForVMStructs,         _ZAddressMetadataFinalizable, uintptr_t*)            \
   nonstatic_field(ZGlobalsForVMStructs,         _ZAddressGoodMask,    uintptr_t*)                    \
   nonstatic_field(ZGlobalsForVMStructs,         _ZAddressBadMask,     uintptr_t*)                    \
-  nonstatic_field(ZGlobalsForVMStructs,         _ZAddressWeakBadMask, uintptr_t*)                    \
   nonstatic_field(ZGlobalsForVMStructs,         _ZObjectAlignmentSmallShift, const int*)             \
   nonstatic_field(ZGlobalsForVMStructs,         _ZObjectAlignmentSmall, const int*)                  \
                                                                                                      \
@@ -77,13 +69,11 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
                                                                                                      \
   nonstatic_field(ZHeap,                        _page_allocator,      ZPageAllocator)                \
   nonstatic_field(ZHeap,                        _page_table,          ZPageTable)                    \
-  nonstatic_field(ZHeap,                        _forwarding_table,    ZForwardingTable)              \
-  nonstatic_field(ZHeap,                        _relocate,            ZRelocate)                     \
                                                                                                      \
   nonstatic_field(ZPage,                        _type,                const uint8_t)                 \
-  nonstatic_field(ZPage,                        _seqnum,              uint32_t)                      \
+  volatile_nonstatic_field(ZPage,               _seqnum,              uint32_t)                      \
   nonstatic_field(ZPage,                        _virtual,             const ZVirtualMemory)          \
-  volatile_nonstatic_field(ZPage,               _top,                 uintptr_t)                     \
+  volatile_nonstatic_field(ZPage,               _top,                 zoffset)                       \
                                                                                                      \
   nonstatic_field(ZPageAllocator,               _max_capacity,        const size_t)                  \
   volatile_nonstatic_field(ZPageAllocator,      _capacity,            size_t)                        \
@@ -96,8 +86,8 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
                                                                                                      \
   nonstatic_field(ZForwardingTable,             _map,                 ZGranuleMapForForwarding)      \
                                                                                                      \
-  nonstatic_field(ZVirtualMemory,               _start,               const uintptr_t)               \
-  nonstatic_field(ZVirtualMemory,               _end,                 const uintptr_t)               \
+  nonstatic_field(ZVirtualMemory,               _start,               const zoffset)                 \
+  nonstatic_field(ZVirtualMemory,               _end,                 const zoffset)                 \
                                                                                                      \
   nonstatic_field(ZForwarding,                  _virtual,             const ZVirtualMemory)          \
   nonstatic_field(ZForwarding,                  _object_alignment_shift, const size_t)               \
@@ -107,7 +97,6 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   nonstatic_field(ZAttachedArrayForForwarding,  _length,              const size_t)
 
 #define VM_INT_CONSTANTS_ZGC(declare_constant, declare_constant_with_value)                          \
-  declare_constant(ZPhaseRelocate)                                                                   \
   declare_constant(ZPageTypeSmall)                                                                   \
   declare_constant(ZPageTypeMedium)                                                                  \
   declare_constant(ZPageTypeLarge)                                                                   \
@@ -121,9 +110,10 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   declare_constant(ZAddressOffsetShift)                                                              \
   declare_constant(ZAddressOffsetBits)                                                               \
   declare_constant(ZAddressOffsetMask)                                                               \
-  declare_constant(ZAddressOffsetMax)
+  declare_constant(ZAddressOffsetMaxSize)
 
 #define VM_TYPES_ZGC(declare_type, declare_toplevel_type, declare_integer_type)                      \
+  declare_toplevel_type(zoffset)                                                                     \
   declare_toplevel_type(ZGlobalsForVMStructs)                                                        \
   declare_type(ZCollectedHeap, CollectedHeap)                                                        \
   declare_toplevel_type(ZHeap)                                                                       \

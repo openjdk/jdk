@@ -29,22 +29,22 @@
 #include "gc/z/zMemory.inline.hpp"
 
 inline ZVirtualMemory::ZVirtualMemory() :
-    _start(UINTPTR_MAX),
-    _end(UINTPTR_MAX) {}
+    _start(zoffset(UINTPTR_MAX)),
+    _end(zoffset(UINTPTR_MAX)) {}
 
-inline ZVirtualMemory::ZVirtualMemory(uintptr_t start, size_t size) :
+inline ZVirtualMemory::ZVirtualMemory(zoffset start, size_t size) :
     _start(start),
     _end(start + size) {}
 
 inline bool ZVirtualMemory::is_null() const {
-  return _start == UINTPTR_MAX;
+  return _start == zoffset(UINTPTR_MAX);
 }
 
-inline uintptr_t ZVirtualMemory::start() const {
+inline zoffset ZVirtualMemory::start() const {
   return _start;
 }
 
-inline uintptr_t ZVirtualMemory::end() const {
+inline zoffset ZVirtualMemory::end() const {
   return _end;
 }
 

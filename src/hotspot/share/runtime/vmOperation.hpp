@@ -60,10 +60,13 @@
   template(G1CollectFull)                         \
   template(G1Concurrent)                          \
   template(G1TryInitiateConcMark)                 \
-  template(ZMarkStart)                            \
-  template(ZMarkEnd)                              \
-  template(ZRelocateStart)                        \
-  template(ZVerify)                               \
+  template(ZMinorMarkStart)                       \
+  template(ZMinorMarkEnd)                         \
+  template(ZMinorRelocateStart)                   \
+  template(ZMajorMarkStart)                       \
+  template(ZMajorMarkEnd)                         \
+  template(ZMajorRelocateStart)                   \
+  template(ZMajorVerify)                          \
   template(HandshakeOneThread)                    \
   template(HandshakeAllThreads)                   \
   template(HandshakeFallback)                     \

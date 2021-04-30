@@ -29,41 +29,34 @@
 #include "runtime/atomic.hpp"
 
 template <typename T, bool Parallel>
-inline bool ZArrayIteratorImpl<T, Parallel>::next_serial(T* elem) {
+inline bool ZArrayIteratorImpl<T, Parallel>::next_serial(size_t* index) {
   if (_next == _end) {
     return false;
   }
 
-  *elem = *_next;
+  *index = _next;
   _next++;
 
   return true;
 }
 
 template <typename T, bool Parallel>
-inline bool ZArrayIteratorImpl<T, Parallel>::next_parallel(T* elem) {
-  const T* old_next = Atomic::load(&_next);
+inline bool ZArrayIteratorImpl<T, Parallel>::next_parallel(size_t* index) {
+  const size_t claimed_index = Atomic::fetch_and_add(&_next, 1u, memory_order_relaxed);
 
-  for (;;) {
-    if (old_next == _end) {
-      return false;
-    }
-
-    const T* const new_next = old_next + 1;
-    const T* const prev_next = Atomic::cmpxchg(&_next, old_next, new_next);
-    if (prev_next == old_next) {
-      *elem = *old_next;
-      return true;
-    }
-
-    old_next = prev_next;
+  if (claimed_index < _end) {
+    *index = claimed_index;
+    return true;
   }
+
+  return false;
 }
 
 template <typename T, bool Parallel>
 inline ZArrayIteratorImpl<T, Parallel>::ZArrayIteratorImpl(const T* array, size_t length) :
-    _next(array),
-    _end(array + length) {}
+    _next(0),
+    _end(length),
+    _array(array) {}
 
 template <typename T, bool Parallel>
 inline ZArrayIteratorImpl<T, Parallel>::ZArrayIteratorImpl(const ZArray<T>* array) :
@@ -71,11 +64,28 @@ inline ZArrayIteratorImpl<T, Parallel>::ZArrayIteratorImpl(const ZArray<T>* arra
 
 template <typename T, bool Parallel>
 inline bool ZArrayIteratorImpl<T, Parallel>::next(T* elem) {
-  if (Parallel) {
-    return next_parallel(elem);
-  } else {
-    return next_serial(elem);
+  size_t index;
+  if (next_index(&index)) {
+    *elem = index_to_elem(index);
+    return true;
   }
+
+  return false;
+}
+
+template <typename T, bool Parallel>
+inline bool ZArrayIteratorImpl<T, Parallel>::next_index(size_t* index) {
+  if (Parallel) {
+    return next_parallel(index);
+  } else {
+    return next_serial(index);
+  }
+}
+
+template <typename T, bool Parallel>
+inline T ZArrayIteratorImpl<T, Parallel>::index_to_elem(size_t index) {
+  assert(index < _end, "Out of bounds");
+  return _array[index];
 }
 
 #endif // SHARE_GC_Z_ZARRAY_INLINE_HPP

@@ -3480,31 +3480,44 @@ void MacroAssembler::vpermd(XMMRegister dst,  XMMRegister nds, AddressLiteral sr
   }
 }
 
-void MacroAssembler::clear_jweak_tag(Register possibly_jweak) {
-  const int32_t inverted_jweak_mask = ~static_cast<int32_t>(JNIHandles::weak_tag_mask);
-  STATIC_ASSERT(inverted_jweak_mask == -2); // otherwise check this code
+void MacroAssembler::clear_jobject_tag(Register possibly_non_local) {
+  const int32_t inverted_mask = ~static_cast<int32_t>(JNIHandles::tag_mask);
+  STATIC_ASSERT(inverted_mask == -4); // otherwise check this code
   // The inverted mask is sign-extended
-  andptr(possibly_jweak, inverted_jweak_mask);
+  andptr(possibly_non_local, inverted_mask);
 }
 
 void MacroAssembler::resolve_jobject(Register value,
                                      Register thread,
                                      Register tmp) {
   assert_different_registers(value, thread, tmp);
-  Label done, not_weak;
+  Label done, tagged, weak_tagged;
   testptr(value, value);
-  jcc(Assembler::zero, done);                // Use NULL as-is.
-  testptr(value, JNIHandles::weak_tag_mask); // Test for jweak tag.
-  jcc(Assembler::zero, not_weak);
+  jcc(Assembler::zero, done);           // Use NULL as-is.
+  testptr(value, JNIHandles::tag_mask); // Test for tag.
+  jcc(Assembler::notZero, tagged);
+
+  // Resolve local handle
+  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, value, Address(value, 0), tmp, thread);
+  //verify_oop(value);
+  jmp(done);
+
+  bind(tagged);
+  testptr(value, JNIHandles::weak_tag_mask); // Test for weak tag.
+  jcc(Assembler::notZero, weak_tagged);
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::global_tag_value), tmp, thread);
+  verify_oop(value);
+  jmp(done);
+
+  bind(weak_tagged);
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
                  value, Address(value, -JNIHandles::weak_tag_value), tmp, thread);
   verify_oop(value);
   jmp(done);
-  bind(not_weak);
-  // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, 0), tmp, thread);
-  verify_oop(value);
+
   bind(done);
 }
 
@@ -4487,6 +4500,7 @@ void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
   // OopHandle::resolve is an indirection like jobject.
   access_load_at(T_OBJECT, IN_NATIVE,
                  result, Address(result, 0), tmp, /*tmp_thread*/noreg);
+  verify_oop_msg(result, "resolve_oop_handle");
 }
 
 // ((WeakHandle)result).resolve();
@@ -4503,6 +4517,7 @@ void MacroAssembler::resolve_weak_handle(Register rresult, Register rtmp) {
   // WeakHandle::resolve is an indirection like jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
                  rresult, Address(rresult, 0), rtmp, /*tmp_thread*/noreg);
+  verify_oop_msg(rresult, "resolve_weak_handle");
   bind(resolved);
 }
 
@@ -4552,7 +4567,7 @@ void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                                     Register tmp1, Register thread_tmp) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
@@ -4562,14 +4577,14 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators, Reg
 }
 
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
-                                     Register tmp1, Register tmp2) {
+                                     Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2);
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
   } else {
-    bs->store_at(this, decorators, type, dst, src, tmp1, tmp2);
+    bs->store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
   }
 }
 
@@ -4585,13 +4600,13 @@ void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register 
 }
 
 void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
-                                    Register tmp2, DecoratorSet decorators) {
-  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2);
+                                    Register tmp2, Register tmp3, DecoratorSet decorators) {
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2, tmp3);
 }
 
 // Used for storing NULLs.
 void MacroAssembler::store_heap_oop_null(Address dst) {
-  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg);
+  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg, noreg);
 }
 
 #ifdef _LP64

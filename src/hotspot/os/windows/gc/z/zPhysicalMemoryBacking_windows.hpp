@@ -44,8 +44,8 @@ public:
   size_t commit(size_t offset, size_t length);
   size_t uncommit(size_t offset, size_t length);
 
-  void map(uintptr_t addr, size_t size, size_t offset) const;
-  void unmap(uintptr_t addr, size_t size) const;
+  void map(zaddress addr, size_t size, zoffset offset) const;
+  void unmap(zaddress addr, size_t size) const;
 };
 
 #endif // OS_WINDOWS_GC_Z_ZPHYSICALMEMORYBACKING_WINDOWS_HPP

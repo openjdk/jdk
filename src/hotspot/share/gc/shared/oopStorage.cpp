@@ -23,11 +23,14 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/universe.hpp"
+#include "oops/access.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
@@ -768,7 +771,8 @@ bool OopStorage::reduce_deferred_updates() {
 
 static inline void check_release_entry(const oop* entry) {
   assert(entry != NULL, "Releasing NULL");
-  assert(*entry == NULL, "Releasing uncleared entry: " PTR_FORMAT, p2i(entry));
+  assert(Universe::heap()->contains_null(entry),
+         "Releasing uncleared entry: " PTR_FORMAT, p2i(entry));
 }
 
 void OopStorage::release(const oop* ptr) {

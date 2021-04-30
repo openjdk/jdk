@@ -798,6 +798,7 @@ private:
 
   // These are all easily abused and hence protected
 
+ public:
   // 32BIT ONLY SECTION
 #ifndef _LP64
   // Make these disappear in 64bit mode since they would never be correct
@@ -819,6 +820,7 @@ private:
   void mov_narrow_oop(Address dst, int32_t imm32, RelocationHolder const& rspec);
 #endif // _LP64
 
+ protected:
   // These are unique in that we are ensured by the caller that the 32bit
   // relative in these instructions will always be able to reach the potentially
   // 64bit address described by entry. Since they can take a 64bit address they
@@ -1666,7 +1668,7 @@ private:
 
   void orq(Address dst, int32_t imm32);
   void orq(Address dst, Register src);
-  void orq(Register dst, int32_t imm32);
+  void orq(Register dst, int32_t imm32, bool compress_encoding = true);
   void orq(Register dst, Address src);
   void orq(Register dst, Register src);
 
@@ -2056,6 +2058,9 @@ private:
 
   void testb(Register dst, int imm8);
   void testb(Address dst, int imm8);
+
+  void testw(Address dst, int16_t imm16);
+  void testw(Register dst, int16_t imm16);
 
   void testl(Register dst, int32_t imm32);
   void testl(Register dst, Register src);

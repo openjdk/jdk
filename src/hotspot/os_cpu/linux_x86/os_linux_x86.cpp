@@ -218,15 +218,19 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   if (info != NULL && uc != NULL && thread != NULL) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
+    if (sig == SIGSEGV && info->si_addr == 0 && info->si_code == SI_KERNEL) {
 #ifndef AMD64
     // Halt if SI_KERNEL before more crashes get misdiagnosed as Java bugs
     // This can happen in any running code (currently more frequently in
     // interpreter code but has been seen in compiled code)
-    if (sig == SIGSEGV && info->si_addr == 0 && info->si_code == SI_KERNEL) {
       fatal("An irrecoverable SI_KERNEL SIGSEGV has occurred due "
             "to unstable signal handling in this distribution.");
+#else
+      // An irrecoverable SI_KERNEL SIGSEGV has occurred.
+      // It's likely caused by dereferencing an address larger than TASK_SIZE.
+      return false;
+#endif
     }
-#endif // AMD64
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV) {

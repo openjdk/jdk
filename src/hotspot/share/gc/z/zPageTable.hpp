@@ -25,13 +25,17 @@
 #define SHARE_GC_Z_ZPAGETABLE_HPP
 
 #include "gc/z/zGranuleMap.hpp"
+#include "gc/z/zIndexDistributor.hpp"
 #include "memory/allocation.hpp"
 
+class ZForwarding;
 class ZPage;
 
 class ZPageTable {
   friend class VMStructs;
+  friend class ZOldGenerationPagesSafeIterator;
   friend class ZPageTableIterator;
+  friend class ZPageTableParallelIterator;
 
 private:
   ZGranuleMap<ZPage*> _map;
@@ -39,21 +43,63 @@ private:
 public:
   ZPageTable();
 
-  ZPage* get(uintptr_t addr) const;
+  ZPage* get(zaddress addr) const;
+  ZPage* get(volatile zpointer* p) const;
+
+  ZPage* at(size_t index) const;
 
   void insert(ZPage* page);
   void remove(ZPage* page);
+  void replace(ZPage* old_page, ZPage* new_page);
 };
 
 class ZPageTableIterator : public StackObj {
 private:
-  ZGranuleMapIterator<ZPage*> _iter;
-  ZPage*                      _prev;
+  ZGranuleMapIterator<ZPage*, false> _iter;
+  ZPage*                              _prev;
 
 public:
-  ZPageTableIterator(const ZPageTable* page_table);
+  ZPageTableIterator(const ZPageTable* table);
 
   bool next(ZPage** page);
+};
+
+class ZPageTableParallelIterator : public StackObj {
+  const ZPageTable* _table;
+  ZIndexDistributor _index_distributor;
+
+public:
+  ZPageTableParallelIterator(const ZPageTable* table);
+
+  template <typename Function>
+  void do_pages(Function function);
+};
+
+class ZGenerationPagesIterator : public StackObj {
+private:
+  ZPageTableIterator _iterator;
+  ZGenerationId      _generation_id;
+  ZPageAllocator*    _page_allocator;
+
+public:
+  ZGenerationPagesIterator(const ZPageTable* page_table, ZGenerationId generation, ZPageAllocator* page_allocator);
+  ~ZGenerationPagesIterator();
+
+  bool next(ZPage** page);
+};
+
+class ZGenerationPagesParallelIterator : public StackObj {
+private:
+  ZPageTableParallelIterator _iterator;
+  ZGenerationId              _generation_id;
+  ZPageAllocator*            _page_allocator;
+
+public:
+  ZGenerationPagesParallelIterator(const ZPageTable* page_table, ZGenerationId generation, ZPageAllocator* page_allocator);
+  ~ZGenerationPagesParallelIterator();
+
+  template <typename Function>
+  void do_pages(Function function);
 };
 
 #endif // SHARE_GC_Z_ZPAGETABLE_HPP

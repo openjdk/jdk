@@ -32,6 +32,7 @@
 #include "c1/c1_LinearScan.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "code/vmreg.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -3271,8 +3272,11 @@ void LinearScan::verify() {
   TRACE_LINEAR_SCAN(2, tty->print_cr("********* verifying intervals ******************************************"));
   verify_intervals();
 
-  TRACE_LINEAR_SCAN(2, tty->print_cr("********* verifying that no oops are in fixed intervals ****************"));
-  verify_no_oops_in_fixed_intervals();
+  if (!UseZGC) {
+    // TODO: Find better solution
+    TRACE_LINEAR_SCAN(2, tty->print_cr("********* verifying that no oops are in fixed intervals ****************"));
+    verify_no_oops_in_fixed_intervals();
+  }
 
   TRACE_LINEAR_SCAN(2, tty->print_cr("********* verifying that unpinned constants are not alive across block boundaries"));
   verify_constants();

@@ -1708,8 +1708,9 @@ void Assembler::cmpl(Register dst, Address  src) {
 
 void Assembler::cmpw(Address dst, int imm16) {
   InstructionMark im(this);
-  assert(!dst.base_needs_rex() && !dst.index_needs_rex(), "no extended registers");
-  emit_int16(0x66, (unsigned char)0x81);
+  emit_int8(0x66);
+  prefix(dst);
+  emit_int8((unsigned char)0x81);
   emit_operand(rdi, dst, 2);
   emit_int16(imm16);
 }
@@ -5559,6 +5560,28 @@ void Assembler::testb(Address dst, int imm8) {
   emit_int8((unsigned char)0xF6);
   emit_operand(rax, dst, 1);
   emit_int8(imm8);
+}
+
+void Assembler::testw(Address dst, int16_t imm16) {
+  InstructionMark im(this);
+  emit_int8(0x66);
+  prefix(dst);
+  emit_int8((unsigned char)0xF7);
+  emit_operand(rax, dst, 1);
+  emit_int16(imm16);
+}
+
+void Assembler::testw(Register dst, int16_t imm16) {
+  int encode = dst->encoding();
+  InstructionMark im(this);
+  emit_int8(0x66);
+  if (encode == 0) {
+    emit_int8((unsigned char)0xA9);
+  } else {
+    encode = prefix_and_encode(encode);
+    emit_int16((unsigned char)0xF7, (0xC0 | encode));
+  }
+  emit_int16(imm16);
 }
 
 void Assembler::testl(Register dst, int32_t imm32) {
@@ -10586,9 +10609,13 @@ void Assembler::orq(Address dst, Register src) {
   emit_operand(src, dst);
 }
 
-void Assembler::orq(Register dst, int32_t imm32) {
+void Assembler::orq(Register dst, int32_t imm32, bool compress_encoding) {
   (void) prefixq_and_encode(dst->encoding());
-  emit_arith(0x81, 0xC8, dst, imm32);
+  if (compress_encoding) {
+    emit_arith(0x81, 0xC8, dst, imm32);
+  } else {
+    emit_arith_imm32(0x81, 0xC8, dst, imm32);
+  }
 }
 
 void Assembler::orq(Register dst, Address src) {

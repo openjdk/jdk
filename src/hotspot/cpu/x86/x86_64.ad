@@ -6057,6 +6057,7 @@ instruct storeL(memory mem, rRegL src)
 // Store Pointer
 instruct storeP(memory mem, any_RegP src)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreP mem src));
 
   ins_cost(125); // XXX
@@ -6069,7 +6070,7 @@ instruct storeP(memory mem, any_RegP src)
 
 instruct storeImmP0(memory mem, immP0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreP mem zero));
 
   ins_cost(125); // XXX
@@ -6083,6 +6084,7 @@ instruct storeImmP0(memory mem, immP0 zero)
 // Store NULL Pointer, mark word, or other simple pointer constant.
 instruct storeImmP(memory mem, immP31 src)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreP mem src));
 
   ins_cost(150); // XXX

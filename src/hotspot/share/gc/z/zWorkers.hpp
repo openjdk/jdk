@@ -34,7 +34,7 @@ private:
   WorkGang _workers;
 
 public:
-  ZWorkers();
+  ZWorkers(const char* name);
 
   uint active_workers() const;
   void set_active_workers(uint nworkers);

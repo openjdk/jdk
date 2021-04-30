@@ -44,17 +44,94 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
+template<typename K, typename V, size_t _table_size>
+class ZArenaHashtable : public ResourceObj {
+  class ZArenaHashtableEntry : public ResourceObj {
+  public:
+    ZArenaHashtableEntry* _next;
+    K _key;
+    V _value;
+  };
+
+  static const size_t _table_mask = _table_size - 1;
+
+  Arena* _arena;
+  ZArenaHashtableEntry* _table[_table_size];
+
+public:
+  class Iterator {
+    ZArenaHashtable* _table;
+    ZArenaHashtableEntry* _current_entry;
+    size_t _current_index;
+
+  public:
+    Iterator(ZArenaHashtable* table) :
+      _table(table),
+      _current_entry(table->_table[0]),
+      _current_index(0) {
+      if (_current_entry == NULL) {
+        next();
+      }
+    }
+
+    bool has_next() { return _current_entry != NULL; }
+    K key()         { return _current_entry->_key; }
+    V value()       { return _current_entry->_value; }
+
+    void next() {
+      if (_current_entry != NULL) {
+        _current_entry = _current_entry->_next;
+      }
+      while (_current_entry == NULL && ++_current_index < _table_size) {
+        _current_entry = _table->_table[_current_index];
+      }
+    }
+  };
+
+  ZArenaHashtable(Arena* arena) :
+      _arena(arena),
+      _table() {
+    Copy::zero_to_bytes(&_table, sizeof(ZArenaHashtableEntry*) * _table_size);
+  }
+
+  void add(K key, V value) {
+    ZArenaHashtableEntry* entry = new (_arena) ZArenaHashtableEntry();
+    entry->_key = key;
+    entry->_value = value;
+    entry->_next = _table[key & _table_mask];
+    _table[key & _table_mask] = entry;
+  }
+
+  V* get(K key) const {
+    for (ZArenaHashtableEntry* e = _table[key & _table_mask]; e != NULL; e = e->_next) {
+      if (e->_key == key) {
+        return &(e->_value);
+      }
+    }
+    return NULL;
+  }
+
+  Iterator iterator() {
+    return Iterator(this);
+  }
+};
+
+typedef ZArenaHashtable<intptr_t, bool, 4> ZOffsetTable;
+typedef ZArenaHashtable<node_idx_t, ZOffsetTable*, 128> ZPrefetchTable;
+
 class ZBarrierSetC2State : public ResourceObj {
 private:
-  GrowableArray<ZLoadBarrierStubC2*>* _stubs;
-  Node_Array                          _live;
+  GrowableArray<ZBarrierStubC2*>* _stubs;
+  Node_Array                      _live;
+  ZPrefetchTable*                 _prefetch_table;
 
 public:
   ZBarrierSetC2State(Arena* arena) :
-    _stubs(new (arena) GrowableArray<ZLoadBarrierStubC2*>(arena, 8,  0, NULL)),
-    _live(arena) {}
+    _stubs(new (arena) GrowableArray<ZBarrierStubC2*>(arena, 8,  0, NULL)),
+    _live(arena),
+    _prefetch_table(new (arena) ZPrefetchTable(arena)) {}
 
-  GrowableArray<ZLoadBarrierStubC2*>* stubs() {
+  GrowableArray<ZBarrierStubC2*>* stubs() {
     return _stubs;
   }
 
@@ -65,7 +142,7 @@ public:
     }
 
     const MachNode* const mach = node->as_Mach();
-    if (mach->barrier_data() == ZLoadBarrierElided) {
+    if (mach->barrier_data() == ZBarrierElided) {
       // Don't need liveness data for nodes without barriers
       return NULL;
     }
@@ -78,14 +155,48 @@ public:
 
     return live;
   }
+
+  ZPrefetchTable* prefetch_table() {
+    return _prefetch_table;
+  }
+
+  ZOffsetTable::Iterator prefetch_offsets(const Node* node) {
+    ZOffsetTable* offsets = *_prefetch_table->get(node->_idx);
+    return offsets->iterator();
+  }
 };
 
 static ZBarrierSetC2State* barrier_set_state() {
   return reinterpret_cast<ZBarrierSetC2State*>(Compile::current()->barrier_set_state());
 }
 
-ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data) {
-  ZLoadBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZLoadBarrierStubC2(node, ref_addr, ref, tmp, barrier_data);
+ZBarrierStubC2::ZBarrierStubC2(const MachNode* node) :
+    _node(node),
+    _entry(),
+    _continuation() {}
+
+Register ZBarrierStubC2::result() const {
+  return noreg;
+}
+
+RegMask& ZBarrierStubC2::live() const {
+  return *barrier_set_state()->live(_node);
+}
+
+Label* ZBarrierStubC2::entry() {
+  // The _entry will never be bound when in_scratch_emit_size() is true.
+  // However, we still need to return a label that is not bound now, but
+  // will eventually be bound. Any eventually bound label will do, as it
+  // will only act as a placeholder, so we return the _continuation label.
+  return Compile::current()->output()->in_scratch_emit_size() ? &_continuation : &_entry;
+}
+
+Label* ZBarrierStubC2::continuation() {
+  return &_continuation;
+}
+
+ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref_addr, Register ref) {
+  ZLoadBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZLoadBarrierStubC2(node, ref_addr, ref);
   if (!Compile::current()->output()->in_scratch_emit_size()) {
     barrier_set_state()->stubs()->append(stub);
   }
@@ -93,14 +204,10 @@ ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref
   return stub;
 }
 
-ZLoadBarrierStubC2::ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data) :
-    _node(node),
+ZLoadBarrierStubC2::ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref) :
+    ZBarrierStubC2(node),
     _ref_addr(ref_addr),
-    _ref(ref),
-    _tmp(tmp),
-    _barrier_data(barrier_data),
-    _entry(),
-    _continuation() {
+    _ref(ref) {
   assert_different_registers(ref, ref_addr.base());
   assert_different_registers(ref, ref_addr.index());
 }
@@ -113,41 +220,71 @@ Register ZLoadBarrierStubC2::ref() const {
   return _ref;
 }
 
-Register ZLoadBarrierStubC2::tmp() const {
-  return _tmp;
+Register ZLoadBarrierStubC2::result() const {
+  return ref();
 }
 
 address ZLoadBarrierStubC2::slow_path() const {
+  const uint8_t barrier_data = _node->barrier_data();
   DecoratorSet decorators = DECORATORS_NONE;
-  if (_barrier_data & ZLoadBarrierStrong) {
+  if (barrier_data & ZBarrierStrong) {
     decorators |= ON_STRONG_OOP_REF;
   }
-  if (_barrier_data & ZLoadBarrierWeak) {
+  if (barrier_data & ZBarrierWeak) {
     decorators |= ON_WEAK_OOP_REF;
   }
-  if (_barrier_data & ZLoadBarrierPhantom) {
+  if (barrier_data & ZBarrierPhantom) {
     decorators |= ON_PHANTOM_OOP_REF;
   }
-  if (_barrier_data & ZLoadBarrierNoKeepalive) {
+  if (barrier_data & ZBarrierNoKeepalive) {
     decorators |= AS_NO_KEEPALIVE;
   }
   return ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators);
 }
 
-RegMask& ZLoadBarrierStubC2::live() const {
-  return *barrier_set_state()->live(_node);
+void ZLoadBarrierStubC2::emit_code(MacroAssembler& masm) {
+  ZBarrierSet::assembler()->generate_c2_load_barrier_stub(&masm, static_cast<ZLoadBarrierStubC2*>(this));
 }
 
-Label* ZLoadBarrierStubC2::entry() {
-  // The _entry will never be bound when in_scratch_emit_size() is true.
-  // However, we still need to return a label that is not bound now, but
-  // will eventually be bound. Any lable will do, as it will only act as
-  // a placeholder, so we return the _continuation label.
-  return Compile::current()->output()->in_scratch_emit_size() ? &_continuation : &_entry;
+ZStoreBarrierStubC2* ZStoreBarrierStubC2::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_atomic) {
+  ZStoreBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_atomic);
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    barrier_set_state()->stubs()->append(stub);
+  }
+
+  return stub;
 }
 
-Label* ZLoadBarrierStubC2::continuation() {
-  return &_continuation;
+ZStoreBarrierStubC2::ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_atomic) :
+    ZBarrierStubC2(node),
+    _ref_addr(ref_addr),
+    _new_zaddress(new_zaddress),
+    _new_zpointer(new_zpointer),
+    _is_atomic(is_atomic) {
+}
+
+Address ZStoreBarrierStubC2::ref_addr() const {
+  return _ref_addr;
+}
+
+Register ZStoreBarrierStubC2::new_zaddress() const {
+  return _new_zaddress;
+}
+
+Register ZStoreBarrierStubC2::new_zpointer() const {
+  return _new_zpointer;
+}
+
+bool ZStoreBarrierStubC2::is_atomic() const {
+  return _is_atomic;
+}
+
+Register ZStoreBarrierStubC2::result() const {
+  return noreg;
+}
+
+void ZStoreBarrierStubC2::emit_code(MacroAssembler& masm) {
+  ZBarrierSet::assembler()->generate_c2_store_barrier_stub(&masm, static_cast<ZStoreBarrierStubC2*>(this));
 }
 
 void* ZBarrierSetC2::create_barrier_state(Arena* comp_arena) const {
@@ -155,13 +292,13 @@ void* ZBarrierSetC2::create_barrier_state(Arena* comp_arena) const {
 }
 
 void ZBarrierSetC2::late_barrier_analysis() const {
-  analyze_dominating_barriers();
   compute_liveness_at_stubs();
+  analyze_dominating_barriers();
 }
 
 void ZBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
   MacroAssembler masm(&cb);
-  GrowableArray<ZLoadBarrierStubC2*>* const stubs = barrier_set_state()->stubs();
+  GrowableArray<ZBarrierStubC2*>* const stubs = barrier_set_state()->stubs();
 
   for (int i = 0; i < stubs->length(); i++) {
     // Make sure there is enough space in the code buffer
@@ -170,7 +307,7 @@ void ZBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
       return;
     }
 
-    ZBarrierSet::assembler()->generate_c2_load_barrier_stub(&masm, stubs->at(i));
+    stubs->at(i)->emit_code(masm);
   }
 
   masm.flush();
@@ -179,13 +316,13 @@ void ZBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
 int ZBarrierSetC2::estimate_stub_size() const {
   Compile* const C = Compile::current();
   BufferBlob* const blob = C->output()->scratch_buffer_blob();
-  GrowableArray<ZLoadBarrierStubC2*>* const stubs = barrier_set_state()->stubs();
+  GrowableArray<ZBarrierStubC2*>* const stubs = barrier_set_state()->stubs();
   int size = 0;
 
   for (int i = 0; i < stubs->length(); i++) {
     CodeBuffer cb(blob->content_begin(), (address)C->output()->scratch_locs_memory() - blob->content_begin());
     MacroAssembler masm(&cb);
-    ZBarrierSet::assembler()->generate_c2_load_barrier_stub(&masm, stubs->at(i));
+    stubs->at(i)->emit_code(masm);
     size += cb.insts_size();
   }
 
@@ -193,23 +330,35 @@ int ZBarrierSetC2::estimate_stub_size() const {
 }
 
 static void set_barrier_data(C2Access& access) {
-  if (ZBarrierSet::barrier_needed(access.decorators(), access.type())) {
-    uint8_t barrier_data = 0;
-
-    if (access.decorators() & ON_PHANTOM_OOP_REF) {
-      barrier_data |= ZLoadBarrierPhantom;
-    } else if (access.decorators() & ON_WEAK_OOP_REF) {
-      barrier_data |= ZLoadBarrierWeak;
-    } else {
-      barrier_data |= ZLoadBarrierStrong;
-    }
-
-    if (access.decorators() & AS_NO_KEEPALIVE) {
-      barrier_data |= ZLoadBarrierNoKeepalive;
-    }
-
-    access.set_barrier_data(barrier_data);
+  if (!ZBarrierSet::barrier_needed(access.decorators(), access.type())) {
+    return;
   }
+
+  if (access.decorators() & C2_TIGHTLY_COUPLED_ALLOC) {
+    access.set_barrier_data(ZBarrierElided);
+    return;
+  }
+
+  uint8_t barrier_data = 0;
+
+  if (access.decorators() & ON_PHANTOM_OOP_REF) {
+    barrier_data |= ZBarrierPhantom;
+  } else if (access.decorators() & ON_WEAK_OOP_REF) {
+    barrier_data |= ZBarrierWeak;
+  } else {
+    barrier_data |= ZBarrierStrong;
+  }
+
+  if (access.decorators() & AS_NO_KEEPALIVE) {
+    barrier_data |= ZBarrierNoKeepalive;
+  }
+
+  access.set_barrier_data(barrier_data);
+}
+
+Node* ZBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
+  set_barrier_data(access);
+  return BarrierSetC2::store_at_resolved(access, val);
 }
 
 Node* ZBarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) const {
@@ -376,90 +525,133 @@ static uint block_index(const Block* block, const Node* node) {
   return 0;
 }
 
-void ZBarrierSetC2::analyze_dominating_barriers() const {
-  ResourceMark rm;
-  Compile* const C = Compile::current();
-  PhaseCFG* const cfg = C->cfg();
-  Block_List worklist;
-  Node_List mem_ops;
-  Node_List barrier_loads;
-
-  // Step 1 - Find accesses, and track them in lists
-  for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
-    const Block* const block = cfg->get_block(i);
-    for (uint j = 0; j < block->number_of_nodes(); ++j) {
-      const Node* const node = block->get_node(j);
-      if (!node->is_Mach()) {
-        continue;
+// Look through various node aliases
+static const Node* look_through_node(const Node* node) {
+  while (node != NULL) {
+    const Node* new_node = node;
+    if (node->is_Mach()) {
+      const MachNode* node_mach = node->as_Mach();
+      if (node_mach->ideal_Opcode() == Op_CheckCastPP) {
+        new_node = node->in(1);
       }
-
-      MachNode* const mach = node->as_Mach();
-      switch (mach->ideal_Opcode()) {
-      case Op_LoadP:
-        if ((mach->barrier_data() & ZLoadBarrierStrong) != 0) {
-          barrier_loads.push(mach);
-        }
-        if ((mach->barrier_data() & (ZLoadBarrierStrong | ZLoadBarrierNoKeepalive)) ==
-            ZLoadBarrierStrong) {
-          mem_ops.push(mach);
-        }
-        break;
-      case Op_CompareAndExchangeP:
-      case Op_CompareAndSwapP:
-      case Op_GetAndSetP:
-        if ((mach->barrier_data() & ZLoadBarrierStrong) != 0) {
-          barrier_loads.push(mach);
-        }
-      case Op_StoreP:
-        mem_ops.push(mach);
-        break;
-
-      default:
-        break;
+      if (node_mach->is_SpillCopy()) {
+        new_node = node->in(1);
       }
+    }
+    if (new_node == node || new_node == NULL) {
+      break;
+    } else {
+      node = new_node;
     }
   }
 
-  // Step 2 - Find dominating accesses for each load
-  for (uint i = 0; i < barrier_loads.size(); i++) {
-    MachNode* const load = barrier_loads.at(i)->as_Mach();
-    const TypePtr* load_adr_type = NULL;
-    intptr_t load_offset = 0;
-    const Node* const load_obj = load->get_base_and_disp(load_offset, load_adr_type);
-    Block* const load_block = cfg->get_block_for_node(load);
-    const uint load_index = block_index(load_block, load);
+  return node;
+}
 
-    for (uint j = 0; j < mem_ops.size(); j++) {
-      MachNode* mem = mem_ops.at(j)->as_Mach();
-      const TypePtr* mem_adr_type = NULL;
-      intptr_t mem_offset = 0;
-      const Node* mem_obj = mem->get_base_and_disp(mem_offset, mem_adr_type);
+static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
+  const TypePtr* adr_type = NULL;
+  offset = 0;
+  const Node* base = mach->get_base_and_disp(offset, adr_type);
+
+  if (base == NULL || base == NodeSentinel || offset < 0) {
+    return NULL;
+  }
+
+  return look_through_node(base);
+}
+
+// Match the phi node that connects a TLAB allocation fast path with its slowpath
+static bool is_allocation(const Node* node) {
+  if (node->req() != 3) {
+    return false;
+  }
+  const Node* fast_node = node->in(2);
+  if (!fast_node->is_Mach()) {
+    return false;
+  }
+  const MachNode* fast_mach = fast_node->as_Mach();
+  if (fast_mach->ideal_Opcode() != Op_LoadP) {
+    return false;
+  }
+  const TypePtr* adr_type = NULL;
+  intptr_t offset;
+  const Node* base = get_base_and_offset(fast_mach, offset);
+  if (base == NULL || !base->is_Mach()) {
+    return false;
+  }
+  const MachNode* base_mach = base->as_Mach();
+  if (base_mach->ideal_Opcode() != Op_ThreadLocal) {
+    return false;
+  }
+  return offset == in_bytes(Thread::tlab_top_offset());
+}
+
+static void elide_mach_barrier(MachNode* mach) {
+  mach->set_barrier_data(ZBarrierElided);
+}
+
+void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators, bool prefetch) const {
+  Block_List worklist;
+
+  Compile* const C = Compile::current();
+  PhaseCFG* const cfg = C->cfg();
+
+  for (uint i = 0; i < accesses.size(); i++) {
+    MachNode* const access = accesses.at(i)->as_Mach();
+    intptr_t access_offset;
+    const Node* const access_obj = get_base_and_offset(access, access_offset);
+    Block* const access_block = cfg->get_block_for_node(access);
+    const uint access_index = block_index(access_block, access);
+
+    if (access_obj == NULL) {
+      // No information available
+      continue;
+    }
+
+    if (prefetch) {
+      VectorSet visited_phis;
+      analyze_prefetching(access, access_block, access_index, access_offset, access_obj, visited_phis);
+    }
+
+    for (uint j = 0; j < access_dominators.size(); j++) {
+      Node* mem = access_dominators.at(j);
+      if (mem->is_Phi()) {
+        // Allocation node
+        if (mem != access_obj) {
+          continue;
+        }
+      } else {
+        // Access node
+        MachNode* mem_mach = mem->as_Mach();
+        intptr_t mem_offset;
+        const Node* mem_obj = get_base_and_offset(mem_mach, mem_offset);
+
+        if (mem_obj == NULL) {
+          // No information available
+          continue;
+        }
+
+        if (mem_obj != access_obj || mem_offset != access_offset) {
+          // Not the same addresses, not a candidate
+          continue;
+        }
+      }
+
       Block* mem_block = cfg->get_block_for_node(mem);
       uint mem_index = block_index(mem_block, mem);
 
-      if (load_obj == NodeSentinel || mem_obj == NodeSentinel ||
-          load_obj == NULL || mem_obj == NULL ||
-          load_offset < 0 || mem_offset < 0) {
-        continue;
-      }
-
-      if (mem_obj != load_obj || mem_offset != load_offset) {
-        // Not the same addresses, not a candidate
-        continue;
-      }
-
-      if (load_block == mem_block) {
+      if (access_block == mem_block) {
         // Earlier accesses in the same block
-        if (mem_index < load_index && !block_has_safepoint(mem_block, mem_index + 1, load_index)) {
-          load->set_barrier_data(ZLoadBarrierElided);
+        if (mem_index < access_index && !block_has_safepoint(mem_block, mem_index + 1, access_index)) {
+          elide_mach_barrier(access);
         }
-      } else if (mem_block->dominates(load_block)) {
+      } else if (mem_block->dominates(access_block)) {
         // Dominating block? Look around for safepoints
         ResourceMark rm;
         Block_List stack;
         VectorSet visited;
-        stack.push(load_block);
-        bool safepoint_found = block_has_safepoint(load_block);
+        stack.push(access_block);
+        bool safepoint_found = block_has_safepoint(access_block);
         while (!safepoint_found && stack.size() > 0) {
           Block* block = stack.pop();
           if (visited.test_set(block->_pre_order)) {
@@ -481,11 +673,85 @@ void ZBarrierSetC2::analyze_dominating_barriers() const {
         }
 
         if (!safepoint_found) {
-          load->set_barrier_data(ZLoadBarrierElided);
+          elide_mach_barrier(access);
         }
       }
     }
   }
+}
+
+void ZBarrierSetC2::analyze_dominating_barriers() const {
+  ResourceMark rm;
+  Compile* const C = Compile::current();
+  PhaseCFG* const cfg = C->cfg();
+
+  Node_List loads;
+  Node_List load_dominators;
+
+  Node_List stores;
+  Node_List store_dominators;
+
+  Node_List atomics;
+  Node_List atomic_dominators;
+
+  // Step 1 - Find accesses and allocations, and track them in lists
+  for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
+    const Block* const block = cfg->get_block(i);
+    for (uint j = 0; j < block->number_of_nodes(); ++j) {
+      Node* const node = block->get_node(j);
+      if (node->is_Phi()) {
+        if (is_allocation(node)) {
+          load_dominators.push(node);
+          store_dominators.push(node);
+          // An allocation can't be considered to "dominate" an atomic operation.
+          // For example a CAS requires the memory location to be store-good.
+          // When you have a dominating store or atomic instruction, that is
+          // indeed ensured to be the case. However, as for allocations, the
+          // initialized memory location could be raw null, which isn't store-good.
+        }
+        continue;
+      } else if (!node->is_Mach()) {
+        continue;
+      }
+
+      MachNode* const mach = node->as_Mach();
+      switch (mach->ideal_Opcode()) {
+      case Op_LoadP:
+        if ((mach->barrier_data() & ZBarrierStrong) != 0 &&
+            (mach->barrier_data() & ZBarrierNoKeepalive) == 0) {
+          loads.push(mach);
+          load_dominators.push(mach);
+        }
+        break;
+      case Op_StoreP:
+        if (mach->barrier_data() != 0) {
+          stores.push(mach);
+          load_dominators.push(mach);
+          store_dominators.push(mach);
+          atomic_dominators.push(mach);
+        }
+        break;
+      case Op_CompareAndExchangeP:
+      case Op_CompareAndSwapP:
+      case Op_GetAndSetP:
+        if (mach->barrier_data() != 0) {
+          atomics.push(mach);
+          load_dominators.push(mach);
+          store_dominators.push(mach);
+          atomic_dominators.push(mach);
+        }
+        break;
+
+      default:
+        break;
+      }
+    }
+  }
+
+  // Step 2 - Find dominating accesses or allocations for each access
+  analyze_dominating_barriers_impl(loads, load_dominators, false /* prefetch */);
+  analyze_dominating_barriers_impl(stores, store_dominators, true /* prefetch */);
+  analyze_dominating_barriers_impl(atomics, atomic_dominators, false /* prefetch */);
 }
 
 // == Reduced spilling optimization ==
@@ -560,5 +826,105 @@ void ZBarrierSetC2::compute_liveness_at_stubs() const {
         worklist.push(pred);
       }
     }
+  }
+}
+
+void ZBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {
+  eliminate_gc_barrier_data(node);
+}
+
+void ZBarrierSetC2::eliminate_gc_barrier_data(Node* node) const {
+  if (node->is_Mem()) {
+    MemNode* mem = node->as_Mem();
+    mem->set_barrier_data(ZBarrierElided);
+  } else if (node->is_LoadStore()) {
+    LoadStoreNode* loadstore = node->as_LoadStore();
+    loadstore->set_barrier_data(ZBarrierElided);
+  }
+}
+
+// == Prefetch optimization ==
+
+void ZBarrierSetC2::register_prefetch(const Node* node, intptr_t offset) const {
+  ZPrefetchTable* prefetch_table = barrier_set_state()->prefetch_table();
+  ZOffsetTable** offsets_ptr = prefetch_table->get(node->_idx);
+  ZOffsetTable* offsets;
+  if (offsets_ptr == NULL) {
+    Arena* arena = Compile::current()->comp_arena();
+    offsets = new (arena) ZOffsetTable(arena);
+    prefetch_table->add(node->_idx, offsets);
+  } else {
+    offsets = *offsets_ptr;
+  }
+  if (offsets->get(offset) == NULL) {
+    offsets->add(offset, true);
+  }
+}
+
+int z_offset_compare(intptr_t* a, intptr_t* b) {
+  return *a - *b;
+}
+
+GrowableArray<intptr_t>* ZBarrierSetC2::prefetch_offsets(const Node* node) const {
+  Arena* arena = Compile::current()->comp_arena();
+  GrowableArray<intptr_t>* result = new (arena) GrowableArray<intptr_t>(arena, 2,  0, 0);
+  ZPrefetchTable* prefetch_table = barrier_set_state()->prefetch_table();
+  ZOffsetTable** offsets_ptr = prefetch_table->get(node->_idx);
+  ZOffsetTable* offsets;
+  if (offsets_ptr == NULL) {
+    return result;
+  } else {
+    offsets = *offsets_ptr;
+  }
+  for (auto it = offsets->iterator(); it.has_next(); it.next()) {
+    result->append(it.key());
+  }
+  result->sort(z_offset_compare);
+  return result;
+}
+
+void ZBarrierSetC2::analyze_prefetching(const MachNode* access, Block* access_block, uint access_index, intptr_t access_offset, const Node* base, VectorSet& visited_phis) const {
+  if (!ZPrefetchStores) {
+    return;
+  }
+
+  static const float z_prefetch_block_probability = 0.0f;
+
+  if (base->is_Phi()) {
+    PhiNode* phi = base->as_Phi();
+    if (is_allocation(phi)) {
+      // No need to prefetch allocations; they already prefetch
+      return;
+    }
+    if (!visited_phis.test_set(phi->_idx)) {
+      for (uint i = 1; i < phi->req(); ++i) {
+        const Node* new_base = look_through_node(phi->in(i));
+        analyze_prefetching(access, access_block, access_index, access_offset, new_base, visited_phis);
+      }
+    }
+    return;
+  }
+
+  if (!base->is_Mach() || base->as_Mach()->barrier_data() == 0) {
+    // Not a ZGC load
+    return;
+  }
+
+  Compile* const C = Compile::current();
+  PhaseCFG* const cfg = C->cfg();
+
+  // A load is the base pointer of a subsequent access. Check if it is worthwhile
+  // to prefetch the subsequent access.
+  Block* const base_block = cfg->get_block_for_node(base);
+  if (base_block == access_block) {
+    // Same block - prefetch if far enough away
+    const uint base_index = block_index(base_block, base);
+    if (access_index - base_index > 4) {
+      // Far enough ahead; prefetch
+      register_prefetch(base, access_offset);
+    }
+  } else if (access_block->_freq > z_prefetch_block_probability) {
+    // The subsequent access is "likely" to be executed. Prefetch it!
+    register_prefetch(base, access_offset);
   }
 }

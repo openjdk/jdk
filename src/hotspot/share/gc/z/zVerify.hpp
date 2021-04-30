@@ -42,17 +42,7 @@ public:
   static void after_weak_processing();
 
   static void verify_thread_head_bad(JavaThread* thread) NOT_DEBUG_RETURN;
-  static void verify_thread_frames_bad(JavaThread* thread) NOT_DEBUG_RETURN;
   static void verify_frame_bad(const frame& fr, RegisterMap& register_map) NOT_DEBUG_RETURN;
-};
-
-class ZVerifyViewsFlip {
-private:
-  const ZPageAllocator* const _allocator;
-
-public:
-  ZVerifyViewsFlip(const ZPageAllocator* allocator);
-  ~ZVerifyViewsFlip();
 };
 
 #endif // SHARE_GC_Z_ZVERIFY_HPP

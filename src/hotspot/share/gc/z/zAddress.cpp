@@ -22,37 +22,88 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zAddress.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-void ZAddress::set_good_mask(uintptr_t mask) {
-  ZAddressGoodMask = mask;
-  ZAddressBadMask = ZAddressGoodMask ^ ZAddressMetadataMask;
-  ZAddressWeakBadMask = (ZAddressGoodMask | ZAddressMetadataRemapped | ZAddressMetadataFinalizable) ^ ZAddressMetadataMask;
+size_t    ZAddressOffsetBits;
+uintptr_t ZAddressOffsetMask;
+zoffset   ZAddressOffsetMax;
+size_t    ZAddressOffsetMaxSize;
+
+static void set_vector_mask(uintptr_t vector_mask[], uintptr_t mask) {
+  for (int i = 0; i < 8; ++i) {
+    vector_mask[i] = mask;
+  }
 }
 
-void ZAddress::initialize() {
+void ZGlobalsPointers::set_good_masks() {
+  ZAddressRemapped = ZAddressRemappedMajorMask & ZAddressRemappedMinorMask;
+
+  ZAddressLoadGoodMask  = ZAddressRemapped;
+  ZAddressMarkGoodMask  = ZAddressLoadGoodMask | ZAddressMarkedMinor | ZAddressMarkedMajor;
+  ZAddressStoreGoodMask = ZAddressMarkGoodMask | ZAddressRemembered;
+
+  ZAddressLoadGoodMask  = ZAddressRemapped;
+  ZAddressMarkGoodMask  = ZAddressLoadGoodMask | ZAddressMarkedMinor | ZAddressMarkedMajor;
+  ZAddressStoreGoodMask = ZAddressMarkGoodMask | ZAddressRemembered;
+
+  ZAddressLoadShift = ZPointer::load_shift_lookup(ZAddressLoadGoodMask);
+
+  ZAddressLoadBadMask  = ZAddressLoadGoodMask  ^ ZAddressLoadMetadataMask;
+  ZAddressMarkBadMask  = ZAddressMarkGoodMask  ^ ZAddressMarkMetadataMask;
+  ZAddressStoreBadMask = ZAddressStoreGoodMask ^ ZAddressStoreMetadataMask;
+
+  set_vector_mask(ZAddressVectorLoadBadMask, ZAddressLoadBadMask);
+  set_vector_mask(ZAddressVectorStoreBadMask, ZAddressStoreBadMask);
+  set_vector_mask(ZAddressVectorStoreGoodMask, ZAddressStoreGoodMask);
+}
+
+void ZGlobalsPointers::initialize() {
   ZAddressOffsetBits = ZPlatformAddressOffsetBits();
   ZAddressOffsetMask = (((uintptr_t)1 << ZAddressOffsetBits) - 1) << ZAddressOffsetShift;
-  ZAddressOffsetMax = (uintptr_t)1 << ZAddressOffsetBits;
+  ZAddressOffsetMaxSize = (uintptr_t)1 << ZAddressOffsetBits;
+  ZAddressOffsetMax = zoffset(ZAddressOffsetMaxSize);
 
-  ZAddressMetadataShift = ZPlatformAddressMetadataShift();
-  ZAddressMetadataMask = (((uintptr_t)1 << ZAddressMetadataBits) - 1) << ZAddressMetadataShift;
+  ZAddressHeapBaseShift = ZPlatformAddressHeapBaseShift();
+  ZAddressHeapBase = (uintptr_t)1 << ZAddressHeapBaseShift;
 
-  ZAddressMetadataMarked0 = (uintptr_t)1 << (ZAddressMetadataShift + 0);
-  ZAddressMetadataMarked1 = (uintptr_t)1 << (ZAddressMetadataShift + 1);
-  ZAddressMetadataRemapped = (uintptr_t)1 << (ZAddressMetadataShift + 2);
-  ZAddressMetadataFinalizable = (uintptr_t)1 << (ZAddressMetadataShift + 3);
+  ZAddressRemappedMinorMask = ZAddressRemapped10 | ZAddressRemapped00;
+  ZAddressRemappedMajorMask = ZAddressRemapped01 | ZAddressRemapped00;
+  ZAddressMarkedMinor = ZAddressMarkedMinor0;
+  ZAddressMarkedMajor = ZAddressMarkedMajor0;
+  ZAddressFinalizable = ZAddressFinalizable0;
+  ZAddressRemembered = ZAddressRemembered0;
 
-  ZAddressMetadataMarked = ZAddressMetadataMarked0;
-  set_good_mask(ZAddressMetadataRemapped);
+  set_good_masks();
+  set_vector_mask(ZAddressVectorUncolorMask, ~ZAddressAllMetadataMask);
 }
 
-void ZAddress::flip_to_marked() {
-  ZAddressMetadataMarked ^= (ZAddressMetadataMarked0 | ZAddressMetadataMarked1);
-  set_good_mask(ZAddressMetadataMarked);
+void ZGlobalsPointers::flip_minor_mark_start() {
+  ZAddressMarkedMinor ^= (ZAddressMarkedMinor0 | ZAddressMarkedMinor1);
+  ZAddressRemembered ^= (ZAddressRemembered0 | ZAddressRemembered1);
+  set_good_masks();
 }
 
-void ZAddress::flip_to_remapped() {
-  set_good_mask(ZAddressMetadataRemapped);
+void ZGlobalsPointers::flip_minor_relocate_start() {
+  ZAddressRemappedMinorMask ^= ZAddressRemappedMask;
+  set_good_masks();
+}
+
+void ZGlobalsPointers::flip_major_mark_start() {
+  ZAddressMarkedMajor ^= (ZAddressMarkedMajor0 | ZAddressMarkedMajor1);
+  ZAddressFinalizable ^= (ZAddressFinalizable0 | ZAddressFinalizable1);
+  set_good_masks();
+}
+
+void ZGlobalsPointers::flip_major_relocate_start() {
+  ZAddressRemappedMajorMask ^= ZAddressRemappedMask;
+  set_good_masks();
+}
+
+void z_catch_colored_oops(oopDesc* obj) {
+  if (UseZGC) {
+    (void)to_zaddress(obj);
+  }
 }

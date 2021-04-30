@@ -33,6 +33,11 @@
 inline ZBitMap::ZBitMap(idx_t size_in_bits) :
     CHeapBitMap(size_in_bits, mtGC, false /* clear */) {}
 
+inline ZBitMap::ZBitMap(const ZBitMap& other) :
+    CHeapBitMap(other.size(), mtGC, false /* clear */) {
+  memcpy(map(), other.map(), size_in_bytes());
+}
+
 inline BitMap::bm_word_t ZBitMap::bit_mask_pair(idx_t bit) {
   assert(bit_in_word(bit) < BitsPerWord - 1, "Invalid bit index");
   return (bm_word_t)3 << bit_in_word(bit);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,13 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZOOP_INLINE_HPP
-#define SHARE_GC_Z_ZOOP_INLINE_HPP
+#include "precompiled.hpp"
+#include "gc/z/zUncoloredRoot.inline.hpp"
 
-#include "gc/z/zOop.hpp"
-
-inline oop ZOop::from_address(uintptr_t addr) {
-  return cast_to_oop(addr);
+void ZUncoloredRootClosure::do_oop(oop* p) {
+  do_root(ZUncoloredRoot::cast(p));
 }
 
-inline uintptr_t ZOop::to_address(oop o) {
-  return cast_from_oop<uintptr_t>(o);
+void ZUncoloredRootClosure::do_oop(narrowOop* p) {
+  ShouldNotReachHere();
 }
-
-#endif // SHARE_GC_Z_ZOOP_INLINE_HPP

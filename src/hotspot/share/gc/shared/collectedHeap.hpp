@@ -391,6 +391,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   virtual void keep_alive(oop obj) {}
 
+  // Checks if the address contains a NULL value
+  virtual bool contains_null(const oop* p);
+
   // Perform any cleanup actions necessary before allowing a verification.
   virtual void prepare_for_verify() = 0;
 
@@ -474,8 +477,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Support for object pinning. This is used by JNI Get*Critical()
   // and Release*Critical() family of functions. If supported, the GC
   // must guarantee that pinned objects never move.
-  virtual bool supports_object_pinning() const;
-  virtual oop pin_object(JavaThread* thread, oop obj);
+  virtual void pin_object(JavaThread* thread, oop obj);
   virtual void unpin_object(JavaThread* thread, oop obj);
 
   // Is the given object inside a CDS archive area?

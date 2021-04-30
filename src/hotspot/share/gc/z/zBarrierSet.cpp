@@ -79,17 +79,31 @@ void ZBarrierSet::on_thread_destroy(Thread* thread) {
 
 void ZBarrierSet::on_thread_attach(Thread* thread) {
   // Set thread local address bad mask
-  ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
+  ZThreadLocalData::set_address_load_bad_mask(thread, ZAddressLoadBadMask);
+  ZThreadLocalData::set_address_load_good_mask(thread, ZAddressLoadGoodMask);
+  ZThreadLocalData::set_address_mark_bad_mask(thread, ZAddressMarkBadMask);
+  ZThreadLocalData::set_address_store_bad_mask(thread, ZAddressStoreBadMask);
+  ZThreadLocalData::set_address_store_good_mask(thread, ZAddressStoreGoodMask);
   if (thread->is_Java_thread()) {
     JavaThread* const jt = JavaThread::cast(thread);
     StackWatermark* const watermark = new ZStackWatermark(jt);
     StackWatermarkSet::add_watermark(jt, watermark);
+    ZThreadLocalData::store_barrier_buffer(jt)->initialize();
   }
 }
 
 void ZBarrierSet::on_thread_detach(Thread* thread) {
   // Flush and free any remaining mark stacks
   ZHeap::heap()->mark_flush_and_free(thread);
+}
+
+void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
+  // An allocation slow path can expose an object that gets promoted to the old generation.
+  // However, the compiler optimizes away barriers on new allocations, which implies that
+  // no remset entries will be tracked for this object, by the barrier. Therefore we
+  // explicitly remember such objects here. In most cases this is a no-op as the object
+  // that escapes the runtime is very likely to be young.
+  ZHeap::heap()->remember_fields_filtered(to_zaddress(new_obj));
 }
 
 void ZBarrierSet::print_on(outputStream* st) const {

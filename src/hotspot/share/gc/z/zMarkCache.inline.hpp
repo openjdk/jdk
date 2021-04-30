@@ -52,7 +52,7 @@ inline void ZMarkCacheEntry::evict() {
 
 inline void ZMarkCache::inc_live(ZPage* page, size_t bytes) {
   const size_t mask = ZMarkCacheSize - 1;
-  const size_t index = (page->start() >> _shift) & mask;
+  const size_t index = (untype(page->start()) >> _shift) & mask;
   _cache[index].inc_live(page, bytes);
 }
 

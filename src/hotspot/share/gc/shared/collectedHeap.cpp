@@ -49,7 +49,9 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/perfData.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
@@ -528,6 +530,10 @@ void CollectedHeap::resize_all_tlabs() {
   }
 }
 
+bool CollectedHeap::contains_null(const oop* p) {
+  return *p == NULL;
+}
+
 jlong CollectedHeap::millis_since_last_whole_heap_examined() {
   return (os::javaTimeNanos() - _last_whole_heap_examined_time_ns) / NANOSECS_PER_MILLISEC;
 }
@@ -609,17 +615,12 @@ void CollectedHeap::reset_promotion_should_fail() {
 
 #endif  // #ifndef PRODUCT
 
-bool CollectedHeap::supports_object_pinning() const {
-  return false;
-}
-
-oop CollectedHeap::pin_object(JavaThread* thread, oop obj) {
-  ShouldNotReachHere();
-  return NULL;
+void CollectedHeap::pin_object(JavaThread* thread, oop obj) {
+  GCLocker::lock_critical(thread);
 }
 
 void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
-  ShouldNotReachHere();
+  GCLocker::unlock_critical(thread);
 }
 
 bool CollectedHeap::is_archived_object(oop object) const {

@@ -1722,7 +1722,6 @@ MachNode* Matcher::find_shared_node(Node* leaf, uint rule) {
   return NULL;
 }
 
-
 //------------------------------ReduceInst-------------------------------------
 // Reduce a State tree (with given Control) into a tree of MachNodes.
 // This routine (and it's cohort ReduceOper) convert Ideal Nodes into

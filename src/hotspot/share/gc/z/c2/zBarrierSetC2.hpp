@@ -29,42 +29,81 @@
 #include "opto/node.hpp"
 #include "utilities/growableArray.hpp"
 
-const uint8_t ZLoadBarrierElided      = 0;
-const uint8_t ZLoadBarrierStrong      = 1;
-const uint8_t ZLoadBarrierWeak        = 2;
-const uint8_t ZLoadBarrierPhantom     = 4;
-const uint8_t ZLoadBarrierNoKeepalive = 8;
+const uint8_t ZBarrierStrong             = 1;
+const uint8_t ZBarrierWeak               = 2;
+const uint8_t ZBarrierPhantom            = 4;
+const uint8_t ZBarrierNoKeepalive        = 8;
+const uint8_t ZBarrierElided             = 16;
 
-class ZLoadBarrierStubC2 : public ResourceObj {
-private:
+class Block;
+class MachNode;
+
+class MacroAssembler;
+
+class ZBarrierStubC2 : public ResourceObj {
+protected:
   const MachNode* _node;
-  const Address   _ref_addr;
-  const Register  _ref;
-  const Register  _tmp;
-  const uint8_t   _barrier_data;
   Label           _entry;
   Label           _continuation;
 
-  ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data);
-
 public:
-  static ZLoadBarrierStubC2* create(const MachNode* node, Address ref_addr, Register ref, Register tmp, uint8_t barrier_data);
+  ZBarrierStubC2(const MachNode* node);
 
-  Address ref_addr() const;
-  Register ref() const;
-  Register tmp() const;
-  address slow_path() const;
   RegMask& live() const;
   Label* entry();
   Label* continuation();
+
+  virtual Register result() const = 0;
+  virtual void emit_code(MacroAssembler& masm) = 0;
+};
+
+class ZLoadBarrierStubC2 : public ZBarrierStubC2 {
+private:
+  const Address  _ref_addr;
+  const Register _ref;
+
+  ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref);
+
+public:
+  static ZLoadBarrierStubC2* create(const MachNode* node, Address ref_addr, Register ref);
+
+  Address ref_addr() const;
+  Register ref() const;
+  address slow_path() const;
+
+  virtual Register result() const;
+  virtual void emit_code(MacroAssembler& masm);
+};
+
+class ZStoreBarrierStubC2 : public ZBarrierStubC2 {
+private:
+  const Address  _ref_addr;
+  const Register _new_zaddress;
+  const Register _new_zpointer;
+  bool           _is_atomic;
+
+  ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_atomic);
+
+public:
+  static ZStoreBarrierStubC2* create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_atomic);
+
+  Address ref_addr() const;
+  Register new_zaddress() const;
+  Register new_zpointer() const;
+  bool is_atomic() const;
+
+  virtual Register result() const;
+  virtual void emit_code(MacroAssembler& masm);
 };
 
 class ZBarrierSetC2 : public BarrierSetC2 {
 private:
   void compute_liveness_at_stubs() const;
+  void analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators, bool prefetch) const;
   void analyze_dominating_barriers() const;
 
 protected:
+  virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;
   virtual Node* atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access,
                                                Node* expected_val,
@@ -91,6 +130,13 @@ public:
   virtual void late_barrier_analysis() const;
   virtual int estimate_stub_size() const;
   virtual void emit_stubs(CodeBuffer& cb) const;
+  virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
+  virtual void eliminate_gc_barrier_data(Node* node) const;
+
+  // Access prefetching
+  void analyze_prefetching(const MachNode* access, Block* access_block, uint access_index, intptr_t access_offset, const Node* base, VectorSet& visited_phis) const;
+  void register_prefetch(const Node* node, intptr_t offset) const;
+  GrowableArray<intptr_t>* prefetch_offsets(const Node* node) const;
 };
 
 #endif // SHARE_GC_Z_C2_ZBARRIERSETC2_HPP

@@ -46,7 +46,8 @@ public:
   bool nmethod_osr_entry_barrier(nmethod* nm);
   bool is_armed(nmethod* nm);
   void disarm(nmethod* nm);
+  void disarm_with_value(nmethod* nm, int value);
+  int arm_value(nmethod* nm);
 };
-
 
 #endif // SHARE_GC_SHARED_BARRIERSETNMETHOD_HPP

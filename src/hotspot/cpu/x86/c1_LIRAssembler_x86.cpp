@@ -827,7 +827,7 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
     }
 #endif
     assert(src->is_single_cpu(), "must match");
-    if (src->type() == T_OBJECT) {
+    if (src->type() == T_OBJECT && !UseZGC) {
       __ verify_oop(src->as_register());
     }
     move_regs(src->as_register(), dest->as_register());
@@ -836,7 +836,9 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
 #ifdef _LP64
     if (is_reference_type(src->type())) {
       // Surprising to me but we can see move of a long to t_object
-      __ verify_oop(src->as_register());
+      if (!UseZGC) {
+        __ verify_oop(src->as_register());
+      }
       move_regs(src->as_register(), dest->as_register_lo());
       return;
     }
@@ -959,7 +961,10 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
   Register compressed_src = rscratch1;
 
   if (is_reference_type(type)) {
-    __ verify_oop(src->as_register());
+    if (!UseZGC) {
+      // TODO: Fix this
+      __ verify_oop(src->as_register());
+    }
 #ifdef _LP64
     if (UseCompressedOops && !wide) {
       __ movptr(compressed_src, src->as_register());
@@ -1451,6 +1456,7 @@ void LIR_Assembler::emit_opBranch(LIR_OpBranch* op) {
         case lir_cond_greaterEqual: acond = Assembler::greaterEqual;break;
         case lir_cond_greater:      acond = Assembler::greater;     break;
         case lir_cond_belowEqual:   acond = Assembler::belowEqual;  break;
+        case lir_cond_above:        acond = Assembler::above;       break;
         case lir_cond_aboveEqual:   acond = Assembler::aboveEqual;  break;
         default:                         ShouldNotReachHere();
       }
@@ -2496,7 +2502,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
         default: ShouldNotReachHere();
       }
     } else {
-      Register rright = right->as_register();
+      Register rright = right->is_single_cpu() ? right->as_register() : right->as_register_lo();
       switch (code) {
         case lir_logic_and: __ andptr (reg, rright); break;
         case lir_logic_or : __ orptr  (reg, rright); break;
@@ -2506,8 +2512,8 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     }
     move_regs(reg, dst->as_register());
   } else {
-    Register l_lo = left->as_register_lo();
-    Register l_hi = left->as_register_hi();
+    Register l_lo = left->is_single_cpu() ? left->as_register() : left->as_register_lo();
+    NOT_LP64(Register l_hi = left->as_register_hi();)
     if (right->is_constant()) {
 #ifdef _LP64
       __ mov64(rscratch1, right->as_constant_ptr()->as_jlong());
@@ -2544,12 +2550,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
 #endif // _LP64
     } else {
 #ifdef _LP64
-      Register r_lo;
-      if (is_reference_type(right->type())) {
-        r_lo = right->as_register();
-      } else {
-        r_lo = right->as_register_lo();
-      }
+      Register r_lo = right->is_single_cpu() ? right->as_register() : right->as_register_lo();
 #else
       Register r_lo = right->as_register_lo();
       Register r_hi = right->as_register_hi();
@@ -2572,8 +2573,8 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       }
     }
 
-    Register dst_lo = dst->as_register_lo();
-    Register dst_hi = dst->as_register_hi();
+    Register dst_lo = dst->is_single_cpu() ? dst->as_register() : dst->as_register_lo();
+    NOT_LP64(Register dst_hi = dst->as_register_hi();)
 
 #ifdef _LP64
     move_regs(l_lo, dst_lo);

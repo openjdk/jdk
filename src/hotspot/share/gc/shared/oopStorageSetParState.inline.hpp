@@ -27,9 +27,12 @@
 
 #include "gc/shared/oopStorageSetParState.hpp"
 
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/iterator.hpp"
+#include "memory/universe.hpp"
+#include "oops/access.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
@@ -54,7 +57,7 @@ public:
 
   virtual void do_oop(oop* p) {
     _cl->do_oop(p);
-    if (Atomic::load(p) == NULL) {
+    if (Universe::heap()->contains_null(p)) {
       _num_dead++;              // Count both already NULL and cleared by closure.
     }
   }
