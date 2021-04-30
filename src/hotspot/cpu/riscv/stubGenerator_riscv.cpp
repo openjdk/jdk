@@ -47,6 +47,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
@@ -616,11 +617,7 @@ class StubGenerator: public StubCodeGenerator {
 
 #if INCLUDE_ZGC
     if (UseZGC) {
-      // Check if mask is good.
-      // verifies that ZAddressBadMask & x10 == 0
-      __ ld(c_rarg3, Address(xthread, ZThreadLocalData::address_bad_mask_offset()));
-      __ andr(c_rarg2, x10, c_rarg3);
-      __ bnez(c_rarg2, error);
+      Unimplemented();
     }
 #endif
 

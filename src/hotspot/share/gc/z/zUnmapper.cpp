@@ -70,16 +70,10 @@ void ZUnmapper::do_unmap_and_destroy_page(ZPage* page) const {
 }
 
 void ZUnmapper::unmap_and_destroy_page(ZPage* page) {
-  // Asynchronous unmap and destroy is not supported with ZVerifyViews
-  if (ZVerifyViews) {
-    // Immediately unmap and destroy
-    do_unmap_and_destroy_page(page);
-  } else {
-    // Enqueue for asynchronous unmap and destroy
-    ZLocker<ZConditionLock> locker(&_lock);
-    _queue.insert_last(page);
-    _lock.notify_all();
-  }
+  // Enqueue for asynchronous unmap and destroy
+  ZLocker<ZConditionLock> locker(&_lock);
+  _queue.insert_last(page);
+  _lock.notify_all();
 }
 
 void ZUnmapper::run_service() {

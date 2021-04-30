@@ -319,7 +319,8 @@ void CodeSection::relocate(address at, RelocationHolder const& spec, int format)
            rtype == relocInfo::runtime_call_type ||
            rtype == relocInfo::internal_word_type||
            rtype == relocInfo::section_word_type ||
-           rtype == relocInfo::external_word_type,
+           rtype == relocInfo::external_word_type||
+           rtype == relocInfo::barrier_type,
            "code needs relocation information");
     // leave behind an indication that we attempted a relocation
     DEBUG_ONLY(_locs_start = _locs_limit = (relocInfo*)badAddress);

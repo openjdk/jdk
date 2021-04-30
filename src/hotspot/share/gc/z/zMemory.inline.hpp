@@ -26,18 +26,19 @@
 
 #include "gc/z/zMemory.hpp"
 
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zList.inline.hpp"
 #include "utilities/debug.hpp"
 
-inline ZMemory::ZMemory(uintptr_t start, size_t size) :
+inline ZMemory::ZMemory(zoffset start, size_t size) :
     _start(start),
-    _end(start + size) {}
+    _end(to_zoffset_end(start, size)) {}
 
-inline uintptr_t ZMemory::start() const {
+inline zoffset ZMemory::start() const {
   return _start;
 }
 
-inline uintptr_t ZMemory::end() const {
+inline zoffset_end ZMemory::end() const {
   return _end;
 }
 
@@ -56,7 +57,7 @@ inline void ZMemory::shrink_from_back(size_t size) {
 }
 
 inline void ZMemory::grow_from_front(size_t size) {
-  assert(start() >= size, "Too big");
+  assert(size_t(start()) >= size, "Too big");
   _start -= size;
 }
 

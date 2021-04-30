@@ -60,6 +60,7 @@ static void pd_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
 
 static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
 #ifdef AMD64
+  // Do better than this: inline memmove body  NEEDS CLEANUP
   if (from > to) {
     while (count-- > 0) {
       // Copy forwards

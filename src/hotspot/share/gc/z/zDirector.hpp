@@ -25,21 +25,26 @@
 #define SHARE_GC_Z_ZDIRECTOR_HPP
 
 #include "gc/shared/concurrentGCThread.hpp"
-#include "gc/z/zMetronome.hpp"
-
-class ZDriver;
+#include "gc/z/zLock.hpp"
 
 class ZDirector : public ConcurrentGCThread {
 private:
-  ZDriver* const _driver;
-  ZMetronome     _metronome;
+  static const uint64_t decision_hz = 10;
+  static ZDirector* _director;
+
+  ZConditionLock _monitor;
+  bool           _stopped;
+
+  bool wait_for_tick();
 
 protected:
   virtual void run_service();
   virtual void stop_service();
 
 public:
-  ZDirector(ZDriver* driver);
+  ZDirector();
+
+  static void evaluate_rules();
 };
 
 #endif // SHARE_GC_Z_ZDIRECTOR_HPP

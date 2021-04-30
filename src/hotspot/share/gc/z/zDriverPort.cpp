@@ -21,76 +21,97 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZMESSAGEPORT_INLINE_HPP
-#define SHARE_GC_Z_ZMESSAGEPORT_INLINE_HPP
-
-#include "gc/z/zMessagePort.hpp"
-
+#include "precompiled.hpp"
+#include "gc/z/zDriverPort.hpp"
 #include "gc/z/zFuture.inline.hpp"
 #include "gc/z/zList.inline.hpp"
-#include "runtime/mutexLocker.hpp"
+#include "gc/z/zLock.inline.hpp"
+#include "utilities/debug.hpp"
 
-template <typename T>
-class ZMessageRequest : public StackObj {
-  friend class ZList<ZMessageRequest>;
+ZDriverRequest::ZDriverRequest() :
+    ZDriverRequest(GCCause::_no_gc, 0, 0) {}
+
+ZDriverRequest::ZDriverRequest(GCCause::Cause cause, uint young_nworkers, uint old_nworkers) :
+    _cause(cause),
+    _young_nworkers(young_nworkers),
+    _old_nworkers(old_nworkers) {}
+
+bool ZDriverRequest::operator==(const ZDriverRequest& other) const {
+  return _cause == other._cause;
+}
+
+GCCause::Cause ZDriverRequest::cause() const {
+  return _cause;
+}
+
+uint ZDriverRequest::young_nworkers() const {
+  return _young_nworkers;
+}
+
+uint ZDriverRequest::old_nworkers() const {
+  return _old_nworkers;
+}
+
+class ZDriverPortEntry {
+  friend class ZList<ZDriverPortEntry>;
 
 private:
-  T                          _message;
-  uint64_t                   _seqnum;
-  ZFuture<T>                 _result;
-  ZListNode<ZMessageRequest> _node;
+  const ZDriverRequest        _message;
+  uint64_t                    _seqnum;
+  ZFuture<ZDriverRequest>     _result;
+  ZListNode<ZDriverPortEntry> _node;
 
 public:
-  void initialize(T message, uint64_t seqnum) {
-    _message = message;
-    _seqnum = seqnum;
-  }
+  ZDriverPortEntry(const ZDriverRequest& message) :
+      _message(message),
+      _seqnum(0) {}
 
-  T message() const {
-    return _message;
+  void set_seqnum(uint64_t seqnum) {
+    _seqnum = seqnum;
   }
 
   uint64_t seqnum() const {
     return _seqnum;
   }
 
+  ZDriverRequest message() const {
+    return _message;
+  }
+
   void wait() {
-    const T message = _result.get();
+    const ZDriverRequest message = _result.get();
     assert(message == _message, "Message mismatch");
   }
 
-  void satisfy(T message) {
+  void satisfy(const ZDriverRequest& message) {
     _result.set(message);
   }
 };
 
-template <typename T>
-inline ZMessagePort<T>::ZMessagePort() :
-    _monitor(Monitor::nosafepoint, "ZMessagePort_lock"),
+ZDriverPort::ZDriverPort() :
+    _lock(),
     _has_message(false),
     _seqnum(0),
     _queue() {}
 
-template <typename T>
-inline bool ZMessagePort<T>::is_busy() const {
-  MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
+bool ZDriverPort::is_busy() const {
+  ZLocker<ZConditionLock> locker(&_lock);
   return _has_message;
 }
 
-template <typename T>
-inline void ZMessagePort<T>::send_sync(const T& message) {
-  Request request;
+void ZDriverPort::send_sync(const ZDriverRequest& message) {
+  ZDriverPortEntry entry(message);
 
   {
     // Enqueue message
-    MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
-    request.initialize(message, _seqnum);
-    _queue.insert_last(&request);
-    ml.notify();
+    ZLocker<ZConditionLock> locker(&_lock);
+    entry.set_seqnum(_seqnum);
+    _queue.insert_last(&entry);
+    _lock.notify();
   }
 
   // Wait for completion
-  request.wait();
+  entry.wait();
 
   {
     // Guard deletion of underlying semaphore. This is a workaround for a
@@ -100,28 +121,26 @@ inline void ZMessagePort<T>::send_sync(const T& message) {
     // thread have returned from sem_wait(). To avoid this race we are
     // forcing the waiting thread to acquire/release the lock held by the
     // posting thread. https://sourceware.org/bugzilla/show_bug.cgi?id=12674
-    MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
+    ZLocker<ZConditionLock> locker(&_lock);
   }
 }
 
-template <typename T>
-inline void ZMessagePort<T>::send_async(const T& message) {
-  MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
+void ZDriverPort::send_async(const ZDriverRequest& message) {
+  ZLocker<ZConditionLock> locker(&_lock);
   if (!_has_message) {
     // Post message
     _message = message;
     _has_message = true;
-    ml.notify();
+    _lock.notify();
   }
 }
 
-template <typename T>
-inline T ZMessagePort<T>::receive() {
-  MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
+ZDriverRequest ZDriverPort::receive() {
+  ZLocker<ZConditionLock> locker(&_lock);
 
   // Wait for message
   while (!_has_message && _queue.is_empty()) {
-    ml.wait();
+    _lock.wait();
   }
 
   // Increment request sequence number
@@ -136,9 +155,8 @@ inline T ZMessagePort<T>::receive() {
   return _message;
 }
 
-template <typename T>
-inline void ZMessagePort<T>::ack() {
-  MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
+void ZDriverPort::ack() {
+  ZLocker<ZConditionLock> locker(&_lock);
 
   if (!_has_message) {
     // Nothing to ack
@@ -146,14 +164,14 @@ inline void ZMessagePort<T>::ack() {
   }
 
   // Satisfy requests (and duplicates) in queue
-  ZListIterator<Request> iter(&_queue);
-  for (Request* request; iter.next(&request);) {
-    if (request->message() == _message && request->seqnum() < _seqnum) {
+  ZListIterator<ZDriverPortEntry> iter(&_queue);
+  for (ZDriverPortEntry* entry; iter.next(&entry);) {
+    if (entry->message() == _message && entry->seqnum() < _seqnum) {
       // Dequeue and satisfy request. Note that the dequeue operation must
       // happen first, since the request will immediately be deallocated
       // once it has been satisfied.
-      _queue.remove(request);
-      request->satisfy(_message);
+      _queue.remove(entry);
+      entry->satisfy(_message);
     }
   }
 
@@ -165,17 +183,3 @@ inline void ZMessagePort<T>::ack() {
     _message = _queue.first()->message();
   }
 }
-
-inline void ZRendezvousPort::signal() {
-  _port.send_sync(true /* ignored */);
-}
-
-inline void ZRendezvousPort::wait() {
-  _port.receive();
-}
-
-inline void ZRendezvousPort::ack() {
-  _port.ack();
-}
-
-#endif // SHARE_GC_Z_ZMESSAGEPORT_INLINE_HPP

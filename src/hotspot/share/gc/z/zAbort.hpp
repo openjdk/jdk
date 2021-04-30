@@ -35,4 +35,12 @@ public:
   static void abort();
 };
 
+// Macro to execute a abortion check
+#define abortpoint()               \
+  do {                             \
+    if (ZAbort::should_abort()) {  \
+      return;                      \
+    }                              \
+  } while (false)
+
 #endif // SHARE_GC_Z_ZABORT_HPP

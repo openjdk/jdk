@@ -66,6 +66,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/zStackChunkGCData.inline.hpp"
+#endif
 
 #include <type_traits>
 
@@ -1395,6 +1398,7 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
 
 #if INCLUDE_ZGC
  if (UseZGC) {
+    ZStackChunkGCData::initialize(chunk);
     assert(!chunk->requires_barriers(), "ZGC always allocates in the young generation");
     _barriers = false;
   } else

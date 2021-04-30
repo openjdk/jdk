@@ -37,9 +37,13 @@ template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
   D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
-    D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
-    FULL_MEM_BARRIER;
-    return res;
+    if (order == memory_order_relaxed) {
+      return __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
+    } else {
+      D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
+      FULL_MEM_BARRIER;
+      return res;
+    }
   }
 
   template<typename D, typename I>

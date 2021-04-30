@@ -23,13 +23,11 @@
  *
  */
 
-#ifndef CPU_RISCV_GC_Z_ZGLOBALS_RISCV_HPP
-#define CPU_RISCV_GC_Z_ZGLOBALS_RISCV_HPP
+#ifndef CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
+#define CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
 
-const size_t ZPlatformHeapViews        = 3;
+#include "utilities/globalDefinitions.hpp"
+
 const size_t ZPlatformCacheLineSize    = 64;
 
-size_t ZPlatformAddressOffsetBits();
-size_t ZPlatformAddressMetadataShift();
-
-#endif // CPU_RISCV_GC_Z_ZGLOBALS_RISCV_HPP
+#endif // CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP

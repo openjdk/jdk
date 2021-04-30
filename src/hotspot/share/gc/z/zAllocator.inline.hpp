@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,46 +21,39 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZMESSAGEPORT_HPP
-#define SHARE_GC_Z_ZMESSAGEPORT_HPP
+#ifndef SHARE_GC_Z_ZALLOCATOR_INLINE_HPP
+#define SHARE_GC_Z_ZALLOCATOR_INLINE_HPP
 
-#include "gc/z/zFuture.hpp"
-#include "gc/z/zList.hpp"
-#include "runtime/mutex.hpp"
+#include "gc/z/zAllocator.hpp"
 
-template <typename T> class ZMessageRequest;
+#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zHeap.hpp"
 
-template <typename T>
-class ZMessagePort {
-private:
-  typedef ZMessageRequest<T> Request;
+inline ZAllocatorEden* ZAllocator::eden() {
+  return _eden;
+}
 
-  mutable Monitor _monitor;
-  bool            _has_message;
-  T               _message;
-  uint64_t        _seqnum;
-  ZList<Request>  _queue;
+inline ZAllocatorForRelocation* ZAllocator::relocation(ZPageAge page_age) {
+  return _relocation[static_cast<uint>(page_age) - 1];
+}
 
-public:
-  ZMessagePort();
+inline ZAllocatorForRelocation* ZAllocator::old() {
+  return relocation(ZPageAge::old);
+}
 
-  bool is_busy() const;
+inline zaddress ZAllocatorEden::alloc_tlab(size_t size) {
+  guarantee(size <= ZHeap::heap()->max_tlab_size(), "TLAB too large");
+  return _object_allocator.alloc_object(size);
+}
 
-  void send_sync(const T& message);
-  void send_async(const T& message);
+inline zaddress ZAllocatorEden::alloc_object(size_t size) {
+  const zaddress addr = _object_allocator.alloc_object(size);
 
-  T receive();
-  void ack();
-};
+  if (is_null(addr)) {
+    ZHeap::heap()->out_of_memory();
+  }
 
-class ZRendezvousPort {
-private:
-  ZMessagePort<bool> _port;
+  return addr;
+}
 
-public:
-  void signal();
-  void wait();
-  void ack();
-};
-
-#endif // SHARE_GC_Z_ZMESSAGEPORT_HPP
+#endif // SHARE_GC_Z_ZALLOCATOR_INLINE_HPP

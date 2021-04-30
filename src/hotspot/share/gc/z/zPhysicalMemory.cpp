@@ -73,11 +73,11 @@ size_t ZPhysicalMemory::size() const {
   return size;
 }
 
-void ZPhysicalMemory::insert_segment(int index, uintptr_t start, size_t size, bool committed) {
+void ZPhysicalMemory::insert_segment(int index, zoffset start, size_t size, bool committed) {
   _segments.insert_before(index, ZPhysicalMemorySegment(start, size, committed));
 }
 
-void ZPhysicalMemory::replace_segment(int index, uintptr_t start, size_t size, bool committed) {
+void ZPhysicalMemory::replace_segment(int index, zoffset start, size_t size, bool committed) {
   _segments.at_put(index, ZPhysicalMemorySegment(start, size, committed));
 }
 
@@ -108,7 +108,7 @@ void ZPhysicalMemory::add_segment(const ZPhysicalMemorySegment& segment) {
       if (is_mergable(_segments.at(current), segment)) {
         if (current + 1 < _segments.length() && is_mergable(segment, _segments.at(current + 1))) {
           // Merge with end of current segment and start of next segment
-          const size_t start = _segments.at(current).start();
+          const zoffset start = _segments.at(current).start();
           const size_t size = _segments.at(current).size() + segment.size() + _segments.at(current + 1).size();
           replace_segment(current, start, size, segment.is_committed());
           remove_segment(current + 1);
@@ -116,13 +116,13 @@ void ZPhysicalMemory::add_segment(const ZPhysicalMemorySegment& segment) {
         }
 
         // Merge with end of current segment
-        const size_t start = _segments.at(current).start();
+        const zoffset start = _segments.at(current).start();
         const size_t size = _segments.at(current).size() + segment.size();
         replace_segment(current, start, size, segment.is_committed());
         return;
       } else if (current + 1 < _segments.length() && is_mergable(segment, _segments.at(current + 1))) {
         // Merge with start of next segment
-        const size_t start = segment.start();
+        const zoffset start = segment.start();
         const size_t size = segment.size() + _segments.at(current + 1).size();
         replace_segment(current + 1, start, size, segment.is_committed());
         return;
@@ -136,7 +136,7 @@ void ZPhysicalMemory::add_segment(const ZPhysicalMemorySegment& segment) {
 
   if (_segments.length() > 0 && is_mergable(segment, _segments.at(0))) {
     // Merge with start of first segment
-    const size_t start = segment.start();
+    const zoffset start = segment.start();
     const size_t size = segment.size() + _segments.at(0).size();
     replace_segment(0, start, size, segment.is_committed());
     return;
@@ -234,7 +234,7 @@ ZPhysicalMemory ZPhysicalMemory::split_committed() {
 ZPhysicalMemoryManager::ZPhysicalMemoryManager(size_t max_capacity) :
     _backing(max_capacity) {
   // Make the whole range free
-  _manager.free(0, max_capacity);
+  _manager.free(zoffset(0), max_capacity);
 }
 
 bool ZPhysicalMemoryManager::is_initialized() const {
@@ -264,7 +264,7 @@ void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
 
   // Test if uncommit is supported by the operating system by committing
   // and then uncommitting a granule.
-  ZPhysicalMemory pmem(ZPhysicalMemorySegment(0, ZGranuleSize, false /* committed */));
+  ZPhysicalMemory pmem(ZPhysicalMemorySegment(zoffset(0), ZGranuleSize, false /* committed */));
   if (!commit(pmem) || !uncommit(pmem)) {
     log_info_p(gc, init)("Uncommit: Implicitly Disabled (Not supported by operating system)");
     FLAG_SET_ERGO(ZUncommit, false);
@@ -275,17 +275,16 @@ void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
   log_info_p(gc, init)("Uncommit Delay: " UINTX_FORMAT "s", ZUncommitDelay);
 }
 
-void ZPhysicalMemoryManager::nmt_commit(uintptr_t offset, size_t size) const {
-  // From an NMT point of view we treat the first heap view (marked0) as committed
-  const uintptr_t addr = ZAddress::marked0(offset);
-  MemTracker::record_virtual_memory_commit((void*)addr, size, CALLER_PC);
+void ZPhysicalMemoryManager::nmt_commit(zoffset offset, size_t size) const {
+  const zaddress addr = ZOffset::address(offset);
+  MemTracker::record_virtual_memory_commit((void*)untype(addr), size, CALLER_PC);
 }
 
-void ZPhysicalMemoryManager::nmt_uncommit(uintptr_t offset, size_t size) const {
+void ZPhysicalMemoryManager::nmt_uncommit(zoffset offset, size_t size) const {
   if (MemTracker::enabled()) {
-    const uintptr_t addr = ZAddress::marked0(offset);
+    const zaddress addr = ZOffset::address(offset);
     Tracker tracker(Tracker::uncommit);
-    tracker.record((address)addr, size);
+    tracker.record((address)untype(addr), size);
   }
 }
 
@@ -295,8 +294,8 @@ void ZPhysicalMemoryManager::alloc(ZPhysicalMemory& pmem, size_t size) {
   // Allocate segments
   while (size > 0) {
     size_t allocated = 0;
-    const uintptr_t start = _manager.alloc_low_address_at_most(size, &allocated);
-    assert(start != UINTPTR_MAX, "Allocation should never fail");
+    const zoffset start = _manager.alloc_low_address_at_most(size, &allocated);
+    assert(start != zoffset(UINTPTR_MAX), "Allocation should never fail");
     pmem.add_segment(ZPhysicalMemorySegment(start, allocated, false /* committed */));
     size -= allocated;
   }
@@ -352,12 +351,12 @@ bool ZPhysicalMemoryManager::uncommit(ZPhysicalMemory& pmem) {
   return true;
 }
 
-void ZPhysicalMemoryManager::pretouch_view(uintptr_t addr, size_t size) const {
+void ZPhysicalMemoryManager::pretouch_view(zaddress addr, size_t size) const {
   const size_t page_size = ZLargePages::is_explicit() ? ZGranuleSize : os::vm_page_size();
-  os::pretouch_memory((void*)addr, (void*)(addr + size), page_size);
+  os::pretouch_memory((void*)untype(addr), (void*)(untype(addr) + size), page_size);
 }
 
-void ZPhysicalMemoryManager::map_view(uintptr_t addr, const ZPhysicalMemory& pmem) const {
+void ZPhysicalMemoryManager::map_view(zaddress_unsafe addr, const ZPhysicalMemory& pmem) const {
   size_t size = 0;
 
   // Map segments
@@ -376,60 +375,27 @@ void ZPhysicalMemoryManager::map_view(uintptr_t addr, const ZPhysicalMemory& pme
   }
 }
 
-void ZPhysicalMemoryManager::unmap_view(uintptr_t addr, size_t size) const {
+void ZPhysicalMemoryManager::unmap_view(zaddress_unsafe addr, size_t size) const {
   _backing.unmap(addr, size);
 }
 
-void ZPhysicalMemoryManager::pretouch(uintptr_t offset, size_t size) const {
-  if (ZVerifyViews) {
-    // Pre-touch good view
-    pretouch_view(ZAddress::good(offset), size);
-  } else {
-    // Pre-touch all views
-    pretouch_view(ZAddress::marked0(offset), size);
-    pretouch_view(ZAddress::marked1(offset), size);
-    pretouch_view(ZAddress::remapped(offset), size);
-  }
+void ZPhysicalMemoryManager::pretouch(zoffset offset, size_t size) const {
+  // Pre-touch all views
+  pretouch_view(ZOffset::address(offset), size);
 }
 
-void ZPhysicalMemoryManager::map(uintptr_t offset, const ZPhysicalMemory& pmem) const {
+void ZPhysicalMemoryManager::map(zoffset offset, const ZPhysicalMemory& pmem) const {
   const size_t size = pmem.size();
 
-  if (ZVerifyViews) {
-    // Map good view
-    map_view(ZAddress::good(offset), pmem);
-  } else {
-    // Map all views
-    map_view(ZAddress::marked0(offset), pmem);
-    map_view(ZAddress::marked1(offset), pmem);
-    map_view(ZAddress::remapped(offset), pmem);
-  }
+  // Map all views
+  map_view(ZOffset::address_unsafe(offset), pmem);
 
   nmt_commit(offset, size);
 }
 
-void ZPhysicalMemoryManager::unmap(uintptr_t offset, size_t size) const {
+void ZPhysicalMemoryManager::unmap(zoffset offset, size_t size) const {
   nmt_uncommit(offset, size);
 
-  if (ZVerifyViews) {
-    // Unmap good view
-    unmap_view(ZAddress::good(offset), size);
-  } else {
-    // Unmap all views
-    unmap_view(ZAddress::marked0(offset), size);
-    unmap_view(ZAddress::marked1(offset), size);
-    unmap_view(ZAddress::remapped(offset), size);
-  }
-}
-
-void ZPhysicalMemoryManager::debug_map(uintptr_t offset, const ZPhysicalMemory& pmem) const {
-  // Map good view
-  assert(ZVerifyViews, "Should be enabled");
-  map_view(ZAddress::good(offset), pmem);
-}
-
-void ZPhysicalMemoryManager::debug_unmap(uintptr_t offset, size_t size) const {
-  // Unmap good view
-  assert(ZVerifyViews, "Should be enabled");
-  unmap_view(ZAddress::good(offset), size);
+  // Unmap all views
+  unmap_view(ZOffset::address_unsafe(offset), size);
 }

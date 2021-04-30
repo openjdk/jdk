@@ -32,8 +32,9 @@
 static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
 enum platform_dependent_constants {
-  code_size1 = 20000 LP64_ONLY(+10000),                    // simply increase if too small (assembler will crash if too small)
-  code_size2 = 35300 LP64_ONLY(+45000) WINDOWS_ONLY(+2048) // simply increase if too small (assembler will crash if too small)
+  // simply increase if too small (assembler will crash if too small)
+  code_size1 = 20000 LP64_ONLY(+10000),
+  code_size2 = 35300 LP64_ONLY(+35000) WINDOWS_ONLY(+2048) ZGC_ONLY(+30000)
 };
 
 class x86 {

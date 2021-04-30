@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,37 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZOOP_HPP
-#define SHARE_GC_Z_ZOOP_HPP
+#ifndef SHARE_GC_Z_ZCONTINUATION_HPP
+#define SHARE_GC_Z_ZCONTINUATION_HPP
 
 #include "memory/allStatic.hpp"
+#include "memory/iterator.hpp"
 #include "oops/oopsHierarchy.hpp"
 
-class ZOop : public AllStatic {
+class OopClosure;
+class ZHeap;
+
+class ZContinuation : public AllStatic {
 public:
-  static oop from_address(uintptr_t addr);
-  static uintptr_t to_address(oop o);
+  static bool requires_barriers(const ZHeap* heap, stackChunkOop chunk);
+
+  static oop load_oop(stackChunkOop chunk, void* addr);
+
+  class ZColorStackOopClosure : public OopClosure {
+  private:
+    uintptr_t _color;
+
+  public:
+    ZColorStackOopClosure(stackChunkOop chunk);
+    virtual void do_oop(oop* p) override;
+    virtual void do_oop(narrowOop* p) override;
+  };
+
+  class ZUncolorStackOopClosure : public OopClosure {
+  public:
+    virtual void do_oop(oop* p) override;
+    virtual void do_oop(narrowOop* p) override;
+  };
 };
 
-#endif // SHARE_GC_Z_ZOOP_HPP
+#endif // SHARE_GC_Z_ZCONTINUATION_HPP

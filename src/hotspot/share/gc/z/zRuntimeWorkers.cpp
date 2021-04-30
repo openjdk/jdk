@@ -24,38 +24,8 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/z/zLock.inline.hpp"
 #include "gc/z/zRuntimeWorkers.hpp"
-#include "gc/z/zTask.hpp"
-#include "gc/z/zThread.hpp"
 #include "runtime/java.hpp"
-
-class ZRuntimeWorkersInitializeTask : public WorkerTask {
-private:
-  const uint     _nworkers;
-  uint           _started;
-  ZConditionLock _lock;
-
-public:
-  ZRuntimeWorkersInitializeTask(uint nworkers) :
-      WorkerTask("ZRuntimeWorkersInitializeTask"),
-      _nworkers(nworkers),
-      _started(0),
-      _lock() {}
-
-  virtual void work(uint worker_id) {
-    // Wait for all threads to start
-    ZLocker<ZConditionLock> locker(&_lock);
-    if (++_started == _nworkers) {
-      // All threads started
-      _lock.notify_all();
-    } else {
-      while (_started != _nworkers) {
-        _lock.wait();
-      }
-    }
-  }
-};
 
 ZRuntimeWorkers::ZRuntimeWorkers() :
     _workers("RuntimeWorker",
@@ -69,11 +39,6 @@ ZRuntimeWorkers::ZRuntimeWorkers() :
   if (_workers.active_workers() != _workers.max_workers()) {
     vm_exit_during_initialization("Failed to create ZRuntimeWorkers");
   }
-
-  // Execute task to reduce latency in early safepoints,
-  // which otherwise would have to take on any warmup costs.
-  ZRuntimeWorkersInitializeTask task(_workers.max_workers());
-  _workers.run_task(&task);
 }
 
 WorkerThreads* ZRuntimeWorkers::workers() {

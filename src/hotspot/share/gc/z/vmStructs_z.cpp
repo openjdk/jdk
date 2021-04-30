@@ -23,16 +23,17 @@
 
 #include "precompiled.hpp"
 #include "gc/z/vmStructs_z.hpp"
+#include "gc/z/zAddress.hpp"
 
 ZGlobalsForVMStructs::ZGlobalsForVMStructs() :
-    _ZGlobalPhase(&ZGlobalPhase),
-    _ZGlobalSeqNum(&ZGlobalSeqNum),
     _ZAddressOffsetMask(&ZAddressOffsetMask),
-    _ZAddressMetadataMask(&ZAddressMetadataMask),
-    _ZAddressMetadataFinalizable(&ZAddressMetadataFinalizable),
-    _ZAddressGoodMask(&ZAddressGoodMask),
-    _ZAddressBadMask(&ZAddressBadMask),
-    _ZAddressWeakBadMask(&ZAddressWeakBadMask),
+    _ZPointerLoadGoodMask(&ZPointerLoadGoodMask),
+    _ZPointerLoadBadMask(&ZPointerLoadBadMask),
+    _ZPointerLoadShift(const_cast<size_t*>(&ZPointerLoadShift)),
+    _ZPointerMarkGoodMask(&ZPointerMarkGoodMask),
+    _ZPointerMarkBadMask(&ZPointerMarkBadMask),
+    _ZPointerStoreGoodMask(&ZPointerStoreGoodMask),
+    _ZPointerStoreBadMask(&ZPointerStoreBadMask),
     _ZObjectAlignmentSmallShift(&ZObjectAlignmentSmallShift),
     _ZObjectAlignmentSmall(&ZObjectAlignmentSmall) {
 }

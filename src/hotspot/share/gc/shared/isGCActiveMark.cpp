@@ -42,3 +42,15 @@ IsGCActiveMark::~IsGCActiveMark() {
   assert(heap->is_gc_active(), "Sanity");
   heap->_is_gc_active = false;
 }
+
+DisableIsGCActiveMark::DisableIsGCActiveMark() {
+  CollectedHeap* heap = Universe::heap();
+  assert(heap->is_gc_active(), "Not reentrant");
+  heap->_is_gc_active = false;
+}
+
+DisableIsGCActiveMark::~DisableIsGCActiveMark() {
+  CollectedHeap* heap = Universe::heap();
+  assert(!heap->is_gc_active(), "Sanity");
+  heap->_is_gc_active = true;
+}

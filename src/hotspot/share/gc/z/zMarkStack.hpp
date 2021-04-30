@@ -28,6 +28,8 @@
 #include "gc/z/zMarkStackEntry.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class ZMarkTerminate;
+
 template <typename T, size_t S>
 class ZStack {
 private:
@@ -52,13 +54,14 @@ public:
 template <typename T>
 class ZStackList {
 private:
+  uintptr_t   _base;
   T* volatile _head;
 
   T* encode_versioned_pointer(const T* stack, uint32_t version) const;
   void decode_versioned_pointer(const T* vstack, T** stack, uint32_t* version) const;
 
 public:
-  ZStackList();
+  ZStackList(uintptr_t base);
 
   bool is_empty() const;
 
@@ -82,11 +85,11 @@ private:
   ZCACHE_ALIGNED ZMarkStackList _overflowed;
 
 public:
-  ZMarkStripe();
+  ZMarkStripe(uintptr_t base = 0);
 
   bool is_empty() const;
 
-  void publish_stack(ZMarkStack* stack, bool publish = true);
+  void publish_stack(ZMarkStack* stack, ZMarkTerminate* terminate, bool publish);
   ZMarkStack* steal_stack();
 };
 
@@ -97,9 +100,8 @@ private:
   ZMarkStripe _stripes[ZMarkStripesMax];
 
 public:
-  ZMarkStripeSet();
+  ZMarkStripeSet(uintptr_t base);
 
-  size_t nstripes() const;
   void set_nstripes(size_t nstripes);
 
   bool is_empty() const;
@@ -108,7 +110,8 @@ public:
   ZMarkStripe* stripe_at(size_t index);
   ZMarkStripe* stripe_next(ZMarkStripe* stripe);
   ZMarkStripe* stripe_for_worker(uint nworkers, uint worker_id);
-  ZMarkStripe* stripe_for_addr(uintptr_t addr);
+  ZMarkStripe* stripe_for_addr_worker(uintptr_t addr);
+  ZMarkStripe* stripe_for_addr_barrier(uintptr_t addr);
 };
 
 class ZMarkStackAllocator;
@@ -124,6 +127,7 @@ private:
   bool push_slow(ZMarkStackAllocator* allocator,
                  ZMarkStripe* stripe,
                  ZMarkStack** stackp,
+                 ZMarkTerminate* terminate,
                  ZMarkStackEntry entry,
                  bool publish);
 
@@ -147,6 +151,7 @@ public:
   bool push(ZMarkStackAllocator* allocator,
             ZMarkStripeSet* stripes,
             ZMarkStripe* stripe,
+            ZMarkTerminate* terminate,
             ZMarkStackEntry entry,
             bool publish);
 
@@ -156,7 +161,8 @@ public:
            ZMarkStackEntry& entry);
 
   bool flush(ZMarkStackAllocator* allocator,
-             ZMarkStripeSet* stripes);
+             ZMarkStripeSet* stripes,
+             ZMarkTerminate* terminate);
 
   void free(ZMarkStackAllocator* allocator);
 };

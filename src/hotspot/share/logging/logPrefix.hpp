@@ -77,6 +77,7 @@ DEBUG_ONLY(size_t Test_log_prefix_prefixer(char* buf, size_t len);)
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, verify, start)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, plab)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, promotion)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, page)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, region)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, remset)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, remset, tracking)) \

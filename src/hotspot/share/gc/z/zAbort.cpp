@@ -28,5 +28,5 @@
 volatile bool ZAbort::_should_abort = false;
 
 void ZAbort::abort() {
-  Atomic::release_store_fence(&_should_abort, true);
+  Atomic::store(&_should_abort, true);
 }

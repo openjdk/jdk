@@ -24,17 +24,23 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zAbort.hpp"
+#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zAllocator.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zContinuation.inline.hpp"
 #include "gc/z/zDirector.hpp"
 #include "gc/z/zDriver.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
+#include "gc/z/zJNICritical.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zObjArrayAllocator.hpp"
-#include "gc/z/zOop.inline.hpp"
 #include "gc/z/zServiceability.hpp"
+#include "gc/z/zStackChunkGCData.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "memory/classLoaderMetaspace.hpp"
@@ -43,6 +49,8 @@
 #include "memory/universe.hpp"
 #include "oops/stackChunkOop.hpp"
 #include "runtime/continuationJavaClasses.hpp"
+#include "runtime/jniHandles.inline.hpp"
+#include "services/memoryUsage.hpp"
 #include "utilities/align.hpp"
 
 ZCollectedHeap* ZCollectedHeap::heap() {
@@ -54,8 +62,9 @@ ZCollectedHeap::ZCollectedHeap() :
     _barrier_set(),
     _initialize(&_barrier_set),
     _heap(),
-    _driver(new ZDriver()),
-    _director(new ZDirector(_driver)),
+    _driver_minor(new ZDriverMinor()),
+    _driver_major(new ZDriverMajor()),
+    _director(new ZDirector()),
     _stat(new ZStat()),
     _runtime_workers() {}
 
@@ -72,7 +81,7 @@ jint ZCollectedHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  Universe::calculate_verify_data((HeapWord*)0, (HeapWord*)UINTPTR_MAX);
+  Universe::set_verify_data(~(ZAddressHeapBase - 1) | 0x7, ZAddressHeapBase);
 
   return JNI_OK;
 }
@@ -91,6 +100,8 @@ public:
 };
 
 void ZCollectedHeap::stop() {
+  log_info_p(gc, exit)("Stopping ZGC");
+  ZAbort::abort();
   ZStopConcurrentGCThreadClosure cl;
   gc_threads_do(&cl);
 }
@@ -126,45 +137,28 @@ bool ZCollectedHeap::is_in(const void* p) const {
 }
 
 bool ZCollectedHeap::requires_barriers(stackChunkOop obj) const {
-  uintptr_t* cont_addr = obj->field_addr<uintptr_t>(jdk_internal_vm_StackChunk::cont_offset());
-
-  if (!_heap.is_allocating(cast_from_oop<uintptr_t>(obj))) {
-    // An object that isn't allocating, is visible from GC tracing. Such
-    // stack chunks require barriers.
-    return true;
-  }
-
-  if (!ZAddress::is_good_or_null(*cont_addr)) {
-    // If a chunk is allocated after a GC started, but before relocate start
-    // we can have an allocating chunk that isn't deeply good. That means that
-    // the contained oops might be bad and require GC barriers.
-    return true;
-  }
-
-  // The chunk is allocating and its pointers are good. This chunk needs no
-  // GC barriers
-  return false;
+  return ZContinuation::requires_barriers(&_heap, obj);
 }
 
 HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
   const size_t size_in_bytes = ZUtils::words_to_bytes(align_object_size(requested_size));
-  const uintptr_t addr = _heap.alloc_tlab(size_in_bytes);
+  const zaddress addr = ZAllocator::eden()->alloc_tlab(size_in_bytes);
 
-  if (addr != 0) {
+  if (!is_null(addr)) {
     *actual_size = requested_size;
   }
 
-  return (HeapWord*)addr;
+  return (HeapWord*)untype(addr);
 }
 
 oop ZCollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) {
-  ZObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
+  const ZObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
   return allocator.allocate();
 }
 
 HeapWord* ZCollectedHeap::mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) {
   const size_t size_in_bytes = ZUtils::words_to_bytes(align_object_size(size));
-  return (HeapWord*)_heap.alloc_object(size_in_bytes);
+  return (HeapWord*)ZAllocator::eden()->alloc_object(size_in_bytes);
 }
 
 MetaWord* ZCollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
@@ -184,7 +178,33 @@ MetaWord* ZCollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* lo
 }
 
 void ZCollectedHeap::collect(GCCause::Cause cause) {
-  _driver->collect(cause);
+  const ZDriverRequest request(cause, 1, 1);
+  // Handle external collection requests
+  switch (cause) {
+  case GCCause::_wb_young_gc:
+  case GCCause::_scavenge_alot:
+    // Start Minor GC
+    _driver_minor->collect(request);
+    break;
+
+  case GCCause::_wb_full_gc:
+  case GCCause::_wb_breakpoint:
+  case GCCause::_dcmd_gc_run:
+  case GCCause::_java_lang_system_gc:
+  case GCCause::_full_gc_alot:
+  case GCCause::_jvmti_force_gc:
+  case GCCause::_metadata_GC_threshold:
+  case GCCause::_metadata_GC_clear_soft_refs:
+  case GCCause::_codecache_GC_threshold:
+  case GCCause::_codecache_GC_aggressive:
+    // Start Major GC
+    _driver_major->collect(request);
+    break;
+
+  default:
+    fatal("Unsupported GC cause (%s)", GCCause::to_string(cause));
+    break;
+  }
 }
 
 void ZCollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
@@ -226,19 +246,27 @@ bool ZCollectedHeap::uses_stack_watermark_barrier() const {
 }
 
 MemoryUsage ZCollectedHeap::memory_usage() {
-  return _heap.serviceability_memory_pool()->get_memory_usage();
+  const size_t initial_size = ZHeap::heap()->initial_capacity();
+  const size_t committed    = ZHeap::heap()->capacity();
+  const size_t used         = MIN2(ZHeap::heap()->used(), committed);
+  const size_t max_size     = ZHeap::heap()->max_capacity();
+
+  return MemoryUsage(initial_size, used, committed, max_size);
 }
 
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {
-  GrowableArray<GCMemoryManager*> memory_managers(2);
-  memory_managers.append(_heap.serviceability_cycle_memory_manager());
-  memory_managers.append(_heap.serviceability_pause_memory_manager());
+  GrowableArray<GCMemoryManager*> memory_managers(4);
+  memory_managers.append(_heap.serviceability_cycle_memory_manager(true /* minor */));
+  memory_managers.append(_heap.serviceability_cycle_memory_manager(false /* minor */));
+  memory_managers.append(_heap.serviceability_pause_memory_manager(true /* minor */));
+  memory_managers.append(_heap.serviceability_pause_memory_manager(false /* minor */));
   return memory_managers;
 }
 
 GrowableArray<MemoryPool*> ZCollectedHeap::memory_pools() {
-  GrowableArray<MemoryPool*> memory_pools(1);
-  memory_pools.append(_heap.serviceability_memory_pool());
+  GrowableArray<MemoryPool*> memory_pools(2);
+  memory_pools.append(_heap.serviceability_memory_pool(ZGenerationId::young));
+  memory_pools.append(_heap.serviceability_memory_pool(ZGenerationId::old));
   return memory_pools;
 }
 
@@ -250,6 +278,14 @@ ParallelObjectIteratorImpl* ZCollectedHeap::parallel_object_iterator(uint nworke
   return _heap.parallel_object_iterator(nworkers, true /* visit_weaks */);
 }
 
+void ZCollectedHeap::pin_object(JavaThread* thread, oop obj) {
+  ZJNICritical::enter(thread);
+}
+
+void ZCollectedHeap::unpin_object(JavaThread* thread, oop obj) {
+  ZJNICritical::exit(thread);
+}
+
 void ZCollectedHeap::keep_alive(oop obj) {
   _heap.keep_alive(obj);
 }
@@ -259,7 +295,15 @@ void ZCollectedHeap::register_nmethod(nmethod* nm) {
 }
 
 void ZCollectedHeap::unregister_nmethod(nmethod* nm) {
-  ZNMethod::unregister_nmethod(nm);
+  // ZGC follows the 'unlink | handshake | purge', where nmethods are unlinked
+  // from the system, threads are handshaked so that no reference to the
+  // unlinked nmethods exist, then the nmethods are deleted in the purge phase.
+  //
+  //
+  // CollectedHeap::unregister_nmethod is called during the flush phase, which
+  // is too late for ZGC.
+
+  ZNMethod::purge_nmethod(nm);
 }
 
 void ZCollectedHeap::verify_nmethod(nmethod* nm) {
@@ -272,30 +316,34 @@ WorkerThreads* ZCollectedHeap::safepoint_workers() {
 
 void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   tc->do_thread(_director);
-  tc->do_thread(_driver);
+  tc->do_thread(_driver_major);
+  tc->do_thread(_driver_minor);
   tc->do_thread(_stat);
   _heap.threads_do(tc);
   _runtime_workers.threads_do(tc);
 }
 
 VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {
-  return VirtualSpaceSummary((HeapWord*)0, (HeapWord*)capacity(), (HeapWord*)max_capacity());
+  const uintptr_t start = ZAddressHeapBase;
+
+  // Fake values. ZGC does not commit memory contiguously in the reserved
+  // address space, and the reserved space is larger than MaxHeapSize.
+  const uintptr_t committed_end = ZAddressHeapBase + capacity();
+  const uintptr_t reserved_end = ZAddressHeapBase + max_capacity();
+
+  return VirtualSpaceSummary((HeapWord*)start, (HeapWord*)committed_end, (HeapWord*)reserved_end);
 }
 
 void ZCollectedHeap::safepoint_synchronize_begin() {
+  ZGeneration::young()->synchronize_relocation();
+  ZGeneration::old()->synchronize_relocation();
   SuspendibleThreadSet::synchronize();
 }
 
 void ZCollectedHeap::safepoint_synchronize_end() {
   SuspendibleThreadSet::desynchronize();
-}
-
-void ZCollectedHeap::pin_object(JavaThread* thread, oop obj) {
-  GCLocker::lock_critical(thread);
-}
-
-void ZCollectedHeap::unpin_object(JavaThread* thread, oop obj) {
-  GCLocker::unlock_critical(thread);
+  ZGeneration::old()->desynchronize_relocation();
+  ZGeneration::young()->desynchronize_relocation();
 }
 
 void ZCollectedHeap::prepare_for_verify() {
@@ -308,21 +356,29 @@ void ZCollectedHeap::print_on(outputStream* st) const {
 
 void ZCollectedHeap::print_on_error(outputStream* st) const {
   st->print_cr("ZGC Globals:");
-  st->print_cr(" GlobalPhase:       %u (%s)", ZGlobalPhase, ZGlobalPhaseToString());
-  st->print_cr(" GlobalSeqNum:      %u", ZGlobalSeqNum);
-  st->print_cr(" Offset Max:        " SIZE_FORMAT "%s (" PTR_FORMAT ")",
+  st->print_cr(" Young Collection:   %s/%u", ZGeneration::young()->phase_to_string(), ZGeneration::young()->seqnum());
+  st->print_cr(" Old Collection:     %s/%u", ZGeneration::old()->phase_to_string(), ZGeneration::old()->seqnum());
+  st->print_cr(" Offset Max:         " SIZE_FORMAT "%s (" PTR_FORMAT ")",
                byte_size_in_exact_unit(ZAddressOffsetMax),
                exact_unit_for_byte_size(ZAddressOffsetMax),
                ZAddressOffsetMax);
-  st->print_cr(" Page Size Small:   " SIZE_FORMAT "M", ZPageSizeSmall / M);
-  st->print_cr(" Page Size Medium:  " SIZE_FORMAT "M", ZPageSizeMedium / M);
+  st->print_cr(" Page Size Small:    " SIZE_FORMAT "M", ZPageSizeSmall / M);
+  st->print_cr(" Page Size Medium:   " SIZE_FORMAT "M", ZPageSizeMedium / M);
   st->cr();
   st->print_cr("ZGC Metadata Bits:");
-  st->print_cr(" Good:              " PTR_FORMAT, ZAddressGoodMask);
-  st->print_cr(" Bad:               " PTR_FORMAT, ZAddressBadMask);
-  st->print_cr(" WeakBad:           " PTR_FORMAT, ZAddressWeakBadMask);
-  st->print_cr(" Marked:            " PTR_FORMAT, ZAddressMetadataMarked);
-  st->print_cr(" Remapped:          " PTR_FORMAT, ZAddressMetadataRemapped);
+  st->print_cr(" LoadGood:           " PTR_FORMAT, ZPointerLoadGoodMask);
+  st->print_cr(" LoadBad:            " PTR_FORMAT, ZPointerLoadBadMask);
+  st->print_cr(" MarkGood:           " PTR_FORMAT, ZPointerMarkGoodMask);
+  st->print_cr(" MarkBad:            " PTR_FORMAT, ZPointerMarkBadMask);
+  st->print_cr(" StoreGood:          " PTR_FORMAT, ZPointerStoreGoodMask);
+  st->print_cr(" StoreBad:           " PTR_FORMAT, ZPointerStoreBadMask);
+  st->print_cr(" ------------------- ");
+  st->print_cr(" Remapped:           " PTR_FORMAT, ZPointerRemapped);
+  st->print_cr(" RemappedYoung:      " PTR_FORMAT, ZPointerRemappedYoungMask);
+  st->print_cr(" RemappedOld:        " PTR_FORMAT, ZPointerRemappedOldMask);
+  st->print_cr(" MarkedYoung:        " PTR_FORMAT, ZPointerMarkedYoung);
+  st->print_cr(" MarkedOld:          " PTR_FORMAT, ZPointerMarkedOld);
+  st->print_cr(" Remembered:         " PTR_FORMAT, ZPointerRemembered);
   st->cr();
   CollectedHeap::print_on_error(st);
 }
@@ -340,11 +396,11 @@ bool ZCollectedHeap::print_location(outputStream* st, void* addr) const {
 }
 
 void ZCollectedHeap::verify(VerifyOption option /* ignored */) {
-  _heap.verify();
+  fatal("Externally triggered verification not supported");
 }
 
 bool ZCollectedHeap::is_oop(oop object) const {
-  return _heap.is_oop(ZOop::to_address(object));
+  return _heap.is_oop(cast_from_oop<uintptr_t>(object));
 }
 
 bool ZCollectedHeap::supports_concurrent_gc_breakpoints() const {

@@ -26,7 +26,7 @@
 #include "unittest.hpp"
 
 TEST(ZVirtualMemory, split) {
-  ZVirtualMemory vmem(0, 10);
+  ZVirtualMemory vmem(zoffset(0), 10);
 
   ZVirtualMemory vmem0 = vmem.split(0);
   EXPECT_EQ(vmem0.size(), 0u);

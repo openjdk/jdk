@@ -27,7 +27,7 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/z/zLock.hpp"
 
-class ZPageAllocation;
+class ZPageAllocator;
 
 class ZUncommitter : public ConcurrentGCThread {
 private:

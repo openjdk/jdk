@@ -35,8 +35,8 @@
 #ifndef AMD64
     format_width       =  1
 #else
-    // vs Assembler::narrow_oop_operand.
-    format_width       =  2
+    // vs Assembler::narrow_oop_operand and ZGC barrier encodings.
+    format_width       =  3
 #endif
   };
 

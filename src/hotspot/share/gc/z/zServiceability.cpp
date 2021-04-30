@@ -25,10 +25,31 @@
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/hSpaceCounters.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zDriver.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zServiceability.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "runtime/perfData.hpp"
+
+struct ZMemoryUsageInfo {
+  size_t _young_used;
+  size_t _young_capacity;
+  size_t _old_used;
+  size_t _old_capacity;
+};
+
+static ZMemoryUsageInfo compute_memory_usage_info() {
+  const size_t capacity = ZHeap::heap()->capacity();
+  const size_t old_used = ZHeap::heap()->used_old();
+  const size_t young_used = ZHeap::heap()->used_young();
+
+  ZMemoryUsageInfo info;
+  info._old_used = MIN2(old_used, capacity);
+  info._old_capacity = info._old_used;
+  info._young_capacity = capacity - info._old_capacity;
+  info._young_used = MIN2(young_used, info._young_capacity);
+  return info;
+}
 
 class ZGenerationCounters : public GenerationCounters {
 public:
@@ -45,122 +66,189 @@ public:
 // Class to expose perf counters used by jstat.
 class ZServiceabilityCounters : public CHeapObj<mtGC> {
 private:
-  ZGenerationCounters _generation_counters;
-  HSpaceCounters      _space_counters;
-  CollectorCounters   _collector_counters;
+  ZGenerationCounters _generation_young_counters;
+  ZGenerationCounters _generation_old_counters;
+  HSpaceCounters      _space_young_counters;
+  HSpaceCounters      _space_old_counters;
+  CollectorCounters   _minor_collection_counters;
+  CollectorCounters   _major_collection_counters;
 
 public:
-  ZServiceabilityCounters(size_t min_capacity, size_t max_capacity);
+  ZServiceabilityCounters(size_t initial_capacity, size_t min_capacity, size_t max_capacity);
 
-  CollectorCounters* collector_counters();
+  CollectorCounters* collector_counters(bool minor);
 
   void update_sizes();
 };
 
-ZServiceabilityCounters::ZServiceabilityCounters(size_t min_capacity, size_t max_capacity) :
+ZServiceabilityCounters::ZServiceabilityCounters(size_t initial_capacity, size_t min_capacity, size_t max_capacity) :
+    // generation.0
+    _generation_young_counters(
+        "young"          /* name */,
+        0                /* ordinal */,
+        1                /* spaces */,
+        min_capacity     /* min_capacity */,
+        max_capacity     /* max_capacity */,
+        initial_capacity /* curr_capacity */),
     // generation.1
-    _generation_counters("old"        /* name */,
-                         1            /* ordinal */,
-                         1            /* spaces */,
-                         min_capacity /* min_capacity */,
-                         max_capacity /* max_capacity */,
-                         min_capacity /* curr_capacity */),
+    _generation_old_counters(
+        "old"        /* name */,
+        1            /* ordinal */,
+        1            /* spaces */,
+        0            /* min_capacity */,
+        max_capacity /* max_capacity */,
+        0            /* curr_capacity */),
+    // generation.0.space.0
+    _space_young_counters(
+        _generation_young_counters.name_space(),
+        "space"          /* name */,
+        0                /* ordinal */,
+        max_capacity     /* max_capacity */,
+        initial_capacity /* init_capacity */),
     // generation.1.space.0
-    _space_counters(_generation_counters.name_space(),
-                    "space"      /* name */,
-                    0            /* ordinal */,
-                    max_capacity /* max_capacity */,
-                    min_capacity /* init_capacity */),
+    _space_old_counters(
+        _generation_old_counters.name_space(),
+        "space"      /* name */,
+        0            /* ordinal */,
+        max_capacity /* max_capacity */,
+        0            /* init_capacity */),
+    // gc.collector.0
+    _minor_collection_counters(
+        "ZGC minor collection pauses" /* name */,
+        0                             /* ordinal */),
     // gc.collector.2
-    _collector_counters("Z concurrent cycle pauses" /* name */,
-                        2                           /* ordinal */) {}
+    _major_collection_counters(
+        "ZGC major collection pauses" /* name */,
+        2                             /* ordinal */) {}
 
-CollectorCounters* ZServiceabilityCounters::collector_counters() {
-  return &_collector_counters;
+CollectorCounters* ZServiceabilityCounters::collector_counters(bool minor) {
+  return minor
+      ? &_minor_collection_counters
+      : &_major_collection_counters;
 }
 
 void ZServiceabilityCounters::update_sizes() {
   if (UsePerfData) {
-    const size_t capacity = ZHeap::heap()->capacity();
-    const size_t used = MIN2(ZHeap::heap()->used(), capacity);
-
-    _generation_counters.update_capacity(capacity);
-    _space_counters.update_capacity(capacity);
-    _space_counters.update_used(used);
+    const ZMemoryUsageInfo info = compute_memory_usage_info();
+    _generation_young_counters.update_capacity(info._young_capacity);
+    _generation_old_counters.update_capacity(info._old_capacity);
+    _space_young_counters.update_capacity(info._young_capacity);
+    _space_young_counters.update_used(info._young_used);
+    _space_old_counters.update_capacity(info._old_capacity);
+    _space_old_counters.update_used(info._old_used);
 
     MetaspaceCounters::update_performance_counters();
   }
 }
 
-ZServiceabilityMemoryPool::ZServiceabilityMemoryPool(size_t min_capacity, size_t max_capacity) :
-    CollectedMemoryPool("ZHeap",
+ZServiceabilityMemoryPool::ZServiceabilityMemoryPool(const char* name, ZGenerationId id, size_t min_capacity, size_t max_capacity) :
+    CollectedMemoryPool(name,
                         min_capacity,
                         max_capacity,
-                        true /* support_usage_threshold */) {}
+                        id == ZGenerationId::old /* support_usage_threshold */),
+    _generation_id(id) {}
 
 size_t ZServiceabilityMemoryPool::used_in_bytes() {
-  return ZHeap::heap()->used();
+  return ZHeap::heap()->used_generation(_generation_id);
 }
 
 MemoryUsage ZServiceabilityMemoryPool::get_memory_usage() {
-  const size_t committed = ZHeap::heap()->capacity();
-  const size_t used      = MIN2(ZHeap::heap()->used(), committed);
+  const ZMemoryUsageInfo info = compute_memory_usage_info();
 
-  return MemoryUsage(initial_size(), used, committed, max_size());
+  if (_generation_id == ZGenerationId::young) {
+    return MemoryUsage(initial_size(), info._young_used, info._young_capacity, max_size());
+  } else {
+    return MemoryUsage(initial_size(), info._old_used, info._old_capacity, max_size());
+  }
 }
 
 ZServiceabilityMemoryManager::ZServiceabilityMemoryManager(const char* name,
                                                            const char* end_message,
-                                                           ZServiceabilityMemoryPool* pool) :
+                                                           MemoryPool* young_memory_pool,
+                                                           MemoryPool* old_memory_pool) :
     GCMemoryManager(name, end_message) {
-  add_pool(pool);
+  add_pool(young_memory_pool);
+  add_pool(old_memory_pool);
 }
 
-ZServiceability::ZServiceability(size_t min_capacity, size_t max_capacity) :
+ZServiceability::ZServiceability(size_t initial_capacity,
+                                 size_t min_capacity,
+                                 size_t max_capacity) :
+    _initial_capacity(initial_capacity),
     _min_capacity(min_capacity),
     _max_capacity(max_capacity),
-    _memory_pool(_min_capacity, _max_capacity),
-    _cycle_memory_manager("ZGC Cycles", "end of GC cycle", &_memory_pool),
-    _pause_memory_manager("ZGC Pauses", "end of GC pause", &_memory_pool),
-    _counters(NULL) {}
+    _young_memory_pool("ZGC Young Generation", ZGenerationId::young, _min_capacity, _max_capacity),
+    _old_memory_pool("ZGC Old Generation", ZGenerationId::old, 0, _max_capacity),
+    _minor_cycle_memory_manager("ZGC Minor Cycles", "end of GC cycle", &_young_memory_pool, &_old_memory_pool),
+    _major_cycle_memory_manager("ZGC Major Cycles", "end of GC cycle", &_young_memory_pool, &_old_memory_pool),
+    _minor_pause_memory_manager("ZGC Minor Pauses", "end of GC pause", &_young_memory_pool, &_old_memory_pool),
+    _major_pause_memory_manager("ZGC Major Pauses", "end of GC pause", &_young_memory_pool, &_old_memory_pool),
+    _counters(NULL) {
+}
 
 void ZServiceability::initialize() {
-  _counters = new ZServiceabilityCounters(_min_capacity, _max_capacity);
+  _counters = new ZServiceabilityCounters(_initial_capacity, _min_capacity, _max_capacity);
 }
 
-MemoryPool* ZServiceability::memory_pool() {
-  return &_memory_pool;
+MemoryPool* ZServiceability::memory_pool(ZGenerationId id) {
+  return id == ZGenerationId::young
+      ? &_young_memory_pool
+      : &_old_memory_pool;
 }
 
-GCMemoryManager* ZServiceability::cycle_memory_manager() {
-  return &_cycle_memory_manager;
+GCMemoryManager* ZServiceability::cycle_memory_manager(bool minor) {
+  return minor
+      ? &_minor_cycle_memory_manager
+      : &_major_cycle_memory_manager;
 }
 
-GCMemoryManager* ZServiceability::pause_memory_manager() {
-  return &_pause_memory_manager;
+GCMemoryManager* ZServiceability::pause_memory_manager(bool minor) {
+  return minor
+      ? &_minor_pause_memory_manager
+      : &_major_pause_memory_manager;
 }
 
 ZServiceabilityCounters* ZServiceability::counters() {
   return _counters;
 }
 
-ZServiceabilityCycleTracer::ZServiceabilityCycleTracer() :
-    _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(),
-                          ZCollectedHeap::heap()->gc_cause(),
-                          true  /* allMemoryPoolsAffected */,
-                          true  /* recordGCBeginTime */,
-                          true  /* recordPreGCUsage */,
-                          true  /* recordPeakUsage */,
-                          true  /* recordPostGCUsage */,
-                          true  /* recordAccumulatedGCTime */,
-                          true  /* recordGCEndTime */,
-                          true  /* countCollection */) {}
+bool ZServiceabilityCycleTracer::_minor_is_active;
+
+ZServiceabilityCycleTracer::ZServiceabilityCycleTracer(bool minor) :
+    _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(minor),
+                          minor ? ZDriver::minor()->gc_cause() : ZDriver::major()->gc_cause(),
+                          true /* allMemoryPoolsAffected */,
+                          true /* recordGCBeginTime */,
+                          true /* recordPreGCUsage */,
+                          true /* recordPeakUsage */,
+                          true /* recordPostGCUsage */,
+                          true /* recordAccumulatedGCTime */,
+                          true /* recordGCEndTime */,
+                          true /* countCollection */) {
+  _minor_is_active = minor;
+}
+
+ZServiceabilityCycleTracer::~ZServiceabilityCycleTracer() {
+  _minor_is_active = false;
+}
+
+bool ZServiceabilityCycleTracer::minor_is_active() {
+  return _minor_is_active;
+}
+
+bool ZServiceabilityPauseTracer::minor_is_active() const {
+  // We report pauses at the minor/major collection level instead
+  // of the young/old level. At the call-site where ZServiceabilityPauseTracer
+  // is used, we don't have that information readily available, so
+  // we let ZServiceabilityCycleTracer keep track of that.
+  return ZServiceabilityCycleTracer::minor_is_active();
+}
 
 ZServiceabilityPauseTracer::ZServiceabilityPauseTracer() :
     _svc_gc_marker(SvcGCMarker::CONCURRENT),
-    _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters()),
-    _memory_manager_stats(ZHeap::heap()->serviceability_pause_memory_manager(),
-                          ZCollectedHeap::heap()->gc_cause(),
+    _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters(minor_is_active())),
+    _memory_manager_stats(ZHeap::heap()->serviceability_pause_memory_manager(minor_is_active()),
+                          minor_is_active() ? ZDriver::minor()->gc_cause() : ZDriver::major()->gc_cause(),
                           true  /* allMemoryPoolsAffected */,
                           true  /* recordGCBeginTime */,
                           false /* recordPreGCUsage */,

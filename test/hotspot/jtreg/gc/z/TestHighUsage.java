@@ -94,7 +94,6 @@ public class TestHighUsage {
                                     "-Xlog:gc,gc+start",
                                     Test.class.getName())
                     .shouldNotContain("Allocation Stall")
-                    .shouldContain("High Usage")
                     .shouldHaveExitValue(0);
     }
 }

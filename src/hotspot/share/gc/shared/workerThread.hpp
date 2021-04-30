@@ -93,6 +93,9 @@ private:
 
   WorkerThread* create_worker(uint name_suffix);
 
+  void set_indirectly_suspendible_threads();
+  void clear_indirectly_suspendible_threads();
+
 protected:
   virtual void on_create_worker(WorkerThread* worker) {}
 

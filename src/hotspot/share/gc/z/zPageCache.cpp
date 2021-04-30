@@ -151,13 +151,13 @@ ZPage* ZPageCache::alloc_oversized_page(size_t size) {
   return page;
 }
 
-ZPage* ZPageCache::alloc_page(uint8_t type, size_t size) {
+ZPage* ZPageCache::alloc_page(ZPageType type, size_t size) {
   ZPage* page;
 
   // Try allocate exact page
-  if (type == ZPageTypeSmall) {
+  if (type == ZPageType::small) {
     page = alloc_small_page();
-  } else if (type == ZPageTypeMedium) {
+  } else if (type == ZPageType::medium) {
     page = alloc_medium_page();
   } else {
     page = alloc_large_page(size);
@@ -188,10 +188,10 @@ ZPage* ZPageCache::alloc_page(uint8_t type, size_t size) {
 }
 
 void ZPageCache::free_page(ZPage* page) {
-  const uint8_t type = page->type();
-  if (type == ZPageTypeSmall) {
+  const ZPageType type = page->type();
+  if (type == ZPageType::small) {
     _small.get(page->numa_id()).insert_first(page);
-  } else if (type == ZPageTypeMedium) {
+  } else if (type == ZPageType::medium) {
     _medium.insert_first(page);
   } else {
     _large.insert_first(page);
@@ -222,7 +222,7 @@ void ZPageCache::flush_per_numa_lists(ZPageCacheFlushClosure* cl, ZPerNUMA<ZList
 
   // Flush lists round-robin
   while (numa_done < numa_count) {
-    ZList<ZPage>* numa_list = from->addr(numa_next);
+    ZList<ZPage>* const numa_list = from->addr(numa_next);
     if (++numa_next == numa_count) {
       numa_next = 0;
     }
@@ -330,27 +330,4 @@ size_t ZPageCache::flush_for_uncommit(size_t requested, ZList<ZPage>* to, uint64
 
 void ZPageCache::set_last_commit() {
   _last_commit = ceil(os::elapsedTime());
-}
-
-void ZPageCache::pages_do(ZPageClosure* cl) const {
-  // Small
-  ZPerNUMAConstIterator<ZList<ZPage> > iter_numa(&_small);
-  for (const ZList<ZPage>* list; iter_numa.next(&list);) {
-    ZListIterator<ZPage> iter_small(list);
-    for (ZPage* page; iter_small.next(&page);) {
-      cl->do_page(page);
-    }
-  }
-
-  // Medium
-  ZListIterator<ZPage> iter_medium(&_medium);
-  for (ZPage* page; iter_medium.next(&page);) {
-    cl->do_page(page);
-  }
-
-  // Large
-  ZListIterator<ZPage> iter_large(&_large);
-  for (ZPage* page; iter_large.next(&page);) {
-    cl->do_page(page);
-  }
 }

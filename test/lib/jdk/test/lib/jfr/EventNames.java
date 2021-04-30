@@ -140,6 +140,8 @@ public class EventNames {
     public static final String GCPhaseParallel = PREFIX + "GCPhaseParallel";
     public static final String GCPhaseConcurrent = PREFIX + "GCPhaseConcurrent";
     public static final String GCPhaseConcurrentLevel1 = PREFIX + "GCPhaseConcurrentLevel1";
+    public static final String GCPhaseConcurrentLevel2 = PREFIX + "GCPhaseConcurrentLevel2";
+    public static final String GCPhaseConcurrentLevel3 = PREFIX + "GCPhaseConcurrentLevel3";
     public static final String ZAllocationStall = PREFIX + "ZAllocationStall";
     public static final String ZPageAllocation = PREFIX + "ZPageAllocation";
     public static final String ZRelocationSet = PREFIX + "ZRelocationSet";

@@ -26,7 +26,7 @@
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zMemory.inline.hpp"
 
-ZMemory* ZMemoryManager::create(uintptr_t start, size_t size) {
+ZMemory* ZMemoryManager::create(zoffset start, size_t size) {
   ZMemory* const area = new ZMemory(start, size);
   if (_callbacks._create != NULL) {
     _callbacks._create(area);
@@ -85,7 +85,7 @@ void ZMemoryManager::register_callbacks(const Callbacks& callbacks) {
   _callbacks = callbacks;
 }
 
-uintptr_t ZMemoryManager::peek_low_address() const {
+zoffset ZMemoryManager::peek_low_address() const {
   ZLocker<ZLock> locker(&_lock);
 
   const ZMemory* const area = _freelist.first();
@@ -94,10 +94,10 @@ uintptr_t ZMemoryManager::peek_low_address() const {
   }
 
   // Out of memory
-  return UINTPTR_MAX;
+  return zoffset(UINTPTR_MAX);
 }
 
-uintptr_t ZMemoryManager::alloc_low_address(size_t size) {
+zoffset ZMemoryManager::alloc_low_address(size_t size) {
   ZLocker<ZLock> locker(&_lock);
 
   ZListIterator<ZMemory> iter(&_freelist);
@@ -105,13 +105,13 @@ uintptr_t ZMemoryManager::alloc_low_address(size_t size) {
     if (area->size() >= size) {
       if (area->size() == size) {
         // Exact match, remove area
-        const uintptr_t start = area->start();
+        const zoffset start = area->start();
         _freelist.remove(area);
         destroy(area);
         return start;
       } else {
         // Larger than requested, shrink area
-        const uintptr_t start = area->start();
+        const zoffset start = area->start();
         shrink_from_front(area, size);
         return start;
       }
@@ -119,24 +119,24 @@ uintptr_t ZMemoryManager::alloc_low_address(size_t size) {
   }
 
   // Out of memory
-  return UINTPTR_MAX;
+  return zoffset(UINTPTR_MAX);
 }
 
-uintptr_t ZMemoryManager::alloc_low_address_at_most(size_t size, size_t* allocated) {
+zoffset ZMemoryManager::alloc_low_address_at_most(size_t size, size_t* allocated) {
   ZLocker<ZLock> locker(&_lock);
 
-  ZMemory* area = _freelist.first();
+  ZMemory* const area = _freelist.first();
   if (area != NULL) {
     if (area->size() <= size) {
       // Smaller than or equal to requested, remove area
-      const uintptr_t start = area->start();
+      const zoffset start = area->start();
       *allocated = area->size();
       _freelist.remove(area);
       destroy(area);
       return start;
     } else {
       // Larger than requested, shrink area
-      const uintptr_t start = area->start();
+      const zoffset start = area->start();
       shrink_from_front(area, size);
       *allocated = size;
       return start;
@@ -145,10 +145,10 @@ uintptr_t ZMemoryManager::alloc_low_address_at_most(size_t size, size_t* allocat
 
   // Out of memory
   *allocated = 0;
-  return UINTPTR_MAX;
+  return zoffset(UINTPTR_MAX);
 }
 
-uintptr_t ZMemoryManager::alloc_high_address(size_t size) {
+zoffset ZMemoryManager::alloc_high_address(size_t size) {
   ZLocker<ZLock> locker(&_lock);
 
   ZListReverseIterator<ZMemory> iter(&_freelist);
@@ -156,25 +156,25 @@ uintptr_t ZMemoryManager::alloc_high_address(size_t size) {
     if (area->size() >= size) {
       if (area->size() == size) {
         // Exact match, remove area
-        const uintptr_t start = area->start();
+        const zoffset start = area->start();
         _freelist.remove(area);
         destroy(area);
         return start;
       } else {
         // Larger than requested, shrink area
         shrink_from_back(area, size);
-        return area->end();
+        return to_zoffset(area->end());
       }
     }
   }
 
   // Out of memory
-  return UINTPTR_MAX;
+  return zoffset(UINTPTR_MAX);
 }
 
-void ZMemoryManager::free(uintptr_t start, size_t size) {
-  assert(start != UINTPTR_MAX, "Invalid address");
-  const uintptr_t end = start + size;
+void ZMemoryManager::free(zoffset start, size_t size) {
+  assert(start != zoffset(UINTPTR_MAX), "Invalid address");
+  const zoffset_end end = to_zoffset_end(start, size);
 
   ZLocker<ZLock> locker(&_lock);
 

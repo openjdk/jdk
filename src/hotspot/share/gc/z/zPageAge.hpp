@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,41 +21,30 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZTHREAD_HPP
-#define SHARE_GC_Z_ZTHREAD_HPP
+#ifndef SHARE_GC_Z_ZPAGEAGE_HPP
+#define SHARE_GC_Z_ZPAGEAGE_HPP
 
-#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class ZThread : public AllStatic {
-  friend class ZTask;
-  friend class ZWorkersInitializeTask;
-  friend class ZRuntimeWorkersInitializeTask;
-
-private:
-  static THREAD_LOCAL bool      _initialized;
-  static THREAD_LOCAL uintptr_t _id;
-  static THREAD_LOCAL bool      _is_vm;
-  static THREAD_LOCAL bool      _is_java;
-  static THREAD_LOCAL bool      _is_worker;
-  static THREAD_LOCAL uint      _worker_id;
-
-  static void initialize();
-  static void ensure_initialized();
-
-  static void set_worker();
-
-  static bool has_worker_id();
-  static void set_worker_id(uint worker_id);
-  static void clear_worker_id();
-
-public:
-  static const char* name();
-  static uintptr_t id();
-  static bool is_vm();
-  static bool is_java();
-  static bool is_worker();
-  static uint worker_id();
+enum class ZPageAge : uint8_t {
+  eden,
+  survivor1,
+  survivor2,
+  survivor3,
+  survivor4,
+  survivor5,
+  survivor6,
+  survivor7,
+  survivor8,
+  survivor9,
+  survivor10,
+  survivor11,
+  survivor12,
+  survivor13,
+  survivor14,
+  old
 };
 
-#endif // SHARE_GC_Z_ZTHREAD_HPP
+constexpr uint ZPageAgeMax = static_cast<uint>(ZPageAge::old);
+
+#endif // SHARE_GC_Z_ZPAGEAGE_HPP
