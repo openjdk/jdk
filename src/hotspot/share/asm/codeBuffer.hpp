@@ -175,6 +175,7 @@ class CodeSection {
 
   // Mark scratch buffer.
   void        set_scratch_emit()    { _scratch_emit = true; }
+  void        clear_scratch_emit()  { _scratch_emit = false; }
   bool        scratch_emit()        { return _scratch_emit; }
 
   CodeBuffer* outer() const         { return _outer; }

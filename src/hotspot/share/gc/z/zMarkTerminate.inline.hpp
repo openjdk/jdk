@@ -26,63 +26,76 @@
 
 #include "gc/z/zMarkTerminate.hpp"
 
+#include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zLock.inline.hpp"
+#include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 
 inline ZMarkTerminate::ZMarkTerminate() :
     _nworkers(0),
-    _nworking_stage0(0),
-    _nworking_stage1(0) {}
+    _nworking(0),
+    _resurrected(false),
+    _lock() {}
 
-inline bool ZMarkTerminate::enter_stage(volatile uint* nworking_stage) {
-  return Atomic::sub(nworking_stage, 1u) == 0;
+inline void ZMarkTerminate::reset(uint nworkers) {
+  Atomic::store(&_nworkers, nworkers);
+  Atomic::store(&_nworking, nworkers);
 }
 
-inline void ZMarkTerminate::exit_stage(volatile uint* nworking_stage) {
-  Atomic::add(nworking_stage, 1u);
-}
-
-inline bool ZMarkTerminate::try_exit_stage(volatile uint* nworking_stage) {
-  uint nworking = Atomic::load(nworking_stage);
-
-  for (;;) {
-    if (nworking == 0) {
-      return false;
-    }
-
-    const uint new_nworking = nworking + 1;
-    const uint prev_nworking = Atomic::cmpxchg(nworking_stage, nworking, new_nworking);
-    if (prev_nworking == nworking) {
-      // Success
-      return true;
-    }
-
-    // Retry
-    nworking = prev_nworking;
+inline void ZMarkTerminate::leave() {
+  SuspendibleThreadSetLeaver sts_leaver;
+  ZLocker<ZConditionLock> locker(&_lock);
+  Atomic::store(&_nworking, _nworking - 1);
+  if (_nworking == 0) {
+    // Last thread leaving; notify waiters
+    _lock.notify_all();
   }
 }
 
-inline void ZMarkTerminate::reset(uint nworkers) {
-  _nworkers = _nworking_stage0 = _nworking_stage1 = nworkers;
+inline bool ZMarkTerminate::try_terminate() {
+  SuspendibleThreadSetLeaver sts_leaver;
+  ZLocker<ZConditionLock> locker(&_lock);
+  Atomic::store(&_nworking, _nworking - 1);
+  if (_nworking == 0) {
+    // Last thread entering termination: success
+    _lock.notify_all();
+    return true;
+  }
+  _lock.wait();
+  if (_nworking == 0) {
+    // We got notified all work is done; terminate
+    return true;
+  }
+  // We either got notification about more work
+  // or got a spurious wakeup; don't terminate
+  Atomic::store(&_nworking, _nworking + 1);
+  return false;
 }
 
-inline bool ZMarkTerminate::enter_stage0() {
-  return enter_stage(&_nworking_stage0);
+inline void ZMarkTerminate::wake_up() {
+  if (Atomic::load(&_nworking) == Atomic::load(&_nworkers)) {
+    // Everyone is working
+    return;
+  }
+
+  ZLocker<ZConditionLock> locker(&_lock);
+  _lock.notify();
 }
 
-inline void ZMarkTerminate::exit_stage0() {
-  exit_stage(&_nworking_stage0);
+inline void ZMarkTerminate::set_resurrected(bool value) {
+  // Update resurrected if it changed
+  if (resurrected() != value) {
+    Atomic::store(&_resurrected, value);
+    if (value) {
+      log_debug(gc, marking)("Resurrection broke termination");
+    } else {
+      log_debug(gc, marking)("Try terminate after resurrection");
+    }
+  }
 }
 
-inline bool ZMarkTerminate::try_exit_stage0() {
-  return try_exit_stage(&_nworking_stage0);
-}
-
-inline bool ZMarkTerminate::enter_stage1() {
-  return enter_stage(&_nworking_stage1);
-}
-
-inline bool ZMarkTerminate::try_exit_stage1() {
-  return try_exit_stage(&_nworking_stage1);
+inline bool ZMarkTerminate::resurrected() {
+  return Atomic::load(&_resurrected);
 }
 
 #endif // SHARE_GC_Z_ZMARKTERMINATE_INLINE_HPP
