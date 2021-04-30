@@ -381,7 +381,9 @@ public abstract class AbstractMemorySegmentImpl extends MemorySegmentProxy imple
     }
 
     private void checkBounds(long offset, long length) {
-        if (isSmall()) {
+        if (isSmall() &&
+                offset < Integer.MAX_VALUE && length < Integer.MAX_VALUE &&
+                offset > Integer.MIN_VALUE && length > Integer.MIN_VALUE) {
             checkBoundsSmall((int)offset, (int)length);
         } else {
             if (length < 0 ||

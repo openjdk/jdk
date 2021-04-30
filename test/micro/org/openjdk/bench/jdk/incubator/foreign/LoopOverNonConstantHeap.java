@@ -16,7 +16,7 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 9https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/invoke/MethodHandles.Lookup.html4065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
@@ -95,11 +95,6 @@ public class LoopOverNonConstantHeap {
         }
         segment = MemorySegment.ofArray(base);
         byteBuffer = ByteBuffer.wrap(base).order(ByteOrder.nativeOrder());
-    }
-
-    @TearDown
-    public void tearDown() {
-        segment.scope().close();
     }
 
     @Benchmark
