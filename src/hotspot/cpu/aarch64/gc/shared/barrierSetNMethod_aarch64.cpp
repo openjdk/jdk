@@ -98,22 +98,16 @@ public:
   void verify() const;
 };
 
-// Store the instruction bitmask, bits and name for checking the barrier.
-struct CheckInsn {
-  uint32_t mask;
-  uint32_t bits;
-  const char *name;
-};
-
 // The first instruction of the nmethod entry barrier is an ldr (literal)
 // instruction. Verify that it's really there, so the offsets are not skewed.
 void NativeNMethodBarrier::verify() const {
   uint32_t* addr = (uint32_t*) instruction_address();
   uint32_t inst = *addr;
-  if ((inst & 0xff000000) != 0x18000000) {
-    tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", (intptr_t)addr, inst);
-    fatal("not an ldr (literal) instruction.");
-  }
+  // Check if the barrier starts witha ldr (literal) as expected.
+  guarantee((inst & 0xff000000) == 0x18000000,
+            "Nmethod entry barrier did not start with ldr (literal) as expected. "
+            "Addr: " PTR_FORMAT " Code: " UINT32_FORMAT,
+            p2i(addr), inst);
 }
 
 

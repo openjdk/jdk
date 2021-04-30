@@ -1225,6 +1225,9 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       st->print(" %02x", *(u1*)p);
     }
     st->cr();
+    if (is_aligned(addr, sizeof(void*)) && *(void**)addr != NULL) {
+      Universe::heap()->print_location(st, *(void**)addr);
+    }
     return;
   }
 

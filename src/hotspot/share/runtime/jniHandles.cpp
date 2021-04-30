@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "logging/log.hpp"
@@ -273,6 +274,7 @@ public:
 };
 
 void JNIHandles::verify() {
+  assert(!UseZGC, "not supported");
   VerifyJNIHandles verify_handle;
 
   oops_do(&verify_handle);

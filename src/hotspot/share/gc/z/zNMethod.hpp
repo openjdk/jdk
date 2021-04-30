@@ -24,7 +24,10 @@
 #ifndef SHARE_GC_Z_ZNMETHOD_HPP
 #define SHARE_GC_Z_ZNMETHOD_HPP
 
-#include "memory/allStatic.hpp"
+#include "memory/allocation.hpp"
+#include "memory/iterator.hpp"
+#include "oops/accessDecorators.hpp"
+#include "oops/oopsHierarchy.hpp"
 
 class nmethod;
 class NMethodClosure;
@@ -37,10 +40,12 @@ private:
 
   static void log_register(const nmethod* nm);
   static void log_unregister(const nmethod* nm);
+  static void log_purge(const nmethod* nm);
 
 public:
   static void register_nmethod(nmethod* nm);
   static void unregister_nmethod(nmethod* nm);
+  static void purge_nmethod(nmethod* nm);
 
   static bool supports_entry_barrier(nmethod* nm);
 
@@ -48,19 +53,22 @@ public:
   static void disarm(nmethod* nm);
   static void set_guard_value(nmethod* nm, int value);
 
+  static void nmethod_patch_barriers(nmethod* nm);
+
   static void nmethod_oops_do(nmethod* nm, OopClosure* cl);
   static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl);
 
-  static void nmethod_oops_barrier(nmethod* nm);
-
-  static void nmethods_do_begin();
-  static void nmethods_do_end();
-  static void nmethods_do(NMethodClosure* cl);
+  static void nmethods_do_begin(bool secondary);
+  static void nmethods_do_end(bool secondary);
+  static void nmethods_do(bool secondary, NMethodClosure* cl);
 
   static ZReentrantLock* lock_for_nmethod(nmethod* nm);
 
   static void unlink(ZWorkers* workers, bool unloading_occurred);
   static void purge();
+
+  static uintptr_t color(nmethod* nm);
+  static oop load_oop(oop* p, DecoratorSet decorators);
 };
 
 #endif // SHARE_GC_Z_ZNMETHOD_HPP
