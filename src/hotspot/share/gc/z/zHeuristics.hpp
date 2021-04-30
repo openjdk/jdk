@@ -36,6 +36,8 @@ public:
 
   static uint nparallel_workers();
   static uint nconcurrent_workers();
+
+  static size_t significant_heap_overhead();
 };
 
 #endif // SHARE_GC_Z_ZHEURISTICS_HPP

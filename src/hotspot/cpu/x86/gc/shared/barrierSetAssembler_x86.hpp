@@ -49,6 +49,13 @@ public:
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
 
+  virtual void copy_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                       size_t bytes, Address dst, Address src, Register tmp1, Register tmp2);
+
+  virtual void copy_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                       size_t bytes, Address dst, Address src, Register tmp1, Register tmp2,
+                       XMMRegister xmm_tmp1, XMMRegister xmm_tmp2, bool forward);
+
   // Support for jniFastGetField to try resolving a jobject/jweak in native
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
@@ -64,6 +71,8 @@ public:
 
   virtual void nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation);
   virtual void c2i_entry_barrier(MacroAssembler* masm);
+
+  virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };
 
 #endif // CPU_X86_GC_SHARED_BARRIERSETASSEMBLER_X86_HPP

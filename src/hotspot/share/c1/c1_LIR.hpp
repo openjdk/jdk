@@ -1015,11 +1015,6 @@ enum LIR_Code {
   , begin_opAssert
     , lir_assert
   , end_opAssert
-#ifdef INCLUDE_ZGC
-  , begin_opZLoadBarrierTest
-    , lir_zloadbarrier_test
-  , end_opZLoadBarrierTest
-#endif
 };
 
 
@@ -1031,6 +1026,7 @@ enum LIR_Condition {
   , lir_cond_greaterEqual
   , lir_cond_greater
   , lir_cond_belowEqual
+  , lir_cond_above
   , lir_cond_aboveEqual
   , lir_cond_always
   , lir_cond_unknown = -1

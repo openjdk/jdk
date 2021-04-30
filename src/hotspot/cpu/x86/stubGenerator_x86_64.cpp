@@ -1049,26 +1049,8 @@ address StubGenerator::generate_verify_oop() {
   __ testptr(rax, rax);
   __ jcc(Assembler::zero, exit); // if obj is NULL it is OK
 
-#if INCLUDE_ZGC
-  if (UseZGC) {
-    // Check if metadata bits indicate a bad oop
-    __ testptr(rax, Address(r15_thread, ZThreadLocalData::address_bad_mask_offset()));
-    __ jcc(Assembler::notZero, error);
-  }
-#endif
-
-  // Check if the oop is in the right area of memory
-  __ movptr(c_rarg2, rax);
-  __ movptr(c_rarg3, (intptr_t) Universe::verify_oop_mask());
-  __ andptr(c_rarg2, c_rarg3);
-  __ movptr(c_rarg3, (intptr_t) Universe::verify_oop_bits());
-  __ cmpptr(c_rarg2, c_rarg3);
-  __ jcc(Assembler::notZero, error);
-
-  // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(rax, rax, rscratch1);  // get klass
-  __ testptr(rax, rax);
-  __ jcc(Assembler::zero, error); // if klass is NULL it is broken
+   BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+   bs_asm->check_oop(_masm, rax, c_rarg2, c_rarg3, error);
 
   // return if everything seems ok
   __ bind(exit);
@@ -1166,9 +1148,12 @@ void StubGenerator::restore_arg_regs() {
 
 // This is used in places where r10 is a scratch register, and can
 // be adapted if r9 is needed also.
-void StubGenerator::setup_arg_regs_using_thread() {
+void StubGenerator::setup_arg_regs_using_thread(int nargs) {
   const Register saved_r15 = r9;
 #ifdef _WIN64
+  if (nargs >= 4) {
+    __ mov(rax, r9);       // r9 is also saved_r15
+  }
   __ mov(saved_r15, r15);  // r15 is callee saved and needs to be restored
   __ get_thread(r15_thread);
   assert(c_rarg0 == rcx && c_rarg1 == rdx && c_rarg2 == r8 && c_rarg3 == r9,
@@ -1179,6 +1164,9 @@ void StubGenerator::setup_arg_regs_using_thread() {
   __ mov(rdi, rcx); // c_rarg0
   __ mov(rsi, rdx); // c_rarg1
   __ mov(rdx, r8);  // c_rarg2
+  if (nargs >= 4) {
+      __ mov(rcx, rax); // c_rarg3 (via rax)
+  }
 #else
   assert(c_rarg0 == rdi && c_rarg1 == rsi && c_rarg2 == rdx && c_rarg3 == rcx,
          "unexpected argument registers");

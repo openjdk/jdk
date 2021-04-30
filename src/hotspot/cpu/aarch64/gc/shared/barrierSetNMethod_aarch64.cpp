@@ -98,22 +98,16 @@ public:
   void verify() const;
 };
 
-// Store the instruction bitmask, bits and name for checking the barrier.
-struct CheckInsn {
-  uint32_t mask;
-  uint32_t bits;
-  const char *name;
-};
-
 // The first instruction of the nmethod entry barrier is an ldr (literal)
 // instruction. Verify that it's really there, so the offsets are not skewed.
 void NativeNMethodBarrier::verify() const {
   uint32_t* addr = (uint32_t*) instruction_address();
   uint32_t inst = *addr;
-  if ((inst & 0xff000000) != 0x18000000) {
-    tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", (intptr_t)addr, inst);
-    fatal("not an ldr (literal) instruction.");
-  }
+  // Check if the barrier starts witha ldr (ilteral) as expected.
+  guarantee((inst & 0xff000000) == 0x18000000,
+            "Nmethod entry barrier did not start with ldr (literal) as expected. "
+            "Addr: " PTR_FORMAT " Code: " UINT32_FORMAT,
+            p2i(addr), inst);
 }
 
 
@@ -163,7 +157,7 @@ static NativeNMethodBarrier* native_nmethod_barrier(nmethod* nm) {
   return barrier;
 }
 
-void BarrierSetNMethod::disarm(nmethod* nm) {
+void BarrierSetNMethod::disarm_with_value(nmethod* nm, int value) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
@@ -180,7 +174,7 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
   // Disarms the nmethod guard emitted by BarrierSetAssembler::nmethod_entry_barrier.
   // Symmetric "LDR; DMB ISHLD" is in the nmethod barrier.
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
-  barrier->set_value(nm, disarmed_value());
+  barrier->set_value(nm, value);
 }
 
 void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
@@ -210,4 +204,13 @@ bool BarrierSetNMethod::is_armed(nmethod* nm) {
 
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
   return barrier->get_value(nm) != disarmed_value();
+}
+
+int BarrierSetNMethod::arm_value(nmethod* nm) {
+  if (!supports_entry_barrier(nm)) {
+    return 0;
+  }
+
+  NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
+  return barrier->get_value(nm);
 }

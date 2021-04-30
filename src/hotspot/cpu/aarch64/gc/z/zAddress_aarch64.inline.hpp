@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,41 +21,17 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZTHREAD_HPP
-#define SHARE_GC_Z_ZTHREAD_HPP
+#ifndef CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_INLINE_HPP
+#define CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_INLINE_HPP
 
-#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class ZThread : public AllStatic {
-  friend class ZTask;
-  friend class ZWorkersInitializeTask;
-  friend class ZRuntimeWorkersInitializeTask;
+inline uintptr_t ZPointer::remap_bits(uintptr_t colored) {
+  return (colored ^ ZPointerRemappedMask) & ZPointerRemappedMask;
+}
 
-private:
-  static THREAD_LOCAL bool      _initialized;
-  static THREAD_LOCAL uintptr_t _id;
-  static THREAD_LOCAL bool      _is_vm;
-  static THREAD_LOCAL bool      _is_java;
-  static THREAD_LOCAL bool      _is_worker;
-  static THREAD_LOCAL uint      _worker_id;
+inline constexpr int ZPointer::load_shift_lookup(uintptr_t value) {
+  return ZPointerLoadShift;
+}
 
-  static void initialize();
-  static void ensure_initialized();
-
-  static void set_worker();
-
-  static bool has_worker_id();
-  static void set_worker_id(uint worker_id);
-  static void clear_worker_id();
-
-public:
-  static const char* name();
-  static uintptr_t id();
-  static bool is_vm();
-  static bool is_java();
-  static bool is_worker();
-  static uint worker_id();
-};
-
-#endif // SHARE_GC_Z_ZTHREAD_HPP
+#endif // CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_INLINE_HPP

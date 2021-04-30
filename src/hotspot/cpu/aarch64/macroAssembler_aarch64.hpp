@@ -589,6 +589,14 @@ public:
     mrs(0b011, 0b0000, 0b0000, 0b001, reg);
   }
 
+  inline void get_nzcv(Register reg) {
+    mrs(0b011, 0b0100, 0b0010, 0b000, reg);
+  }
+
+  inline void set_nzcv(Register reg) {
+    msr(0b011, 0b0100, 0b0010, 0b000, reg);
+  }
+
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register ra, Register rb,
                       bool want_remainder, Register tmp = rscratch1);
@@ -853,13 +861,13 @@ public:
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
                        Register tmp1, Register tmp2, Register tmp3);
 
-  void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register tmp2 = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register dst, Address src, Register tmp1,
+                     Register tmp2, DecoratorSet decorators = 0);
 
-  void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register tmp2 = noreg, DecoratorSet decorators = 0);
-  void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
-                      Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop_not_null(Register dst, Address src, Register tmp1,
+                              Register tmp2, DecoratorSet decorators = 0);
+  void store_heap_oop(Address dst, Register src, Register tmp1,
+                      Register tmp2, Register tmp3, DecoratorSet decorators = 0);
 
   // currently unimplemented
   // Used for storing NULL. All other oop constants should be

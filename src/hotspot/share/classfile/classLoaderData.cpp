@@ -57,6 +57,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -279,6 +280,10 @@ void ClassLoaderData::clear_claim(int claim) {
       return;
     }
   }
+}
+
+void ClassLoaderData::verify_not_claimed(int claim) {
+  assert((_claim & claim) == 0, "Found a problem: %d", _claim);
 }
 
 bool ClassLoaderData::try_claim(int claim) {

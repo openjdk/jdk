@@ -229,7 +229,7 @@ void BFSClosure::do_oop(narrowOop* ref) {
 }
 
 void BFSClosure::do_root(UnifiedOopRef ref) {
-  assert(ref.dereference() != NULL, "pointee must not be null");
+  assert(ref.dereference() != NULL, "pointee must not be null: " PTR_FORMAT, p2i(ref.dereference()));
   if (!_edge_queue->is_full()) {
     _edge_queue->add(NULL, ref);
   }

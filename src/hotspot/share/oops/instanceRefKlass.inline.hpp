@@ -30,6 +30,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -182,19 +183,22 @@ void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure,
 #ifdef ASSERT
 template <typename T>
 void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
-  T* referent_addr   = (T*) java_lang_ref_Reference::referent_addr_raw(obj);
-  T* discovered_addr = (T*) java_lang_ref_Reference::discovered_addr_raw(obj);
+  struct Stream : public LogStream {
+    Stream() : LogStream(LogTarget(Trace, gc, ref)()) {}
+    void print_contents_cr(oop* addr)       { print_cr(PTR_FORMAT,   *(uintptr_t*)addr); }
+    void print_contents_cr(narrowOop* addr) { print_cr(UINT32_FORMAT_X_0, *(uint32_t*)addr); }
+  } stream;
 
-  log_develop_trace(gc, ref)("InstanceRefKlass %s for obj " PTR_FORMAT, s, p2i(obj));
-  if (java_lang_ref_Reference::is_phantom(obj)) {
-    log_develop_trace(gc, ref)("     referent_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-                               p2i(referent_addr), p2i((oop)HeapAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(referent_addr)));
-  } else {
-    log_develop_trace(gc, ref)("     referent_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-                               p2i(referent_addr), p2i((oop)HeapAccess<ON_WEAK_OOP_REF | AS_NO_KEEPALIVE>::oop_load(referent_addr)));
+  if (stream.is_enabled()) {
+    T* referent_addr   = (T*) java_lang_ref_Reference::referent_addr_raw(obj);
+    T* discovered_addr = (T*) java_lang_ref_Reference::discovered_addr_raw(obj);
+
+    stream.print_cr("InstanceRefKlass %s for obj " PTR_FORMAT, s, p2i(obj));
+    stream.print("     referent_addr/* " PTR_FORMAT " / ", p2i(referent_addr));
+    stream.print_contents_cr(referent_addr);
+    stream.print("     discovered_addr/* " PTR_FORMAT " / ", p2i(discovered_addr));
+    stream.print_contents_cr(discovered_addr);
   }
-  log_develop_trace(gc, ref)("     discovered_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-      p2i(discovered_addr), p2i((oop)HeapAccess<AS_NO_KEEPALIVE>::oop_load(discovered_addr)));
 }
 #endif
 

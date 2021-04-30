@@ -73,6 +73,7 @@ class oopDesc {
 
   inline void set_mark(markWord m);
   static inline void set_mark(HeapWord* mem, markWord m);
+  static inline void release_set_mark(HeapWord* mem, markWord m);
 
   inline void release_set_mark(markWord m);
   inline markWord cas_set_mark(markWord new_mark, markWord old_mark);
@@ -151,6 +152,8 @@ class oopDesc {
   oop obj_field_access(int offset) const;
   oop obj_field(int offset) const;
   void obj_field_put(int offset, oop value);
+  template <DecoratorSet decorator>
+  void obj_field_put_access(int offset, oop value);
   void obj_field_put_raw(int offset, oop value);
   void obj_field_put_volatile(int offset, oop value);
 

@@ -195,6 +195,41 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   }
 }
 
+void BarrierSetAssembler::copy_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                  size_t bytes, Address dst, Address src, Register tmp1, Register tmp2) {
+  assert(bytes <= 8, "can only deal with non-vector registers");
+  if (bytes == 1) {
+    __ movb(tmp1, src);
+    __ movb(dst, tmp1);
+  } else if (bytes == 2) {
+    __ movw(tmp1, src);
+    __ movw(dst, tmp1);
+  } else if (bytes == 4) {
+    __ movl(tmp1, src);
+    __ movl(dst, tmp1);
+  } else if (bytes == 8) {
+#ifdef _LP64
+    __ movq(tmp1, src);
+    __ movq(dst, tmp1);
+#else
+    fatal("No support for 8 bytes copy");
+#endif
+  }
+}
+
+void BarrierSetAssembler::copy_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                  size_t bytes, Address dst, Address src, Register tmp1, Register tmp2,
+                                  XMMRegister xmm_tmp1, XMMRegister xmm_tmp2, bool forward) {
+  assert(bytes > 8, "can only deal with vector registers");
+  if (bytes == 16) {
+    __ movdqu(xmm_tmp1, src);
+    __ movdqu(dst, xmm_tmp1);
+  } else if (bytes == 32) {
+    __ vmovdqu(xmm_tmp1, src);
+    __ vmovdqu(dst, xmm_tmp1);
+  }
+}
+
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
   __ clear_jobject_tag(obj);
@@ -365,4 +400,19 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ pop(tmp2);
   __ pop(tmp1);
 #endif
+}
+
+void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  // Check if the oop is in the right area of memory
+  __ movptr(tmp1, obj);
+  __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
+  __ andptr(tmp1, tmp2);
+  __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+  __ cmpptr(tmp1, tmp2);
+  __ jcc(Assembler::notZero, error);
+
+  // make sure klass is 'reasonable', which is not zero.
+  __ load_klass(obj, obj, tmp1);  // get klass
+  __ testptr(obj, obj);
+  __ jcc(Assembler::zero, error); // if klass is NULL it is broken
 }

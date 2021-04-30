@@ -170,8 +170,8 @@ class CodeSection {
   bool        has_locs() const      { return _locs_end != NULL; }
 
   // Mark scratch buffer.
-  void        set_scratch_emit()    { _scratch_emit = true; }
-  bool        scratch_emit()        { return _scratch_emit; }
+  void        set_scratch_emit(bool value = true) { _scratch_emit = value; }
+  bool        scratch_emit()                      { return _scratch_emit; }
 
   CodeBuffer* outer() const         { return _outer; }
 
