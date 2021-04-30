@@ -51,9 +51,6 @@
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
-#if INCLUDE_ZGC
-#include "gc/z/zThreadLocalData.hpp"
-#endif
 
 // Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
@@ -957,7 +954,11 @@ class StubGenerator: public StubCodeGenerator {
     Label same_aligned;
     Label copy_big, copy32_loop, copy8_loop, copy_small, done;
 
-    __ beqz(count, done);
+    // The size of copy32_loop body increases significantly with ZGC GC barriers.
+    // Need conditional far branches to reach a point beyond the loop in this case.
+    bool is_far = UseZGC && ZGenerational;
+
+    __ beqz(count, done, is_far);
     __ slli(cnt, count, exact_log2(granularity));
     if (is_backwards) {
       __ add(src, s, cnt);
@@ -971,15 +972,15 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(t0, cnt, -32);
       __ bgez(t0, copy32_loop);
       __ addi(t0, cnt, -8);
-      __ bgez(t0, copy8_loop);
+      __ bgez(t0, copy8_loop, is_far);
       __ j(copy_small);
     } else {
       __ mv(t0, 16);
-      __ blt(cnt, t0, copy_small);
+      __ blt(cnt, t0, copy_small, is_far);
 
       __ xorr(t0, src, dst);
       __ andi(t0, t0, 0b111);
-      __ bnez(t0, copy_small);
+      __ bnez(t0, copy_small, is_far);
 
       __ bind(same_aligned);
       __ andi(t0, src, 0b111);
@@ -995,26 +996,27 @@ class StubGenerator: public StubCodeGenerator {
         __ addi(dst, dst, step);
       }
       __ addi(cnt, cnt, -granularity);
-      __ beqz(cnt, done);
+      __ beqz(cnt, done, is_far);
       __ j(same_aligned);
 
       __ bind(copy_big);
       __ mv(t0, 32);
-      __ blt(cnt, t0, copy8_loop);
+      __ blt(cnt, t0, copy8_loop, is_far);
     }
+
     __ bind(copy32_loop);
     if (is_backwards) {
       __ addi(src, src, -wordSize * 4);
       __ addi(dst, dst, -wordSize * 4);
     }
     // we first load 32 bytes, then write it, so the direction here doesn't matter
-    bs_asm->copy_load_at(_masm, decorators, type, 8, tmp3, Address(src), gct1);
-    bs_asm->copy_load_at(_masm, decorators, type, 8, tmp4, Address(src, 8), gct1);
+    bs_asm->copy_load_at(_masm, decorators, type, 8, tmp3, Address(src),     gct1);
+    bs_asm->copy_load_at(_masm, decorators, type, 8, tmp4, Address(src, 8),  gct1);
     bs_asm->copy_load_at(_masm, decorators, type, 8, tmp5, Address(src, 16), gct1);
     bs_asm->copy_load_at(_masm, decorators, type, 8, tmp6, Address(src, 24), gct1);
 
-    bs_asm->copy_store_at(_masm, decorators, type, 8, Address(dst), tmp3, gct1, gct2, gct3);
-    bs_asm->copy_store_at(_masm, decorators, type, 8, Address(dst, 8), tmp4, gct1, gct2, gct3);
+    bs_asm->copy_store_at(_masm, decorators, type, 8, Address(dst),     tmp3, gct1, gct2, gct3);
+    bs_asm->copy_store_at(_masm, decorators, type, 8, Address(dst, 8),  tmp4, gct1, gct2, gct3);
     bs_asm->copy_store_at(_masm, decorators, type, 8, Address(dst, 16), tmp5, gct1, gct2, gct3);
     bs_asm->copy_store_at(_masm, decorators, type, 8, Address(dst, 24), tmp6, gct1, gct2, gct3);
 
@@ -3731,7 +3733,7 @@ class StubGenerator: public StubCodeGenerator {
       framesize // inclusive of return address
     };
 
-    const int insts_size = 512;
+    const int insts_size = 1024;
     const int locs_size  = 64;
 
     CodeBuffer code(name, insts_size, locs_size);
@@ -3970,7 +3972,7 @@ class StubGenerator: public StubCodeGenerator {
       framesize // inclusive of return address
     };
 
-    int insts_size = 512;
+    int insts_size = 1024;
     int locs_size = 64;
     CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
     OopMapSet* oop_maps = new OopMapSet();

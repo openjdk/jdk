@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,19 +28,30 @@
 
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
+#include "gc/z/zIndexDistributor.inline.hpp"
+#include "gc/z/zPage.inline.hpp"
+#include "gc/z/zPageAllocator.inline.hpp"
 
-inline ZPage* ZPageTable::get(uintptr_t addr) const {
-  assert(!ZAddress::is_null(addr), "Invalid address");
+inline ZPage* ZPageTable::get(zaddress addr) const {
+  assert(!is_null(addr), "Invalid address");
   return _map.get(ZAddress::offset(addr));
 }
 
-inline ZPageTableIterator::ZPageTableIterator(const ZPageTable* page_table) :
-    _iter(&page_table->_map),
-    _prev(NULL) {}
+inline ZPage* ZPageTable::get(volatile zpointer* p) const {
+  return get(to_zaddress((uintptr_t)p));
+}
+
+inline ZPage* ZPageTable::at(size_t index) const {
+  return _map.at(index);
+}
+
+inline ZPageTableIterator::ZPageTableIterator(const ZPageTable* table) :
+    _iter(&table->_map),
+    _prev(nullptr) {}
 
 inline bool ZPageTableIterator::next(ZPage** page) {
   for (ZPage* entry; _iter.next(&entry);) {
-    if (entry != NULL && entry != _prev) {
+    if (entry != nullptr && entry != _prev) {
       // Next page found
       *page = _prev = entry;
       return true;
@@ -49,6 +60,56 @@ inline bool ZPageTableIterator::next(ZPage** page) {
 
   // No more pages
   return false;
+}
+
+inline ZPageTableParallelIterator::ZPageTableParallelIterator(const ZPageTable* table) :
+    _table(table),
+    _index_distributor(int(ZAddressOffsetMax >> ZGranuleSizeShift)) {}
+
+template <typename Function>
+inline void ZPageTableParallelIterator::do_pages(Function function) {
+  _index_distributor.do_indices([&](int index) {
+    ZPage* const page = _table->at(index);
+    if (page != nullptr) {
+      const size_t start_index = untype(page->start()) >> ZGranuleSizeShift;
+      if (size_t(index) == start_index) {
+        // Next page found
+        return function(page);
+      }
+    }
+    return true;
+  });
+}
+
+inline bool ZGenerationPagesIterator::next(ZPage** page) {
+  while (_iterator.next(page)) {
+    if ((*page)->generation_id() == _generation_id) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+template <typename Function>
+inline void ZGenerationPagesIterator::yield(Function function) {
+  _page_allocator->disable_safe_destroy();
+  _page_allocator->disable_safe_recycle();
+
+  function();
+
+  _page_allocator->enable_safe_recycle();
+  _page_allocator->enable_safe_destroy();
+}
+
+template <typename Function>
+inline void ZGenerationPagesParallelIterator::do_pages(Function function) {
+  _iterator.do_pages([&](ZPage* page) {
+    if (page->generation_id() == _generation_id) {
+      return function(page);
+    }
+    return true;
+  });
 }
 
 #endif // SHARE_GC_Z_ZPAGETABLE_INLINE_HPP

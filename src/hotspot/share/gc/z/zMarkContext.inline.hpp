@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ inline ZMarkContext::ZMarkContext(size_t nstripes,
     _cache(nstripes),
     _stripe(stripe),
     _stacks(stacks),
+    _nstripes(nstripes),
     _string_dedup_requests() {}
 
 inline ZMarkCache* ZMarkContext::cache() {
@@ -42,12 +43,25 @@ inline ZMarkStripe* ZMarkContext::stripe() {
   return _stripe;
 }
 
+inline void ZMarkContext::set_stripe(ZMarkStripe* stripe) {
+  _stripe = stripe;
+}
+
 inline ZMarkThreadLocalStacks* ZMarkContext::stacks() {
   return _stacks;
 }
 
 inline StringDedup::Requests* ZMarkContext::string_dedup_requests() {
   return &_string_dedup_requests;
+}
+
+inline size_t ZMarkContext::nstripes() {
+  return _nstripes;
+}
+
+inline void ZMarkContext::set_nstripes(size_t nstripes) {
+  _cache.set_nstripes(nstripes);
+  _nstripes = nstripes;
 }
 
 #endif // SHARE_GC_Z_ZMARKCACHE_INLINE_HPP

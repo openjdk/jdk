@@ -135,6 +135,17 @@ void VM_GC_Operation::doit_epilogue() {
   VM_GC_Sync_Operation::doit_epilogue();
 }
 
+bool VM_GC_HeapInspection::doit_prologue() {
+  if (_full_gc && UseZGC) {
+    // ZGC cannot perform a synchronous GC cycle from within the VM thread.
+    // So VM_GC_HeapInspection::collect() is a noop. To respect the _full_gc
+    // flag a synchronous GC cycle is performed from the caller thread in the
+    // prologue.
+    Universe::heap()->collect(GCCause::_heap_inspection);
+  }
+  return VM_GC_Operation::doit_prologue();
+}
+
 bool VM_GC_HeapInspection::skip_operation() const {
   return false;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,22 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 
+inline ZMovableBitMap::ZMovableBitMap() :
+    CHeapBitMap(mtGC) {}
+
+inline ZMovableBitMap::ZMovableBitMap(ZMovableBitMap&& bitmap) :
+    CHeapBitMap(mtGC) {
+  update(bitmap.map(), bitmap.size());
+  bitmap.update(nullptr, 0);
+}
+
 inline ZBitMap::ZBitMap(idx_t size_in_bits) :
     CHeapBitMap(size_in_bits, mtGC, false /* clear */) {}
+
+inline ZBitMap::ZBitMap(const ZBitMap& other) :
+    CHeapBitMap(other.size(), mtGC, false /* clear */) {
+  memcpy(map(), other.map(), size_in_bytes());
+}
 
 inline BitMap::bm_word_t ZBitMap::bit_mask_pair(idx_t bit) {
   assert(bit_in_word(bit) < BitsPerWord - 1, "Invalid bit index");
@@ -75,6 +89,36 @@ inline bool ZBitMap::par_set_bit_pair(idx_t bit, bool finalizable, bool& inc_liv
   } else {
     return par_set_bit_pair_strong(bit, inc_live);
   }
+}
+
+inline ZBitMap::ReverseIterator::ReverseIterator(BitMap* bitmap) :
+    ZBitMap::ReverseIterator(bitmap, 0, bitmap->size()) {}
+
+inline ZBitMap::ReverseIterator::ReverseIterator(BitMap* bitmap, BitMap::idx_t beg, BitMap::idx_t end) :
+    _bitmap(bitmap),
+    _beg(beg),
+    _end(end) {}
+
+inline void ZBitMap::ReverseIterator::reset(BitMap::idx_t beg, BitMap::idx_t end) {
+  assert(beg < _bitmap->size(), "beg index out of bounds");
+  assert(end >= beg && end <= _bitmap->size(), "end index out of bounds");
+  _beg = beg;
+  _end = end;
+}
+
+inline void ZBitMap::ReverseIterator::reset(BitMap::idx_t end) {
+  assert(end >= _beg && end <= _bitmap->size(), "end index out of bounds");
+  _end = end;
+}
+
+inline bool ZBitMap::ReverseIterator::next(BitMap::idx_t *index) {
+  BitMap::ReverseIterator iter(*_bitmap, _beg, _end);
+  if (iter.is_empty()) {
+    return false;
+  }
+
+  *index = _end = iter.index();
+  return true;
 }
 
 #endif // SHARE_GC_Z_ZBITMAP_INLINE_HPP

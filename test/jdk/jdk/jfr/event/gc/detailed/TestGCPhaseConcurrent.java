@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,16 @@ import jdk.test.lib.jfr.Events;
  * @test TestGCPhaseConcurrent
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @requires vm.hasJFR & vm.gc.Z
- * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent
+ * @requires vm.hasJFR & vm.gc.Z & vm.opt.final.ZGenerational
+ * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent Z
+ */
+
+/**
+ * @test TestGCPhaseConcurrent
+ * @key jfr
+ * @library /test/lib /test/jdk /test/hotspot/jtreg
+ * @requires vm.hasJFR & vm.gc.Z & !vm.opt.final.ZGenerational
+ * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent X
  */
 
 /**
@@ -43,14 +51,19 @@ import jdk.test.lib.jfr.Events;
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
  * @requires vm.hasJFR & vm.gc.Shenandoah
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent Shenandoah
  */
 public class TestGCPhaseConcurrent {
     public static void main(String[] args) throws Exception {
+      boolean usesZGC = args[0].equals("Z");
+
         try (Recording recording = new Recording()) {
             // Activate the event we are interested in and start recording
             recording.enable(EventNames.GCPhaseConcurrent);
             recording.enable(EventNames.GCPhaseConcurrentLevel1);
+            if (usesZGC) {
+              recording.enable(EventNames.GCPhaseConcurrentLevel2);
+            }
             recording.start();
 
             // Run GC to get concurrent phases
@@ -63,6 +76,9 @@ public class TestGCPhaseConcurrent {
             Events.hasEvents(events);
             Events.hasEvent(events, EventNames.GCPhaseConcurrent);
             Events.hasEvent(events, EventNames.GCPhaseConcurrentLevel1);
+            if (usesZGC) {
+              Events.hasEvent(events, EventNames.GCPhaseConcurrentLevel2);
+            }
 
             for (RecordedEvent event : events) {
                 System.out.println("Event:" + event);

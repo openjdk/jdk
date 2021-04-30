@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ size_t ZAddressSpaceLimit::mark_stack() {
   return align_up(limit, ZMarkStackSpaceExpandSize);
 }
 
-size_t ZAddressSpaceLimit::heap_view() {
-  // Allow all heap views to occupy 50% of the address space
-  const size_t limit = address_space_limit() / MaxVirtMemFraction / ZHeapViews;
+size_t ZAddressSpaceLimit::heap() {
+  // Allow the heap to occupy 50% of the address space
+  const size_t limit = address_space_limit() / MaxVirtMemFraction;
   return align_up(limit, ZGranuleSize);
 }
