@@ -1439,6 +1439,7 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
             if (result->Opcode() == Op_LShiftX && result->in(2) == phase->intcon(shift)) {
               // Peel the shift off directly but wrap it in a dummy node
               // since Ideal can't return existing nodes
+              phase->is_IterGVN()->_worklist.push(result);
               result = new RShiftXNode(result->in(1), phase->intcon(0));
             } else if (result->is_Add() && result->in(2)->is_Con() &&
                        result->in(1)->Opcode() == Op_LShiftX &&
@@ -1446,6 +1447,7 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
               // We can't do general optimization: ((X<<Z) + Y) >> Z ==> X + (Y>>Z)
               // but for boxing cache access we know that X<<Z will not overflow
               // (there is range check) so we do this optimizatrion by hand here.
+              phase->is_IterGVN()->_worklist.push(result);
               Node* add_con = new RShiftXNode(result->in(2), phase->intcon(shift));
               result = new AddXNode(result->in(1)->in(1), phase->transform(add_con));
             } else {
