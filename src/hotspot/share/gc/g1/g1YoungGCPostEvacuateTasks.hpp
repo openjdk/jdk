@@ -119,7 +119,7 @@ public:
 class G1PostEvacuateCollectionSetCleanupTask2::PurgeCodeRootsTask : public G1AbstractSubTask {
 public:
   PurgeCodeRootsTask() : G1AbstractSubTask(G1GCPhaseTimes::PurgeCodeRoots) { }
-  
+
   double worker_cost() const override { return 1.0; }
   void do_work(uint worker_id) override;
 };
@@ -196,3 +196,4 @@ public:
 };
 
 #endif // SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP
+
