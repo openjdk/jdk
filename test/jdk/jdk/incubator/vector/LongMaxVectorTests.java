@@ -2418,7 +2418,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
 
 
     static long ROL_unary(long a, long b) {
-        return (long)((a << b) | (a >>> -b));
+        return (long)(((a << b) | (a >>> -b)));
     }
 
     @Test(dataProvider = "longBinaryOpProvider")
@@ -2459,8 +2459,12 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
 
+
+
+
+
     static long ROR_unary(long a, long b) {
-        return (long)((a >>> b) | (a << -b));
+        return (long)(((a >>> b) | (a << -b)));
     }
 
     @Test(dataProvider = "longBinaryOpProvider")
@@ -2499,6 +2503,10 @@ public class LongMaxVectorTests extends AbstractVectorTest {
 
         assertShiftArraysEquals(r, a, b, mask, LongMaxVectorTests::ROR_unary);
     }
+
+
+
+
 
     static long MIN(long a, long b) {
         return (long)(Math.min(a, b));

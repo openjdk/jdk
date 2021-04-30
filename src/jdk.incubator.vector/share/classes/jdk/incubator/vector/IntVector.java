@@ -655,9 +655,9 @@ public abstract class IntVector extends AbstractVector<Integer> {
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> (int)((a & LSHR_SETUP_MASK) >>> n));
                 case VECTOR_OP_LROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) -> (int)((a << (n & (Integer.SIZE-1))) | (a >>> (Integer.SIZE - (n & (Integer.SIZE-1))))));
+                        v0.bOp(v1, (i, a, n) -> Integer.rotateLeft(a, n));
                 case VECTOR_OP_RROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) -> (int)((a >>> (n & (Integer.SIZE-1))) | (a << (Integer.SIZE - (n & (Integer.SIZE-1))))));
+                        v0.bOp(v1, (i, a, n) -> Integer.rotateRight(a, n));
                 default: return null;
                 }}));
     }
@@ -817,9 +817,9 @@ public abstract class IntVector extends AbstractVector<Integer> {
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> (int)((a & LSHR_SETUP_MASK) >>> n));
                 case VECTOR_OP_LROTATE: return (v, n) ->
-                        v.uOp((i, a) -> (int)((a << (n & (Integer.SIZE-1))) | (a >>> (Integer.SIZE - (n & (Integer.SIZE-1))))));
+                        v.uOp((i, a) -> Integer.rotateLeft(a, n));
                 case VECTOR_OP_RROTATE: return (v, n) ->
-                        v.uOp((i, a) -> (int)((a >>> (n & (Integer.SIZE-1))) | (a << (Integer.SIZE - (n & (Integer.SIZE-1))))));
+                        v.uOp((i, a) -> Integer.rotateRight(a, n));
                 default: return null;
                 }}));
     }

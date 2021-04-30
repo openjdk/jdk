@@ -2392,7 +2392,7 @@ public class Int512VectorTests extends AbstractVectorTest {
 
 
     static int ROL_unary(int a, int b) {
-        return (int)((a << b) | (a >>> -b));
+        return (int)(((a << b) | (a >>> -b)));
     }
 
     @Test(dataProvider = "intBinaryOpProvider")
@@ -2433,8 +2433,12 @@ public class Int512VectorTests extends AbstractVectorTest {
     }
 
 
+
+
+
+
     static int ROR_unary(int a, int b) {
-        return (int)((a >>> b) | (a << -b));
+        return (int)(((a >>> b) | (a << -b)));
     }
 
     @Test(dataProvider = "intBinaryOpProvider")
@@ -2473,6 +2477,10 @@ public class Int512VectorTests extends AbstractVectorTest {
 
         assertShiftArraysEquals(r, a, b, mask, Int512VectorTests::ROR_unary);
     }
+
+
+
+
 
     static int MIN(int a, int b) {
         return (int)(Math.min(a, b));

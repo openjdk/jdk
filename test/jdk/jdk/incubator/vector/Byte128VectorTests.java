@@ -2427,6 +2427,94 @@ public class Byte128VectorTests extends AbstractVectorTest {
 
 
 
+    static byte ROL_unary(byte a, byte b) {
+        return (byte)((byte)(((((byte)a) & 0xFF) << (b & 7)) | ((((byte)a) & 0xFF) >>> ((8 - (b & 7)) & 7))));
+    }
+
+    @Test(dataProvider = "byteBinaryOpProvider")
+    static void ROLByte128VectorTestsShift(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROL, (int)b[i]).intoArray(r, i);
+            }
+        }
+
+        assertShiftArraysEquals(r, a, b, Byte128VectorTests::ROL_unary);
+    }
+
+
+
+    @Test(dataProvider = "byteBinaryOpMaskProvider")
+    static void ROLByte128VectorTestsShift(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROL, (int)b[i], vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftArraysEquals(r, a, b, mask, Byte128VectorTests::ROL_unary);
+    }
+
+
+
+
+
+
+    static byte ROR_unary(byte a, byte b) {
+        return (byte)((byte)(((((byte)a) & 0xFF) >>> (b & 7)) | ((((byte)a) & 0xFF) << ((8 - (b & 7)) & 7))));
+    }
+
+    @Test(dataProvider = "byteBinaryOpProvider")
+    static void RORByte128VectorTestsShift(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROR, (int)b[i]).intoArray(r, i);
+            }
+        }
+
+        assertShiftArraysEquals(r, a, b, Byte128VectorTests::ROR_unary);
+    }
+
+
+
+    @Test(dataProvider = "byteBinaryOpMaskProvider")
+    static void RORByte128VectorTestsShift(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROR, (int)b[i], vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftArraysEquals(r, a, b, mask, Byte128VectorTests::ROR_unary);
+    }
+
+
 
     static byte MIN(byte a, byte b) {
         return (byte)(Math.min(a, b));
