@@ -378,12 +378,12 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       for (uint i = 2; i < val->req(); i++) {
         // DecodeN has 2 regular inputs + optional MachTemp or load Base inputs.
         Node *temp = val->in(i);
-        if (get_block_for_node(temp) == valb) {
-          // Input node resides in the same block. Needs to get hoisted, too.
+        Block *tempb = get_block_for_node(temp);
+        if (!tempb->dominates(block)) {
           // We only expect nodes without further inputs, like MachTemp or load Base.
           assert(temp->req() == 0 || (temp->req() == 1 && temp->in(0) == (Node*)C->root()),
                  "need for recursive hoisting not expected");
-          valb->find_remove(temp);
+          tempb->find_remove(temp);
           block->add_inst(temp);
           map_node_to_block(temp, block);
         }
