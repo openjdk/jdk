@@ -575,7 +575,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _Compile_types(mtCompiler),
                   _initial_gvn(NULL),
                   _for_igvn(NULL),
-                  _warm_calls(NULL),
                   _late_inlines(comp_arena(), 2, 0, NULL),
                   _string_late_inlines(comp_arena(), 2, 0, NULL),
                   _boxing_late_inlines(comp_arena(), 2, 0, NULL),
@@ -748,14 +747,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   // clone(), or the like.
   set_default_node_notes(NULL);
 
-  for (;;) {
-    int successes = Inline_Warm();
-    if (failing())  return;
-    if (successes == 0)  break;
-  }
-
-  // Drain the list.
-  Finish_Warm();
 #ifndef PRODUCT
   if (should_print(1)) {
     _printer->print_inlining();
@@ -876,7 +867,6 @@ Compile::Compile( ciEnv* ci_env,
     _Compile_types(mtCompiler),
     _initial_gvn(NULL),
     _for_igvn(NULL),
-    _warm_calls(NULL),
     _number_of_mh_late_inlines(0),
     _native_invokers(),
     _print_inlining_stream(NULL),
@@ -1750,57 +1740,6 @@ bool Compile::can_alias(const TypePtr* adr_type, int alias_idx) {
   int adr_idx = get_alias_index(adr_type);
   assert(adr_idx != AliasIdxBot && adr_idx != AliasIdxTop, "");
   return adr_idx == alias_idx;
-}
-
-
-
-//---------------------------pop_warm_call-------------------------------------
-WarmCallInfo* Compile::pop_warm_call() {
-  WarmCallInfo* wci = _warm_calls;
-  if (wci != NULL)  _warm_calls = wci->remove_from(wci);
-  return wci;
-}
-
-//----------------------------Inline_Warm--------------------------------------
-int Compile::Inline_Warm() {
-  // If there is room, try to inline some more warm call sites.
-  // %%% Do a graph index compaction pass when we think we're out of space?
-  if (!InlineWarmCalls)  return 0;
-
-  int calls_made_hot = 0;
-  int room_to_grow   = NodeCountInliningCutoff - unique();
-  int amount_to_grow = MIN2(room_to_grow, (int)NodeCountInliningStep);
-  int amount_grown   = 0;
-  WarmCallInfo* call;
-  while (amount_to_grow > 0 && (call = pop_warm_call()) != NULL) {
-    int est_size = (int)call->size();
-    if (est_size > (room_to_grow - amount_grown)) {
-      // This one won't fit anyway.  Get rid of it.
-      call->make_cold();
-      continue;
-    }
-    call->make_hot();
-    calls_made_hot++;
-    amount_grown   += est_size;
-    amount_to_grow -= est_size;
-  }
-
-  if (calls_made_hot > 0)  set_major_progress();
-  return calls_made_hot;
-}
-
-
-//----------------------------Finish_Warm--------------------------------------
-void Compile::Finish_Warm() {
-  if (!InlineWarmCalls)  return;
-  if (failing())  return;
-  if (warm_calls() == NULL)  return;
-
-  // Clean up loose ends, if we are out of space for inlining.
-  WarmCallInfo* call;
-  while ((call = pop_warm_call()) != NULL) {
-    call->make_cold();
-  }
 }
 
 //---------------------cleanup_loop_predicates-----------------------
