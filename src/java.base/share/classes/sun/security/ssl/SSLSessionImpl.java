@@ -55,6 +55,8 @@ import javax.net.ssl.SSLSessionBindingEvent;
 import javax.net.ssl.SSLSessionBindingListener;
 import javax.net.ssl.SSLSessionContext;
 
+import static sun.security.ssl.ClientAuthType.CLIENT_AUTH_REQUIRED;
+
 /**
  * Implements the SSL session interface, and exposes the session context
  * which is maintained by SSL servers.
@@ -1520,6 +1522,93 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     public String toString() {
         return "Session(" + creationTime + "|" + getCipherSuite() + ")";
     }
+
+    boolean canRejoin(ClientHello.ClientHelloMessage clientHello,
+                                     ServerHandshakeContext shc) {
+
+        boolean result = isRejoinable() && (getPreSharedKey() != null);
+
+        // Check protocol version
+        if (result && getProtocolVersion() != shc.negotiatedProtocol) {
+            if (SSLLogger.isOn &&
+                    SSLLogger.isOn("ssl,handshake,verbose")) {
+
+                SSLLogger.finest("Can't resume, incorrect protocol version");
+            }
+            result = false;
+        }
+
+        // Make sure that the server handshake context's localSupportedSignAlgs
+        // field is populated.  This is particularly important when
+        // client authentication was used in an initial session and it is
+        // now being resumed.
+        if (shc.localSupportedSignAlgs == null) {
+            shc.localSupportedSignAlgs =
+                    SignatureScheme.getSupportedAlgorithms(
+                            shc.sslConfig,
+                            shc.algorithmConstraints, shc.activeProtocols);
+        }
+
+        // Validate the required client authentication.
+        if (result &&
+                (shc.sslConfig.clientAuthType == CLIENT_AUTH_REQUIRED)) {
+            try {
+                getPeerPrincipal();
+            } catch (SSLPeerUnverifiedException e) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
+                    SSLLogger.finest(
+                            "Can't resume, " +
+                                    "client authentication is required");
+                }
+                result = false;
+            }
+
+            // Make sure the list of supported signature algorithms matches
+            Collection<SignatureScheme> sessionSigAlgs =
+                    getLocalSupportedSignatureSchemes();
+            if (result &&
+                    !shc.localSupportedSignAlgs.containsAll(sessionSigAlgs)) {
+
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("Can't resume. Session uses different " +
+                            "signature algorithms");
+                }
+                result = false;
+            }
+        }
+
+        // ensure that the endpoint identification algorithm matches the
+        // one in the session
+        String identityAlg = shc.sslConfig.identificationProtocol;
+        if (result && identityAlg != null) {
+            String sessionIdentityAlg = getIdentificationProtocol();
+            if (!identityAlg.equalsIgnoreCase(sessionIdentityAlg)) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
+
+                    SSLLogger.finest("Can't resume, endpoint id" +
+                            " algorithm does not match, requested: " +
+                            identityAlg + ", cached: " + sessionIdentityAlg);
+                }
+                result = false;
+            }
+        }
+
+        // Ensure cipher suite can be negotiated
+        if (result && (!shc.isNegotiable(getSuite()) ||
+                !clientHello.cipherSuites.contains(getSuite()))) {
+            if (SSLLogger.isOn &&
+                    SSLLogger.isOn("ssl,handshake,verbose")) {
+                SSLLogger.finest(
+                        "Can't resume, unavailable session cipher suite");
+            }
+            result = false;
+        }
+
+        return result;
+    }
+
 }
 
 /**

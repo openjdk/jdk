@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Locale;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
@@ -61,6 +62,8 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     private static final int DEFAULT_MAX_CACHE_SIZE = 20480;
     // Default lifetime of a session. 24 hours
     static final int DEFAULT_SESSION_TIMEOUT = 86400;
+
+    private final ReentrantLock sessionCacheLock = new ReentrantLock();
 
     private final Cache<SessionId, SSLSessionImpl> sessionCache;
                                         // session cache, session id as key
@@ -95,15 +98,21 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         if (sessionId == null) {
             throw new NullPointerException("session id cannot be null");
         }
+        sessionCacheLock.lock();
+        try {
+            return getSession(new SessionId(sessionId));
+        } finally {
+            sessionCacheLock.unlock();
+        }
+    }
 
-        SSLSessionImpl sess = sessionCache.get(new SessionId(sessionId));
+    private SSLSessionImpl getSession(SessionId sessionId) {
+        SSLSessionImpl sess = sessionCache.get(sessionId);
         if (!isTimedout(sess)) {
             return sess;
         }
-
         return null;
     }
-
     /**
      * Returns an enumeration of the active SSL sessions.
      */
@@ -217,14 +226,39 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         s.setContext(this);
     }
 
+    // extract cached session if it is rejoinable
+    SSLSessionImpl consumeRejoinableSession(ClientHello.ClientHelloMessage clientHello,
+                                  ServerHandshakeContext shc, byte[] id) {
+        sessionCacheLock.lock();
+        try {
+            SSLSessionImpl s = getSession(new SessionId(id));
+            if (s != null && s.canRejoin(clientHello, shc)) {
+                remove(s);
+            }
+            return s;
+        } finally {
+            sessionCacheLock.unlock();
+        }
+    }
+
     // package-private method, remove a cached SSLSession
     void remove(SessionId key) {
-        SSLSessionImpl s = sessionCache.get(key);
-        if (s != null) {
-            sessionCache.remove(key);
-            sessionHostPortCache.remove(
-                    getKey(s.getPeerHost(), s.getPeerPort()));
+        sessionCacheLock.lock();
+        try {
+            SSLSessionImpl s = sessionCache.get(key);
+            if (s != null) {
+                remove(s);
+            }
+        } finally {
+            sessionCacheLock.unlock();
         }
+    }
+
+    // remove a cached SSLSession
+    private void remove(SSLSessionImpl s) {
+        sessionCache.remove(s.getSessionId());
+        sessionHostPortCache.remove(
+                getKey(s.getPeerHost(), s.getPeerPort()));
     }
 
     private int getDefaults(boolean server) {
