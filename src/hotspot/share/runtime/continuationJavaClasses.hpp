@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,6 +124,7 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline void set_maxThawingSize(oop chunk, int value);
 
   // cont oop's processing is essential for the chunk's GC protocol
+  static inline oop cont(oop chunk);
   template<typename P>
   static inline oop cont_raw(oop chunk);
   static inline void set_cont(oop chunk, oop value);

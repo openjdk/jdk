@@ -60,10 +60,19 @@
   template(G1PauseRemark)                         \
   template(G1PauseCleanup)                        \
   template(G1TryInitiateConcMark)                 \
-  template(ZMarkStart)                            \
-  template(ZMarkEnd)                              \
-  template(ZRelocateStart)                        \
-  template(ZVerify)                               \
+  template(ZMarkEndOld)                           \
+  template(ZMarkEndYoung)                         \
+  template(ZMarkFlushOperation)                   \
+  template(ZMarkStartYoung)                       \
+  template(ZMarkStartYoungAndOld)                 \
+  template(ZRelocateStartOld)                     \
+  template(ZRelocateStartYoung)                   \
+  template(ZRendezvousGCThreads)                  \
+  template(ZVerifyOld)                            \
+  template(XMarkStart)                            \
+  template(XMarkEnd)                              \
+  template(XRelocateStart)                        \
+  template(XVerify)                               \
   template(HandshakeAllThreads)                   \
   template(PopulateDumpSharedSpace)               \
   template(JNIFunctionTableCopier)                \

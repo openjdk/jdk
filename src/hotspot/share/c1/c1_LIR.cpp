@@ -1143,8 +1143,14 @@ void LIR_List::set_cmp_oprs(LIR_Op* op) {
       op->as_Op4()->set_in_opr3(_cmp_opr1);
       op->as_Op4()->set_in_opr4(_cmp_opr2);
       break;
+    case lir_cas_long:
+    case lir_cas_obj:
+    case lir_cas_int:
+      _cmp_opr1 = op->as_OpCompareAndSwap()->result_opr();
+      _cmp_opr2 = LIR_OprFact::intConst(0);
+      break;
 #if INCLUDE_ZGC
-    case lir_zloadbarrier_test:
+    case lir_xloadbarrier_test:
       _cmp_opr1 = FrameMap::as_opr(t1);
       _cmp_opr2 = LIR_OprFact::intConst(0);
       break;

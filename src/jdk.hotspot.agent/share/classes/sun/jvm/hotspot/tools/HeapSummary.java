@@ -32,6 +32,7 @@ import sun.jvm.hotspot.gc.parallel.*;
 import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shenandoah.*;
 import sun.jvm.hotspot.gc.shared.*;
+import sun.jvm.hotspot.gc.x.*;
 import sun.jvm.hotspot.gc.z.*;
 import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.memory.*;
@@ -143,6 +144,9 @@ public class HeapSummary extends Tool {
       } else if (heap instanceof EpsilonHeap) {
          EpsilonHeap eh = (EpsilonHeap) heap;
          printSpace(eh.space());
+      } else if (heap instanceof XCollectedHeap) {
+         XCollectedHeap zheap = (XCollectedHeap) heap;
+         zheap.printOn(System.out);
       } else if (heap instanceof ZCollectedHeap) {
          ZCollectedHeap zheap = (ZCollectedHeap) heap;
          zheap.printOn(System.out);

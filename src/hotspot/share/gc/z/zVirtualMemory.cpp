@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,7 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
     _reserved(0),
     _initialized(false) {
 
-  // Check max supported heap size
-  if (max_capacity > ZAddressOffsetMax) {
-    log_error_p(gc)("Java heap too large (max supported heap size is " SIZE_FORMAT "G)",
-                    ZAddressOffsetMax / G);
-    return;
-  }
+  assert(max_capacity <= ZAddressOffsetMax, "Too large max_capacity");
 
   // Initialize platform specific parts before reserving address space
   pd_initialize_before_reserve();
@@ -59,7 +54,7 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity) :
   _initialized = true;
 }
 
-size_t ZVirtualMemoryManager::reserve_discontiguous(uintptr_t start, size_t size, size_t min_range) {
+size_t ZVirtualMemoryManager::reserve_discontiguous(zoffset start, size_t size, size_t min_range) {
   if (size < min_range) {
     // Too small
     return 0;
@@ -89,47 +84,32 @@ size_t ZVirtualMemoryManager::reserve_discontiguous(size_t size) {
   // This avoids an explosion of reservation attempts in case large parts of the
   // address space is already occupied.
   const size_t min_range = align_up(size / 100, ZGranuleSize);
-  size_t start = 0;
+  uintptr_t start = 0;
   size_t reserved = 0;
 
   // Reserve size somewhere between [0, ZAddressOffsetMax)
   while (reserved < size && start < ZAddressOffsetMax) {
     const size_t remaining = MIN2(size - reserved, ZAddressOffsetMax - start);
-    reserved += reserve_discontiguous(start, remaining, min_range);
+    reserved += reserve_discontiguous(to_zoffset(start), remaining, min_range);
     start += remaining;
   }
 
   return reserved;
 }
 
-bool ZVirtualMemoryManager::reserve_contiguous(uintptr_t start, size_t size) {
+bool ZVirtualMemoryManager::reserve_contiguous(zoffset start, size_t size) {
   assert(is_aligned(size, ZGranuleSize), "Must be granule aligned");
 
   // Reserve address views
-  const uintptr_t marked0 = ZAddress::marked0(start);
-  const uintptr_t marked1 = ZAddress::marked1(start);
-  const uintptr_t remapped = ZAddress::remapped(start);
+  const zaddress_unsafe addr = ZOffset::address_unsafe(start);
 
   // Reserve address space
-  if (!pd_reserve(marked0, size)) {
-    return false;
-  }
-
-  if (!pd_reserve(marked1, size)) {
-    pd_unreserve(marked0, size);
-    return false;
-  }
-
-  if (!pd_reserve(remapped, size)) {
-    pd_unreserve(marked0, size);
-    pd_unreserve(marked1, size);
+  if (!pd_reserve(addr, size)) {
     return false;
   }
 
   // Register address views with native memory tracker
-  nmt_reserve(marked0, size);
-  nmt_reserve(marked1, size);
-  nmt_reserve(remapped, size);
+  nmt_reserve(addr, size);
 
   // Make the address range free
   _manager.free(start, size);
@@ -142,8 +122,8 @@ bool ZVirtualMemoryManager::reserve_contiguous(size_t size) {
   const size_t unused = ZAddressOffsetMax - size;
   const size_t increment = MAX2(align_up(unused / 8192, ZGranuleSize), ZGranuleSize);
 
-  for (size_t start = 0; start + size <= ZAddressOffsetMax; start += increment) {
-    if (reserve_contiguous(start, size)) {
+  for (uintptr_t start = 0; start + size <= ZAddressOffsetMax; start += increment) {
+    if (reserve_contiguous(to_zoffset(start), size)) {
       // Success
       return true;
     }
@@ -154,7 +134,7 @@ bool ZVirtualMemoryManager::reserve_contiguous(size_t size) {
 }
 
 bool ZVirtualMemoryManager::reserve(size_t max_capacity) {
-  const size_t limit = MIN2(ZAddressOffsetMax, ZAddressSpaceLimit::heap_view());
+  const size_t limit = MIN2(ZAddressOffsetMax, ZAddressSpaceLimit::heap());
   const size_t size = MIN2(max_capacity * ZVirtualToPhysicalRatio, limit);
 
   size_t reserved = size;
@@ -171,8 +151,7 @@ bool ZVirtualMemoryManager::reserve(size_t max_capacity) {
                        (contiguous ? "Contiguous" : "Discontiguous"),
                        (limit == ZAddressOffsetMax ? "Unrestricted" : "Restricted"),
                        (reserved == size ? "Complete" : "Degraded"));
-  log_info_p(gc, init)("Address Space Size: " SIZE_FORMAT "M x " SIZE_FORMAT " = " SIZE_FORMAT "M",
-                       reserved / M, ZHeapViews, (reserved * ZHeapViews) / M);
+  log_info_p(gc, init)("Address Space Size: " SIZE_FORMAT "M", reserved / M);
 
   // Record reserved
   _reserved = reserved;
@@ -180,9 +159,9 @@ bool ZVirtualMemoryManager::reserve(size_t max_capacity) {
   return reserved >= max_capacity;
 }
 
-void ZVirtualMemoryManager::nmt_reserve(uintptr_t start, size_t size) {
-  MemTracker::record_virtual_memory_reserve((void*)start, size, CALLER_PC);
-  MemTracker::record_virtual_memory_type((void*)start, mtJavaHeap);
+void ZVirtualMemoryManager::nmt_reserve(zaddress_unsafe start, size_t size) {
+  MemTracker::record_virtual_memory_reserve((void*)untype(start), size, CALLER_PC);
+  MemTracker::record_virtual_memory_type((void*)untype(start), mtJavaHeap);
 }
 
 bool ZVirtualMemoryManager::is_initialized() const {
@@ -190,7 +169,7 @@ bool ZVirtualMemoryManager::is_initialized() const {
 }
 
 ZVirtualMemory ZVirtualMemoryManager::alloc(size_t size, bool force_low_address) {
-  uintptr_t start;
+  zoffset start;
 
   // Small pages are allocated at low addresses, while medium/large pages
   // are allocated at high addresses (unless forced to be at a low address).

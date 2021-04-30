@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,14 @@ public:
 
 class ZMarkCache : public StackObj {
 private:
-  const size_t    _shift;
+  size_t          _shift;
   ZMarkCacheEntry _cache[ZMarkCacheSize];
 
 public:
   ZMarkCache(size_t nstripes);
   ~ZMarkCache();
+
+  void set_nstripes(size_t nstripes);
 
   void inc_live(ZPage* page, size_t bytes);
 };
