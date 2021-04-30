@@ -858,10 +858,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       __ decode_heap_oop(dest->as_register());
     }
 
-    if (!UseZGC) {
-      // Load barrier has not yet been applied, so ZGC can't verify the oop here
-      __ verify_oop(dest->as_register());
-    }
+    __ verify_oop(dest->as_register());
   }
 }
 
@@ -1264,10 +1261,13 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     if (UseCompressedOops) {
       Register tmp1 = op->tmp1()->as_register();
       assert(op->tmp1()->is_valid(), "must be");
+      Register tmp2 = op->tmp2()->as_register();
+      assert(op->tmp2()->is_valid(), "must be");
+
       __ encode_heap_oop(tmp1, cmpval);
       cmpval = tmp1;
-      __ encode_heap_oop(t1, newval);
-      newval = t1;
+      __ encode_heap_oop(tmp2, newval);
+      newval = tmp2;
       caswu(addr, newval, cmpval);
     } else {
       casl(addr, newval, cmpval);
@@ -1276,6 +1276,11 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     casw(addr, newval, cmpval);
   } else {
     casl(addr, newval, cmpval);
+  }
+
+  if (op->result_opr()->is_valid()) {
+    assert(op->result_opr()->is_register(), "need a register");
+    __ mv(as_reg(op->result_opr()), t0); // cas result in t0, and 0 for success
   }
 }
 

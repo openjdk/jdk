@@ -22,29 +22,64 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zGenerationId.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
 #include "unittest.hpp"
 
 class ZLiveMapTest : public ::testing::Test {
+private:
+  // Setup and tear down
+  ZHeap*            _old_heap;
+  ZGenerationOld*   _old_old;
+  ZGenerationYoung* _old_young;
+
+public:
+
+  virtual void SetUp() {
+    ZGlobalsPointers::initialize();
+    _old_heap = ZHeap::_heap;
+    ZHeap::_heap = (ZHeap*)os::malloc(sizeof(ZHeap), mtTest);
+
+    _old_old = ZGeneration::_old;
+    _old_young = ZGeneration::_young;
+
+    ZGeneration::_old = &ZHeap::_heap->_old;
+    ZGeneration::_young = &ZHeap::_heap->_young;
+
+    *const_cast<ZGenerationId*>(&ZGeneration::_old->_id) = ZGenerationId::old;
+    *const_cast<ZGenerationId*>(&ZGeneration::_young->_id) = ZGenerationId::young;
+
+    ZGeneration::_old->_seqnum = 1;
+    ZGeneration::_young->_seqnum = 2;
+  }
+
+  virtual void TearDown() {
+    os::free(ZHeap::_heap);
+    ZHeap::_heap = _old_heap;
+    ZGeneration::_old = _old_old;
+    ZGeneration::_young = _old_young;
+  }
+
 protected:
   static void strongly_live_for_large_zpage() {
     // Large ZPages only have room for one object.
     ZLiveMap livemap(1);
 
     bool inc_live;
-    uintptr_t object = 0u;
+    BitMap::idx_t object_index = BitMap::idx_t(0);
 
     // Mark the object strong.
-    livemap.set(object, false /* finalizable */, inc_live);
+    livemap.set(ZGenerationId::old, object_index, false /* finalizable */, inc_live);
 
     // Check that both bits are in the same segment.
     ASSERT_EQ(livemap.index_to_segment(0), livemap.index_to_segment(1));
 
     // Check that the object was marked.
-    ASSERT_TRUE(livemap.get(0));
+    ASSERT_TRUE(livemap.get(ZGenerationId::old, 0));
 
     // Check that the object was strongly marked.
-    ASSERT_TRUE(livemap.get(1));
+    ASSERT_TRUE(livemap.get(ZGenerationId::old, 1));
 
     ASSERT_TRUE(inc_live);
   }

@@ -756,6 +756,11 @@ void MacroAssembler::la(Register Rd, Label &label) {
   wrap_label(Rd, label, &MacroAssembler::la);
 }
 
+void MacroAssembler::li16u(Register Rd, int32_t imm) {
+  lui(Rd, imm << 12);
+  srli(Rd, Rd, 12);
+}
+
 void MacroAssembler::li32(Register Rd, int32_t imm) {
   // int32_t is in range 0x8000 0000 ~ 0x7fff ffff, and imm[31] is the sign bit
   int64_t upper = imm, lower = imm;
@@ -1403,6 +1408,11 @@ static int patch_imm_in_li64(address branch, address target) {
   return LI64_INSTRUCTIONS_NUM * NativeInstruction::instruction_size;
 }
 
+static int patch_imm_in_li16u(address branch, int32_t target) {
+  Assembler::patch(branch, 31, 12, target & 0xfffff); // patch lui only
+  return NativeInstruction::instruction_size;
+}
+
 int MacroAssembler::patch_imm_in_li32(address branch, int32_t target) {
   const int LI32_INSTRUCTIONS_NUM = 2;                                          // lui + addiw
   int64_t upper = (intptr_t)target;
@@ -1492,6 +1502,9 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
   } else if (NativeInstruction::is_li32_at(branch)) {                 // li32
     int64_t imm = (intptr_t)target;
     return patch_imm_in_li32(branch, (int32_t)imm);
+  } else if (NativeInstruction::is_li16u_at(branch)) {
+    int64_t imm = (intptr_t)target;
+    return patch_imm_in_li16u(branch, (int32_t)imm);
   } else {
 #ifdef ASSERT
     tty->print_cr("pd_patch_instruction_size: instruction 0x%x at " INTPTR_FORMAT " could not be patched!\n",
@@ -2431,6 +2444,10 @@ void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acqui
 
 void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
                                 Label &succeed, Label *fail) {
+  assert_different_registers(addr, tmp);
+  assert_different_registers(newv, tmp);
+  assert_different_registers(oldv, tmp);
+
   // oldv holds comparison value
   // newv holds value to write in exchange
   // addr identifies memory word to compare against/update
@@ -2617,6 +2634,9 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
                              Assembler::Aqrl acquire, Assembler::Aqrl release,
                              Register result, bool result_as_bool) {
   assert(size != int8 && size != int16, "unsupported operand size");
+  assert_different_registers(addr, t0);
+  assert_different_registers(expected, t0);
+  assert_different_registers(new_val, t0);
 
   Label retry_load, done, ne_done;
   bind(retry_load);
@@ -2649,6 +2669,10 @@ void MacroAssembler::cmpxchg_weak(Register addr, Register expected,
                                   enum operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
+  assert_different_registers(addr, t0);
+  assert_different_registers(expected, t0);
+  assert_different_registers(new_val, t0);
+
   Label fail, done;
   load_reserved(addr, size, acquire);
   bne(t0, expected, fail);

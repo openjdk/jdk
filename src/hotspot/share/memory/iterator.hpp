@@ -203,10 +203,14 @@ class ObjectClosure : public Closure {
   virtual void do_object(oop obj) = 0;
 };
 
-
 class BoolObjectClosure : public Closure {
  public:
   virtual bool do_object_b(oop obj) = 0;
+};
+
+class OopFieldClosure {
+public:
+  virtual void do_field(oop base, oop* p) = 0;
 };
 
 class AlwaysTrueClosure: public BoolObjectClosure {
