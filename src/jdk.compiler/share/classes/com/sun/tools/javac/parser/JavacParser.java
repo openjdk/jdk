@@ -188,6 +188,7 @@ public class JavacParser implements Parser {
         this.allowRecords = Feature.RECORDS.allowedInSource(source);
         this.allowSealedTypes = (!preview.isPreview(Feature.SEALED_CLASSES) || preview.isEnabled()) &&
                 Feature.SEALED_CLASSES.allowedInSource(source);
+        this.elideAccStrictBit = Feature.REDUNDANT_STRICTFP.allowedInSource(source);
     }
 
     protected AbstractEndPosTable newEndPosTable(boolean keepEndPositions) {
@@ -228,6 +229,12 @@ public class JavacParser implements Parser {
     /** Switch: are sealed types allowed in this source level?
      */
     boolean allowSealedTypes;
+
+    /**
+     * If the strictfp modifier is redundant, do not add the strictfp
+     * flag to its symbol.
+     */
+    boolean elideAccStrictBit;
 
     /** The type of the method receiver, as specified by a first "this" parameter.
      */
@@ -3129,7 +3136,8 @@ public class JavacParser implements Parser {
             case NATIVE      : flag = Flags.NATIVE; break;
             case VOLATILE    : flag = Flags.VOLATILE; break;
             case SYNCHRONIZED: flag = Flags.SYNCHRONIZED; break;
-            case STRICTFP    : flag = Flags.STRICTFP; break;
+                // todo: elided too soon; prevents consistency checks later.
+            case STRICTFP    : flag = (elideAccStrictBit ? 0 : Flags.STRICTFP); break;
             case MONKEYS_AT  : flag = Flags.ANNOTATION; break;
             case DEFAULT     : checkSourceLevel(Feature.DEFAULT_METHODS); flag = Flags.DEFAULT; break;
             case ERROR       : flag = 0; nextToken(); break;

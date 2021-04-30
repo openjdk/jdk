@@ -81,7 +81,8 @@ public class CheckACC_STRICTFlagOnPkgAccessClassTest {
     }
 
     private void compile(JavaCompiler comp) {
-        JavacTask ct = (JavacTask)comp.getTask(null, null, null, null, null,
+        JavacTask ct = (JavacTask)comp.getTask(null, null, null,
+                                               List.of("--release", "16"), null,
                 Arrays.asList(source));
         try {
             if (!ct.call()) {

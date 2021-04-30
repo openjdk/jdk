@@ -49,7 +49,7 @@ public abstract class T6397044 {
         try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
             Iterable<? extends JavaFileObject> files
                 = fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(srcDir, self + ".java")));
-            JavacTask task = tool.getTask(null, fm, null, null, null, files);
+            JavacTask task = tool.getTask(null, fm, null, List.of("--release", "16"), null, files);
             Iterable<? extends CompilationUnitTree> trees = task.parse();
             Checker checker = new Checker();
             for (CompilationUnitTree tree: trees)
