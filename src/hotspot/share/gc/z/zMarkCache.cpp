@@ -27,7 +27,7 @@
 #include "utilities/powerOfTwo.hpp"
 
 ZMarkCacheEntry::ZMarkCacheEntry() :
-    _page(NULL),
+    _page(nullptr),
     _objects(0),
     _bytes(0) {}
 

@@ -30,12 +30,12 @@
 #include "utilities/globalDefinitions.hpp"
 
 ZNMethodTableIteration::ZNMethodTableIteration() :
-    _table(NULL),
+    _table(nullptr),
     _size(0),
     _claimed(0) {}
 
 bool ZNMethodTableIteration::in_progress() const {
-  return _table != NULL;
+  return _table != nullptr;
 }
 
 void ZNMethodTableIteration::nmethods_do_begin(ZNMethodTableEntry* table, size_t size) {
@@ -50,7 +50,7 @@ void ZNMethodTableIteration::nmethods_do_end() {
   assert(_claimed >= _size, "Failed to claim all table entries");
 
   // Finish iteration
-  _table = NULL;
+  _table = nullptr;
 }
 
 void ZNMethodTableIteration::nmethods_do(NMethodClosure* cl) {

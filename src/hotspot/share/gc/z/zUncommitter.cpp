@@ -59,7 +59,7 @@ bool ZUncommitter::should_continue() const {
   return !_stop;
 }
 
-void ZUncommitter::run_service() {
+void ZUncommitter::run_thread() {
   uint64_t timeout = 0;
 
   while (wait(timeout)) {
@@ -89,7 +89,7 @@ void ZUncommitter::run_service() {
   }
 }
 
-void ZUncommitter::stop_service() {
+void ZUncommitter::terminate() {
   ZLocker<ZConditionLock> locker(&_lock);
   _stop = true;
   _lock.notify_all();

@@ -131,14 +131,12 @@ void GCTracer::report_metaspace_summary(GCWhen::Type when, const MetaspaceSummar
 }
 
 void YoungGCTracer::report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions) {
-  assert(!_uses_tenuring_threshold || _tenuring_threshold != UNSET_TENURING_THRESHOLD, "Tenuring threshold has not been reported");
+  assert(_tenuring_threshold != UNSET_TENURING_THRESHOLD, "Tenuring threshold has not been reported");
 
   GCTracer::report_gc_end_impl(timestamp, time_partitions);
   send_young_gc_event();
 
-  if (_uses_tenuring_threshold) {
-    _tenuring_threshold = UNSET_TENURING_THRESHOLD;
-  }
+  _tenuring_threshold = UNSET_TENURING_THRESHOLD;
 }
 
 void YoungGCTracer::report_promotion_failed(const PromotionFailedInfo& pf_info) const {
@@ -146,7 +144,6 @@ void YoungGCTracer::report_promotion_failed(const PromotionFailedInfo& pf_info) 
 }
 
 void YoungGCTracer::report_tenuring_threshold(const uint tenuring_threshold) {
-  assert(_uses_tenuring_threshold, "Unexpected");
   _tenuring_threshold = tenuring_threshold;
 }
 

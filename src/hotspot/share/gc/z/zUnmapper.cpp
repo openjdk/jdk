@@ -45,11 +45,11 @@ ZPage* ZUnmapper::dequeue() {
 
   for (;;) {
     if (_stop) {
-      return NULL;
+      return nullptr;
     }
 
     ZPage* const page = _queue.remove_first();
-    if (page != NULL) {
+    if (page != nullptr) {
       return page;
     }
 
@@ -70,22 +70,16 @@ void ZUnmapper::do_unmap_and_destroy_page(ZPage* page) const {
 }
 
 void ZUnmapper::unmap_and_destroy_page(ZPage* page) {
-  // Asynchronous unmap and destroy is not supported with ZVerifyViews
-  if (ZVerifyViews) {
-    // Immediately unmap and destroy
-    do_unmap_and_destroy_page(page);
-  } else {
-    // Enqueue for asynchronous unmap and destroy
-    ZLocker<ZConditionLock> locker(&_lock);
-    _queue.insert_last(page);
-    _lock.notify_all();
-  }
+  // Enqueue for asynchronous unmap and destroy
+  ZLocker<ZConditionLock> locker(&_lock);
+  _queue.insert_last(page);
+  _lock.notify_all();
 }
 
-void ZUnmapper::run_service() {
+void ZUnmapper::run_thread() {
   for (;;) {
     ZPage* const page = dequeue();
-    if (page == NULL) {
+    if (page == nullptr) {
       // Stop
       return;
     }
@@ -94,7 +88,7 @@ void ZUnmapper::run_service() {
   }
 }
 
-void ZUnmapper::stop_service() {
+void ZUnmapper::terminate() {
   ZLocker<ZConditionLock> locker(&_lock);
   _stop = true;
   _lock.notify_all();

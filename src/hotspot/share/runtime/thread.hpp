@@ -213,6 +213,7 @@ class Thread: public ThreadShadow {
 
  private:
   DEBUG_ONLY(bool _suspendible_thread;)
+  DEBUG_ONLY(bool _indirectly_suspendible_thread;)
 
  public:
   // Determines if a heap allocation failure will be retried
@@ -224,15 +225,13 @@ class Thread: public ThreadShadow {
   virtual bool in_retryable_allocation() const { return false; }
 
 #ifdef ASSERT
-  void set_suspendible_thread() {
-    _suspendible_thread = true;
-  }
+  void set_suspendible_thread()   { _suspendible_thread = true; }
+  void clear_suspendible_thread() { _suspendible_thread = false; }
+  bool is_suspendible_thread()    { return _suspendible_thread; }
 
-  void clear_suspendible_thread() {
-    _suspendible_thread = false;
-  }
-
-  bool is_suspendible_thread() { return _suspendible_thread; }
+  void set_indirectly_suspendible_thread()   { _indirectly_suspendible_thread = true; }
+  void clear_indirectly_suspendible_thread() { _indirectly_suspendible_thread = false; }
+  bool is_indirectly_suspendible_thread()    { return _indirectly_suspendible_thread; }
 #endif
 
  private:

@@ -26,10 +26,7 @@
 #define CPU_PPC_GC_Z_ZGLOBALS_PPC_HPP
 
 #include "globalDefinitions_ppc.hpp"
-const size_t ZPlatformHeapViews        = 3;
-const size_t ZPlatformCacheLineSize    = DEFAULT_CACHE_LINE_SIZE;
 
-size_t ZPlatformAddressOffsetBits();
-size_t ZPlatformAddressMetadataShift();
+const size_t ZPlatformCacheLineSize    = DEFAULT_CACHE_LINE_SIZE;
 
 #endif // CPU_PPC_GC_Z_ZGLOBALS_PPC_HPP

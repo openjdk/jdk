@@ -31,11 +31,11 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 
-ZPerWorker<ThreadLocalAllocStats>* ZThreadLocalAllocBuffer::_stats = NULL;
+ZPerWorker<ThreadLocalAllocStats>* ZThreadLocalAllocBuffer::_stats = nullptr;
 
 void ZThreadLocalAllocBuffer::initialize() {
   if (UseTLAB) {
-    assert(_stats == NULL, "Already initialized");
+    assert(_stats == nullptr, "Already initialized");
     _stats = new ZPerWorker<ThreadLocalAllocStats>();
     reset_statistics();
   }
@@ -64,7 +64,7 @@ void ZThreadLocalAllocBuffer::publish_statistics() {
 }
 
 static void fixup_address(HeapWord** p) {
-  *p = (HeapWord*)ZAddress::good_or_null((uintptr_t)*p);
+  *p = (HeapWord*)*p;
 }
 
 void ZThreadLocalAllocBuffer::retire(JavaThread* thread, ThreadLocalAllocStats* stats) {

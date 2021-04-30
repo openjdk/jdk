@@ -129,11 +129,12 @@ public:
   virtual void oops_do(OopClosure* cl) = 0;
 };
 
+enum class derived_base : intptr_t;
 enum class derived_pointer : intptr_t;
 class DerivedOopClosure : public Closure {
  public:
   enum { SkipNull = true };
-  virtual void do_derived_oop(oop* base, derived_pointer* derived) = 0;
+  virtual void do_derived_oop(derived_base* base, derived_pointer* derived) = 0;
 };
 
 class KlassClosure : public Closure {
@@ -203,10 +204,14 @@ class ObjectClosure : public Closure {
   virtual void do_object(oop obj) = 0;
 };
 
-
 class BoolObjectClosure : public Closure {
  public:
   virtual bool do_object_b(oop obj) = 0;
+};
+
+class OopFieldClosure {
+public:
+  virtual void do_field(oop base, oop* p) = 0;
 };
 
 class AlwaysTrueClosure: public BoolObjectClosure {

@@ -39,7 +39,8 @@
     format_width       =  0
 #else
     // Except narrow oops in 64-bits VM.
-    format_width       =  1
+    // Must be at least 2 for ZGC GC barrier patching.
+    format_width       =  2
 #endif
   };
 
