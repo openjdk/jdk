@@ -352,7 +352,7 @@ oop StringTable::do_intern(Handle string_or_null_h, const jchar* name,
 
   // Notify deduplication support that the string is being interned.  A string
   // must never be deduplicated after it has been interned.  Doing so interferes
-  // with compiler optimizations don on e.g. interned string literals.
+  // with compiler optimizations done on e.g. interned string literals.
   if (StringDedup::is_enabled()) {
     StringDedup::notify_intern(string_h());
   }

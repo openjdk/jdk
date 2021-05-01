@@ -74,7 +74,7 @@ bool java_lang_String::is_latin1(oop java_string) {
 }
 
 uint8_t* java_lang_String::flags_addr(oop java_string) {
-  assert(_initialized, "Mut be initialized");
+  assert(_initialized, "Must be initialized");
   assert(is_instance(java_string), "Must be java string");
   return java_string->obj_field_addr<uint8_t>(_flags_offset);
 }
