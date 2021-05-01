@@ -1,5 +1,5 @@
 [general]
-project=jdk
+project=shenandoah
 jbs=JDK
 
 [checks]
