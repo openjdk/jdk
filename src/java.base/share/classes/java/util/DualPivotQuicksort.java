@@ -44,10 +44,11 @@ import java.util.concurrent.RecursiveTask;
  * @author Josh Bloch
  * @author Doug Lea
  *
- * @version 2018.08.18
+ * @version 2021.05.01
  *
  * @since 1.7 * 14
  */
+/* Vladimir's version: DualPivotQuicksort_6K_7b.java */
 final class DualPivotQuicksort {
 
     /**
@@ -114,6 +115,9 @@ final class DualPivotQuicksort {
      * Threshold of mixed insertion sort is incremented by this value.
      */
     private static final int DELTA = 3 << 1;
+
+    private static final int DELTA4 = DELTA << 2; // TODO
+    private static final int RADIX_MIN_SIZE = 6 << 10;
 
     /**
      * Max recursive partitioning depth before using heap sort.
@@ -272,6 +276,12 @@ final class DualPivotQuicksort {
              * Partitioning with 2 pivots in case of different elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
+
+                // TODD add comment
+                if ((sorter == null || bits > DELTA4) && size > RADIX_MIN_SIZE) {
+                    radixSort(sorter, a, low, high);
+                    return;
+                }
 
                 /*
                  * Use the first and fifth of the five sorted elements as
@@ -574,6 +584,107 @@ final class DualPivotQuicksort {
         }
     }
 
+    // TODO add javadoc
+//  private 
+    static void radixSort(Sorter sorter, int[] a, int low, int high) {
+        int[] b; int offset = low;
+
+        if (sorter == null || (b = (int[]) sorter.b) == null) {
+            b = new int[high - low];
+        } else {
+            offset = sorter.offset;
+        }
+
+        int start = low - offset;
+        int last = high - offset;
+
+        int[] count1 = new int[256];
+        int[] count2 = new int[256];
+        int[] count3 = new int[256];
+        int[] count4 = new int[256];
+
+        for (int i = low; i < high; ++i) {
+            count1[ a[i]         & 0xFF]--;
+            count2[(a[i] >>>  8) & 0xFF]--;
+            count3[(a[i] >>> 16) & 0xFF]--;
+            count4[(a[i] >>> 24) ^ 0x80]--;
+        }
+        boolean passLevel4 = passLevel(count4, low - high, high);
+        boolean passLevel3 = passLevel(count3, low - high, high);
+        boolean passLevel2 = passLevel(count2, low - high, high);
+        boolean passLevel1 = passLevel(count1, low - high, high);
+
+        // 1 todo process LSD
+        if (passLevel1) {
+            for (int i = low; i < high; ++i) {
+                b[count1[a[i] & 0xFF]++ - offset] = a[i];
+            }
+        }
+
+        // 2
+        if (passLevel2) {
+            if (passLevel1) {
+                for (int i = start; i < last; ++i) {
+                    a[count2[(b[i] >> 8) & 0xFF]++] = b[i];
+                }
+            } else {
+                for (int i = low; i < high; ++i) {
+                    b[count2[(a[i] >> 8) & 0xFF]++ - offset] = a[i];
+                }
+            }
+        }
+
+        // 3
+        if (passLevel3) {
+            if (passLevel1 ^ passLevel2) {
+                for (int i = start; i < last; ++i) {
+                    a[count3[(b[i] >> 16) & 0xFF]++] = b[i];
+                }
+            } else {
+                for (int i = low; i < high; ++i) {
+                    b[count3[(a[i] >> 16) & 0xFF]++ - offset] = a[i];
+                }
+            }
+        }
+
+        // 4
+        if (passLevel4) {
+            if (passLevel1 ^ passLevel2 ^ passLevel3) {
+                for (int i = start; i < last; ++i) {
+                    a[count4[(b[i] >>> 24) ^ 0x80]++] = b[i];
+                }
+            } else {
+                for (int i = low; i < high; ++i) {
+                    b[count4[(a[i] >>> 24) ^ 0x80]++ - offset] = a[i];
+                }
+            }
+        }
+
+        if (passLevel1 ^ passLevel2 ^ passLevel3 ^ passLevel4) {
+            System.arraycopy(b, low - offset, a, low, high - low);
+        }
+    }
+
+    // TODO: add javadoc
+    private static boolean passLevel(int[] count, int total, int high) {
+        for (int c : count) {
+            if (c == 0) {
+                continue;
+            }
+            if (c == total) {
+                return false;
+            }
+            break;
+        }
+        // todo create historgam
+        count[255] += high;
+
+        for (int i = 255; i > 0; --i) {
+            count[i - 1] += count[i];
+        }
+        return true;
+    }
+
     /**
      * Sorts the specified range of the array using heap sort.
      *
@@ -673,7 +784,6 @@ final class DualPivotQuicksort {
              */
             if (run == null) {
                 if (k == high) {
-
                     /*
                      * The array is monotonous sequence,
                      * and therefore already sorted.
@@ -682,7 +792,6 @@ final class DualPivotQuicksort {
                 }
 
                 if (k - low < MIN_FIRST_RUN_SIZE) {
-
                     /*
                      * The first run is too small
                      * to proceed with scanning.
@@ -693,10 +802,9 @@ final class DualPivotQuicksort {
                 run = new int[((size >> 10) | 0x7F) & 0x3FF];
                 run[0] = low;
 
-            } else if (a[last - 1] > a[last]) {
+            } else if (a[last - 1] > a[last]) { // Can't join with previous run
 
                 if (count > (k - low) >> MIN_FIRST_RUNS_FACTOR) {
-
                     /*
                      * The first runs are not long
                      * enough to continue scanning.
@@ -705,7 +813,6 @@ final class DualPivotQuicksort {
                 }
 
                 if (++count == MAX_RUN_CAPACITY) {
-
                     /*
                      * Array is not highly structured.
                      */
@@ -713,7 +820,6 @@ final class DualPivotQuicksort {
                 }
 
                 if (count == run.length) {
-
                     /*
                      * Increase capacity of index array.
                      */
@@ -721,6 +827,13 @@ final class DualPivotQuicksort {
                 }
             }
             run[count] = (last = k);
+
+            if (++k == high) {
+                /*
+                 * There is a single-element run at the end.
+                 */
+                --k;
+            }
         }
 
         /*
@@ -1427,7 +1540,6 @@ final class DualPivotQuicksort {
              */
             if (run == null) {
                 if (k == high) {
-
                     /*
                      * The array is monotonous sequence,
                      * and therefore already sorted.
@@ -1436,7 +1548,6 @@ final class DualPivotQuicksort {
                 }
 
                 if (k - low < MIN_FIRST_RUN_SIZE) {
-
                     /*
                      * The first run is too small
                      * to proceed with scanning.
@@ -1447,10 +1558,9 @@ final class DualPivotQuicksort {
                 run = new int[((size >> 10) | 0x7F) & 0x3FF];
                 run[0] = low;
 
-            } else if (a[last - 1] > a[last]) {
+            } else if (a[last - 1] > a[last]) { // Can't join with previous run
 
                 if (count > (k - low) >> MIN_FIRST_RUNS_FACTOR) {
-
                     /*
                      * The first runs are not long
                      * enough to continue scanning.
@@ -1459,7 +1569,6 @@ final class DualPivotQuicksort {
                 }
 
                 if (++count == MAX_RUN_CAPACITY) {
-
                     /*
                      * Array is not highly structured.
                      */
@@ -1467,7 +1576,6 @@ final class DualPivotQuicksort {
                 }
 
                 if (count == run.length) {
-
                     /*
                      * Increase capacity of index array.
                      */
@@ -1475,6 +1583,13 @@ final class DualPivotQuicksort {
                 }
             }
             run[count] = (last = k);
+
+            if (++k == high) {
+                /*
+                 * There is a single-element run at the end.
+                 */
+                --k;
+            }
         }
 
         /*
@@ -2968,7 +3083,6 @@ final class DualPivotQuicksort {
              */
             if (run == null) {
                 if (k == high) {
-
                     /*
                      * The array is monotonous sequence,
                      * and therefore already sorted.
@@ -2977,7 +3091,6 @@ final class DualPivotQuicksort {
                 }
 
                 if (k - low < MIN_FIRST_RUN_SIZE) {
-
                     /*
                      * The first run is too small
                      * to proceed with scanning.
@@ -2988,10 +3101,9 @@ final class DualPivotQuicksort {
                 run = new int[((size >> 10) | 0x7F) & 0x3FF];
                 run[0] = low;
 
-            } else if (a[last - 1] > a[last]) {
+            } else if (a[last - 1] > a[last]) { // Can't join with previous run
 
                 if (count > (k - low) >> MIN_FIRST_RUNS_FACTOR) {
-
                     /*
                      * The first runs are not long
                      * enough to continue scanning.
@@ -3000,7 +3112,6 @@ final class DualPivotQuicksort {
                 }
 
                 if (++count == MAX_RUN_CAPACITY) {
-
                     /*
                      * Array is not highly structured.
                      */
@@ -3008,7 +3119,6 @@ final class DualPivotQuicksort {
                 }
 
                 if (count == run.length) {
-
                     /*
                      * Increase capacity of index array.
                      */
@@ -3016,6 +3126,13 @@ final class DualPivotQuicksort {
                 }
             }
             run[count] = (last = k);
+
+            if (++k == high) {
+                /*
+                 * There is a single-element run at the end.
+                 */
+                --k;
+            }
         }
 
         /*
@@ -3774,7 +3891,6 @@ final class DualPivotQuicksort {
              */
             if (run == null) {
                 if (k == high) {
-
                     /*
                      * The array is monotonous sequence,
                      * and therefore already sorted.
@@ -3783,7 +3899,6 @@ final class DualPivotQuicksort {
                 }
 
                 if (k - low < MIN_FIRST_RUN_SIZE) {
-
                     /*
                      * The first run is too small
                      * to proceed with scanning.
@@ -3794,10 +3909,9 @@ final class DualPivotQuicksort {
                 run = new int[((size >> 10) | 0x7F) & 0x3FF];
                 run[0] = low;
 
-            } else if (a[last - 1] > a[last]) {
+            } else if (a[last - 1] > a[last]) { // Can't join with previous run
 
                 if (count > (k - low) >> MIN_FIRST_RUNS_FACTOR) {
-
                     /*
                      * The first runs are not long
                      * enough to continue scanning.
@@ -3806,7 +3920,6 @@ final class DualPivotQuicksort {
                 }
 
                 if (++count == MAX_RUN_CAPACITY) {
-
                     /*
                      * Array is not highly structured.
                      */
@@ -3814,7 +3927,6 @@ final class DualPivotQuicksort {
                 }
 
                 if (count == run.length) {
-
                     /*
                      * Increase capacity of index array.
                      */
@@ -3822,6 +3934,13 @@ final class DualPivotQuicksort {
                 }
             }
             run[count] = (last = k);
+
+            if (++k == high) {
+                /*
+                 * There is a single-element run at the end.
+                 */
+                --k;
+            }
         }
 
         /*
