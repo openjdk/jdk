@@ -3092,7 +3092,7 @@ void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
   __ move(trace_id_addr, trace_id_raw);
 
   LIR_Opr epoch = new_register(T_INT);
-  LIR_Opr epoch_address = new_register(T_LONG);
+  LIR_Opr epoch_address = new_pointer_register();
   __ move(LIR_OprFact::intptrConst(JfrTraceIdEpoch::epoch_address()), epoch_address);
   __ move(new LIR_Address(epoch_address, (intx)0, T_INT), epoch);
   __ cmp(lir_cond_equal, epoch, LIR_OprFact::intConst(0));
