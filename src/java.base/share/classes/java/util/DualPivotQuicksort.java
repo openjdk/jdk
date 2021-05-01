@@ -585,7 +585,7 @@ final class DualPivotQuicksort {
     }
 
     // TODO add javadoc
-//  private 
+//  private
     static void radixSort(Sorter sorter, int[] a, int low, int high) {
         int[] b; int offset = low;
 
