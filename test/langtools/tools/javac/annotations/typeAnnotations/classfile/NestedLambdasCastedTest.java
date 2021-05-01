@@ -30,7 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavapTask
- * @run compile -g NestedLambdasCastedTest.java
+ * @run compile -source 16 -g NestedLambdasCastedTest.java
  * @run main NestedLambdasCastedTest
  */
 

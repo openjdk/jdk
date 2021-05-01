@@ -1,6 +1,6 @@
 /*
  * @test  /nodynamiccopyright/
- * @bug 4153038 4785453
+ * @bug 4153038 4785453 8244146
  * @summary strictfp may not be used with constructors
  * @author David Stoutamire (dps)
  *

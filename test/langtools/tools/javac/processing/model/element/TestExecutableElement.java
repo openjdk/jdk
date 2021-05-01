@@ -143,8 +143,8 @@ interface ProviderOfDefault {
     boolean process(Set<? extends TypeElement> annotations,
                     RoundEnvironment roundEnv);
 
-    @IsDefault(value=true, expectedTextRegex="\\s*@IsDefault\\(.*\\)\\s*default strictfp void quux\\(\\);\\s*$")
-    default strictfp void quux() {};
+    @IsDefault(value=true, expectedTextRegex="\\s*@IsDefault\\(.*\\)\\s*default void quux\\(\\);\\s*$")
+    default void quux() {};
     @IsDefault(false)
     static void statik() {}
 }

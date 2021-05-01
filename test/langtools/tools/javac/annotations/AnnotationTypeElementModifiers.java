@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8028428
+ * @bug 8028428 8244146
  * @summary Test that only 'public' and 'abstract' elements compile
  * @compile/fail/ref=AnnotationTypeElementModifiers.out -XDrawDiagnostics --release 16 AnnotationTypeElementModifiers.java
  * @compile/fail/ref=AnnotationTypeElementModifiers.out -XDrawDiagnostics AnnotationTypeElementModifiers.java
