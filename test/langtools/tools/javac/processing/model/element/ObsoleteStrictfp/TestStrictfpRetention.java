@@ -73,7 +73,7 @@ public class TestStrictfpRetention extends AbstractProcessor {
 
             for (Element e: roundEnv.getElementsAnnotatedWith(StrictfpInSource.class)) {
                 annotatedElementsFound = true;
-                
+
                 boolean strictfpPresent =  e.getModifiers().contains(STRICTFP);
                 if (strictfpPresent != strictfpExpected) {
                     messager.printMessage(ERROR, "Unexpected strictfp status: " + strictfpPresent + " " + e, e);
