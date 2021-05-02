@@ -387,7 +387,7 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
        return remoteDebugger.getThreadHashCode(id, false);
     } catch (RemoteException e) {
     }
-    return (int) id;
+    return Long.hashCode(id);
   }
 
   public ThreadProxy getThreadForIdentifierAddress(Address addr) {

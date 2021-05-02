@@ -74,7 +74,7 @@ class WindbgX86Thread implements ThreadProxy {
   }
 
   public int hashCode() {
-    return (int) getThreadID();
+    return Long.hashCode(getThreadID());
   }
 
   public String toString() {
