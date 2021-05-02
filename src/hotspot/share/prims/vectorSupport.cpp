@@ -97,14 +97,13 @@ jint VectorSupport::klass2length(InstanceKlass* ik) {
 
 void VectorSupport::init_payload_element(typeArrayOop arr, BasicType elem_bt, int index, address addr) {
   switch (elem_bt) {
-    case T_BOOLEAN: arr->  byte_at_put(index,   *(jboolean*)addr); break;
-    case T_BYTE:   arr->  byte_at_put(index,   *(jbyte*)addr); break;
-    case T_SHORT:  arr-> short_at_put(index,  *(jshort*)addr); break;
-    case T_INT:    arr->   int_at_put(index,    *(jint*)addr); break;
-    case T_FLOAT:  arr-> float_at_put(index,  *(jfloat*)addr); break;
-    case T_LONG:   arr->  long_at_put(index,   *(jlong*)addr); break;
-    case T_DOUBLE: arr->double_at_put(index, *(jdouble*)addr); break;
-
+    case T_BOOLEAN: arr->bool_at_put(index, *(jboolean*)addr); break;
+    case T_BYTE:    arr->byte_at_put(index, *(jbyte*)addr); break;
+    case T_SHORT:   arr->short_at_put(index, *(jshort*)addr); break;
+    case T_INT:     arr->int_at_put(index, *(jint*)addr); break;
+    case T_FLOAT:   arr->float_at_put(index, *(jfloat*)addr); break;
+    case T_LONG:    arr->long_at_put(index, *(jlong*)addr); break;
+    case T_DOUBLE:  arr->double_at_put(index, *(jdouble*)addr); break;
     default: fatal("unsupported: %s", type2name(elem_bt));
   }
 }
