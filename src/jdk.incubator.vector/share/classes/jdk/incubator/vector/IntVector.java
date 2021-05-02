@@ -394,6 +394,18 @@ public abstract class IntVector extends AbstractVector<Integer> {
     }
 
     /*package-private*/
+    @ForceInline
+    static int rotateLeft(int a, int n) {
+        return Integer.rotateLeft(a, n);
+    }
+
+    /*package-private*/
+    @ForceInline
+    static int rotateRight(int a, int n) {
+        return Integer.rotateRight(a, n);
+    }
+
+    /*package-private*/
     @Override
     abstract IntSpecies vspecies();
 
@@ -655,9 +667,9 @@ public abstract class IntVector extends AbstractVector<Integer> {
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> (int)((a & LSHR_SETUP_MASK) >>> n));
                 case VECTOR_OP_LROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) -> Integer.rotateLeft(a, n));
+                        v0.bOp(v1, (i, a, n) -> rotateLeft(a, (int)n));
                 case VECTOR_OP_RROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) -> Integer.rotateRight(a, n));
+                        v0.bOp(v1, (i, a, n) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }
@@ -817,9 +829,9 @@ public abstract class IntVector extends AbstractVector<Integer> {
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> (int)((a & LSHR_SETUP_MASK) >>> n));
                 case VECTOR_OP_LROTATE: return (v, n) ->
-                        v.uOp((i, a) -> Integer.rotateLeft(a, n));
+                        v.uOp((i, a) -> rotateLeft(a, (int)n));
                 case VECTOR_OP_RROTATE: return (v, n) ->
-                        v.uOp((i, a) -> Integer.rotateRight(a, n));
+                        v.uOp((i, a) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }

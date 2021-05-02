@@ -1155,6 +1155,14 @@ public class Short256VectorTests extends AbstractVectorTest {
         }
     }
 
+    static short ROL_scalar(short a, short b) {
+        return (short)(((((short)a) & 0xFFFF) << (b & 15)) | ((((short)a) & 0xFFFF) >>> (16 - (b & 15))));
+    }
+
+    static short ROR_scalar(short a, short b) {
+        return (short)(((((short)a) & 0xFFFF) >>> (b & 15)) | ((((short)a) & 0xFFFF) << (16 - (b & 15))));
+    }
+
     @Test
     static void smokeTest1() {
         ShortVector three = ShortVector.broadcast(SPECIES, (byte)-3);
@@ -2414,17 +2422,8 @@ public class Short256VectorTests extends AbstractVectorTest {
         assertShiftArraysEquals(r, a, b, mask, Short256VectorTests::ASHR_unary);
     }
 
-
-
-
-
-
-    static short ROL_unary(short a, short b) {
-        return (short)((short)(((((short)a) & 0xFFFF) << (b & 15)) | ((((short)a) & 0xFFFF) >>> ((16 - (b & 15)) & 15))));
-    }
-
     @Test(dataProvider = "shortBinaryOpProvider")
-    static void ROLShort256VectorTestsShift(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+    static void ROLShort256VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
@@ -2436,13 +2435,10 @@ public class Short256VectorTests extends AbstractVectorTest {
             }
         }
 
-        assertShiftArraysEquals(r, a, b, Short256VectorTests::ROL_unary);
+        assertShiftArraysEquals(r, a, b, Short256VectorTests::ROL_scalar);
     }
-
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
-    static void ROLShort256VectorTestsShift(IntFunction<short[]> fa, IntFunction<short[]> fb,
+    static void ROLShort256VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
@@ -2457,20 +2453,10 @@ public class Short256VectorTests extends AbstractVectorTest {
             }
         }
 
-        assertShiftArraysEquals(r, a, b, mask, Short256VectorTests::ROL_unary);
+        assertShiftArraysEquals(r, a, b, mask, Short256VectorTests::ROL_scalar);
     }
-
-
-
-
-
-
-    static short ROR_unary(short a, short b) {
-        return (short)((short)(((((short)a) & 0xFFFF) >>> (b & 15)) | ((((short)a) & 0xFFFF) << ((16 - (b & 15)) & 15))));
-    }
-
     @Test(dataProvider = "shortBinaryOpProvider")
-    static void RORShort256VectorTestsShift(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+    static void RORShort256VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
@@ -2482,13 +2468,10 @@ public class Short256VectorTests extends AbstractVectorTest {
             }
         }
 
-        assertShiftArraysEquals(r, a, b, Short256VectorTests::ROR_unary);
+        assertShiftArraysEquals(r, a, b, Short256VectorTests::ROR_scalar);
     }
-
-
-
     @Test(dataProvider = "shortBinaryOpMaskProvider")
-    static void RORShort256VectorTestsShift(IntFunction<short[]> fa, IntFunction<short[]> fb,
+    static void RORShort256VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
@@ -2503,9 +2486,8 @@ public class Short256VectorTests extends AbstractVectorTest {
             }
         }
 
-        assertShiftArraysEquals(r, a, b, mask, Short256VectorTests::ROR_unary);
+        assertShiftArraysEquals(r, a, b, mask, Short256VectorTests::ROR_scalar);
     }
-
     static short MIN(short a, short b) {
         return (short)(Math.min(a, b));
     }

@@ -32,105 +32,101 @@ import org.openjdk.jmh.infra.Blackhole;
 @OutputTimeUnit(TimeUnit.MINUTES)
 @State(Scope.Thread)
 public class RotateBenchmark {
+    @Param({"64","128","256"})
+    int size;
 
-  @Param({"64","128","256"})
-  public int TESTSIZE;
+    @Param({"128","256", "512"})
+    int bits;
 
-  @Param({"128","256", "512"})
-  public int bits;
+    @Param({"11","21","31"})
+    int shift;
 
-  @Param({"31"})
-  public int shift;
+    long[] longinp;
+    long[] longres;
+    int[] intinp;
+    int[] intres;
+    VectorSpecies ispecies;
+    VectorSpecies lspecies;
 
-  public long[] inpL;
-  public long[] resL;
-  public int[] inpI;
-  public int[] resI;
-  public VectorSpecies ISPECIES;
-  public VectorSpecies LSPECIES;
-  public IntVector vecI;
-  public LongVector vecL;
+    static final long[] specialvalslong = {0L, -0L, Long.MIN_VALUE, Long.MAX_VALUE};
+    static final int[] specialvalsint = {0, -0, Integer.MIN_VALUE, Integer.MAX_VALUE};
 
-  public final long[] specialValsL = {0L, -0L, Long.MIN_VALUE, Long.MAX_VALUE};
-  public final int[] specialValsI = {0, -0, Integer.MIN_VALUE, Integer.MAX_VALUE};
+    @Setup(Level.Trial)
+    public void BmSetup() {
+        Random r = new Random(1024);
+        longinp = new long[size];
+        longres = new long[size];
+        intinp = new int[size];
+        intres = new int[size];
 
-  @Setup(Level.Trial)
-  public void BmSetup() {
-    Random r = new Random(1024);
-    inpL = new long[TESTSIZE];
-    resL = new long[TESTSIZE];
-    inpI = new int[TESTSIZE];
-    resI = new int[TESTSIZE];
+        ispecies = VectorSpecies.of(int.class, VectorShape.forBitSize(bits));
+        lspecies = VectorSpecies.of(long.class, VectorShape.forBitSize(bits));
 
-    ISPECIES = VectorSpecies.of(int.class, VectorShape.forBitSize(bits));
-    LSPECIES = VectorSpecies.of(long.class, VectorShape.forBitSize(bits));
-
-    for (int i = 4; i < TESTSIZE; i++) {
-      inpI[i] = i;
-      inpL[i] = i;
-    }
-    for (int i = 0 ; i < specialValsL.length; i++) {
-      inpL[i] = specialValsL[i];
-    }
-    for (int i = 0 ; i < specialValsI.length; i++) {
-      inpI[i] = specialValsI[i];
+        for (int i = 4; i < size; i++) {
+            intinp[i] = i;
+            longinp[i] = i;
+        }
+        for (int i = 0 ; i < specialvalslong.length; i++) {
+            longinp[i] = specialvalslong[i];
+        }
+        for (int i = 0 ; i < specialvalsint.length; i++) {
+            intinp[i] = specialvalsint[i];
+        }
     }
 
-  }
-
-  @Benchmark
-  public void testRotateLeftI(Blackhole bh) {
-    for(int i = 0 ; i < 10000; i++) {
-      for (int j = 0 ; j < TESTSIZE; j+= ISPECIES.length()) {
-        vecI = IntVector.fromArray(ISPECIES, inpI, j);
-        vecI = vecI.lanewise(VectorOperators.ROL, i);
-        vecI = vecI.lanewise(VectorOperators.ROL, i);
-        vecI = vecI.lanewise(VectorOperators.ROL, i);
-        vecI = vecI.lanewise(VectorOperators.ROL, i);
-        vecI.lanewise(VectorOperators.ROL, i).intoArray(resI, j);
-      }
+    @Benchmark
+    public void testRotateLeftI(Blackhole bh) {
+        IntVector intvec = null;
+        for (int j = 0 ; j < size; j+= ispecies.length()) {
+            intvec = IntVector.fromArray(ispecies, intinp, shift);
+            intvec = intvec.lanewise(VectorOperators.ROL, shift);
+            intvec = intvec.lanewise(VectorOperators.ROL, shift);
+            intvec = intvec.lanewise(VectorOperators.ROL, shift);
+            intvec = intvec.lanewise(VectorOperators.ROL, shift);
+            intvec.lanewise(VectorOperators.ROL, j).intoArray(intres, j);
+        }
+        bh.consume(intvec);
     }
-  }
 
-  @Benchmark
-  public void testRotateRightI(Blackhole bh) {
-    for(int i = 0 ; i < 10000; i++) {
-      for (int j = 0 ; j < TESTSIZE; j+= ISPECIES.length()) {
-        vecI = IntVector.fromArray(ISPECIES, inpI, j);
-        vecI = vecI.lanewise(VectorOperators.ROR, i);
-        vecI = vecI.lanewise(VectorOperators.ROR, i);
-        vecI = vecI.lanewise(VectorOperators.ROR, i);
-        vecI = vecI.lanewise(VectorOperators.ROR, i);
-        vecI.lanewise(VectorOperators.ROR, i).intoArray(resI, j);
-      }
+    @Benchmark
+    public void testRotateRightI(Blackhole bh) {
+        IntVector intvec = null;
+        for (int j = 0 ; j < size; j+= ispecies.length()) {
+            intvec = IntVector.fromArray(ispecies, intinp, shift);
+            intvec = intvec.lanewise(VectorOperators.ROR, shift);
+            intvec = intvec.lanewise(VectorOperators.ROR, shift);
+            intvec = intvec.lanewise(VectorOperators.ROR, shift);
+            intvec = intvec.lanewise(VectorOperators.ROR, shift);
+            intvec.lanewise(VectorOperators.ROR, j).intoArray(intres, j);
+        }
+        bh.consume(intvec);
     }
-  }
 
-  @Benchmark
-  public void testRotateLeftL(Blackhole bh) {
-    for(int i = 0 ; i < 10000; i++) {
-      for (int j = 0 ; j < TESTSIZE; j+= LSPECIES.length()) {
-        vecL = LongVector.fromArray(LSPECIES, inpL, j);
-        vecL = vecL.lanewise(VectorOperators.ROL, i);
-        vecL = vecL.lanewise(VectorOperators.ROL, i);
-        vecL = vecL.lanewise(VectorOperators.ROL, i);
-        vecL = vecL.lanewise(VectorOperators.ROL, i);
-        vecL.lanewise(VectorOperators.ROL, i).intoArray(resL, j);
-      }
+    @Benchmark
+    public void testRotateLeftL(Blackhole bh) {
+        LongVector longvec = null;
+        for (int j = 0 ; j < size; j+= lspecies.length()) {
+            longvec = LongVector.fromArray(lspecies, longinp, shift);
+            longvec = longvec.lanewise(VectorOperators.ROL, shift);
+            longvec = longvec.lanewise(VectorOperators.ROL, shift);
+            longvec = longvec.lanewise(VectorOperators.ROL, shift);
+            longvec = longvec.lanewise(VectorOperators.ROL, shift);
+            longvec.lanewise(VectorOperators.ROL, j).intoArray(longres, j);
+        }
+        bh.consume(longvec);
     }
-  }
 
-  @Benchmark
-  public void testRotateRightL(Blackhole bh) {
-    for(int i = 0 ; i < 10000; i++) {
-      for (int j = 0 ; j < TESTSIZE; j+= LSPECIES.length()) {
-        vecL = LongVector.fromArray(LSPECIES, inpL, j);
-        vecL = vecL.lanewise(VectorOperators.ROR, i);
-        vecL = vecL.lanewise(VectorOperators.ROR, i);
-        vecL = vecL.lanewise(VectorOperators.ROR, i);
-        vecL = vecL.lanewise(VectorOperators.ROR, i);
-        vecL.lanewise(VectorOperators.ROR, i).intoArray(resL, j);
-      }
+    @Benchmark
+    public void testRotateRightL(Blackhole bh) {
+        LongVector longvec = null;
+        for (int j = 0 ; j < size; j+= lspecies.length()) {
+            longvec = LongVector.fromArray(lspecies, longinp, shift);
+            longvec = longvec.lanewise(VectorOperators.ROR, shift);
+            longvec = longvec.lanewise(VectorOperators.ROR, shift);
+            longvec = longvec.lanewise(VectorOperators.ROR, shift);
+            longvec = longvec.lanewise(VectorOperators.ROR, shift);
+            longvec.lanewise(VectorOperators.ROR, j).intoArray(longres, j);
+        }
+        bh.consume(longvec);
     }
-  }
 }

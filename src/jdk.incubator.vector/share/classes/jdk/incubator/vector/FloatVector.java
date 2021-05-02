@@ -393,6 +393,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         throw new AssertionError(Integer.toHexString(cond));
     }
 
+
     /*package-private*/
     @Override
     abstract FloatSpecies vspecies();

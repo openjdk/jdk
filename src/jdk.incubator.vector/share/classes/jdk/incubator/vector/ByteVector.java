@@ -394,6 +394,18 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     }
 
     /*package-private*/
+    @ForceInline
+    static byte rotateLeft(byte a, int n) {
+        return (byte)(((((byte)a) & Byte.toUnsignedInt((byte)-1)) << (n & Byte.SIZE-1)) | ((((byte)a) & Byte.toUnsignedInt((byte)-1)) >>> (Byte.SIZE - (n & Byte.SIZE-1))));
+    }
+
+    /*package-private*/
+    @ForceInline
+    static byte rotateRight(byte a, int n) {
+        return (byte)(((((byte)a) & Byte.toUnsignedInt((byte)-1)) >>> (n & Byte.SIZE-1)) | ((((byte)a) & Byte.toUnsignedInt((byte)-1)) << (Byte.SIZE - (n & Byte.SIZE-1))));
+    }
+
+    /*package-private*/
     @Override
     abstract ByteSpecies vspecies();
 
@@ -655,9 +667,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> (byte)((a & LSHR_SETUP_MASK) >>> n));
                 case VECTOR_OP_LROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) ->(byte)(((((byte)a) & Byte.toUnsignedInt((byte)-1)) << (n & Byte.SIZE-1)) | ((((byte)a) & Byte.toUnsignedInt((byte)-1)) >>> (Byte.SIZE - (n & Byte.SIZE-1)))));
+                        v0.bOp(v1, (i, a, n) -> rotateLeft(a, (int)n));
                 case VECTOR_OP_RROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) ->(byte)(((((byte)a) & Byte.toUnsignedInt((byte)-1)) >>> (n & Byte.SIZE-1)) | ((((byte)a) & Byte.toUnsignedInt((byte)-1)) << (Byte.SIZE - (n & Byte.SIZE-1)))));
+                        v0.bOp(v1, (i, a, n) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }
@@ -817,9 +829,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> (byte)((a & LSHR_SETUP_MASK) >>> n));
                 case VECTOR_OP_LROTATE: return (v, n) ->
-                        v.uOp((i, a) ->(byte)(((((byte)a) & Byte.toUnsignedInt((byte)-1)) << (n & Byte.SIZE-1)) | ((((byte)a) & Byte.toUnsignedInt((byte)-1)) >>> (Byte.SIZE - (n & Byte.SIZE-1)))));
+                        v.uOp((i, a) -> rotateLeft(a, (int)n));
                 case VECTOR_OP_RROTATE: return (v, n) ->
-                        v.uOp((i, a) ->(byte)(((((byte)a) & Byte.toUnsignedInt((byte)-1)) >>> (n & Byte.SIZE-1)) | ((((byte)a) & Byte.toUnsignedInt((byte)-1)) << (Byte.SIZE - (n & Byte.SIZE-1)))));
+                        v.uOp((i, a) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }

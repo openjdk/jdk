@@ -73,7 +73,9 @@ bool_reduction_scalar="BoolReduction-Scalar-op"
 bool_reduction_template="BoolReduction-op"
 with_op_template="With-Op"
 shift_template="Shift-op"
+rotate_template="Rotate-op"
 shift_masked_template="Shift-Masked-op"
+rotate_masked_template="Rotate-Masked-op"
 gather_template="Gather-op"
 gather_masked_template="Gather-Masked-op"
 scatter_template="Scatter-op"
@@ -103,9 +105,9 @@ function replace_variables {
   local kernel_smoke=${10}
 
   if [ "x${kernel}" != "x" ]; then
-    local kernel_escaped=$(echo -e "$kernel" | tr '\n' '|')
+    local kernel_escaped=$(echo -e "$kernel" | tr '\n' '`')
     sed "s/\[\[KERNEL\]\]/${kernel_escaped}/g" $filename > ${filename}.current1
-    cat ${filename}.current1 | tr '|' "\n" > ${filename}.current
+    cat ${filename}.current1 | tr '`' "\n" > ${filename}.current
     rm -f "${filename}.current1"
   else
     cp $filename ${filename}.current
@@ -160,9 +162,9 @@ function replace_variables {
   if [[ "$filename" == *"Unit"* ]] && [ "$test_func" != "" ]; then
     if [ "$masked" == "" ] || [ "$withMask" != "" ]; then
       if [ ! -z "$kernel_smoke" ]; then
-        local kernel_smoke_escaped=$(echo -e "$kernel_smoke" | tr '\n' '|')
+        local kernel_smoke_escaped=$(echo -e "$kernel_smoke" | tr '\n' '`')
         sed "s/\[\[KERNEL\]\]/${kernel_smoke_escaped}/g" $filename > ${filename}.scurrent1
-        cat ${filename}.scurrent1 | tr '|' "\n" > ${filename}.scurrent
+        cat ${filename}.scurrent1 | tr '`' "\n" > ${filename}.scurrent
         rm -f "${filename}.scurrent1"
       else
         cp $filename.current ${filename}.scurrent
@@ -276,6 +278,12 @@ function gen_shift_cst_op {
   echo "Generating Shift constant op $1 ($2)..."
   gen_op_tmpl $shift_template "$@"
   gen_op_tmpl $shift_masked_template "$@"
+}
+
+function gen_rotate_cst_op {
+  echo "Generating Rotate constant op $1 ($2)..."
+  gen_op_tmpl $rotate_template "$@"
+  gen_op_tmpl $rotate_masked_template "$@"
 }
 
 function gen_unary_alu_op {
@@ -449,12 +457,8 @@ gen_shift_cst_op  "LSHR" "((a \& 0xFFFF) >>> (b \& 15))" "short"
 gen_shift_cst_op  "ASHR" "(a >> b)" "intOrLong"
 gen_shift_cst_op  "ASHR" "(a >> (b \& 7))" "byte"
 gen_shift_cst_op  "ASHR" "(a >> (b \& 15))" "short"
-gen_shift_cst_op  "ROL" "((a << b) | (a >>> -b))" "intOrLong"
-gen_shift_cst_op  "ROL" "(byte)(((((byte)a) \& 0xFF) << (b \& 7)) | ((((byte)a) \& 0xFF) >>> ((8 - (b \& 7)) \& 7)))" "byte"
-gen_shift_cst_op  "ROL" "(short)(((((short)a) \& 0xFFFF) << (b \& 15)) | ((((short)a) \& 0xFFFF) >>> ((16 - (b \& 15)) \& 15)))" "short"
-gen_shift_cst_op  "ROR" "((a >>> b) | (a << -b))" "intOrLong"
-gen_shift_cst_op  "ROR" "(byte)(((((byte)a) \& 0xFF) >>> (b \& 7)) | ((((byte)a) \& 0xFF) << ((8 - (b \& 7)) \& 7)))" "byte"
-gen_shift_cst_op  "ROR" "(short)(((((short)a) \& 0xFFFF) >>> (b \& 15)) | ((((short)a) \& 0xFFFF) << ((16 - (b \& 15)) \& 15)))" "short"
+gen_rotate_cst_op  "ROL" "" ""
+gen_rotate_cst_op  "ROR" "" ""
 
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"

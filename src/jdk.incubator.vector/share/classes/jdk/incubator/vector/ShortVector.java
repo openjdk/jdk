@@ -394,6 +394,18 @@ public abstract class ShortVector extends AbstractVector<Short> {
     }
 
     /*package-private*/
+    @ForceInline
+    static short rotateLeft(short a, int n) {
+        return (short)(((((short)a) & Short.toUnsignedInt((short)-1)) << (n & Short.SIZE-1)) | ((((short)a) & Short.toUnsignedInt((short)-1)) >>> (Short.SIZE - (n & Short.SIZE-1))));
+    }
+
+    /*package-private*/
+    @ForceInline
+    static short rotateRight(short a, int n) {
+        return (short)(((((short)a) & Short.toUnsignedInt((short)-1)) >>> (n & Short.SIZE-1)) | ((((short)a) & Short.toUnsignedInt((short)-1)) << (Short.SIZE - (n & Short.SIZE-1))));
+    }
+
+    /*package-private*/
     @Override
     abstract ShortSpecies vspecies();
 
@@ -655,9 +667,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> (short)((a & LSHR_SETUP_MASK) >>> n));
                 case VECTOR_OP_LROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) ->(short)(((((short)a) & Short.toUnsignedInt((short)-1)) << (n & Short.SIZE-1)) | ((((short)a) & Short.toUnsignedInt((short)-1)) >>> (Short.SIZE - (n & Short.SIZE-1)))));
+                        v0.bOp(v1, (i, a, n) -> rotateLeft(a, (int)n));
                 case VECTOR_OP_RROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) ->(short)(((((short)a) & Short.toUnsignedInt((short)-1)) >>> (n & Short.SIZE-1)) | ((((short)a) & Short.toUnsignedInt((short)-1)) << (Short.SIZE - (n & Short.SIZE-1)))));
+                        v0.bOp(v1, (i, a, n) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }
@@ -817,9 +829,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> (short)((a & LSHR_SETUP_MASK) >>> n));
                 case VECTOR_OP_LROTATE: return (v, n) ->
-                        v.uOp((i, a) ->(short)(((((short)a) & Short.toUnsignedInt((short)-1)) << (n & Short.SIZE-1)) | ((((short)a) & Short.toUnsignedInt((short)-1)) >>> (Short.SIZE - (n & Short.SIZE-1)))));
+                        v.uOp((i, a) -> rotateLeft(a, (int)n));
                 case VECTOR_OP_RROTATE: return (v, n) ->
-                        v.uOp((i, a) ->(short)(((((short)a) & Short.toUnsignedInt((short)-1)) >>> (n & Short.SIZE-1)) | ((((short)a) & Short.toUnsignedInt((short)-1)) << (Short.SIZE - (n & Short.SIZE-1)))));
+                        v.uOp((i, a) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }

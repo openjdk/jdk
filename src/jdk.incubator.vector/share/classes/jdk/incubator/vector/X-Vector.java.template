@@ -397,6 +397,28 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         throw new AssertionError(Integer.toHexString(cond));
     }
 
+#if[BITWISE]
+    /*package-private*/
+    @ForceInline
+    static $type$ rotateLeft($type$ a, int n) {
+#if[intOrLong]
+        return $Boxtype$.rotateLeft(a, n);
+#else[intOrLong]
+        return ($type$)((((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) << (n & $Boxtype$.SIZE-1)) | (((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) >>> ($Boxtype$.SIZE - (n & $Boxtype$.SIZE-1))));
+#end[intOrLong]
+    }
+
+    /*package-private*/
+    @ForceInline
+    static $type$ rotateRight($type$ a, int n) {
+#if[intOrLong]
+        return $Boxtype$.rotateRight(a, n);
+#else[intOrLong]
+        return ($type$)((((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) >>> (n & $Boxtype$.SIZE-1)) | (((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) << ($Boxtype$.SIZE - (n & $Boxtype$.SIZE-1))));
+#end[intOrLong]
+    }
+#end[BITWISE]
+
     /*package-private*/
     @Override
     abstract $Type$Species vspecies();
@@ -725,24 +747,10 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                         v0.bOp(v1, (i, a, n) -> ($type$)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> ($type$)((a & LSHR_SETUP_MASK) >>> n));
-#if[long]
                 case VECTOR_OP_LROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) -> Long.rotateLeft(a, (int)n));
+                        v0.bOp(v1, (i, a, n) -> rotateLeft(a, (int)n));
                 case VECTOR_OP_RROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) -> Long.rotateRight(a, (int)n));
-#else[long]
-#if[int]
-                case VECTOR_OP_LROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) -> Integer.rotateLeft(a, n));
-                case VECTOR_OP_RROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) -> Integer.rotateRight(a, n));
-#else[int]
-                case VECTOR_OP_LROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) ->($type$)((((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) << (n & $Boxtype$.SIZE-1)) | (((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) >>> ($Boxtype$.SIZE - (n & $Boxtype$.SIZE-1)))));
-                case VECTOR_OP_RROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) ->($type$)((((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) >>> (n & $Boxtype$.SIZE-1)) | (((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) << ($Boxtype$.SIZE - (n & $Boxtype$.SIZE-1)))));
-#end[int]
-#end[long]
+                        v0.bOp(v1, (i, a, n) -> rotateRight(a, (int)n));
 #end[BITWISE]
                 default: return null;
                 }}));
@@ -911,24 +919,10 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                         v.uOp((i, a) -> ($type$)(a >> n));
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> ($type$)((a & LSHR_SETUP_MASK) >>> n));
-#if[long]
                 case VECTOR_OP_LROTATE: return (v, n) ->
-                        v.uOp((i, a) -> Long.rotateLeft(a, (int)n));
+                        v.uOp((i, a) -> rotateLeft(a, (int)n));
                 case VECTOR_OP_RROTATE: return (v, n) ->
-                        v.uOp((i, a) -> Long.rotateRight(a, (int)n));
-#else[long]
-#if[int]
-                case VECTOR_OP_LROTATE: return (v, n) ->
-                        v.uOp((i, a) -> Integer.rotateLeft(a, n));
-                case VECTOR_OP_RROTATE: return (v, n) ->
-                        v.uOp((i, a) -> Integer.rotateRight(a, n));
-#else[int]
-                case VECTOR_OP_LROTATE: return (v, n) ->
-                        v.uOp((i, a) ->($type$)((((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) << (n & $Boxtype$.SIZE-1)) | (((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) >>> ($Boxtype$.SIZE - (n & $Boxtype$.SIZE-1)))));
-                case VECTOR_OP_RROTATE: return (v, n) ->
-                        v.uOp((i, a) ->($type$)((((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) >>> (n & $Boxtype$.SIZE-1)) | (((($type$)a) & $Boxtype$.toUnsignedInt(($type$)-1)) << ($Boxtype$.SIZE - (n & $Boxtype$.SIZE-1)))));
-#end[int]
-#end[long]
+                        v.uOp((i, a) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }

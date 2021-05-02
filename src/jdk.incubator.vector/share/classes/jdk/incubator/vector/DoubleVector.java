@@ -393,6 +393,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         throw new AssertionError(Integer.toHexString(cond));
     }
 
+
     /*package-private*/
     @Override
     abstract DoubleSpecies vspecies();

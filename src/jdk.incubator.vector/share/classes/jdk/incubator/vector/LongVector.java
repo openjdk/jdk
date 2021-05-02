@@ -394,6 +394,18 @@ public abstract class LongVector extends AbstractVector<Long> {
     }
 
     /*package-private*/
+    @ForceInline
+    static long rotateLeft(long a, int n) {
+        return Long.rotateLeft(a, n);
+    }
+
+    /*package-private*/
+    @ForceInline
+    static long rotateRight(long a, int n) {
+        return Long.rotateRight(a, n);
+    }
+
+    /*package-private*/
     @Override
     abstract LongSpecies vspecies();
 
@@ -613,9 +625,9 @@ public abstract class LongVector extends AbstractVector<Long> {
                 case VECTOR_OP_URSHIFT: return (v0, v1) ->
                         v0.bOp(v1, (i, a, n) -> (long)((a & LSHR_SETUP_MASK) >>> n));
                 case VECTOR_OP_LROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) -> Long.rotateLeft(a, (int)n));
+                        v0.bOp(v1, (i, a, n) -> rotateLeft(a, (int)n));
                 case VECTOR_OP_RROTATE: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, n) -> Long.rotateRight(a, (int)n));
+                        v0.bOp(v1, (i, a, n) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }
@@ -735,9 +747,9 @@ public abstract class LongVector extends AbstractVector<Long> {
                 case VECTOR_OP_URSHIFT: return (v, n) ->
                         v.uOp((i, a) -> (long)((a & LSHR_SETUP_MASK) >>> n));
                 case VECTOR_OP_LROTATE: return (v, n) ->
-                        v.uOp((i, a) -> Long.rotateLeft(a, (int)n));
+                        v.uOp((i, a) -> rotateLeft(a, (int)n));
                 case VECTOR_OP_RROTATE: return (v, n) ->
-                        v.uOp((i, a) -> Long.rotateRight(a, (int)n));
+                        v.uOp((i, a) -> rotateRight(a, (int)n));
                 default: return null;
                 }}));
     }

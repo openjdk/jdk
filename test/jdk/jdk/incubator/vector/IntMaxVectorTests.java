@@ -1131,6 +1131,14 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         }
     }
 
+    static int ROL_scalar(int a, int b) {
+        return Integer.rotateLeft(a, ((int)b));
+    }
+
+    static int ROR_scalar(int a, int b) {
+        return Integer.rotateRight(a, ((int)b));
+    }
+
     @Test
     static void smokeTest1() {
         IntVector three = IntVector.broadcast(SPECIES, (byte)-3);
@@ -2395,13 +2403,8 @@ public class IntMaxVectorTests extends AbstractVectorTest {
 
 
 
-
-    static int ROL_unary(int a, int b) {
-        return (int)(((a << b) | (a >>> -b)));
-    }
-
     @Test(dataProvider = "intBinaryOpProvider")
-    static void ROLIntMaxVectorTestsShift(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+    static void ROLIntMaxVectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
         int[] a = fa.apply(SPECIES.length());
         int[] b = fb.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
@@ -2413,13 +2416,10 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             }
         }
 
-        assertShiftArraysEquals(r, a, b, IntMaxVectorTests::ROL_unary);
+        assertShiftArraysEquals(r, a, b, IntMaxVectorTests::ROL_scalar);
     }
-
-
-
     @Test(dataProvider = "intBinaryOpMaskProvider")
-    static void ROLIntMaxVectorTestsShift(IntFunction<int[]> fa, IntFunction<int[]> fb,
+    static void ROLIntMaxVectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
                                           IntFunction<boolean[]> fm) {
         int[] a = fa.apply(SPECIES.length());
         int[] b = fb.apply(SPECIES.length());
@@ -2434,20 +2434,10 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             }
         }
 
-        assertShiftArraysEquals(r, a, b, mask, IntMaxVectorTests::ROL_unary);
+        assertShiftArraysEquals(r, a, b, mask, IntMaxVectorTests::ROL_scalar);
     }
-
-
-
-
-
-
-    static int ROR_unary(int a, int b) {
-        return (int)(((a >>> b) | (a << -b)));
-    }
-
     @Test(dataProvider = "intBinaryOpProvider")
-    static void RORIntMaxVectorTestsShift(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+    static void RORIntMaxVectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
         int[] a = fa.apply(SPECIES.length());
         int[] b = fb.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
@@ -2459,13 +2449,10 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             }
         }
 
-        assertShiftArraysEquals(r, a, b, IntMaxVectorTests::ROR_unary);
+        assertShiftArraysEquals(r, a, b, IntMaxVectorTests::ROR_scalar);
     }
-
-
-
     @Test(dataProvider = "intBinaryOpMaskProvider")
-    static void RORIntMaxVectorTestsShift(IntFunction<int[]> fa, IntFunction<int[]> fb,
+    static void RORIntMaxVectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
                                           IntFunction<boolean[]> fm) {
         int[] a = fa.apply(SPECIES.length());
         int[] b = fb.apply(SPECIES.length());
@@ -2480,13 +2467,8 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             }
         }
 
-        assertShiftArraysEquals(r, a, b, mask, IntMaxVectorTests::ROR_unary);
+        assertShiftArraysEquals(r, a, b, mask, IntMaxVectorTests::ROR_scalar);
     }
-
-
-
-
-
     static int MIN(int a, int b) {
         return (int)(Math.min(a, b));
     }

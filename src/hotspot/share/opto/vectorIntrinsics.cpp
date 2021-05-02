@@ -1293,13 +1293,15 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     }
     return false; // operation not supported
   }
+  Node* cnt  = argument(5);
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
+  bool is_const_rotate = is_rotate && cnt->is_Con() && -0x80 <= cnt->get_int() && cnt->get_int() < 0x80;
 
   if (is_rotate) {
     bool is_unsupported = false;
     if (!arch_supports_vector(sopc, num_elem, elem_bt, VecMaskNotUsed, true /*has_scalar_args*/) ||
-        !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed)) {
+        (!is_const_rotate && !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed))) {
       is_unsupported = true;
     }
     int lshiftopc = VectorNode::opcode(elem_bt == T_LONG ? Op_LShiftL : Op_LShiftI, elem_bt);
@@ -1337,12 +1339,11 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   }
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
   Node* opd2 = NULL;
-  Node* cnt  = argument(5);
   if (is_shift) {
     opd2 = vector_shift_count(cnt, opc, elem_bt, num_elem);
   } else {
     assert(is_rotate, "unexpected operation");
-    if (!cnt->is_Con() || -0x80 > cnt->get_int() || cnt->get_int() >= 0x80) {
+    if (!is_const_rotate) {
       const Type * type_bt = Type::get_const_basic_type(elem_bt);
       cnt = elem_bt == T_LONG ? gvn().transform(new ConvI2LNode(cnt)) : cnt;
       opd2 = gvn().transform(VectorNode::scalar2vector(cnt, num_elem, type_bt));

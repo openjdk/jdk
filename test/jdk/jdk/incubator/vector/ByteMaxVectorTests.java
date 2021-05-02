@@ -1170,6 +1170,14 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
         }
     }
 
+    static byte ROL_scalar(byte a, byte b) {
+        return (byte)(((((byte)a) & 0xFF) << (b & 7)) | ((((byte)a) & 0xFF) >>> (8 - (b & 7))));
+    }
+
+    static byte ROR_scalar(byte a, byte b) {
+        return (byte)(((((byte)a) & 0xFF) >>> (b & 7)) | ((((byte)a) & 0xFF) << (8 - (b & 7))));
+    }
+
     @Test
     static void smokeTest1() {
         ByteVector three = ByteVector.broadcast(SPECIES, (byte)-3);
@@ -2429,15 +2437,8 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
 
 
 
-
-
-
-    static byte ROL_unary(byte a, byte b) {
-        return (byte)((byte)(((((byte)a) & 0xFF) << (b & 7)) | ((((byte)a) & 0xFF) >>> ((8 - (b & 7)) & 7))));
-    }
-
     @Test(dataProvider = "byteBinaryOpProvider")
-    static void ROLByteMaxVectorTestsShift(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
+    static void ROLByteMaxVectorTests(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] b = fb.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
@@ -2449,13 +2450,10 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
             }
         }
 
-        assertShiftArraysEquals(r, a, b, ByteMaxVectorTests::ROL_unary);
+        assertShiftArraysEquals(r, a, b, ByteMaxVectorTests::ROL_scalar);
     }
-
-
-
     @Test(dataProvider = "byteBinaryOpMaskProvider")
-    static void ROLByteMaxVectorTestsShift(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
+    static void ROLByteMaxVectorTestsMasked(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
                                           IntFunction<boolean[]> fm) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] b = fb.apply(SPECIES.length());
@@ -2470,20 +2468,10 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
             }
         }
 
-        assertShiftArraysEquals(r, a, b, mask, ByteMaxVectorTests::ROL_unary);
+        assertShiftArraysEquals(r, a, b, mask, ByteMaxVectorTests::ROL_scalar);
     }
-
-
-
-
-
-
-    static byte ROR_unary(byte a, byte b) {
-        return (byte)((byte)(((((byte)a) & 0xFF) >>> (b & 7)) | ((((byte)a) & 0xFF) << ((8 - (b & 7)) & 7))));
-    }
-
     @Test(dataProvider = "byteBinaryOpProvider")
-    static void RORByteMaxVectorTestsShift(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
+    static void RORByteMaxVectorTests(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] b = fb.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
@@ -2495,13 +2483,10 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
             }
         }
 
-        assertShiftArraysEquals(r, a, b, ByteMaxVectorTests::ROR_unary);
+        assertShiftArraysEquals(r, a, b, ByteMaxVectorTests::ROR_scalar);
     }
-
-
-
     @Test(dataProvider = "byteBinaryOpMaskProvider")
-    static void RORByteMaxVectorTestsShift(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
+    static void RORByteMaxVectorTestsMasked(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
                                           IntFunction<boolean[]> fm) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] b = fb.apply(SPECIES.length());
@@ -2516,11 +2501,8 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
             }
         }
 
-        assertShiftArraysEquals(r, a, b, mask, ByteMaxVectorTests::ROR_unary);
+        assertShiftArraysEquals(r, a, b, mask, ByteMaxVectorTests::ROR_scalar);
     }
-
-
-
     static byte MIN(byte a, byte b) {
         return (byte)(Math.min(a, b));
     }
