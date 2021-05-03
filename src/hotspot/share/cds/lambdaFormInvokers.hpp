@@ -40,8 +40,6 @@ class LambdaFormInvokers : public AllStatic {
  public:
   static void append(char* line);
   static void append_filtered(char* line);
-  // All exceptions except for OOM will be suppressed in the fucntion, the
-  // non-OOM failure should not affect normal archiving.
   static void regenerate_holder_classes(TRAPS);
   static GrowableArrayCHeap<char*, mtClassShared>* lambdaform_lines() {
     return _lambdaform_lines;
