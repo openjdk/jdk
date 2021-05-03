@@ -135,7 +135,6 @@ public class TestJFREvents {
         Common.logNewTestCase("Memory Usage");
         String eventName = "jdk.ContainerMemoryUsage";
 
-        String memoryPressureFld = "memoryPressure";
         String memoryFailCountFld = "memoryFailCount";
         String memoryUsageFld = "memoryUsage";
         String swapMemoryUsageFld = "swapMemoryUsage";
@@ -144,7 +143,6 @@ public class TestJFREvents {
                                       commonDockerOpts()
                                       .addClassOptions(eventName, "period=endChunk"))
             .shouldHaveExitValue(0)
-            .shouldContain(memoryPressureFld)
             .shouldContain(memoryFailCountFld)
             .shouldContain(memoryUsageFld)
             .shouldContain(swapMemoryUsageFld);
