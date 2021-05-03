@@ -231,8 +231,8 @@ void G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask
   G1FreeHumongousRegionClosure cl;
   g1h->heap_region_iterate(&cl);
 
-  record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumTotal, g1h->num_humongous_objects_total());
-  record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumCandidates, g1h->num_humongous_objects_reclaim_candidates());
+  record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumTotal, g1h->num_humongous_total_objects());
+  record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumCandidates, g1h->num_humongous_reclaim_candidate_objects());
   record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumReclaimed, cl.humongous_objects_reclaimed());
 
   _humongous_regions_reclaimed = cl.humongous_regions_reclaimed();

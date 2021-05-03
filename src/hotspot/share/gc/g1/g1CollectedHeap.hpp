@@ -257,12 +257,12 @@ private:
   };
 
   HumongousReclaimCandidates _humongous_reclaim_candidates;
-  uint _num_humongous_reclaim_total; // Current amount of (all) humongous objects found in the heap.
-  uint _num_humongous_reclaim_candidates; // Number of humongous object eager reclaim candidates.
+  uint _num_humongous_reclaim_total_objects; // Current amount of (all) humongous objects found in the heap.
+  uint _num_humongous_reclaim_candidate_objects; // Number of humongous object eager reclaim candidates.
 public:
-  uint num_humongous_objects_total() const { return _num_humongous_reclaim_total; }
-  uint num_humongous_objects_reclaim_candidates() const { return _num_humongous_reclaim_candidates; }
-  bool has_humongous_reclaim_candidates() const { return _num_humongous_reclaim_candidates > 0; }
+  uint num_humongous_total_objects() const { return _num_humongous_reclaim_total_objects; }
+  uint num_humongous_reclaim_candidate_objects() const { return _num_humongous_reclaim_candidate_objects; }
+  bool has_humongous_reclaim_candidate_objects() const { return _num_humongous_reclaim_candidate_objects > 0; }
 
   bool eagerly_reclaim_enabled() const;
 
