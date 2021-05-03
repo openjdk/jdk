@@ -32,9 +32,10 @@ class ShenandoahAllocRequest : StackObj {
 public:
   enum Type {
     _alloc_shared,      // Allocate common, outside of TLAB
-    _alloc_shared_gc,   // Allocate common, outside of GCLAB
+    _alloc_shared_gc,   // Allocate common, outside of GCLAB/PLAB
     _alloc_tlab,        // Allocate TLAB
     _alloc_gclab,       // Allocate GCLAB
+    _alloc_plab,        // Allocate PLAB
     _ALLOC_LIMIT
   };
 
@@ -48,6 +49,8 @@ public:
         return "TLAB";
       case _alloc_gclab:
         return "GCLAB";
+      case _alloc_plab:
+        return "PLAB";
       default:
         ShouldNotReachHere();
         return "";
@@ -79,6 +82,10 @@ public:
 
   static inline ShenandoahAllocRequest for_gclab(size_t min_size, size_t requested_size) {
     return ShenandoahAllocRequest(min_size, requested_size, _alloc_gclab, ShenandoahRegionAffiliation::YOUNG_GENERATION);
+  }
+
+  static inline ShenandoahAllocRequest for_plab(size_t min_size, size_t requested_size) {
+    return ShenandoahAllocRequest(min_size, requested_size, _alloc_plab, ShenandoahRegionAffiliation::OLD_GENERATION);
   }
 
   static inline ShenandoahAllocRequest for_shared_gc(size_t requested_size, ShenandoahRegionAffiliation affiliation) {
@@ -125,6 +132,7 @@ public:
       case _alloc_shared:
         return true;
       case _alloc_gclab:
+      case _alloc_plab:
       case _alloc_shared_gc:
         return false;
       default:
@@ -139,6 +147,7 @@ public:
       case _alloc_shared:
         return false;
       case _alloc_gclab:
+      case _alloc_plab:
       case _alloc_shared_gc:
         return true;
       default:
@@ -151,6 +160,7 @@ public:
     switch (_alloc_type) {
       case _alloc_tlab:
       case _alloc_gclab:
+      case _alloc_plab:
         return true;
       case _alloc_shared:
       case _alloc_shared_gc:

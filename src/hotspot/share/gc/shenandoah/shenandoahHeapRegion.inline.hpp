@@ -30,14 +30,14 @@
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "runtime/atomic.hpp"
 
-HeapWord* ShenandoahHeapRegion::allocate(size_t size, ShenandoahAllocRequest::Type type) {
+HeapWord* ShenandoahHeapRegion::allocate(size_t size, ShenandoahAllocRequest req) {
   shenandoah_assert_heaplocked_or_safepoint();
   assert(is_object_aligned(size), "alloc size breaks alignment: " SIZE_FORMAT, size);
 
   HeapWord* obj = top();
   if (pointer_delta(end(), obj) >= size) {
-    make_regular_allocation();
-    adjust_alloc_metadata(type, size);
+    make_regular_allocation(req.affiliation());
+    adjust_alloc_metadata(req.type(), size);
 
     HeapWord* new_top = obj + size;
     set_top(new_top);
@@ -62,6 +62,9 @@ inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::
       break;
     case ShenandoahAllocRequest::_alloc_gclab:
       _gclab_allocs += size;
+      break;
+    case ShenandoahAllocRequest::_alloc_plab:
+      _plab_allocs += size;
       break;
     default:
       ShouldNotReachHere();

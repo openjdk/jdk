@@ -224,6 +224,10 @@
   product(bool, ShenandoahElasticTLAB, true, DIAGNOSTIC,                    \
           "Use Elastic TLABs with Shenandoah")                              \
                                                                             \
+  product(bool, ShenandoahUsePLAB, true, DIAGNOSTIC,                        \
+          "Use PLABs for object promotions with Shenandoah, "               \
+          "if in generational mode and UseTLAB is also set.")               \
+                                                                            \
   product(uintx, ShenandoahEvacReserve, 5, EXPERIMENTAL,                    \
           "How much of heap to reserve for evacuations. Larger values make "\
           "GC evacuate more live objects on every cycle, while leaving "    \

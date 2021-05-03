@@ -44,6 +44,7 @@
 
 class ConcurrentGCTimer;
 class ObjectIterateScanRootClosure;
+class PLAB;
 class ShenandoahCollectorPolicy;
 class ShenandoahControlThread;
 class ShenandoahRegulatorThread;
@@ -567,9 +568,14 @@ public:
 //
 private:
   HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region);
+
   inline HeapWord* allocate_from_gclab(Thread* thread, size_t size);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
+
+  inline HeapWord* allocate_from_plab(Thread* thread, size_t size);
+  HeapWord* allocate_from_plab_slow(Thread* thread, size_t size);
+  HeapWord* allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size);
 
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);
@@ -676,6 +682,7 @@ public:
   inline RememberedScanner* card_scan() { return _card_scan; }
   void clear_cards_for(ShenandoahHeapRegion* region);
   void mark_card_as_dirty(HeapWord* location);
+  void retire_plab(PLAB* plab);
 
 // ---------- Helper functions
 //

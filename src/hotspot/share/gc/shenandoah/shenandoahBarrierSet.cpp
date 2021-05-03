@@ -120,8 +120,11 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
       gclab->retire();
     }
 
-    // SATB protocol requires to keep alive reacheable oops from roots at the beginning of GC
     ShenandoahHeap* const heap = ShenandoahHeap::heap();
+    PLAB* plab = ShenandoahThreadLocalData::plab(thread);
+    heap->retire_plab(plab);
+
+    // SATB protocol requires to keep alive reacheable oops from roots at the beginning of GC
     if (heap->is_concurrent_mark_in_progress()) {
       ShenandoahKeepAliveClosure oops;
       StackWatermarkSet::finish_processing(thread->as_Java_thread(), &oops, StackWatermarkKind::gc);

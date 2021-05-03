@@ -42,6 +42,7 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -211,8 +212,29 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
   if (obj != NULL) {
     return obj;
   }
-  // Otherwise...
   return allocate_from_gclab_slow(thread, size);
+}
+
+inline HeapWord* ShenandoahHeap::allocate_from_plab(Thread* thread, size_t size) {
+  assert(UseTLAB, "TLABs should be enabled");
+
+  PLAB* plab = ShenandoahThreadLocalData::plab(thread);
+  if (plab == NULL) {
+    assert(!thread->is_Java_thread() && !thread->is_Worker_thread(),
+           "Performance: thread should have PLAB: %s", thread->name());
+    // No PLABs in this thread, fallback to shared allocation
+    return NULL;
+  }
+  HeapWord* obj = plab->allocate(size);
+  if (obj == NULL) {
+    obj = allocate_from_plab_slow(thread, size);
+  }
+
+  if (mode()->is_generational() && obj != NULL) {
+    ShenandoahHeap::heap()->card_scan()->register_object(obj);
+  }
+
+  return obj;
 }
 
 inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
@@ -241,13 +263,6 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
     } else if (mark.age() >= InitialTenuringThreshold) {
       oop result = try_evacuate_object(p, thread, r, OLD_GENERATION);
       if (result != NULL) {
-        // TODO: Just marking the cards covering this object dirty
-        // may overall be less efficient than scanning it now for references to young gen
-        // or other alternatives like deferred card marking or scanning.
-        // We should revisit this.
-        // Furthermore, the object start should be registered for remset scanning.
-        MemRegion mr(cast_from_oop<HeapWord*>(result), result->size());
-        ShenandoahBarrierSet::barrier_set()->card_table()->invalidate(mr);
         return result;
       }
     }
@@ -256,7 +271,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 }
 
 inline oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahRegionAffiliation target_gen) {
-  bool alloc_from_gclab = true;
+  bool alloc_from_lab = true;
   HeapWord* copy = NULL;
   size_t size = p->size();
 
@@ -266,13 +281,28 @@ inline oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, Shenandoah
         copy = NULL;
   } else {
 #endif
-    if (UseTLAB && target_gen == YOUNG_GENERATION) {
-      copy = allocate_from_gclab(thread, size);
+    if (UseTLAB) {
+      switch (target_gen) {
+        case YOUNG_GENERATION: {
+           copy = allocate_from_gclab(thread, size);
+           break;
+        }
+        case OLD_GENERATION: {
+           if (ShenandoahUsePLAB) {
+             copy = allocate_from_plab(thread, size);
+           }
+           break;
+        }
+        default: {
+          ShouldNotReachHere();
+          break;
+        }
+      }
     }
     if (copy == NULL) {
       ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen);
       copy = allocate_memory(req);
-      alloc_from_gclab = false;
+      alloc_from_lab = false;
     }
 #ifdef ASSERT
   }
@@ -311,6 +341,10 @@ inline oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, Shenandoah
   // Try to install the new forwarding pointer.
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
+    if (target_gen == OLD_GENERATION) {
+      ShenandoahBarrierSet::barrier_set()->card_table()->dirty_MemRegion(MemRegion(copy, size));
+      card_scan()->register_object(copy);
+    }
     // Successfully evacuated. Our copy is now the public one!
     shenandoah_assert_correct(NULL, copy_val);
     return copy_val;
@@ -320,17 +354,33 @@ inline oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, Shenandoah
     // But if it happens to contain references to evacuated regions, those references would
     // not get updated for this stale copy during this cycle, and we will crash while scanning
     // it the next cycle.
-    //
-    // For GCLAB allocations, it is enough to rollback the allocation ptr. Either the next
-    // object will overwrite this stale copy, or the filler object on LAB retirement will
-    // do this. For non-GCLAB allocations, we have no way to retract the allocation, and
-    // have to explicitly overwrite the copy with the filler object. With that overwrite,
-    // we have to keep the fwdptr initialized and pointing to our (stale) copy.
-    if (alloc_from_gclab) {
-      ShenandoahThreadLocalData::gclab(thread)->undo_allocation(copy, size);
+    if (alloc_from_lab) {
+       // For LAB allocations, it is enough to rollback the allocation ptr. Either the next
+       // object will overwrite this stale copy, or the filler object on LAB retirement will
+       // do this.
+       switch (target_gen) {
+         case YOUNG_GENERATION: {
+             ShenandoahThreadLocalData::gclab(thread)->undo_allocation(copy, size);
+            break;
+         }
+         case OLD_GENERATION: {
+            ShenandoahThreadLocalData::plab(thread)->undo_allocation(copy, size);
+            break;
+         }
+         default: {
+           ShouldNotReachHere();
+           break;
+         }
+       }
     } else {
+      // For non-LAB allocations, we have no way to retract the allocation, and
+      // have to explicitly overwrite the copy with the filler object. With that overwrite,
+      // we have to keep the fwdptr initialized and pointing to our (stale) copy.
       fill_with_object(copy, size);
       shenandoah_assert_correct(NULL, copy_val);
+      if (target_gen == OLD_GENERATION) {
+        card_scan()->register_object(copy);
+      }
     }
     shenandoah_assert_correct(NULL, result);
     return result;

@@ -35,7 +35,6 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/orderAccess.hpp"
 
-
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),
   _mutator_free_bitmap(max_regions, mtGC),
@@ -63,6 +62,23 @@ bool ShenandoahFreeSet::is_collector_free(size_t idx) const {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT " (left: " SIZE_FORMAT ", right: " SIZE_FORMAT ")",
           idx, _max, _collector_leftmost, _collector_rightmost);
   return _collector_free_bitmap.at(idx);
+}
+
+HeapWord* ShenandoahFreeSet::allocate_with_affiliation(ShenandoahRegionAffiliation affiliation, ShenandoahAllocRequest& req, bool& in_new_region) {
+  for (size_t c = _collector_rightmost + 1; c > _collector_leftmost; c--) {
+    // size_t is unsigned, need to dodge underflow when _leftmost = 0
+    size_t idx = c - 1;
+    if (is_collector_free(idx)) {
+      ShenandoahHeapRegion* r = _heap->get_region(idx);
+      if (r->affiliation() == affiliation) {
+        HeapWord* result = try_allocate_in(r, req, in_new_region);
+        if (result != NULL) {
+          return result;
+        }
+      }
+    }
+  }
+  return NULL;
 }
 
 HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& in_new_region) {
@@ -96,34 +112,17 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
       break;
     }
     case ShenandoahAllocRequest::_alloc_gclab:
+    case ShenandoahAllocRequest::_alloc_plab:
     case ShenandoahAllocRequest::_alloc_shared_gc: {
-      // size_t is unsigned, need to dodge underflow when _leftmost = 0
-
-      // Fast-path: try to allocate in the collector view first
-      for (size_t c = _collector_rightmost + 1; c > _collector_leftmost; c--) {
-        size_t idx = c - 1;
-        if (is_collector_free(idx)) {
-          ShenandoahHeapRegion* r = _heap->get_region(idx);
-          if (r->is_young() && req.is_old()) {
-            // We don't want to cannibalize a young region to satisfy
-            // an evacuation from an old region.
-            continue;
-          }
-          HeapWord* result = try_allocate_in(r, req, in_new_region);
-          if (result != NULL) {
-            if (r->is_old()) {
-              // HEY! This is a very coarse card marking. We hope to repair
-              // such cards during remembered set scanning.
-
-              // HEY! To support full generality with alternative remembered set implementations,
-              // is preferable to not make direct access to the current card_table implementation.
-              //  Try ShenandoahHeap::heap()->card_scan()->mark_range_as_dirty(result, req.actual_size());
-
-              ShenandoahBarrierSet::barrier_set()->card_table()->dirty_MemRegion(MemRegion(result, req.actual_size()));
-            }
-            return result;
-          }
-        }
+      // First try to fit into a region that is already in use in the same generation.
+      HeapWord* result = allocate_with_affiliation(req.affiliation(), req, in_new_region);
+      if (result != NULL) {
+        return result;
+      }
+      // Then try a free region that is dedicated to GC allocations.
+      result = allocate_with_affiliation(FREE, req, in_new_region);
+      if (result != NULL) {
+        return result;
       }
 
       // No dice. Can we borrow space from mutator view?
@@ -131,29 +130,15 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
         return NULL;
       }
 
-      // Try to steal the empty region from the mutator view
+      // Try to steal an empty region from the mutator view.
       for (size_t c = _mutator_rightmost + 1; c > _mutator_leftmost; c--) {
         size_t idx = c - 1;
         if (is_mutator_free(idx)) {
           ShenandoahHeapRegion* r = _heap->get_region(idx);
           if (can_allocate_from(r)) {
-            if (r->is_young() && req.is_old()) {
-              continue;
-            }
-
             flip_to_gc(r);
             HeapWord *result = try_allocate_in(r, req, in_new_region);
             if (result != NULL) {
-              if (r->is_old()) {
-                // HEY! This is a very coarse card marking. We hope to repair
-                // such cards during remembered set scanning.
-
-                // HEY! To support full generality with alternative remembered set implementations,
-                // is preferable to not make direct access to the current card_table implementation.
-                //  Try ShenandoahHeap::heap()->card_scan()->mark_range_as_dirty(result, req.actual_size());
-
-                ShenandoahBarrierSet::barrier_set()->card_table()->dirty_MemRegion(MemRegion(result, req.actual_size()));
-              }
               return result;
             }
           }
@@ -163,13 +148,11 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
       // No dice. Do not try to mix mutator and GC allocations, because
       // URWM moves due to GC allocations would expose unparsable mutator
       // allocations.
-
       break;
     }
     default:
       ShouldNotReachHere();
   }
-
   return NULL;
 }
 
@@ -202,11 +185,11 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       size = free;
     }
     if (size >= req.min_size()) {
-      result = r->allocate(size, req.type());
+      result = r->allocate(size, req);
       assert (result != NULL, "Allocation must succeed: free " SIZE_FORMAT ", actual " SIZE_FORMAT, free, size);
     }
   } else {
-    result = r->allocate(size, req.type());
+    result = r->allocate(size, req);
   }
 
   if (result != NULL) {
@@ -439,6 +422,10 @@ void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r) {
     adjust_bounds();
   }
   assert_bounds();
+
+  // We do not ensure that the region is no longer trash,
+  // relying on try_allocate_in(), which always comes next,
+  // to recycle trash before attempting to allocate anything in the region.
 }
 
 void ShenandoahFreeSet::clear() {
@@ -599,6 +586,7 @@ HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_
       case ShenandoahAllocRequest::_alloc_shared_gc:
         in_new_region = true;
         return allocate_contiguous(req);
+      case ShenandoahAllocRequest::_alloc_plab:
       case ShenandoahAllocRequest::_alloc_gclab:
       case ShenandoahAllocRequest::_alloc_tlab:
         in_new_region = false;

@@ -70,10 +70,11 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _top(start),
   _tlab_allocs(0),
   _gclab_allocs(0),
+  _plab_allocs(0),
   _live_data(0),
   _critical_pins(0),
   _update_watermark(start),
-  _affiliation(ShenandoahRegionAffiliation::FREE),
+  _affiliation(FREE),
   _age(0) {
 
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
@@ -91,13 +92,14 @@ void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
   fatal("%s", ss.as_string());
 }
 
-void ShenandoahHeapRegion::make_regular_allocation() {
+void ShenandoahHeapRegion::make_regular_allocation(ShenandoahRegionAffiliation affiliation) {
   shenandoah_assert_heaplocked();
   reset_age();
   switch (_state) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
+      set_affiliation(affiliation);
       set_state(_regular);
     case _regular:
     case _pinned:
@@ -119,6 +121,12 @@ void ShenandoahHeapRegion::make_regular_bypass() {
     case _cset:
     case _humongous_start:
     case _humongous_cont:
+      // TODO: Changing this region to young during compaction may not be
+      // technically correct here because it completely disregards the ages
+      // and origins of the objects being moved. It is, however, certainly
+      // more correct than putting live objects into a region without a
+      // generational affiliation.
+      set_affiliation(YOUNG_GENERATION);
       set_state(_regular);
       return;
     case _pinned_cset:
@@ -220,6 +228,7 @@ void ShenandoahHeapRegion::make_unpinned() {
 
   switch (_state) {
     case _pinned:
+      assert(affiliation() != FREE, "Pinned region should not be FREE");
       set_state(_regular);
       return;
     case _regular:
@@ -318,10 +327,11 @@ void ShenandoahHeapRegion::make_committed_bypass() {
 void ShenandoahHeapRegion::reset_alloc_metadata() {
   _tlab_allocs = 0;
   _gclab_allocs = 0;
+  _plab_allocs = 0;
 }
 
 size_t ShenandoahHeapRegion::get_shared_allocs() const {
-  return used() - (_tlab_allocs + _gclab_allocs) * HeapWordSize;
+  return used() - (_tlab_allocs + _gclab_allocs + _plab_allocs) * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_tlab_allocs() const {
@@ -330,6 +340,10 @@ size_t ShenandoahHeapRegion::get_tlab_allocs() const {
 
 size_t ShenandoahHeapRegion::get_gclab_allocs() const {
   return _gclab_allocs * HeapWordSize;
+}
+
+size_t ShenandoahHeapRegion::get_plab_allocs() const {
+  return _plab_allocs * HeapWordSize;
 }
 
 void ShenandoahHeapRegion::set_live_data(size_t s) {
@@ -397,6 +411,9 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|U " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(used()),                proper_unit_for_byte_size(used()));
   st->print("|T " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_tlab_allocs()),     proper_unit_for_byte_size(get_tlab_allocs()));
   st->print("|G " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_gclab_allocs()),    proper_unit_for_byte_size(get_gclab_allocs()));
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    st->print("|G " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_plab_allocs()),   proper_unit_for_byte_size(get_plab_allocs()));
+  }
   st->print("|S " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_shared_allocs()),   proper_unit_for_byte_size(get_shared_allocs()));
   st->print("|L " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_live_data_bytes()), proper_unit_for_byte_size(get_live_data_bytes()));
   st->print("|CP " SIZE_FORMAT_W(3), pin_count());
@@ -533,7 +550,6 @@ void ShenandoahHeapRegion::recycle() {
   set_update_watermark(bottom());
 
   make_empty();
-
   set_affiliation(FREE);
 
   if (ZapUnusedHeapArea) {

@@ -331,7 +331,7 @@ public:
   void finish_region() {
     assert(_to_region != NULL, "should not happen");
     if (_heap->mode()->is_generational() && _to_region->affiliation() == FREE) {
-      // HEY! Changing this region to young during compaction may not be
+      // TODO: Changing this region to young during compaction may not be
       // technically correct here because it completely disregards the ages
       // and origins of the objects being moved. It is, however, certainly
       // more correct than putting live objects into a region without a

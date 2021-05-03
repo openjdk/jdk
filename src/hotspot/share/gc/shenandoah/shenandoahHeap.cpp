@@ -833,6 +833,67 @@ HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) 
   return gclab->allocate(size);
 }
 
+HeapWord* ShenandoahHeap::allocate_from_plab_slow(Thread* thread, size_t size) {
+  // New object should fit the PLAB size
+  size_t min_size = MAX2(size, PLAB::min_size());
+
+  // Figure out size of new PLAB, looking back at heuristics. Expand aggressively.
+  size_t new_size = ShenandoahThreadLocalData::plab_size(thread) * 2;
+  new_size = MIN2(new_size, PLAB::max_size());
+  new_size = MAX2(new_size, PLAB::min_size());
+
+  // Record new heuristic value even if we take any shortcut. This captures
+  // the case when moderately-sized objects always take a shortcut. At some point,
+  // heuristics should catch up with them.
+  ShenandoahThreadLocalData::set_plab_size(thread, new_size);
+
+  if (new_size < size) {
+    // New size still does not fit the object. Fall back to shared allocation.
+    // This avoids retiring perfectly good PLABs, when we encounter a large object.
+    return NULL;
+  }
+
+  // Retire current PLAB, and allocate a new one.
+  PLAB* plab = ShenandoahThreadLocalData::plab(thread);
+  retire_plab(plab);
+
+  size_t actual_size = 0;
+  HeapWord* plab_buf = allocate_new_plab(min_size, new_size, &actual_size);
+  if (plab_buf == NULL) {
+    return NULL;
+  }
+
+  assert (size <= actual_size, "allocation should fit");
+
+  if (ZeroTLAB) {
+    // ..and clear it.
+    Copy::zero_to_words(plab_buf, actual_size);
+  } else {
+    // ...and zap just allocated object.
+#ifdef ASSERT
+    // Skip mangling the space corresponding to the object header to
+    // ensure that the returned space is not considered parsable by
+    // any concurrent GC thread.
+    size_t hdr_size = oopDesc::header_size();
+    Copy::fill_to_words(plab_buf + hdr_size, actual_size - hdr_size, badHeapWordVal);
+#endif // ASSERT
+  }
+  plab->set_buf(plab_buf, actual_size);
+  return plab->allocate(size);
+}
+
+void ShenandoahHeap::retire_plab(PLAB* plab) {
+  size_t waste = plab->waste();
+  HeapWord* top = plab->top();
+  plab->retire();
+  if (top != NULL && plab->waste() > waste) {
+    // If retiring the plab created a filler object, then we
+    // need to register it with our card scanner so it can
+    // safely walk the region backing the plab.
+    card_scan()->register_object(top);
+  }
+}
+
 HeapWord* ShenandoahHeap::allocate_new_tlab(size_t min_size,
                                             size_t requested_size,
                                             size_t* actual_size) {
@@ -850,6 +911,19 @@ HeapWord* ShenandoahHeap::allocate_new_gclab(size_t min_size,
                                              size_t word_size,
                                              size_t* actual_size) {
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_gclab(min_size, word_size);
+  HeapWord* res = allocate_memory(req);
+  if (res != NULL) {
+    *actual_size = req.actual_size();
+  } else {
+    *actual_size = 0;
+  }
+  return res;
+}
+
+HeapWord* ShenandoahHeap::allocate_new_plab(size_t min_size,
+                                            size_t word_size,
+                                            size_t* actual_size) {
+  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_plab(min_size, word_size);
   HeapWord* res = allocate_memory(req);
   if (res != NULL) {
     *actual_size = req.actual_size();
@@ -954,23 +1028,25 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
   //
   // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as last-start
   // representing object b while first-start represents object c.  This is why we need to require all register_object()
-  // invocations to be "mutually exclusive".  Later, when we use GCLABs to allocate memory for promotions and evacuations,
+  // invocations to be "mutually exclusive".  Later, when we use GCLABs and PLABs to allocate memory for promotions and evacuations,
   // the protocol may work something like the following:
-  //   1. The GCLAB is allocated by this (or similar) function, while holding the global lock.
-  //   2. The GCLAB is registered as a single object.
-  ///  3. The GCLAB is always aligned at the start of a card memory range and is always a multiple of the card-table memory range size
-  //   3. Individual allocations carved from the GCLAB are not immediately registered
-  //   4. When the GCLAB is eventually retired, all of the objects allocated within the GCLAB are registered in batch by a
-  //      single thread.  No further synchronization is required because no other allocations will pertain to the same
+  //   1. The GCLAB/PLAB is allocated by this (or similar) function, while holding the global lock.
+  //   2. The GCLAB/PLAB is always aligned at the start of a card memory range
+  //      and is always a multiple of the card-table memory range size.
+  //   3. Individual allocations carved from a GCLAB/PLAB are not immediately registered.
+  //   4. A PLAB is registered as a single object.
+  //   5. When a PLAB is eventually retired, all of the objects allocated within the GCLAB/PLAB are registered in batch by a
+   //      single thread.  No further synchronization is required because no other allocations will pertain to the same
   //      card-table memory ranges.
   //
-  // The other case that needs special handling is promotion of regions en masse.  When the region is promoted, all objects contained
-  // within the region are registered.  Since the region is a multiple of card-table memory range sizes, there is no need for
-  // synchronization.  It might be nice to figure out how to allow multiple threads to work together to register all of the objects in
-  // a promoted region, or at least try to balance the efforts so that different gc threads work on registering the objects of
-  // different heap regions.  But that effort will come later.
+  // The other case that needs special handling is region promotion.  When a region is promoted, all objects contained
+  // in it are registered.  Since the region is a multiple of card table memory range sizes, there is no need for
+  // synchronization.
+  // TODO: figure out how to allow multiple threads to work together to register all of the objects in
+  // a promoted region, or at least try to balance the efforts so that different GC threads work
+  // on registering the objects of different heap regions.
   //
-  if (result != NULL && req.affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
+  if (mode()->is_generational() && result != NULL && req.affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
     ShenandoahHeap::heap()->card_scan()->register_object(result);
   }
   return result;
@@ -1140,6 +1216,10 @@ public:
     PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
     assert(gclab != NULL, "GCLAB should be initialized for %s", thread->name());
     assert(gclab->words_remaining() == 0, "GCLAB should not need retirement");
+
+    PLAB* plab = ShenandoahThreadLocalData::plab(thread);
+    assert(plab != NULL, "PLAB should be initialized for %s", thread->name());
+    assert(plab->words_remaining() == 0, "PLAB should not need retirement");
   }
 };
 
@@ -1154,6 +1234,13 @@ public:
     gclab->retire();
     if (_resize && ShenandoahThreadLocalData::gclab_size(thread) > 0) {
       ShenandoahThreadLocalData::set_gclab_size(thread, 0);
+    }
+
+    PLAB* plab = ShenandoahThreadLocalData::plab(thread);
+    assert(plab != NULL, "PLAB should be initialized for %s", thread->name());
+    ShenandoahHeap::heap()->retire_plab(plab);
+    if (_resize && ShenandoahThreadLocalData::plab_size(thread) > 0) {
+      ShenandoahThreadLocalData::set_plab_size(thread, 0);
     }
   }
 };

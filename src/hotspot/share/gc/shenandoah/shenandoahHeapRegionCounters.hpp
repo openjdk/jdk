@@ -51,7 +51,7 @@
  * - bits 14-20  tlab allocated memory in percent
  * - bits 21-27  gclab allocated memory in percent
  * - bits 28-34  shared allocated memory in percent
- * - bits 35-41  <reserved>
+ * - bits 35-41  plab allocated memory in percent
  * - bits 42-50  <reserved>
  * - bits 51-55  age
  * - bits 56-57  affiliation: 0 = free, young = 1, old = 2
@@ -70,6 +70,7 @@ private:
   static const jlong TLAB_SHIFT        = 14;
   static const jlong GCLAB_SHIFT       = 21;
   static const jlong SHARED_SHIFT      = 28;
+  static const jlong PLAB_SHIFT        = 35;
   static const jlong AGE_SHIFT         = 51;
   static const jlong AFFILIATION_SHIFT = 56;
   static const jlong STATUS_SHIFT      = 58;
