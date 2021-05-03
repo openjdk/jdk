@@ -916,9 +916,8 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
     return;
   }
 
-  BarrierSet *bs = BarrierSet::barrier_set();
-  ShenandoahBarrierSet* ctbs = barrier_set_cast<ShenandoahBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
+  ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
+  CardTable* ct = bs->card_table();
   intptr_t disp = (intptr_t) ct->byte_map_base();
 
   Label L_loop, L_done;
