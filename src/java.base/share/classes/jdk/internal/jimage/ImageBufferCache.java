@@ -26,8 +26,10 @@ package jdk.internal.jimage;
 
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
+import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Map;
 
 /**
  * @implNote This class needs to maintain JDK 8 source compatibility.
@@ -39,12 +41,13 @@ import java.util.Comparator;
 class ImageBufferCache {
     private static final int MAX_CACHED_BUFFERS = 3;
     private static final int LARGE_BUFFER = 0x10000;
-    private static final ThreadLocal<BufferReference[]> CACHE =
-        new ThreadLocal<BufferReference[]>() {
+    @SuppressWarnings("rawtypes")
+    private static final ThreadLocal<Map.Entry[]> CACHE =
+        new ThreadLocal<Map.Entry[]>() {
             @Override
-            protected BufferReference[] initialValue() {
+            protected Map.Entry[] initialValue() {
                 // 1 extra slot to simplify logic of releaseBuffer()
-                return new BufferReference[MAX_CACHED_BUFFERS + 1];
+                return new Map.Entry[MAX_CACHED_BUFFERS + 1];
             }
         };
 
@@ -52,6 +55,7 @@ class ImageBufferCache {
         return ByteBuffer.allocateDirect((int)((size + 0xFFF) & ~0xFFF));
     }
 
+    @SuppressWarnings("rawtypes")
     static ByteBuffer getBuffer(long size) {
         if (size < 0 || Integer.MAX_VALUE < size) {
             throw new IndexOutOfBoundsException("size");
@@ -62,15 +66,15 @@ class ImageBufferCache {
         if (size > LARGE_BUFFER) {
             result = allocateBuffer(size);
         } else {
-            BufferReference[] cache = CACHE.get();
+            Map.Entry[] cache = CACHE.get();
 
             // buffers are ordered by decreasing capacity
             // cache[MAX_CACHED_BUFFERS] is always null
             for (int i = MAX_CACHED_BUFFERS - 1; i >= 0; i--) {
-                BufferReference reference = cache[i];
+                Map.Entry reference = cache[i];
 
                 if (reference != null) {
-                    ByteBuffer buffer = reference.get();
+                    ByteBuffer buffer = getByteBuffer(reference);
 
                     if (buffer != null && size <= buffer.capacity()) {
                         cache[i] = null;
@@ -91,45 +95,50 @@ class ImageBufferCache {
         return result;
     }
 
+    @SuppressWarnings("rawtypes")
     static void releaseBuffer(ByteBuffer buffer) {
         if (buffer.capacity() > LARGE_BUFFER) {
             return;
         }
 
-        BufferReference[] cache = CACHE.get();
+        Map.Entry[] cache = CACHE.get();
 
         // expunge cleared BufferRef(s)
         for (int i = 0; i < MAX_CACHED_BUFFERS; i++) {
-            BufferReference reference = cache[i];
-            if (reference != null && reference.get() == null) {
+            Map.Entry reference = cache[i];
+            if (reference != null && getByteBuffer(reference) == null) {
                 cache[i] = null;
             }
         }
 
         // insert buffer back with new BufferRef wrapping it
-        cache[MAX_CACHED_BUFFERS] = new BufferReference(buffer);
+        cache[MAX_CACHED_BUFFERS] = newCacheEntry(buffer);
         Arrays.sort(cache, DECREASING_CAPACITY_NULLS_LAST);
         // squeeze the smallest one out
         cache[MAX_CACHED_BUFFERS] = null;
     }
 
-    private static Comparator<BufferReference> DECREASING_CAPACITY_NULLS_LAST =
-        new Comparator<BufferReference>() {
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private static Map.Entry newCacheEntry(ByteBuffer bb) {
+        return new AbstractMap.SimpleEntry(new WeakReference<ByteBuffer>(bb), bb.capacity());
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static int getCapacity(Map.Entry e) {
+        return e == null? 0 : (Integer)e.getValue();
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static ByteBuffer getByteBuffer(Map.Entry e) {
+        return e == null? null : (ByteBuffer)((WeakReference)e.getKey()).get();
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static Comparator<Map.Entry> DECREASING_CAPACITY_NULLS_LAST =
+        new Comparator<Map.Entry>() {
             @Override
-            public int compare(BufferReference br1, BufferReference br2) {
-                return Integer.compare(br2 == null ? 0 : br2.capacity,
-                                       br1 == null ? 0 : br1.capacity);
+            public int compare(Map.Entry br1, Map.Entry br2) {
+                return Integer.compare(getCapacity(br1), getCapacity(br2));
             }
         };
-
-    private static class BufferReference extends WeakReference<ByteBuffer> {
-        // saved capacity so that DECREASING_CAPACITY_NULLS_LAST comparator
-        // is stable in the presence of GC clearing the WeakReference concurrently
-        final int capacity;
-
-        BufferReference(ByteBuffer buffer) {
-            super(buffer);
-            capacity = buffer.capacity();
-        }
-    }
 }
