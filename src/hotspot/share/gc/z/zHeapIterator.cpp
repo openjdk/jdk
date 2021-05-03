@@ -27,10 +27,10 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
 #include "gc/z/zHeapIterator.hpp"
-#include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zOop.inline.hpp"
@@ -124,15 +124,13 @@ public:
 };
 
 template <bool VisitReferents>
-class ZHeapIteratorOopClosure : public ClaimMetadataVisitingOopIterateClosure {
+class ZHeapIteratorOopClosure : public OopIterateClosure {
 private:
   const ZHeapIteratorContext& _context;
   const oop                   _base;
 
   oop load_oop(oop* p) {
-    if (!ZCollectedHeap::heap()->is_in(p)) {
-      return NativeAccess<AS_NO_KEEPALIVE>::oop_load(p);
-    }
+    assert(ZCollectedHeap::heap()->is_in(p), "p should be in-heap");
 
     if (VisitReferents) {
       return HeapAccess<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>::oop_load_at(_base, _base->field_offset(p));
@@ -143,7 +141,7 @@ private:
 
 public:
   ZHeapIteratorOopClosure(const ZHeapIteratorContext& context, oop base) :
-      ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_other),
+      OopIterateClosure(nullptr),
       _context(context),
       _base(base) {}
 
@@ -158,6 +156,35 @@ public:
 
   virtual void do_oop(narrowOop* p) {
     ShouldNotReachHere();
+  }
+
+  virtual bool do_metadata() { return true; }
+
+  virtual void do_klass(Klass* k) {
+    ClassLoaderData* cld = k->class_loader_data();
+    ZHeapIteratorOopClosure::do_cld(cld);
+  }
+
+  virtual void do_cld(ClassLoaderData* cld) {
+    class NativeAccessClosure : public OopClosure {
+      const ZHeapIteratorContext& _context;
+
+     public:
+      explicit NativeAccessClosure(const ZHeapIteratorContext& context) :
+          _context(context) {}
+
+      virtual void do_oop(oop* p) {
+        assert(!ZCollectedHeap::heap()->is_in(p), "p lives outside heap");
+        const oop obj = NativeAccess<AS_NO_KEEPALIVE>::oop_load(p);
+        _context.mark_and_push(obj);
+      }
+
+      virtual void do_oop(narrowOop* p) {
+        ShouldNotReachHere();
+      }
+    } closure{_context};
+
+    cld->oops_do(&closure, ClassLoaderData::_claim_other);
   }
 };
 
