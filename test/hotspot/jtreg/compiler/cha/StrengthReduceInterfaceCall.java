@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @requires !vm.graal.enabled
+ * @requires !vm.graal.enabled & vm.opt.final.UseVtableBasedCHA == true
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation
@@ -32,7 +32,6 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+UseVtableBasedCHA
  *                   -XX:+PrintCompilation -XX:+PrintInlining -XX:+TraceDependencies -verbose:class -XX:CompileCommand=quiet
  *                   -XX:CompileCommand=compileonly,*::test -XX:CompileCommand=compileonly,*::m -XX:CompileCommand=dontinline,*::test
  *                   -Xbatch -XX:+WhiteBoxAPI -Xmixed
@@ -40,7 +39,6 @@
  *                      compiler.cha.StrengthReduceInterfaceCall
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+UseVtableBasedCHA
  *                   -XX:+PrintCompilation -XX:+PrintInlining -XX:+TraceDependencies -verbose:class -XX:CompileCommand=quiet
  *                   -XX:CompileCommand=compileonly,*::test -XX:CompileCommand=compileonly,*::m -XX:CompileCommand=dontinline,*::test
  *                   -Xbatch -XX:+WhiteBoxAPI -Xmixed
