@@ -81,6 +81,9 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 
   std(return_pc, _abi0(lr), R1_SP);     // SP->lr = return_pc
   push_frame(frame_size_in_bytes, R0); // SP -= frame_size_in_bytes
+
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(this, R20);
 }
 
 

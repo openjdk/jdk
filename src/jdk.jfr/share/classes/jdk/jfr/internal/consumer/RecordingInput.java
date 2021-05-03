@@ -34,7 +34,7 @@ import java.nio.file.Path;
 
 public final class RecordingInput implements DataInput, AutoCloseable {
 
-    private final static int DEFAULT_BLOCK_SIZE = 64_000;
+    private static final int DEFAULT_BLOCK_SIZE = 64_000;
 
     private static final class Block {
         private byte[] bytes = new byte[0];

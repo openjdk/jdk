@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ class ObjectValue: public ScopeValue {
   bool                        is_visited() const        { return _visited; }
 
   void                        set_value(oop value);
-  void                        set_visited(bool visited) { _visited = false; }
+  void                        set_visited(bool visited) { _visited = visited; }
 
   // Serialization of debugging information
   void read_object(DebugInfoReadStream* stream);

@@ -26,7 +26,7 @@ package gc.epsilon;
 /**
  * @test TestElasticTLAB
  * @key randomness
- * @requires vm.gc.Epsilon
+ * @requires vm.gc.Epsilon & os.maxMemory > 1G
  * @summary Epsilon is able to work with/without elastic TLABs
  * @library /test/lib
  *

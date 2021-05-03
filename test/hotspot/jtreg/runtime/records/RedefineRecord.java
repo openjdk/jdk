@@ -43,6 +43,7 @@ import java.lang.instrument.IllegalClassFormatException;
 import java.util.spi.ToolProvider;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class RedefineRecord {
 

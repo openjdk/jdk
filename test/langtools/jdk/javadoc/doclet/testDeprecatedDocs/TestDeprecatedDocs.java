@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4927552 8026567 8071982 8162674 8175200 8175218 8183511 8186332
- *           8169819 8074407 8191030 8182765 8184205 8243533
+ *           8169819 8074407 8191030 8182765 8184205 8243533 8261976
  * @summary  test generated docs for deprecated items
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -267,26 +267,26 @@ public class TestDeprecatedDocs extends JavadocTester {
         checkOutput("deprecated-list.html", true,
                 """
                     <ul>
-                    <li><a href="#forRemoval">For Removal</a></li>
+                    <li><a href="#for-removal">For Removal</a></li>
                     <li><a href="#class">Classes</a></li>
-                    <li><a href="#enum.class">Enum Classes</a></li>
+                    <li><a href="#enum-class">Enum Classes</a></li>
                     <li><a href="#exception">Exceptions</a></li>
                     <li><a href="#error">Errors</a></li>
-                    <li><a href="#annotation.interface">Annotation Interfaces</a></li>
+                    <li><a href="#annotation-interface">Annotation Interfaces</a></li>
                     <li><a href="#field">Fields</a></li>
                     <li><a href="#method">Methods</a></li>
                     <li><a href="#constructor">Constructors</a></li>
-                    <li><a href="#enum.constant">Enum Constants</a></li>
-                    <li><a href="#annotation.interface.member">Annotation Interface Elements</a></li>
+                    <li><a href="#enum-constant">Enum Constants</a></li>
+                    <li><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
                     </ul>""",
                 """
-                    <div id="forRemoval">
+                    <div id="for-removal">
                     <div class="caption"><span>For Removal</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Element</div>
                     <div class="table-header col-last">Description</div>""",
                 """
-                    <div id="enum.class">
+                    <div id="enum-class">
                     <div class="caption"><span>Enum Classes</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Enum Class</div>

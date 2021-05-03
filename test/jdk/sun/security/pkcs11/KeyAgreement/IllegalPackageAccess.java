@@ -71,6 +71,7 @@ public class IllegalPackageAccess extends PKCS11Test {
 
     @Override
     public void main(Provider p) throws Exception {
+        Policy.setPolicy(null);
         Policy.setPolicy(new MyPolicy());
         System.setSecurityManager(new SecurityManager());
 

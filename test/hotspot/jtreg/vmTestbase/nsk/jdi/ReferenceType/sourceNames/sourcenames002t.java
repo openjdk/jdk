@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,14 +88,14 @@ public class sourcenames002t {
 
     // arrays used to check AbsentInformationException throwing
     // in the debugger
-    Boolean boolClsArr[] = {new Boolean(false)};
-    Byte byteClsArr[] = {new Byte((byte) 127)};
-    Character charClsArr[] = {new Character('a')};
-    Double doubleClsArr[] = {new Double(6.2D)};
-    Float floatClsArr[] = {new Float(5.1F)};
-    Integer intClsArr[] = {new Integer(2147483647)};
-    Long longClsArr[] = {new Long(9223372036854775807L)};
-    Short shortClsArr[] = {new Short((short) -32768)};
+    Boolean boolClsArr[] = {Boolean.valueOf(false)};
+    Byte byteClsArr[] = {Byte.valueOf((byte) 127)};
+    Character charClsArr[] = {Character.valueOf('a')};
+    Double doubleClsArr[] = {Double.valueOf(6.2D)};
+    Float floatClsArr[] = {Float.valueOf(5.1F)};
+    Integer intClsArr[] = {Integer.valueOf(2147483647)};
+    Long longClsArr[] = {Long.valueOf(9223372036854775807L)};
+    Short shortClsArr[] = {Short.valueOf((short) -32768)};
 
     boolean boolArr[] = {boolVal};
     byte byteArr[] = {byteVal};

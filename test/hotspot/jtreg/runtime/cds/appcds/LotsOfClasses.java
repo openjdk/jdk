@@ -49,7 +49,7 @@ public class LotsOfClasses {
         opts.addSuffix("-Xlog:hashtables");
         opts.addSuffix("-Xmx500m");
         opts.addSuffix("-Xlog:gc+region+cds");
-        opts.addSuffix("-Xlog:gc+region=trace");
+        opts.addSuffix("-Xlog:cds=debug");  // test detailed metadata info printing
 
         CDSTestUtils.createArchiveAndCheck(opts);
     }

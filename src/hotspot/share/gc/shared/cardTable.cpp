@@ -41,8 +41,7 @@ size_t CardTable::compute_byte_map_size() {
   return align_up(_guard_index + 1, MAX2(_page_size, granularity));
 }
 
-CardTable::CardTable(MemRegion whole_heap, bool conc_scan) :
-  _scanned_concurrently(conc_scan),
+CardTable::CardTable(MemRegion whole_heap) :
   _whole_heap(whole_heap),
   _guard_index(0),
   _last_valid_index(0),

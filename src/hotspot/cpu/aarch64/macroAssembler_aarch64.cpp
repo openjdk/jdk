@@ -35,6 +35,7 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
@@ -178,7 +179,7 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   // instruction.
   if (Instruction_aarch64::extract(insn, 31, 21) == 0b11010010101) {
     // Move narrow OOP
-    uint32_t n = CompressedOops::narrow_oop_value((oop)o);
+    uint32_t n = CompressedOops::narrow_oop_value(cast_to_oop(o));
     Instruction_aarch64::patch(insn_addr, 20, 5, n >> 16);
     Instruction_aarch64::patch(insn_addr+4, 20, 5, n & 0xffff);
     instructions = 2;
@@ -293,10 +294,10 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
 
 void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod) {
   if (acquire) {
-    lea(rscratch1, Address(rthread, Thread::polling_word_offset()));
+    lea(rscratch1, Address(rthread, JavaThread::polling_word_offset()));
     ldar(rscratch1, rscratch1);
   } else {
-    ldr(rscratch1, Address(rthread, Thread::polling_word_offset()));
+    ldr(rscratch1, Address(rthread, JavaThread::polling_word_offset()));
   }
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
@@ -320,8 +321,6 @@ void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
 
   // Always clear the pc because it could have been set by make_walkable()
   str(zr, Address(rthread, JavaThread::last_Java_pc_offset()));
-
-  str(zr, Address(rthread, JavaThread::saved_fp_address_offset()));
 }
 
 // Calls to C land
@@ -2567,6 +2566,8 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
 
 ATOMIC_XCHG(xchg, swp, ldxr, stxr, Assembler::xword)
 ATOMIC_XCHG(xchgw, swp, ldxrw, stxrw, Assembler::word)
+ATOMIC_XCHG(xchgl, swpl, ldxr, stlxr, Assembler::xword)
+ATOMIC_XCHG(xchglw, swpl, ldxrw, stlxrw, Assembler::word)
 ATOMIC_XCHG(xchgal, swpal, ldaxr, stlxr, Assembler::xword)
 ATOMIC_XCHG(xchgalw, swpal, ldaxrw, stlxrw, Assembler::word)
 
@@ -4392,7 +4393,7 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
 
 // Move the address of the polling page into dest.
 void MacroAssembler::get_polling_page(Register dest, relocInfo::relocType rtype) {
-  ldr(dest, Address(rthread, Thread::polling_page_offset()));
+  ldr(dest, Address(rthread, JavaThread::polling_page_offset()));
 }
 
 // Read the polling page.  The address of the polling page must
@@ -5153,7 +5154,7 @@ address MacroAssembler::byte_array_inflate(Register src, Register dst, Register 
 
   assert_different_registers(src, dst, len, tmp4, rscratch1);
 
-  fmovd(vtmp1, zr);
+  fmovd(vtmp1, 0.0);
   lsrw(tmp4, len, 3);
   bind(after_init);
   cbnzw(tmp4, big);
@@ -5266,10 +5267,14 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 // by the call to JavaThread::aarch64_get_thread_helper() or, indeed,
 // the call setup code.
 //
-// aarch64_get_thread_helper() clobbers only r0, r1, and flags.
+// On Linux, aarch64_get_thread_helper() clobbers only r0, r1, and flags.
+// On other systems, the helper is a usual C function.
 //
 void MacroAssembler::get_thread(Register dst) {
-  RegSet saved_regs = RegSet::range(r0, r1) + lr - dst;
+  RegSet saved_regs =
+    LINUX_ONLY(RegSet::range(r0, r1)  + lr - dst)
+    NOT_LINUX (RegSet::range(r0, r17) + lr - dst);
+
   push(saved_regs, sp);
 
   mov(lr, CAST_FROM_FN_PTR(address, JavaThread::aarch64_get_thread_helper));

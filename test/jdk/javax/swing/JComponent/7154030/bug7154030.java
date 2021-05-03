@@ -31,8 +31,11 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -81,18 +84,24 @@ public class bug7154030 {
                     button.setOpaque(true);
                     button.setVisible(false);
                     desktop.add(button);
+                    desktop.setMinimumSize(new Dimension(300, 300));
+                    desktop.setMaximumSize(new Dimension(300, 300));
 
                     frame.setContentPane(desktop);
-                    frame.setSize(300, 300);
+                    frame.setMinimumSize(new Dimension(350, 350));
+                    frame.setMaximumSize(new Dimension(350, 350));
+                    frame.pack();
                     frame.setLocationRelativeTo(null);
                     frame.setVisible(true);
                     frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 }
             });
 
-            robot.delay(1000);
             robot.waitForIdle(1000);
+            robot.delay(1000);
 
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            Rectangle screen = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
             Rectangle bounds = frame.getBounds();
             Insets insets = frame.getInsets();
             locx = bounds.x + insets.left;
@@ -100,6 +109,10 @@ public class bug7154030 {
             frw = bounds.width - insets.left - insets.right;
             frh = bounds.height - insets.top - insets.bottom;
 
+            BufferedImage fullScreen = robot.createScreenCapture(screen);
+            Graphics g = fullScreen.getGraphics();
+            g.setColor(Color.RED);
+            g.drawRect(locx - 1, locy - 1, frw + 1, frh + 1);
             imageInit = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
 
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -115,6 +128,7 @@ public class bug7154030 {
             if (Util.compareBufferedImages(imageInit, imageShow)) {
                 ImageIO.write(imageInit, "png", new File("imageInit.png"));
                 ImageIO.write(imageShow, "png", new File("imageShow.png"));
+                ImageIO.write(fullScreen, "png", new File("fullScreenInit.png"));
                 throw new Exception("Failed to show opaque button");
             }
 
@@ -133,6 +147,7 @@ public class bug7154030 {
             if (!Util.compareBufferedImages(imageInit, imageHide)) {
                 ImageIO.write(imageInit, "png", new File("imageInit.png"));
                 ImageIO.write(imageHide, "png", new File("imageHide.png"));
+                ImageIO.write(fullScreen, "png", new File("fullScreenInit.png"));
                 throw new Exception("Failed to hide opaque button");
             }
 
@@ -160,6 +175,13 @@ public class bug7154030 {
             robot.waitForIdle(500);
             imageShow = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
 
+            if (Util.compareBufferedImages(imageInit, imageShow)) {
+                ImageIO.write(imageInit, "png", new File("imageInit.png"));
+                ImageIO.write(imageShow, "png", new File("imageShow.png"));
+                ImageIO.write(fullScreen, "png", new File("fullScreenInit.png"));
+                throw new Exception("Failed to show non-opaque button");
+            }
+
             SwingUtilities.invokeAndWait(new Runnable() {
 
                 @Override
@@ -168,18 +190,13 @@ public class bug7154030 {
                 }
             });
 
-            if (Util.compareBufferedImages(imageInit, imageShow)) {
-                ImageIO.write(imageInit, "png", new File("imageInit.png"));
-                ImageIO.write(imageShow, "png", new File("imageShow.png"));
-                throw new Exception("Failed to show non-opaque button");
-            }
-
             robot.waitForIdle(500);
             imageHide = robot.createScreenCapture(new Rectangle(locx, locy, frw, frh));
 
             if (!Util.compareBufferedImages(imageInit, imageHide)) {
                 ImageIO.write(imageInit, "png", new File("imageInit.png"));
                 ImageIO.write(imageHide, "png", new File("imageHide.png"));
+                ImageIO.write(fullScreen, "png", new File("fullScreenInit.png"));
                 throw new Exception("Failed to hide non-opaque button");
             }
         } finally {

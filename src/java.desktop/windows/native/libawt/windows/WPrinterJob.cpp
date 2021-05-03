@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,12 +133,25 @@ static jobjectArray getPrinterNames(JNIEnv *env, DWORD flags) {
     jobjectArray nameArray;
 
     try {
-        ::EnumPrinters(flags,
-                       NULL, 4, NULL, 0, &cbNeeded, &cReturned);
-        pPrinterEnum = new BYTE[cbNeeded];
-        ::EnumPrinters(flags,
-                       NULL, 4, pPrinterEnum, cbNeeded, &cbNeeded,
-                       &cReturned);
+        ::EnumPrinters(flags, NULL, 4, NULL,
+                       0, &cbNeeded, &cReturned);
+
+        BOOL bResult;
+        int nCount = 0;
+        do {
+            if (pPrinterEnum != NULL) {
+                delete [] pPrinterEnum;
+            }
+            pPrinterEnum = new BYTE[cbNeeded];
+
+            bResult = ::EnumPrinters(flags, NULL, 4, pPrinterEnum,
+                                     cbNeeded, &cbNeeded, &cReturned);
+        } while (!bResult && ++nCount < 5);
+
+        if (!bResult) {
+            // No printers in case of error
+            cReturned = 0;
+        }
 
         if (cReturned > 0) {
             nameArray = env->NewObjectArray(cReturned, clazz, NULL);
@@ -178,12 +191,6 @@ Java_sun_print_PrintServiceLookupProvider_getAllPrinterNames(JNIEnv *env,
     return getPrinterNames(env, PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS);
 }
 
-JNIEXPORT jobjectArray JNICALL
-Java_sun_print_PrintServiceLookupProvider_getRemotePrintersNames(JNIEnv *env,
-                                                                 jobject peer)
-{
-    return getPrinterNames(env, PRINTER_ENUM_CONNECTIONS);
-}
 
 JNIEXPORT void JNICALL
 Java_sun_print_PrintServiceLookupProvider_notifyLocalPrinterChange(JNIEnv *env,
@@ -224,6 +231,37 @@ Java_sun_print_PrintServiceLookupProvider_notifyLocalPrinterChange(JNIEnv *env,
         FindClosePrinterChangeNotification(chgObj);
     }
     ::ClosePrinter(hPrinter);
+}
+
+JNIEXPORT void JNICALL
+Java_sun_print_PrintServiceLookupProvider_notifyRemotePrinterChange(JNIEnv *env,
+                                                                    jobject peer)
+{
+    jclass cls = env->GetObjectClass(peer);
+    CHECK_NULL(cls);
+    jmethodID refresh = env->GetMethodID(cls, "refreshServices", "()V");
+    CHECK_NULL(refresh);
+
+    HKEY hKey;
+    if (ERROR_SUCCESS != RegOpenKeyEx(HKEY_CURRENT_USER,
+                                      _T("Printers\\Connections"),
+                                      0, KEY_NOTIFY, &hKey)) {
+        return;
+    }
+
+    BOOL keepMonitoring;
+    do {
+        keepMonitoring =
+                ERROR_SUCCESS == RegNotifyChangeKeyValue(hKey, TRUE,
+                                                         REG_NOTIFY_CHANGE_NAME,
+                                                         NULL,
+                                                         FALSE);
+        if (keepMonitoring) {
+            env->CallVoidMethod(peer, refresh);
+        }
+    } while (keepMonitoring && !env->ExceptionCheck());
+
+    RegCloseKey(hKey);
 }
 
 

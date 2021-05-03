@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,9 +74,9 @@ inline Klass** InstanceKlass::end_of_nonstatic_oop_maps() const {
                    nonstatic_oop_map_count());
 }
 
-inline Klass* volatile* InstanceKlass::adr_implementor() const {
+inline InstanceKlass* volatile* InstanceKlass::adr_implementor() const {
   if (is_interface()) {
-    return (Klass* volatile*)end_of_nonstatic_oop_maps();
+    return (InstanceKlass* volatile*)end_of_nonstatic_oop_maps();
   } else {
     return NULL;
   }
@@ -90,24 +90,6 @@ inline InstanceKlass** InstanceKlass::adr_unsafe_anonymous_host() const {
     } else {
       return (InstanceKlass **)end_of_nonstatic_oop_maps();
     }
-  } else {
-    return NULL;
-  }
-}
-
-inline address InstanceKlass::adr_fingerprint() const {
-  if (has_stored_fingerprint()) {
-    InstanceKlass** adr_host = adr_unsafe_anonymous_host();
-    if (adr_host != NULL) {
-      return (address)(adr_host + 1);
-    }
-
-    Klass* volatile* adr_impl = adr_implementor();
-    if (adr_impl != NULL) {
-      return (address)(adr_impl + 1);
-    }
-
-    return (address)end_of_nonstatic_oop_maps();
   } else {
     return NULL;
   }

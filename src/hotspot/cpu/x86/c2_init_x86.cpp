@@ -30,7 +30,7 @@
 
 // processor dependent initialization for i486
 
-LP64_ONLY(extern void reg_mask_init();)
+extern void reg_mask_init();
 
 void Compile::pd_compiler2_init() {
   guarantee(CodeEntryAlignment >= InteriorEntryAlignment, "" );
@@ -61,5 +61,5 @@ void Compile::pd_compiler2_init() {
       OptoReg::invalidate(i);
     }
   }
-  LP64_ONLY(reg_mask_init();)
+  reg_mask_init();
 }

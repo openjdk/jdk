@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package sun.nio.cs;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -48,6 +51,9 @@ public class SingleByte
 
     public static final class Decoder extends CharsetDecoder
                                       implements ArrayDecoder {
+
+        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
         private final char[] b2c;
         private final boolean isASCIICompatible;
         private final boolean isLatin1Decodable;
@@ -88,6 +94,11 @@ public class SingleByte
                 cr = CoderResult.OVERFLOW;
             }
 
+            if (isASCIICompatible) {
+                int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
+                sp += n;
+                dp += n;
+            }
             while (sp < sl) {
                 char c = decode(sa[sp]);
                 if (c == UNMAPPABLE_DECODING) {

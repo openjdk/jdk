@@ -64,7 +64,7 @@ class LockerThread : public JavaTestThread {
   virtual ~LockerThread() {}
 
   void main_run() {
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current();
     HandleMark hm(THREAD);
     Handle h_obj(THREAD, _obj);
     ResourceMark rm(THREAD);

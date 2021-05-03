@@ -1149,6 +1149,11 @@ final class ClientHello {
                         "Received unexpected renegotiation handshake message");
             }
 
+            if (clientHello.clientVersion != ProtocolVersion.TLS12.id) {
+                throw shc.conContext.fatal(Alert.PROTOCOL_VERSION,
+                        "The ClientHello.legacy_version field is not TLS 1.2");
+            }
+
             // The client may send a dummy change_cipher_spec record
             // immediately after the first ClientHello.
             shc.conContext.consumers.putIfAbsent(

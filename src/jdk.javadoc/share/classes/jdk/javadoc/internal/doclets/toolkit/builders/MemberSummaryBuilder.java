@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -409,10 +409,14 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             if (inheritedClass == typeElement) {
                 continue;
             }
+            if (utils.hasHiddenTag(inheritedClass)) {
+                continue;
+            }
 
-            List<Element> members = inheritedMembersFromMap.stream()
+            List<? extends Element> members = inheritedMembersFromMap.stream()
                     .filter(e -> utils.getEnclosingTypeElement(e) == inheritedClass)
-                    .collect(Collectors.toList());
+                    .toList();
+
             if (!members.isEmpty()) {
                 SortedSet<Element> inheritedMembers = new TreeSet<>(comparator);
                 inheritedMembers.addAll(members);

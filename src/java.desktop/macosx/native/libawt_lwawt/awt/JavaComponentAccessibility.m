@@ -25,9 +25,8 @@
 
 // External Java Accessibility links:
 //
-// <https://docs.oracle.com/javase/8/docs/technotes/guides/access/index.html>
-// <http://www-106.ibm.com/developerworks/library/j-access/?n-j-10172>
-// <http://archives.java.sun.com/archives/java-access.html> (Sun's mailing list for Java accessibility)
+// <https://docs.oracle.com/en/java/javase/11/access/java-accessibility-overview.html>
+// <https://www.ibm.com/able/guidelines/java/snsjavagjfc.html>
 
 #import "JavaComponentAccessibility.h"
 #import "a11y/CommonComponentAccessibility.h"
@@ -83,9 +82,6 @@ static jmethodID sjm_getAccessibleIndexInParent = NULL;
 static jclass sjc_CAccessible = NULL;
 #define GET_CACCESSIBLE_CLASS_RETURN(ret) \
     GET_CLASS_RETURN(sjc_CAccessible, "sun/lwawt/macosx/CAccessible", ret);
-
-
-static jobject sAccessibilityClass = NULL;
 
 // sAttributeNamesForRoleCache holds the names of the attributes to which each java
 // AccessibleRole responds (see AccessibleRole.java).
@@ -285,39 +281,6 @@ static NSObject *sAttributeNamesLOCK = nil;
 
     if (sRoles == nil) {
         initializeRoles();
-    }
-
-    if (sAccessibilityClass == NULL) {
-        JNIEnv *env = [ThreadUtilities getJNIEnv];
-
-        GET_CACCESSIBILITY_CLASS();
-        DECLARE_STATIC_METHOD(jm_getAccessibility, sjc_CAccessibility, "getAccessibility", "([Ljava/lang/String;)Lsun/lwawt/macosx/CAccessibility;");
-
-#ifdef JAVA_AX_NO_IGNORES
-        NSArray *ignoredKeys = [NSArray array];
-#else
-        NSArray *ignoredKeys = [sRoles allKeysForObject:JavaAccessibilityIgnore];
-#endif
-        jobjectArray result = NULL;
-        jsize count = [ignoredKeys count];
-
-        DECLARE_CLASS(jc_String, "java/lang/String");
-        result = (*env)->NewObjectArray(env, count, jc_String, NULL);
-        CHECK_EXCEPTION();
-        if (!result) {
-            NSLog(@"In %s, can't create Java array of String objects", __FUNCTION__);
-            return;
-        }
-
-        NSInteger i;
-        for (i = 0; i < count; i++) {
-            jstring jString = NSStringToJavaString(env, [ignoredKeys objectAtIndex:i]);
-            (*env)->SetObjectArrayElement(env, result, i, jString);
-            (*env)->DeleteLocalRef(env, jString);
-        }
-
-        sAccessibilityClass = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibility, result); // AWT_THREADING Safe (known object)
-        CHECK_EXCEPTION();
     }
 }
 
@@ -968,14 +931,14 @@ static NSNumber* JavaNumberToNSNumber(JNIEnv *env, jobject jnumber) {
     }
     DECLARE_CLASS_RETURN(jnumber_Class, "java/lang/Number", nil);
     DECLARE_CLASS_RETURN(jinteger_Class, "java/lang/Integer", nil);
-    DECLARE_METHOD_RETURN(jm_intValue, jnumber_Class, "intValue", "()D", nil);
+    DECLARE_METHOD_RETURN(jm_intValue, jnumber_Class, "intValue", "()I", nil);
     DECLARE_METHOD_RETURN(jm_doubleValue, jnumber_Class, "doubleValue", "()D", nil);
     if ((*env)->IsInstanceOf(env, jnumber, jinteger_Class)) {
-        jint i = (*env)->CallIntMethod(env, jnumber_Class, jm_intValue);
+        jint i = (*env)->CallIntMethod(env, jnumber, jm_intValue);
         CHECK_EXCEPTION();
         return [NSNumber numberWithInteger:i];
     } else {
-        jdouble d = (*env)->CallDoubleMethod(env, jnumber_Class, jm_doubleValue);
+        jdouble d = (*env)->CallDoubleMethod(env, jnumber, jm_doubleValue);
         CHECK_EXCEPTION();
         return [NSNumber numberWithDouble:d];
     }
@@ -1492,6 +1455,7 @@ static NSNumber* JavaNumberToNSNumber(JNIEnv *env, jobject jnumber) {
 - (id)accessibilityFocusedUIElement
 {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
+    GET_CACCESSIBILITY_CLASS_RETURN(nil);
     DECLARE_STATIC_METHOD_RETURN(jm_getFocusOwner, sjc_CAccessibility, "getFocusOwner",
                                   "(Ljava/awt/Component;)Ljavax/accessibility/Accessible;", nil);
     id value = nil;
