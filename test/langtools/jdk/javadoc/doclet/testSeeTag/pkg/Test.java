@@ -31,9 +31,10 @@ public class Test {
     * Testing different combos of see tags.
     * @see InnerOne#foo()
     * @see InnerOne#bar(
-    *                   Object)
+    *                   Object
+    *                   )
     * @see <a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see">Javadoc</a>
-    * @see InnerOne#baz(float priority) something
+    * @see InnerOne#baz( float priority ) something
     */
     public void foo() {}
 

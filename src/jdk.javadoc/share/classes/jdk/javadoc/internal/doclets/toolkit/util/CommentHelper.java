@@ -461,9 +461,59 @@ public class CommentHelper {
         return new ReferenceDocTreeVisitor<String>() {
             @Override
             public String visitReference(ReferenceTree node, Void p) {
-                return node.getSignature();
+                return normalizeSignature(node.getSignature());
             }
         }.visit(dtree, null);
+    }
+
+    @SuppressWarnings("fallthrough")
+    private static String normalizeSignature(String sig) {
+        if (sig == null
+                || (!sig.contains(" ") && !sig.contains("\n")
+                 && !sig.contains("\r") && !sig.endsWith("/"))) {
+            return sig;
+        }
+        StringBuilder sb = new StringBuilder();
+        char lastChar = 0;
+        for (int i = 0; i < sig.length(); i++) {
+            char ch = sig.charAt(i);
+            switch (ch) {
+                case '\n':
+                case '\r':
+                case '\f':
+                case '\t':
+                case ' ':
+                    switch (lastChar) {
+                        case 0:
+                        case'(':
+                        case'<':
+                        case ' ':
+                        case '.':
+                            break;
+                        default:
+                            sb.append(' ');
+                            lastChar = ' ';
+                            break;
+                    }
+                    break;
+                case ',':
+                case '>':
+                case ')':
+                case '.':
+                    if (lastChar == ' ') {
+                        sb.setLength(sb.length() - 1);
+                    }
+                    // fallthrough
+                default:
+                    sb.append(ch);
+                    lastChar = ch;
+            }
+        }
+        // Delete trailing slash
+        if (lastChar == '/') {
+            sb.setLength(sb.length() - 1);
+        }
+        return sb.toString();
     }
 
     private static class ReferenceDocTreeVisitor<R> extends SimpleDocTreeVisitor<R, Void> {
