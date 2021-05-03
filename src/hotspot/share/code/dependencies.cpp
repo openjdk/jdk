@@ -1522,7 +1522,7 @@ Method* LinkedConcreteMethodFinder::select_method(InstanceKlass* recv_klass) {
   } else {
     selected_method = recv_klass->method_at_vtable(_vtable_index);
   }
-  return selected_method;
+  return selected_method; // NULL when corresponding slot is empty (AbstractMethodError case)
 }
 
 int LinkedConcreteMethodFinder::compute_vtable_index(InstanceKlass* resolved_klass, Method* resolved_method,
@@ -1852,14 +1852,21 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
   if (wit != NULL) {
     return NULL;  // Too many witnesses.
   }
-  Method* fm = wf.found_method(0);  // Will be NULL if num_parts == 0.
-  Klass*   p = wf.participant(0);   // Will be NULL if num_parts == 0.
+  // p == NULL when no participants are found (wf.num_participants() == 0).
+  // fm == NULL case has 2 meanings:
+  //  * when p == NULL: no method found;
+  //  * when p != NULL: AbstractMethodError-throwing method found.
+  // Also, found method should always be accompanied by a participant class.
+  Klass*   p = wf.participant(0);
+  Method* fm = wf.found_method(0);
+  assert(fm == NULL || p != NULL, "no participant");
   if (fm == Universe::throw_illegal_access_error() || fm == Universe::throw_no_such_method_error()) {
     fm = NULL; // error-throwing method
   }
   if (Dependencies::is_concrete_method(m, ctxk)) {
-    if (fm == NULL && p == NULL) {
+    if (p == NULL) {
       // It turns out that m was always the only implementation.
+      assert(fm == NULL, "sanity");
       fm = m;
     }
   }
