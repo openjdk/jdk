@@ -28,7 +28,7 @@
 #import "AWTView.h"
 #import "AWTWindow.h"
 #import "JavaComponentAccessibility.h"
-#import "JavaTextAccessibility.h"
+#import "a11y/CommonTextAccessibility.h"
 #import "JavaAccessibilityUtilities.h"
 #import "GeomUtilities.h"
 #import "ThreadUtilities.h"
@@ -684,8 +684,8 @@ static BOOL shouldUsePressAndHold() {
 - (NSString *)accessibleSelectedText
 {
     id focused = [self accessibilityFocusedUIElement];
-    if (![focused isKindOfClass:[JavaTextAccessibility class]]) return nil;
-    return [(JavaTextAccessibility *)focused accessibilitySelectedTextAttribute];
+    if (![focused isKindOfClass:[CommonTextAccessibility class]]) return nil;
+    return [(CommonTextAccessibility *)focused accessibilitySelectedTextAttribute];
 }
 
 // same as above, but converts to RTFD
@@ -704,8 +704,8 @@ static BOOL shouldUsePressAndHold() {
 - (BOOL)replaceAccessibleTextSelection:(NSString *)text
 {
     id focused = [self accessibilityFocusedUIElement];
-    if (![focused isKindOfClass:[JavaTextAccessibility class]]) return NO;
-    [(JavaTextAccessibility *)focused accessibilitySetSelectedTextAttribute:text];
+    if (![focused isKindOfClass:[CommonTextAccessibility class]]) return NO;
+    [(CommonTextAccessibility *)focused accessibilitySetSelectedTextAttribute:text];
     return YES;
 }
 

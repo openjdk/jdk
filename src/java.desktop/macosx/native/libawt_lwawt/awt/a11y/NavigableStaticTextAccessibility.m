@@ -23,23 +23,35 @@
  * questions.
  */
 
-#ifndef COMMON_TEXT_ACCESSIBILITY
-#define COMMON_TEXT_ACCESSIBILITY
+#import "NavigableStaticTextAccessibility.h"
 
-#import "CommonComponentAccessibility.h"
-#import "JavaAccessibilityUtilities.h"
-
-#import <AppKit/NSAccessibility.h>
-
-@interface CommonTextAccessibility : CommonComponentAccessibility {
-
+@implementation NavigableStaticTextAccessibility
+- (NSRect)accessibilityFrameForRange:(NSRange)range
+{
+    NSLog(@"in accessibilityFrameForRange");
+    NSRect rect = [self accessibilityBoundsForRangeAttribute:range];
+    NSLog(@"Frame for range %@ is %@", NSStringFromRange(range), NSStringFromRect(rect));
+    return rect;
 }
-- (nullable NSString *)accessibilityValueAttribute;
-- (NSRange)accessibilityVisibleCharacterRangeAttribute;
-- (nullable NSString *)accessibilityStringForRangeAttribute:(NSRange)parameter;
-- (NSRect)accessibilityBoundsForRangeAttribute:(NSRange)parameter;
-- (int)accessibilityLineForIndexAttribute:(int)index;
-- (NSRange)accessibilityRangeForLineAttribute:(int)index;
+- (int)accessibilityLineForIndex:(int)index
+{
+    NSLog(@"in accessibilityLineForIndex");
+    int line = [self accessibilityLineForIndexAttribute:index];
+    NSLog(@"Line number for index %d is: %d", index, line);
+    return line;
+}
+- (NSRange)accessibilityRangeForLine:(int)line
+{
+    NSLog(@"in accessibilityRangeForLine");
+    NSRange range = [self accessibilityRangeForLineAttribute:line];
+    NSLog(@"Range for line %d is %@", line, NSStringFromRange(range));
+    return range;
+}
+- (nullable NSString *)accessibilityStringForRange:(NSRange)range
+{
+    NSLog(@"in accessibilityStringForRange");
+    NSString * str = [self accessibilityStringForRangeAttribute:range];
+    NSLog(@"String  for range %@ is %@", NSStringFromRange(range), str);
+    return str;
+}
 @end
-
-#endif
