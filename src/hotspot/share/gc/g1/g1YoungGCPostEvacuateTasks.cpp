@@ -41,7 +41,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
 {
   add_serial_task(new MergePssTask(per_thread_states));
   add_serial_task(new RecalculateUsedTask());
-  if (RemoveSelfForwardPtrsTask::execute()) {
+  if (RemoveSelfForwardPtrsTask::should_execute()) {
     add_parallel_task(new RemoveSelfForwardPtrsTask(rdcqs));
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
@@ -56,14 +56,15 @@ void G1PostEvacuateCollectionSetCleanupTask1::MergePssTask::do_work(uint worker_
 }
 
 double G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask::worker_cost() const {
-  return G1CollectedHeap::heap()->evacuation_failed() ? 1.0 : 0.01;
+  // If there is no evacuation failure, the work to perform is minimal.
+  return G1CollectedHeap::heap()->evacuation_failed() ? 1.0 : AlmostNoWork;
 }
 
 void G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask::do_work(uint worker_id) {
   G1CollectedHeap::heap()->update_used_after_gc();
 }
 
-bool G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::execute() {
+bool G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::should_execute() {
   return G1CollectedHeap::heap()->evacuation_failed();
 }
 
@@ -78,7 +79,7 @@ G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::~RemoveSelfF
 }
 
 double G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::worker_cost() const {
-  assert(execute(), "Should not call this if not executed");
+  assert(should_execute(), "Should not call this if not executed");
   return G1CollectedHeap::heap()->num_regions_failed_evacuation();
 }
 
@@ -215,7 +216,7 @@ void G1PostEvacuateCollectionSetCleanupTask2::UpdateDerivedPointersTask::do_work
 }
 #endif
 
-bool G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask::execute() {
+bool G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask::should_execute() {
   return G1CollectedHeap::heap()->eagerly_reclaim_enabled();
 }
 
@@ -245,7 +246,7 @@ G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask::~Ea
   g1h->decrement_summary_bytes(_bytes_freed);
 }
 
-bool G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::execute() {
+bool G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::should_execute() {
   return G1CollectedHeap::heap()->evacuation_failed();
 }
 
@@ -257,7 +258,7 @@ G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::~RestorePres
 }
 
 double G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::worker_cost() const {
-  assert(execute(), "Should not call this if not executed");
+  assert(should_execute(), "Should not call this if not executed");
   return _preserved_marks->num();
 }
 
@@ -593,11 +594,11 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
 #if COMPILER2_OR_JVMCI
   add_serial_task(new UpdateDerivedPointersTask());
 #endif
-  if (EagerlyReclaimHumongousObjectsTask::execute()) {
+  if (EagerlyReclaimHumongousObjectsTask::should_execute()) {
     add_serial_task(new EagerlyReclaimHumongousObjectsTask());
   }
 
-  if (RestorePreservedMarksTask::execute()) {
+  if (RestorePreservedMarksTask::should_execute()) {
     add_parallel_task(new RestorePreservedMarksTask(preserved_marks_set));
   }
   add_parallel_task(new RedirtyLoggedCardsTask(rdcqs));

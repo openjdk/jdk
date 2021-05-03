@@ -244,9 +244,9 @@ private:
   // candidates removed from the set as they are found reachable from
   // roots or the young generation.
   class HumongousReclaimCandidates : public G1BiasedMappedArray<bool> {
-   protected:
+  protected:
     bool default_value() const { return false; }
-   public:
+  public:
     void clear() { G1BiasedMappedArray<bool>::clear(); }
     void set_candidate(uint region, bool value) {
       set_by_index(region, value);
@@ -257,8 +257,8 @@ private:
   };
 
   HumongousReclaimCandidates _humongous_reclaim_candidates;
-  uint _num_humongous_reclaim_total; // Total number of humongous objects
-  uint _num_humongous_reclaim_candidates; // Total number of humongous object eager reclaim candidates
+  uint _num_humongous_reclaim_total; // Current amount of (all) humongous objects found in the heap.
+  uint _num_humongous_reclaim_candidates; // Number of humongous object eager reclaim candidates.
 public:
   uint num_humongous_objects_total() const { return _num_humongous_reclaim_total; }
   uint num_humongous_objects_reclaim_candidates() const { return _num_humongous_reclaim_candidates; }

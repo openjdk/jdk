@@ -75,7 +75,7 @@ public:
   RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs);
   ~RemoveSelfForwardPtrsTask();
 
-  static bool execute();
+  static bool should_execute();
 
   double worker_cost() const override;
   void do_work(uint worker_id) override;
@@ -142,7 +142,7 @@ public:
   EagerlyReclaimHumongousObjectsTask();
   virtual ~EagerlyReclaimHumongousObjectsTask();
 
-  static bool execute();
+  static bool should_execute();
 
   double worker_cost() const override { return 1.0; }
   void do_work(uint worker_id) override;
@@ -156,7 +156,7 @@ public:
   RestorePreservedMarksTask(PreservedMarksSet* preserved_marks);
   virtual ~RestorePreservedMarksTask();
 
-  static bool execute();
+  static bool should_execute();
 
   double worker_cost() const override;
   void do_work(uint worker_id) override;

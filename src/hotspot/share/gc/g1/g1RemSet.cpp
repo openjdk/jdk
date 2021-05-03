@@ -247,7 +247,8 @@ private:
       uint num_regions = _regions->size();
 
       if (num_regions == 0) {
-        return 0.001;
+        // There is no card table clean work, only some cleanup of memory.
+        return AlmostNoWork;
       }
       return ((double)align_up((size_t)num_regions << HeapRegion::LogCardsPerRegion, chunk_size()) / chunk_size());
     }
