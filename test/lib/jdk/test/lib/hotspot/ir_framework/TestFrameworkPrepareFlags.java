@@ -23,8 +23,12 @@
 
 package jdk.test.lib.hotspot.ir_framework;
 
+import jdk.test.lib.process.ProcessTools;
 import sun.hotspot.WhiteBox;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -35,14 +39,23 @@ import java.util.Arrays;
  */
 class TestFrameworkPrepareFlags {
     private static final WhiteBox WHITE_BOX;
+    static final String TEST_VM_FLAGS_FILE_PREFIX = "test-vm-flags-pid-";
+    static final String TEST_VM_FLAGS_FILE_POSTFIX = ".log";
 
     static {
         try {
             WHITE_BOX = WhiteBox.getWhiteBox();
+            TEST_VM_FLAGS_FILE = TEST_VM_FLAGS_FILE_PREFIX + ProcessTools.getProcessId() + TEST_VM_FLAGS_FILE_POSTFIX;
         } catch (UnsatisfiedLinkError e) {
             throw new TestFrameworkException("Could not load WhiteBox", e);
+        } catch (Exception e) {
+            throw new TestFrameworkException("Could not get process id", e);
         }
     }
+
+    private static final String TEST_VM_FLAGS_FILE;
+
+    static final String TEST_VM_FLAGS_DELIMITER = " ";
 
     private static final boolean TIERED_COMPILATION = (Boolean)WHITE_BOX.getVMFlag("TieredCompilation");
     private static final CompLevel TIERED_COMPILATION_STOP_AT_LEVEL =
@@ -65,31 +78,29 @@ class TestFrameworkPrepareFlags {
      * Main entry point of the flag VM.
      */
     public static void main(String[] args) {
-        try {
-            String testClassName = args[0];
-            if (VERBOSE) {
-                System.out.println("TestFrameworkPrepareFlags main() called. Prepare test VM flags to run class " + testClassName);
-            }
-            Class<?> testClass;
-            try {
-                testClass = Class.forName(testClassName);
-            } catch (Exception e) {
-                throw new TestRunException("Could not find test class " + testClassName, e);
-            }
-            emitTestVMFlags(prepareTestVmFlags(testClass));
-        } finally {
-            TestFrameworkSocket.closeClientSocket();
+        String testClassName = args[0];
+        if (VERBOSE) {
+            System.out.println("TestFrameworkPrepareFlags main() called. Prepare test VM flags to run class " + testClassName);
         }
+        Class<?> testClass;
+        try {
+            testClass = Class.forName(testClassName);
+        } catch (Exception e) {
+            throw new TestRunException("Could not find test class " + testClassName, e);
+        }
+        emitTestVMFlags(prepareTestVmFlags(testClass));
     }
 
     /**
-     * Emit test VM flags to standard output to parse them from the TestFramework "driver" VM again which adds them to the test VM.
+     * Emit test VM flags to the dedicated test VM flags file to parse them from the TestFramework "driver" VM again
+     * which adds them to the test VM.
      */
     private static void emitTestVMFlags(ArrayList<String> flags) {
-        String encoding = TestFramework.TEST_VM_FLAGS_START + System.lineSeparator()
-                          + String.join(TestFramework.TEST_VM_FLAGS_DELIMITER, flags)
-                          + System.lineSeparator() + TestFramework.TEST_VM_FLAGS_END;
-        TestFrameworkSocket.write(encoding, "flag encoding");
+        try (var bw = Files.newBufferedWriter(Paths.get(TEST_VM_FLAGS_FILE))) {
+            bw.write(String.join(TEST_VM_FLAGS_DELIMITER, flags));
+        } catch (IOException e) {
+            throw new TestFrameworkException("Error while writing to file " + TEST_VM_FLAGS_FILE, e);
+        }
     }
 
     private static ArrayList<String> prepareTestVmFlags(Class<?> testClass) {

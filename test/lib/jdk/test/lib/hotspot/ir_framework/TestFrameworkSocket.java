@@ -29,7 +29,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
 /**
@@ -40,9 +40,9 @@ class TestFrameworkSocket implements AutoCloseable {
     private static final String SERVER_PORT_PROPERTY = "ir.framework.server.port";
     private static final int SERVER_PORT = Integer.getInteger(SERVER_PORT_PROPERTY, -1);
 
+    static final String STDOUT_PREFIX = "[STDOUT]";
     private static final boolean REPRODUCE = Boolean.getBoolean("Reproduce");
     private static final String HOSTNAME = null;
-    private static final String STDOUT_PREFIX = "[STDOUT]";
     private static Socket clientSocket = null;
     private static PrintWriter clientWriter = null;
 
@@ -50,9 +50,7 @@ class TestFrameworkSocket implements AutoCloseable {
     private FutureTask<String> socketTask;
     private final ServerSocket serverSocket;
 
-    private static TestFrameworkSocket singleton = null;
-
-    private TestFrameworkSocket() {
+    TestFrameworkSocket() {
         try {
             serverSocket = new ServerSocket(0);
         } catch (IOException e) {
@@ -63,28 +61,21 @@ class TestFrameworkSocket implements AutoCloseable {
             System.out.println("TestFramework server socket uses port " + port);
         }
         serverPortPropertyFlag = "-D" + SERVER_PORT_PROPERTY + "=" + port;
-    }
-
-    public static TestFrameworkSocket getSocket() {
-        if (singleton == null || singleton.serverSocket.isClosed()) {
-            singleton = new TestFrameworkSocket();
-            return singleton;
-        }
-        return singleton;
+        start();
     }
 
     public String getPortPropertyFlag() {
         return serverPortPropertyFlag;
     }
 
-    public void start() {
+    private void start() {
         socketTask = initSocketTask();
         Thread socketThread = new Thread(socketTask);
         socketThread.start();
     }
 
     /**
-     * Waits for client sockets (created by flag or test VM) to connect. Return the messages received by the clients.
+     * Waits for a client (created by flag or test VM) to connect. Return the messages received from the client.
      */
     private FutureTask<String> initSocketTask() {
         return new FutureTask<>(() -> {
@@ -113,14 +104,14 @@ class TestFrameworkSocket implements AutoCloseable {
     }
 
     /**
-     * Only called by flag and test VM to write to server socket.
+     * Only called by test VM to write to server socket.
      */
     public static void write(String msg, String type) {
         write(msg, type, false);
     }
 
     /**
-     * Only called by flag and test VM to write to server socket.
+     * Only called by test VM to write to server socket.
      */
     public static void write(String msg, String type, boolean stdout) {
         if (REPRODUCE) {
@@ -130,8 +121,7 @@ class TestFrameworkSocket implements AutoCloseable {
         TestFramework.check(SERVER_PORT != -1, "Server port was not set correctly for flag and/or test VM "
                                                + "or method not called from flag or test VM");
         try {
-            // Keep the client socket open until the flag or test VM terminates (calls closeClientSocket before exiting
-            // main()).
+            // Keep the client socket open until the test VM terminates (calls closeClientSocket before exiting main()).
             if (clientSocket == null) {
                 clientSocket = new Socket(HOSTNAME, SERVER_PORT);
                 clientWriter = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -179,38 +169,9 @@ class TestFrameworkSocket implements AutoCloseable {
     public String getOutput() {
         try {
             return socketTask.get();
-
-        } catch (Exception e) {
-            throw new TestFrameworkException("Could not read from socket task", e);
-        }
-    }
-
-    /**
-     * Get the socket output from the test VM by stripping all lines starting with a [STDOUT] output and printing them
-     * to the standard output.
-     */
-    public String getOutputPrintStdout() {
-        try {
-            String output = socketTask.get();
-            if (TestFramework.TESTLIST || TestFramework.EXCLUDELIST) {
-                StringBuilder builder = new StringBuilder();
-                Scanner scanner = new Scanner(output);
-                System.out.println(System.lineSeparator() + "Run flag defined test list");
-                System.out.println("--------------------------");
-                while (scanner.hasNextLine()) {
-                    String line = scanner.nextLine();
-                    if (line.startsWith(STDOUT_PREFIX)) {
-                        line = "> " + line.substring(STDOUT_PREFIX.length());
-                        System.out.println(line);
-                    } else {
-                        builder.append(line).append(System.lineSeparator());
-                    }
-                }
-                System.out.println();
-                return builder.toString();
-            }
-            return output;
-
+        } catch (ExecutionException e) {
+            // Thrown when socket task was not finished, yet (i.e. no client sent data) but socket was already closed.
+            return "";
         } catch (Exception e) {
             throw new TestFrameworkException("Could not read from socket task", e);
         }

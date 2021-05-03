@@ -36,7 +36,8 @@ public class IRViolationException extends RuntimeException {
     private String exceptionInfo;
 
     IRViolationException(String message, String compilations) {
-        super(message);
+        super("There were one or multiple IR rule failures. Please check stderr for more information.");
+        this.exceptionInfo = message;
         this.compilations = compilations;
     }
 
@@ -53,7 +54,7 @@ public class IRViolationException extends RuntimeException {
         return compilations;
     }
 
-    void setExceptionInfo(String exceptionInfo) {
-        this.exceptionInfo = exceptionInfo;
+    void addCommandLine(String commandLine) {
+        this.exceptionInfo = commandLine + System.lineSeparator() + exceptionInfo;
     }
 }

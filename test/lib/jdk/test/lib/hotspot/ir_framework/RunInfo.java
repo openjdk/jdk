@@ -86,7 +86,7 @@ public class RunInfo extends AbstractInfo {
      * be called if <i>one</i> test method is specified in the custom run test ({@link Run#test()}). Otherwise, use
      * {@link #isCompilationSkipped(String)}.
      *
-     * @return {@code true} if the framework compiled the test;
+     * @return {@code true} if the framework skipped compilation of the test;
      *         {@code false} otherwise.
      * @throws TestRunException if called for a custom run test that specifies multiple test methods in {@link Run#test()}.
      */
@@ -102,7 +102,7 @@ public class RunInfo extends AbstractInfo {
      * in ({@link Run#test()}). Otherwise, use {@link #isCompilationSkipped()}.
      *
      * @param testName the test method for which the method object should be returned.
-     * @return {@code true} if the framework compiled the test;
+     * @return {@code true} if the framework skipped compilation of the test;
      *         {@code false} otherwise.
      * @throws TestRunException if there is no test method with the name {@code testName} or if called with only
      *         <i>one</i> associated test method.

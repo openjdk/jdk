@@ -54,7 +54,7 @@ public class TestInfo extends AbstractInfo {
      * Return a boolean indicating if the framework skipped a compilation after the warm-up due to VM flags not
      * allowing a compilation on the requested level in {@link Test#compLevel()}.
      *
-     * @return {@code true} if the framework compiled the test;
+     * @return {@code true} if the framework skipped compilation of the test;
      *         {@code false} otherwise.
      */
     public boolean isCompilationSkipped() {

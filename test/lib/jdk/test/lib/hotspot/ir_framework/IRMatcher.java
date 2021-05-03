@@ -62,8 +62,10 @@ class IRMatcher {
             System.out.println("Read IR encoding from test VM:");
             System.out.println(irEncoding);
         }
-        parseHotspotPidFile();
-        applyRules();
+        if (!compilations.isEmpty()) {
+            parseHotspotPidFile();
+            applyRules();
+        }
     }
 
     /**
@@ -475,8 +477,7 @@ class IRMatcher {
                                                  .append(System.lineSeparator()));
                 failuresBuilder.append(System.lineSeparator());
             }
-            failuresBuilder.insert(0, (System.lineSeparator() + System.lineSeparator()
-                                       + "One or more @IR rules failed:" + System.lineSeparator()
+            failuresBuilder.insert(0, ("One or more @IR rules failed:" + System.lineSeparator()
                                        + System.lineSeparator() + "Failed IR Rules (" + failures + ")"
                                        + System.lineSeparator()) + "-----------------"
                                        + "-".repeat(String.valueOf(failures).length()) + System.lineSeparator());
