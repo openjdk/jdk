@@ -32,8 +32,31 @@
 #include "runtime/vmThread.hpp"
 #include "unittest.hpp"
 
+// So far, shutdown asynclogging on-the-fly can only be done in vmthread.
+// Use it only in gtest.
+class AsyncLogDisabler : public VM_GTestExecuteAtSafepoint {
+  void doit() override {
+    LogConfiguration::set_async_mode(false);
+    LogAsyncFlusher::terminate();
+  }
+};
 
 class AsyncLogTest : public LogTestFixture {
+  bool _saved_async_mode;
+
+ public:
+  AsyncLogTest() : _saved_async_mode(LogConfiguration::is_async_mode()) {
+    LogConfiguration::set_async_mode(true);
+    LogAsyncFlusher::initialize();
+  }
+
+  ~AsyncLogTest() {
+    if (!_saved_async_mode) {
+      AsyncLogDisabler op;
+      ThreadInVMfromNative invm(JavaThread::current());
+      VMThread::execute(&op);
+    }
+  }
 };
 
 TEST_VM_F(AsyncLogTest, fifo) {
@@ -143,7 +166,7 @@ LOG_LEVEL_LIST
 };
 
 TEST_VM_F(AsyncLogTest, asynclog) {
-  set_log_config(TestLogFileName, "logging=debug", NULL, "async=true");
+  set_log_config(TestLogFileName, "logging=debug");
 
   LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
   ASSERT_NE(flusher, nullptr) <<  "async flusher must not be null";
@@ -170,7 +193,7 @@ TEST_VM_F(AsyncLogTest, asynclog) {
 }
 
 TEST_VM_F(AsyncLogTest, logMessage) {
-  set_log_config(TestLogFileName, "logging=debug", "none" /*decorators*/, "async=true");
+  set_log_config(TestLogFileName, "logging=debug");
 
   LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
   ASSERT_NE(flusher, nullptr) <<  "async flusher must not be null";
@@ -207,12 +230,12 @@ TEST_VM_F(AsyncLogTest, logMessage) {
 }
 
 TEST_VM_F(AsyncLogTest, droppingMessage) {
-  set_log_config(TestLogFileName, "logging=debug", "none" /*decorators*/, "async=true");
+  set_log_config(TestLogFileName, "logging=debug");
   const size_t sz = 100;
   LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
   ASSERT_NE(flusher, nullptr) <<  "async flusher must not be null";
   // shrink async buffer.
-  AutoModifyRestore<size_t> saver(AsyncLogBufferSize, sz);
+  AutoModifyRestore<size_t> saver(AsyncLogBufferEntries, sz);
   LogMessage(logging) lm;
 
   // write 100x more messages than its capacity in burst

@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logAsyncFlusher.hpp"
+#include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
 #include "logging/logHandle.hpp"
 #include "runtime/atomic.hpp"
@@ -38,7 +39,7 @@ void AsyncLogMessage::writeback() {
 void LogAsyncFlusher::enqueue_impl(const AsyncLogMessage& msg) {
   assert_lock_strong(&_lock);
 
-  if (_buffer.size() >= AsyncLogBufferSize)  {
+  if (_buffer.size() >= AsyncLogBufferEntries)  {
     const AsyncLogMessage* h = _buffer.front();
     assert(h != NULL, "sanity check");
 
@@ -59,12 +60,12 @@ void LogAsyncFlusher::enqueue_impl(const AsyncLogMessage& msg) {
 
     _buffer.pop_front();
   }
-  assert(_buffer.size() < AsyncLogBufferSize, "_buffer is over-sized.");
+  assert(_buffer.size() < AsyncLogBufferEntries, "_buffer is over-sized.");
   _buffer.push_back(msg);
 
   // notify asynclog thread if occupancy is over 3/4
   size_t sz = _buffer.size();
-  if (sz > (AsyncLogBufferSize >> 2) * 3 ) {
+  if (sz > (AsyncLogBufferEntries >> 2) * 3 ) {
     _lock.notify();
   }
 }
@@ -159,20 +160,22 @@ void LogAsyncFlusher::run() {
 
   // Signal thread has terminated
   MonitorLocker ml(Terminator_lock);
-  Atomic::release_store(&_state, ThreadState::Terminated);
+  _state = ThreadState::Terminated;
   ml.notify_all();
 }
 
 LogAsyncFlusher* LogAsyncFlusher::_instance = nullptr;
 
 void LogAsyncFlusher::initialize() {
-  if (!_instance) {
-    _instance = new LogAsyncFlusher();
+  if (!LogConfiguration::is_async_mode()) return;
+
+  if (_instance == NULL) {
+    Atomic::release_store(&LogAsyncFlusher::_instance, new LogAsyncFlusher());
   }
 }
 
 // Termination
-// 1. issue an atomic release_store&fence to close the logging window.
+// 1. issue an atomic release_store to close the logging window.
 // 2. flush itself in-place.
 // 3. signal asynclog thread to exit.
 // 4. wait until asynclog thread exits.
@@ -181,11 +184,11 @@ void LogAsyncFlusher::terminate() {
   if (_instance != NULL) {
     LogAsyncFlusher* self = _instance;
 
-    Atomic::release_store_fence<LogAsyncFlusher*, LogAsyncFlusher*>(&_instance, nullptr);
+    Atomic::release_store<LogAsyncFlusher*, LogAsyncFlusher*>(&_instance, nullptr);
     self->flush();
     {
       MonitorLocker ml(&self->_lock, Mutex::_no_safepoint_check_flag);
-      Atomic::release_store(&self->_state, ThreadState::Terminating);
+      self->_state = ThreadState::Terminating;
       ml.notify();
     }
     {

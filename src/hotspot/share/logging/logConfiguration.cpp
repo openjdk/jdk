@@ -551,7 +551,12 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr("   filecount=.. - Number of files to keep in rotation (not counting the active file)."
                                     " If set to 0, log rotation is disabled."
                                     " This will cause existing log files to be overwritten.");
-  out->print_cr("   async=true|false - write asynchronously or not, false by default.");
+  out->cr();
+  out->print_cr("\nAsynchronous logging(off by default):");
+  out->print_cr(" -Xlog:async");
+  out->print_cr("  All log messages write to an intermediate buffer first defined by AsyncLogBufferEntries "
+                " and then will be flushed to the corresponding log outputs by a standalone thread. Write operation at logsites "
+                " guarantee non-blocking.");
   out->cr();
 
   out->print_cr("Some examples:");
@@ -595,6 +600,10 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr(" -Xlog:disable -Xlog:safepoint=trace:safepointtrace.txt");
   out->print_cr("\t Turn off all logging, including warnings and errors,");
   out->print_cr("\t and then enable messages tagged with 'safepoint' up to 'trace' level to file 'safepointtrace.txt'.");
+
+  out->print_cr(" -Xlog:async -Xlog:gc=debug:file=gc.log -Xlog:safepoint=trace");
+  out->print_cr("\t Write logs asynchronously. Enable messages tagged with 'safepoint' up to 'trace' level to stdout ");
+  out->print_cr("\t and messages tagged with 'gc' up to 'trace' level to file 'gc.log'.");
 }
 
 void LogConfiguration::rotate_all_outputs() {
@@ -621,3 +630,5 @@ void LogConfiguration::notify_update_listeners() {
     _listener_callbacks[i]();
   }
 }
+
+bool LogConfiguration::_async_mode = false;

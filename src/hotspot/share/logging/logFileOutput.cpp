@@ -40,14 +40,13 @@ const char* const LogFileOutput::TimestampFilenamePlaceholder = "%t";
 const char* const LogFileOutput::TimestampFormat = "%Y-%m-%d_%H-%M-%S";
 const char* const LogFileOutput::FileSizeOptionKey = "filesize";
 const char* const LogFileOutput::FileCountOptionKey = "filecount";
-const char* const LogFileOutput::AsyncOptionKey = "async";
 char        LogFileOutput::_pid_str[PidBufferSize];
 char        LogFileOutput::_vm_start_time_str[StartTimeBufferSize];
 
 LogFileOutput::LogFileOutput(const char* name)
     : LogFileStreamOutput(NULL), _name(os::strdup_check_oom(name, mtLogging)),
       _file_name(NULL), _archive_name(NULL), _current_file(0),
-      _file_count(DefaultFileCount), _is_default_file_count(true), _async_mode(AsyncLogging), _archive_name_len(0),
+      _file_count(DefaultFileCount), _is_default_file_count(true), _archive_name_len(0),
       _rotate_size(DefaultFileSize), _current_size(0), _rotation_semaphore(1) {
   assert(strstr(name, Prefix) == name, "invalid output name '%s': missing prefix: %s", name, Prefix);
   _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
@@ -217,17 +216,6 @@ bool LogFileOutput::parse_options(const char* options, outputStream* errstream) 
         break;
       }
       _rotate_size = static_cast<size_t>(value);
-    } else if (strcmp(AsyncOptionKey, key) == 0) {
-      if (strcasecmp(value_str, "true") == 0) {
-        _async_mode = true;
-      } else if (strcasecmp(value_str, "false") == 0) {
-        _async_mode =false;
-      } else {
-        errstream->print_cr("Invalid option: %s must be either true or false.",
-                            AsyncOptionKey);
-        success = false;
-        break;
-      }
     } else {
       errstream->print_cr("Invalid option '%s' for log file output.", key);
       success = false;
@@ -259,9 +247,8 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
   }
 
   log_trace(logging)("Initializing logging to file '%s' (filecount: %u"
-                     ", filesize: " SIZE_FORMAT " KiB, async: %s).",
-                     _file_name, _file_count, _rotate_size / K,
-                     _async_mode ? "true" : "false");
+                     ", filesize: " SIZE_FORMAT " KiB).",
+                     _file_name, _file_count, _rotate_size / K);
 
   if (_file_count > 0 && file_exist) {
     if (!is_regular_file(_file_name)) {
@@ -320,7 +307,7 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
   }
 
   LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
-  if (_async_mode && flusher != NULL) {
+  if (flusher != NULL) {
     flusher->enqueue(*this, decorations, msg);
     return 0;
   }
@@ -335,7 +322,7 @@ int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
   }
 
   LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
-  if (_async_mode && flusher != NULL) {
+  if (flusher != NULL) {
     flusher->enqueue(*this, msg_iterator);
     return -1;
   }
@@ -494,5 +481,5 @@ void LogFileOutput::describe(outputStream *out) {
   out->print("filecount=%u,filesize=" SIZE_FORMAT "%s,async=%s", _file_count,
              byte_size_in_proper_unit(_rotate_size),
              proper_unit_for_byte_size(_rotate_size),
-             _async_mode ? "true" : "false");
+             LogConfiguration::is_async_mode() ? "true" : "false");
 }

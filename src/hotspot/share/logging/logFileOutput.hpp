@@ -58,7 +58,6 @@ class LogFileOutput : public LogFileStreamOutput {
   uint  _file_count;
   uint  _file_count_max_digits;
   bool  _is_default_file_count;
-  bool  _async_mode;
 
   size_t  _archive_name_len;
   size_t  _rotate_size;
