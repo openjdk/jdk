@@ -2672,22 +2672,12 @@ static void post_adapter_creation(const AdapterBlob* new_adapter, const AdapterH
 }
 
 void AdapterHandlerLibrary::initialize() {
-
   ResourceMark rm;
   AdapterBlob* no_arg_blob = NULL;
-
   AdapterBlob* int_arg_blob = NULL;
-  BasicType    int_args[] = { T_INT };
-
   AdapterBlob* obj_arg_blob = NULL;
-  BasicType    obj_args[] = { T_OBJECT };
-
   AdapterBlob* obj_int_arg_blob = NULL;
-  BasicType    obj_int_args[] = { T_OBJECT, T_INT };
-
   AdapterBlob* obj_obj_arg_blob = NULL;
-  BasicType    obj_obj_args[] = { T_OBJECT, T_OBJECT };
-
   {
     MutexLocker mu(AdapterHandlerLibrary_lock);
     assert(_adapters == NULL, "Initializing more than once");
@@ -2707,9 +2697,17 @@ void AdapterHandlerLibrary::initialize() {
     _buffer = BufferBlob::create("adapters", AdapterHandlerLibrary_size);
 
     _no_arg_handler = create_adapter(no_arg_blob, 0, NULL, true);
+
+    BasicType obj_args[] = { T_OBJECT };
     _obj_arg_handler = create_adapter(obj_arg_blob, 1, obj_args, true);
+
+    BasicType int_args[] = { T_INT };
     _int_arg_handler = create_adapter(int_arg_blob, 1, int_args, true);
+
+    BasicType obj_int_args[] = { T_OBJECT, T_INT };
     _obj_int_arg_handler = create_adapter(obj_int_arg_blob, 2, obj_int_args, true);
+
+    BasicType obj_obj_args[] = { T_OBJECT, T_OBJECT };
     _obj_obj_arg_handler = create_adapter(obj_obj_arg_blob, 2, obj_obj_args, true);
 
     assert(no_arg_blob != NULL &&
@@ -2718,7 +2716,6 @@ void AdapterHandlerLibrary::initialize() {
           obj_int_arg_blob != NULL &&
           obj_obj_arg_blob != NULL, "Initial adapters must be properly created");
   }
-
 
   // Outside of the lock
   post_adapter_creation(no_arg_blob, _no_arg_handler);
@@ -2836,12 +2833,12 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
   // Fill in the signature array, for the calling-convention call.
   int total_args_passed = method->size_of_parameters(); // All args on stack
 
-  AdapterSignatureIterator si(method->signature(), method->constMethod()->fingerprint(), method->is_static(), total_args_passed);
+  AdapterSignatureIterator si(method->signature(), method->constMethod()->fingerprint(),
+                              method->is_static(), total_args_passed);
+  assert(si.slots() == total_args_passed, "");
   BasicType* sig_bt = si.basic_types();
   {
     MutexLocker mu(AdapterHandlerLibrary_lock);
-
-    assert(si.slots() == total_args_passed, "");
 
     // Lookup method signature's fingerprint
     entry = _adapters->lookup(total_args_passed, sig_bt);
@@ -3052,22 +3049,14 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       // Fill in the signature array, for the calling-convention call.
       const int total_args_passed = method->size_of_parameters();
 
-      BasicType stack_sig_bt[16];
       VMRegPair stack_regs[16];
-      BasicType* sig_bt = (total_args_passed <= 16) ? stack_sig_bt : NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
       VMRegPair* regs = (total_args_passed <= 16) ? stack_regs : NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
 
-      int i = 0;
-      if (!method->is_static())  // Pass in receiver first
-        sig_bt[i++] = T_OBJECT;
-      SignatureStream ss(method->signature());
-      for (; !ss.at_return_type(); ss.next()) {
-        sig_bt[i++] = ss.type();  // Collect remaining bits of signature
-        if (ss.type() == T_LONG || ss.type() == T_DOUBLE)
-          sig_bt[i++] = T_VOID;   // Longs & doubles take 2 Java slots
-      }
-      assert(i == total_args_passed, "");
-      BasicType ret_type = ss.type();
+      AdapterSignatureIterator si(method->signature(), method->constMethod()->fingerprint(),
+                              method->is_static(), total_args_passed);
+      BasicType* sig_bt = si.basic_types();
+      assert(si.slots() == total_args_passed, "");
+      BasicType ret_type = si.return_type();
 
       // Now get the compiled-Java arguments layout.
       int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
