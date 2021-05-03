@@ -33,9 +33,9 @@ import sun.awt.CGraphicsConfig;
 import sun.java2d.NullSurfaceData;
 import sun.java2d.SurfaceData;
 import sun.lwawt.LWWindowPeer;
-import sun.lwawt.macosx.CFRetainedResource;
+import sun.lwawt.macosx.CFLayer;
 
-public class CGLLayer extends CFRetainedResource {
+public class CGLLayer extends CFLayer {
 
     private native long nativeCreateLayer();
     private static native void nativeSetScale(long layerPtr, double scale);
@@ -45,17 +45,11 @@ public class CGLLayer extends CFRetainedResource {
     private LWWindowPeer peer;
     private int scale = 1;
 
-    private SurfaceData surfaceData; // represents intermediate buffer (texture)
-
     public CGLLayer(LWWindowPeer peer) {
         super(0, true);
 
         setPtr(nativeCreateLayer());
         this.peer = peer;
-    }
-
-    public long getPointer() {
-        return ptr;
     }
 
     public Rectangle getBounds() {
@@ -95,10 +89,6 @@ public class CGLLayer extends CFRetainedResource {
             validate((CGLSurfaceData)surfaceData);
         }
 
-        return surfaceData;
-    }
-
-    public SurfaceData getSurfaceData() {
         return surfaceData;
     }
 
