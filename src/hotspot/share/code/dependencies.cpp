@@ -1775,6 +1775,9 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
   if (m->is_old()) {
     return NULL;
   }
+  if (m->is_default_method()) {
+    return NULL; // not supported
+  }
   assert(verify_method_context(ctxk, m), "proper context");
   ConcreteMethodFinder wf(m);
   wf.record_witnesses(1);

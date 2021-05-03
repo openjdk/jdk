@@ -303,8 +303,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           caller->get_declared_method_holder_at_bci(bci)->as_instance_klass();
       ciInstanceKlass* singleton = declared_interface->unique_implementor();
 
-      if (singleton != NULL &&
-          (!callee->is_default_method() || callee->is_overpass()) /* CHA doesn't support default methods yet */) {
+      if (singleton != NULL) {
         assert(singleton != declared_interface, "not a unique implementor");
 
         ciMethod* cha_monomorphic_target =

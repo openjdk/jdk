@@ -708,11 +708,6 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
 
   VM_ENTRY_MARK;
 
-  // Disable CHA for default methods for now
-  if (root_m->is_default_method()) {
-    return NULL;
-  }
-
   methodHandle target;
   {
     MutexLocker locker(Compile_lock);
