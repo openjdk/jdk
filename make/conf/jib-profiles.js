@@ -672,11 +672,7 @@ var getJibProfilesProfiles = function (input, common, data) {
                 ["--with-jcov-input-jdk=" + input.get(name + ".jdk", "home_path")]);
         });
 
-    //
     // Define artifacts for profiles
-    //
-    // Macosx bundles are named osx
-    // tar.gz.
     var artifactData = {
         "linux-x64": {
             platform: "linux-x64",
@@ -685,11 +681,11 @@ var getJibProfilesProfiles = function (input, common, data) {
             platform: "linux-x86",
         },
         "macosx-x64": {
-            platform: "osx-x64",
+            platform: "macos-x64",
             jdk_subdir: "jdk-" + data.version +  ".jdk/Contents/Home",
         },
         "macosx-aarch64": {
-            platform: "osx-aarch64",
+            platform: "macos-aarch64",
             jdk_subdir: "jdk-" + data.version + ".jdk/Contents/Home",
         },
         "windows-x64": {

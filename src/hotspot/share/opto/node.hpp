@@ -322,9 +322,11 @@ protected:
   // preserved in _parse_idx.
   const node_idx_t _idx;
   DEBUG_ONLY(const node_idx_t _parse_idx;)
-  // IGV node identifier. It is similar to Node::_debug_idx in that it is unique
-  // across all compilation phases, but different in that it is initialized in
-  // each compilation, for stability.
+  // IGV node identifier. Two nodes, possibly in different compilation phases,
+  // have the same IGV identifier if (and only if) they are the very same node
+  // (same memory address) or one is "derived" from the other (by e.g.
+  // renumbering or matching). This identifier makes it possible to follow the
+  // entire lifetime of a node in IGV even if its C2 identifier (_idx) changes.
   NOT_PRODUCT(node_idx_t _igv_idx;)
 
   // Get the (read-only) number of input edges
