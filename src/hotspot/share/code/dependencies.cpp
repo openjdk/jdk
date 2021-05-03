@@ -1860,7 +1860,10 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
   Klass*   p = wf.participant(0);
   Method* fm = wf.found_method(0);
   assert(fm == NULL || p != NULL, "no participant");
-  if (fm == Universe::throw_illegal_access_error() || fm == Universe::throw_no_such_method_error()) {
+  // Normalize all error-throwing cases to NULL.
+  if (fm == Universe::throw_illegal_access_error() ||
+      fm == Universe::throw_no_such_method_error() ||
+      !Dependencies::is_concrete_method(fm, p)) {
     fm = NULL; // error-throwing method
   }
   if (Dependencies::is_concrete_method(m, ctxk)) {
