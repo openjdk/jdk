@@ -24,9 +24,11 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/classListParser.hpp"
+#include "cds/classListWriter.hpp"
+#include "cds/dynamicArchive.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/classListParser.hpp"
-#include "classfile/classListWriter.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -46,8 +48,6 @@
 #include "interpreter/bytecodeUtils.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
-#include "memory/dynamicArchive.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/referenceType.hpp"
 #include "memory/resourceArea.hpp"
@@ -1502,7 +1502,7 @@ JVM_ENTRY(jbyteArray, JVM_GetClassAnnotations(JNIEnv *env, jclass cls))
 JVM_END
 
 
-static bool jvm_get_field_common(jobject field, fieldDescriptor& fd, TRAPS) {
+static bool jvm_get_field_common(jobject field, fieldDescriptor& fd) {
   // some of this code was adapted from from jni_FromReflectedField
 
   oop reflected = JNIHandles::resolve_non_null(field);
@@ -1593,7 +1593,7 @@ JVM_END
 JVM_ENTRY(jbyteArray, JVM_GetFieldTypeAnnotations(JNIEnv *env, jobject field))
   assert (field != NULL, "illegal field");
   fieldDescriptor fd;
-  bool gotFd = jvm_get_field_common(field, fd, CHECK_NULL);
+  bool gotFd = jvm_get_field_common(field, fd);
   if (!gotFd) {
     return NULL;
   }
@@ -2980,32 +2980,9 @@ JVM_ENTRY(void, JVM_SuspendThread(JNIEnv* env, jobject jthread))
   JavaThread* receiver = NULL;
   bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &receiver, NULL);
   if (is_alive) {
-    // jthread refers to a live JavaThread.
-    {
-      MutexLocker ml(receiver->SR_lock(), Mutex::_no_safepoint_check_flag);
-      if (receiver->is_external_suspend()) {
-        // Don't allow nested external suspend requests. We can't return
-        // an error from this interface so just ignore the problem.
-        return;
-      }
-      if (receiver->is_exiting()) { // thread is in the process of exiting
-        return;
-      }
-      receiver->set_external_suspend();
-    }
-
-    // java_suspend() will catch threads in the process of exiting
-    // and will ignore them.
+    // jthread refers to a live JavaThread, but java_suspend() will
+    // detect a thread that has started to exit and will ignore it.
     receiver->java_suspend();
-
-    // It would be nice to have the following assertion in all the
-    // time, but it is possible for a racing resume request to have
-    // resumed this thread right after we suspended it. Temporarily
-    // enable this assertion if you are chasing a different kind of
-    // bug.
-    //
-    // assert(java_lang_Thread::thread(receiver->threadObj()) == NULL ||
-    //   receiver->is_being_ext_suspended(), "thread is not suspended");
   }
 JVM_END
 
@@ -3016,22 +2993,6 @@ JVM_ENTRY(void, JVM_ResumeThread(JNIEnv* env, jobject jthread))
   bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &receiver, NULL);
   if (is_alive) {
     // jthread refers to a live JavaThread.
-
-    // This is the original comment for this Threads_lock grab:
-    //   We need to *always* get the threads lock here, since this operation cannot be allowed during
-    //   a safepoint. The safepoint code relies on suspending a thread to examine its state. If other
-    //   threads randomly resumes threads, then a thread might not be suspended when the safepoint code
-    //   looks at it.
-    //
-    // The above comment dates back to when we had both internal and
-    // external suspend APIs that shared a common underlying mechanism.
-    // External suspend is now entirely cooperative and doesn't share
-    // anything with internal suspend. That said, there are some
-    // assumptions in the VM that an external resume grabs the
-    // Threads_lock. We can't drop the Threads_lock grab here until we
-    // resolve the assumptions that exist elsewhere.
-    //
-    MutexLocker ml(Threads_lock);
     receiver->java_resume();
   }
 JVM_END
@@ -3653,11 +3614,11 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
-    return Arguments::is_dumping_archive();
+  return Arguments::is_dumping_archive();
 JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsSharingEnabled(JNIEnv* env))
-    return UseSharedSpaces;
+  return UseSharedSpaces;
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
@@ -3700,6 +3661,24 @@ JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
     ClassListWriter w;
     w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
   }
+#endif // INCLUDE_CDS
+JVM_END
+
+JVM_ENTRY(void, JVM_DumpClassListToFile(JNIEnv *env, jstring listFileName))
+#if INCLUDE_CDS
+  ResourceMark rm(THREAD);
+  Handle file_handle(THREAD, JNIHandles::resolve_non_null(listFileName));
+  char* file_name  = java_lang_String::as_utf8_string(file_handle());
+  MetaspaceShared::dump_loaded_classes(file_name, THREAD);
+#endif // INCLUDE_CDS
+JVM_END
+
+JVM_ENTRY(void, JVM_DumpDynamicArchive(JNIEnv *env, jstring archiveName))
+#if INCLUDE_CDS
+  ResourceMark rm(THREAD);
+  Handle file_handle(THREAD, JNIHandles::resolve_non_null(archiveName));
+  char* archive_name  = java_lang_String::as_utf8_string(file_handle());
+  DynamicArchive::dump(archive_name, THREAD);
 #endif // INCLUDE_CDS
 JVM_END
 

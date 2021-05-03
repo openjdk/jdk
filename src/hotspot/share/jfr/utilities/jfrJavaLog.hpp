@@ -43,6 +43,7 @@ class JfrJavaLog : public AllStatic {
  public:
   static void subscribe_log_level(jobject log_tag, jint id, TRAPS);
   static void log(jint tag_set, jint level, jstring message, TRAPS);
+  static void log_event(JNIEnv* env, jint level, jobjectArray lines, bool system, TRAPS);
 };
 
 #endif // SHARE_JFR_UTILITIES_JFRJAVALOG_HPP

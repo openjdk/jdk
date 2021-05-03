@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,11 @@ Matcher::Matcher()
   _end_inst_chain_rule(_END_INST_CHAIN_RULE),
   _must_clone(must_clone),
   _shared_nodes(C->comp_arena()),
-#ifdef ASSERT
+#ifndef PRODUCT
   _old2new_map(C->comp_arena()),
   _new2old_map(C->comp_arena()),
-#endif
+  _reused(C->comp_arena()),
+#endif // !PRODUCT
   _allocation_started(false),
   _ruleName(ruleName),
   _register_save_policy(register_save_policy),
@@ -95,6 +96,7 @@ Matcher::Matcher()
   idealreg2spillmask  [Op_VecY] = NULL;
   idealreg2spillmask  [Op_VecZ] = NULL;
   idealreg2spillmask  [Op_RegFlags] = NULL;
+  idealreg2spillmask  [Op_RegVectMask] = NULL;
 
   idealreg2debugmask  [Op_RegI] = NULL;
   idealreg2debugmask  [Op_RegN] = NULL;
@@ -109,6 +111,7 @@ Matcher::Matcher()
   idealreg2debugmask  [Op_VecY] = NULL;
   idealreg2debugmask  [Op_VecZ] = NULL;
   idealreg2debugmask  [Op_RegFlags] = NULL;
+  idealreg2debugmask  [Op_RegVectMask] = NULL;
 
   idealreg2mhdebugmask[Op_RegI] = NULL;
   idealreg2mhdebugmask[Op_RegN] = NULL;
@@ -123,6 +126,7 @@ Matcher::Matcher()
   idealreg2mhdebugmask[Op_VecY] = NULL;
   idealreg2mhdebugmask[Op_VecZ] = NULL;
   idealreg2mhdebugmask[Op_RegFlags] = NULL;
+  idealreg2mhdebugmask[Op_RegVectMask] = NULL;
 
   debug_only(_mem_node = NULL;)   // Ideal memory node consumed by mach node
 }
@@ -430,7 +434,7 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
   return rms;
 }
 
-#define NOF_STACK_MASKS (3*12)
+#define NOF_STACK_MASKS (3*13)
 
 // Create the initial stack mask used by values spilling to the stack.
 // Disallow any debug info in outgoing argument areas by setting the
@@ -487,6 +491,10 @@ void Matcher::init_first_stack_mask() {
   idealreg2mhdebugmask[Op_VecY] = &rms[34];
   idealreg2mhdebugmask[Op_VecZ] = &rms[35];
 
+  idealreg2spillmask  [Op_RegVectMask] = &rms[36];
+  idealreg2debugmask  [Op_RegVectMask] = &rms[37];
+  idealreg2mhdebugmask[Op_RegVectMask] = &rms[38];
+
   OptoReg::Name i;
 
   // At first, start with the empty mask
@@ -530,6 +538,11 @@ void Matcher::init_first_stack_mask() {
    idealreg2spillmask[Op_RegF]->OR(C->FIRST_STACK_mask());
   *idealreg2spillmask[Op_RegD] = *idealreg2regmask[Op_RegD];
    idealreg2spillmask[Op_RegD]->OR(aligned_stack_mask);
+
+  if (Matcher::has_predicated_vectors()) {
+    *idealreg2spillmask[Op_RegVectMask] = *idealreg2regmask[Op_RegVectMask];
+     idealreg2spillmask[Op_RegVectMask]->OR(aligned_stack_mask);
+  }
 
   if (Matcher::vector_size_supported(T_BYTE,4)) {
     *idealreg2spillmask[Op_VecS] = *idealreg2regmask[Op_VecS];
@@ -649,6 +662,7 @@ void Matcher::init_first_stack_mask() {
   *idealreg2debugmask  [Op_RegF] = *idealreg2spillmask[Op_RegF];
   *idealreg2debugmask  [Op_RegD] = *idealreg2spillmask[Op_RegD];
   *idealreg2debugmask  [Op_RegP] = *idealreg2spillmask[Op_RegP];
+  *idealreg2debugmask  [Op_RegVectMask] = *idealreg2spillmask[Op_RegVectMask];
 
   *idealreg2debugmask  [Op_VecA] = *idealreg2spillmask[Op_VecA];
   *idealreg2debugmask  [Op_VecS] = *idealreg2spillmask[Op_VecS];
@@ -663,6 +677,7 @@ void Matcher::init_first_stack_mask() {
   *idealreg2mhdebugmask[Op_RegF] = *idealreg2spillmask[Op_RegF];
   *idealreg2mhdebugmask[Op_RegD] = *idealreg2spillmask[Op_RegD];
   *idealreg2mhdebugmask[Op_RegP] = *idealreg2spillmask[Op_RegP];
+  *idealreg2mhdebugmask[Op_RegVectMask] = *idealreg2spillmask[Op_RegVectMask];
 
   *idealreg2mhdebugmask[Op_VecA] = *idealreg2spillmask[Op_VecA];
   *idealreg2mhdebugmask[Op_VecS] = *idealreg2spillmask[Op_VecS];
@@ -683,6 +698,7 @@ void Matcher::init_first_stack_mask() {
   idealreg2debugmask[Op_RegF]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_RegD]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_RegP]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_RegVectMask]->SUBTRACT(*caller_save_mask);
 
   idealreg2debugmask[Op_VecA]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_VecS]->SUBTRACT(*caller_save_mask);
@@ -697,6 +713,7 @@ void Matcher::init_first_stack_mask() {
   idealreg2mhdebugmask[Op_RegF]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_RegD]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_RegP]->SUBTRACT(*mh_caller_save_mask);
+  idealreg2mhdebugmask[Op_RegVectMask]->SUBTRACT(*mh_caller_save_mask);
 
   idealreg2mhdebugmask[Op_VecA]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_VecS]->SUBTRACT(*mh_caller_save_mask);
@@ -965,6 +982,7 @@ void Matcher::init_spill_mask( Node *ret ) {
   idealreg2regmask[Op_VecX] = regmask_for_ideal_register(Op_VecX, ret);
   idealreg2regmask[Op_VecY] = regmask_for_ideal_register(Op_VecY, ret);
   idealreg2regmask[Op_VecZ] = regmask_for_ideal_register(Op_VecZ, ret);
+  idealreg2regmask[Op_RegVectMask] = regmask_for_ideal_register(Op_RegVectMask, ret);
 }
 
 #ifdef ASSERT
@@ -1081,16 +1099,12 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             if (n->is_Proj() && n->in(0) != NULL && n->in(0)->is_Multi()) {       // Projections?
               // Convert to machine-dependent projection
               m = n->in(0)->as_Multi()->match( n->as_Proj(), this );
-#ifdef ASSERT
-              _new2old_map.map(m->_idx, n);
-#endif
+              NOT_PRODUCT(record_new2old(m, n);)
               if (m->in(0) != NULL) // m might be top
                 collect_null_checks(m, n);
             } else {                // Else just a regular 'ol guy
               m = n->clone();       // So just clone into new-space
-#ifdef ASSERT
-              _new2old_map.map(m->_idx, n);
-#endif
+              NOT_PRODUCT(record_new2old(m, n);)
               // Def-Use edges will be added incrementally as Uses
               // of this node are matched.
               assert(m->outcnt() == 0, "no Uses of this clone yet");
@@ -1148,9 +1162,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             // || op == Op_BoxLock  // %%%% enable this and remove (+++) in chaitin.cpp
             ) {
           m = m->clone();
-#ifdef ASSERT
-          _new2old_map.map(m->_idx, n);
-#endif
+          NOT_PRODUCT(record_new2old(m, n));
           mstack.push(m, Post_Visit, n, i); // Don't need to visit
           mstack.push(m->in(0), Visit, m, 0);
         } else {
@@ -1482,10 +1494,8 @@ MachNode *Matcher::match_tree( const Node *n ) {
   }
   // Reduce input tree based upon the state labels to machine Nodes
   MachNode *m = ReduceInst(s, s->rule(mincost), mem);
-#ifdef ASSERT
-  _old2new_map.map(n->_idx, m);
-  _new2old_map.map(m->_idx, (Node*)n);
-#endif
+  // New-to-old mapping is done in ReduceInst, to cover complex instructions.
+  NOT_PRODUCT(_old2new_map.map(n->_idx, m);)
 
   // Add any Matcher-ignored edges
   uint cnt = n->req();
@@ -1742,6 +1752,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
   mach->_opnds[0] = s->MachOperGenerator(_reduceOp[rule]);
   assert( mach->_opnds[0] != NULL, "Missing result operand" );
   Node *leaf = s->_leaf;
+  NOT_PRODUCT(record_new2old(mach, leaf);)
   // Check for instruction or instruction chain rule
   if( rule >= _END_INST_CHAIN_RULE || rule < _BEGIN_INST_CHAIN_RULE ) {
     assert(C->node_arena()->contains(s->_leaf) || !has_new_node(s->_leaf),
@@ -1810,9 +1821,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
     for( uint i=0; i<mach->req(); i++ ) {
       mach->set_req(i,NULL);
     }
-#ifdef ASSERT
-    _new2old_map.map(ex->_idx, s->_leaf);
-#endif
+    NOT_PRODUCT(record_new2old(ex, s->_leaf);)
   }
 
   // PhaseChaitin::fixup_spills will sometimes generate spill code
@@ -2410,12 +2419,22 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
   }
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
+void Matcher::record_new2old(Node* newn, Node* old) {
+  _new2old_map.map(newn->_idx, old);
+  if (!_reused.test_set(old->_igv_idx)) {
+    // Reuse the Ideal-level IGV identifier so that the node can be tracked
+    // across matching. If there are multiple machine nodes expanded from the
+    // same Ideal node, only one will reuse its IGV identifier.
+    newn->_igv_idx = old->_igv_idx;
+  }
+}
+
 // machine-independent root to machine-dependent root
 void Matcher::dump_old2new_map() {
   _old2new_map.dump();
 }
-#endif
+#endif // !PRODUCT
 
 //---------------------------collect_null_checks-------------------------------
 // Find null checks in the ideal graph; write a machine-specific node for
@@ -2559,6 +2578,7 @@ const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
     case Op_VecX: // fall-through
     case Op_VecY: // fall-through
     case Op_VecZ: spill = new LoadVectorNode(NULL, mem, fp, atp, t->is_vect()); break;
+    case Op_RegVectMask: return Matcher::predicate_reg_mask();
 
     default: ShouldNotReachHere();
   }

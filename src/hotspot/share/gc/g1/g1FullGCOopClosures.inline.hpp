@@ -70,8 +70,8 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
 
   oop obj = CompressedOops::decode_not_null(heap_oop);
   assert(Universe::heap()->is_in(obj), "should be in heap");
-  if (_collector->is_in_pinned_or_closed(obj)) {
-    // We never forward objects in pinned regions so there is no need to
+  if (!_collector->is_compacting(obj)) {
+    // We never forward objects in non-compacting regions so there is no need to
     // process them further.
     return;
   }
@@ -96,7 +96,7 @@ inline void G1AdjustClosure::do_oop(oop* p)       { do_oop_work(p); }
 inline void G1AdjustClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 inline bool G1IsAliveClosure::do_object_b(oop p) {
-  return _bitmap->is_marked(p) || _collector->is_in_closed(p);
+  return _bitmap->is_marked(p) || _collector->is_skip_marking(p);
 }
 
 template<typename T>

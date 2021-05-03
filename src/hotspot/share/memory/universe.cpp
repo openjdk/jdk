@@ -23,7 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
+#include "cds/heapShared.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
@@ -34,6 +35,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBehaviours.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
@@ -43,11 +45,9 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceCounters.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -329,7 +329,7 @@ void Universe::genesis(TRAPS) {
       }
     }
 
-    vmSymbols::initialize(CHECK);
+    vmSymbols::initialize();
 
     SystemDictionary::initialize(CHECK);
 
@@ -752,8 +752,6 @@ jint universe_init() {
   // Initialize performance counters for metaspaces
   MetaspaceCounters::initialize_performance_counters();
   CompressedClassSpaceCounters::initialize_performance_counters();
-
-  AOTLoader::universe_init();
 
   // Checks 'AfterMemoryInit' constraints.
   if (!JVMFlagLimit::check_all_constraints(JVMFlagConstraintPhase::AfterMemoryInit)) {

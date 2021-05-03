@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -38,7 +39,6 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -47,7 +47,7 @@
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vm_version.hpp"
@@ -521,6 +521,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "SuspendRetryCount",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "SuspendRetryDelay",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
   { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
   { "AlwaysLockClassLoader",        JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
@@ -538,6 +540,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
+  { "AssertOnSuspendWaitFailure",   JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "TraceSuspendWaitFailures",     JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::undefined() },
 #endif
@@ -804,7 +808,7 @@ void Arguments::describe_range_error(ArgsRange errcode) {
 }
 
 static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlagOrigin origin) {
-  if (JVMFlagAccess::boolAtPut(flag, &value, origin) == JVMFlag::SUCCESS) {
+  if (JVMFlagAccess::set_bool(flag, &value, origin) == JVMFlag::SUCCESS) {
     return true;
   } else {
     return false;
@@ -819,7 +823,7 @@ static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin
     return false;
   }
 
-  if (JVMFlagAccess::doubleAtPut(flag, &v, origin) == JVMFlag::SUCCESS) {
+  if (JVMFlagAccess::set_double(flag, &v, origin) == JVMFlag::SUCCESS) {
     return true;
   }
   return false;
@@ -851,35 +855,35 @@ static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
     if (is_neg) {
       int_v = -int_v;
     }
-    return JVMFlagAccess::intAtPut(flag, &int_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_int(flag, &int_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint()) {
     uint uint_v = (uint) v;
-    return JVMFlagAccess::uintAtPut(flag, &uint_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_uint(flag, &uint_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_intx()) {
     intx_v = (intx) v;
     if (is_neg) {
       intx_v = -intx_v;
     }
-    return JVMFlagAccess::intxAtPut(flag, &intx_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_intx(flag, &intx_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uintx()) {
     uintx uintx_v = (uintx) v;
-    return JVMFlagAccess::uintxAtPut(flag, &uintx_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_uintx(flag, &uintx_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint64_t()) {
     uint64_t uint64_t_v = (uint64_t) v;
-    return JVMFlagAccess::uint64_tAtPut(flag, &uint64_t_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_uint64_t(flag, &uint64_t_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_size_t()) {
     size_t size_t_v = (size_t) v;
-    return JVMFlagAccess::size_tAtPut(flag, &size_t_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_size_t(flag, &size_t_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_double()) {
     double double_v = (double) v;
-    return JVMFlagAccess::doubleAtPut(flag, &double_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_double(flag, &double_v, origin) == JVMFlag::SUCCESS;
   } else {
     return false;
   }
 }
 
 static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlagOrigin origin) {
-  if (JVMFlagAccess::ccstrAtPut(flag, &value, origin) != JVMFlag::SUCCESS) return false;
+  if (JVMFlagAccess::set_ccstr(flag, &value, origin) != JVMFlag::SUCCESS) return false;
   // Contract:  JVMFlag always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value);
   return true;
@@ -887,7 +891,7 @@ static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlagOrigin orig
 
 static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlagOrigin origin) {
   const char* old_value = "";
-  if (JVMFlagAccess::ccstrAt(flag, &old_value) != JVMFlag::SUCCESS) return false;
+  if (JVMFlagAccess::get_ccstr(flag, &old_value) != JVMFlag::SUCCESS) return false;
   size_t old_len = old_value != NULL ? strlen(old_value) : 0;
   size_t new_len = strlen(new_value);
   const char* value;
@@ -904,7 +908,7 @@ static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlagO
     value = buf;
     free_this_too = buf;
   }
-  (void) JVMFlagAccess::ccstrAtPut(flag, &value, origin);
+  (void) JVMFlagAccess::set_ccstr(flag, &value, origin);
   // JVMFlag always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value);
   // JVMFlag made its own copy, so I must delete my own temp. buffer.
@@ -3114,30 +3118,25 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
       log_info(cds)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
     }
   }
-  if (ArchiveClassesAtExit == NULL) {
-    FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, false);
+
+  // RecordDynamicDumpInfo is not compatible with ArchiveClassesAtExit
+  if (ArchiveClassesAtExit != NULL && RecordDynamicDumpInfo) {
+    log_info(cds)("RecordDynamicDumpInfo is for jcmd only, could not set with -XX:ArchiveClassesAtExit.");
+    return JNI_ERR;
   }
+
+  if (ArchiveClassesAtExit == NULL && !RecordDynamicDumpInfo) {
+    FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, false);
+  } else {
+    FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, true);
+  }
+
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
   if (UseSharedSpaces && !DumpSharedSpaces && check_unsupported_cds_runtime_properties()) {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
-#endif
-
-#if !INCLUDE_AOT
-  UNSUPPORTED_OPTION(UseAOT);
-  UNSUPPORTED_OPTION(PrintAOT);
-  UNSUPPORTED_OPTION(UseAOTStrictLoading);
-  UNSUPPORTED_OPTION_NULL(AOTLibrary);
-
-  UNSUPPORTED_OPTION_INIT(Tier3AOTInvocationThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier3AOTMinInvocationThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier3AOTCompileThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier3AOTBackEdgeThreshold, 0);
-#ifndef PRODUCT
-  UNSUPPORTED_OPTION(PrintAOTStatistics);
-#endif
 #endif
 
 #ifndef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -3497,6 +3496,11 @@ bool Arguments::init_shared_archive_paths() {
     }
     check_unsupported_dumping_properties();
     SharedDynamicArchivePath = os::strdup_check_oom(ArchiveClassesAtExit, mtArguments);
+  } else {
+    if (SharedDynamicArchivePath != nullptr) {
+      os::free(SharedDynamicArchivePath);
+      SharedDynamicArchivePath = nullptr;
+    }
   }
   if (SharedArchiveFile == NULL) {
     SharedArchivePath = get_default_shared_archive_path();
@@ -3966,6 +3970,12 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
+
+  if (TraceDependencies && VerifyDependencies) {
+    if (!FLAG_IS_DEFAULT(TraceDependencies)) {
+      warning("TraceDependencies results may be inflated by VerifyDependencies");
+    }
+  }
 
   apply_debugger_ergo();
 

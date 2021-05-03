@@ -148,7 +148,7 @@ public class ThrowsTaglet extends BaseTaglet
                     }
                     List<? extends ThrowsTree> inheritedTags = inheritedDoc.tagList.stream()
                             .map(t -> (ThrowsTree) t)
-                            .collect(Collectors.toList());
+                            .toList();
                     declaredExceptionTags.put(inheritedTags, (ExecutableElement) inheritedDoc.holder);
                 }
             }

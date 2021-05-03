@@ -374,7 +374,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         return options.additionalStylesheets().stream()
                 .map(ssf -> DocFile.createFileForInput(this, ssf))
                 .map(file -> DocPath.create(file.getName()))
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Override

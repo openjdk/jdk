@@ -61,6 +61,7 @@ class MyLoader extends ClassLoader {
     private static boolean parallel = false;
     private Object sync = new Object();
     private Object thread_sync = new Object();
+    private static volatile boolean waiting = false;
 
     private void makeThreadWait() {
         if (!parallel) { return; }
@@ -73,6 +74,7 @@ class MyLoader extends ClassLoader {
             synchronized(sync) {
                 try {
                     ThreadPrint.println("t1 waits parallelCapable loader");
+                    waiting = true;
                     sync.wait();  // Give up lock before request to load B
                 } catch (InterruptedException e) {}
              }
@@ -88,6 +90,11 @@ class MyLoader extends ClassLoader {
     // Non-parallelCapable class loader thread will be woken up by the jvm.
     private void wakeUpThread() {
         if (isRegisteredAsParallelCapable()) {
+            while (!waiting) {
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {}
+            }
             synchronized(sync) {
                 sync.notify();
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,8 +135,11 @@ private:
 
   Node_Array _shared_nodes;
 
-  debug_only(Node_Array _old2new_map;)   // Map roots of ideal-trees to machine-roots
-  debug_only(Node_Array _new2old_map;)   // Maps machine nodes back to ideal
+#ifndef PRODUCT
+  Node_Array _old2new_map;    // Map roots of ideal-trees to machine-roots
+  Node_Array _new2old_map;    // Maps machine nodes back to ideal
+  VectorSet _reused;          // Ideal IGV identifiers reused by machine nodes
+#endif // !PRODUCT
 
   // Accessors for the inherited field PhaseTransform::_nodes:
   void   grow_new_node_array(uint idx_limit) {
@@ -319,6 +322,8 @@ public:
 
   // Some microarchitectures have mask registers used on vectors
   static const bool has_predicated_vectors(void);
+  static const RegMask* predicate_reg_mask(void);
+  static const TypeVect* predicate_reg_type(const Type* elemTy, int length);
 
   // Some uarchs have different sized float register resources
   static const int float_pressure(int default_pressure_threshold);
@@ -554,13 +559,16 @@ public:
   // Does n lead to an uncommon trap that can cause deoptimization?
   static bool branches_to_uncommon_trap(const Node *n);
 
-#ifdef ASSERT
+#ifndef PRODUCT
+  // Record mach-to-Ideal mapping, reusing the Ideal IGV identifier if possible.
+  void record_new2old(Node* newn, Node* old);
+
   void dump_old2new_map();      // machine-independent to machine-dependent
 
   Node* find_old_node(Node* new_node) {
     return _new2old_map[new_node->_idx];
   }
-#endif
+#endif // !PRODUCT
 };
 
 #endif // SHARE_OPTO_MATCHER_HPP

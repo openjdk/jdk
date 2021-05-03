@@ -53,7 +53,6 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 
 typedef JfrCheckpointManager::BufferPtr BufferPtr;

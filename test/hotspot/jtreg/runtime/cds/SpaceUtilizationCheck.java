@@ -45,7 +45,7 @@ import java.lang.Integer;
 public class SpaceUtilizationCheck {
     // For the RW/RO regions:
     // [1] Each region must have strictly less than
-    //     WhiteBox.metaspaceReserveAlignment() bytes of unused space.
+    //     WhiteBox.metaspaceSharedRegionAlignment() bytes of unused space.
     // [2] There must be no gap between two consecutive regions.
 
     public static void main(String[] args) throws Exception {
@@ -58,8 +58,8 @@ public class SpaceUtilizationCheck {
         OutputAnalyzer output = CDSTestUtils.createArchiveAndCheck(opts);
         Pattern pattern = Pattern.compile("(..)  space: *([0-9]+).* out of *([0-9]+) bytes .* at 0x([0-9a0-f]+)");
         WhiteBox wb = WhiteBox.getWhiteBox();
-        long reserve_alignment = wb.metaspaceReserveAlignment();
-        System.out.println("Metaspace::reserve_alignment() = " + reserve_alignment);
+        long reserve_alignment = wb.metaspaceSharedRegionAlignment();
+        System.out.println("MetaspaceShared::core_region_alignment() = " + reserve_alignment);
 
         // Look for output like this. The pattern will only match the first 2 regions, which is what we need to check
         //
@@ -88,7 +88,7 @@ public class SpaceUtilizationCheck {
                     }
                     if (unused > reserve_alignment) {
                         // [1] Check for unused space
-                        throw new RuntimeException("Unused space (" + unused + ") must be smaller than Metaspace::reserve_alignment() (" +
+                        throw new RuntimeException("Unused space (" + unused + ") must be smaller than MetaspaceShared::core_region_alignment() (" +
                                                    reserve_alignment + ")");
                     }
                     if (last_region >= 0 && address != last_region) {

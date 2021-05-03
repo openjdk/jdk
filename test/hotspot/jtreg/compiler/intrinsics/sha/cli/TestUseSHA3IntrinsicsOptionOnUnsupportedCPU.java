@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +27,7 @@
  * @bug 8252204
  * @summary Verify UseSHA3Intrinsics option processing on unsupported CPU.
  * @library /test/lib testcases /
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  *

@@ -3964,7 +3964,7 @@ bool MatchRule::is_base_register(FormDict &globals) const {
          strcmp(opType,"RegL")==0 ||
          strcmp(opType,"RegF")==0 ||
          strcmp(opType,"RegD")==0 ||
-         strcmp(opType,"RegVMask")==0 ||
+         strcmp(opType,"RegVectMask")==0 ||
          strcmp(opType,"VecA")==0 ||
          strcmp(opType,"VecS")==0 ||
          strcmp(opType,"VecD")==0 ||
@@ -4200,7 +4200,8 @@ bool MatchRule::is_vector() const {
     "FmaVD", "FmaVF","PopCountVI",
     // Next are not supported currently.
     "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
-    "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD"
+    "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD",
+    "VectorMaskCast"
   };
   int cnt = sizeof(vector_list)/sizeof(char*);
   if (_rChild) {

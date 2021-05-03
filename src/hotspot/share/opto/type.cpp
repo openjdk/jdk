@@ -63,6 +63,7 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ARRAY,      "array:",        false, Node::NotAMachineReg, relocInfo::none          },  // Array
 
 #if defined(PPC64)
+  { Bad,             T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask,       relocInfo::none          },  // VectorMask.
   { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, 0,                    relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL,              relocInfo::none          },  // VectorD
@@ -70,6 +71,7 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ILLEGAL,    "vectory:",      false, 0,                    relocInfo::none          },  // VectorY
   { Bad,             T_ILLEGAL,    "vectorz:",      false, 0,                    relocInfo::none          },  // VectorZ
 #elif defined(S390)
+  { Bad,             T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask,       relocInfo::none          },  // VectorMask.
   { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, 0,                    relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL,              relocInfo::none          },  // VectorD
@@ -77,6 +79,7 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ILLEGAL,    "vectory:",      false, 0,                    relocInfo::none          },  // VectorY
   { Bad,             T_ILLEGAL,    "vectorz:",      false, 0,                    relocInfo::none          },  // VectorZ
 #else // all other
+  { Bad,             T_ILLEGAL,    "vectormask:",   false, Op_RegVectMask,       relocInfo::none          },  // VectorMask.
   { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, Op_VecS,              relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_VecD,              relocInfo::none          },  // VectorD
@@ -658,6 +661,9 @@ void Type::Initialize_shared(Compile* current) {
   // get_zero_type() should not happen for T_CONFLICT
   _zero_type[T_CONFLICT]= NULL;
 
+  TypeVect::VECTMASK = (TypeVect*)(new TypeVectMask(TypeInt::BOOL, MaxVectorSize))->hashcons();
+  mreg2type[Op_RegVectMask] = TypeVect::VECTMASK;
+
   if (Matcher::supports_scalable_vector()) {
     TypeVect::VECTA = TypeVect::make(T_BYTE, Matcher::scalable_vector_reg_size(T_BYTE));
   }
@@ -987,47 +993,6 @@ const Type *Type::filter_helper(const Type *kills, bool include_speculative) con
 }
 
 //------------------------------xdual------------------------------------------
-// Compute dual right now.
-const Type::TYPES Type::dual_type[Type::lastype] = {
-  Bad,          // Bad
-  Control,      // Control
-  Bottom,       // Top
-  Bad,          // Int - handled in v-call
-  Bad,          // Long - handled in v-call
-  Half,         // Half
-  Bad,          // NarrowOop - handled in v-call
-  Bad,          // NarrowKlass - handled in v-call
-
-  Bad,          // Tuple - handled in v-call
-  Bad,          // Array - handled in v-call
-  Bad,          // VectorA - handled in v-call
-  Bad,          // VectorS - handled in v-call
-  Bad,          // VectorD - handled in v-call
-  Bad,          // VectorX - handled in v-call
-  Bad,          // VectorY - handled in v-call
-  Bad,          // VectorZ - handled in v-call
-
-  Bad,          // AnyPtr - handled in v-call
-  Bad,          // RawPtr - handled in v-call
-  Bad,          // OopPtr - handled in v-call
-  Bad,          // InstPtr - handled in v-call
-  Bad,          // AryPtr - handled in v-call
-
-  Bad,          //  MetadataPtr - handled in v-call
-  Bad,          // KlassPtr - handled in v-call
-
-  Bad,          // Function - handled in v-call
-  Abio,         // Abio
-  Return_Address,// Return_Address
-  Memory,       // Memory
-  FloatBot,     // FloatTop
-  FloatCon,     // FloatCon
-  FloatTop,     // FloatBot
-  DoubleBot,    // DoubleTop
-  DoubleCon,    // DoubleCon
-  DoubleTop,    // DoubleBot
-  Top           // Bottom
-};
 
 const Type *Type::xdual() const {
   // Note: the base() accessor asserts the sanity of _base.
@@ -2376,6 +2341,7 @@ const TypeVect *TypeVect::VECTD = NULL; //  64-bit vectors
 const TypeVect *TypeVect::VECTX = NULL; // 128-bit vectors
 const TypeVect *TypeVect::VECTY = NULL; // 256-bit vectors
 const TypeVect *TypeVect::VECTZ = NULL; // 512-bit vectors
+const TypeVect *TypeVect::VECTMASK = NULL; // predicate/mask vector
 
 //------------------------------make-------------------------------------------
 const TypeVect* TypeVect::make(const Type *elem, uint length) {
@@ -2403,6 +2369,15 @@ const TypeVect* TypeVect::make(const Type *elem, uint length) {
   return NULL;
 }
 
+const TypeVect *TypeVect::makemask(const Type* elem, uint length) {
+  if (Matcher::has_predicated_vectors()) {
+    const TypeVect* mtype = Matcher::predicate_reg_type(elem, length);
+    return (TypeVect*)(const_cast<TypeVect*>(mtype))->hashcons();
+  } else {
+    return make(elem, length);
+  }
+}
+
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeVect::xmeet( const Type *t ) const {
@@ -2417,6 +2392,13 @@ const Type *TypeVect::xmeet( const Type *t ) const {
 
   default:                      // All else is a mistake
     typerr(t);
+  case VectorMask: {
+    const TypeVectMask* v = t->is_vectmask();
+    assert(  base() == v->base(), "");
+    assert(length() == v->length(), "");
+    assert(element_basic_type() == v->element_basic_type(), "");
+    return TypeVect::makemask(_elem->xmeet(v->_elem), _length);
+  }
   case VectorA:
   case VectorS:
   case VectorD:
@@ -2484,6 +2466,8 @@ void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
     st->print("vectory["); break;
   case VectorZ:
     st->print("vectorz["); break;
+  case VectorMask:
+    st->print("vectormask["); break;
   default:
     ShouldNotReachHere();
   }
@@ -2493,6 +2477,14 @@ void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
 }
 #endif
 
+bool TypeVectMask::eq(const Type *t) const {
+  const TypeVectMask *v = t->is_vectmask();
+  return (element_type() == v->element_type()) && (length() == v->length());
+}
+
+const Type *TypeVectMask::xdual() const {
+  return new TypeVectMask(element_type()->dual(), length());
+}
 
 //=============================================================================
 // Convenience common pre-built types.

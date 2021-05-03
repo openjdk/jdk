@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,12 +209,11 @@ public class ClassFinder {
         // Temporary, until more info is available from the module system.
         boolean useCtProps;
         JavaFileManager fm = context.get(JavaFileManager.class);
-        if (fm instanceof DelegatingJavaFileManager) {
-            fm = ((DelegatingJavaFileManager) fm).getBaseFileManager();
+        if (fm instanceof DelegatingJavaFileManager delegatingJavaFileManager) {
+            fm = delegatingJavaFileManager.getBaseFileManager();
         }
-        if (fm instanceof JavacFileManager) {
-            JavacFileManager jfm = (JavacFileManager) fm;
-            useCtProps = jfm.isDefaultBootClassPath() && jfm.isSymbolFileEnabled();
+        if (fm instanceof JavacFileManager javacFileManager) {
+            useCtProps = javacFileManager.isDefaultBootClassPath() && javacFileManager.isSymbolFileEnabled();
         } else if (fm.getClass().getName().equals("com.sun.tools.sjavac.comp.SmartFileManager")) {
             useCtProps = !options.isSet("ignore.symbol.file");
         } else {
@@ -642,27 +641,26 @@ public class ClassFinder {
 
         if (verbose && verbosePath) {
             verbosePath = false; // print once per compile
-            if (fileManager instanceof StandardJavaFileManager) {
-                StandardJavaFileManager fm = (StandardJavaFileManager)fileManager;
+            if (fileManager instanceof StandardJavaFileManager standardJavaFileManager) {
                 if (haveSourcePath && wantSourceFiles) {
                     List<Path> path = List.nil();
-                    for (Path sourcePath : fm.getLocationAsPaths(SOURCE_PATH)) {
+                    for (Path sourcePath : standardJavaFileManager.getLocationAsPaths(SOURCE_PATH)) {
                         path = path.prepend(sourcePath);
                     }
                     log.printVerbose("sourcepath", path.reverse().toString());
                 } else if (wantSourceFiles) {
                     List<Path> path = List.nil();
-                    for (Path classPath : fm.getLocationAsPaths(CLASS_PATH)) {
+                    for (Path classPath : standardJavaFileManager.getLocationAsPaths(CLASS_PATH)) {
                         path = path.prepend(classPath);
                     }
                     log.printVerbose("sourcepath", path.reverse().toString());
                 }
                 if (wantClassFiles) {
                     List<Path> path = List.nil();
-                    for (Path platformPath : fm.getLocationAsPaths(PLATFORM_CLASS_PATH)) {
+                    for (Path platformPath : standardJavaFileManager.getLocationAsPaths(PLATFORM_CLASS_PATH)) {
                         path = path.prepend(platformPath);
                     }
-                    for (Path classPath : fm.getLocationAsPaths(CLASS_PATH)) {
+                    for (Path classPath : standardJavaFileManager.getLocationAsPaths(CLASS_PATH)) {
                         path = path.prepend(classPath);
                     }
                     log.printVerbose("classpath",  path.reverse().toString());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import java.nio.ByteOrder;
 import java.util.EnumSet;
 
 import jdk.vm.ci.code.Architecture;
+import jdk.vm.ci.code.CPUFeatureName;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.code.RegisterArray;
@@ -162,7 +163,7 @@ public class AArch64 extends Architecture {
      * Basic set of CPU features mirroring what is returned from the cpuid instruction. See:
      * {@code VM_Version::cpuFeatureFlags}.
      */
-    public enum CPUFeature {
+    public enum CPUFeature implements CPUFeatureName {
         FP,
         ASIMD,
         EVTSTRM,
@@ -172,8 +173,13 @@ public class AArch64 extends Architecture {
         SHA2,
         CRC32,
         LSE,
+        DCPOP,
+        SHA3,
+        SHA512,
+        SVE,
+        SVE2,
         STXR_PREFETCH,
-        A53MAC
+        A53MAC,
     }
 
     private final EnumSet<CPUFeature> features;
@@ -198,6 +204,7 @@ public class AArch64 extends Architecture {
         this.flags = flags;
     }
 
+    @Override
     public EnumSet<CPUFeature> getFeatures() {
         return features;
     }

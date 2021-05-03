@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -584,10 +584,10 @@ final class TransportContext implements ConnectionContext {
         closeNotify(useUserCanceled);
     }
 
-    // Note; HandshakeStatus.FINISHED status is retrieved in other places.
+    // Note: HandshakeStatus.FINISHED status is retrieved in other places.
     HandshakeStatus getHandshakeStatus() {
         if (!outputRecord.isEmpty()) {
-            // If no handshaking, special case to wrap alters or
+            // If not handshaking, special case to wrap alerts or
             // post-handshake messages.
             return HandshakeStatus.NEED_WRAP;
         } else if (isOutboundClosed() && isInboundClosed()) {
@@ -596,8 +596,7 @@ final class TransportContext implements ConnectionContext {
             if (!handshakeContext.delegatedActions.isEmpty()) {
                 return HandshakeStatus.NEED_TASK;
             } else if (!isInboundClosed()) {
-                if (sslContext.isDTLS() &&
-                        !inputRecord.isEmpty()) {
+                if (sslContext.isDTLS() && !inputRecord.isEmpty()) {
                     return HandshakeStatus.NEED_UNWRAP_AGAIN;
                 } else {
                     return HandshakeStatus.NEED_UNWRAP;

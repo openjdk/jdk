@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,6 +221,9 @@ public class DerValue {
      * Creates a new DerValue by specifying all its fields.
      */
     DerValue(byte tag, byte[] buffer, int start, int end, boolean allowBER) {
+        if ((tag & 0x1f) == 0x1f) {
+            throw new IllegalArgumentException("Tag number over 30 is not supported");
+        }
         this.tag = tag;
         this.buffer = buffer;
         this.start = start;
@@ -284,6 +287,22 @@ public class DerValue {
     }
 
     /**
+     * Wraps an DerOutputStream. All bytes currently written
+     * into the stream will become the content of the newly
+     * created DerValue.
+     *
+     * Attention: do not reset the DerOutputStream after this call.
+     * No array copying is made.
+     *
+     * @param tag the tag
+     * @param out the DerOutputStream
+     * @returns a new DerValue using out as its content
+     */
+    public static DerValue wrap(byte tag, DerOutputStream out) {
+        return new DerValue(tag, out.buf(), 0, out.size(), false);
+    }
+
+    /**
      * Parse an ASN.1/BER encoded datum. The entire encoding must hold exactly
      * one datum, including its tag and length.
      *
@@ -315,6 +334,9 @@ public class DerValue {
         }
         int pos = offset;
         tag = buf[pos++];
+        if ((tag & 0x1f) == 0x1f) {
+            throw new IOException("Tag number over 30 at " + offset + " is not supported");
+        }
         int lenByte = buf[pos++];
 
         int length;
@@ -388,6 +410,9 @@ public class DerValue {
     // arg to control whether DER checks are enforced.
     DerValue(InputStream in, boolean allowBER) throws IOException {
         this.tag = (byte)in.read();
+        if ((tag & 0x1f) == 0x1f) {
+            throw new IOException("Tag number over 30 is not supported");
+        }
         int length = DerInputStream.getLength(in);
         if (length == -1) { // indefinite length encoding found
             if (!allowBER) {
@@ -1063,10 +1088,15 @@ public class DerValue {
      * @return DER-encoded value, including tag and length.
      */
     public byte[] toByteArray() throws IOException {
+        data.pos = data.start; // Compatibility. At head.
+        // Minimize content duplication by writing out tag and length only
         DerOutputStream out = new DerOutputStream();
-        encode(out);
-        data.pos = data.start; // encode go last, should go back
-        return out.toByteArray();
+        out.write(tag);
+        out.putLength(end - start);
+        int headLen = out.size();
+        byte[] result = Arrays.copyOf(out.buf(), end - start + headLen);
+        System.arraycopy(buffer, start, result, headLen, end - start);
+        return result;
     }
 
     /**
@@ -1140,6 +1170,9 @@ public class DerValue {
      * @param val the tag value
      */
     public static byte createTag(byte tagClass, boolean form, byte val) {
+        if (val < 0 || val > 30) {
+            throw new IllegalArgumentException("Tag number over 30 is not supported");
+        }
         byte tag = (byte)(tagClass | val);
         if (form) {
             tag |= (byte)0x20;
@@ -1203,5 +1236,9 @@ public class DerValue {
             result.add(dis.getDerValue());
         }
         return result.toArray(new DerValue[0]);
+    }
+
+    public void clear() {
+        Arrays.fill(buffer, start, end, (byte)0);
     }
 }

@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "aot/aotLoader.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -51,7 +51,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -88,7 +87,6 @@
 #include "jfr/jfr.hpp"
 #endif
 
-LoaderConstraintTable* SystemDictionary::_loader_constraints  = NULL;
 ResolutionErrorTable*  SystemDictionary::_resolution_errors   = NULL;
 SymbolPropertyTable*   SystemDictionary::_invoke_method_table = NULL;
 ProtectionDomainCacheTable*   SystemDictionary::_pd_cache_table = NULL;
@@ -99,14 +97,18 @@ OopHandle   SystemDictionary::_java_platform_loader;
 // Default ProtectionDomainCacheSize value
 const int defaultProtectionDomainCacheSize = 1009;
 
-const int _loader_constraint_size = 107;                     // number of entries in constraint table
 const int _resolution_error_size  = 107;                     // number of entries in resolution error table
 const int _invoke_method_size     = 139;                     // number of entries in invoke method table
 
 // Hashtable holding placeholders for classes being loaded.
 const int _placeholder_table_size = 1009;
-PlaceholderTable* _placeholders   = NULL;
+static PlaceholderTable* _placeholders   = NULL;
 static PlaceholderTable*   placeholders() { return _placeholders; }
+
+// Constraints on class loaders
+const int _loader_constraint_size = 107;                     // number of entries in constraint table
+static LoaderConstraintTable*  _loader_constraints;
+static LoaderConstraintTable* constraints() { return _loader_constraints; }
 
 // ----------------------------------------------------------------------------
 // Java-level SystemLoader and PlatformLoader
@@ -1214,11 +1216,11 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     ik->restore_unshareable_info(loader_data, protection_domain, pkg_entry, CHECK_NULL);
   }
 
-  load_shared_class_misc(ik, loader_data, CHECK_NULL);
+  load_shared_class_misc(ik, loader_data);
   return ik;
 }
 
-void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, TRAPS) {
+void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data) {
   ik->print_class_load_logging(loader_data, NULL, NULL);
 
   // For boot loader, ensure that GetSystemPackage knows that a class in this
@@ -1230,21 +1232,6 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
 
   // notify a class loaded from shared object
   ClassLoadingService::notify_class_loaded(ik, true /* shared class */);
-
-  ik->set_has_passed_fingerprint_check(false);
-  if (UseAOT && ik->supers_have_passed_fingerprint_checks()) {
-    uint64_t aot_fp = AOTLoader::get_saved_fingerprint(ik);
-    uint64_t cds_fp = ik->get_stored_fingerprint();
-    if (aot_fp != 0 && aot_fp == cds_fp) {
-      // This class matches with a class saved in an AOT library
-      ik->set_has_passed_fingerprint_check(true);
-    } else {
-      if (log_is_enabled(Info, class, fingerprint)) {
-        ResourceMark rm(THREAD);
-        log_info(class, fingerprint)("%s :  expected = " PTR64_FORMAT " actual = " PTR64_FORMAT, ik->external_name(), aot_fp, cds_fp);
-      }
-    }
-  }
 }
 
 #endif // INCLUDE_CDS
@@ -2428,11 +2415,6 @@ void SystemDictionary::invoke_bootstrap_method(BootstrapInfo& bootstrap_specifie
           bootstrap_specifier.resolved_method().not_null()), "bootstrap method call failed");
 }
 
-// Protection domain cache table handling
-
-ProtectionDomainCacheEntry* SystemDictionary::cache_get(Handle protection_domain) {
-  return _pd_cache_table->get(protection_domain);
-}
 
 ClassLoaderData* SystemDictionary::class_loader_data(Handle class_loader) {
   return ClassLoaderData::class_loader_data(class_loader());
@@ -2525,15 +2507,4 @@ void SystemDictionaryDCmd::execute(DCmdSource source, TRAPS) {
   VM_DumpHashtable dumper(output(), VM_DumpHashtable::DumpSysDict,
                          _verbose.value());
   VMThread::execute(&dumper);
-}
-
-int SystemDictionaryDCmd::num_arguments() {
-  ResourceMark rm;
-  SystemDictionaryDCmd* dcmd = new SystemDictionaryDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }

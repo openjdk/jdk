@@ -26,6 +26,7 @@
  * @bug 8035968
  * @summary Verify UseSHA option processing on unsupported CPU.
  * @library /test/lib testcases /
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox

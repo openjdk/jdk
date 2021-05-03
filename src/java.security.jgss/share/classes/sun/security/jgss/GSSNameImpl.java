@@ -93,7 +93,7 @@ public class GSSNameImpl implements GSSName {
      * its internal name type and getStringNameType() output are
      * always the new value.
      */
-    final static Oid oldHostbasedServiceName;
+    static final Oid oldHostbasedServiceName;
 
     static {
         Oid tmp = null;

@@ -535,7 +535,7 @@ void PhaseConservativeCoalesce::union_helper( Node *lr1_node, Node *lr2_node, ui
 
 // Factored code from copy_copy that computes extra interferences from
 // lengthening a live range by double-coalescing.
-uint PhaseConservativeCoalesce::compute_separating_interferences(Node *dst_copy, Node *src_copy, Block *b, uint bindex, RegMask &rm, uint reg_degree, uint rm_size, uint lr1, uint lr2 ) {
+uint PhaseConservativeCoalesce::compute_separating_interferences(Node *dst_copy, Node *src_copy, Block *b, uint bindex, RegMask &rm, uint rm_size, uint reg_degree, uint lr1, uint lr2 ) {
 
   assert(!lrgs(lr1)._fat_proj, "cannot coalesce fat_proj");
   assert(!lrgs(lr2)._fat_proj, "cannot coalesce fat_proj");
