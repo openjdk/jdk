@@ -60,9 +60,9 @@ import java.util.stream.Collectors;
  * Note that even though the framework uses the Whitebox API internally, it is not required to build and enabel it in the
  * JTreg test if the test itself is not utilizing any Whitebox features directly.
  * <p>
- * To specify additional flags, use {@link #runWithFlags(String...)}, {@link #addFlags(String...)},
- * {@link #addScenarios(Scenario...)}, or {@link #runWithScenarios(Scenario...)} where the scenarios can also be used
- * to run different flag combinations (instead of specifying multiple JTreg {@code @run} entries).
+ * To specify additional flags, use {@link #runWithFlags(String...)}, {@link #addFlags(String...)}, or
+ * {@link #addScenarios(Scenario...)} where the scenarios can also be used to run different flag combinations
+ * (instead of specifying multiple JTreg {@code @run} entries).
  * <p>
  * After annotating your test code with the framework specific annotations, the framework needs to be invoked from the
  * {@code main()} method of your JTreg test. There are two ways to do so. The first way is by calling the various
@@ -201,96 +201,18 @@ public class TestFramework {
      *            Use {@code -DPreferCommandLineFlags=true} if you want to prefer the JTreg VM and  Javaoptions flags over
      *            the specified {@code flags} of this method.</li>
      *     <li><p>If you want to run your entire JTreg test with additional flags, use this method.</li>
+     *     <li><p>If you want to run your entire JTreg test with additional flags but for another test class then the one
+     *            from which this method was called from, use {@link #addFlags(String...)}, use this method.</li>
      *     <li><p>If you want to run your JTreg test with multiple flag combinations, use
-     *            {@link #runWithScenarios(Scenario...)}</li>
+     *            {@link #addScenarios(Scenario...)}</li>
      * </ul>
      *
      * @param flags VM flags to be used for the test VM.
      */
     public static void runWithFlags(String... flags) {
         StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-        runWithFlags(walker.getCallerClass(), flags);
-    }
-
-    /**
-     * Tests {@code testClass}. The test VM is called with the specified {@code flags}.
-     * <ul>
-     *     <li><p>The {@code flags} override any set VM or Javaoptions flags by JTreg by default.<p>
-     *            Use {@code -DPreferCommandLineFlags=true} if you want to prefer the JTreg VM and  Javaoptions flags over
-     *            the specified {@code flags} of this method.</li>
-     *     <li><p>If you want to run your entire JTreg test with additional flags, use this method.</li>
-     *     <li><p>If you want to run your JTreg test with multiple flag combinations, use
-     *            {@link #runWithScenarios(Scenario...)}</li>
-     * </ul>
-     *
-     * @param testClass the class to be tested by the framework.
-     * @param flags VM flags to be used for the test VM.
-     *
-     * @see #runWithFlags(String...)
-     */
-    public static void runWithFlags(Class<?> testClass, String... flags) {
-        TestFramework framework = new TestFramework(testClass);
+        TestFramework framework = new TestFramework(walker.getCallerClass());
         framework.addFlags(flags);
-        framework.start();
-    }
-
-    /**
-     * Tests {@code testClass} which uses {@code helperClasses} that can specify additional compile command annotations
-     * ({@link ForceCompile @ForceCompile}, {@link DontCompile @DontCompile}, {@link ForceInline @ForceInline},
-     * {@link DontInline @DontInline}) to be applied while testing {@code testClass} (also see description of
-     * {@link TestFramework}).
-     *
-     * <p>
-     * If a class is used by the test class that does not specify any compile command annotations, you do not
-     * need to include it in {@code helperClasses}. If no helper class specifies any compile commands, consider
-     * using {@link #run()} or {@link #run(Class)}.
-     *
-     * @param testClass the class to be tested by the framework.
-     * @param helperClasses helper classes containing compile command annotations ({@link ForceCompile},
-     *                      {@link DontCompile}, {@link ForceInline}, {@link DontInline}) to be applied
-     *                      while testing {@code testClass} (also see description of {@link TestFramework}).
-     */
-    public static void runWithHelperClasses(Class<?> testClass, Class<?>... helperClasses) {
-        TestFramework framework = new TestFramework(testClass);
-        framework.addHelperClasses(helperClasses);
-        framework.start();
-    }
-
-    /**
-     * Tests the class from which this method was invoked from. A test VM is called for each scenario in {@code scenarios}
-     * by using the specified flags in the scenario.
-     * <ul>
-     *     <li><p>If there is only one scenario, consider using {@link #runWithFlags(String...)}.</li>
-     *     <li><p>The scenario flags override any VM or Javaoptions set by JTreg by default.<p>
-     *            Use {@code -DPreferCommandLineFlags=true} if you want to prefer the Java and VM options over the
-     *            scenario flags.</li>
-     * </ul>
-     *
-     * @param scenarios scenarios which specify specific flags for the test VM.
-     */
-    public static void runWithScenarios(Scenario... scenarios) {
-        StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-        runWithScenarios(walker.getCallerClass(), scenarios);
-    }
-
-    /**
-     * Tests {@code testClass} A test VM is called for each scenario in {@code scenarios} by using the specified flags
-     * in the scenario.
-     * <ul>
-     *     <li><p>If there is only one scenario, consider using {@link #runWithFlags(String...)}.</li>
-     *     <li><p>The scenario flags override any VM or Javaoptions set by JTreg by default.<p>
-     *            Use {@code -DPreferCommandLineFlags=true} if you want to prefer the Java and VM options over the
-     *            scenario flags.</li>
-     * </ul>
-     *
-     * @param testClass the class to be tested by the framework.
-     * @param scenarios scenarios which specify specific flags for the test VM.
-     *
-     * @see #runWithScenarios(Scenario...)
-     */
-    public static void runWithScenarios(Class<?> testClass, Scenario... scenarios) {
-        TestFramework framework = new TestFramework(testClass);
-        framework.addScenarios(scenarios);
         framework.start();
     }
 
@@ -699,7 +621,6 @@ public class TestFramework {
             return;
         }
         shouldVerifyIR = irVerificationPossible;
-        this.scenario = scenario;
         try {
             // Use TestFramework flags and scenario flags for new VMs.
             List<String> additionalFlags = new ArrayList<>();
@@ -716,6 +637,7 @@ public class TestFramework {
                     "" : " - [" + String.join(", ", additionalFlags) + "]";
 
             if (shouldVerifyIR) {
+                // Only need to use flag VM if an IR verification is possibly done.
                 System.out.println("Run Flag VM:");
                 FlagVMProcess flagVMProcess = new FlagVMProcess(testClass, additionalFlags);
                 shouldVerifyIR = flagVMProcess.shouldVerifyIR();

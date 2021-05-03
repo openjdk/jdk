@@ -50,7 +50,7 @@ public class TestDScenarios {
                     Scenario s2 = new Scenario(5);
                     Scenario s3 = new Scenario(10);
                     Scenario bad = new Scenario(0, "-Flagdoesnotexist"); // not executed
-                    TestFramework.runWithScenarios(bad, s1, s2, s3);
+                    new TestFramework().addScenarios(bad, s1, s2, s3).start();
                 }
                 case "test2" -> {
                     try {

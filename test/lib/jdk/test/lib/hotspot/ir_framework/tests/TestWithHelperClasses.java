@@ -36,9 +36,9 @@ import jdk.test.lib.Asserts;
 public class TestWithHelperClasses {
 
     public static void main(String[] args) {
-        TestFramework.runWithHelperClasses(TestWithHelperClasses.class, Helper1.class, Helper2.class);
+        new TestFramework().addHelperClasses(Helper1.class, Helper2.class).start();
         try {
-            TestFramework.runWithHelperClasses(TestWithHelperClasses.class, Helper1.class);
+            new TestFramework().addHelperClasses(Helper1.class).start();
             shouldNotReach();
         } catch (TestVMException e) {
             Asserts.assertFalse(e.getExceptionInfo().contains("public static void jdk.test.lib.hotspot.ir_framework.tests.Helper1.foo() should have been C2 compiled"));
@@ -50,7 +50,7 @@ public class TestWithHelperClasses {
         }
 
         try {
-            TestFramework.runWithHelperClasses(BadHelperClass.class, BadHelper.class);
+            new TestFramework(BadHelperClass.class).addHelperClasses(BadHelper.class).start();
             shouldNotReach();
         } catch (TestFormatException e) {
             Asserts.assertTrue(e.getMessage().contains("Cannot use @Test annotation in helper class"));
@@ -64,7 +64,7 @@ public class TestWithHelperClasses {
         }
 
         try {
-            TestFramework.runWithHelperClasses(TestAsHelper.class, TestAsHelper.class);
+            new TestFramework(TestAsHelper.class).addHelperClasses(TestAsHelper.class).start();
             shouldNotReach();
         } catch (TestFormatException e) {
             Asserts.assertTrue(e.getMessage().contains("Cannot specify test class jdk.test.lib.hotspot.ir_framework." +
@@ -72,7 +72,7 @@ public class TestWithHelperClasses {
         }
 
         try {
-            TestFramework.runWithHelperClasses(TestWithHelperClasses.class, NestedHelper.class);
+            new TestFramework().addHelperClasses(NestedHelper.class).start();
             shouldNotReach();
         } catch (TestFormatException e) {
             Asserts.assertTrue(e.getMessage().contains("Nested class"));

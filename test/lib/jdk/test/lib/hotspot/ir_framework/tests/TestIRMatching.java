@@ -250,12 +250,12 @@ public class TestIRMatching {
     }
 
     private static void runWithArguments(Class<?> clazz, String... args) {
-        TestFramework.runWithFlags(clazz, args);
+        new TestFramework(clazz).addFlags(args).start();
     }
 
     private static void runCheck(String[] args , Constraint... constraints) {
         try {
-            TestFramework.runWithFlags(constraints[0].getKlass(), args); // All constraints have the same class.
+            new TestFramework(constraints[0].getKlass()).addFlags(args).start(); // All constraints have the same class.
             shouldNotReach();
         } catch (IRViolationException e) {
             checkConstraints(e, constraints);
@@ -287,7 +287,7 @@ public class TestIRMatching {
     // Single constraint
     private static void runFailOnTestsArgs(Constraint constraint, String... args) {
         try {
-            TestFramework.runWithFlags(constraint.getKlass(), args); // All constraints have the same class.
+            new TestFramework(constraint.getKlass()).addFlags(args).start(); // All constraints have the same class.
             shouldNotReach();
         } catch (IRViolationException e) {
             constraint.checkConstraint(e);

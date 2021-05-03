@@ -42,27 +42,26 @@ public class TestScenarios {
         Scenario s3 = new Scenario(3, "-XX:SuspendRetryCount=53");
         Scenario s3dup = new Scenario(3, "-XX:SuspendRetryCount=53");
         try {
-            TestFramework.runWithScenarios(sDefault, s1, s2, s3);
+            new TestFramework().addScenarios(sDefault, s1, s2, s3).start();
             Asserts.fail("Should not reach");
         } catch (TestRunException e) {
             Asserts.assertTrue(e.getMessage().contains("The following scenarios have failed: #0, #1, #3"), e.getMessage());
         }
         try {
-            TestFramework.runWithScenarios(s1, s2, s3);
+            new TestFramework().addScenarios(s1, s2, s3).start();
             Asserts.fail("Should not reach");
         } catch (TestRunException e) {
             Asserts.assertTrue(e.getMessage().contains("The following scenarios have failed: #1, #3"), e.getMessage());
         }
-
-        TestFramework.runWithScenarios(ScenarioTest.class, s1, s2, s3);
+        new TestFramework(ScenarioTest.class).addScenarios(s1, s2, s3).start();
         try {
-            TestFramework.runWithScenarios(s1, s3dup, s2, s3);
+            new TestFramework().addScenarios(s1, s3dup, s2, s3).start();
             Asserts.fail("Should not reach");
         } catch (RuntimeException e) {
             Asserts.assertTrue(e.getMessage().contains("Cannot define two scenarios with the same index 3"), e.getMessage());
         }
         try {
-            TestFramework.runWithScenarios(MyExceptionTest.class, s1, s2, s3);
+            new TestFramework(MyExceptionTest.class).addScenarios(s1, s2, s3).start();
             Asserts.fail("Should not reach");
         } catch (TestRunException e) {
             Asserts.assertTrue(s1.getTestVMOutput().contains("Caused by: jdk.test.lib.hotspot.ir_framework.tests.MyScenarioException"));

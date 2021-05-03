@@ -66,7 +66,7 @@ public class TestBadFormat {
             if (helpers == null) {
                 TestFramework.run(clazz);
             } else {
-                TestFramework.runWithHelperClasses(clazz, helpers);
+                new TestFramework(clazz).addHelperClasses(helpers).start();
             }
         } catch (Exception e) {
             if (!(e instanceof TestFormatException)) {
