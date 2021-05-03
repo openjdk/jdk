@@ -52,10 +52,10 @@ public class TestControls {
     public int iFld;
 
     public static void main(String[] args) throws Exception {
-        Method runTestsOnSameVM = TestFrameworkExecution.class.getDeclaredMethod("runTestsOnSameVM", Class.class);
+        Method runTestsOnSameVM = TestVM.class.getDeclaredMethod("runTestsOnSameVM", Class.class);
         runTestsOnSameVM.setAccessible(true);
         runTestsOnSameVM.invoke(null, new Object[]{ null });
-        final int defaultIterations = TestFrameworkExecution.WARMUP_ITERATIONS + 1;
+        final int defaultIterations = TestVM.WARMUP_ITERATIONS + 1;
         Asserts.assertEQ(executed[0], 1001);
         Asserts.assertEQ(executed[1], 101);
         Asserts.assertEQ(executed[2], 10000);

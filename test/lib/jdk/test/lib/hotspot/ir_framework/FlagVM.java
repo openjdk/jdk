@@ -37,7 +37,7 @@ import java.util.Arrays;
  * Whitebox API to determine the necessary additional flags to run the test VM (e.g. to do IR matching). It returns
  * the flags over the dedicated TestFramework socket.
  */
-class TestFrameworkPrepareFlags {
+class FlagVM {
     private static final WhiteBox WHITE_BOX;
     static final String TEST_VM_FLAGS_FILE_PREFIX = "test-vm-flags-pid-";
     static final String TEST_VM_FLAGS_FILE_POSTFIX = ".log";
@@ -80,7 +80,7 @@ class TestFrameworkPrepareFlags {
     public static void main(String[] args) {
         String testClassName = args[0];
         if (VERBOSE) {
-            System.out.println("TestFrameworkPrepareFlags main() called. Prepare test VM flags to run class " + testClassName);
+            System.out.println("FlagVM main() called. Prepare test VM flags to run class " + testClassName);
         }
         Class<?> testClass;
         try {

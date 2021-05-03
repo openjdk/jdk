@@ -32,9 +32,6 @@ import java.io.StringWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -43,7 +40,7 @@ import java.util.stream.Stream;
  * the heart of the framework and is responsible for executing all the specified tests in the test class. It uses the
  * Whitebox API and reflection to achieve this task.
  */
-public class TestFrameworkExecution {
+public class TestVM {
     private static final WhiteBox WHITE_BOX;
 
     static {
@@ -56,7 +53,7 @@ public class TestFrameworkExecution {
                                   TestFramework in main() of your test? Make sure to
                                   only call setup/run methods and no checks or
                                   assertions from main() of your test!
-                                - Are you rerunning the test VM (TestFrameworkExecution)
+                                - Are you rerunning the test VM (TestVM class)
                                   directly after a JTreg run? Make sure to start it
                                   from within JTwork/scratch and with the flag
                                   -DReproduce=true!
@@ -104,7 +101,7 @@ public class TestFrameworkExecution {
     private final Class<?> testClass;
     private final Map<Executable, CompLevel> forceCompileMap = new HashMap<>();
 
-    private TestFrameworkExecution(Class<?> testClass) {
+    private TestVM(Class<?> testClass) {
         TestRun.check(testClass != null, "Test class cannot be null");
         this.testClass = testClass;
         this.testList = createTestFilterList(TESTLIST, testClass);
@@ -146,10 +143,10 @@ public class TestFrameworkExecution {
     public static void main(String[] args) {
         try {
             String testClassName = args[0];
-            System.out.println("Framework main(), about to run tests in class " + testClassName);
+            System.out.println("TestVM main() called - about to run tests in class " + testClassName);
             Class<?> testClass = getClassObject(testClassName, "test");
 
-            TestFrameworkExecution framework = new TestFrameworkExecution(testClass);
+            TestVM framework = new TestVM(testClass);
             framework.addHelperClasses(args);
             framework.start();
         } finally {
@@ -226,7 +223,7 @@ public class TestFrameworkExecution {
             StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
             testClass = walker.getCallerClass();
         }
-        TestFrameworkExecution framework = new TestFrameworkExecution(testClass);
+        TestVM framework = new TestVM(testClass);
         framework.start();
     }
 
@@ -470,7 +467,7 @@ public class TestFrameworkExecution {
     }
 
     static void enqueueForCompilation(Executable ex, CompLevel requestedCompLevel) {
-        if (TestFrameworkExecution.VERBOSE) {
+        if (TestVM.VERBOSE) {
             System.out.println("enqueueForCompilation " + ex + ", level = " + requestedCompLevel);
         }
         CompLevel compLevel = restrictCompLevel(requestedCompLevel);
@@ -751,7 +748,7 @@ public class TestFrameworkExecution {
                 return;
             }
             // Retry again if not yet compiled.
-            forceCompileMap.forEach(TestFrameworkExecution::enqueueForCompilation);
+            forceCompileMap.forEach(TestVM::enqueueForCompilation);
             elapsed = System.currentTimeMillis() - started;
         } while (elapsed < 5000);
         StringBuilder builder = new StringBuilder();

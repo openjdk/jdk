@@ -107,7 +107,7 @@ abstract public class AbstractInfo {
      *         {@code false} otherwise (run with {@code -XX:TieredStopAtLevel={1,2,3}, -XX:-UseCompiler}).
      */
     public boolean isC2CompilationEnabled() {
-        return TestFrameworkExecution.USE_COMPILER && !TestFrameworkExecution.TEST_C1;
+        return TestVM.USE_COMPILER && !TestVM.TEST_C1;
     }
 
     /**

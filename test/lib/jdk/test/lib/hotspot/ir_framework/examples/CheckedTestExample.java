@@ -35,7 +35,7 @@ import jdk.test.lib.hotspot.ir_framework.*;
 /**
  * If there is no non-default warm-up specified, the Test Framework will do the following:
  * <ol>
- *     <li><p>Invoke @Test method {@link TestFrameworkExecution#WARMUP_ITERATIONS} many times.</li>
+ *     <li><p>Invoke @Test method {@link TestVM#WARMUP_ITERATIONS} many times.</li>
  *     <li><p>By default, after each invocation, the @Check method of the @Test method is invoked. This can be disabled
  *            by using {@link CheckAt#COMPILED}</li>
  *     <li><p>After the warm-up, the @Test method is compiled.</li>
@@ -47,7 +47,7 @@ import jdk.test.lib.hotspot.ir_framework.*;
  * <ul>
  *     <li><p>At @Test method:</li>
  *     <ul>
- *         <li><p>@Warmup: Change warm-up iterations of test (defined by default by TestFrameworkExecution.WARMUP_ITERATIONS)</li>
+ *         <li><p>@Warmup: Change warm-up iterations of test (defined by default by TestVM.WARMUP_ITERATIONS)</li>
  *         <li><p>@Arguments: If a @Test method specifies arguments, you need to provide arguments by using @Arguments
  *                            such that the framework knows how to call the method. If you need more complex values, use a
  *                            custom run test with @Run.</li>

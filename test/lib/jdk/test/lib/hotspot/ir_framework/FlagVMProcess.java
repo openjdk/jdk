@@ -71,7 +71,7 @@ class FlagVMProcess {
         TestFramework.check(matcher.find(), "Invalid flag encoding emitted by flag VM");
         // Maybe we run with flags that make IR verification impossible
         shouldVerifyIR = Boolean.parseBoolean(matcher.group(2));
-        testVMFlags.addAll(Arrays.asList(matcher.group(1).split(TestFrameworkPrepareFlags.TEST_VM_FLAGS_DELIMITER)));
+        testVMFlags.addAll(Arrays.asList(matcher.group(1).split(FlagVM.TEST_VM_FLAGS_DELIMITER)));
     }
 
     private String readFlagsFromFile() {
@@ -100,7 +100,7 @@ class FlagVMProcess {
         cmds.add("-XX:+WhiteBoxAPI");
         // TestFramework and scenario flags might have an influence on the later used test VM flags. Add them as well.
         cmds.addAll(additionalFlags);
-        cmds.add(TestFrameworkPrepareFlags.class.getCanonicalName());
+        cmds.add(FlagVM.class.getCanonicalName());
         cmds.add(testClass.getCanonicalName());
     }
 
@@ -111,8 +111,8 @@ class FlagVMProcess {
         } catch (Exception e) {
             throw new TestRunException("Failed to execute TestFramework flag VM", e);
         }
-        testVMFlagsFile = TestFrameworkPrepareFlags.TEST_VM_FLAGS_FILE_PREFIX + oa.pid()
-                          + TestFrameworkPrepareFlags.TEST_VM_FLAGS_FILE_POSTFIX;
+        testVMFlagsFile = FlagVM.TEST_VM_FLAGS_FILE_PREFIX + oa.pid()
+                          + FlagVM.TEST_VM_FLAGS_FILE_POSTFIX;
         checkFlagVMExitCode();
     }
 

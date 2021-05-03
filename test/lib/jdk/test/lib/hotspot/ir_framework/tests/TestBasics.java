@@ -52,7 +52,7 @@ public class TestBasics {
     public static void main(String[] args) throws Exception {
         // Run on same VM to make this test easier as we are not interested in any output processing.
         Class<?> c = TestFramework.class; // Enable JTreg test to compile TestFramework
-        Method runTestsOnSameVM = TestFrameworkExecution.class.getDeclaredMethod("runTestsOnSameVM", Class.class);
+        Method runTestsOnSameVM = TestVM.class.getDeclaredMethod("runTestsOnSameVM", Class.class);
         runTestsOnSameVM.setAccessible(true);
         runTestsOnSameVM.invoke(null, new Object[]{ null });
 
@@ -61,10 +61,10 @@ public class TestBasics {
         }
         for (int i = 0; i < executed.length; i++) {
             int value = executed[i];
-            if (value != TestFrameworkExecution.WARMUP_ITERATIONS + 1) {
+            if (value != TestVM.WARMUP_ITERATIONS + 1) {
                 // Warmups + 1 C2 compiled invocation
                 throw new RuntimeException("Test " + i + "  was executed " + value + " times instead stead of "
-                        + (TestFrameworkExecution.WARMUP_ITERATIONS + 1) + " times." );
+                                           + (TestVM.WARMUP_ITERATIONS + 1) + " times." );
             }
         }
 
@@ -1029,7 +1029,7 @@ public class TestBasics {
 
     @Run(test = "testRunOnce2", mode = RunMode.STANDALONE)
     public void runTestRunOnce2(RunInfo info) {
-        for (int i = 0; i < TestFrameworkExecution.WARMUP_ITERATIONS + 1; i++) {
+        for (int i = 0; i < TestVM.WARMUP_ITERATIONS + 1; i++) {
             testRunOnce2();
         }
     }
@@ -1073,7 +1073,7 @@ public class TestBasics {
 
     @Run(test = {"testRunMultiple3", "testRunMultiple4", "testRunMultipleNotExecuted2"}, mode = RunMode.STANDALONE)
     public void runTestRunMultipl2(RunInfo info) {
-        for (int i = 0; i < TestFrameworkExecution.WARMUP_ITERATIONS + 1; i++) {
+        for (int i = 0; i < TestVM.WARMUP_ITERATIONS + 1; i++) {
             testRunMultiple3();
             testRunMultiple4();
         }

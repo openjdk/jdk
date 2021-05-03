@@ -108,7 +108,7 @@ class TestVMProcess {
             cmds.add("-DWarmup=" + defaultWarmup);
         }
 
-        cmds.add(TestFrameworkExecution.class.getName());
+        cmds.add(TestVM.class.getName());
         cmds.add(testClass.getName());
         if (helperClasses != null) {
             helperClasses.forEach(c -> cmds.add(c.getName()));
@@ -135,7 +135,7 @@ class TestVMProcess {
     private void start() {
         ProcessBuilder process = ProcessTools.createJavaProcessBuilder(cmds);
         try {
-            // Calls 'main' of TestFrameworkExecution to run all specified tests with commands 'cmds'.
+            // Calls 'main' of TestVM to run all specified tests with commands 'cmds'.
             // Use executeProcess instead of executeTestJvm as we have already added the JTreg VM and
             // Java options in prepareTestVMFlags().
             oa = ProcessTools.executeProcess(process);

@@ -42,15 +42,15 @@ public class TestCompLevels {
     static int[] testExecuted = new int[5];
 
     public static void main(String[] args) throws Exception {
-        Method runTestsOnSameVM = TestFrameworkExecution.class.getDeclaredMethod("runTestsOnSameVM", Class.class);
+        Method runTestsOnSameVM = TestVM.class.getDeclaredMethod("runTestsOnSameVM", Class.class);
         runTestsOnSameVM.setAccessible(true);
         runTestsOnSameVM.invoke(null, new Object[]{null});
         for (int i = 0; i < testExecuted.length; i++) {
             int value = testExecuted[i];
-            if (value != TestFrameworkExecution.WARMUP_ITERATIONS + 1) {
+            if (value != TestVM.WARMUP_ITERATIONS + 1) {
                 // Warmups + 1 compiled invocation
                 throw new RuntimeException("Test " + i + "  was executed " + value + " times stead of "
-                                                   + TestFrameworkExecution.WARMUP_ITERATIONS + 1 + " times." );
+                                           + TestVM.WARMUP_ITERATIONS + 1 + " times." );
             }
         }
         TestFramework framework = new TestFramework(TestNoTiered.class);

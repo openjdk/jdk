@@ -152,7 +152,7 @@ public enum CompLevel {
             // No exclusion
             return this;
         }
-        Compiler compiler = TestFrameworkExecution.excludeRandomly(ex);
+        Compiler compiler = TestVM.excludeRandomly(ex);
         return switch (compiler) {
             case ANY -> SKIP;
             case C1 -> isC1() ? SKIP : this;

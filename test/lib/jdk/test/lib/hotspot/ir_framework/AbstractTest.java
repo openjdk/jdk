@@ -123,7 +123,7 @@ abstract class AbstractTest {
             System.out.println("Compile method " + testMethod + " after warm-up...");
         }
 
-        final boolean maybeCodeBufferOverflow = (TestFrameworkExecution.TEST_C1 && VERIFY_OOPS);
+        final boolean maybeCodeBufferOverflow = (TestVM.TEST_C1 && VERIFY_OOPS);
         final long started = System.currentTimeMillis();
         long elapsed = 0;
         enqueueMethodForCompilation(test);
@@ -131,7 +131,7 @@ abstract class AbstractTest {
         do {
             if (!WHITE_BOX.isMethodQueuedForCompilation(testMethod)) {
                 if (elapsed > 0) {
-                    if (TestFrameworkExecution.VERBOSE) {
+                    if (TestVM.VERBOSE) {
                         System.out.println(testMethod + " is not in queue anymore due to compiling it simultaneously on " +
                                            "a different level. Enqueue again.");
                     }
@@ -157,7 +157,7 @@ abstract class AbstractTest {
     }
 
     private void enqueueMethodForCompilation(DeclaredTest test) {
-        TestFrameworkExecution.enqueueForCompilation(test.getTestMethod(), test.getCompLevel());
+        TestVM.enqueueForCompilation(test.getTestMethod(), test.getCompLevel());
     }
 
     protected void checkCompilationLevel(DeclaredTest test) {
@@ -168,7 +168,7 @@ abstract class AbstractTest {
 
     final protected void waitForCompilation(DeclaredTest test) {
         final Method testMethod = test.getTestMethod();
-        final boolean maybeCodeBufferOverflow = (TestFrameworkExecution.TEST_C1 && VERIFY_OOPS);
+        final boolean maybeCodeBufferOverflow = (TestVM.TEST_C1 && VERIFY_OOPS);
         final long started = System.currentTimeMillis();
         boolean stateCleared = false;
         long elapsed;
@@ -184,10 +184,10 @@ abstract class AbstractTest {
             }
 
             boolean isCompiled = WHITE_BOX.isMethodCompiled(testMethod, false);
-            if (TestFrameworkExecution.VERBOSE) {
+            if (TestVM.VERBOSE) {
                 System.out.println("Is " + testMethod + " compiled? " + isCompiled);
             }
-            if (isCompiled || TestFrameworkExecution.XCOMP || TestFrameworkExecution.EXCLUDE_RANDOM) {
+            if (isCompiled || TestVM.XCOMP || TestVM.EXCLUDE_RANDOM) {
                 // Don't wait for compilation if -Xcomp is enabled or if we are randomly excluding methods from compilation.
                 return;
             }

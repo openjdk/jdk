@@ -35,7 +35,7 @@ import jdk.test.lib.hotspot.ir_framework.*;
 /**
  * If there is no warm-up specified, the Test Framework will do the following:
  * <ol>
- *     <li><p>Invoke @Run method {#link TestFrameworkExecution#WARMUP_ITERATIONS} many times. Note that the @Run method
+ *     <li><p>Invoke @Run method {@link TestVM#WARMUP_ITERATIONS} many times. Note that the @Run method
  *            is responsible to invoke the @Test methods to warm it up properly. This is not done by the framework. Not
  *            invoking a @Test method will result in an -Xcomp like compilation of the method as there is no profile
  *            information for it. The @Run method can do any arbitrary argument setup and return value verification and
@@ -57,7 +57,7 @@ import jdk.test.lib.hotspot.ir_framework.*;
  *     <li><p>At @Run method:</li>
  *     <ul>
  *         <li><p>@Warmup: Change warm-up iterations of @Run method (defined by default by
- *                         TestFrameworkExecution.WARMUP_ITERATIONS)</li>
+ *                         TestVM.WARMUP_ITERATIONS)</li>
  *         <li><p>{@link Run#test}: Specify any number of @Test methods. They cannot be shared with other @Check or @Run
  *                                  methods.</li>
  *         <li><p>{@link Run#mode}: Choose between normal invocation as described above or {@link RunMode#STANDALONE}.

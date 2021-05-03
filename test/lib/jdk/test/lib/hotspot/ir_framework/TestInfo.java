@@ -68,7 +68,7 @@ public class TestInfo extends AbstractInfo {
      *         {@code false} otherwise.
      */
     public boolean isC1Compiled() {
-        return TestFrameworkExecution.isC1Compiled(testMethod);
+        return TestVM.isC1Compiled(testMethod);
     }
 
     /**
@@ -78,7 +78,7 @@ public class TestInfo extends AbstractInfo {
      *         {@code false} otherwise.
      */
     public boolean isC2Compiled() {
-        return TestFrameworkExecution.isC2Compiled(testMethod);
+        return TestVM.isC2Compiled(testMethod);
     }
 
     /**
@@ -89,6 +89,6 @@ public class TestInfo extends AbstractInfo {
      *         {@code false} otherwise.
      */
     public boolean isCompiledAtLevel(CompLevel compLevel) {
-        return TestFrameworkExecution.isCompiledAtLevel(testMethod, compLevel);
+        return TestVM.isCompiledAtLevel(testMethod, compLevel);
     }
 }

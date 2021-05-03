@@ -135,7 +135,7 @@ class TestFrameworkSocket implements AutoCloseable {
             // driver VM.
             String failMsg = System.lineSeparator() + System.lineSeparator() + """
                              ###########################################################
-                              Did you directly run the test VM (TestFrameworkExecution)
+                              Did you directly run the test VM (TestVM class)
                               to reproduce a bug?
                               => Append the flag -DReproduce=true and try again!
                              ###########################################################
@@ -158,7 +158,7 @@ class TestFrameworkSocket implements AutoCloseable {
                 clientWriter.close();
                 clientSocket.close();
             } catch (IOException e) {
-                throw new RuntimeException("Could not close TestFrameworkExecution socket", e);
+                throw new RuntimeException("Could not close TestVM socket", e);
             }
         }
     }

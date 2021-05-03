@@ -400,7 +400,7 @@ public class TestFramework {
 
     /**
      * Set a new default warm-up (overriding the framework default of 2000 at
-     * {@link TestFrameworkExecution#WARMUP_ITERATIONS}) to be applied for all tests that do not specify an explicit
+     * {@link TestVM#WARMUP_ITERATIONS}) to be applied for all tests that do not specify an explicit
      * warm-up with {@link Warmup @Warmup}.
      *
      * @param defaultWarmup a new non-negative default warm-up.
@@ -436,7 +436,7 @@ public class TestFramework {
      * @throws TestRunException if compilation level is {@link CompLevel#SKIP} or {@link CompLevel#WAIT_FOR_COMPILATION}.
      */
     public static void compile(Method m, CompLevel compLevel) {
-        TestFrameworkExecution.compile(m, compLevel);
+        TestVM.compile(m, compLevel);
     }
 
     /**
@@ -445,7 +445,7 @@ public class TestFramework {
      * @param m the method to be deoptimized.
      */
     public static void deoptimize(Method m) {
-        TestFrameworkExecution.deoptimize(m);
+        TestVM.deoptimize(m);
     }
 
     /**
@@ -456,7 +456,7 @@ public class TestFramework {
      *         {@code false} otherwise.
      */
     public static boolean isCompiled(Method m) {
-        return TestFrameworkExecution.isCompiled(m);
+        return TestVM.isCompiled(m);
     }
 
     /**
@@ -467,7 +467,7 @@ public class TestFramework {
      *         {@code false} otherwise.
      */
     public static boolean isC1Compiled(Method m) {
-        return TestFrameworkExecution.isC1Compiled(m);
+        return TestVM.isC1Compiled(m);
     }
 
     /**
@@ -478,7 +478,7 @@ public class TestFramework {
      *         {@code false} otherwise.
      */
     public static boolean isC2Compiled(Method m) {
-        return TestFrameworkExecution.isC2Compiled(m);
+        return TestVM.isC2Compiled(m);
     }
 
     /**
@@ -490,7 +490,7 @@ public class TestFramework {
      *         {@code false} otherwise.
      */
     public static boolean isCompiledAtLevel(Method m, CompLevel compLevel) {
-        return TestFrameworkExecution.isCompiledAtLevel(m, compLevel);
+        return TestVM.isCompiledAtLevel(m, compLevel);
     }
 
     /**
@@ -500,7 +500,7 @@ public class TestFramework {
      * @throws TestRunException if {@code m} is not compiled at any level.
      */
     public static void assertCompiled(Method m) {
-        TestFrameworkExecution.assertCompiled(m);
+        TestVM.assertCompiled(m);
     }
 
     /**
@@ -510,7 +510,7 @@ public class TestFramework {
      * @throws TestRunException if {@code m} is compiled at any level.
      */
     public static void assertNotCompiled(Method m) {
-        TestFrameworkExecution.assertNotCompiled(m);
+        TestVM.assertNotCompiled(m);
     }
 
     /**
@@ -520,7 +520,7 @@ public class TestFramework {
      * @throws TestRunException if {@code m} is not compiled with C1.
      */
     public static void assertCompiledByC1(Method m) {
-        TestFrameworkExecution.assertCompiledByC1(m);
+        TestVM.assertCompiledByC1(m);
     }
 
     /**
@@ -530,7 +530,7 @@ public class TestFramework {
      * @throws TestRunException if {@code m} is not compiled with C2.
      */
     public static void assertCompiledByC2(Method m) {
-        TestFrameworkExecution.assertCompiledByC2(m);
+        TestVM.assertCompiledByC2(m);
     }
 
     /**
@@ -541,7 +541,7 @@ public class TestFramework {
      * @throws TestRunException if {@code m} is not compiled at {@code compLevel}.
      */
     public static void assertCompiledAtLevel(Method m, CompLevel compLevel) {
-        TestFrameworkExecution.assertCompiledAtLevel(m, compLevel);
+        TestVM.assertCompiledAtLevel(m, compLevel);
     }
 
     /**
@@ -551,7 +551,7 @@ public class TestFramework {
      * @throws TestRunException if {@code m} is was not deoptimized after being C1 compiled.
      */
     public static void assertDeoptimizedByC1(Method m) {
-        TestFrameworkExecution.assertDeoptimizedByC1(m);
+        TestVM.assertDeoptimizedByC1(m);
     }
 
     /**
@@ -561,7 +561,7 @@ public class TestFramework {
      * @throws TestRunException if {@code m} is was not deoptimized after being C2 compiled.
      */
     public static void assertDeoptimizedByC2(Method m) {
-        TestFrameworkExecution.assertDeoptimizedByC2(m);
+        TestVM.assertDeoptimizedByC2(m);
     }
 
     /**
