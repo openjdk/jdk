@@ -271,8 +271,8 @@ public class TestIRMatching {
         }
     }
 
-    private static void checkConstraints(RuntimeException e, Constraint[] constraints) {
-        String message = e.getMessage();
+    private static void checkConstraints(IRViolationException e, Constraint[] constraints) {
+        String message = e.getExceptionInfo();
         try {
             for (Constraint constraint : constraints) {
                 constraint.checkConstraint(e);
@@ -1385,8 +1385,8 @@ abstract class Constraint {
         return "Method " + methodName + ", Rule " + ruleIdx;
     }
 
-    public void checkConstraint(RuntimeException e) {
-        String message = e.getMessage();
+    public void checkConstraint(IRViolationException e) {
+        String message = e.getExceptionInfo();
         String[] splitMethods = message.split("Method");
         for (int i = 1; i < splitMethods.length; i++) {
             String method = splitMethods[i];

@@ -45,8 +45,8 @@ public class TestRunTests {
             throw new RuntimeException("Should not reach");
         } catch (IRViolationException e) {
             String[] matches = { "test(int)", "test2(int)", "Failed IR Rules (2)"};
-            Arrays.stream(matches).forEach(m -> Asserts.assertTrue(e.getMessage().contains(m)));
-            Asserts.assertEQ(e.getMessage().split("STANDALONE mode", -1).length - 1, 2);
+            Arrays.stream(matches).forEach(m -> Asserts.assertTrue(e.getExceptionInfo().contains(m)));
+            Asserts.assertEQ(e.getExceptionInfo().split("STANDALONE mode", -1).length - 1, 2);
         }
         TestFramework.runWithFlags(SkipCompilation.class, "-XX:-UseCompiler");
         TestFramework.runWithFlags(SkipCompilation.class, "-Xint");

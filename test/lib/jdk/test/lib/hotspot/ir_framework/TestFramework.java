@@ -127,7 +127,7 @@ public class TestFramework {
                                        #############################################################
                                         - To only run the failed tests use -DTest, -DExclude,
                                           and/or -DScenarios.
-                                        - To also get the standard output of the test VM run with\s
+                                        - To also get the standard output of the test VM run with
                                           -DReportStdout=true or for even more fine-grained logging
                                           use -DVerbose=true.
                                        #############################################################
@@ -143,7 +143,6 @@ public class TestFramework {
     private Set<Integer> scenarioIndices;
     private List<String> flags;
     private int defaultWarmup = -1;
-    private Scenario scenario;
 
     /*
      * Public interface methods
@@ -172,7 +171,6 @@ public class TestFramework {
         TestRun.check(testClass != null, "Test class cannot be null");
         this.testClass = testClass;
         if (VERBOSE) {
-            System.out.println("Test class: " + testClass);
             System.out.println("Test class: " + testClass);
         }
     }
@@ -661,8 +659,8 @@ public class TestFramework {
                                    + "Compilation(s) of failed matche(s):");
                 System.out.println(irException.getCompilations());
                 builder.append(errorMsg).append(System.lineSeparator()).append(irException.getExceptionInfo());
-            } else if (e instanceof TestVMException) {
-                builder.append(errorMsg).append(System.lineSeparator()).append(((TestVMException) e).getExceptionInfo());
+            } else if (e instanceof TestVMException testVMException) {
+                builder.append(errorMsg).append(System.lineSeparator()).append(testVMException.getExceptionInfo());
             } else {
                 // Print stack trace otherwise
                 StringWriter errors = new StringWriter();

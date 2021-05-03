@@ -33,7 +33,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This class creates create and runs the "test" VM and store information about the test VM output.
+ * This class prepares, creates, and runs the "test" VM with verification of proper termination. The class also stores
+ * information about the test VM which is later queried for IR matching. The communication between this driver VM
+ * and the test VM is done over a dedicated socket.
+ *
+ * @see TestVM
+ * @see TestFrameworkSocket
  */
 class TestVMProcess {
     private static final boolean VERBOSE = Boolean.getBoolean("Verbose");
@@ -148,6 +153,10 @@ class TestVMProcess {
         lastTestVMOutput = oa.getOutput();
     }
 
+    /**
+     * Process the socket output: All prefixed lines are dumped to the standard output while the remaining lines
+     * represent the IR encoding used for IR matching later.
+     */
     private void processSocketOutput(String output) {
         if (TestFramework.TESTLIST || TestFramework.EXCLUDELIST) {
             StringBuilder builder = new StringBuilder();
@@ -182,6 +191,10 @@ class TestVMProcess {
         }
     }
 
+    /**
+     * Exit code was non-zero of test VM. Check the stderr to determine what kind of exception that should be thrown to
+     * react accordingly later.
+     */
     private void throwTestVMException() {
         String stdErr = oa.getStderr();
         if (stdErr.contains("TestFormat.reportIfAnyFailures")) {
@@ -200,11 +213,12 @@ class TestVMProcess {
     /**
      * Get more detailed information about the exception in a pretty format.
      */
-    public String getExceptionInfo() {
+    private String getExceptionInfo() {
         int exitCode = oa.getExitValue();
         String stdErr = oa.getStderr();
         String stdOut = "";
         if (exitCode == 134) {
+            // Also dump the stdout if we experience a JVM error (e.g. to show hit assertions etc.).
             stdOut = System.lineSeparator() + System.lineSeparator() + "Standard Output" + System.lineSeparator()
                      + "---------------" + System.lineSeparator() + oa.getOutput();
         }

@@ -37,10 +37,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This class creates and runs the "flag" VM to determine the flags required for the "test" VM. The flag VM writes these
- * flags to a dedicated file which is then parsed by this class after the termination of the flag VM. This class
- * (compared to {@link TestVMProcess}) also prepares the VM flags and does some after processing after the termination
- * of the flag VM.
+ * This class prepares, creates, and runs the "flag" VM with verification of proper termination. The flag VM determines
+ * the flags required for the "test" VM. The flag VM writes these flags to a dedicated file which is then parsed by this
+ * class after the termination of the flag VM.
+ *
+ * @see FlagVM
  */
 class FlagVMProcess {
     private static final boolean VERBOSE = Boolean.getBoolean("Verbose");
