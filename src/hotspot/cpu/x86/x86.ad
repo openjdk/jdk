@@ -1599,6 +1599,16 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
 #endif // !LP64
+    case Op_SignumF:
+      if (UseSSE < 1) {
+        return false;
+      }
+      break;
+    case Op_SignumD:
+      if (UseSSE < 2) {
+        return false;
+      }
+      break;
   }
   return true;  // Match rules are supported by default.
 }
@@ -5775,6 +5785,30 @@ instruct evminmaxFP_reg_eavx(vec dst, vec a, vec b, vec atmp, vec btmp, kReg ktm
     __ evminmax_fp(opcode, elem_bt,
                    $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister,
                    $ktmp$$KRegister, $atmp$$XMMRegister , $btmp$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// --------------------------------- Signum ---------------------------
+
+instruct signumF_reg(regF dst, regF zero, regF one, rRegP scratch, rFlagsReg cr) %{
+  match(Set dst (SignumF dst (Binary zero one)));
+  effect(TEMP scratch, KILL cr);
+  format %{ "signumF $dst, $dst\t! using $scratch as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    __ signum_fp(opcode, $dst$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister, $scratch$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr) %{
+  match(Set dst (SignumD dst (Binary zero one)));
+  effect(TEMP scratch, KILL cr);
+  format %{ "signumD $dst, $dst\t! using $scratch as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    __ signum_fp(opcode, $dst$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister, $scratch$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
