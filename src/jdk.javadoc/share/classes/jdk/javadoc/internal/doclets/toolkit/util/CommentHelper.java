@@ -483,6 +483,7 @@ public class CommentHelper {
                 case '\f':
                 case '\t':
                 case ' ':
+                    // Add at most one space char, or none if it isn't needed
                     switch (lastChar) {
                         case 0:
                         case'(':
@@ -500,6 +501,7 @@ public class CommentHelper {
                 case '>':
                 case ')':
                 case '.':
+                    // Remove preceding space character
                     if (lastChar == ' ') {
                         sb.setLength(sb.length() - 1);
                     }
