@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1939,12 +1939,6 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall *op) {
     __ bind(call_return);
   }
   add_call_info(code_offset(), op->info());
-}
-
-
-/* vtable-dispatch is not enabled for arm platforms */
-void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
-  ShouldNotReachHere();
 }
 
 void LIR_Assembler::emit_static_call_stub() {

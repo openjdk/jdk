@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,30 @@
 package jdk.jfr.internal.tool;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
+import java.util.function.Predicate;
 
+import jdk.jfr.EventType;
+import jdk.jfr.FlightRecorder;
 import jdk.jfr.consumer.RecordingFile;
+import jdk.jfr.internal.PlatformEventType;
+import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
+import jdk.jfr.internal.TypeLibrary;
 import jdk.jfr.internal.consumer.JdkJfrConsumer;
 
 final class Metadata extends Command {
 
-    private final static JdkJfrConsumer PRIVATE_ACCESS = JdkJfrConsumer.instance();
+    private static final JdkJfrConsumer PRIVATE_ACCESS = JdkJfrConsumer.instance();
 
     private static class TypeComparator implements Comparator<Type> {
 
@@ -91,7 +101,6 @@ final class Metadata extends Command {
         }
     }
 
-
     @Override
     public String getName() {
         return "metadata";
@@ -99,44 +108,158 @@ final class Metadata extends Command {
 
     @Override
     public List<String> getOptionSyntax() {
-        return Collections.singletonList("<file>");
+        List<String> list = new ArrayList<>();
+        list.add("[--categories <filter>]");
+        list.add("[--events <filter>]");
+        list.add("[<file>]");
+        return list;
     }
 
     @Override
-    public String getDescription() {
+    protected String getTitle() {
         return "Display event metadata, such as labels, descriptions and field layout";
     }
 
     @Override
+    public String getDescription() {
+        return getTitle() + ". See 'jfr help metadata' for details.";
+    }
+
+    @Override
+    public void displayOptionUsage(PrintStream stream) {
+        char q = quoteCharacter();
+        stream.println("  --categories <filter>   Select events matching a category name.");
+        stream.println("                          The filter is a comma-separated list of names,");
+        stream.println("                          simple and/or qualified, and/or quoted glob patterns");
+        stream.println();
+        stream.println("  --events <filter>       Select events matching an event name.");
+        stream.println("                          The filter is a comma-separated list of names,");
+        stream.println("                          simple and/or qualified, and/or quoted glob patterns");
+        stream.println();
+        stream.println("  <file>                  Location of the recording file (.jfr)");
+        stream.println();
+        stream.println("If the <file> parameter is omitted, metadata from the JDK where");
+        stream.println("the " + q + "jfr" + q + " tool is located will be used");
+        stream.println();
+        stream.println();
+        stream.println("Example usage:");
+        stream.println();
+        stream.println(" jfr metadata");
+        stream.println();
+        stream.println(" jfr metadata --events jdk.ThreadStart recording.jfr");
+        stream.println();
+        stream.println(" jfr metadata --events CPULoad,GarbageCollection");
+        stream.println();
+        stream.println(" jfr metadata --categories " + q + "GC,JVM,Java*" + q);
+        stream.println();
+        stream.println(" jfr metadata --events " + q + "Thread*" + q);
+        stream.println();
+    }
+
+    @Override
     public void execute(Deque<String> options) throws UserSyntaxException, UserDataException {
-        Path file = getJFRInputFile(options);
+        Path file = getOptionalJFRInputFile(options);
 
         boolean showIds = false;
+        boolean foundEventFilter = false;
+        boolean foundCategoryFilter = false;
+        Predicate<EventType> filter = null;
         int optionCount = options.size();
         while (optionCount > 0) {
-            if (acceptOption(options, "--ids")) {
+            // internal option, doest not export to users
+            if (acceptSingleOption(options, "--ids")) {
                 showIds = true;
+            }
+            if (acceptFilterOption(options, "--events")) {
+                if (foundEventFilter) {
+                    throw new UserSyntaxException("use --events event1,event2,event3 to include multiple events");
+                }
+                foundEventFilter = true;
+                String filterStr = options.remove();
+                warnForWildcardExpansion("--events", filterStr);
+                filter = addEventFilter(filterStr, filter);
+            }
+            if (acceptFilterOption(options, "--categories")) {
+                if (foundCategoryFilter) {
+                    throw new UserSyntaxException("use --categories category1,category2 to include multiple categories");
+                }
+                foundCategoryFilter = true;
+                String filterStr = options.remove();
+                warnForWildcardExpansion("--categories", filterStr);
+                filter = addCategoryFilter(filterStr, filter);
             }
             if (optionCount == options.size()) {
                 // No progress made
+                checkCommonError(options, "--event", "--events");
+                checkCommonError(options, "--category", "--categories");
                 throw new UserSyntaxException("unknown option " + options.peek());
             }
             optionCount = options.size();
         }
 
-        try (PrintWriter pw = new PrintWriter(System.out)) {
+        try (PrintWriter pw = new PrintWriter(System.out, false, Charset.forName("UTF-8"))) {
             PrettyWriter prettyWriter = new PrettyWriter(pw);
             prettyWriter.setShowIds(showIds);
-            try (RecordingFile rf = new RecordingFile(file)) {
-                List<Type> types = PRIVATE_ACCESS.readTypes(rf);
-                Collections.sort(types, new TypeComparator());
-                for (Type type : types) {
+            if (filter != null) {
+                filter = addCache(filter, type -> type.getId());
+            }
+
+            List<Type> types = findTypes(file);
+            Collections.sort(types, new TypeComparator());
+            for (Type type : types) {
+                if (filter != null) {
+                    // If --events or --categories, only operate on events
+                    if (Type.SUPER_TYPE_EVENT.equals(type.getSuperType())) {
+                        EventType et = PrivateAccess.getInstance().newEventType((PlatformEventType) type);
+                        if (filter.test(et)) {
+                            prettyWriter.printType(type);
+                        }
+                    }
+                } else {
                     prettyWriter.printType(type);
                 }
-                prettyWriter.flush(true);
-            } catch (IOException ioe) {
-                couldNotReadError(file, ioe);
+            }
+            prettyWriter.flush(true);
+            pw.flush();
+        }
+    }
+
+    private List<Type> findTypes(Path file) throws UserDataException {
+        // Determine whether reading from recording file or reading from the JDK where
+        // the jfr tool is located will be used
+        if (file == null) {
+            // Force initialization
+            FlightRecorder.getFlightRecorder().getEventTypes();
+            return TypeLibrary.getInstance().getTypes();
+        }
+        try (RecordingFile rf = new RecordingFile(file)) {
+            return PRIVATE_ACCESS.readTypes(rf);
+        } catch (IOException ioe) {
+            couldNotReadError(file, ioe);
+        }
+        return null; // Can't reach
+    }
+
+    private Path getOptionalJFRInputFile(Deque<String> options) throws UserDataException {
+        if (!options.isEmpty()) {
+            String file = options.getLast();
+            if (!file.startsWith("--")) {
+                Path tmp = Paths.get(file).toAbsolutePath();
+                if (tmp.toString().endsWith(".jfr")) {
+                    ensureAccess(tmp);
+                    options.removeLast();
+                    return tmp;
+                }
             }
         }
+        return null;
+    }
+
+    private static boolean acceptSingleOption(Deque<String> options, String expected) {
+        if (expected.equals(options.peek())) {
+            options.remove();
+            return true;
+        }
+        return false;
     }
 }

@@ -41,7 +41,7 @@
  * @build compiler.jvmci.common.JVMCIHelpers
  * @run driver jdk.test.lib.FileInstaller ./JvmciNotifyInstallEventTest.config
  *     ./META-INF/services/jdk.vm.ci.services.JVMCIServiceLocator
- * @run driver ClassFileInstaller
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller
  *      compiler.jvmci.common.JVMCIHelpers$EmptyHotspotCompiler
  *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory
  *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilationRequestResult

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,9 +216,8 @@ final class NetMulticastSocket extends MulticastSocket {
             throw new SocketException("already bound");
         if (addr == null)
             addr = new InetSocketAddress(0);
-        if (!(addr instanceof InetSocketAddress))
+        if (!(addr instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type!");
-        InetSocketAddress epoint = (InetSocketAddress) addr;
         if (epoint.isUnresolved())
             throw new SocketException("Unresolved address");
         InetAddress iaddr = epoint.getAddress();
@@ -259,9 +258,8 @@ final class NetMulticastSocket extends MulticastSocket {
     public void connect(SocketAddress addr) throws SocketException {
         if (addr == null)
             throw new IllegalArgumentException("Address can't be null");
-        if (!(addr instanceof InetSocketAddress))
+        if (!(addr instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type");
-        InetSocketAddress epoint = (InetSocketAddress) addr;
         if (epoint.isUnresolved())
             throw new SocketException("Unresolved address");
         connectInternal(epoint.getAddress(), epoint.getPort());

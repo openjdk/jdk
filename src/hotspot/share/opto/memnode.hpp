@@ -849,6 +849,7 @@ public:
   virtual const Type *bottom_type() const { return _type; }
   virtual uint ideal_reg() const;
   virtual const class TypePtr *adr_type() const { return _adr_type; }  // returns bottom_type of address
+  virtual const Type* Value(PhaseGVN* phase) const;
 
   bool result_not_used() const;
   MemBarNode* trailing_membar() const;
@@ -863,6 +864,7 @@ public:
     ExpectedIn = MemNode::ValueIn+1 // One more input than MemNode
   };
   LoadStoreConditionalNode(Node *c, Node *mem, Node *adr, Node *val, Node *ex);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------StorePConditionalNode---------------------------

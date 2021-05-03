@@ -25,8 +25,6 @@
 
 #include "precompiled.hpp"
 
-#include "gc/shared/gcTrace.hpp"
-#include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
@@ -35,7 +33,6 @@
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-#include "memory/iterator.inline.hpp"
 
 ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q,  ShenandoahReferenceProcessor* rp) :
   MetadataVisitingOopIterateClosure(rp),
@@ -43,11 +40,6 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
   _mark_context(ShenandoahHeap::heap()->marking_context()),
   _weak(false)
 { }
-
-ShenandoahInitMarkRootsClosure::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
-  _queue(q),
-  _mark_context(ShenandoahHeap::heap()->marking_context()) {
-}
 
 ShenandoahMark::ShenandoahMark() :
   _task_queues(ShenandoahHeap::heap()->marking_context()->task_queues()) {
@@ -75,37 +67,45 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
   if (heap->unload_classes()) {
     if (heap->has_forwarded_objects()) {
       if (strdedup) {
-        ShenandoahMarkUpdateRefsMetadataDedupClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkUpdateRefsMetadataDedupClosure, CANCELLABLE>(&cl, ld, w, t);
+        using Closure = ShenandoahMarkUpdateRefsMetadataClosure<ENQUEUE_DEDUP>;
+        Closure cl(q, rp);
+        mark_loop_work<Closure, CANCELLABLE>(&cl, ld, w, t);
       } else {
-        ShenandoahMarkUpdateRefsMetadataClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkUpdateRefsMetadataClosure, CANCELLABLE>(&cl, ld, w, t);
+        using Closure = ShenandoahMarkUpdateRefsMetadataClosure<NO_DEDUP>;
+        Closure cl(q, rp);
+        mark_loop_work<Closure, CANCELLABLE>(&cl, ld, w, t);
       }
     } else {
       if (strdedup) {
-        ShenandoahMarkRefsMetadataDedupClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkRefsMetadataDedupClosure, CANCELLABLE>(&cl, ld, w, t);
+        using Closure = ShenandoahMarkRefsMetadataClosure<ENQUEUE_DEDUP>;
+        Closure cl(q, rp);
+        mark_loop_work<Closure, CANCELLABLE>(&cl, ld, w, t);
       } else {
-        ShenandoahMarkRefsMetadataClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkRefsMetadataClosure, CANCELLABLE>(&cl, ld, w, t);
+        using Closure = ShenandoahMarkRefsMetadataClosure<NO_DEDUP>;
+        Closure cl(q, rp);
+        mark_loop_work<Closure, CANCELLABLE>(&cl, ld, w, t);
       }
     }
   } else {
     if (heap->has_forwarded_objects()) {
       if (strdedup) {
-        ShenandoahMarkUpdateRefsDedupClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkUpdateRefsDedupClosure, CANCELLABLE>(&cl, ld, w, t);
+        using Closure = ShenandoahMarkUpdateRefsClosure<ENQUEUE_DEDUP>;
+        Closure cl(q, rp);
+        mark_loop_work<Closure, CANCELLABLE>(&cl, ld, w, t);
       } else {
-        ShenandoahMarkUpdateRefsClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkUpdateRefsClosure, CANCELLABLE>(&cl, ld, w, t);
+        using Closure = ShenandoahMarkUpdateRefsClosure<NO_DEDUP>;
+        Closure cl(q, rp);
+        mark_loop_work<Closure, CANCELLABLE>(&cl, ld, w, t);
       }
     } else {
       if (strdedup) {
-        ShenandoahMarkRefsDedupClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkRefsDedupClosure, CANCELLABLE>(&cl, ld, w, t);
+        using Closure = ShenandoahMarkRefsClosure<ENQUEUE_DEDUP>;
+        Closure cl(q, rp);
+        mark_loop_work<Closure, CANCELLABLE>(&cl, ld, w, t);
       } else {
-        ShenandoahMarkRefsClosure cl(q, rp);
-        mark_loop_work<ShenandoahMarkRefsClosure, CANCELLABLE>(&cl, ld, w, t);
+        using Closure = ShenandoahMarkRefsClosure<NO_DEDUP>;
+        Closure cl(q, rp);
+        mark_loop_work<Closure, CANCELLABLE>(&cl, ld, w, t);
       }
     }
   }

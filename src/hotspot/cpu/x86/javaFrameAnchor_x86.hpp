@@ -30,9 +30,6 @@ private:
   // FP value associated with _last_Java_sp:
   intptr_t* volatile        _last_Java_fp;           // pointer is volatile not what it points to
 
-  // (Optional) location of saved RBP register, which GCs want to inspect
-  intptr_t** volatile _saved_rbp_address;
-
 public:
   // Each arch must define reset, save, restore
   // These are used by objects that only care about:
@@ -46,7 +43,6 @@ public:
     // fence?
     _last_Java_fp = NULL;
     _last_Java_pc = NULL;
-    _saved_rbp_address = NULL;
   }
 
   void copy(JavaFrameAnchor* src) {
@@ -64,8 +60,6 @@ public:
     _last_Java_pc = src->_last_Java_pc;
     // Must be last so profiler will always see valid frame if has_last_frame() is true
     _last_Java_sp = src->_last_Java_sp;
-
-    _saved_rbp_address = src->_saved_rbp_address;
   }
 
   bool walkable(void)                            { return _last_Java_sp != NULL && _last_Java_pc != NULL; }
@@ -76,12 +70,9 @@ public:
 
   address last_Java_pc(void)                     { return _last_Java_pc; }
 
-  intptr_t** saved_rbp_address(void) const       { return _saved_rbp_address; }
-
 private:
 
   static ByteSize last_Java_fp_offset()          { return byte_offset_of(JavaFrameAnchor, _last_Java_fp); }
-  static ByteSize saved_rbp_address_offset()     { return byte_offset_of(JavaFrameAnchor, _saved_rbp_address); }
 
 public:
 

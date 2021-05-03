@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,6 +208,10 @@ public final class Files {
      *          if {@code options} contains an invalid combination of options
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException
@@ -349,9 +353,10 @@ public final class Files {
      *          if an unsupported open option is specified or the array contains
      *          attributes that cannot be set atomically when creating the file
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
+     *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
-     *          <i>(optional specific exception)</i>
+     *          and the file is being opened for writing <i>(optional specific
+     *          exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException
@@ -395,9 +400,10 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported open option is specified
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
+     *          If a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
-     *          <i>(optional specific exception)</i>
+     *          and the file is being opened for writing <i>(optional specific
+     *          exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException
@@ -637,7 +643,7 @@ public final class Files {
      *          if the array contains an attribute that cannot be set atomically
      *          when creating the file
      * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists
+     *          If a file of that name already exists
      *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs or the parent directory does not exist
@@ -2849,9 +2855,10 @@ public final class Files {
      *
      * <p> This method works as if invoking it were equivalent to evaluating the
      * expression:
-     * <blockquote><pre>
-     * walkFileTree(start, EnumSet.noneOf(FileVisitOption.class), Integer.MAX_VALUE, visitor)
-     * </pre></blockquote>
+     * <blockquote>{@link
+     * walkFileTree(Path, Set<FileVisitOption>, int, FileVisitor<? super Path>)
+     * Files.walkFileTree(start, EnumSet.noneOf(FileVisitOption.class), Integer.MAX_VALUE, visitor)
+     * }</blockquote>
      * In other words, it does not follow symbolic links, and visits all levels
      * of the file tree.
      *
@@ -2925,9 +2932,10 @@ public final class Files {
      *
      * <p> This method works as if invoking it were equivalent to evaluating the
      * expression:
-     * <pre>{@code
+     * <blockquote>{@link
+     * newBufferedReader(Path, Charset)
      * Files.newBufferedReader(path, StandardCharsets.UTF_8)
-     * }</pre>
+     * }</blockquote>
      *
      * @param   path
      *          the path to the file
@@ -2979,6 +2987,10 @@ public final class Files {
      *          if an I/O error occurs opening or creating the file
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          <i>(optional specific exception)</i>
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
@@ -3006,9 +3018,10 @@ public final class Files {
      *
      * <p> This method works as if invoking it were equivalent to evaluating the
      * expression:
-     * <pre>{@code
+     * <blockquote>{@link
+     * newBufferedWriter(Path, Charset, OpenOption...)
      * Files.newBufferedWriter(path, StandardCharsets.UTF_8, options)
-     * }</pre>
+     * }</blockquote>
      *
      * @param   path
      *          the path to the file
@@ -3024,6 +3037,10 @@ public final class Files {
      *          if an I/O error occurs opening or creating the file
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          <i>(optional specific exception)</i>
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
@@ -3286,8 +3303,8 @@ public final class Files {
      * The method ensures that the file is closed when all content have been read
      * or an I/O error, or other runtime exception, is thrown.
      *
-     * <p> This method is equivalent to:
-     * {@code readString(path, StandardCharsets.UTF_8) }
+     * <p> This method is equivalent to: {@link readString(Path, Charset)
+     * readString(path, StandardCharsets.UTF_8)}.
      *
      * @param   path the path to the file
      *
@@ -3411,9 +3428,10 @@ public final class Files {
      *
      * <p> This method works as if invoking it were equivalent to evaluating the
      * expression:
-     * <pre>{@code
+     * <blockquote>{@link
+     * readAllLines(Path, Charset)
      * Files.readAllLines(path, StandardCharsets.UTF_8)
-     * }</pre>
+     * }</blockquote>
      *
      * @param   path
      *          the path to the file
@@ -3474,6 +3492,10 @@ public final class Files {
      *          if an I/O error occurs writing to or creating the file
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          <i>(optional specific exception)</i>
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
@@ -3538,6 +3560,10 @@ public final class Files {
      *          text cannot be encoded using the specified charset
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          <i>(optional specific exception)</i>
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
@@ -3569,9 +3595,10 @@ public final class Files {
      *
      * <p> This method works as if invoking it were equivalent to evaluating the
      * expression:
-     * <pre>{@code
-     * Files.write(path, lines, StandardCharsets.UTF_8, options);
-     * }</pre>
+     * <blockquote>{@link
+     * write(Path, Iterable<? extends CharSequence>, Charset, OpenOption...)
+     * Files.write(path, lines, StandardCharsets.UTF_8, options)
+     * }</blockquote>
      *
      * @param   path
      *          the path to the file
@@ -3612,8 +3639,9 @@ public final class Files {
      * Characters are encoded into bytes using the
      * {@link StandardCharsets#UTF_8 UTF-8} {@link Charset charset}.
      *
-     * <p> This method is equivalent to:
-     * {@code writeString(path, test, StandardCharsets.UTF_8, options) }
+     * <p> This method is equivalent to: {@link
+     * writeString(Path, CharSequence, Charset, OpenOption...)
+     * writeString(path, csq, StandardCharsets.UTF_8, options)}.
      *
      * @param   path
      *          the path to the file
@@ -3910,9 +3938,10 @@ public final class Files {
      *
      * <p> This method works as if invoking it were equivalent to evaluating the
      * expression:
-     * <blockquote><pre>
-     * walk(start, Integer.MAX_VALUE, options)
-     * </pre></blockquote>
+     * <blockquote>{@link
+     * walk(Path, int, FileVisitOption...)
+     * Files.walk(start, Integer.MAX_VALUE, options)
+     * }</blockquote>
      * In other words, it visits all levels of the file tree.
      *
      * <p> The returned stream contains references to one or more open directories.
@@ -4121,9 +4150,11 @@ public final class Files {
             // FileChannel.size() may in certain circumstances return zero
             // for a non-zero length file so disallow this case.
             if (length > 0 && length <= Integer.MAX_VALUE) {
-                Spliterator<String> s = new FileChannelLinesSpliterator(fc, cs, 0, (int) length);
-                return StreamSupport.stream(s, false)
-                        .onClose(Files.asUncheckedRunnable(fc));
+                FileChannelLinesSpliterator fcls =
+                    new FileChannelLinesSpliterator(fc, cs, 0, (int) length);
+                return StreamSupport.stream(fcls, false)
+                        .onClose(Files.asUncheckedRunnable(fc))
+                        .onClose(() -> fcls.close());
             }
         } catch (Error|RuntimeException|IOException e) {
             try {
@@ -4169,9 +4200,10 @@ public final class Files {
      *
      * <p> This method works as if invoking it were equivalent to evaluating the
      * expression:
-     * <pre>{@code
+     * <blockquote>{@link
+     * lines(Path, Charset)
      * Files.lines(path, StandardCharsets.UTF_8)
-     * }</pre>
+     * }</blockquote>
      *
      * @apiNote
      * This method must be used within a try-with-resources statement or similar

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.javadoc.internal.doclets.formats.html;
 
 import javax.lang.model.element.PackageElement;
@@ -31,7 +32,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -94,12 +95,12 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
      */
     protected void addPackages(Content content) {
         Table table = new Table(HtmlStyle.summaryTable)
-                .setCaption(new StringContent(contents.packageSummary))
+                .setCaption(Text.of(contents.packageSummary))
                 .setHeader(new TableHeader(contents.packageLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (PackageElement pkg : configuration.packages) {
             if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
-                Content packageLinkContent = getPackageLink(pkg, getPackageName(pkg));
+                Content packageLinkContent = getPackageLink(pkg, getLocalizedPackageName(pkg));
                 Content summaryContent = new ContentBuilder();
                 addSummaryComment(pkg, summaryContent);
                 table.addRow(pkg, packageLinkContent, summaryContent);

@@ -216,7 +216,9 @@ void JVMCI::vlog(int level, const char* format, va_list ap) {
     StringEventLog* events = level == 1 ? _events : _verbose_events;
     guarantee(events != NULL, "JVMCI event log not yet initialized");
     Thread* thread = Thread::current_or_null_safe();
-    events->logv(thread, format, ap);
+    if (thread != NULL) {
+      events->logv(thread, format, ap);
+    }
   }
 }
 

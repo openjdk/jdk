@@ -32,9 +32,9 @@
 #include "interpreter/linkResolver.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/methodData.inline.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
@@ -1256,7 +1256,7 @@ void MethodData::initialize() {
   object_size += extra_size + arg_data_size;
 
   int parms_cell = ParametersTypeData::compute_cell_count(method());
-  // If we are profiling parameters, we reserver an area near the end
+  // If we are profiling parameters, we reserved an area near the end
   // of the MDO after the slots for bytecodes (because there's no bci
   // for method entry so they don't fit with the framework for the
   // profiling of bytecodes). We store the offset within the MDO of

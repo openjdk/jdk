@@ -139,7 +139,7 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
       int vslot = (i * elem_size) / VMRegImpl::stack_slot_size;
       int off   = (i * elem_size) % VMRegImpl::stack_slot_size;
 
-      address elem_addr = reg_map->location(vreg->next(vslot)) + off;
+      address elem_addr = reg_map->location(vreg, vslot) + off; // assumes little endian element order
       init_payload_element(arr, is_mask, elem_bt, i, elem_addr);
     }
   } else {
@@ -153,16 +153,27 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
 }
 
 Handle VectorSupport::allocate_vector_payload(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ScopeValue* payload, TRAPS) {
-  if (payload->is_location() &&
-      payload->as_LocationValue()->location().type() == Location::vector) {
-    // Vector value in an aligned adjacent tuple (1, 2, 4, 8, or 16 slots).
+  if (payload->is_location()) {
     Location location = payload->as_LocationValue()->location();
-    return allocate_vector_payload_helper(ik, fr, reg_map, location, THREAD); // safepoint
-  } else {
-    // Scalar-replaced boxed vector representation.
-    StackValue* value = StackValue::create_stack_value(fr, reg_map, payload);
-    return value->get_obj();
+    if (location.type() == Location::vector) {
+      // Vector value in an aligned adjacent tuple (1, 2, 4, 8, or 16 slots).
+      return allocate_vector_payload_helper(ik, fr, reg_map, location, THREAD); // safepoint
+    }
+#ifdef ASSERT
+    // Other payload values are: 'oop' type location and Scalar-replaced boxed vector representation.
+    // They will be processed in Deoptimization::reassign_fields() after all objects are reallocated.
+    else {
+      Location::Type loc_type = location.type();
+      assert(loc_type == Location::oop || loc_type == Location::narrowoop,
+             "expected 'oop'(%d) or 'narrowoop'(%d) types location but got: %d", Location::oop, Location::narrowoop, loc_type);
+    }
+  } else if (!payload->is_object()) {
+    stringStream ss;
+    payload->print_on(&ss);
+    assert(payload->is_object(), "expected 'object' value for scalar-replaced boxed vector but got: %s", ss.as_string());
+#endif
   }
+  return Handle(THREAD, nullptr);
 }
 
 instanceOop VectorSupport::allocate_vector(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ObjectValue* ov, TRAPS) {

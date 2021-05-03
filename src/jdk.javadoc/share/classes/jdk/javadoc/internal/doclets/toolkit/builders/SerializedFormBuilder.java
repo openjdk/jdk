@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -552,10 +552,8 @@ public class SerializedFormBuilder extends AbstractBuilder {
         if (utils.isSerializable(te)) {
             if (utils.hasDocCommentTree(te) && !utils.getSerialTrees(te).isEmpty()) {
                 return serialDocInclude(utils, te);
-            } else if (utils.isPublic(te) || utils.isProtected(te)) {
-                return true;
             } else {
-                return false;
+                return utils.isPublic(te) || utils.isProtected(te);
             }
         }
         return false;

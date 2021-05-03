@@ -151,8 +151,8 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      */
     protected void addTableRow(Table table, TypeElement klass) {
         List<Content> rowContents = new ArrayList<>();
-        Content classLink = getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.Kind.INDEX, klass));
+        Content classLink = getLink(new HtmlLinkInfo(
+                configuration, HtmlLinkInfo.Kind.INDEX, klass));
         ContentBuilder description = new ContentBuilder();
         Set<ElementFlag> flags = utils.elementFlags(klass);
         if (flags.contains(ElementFlag.PREVIEW)) {

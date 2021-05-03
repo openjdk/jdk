@@ -213,7 +213,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     HeapWord* first_object = start_array->object_start(slice_start);
     debug_only(oop* first_object_within_slice = (oop*) first_object;)
     if (first_object < slice_start) {
-      last_scanned = (oop*)(first_object + oop(first_object)->size());
+      last_scanned = (oop*)(first_object + cast_to_oop(first_object)->size());
       debug_only(first_object_within_slice = last_scanned;)
       worker_start_card = byte_for(last_scanned);
     }
@@ -222,7 +222,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     if (slice_end < (HeapWord*)sp_top) {
       // The subtraction is important! An object may start precisely at slice_end.
       HeapWord* last_object = start_array->object_start(slice_end - 1);
-      slice_end = last_object + oop(last_object)->size();
+      slice_end = last_object + cast_to_oop(last_object)->size();
       // worker_end_card is exclusive, so bump it one past the end of last_object's
       // covered span.
       worker_end_card = byte_for(slice_end) + 1;
@@ -260,7 +260,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
           // prevents the redundant object scan, but it does not prevent newly
           // marked cards from being cleaned.
           HeapWord* last_object_in_dirty_region = start_array->object_start(addr_for(current_card)-1);
-          size_t size_of_last_object = oop(last_object_in_dirty_region)->size();
+          size_t size_of_last_object = cast_to_oop(last_object_in_dirty_region)->size();
           HeapWord* end_of_last_object = last_object_in_dirty_region + size_of_last_object;
           CardValue* ending_card_of_last_object = byte_for(end_of_last_object);
           assert(ending_card_of_last_object <= worker_end_card, "ending_card_of_last_object is greater than worker_end_card");
@@ -316,7 +316,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
         if (interval != 0) {
           while (p < to) {
             Prefetch::write(p, interval);
-            oop m = oop(p);
+            oop m = cast_to_oop(p);
             assert(oopDesc::is_oop_or_null(m), "Expected an oop or NULL for header field at " PTR_FORMAT, p2i(m));
             pm->push_contents(m);
             p += m->size();
@@ -324,7 +324,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
           pm->drain_stacks_cond_depth();
         } else {
           while (p < to) {
-            oop m = oop(p);
+            oop m = cast_to_oop(p);
             assert(oopDesc::is_oop_or_null(m), "Expected an oop or NULL for header field at " PTR_FORMAT, p2i(m));
             pm->push_contents(m);
             p += m->size();
