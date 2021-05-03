@@ -135,6 +135,12 @@ class Dependencies: public ResourceObj {
     // in a subtype* of CX.  It asserts that MM(CX, M1) is no greater
     // than {M1}.
     unique_concrete_method_2, // one unique concrete method under CX
+
+    // In addition to the method M1 and the context class CX, the parameters
+    // to this dependency are the resolved class RC1 and the
+    // resolved method RM1. It asserts that MM(CX, M1, RC1, RM1)
+    // is no greater than {M1}. RC1 and RM1 are used to improve the precision
+    // of the analysis.
     unique_concrete_method_4, // one unique concrete method under CX
 
     // This dependency asserts that no instances of class or it's
