@@ -117,7 +117,7 @@ class TestMaxHeapSizeTools {
 
   private static void getNewOldSize(String gcflag, long[] values) throws Exception {
     ProcessBuilder pb = GCArguments.createJavaProcessBuilder(gcflag,
-      "-XX:+PrintFlagsFinal", "-version");
+      "-XX:-CreateCoredumpOnCrash", "-XX:+PrintFlagsFinal", "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
 

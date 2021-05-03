@@ -59,6 +59,7 @@ public class TestMaxRAMFlags {
       args.add("-XX:+UseCompressedOops");
     }
 
+    args.add("-XX:-CreateCoredumpOnCrash");
     args.add("-XX:+PrintFlagsFinal");
     args.add("-version");
 

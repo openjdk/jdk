@@ -43,6 +43,7 @@ public class TestCompressedClassFlags {
         if (Platform.is64bit()) {
             OutputAnalyzer output = runJava("-XX:CompressedClassSpaceSize=1g",
                                             "-XX:-UseCompressedClassPointers",
+                                            "-XX:-CreateCoredumpOnCrash",
                                             "-version");
             output.shouldContain("warning");
             output.shouldNotContain("error");

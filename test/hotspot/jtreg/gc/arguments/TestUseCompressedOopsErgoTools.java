@@ -140,6 +140,7 @@ class TestUseCompressedOopsErgoTools {
      finalargs.addAll(Arrays.asList(args));
      finalargs.add("-Xmx" + heapsize);
      finalargs.add("-XX:+PrintFlagsFinal");
+     finalargs.add("-XX:-CreateCoredumpOnCrash");
      finalargs.add("-version");
 
      String output = expectValid(finalargs.toArray(new String[0]));
