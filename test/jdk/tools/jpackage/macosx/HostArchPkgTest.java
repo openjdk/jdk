@@ -32,6 +32,7 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Annotations.Test;
 
 /**
  * Test will generation default pkg package and will validate "hostArchitectures"
@@ -47,12 +48,13 @@ import jdk.jpackage.test.TKit;
  * @compile HostArchPkgTest.java
  * @requires (os.family == "mac")
  * @key jpackagePlatformPackage
- * @run main/othervm -Xmx512m HostArchPkgTest
+ * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=HostArchPkgTest
  */
 public class HostArchPkgTest {
 
     private static void verifyHostArch(JPackageCommand cmd) throws Exception {
-        Path distributionFile = cmd.unpackedPackageDirectory()
+        Path distributionFile = cmd.pathToUnpackedPackageFile(Path.of("/"))
                 .toAbsolutePath()
                 .getParent()
                 .resolve("data")
@@ -81,14 +83,13 @@ public class HostArchPkgTest {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        TKit.run(args, () -> {
-            new PackageTest()
-                    .excludeTypes(PackageType.MAC_DMG) // Not valid case
-                    .configureHelloApp()
-                    .forTypes(PackageType.MAC_PKG)
-                    .addInstallVerifier(HostArchPkgTest::verifyHostArch)
-                    .run();
-        });
+    @Test
+    public static void test() {
+        new PackageTest()
+                .excludeTypes(PackageType.MAC_DMG) // Not valid case
+                .configureHelloApp()
+                .forTypes(PackageType.MAC_PKG)
+                .addInstallVerifier(HostArchPkgTest::verifyHostArch)
+                .run();
     }
 }
