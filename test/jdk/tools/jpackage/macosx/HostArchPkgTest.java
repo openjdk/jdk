@@ -86,10 +86,9 @@ public class HostArchPkgTest {
     @Test
     public static void test() {
         new PackageTest()
-                .excludeTypes(PackageType.MAC_DMG) // Not valid case
-                .configureHelloApp()
                 .forTypes(PackageType.MAC_PKG)
+                .configureHelloApp()
                 .addInstallVerifier(HostArchPkgTest::verifyHostArch)
-                .run();
+                .run(PackageTest.Action.CREATE_AND_UNPACK);
     }
 }
