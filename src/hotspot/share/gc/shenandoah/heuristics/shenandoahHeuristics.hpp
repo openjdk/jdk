@@ -57,6 +57,7 @@
 class ShenandoahCollectionSet;
 class ShenandoahHeapRegion;
 class ShenandoahGeneration;
+class ShenandoahOldHeuristics;
 
 class ShenandoahHeuristics : public CHeapObj<mtGC> {
   static const intx Concurrent_Adjust   = -1; // recover from penalties
