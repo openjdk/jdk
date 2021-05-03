@@ -23,9 +23,8 @@
 
 /*
  * @test
- * @bug 8265325
+ * @bug 8265325 8265940
  * @summary test the optimization of pow(x, 0.5)
- * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @run main/othervm TestPow0Dot5Opt
  * @run main/othervm -Xint TestPow0Dot5Opt
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestPow0Dot5Opt

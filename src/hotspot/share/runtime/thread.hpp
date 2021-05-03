@@ -308,21 +308,9 @@ class Thread: public ThreadShadow {
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_FIELD_JFR;)      // Thread-local data for jfr
 
-  ObjectMonitor* _current_pending_monitor;      // ObjectMonitor this thread
-                                                // is waiting to lock
-  bool _current_pending_monitor_is_from_java;   // locking is from Java code
   JvmtiRawMonitor* _current_pending_raw_monitor; // JvmtiRawMonitor this thread
                                                  // is waiting to lock
-
-
-  // ObjectMonitor on which this thread called Object.wait()
-  ObjectMonitor* _current_waiting_monitor;
-
  public:
-  enum {
-    is_definitely_current_thread = true
-  };
-
   // Constructor
   Thread();
   virtual ~Thread() = 0;        // Thread is abstract.
@@ -493,28 +481,6 @@ class Thread: public ThreadShadow {
   bool is_trace_suspend()               { return (_suspend_flags & _trace_flag) != 0; }
 
   bool is_obj_deopt_suspend()           { return (_suspend_flags & _obj_deopt) != 0; }
-
-  // For tracking the heavyweight monitor the thread is pending on.
-  ObjectMonitor* current_pending_monitor() {
-    return _current_pending_monitor;
-  }
-  void set_current_pending_monitor(ObjectMonitor* monitor) {
-    _current_pending_monitor = monitor;
-  }
-  void set_current_pending_monitor_is_from_java(bool from_java) {
-    _current_pending_monitor_is_from_java = from_java;
-  }
-  bool current_pending_monitor_is_from_java() {
-    return _current_pending_monitor_is_from_java;
-  }
-
-  // For tracking the ObjectMonitor on which this thread called Object.wait()
-  ObjectMonitor* current_waiting_monitor() {
-    return _current_waiting_monitor;
-  }
-  void set_current_waiting_monitor(ObjectMonitor* monitor) {
-    _current_waiting_monitor = monitor;
-  }
 
   // For tracking the Jvmti raw monitor the thread is pending on.
   JvmtiRawMonitor* current_pending_raw_monitor() {
@@ -693,8 +659,6 @@ protected:
   JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
 
  public:
-  volatile intptr_t _Stalled;
-  volatile int _TypeTag;
   ParkEvent * volatile _ParkEvent;            // for Object monitors, JVMTI raw monitors,
                                               // and ObjectSynchronizer::read_stable_mark
 
@@ -703,7 +667,6 @@ protected:
   // (which can't itself be read from the signal handler if a signal hits during the Thread destructor).
   bool has_terminated()                       { return Atomic::load(&_ParkEvent) == NULL; };
 
-  volatile int _OnTrap;                       // Resume-at IP delta
   jint _hashStateW;                           // Marsaglia Shift-XOR thread-local RNG
   jint _hashStateX;                           // thread-specific hashCode generator state
   jint _hashStateY;
@@ -777,14 +740,6 @@ class JavaThread: public Thread {
  private:  // restore original namespace restriction
 #endif  // ifdef ASSERT
 
-#ifndef PRODUCT
- public:
-  enum {
-    jump_ring_buffer_size = 16
-  };
- private:  // restore original namespace restriction
-#endif
-
   JavaFrameAnchor _anchor;                       // Encapsulation of current java frame and it state
 
   ThreadFunction _entry_point;
@@ -821,9 +776,36 @@ class JavaThread: public Thread {
   // elided card-marks for performance along the fast-path.
   MemRegion     _deferred_card_mark;
 
-  MonitorChunk* _monitor_chunks;                 // Contains the off stack monitors
-                                                 // allocated during deoptimization
-                                                 // and by JNI_MonitorEnter/Exit
+  ObjectMonitor* _current_pending_monitor;              // ObjectMonitor this thread is waiting to lock
+  bool           _current_pending_monitor_is_from_java; // locking is from Java code
+  ObjectMonitor* _current_waiting_monitor;              // ObjectMonitor on which this thread called Object.wait()
+ public:
+  volatile intptr_t _Stalled;
+
+  // For tracking the heavyweight monitor the thread is pending on.
+  ObjectMonitor* current_pending_monitor() {
+    return _current_pending_monitor;
+  }
+  void set_current_pending_monitor(ObjectMonitor* monitor) {
+    _current_pending_monitor = monitor;
+  }
+  void set_current_pending_monitor_is_from_java(bool from_java) {
+    _current_pending_monitor_is_from_java = from_java;
+  }
+  bool current_pending_monitor_is_from_java() {
+    return _current_pending_monitor_is_from_java;
+  }
+  ObjectMonitor* current_waiting_monitor() {
+    return _current_waiting_monitor;
+  }
+  void set_current_waiting_monitor(ObjectMonitor* monitor) {
+    _current_waiting_monitor = monitor;
+  }
+
+ private:
+  MonitorChunk* _monitor_chunks;              // Contains the off stack monitors
+                                              // allocated during deoptimization
+                                              // and by JNI_MonitorEnter/Exit
 
   // Async. requests support
   enum AsyncRequests {

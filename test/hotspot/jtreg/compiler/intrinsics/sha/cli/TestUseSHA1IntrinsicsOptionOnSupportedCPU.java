@@ -26,6 +26,7 @@
  * @bug 8035968
  * @summary Verify UseSHA1Intrinsics option processing on supported CPU.
  * @library /test/lib testcases /
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
