@@ -21,8 +21,10 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.test;
 
+import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.shared.*;
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Method;
@@ -37,7 +39,7 @@ import java.util.function.Function;
  * This is done during the execution of the test VM by checking the active VM flags. This encoding is eventually parsed
  * and checked by the IRMatcher class in the driver VM after the termination of the test VM.
  */
-class IREncodingPrinter {
+public class IREncodingPrinter {
     public static final String START = "##### IRMatchRulesEncoding - used by TestFramework #####";
     public static final String END = "----- END -----";
     public static final int NO_RULE_APPLIED = -1;

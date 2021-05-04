@@ -21,8 +21,12 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.driver;
 
+import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.shared.TestFrameworkException;
+import compiler.lib.ir_framework.flag.FlagVM;
+import compiler.lib.ir_framework.shared.TestRunException;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -43,7 +47,7 @@ import java.util.regex.Pattern;
  *
  * @see FlagVM
  */
-class FlagVMProcess {
+public class FlagVMProcess {
     private static final boolean VERBOSE = Boolean.getBoolean("Verbose");
 
     private final List<String> cmds;
@@ -52,7 +56,7 @@ class FlagVMProcess {
     private String testVMFlagsFile;
     private OutputAnalyzer oa;
 
-    FlagVMProcess(Class<?> testClass, List<String> additionalFlags) {
+    public FlagVMProcess(Class<?> testClass, List<String> additionalFlags) {
         cmds = new ArrayList<>();
         testVMFlags = new ArrayList<>();
         prepareVMFlags(testClass, additionalFlags);

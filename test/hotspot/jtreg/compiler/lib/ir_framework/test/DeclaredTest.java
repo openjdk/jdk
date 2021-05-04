@@ -21,7 +21,10 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.test;
+
+import compiler.lib.ir_framework.CompLevel;
+import compiler.lib.ir_framework.shared.TestRunException;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -29,7 +32,7 @@ import java.util.Arrays;
 /**
  * This class represents a @Test method.
  */
-class DeclaredTest {
+public class DeclaredTest {
     private final Method testMethod;
     private final ArgumentValue[] arguments;
     private final int warmupIterations;

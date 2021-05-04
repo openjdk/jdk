@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.shared;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +29,7 @@ import java.util.List;
 /**
  * Utility class to report a {@link TestFormatException}.
  */
-class TestFormat {
+public class TestFormat {
     private static final List<String> FAILURES = new ArrayList<>();
 
     public static void check(boolean test, String failureMessage) {

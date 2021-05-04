@@ -23,6 +23,10 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.shared.TestFrameworkException;
+import compiler.lib.ir_framework.shared.TestRun;
+import compiler.lib.ir_framework.shared.TestRunException;
+import compiler.lib.ir_framework.test.TestVM;
 import jdk.test.lib.Utils;
 
 import java.lang.reflect.Executable;
@@ -119,9 +123,9 @@ public enum CompLevel {
     }
 
     /**
-     * Checks if this compilation level is not part of the compiler.
+     * Called by {@link TestFramework} to check if this compilation level is not part of the compiler.
      */
-    boolean isNotCompilationLevelOfCompiler(Compiler c) {
+    public boolean isNotCompilationLevelOfCompiler(Compiler c) {
         return switch (c) {
             case C1 -> !isC1();
             case C2 -> this != C2;
@@ -130,9 +134,9 @@ public enum CompLevel {
     }
 
     /**
-     * Flip the compilation levels.
+     * Called by {@link TestFramework} to flip compilation levels.
      */
-    CompLevel flipCompLevel() {
+    public CompLevel flipCompLevel() {
         switch (this) {
             case C1_SIMPLE, C1_LIMITED_PROFILE, C1_FULL_PROFILE -> {
                 return CompLevel.C2;
@@ -145,9 +149,10 @@ public enum CompLevel {
     }
 
     /**
-     * Return the compilation level when only allowing a compilation with the specified compiler.
+     * Called by {@link TestFramework}. Return the compilation level when only allowing a compilation with the specified
+     * compiler.
      */
-    CompLevel excludeCompilationRandomly(Executable ex) {
+    public CompLevel excludeCompilationRandomly(Executable ex) {
         if (Utils.getRandomInstance().nextBoolean()) {
             // No exclusion
             return this;

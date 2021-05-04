@@ -23,6 +23,9 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.driver.*;
+import compiler.lib.ir_framework.shared.*;
+import compiler.lib.ir_framework.test.*;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.helpers.ClassFileInstaller;
@@ -118,20 +121,20 @@ public class TestFramework {
             )
     );
 
-    static final boolean VERBOSE = Boolean.getBoolean("Verbose");
-    static final boolean TESTLIST = !System.getProperty("Test", "").isEmpty();
-    static final boolean EXCLUDELIST = !System.getProperty("Exclude", "").isEmpty();
+    public static final boolean VERBOSE = Boolean.getBoolean("Verbose");
+    public static final boolean TESTLIST = !System.getProperty("Test", "").isEmpty();
+    public static final boolean EXCLUDELIST = !System.getProperty("Exclude", "").isEmpty();
     private static final boolean REPORT_STDOUT = Boolean.getBoolean("ReportStdout");
 
-    static final String RERUN_HINT = """
-                                       #############################################################
-                                        - To only run the failed tests use -DTest, -DExclude,
-                                          and/or -DScenarios.
-                                        - To also get the standard output of the test VM run with
-                                          -DReportStdout=true or for even more fine-grained logging
-                                          use -DVerbose=true.
-                                       #############################################################
-                                     """ + System.lineSeparator();
+    private static final String RERUN_HINT = """
+                                               #############################################################
+                                                - To only run the failed tests use -DTest, -DExclude,
+                                                  and/or -DScenarios.
+                                                - To also get the standard output of the test VM run with
+                                                  -DReportStdout=true or for even more fine-grained logging
+                                                  use -DVerbose=true.
+                                               #############################################################
+                                             """ + System.lineSeparator();
 
     private boolean irVerificationPossible = Boolean.parseBoolean(System.getProperty("VerifyIR", "true"));
     private boolean shouldVerifyIR; // Should we perform IR matching?
@@ -695,7 +698,7 @@ public class TestFramework {
         }
     }
 
-    static void check(boolean test, String failureMessage) {
+    public static void check(boolean test, String failureMessage) {
         if (!test) {
             throw new TestFrameworkException(failureMessage);
         }

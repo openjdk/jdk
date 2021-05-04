@@ -21,8 +21,11 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.test;
 
+import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.Compiler;
+import compiler.lib.ir_framework.shared.*;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import sun.hotspot.WhiteBox;
@@ -72,12 +75,12 @@ public class TestVM {
 
     private static final boolean TIERED_COMPILATION = (Boolean)WHITE_BOX.getVMFlag("TieredCompilation");
     private static final CompLevel TIERED_COMPILATION_STOP_AT_LEVEL = CompLevel.forValue(((Long)WHITE_BOX.getVMFlag("TieredStopAtLevel")).intValue());
-    static final boolean TEST_C1 = TIERED_COMPILATION && TIERED_COMPILATION_STOP_AT_LEVEL.getValue() < CompLevel.C2.getValue();
+    public static final boolean TEST_C1 = TIERED_COMPILATION && TIERED_COMPILATION_STOP_AT_LEVEL.getValue() < CompLevel.C2.getValue();
 
     static final boolean XCOMP = Platform.isComp();
     static final boolean VERBOSE = Boolean.getBoolean("Verbose");
     private static final boolean PRINT_TIMES = Boolean.getBoolean("PrintTimes");
-    static final boolean USE_COMPILER = WHITE_BOX.getBooleanVMFlag("UseCompiler");
+    public static final boolean USE_COMPILER = WHITE_BOX.getBooleanVMFlag("UseCompiler");
     static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
     private static final String TESTLIST = System.getProperty("Test", "");
     private static final String EXCLUDELIST = System.getProperty("Exclude", "");
@@ -363,7 +366,7 @@ public class TestVM {
      * Exclude a method from compilation with a compiler randomly. Return the compiler for which the method was made
      * not compilable.
      */
-    static Compiler excludeRandomly(Executable ex) {
+    public static Compiler excludeRandomly(Executable ex) {
         Compiler compiler = switch (Utils.getRandomInstance().nextInt() % 3) {
             case 1 -> Compiler.C1;
             case 2 -> Compiler.C2;
@@ -843,40 +846,40 @@ public class TestVM {
         No
     }
 
-    static void compile(Method m, CompLevel compLevel) {
+    public static void compile(Method m, CompLevel compLevel) {
         TestRun.check(compLevel != CompLevel.SKIP && compLevel != CompLevel.WAIT_FOR_COMPILATION,
                          "Invalid compilation request with level " + compLevel);
         enqueueForCompilation(m, compLevel);
     }
 
-    static void deoptimize(Method m) {
+    public static void deoptimize(Method m) {
         WHITE_BOX.deoptimizeMethod(m);
     }
 
-    static boolean isCompiled(Method m) {
+    public static boolean isCompiled(Method m) {
         return compiledAtLevel(m, CompLevel.ANY) == TriState.Yes;
     }
 
-    static boolean isC1Compiled(Method m) {
+    public static boolean isC1Compiled(Method m) {
         return compiledByC1(m) == TriState.Yes;
     }
 
-    static boolean isC2Compiled(Method m) {
+    public static boolean isC2Compiled(Method m) {
         return compiledByC2(m) == TriState.Yes;
     }
 
-    static boolean isCompiledAtLevel(Method m, CompLevel compLevel) {
+    public static boolean isCompiledAtLevel(Method m, CompLevel compLevel) {
         return compiledAtLevel(m, compLevel) == TriState.Yes;
     }
 
-    static void assertDeoptimizedByC1(Method m) {
+    public static void assertDeoptimizedByC1(Method m) {
         if (notUnstableDeoptAssertion(m, CompLevel.C1_SIMPLE)) {
             TestRun.check(compiledByC1(m) != TriState.Yes || PER_METHOD_TRAP_LIMIT == 0 || !PROFILE_INTERPRETER,
                           m + " should have been deoptimized by C1");
         }
     }
 
-    static void assertDeoptimizedByC2(Method m) {
+    public static void assertDeoptimizedByC2(Method m) {
         if (notUnstableDeoptAssertion(m, CompLevel.C2)) {
             TestRun.check(compiledByC2(m) != TriState.Yes || PER_METHOD_TRAP_LIMIT == 0 || !PROFILE_INTERPRETER,
                           m + " should have been deoptimized by C2");
@@ -891,24 +894,24 @@ public class TestVM {
                (!EXCLUDE_RANDOM || WHITE_BOX.isMethodCompilable(m, level.getValue(), false)));
     }
 
-    static void assertCompiledByC1(Method m) {
+    public static void assertCompiledByC1(Method m) {
         TestRun.check(compiledByC1(m) != TriState.No, m + " should have been C1 compiled");
     }
 
-    static void assertCompiledByC2(Method m) {
+    public static void assertCompiledByC2(Method m) {
         TestRun.check(compiledByC2(m) != TriState.No, m + " should have been C2 compiled");
     }
 
-    static void assertCompiledAtLevel(Method m, CompLevel level) {
+    public static void assertCompiledAtLevel(Method m, CompLevel level) {
         TestRun.check(compiledAtLevel(m, level) != TriState.No, m + " should have been compiled at level " + level.name());
     }
 
-    static void assertNotCompiled(Method m) {
+    public static void assertNotCompiled(Method m) {
         TestRun.check(!isC1Compiled(m), m + " should not have been compiled by C1");
         TestRun.check(!isC2Compiled(m), m + " should not have been compiled by C2");
     }
 
-    static void assertCompiled(Method m) {
+    public static void assertCompiled(Method m) {
         TestRun.check(compiledByC1(m) != TriState.No || compiledByC2(m) != TriState.No, m + " should have been compiled");
     }
 

@@ -21,7 +21,11 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.driver;
+
+import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.shared.*;
+import compiler.lib.ir_framework.test.*;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -34,10 +38,10 @@ import java.util.regex.Pattern;
 /**
  * Parse the hotspot pid file of the test VM to match all @IR rules.
  */
-class IRMatcher {
+public class IRMatcher {
     private static final boolean PRINT_IR_ENCODING = Boolean.parseBoolean(System.getProperty("PrintIREncoding", "false"));
     private static final Pattern IR_ENCODING_PATTERN =
-            Pattern.compile("(?<=" + IREncodingPrinter.START + "\\R)[\\s\\S]*(?=" + IREncodingPrinter.END + ")");
+            Pattern.compile("(?<=" + IREncodingPrinter.START + "\r?\n)[\\s\\S]*(?=" + IREncodingPrinter.END + ")");
     private static final Pattern COMPILE_ID_PATTERN = Pattern.compile("compile_id='(\\d+)'");
 
     private final Map<String, IRMethod> compilations;
@@ -75,7 +79,7 @@ class IRMatcher {
         Map<String, int[]> irRulesMap = parseIREncoding(irEncoding);
         for (Method m : testClass.getDeclaredMethods()) {
             method = m;
-            IR[] irAnnos =  m.getAnnotationsByType(IR.class);
+            IR[] irAnnos = m.getAnnotationsByType(IR.class);
             if (irAnnos.length > 0) {
                 // Validation of legal @IR attributes and placement of the annotation was already done in Test VM.
                 int[] ids = irRulesMap.get(m.getName());
@@ -93,7 +97,7 @@ class IRMatcher {
     /**
      * Read the IR encoding emitted by the test VM to decide if an @IR rule must be checked for a method.
      */
-    private Map<String, int[]>  parseIREncoding(String irEncoding) {
+    private Map<String, int[]> parseIREncoding(String irEncoding) {
         Map<String, int[]> irRulesMap = new HashMap<>();
         Matcher matcher = IR_ENCODING_PATTERN.matcher(irEncoding);
         TestFramework.check(matcher.find(), "Did not find IR encoding");
@@ -375,7 +379,7 @@ class IRMatcher {
             final List<String> nodesWithCount = IRNode.mergeNodes(irAnno.counts());
             for (int i = 0; i < nodesWithCount.size(); i += 2) {
                 String node = nodesWithCount.get(i);
-                TestFormat.check(i + 1 < nodesWithCount.size(), "Missing count"  + getPostfixErrorMsg(node));
+                TestFormat.check(i + 1 < nodesWithCount.size(), "Missing count" + getPostfixErrorMsg(node));
                 String countString = nodesWithCount.get(i + 1);
                 long expectedCount;
                 ParsedComparator<Long> parsedComparator;

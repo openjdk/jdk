@@ -21,13 +21,15 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.shared;
 
 /**
- * Checked internal exceptions in the framework to propagate error handling.
+ * Utility class to report a {@link TestRunException}.
  */
-class CheckedTestFrameworkException extends Exception {
-    CheckedTestFrameworkException(String msg) {
-        super(msg);
+public class TestRun {
+    public static void check(boolean test, String failureMessage) {
+        if (!test) {
+            throw new TestRunException(failureMessage);
+        }
     }
 }

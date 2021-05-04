@@ -21,15 +21,18 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.shared;
 
 /**
- * Utility class to report a {@link TestRunException}.
+ * Exception that is thrown if the JTreg test throws an exception during the execution of individual tests of the
+ * test class.
  */
-class TestRun {
-    public static void check(boolean test, String failureMessage) {
-        if (!test) {
-            throw new TestRunException(failureMessage);
-        }
+public class TestRunException extends RuntimeException {
+    public TestRunException(String message) {
+        super(message);
+    }
+
+    public TestRunException(String message, Exception e) {
+        super(message, e);
     }
 }

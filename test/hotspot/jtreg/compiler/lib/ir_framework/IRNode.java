@@ -23,6 +23,10 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.driver.IRMatcher;
+import compiler.lib.ir_framework.shared.TestFormat;
+import compiler.lib.ir_framework.shared.TestFormatException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -128,7 +132,10 @@ public class IRNode {
     private static final String LOAD_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
     private static final String LOAD_OF_FIELD_POSTFIX = ",.*" + END;
 
-    static List<String> mergeNodes(String[] nodes) {
+    /**
+     * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.
+     */
+    public static List<String> mergeNodes(String[] nodes) {
         List<String> mergedNodes = new ArrayList<>();
         for (int i = 0; i < nodes.length; i += 2) {
             String node = nodes[i];

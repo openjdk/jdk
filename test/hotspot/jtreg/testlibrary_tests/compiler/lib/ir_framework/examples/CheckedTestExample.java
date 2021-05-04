@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.examples;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.test.TestVM;
 
 /*
  * @test

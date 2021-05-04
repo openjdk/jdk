@@ -58,7 +58,7 @@ The user has the possibility to add an additional `@IR` annotation to any `@Test
  - A `failOn` check that verifies that the provided regex is not matched in the C2 IR.
  - A `counts` check that verifies that the provided regex is matched a user defined number of times in the C2 IR.
  
-A regex can either be a custom string or any of the default regexes provided by the framework in [IRNode](IRNode.java) for some commonly used IR nodes (also provides the possibility of composite regexes).
+A regex can either be a custom string or any of the default regexes provided by the framework in [IRNode](./IRNode.java) for some commonly used IR nodes (also provides the possibility of composite regexes).
 
 An IR verification cannot always be performed. For example, a JTreg test could be run with _-Xint_ or not a debug build (_-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_ are debug build flags). But also CI tier testing could add additional JTreg VM and Javaoptions flags which could make an IR rule unstable. 
 
@@ -99,7 +99,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DShuffleTests=false`: Disables the random execution order of all tests (such a shuffling is always done by default).
 - `-DDumpReplay=true`: Add the `DumpReplay` directive to the test VM.
 - `-DGCAfter=true`: Perform `System.gc()` after each test (slows the execution down).
-- `-DWaitForCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a `@Test` annotated method with compilation level [WAIT_FOR_COMPILATION](./CompLevel.java).
+- `-DWaitForCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a `@Test` annotated method with compilation level [WAIT\_FOR\_COMPILATION](./CompLevel.java).
 - `-DIgnoreCompilerControls=false`: Ignore all compiler controls applied in the framework. This includes any compiler control annotations (`@DontCompile`, `@DontInline`, `@ForceCompile`, `@ForceInline`, `@ForceCompileStaticInitializer`), the exclusion of `@Run` and `@Check` methods from compilation, and the directive to not inline `@Test` annotated methods.
 
 
@@ -118,9 +118,17 @@ Some of the steps above can be different due to the kind of the test or due to u
 More information about the internals and the workflow of the framework can be found in the Javadocs of [TestFramework](./TestFramework.java).  
  
 ## 4. Internal Framework Tests
-There are various tests to verify the correctness of the test framework. These tests can be found in [tests](tests) and can directly be run with JTreg. The tests are not part of the normal JTreg tests of HotSpot and should only be run upon changing the framework code as a minimal form of testing.
+There are various tests to verify the correctness of the test framework. These tests can be found in [ir_framework](../../../testlibrary_tests/compiler/lib/ir_framework) and can directly be run with JTreg. The tests are part of the normal JTreg tests of HotSpot and should be run upon changing the framework code as a minimal form of testing.
 
 Additional testing was performed by converting all compiler Inline Types tests that used the currently present IR test framework in Valhalla (see [JDK-8263024](https://bugs.openjdk.java.net/browse/JDK-8263024)). It is strongly advised to make sure a change to the framework still lets these converted tests in Valhalla pass as part of an additional testing step.
 
-## 5. Summary
+## 5. Framework Package Structure
+A user only needs to import classes from the package `compiler.lib.ir_framework` (e.g. `import compiler.lib.ir_framework.*;`) which represents the interface classes to the framework. The remaining framework internal classes are kept in separate subpackages and should not directly be imported:
+
+- `compiler.lib.ir_framework.driver`: These classes are used while running the driver VM (same VM as the one running the user code's `main()` method of a JTreg test).
+- `compiler.lib.ir_framework.flag`: These classes are used while running the flag VM to determine additional flags for the test VM which are required for IR verification.
+- `compiler.lib.ir_framework.test`: These classes are used while running the test VM (i.e. the actual execution of the user tests as described in section 3).
+- `compiler.lib.ir_framework.shared`: These classes can be called from either the driver, flag, or test VM.
+
+## 6. Summary
  The initial design and feature set was kept simple and straight forward and serves well for small to medium sized tests. There are a lot of possibilities to further enhance the framework and make it more powerful. This can be tackled in additional RFEs. A few ideas can be found as subtasks of the [initial RFE](https://bugs.openjdk.java.net/browse/JDK-8254129) for this framework.

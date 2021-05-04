@@ -21,7 +21,10 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.test;
+
+import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.shared.TestRunException;
 
 import java.lang.reflect.Method;
 
@@ -40,7 +43,7 @@ class BaseTest extends AbstractTest {
         super(test.getWarmupIterations(), skip);
         this.test = test;
         this.testMethod = test.getTestMethod();
-        this.testInfo = new TestInfo(test);
+        this.testInfo = new TestInfo(testMethod, test.getCompLevel());
         this.invocationTarget = createInvocationTarget(testMethod);
         this.shouldCompile = shouldCompile(test);
         this.waitForCompilation = isWaitForCompilation(test);

@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.driver.TestVMException;
 import jdk.test.lib.Utils;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;

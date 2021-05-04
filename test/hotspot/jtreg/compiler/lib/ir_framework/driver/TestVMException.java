@@ -21,40 +21,27 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.driver;
+
+import compiler.lib.ir_framework.shared.TestFormatException;
 
 /**
- * Exception that is thrown if an {@link IR} rule/constraint failed. The exception message contains a detailed list of
- * all failures, including failing method(s), {@code @IR} rule(s) (the first {@code @IR} constraint is rule 1) and the
- * specific regex(es) that could not be matched.
- *
- * @see IR
- * @see Test
+ * Exception that is thrown if the test VM has thrown any kind of exception (except for {@link TestFormatException}).
  */
-public class IRViolationException extends RuntimeException {
-    private final String compilations;
-    private String exceptionInfo;
+public class TestVMException extends RuntimeException {
+    private final String exceptionInfo;
 
-    IRViolationException(String message, String compilations) {
-        super("There were one or multiple IR rule failures. Please check stderr for more information.");
-        this.exceptionInfo = message;
-        this.compilations = compilations;
+    TestVMException(String exceptionInfo) {
+        super("There were one or multiple errors. Please check stderr for more information.");
+        this.exceptionInfo = exceptionInfo;
     }
 
     /**
-     * Get some more detailed information about the violated IR rule(s) and how to reproduce it.
+     * Get some more detailed information about the exception thrown in the test VM and how to reproduce it.
      *
-     * @return a formatted string containing information about the violated IR rule(s) and how to reproduce it.
+     * @return a formatted string containing information about the exception of the test VM and how to reproduce it.
      */
     public String getExceptionInfo() {
         return exceptionInfo;
-    }
-
-    String getCompilations() {
-        return compilations;
-    }
-
-    void addCommandLine(String commandLine) {
-        this.exceptionInfo = commandLine + System.lineSeparator() + exceptionInfo;
     }
 }

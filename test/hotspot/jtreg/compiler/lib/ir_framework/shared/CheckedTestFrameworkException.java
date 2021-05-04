@@ -21,13 +21,13 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.shared;
 
 /**
- * Exception that is thrown if a JTreg test violates the supported format by the test framework.
+ * Checked internal exceptions in the framework to propagate error handling.
  */
-public class TestFormatException extends RuntimeException {
-    TestFormatException(String message) {
-        super(message);
+public class CheckedTestFrameworkException extends Exception {
+    public CheckedTestFrameworkException(String msg) {
+        super(msg);
     }
 }

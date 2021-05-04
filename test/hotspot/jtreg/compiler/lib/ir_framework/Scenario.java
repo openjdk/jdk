@@ -23,6 +23,8 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.shared.TestRunException;
+
 import java.util.*;
 import java.util.stream.Collectors;
 

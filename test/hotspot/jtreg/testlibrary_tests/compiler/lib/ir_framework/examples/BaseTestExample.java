@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.examples;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.test.TestVM;
 /*
  * @test
  * @summary Example test to use the new test framework.

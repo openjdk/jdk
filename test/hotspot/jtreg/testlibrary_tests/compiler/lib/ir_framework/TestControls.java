@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.test.TestVM;
 import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
 

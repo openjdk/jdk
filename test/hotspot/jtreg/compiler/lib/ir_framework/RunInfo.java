@@ -23,6 +23,10 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.test.DeclaredTest;
+import compiler.lib.ir_framework.shared.TestRunException;
+import compiler.lib.ir_framework.test.TestVM;
+
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +43,7 @@ public class RunInfo extends AbstractInfo {
     private final Map<String, DeclaredTest> tests;
     private final boolean hasMultipleTests;
 
-    RunInfo(List<DeclaredTest> tests) {
+    public RunInfo(List<DeclaredTest> tests) {
         super(tests.get(0).getTestMethod().getDeclaringClass());
         this.test = tests.get(0);
         this.testMethod = test.getTestMethod();

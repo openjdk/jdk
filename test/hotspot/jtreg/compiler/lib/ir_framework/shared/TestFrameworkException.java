@@ -21,22 +21,18 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.shared;
 
 /**
- * Exception that is thrown by the test VM if no tests are run as a result of specifying {@code -DTest} and/or
- * {@code -DExclude} defining an empty set with the used test VM flags.
+ * Exception that is thrown if there is an internal error in the framework. This is most likely an indicator of a bug
+ * in the framework.
  */
-public class NoTestsRunException extends RuntimeException {
-    /**
-     * Default constructor used by test VM
-     */
-    NoTestsRunException() {}
+public class TestFrameworkException extends RuntimeException {
+    public TestFrameworkException(String message) {
+        super("Internal Test Framework exception - please file a bug:" + System.lineSeparator() + message);
+    }
 
-    /**
-     * Constructor used to eventually throw the exception in the driver VM.
-     */
-    NoTestsRunException(String message) {
-        super(message);
+    public TestFrameworkException(String message, Throwable e) {
+        super("Internal Test Framework exception - please file a bug:" + System.lineSeparator() + message, e);
     }
 }

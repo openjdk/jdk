@@ -21,8 +21,14 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.driver;
 
+import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.shared.TestFrameworkException;
+import compiler.lib.ir_framework.shared.TestFrameworkSocket;
+import compiler.lib.ir_framework.shared.NoTestsRunException;
+import compiler.lib.ir_framework.shared.TestFormatException;
+import compiler.lib.ir_framework.test.TestVM;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -40,7 +46,7 @@ import java.util.regex.Pattern;
  * @see TestVM
  * @see TestFrameworkSocket
  */
-class TestVMProcess {
+public class TestVMProcess {
     private static final boolean VERBOSE = Boolean.getBoolean("Verbose");
     private static final boolean PREFER_COMMAND_LINE_FLAGS = Boolean.getBoolean("PreferCommandLineFlags");
     private static final int WARMUP_ITERATIONS = Integer.getInteger("Warmup", -1);
@@ -56,7 +62,7 @@ class TestVMProcess {
     private OutputAnalyzer oa;
     private String irEncoding;
 
-    TestVMProcess(List<String> additionalFlags, Class<?> testClass, Set<Class<?>> helperClasses, int defaultWarmup) {
+    public TestVMProcess(List<String> additionalFlags, Class<?> testClass, Set<Class<?>> helperClasses, int defaultWarmup) {
         this.cmds = new ArrayList<>();
         TestFrameworkSocket socket = new TestFrameworkSocket();
         try (socket) {

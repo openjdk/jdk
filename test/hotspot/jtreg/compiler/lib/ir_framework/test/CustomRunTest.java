@@ -21,8 +21,12 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.test;
 
+import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.shared.TestFormat;
+import compiler.lib.ir_framework.shared.TestFrameworkException;
+import compiler.lib.ir_framework.shared.TestRunException;
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Method;

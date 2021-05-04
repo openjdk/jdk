@@ -23,6 +23,9 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.test.DeclaredTest;
+import compiler.lib.ir_framework.test.TestVM;
+
 import java.lang.reflect.Method;
 
 /**
@@ -35,10 +38,10 @@ public class TestInfo extends AbstractInfo {
     private final Method testMethod;
     private final boolean compilationSkipped;
 
-    TestInfo(DeclaredTest test) {
-        super(test.getTestMethod().getDeclaringClass());
-        this.testMethod = test.getTestMethod();
-        this.compilationSkipped = test.getCompLevel() == CompLevel.SKIP;
+    public TestInfo(Method testMethod, CompLevel testCmpLevel) {
+        super(testMethod.getDeclaringClass());
+        this.testMethod = testMethod;
+        this.compilationSkipped = testCmpLevel == CompLevel.SKIP;
     }
 
     /**

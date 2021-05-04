@@ -21,8 +21,12 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.flag;
 
+import compiler.lib.ir_framework.CompLevel;
+import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.shared.TestFrameworkException;
+import compiler.lib.ir_framework.shared.TestRunException;
 import jdk.test.lib.process.ProcessTools;
 import sun.hotspot.WhiteBox;
 
@@ -37,10 +41,13 @@ import java.util.Arrays;
  * Whitebox API to determine the necessary additional flags to run the test VM (e.g. to do IR matching). It returns
  * the flags over the dedicated TestFramework socket.
  */
-class FlagVM {
+public class FlagVM {
+    public static final String TEST_VM_FLAGS_FILE_PREFIX = "test-vm-flags-pid-";
+    public static final String TEST_VM_FLAGS_FILE_POSTFIX = ".log";
+    public static final String TEST_VM_FLAGS_DELIMITER = " ";
+
+    private static final String TEST_VM_FLAGS_FILE;
     private static final WhiteBox WHITE_BOX;
-    static final String TEST_VM_FLAGS_FILE_PREFIX = "test-vm-flags-pid-";
-    static final String TEST_VM_FLAGS_FILE_POSTFIX = ".log";
 
     static {
         try {
@@ -53,9 +60,6 @@ class FlagVM {
         }
     }
 
-    private static final String TEST_VM_FLAGS_FILE;
-
-    static final String TEST_VM_FLAGS_DELIMITER = " ";
 
     private static final boolean TIERED_COMPILATION = (Boolean)WHITE_BOX.getVMFlag("TieredCompilation");
     private static final CompLevel TIERED_COMPILATION_STOP_AT_LEVEL =

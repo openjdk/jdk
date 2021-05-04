@@ -21,7 +21,11 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.test;
+
+import compiler.lib.ir_framework.Check;
+import compiler.lib.ir_framework.CheckAt;
+import compiler.lib.ir_framework.shared.TestRunException;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

@@ -21,7 +21,9 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.shared;
+
+import compiler.lib.ir_framework.TestFramework;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -35,12 +37,12 @@ import java.util.concurrent.FutureTask;
 /**
  * Dedicated socket to send data from the flag and test VM back to the driver VM.
  */
-class TestFrameworkSocket implements AutoCloseable {
-    // Static fields used by flag and test VM only.
+public class TestFrameworkSocket implements AutoCloseable {
+    public static final String STDOUT_PREFIX = "[STDOUT]";
+    // Static fields used for test VM only.
     private static final String SERVER_PORT_PROPERTY = "ir.framework.server.port";
     private static final int SERVER_PORT = Integer.getInteger(SERVER_PORT_PROPERTY, -1);
 
-    static final String STDOUT_PREFIX = "[STDOUT]";
     private static final boolean REPRODUCE = Boolean.getBoolean("Reproduce");
     private static final String HOSTNAME = null;
     private static Socket clientSocket = null;
@@ -50,7 +52,7 @@ class TestFrameworkSocket implements AutoCloseable {
     private FutureTask<String> socketTask;
     private final ServerSocket serverSocket;
 
-    TestFrameworkSocket() {
+    public TestFrameworkSocket() {
         try {
             serverSocket = new ServerSocket(0);
         } catch (IOException e) {

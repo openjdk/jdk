@@ -21,14 +21,14 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.shared;
 
 import java.util.function.BiPredicate;
 
 /**
  * Utility class to parse a comparator either in the applyIf* or in the counts properties of an @IR rules.
  */
-class ParsedComparator<T extends Comparable<T>> {
+public class ParsedComparator<T extends Comparable<T>> {
     private final String strippedString;
     private final BiPredicate<T, T> predicate;
     private final String comparator;

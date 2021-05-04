@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.shared.TestFormatException;
 import jdk.test.lib.Asserts;
 
 import java.lang.annotation.Retention;

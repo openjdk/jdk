@@ -23,6 +23,8 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.shared.TestRunException;
+import compiler.lib.ir_framework.test.TestVM;
 import jdk.test.lib.Utils;
 
 import java.lang.reflect.Method;
@@ -111,9 +113,9 @@ abstract public class AbstractInfo {
     }
 
     /**
-     * Called by framework when the warm-up is finished. Not exposed to users.
+     * Called by {@link TestFramework} when the warm-up is finished. Should not be called by user code.
      */
-    void setWarmUpFinished() {
+    public void setWarmUpFinished() {
         onWarmUp = false;
     }
 }

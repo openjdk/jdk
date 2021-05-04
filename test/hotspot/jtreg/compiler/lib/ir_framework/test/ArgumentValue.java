@@ -21,8 +21,13 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.test;
 
+import compiler.lib.ir_framework.Argument;
+import compiler.lib.ir_framework.Arguments;
+import compiler.lib.ir_framework.shared.TestFrameworkException;
+import compiler.lib.ir_framework.shared.TestFormat;
+import compiler.lib.ir_framework.shared.TestFormatException;
 import jdk.test.lib.Utils;
 
 import java.lang.reflect.Constructor;

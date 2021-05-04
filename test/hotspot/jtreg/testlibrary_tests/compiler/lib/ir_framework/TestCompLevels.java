@@ -23,6 +23,8 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.test.TestVM;
+
 import java.lang.reflect.Method;
 
 /*

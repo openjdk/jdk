@@ -21,7 +21,9 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.driver;
+
+import compiler.lib.ir_framework.IR;
 
 import java.lang.reflect.Method;
 
