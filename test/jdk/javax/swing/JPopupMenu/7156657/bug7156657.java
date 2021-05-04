@@ -131,6 +131,7 @@ public class bug7156657 {
         });
 
         robot.waitForIdle();
+        robot.delay(1000); // Give frame time to repaint
 
         BufferedImage greenBackgroundCapture = robot.createScreenCapture(popupRectangle);
         BufferedImage greenFrame = robot.createScreenCapture(frame.getBounds());
