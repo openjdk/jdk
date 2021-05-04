@@ -2270,6 +2270,12 @@ public final class System {
             public boolean isReflectivelyOpened(Module m, String pn, Module other) {
                 return m.isReflectivelyOpened(pn, other);
             }
+            public Module addEnableNativeAccess(Module m) {
+                return m.addEnableNativeAccess();
+            }
+            public boolean isEnableNativeAccess(Module m) {
+                return m.isEnableNativeAccess();
+            }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();
             }
@@ -2333,16 +2339,6 @@ public final class System {
 
             public Object classData(Class<?> c) {
                 return c.getClassData();
-            }
-
-            @Override
-            public Module addEnableNativeAccess(Module m) {
-                return m.addEnableNativeAccess();
-            }
-
-            @Override
-            public boolean isEnableNativeAccess(Module m) {
-                return m.isEnableNativeAccess();
             }
         });
     }

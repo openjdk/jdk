@@ -109,8 +109,7 @@ public class Reflection {
     public static void ensureNativeAccess(Class<?> currentClass) {
         Module module = currentClass.getModule();
         if (!SharedSecrets.getJavaLangAccess().isEnableNativeAccess(module)) {
-            String moduleName = module.isNamed()?  module.getName() : "UNNAMED";
-            throw new IllegalCallerException("Illegal native access from module: " + moduleName);
+            throw new IllegalCallerException("Illegal native access from module: " + module);
         }
     }
 
