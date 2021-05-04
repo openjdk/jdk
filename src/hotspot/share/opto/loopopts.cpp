@@ -718,7 +718,9 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
         break;
       }
     }
-    if (phi == NULL)  break;
+    if (phi == NULL || _igvn.type(phi) == Type::TOP) {
+      break;
+    }
     if (PrintOpto && VerifyLoopOptimizations) { tty->print_cr("CMOV"); }
     // Move speculative ops
     wq.push(phi);
@@ -1479,7 +1481,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
               IdealLoopTree* x_loop = get_loop(x_ctrl);
               Node* x_head = x_loop->_head;
               if (x_head->is_Loop() && (x_head->is_OuterStripMinedLoop() || x_head->as_Loop()->is_strip_mined())) {
-                if (is_dominator(n_ctrl, x_head)) {
+                if (is_dominator(n_ctrl, x_head) && n_ctrl != x_head) {
                   // Anti dependence analysis is sometimes too
                   // conservative: a store in the outer strip mined loop
                   // can prevent a load from floating out of the outer

@@ -278,7 +278,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
             // search is done on the node label (without line breaks). See also
             // class NodeQuickSearch in the View module.
             for (InputNode n : getSource().getSourceNodes()) {
-                String label = resolveString(diagram.getNodeText(), n.getProperties());
+                String label = n.getProperties().resolveString(diagram.getNodeText());
                 n.getProperties().setProperty("label", label.replaceAll("\\R", " "));
             }
         }
@@ -290,42 +290,10 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
         String[] result = new String[strings.length];
 
         for (int i = 0; i < strings.length; i++) {
-            result[i] = resolveString(strings[i], getProperties());
+            result[i] = getProperties().resolveString(strings[i]);
         }
 
         lines = result;
-    }
-
-    public static final String resolveString(String string, Properties properties) {
-
-        StringBuilder sb = new StringBuilder();
-        boolean inBrackets = false;
-        StringBuilder curIdent = new StringBuilder();
-
-        for (int i = 0; i < string.length(); i++) {
-            char c = string.charAt(i);
-            if (inBrackets) {
-                if (c == ']') {
-                    String value = properties.get(curIdent.toString());
-                    if (value == null) {
-                        value = "";
-                    }
-                    sb.append(value);
-                    inBrackets = false;
-                } else {
-                    curIdent.append(c);
-                }
-            } else {
-                if (c == '[') {
-                    inBrackets = true;
-                    curIdent = new StringBuilder();
-                } else {
-                    sb.append(c);
-                }
-            }
-        }
-
-        return sb.toString();
     }
 
     @Override

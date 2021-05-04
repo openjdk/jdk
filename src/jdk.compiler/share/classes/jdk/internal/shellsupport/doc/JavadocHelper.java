@@ -284,12 +284,12 @@ public abstract class JavadocHelper implements AutoCloseable {
                                     executableElement.getParameters()
                                                      .stream()
                                                      .map(param -> param.getSimpleName().toString())
-                                                     .collect(Collectors.toList());
+                                                     .toList();
                             List<String> throwsList =
                                     executableElement.getThrownTypes()
                                                      .stream()
                                                      .map(TypeMirror::toString)
-                                                     .collect(Collectors.toList());
+                                                     .toList();
                             Set<String> missingParams = new HashSet<>(parameters);
                             Set<String> missingThrows = new HashSet<>(throwsList);
                             boolean hasReturn = false;

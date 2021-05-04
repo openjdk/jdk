@@ -410,7 +410,8 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _max_concurrent_workers(0),
 
   _region_mark_stats(NEW_C_HEAP_ARRAY(G1RegionMarkStats, _g1h->max_reserved_regions(), mtGC)),
-  _top_at_rebuild_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_reserved_regions(), mtGC))
+  _top_at_rebuild_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_reserved_regions(), mtGC)),
+  _needs_remembered_set_rebuild(false)
 {
   assert(CGC_lock != NULL, "CGC_lock must be initialized");
 
@@ -988,10 +989,10 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
 
       bool selected_for_rebuild;
       if (hr->is_humongous()) {
-        bool const is_live = _cm->liveness(hr->humongous_start_region()->hrm_index()) > 0;
+        bool const is_live = _cm->live_words(hr->humongous_start_region()->hrm_index()) > 0;
         selected_for_rebuild = tracking_policy->update_humongous_before_rebuild(hr, is_live);
       } else {
-        size_t const live_bytes = _cm->liveness(hr->hrm_index());
+        size_t const live_bytes = _cm->live_bytes(hr->hrm_index());
         selected_for_rebuild = tracking_policy->update_before_rebuild(hr, live_bytes);
       }
       if (selected_for_rebuild) {
@@ -1029,7 +1030,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
 
     void update_marked_bytes(HeapRegion* hr) {
       uint const region_idx = hr->hrm_index();
-      size_t const marked_words = _cm->liveness(region_idx);
+      size_t const marked_words = _cm->live_words(region_idx);
       // The marking attributes the object's size completely to the humongous starts
       // region. We need to distribute this value across the entire set of regions a
       // humongous object spans.
@@ -1042,7 +1043,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
         }
       } else {
         log_trace(gc, marking)("Adding " SIZE_FORMAT " words to region %u (%s)", marked_words, region_idx, hr->get_type_str());
-        add_marked_bytes_and_note_end(hr, marked_words * HeapWordSize);
+        add_marked_bytes_and_note_end(hr, _cm->live_bytes(region_idx));
       }
     }
 
@@ -1150,6 +1151,8 @@ void G1ConcurrentMark::remark() {
 
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
                                       _g1h->num_regions(), cl.total_selected_for_rebuild());
+
+      _needs_remembered_set_rebuild = (cl.total_selected_for_rebuild() > 0);
     }
     {
       GCTraceTime(Debug, gc, phases) debug("Reclaim Empty Regions", _gc_timer_cm);
@@ -1321,10 +1324,12 @@ void G1ConcurrentMark::cleanup() {
 
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup before");
 
-  {
+  if (needs_remembered_set_rebuild()) {
     GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking After Rebuild", _gc_timer_cm);
     G1UpdateRemSetTrackingAfterRebuild cl(_g1h);
     _g1h->heap_region_iterate(&cl);
+  } else {
+    log_debug(gc, phases)("No Remembered Sets to update after rebuild");
   }
 
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup after");
@@ -1340,7 +1345,7 @@ void G1ConcurrentMark::cleanup() {
 
   {
     GCTraceTime(Debug, gc, phases) debug("Finalize Concurrent Mark Cleanup", _gc_timer_cm);
-    policy->record_concurrent_mark_cleanup_end();
+    policy->record_concurrent_mark_cleanup_end(needs_remembered_set_rebuild());
   }
 }
 
@@ -1953,6 +1958,12 @@ void G1ConcurrentMark::verify_no_collection_set_oops() {
 #endif // PRODUCT
 
 void G1ConcurrentMark::rebuild_rem_set_concurrently() {
+  // If Remark did not select any regions for RemSet rebuild,
+  // skip the rebuild remembered set phase
+  if (!needs_remembered_set_rebuild()) {
+    log_debug(gc, marking)("Skipping Remembered Set Rebuild. No regions selected for rebuild");
+    return;
+  }
   _g1h->rem_set()->rebuild_rem_set(this, _concurrent_workers, _worker_id_offset);
 }
 
