@@ -118,6 +118,9 @@ public class Lint
             if (source.compareTo(Source.JDK9) >= 0) {
                 values.add(LintCategory.DEP_ANN);
             }
+            if (source.compareTo(Source.JDK17) >= 0) {
+                values.add(LintCategory.STRICTFP);
+            }
             values.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
             values.add(LintCategory.OPENS);
             values.add(LintCategory.MODULE);
@@ -282,6 +285,11 @@ public class Lint
          * Warn about issues relating to use of statics
          */
         STATIC("static"),
+
+        /**
+         * Warning about unnecessary uses of the strictfp modifier
+         */
+        STRICTFP("strictfp"),
 
         /**
          * Warn about synchronization attempts on instances of @ValueBased classes.

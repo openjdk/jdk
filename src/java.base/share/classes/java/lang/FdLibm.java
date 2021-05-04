@@ -120,7 +120,7 @@ class FdLibm {
             throw new UnsupportedOperationException();
         }
 
-        public static strictfp double compute(double x) {
+        public static double compute(double x) {
             double  t = 0.0;
             double sign;
 
@@ -203,7 +203,7 @@ class FdLibm {
             throw new UnsupportedOperationException();
         }
 
-        public static strictfp double compute(double x, double y) {
+        public static double compute(double x, double y) {
             double a = Math.abs(x);
             double b = Math.abs(y);
 
@@ -343,7 +343,7 @@ class FdLibm {
             throw new UnsupportedOperationException();
         }
 
-        public static strictfp double compute(final double x, final double y) {
+        public static double compute(final double x, final double y) {
             double z;
             double r, s, t, u, v, w;
             int i, j, k, n;
@@ -680,8 +680,7 @@ class FdLibm {
             throw new UnsupportedOperationException();
         }
 
-        // should be able to forgo strictfp due to controlled over/underflow
-        public static strictfp double compute(double x) {
+        public static double compute(double x) {
             double y;
             double hi = 0.0;
             double lo = 0.0;

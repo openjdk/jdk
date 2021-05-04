@@ -41,7 +41,8 @@ import static com.sun.tools.javac.jvm.ByteCodes.*;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-strictfp class ConstFold {
+@SuppressWarnings("strictfp")
+/* strictfp */ class ConstFold { // Temporary comment out strictfp until suppression debugged
     protected static final Context.Key<ConstFold> constFoldKey = new Context.Key<>();
 
     private Symtab syms;

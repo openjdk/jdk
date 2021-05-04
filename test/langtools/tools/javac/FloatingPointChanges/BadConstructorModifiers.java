@@ -4,8 +4,8 @@
  * @summary strictfp may not be used with constructors
  * @author David Stoutamire (dps)
  *
- * @compile/fail/ref=BadConstructorModifiers.out -XDrawDiagnostics --release 16 BadConstructorModifiers.java
- * @compile/fail/ref=BadConstructorModifiers.out -XDrawDiagnostics BadConstructorModifiers.java
+ * @compile/fail/ref=BadConstructorModifiers.out -XDrawDiagnostics --release 16     BadConstructorModifiers.java
+ * @compile/fail/ref=BadConstructorModifiers.out -XDrawDiagnostics -Xlint:-strictfp BadConstructorModifiers.java
  */
 
 public class BadConstructorModifiers {

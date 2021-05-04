@@ -167,7 +167,7 @@ class TaskFactory {
         List<String> allOptions = new ArrayList<>();
 
         allOptions.add("--should-stop=at=FLOW");
-        allOptions.add("-Xlint:unchecked");
+        allOptions.add("-Xlint:unchecked,-strictfp");
         allOptions.add("-proc:none");
         allOptions.addAll(extraArgs);
 
@@ -184,7 +184,7 @@ class TaskFactory {
 
         return runTask(wraps.stream(),
                        sh,
-                       List.of("-Xlint:unchecked", "-proc:none", "-parameters"),
+                       List.of("-Xlint:unchecked,-strictfp", "-proc:none", "-parameters"),
                        (jti, diagnostics) -> new CompileTask(sh, jti, diagnostics),
                        worker);
     }
