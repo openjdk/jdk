@@ -600,14 +600,6 @@ extern "C" JNIEXPORT nmethod* findnm(intptr_t addr) {
   return  CodeCache::find_nmethod((address)addr);
 }
 
-// Another interface that isn't ambiguous in dbx.
-// Can we someday rename the other find to hsfind?
-extern "C" JNIEXPORT void hsfind(intptr_t x) {
-  Command c("hsfind");
-  os::print_location(tty, x, false);
-}
-
-
 extern "C" JNIEXPORT void find(intptr_t x) {
   Command c("find");
   os::print_location(tty, x, false);
