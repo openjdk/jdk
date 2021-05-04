@@ -310,10 +310,6 @@ public:
     static void clone_in_heap(oop src, oop dst, size_t size) {
       Raw::clone(src, dst, size);
     }
-
-    static oop resolve(oop obj) {
-      return Raw::resolve(obj);
-    }
   };
 };
 
