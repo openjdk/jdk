@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_JAVA_HPP
 #define SHARE_RUNTIME_JAVA_HPP
 
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class Handle;
