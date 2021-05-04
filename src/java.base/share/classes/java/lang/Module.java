@@ -110,7 +110,7 @@ public final class Module implements AnnotatedElement {
     // the module descriptor
     private final ModuleDescriptor descriptor;
 
-    // is this module a native module
+    // true, if this module allows restricted native access
     private volatile boolean enableNativeAccess;
 
     /**
