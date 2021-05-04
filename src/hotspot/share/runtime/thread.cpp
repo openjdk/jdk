@@ -781,17 +781,12 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
                                       JavaThreadStatus::RUNNABLE);
 }
 
-static char java_version[64] = "";
-static char java_runtime_name[128] = "";
-static char java_runtime_version[128] = "";
-static char java_runtime_vendor_version[128] = "";
-static char java_runtime_vendor_vm_bug_url[128] = "";
-
-// Extract version and vendor specific information.
+// Extract version and vendor specific information from
+// java.lang.VersionProps fields.
+// Returned char* is allocated in the thread's resource area
+// so must be copied for permanency.
 static const char* get_java_version_info(InstanceKlass* ik,
-                                         Symbol* field_name,
-                                         char* buffer,
-                                         int buffer_size) {
+                                         Symbol* field_name) {
   fieldDescriptor fd;
   bool found = ik != NULL &&
                ik->find_local_field(field_name,
@@ -801,9 +796,7 @@ static const char* get_java_version_info(InstanceKlass* ik,
     if (name_oop == NULL) {
       return NULL;
     }
-    const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        buffer,
-                                                        buffer_size);
+    const char* name = java_lang_String::as_utf8_string(name_oop);
     return name;
   } else {
     return NULL;
@@ -2664,26 +2657,23 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   // Phase 1 of the system initialization in the library, java.lang.System class initialization
   call_initPhase1(CHECK);
 
-  // get the Java runtime name, version, and vendor info after java.lang.System is initialized
+  // Get the Java runtime name, version, and vendor info after java.lang.System is initialized.
+  // Some values are actually configure-time constants but some can be set via the jlink tool and
+  // so must be read dynamically. We treat them all the same.
   InstanceKlass* ik = SystemDictionary::find_instance_klass(vmSymbols::java_lang_VersionProps(),
                                                             Handle(), Handle());
+  {
+    ResourceMark rm(main_thread);
+    JDK_Version::set_java_version(get_java_version_info(ik, vmSymbols::java_version_name()));
 
-  JDK_Version::set_java_version(get_java_version_info(ik, vmSymbols::java_version_name(),
-                                                      java_version, sizeof(java_version)));
+    JDK_Version::set_runtime_name(get_java_version_info(ik, vmSymbols::java_runtime_name_name()));
 
-  JDK_Version::set_runtime_name(get_java_version_info(ik, vmSymbols::java_runtime_name_name(),
-                                                      java_runtime_name, sizeof(java_runtime_name)));
+    JDK_Version::set_runtime_version(get_java_version_info(ik, vmSymbols::java_runtime_version_name()));
 
-  JDK_Version::set_runtime_version(get_java_version_info(ik, vmSymbols::java_runtime_version_name(),
-                                                         java_runtime_version, sizeof(java_runtime_version)));
+    JDK_Version::set_runtime_vendor_version(get_java_version_info(ik, vmSymbols::java_runtime_vendor_version_name()));
 
-  JDK_Version::set_runtime_vendor_version(get_java_version_info(ik, vmSymbols::java_runtime_vendor_version_name(),
-                                                                java_runtime_vendor_version,
-                                                                sizeof(java_runtime_vendor_version)));
-
-  JDK_Version::set_runtime_vendor_vm_bug_url(get_java_version_info(ik, vmSymbols::java_runtime_vendor_vm_bug_url_name(),
-                                                                   java_runtime_vendor_vm_bug_url,
-                                                                   sizeof(java_runtime_vendor_vm_bug_url)));
+    JDK_Version::set_runtime_vendor_vm_bug_url(get_java_version_info(ik, vmSymbols::java_runtime_vendor_vm_bug_url_name()));
+  }
 
   // an instance of OutOfMemory exception has been allocated earlier
   initialize_class(vmSymbols::java_lang_OutOfMemoryError(), CHECK);
