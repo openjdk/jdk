@@ -25,10 +25,8 @@
  * @test
  * @bug 8035968
  * @summary Verify UseSHA1Intrinsics option processing on unsupported CPU.
- * @library /test/lib testcases /
+ * @library /test/lib /
  * @requires vm.flagless
- * @modules java.base/jdk.internal.misc
- *          java.management
  *
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
