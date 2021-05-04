@@ -1213,10 +1213,17 @@ public class Check {
                 mask = MethodFlags;
             }
             // Possibly warn on explicit strictfp
-            if (((flags & STRICTFP)  != 0) &&
-                (lint.isEnabled(LintCategory.STRICTFP) &&
-                 !lint.isSuppressed(LintCategory.STRICTFP))) {
-                log.warning(LintCategory.STRICTFP, pos, Warnings.Strictfp);
+//             if (((flags & STRICTFP)  != 0) &&
+//                 (lint.isEnabled(LintCategory.STRICTFP) &&
+//                  !lint.isSuppressed(LintCategory.STRICTFP))) {
+//                 log.warning(LintCategory.STRICTFP, pos, Warnings.Strictfp);
+//             }
+            if ((flags & STRICTFP) != 0) {
+                deferredLintHandler.report(() -> {
+                                               if (lint.isEnabled(LintCategory.STRICTFP)) {
+                                                   log.warning(LintCategory.STRICTFP,
+                                                               pos, Warnings.Strictfp); }
+                                           });
             }
             // Imply STRICTFP if owner has STRICTFP set.
             if (((flags|implicit) & Flags.ABSTRACT) == 0 ||
@@ -1260,10 +1267,17 @@ public class Check {
                 implicit |= FINAL;
             }
             // Possibly warn on explicit strictfp
-            if (((flags & STRICTFP) != 0) &&
-                (lint.isEnabled(LintCategory.STRICTFP) &&
-                 !lint.isSuppressed(LintCategory.STRICTFP))) {
-                log.warning(LintCategory.STRICTFP, pos, Warnings.Strictfp);
+//             if (((flags & STRICTFP) != 0) &&
+//                 (lint.isEnabled(LintCategory.STRICTFP) &&
+//                  !lint.isSuppressed(LintCategory.STRICTFP))) {
+//                 log.warning(LintCategory.STRICTFP, pos, Warnings.Strictfp);
+//             }
+            if ((flags & STRICTFP) != 0) {
+                deferredLintHandler.report(() -> {
+                                               if (lint.isEnabled(LintCategory.STRICTFP)) {
+                                                   log.warning(LintCategory.STRICTFP,
+                                                               pos, Warnings.Strictfp); }
+                                           });
             }
             // Imply STRICTFP if owner has STRICTFP set.
             implicit |= sym.owner.flags_field & STRICTFP;
