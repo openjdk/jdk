@@ -41,13 +41,31 @@ import java.util.Map;
 class ImageBufferCache {
     private static final int MAX_CACHED_BUFFERS = 3;
     private static final int LARGE_BUFFER = 0x10000;
-    @SuppressWarnings("rawtypes")
-    private static final ThreadLocal<Map.Entry[]> CACHE =
-        new ThreadLocal<Map.Entry[]>() {
+
+    /*
+     * We used to have a class BufferReference extending from WeakReference<ByteBuffer>.
+     * BufferReference class had an  instance field called "capacity". This field was
+     * used to make DECREASING_CAPACITY_NULLS_LAST comparator stable in the presence
+     * of GC clearing the WeakReference concurrently.
+     *
+     * But this scheme results in metaspace leak. The thread local is alive till the
+     * the thread is alive. And so ImageBufferCache$BufferReference class was kept alive.
+     * Because this class and ImageBufferCache$BufferReference are all loaded by a URL
+     * class loader from jrt-fs.jar, the class loader and so all the classes loaded by it
+     * were alive!
+     *
+     * Solution is to avoid using a URL loader loaded class type with thread local. All we
+     * need is a pair of WeakReference<ByteBuffer>, Integer (saved capacity for stability
+     * of comparator). We use Map.Entry as pair implementation. With this, all types used
+     * with thread local are bootstrap types and so no metaspace leak.
+     */
+    @SuppressWarnings("unchecked")
+    private static final ThreadLocal<Map.Entry<WeakReference<ByteBuffer>, Integer>[]> CACHE =
+        new ThreadLocal<Map.Entry<WeakReference<ByteBuffer>, Integer>[]>() {
             @Override
-            protected Map.Entry[] initialValue() {
+            protected Map.Entry<WeakReference<ByteBuffer>, Integer>[] initialValue() {
                 // 1 extra slot to simplify logic of releaseBuffer()
-                return new Map.Entry[MAX_CACHED_BUFFERS + 1];
+                return (Map.Entry<WeakReference<ByteBuffer>, Integer>[])new Map.Entry<?,?>[MAX_CACHED_BUFFERS + 1];
             }
         };
 
@@ -55,7 +73,6 @@ class ImageBufferCache {
         return ByteBuffer.allocateDirect((int)((size + 0xFFF) & ~0xFFF));
     }
 
-    @SuppressWarnings("rawtypes")
     static ByteBuffer getBuffer(long size) {
         if (size < 0 || Integer.MAX_VALUE < size) {
             throw new IndexOutOfBoundsException("size");
@@ -66,12 +83,12 @@ class ImageBufferCache {
         if (size > LARGE_BUFFER) {
             result = allocateBuffer(size);
         } else {
-            Map.Entry[] cache = CACHE.get();
+            Map.Entry<WeakReference<ByteBuffer>, Integer>[] cache = CACHE.get();
 
             // buffers are ordered by decreasing capacity
             // cache[MAX_CACHED_BUFFERS] is always null
             for (int i = MAX_CACHED_BUFFERS - 1; i >= 0; i--) {
-                Map.Entry reference = cache[i];
+                Map.Entry<WeakReference<ByteBuffer>, Integer> reference = cache[i];
 
                 if (reference != null) {
                     ByteBuffer buffer = getByteBuffer(reference);
@@ -95,17 +112,16 @@ class ImageBufferCache {
         return result;
     }
 
-    @SuppressWarnings("rawtypes")
     static void releaseBuffer(ByteBuffer buffer) {
         if (buffer.capacity() > LARGE_BUFFER) {
             return;
         }
 
-        Map.Entry[] cache = CACHE.get();
+        Map.Entry<WeakReference<ByteBuffer>, Integer>[] cache = CACHE.get();
 
         // expunge cleared BufferRef(s)
         for (int i = 0; i < MAX_CACHED_BUFFERS; i++) {
-            Map.Entry reference = cache[i];
+            Map.Entry<WeakReference<ByteBuffer>, Integer> reference = cache[i];
             if (reference != null && getByteBuffer(reference) == null) {
                 cache[i] = null;
             }
@@ -118,26 +134,24 @@ class ImageBufferCache {
         cache[MAX_CACHED_BUFFERS] = null;
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private static Map.Entry newCacheEntry(ByteBuffer bb) {
-        return new AbstractMap.SimpleEntry(new WeakReference<ByteBuffer>(bb), bb.capacity());
+    private static Map.Entry<WeakReference<ByteBuffer>, Integer> newCacheEntry(ByteBuffer bb) {
+        return new AbstractMap.SimpleEntry<WeakReference<ByteBuffer>, Integer>(
+                    new WeakReference<ByteBuffer>(bb), bb.capacity());
     }
 
-    @SuppressWarnings("rawtypes")
-    private static int getCapacity(Map.Entry e) {
-        return e == null? 0 : (Integer)e.getValue();
+    private static int getCapacity(Map.Entry<WeakReference<ByteBuffer>, Integer> e) {
+        return e == null? 0 : e.getValue();
     }
 
-    @SuppressWarnings("rawtypes")
-    private static ByteBuffer getByteBuffer(Map.Entry e) {
-        return e == null? null : (ByteBuffer)((WeakReference)e.getKey()).get();
+    private static ByteBuffer getByteBuffer(Map.Entry<WeakReference<ByteBuffer>, Integer> e) {
+        return e == null? null : e.getKey().get();
     }
 
-    @SuppressWarnings("rawtypes")
-    private static Comparator<Map.Entry> DECREASING_CAPACITY_NULLS_LAST =
-        new Comparator<Map.Entry>() {
+    private static Comparator<Map.Entry<WeakReference<ByteBuffer>, Integer>> DECREASING_CAPACITY_NULLS_LAST =
+        new Comparator<Map.Entry<WeakReference<ByteBuffer>, Integer>>() {
             @Override
-            public int compare(Map.Entry br1, Map.Entry br2) {
+            public int compare(Map.Entry<WeakReference<ByteBuffer>, Integer> br1,
+                        Map.Entry<WeakReference<ByteBuffer>, Integer> br2) {
                 return Integer.compare(getCapacity(br1), getCapacity(br2));
             }
         };
