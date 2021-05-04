@@ -138,7 +138,7 @@ public final class Module implements AnnotatedElement {
         defineModule0(this, isOpen, vs, loc, packages);
         if (loader == null || loader == ClassLoaders.platformClassLoader()) {
             // boot/builtin modules are always native
-            addEnableNativeAccess();
+            implAddEnableNativeAccess();
         }
     }
 
@@ -252,7 +252,7 @@ public final class Module implements AnnotatedElement {
     /**
      * Update this module to allow access to restricted methods.
      */
-    Module addEnableNativeAccess() {
+    Module implAddEnableNativeAccess() {
         enableNativeAccess = true;
         return this;
     }
@@ -260,14 +260,14 @@ public final class Module implements AnnotatedElement {
     /**
      * Update all unnamed modules to allow access to restricted methods.
      */
-    static void addEnableNativeAccessAllUnnamed() {
+    static void implAddEnableNativeAccessAllUnnamed() {
         ALL_UNNAMED_MODULE.enableNativeAccess = true;
     }
 
     /**
      * Returns true if module m can access restricted methods.
      */
-    boolean isEnableNativeAccess() {
+    boolean implIsEnableNativeAccess() {
         if (isNamed() && enableNativeAccess) {
             return true;
         } else if (!isNamed() && ALL_UNNAMED_MODULE.enableNativeAccess) {

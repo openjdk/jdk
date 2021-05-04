@@ -2271,13 +2271,13 @@ public final class System {
                 return m.isReflectivelyOpened(pn, other);
             }
             public Module addEnableNativeAccess(Module m) {
-                return m.addEnableNativeAccess();
+                return m.implAddEnableNativeAccess();
             }
             public void addEnableNativeAccessAllUnnamed() {
-                Module.addEnableNativeAccessAllUnnamed();
+                Module.implAddEnableNativeAccessAllUnnamed();
             }
             public boolean isEnableNativeAccess(Module m) {
-                return m.isEnableNativeAccess();
+                return m.implIsEnableNativeAccess();
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();
