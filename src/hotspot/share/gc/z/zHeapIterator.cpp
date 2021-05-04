@@ -167,6 +167,7 @@ public:
 
   virtual void do_cld(ClassLoaderData* cld) {
     class NativeAccessClosure : public OopClosure {
+    private:
       const ZHeapIteratorContext& _context;
 
      public:
