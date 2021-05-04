@@ -21,19 +21,18 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework.tests;
+package compiler.lib.ir_framework;
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.hotspot.ir_framework.*;
 
 import java.util.Arrays;
 
 /*
  * @test
- * @requires vm.compMode != "Xint" & vm.compiler2.enabled
+ * @requires vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
  * @summary Test different custom run tests.
- * @library /test/lib
- * @run driver jdk.test.lib.hotspot.ir_framework.tests.TestRunTests
+ * @library /test/lib /
+ * @run driver compiler.lib.ir_framework.TestRunTests
  */
 
 public class TestRunTests {

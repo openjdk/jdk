@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework;
+package compiler.lib.ir_framework;
 
 /**
  * Exception that is thrown if there is an internal error in the framework. This is most likely an indicator of a bug

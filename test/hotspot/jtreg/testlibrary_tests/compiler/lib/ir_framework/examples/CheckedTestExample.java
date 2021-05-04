@@ -21,15 +21,15 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework.examples;
+package compiler.lib.ir_framework.examples;
 
-import jdk.test.lib.hotspot.ir_framework.*;
+import compiler.lib.ir_framework.*;
 
 /*
  * @test
  * @summary Example test to use the new test framework.
- * @library /test/lib
- * @run driver jdk.test.lib.hotspot.ir_framework.examples.CheckedTestExample
+ * @library /test/lib /
+ * @run driver compiler.lib.ir_framework.examples.CheckedTestExample
  */
 
 /**

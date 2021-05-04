@@ -2,18 +2,18 @@
 This folder contains a test framework whose main purpose is to perform regex-based checks on the C2 IR shape of test methods emitted by the VM flags _-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_. The framework can also be used for other non-IR matching (and non-compiler) tests by providing easy to use annotations for commonly used testing patterns and compiler control flags.
 
 ## 1. How to Use the Framework
-The framework is intended to be used in JTreg tests. The JTreg header of the test must contain `@library /test/lib` and should be run as a driver with `@run driver`. Annotate the test code with the supported framework annotations and call the framework from within the test's `main()` method. A simple example is shown below:
+The framework is intended to be used in JTreg tests. The JTreg header of the test must contain `@library /test/lib /` (2 paths) and should be run as a driver with `@run driver`. Annotate the test code with the supported framework annotations and call the framework from within the test's `main()` method. A simple example is shown below:
 
     /*
      * @test
      * @summary A simple test using the test framework.
-     * @library /test/lib
+     * @library /test/lib /
      * @run driver my.package.MySimpleTest
      */
     
     package my.package;
     
-    import jdk.test.lib.hotspot.ir_framework.*;
+    import compiler.lib.ir_framework.*;
 
     public class MySimpleTest {
         
@@ -38,17 +38,17 @@ There are three kinds of tests depending on how much control is needed over the 
 #### Base Tests
 The simplest form of testing provides a single `@Test` annotated method which the framework will invoke as part of the testing. The test method has no or well-defined arguments that the framework can automatically provide. 
 
-More information on base tests with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a base test can be found in [BaseTestsExample](./examples/BaseTestExample.java).
+More information on base tests with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a base test can be found in [BaseTestsExample](../../../testlibrary_tests/compiler/lib/ir_framework/examples/BaseTestExample.java).
 
 #### Checked Tests
 The base tests do not provide any way of verification by user code. A checked test enables this by allowing the user to define an additional `@Check` annotated method which is invoked directly after the `@Test` annotated method. This allows the user to perform various checks about the test method including return value verification.
 
-More information on checked tests with a precise definition can be found in the Javadocs of [Check](./Check.java). Concrete examples on how to specify a checked test can be found in [CheckedTestsExample](./examples/CheckedTestExample.java).
+More information on checked tests with a precise definition can be found in the Javadocs of [Check](./Check.java). Concrete examples on how to specify a checked test can be found in [CheckedTestsExample](../../../testlibrary_tests/compiler/lib/ir_framework/examples/CheckedTestExample.java).
 
 #### Custom Run Tests
 Neither the base nor the checked tests provide any control over how a `@Test` annotated method is invoked in terms of customized argument values and/or conditions for the invocation itself. A custom run test gives full control over the invocation of the `@Test` annotated method to the user. The framework calls a dedicated `@Run` annotated method from which the user can invoke the `@Test` method according to his/her needs.
 
-More information on checked tests with a precise definition can be found in the Javadocs of [Run](./Run.java). Concrete examples on how to specify a custom run test can be found in [CustomRunTestsExample](./examples/CustomRunTestExample.java).
+More information on checked tests with a precise definition can be found in the Javadocs of [Run](./Run.java). Concrete examples on how to specify a custom run test can be found in [CustomRunTestsExample](../../../testlibrary_tests/compiler/lib/ir_framework/examples/CustomRunTestExample.java).
 
 ### 2.2 IR Verification
 The main feature of this framework is to perform a simple but yet powerful regex-based C2 IR matching on the output of _-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_. For simplicity, we will refer to the "IR" or "IR matching" when actually meaning the combined output of _-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_ for a C2 compilation.
@@ -66,7 +66,7 @@ In general, the framework will only perform IR verification if the used VM flags
 
 An `@IR` annotation allows additional preconditions/restrictions on the currently present VM flags to enable or disable rules when certain flags are present or have a specific value (see `applyIfXX` properties of an `@IR` annotation).
 
-More information about IR matching can be found in the Javadocs of [IR](./IR.java). Concrete examples on how to specify IR constraint/rules can be found in [IRExample](./examples/IRExample.java) and [TestIRMatching](./tests/TestIRMatching.java) (an internal framework test).
+More information about IR matching can be found in the Javadocs of [IR](./IR.java). Concrete examples on how to specify IR constraint/rules can be found in [IRExample](../../../testlibrary_tests/compiler/lib/ir_framework/examples/IRExample.java) and [TestIRMatching](../../../testlibrary_tests/compiler/lib/ir_framework/TestIRMatching.java) (an internal framework test).
 
 ### 2.3 Test VM Flags and Scenarios
 The recommended way to use the framework is by defining a single `@run driver` statement in the JTreg header which, however, does not allow the specification of additional test VM flags. Instead, the user has the possibility to provide VM flags by calling `TestFramework.runWithFlags()` or by creating a `TestFramework` builder object on which `addFlags()` can be called.

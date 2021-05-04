@@ -21,17 +21,16 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework.tests;
+package compiler.lib.ir_framework;
 
-import jdk.test.lib.hotspot.ir_framework.*;
 import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @requires vm.compMode != "Xint" & vm.compiler2.enabled
+ * @requires vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
  * @summary Test scenarios with the framework.
- * @library /test/lib
- * @run driver jdk.test.lib.hotspot.ir_framework.tests.TestScenarios
+ * @library /test/lib /
+ * @run driver compiler.lib.ir_framework.TestScenarios
  */
 
 public class TestScenarios {
@@ -64,9 +63,9 @@ public class TestScenarios {
             new TestFramework(MyExceptionTest.class).addScenarios(s1, s2, s3).start();
             Asserts.fail("Should not reach");
         } catch (TestRunException e) {
-            Asserts.assertTrue(s1.getTestVMOutput().contains("Caused by: jdk.test.lib.hotspot.ir_framework.tests.MyScenarioException"));
-            Asserts.assertTrue(s2.getTestVMOutput().contains("Caused by: jdk.test.lib.hotspot.ir_framework.tests.MyScenarioException"));
-            Asserts.assertTrue(s3.getTestVMOutput().contains("Caused by: jdk.test.lib.hotspot.ir_framework.tests.MyScenarioException"));
+            Asserts.assertTrue(s1.getTestVMOutput().contains("Caused by: compiler.lib.ir_framework.MyScenarioException"));
+            Asserts.assertTrue(s2.getTestVMOutput().contains("Caused by: compiler.lib.ir_framework.MyScenarioException"));
+            Asserts.assertTrue(s3.getTestVMOutput().contains("Caused by: compiler.lib.ir_framework.MyScenarioException"));
         } catch (Exception e) {
             Asserts.fail("Should not catch other exceptions");
         }

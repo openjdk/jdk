@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework;
+package compiler.lib.ir_framework;
 
 /**
  * Exception that is thrown if the test VM has thrown any kind of exception (except for {@link TestFormatException}).

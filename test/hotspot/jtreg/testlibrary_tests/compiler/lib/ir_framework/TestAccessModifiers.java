@@ -21,15 +21,14 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework.tests;
-
-import jdk.test.lib.hotspot.ir_framework.*;
+package compiler.lib.ir_framework;
 
 /*
  * @test
+ * @requires vm.flagless
  * @summary Test different access modifiers an make sure, the framework can access all methods.
- * @library /test/lib
- * @run driver jdk.test.lib.hotspot.ir_framework.tests.TestAccessModifiers
+ * @library /test/lib /
+ * @run driver compiler.lib.ir_framework.TestAccessModifiers
  */
 
 public class TestAccessModifiers {

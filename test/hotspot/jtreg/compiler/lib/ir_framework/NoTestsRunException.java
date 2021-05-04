@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework;
+package compiler.lib.ir_framework;
 
 /**
  * Exception that is thrown by the test VM if no tests are run as a result of specifying {@code -DTest} and/or

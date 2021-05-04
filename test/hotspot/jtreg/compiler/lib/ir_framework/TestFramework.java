@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework;
+package compiler.lib.ir_framework;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;

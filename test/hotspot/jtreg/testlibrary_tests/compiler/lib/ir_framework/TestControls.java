@@ -21,11 +21,9 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework.tests;
+package compiler.lib.ir_framework;
 
-import jdk.test.lib.hotspot.ir_framework.*;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.hotspot.ir_framework.Compiler;
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Method;
@@ -34,14 +32,14 @@ import java.util.regex.Pattern;
 
 /*
  * @test
- * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled
+ * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
  * @summary Test if compilation control annotaions are handled correctly in the framework.
  *          This test runs directly the test VM which normally does not happen.
- * @library /test/lib
+ * @library /test/lib /
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   jdk.test.lib.hotspot.ir_framework.tests.TestControls
+ *                   compiler.lib.ir_framework.TestControls
  */
 
 public class TestControls {

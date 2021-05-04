@@ -21,11 +21,9 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework.tests;
+package compiler.lib.ir_framework;
 
-import jdk.test.lib.hotspot.ir_framework.*;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.hotspot.ir_framework.Compiler;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -38,10 +36,10 @@ import java.util.regex.Pattern;
 
 /*
  * @test
- * @requires vm.compiler2.enabled
+ * @requires vm.compiler2.enabled & vm.flagless
  * @summary Test test format violations.
- * @library /test/lib
- * @run driver jdk.test.lib.hotspot.ir_framework.tests.TestBadFormat
+ * @library /test/lib /
+ * @run driver compiler.lib.ir_framework.TestBadFormat
  */
 
 public class TestBadFormat {

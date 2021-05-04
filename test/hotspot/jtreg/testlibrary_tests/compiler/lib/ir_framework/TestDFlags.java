@@ -21,27 +21,24 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework.tests;
-
-import jdk.test.lib.hotspot.ir_framework.Test;
-import jdk.test.lib.hotspot.ir_framework.TestFramework;
+package compiler.lib.ir_framework;
 
 /*
  * @test
- * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled
+ * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
  * @summary Sanity test remaining framework property flags.
- * @library /test/lib
- * @run main/othervm -DFlipC1C2=true jdk.test.lib.hotspot.ir_framework.tests.TestDFlags
- * @run main/othervm -DExcludeRandom=true jdk.test.lib.hotspot.ir_framework.tests.TestDFlags
- * @run main/othervm -DVerifyVM=true jdk.test.lib.hotspot.ir_framework.tests.TestDFlags
- * @run main/othervm -DDumpReplay=true jdk.test.lib.hotspot.ir_framework.tests.TestDFlags
- * @run main/othervm -DVerbose=true jdk.test.lib.hotspot.ir_framework.tests.TestDFlags
- * @run main/othervm -DShuffleTests=false jdk.test.lib.hotspot.ir_framework.tests.TestDFlags
- * @run main/othervm -DReproduce=true jdk.test.lib.hotspot.ir_framework.tests.TestDFlags
- * @run main/othervm -DReportStdout=true jdk.test.lib.hotspot.ir_framework.tests.TestDFlags
- * @run main/othervm -DGCAfter=true jdk.test.lib.hotspot.ir_framework.tests.TestDFlags
- * @run main/othervm -DPrintTimes=true jdk.test.lib.hotspot.ir_framework.tests.TestDFlags
- * @run main/othervm -DVerifyIR=false jdk.test.lib.hotspot.ir_framework.tests.TestDFlags
+ * @library /test/lib /
+ * @run main/othervm -DFlipC1C2=true compiler.lib.ir_framework.TestDFlags
+ * @run main/othervm -DExcludeRandom=true compiler.lib.ir_framework.TestDFlags
+ * @run main/othervm -DVerifyVM=true compiler.lib.ir_framework.TestDFlags
+ * @run main/othervm -DDumpReplay=true compiler.lib.ir_framework.TestDFlags
+ * @run main/othervm -DVerbose=true compiler.lib.ir_framework.TestDFlags
+ * @run main/othervm -DShuffleTests=false compiler.lib.ir_framework.TestDFlags
+ * @run main/othervm -DReproduce=true compiler.lib.ir_framework.TestDFlags
+ * @run main/othervm -DReportStdout=true compiler.lib.ir_framework.TestDFlags
+ * @run main/othervm -DGCAfter=true compiler.lib.ir_framework.TestDFlags
+ * @run main/othervm -DPrintTimes=true compiler.lib.ir_framework.TestDFlags
+ * @run main/othervm -DVerifyIR=false compiler.lib.ir_framework.TestDFlags
  */
 
 public class TestDFlags {

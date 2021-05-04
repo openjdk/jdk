@@ -21,19 +21,19 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework.tests;
+package compiler.lib.ir_framework;
 
 import jdk.test.lib.Utils;
-import jdk.test.lib.hotspot.ir_framework.*;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
+ * @requires vm.flagless
  * @summary Test -DTest and -DExclude property flag.
- * @library /test/lib
- * @run driver jdk.test.lib.hotspot.ir_framework.tests.TestDTestAndExclude
+ * @library /test/lib /
+ * @run driver compiler.lib.ir_framework.TestDTestAndExclude
  */
 
 public class TestDTestAndExclude {
@@ -94,7 +94,7 @@ public class TestDTestAndExclude {
         ProcessBuilder process = ProcessTools.createJavaProcessBuilder(
                 "-Dtest.class.path=" + Utils.TEST_CLASS_PATH, "-Dtest.jdk=" + Utils.TEST_JDK,
                 "-Dtest.vm.opts=-DTest=" + dTest + " -DExclude=" + dExclude,
-                "jdk.test.lib.hotspot.ir_framework.tests.TestDTestAndExclude", arg);
+                "compiler.lib.ir_framework.TestDTestAndExclude", arg);
         oa = ProcessTools.executeProcess(process);
         oa.shouldHaveExitValue(0);
     }

@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework;
+package compiler.lib.ir_framework;
 
 /**
  * Utility class to report a {@link TestRunException}.

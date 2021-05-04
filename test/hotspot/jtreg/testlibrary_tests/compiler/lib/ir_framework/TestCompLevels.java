@@ -21,21 +21,20 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework.tests;
-
-import jdk.test.lib.hotspot.ir_framework.*;
+package compiler.lib.ir_framework;
 
 import java.lang.reflect.Method;
 
 /*
  * @test
+ * @requires vm.flagless
  * @summary Test if compilation levels are used correctly in the framework.
  *          This test runs directly the test VM which normally does not happen.
- * @library /test/lib
+ * @library /test/lib /
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   jdk.test.lib.hotspot.ir_framework.tests.TestCompLevels
+ *                   compiler.lib.ir_framework.TestCompLevels
  */
 
 public class TestCompLevels {

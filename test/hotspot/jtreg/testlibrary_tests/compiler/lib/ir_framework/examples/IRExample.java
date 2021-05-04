@@ -21,17 +21,16 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework.examples;
+package compiler.lib.ir_framework.examples;
 
-import jdk.test.lib.hotspot.ir_framework.*;
+import compiler.lib.ir_framework.*;
 
 /*
  * @test
  * @summary Example test to use the new test framework.
- * @library /test/lib
- * @run driver jdk.test.lib.hotspot.ir_framework.examples.IRExample
+ * @library /test/lib /
+ * @run driver compiler.lib.ir_framework.examples.IRExample
  */
-
 
 /**
  * Multiple @IR rules can be specified at @Test methods. The framework performs a regex based match on the PrintIdeal
@@ -73,14 +72,14 @@ import jdk.test.lib.hotspot.ir_framework.*;
 // This test is expected to fail when run with JTreg.
 public class IRExample {
     int iFld, iFld2, iFld3;
-
     public static void main(String[] args) {
         TestFramework.run(); // First run tests from IRExample
         try {
             TestFramework.run(FailingExamples.class); // Secondly, run tests from FailingExamples
         } catch (IRViolationException e) {
-            // Expected. Check output to see how IR failures are reported.
-            throw e;
+            // Expected. Check stderr/stdout to see how IR failures are reported (always printed, regardless if
+            // exception is thrown or not). Uncomment the "throw" statement below to get a completely failing test.
+            //throw e;
         }
     }
 

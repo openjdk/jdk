@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework;
+package compiler.lib.ir_framework;
 
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;

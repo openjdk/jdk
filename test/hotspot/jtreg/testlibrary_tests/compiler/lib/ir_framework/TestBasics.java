@@ -21,9 +21,7 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework.tests;
-
-import jdk.test.lib.hotspot.ir_framework.*;
+package compiler.lib.ir_framework;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -31,13 +29,13 @@ import java.util.stream.Stream;
 
 /*
  * @test
- * @requires vm.compiler2.enabled
+ * @requires vm.compiler2.enabled & vm.flagless
  * @summary Test basics of the framework. This test runs directly the test VM which normally does not happen.
- * @library /test/lib
+ * @library /test/lib /
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   jdk.test.lib.hotspot.ir_framework.tests.TestBasics
+ *                   compiler.lib.ir_framework.TestBasics
  */
 
 public class TestBasics {

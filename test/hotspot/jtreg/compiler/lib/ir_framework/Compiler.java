@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.test.lib.hotspot.ir_framework;
+package compiler.lib.ir_framework;
 
 /**
  * Compilers to select for {@link DontCompile}. HotSpot does not handle the exclusion of a C1 method at a specific level.
