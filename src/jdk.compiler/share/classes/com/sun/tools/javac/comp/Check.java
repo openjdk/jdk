@@ -1329,7 +1329,6 @@ public class Check {
                                                log.warning(LintCategory.STRICTFP,
                                                            pos, Warnings.Strictfp); }
                                        });
-            
         } finally {
             deferredLintHandler.setPos(prevLintPos);
         }
