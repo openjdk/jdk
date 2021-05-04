@@ -111,7 +111,7 @@ public interface Debugger extends SymbolLookup, ThreadAccess {
 
   /**
    * Find address and executable which contains symbol.
-  */
+   */
   public String findSymbol(String symbol);
 
   /** the following methods are intended only for RemoteDebuggerClient */
