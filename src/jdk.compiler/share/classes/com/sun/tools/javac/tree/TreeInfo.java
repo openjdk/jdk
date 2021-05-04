@@ -541,6 +541,10 @@ public class TreeInfo {
                 JCBindingPattern node = (JCBindingPattern)tree;
                 return getStartPos(node.var);
             }
+            case GUARDPATTERN: {
+                JCGuardPattern node = (JCGuardPattern) tree;
+                return getStartPos(node.patt);
+            }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
                 if (node.errs != null && node.errs.nonEmpty())
@@ -630,6 +634,14 @@ public class TreeInfo {
                 return getEndPos(((JCWhileLoop) tree).body, endPosTable);
             case ANNOTATED_TYPE:
                 return getEndPos(((JCAnnotatedType) tree).underlyingType, endPosTable);
+            case PARENTHESIZEDPATTERN: {
+                JCParenthesizedPattern node = (JCParenthesizedPattern) tree;
+                return getEndPos(node.pattern, endPosTable);
+            }
+            case GUARDPATTERN: {
+                JCGuardPattern node = (JCGuardPattern) tree;
+                return getEndPos(node.expr, endPosTable);
+            }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
                 if (node.errs != null && node.errs.nonEmpty())
@@ -1329,7 +1341,7 @@ public class TreeInfo {
 
     public static boolean isErrorEnumSwitch(JCExpression selector, List<JCCase> cases) {
         return selector.type.tsym.kind == Kinds.Kind.ERR &&
-               cases.stream().flatMap(c -> c.pats.stream())
+               cases.stream().flatMap(c -> c.labels.stream())
                              .allMatch(p -> p.hasTag(IDENT));
     }
 }

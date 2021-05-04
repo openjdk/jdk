@@ -3212,11 +3212,12 @@ public class Utils {
             flags.add(ElementFlag.DEPRECATED);
         }
 
-        if (!previewLanguageFeaturesUsed(el).isEmpty() ||
-            configuration.workArounds.isPreviewAPI(el) ||
-            !previewAPIs.previewAPI.isEmpty() ||
-            !previewAPIs.reflectivePreviewAPI.isEmpty() ||
-            !previewAPIs.declaredUsingPreviewFeature.isEmpty())  {
+        if ((!previewLanguageFeaturesUsed(el).isEmpty() ||
+             configuration.workArounds.isPreviewAPI(el) ||
+             !previewAPIs.previewAPI.isEmpty() ||
+             !previewAPIs.reflectivePreviewAPI.isEmpty() ||
+             !previewAPIs.declaredUsingPreviewFeature.isEmpty()) &&
+            !hasNoProviewAnnotation(el)) {
             flags.add(ElementFlag.PREVIEW);
         }
 
@@ -3232,4 +3233,9 @@ public class Utils {
         PREVIEW;
     }
 
+    private boolean hasNoProviewAnnotation(Element el) {
+        return el.getAnnotationMirrors()
+                 .stream()
+                 .anyMatch(am -> "jdk.internal.javac.NoPreview".equals(getQualifiedTypeName(am.getAnnotationType())));
+    }
 }

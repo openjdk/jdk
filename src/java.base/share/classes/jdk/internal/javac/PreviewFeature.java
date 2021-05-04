@@ -55,6 +55,7 @@ public @interface PreviewFeature {
 
     public enum Feature {
         SEALED_CLASSES,
+        SWITCH_PATTERN_MATCHING,
         /**
          * A key for testing.
          */
