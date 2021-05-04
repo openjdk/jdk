@@ -80,6 +80,7 @@ void MacroAssembler::updateBytesAdler32(Register init_d, Register data, Register
       cmpptr(data, end);
       jcc(Assembler::aboveEqual, SKIP_LOOP_1A);
 
+      align(32);
       bind(SLOOP1A);
       vbroadcastf128(ydata, Address(data, 0), Assembler::AVX_256bit);
       addptr(data, CHUNKSIZE);
@@ -108,9 +109,9 @@ void MacroAssembler::updateBytesAdler32(Register init_d, Register data, Register
       vextracti128(xtmp0, ya, 1);
       vextracti128(xtmp1, yb, 1);
       vextracti128(xtmp2, ysa, 1);
-      vpaddd(xa, xa, xtmp0, Assembler::AVX_256bit);
-      vpaddd(xb, xb, xtmp1, Assembler::AVX_256bit);
-      vpaddd(xsa, xsa, xtmp2, Assembler::AVX_256bit);
+      vpaddd(xa, xa, xtmp0, Assembler::AVX_128bit);
+      vpaddd(xb, xb, xtmp1, Assembler::AVX_128bit);
+      vpaddd(xsa, xsa, xtmp2, Assembler::AVX_128bit);
       vphaddd(xa, xa, xa, Assembler::AVX_128bit);
       vphaddd(xb, xb, xb, Assembler::AVX_128bit);
       vphaddd(xsa, xsa, xsa, Assembler::AVX_128bit);
@@ -177,10 +178,11 @@ void MacroAssembler::updateBytesAdler32(Register init_d, Register data, Register
       movdl(rax, xb);
       addl(b_d, rax);
 
+      align(32);
       bind(FINAL_LOOP);
       movzbl(rax, Address(data, 0)); //movzx   eax, byte[data]
       addl(a_d, rax);
-      incl(data);
+      addptr(data, 1);
       addl(b_d, a_d);
       cmpptr(data, end);
       jcc(Assembler::below, FINAL_LOOP);
