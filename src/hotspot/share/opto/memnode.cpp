@@ -46,6 +46,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/vectornode.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
@@ -1128,8 +1129,17 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
         // Thus, we are able to replace L by V.
       }
       // Now prove that we have a LoadQ matched to a StoreQ, for some Q.
-      if (store_Opcode() != st->Opcode())
+      if (store_Opcode() != st->Opcode()) {
         return NULL;
+      }
+      // LoadVector/StoreVector needs additional check to ensure the types match.
+      if (store_Opcode() == Op_StoreVector) {
+        const TypeVect*  in_vt = st->as_StoreVector()->vect_type();
+        const TypeVect* out_vt = as_LoadVector()->vect_type();
+        if (in_vt != out_vt) {
+          return NULL;
+        }
+      }
       return st->in(MemNode::ValueIn);
     }
 

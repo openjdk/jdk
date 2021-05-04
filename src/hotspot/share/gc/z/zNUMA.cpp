@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,28 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zNUMA.hpp"
+#include "gc/z/zNUMA.inline.hpp"
 
-bool ZNUMA::_enabled;
+ZNUMA::State ZNUMA::_state;
 
 void ZNUMA::initialize() {
   pd_initialize();
 
   log_info_p(gc, init)("NUMA Support: %s", to_string());
-  if (_enabled) {
+  if (is_enabled()) {
     log_info_p(gc, init)("NUMA Nodes: %u", count());
   }
 }
 
 const char* ZNUMA::to_string() {
-  return _enabled ? "Enabled" : "Disabled";
+  switch (_state) {
+  case Enabled:
+    return "Enabled";
+
+  case Unsupported:
+    return "Unsupported";
+
+  default:
+    return "Disabled";
+  }
 }

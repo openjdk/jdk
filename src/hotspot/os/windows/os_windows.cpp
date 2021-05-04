@@ -39,7 +39,6 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_share_windows.hpp"
 #include "os_windows.inline.hpp"
@@ -59,6 +58,7 @@
 #include "runtime/perfMemory.hpp"
 #include "runtime/safefetch.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
+#include "runtime/semaphore.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/thread.inline.hpp"
@@ -130,9 +130,6 @@ static FILETIME process_kernel_time;
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
 PVOID  topLevelVectoredExceptionHandler = NULL;
 LPTOP_LEVEL_EXCEPTION_FILTER previousUnhandledExceptionFilter = NULL;
-#elif INCLUDE_AOT
-PVOID  topLevelVectoredExceptionHandler = NULL;
-LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 #endif
 
 // save DLL module handle, used by GetModuleFileName
@@ -153,7 +150,7 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
     if (ForceTimeHighResolution) {
       timeEndPeriod(1L);
     }
-#if defined(USE_VECTORED_EXCEPTION_HANDLING) || INCLUDE_AOT
+#if defined(USE_VECTORED_EXCEPTION_HANDLING)
     if (topLevelVectoredExceptionHandler != NULL) {
       RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
       topLevelVectoredExceptionHandler = NULL;
@@ -1190,6 +1187,16 @@ void os::die() {
   win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, -1);
 }
 
+const char* os::dll_file_extension() { return ".dll"; }
+
+void  os::dll_unload(void *lib) {
+  ::FreeLibrary((HMODULE)lib);
+}
+
+void* os::dll_lookup(void *lib, const char *name) {
+  return (void*)::GetProcAddress((HMODULE)lib, name);
+}
+
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
 //  * dirent_md.c       1.15 00/02/02
 //
@@ -2197,28 +2204,7 @@ static int check_pending_signals() {
         return i;
       }
     }
-    JavaThread *thread = JavaThread::current();
-
-    ThreadBlockInVM tbivm(thread);
-
-    bool threadIsSuspended;
-    do {
-      thread->set_suspend_equivalent();
-      // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
-      sig_sem->wait();
-
-      // were we externally suspended while we were waiting?
-      threadIsSuspended = thread->handle_special_suspend_equivalent_condition();
-      if (threadIsSuspended) {
-        // The semaphore has been incremented, but while we were waiting
-        // another thread suspended us. We don't want to continue running
-        // while suspended because that would surprise the thread that
-        // suspended us.
-        sig_sem->signal();
-
-        thread->java_suspend_self();
-      }
-    } while (threadIsSuspended);
+    sig_sem->wait_with_safepoint_check(JavaThread::current());
   }
   ShouldNotReachHere();
   return 0; // Satisfy compiler
@@ -2695,7 +2681,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
-#if defined(USE_VECTORED_EXCEPTION_HANDLING) || INCLUDE_AOT
+#if defined(USE_VECTORED_EXCEPTION_HANDLING)
 LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
 #if defined(_M_ARM64)
@@ -2711,9 +2697,7 @@ LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptio
     return topLevelExceptionFilter(exceptionInfo);
   }
 
-  // Handle the case where we get an implicit exception in AOT generated
-  // code.  AOT DLL's loaded are not registered for structured exceptions.
-  // If the exception occurred in the codeCache or AOT code, pass control
+  // If the exception occurred in the codeCache, pass control
   // to our normal exception handler.
   CodeBlob* cb = CodeCache::find_blob(pc);
   if (cb != NULL) {
@@ -4162,14 +4146,6 @@ jint os::init_2(void) {
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
   topLevelVectoredExceptionHandler = AddVectoredExceptionHandler(1, topLevelVectoredExceptionFilter);
   previousUnhandledExceptionFilter = SetUnhandledExceptionFilter(topLevelUnhandledExceptionFilter);
-#elif INCLUDE_AOT
-  // If AOT is enabled we need to install a vectored exception handler
-  // in order to forward implicit exceptions from code in AOT
-  // generated DLLs.  This is necessary since these DLLs are not
-  // registered for structured exceptions like codecache methods are.
-  if (AOTLibrary != NULL && (UseAOT || FLAG_IS_DEFAULT(UseAOT))) {
-    topLevelVectoredExceptionHandler = AddVectoredExceptionHandler( 1, topLevelVectoredExceptionFilter);
-  }
 #endif
 
   // for debugging float code generation bugs
@@ -4641,6 +4617,18 @@ int os::open(const char *path, int oflag, int mode) {
 
 FILE* os::open(int fd, const char* mode) {
   return ::_fdopen(fd, mode);
+}
+
+size_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  return ::write(fd, buf, nBytes);
+}
+
+int os::close(int fd) {
+  return ::close(fd);
+}
+
+void os::exit(int num) {
+  win32::exit_process_or_thread(win32::EPT_PROCESS, num);
 }
 
 // Is a (classpath) directory empty?
@@ -5465,15 +5453,9 @@ void Parker::park(bool isAbsolute, jlong time) {
   } else {
     ThreadBlockInVM tbivm(thread);
     OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
-    thread->set_suspend_equivalent();
 
     WaitForSingleObject(_ParkHandle, time);
     ResetEvent(_ParkHandle);
-
-    // If externally suspended while waiting, re-suspend
-    if (thread->handle_special_suspend_equivalent_condition()) {
-      thread->java_suspend_self();
-    }
   }
 }
 

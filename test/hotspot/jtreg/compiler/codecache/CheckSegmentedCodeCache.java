@@ -26,8 +26,7 @@
  * @bug 8015774
  * @summary Checks VM options related to the segmented code cache
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @requires vm.flagless
  *
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
@@ -59,10 +58,10 @@ public class CheckSegmentedCodeCache {
                 out.shouldContain(NON_METHOD);
             } catch (RuntimeException e) {
                 // Check if TieredCompilation is disabled (in a client VM)
-                if(!out.getOutput().contains("-XX:+TieredCompilation not supported in this VM")) {
+                if (!out.getOutput().contains("-XX:+TieredCompilation not supported in this VM")) {
                     // Code cache is not segmented
                     throw new RuntimeException("No code cache segmentation.");
-                    }
+                }
             }
         } else {
             out.shouldNotContain(NON_METHOD);

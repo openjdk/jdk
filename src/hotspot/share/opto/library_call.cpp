@@ -1643,9 +1643,7 @@ bool LibraryCallKit::inline_math_pow() {
       Node* base = round_double_node(argument(0));
       set_result(_gvn.transform(new MulDNode(base, base)));
       return true;
-    }
-#if defined(X86) && defined(_LP64)
-    else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
+    } else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
       // Special case: pow(x, 0.5) => sqrt(x)
       Node* base = round_double_node(argument(0));
       Node* zero = _gvn.zerocon(T_DOUBLE);
@@ -1654,7 +1652,10 @@ bool LibraryCallKit::inline_math_pow() {
       Node* phi = new PhiNode(region, Type::DOUBLE);
 
       Node* cmp  = _gvn.transform(new CmpDNode(base, zero));
-      Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
+      // According to the API specs, pow(-0.0, 0.5) = 0.0 and sqrt(-0.0) = -0.0.
+      // So pow(-0.0, 0.5) shouldn't be replaced with sqrt(-0.0).
+      // -0.0/+0.0 are both excluded since floating-point comparison doesn't distinguish -0.0 from +0.0.
+      Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::le));
 
       Node* if_pow = generate_slow_guard(test, NULL);
       Node* value_sqrt = _gvn.transform(new SqrtDNode(C, control(), base));
@@ -1684,7 +1685,6 @@ bool LibraryCallKit::inline_math_pow() {
 
       return true;
     }
-#endif // defined(X86) && defined(_LP64)
   }
 
   return StubRoutines::dpow() != NULL ?
@@ -1737,8 +1737,8 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_dpow:      return inline_math_pow();
   case vmIntrinsics::_dcopySign: return inline_double_math(id);
   case vmIntrinsics::_fcopySign: return inline_math(id);
-  case vmIntrinsics::_dsignum: return inline_double_math(id);
-  case vmIntrinsics::_fsignum: return inline_math(id);
+  case vmIntrinsics::_dsignum: return Matcher::match_rule_supported(Op_SignumD) ? inline_double_math(id) : false;
+  case vmIntrinsics::_fsignum: return Matcher::match_rule_supported(Op_SignumF) ? inline_math(id) : false;
 
    // These intrinsics are not yet correctly implemented
   case vmIntrinsics::_datan2:
