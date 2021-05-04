@@ -74,7 +74,6 @@ class InstructionPrinter: public InstructionVisitor {
   void print_stack(ValueStack* stack);
   void print_inline_level(BlockBegin* block);
   void print_unsafe_op(UnsafeOp* op, const char* name);
-  void print_unsafe_raw_op(UnsafeRawOp* op, const char* name);
   void print_unsafe_object_op(UnsafeObjectOp* op, const char* name);
   void print_phi(int i, Value v, BlockBegin* b);
   void print_alias(Value v);
@@ -124,8 +123,6 @@ class InstructionPrinter: public InstructionVisitor {
   virtual void do_OsrEntry       (OsrEntry*        x);
   virtual void do_ExceptionObject(ExceptionObject* x);
   virtual void do_RoundFP        (RoundFP*         x);
-  virtual void do_UnsafeGetRaw   (UnsafeGetRaw*    x);
-  virtual void do_UnsafePutRaw   (UnsafePutRaw*    x);
   virtual void do_UnsafeGetObject(UnsafeGetObject* x);
   virtual void do_UnsafePutObject(UnsafePutObject* x);
   virtual void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x);

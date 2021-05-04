@@ -585,8 +585,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_OsrEntry       (OsrEntry*        x);
   virtual void do_ExceptionObject(ExceptionObject* x);
   virtual void do_RoundFP        (RoundFP*         x);
-  virtual void do_UnsafeGetRaw   (UnsafeGetRaw*    x);
-  virtual void do_UnsafePutRaw   (UnsafePutRaw*    x);
   virtual void do_UnsafeGetObject(UnsafeGetObject* x);
   virtual void do_UnsafePutObject(UnsafePutObject* x);
   virtual void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x);

@@ -530,8 +530,6 @@ public:
   void do_OsrEntry       (OsrEntry*        x);
   void do_ExceptionObject(ExceptionObject* x);
   void do_RoundFP        (RoundFP*         x);
-  void do_UnsafeGetRaw   (UnsafeGetRaw*    x);
-  void do_UnsafePutRaw   (UnsafePutRaw*    x);
   void do_UnsafeGetObject(UnsafeGetObject* x);
   void do_UnsafePutObject(UnsafePutObject* x);
   void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x);
@@ -716,8 +714,6 @@ void NullCheckVisitor::do_Base           (Base*            x) {}
 void NullCheckVisitor::do_OsrEntry       (OsrEntry*        x) {}
 void NullCheckVisitor::do_ExceptionObject(ExceptionObject* x) { nce()->handle_ExceptionObject(x); }
 void NullCheckVisitor::do_RoundFP        (RoundFP*         x) {}
-void NullCheckVisitor::do_UnsafeGetRaw   (UnsafeGetRaw*    x) {}
-void NullCheckVisitor::do_UnsafePutRaw   (UnsafePutRaw*    x) {}
 void NullCheckVisitor::do_UnsafeGetObject(UnsafeGetObject* x) {}
 void NullCheckVisitor::do_UnsafePutObject(UnsafePutObject* x) {}
 void NullCheckVisitor::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {}

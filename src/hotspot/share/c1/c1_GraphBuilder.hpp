@@ -375,8 +375,6 @@ class GraphBuilder {
 
   void append_unsafe_get_obj(ciMethod* callee, BasicType t, bool is_volatile);
   void append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_volatile);
-  void append_unsafe_get_raw(ciMethod* callee, BasicType t);
-  void append_unsafe_put_raw(ciMethod* callee, BasicType t);
   void append_unsafe_CAS(ciMethod* callee);
   void append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add);
   void append_char_access(ciMethod* callee, bool is_store);

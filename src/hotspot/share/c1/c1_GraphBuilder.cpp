@@ -3148,10 +3148,11 @@ void GraphBuilder::setup_osr_entry_block() {
       // doesn't so pretend that the interpreter passed in null.
       get = append(new Constant(objectNull));
     } else {
-      get = append(new UnsafeGetRaw(as_BasicType(local->type()), e,
-                                    append(new Constant(new IntConstant(offset))),
-                                    0,
-                                    true /*unaligned*/, true /*wide*/));
+      Value off_val = append(new Constant(new IntConstant(offset)));
+      get = append(new UnsafeGetObject(as_BasicType(local->type()), e,
+                                      off_val,
+                                      false/*is_volatile*/,
+                                      true/*is_raw_get*/));
     }
     _state->store_local(index, get);
   }
@@ -4247,24 +4248,6 @@ void GraphBuilder::append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_
   compilation()->set_has_unsafe_access(true);
   kill_all();
 }
-
-
-void GraphBuilder::append_unsafe_get_raw(ciMethod* callee, BasicType t) {
-  Values* args = state()->pop_arguments(callee->arg_size());
-  null_check(args->at(0));
-  Instruction* op = append(new UnsafeGetRaw(t, args->at(1), false));
-  push(op->type(), op);
-  compilation()->set_has_unsafe_access(true);
-}
-
-
-void GraphBuilder::append_unsafe_put_raw(ciMethod* callee, BasicType t) {
-  Values* args = state()->pop_arguments(callee->arg_size());
-  null_check(args->at(0));
-  Instruction* op = append(new UnsafePutRaw(t, args->at(1), args->at(2)));
-  compilation()->set_has_unsafe_access(true);
-}
-
 
 void GraphBuilder::append_unsafe_CAS(ciMethod* callee) {
   ValueStack* state_before = copy_state_for_exception();

@@ -154,10 +154,8 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_MonitorEnter   (MonitorEnter*    x) { kill_memory(); }
   void do_MonitorExit    (MonitorExit*     x) { kill_memory(); }
   void do_Invoke         (Invoke*          x) { kill_memory(); }
-  void do_UnsafePutRaw   (UnsafePutRaw*    x) { kill_memory(); }
   void do_UnsafePutObject(UnsafePutObject* x) { kill_memory(); }
   void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) { kill_memory(); }
-  void do_UnsafeGetRaw   (UnsafeGetRaw*    x) { /* nothing to do */ }
   void do_UnsafeGetObject(UnsafeGetObject* x) {
     if (x->is_volatile()) { // the JMM requires this
       kill_memory();

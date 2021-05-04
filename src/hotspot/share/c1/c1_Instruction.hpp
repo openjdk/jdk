@@ -96,9 +96,6 @@ class       Throw;
 class       Base;
 class   RoundFP;
 class   UnsafeOp;
-class     UnsafeRawOp;
-class       UnsafeGetRaw;
-class       UnsafePutRaw;
 class     UnsafeObjectOp;
 class       UnsafeGetObject;
 class       UnsafePutObject;
@@ -197,8 +194,6 @@ class InstructionVisitor: public StackObj {
   virtual void do_OsrEntry       (OsrEntry*        x) = 0;
   virtual void do_ExceptionObject(ExceptionObject* x) = 0;
   virtual void do_RoundFP        (RoundFP*         x) = 0;
-  virtual void do_UnsafeGetRaw   (UnsafeGetRaw*    x) = 0;
-  virtual void do_UnsafePutRaw   (UnsafePutRaw*    x) = 0;
   virtual void do_UnsafeGetObject(UnsafeGetObject* x) = 0;
   virtual void do_UnsafePutObject(UnsafePutObject* x) = 0;
   virtual void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) = 0;
@@ -2281,104 +2276,6 @@ BASE(UnsafeOp, Instruction)
 };
 
 
-BASE(UnsafeRawOp, UnsafeOp)
- private:
-  Value _base;                                   // Base address (a Java long)
-  Value _index;                                  // Index if computed by optimizer; initialized to NULL
-  int   _log2_scale;                             // Scale factor: 0, 1, 2, or 3.
-                                                 // Indicates log2 of number of bytes (1, 2, 4, or 8)
-                                                 // to scale index by.
-
- protected:
-  UnsafeRawOp(BasicType basic_type, Value addr, bool is_put)
-  : UnsafeOp(basic_type, is_put)
-  , _base(addr)
-  , _index(NULL)
-  , _log2_scale(0)
-  {
-    // Can not use ASSERT_VALUES because index may be NULL
-    assert(addr != NULL && addr->type()->is_long(), "just checking");
-  }
-
-  UnsafeRawOp(BasicType basic_type, Value base, Value index, int log2_scale, bool is_put)
-  : UnsafeOp(basic_type, is_put)
-  , _base(base)
-  , _index(index)
-  , _log2_scale(log2_scale)
-  {
-  }
-
- public:
-  // accessors
-  Value base()                                   { return _base; }
-  Value index()                                  { return _index; }
-  bool  has_index()                              { return (_index != NULL); }
-  int   log2_scale()                             { return _log2_scale; }
-
-  // setters
-  void set_base (Value base)                     { _base  = base; }
-  void set_index(Value index)                    { _index = index; }
-  void set_log2_scale(int log2_scale)            { _log2_scale = log2_scale; }
-
-  // generic
-  virtual void input_values_do(ValueVisitor* f)   { UnsafeOp::input_values_do(f);
-                                                   f->visit(&_base);
-                                                   if (has_index()) f->visit(&_index); }
-};
-
-
-LEAF(UnsafeGetRaw, UnsafeRawOp)
- private:
- bool _may_be_unaligned, _is_wide;  // For OSREntry
-
- public:
- UnsafeGetRaw(BasicType basic_type, Value addr, bool may_be_unaligned, bool is_wide = false)
-  : UnsafeRawOp(basic_type, addr, false) {
-    _may_be_unaligned = may_be_unaligned;
-    _is_wide = is_wide;
-  }
-
- UnsafeGetRaw(BasicType basic_type, Value base, Value index, int log2_scale, bool may_be_unaligned, bool is_wide = false)
-  : UnsafeRawOp(basic_type, base, index, log2_scale, false) {
-    _may_be_unaligned = may_be_unaligned;
-    _is_wide = is_wide;
-  }
-
-  bool may_be_unaligned()                         { return _may_be_unaligned; }
-  bool is_wide()                                  { return _is_wide; }
-};
-
-
-LEAF(UnsafePutRaw, UnsafeRawOp)
- private:
-  Value _value;                                  // Value to be stored
-
- public:
-  UnsafePutRaw(BasicType basic_type, Value addr, Value value)
-  : UnsafeRawOp(basic_type, addr, true)
-  , _value(value)
-  {
-    assert(value != NULL, "just checking");
-    ASSERT_VALUES
-  }
-
-  UnsafePutRaw(BasicType basic_type, Value base, Value index, int log2_scale, Value value)
-  : UnsafeRawOp(basic_type, base, index, log2_scale, true)
-  , _value(value)
-  {
-    assert(value != NULL, "just checking");
-    ASSERT_VALUES
-  }
-
-  // accessors
-  Value value()                                  { return _value; }
-
-  // generic
-  virtual void input_values_do(ValueVisitor* f)   { UnsafeRawOp::input_values_do(f);
-                                                   f->visit(&_value); }
-};
-
-
 BASE(UnsafeObjectOp, UnsafeOp)
  private:
   Value _object;                                 // Object to be fetched from or mutated
@@ -2402,12 +2299,23 @@ BASE(UnsafeObjectOp, UnsafeOp)
 
 
 LEAF(UnsafeGetObject, UnsafeObjectOp)
+ private:
+  bool _is_raw_get;
  public:
   UnsafeGetObject(BasicType basic_type, Value object, Value offset, bool is_volatile)
   : UnsafeObjectOp(basic_type, object, offset, false, is_volatile)
   {
     ASSERT_VALUES
+    _is_raw_get = false;
   }
+  UnsafeGetObject(BasicType basic_type, Value object, Value offset, bool is_volatile, bool is_raw_get)
+  : UnsafeObjectOp(basic_type, object, offset, false, is_volatile), _is_raw_get(is_raw_get)
+  {
+    ASSERT_VALUES
+  }
+
+  // accessors
+  bool is_raw_get()                             { return _is_raw_get; }
 };
 
 
