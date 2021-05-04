@@ -412,11 +412,7 @@ struct NUMASwitcher {
 #endif
 
 #ifndef _AIX // JDK-8257041
-#if defined(__APPLE__) && defined(AARCH64)
-TEST_VM(os, DISABLED_release_multi_mappings) {
-#else
 TEST_VM(os, release_multi_mappings) {
-#endif
   // Test that we can release an area created with multiple reservation calls
   const size_t stripe_len = 4 * M;
   const int num_stripes = 4;
