@@ -57,7 +57,6 @@ import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.CDS;
 import jdk.internal.module.IllegalAccessLogger;
-import jdk.internal.module.IllegalNativeAccessChecker;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.module.Resources;
@@ -259,20 +258,23 @@ public final class Module implements AnnotatedElement {
     }
 
     /**
+     * Update all unnamed modules to allow access to restricted methods.
+     */
+    static void addEnableNativeAccessAllUnnamed() {
+        ALL_UNNAMED_MODULE.enableNativeAccess = true;
+    }
+
+    /**
      * Returns true if module m can access restricted methods.
      */
     boolean isEnableNativeAccess() {
-        if (enableNativeAccess) {
+        if (isNamed() && enableNativeAccess) {
             return true;
-        }
-
-        // lazy init for unnamed modules
-        if (!isNamed() && IllegalNativeAccessChecker.enableNativeAccessAllUnnamedModules()) {
-            enableNativeAccess = true;
+        } else if (!isNamed() && ALL_UNNAMED_MODULE.enableNativeAccess) {
             return true;
+        } else {
+            return false;
         }
-
-        return false;
     }
 
     // --

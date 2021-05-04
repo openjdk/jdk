@@ -878,17 +878,41 @@ public final class ModuleBootstrap {
      * Process the --enable-native-access option to grant access to restricted methods to selected modules.
      */
     private static void addEnableNativeAccess(ModuleLayer layer) {
-        // add native modules explicitly provided on the command line
-
-        for (String name : IllegalNativeAccessChecker.enableNativeAccessModules()) {
-            Optional<Module> module = layer.findModule(name);
-            if (module.isPresent()) {
-                SharedSecrets.getJavaLangAccess().addEnableNativeAccess(module.get());
+        for (String name : decode()) {
+            if (name.equals("ALL-UNNAMED")) {
+                SharedSecrets.getJavaLangAccess().addEnableNativeAccessAllUnnamed();
             } else {
-                // silently skip.
-                // warnUnknownModule(ENABLE_NATIVE_ACCESS, name);
+                Optional<Module> module = layer.findModule(name);
+                if (module.isPresent()) {
+                    SharedSecrets.getJavaLangAccess().addEnableNativeAccess(module.get());
+                } else {
+                    warnUnknownModule(ENABLE_NATIVE_ACCESS, name);
+                }
             }
         }
+    }
+
+    /**
+     * Returns the set of module names specified by --enable-native-access options.
+     */
+    private static Set<String> decode() {
+        String prefix = "jdk.module.enable.native.access.";
+        int index = 0;
+        // the system property is removed after decoding
+        String value = getAndRemoveProperty(prefix + index);
+        Set<String> modules = new HashSet<>();
+        if (value == null) {
+            return modules;
+        }
+        while (value != null) {
+            for (String s : value.split(",")) {
+                if (!s.isEmpty())
+                    modules.add(s);
+            }
+            index++;
+            value = getAndRemoveProperty(prefix + index);
+        }
+        return modules;
     }
 
     /**

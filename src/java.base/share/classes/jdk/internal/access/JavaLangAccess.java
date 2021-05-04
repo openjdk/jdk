@@ -262,6 +262,11 @@ public interface JavaLangAccess {
     Module addEnableNativeAccess(Module m);
 
     /**
+     * Updates all unnamed modules to allow access to restricted methods.
+     */
+    void addEnableNativeAccessAllUnnamed();
+
+    /**
      * Returns true if module m can access restricted methods.
      */
     boolean isEnableNativeAccess(Module m);

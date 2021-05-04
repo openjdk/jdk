@@ -2273,6 +2273,9 @@ public final class System {
             public Module addEnableNativeAccess(Module m) {
                 return m.addEnableNativeAccess();
             }
+            public void addEnableNativeAccessAllUnnamed() {
+                Module.addEnableNativeAccessAllUnnamed();
+            }
             public boolean isEnableNativeAccess(Module m) {
                 return m.isEnableNativeAccess();
             }
