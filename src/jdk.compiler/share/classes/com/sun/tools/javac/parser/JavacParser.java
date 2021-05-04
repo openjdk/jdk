@@ -3129,7 +3129,6 @@ public class JavacParser implements Parser {
             case NATIVE      : flag = Flags.NATIVE; break;
             case VOLATILE    : flag = Flags.VOLATILE; break;
             case SYNCHRONIZED: flag = Flags.SYNCHRONIZED; break;
-                // todo: reset to old way; print message?
             case STRICTFP    : flag = Flags.STRICTFP; break;
             case MONKEYS_AT  : flag = Flags.ANNOTATION; break;
             case DEFAULT     : checkSourceLevel(Feature.DEFAULT_METHODS); flag = Flags.DEFAULT; break;
