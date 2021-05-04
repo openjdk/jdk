@@ -347,7 +347,7 @@ void DynamicArchive::dump(const char* archive_name, TRAPS) {
     set_has_been_dumped_once();
     ArchiveClassesAtExit = archive_name;
     if (Arguments::init_shared_archive_paths()) {
-      DynamicArchive::dump(CHECK);
+      dump(CHECK);
     } else {
       ArchiveClassesAtExit = nullptr;
       THROW_MSG(vmSymbols::java_lang_RuntimeException(),
