@@ -163,8 +163,8 @@ public final class BaseLocale {
         if (!language.isEmpty()) {
             language = switch (language) {
                 case "he", "iw" -> OLD_ISO_CODES ? "iw" : "he";
-                case "ji", "yi" -> OLD_ISO_CODES ? "yi" : "ji";
                 case "id", "in" -> OLD_ISO_CODES ? "in" : "id";
+                case "yi", "ji" -> OLD_ISO_CODES ? "ji" : "yi";
                 default -> language;
             };
         }

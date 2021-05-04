@@ -581,11 +581,13 @@ public class CLDRConverter {
             addLikelySubtags(langTag);
         }
 
-        // Add extra language tags from likely subtags if
-        // its likely subtag is supported (already in the available langtag set)
+        // Add extra language tags from likely subtags that meet the following conditions
+        // 1. Its likely subtag is supported (already in the available langtag set)
+        // 2. Neither of old obsolete ones (in/iw/ji)
         handlerLikelySubtags.getData().entrySet().stream()
             .filter(e -> availableLangTags.contains(e.getValue()))
             .map(Map.Entry::getKey)
+            .filter(t -> !t.equals("in") && !t.equals("iw") && !t.equals("ji"))
             .forEach(availableLangTags::add);
 
         bundleGenerator.generateMetaInfo(metaInfo);

@@ -3150,13 +3150,20 @@ public abstract class ResourceBundle {
             var bundleName = toBundleName(baseName, locale);
             var bundle = newBundle0(baseName, bundleName, format, loader, reload);
             if (bundle == null) {
-                bundle = newBundle0(baseName,
-                    switch (locale.getLanguage()) {
-                        case "he" -> bundleName.replaceFirst("_he", "_iw");
-                        case "ji" -> bundleName.replaceFirst("_ji", "_yi");
-                        case "id" -> bundleName.replaceFirst("_id", "_in");
-                        default -> bundleName;
-                    }, format, loader, reload);
+                var simpleName= baseName.substring(baseName.lastIndexOf('.') + 1);
+                var ext = bundleName.substring(bundleName.lastIndexOf(simpleName) + simpleName.length());
+                var otherExt = switch(locale.getLanguage()) {
+                    case "he" -> ext.replaceFirst("^_he(_.*)?$", "_iw$1");
+                    case "id" -> ext.replaceFirst("^_id(_.*)?$", "_in$1");
+                    case "yi" -> ext.replaceFirst("^_yi(_.*)?$", "_ji$1");
+                    case "iw" -> ext.replaceFirst("^_iw(_.*)?$", "_he$1");
+                    case "in" -> ext.replaceFirst("^_in(_.*)?$", "_id$1");
+                    case "ji" -> ext.replaceFirst("^_ji(_.*)?$", "_yi$1");
+                    default -> ext;
+                };
+                if (!ext.equals(otherExt)) {
+                    bundle = newBundle0(baseName, bundleName.substring(0, bundleName.lastIndexOf(ext)) + otherExt, format, loader, reload);
+                }
             }
 
             return bundle;

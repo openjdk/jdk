@@ -209,17 +209,24 @@ public abstract class Bundles {
                         bundle = bundleAccess.newResourceBundle(bundleClass);
                     }
                     if (bundle == null) {
-                        c = Class.forName(Bundles.class.getModule(),
-                                switch (targetLocale.getLanguage()) {
-                                    case "he" -> bundleName.replaceFirst("_he", "_iw");
-                                    case "ji" -> bundleName.replaceFirst("_ji", "_yi");
-                                    case "id" -> bundleName.replaceFirst("_id", "_in");
-                                    default -> bundleName;
-                                });
-                        if (c != null && ResourceBundle.class.isAssignableFrom(c)) {
-                            @SuppressWarnings("unchecked")
-                            Class<ResourceBundle> bundleClass = (Class<ResourceBundle>) c;
-                            bundle = bundleAccess.newResourceBundle(bundleClass);
+                        var simpleName= baseName.substring(baseName.lastIndexOf('.') + 1);
+                        var ext = bundleName.substring(bundleName.lastIndexOf(simpleName) + simpleName.length());
+                        var otherExt = switch(targetLocale.getLanguage()) {
+                            case "he" -> ext.replaceFirst("^_he(_.*)?$", "_iw$1");
+                            case "id" -> ext.replaceFirst("^_id(_.*)?$", "_in$1");
+                            case "yi" -> ext.replaceFirst("^_yi(_.*)?$", "_ji$1");
+                            case "iw" -> ext.replaceFirst("^_iw(_.*)?$", "_he$1");
+                            case "in" -> ext.replaceFirst("^_in(_.*)?$", "_id$1");
+                            case "ji" -> ext.replaceFirst("^_ji(_.*)?$", "_yi$1");
+                            default -> ext;
+                        };
+                        if (!ext.equals(otherExt)) {
+                            c = Class.forName(Bundles.class.getModule(), bundleName.substring(0, bundleName.lastIndexOf(ext)) + otherExt);
+                            if (c != null && ResourceBundle.class.isAssignableFrom(c)) {
+                                @SuppressWarnings("unchecked")
+                                Class<ResourceBundle> bundleClass = (Class<ResourceBundle>) c;
+                                bundle = bundleAccess.newResourceBundle(bundleClass);
+                            }
                         }
                     }
                 } catch (Exception e) {

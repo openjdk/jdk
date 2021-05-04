@@ -536,21 +536,16 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
 
         locale = locale.stripExtensions();
         var langtag = locale.toLanguageTag();
-        if (langtags.contains(langtag)) {
-            return true;
-        }
-
-        var lang = locale.getLanguage();
-        var otherLang = switch (lang) {
-                case "he" -> "iw";
-                case "ji" -> "yi";
-                case "id" -> "in";
-                case "iw" -> "he";
-                case "yi" -> "ji";
-                case "in" -> "id";
-                default -> lang;
-            };
-        if (!lang.equals(otherLang) && langtags.contains(langtag.replaceFirst(lang, otherLang))) {
+        if (langtags.contains(langtag) ||
+            langtags.contains(switch(locale.getLanguage()) {
+                    case "he" -> langtag.replaceFirst("^he(-.*)?$", "iw$1");
+                    case "id" -> langtag.replaceFirst("^id(-.*)?$", "in$1");
+                    case "yi" -> langtag.replaceFirst("^yi(-.*)?$", "ji$1");
+                    case "iw" -> langtag.replaceFirst("^iw(-.*)?$", "he$1");
+                    case "in" -> langtag.replaceFirst("^in(-.*)?$", "id$1");
+                    case "ji" -> langtag.replaceFirst("^ji(-.*)?$", "yi$1");
+                    default -> langtag;
+                })) {
             return true;
         }
 
