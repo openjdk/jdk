@@ -878,13 +878,13 @@ public final class ModuleBootstrap {
      * Process the --enable-native-access option to grant access to restricted methods to selected modules.
      */
     private static void addEnableNativeAccess(ModuleLayer layer) {
-        for (String name : decode()) {
+        for (String name : decodeEnableNativeAccess()) {
             if (name.equals("ALL-UNNAMED")) {
-                SharedSecrets.getJavaLangAccess().addEnableNativeAccessAllUnnamed();
+                JLA.addEnableNativeAccessAllUnnamed();
             } else {
                 Optional<Module> module = layer.findModule(name);
                 if (module.isPresent()) {
-                    SharedSecrets.getJavaLangAccess().addEnableNativeAccess(module.get());
+                    JLA.addEnableNativeAccess(module.get());
                 } else {
                     warnUnknownModule(ENABLE_NATIVE_ACCESS, name);
                 }
@@ -895,7 +895,7 @@ public final class ModuleBootstrap {
     /**
      * Returns the set of module names specified by --enable-native-access options.
      */
-    private static Set<String> decode() {
+    private static Set<String> decodeEnableNativeAccess() {
         String prefix = "jdk.module.enable.native.access.";
         int index = 0;
         // the system property is removed after decoding

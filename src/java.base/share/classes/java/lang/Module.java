@@ -268,13 +268,9 @@ public final class Module implements AnnotatedElement {
      * Returns true if module m can access restricted methods.
      */
     boolean implIsEnableNativeAccess() {
-        if (isNamed() && enableNativeAccess) {
-            return true;
-        } else if (!isNamed() && ALL_UNNAMED_MODULE.enableNativeAccess) {
-            return true;
-        } else {
-            return false;
-        }
+        return isNamed() ?
+                enableNativeAccess :
+                ALL_UNNAMED_MODULE.enableNativeAccess;
     }
 
     // --
