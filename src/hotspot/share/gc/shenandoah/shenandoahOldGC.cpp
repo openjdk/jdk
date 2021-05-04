@@ -67,7 +67,9 @@ public:
 
 
 ShenandoahOldGC::ShenandoahOldGC(ShenandoahGeneration* generation, ShenandoahSharedFlag& allow_preemption) :
-  ShenandoahConcurrentGC(generation), _allow_preemption(allow_preemption) {}
+  ShenandoahConcurrentGC(generation), _allow_preemption(allow_preemption) {
+  _coalesce_and_fill_region_array = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, ShenandoahHeap::heap()->num_regions(), mtGC);
+}
 
 void ShenandoahOldGC::entry_old_evacuations() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
@@ -146,10 +148,9 @@ void ShenandoahOldGC::op_coalesce_and_fill() {
 
   ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
   uint coalesce_and_fill_regions_count = old_heuristics->old_coalesce_and_fill_candidates();
-  ShenandoahHeapRegion* coalesce_and_fill_region_array[coalesce_and_fill_regions_count];
-
-  old_heuristics->get_coalesce_and_fill_candidates(coalesce_and_fill_region_array);
-  ShenandoahConcurrentCoalesceAndFillTask task(nworkers, coalesce_and_fill_region_array, coalesce_and_fill_regions_count);
+  assert(coalesce_and_fill_regions_count <= heap->num_regions(), "Sanity");
+  old_heuristics->get_coalesce_and_fill_candidates(_coalesce_and_fill_region_array);
+  ShenandoahConcurrentCoalesceAndFillTask task(nworkers, _coalesce_and_fill_region_array, coalesce_and_fill_regions_count);
 
 
   // TODO:  We need to implement preemption of coalesce and fill.  If young-gen wants to run while we're working on this,

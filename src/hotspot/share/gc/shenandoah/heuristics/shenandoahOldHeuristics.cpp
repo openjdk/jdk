@@ -236,9 +236,9 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
 
     if (percent_garbage < collection_threshold_garbage_percent) {
       _hidden_next_old_collection_candidate = 0;
-      _hidden_old_collection_candidates = i;
-      _first_coalesce_and_fill_candidate = i;
-      _old_coalesce_and_fill_candidates = cand_idx - i;
+      _hidden_old_collection_candidates = (uint)i;
+      _first_coalesce_and_fill_candidate = (uint)i;
+      _old_coalesce_and_fill_candidates = (uint)(cand_idx - i);
 
       // Note that we do not coalesce and fill occupied humongous regions
       // HR: humongous regions, RR: regular regions, CF: coalesce and fill regions
@@ -252,7 +252,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
 
   // If we reach here, all of non-humogous old-gen regions are candidates for collection set.
   _hidden_next_old_collection_candidate = 0;
-  _hidden_old_collection_candidates = first_humongous_non_empty;
+  _hidden_old_collection_candidates = (uint)first_humongous_non_empty;
   _first_coalesce_and_fill_candidate = 0;
   _old_coalesce_and_fill_candidates = 0;
 
