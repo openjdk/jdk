@@ -42,7 +42,7 @@ public class NullInputStream {
     private static InputStream openStream;
     private static InputStream closedStream;
 
-    @BeforeClass 
+    @BeforeClass
     public static void setup() {
         openStream = InputStream.nullInputStream();
         closedStream = InputStream.nullInputStream();
