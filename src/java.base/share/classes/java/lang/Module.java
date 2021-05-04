@@ -112,7 +112,7 @@ public final class Module implements AnnotatedElement {
     private final ModuleDescriptor descriptor;
 
     // is this module a native module
-    private volatile boolean enableNativeAccess = false;
+    private volatile boolean enableNativeAccess;
 
     /**
      * Creates a new named Module. The resulting Module will be defined to the
