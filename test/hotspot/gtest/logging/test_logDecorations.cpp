@@ -230,3 +230,40 @@ TEST(LogDecorations, identifiers) {
     EXPECT_EQ(ids[i].expected, strtol(reported, NULL, 10));
   }
 }
+
+// Test that the LogDecorations object can be safely copied.
+TEST_VM(LogDecorations, copy) {
+  // A literal with all decorations, comma-separated
+  const char* const all_decorators =
+#define DECORATOR(name, abbr) "," #name
+  DECORATOR_LIST
+#undef DECORATOR
+  ;
+  LogDecorators decorator_selection;
+  ASSERT_TRUE(decorator_selection.parse(all_decorators + 1 // skip leading comma
+              , tty));
+  LogDecorations decorations_orig(LogLevel::Info, tagset, decorator_selection);
+  LogDecorations decorations_copy(decorations_orig);
+
+  for (uint i = 0; i < LogDecorators::Count; i++) {
+    LogDecorators::Decorator decorator = static_cast<LogDecorators::Decorator>(i);
+    // Each decorator should be set here
+    EXPECT_TRUE(decorator_selection.is_decorator(decorator));
+
+    // We expect the resolved decorations to be not-null, to be semantically equal but
+    // to point to different addresses within each LogDecorations object
+    // (unless level string, which is a constant kept somewhere else)
+    const char* orig_deco = decorations_orig.decoration(decorator);
+    const char* copy_deco = decorations_copy.decoration(decorator);
+    EXPECT_NE(orig_deco, (const char*)NULL);
+    EXPECT_NE(copy_deco, (const char*)NULL);
+    EXPECT_EQ(::strcmp(orig_deco, copy_deco), 0);
+    if (decorator != LogDecorators::level_decorator) {
+      EXPECT_NE(orig_deco, copy_deco);
+      EXPECT_GE((address)orig_deco, (address)(&decorations_orig));
+      EXPECT_LT((address)orig_deco, (address)(&decorations_orig + 1));
+      EXPECT_GE((address)copy_deco, (address)(&decorations_copy));
+      EXPECT_LT((address)copy_deco, (address)(&decorations_copy + 1));
+    }
+  }
+}

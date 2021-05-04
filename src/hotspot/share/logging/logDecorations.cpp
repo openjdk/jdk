@@ -57,10 +57,10 @@ void LogDecorations::create_decorations(const LogDecorators &decorators) {
   char* position = _decorations_buffer;
   #define DECORATOR(full_name, abbr) \
   if (decorators.is_decorator(LogDecorators::full_name##_decorator)) { \
-    _decoration_offset[LogDecorators::full_name##_decorator] = position; \
+    _decoration_offset[LogDecorators::full_name##_decorator] = (offset_t)(position - _decorations_buffer); \
     position = create_##full_name##_decoration(position) + 1; \
   } else { \
-    _decoration_offset[LogDecorators::full_name##_decorator] = NULL; \
+    _decoration_offset[LogDecorators::full_name##_decorator] = invalid_offset; \
   }
   DECORATOR_LIST
 #undef DECORATOR

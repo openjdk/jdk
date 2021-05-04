@@ -32,8 +32,15 @@ class LogDecorations {
  public:
   static const int DecorationsBufferSize = 256;
  private:
+  // Buffer for resolved decorations
   char _decorations_buffer[DecorationsBufferSize];
-  char* _decoration_offset[LogDecorators::Count];
+  // Lookup table, contains offsets of the decoration string start addresses by logtag
+  // To keep its size small (which matters, see e.g. JDK-8229517) we use a byte index. That is
+  //  fine since the max. size of the decorations buffer is 256. Note: 255 is reserved
+  //  as "invalid offset" marker.
+  typedef uint8_t offset_t;
+  static const offset_t invalid_offset = DecorationsBufferSize - 1;
+  offset_t _decoration_offset[LogDecorators::Count];
   LogLevelType _level;
   const LogTagSet& _tagset;
   static const char* volatile _host_name;
@@ -56,7 +63,11 @@ class LogDecorations {
     if (decorator == LogDecorators::level_decorator) {
       return LogLevel::name(_level);
     }
-    return _decoration_offset[decorator];
+    const offset_t offset = _decoration_offset[decorator];
+    if (offset == invalid_offset) {
+      return NULL;
+    }
+    return _decorations_buffer + offset;
   }
 };
 
