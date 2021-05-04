@@ -1497,7 +1497,7 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
   size_t preferred_page_size = os::page_size_for_region_unaligned(size, 1);
   // Allocate a new reserved space, preferring to use large pages.
   ReservedSpace rs(size, preferred_page_size);
-  size_t page_size = ReservedSpace::actual_reserved_page_size(rs);
+  size_t page_size = rs.page_size();
   G1RegionToSpaceMapper* result  =
     G1RegionToSpaceMapper::create_mapper(rs,
                                          size,
@@ -1589,7 +1589,7 @@ jint G1CollectedHeap::initialize() {
   _hot_card_cache = new G1HotCardCache(this);
 
   // Create space mappers.
-  size_t page_size = ReservedSpace::actual_reserved_page_size(heap_rs);
+  size_t page_size = heap_rs.page_size();
   G1RegionToSpaceMapper* heap_storage =
     G1RegionToSpaceMapper::create_mapper(heap_rs,
                                          heap_rs.size(),
