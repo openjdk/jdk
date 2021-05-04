@@ -29,6 +29,8 @@ import vm.runtime.defmeth.shared.executor.MHInvokeWithArgsTest;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -44,6 +46,11 @@ public class TestContext {
         return m.invoke(obj, args);
     }
 
+    public static Object invoke(Constructor m, Object... args)
+            throws InvocationTargetException, IllegalAccessException, InstantiationException {
+        return m.newInstance(args);
+    }
+
     public static Object invokeWithArguments(CallMethod.Invoke invokeType, Class<?> declaringClass,
                                              String methodName, MethodType type, Object... arguments) throws Throwable {
         // Need to do method lookup in the right context
@@ -56,7 +63,11 @@ public class TestContext {
         if (invokeType == CallMethod.Invoke.VIRTUAL || invokeType == CallMethod.Invoke.INTERFACE) {
             mh = LOOKUP.findVirtual(declaringClass, methodName, type);
         } else if (invokeType == CallMethod.Invoke.SPECIAL) {
-            mh = LOOKUP.findSpecial(declaringClass, methodName, type, declaringClass);
+            if (methodName.equals("<init>") && type.returnType() == void.class) {
+                mh = LOOKUP.findConstructor(declaringClass, type);
+            } else {
+                mh = LOOKUP.findSpecial(declaringClass, methodName, type, declaringClass);
+            }
         } else if (invokeType == CallMethod.Invoke.STATIC) {
             mh = LOOKUP.findStatic(declaringClass, methodName, type);
         } else {

@@ -153,6 +153,10 @@ public class TesterBuilder implements Builder<Tester> {
                 .cpEntryType(CallMethod.IndexbyteOp.INTERFACEMETHODREF);
     }
 
+    public TesterBuilder new_(ConcreteClass receiver) {
+        return callSite(receiver, receiver,"<init>", "()V");
+    }
+
     public TesterBuilder params(int... intParams) {
         this.params = new Param[intParams.length];
         for (int i = 0; i < intParams.length; i++) {
@@ -217,18 +221,18 @@ public class TesterBuilder implements Builder<Tester> {
     private CallMethod.Invoke getCallInsn() {
         if ((m.acc() & Opcodes.ACC_STATIC) != 0) {
             return Invoke.STATIC;
-        } else {
-            if (staticReceiver instanceof Interface) {
-                return Invoke.INTERFACE;
-            } else if (staticReceiver instanceof ConcreteClass) {
-                if ((m.acc() & Opcodes.ACC_INTERFACE) == 0) {
-                    return Invoke.VIRTUAL;
-                } else {
-                    return Invoke.INTERFACE;
-                }
+        } else if (staticReceiver instanceof Interface) {
+            return Invoke.INTERFACE;
+        } else if (staticReceiver instanceof ConcreteClass) {
+            if (m.isConstructor()) {
+                return Invoke.SPECIAL;
+            } else if ((m.acc() & Opcodes.ACC_INTERFACE) == 0) {
+                return Invoke.VIRTUAL;
             } else {
-                throw new UnsupportedOperationException("Can't detect invoke instruction");
+                return Invoke.INTERFACE;
             }
+        } else {
+            throw new UnsupportedOperationException("Can't detect invoke instruction");
         }
     }
 

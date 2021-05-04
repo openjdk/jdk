@@ -214,7 +214,11 @@ public class BasicTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().callSite(I, C, "m", "()V").throws_(ExceptionInInitializerError.class).done()
+        boolean isReflectionMode = factory.getExecutionMode().equals("REFLECTION");
+        Class expectedError = isReflectionMode ? RuntimeException.class
+                                               : ExceptionInInitializerError.class;
+
+        b.test().new_(C).throws_(expectedError).done()
 
         .run();
     }
@@ -247,20 +251,11 @@ public class BasicTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        Class expectedClass;
-        switch (factory.getExecutionMode()) {
-            case "REFLECTION":
-                expectedClass = NoSuchMethodException.class;
-                break;
-            case "INVOKE_EXACT":
-            case "INVOKE_GENERIC":
-                expectedClass = IllegalAccessError.class;
-                break;
-            default:
-                expectedClass = ExceptionInInitializerError.class;
-                break;
-        }
-        b.test().callSite(I, C, "m", "()V").throws_(expectedClass).done()
+        boolean isReflectionMode = factory.getExecutionMode().equals("REFLECTION");
+        Class expectedError = isReflectionMode ? RuntimeException.class
+                                               : ExceptionInInitializerError.class;
+
+        b.test().new_(C).throws_(expectedError).done()
 
         .run();
     }

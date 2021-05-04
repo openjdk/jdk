@@ -108,15 +108,14 @@ public class MHInvokeWithArgsTest extends AbstractReflectionTest {
 
             Object[] values = values(params);
 
-            if (call.invokeInsn() != CallMethod.Invoke.STATIC) {
+            if (!call.isConstructorCall() && call.invokeInsn() != CallMethod.Invoke.STATIC) {
                 // Prepare receiver for non-static call
                 args = new Object[params.length+1];
                 Class recClass = resolve(receiverClass);
                 args[0] = recClass.newInstance();
                 System.arraycopy(values, 0, args, 1, values.length);
             } else {
-                // No need for a receiver for static call
-                args = values;
+                args = values; // no receiver
             }
         }
 

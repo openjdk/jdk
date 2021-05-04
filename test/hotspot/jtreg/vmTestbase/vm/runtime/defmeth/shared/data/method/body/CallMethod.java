@@ -171,6 +171,12 @@ public class CallMethod implements MethodBody {
                          staticClass() instanceof Interface);
     }
 
+    public boolean isConstructorCall() {
+        return invokeInsn() == Invoke.SPECIAL &&
+               methodName().equals("<init>") &&
+               methodDesc().equals("()V");
+    }
+
     @Override
     public void visit(Visitor v) {
         v.visitCallMethod(this);
