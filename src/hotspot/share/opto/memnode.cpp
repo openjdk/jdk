@@ -1367,10 +1367,10 @@ Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Ty
 // merging a newly allocated object and a load from the cache.
 // We want to replace this load with the original incoming
 // argument to the valueOf call.
-Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
-  assert(phase->C->eliminate_boxing(), "sanity");
+Node* LoadNode::eliminate_autobox(PhaseIterGVN* igvn) {
+  assert(igvn->C->eliminate_boxing(), "sanity");
   intptr_t ignore = 0;
-  Node* base = AddPNode::Ideal_base_and_offset(in(Address), phase, ignore);
+  Node* base = AddPNode::Ideal_base_and_offset(in(Address), igvn, ignore);
   if ((base == NULL) || base->is_Phi()) {
     // Push the loads from the phi that comes from valueOf up
     // through it to allow elimination of the loads and the recovery
@@ -1404,7 +1404,7 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
         if (count > 0 && elements[0]->is_Con() &&
             (count == 1 ||
              (count == 2 && elements[1]->Opcode() == Op_LShiftX &&
-                            elements[1]->in(2) == phase->intcon(shift)))) {
+                            elements[1]->in(2) == igvn->intcon(shift)))) {
           ciObjArray* array = base_type->const_oop()->as_obj_array();
           // Fetch the box object cache[0] at the base of the array and get its value
           ciInstance* box = array->obj_at(0)->as_instance();
@@ -1431,43 +1431,45 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
            // Add up all the offsets making of the address of the load
             Node* result = elements[0];
             for (int i = 1; i < count; i++) {
-              result = phase->transform(new AddXNode(result, elements[i]));
+              result = igvn->transform(new AddXNode(result, elements[i]));
             }
             // Remove the constant offset from the address and then
-            result = phase->transform(new AddXNode(result, phase->MakeConX(-(int)offset)));
+            result = igvn->transform(new AddXNode(result, igvn->MakeConX(-(int)offset)));
             // remove the scaling of the offset to recover the original index.
-            if (result->Opcode() == Op_LShiftX && result->in(2) == phase->intcon(shift)) {
+            if (result->Opcode() == Op_LShiftX && result->in(2) == igvn->intcon(shift)) {
               // Peel the shift off directly but wrap it in a dummy node
               // since Ideal can't return existing nodes
-              result = new RShiftXNode(result->in(1), phase->intcon(0));
+              igvn->_worklist.push(result); // remove dead node later
+              result = new RShiftXNode(result->in(1), igvn->intcon(0));
             } else if (result->is_Add() && result->in(2)->is_Con() &&
                        result->in(1)->Opcode() == Op_LShiftX &&
-                       result->in(1)->in(2) == phase->intcon(shift)) {
+                       result->in(1)->in(2) == igvn->intcon(shift)) {
               // We can't do general optimization: ((X<<Z) + Y) >> Z ==> X + (Y>>Z)
               // but for boxing cache access we know that X<<Z will not overflow
               // (there is range check) so we do this optimizatrion by hand here.
-              Node* add_con = new RShiftXNode(result->in(2), phase->intcon(shift));
-              result = new AddXNode(result->in(1)->in(1), phase->transform(add_con));
+              igvn->_worklist.push(result); // remove dead node later
+              Node* add_con = new RShiftXNode(result->in(2), igvn->intcon(shift));
+              result = new AddXNode(result->in(1)->in(1), igvn->transform(add_con));
             } else {
-              result = new RShiftXNode(result, phase->intcon(shift));
+              result = new RShiftXNode(result, igvn->intcon(shift));
             }
 #ifdef _LP64
             if (bt != T_LONG) {
-              result = new ConvL2INode(phase->transform(result));
+              result = new ConvL2INode(igvn->transform(result));
             }
 #else
             if (bt == T_LONG) {
-              result = new ConvI2LNode(phase->transform(result));
+              result = new ConvI2LNode(igvn->transform(result));
             }
 #endif
             // Boxing/unboxing can be done from signed & unsigned loads (e.g. LoadUB -> ... -> LoadB pair).
             // Need to preserve unboxing load type if it is unsigned.
             switch(this->Opcode()) {
               case Op_LoadUB:
-                result = new AndINode(phase->transform(result), phase->intcon(0xFF));
+                result = new AndINode(igvn->transform(result), igvn->intcon(0xFF));
                 break;
               case Op_LoadUS:
-                result = new AndINode(phase->transform(result), phase->intcon(0xFFFF));
+                result = new AndINode(igvn->transform(result), igvn->intcon(0xFFFF));
                 break;
             }
             return result;
@@ -1760,7 +1762,8 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         (t_oop->is_known_instance_field() ||
          t_oop->is_ptr_to_boxed_value())) {
       PhaseIterGVN *igvn = phase->is_IterGVN();
-      if (igvn != NULL && igvn->_worklist.member(opt_mem)) {
+      assert(igvn != NULL, "must be PhaseIterGVN when can_reshape is true");
+      if (igvn->_worklist.member(opt_mem)) {
         // Delay this transformation until memory Phi is processed.
         igvn->_worklist.push(this);
         return NULL;
@@ -1770,7 +1773,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (result != NULL) return result;
 
       if (t_oop->is_ptr_to_boxed_value()) {
-        Node* result = eliminate_autobox(phase);
+        Node* result = eliminate_autobox(igvn);
         if (result != NULL) return result;
       }
     }
