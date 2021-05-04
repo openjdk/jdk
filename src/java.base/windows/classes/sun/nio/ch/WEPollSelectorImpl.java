@@ -108,7 +108,7 @@ class WEPollSelectorImpl extends SelectorImpl {
         processDeregisterQueue();
         try {
             begin(blocking);
-            numEntries = WEPoll.wait(eph, pollArrayAddress, NUM_EPOLLEVENTS, (int) timeout);
+            numEntries = WEPoll.wait(eph, pollArrayAddress, NUM_EPOLLEVENTS, to);
         } finally {
             end(blocking);
         }
