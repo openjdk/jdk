@@ -61,7 +61,7 @@ class DynamicArchive : AllStatic {
   static bool _has_been_dumped_once;
 public:
   static void dump(const char* archive_name, TRAPS);
-  static void dump();
+  static void dump(TRAPS);
   static bool has_been_dumped_once() { return _has_been_dumped_once; }
   static void set_has_been_dumped_once() { _has_been_dumped_once = true; }
   static bool is_mapped() { return FileMapInfo::dynamic_info() != NULL; }
