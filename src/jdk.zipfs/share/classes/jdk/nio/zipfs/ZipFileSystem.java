@@ -2209,7 +2209,7 @@ class ZipFileSystem extends FileSystem {
             }
             ByteBuffer bb = ByteBuffer.wrap(b);
             bb.position(off);
-            bb.limit((int)(off + len));
+            bb.limit(off + len);
             long n = readFullyAt(bb, pos);
             if (n > 0) {
                 pos += n;
