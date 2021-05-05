@@ -337,11 +337,9 @@ public class Navigation {
      */
     private void addSummaryLinks(Content tree) {
         switch (documentedPage) {
-            case MODULE:
-            case PACKAGE:
-            case CLASS:
-            case HELP:
-                List<Content> listContents = subNavLinks.getSubNavLinks();
+            case MODULE, PACKAGE, CLASS, HELP -> {
+                List<? extends Content> listContents = subNavLinks.getSubNavLinks()
+                        .stream().map(HtmlTree::LI).toList();
                 if (!listContents.isEmpty()) {
                     tree.add(HtmlTree.LI(switch (documentedPage) {
                         case MODULE -> contents.moduleSubNavLabel;
@@ -352,10 +350,7 @@ public class Navigation {
                     }).add(Entity.NO_BREAK_SPACE));
                     addListToNav(listContents, tree);
                 }
-                break;
-
-            default:
-                break;
+            }
         }
     }
 
@@ -421,7 +416,7 @@ public class Navigation {
         tree.add(HtmlTree.LI(content));
     }
 
-    private void addListToNav(List<Content> listContents, Content tree) {
+    private void addListToNav(List<? extends Content> listContents, Content tree) {
         int count = 0;
         for (Content liContent : listContents) {
             if (count < listContents.size() - 1) {

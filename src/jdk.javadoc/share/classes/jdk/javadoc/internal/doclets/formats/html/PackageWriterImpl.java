@@ -195,12 +195,12 @@ public class PackageWriterImpl extends HtmlDocletWriter
         return super.getNavBar(pageMode, element)
                 .setNavLinkModule(linkContent)
                 .setSubNavLinks(() -> List.of(
-                        HtmlTree.LI(links.createLink(HtmlIds.PACKAGE_DESCRIPTION, contents.navDescription,
-                                !utils.getFullBody(packageElement).isEmpty() && !options.noComment())),
-                        HtmlTree.LI(links.createLink(HtmlIds.RELATED_PACKAGE_SUMMARY, contents.relatedPackages,
-                                relatedPackages != null && !relatedPackages.isEmpty())),
-                        HtmlTree.LI(links.createLink(HtmlIds.CLASS_SUMMARY, contents.navClassesAndInterfaces,
-                                allClasses != null && !allClasses.isEmpty()))));
+                        links.createLink(HtmlIds.PACKAGE_DESCRIPTION, contents.navDescription,
+                                !utils.getFullBody(packageElement).isEmpty() && !options.noComment()),
+                        links.createLink(HtmlIds.RELATED_PACKAGE_SUMMARY, contents.relatedPackages,
+                                relatedPackages != null && !relatedPackages.isEmpty()),
+                        links.createLink(HtmlIds.CLASS_SUMMARY, contents.navClassesAndInterfaces,
+                                allClasses != null && !allClasses.isEmpty())));
     }
 
     /**

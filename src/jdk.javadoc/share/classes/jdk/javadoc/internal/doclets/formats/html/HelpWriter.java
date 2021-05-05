@@ -148,8 +148,8 @@ public class HelpWriter extends HtmlDocletWriter {
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         return super.getNavBar(pageMode, element)
                 .setSubNavLinks(() -> List.of(
-                        HtmlTree.LI(links.createLink(HtmlIds.HELP_NAVIGATION, contents.navHelpNavigation)),
-                        HtmlTree.LI(links.createLink(HtmlIds.HELP_PAGES, contents.navHelpPages)))
+                        links.createLink(HtmlIds.HELP_NAVIGATION, contents.navHelpNavigation),
+                        links.createLink(HtmlIds.HELP_PAGES, contents.navHelpPages))
                 );
     }
 

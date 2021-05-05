@@ -158,8 +158,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                     Set<VisibleMemberTable.Kind> summarySet =
                             VisibleMemberTable.Kind.forSummariesOf(element.getKind());
                     for (VisibleMemberTable.Kind kind : summarySet) {
-                        list.add(HtmlTree.LI(links.createLink(HtmlIds.forMemberSummary(kind),
-                                contents.getNavLinkLabelContent(kind), vmt.hasVisibleMembers(kind))));
+                        list.add(links.createLink(HtmlIds.forMemberSummary(kind),
+                                contents.getNavLinkLabelContent(kind), vmt.hasVisibleMembers(kind)));
                     }
                     return list;
                 });
