@@ -77,9 +77,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: C c = new C(); c.m() == 88;
      * TEST: I i = new C(); i.m() == 88;
      */
-    public void testSuperBasic1() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testSuperBasic1(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -92,9 +90,7 @@ public class SuperCallTest extends DefMethTest {
 
         b.test().callSite(I, C, "m", "()I").returns(1).done()
          .test().callSite(J, C, "m", "()I").returns(1).done()
-         .test().callSite(C, C, "m", "()I").returns(1).done()
-
-        .run();
+         .test().callSite(C, C, "m", "()I").returns(1).done();
     }
 
     /*
@@ -115,9 +111,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: L l = new D(); l.m() == 1
      * TEST: D d = new D(); d.m() == 1
      */
-    public void testSuperConflictResolution() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testSuperConflictResolution(TestBuilder b) {
         Interface K = b.intf("K")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -144,9 +138,7 @@ public class SuperCallTest extends DefMethTest {
 
          .test().callSite(K, D, "m", "()I").returns(1).done()
          .test().callSite(L, D, "m", "()I").returns(1).done()
-         .test().callSite(D, D, "m", "()I").returns(1).done()
-
-        .run();
+         .test().callSite(D, D, "m", "()I").returns(1).done();
     }
 
     /*
@@ -181,9 +173,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: D o = new D(); o.k()I == 1
      * TEST: D o = new D(); o.l()I == 2
      */
-    public void testSuperConflictDiffMethod() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testSuperConflictDiffMethod(TestBuilder b) {
         Interface K = b.intf("K")
                 .defaultMethod("m", "(I)I").returns(1).build()
             .build();
@@ -218,9 +208,7 @@ public class SuperCallTest extends DefMethTest {
          .test().callSite(D, D, "m", "(I)I").throws_(IncompatibleClassChangeError.class).done()
 
          .test().callSite(D, D, "k", "()I").returns(1).done()
-         .test().callSite(D, D, "l", "()I").returns(2).done()
-
-        .run();
+         .test().callSite(D, D, "l", "()I").returns(2).done();
     }
 
     /*
@@ -238,9 +226,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: I i = new C(); i.m() ==> ICCE
      * TEST: C c = new C(); c.m() ==> ICCE
      */
-    public void testSuperConflict() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testSuperConflict(TestBuilder b) {
         Interface K = b.intf("K")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -261,9 +247,7 @@ public class SuperCallTest extends DefMethTest {
          .test().callSite(L, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
          .test().callSite(J, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
          .test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-         .test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-
-        .run();
+         .test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
     }
 
     /*
@@ -276,9 +260,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: C c = new C(); c.m() ==> 1
      * TEST: J j = new C(); j.m() ==> 1
      */
-    public void testSuperDisqual() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testSuperDisqual(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -293,9 +275,7 @@ public class SuperCallTest extends DefMethTest {
 
         b.test().callSite(I, C, "m", "()I").returns(1).done()
          .test().callSite(J, C, "m", "()I").returns(1).done()
-         .test().callSite(C, C, "m", "()I").returns(1).done()
-
-        .run();
+         .test().callSite(C, C, "m", "()I").returns(1).done();
     }
 
     /*
@@ -312,9 +292,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: C c = new C(); c.m() ==> AME
      * TEST: K k = new D(); k.m() ==> NSME
      */
-    public void testSuperNull() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testSuperNull(TestBuilder b) {
         Interface I = b.intf("I")
                 .abstractMethod("m", "()I").build()
             .build();
@@ -333,9 +311,7 @@ public class SuperCallTest extends DefMethTest {
         b.test().callSite(I, C, "m", "()I").throws_(AbstractMethodError.class).done()
          .test().callSite(J, C, "m", "()I").throws_(AbstractMethodError.class).done()
          .test().callSite(C, C, "m", "()I").throws_(AbstractMethodError.class).done()
-         .test().callSite(K, D, "m", "()I").throws_(NoSuchMethodError.class).done()
-
-        .run();
+         .test().callSite(K, D, "m", "()I").throws_(NoSuchMethodError.class).done();
     }
 
     /*
@@ -351,9 +327,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: C c = new C(); c.m(new Object()) == 1;
      * TEST: C c = new C(); c.m("") == 1;
      */
-    public void testSuperGeneric() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testSuperGeneric(TestBuilder b) {
         // interface I<T> {
         //     default int m(T t) { return 1; }
         // }
@@ -378,9 +352,7 @@ public class SuperCallTest extends DefMethTest {
          .test().callSite(J, C, "m", "(Ljava/lang/String;)I").returns(1).done()
 
          .test().callSite(C, C, "m", "(Ljava/lang/Object;)I").returns(1).done()
-         .test().callSite(C, C, "m", "(Ljava/lang/String;)I").returns(1).done()
-
-        .run();
+         .test().callSite(C, C, "m", "(Ljava/lang/String;)I").returns(1).done();
     }
 
     /*
@@ -392,9 +364,7 @@ public class SuperCallTest extends DefMethTest {
      *
      * TEST: C c = new C(); c.m("string") == 1
      */
-    public void testSuperGenericDisqual() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testSuperGenericDisqual(TestBuilder b) {
         Interface I = b.intf("I").sig("<T:Ljava/lang/Object;>Ljava/lang/Object;")
                 .defaultMethod("m", "(Ljava/lang/Object;)I").sig("(TT;)I").returns(1).build()
             .build();
@@ -415,9 +385,7 @@ public class SuperCallTest extends DefMethTest {
          .test().callSite(J, C, "m", "(Ljava/lang/String;)I").returns(1).done()
 
          .test().callSite(C, C, "m", "(Ljava/lang/Object;)I").returns(1).done()
-         .test().callSite(C, C, "m", "(Ljava/lang/String;)I").returns(1).done()
-
-        .run();
+         .test().callSite(C, C, "m", "(Ljava/lang/String;)I").returns(1).done();
     }
 
     /*
@@ -429,9 +397,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: C d = new D(); d.m() == 1
      * TEST: D d = new D(); d.m() == 1
      */
-    public void testSuperNonDefault() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testSuperNonDefault(TestBuilder b) {
         ConcreteClass C = b.clazz("C")
                 .concreteMethod("m", "()I").returns(1).build()
             .build();
@@ -441,9 +407,7 @@ public class SuperCallTest extends DefMethTest {
             .build();
 
         b.test().callSite(C, D, "m", "()I").returns(1).done()
-         .test().callSite(D, D, "m", "()I").returns(1).done()
-
-        .run();
+         .test().callSite(D, D, "m", "()I").returns(1).done();
     }
 
     /*
@@ -461,9 +425,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: C e = new E(); e.m() == 1
      * TEST: E e = new E(); e.m() == 1
      */
-    public void testSuperNonDefault1() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testSuperNonDefault1(TestBuilder b) {
         Interface I = b.intf("I")
                 .abstractMethod("m", "()I").build()
             .build();
@@ -486,9 +448,7 @@ public class SuperCallTest extends DefMethTest {
 
          .test().callSite(I, E, "m", "()I").returns(1).done()
          .test().callSite(C, E, "m", "()I").returns(1).done()
-         .test().callSite(E, E, "m", "()I").returns(1).done()
-
-        .run();
+         .test().callSite(E, E, "m", "()I").returns(1).done();
     }
 
     /*
@@ -507,9 +467,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: C e = new E(); e.m() == 2
      * TEST: E e = new E(); e.m() == 2
      */
-    public void testSuperNonDefault2() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testSuperNonDefault2(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -532,9 +490,7 @@ public class SuperCallTest extends DefMethTest {
 
          .test().callSite(I, E, "m", "()I").returns(2).done()
          .test().callSite(C, E, "m", "()I").returns(2).done()
-         .test().callSite(E, E, "m", "()I").returns(2).done()
-
-        .run();
+         .test().callSite(E, E, "m", "()I").returns(2).done();
     }
 
     /*
@@ -549,9 +505,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: C c = new C(); c.q() == 1;
      * TEST: C c = new C(); c.r() == 2;
      */
-    public void testDisambig() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testDisambig(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -567,9 +521,7 @@ public class SuperCallTest extends DefMethTest {
 
         b.test().callSite(C, C, "q", "()I").returns(1).done()
          .test().callSite(C, C, "r", "()I").returns(2).done()
-         .test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-
-        .run();
+         .test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
     }
 
     /*
@@ -586,9 +538,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: C c = new C(); c.q() == 1;
      * TEST: C c = new C(); c.r() == 2;
      */
-    public void testDisambig2() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testDisambig2(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -608,9 +558,7 @@ public class SuperCallTest extends DefMethTest {
 
         b.test().callSite(C, C, "q", "()I").returns(1).done()
          .test().callSite(C, C, "r", "()I").returns(2).done()
-         .test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-
-        .run();
+         .test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done();
     }
 
     /*
@@ -624,9 +572,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: C c = new C(); c.m() == 2
      * TEST: C c = new C(); c.q() == 1
      */
-    public void testResolvedShadowed() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testResolvedShadowed(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -643,9 +589,7 @@ public class SuperCallTest extends DefMethTest {
             .build();
 
         b.test().callSite(C, C, "m", "()I").returns(2).done()
-         .test().callSite(C, C, "q", "()I").returns(1).done()
-
-        .run();
+         .test().callSite(C, C, "q", "()I").returns(1).done();
     }
 
     /*
@@ -659,9 +603,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: C c = new C(); c.q() == 1
      * TEST: C c = new C(); c.m() == 2
      */
-    public void testResolvedButSuperClass() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testResolvedButSuperClass(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -678,9 +620,7 @@ public class SuperCallTest extends DefMethTest {
             .build();
 
         b.test().callSite(C, C, "q", "()I").returns(1).done()
-         .test().callSite(C, C, "m", "()I").returns(2).done()
-
-        .run();
+         .test().callSite(C, C, "m", "()I").returns(2).done();
     }
 
     /*
@@ -695,9 +635,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: C c = new C(); c.m() == ICCE
      * TEST: C c = new C(); c.q() == 1
      */
-    public void testResolved1Caller2NotShadowed() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testResolved1Caller2NotShadowed(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -716,9 +654,7 @@ public class SuperCallTest extends DefMethTest {
             .build();
 
         b.test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-         .test().callSite(C, C, "q", "()I").returns(1).done()
-
-        .run();
+         .test().callSite(C, C, "q", "()I").returns(1).done();
     }
 
     /*
@@ -746,9 +682,7 @@ public class SuperCallTest extends DefMethTest {
      * TEST: K k = new C(); k.m() == VerifyError
      */
     @NotApplicableFor(modes = { REDEFINITION }) // Can't redefine a class that gets VerifyError
-    public void testSuperInvalidIndirectInterfaceMethodInvokeSpecial() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testSuperInvalidIndirectInterfaceMethodInvokeSpecial(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -761,8 +695,6 @@ public class SuperCallTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(K).build();
 
-        b.test().callSite(K, C, "m", "()I").throws_(VerifyError.class).done()
-
-        .run();
+        b.test().callSite(K, C, "m", "()I").throws_(VerifyError.class).done();
     }
 }

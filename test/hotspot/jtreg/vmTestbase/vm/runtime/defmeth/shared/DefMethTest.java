@@ -26,6 +26,7 @@ package vm.runtime.defmeth.shared;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
@@ -43,6 +44,7 @@ import vm.runtime.defmeth.PrivateMethodsTest;
 import vm.runtime.defmeth.StaticMethodsTest;
 import vm.runtime.defmeth.SuperCallTest;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
+import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.builder.TestBuilderFactory;
 import vm.share.options.Option;
 import vm.share.options.OptionSupport;
@@ -216,6 +218,11 @@ public abstract class DefMethTest extends TestBase {
         return true;
     }
 
+    private boolean requiresTestBuilder(Method m) {
+        Parameter[] params = m.getParameters();
+        return params.length == 1 && (params[0].getType() == TestBuilder.class);
+    }
+
     /** Information about the test being executed */
     public String shortTestName;
 
@@ -283,7 +290,13 @@ public abstract class DefMethTest extends TestBase {
                     try {
                         factory.setExecutionMode(mode.name());
                         getLog().info(format("    %s: ", mode));
-                        m.invoke(this);
+                        if (requiresTestBuilder(m)) {
+                            TestBuilder b = factory.getBuilder();
+                            m.invoke(this, b);
+                            b.run();
+                        } else {
+                            m.invoke(this);
+                        }
                     } catch (IllegalAccessException | IllegalArgumentException e) {
                         throw new TestFailure(e);
                     } catch (InvocationTargetException e) {

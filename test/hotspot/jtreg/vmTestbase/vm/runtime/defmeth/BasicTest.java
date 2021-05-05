@@ -63,9 +63,7 @@ public class BasicTest extends DefMethTest {
      * objectref does not implement the resolved interface, invokevirtual throws
      * an IncompatibleClassChangeError.
      */
-    public void testInterfaceNotImplemented() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInterfaceNotImplemented(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()V").emptyBody().build()
             .build();
@@ -92,9 +90,7 @@ public class BasicTest extends DefMethTest {
             expectedClass = IncompatibleClassChangeError.class;
         }
 
-        b.test().callSite(I, C, "m", "()V").throws_(expectedClass).done()
-
-        .run();
+        b.test().callSite(I, C, "m", "()V").throws_(expectedClass).done();
     }
 
     /*
@@ -105,9 +101,7 @@ public class BasicTest extends DefMethTest {
      *
      * ...
      */
-    public void testNoMatch() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testNoMatch(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "(Ljava/lang/Object;)V").emptyBody().build()
             .build();
@@ -116,9 +110,7 @@ public class BasicTest extends DefMethTest {
 
         b.test().callSite(C, C, "m",  "()I").throws_(NoSuchMethodError.class).done()
          .test().callSite(C, C, "m1", "()V").throws_(NoSuchMethodError.class).done()
-         .test().callSite(C, C, "m", "(I)V").throws_(NoSuchMethodError.class).done()
-
-        .run();
+         .test().callSite(C, C, "m", "(I)V").throws_(NoSuchMethodError.class).done();
     }
 
     /*
@@ -133,9 +125,7 @@ public class BasicTest extends DefMethTest {
      *
      * ...
      */
-    public void testNonPublic() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testNonPublic(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m1", "()V").private_().emptyBody().build()
                 .defaultMethod("m2", "()I").private_().returns(1).build()
@@ -144,9 +134,7 @@ public class BasicTest extends DefMethTest {
         ConcreteClass C = b.clazz("C").implement(I).build();
 
         b.test().callSite(C, C, "m1",  "()V").throws_(NoSuchMethodError.class).done()
-         .test().callSite(C, C, "m2",  "()I").throws_(NoSuchMethodError.class).done()
-
-        .run();
+         .test().callSite(C, C, "m2",  "()I").throws_(NoSuchMethodError.class).done();
     }
 
     /*
@@ -160,9 +148,7 @@ public class BasicTest extends DefMethTest {
      * }
      *
      */
-    public void testNonPublicOverride() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testNonPublicOverride(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -181,9 +167,7 @@ public class BasicTest extends DefMethTest {
 
          b.test().callSite(I, C, "m", "()I").returns(1).done()
           .test().callSite(I, D, "m", "()I").throws_(IllegalAccessError.class).done()
-          .test().callSite(I, E, "m", "()I").throws_(IllegalAccessError.class).done()
-
-        .run();
+          .test().callSite(I, E, "m", "()I").throws_(IllegalAccessError.class).done();
     }
 
 
@@ -199,9 +183,7 @@ public class BasicTest extends DefMethTest {
      * Static initialization of class C will trigger
      * I's static initialization due to I's default method.
      */
-    public void testStaticInit() throws ClassNotFoundException {
-        TestBuilder b = factory.getBuilder();
-
+    public void testStaticInit(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("<clinit>", "()V")
                     .flags(ACC_STATIC)
@@ -218,9 +200,7 @@ public class BasicTest extends DefMethTest {
         Class expectedError = isReflectionMode ? RuntimeException.class
                                                : ExceptionInInitializerError.class;
 
-        b.test().new_(C).throws_(expectedError).done()
-
-        .run();
+        b.test().new_(C).throws_(expectedError).done();
     }
 
     /**
@@ -235,9 +215,7 @@ public class BasicTest extends DefMethTest {
      * Static initialization of class C will trigger
      * I's static initialization due to I's private concrete method.
      */
-    public void testStaticInitPrivate() throws ClassNotFoundException {
-        TestBuilder b = factory.getBuilder();
-
+    public void testStaticInitPrivate(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("<clinit>", "()V")
                     .flags(ACC_STATIC)
@@ -255,9 +233,7 @@ public class BasicTest extends DefMethTest {
         Class expectedError = isReflectionMode ? RuntimeException.class
                                                : ExceptionInInitializerError.class;
 
-        b.test().new_(C).throws_(expectedError).done()
-
-        .run();
+        b.test().new_(C).throws_(expectedError).done();
     }
 
     /**
@@ -274,9 +250,7 @@ public class BasicTest extends DefMethTest {
      * Static initialization of class C will not trigger
      * I's static initialization since I has no concrete methods.
      */
-    public void testNotStaticInitNoDefault() throws ClassNotFoundException {
-        TestBuilder b = factory.getBuilder();
-
+    public void testNotStaticInitNoDefault(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("<clinit>", "()V")
                     .flags(ACC_STATIC)
@@ -291,9 +265,7 @@ public class BasicTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I,J).build();
 
-        b.test().callSite(C, C, "m", "()I").returns(1).done()
-
-        .run();
+        b.test().callSite(C, C, "m", "()I").returns(1).done();
     }
 
     /*
@@ -313,9 +285,7 @@ public class BasicTest extends DefMethTest {
     // disabling this test for REFLECTION and INVOKE for now until
     // loader constraint issue associated with those modes has been resolved
     @NotApplicableFor(modes = { REFLECTION, INVOKE_WITH_ARGS, INVOKE_EXACT, INVOKE_GENERIC, INDY })
-    public void testLoaderConstraint() throws Exception{
-        TestBuilder b = factory.getBuilder();
-
+    public void testLoaderConstraint(TestBuilder b) {
         ConcreteClass A = b.clazz("A").build();
 
         Interface I = b.intf("I")
@@ -371,6 +341,6 @@ public class BasicTest extends DefMethTest {
 
                     return l2;
                 }
-            }).run();
+            });
     }
 }

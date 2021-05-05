@@ -32,6 +32,8 @@ import static vm.runtime.defmeth.shared.data.method.body.CallMethod.IndexbyteOp.
 import vm.runtime.defmeth.shared.data.method.body.*;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * Test that default methods don't override methods inherited from Object class.
  */
@@ -42,9 +44,7 @@ public class ObjectMethodOverridesTest extends DefMethTest {
     }
 
     /* protected Object clone() */
-    public void testClone() throws Exception {
-        TestBuilder b = factory.getBuilder();
-
+    public void testClone(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("clone", "()Ljava/lang/Object;")
                     .throw_(TestFailure.class)
@@ -62,15 +62,11 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         b.test().callSite(C, C, "m", "()V")
                 .throws_(CloneNotSupportedException.class)
-                .done()
-
-        .run();
+                .done();
     }
 
     /* boolean equals(Object obj) */
-    public void testEquals() throws Exception {
-        TestBuilder b = factory.getBuilder();
-
+    public void testEquals(TestBuilder b) throws ReflectiveOperationException {
         Interface I = b.intf("I")
                 .defaultMethod("equals", "(Ljava/lang/Object;)Z")
                     .throw_(TestFailure.class)
@@ -79,16 +75,16 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        ClassLoader cl = b.build();
-        Object c = cl.loadClass("C").newInstance();
-
-        c.equals(this);
+        b.test().callSite(I, C, "equals", "(Ljava/lang/Object;)Z")
+                .ignoreResult()
+                .done();
+        b.test().callSite(C, C, "equals", "(Ljava/lang/Object;)Z")
+                .ignoreResult()
+                .done();
     }
 
     /* void finalize() */
-    public void testFinalize() throws Exception {
-        TestBuilder b = factory.getBuilder();
-
+    public void testFinalize(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("finalize", "()V")
                     .throw_(TestFailure.class)
@@ -103,17 +99,16 @@ public class ObjectMethodOverridesTest extends DefMethTest {
                 .build()
             .build();
 
+        b.test().callSite(I, C, "m", "()V")
+                .ignoreResult()
+                .done();
         b.test().callSite(C, C, "m", "()V")
                 .ignoreResult()
-                .done()
-
-        .run();
+                .done();
     }
 
     /* final Class<?> getClass() */
-    public void testGetClass() throws Exception {
-        TestBuilder b = factory.getBuilder();
-
+    public void testGetClass(TestBuilder b) throws Exception {
         Interface I = b.intf("I")
                 .defaultMethod("getClass", "()Ljava/lang/Class;")
                     .sig("()Ljava/lang/Class<*>;")
@@ -123,14 +118,12 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done()
-        .run();
+        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done();
+        b.test().loadClass(C).throws_(IncompatibleClassChangeError.class).done();
     }
 
     /* int hashCode() */
-    public void testHashCode() throws Exception {
-        TestBuilder b = factory.getBuilder();
-
+    public void testHashCode(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("hashCode", "()I")
                     .throw_(TestFailure.class)
@@ -139,17 +132,17 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        ClassLoader cl = b.build();
-        Object c = cl.loadClass("C").newInstance();
-
-        c.hashCode();
+        b.test().callSite(I, C, "hashCode", "()I")
+                .ignoreResult()
+                .done();
+        b.test().callSite(C, C, "hashCode", "()I")
+                .ignoreResult()
+                .done();
     }
 
 
     /* final void notify() */
-    public void testNotify() throws Exception {
-        TestBuilder b = factory.getBuilder();
-
+    public void testNotify(TestBuilder b) throws Exception {
         Interface I = b.intf("I")
                 .defaultMethod("notify", "()V")
                     .throw_(TestFailure.class)
@@ -158,14 +151,12 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done()
-        .run();
+        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done();
+        b.test().loadClass(C).throws_(IncompatibleClassChangeError.class).done();
     }
 
     /* void notifyAll() */
-    public void testNotifyAll() throws Exception {
-        TestBuilder b = factory.getBuilder();
-
+    public void testNotifyAll(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("notifyAll", "()V")
                     .throw_(TestFailure.class)
@@ -174,14 +165,12 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done()
-        .run();
+        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done();
+        b.test().loadClass(C).throws_(IncompatibleClassChangeError.class).done();
     }
 
     /* String toString() */
-    public void testToString() throws Exception {
-        TestBuilder b = factory.getBuilder();
-
+    public void testToString(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("toString()", "()Ljava/lang/String;")
                     .throw_(TestFailure.class)
@@ -190,16 +179,12 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        ClassLoader cl = b.build();
-        Object c = cl.loadClass("C").newInstance();
-
-        c.toString();
+        b.test().callSite(I, C, "toString", "()Ljava/lang/String;");
+        b.test().callSite(C, C, "toString", "()Ljava/lang/String;");
     }
 
     /* final void wait() */
-    public void testWait() throws Exception {
-        TestBuilder b = factory.getBuilder();
-
+    public void testWait(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("wait", "()V")
                     .throw_(TestFailure.class)
@@ -208,14 +193,12 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done()
-        .run();
+        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done();
+        b.test().loadClass(C).throws_(IncompatibleClassChangeError.class).done();
     }
 
     /* final void wait(long timeout) */
-    public void testTimedWait() throws Exception {
-        TestBuilder b = factory.getBuilder();
-
+    public void testTimedWait(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("wait", "(J)V")
                     .throw_(TestFailure.class)
@@ -224,14 +207,12 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done()
-        .run();
+        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done();
+        b.test().loadClass(C).throws_(IncompatibleClassChangeError.class).done();
     }
 
     /* final void wait(long timeout, int nanos) */
-    public void testTimedWait1() throws Exception {
-        TestBuilder b = factory.getBuilder();
-
+    public void testTimedWait1(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("wait", "(JI)V")
                     .throw_(TestFailure.class)
@@ -240,7 +221,7 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done()
-        .run();
+        b.test().loadClass(I).throws_(IncompatibleClassChangeError.class).done();
+        b.test().loadClass(C).throws_(IncompatibleClassChangeError.class).done();
     }
 }
