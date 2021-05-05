@@ -343,7 +343,7 @@ public class TestConfigure {
     }
 
     private static String newOutputFile(String filename) {
-        return Path.of(DIR, System.currentTimeMillis() + filename).toAbsolutePath().toString();
+        return Path.of(".", System.currentTimeMillis() + filename).toAbsolutePath().toString();
     }
 
     private static void aseertEqual(Map<String, String> output, Map<String, String> expected) throws Exception {

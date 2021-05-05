@@ -165,7 +165,7 @@ public final class DateTimeFormatterBuilder {
      */
     private static final TemporalQuery<ZoneId> QUERY_REGION_ONLY = (temporal) -> {
         ZoneId zone = temporal.query(TemporalQueries.zoneId());
-        return (zone != null && zone instanceof ZoneOffset == false ? zone : null);
+        return zone instanceof ZoneOffset ? null : zone;
     };
 
     /**

@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import sun.nio.cs.StreamDecoder;
@@ -35,7 +36,7 @@ import sun.nio.cs.StreamDecoder;
  * reads bytes and decodes them into characters using a specified {@link
  * java.nio.charset.Charset charset}.  The charset that it uses
  * may be specified by name or may be given explicitly, or the platform's
- * default charset may be accepted.
+ * {@link Charset#defaultCharset() default charset} may be accepted.
  *
  * <p> Each invocation of one of an InputStreamReader's read() methods may
  * cause one or more bytes to be read from the underlying byte-input stream.
@@ -48,7 +49,7 @@ import sun.nio.cs.StreamDecoder;
  *
  * <pre>
  * BufferedReader in
- *   = new BufferedReader(new InputStreamReader(System.in));
+ *   = new BufferedReader(new InputStreamReader(anInputStream));
  * </pre>
  *
  * @see BufferedReader
@@ -64,9 +65,12 @@ public class InputStreamReader extends Reader {
     private final StreamDecoder sd;
 
     /**
-     * Creates an InputStreamReader that uses the default charset.
+     * Creates an InputStreamReader that uses the
+     * {@link Charset#defaultCharset() default charset}.
      *
      * @param  in   An InputStream
+     *
+     * @see Charset#defaultCharset()
      */
     public InputStreamReader(InputStream in) {
         super(in);
@@ -147,6 +151,10 @@ public class InputStreamReader extends Reader {
      */
     public String getEncoding() {
         return sd.getEncoding();
+    }
+
+    public int read(CharBuffer target) throws IOException {
+        return sd.read(target);
     }
 
     /**

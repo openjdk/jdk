@@ -419,46 +419,6 @@
           "If parser node generation exceeds limit stop inlining")          \
           range(0, max_jint)                                                \
                                                                             \
-  develop(intx, NodeCountInliningStep, 1000,                                \
-          "Target size of warm calls inlined between optimization passes")  \
-          range(0, max_jint)                                                \
-                                                                            \
-  develop(bool, InlineWarmCalls, false,                                     \
-          "Use a heat-based priority queue to govern inlining")             \
-                                                                            \
-  /* Max values must not exceed WarmCallInfo::MAX_VALUE(). */               \
-  develop(intx, HotCallCountThreshold, 999999,                              \
-          "large numbers of calls (per method invocation) force hotness")   \
-          range(0, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))      \
-                                                                            \
-  develop(intx, HotCallProfitThreshold, 999999,                             \
-          "highly profitable inlining opportunities force hotness")         \
-          range(0, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))      \
-                                                                            \
-  develop(intx, HotCallTrivialWork, -1,                                     \
-          "trivial execution time (no larger than this) forces hotness")    \
-          range(-1, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))     \
-                                                                            \
-  develop(intx, HotCallTrivialSize, -1,                                     \
-          "trivial methods (no larger than this) force calls to be hot")    \
-          range(-1, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))     \
-                                                                            \
-  develop(intx, WarmCallMinCount, -1,                                       \
-          "number of calls (per method invocation) to enable inlining")     \
-          range(-1, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))     \
-                                                                            \
-  develop(intx, WarmCallMinProfit, -1,                                      \
-          "number of calls (per method invocation) to enable inlining")     \
-          range(-1, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))     \
-                                                                            \
-  develop(intx, WarmCallMaxWork, 999999,                                    \
-          "execution time of the largest inlinable method")                 \
-          range(0, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))      \
-                                                                            \
-  develop(intx, WarmCallMaxSize, 999999,                                    \
-          "size of the largest inlinable method")                           \
-          range(0, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))      \
-                                                                            \
   product(intx, MaxNodeLimit, 80000,                                        \
           "Maximum number of nodes")                                        \
           range(1000, max_jint / 3)                                         \

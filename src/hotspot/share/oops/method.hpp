@@ -88,10 +88,9 @@ class Method : public Metadata {
     _dont_inline           = 1 << 2,
     _hidden                = 1 << 3,
     _has_injected_profile  = 1 << 4,
-    _running_emcp          = 1 << 5,
-    _intrinsic_candidate   = 1 << 6,
-    _reserved_stack_access = 1 << 7,
-    _scoped                = 1 << 8
+    _intrinsic_candidate   = 1 << 5,
+    _reserved_stack_access = 1 << 6,
+    _scoped                = 1 << 7
   };
   mutable u2 _flags;
 
@@ -112,10 +111,6 @@ class Method : public Metadata {
   // NULL only at safepoints (because of a de-opt).
   CompiledMethod* volatile _code;                       // Points to the corresponding piece of native code
   volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
-
-#if INCLUDE_AOT
-  CompiledMethod* _aot_code;
-#endif
 
   // Constructor
   Method(ConstMethod* xconst, AccessFlags access_flags);
@@ -403,18 +398,6 @@ class Method : public Metadata {
     }
   }
 
-#if INCLUDE_AOT
-  void set_aot_code(CompiledMethod* aot_code) {
-    _aot_code = aot_code;
-  }
-
-  CompiledMethod* aot_code() const {
-    return _aot_code;
-  }
-#else
-  CompiledMethod* aot_code() const { return NULL; }
-#endif // INCLUDE_AOT
-
   int nmethod_age() const {
     if (method_counters() == NULL) {
       return INT_MAX;
@@ -674,8 +657,6 @@ public:
   // simultaneously. Use with caution.
   bool has_compiled_code() const;
 
-  bool has_aot_code() const                      { return aot_code() != NULL; }
-
   bool needs_clinit_barrier() const;
 
   // sizing
@@ -761,20 +742,6 @@ public:
   bool is_deleted() const                           { return access_flags().is_deleted(); }
   void set_is_deleted()                             { _access_flags.set_is_deleted(); }
 
-  bool is_running_emcp() const {
-    // EMCP methods are old but not obsolete or deleted. Equivalent
-    // Modulo Constant Pool means the method is equivalent except
-    // the constant pool and instructions that access the constant
-    // pool might be different.
-    // If a breakpoint is set in a redefined method, its EMCP methods that are
-    // still running must have a breakpoint also.
-    return (_flags & _running_emcp) != 0;
-  }
-
-  void set_running_emcp(bool x) {
-    _flags = x ? (_flags | _running_emcp) : (_flags & ~_running_emcp);
-  }
-
   bool on_stack() const                             { return access_flags().on_stack(); }
   void set_on_stack(const bool value);
 
@@ -838,7 +805,7 @@ public:
   void     set_intrinsic_id(vmIntrinsicID id) {                           _intrinsic_id = (u2) id; }
 
   // Helper routines for intrinsic_id() and vmIntrinsics::method().
-  void init_intrinsic_id();     // updates from _none if a match
+  void init_intrinsic_id(vmSymbolID klass_id);     // updates from _none if a match
   static vmSymbolID klass_id_for_intrinsics(const Klass* holder);
 
   bool caller_sensitive() {

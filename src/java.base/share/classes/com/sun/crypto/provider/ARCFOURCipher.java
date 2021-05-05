@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 
 import javax.crypto.*;
 
@@ -180,6 +181,9 @@ public final class ARCFOURCipher extends CipherSpi {
 
     // init method. Check opmode and key, then call init(byte[]).
     private void init(int opmode, Key key) throws InvalidKeyException {
+        if (lastKey != null) {
+            Arrays.fill(lastKey, (byte)0);
+        }
         if ((opmode < Cipher.ENCRYPT_MODE) || (opmode > Cipher.UNWRAP_MODE)) {
             throw new InvalidKeyException("Unknown opmode: " + opmode);
         }
@@ -199,6 +203,7 @@ public final class ARCFOURCipher extends CipherSpi {
         }
         byte[] encodedKey = key.getEncoded();
         if ((encodedKey.length < 5) || (encodedKey.length > 128)) {
+            Arrays.fill(encodedKey, (byte)0);
             throw new InvalidKeyException
                 ("Key length must be between 40 and 1024 bit");
         }
@@ -244,19 +249,31 @@ public final class ARCFOURCipher extends CipherSpi {
         if ((encoded == null) || (encoded.length == 0)) {
             throw new InvalidKeyException("Could not obtain encoded key");
         }
-        return engineDoFinal(encoded, 0, encoded.length);
+        try {
+            return engineDoFinal(encoded, 0, encoded.length);
+        } finally {
+            Arrays.fill(encoded, (byte)0);
+        }
     }
 
     // see JCE spec
     protected Key engineUnwrap(byte[] wrappedKey, String algorithm,
             int type) throws InvalidKeyException, NoSuchAlgorithmException {
-        byte[] encoded = engineDoFinal(wrappedKey, 0, wrappedKey.length);
-        return ConstructKeys.constructKey(encoded, algorithm, type);
+        byte[] encoded = null;
+        try {
+            encoded = engineDoFinal(wrappedKey, 0, wrappedKey.length);
+            return ConstructKeys.constructKey(encoded, algorithm, type);
+        } finally {
+            if (encoded != null) {
+                Arrays.fill(encoded, (byte) 0);
+            }
+        }
     }
 
     // see JCE spec
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encodedKey = getEncodedKey(key);
+        Arrays.fill(encodedKey, (byte)0);
         return Math.multiplyExact(encodedKey.length, 8);
     }
 

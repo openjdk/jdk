@@ -1360,7 +1360,7 @@ source %{
 
     // r27 is not allocatable when compressed oops is on and heapbase is not
     // zero, compressed klass pointers doesn't use r27 after JDK-8234794
-    if (UseCompressedOops && (CompressedOops::ptrs_base() != NULL || UseAOT)) {
+    if (UseCompressedOops && (CompressedOops::ptrs_base() != NULL)) {
       _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
       _NO_SPECIAL_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
       _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
@@ -3111,32 +3111,6 @@ encode %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::strd, src_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
-  %}
-
-  // This encoding class is generated automatically from ad_encode.m4.
-  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strw_immn(immN src, memory1 mem) %{
-    C2_MacroAssembler _masm(&cbuf);
-    address con = (address)$src$$constant;
-    // need to do this the hard way until we can manage relocs
-    // for 32 bit constants
-    __ movoop(rscratch2, (jobject)con);
-    if (con) __ encode_heap_oop_not_null(rscratch2);
-    loadStore(_masm, &MacroAssembler::strw, rscratch2, $mem->opcode(),
-               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
-  %}
-
-  // This encoding class is generated automatically from ad_encode.m4.
-  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strw_immnk(immN src, memory4 mem) %{
-    C2_MacroAssembler _masm(&cbuf);
-    address con = (address)$src$$constant;
-    // need to do this the hard way until we can manage relocs
-    // for 32 bit constants
-    __ movoop(rscratch2, (jobject)con);
-    __ encode_klass_not_null(rscratch2);
-    loadStore(_masm, &MacroAssembler::strw, rscratch2, $mem->opcode(),
-               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
   // This encoding class is generated automatically from ad_encode.m4.
