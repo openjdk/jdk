@@ -104,9 +104,8 @@ LogAsyncFlusher::LogAsyncFlusher()
 }
 
 bool AsyncLogMapIterator::do_entry(LogFileOutput* output, uintx* counter) {
-  LogDecorators decorators = output->decorators();
-  decorators.without(LogDecorators::tags_decorator);
-  LogDecorations decorations(LogLevel::Warning, decorators);
+  using dummy = LogTagSetMapping<LogTag::__NO_TAG>;
+  LogDecorations decorations(LogLevel::Warning, dummy::tagset(), output->decorators());
   const int sz = 128;
   char out_of_band[sz];
 

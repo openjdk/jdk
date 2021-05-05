@@ -104,10 +104,6 @@ class LogDecorators {
     _decorators |= source._decorators;
   }
 
-  void without(LogDecorators::Decorator source) {
-    _decorators &= ~LogDecorators::mask(source);
-  }
-
   bool is_empty() const {
     return _decorators == 0;
   }
