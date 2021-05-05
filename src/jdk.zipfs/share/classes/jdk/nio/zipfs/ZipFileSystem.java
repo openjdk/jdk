@@ -2120,7 +2120,7 @@ class ZipFileSystem extends FileSystem {
             // streams.add(eis);
             return eis;
         } else {  // untouched CEN or COPY
-            eis = new EntryInputStream(e, ch);
+            eis = new EntryInputStream(e);
         }
         if (e.method == METHOD_DEFLATED) {
             // MORE: Compute good size for inflater stream:
@@ -2177,15 +2177,12 @@ class ZipFileSystem extends FileSystem {
     // Inner class implementing the input stream used to read
     // a (possibly compressed) zip file entry.
     private class EntryInputStream extends InputStream {
-        private final SeekableByteChannel zfch; // local ref to zipfs's "ch". zipfs.ch might
-                                                // point to a new channel after sync()
         private long pos;                       // current position within entry data
         private long rem;                       // number of remaining bytes within entry
 
-        EntryInputStream(Entry e, SeekableByteChannel zfch)
+        EntryInputStream(Entry e)
             throws IOException
         {
-            this.zfch = zfch;
             rem = e.csize;
             pos = e.locoff;
             if (pos == -1) {
@@ -2210,18 +2207,10 @@ class ZipFileSystem extends FileSystem {
             if (len > rem) {
                 len = (int) rem;
             }
-            // readFullyAt()
-            long n;
             ByteBuffer bb = ByteBuffer.wrap(b);
             bb.position(off);
-            bb.limit(off + len);
-            if (zfch instanceof FileChannel fch) {
-                n = fch.read(bb, pos);
-            } else {
-                synchronized (zfch) {
-                    n = zfch.position(pos).read(bb);
-                }
-            }
+            bb.limit((int)(off + len));
+            long n = readFullyAt(bb, pos);
             if (n > 0) {
                 pos += n;
                 rem -= n;
