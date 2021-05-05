@@ -2068,7 +2068,7 @@ LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset, BasicType type)
   }
 }
 
-Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, DecoratorSet decorators, BasicType type, bool can_cast) {
+Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, BasicType type, bool can_cast) {
   Node* uncasted_base = base;
   int kind = classify_unsafe_addr(uncasted_base, offset, type);
   if (kind == Type::RawPtr) {
@@ -2265,7 +2265,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   uint old_sp = sp();
   SafePointNode* old_map = clone_map();
 
-  Node* adr = make_unsafe_address(base, offset, is_store ? ACCESS_WRITE : ACCESS_READ, type, kind == Relaxed);
+  Node* adr = make_unsafe_address(base, offset, type, kind == Relaxed);
 
   if (_gvn.type(base)->isa_ptr() == TypePtr::NULL_PTR) {
     if (type != T_OBJECT) {
@@ -2568,7 +2568,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   // Save state and restore on bailout
   uint old_sp = sp();
   SafePointNode* old_map = clone_map();
-  Node* adr = make_unsafe_address(base, offset, ACCESS_WRITE | ACCESS_READ, type, false);
+  Node* adr = make_unsafe_address(base, offset,type, false);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
   Compile::AliasType* alias_type = C->alias_type(adr_type);
@@ -4034,8 +4034,8 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   assert(Unsafe_field_offset_to_byte_offset(11) == 11,
          "fieldOffset must be byte-scaled");
 
-  Node* src = make_unsafe_address(src_ptr, src_off, ACCESS_READ);
-  Node* dst = make_unsafe_address(dst_ptr, dst_off, ACCESS_WRITE);
+  Node* src = make_unsafe_address(src_ptr, src_off);
+  Node* dst = make_unsafe_address(dst_ptr, dst_off);
 
   // Conservatively insert a memory barrier on all memory slices.
   // Do not let writes of the copy source or destination float below the copy.
@@ -5214,8 +5214,8 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   Node* call;
   jvms()->set_should_reexecute(true);
 
-  Node* obja_adr = make_unsafe_address(obja, aoffset, ACCESS_READ);
-  Node* objb_adr = make_unsafe_address(objb, boffset, ACCESS_READ);
+  Node* obja_adr = make_unsafe_address(obja, aoffset);
+  Node* objb_adr = make_unsafe_address(objb, boffset);
 
   call = make_runtime_call(RC_LEAF,
     OptoRuntime::vectorizedMismatch_Type(),
