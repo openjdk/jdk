@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,14 +28,14 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * Abstract super class for instructions dealing with local variables.
  *
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 public abstract class LocalVariableInstruction extends Instruction implements TypedInstruction,
         IndexedInstruction {
 
     private int n = -1; // index of referenced variable
-    private short c_tag = -1; // compact version, such as ILOAD_0
-    private short canon_tag = -1; // canonical tag such as ILOAD
+    private short cTag = -1; // compact version, such as ILOAD_0
+    private short canonTag = -1; // canonical tag such as ILOAD
 
 
     private boolean wide() {
@@ -50,8 +50,8 @@ public abstract class LocalVariableInstruction extends Instruction implements Ty
      */
     LocalVariableInstruction(final short canon_tag, final short c_tag) {
         super();
-        this.canon_tag = canon_tag;
-        this.c_tag = c_tag;
+        this.canonTag = canon_tag;
+        this.cTag = c_tag;
     }
 
 
@@ -65,13 +65,13 @@ public abstract class LocalVariableInstruction extends Instruction implements Ty
 
     /**
      * @param opcode Instruction opcode
-     * @param c_tag Instruction number for compact version, ALOAD_0, e.g.
+     * @param cTag Instruction number for compact version, ALOAD_0, e.g.
      * @param n local variable index (unsigned short)
      */
-    protected LocalVariableInstruction(final short opcode, final short c_tag, final int n) {
+    protected LocalVariableInstruction(final short opcode, final short cTag, final int n) {
         super(opcode, (short) 2);
-        this.c_tag = c_tag;
-        canon_tag = opcode;
+        this.cTag = cTag;
+        canonTag = opcode;
         setIndex(n);
     }
 
@@ -167,10 +167,10 @@ public abstract class LocalVariableInstruction extends Instruction implements Ty
         this.n = n;
         // Cannot be < 0 as this is checked above
         if (n <= 3) { // Use more compact instruction xLOAD_n
-            super.setOpcode((short) (c_tag + n));
+            super.setOpcode((short) (cTag + n));
             super.setLength(1);
         } else {
-            super.setOpcode(canon_tag);
+            super.setOpcode(canonTag);
             if (wide()) {
                 super.setLength(4);
             } else {
@@ -183,7 +183,7 @@ public abstract class LocalVariableInstruction extends Instruction implements Ty
     /** @return canonical tag for instruction, e.g., ALOAD for ALOAD_0
      */
     public short getCanonicalTag() {
-        return canon_tag;
+        return canonTag;
     }
 
 
@@ -197,7 +197,7 @@ public abstract class LocalVariableInstruction extends Instruction implements Ty
      */
     @Override
     public Type getType( final ConstantPoolGen cp ) {
-        switch (canon_tag) {
+        switch (canonTag) {
             case Const.ILOAD:
             case Const.ISTORE:
                 return Type.INT;
@@ -214,7 +214,7 @@ public abstract class LocalVariableInstruction extends Instruction implements Ty
             case Const.ASTORE:
                 return Type.OBJECT;
             default:
-                throw new ClassGenException("Oops: unknown case in switch" + canon_tag);
+                throw new ClassGenException("Unknown case in switch" + canonTag);
         }
     }
 
