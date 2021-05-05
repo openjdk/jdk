@@ -27,7 +27,6 @@ package jdk.javadoc.internal.doclets.toolkit.builders;
 
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -222,8 +221,8 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
      * @param summariesList the list of summaries to which the summary will be added
      */
     protected void buildNestedClassesSummary(Content summariesList) {
-        MemberSummaryWriter writer = memberSummaryWriters.get(INNER_CLASSES);
-        addSummary(writer, INNER_CLASSES, true, summariesList);
+        MemberSummaryWriter writer = memberSummaryWriters.get(NESTED_CLASSES);
+        addSummary(writer, NESTED_CLASSES, true, summariesList);
     }
 
     /**

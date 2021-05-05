@@ -54,7 +54,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -99,7 +98,7 @@ import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
 public class VisibleMemberTable {
 
     public enum Kind {
-        INNER_CLASSES,
+        NESTED_CLASSES,
         ENUM_CONSTANTS,
         FIELDS,
         CONSTRUCTORS,
@@ -109,9 +108,9 @@ public class VisibleMemberTable {
         PROPERTIES;
 
         private static final EnumSet<Kind> defaultSummarySet = EnumSet.of(
-                INNER_CLASSES, FIELDS, CONSTRUCTORS, METHODS);
+                NESTED_CLASSES, FIELDS, CONSTRUCTORS, METHODS);
         private static final EnumSet<Kind> enumSummarySet = EnumSet.of(
-                INNER_CLASSES, ENUM_CONSTANTS, FIELDS, METHODS);
+                NESTED_CLASSES, ENUM_CONSTANTS, FIELDS, METHODS);
         private static final EnumSet<Kind> annotationSummarySet = EnumSet.of(
                 FIELDS, ANNOTATION_TYPE_MEMBER_OPTIONAL, ANNOTATION_TYPE_MEMBER_REQUIRED);
         private static final EnumSet<Kind> defaultDetailSet = EnumSet.of(
@@ -426,7 +425,7 @@ public class VisibleMemberTable {
 
     void computeVisibleMembers(LocalMemberTable lmt, Kind kind) {
         switch (kind) {
-            case FIELDS: case INNER_CLASSES:
+            case FIELDS: case NESTED_CLASSES:
                 computeVisibleFieldsAndInnerClasses(lmt, kind);
                 return;
 
@@ -751,7 +750,7 @@ public class VisibleMemberTable {
                     case ENUM:
                     case ANNOTATION_TYPE:
                     case RECORD:
-                        addMember(e, Kind.INNER_CLASSES);
+                        addMember(e, Kind.NESTED_CLASSES);
                         break;
                     case FIELD:
                         addMember(e, Kind.FIELDS);

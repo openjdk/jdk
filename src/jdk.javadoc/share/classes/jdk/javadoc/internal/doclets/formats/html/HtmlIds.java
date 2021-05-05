@@ -436,7 +436,7 @@ public class HtmlIds {
      */
     static HtmlId forMemberSummary(VisibleMemberTable.Kind kind) {
         return switch (kind) {
-            case INNER_CLASSES -> NESTED_CLASS_SUMMARY;
+            case NESTED_CLASSES -> NESTED_CLASS_SUMMARY;
             case ENUM_CONSTANTS -> ENUM_CONSTANT_SUMMARY;
             case FIELDS -> FIELD_SUMMARY;
             case CONSTRUCTORS -> CONSTRUCTOR_SUMMARY;

@@ -52,6 +52,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 public class Contents {
 
     public final Content allClassesLabel;
+    public final Content allClassesAndInterfacesLabel;
     public final Content allImplementedInterfacesLabel;
     public final Content allModulesLabel;
     public final Content allPackagesLabel;
@@ -151,6 +152,7 @@ public class Contents {
     public final Content package_;
     public final Content packagesLabel;
     public final Content packageSubNavLabel;
+    public final Content packageSummaryLabel;
     public final Content parameters;
     public final Content previewAPI;
     public final Content previewLabel;
@@ -160,7 +162,7 @@ public class Contents {
     public final Content propertyLabel;
     public final Content propertyDetailsLabel;
     public final Content propertySummaryLabel;
-    public final Content record;
+    public final Content records;
     public final Content recordComponents;
     public final Content referencedIn;
     public final Content relatedPackages;
@@ -183,16 +185,6 @@ public class Contents {
 
     private final EnumMap<VisibleMemberTable.Kind, Content> navLinkLabels;
 
-    public final String allClassesAndInterfaces;
-    public final String annotationTypesString;
-    public final String classesString;
-    public final String enumsString;
-    public final String errorsString;
-    public final String exceptionsString;
-    public final String interfacesString;
-    public final String packageSummary;
-    public final String recordsString;
-
     private final Resources resources;
 
     /**
@@ -205,6 +197,7 @@ public class Contents {
         this.resources = configuration.getDocResources();
 
         allClassesLabel = getNonBreakResource("doclet.All_Classes");
+        this.allClassesAndInterfacesLabel = getContent("doclet.All_Classes_And_Interfaces");
         allImplementedInterfacesLabel = getContent("doclet.All_Implemented_Interfaces");
         allModulesLabel = getNonBreakResource("doclet.All_Modules");
         allPackagesLabel = getNonBreakResource("doclet.All_Packages");
@@ -304,6 +297,7 @@ public class Contents {
         package_ = getContent("doclet.package");
         packagesLabel = getContent("doclet.Packages");
         packageSubNavLabel = getContent("doclet.Package_Sub_Nav");
+        this.packageSummaryLabel = getContent("doclet.Package_Summary");
         parameters = getContent("doclet.Parameters");
         previewAPI = getContent("doclet.Preview_API");
         previewLabel = getContent("doclet.Preview_Label");
@@ -313,7 +307,7 @@ public class Contents {
         propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");
         propertySummaryLabel = getContent("doclet.Property_Summary");
-        record = getContent("doclet.RecordClass");
+        records = getContent("doclet.RecordClasses");
         recordComponents = getContent("doclet.RecordComponents");
         referencedIn = getContent("doclet.ReferencedIn");
         relatedPackages = getContent("doclet.Related_Packages");
@@ -335,7 +329,7 @@ public class Contents {
         valueLabel = getContent("doclet.Value");
 
         navLinkLabels = new EnumMap<>(VisibleMemberTable.Kind.class);
-        navLinkLabels.put(VisibleMemberTable.Kind.INNER_CLASSES, getContent("doclet.navNested"));
+        navLinkLabels.put(VisibleMemberTable.Kind.NESTED_CLASSES, getContent("doclet.navNested"));
         navLinkLabels.put(VisibleMemberTable.Kind.ENUM_CONSTANTS, getContent("doclet.navEnum"));
         navLinkLabels.put(VisibleMemberTable.Kind.FIELDS, getContent("doclet.navField"));
         navLinkLabels.put(VisibleMemberTable.Kind.CONSTRUCTORS, getContent("doclet.navConstructor"));
@@ -344,16 +338,6 @@ public class Contents {
                 getContent("doclet.navAnnotationTypeOptionalMember"));
         navLinkLabels.put(VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER_REQUIRED,
                 getContent("doclet.navAnnotationTypeRequiredMember"));
-
-        this.allClassesAndInterfaces = resources.getText("doclet.All_Classes_And_Interfaces");
-        this.annotationTypesString = resources.getText("doclet.AnnotationTypes");
-        this.classesString = resources.getText("doclet.Classes");
-        this.enumsString = resources.getText("doclet.Enums");
-        this.errorsString = resources.getText("doclet.Errors");
-        this.exceptionsString = resources.getText("doclet.Exceptions");
-        this.interfacesString = resources.getText("doclet.Interfaces");
-        this.packageSummary = resources.getText("doclet.Package_Summary");
-        this.recordsString = resources.getText("doclet.RecordClasses");
     }
 
     /**

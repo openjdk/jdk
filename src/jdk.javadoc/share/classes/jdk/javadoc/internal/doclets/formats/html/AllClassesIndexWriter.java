@@ -115,14 +115,14 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId(HtmlIds.ALL_CLASSES_TABLE)
-                .setDefaultTab(contents.allClassesAndInterfaces)
-                .addTab(contents.interfacesString, utils::isInterface)
-                .addTab(contents.classesString, e -> utils.isOrdinaryClass((TypeElement)e))
-                .addTab(contents.enumsString, utils::isEnum)
-                .addTab(contents.recordsString, e -> utils.isRecord((TypeElement)e))
-                .addTab(contents.exceptionsString, e -> utils.isException((TypeElement)e))
-                .addTab(contents.errorsString, e -> utils.isError((TypeElement)e))
-                .addTab(contents.annotationTypesString, utils::isAnnotationType);
+                .setDefaultTab(contents.allClassesAndInterfacesLabel.toString())
+                .addTab(contents.interfaces.toString(), utils::isInterface)
+                .addTab(contents.classes.toString(), e -> utils.isOrdinaryClass((TypeElement)e))
+                .addTab(contents.enums.toString(), utils::isEnum)
+                .addTab(contents.records.toString(), e -> utils.isRecord((TypeElement)e))
+                .addTab(contents.exceptions.toString(), e -> utils.isException((TypeElement)e))
+                .addTab(contents.errors.toString(), e -> utils.isError((TypeElement)e))
+                .addTab(contents.annotationTypes.toString(), utils::isAnnotationType);
         for (Character unicode : indexBuilder.getFirstCharacters()) {
             for (IndexItem indexItem : indexBuilder.getItems(unicode)) {
                 TypeElement typeElement = (TypeElement) indexItem.getElement();
