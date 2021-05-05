@@ -276,17 +276,18 @@ public class FileInputStream extends InputStream
 
     public byte[] readAllBytes() throws IOException {
         long length = length();
-        if (length <= 0)
+        long position = position();
+        long size = length - position;
+
+        if (length <= 0 || size <= 0)
             return super.readAllBytes();
 
-        long size = length - position();
         if (size > (long) Integer.MAX_VALUE) {
-            String msg = String.format("Required array size too large: %d = %d - %d",
-                size, length, position());
+            String msg =
+                String.format("Required array size too large: %d = %d - %d",
+                    size, length, position);
             throw new OutOfMemoryError(msg);
         }
-        if (size <= 0L)
-            return new byte[0];
 
         int capacity = (int)size;
         byte[] buf = new byte[capacity];
@@ -318,13 +319,13 @@ public class FileInputStream extends InputStream
     public byte[] readNBytes(int len) throws IOException {
         if (len < 0)
             throw new IllegalArgumentException("len < 0");
-        long length = length();
-        if (length <= 0)
-            return super.readNBytes(len);
 
-        long size = length - position();
-        if (size <= 0L)
-            return new byte[0];
+        long length = length();
+        long position = position();
+        long size = length - position;
+
+        if (length <= 0 || size <= 0)
+            return super.readNBytes(len);
 
         int capacity = (int)Math.min(len, size);
         byte[] buf = new byte[capacity];
