@@ -309,7 +309,7 @@ static void initialize_ThreadInfo_constructor_arguments(JavaCallArguments* args,
 
   int thread_status = static_cast<int>(snapshot->thread_status());
   assert((thread_status & JMM_THREAD_STATE_FLAG_MASK) == 0, "Flags already set in thread_status in Thread object");
-  if (snapshot->is_ext_suspended()) {
+  if (snapshot->is_suspended()) {
     thread_status |= JMM_THREAD_STATE_FLAG_SUSPENDED;
   }
   if (snapshot->is_in_native()) {

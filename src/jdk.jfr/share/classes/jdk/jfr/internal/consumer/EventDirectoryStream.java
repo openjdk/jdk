@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import jdk.jfr.Configuration;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.PlatformRecording;
+import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.consumer.ChunkParser.ParserConfiguration;
 
@@ -64,10 +65,19 @@ public class EventDirectoryStream extends AbstractEventStream {
 
     private volatile Consumer<Long> onCompleteHandler;
 
-    public EventDirectoryStream(AccessControlContext acc, Path p, FileAccess fileAccess, PlatformRecording recording, List<Configuration> configurations) throws IOException {
+    public EventDirectoryStream(
+            AccessControlContext acc,
+            Path p,
+            FileAccess fileAccess,
+            PlatformRecording recording,
+            List<Configuration> configurations,
+            boolean allowSubDirectories) throws IOException {
         super(acc, recording, configurations);
+        if (p != null && SecuritySupport.PRIVILEGED == fileAccess) {
+            throw new SecurityException("Priviliged file access not allowed with potentially malicious Path implementation");
+        }
         this.fileAccess = Objects.requireNonNull(fileAccess);
-        this.repositoryFiles = new RepositoryFiles(fileAccess, p);
+        this.repositoryFiles = new RepositoryFiles(fileAccess, p, allowSubDirectories);
     }
 
     @Override

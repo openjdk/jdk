@@ -210,8 +210,6 @@ class CompilationPolicy : AllStatic {
   // Is method profiled enough?
   static bool is_method_profiled(const methodHandle& method);
 
-  static bool maybe_switch_to_aot(const methodHandle& mh, CompLevel cur_level, CompLevel next_level, Thread* thread);
-
   static void set_c1_count(int x) { _c1_count = x;    }
   static void set_c2_count(int x) { _c2_count = x;    }
 

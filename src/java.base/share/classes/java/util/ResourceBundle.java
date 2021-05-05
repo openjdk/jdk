@@ -62,7 +62,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.jar.JarEntry;
 import java.util.spi.ResourceBundleControlProvider;
 import java.util.spi.ResourceBundleProvider;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.BootLoader;
@@ -1514,13 +1513,10 @@ public abstract class ResourceBundle {
 
     private static class ResourceBundleControlProviderHolder {
         private static final PrivilegedAction<List<ResourceBundleControlProvider>> pa =
-            () -> {
-                return Collections.unmodifiableList(
-                    ServiceLoader.load(ResourceBundleControlProvider.class,
-                                       ClassLoader.getSystemClassLoader()).stream()
-                        .map(ServiceLoader.Provider::get)
-                        .collect(Collectors.toList()));
-            };
+            () -> ServiceLoader.load(ResourceBundleControlProvider.class,
+                                   ClassLoader.getSystemClassLoader()).stream()
+                             .map(ServiceLoader.Provider::get)
+                             .toList();
 
         private static final List<ResourceBundleControlProvider> CONTROL_PROVIDERS =
             AccessController.doPrivileged(pa);

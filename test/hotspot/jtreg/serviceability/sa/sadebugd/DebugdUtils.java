@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,27 +30,52 @@ import jdk.test.lib.Utils;
 
 
 public class DebugdUtils {
-
     private static final String GOLDEN = "Debugger attached";
-
     private final String id;
-
+    private int registryPort;
+    private boolean disableRegistry;
+    private String prefix;
     private Process debugdProcess;
 
     public DebugdUtils(String id) {
         this.id = id;
+        this.registryPort = 0;
+        this.disableRegistry = false;
+        this.prefix = null;
         debugdProcess = null;
+    }
+
+    public void setRegistryPort(int registryPort) {
+        this.registryPort = registryPort;
+    }
+
+    public void setDisableRegistry(boolean disableRegistry) {
+        this.disableRegistry = disableRegistry;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
     }
 
     public void attach(long pid) throws IOException {
         JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
         jhsdbLauncher.addVMArgs(Utils.getTestJavaOpts());
+        if (prefix != null) {
+            jhsdbLauncher.addToolArg("-J-Dsun.jvm.hotspot.rmi.serverNamePrefix=" + prefix);
+        }
         jhsdbLauncher.addToolArg("debugd");
         jhsdbLauncher.addToolArg("--pid");
         jhsdbLauncher.addToolArg(Long.toString(pid));
         if (id != null) {
             jhsdbLauncher.addToolArg("--serverid");
             jhsdbLauncher.addToolArg(id);
+        }
+        if (registryPort != 0) {
+            jhsdbLauncher.addToolArg("--registryport");
+            jhsdbLauncher.addToolArg(Integer.toString(registryPort));
+        }
+        if (disableRegistry) {
+            jhsdbLauncher.addToolArg("--disable-registry");
         }
         debugdProcess = (new ProcessBuilder(jhsdbLauncher.getCommand())).start();
 

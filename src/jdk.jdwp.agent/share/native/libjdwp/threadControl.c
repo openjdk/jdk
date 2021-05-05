@@ -253,8 +253,15 @@ findThread(ThreadList *list, jthread thread)
         if ( list == NULL || list == &otherThreads ) {
             node = nonTlsSearch(getEnv(), &otherThreads, thread);
         }
-        /* A thread with no TLS should never be in the runningThreads list. */
-        JDI_ASSERT(!nonTlsSearch(getEnv(), &runningThreads, thread));
+        /*
+         * Search runningThreads list. The TLS lookup may have failed because the
+         * thread has terminated, but the ThreadNode may still be present.
+         */
+        if ( node == NULL ) {
+            if ( list == NULL || list == &runningThreads ) {
+                node = nonTlsSearch(getEnv(), &runningThreads, thread);
+            }
+        }
     }
 
     /* If a list is supplied, only return ones in this list */

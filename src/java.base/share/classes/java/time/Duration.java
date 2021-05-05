@@ -719,8 +719,8 @@ public final class Duration
         if (amountToAdd == 0) {
             return this;
         }
-        if (unit instanceof ChronoUnit) {
-            switch ((ChronoUnit) unit) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            switch (chronoUnit) {
                 case NANOS: return plusNanos(amountToAdd);
                 case MICROS: return plusSeconds((amountToAdd / (1000_000L * 1000)) * 1000).plusNanos((amountToAdd % (1000_000L * 1000)) * 1000);
                 case MILLIS: return plusMillis(amountToAdd);
@@ -1421,20 +1421,17 @@ public final class Duration
      * <p>
      * The comparison is based on the total length of the durations.
      *
-     * @param otherDuration the other duration, null returns false
+     * @param other the other duration, null returns false
      * @return true if the other duration is equal to this one
      */
     @Override
-    public boolean equals(Object otherDuration) {
-        if (this == otherDuration) {
+    public boolean equals(Object other) {
+        if (this == other) {
             return true;
         }
-        if (otherDuration instanceof Duration) {
-            Duration other = (Duration) otherDuration;
-            return this.seconds == other.seconds &&
-                   this.nanos == other.nanos;
-        }
-        return false;
+        return (other instanceof Duration otherDuration)
+                && this.seconds == otherDuration.seconds
+                && this.nanos == otherDuration.nanos;
     }
 
     /**

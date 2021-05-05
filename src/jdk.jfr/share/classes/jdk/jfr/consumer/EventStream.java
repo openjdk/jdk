@@ -138,7 +138,14 @@ public interface EventStream extends AutoCloseable {
      */
     public static EventStream openRepository() throws IOException {
         Utils.checkAccessFlightRecorder();
-        return new EventDirectoryStream(AccessController.getContext(), null, SecuritySupport.PRIVILEGED, null, Collections.emptyList());
+        return new EventDirectoryStream(
+            AccessController.getContext(),
+            null,
+            SecuritySupport.PRIVILEGED,
+            null,
+            Collections.emptyList(),
+            false
+        );
     }
 
     /**
@@ -161,7 +168,14 @@ public interface EventStream extends AutoCloseable {
     public static EventStream openRepository(Path directory) throws IOException {
         Objects.requireNonNull(directory);
         AccessControlContext acc = AccessController.getContext();
-        return new EventDirectoryStream(acc, directory, FileAccess.UNPRIVILEGED, null, Collections.emptyList());
+        return new EventDirectoryStream(
+            acc,
+            directory,
+            FileAccess.UNPRIVILEGED,
+            null,
+            Collections.emptyList(),
+            true
+        );
     }
 
     /**

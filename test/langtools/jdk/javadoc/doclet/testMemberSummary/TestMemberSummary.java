@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug      4951228 6290760 8025633 8026567 8081854 8162363 8175200 8177417 8186332 8182765
+ *           8258602
  * @summary  Test the case where the overridden method returns a different
  *           type than the method in the child class.  Make sure the
  *           documentation is inherited but the return type isn't.
@@ -79,5 +80,102 @@ public class TestMemberSummary extends JavadocTester {
                     <section class="detail" id="f(T[])">
                     <h3 id="f(java.lang.Object[])">f</h3>
                     """);
+    }
+
+    @Test
+    public void testSummaries() {
+        javadoc("-d", "out-summaries",
+                "-private",
+                "-sourcepath", testSrc,
+                "pkg3");
+        checkExit(Exit.OK);
+        checkOutput("pkg3/Members.html", true,
+                """
+                    <div class="caption"><span>Nested Classes</span></div>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Class</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>private static interface&nbsp;</code></div>
+                    <div class="col-second even-row-color"><code><a href="Members.A.html" class="type-name-link" title="annotation interface in pkg3">Members.A</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    <div class="col-first odd-row-color"><code>private static final class&nbsp;</code></div>
+                    <div class="col-second odd-row-color"><code><a href="Members.C.html" class="type-name-link" title="class in pkg3">Members.C</a></code></div>
+                    <div class="col-last odd-row-color">&nbsp;</div>
+                    <div class="col-first even-row-color"><code>private static class&nbsp;</code></div>
+                    <div class="col-second even-row-color"><code><a href="Members.E.html" class="type-name-link" title="enum class in pkg3">Members.E</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    <div class="col-first odd-row-color"><code>private static interface&nbsp;</code></div>
+                    <div class="col-second odd-row-color"><code><a href="Members.I.html" class="type-name-link" title="interface in pkg3">Members.I</a></code></div>
+                    <div class="col-last odd-row-color">&nbsp;</div>
+                    <div class="col-first even-row-color"><code>private static final class&nbsp;</code></div>
+                    <div class="col-second even-row-color"><code><a href="Members.R.html" class="type-name-link" title="class in pkg3">Members.R</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>""",
+                """
+                    <div class="caption"><span>Fields</span></div>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Field</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>private static final int</code></div>
+                    <div class="col-second even-row-color"><code><a href="#F" class="member-name-link">F</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>""",
+                """
+                    <div class="caption"><span>Constructors</span></div>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier</div>
+                    <div class="table-header col-second">Constructor</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>private </code></div>
+                    <div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E()" class="member-name-link">Members</a>()</code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>
+                    """);
+        checkOutput("pkg3/Members.A.html", true,
+                """
+                    <div class="caption"><span>Required Elements</span></div>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Required Element</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>int</code></div>
+                    <div class="col-second even-row-color"><code><a href="#v()" class="member-name-link">v</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>""",
+                """
+                    <div class="caption"><span>Optional Elements</span></div>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Optional Element</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code><a href="https://download.java.net/java/early_access/jdk17/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+                    <div class="col-second even-row-color"><code><a href="#s()" class="member-name-link">s</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>
+                    """);
+        checkOutput("pkg3/Members.E.html", true,
+                """
+                    <h2>Enum Constant Summary</h2>
+                    <div class="caption"><span>Enum Constants</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Enum Constant</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code><a href="#C" class="member-name-link">C</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>""");
+        checkOutput("pkg3/Members.R.html", true,
+                """
+                    <div class="caption"><span>Fields</span></div>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Field</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>private final int</code></div>
+                    <div class="col-second even-row-color"><code><a href="#i" class="member-name-link">i</a></code></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">The field for the <code>i</code> record component.</div>
+                    </div>""");
     }
 }

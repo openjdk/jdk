@@ -248,7 +248,7 @@ public:
   Node* split_through_phi(PhaseGVN *phase);
 
   // Recover original value from boxed values
-  Node *eliminate_autobox(PhaseGVN *phase);
+  Node *eliminate_autobox(PhaseIterGVN *igvn);
 
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.

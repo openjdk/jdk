@@ -426,16 +426,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Delay in milliseconds for option AbortVMOnVMOperationTimeout")   \
           range(0, max_intx)                                                \
                                                                             \
-  /* 50 retries * (5 * current_retry_count) millis = ~6.375 seconds */      \
-  /* typically, at most a few retries are needed                    */      \
-  product(intx, SuspendRetryCount, 50,                                      \
-          "Maximum retry count for an external suspend request")            \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(intx, SuspendRetryDelay, 5,                                       \
-          "Milliseconds to delay per retry (* current_retry_count)")        \
-          range(0, max_intx)                                                \
-                                                                            \
   product(bool, MaxFDLimit, true,                                           \
           "Bump the number of file descriptors to maximum (Unix only)")     \
                                                                             \
@@ -1643,25 +1633,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Segmented code cache: X[%] of the non-profiled heap."            \
           "Non-segmented code cache: X[%] of the total code cache")         \
           range(0, 100)                                                     \
-                                                                            \
-  /* AOT parameters */                                                      \
-  product(bool, UseAOT, false, EXPERIMENTAL,                                \
-          "Use AOT compiled files")                                         \
-                                                                            \
-  product(ccstrlist, AOTLibrary, NULL, EXPERIMENTAL,                        \
-          "AOT library")                                                    \
-                                                                            \
-  product(bool, PrintAOT, false, EXPERIMENTAL,                              \
-          "Print used AOT klasses and methods")                             \
-                                                                            \
-  notproduct(bool, PrintAOTStatistics, false,                               \
-          "Print AOT statistics")                                           \
-                                                                            \
-  product(bool, UseAOTStrictLoading, false, DIAGNOSTIC,                     \
-          "Exit the VM if any of the AOT libraries has invalid config")     \
-                                                                            \
-  product(bool, CalculateClassFingerprint, false,                           \
-          "Calculate class fingerprint")                                    \
                                                                             \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \

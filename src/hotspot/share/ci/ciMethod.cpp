@@ -303,7 +303,9 @@ bool ciMethod::has_balanced_monitors() {
     ExceptionMark em(THREAD);
     ResourceMark rm(THREAD);
     GeneratePairingInfo gpi(method);
-    gpi.compute_map(CATCH);
+    if (!gpi.compute_map(THREAD)) {
+      fatal("Unrecoverable verification or out-of-memory error");
+    }
     if (!gpi.monitor_safe()) {
       return false;
     }

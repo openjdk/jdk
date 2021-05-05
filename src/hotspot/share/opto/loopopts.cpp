@@ -718,7 +718,9 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
         break;
       }
     }
-    if (phi == NULL)  break;
+    if (phi == NULL || _igvn.type(phi) == Type::TOP) {
+      break;
+    }
     if (PrintOpto && VerifyLoopOptimizations) { tty->print_cr("CMOV"); }
     // Move speculative ops
     wq.push(phi);
