@@ -55,7 +55,7 @@ public class RedefineTest extends DefMethTest {
         // There are no testers being generated for reflection-based scenarios,
         // so scenarios on class redefinition don't work
         String mode = factory.getExecutionMode();
-        if ( "REFLECTION".equals(mode) || "INVOKE_WITH_ARGS".equals(mode)) {
+        if ("REFLECTION".equals(mode) || "INVOKE_WITH_ARGS".equals(mode)) {
             throw new TestFailure("RedefineTest isn't applicable to reflection-based execution scenario " +
                     "(REDEFINE & INVOKE_WITH_ARGS).");
         }

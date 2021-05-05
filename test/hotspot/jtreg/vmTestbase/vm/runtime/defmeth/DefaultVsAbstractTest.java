@@ -435,10 +435,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
      *
      * class B extends A implements J;
      *
-     * TEST: A o = new B(); o.m()I
-     *                ICCE for DIRECT mode
-     *                AME for REFLECTION and INVOKE_WITH_ARGS modes
-     *                IAE for other modes
+     * TEST: A o = new B(); o.m()I throws ICCE
      */
     public void testInvokeInterfaceClassAbstractMethod() {
         TestBuilder b = factory.getBuilder();
@@ -455,16 +452,11 @@ public class DefaultVsAbstractTest extends DefMethTest {
 
         ConcreteClass B = b.clazz("B").extend(A).implement(J).build();
 
-        String exeMode = factory.getExecutionMode();
-
-        // ICCE in direct mode due to
         // JVMS-5.4.3.4. Interface Method Resolution
         //   When resolving an interface method reference:
         //     If C is not an interface, interface method resolution throws an IncompatibleClassChangeError.
-        Class expectedError = IncompatibleClassChangeError.class;;
-
         b.test().interfaceCallSite(A, B, "m", "()I")
-         .throws_(expectedError).done()
+         .throws_(IncompatibleClassChangeError.class).done()
          .run();
 
     }
@@ -482,8 +474,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
      *
      * class B extends A implements J;
      *
-     * TEST: A o = new B(); o.m()I
-     *                ICCE for all modes
+     * TEST: A o = new B(); o.m()I throws ICCE
      */
     public void testInvokeInterfaceMultipleDefinedClassDefaultMethod() {
         TestBuilder b = factory.getBuilder();
@@ -500,16 +491,11 @@ public class DefaultVsAbstractTest extends DefMethTest {
 
         ConcreteClass B = b.clazz("B").extend(A).implement(J).build();
 
-        String exeMode = factory.getExecutionMode();
-
-        // ICCE in direct mode due to
         // JVMS-5.4.3.4. Interface Method Resolution
         //   When resolving an interface method reference:
         //     If C is not an interface, interface method resolution throws an IncompatibleClassChangeError.
-        Class expectedError = IncompatibleClassChangeError.class;
-
         b.test().interfaceCallSite(A, B, "m", "()I")
-         .throws_(expectedError).done()
+         .throws_(IncompatibleClassChangeError.class).done()
          .run();
     }
 

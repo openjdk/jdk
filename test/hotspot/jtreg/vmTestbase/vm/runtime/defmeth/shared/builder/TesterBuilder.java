@@ -137,9 +137,16 @@ public class TesterBuilder implements Builder<Tester> {
         return static_(I).callee(methodName, methodDesc, ACC_STATIC);
     }
 
+    public TesterBuilder callSite(Clazz I, String methodName, String methodDesc, int acc) {
+        if ((acc & ACC_PRIVATE) != 0) {
+            testPrivateMethod = true;
+        }
+        return static_(I).callee(methodName, methodDesc, acc);
+    }
+
     public TesterBuilder privateCallSite(Clazz staticReceiver, ConcreteClass receiver,
             String methodName, String methodDesc) {
-        this.testPrivateMethod = true;
+        testPrivateMethod = true;
         return static_(staticReceiver)
                 .dynamic(receiver)
                 .callee(methodName, methodDesc);
