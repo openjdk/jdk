@@ -332,6 +332,7 @@ Node::Node(uint req)
 #ifdef ASSERT
   , _parse_idx(_idx)
   , _indent(0)
+  , _igvn_verify_epoch(0)
 #endif
 {
   assert( req < Compile::current()->max_node_limit() - NodeLimitFudgeFactor, "Input limit exceeded" );
@@ -353,6 +354,7 @@ Node::Node(Node *n0)
 #ifdef ASSERT
   , _parse_idx(_idx)
   , _indent(0)
+  , _igvn_verify_epoch(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -367,6 +369,7 @@ Node::Node(Node *n0, Node *n1)
 #ifdef ASSERT
   , _parse_idx(_idx)
   , _indent(0)
+  , _igvn_verify_epoch(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -383,6 +386,7 @@ Node::Node(Node *n0, Node *n1, Node *n2)
 #ifdef ASSERT
   , _parse_idx(_idx)
   , _indent(0)
+  , _igvn_verify_epoch(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -401,6 +405,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3)
 #ifdef ASSERT
   , _parse_idx(_idx)
   , _indent(0)
+  , _igvn_verify_epoch(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -421,6 +426,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3, Node *n4)
 #ifdef ASSERT
   , _parse_idx(_idx)
   , _indent(0)
+  , _igvn_verify_epoch(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -444,6 +450,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
 #ifdef ASSERT
   , _parse_idx(_idx)
   , _indent(0)
+  , _igvn_verify_epoch(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -469,6 +476,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
 #ifdef ASSERT
   , _parse_idx(_idx)
   , _indent(0)
+  , _igvn_verify_epoch(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -2210,61 +2218,122 @@ void Node::verify_edges(Unique_Node_List &visited) {
   }
 }
 
-// Verify all nodes if verify_depth is negative
-void Node::verify(Node* n, int verify_depth) {
-  assert(verify_depth != 0, "depth should not be 0");
+/*
+ * Design target:
+ * 1. Each node is only verified once in PhaseIterGVN::verify_step, optimize
+ *    1.1. Redundant verifications between full and nodes in _verify_window
+ *    1.2. Redundant verifications between nodes in _verify_window
+ * 2. Node's def-use count is only verified once.
+ *
+ * Node none product fields to record IGVN verification status:
+ * 1. _igvn_verify_epoch: if node is visisted in current PhaseIterGVN::verify_step
+ * 2. _igvn_verify_depth_cur: processed depth in current Node::verify
+ * 3. _igvn_verify_depth_prev: processed depth in previous Node::verify
+ *
+ * Status:
+ * 1. _igvn_verify_epoch != verify_epoch: self and recurisive check
+ * 2. _igvn_verify_epoch == verify_epoch:
+ *    2.1. _igvn_verify_depth_prev == 0: self and recurisive check
+ *    2.2. 0 < _igvn_verify_depth_prev < _igvn_verify_depth_cur: recurisive check
+ *
+ * Actions:
+ * Adding node into worklist when:
+ * 1. _igvn_verify_epoch is different with current verify_epoch
+ * 2. Or _igvn_verify_depth_cur is smaller than verify_depth
+ * Note: verify_depth variable decreased in this method.
+ *
+ * When adding node into worklist:
+ * 1. If _igvn_verify_epoch is different with current verify_epoch
+ *    _igvn_verify_depth_prev = 0
+ *    _igvn_verify_depth_cur = (current verify_depth)
+ * 2. Else
+ *    _igvn_verify_depth_prev = _igvn_verify_depth_cur
+ *    _igvn_verify_depth_cur = (current verify_depth)
+ *
+ * As recursive is performed in BFS, bigger verify_depth is processed
+ * before smaller verify_depth, there are no redundannt nodes in worklist.
+ */
+ void Node::verify(Node* n, jint verify_depth, julong verify_epoch) {
+  assert(verify_depth > 0, "depth should not be positive");
+  if (n->_igvn_verify_epoch != verify_epoch) {
+    n->_igvn_verify_epoch = verify_epoch;
+    n->_igvn_verify_depth_prev = 0;
+    n->_igvn_verify_depth_cur = verify_depth;
+  } else if (n->_igvn_verify_depth_cur < verify_depth) {
+    n->_igvn_verify_depth_prev = n->_igvn_verify_depth_cur;
+    n->_igvn_verify_depth_cur = verify_depth;
+  } else {
+    return;
+  }
   ResourceMark rm;
-  VectorSet old_space;
-  VectorSet new_space;
   Node_List worklist;
   worklist.push(n);
   Compile* C = Compile::current();
+  Node* top = C->top();
   uint last_index_on_current_depth = 0;
   verify_depth--; // Visiting the first node on depth 1
-  // Only add nodes to worklist if verify_depth is negative (visit all nodes) or greater than 0
-  bool add_to_worklist = verify_depth != 0;
-
+  bool add_to_worklist = verify_depth > 0; // add nodes to worklist if verify_depth is positive
 
   for (uint list_index = 0; list_index < worklist.size(); list_index++) {
     n = worklist[list_index];
 
-    if (n->is_Con() && n->bottom_type() == Type::TOP) {
+    bool verify_self = (n->_igvn_verify_depth_prev == 0);
+
+    if (verify_self && n->is_Con() && n->bottom_type() == Type::TOP) {
       if (C->cached_top_node() == NULL) {
         C->set_cached_top_node((Node*)n);
       }
       assert(C->cached_top_node() == n, "TOP node must be unique");
     }
 
-    for (uint i = 0; i < n->len(); i++) {
-      Node* x = n->in(i);
-      if (!x || x->is_top()) {
+    uint in_len = n->len();
+    for (uint i = 0; i < in_len; i++) {
+      Node* x = n->_in[i];
+      if (!x || x == top) {
         continue;
       }
 
       // Verify my input has a def-use edge to me
       // Count use-def edges from n to x
-      int cnt = 0;
-      for (uint j = 0; j < n->len(); j++) {
-        if (n->in(j) == x) {
-          cnt++;
+      if (verify_self) {
+        int cnt = 1;
+        for (uint j = 0; j < i; j++) {
+          if (n->_in[j] == x) {
+            cnt++;
+            break;
+          }
         }
+        // has same input node before i, x already checked
+        if (cnt == 2) {
+          continue;
+        }
+        for (uint j = i + 1; j < in_len; j++) {
+          if (n->_in[j] == x) {
+            cnt++;
+          }
+        }
+
+        // Count def-use edges from x to n
+        uint max = x->_outcnt;
+        for (uint k = 0; k < max; k++) {
+          if (x->_out[k] == n) {
+            cnt--;
+          }
+        }
+        assert(cnt == 0, "mismatched def-use edge counts");
       }
 
-      // Count def-use edges from x to n
-      uint max = x->_outcnt;
-      for (uint k = 0; k < max; k++) {
-        if (x->_out[k] == n) {
-          cnt--;
+      if (add_to_worklist) {
+        if (x->_igvn_verify_epoch != verify_epoch) {
+          x->_igvn_verify_epoch = verify_epoch;
+          x->_igvn_verify_depth_prev = 0;
+          x->_igvn_verify_depth_cur = verify_depth;
+          worklist.push(x);
+        } else if (x->_igvn_verify_depth_cur < verify_depth) {
+          x->_igvn_verify_depth_prev = x->_igvn_verify_depth_cur;
+          x->_igvn_verify_depth_cur = verify_depth;
+          worklist.push(x);
         }
-      }
-      assert(cnt == 0, "mismatched def-use edge counts");
-
-      // Contained in new_space or old_space?
-      VectorSet* v = C->node_arena()->contains(x) ? &new_space : &old_space;
-      // Check for visited in the proper space. Numberings are not unique
-      // across spaces so we need a separate VectorSet for each space.
-      if (add_to_worklist && !v->test_set(x->_idx)) {
-        worklist.push(x);
       }
     }
 

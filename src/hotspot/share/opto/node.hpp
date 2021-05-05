@@ -1161,6 +1161,10 @@ public:
 #ifndef PRODUCT
  private:
   int _indent;
+  // used in VerifyIterativeGVN, indicate if Node is processed in this iteration.
+  jint _igvn_verify_depth_cur;
+  jint _igvn_verify_depth_prev;
+  julong _igvn_verify_epoch;
 
  public:
   void set_indent(int indent) { _indent = indent; }
@@ -1201,7 +1205,7 @@ public:
   void collect_nodes_out_all_ctrl_boundary(GrowableArray<Node*> *ns) const;
 
   void verify_edges(Unique_Node_List &visited); // Verify bi-directional edges
-  static void verify(Node* n, int verify_depth);
+  static void verify(Node* n, jint verify_depth, julong verify_epoch);
 
   // This call defines a class-unique string used to identify class instances
   virtual const char *Name() const;

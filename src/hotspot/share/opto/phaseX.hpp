@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -555,6 +555,7 @@ protected:
   // Sub-quadratic implementation of VerifyIterativeGVN.
   julong _verify_counter;
   julong _verify_full_passes;
+  julong _verify_epoch;
   enum { _verify_window_size = 30 };
   Node* _verify_window[_verify_window_size];
   void verify_step(Node* n);

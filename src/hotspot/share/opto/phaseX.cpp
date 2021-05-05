@@ -967,6 +967,7 @@ PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : PhaseGVN(igvn),
                                                  _stack(igvn->_stack ),
                                                  _worklist(igvn->_worklist)
 {
+  NOT_PRODUCT(_verify_epoch = 0;)
   _iterGVN = true;
 }
 
@@ -981,6 +982,7 @@ PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : PhaseGVN(gvn),
                                             _stack(C->comp_arena(), 32),
                                             _worklist(*C->for_igvn())
 {
+  NOT_PRODUCT(_verify_epoch = 0;)
   _iterGVN = true;
   uint max;
 
@@ -1024,11 +1026,13 @@ void PhaseIterGVN::shuffle_worklist() {
 #ifndef PRODUCT
 void PhaseIterGVN::verify_step(Node* n) {
   if (VerifyIterativeGVN) {
+    // Node::verify is only invoked in PhaseIterGVN::verify_step
+    ++_verify_epoch;
     _verify_window[_verify_counter % _verify_window_size] = n;
     ++_verify_counter;
     if (C->unique() < 1000 || 0 == _verify_counter % (C->unique() < 10000 ? 10 : 100)) {
       ++_verify_full_passes;
-      Node::verify(C->root(), -1);
+      Node::verify(C->root(), max_jint, _verify_epoch);
     }
     for (int i = 0; i < _verify_window_size; i++) {
       Node* n = _verify_window[i];
@@ -1041,7 +1045,7 @@ void PhaseIterGVN::verify_step(Node* n) {
         continue;
       }
       // Typical fanout is 1-2, so this call visits about 6 nodes.
-      Node::verify(n, 4);
+      Node::verify(n, 4, _verify_epoch);
     }
   }
 }
