@@ -800,15 +800,15 @@ TEST_VM(os, iso8601_time) {
   EXPECT_TRUE(very_simple_string_matcher(pattern, result));
 
   // Test with explicit timestamps
-  result = os::iso8601_time(0, buffer, sizeof(buffer), false);
+  result = os::iso8601_time(0, buffer, sizeof(buffer), true);
   tty->print_cr("%s", result);
   EXPECT_EQ(result, buffer);
-  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.01:00:00.000+dddd", result));
+  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.000+dddd", result));
 
-  result = os::iso8601_time(17, buffer, sizeof(buffer), false);
+  result = os::iso8601_time(17, buffer, sizeof(buffer), true);
   tty->print_cr("%s", result);
   EXPECT_EQ(result, buffer);
-  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.01:00:00.017+dddd", result));
+  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.017+dddd", result));
 
   // Canary should still be intact
   EXPECT_EQ(buffer[29], 'X');
