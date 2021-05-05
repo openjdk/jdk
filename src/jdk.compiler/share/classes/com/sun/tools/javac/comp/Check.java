@@ -1213,7 +1213,7 @@ public class Check {
                 mask = MethodFlags;
             }
             if ((flags & STRICTFP) != 0) {
-                warnOnExplicitStrictfp(pos, tree);
+                warnOnExplicitStrictfp(pos);
             }
             // Imply STRICTFP if owner has STRICTFP set.
             if (((flags|implicit) & Flags.ABSTRACT) == 0 ||
@@ -1257,7 +1257,7 @@ public class Check {
                 implicit |= FINAL;
             }
             if ((flags & STRICTFP) != 0) {
-                warnOnExplicitStrictfp(pos, tree);
+                warnOnExplicitStrictfp(pos);
             }
             // Imply STRICTFP if owner has STRICTFP set.
             implicit |= sym.owner.flags_field & STRICTFP;
@@ -1321,8 +1321,8 @@ public class Check {
         return flags & (mask | ~ExtendedStandardFlags) | implicit;
     }
 
-    private void warnOnExplicitStrictfp(DiagnosticPosition pos, JCTree tree) {
-        DiagnosticPosition prevLintPos = deferredLintHandler.setPos(tree.pos());
+    private void warnOnExplicitStrictfp(DiagnosticPosition pos) {
+        DiagnosticPosition prevLintPos = deferredLintHandler.setPos(pos);
         try {
             deferredLintHandler.report(() -> {
                                            if (lint.isEnabled(LintCategory.STRICTFP)) {
