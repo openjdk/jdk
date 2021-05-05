@@ -206,4 +206,3 @@ void LogTagSet::list_all_tagsets(outputStream* out) {
   out->cr();
   FREE_C_HEAP_ARRAY(char*, tagset_labels);
 }
-
