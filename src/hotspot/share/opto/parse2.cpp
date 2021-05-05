@@ -2566,7 +2566,6 @@ void Parse::do_one_bytecode() {
         maybe_add_safepoint(iter().next_get_dest());
       default:
         break;
-      }
     }
     b = pop_pair();
     a = pop_pair();
