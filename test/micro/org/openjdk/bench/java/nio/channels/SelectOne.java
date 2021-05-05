@@ -67,23 +67,24 @@ public class SelectOne {
         clients = new ArrayList<SocketChannel>();
         peers = new ArrayList<SocketChannel>();
 
-        ServerSocketChannel listener = ServerSocketChannel.open();
-        listener.bind(new InetSocketAddress(0));
-        SocketAddress remote = listener.getLocalAddress();
+        try (ServerSocketChannel listener = ServerSocketChannel.open()) {
+            listener.bind(new InetSocketAddress(0));
+            SocketAddress remote = listener.getLocalAddress();
 
-        for (int i = 0; i < nchannels; i++) {
-            SocketChannel sc = SocketChannel.open(remote);
-            sc.configureBlocking(false);
-            sc.register(sel, SelectionKey.OP_READ);
-            clients.add(sc);
+            for (int i = 0; i < nchannels; i++) {
+                SocketChannel sc = SocketChannel.open(remote);
+                sc.configureBlocking(false);
+                sc.register(sel, SelectionKey.OP_READ);
+                clients.add(sc);
 
-            SocketChannel peer = listener.accept();
-            peers.add(peer);
-        }
+                SocketChannel peer = listener.accept();
+                peers.add(peer);
+            }
 
-        for (int i = nready - 1; i >= 0; i--) {
-            SocketChannel peer = peers.get(i);
-            peer.write(ByteBuffer.allocate(1));
+            for (int i = nready - 1; i >= 0; i--) {
+                SocketChannel peer = peers.get(i);
+                peer.write(ByteBuffer.allocate(1));
+            }
         }
     }
 

@@ -53,7 +53,7 @@ class WEPoll {
      */
     private static final int SIZEOF_EPOLLEVENT   = eventSize();
     private static final int OFFSETOF_EVENTS     = eventsOffset();
-    private static final int OFFSETOF_FD         = dataOffset();
+    private static final int OFFSETOF_SOCK       = dataOffset();
 
     // opcodes
     static final int EPOLL_CTL_ADD  = 1;
@@ -92,17 +92,10 @@ class WEPoll {
     }
 
     /**
-     * Returns event->data.fd
-     */
-    static int getDescriptor(long eventAddress) {
-        return UNSAFE.getInt(eventAddress + OFFSETOF_FD);
-    }
-
-    /**
      * Returns event->data.socket
      */
     static long getSocket(long eventAddress) {
-        return UNSAFE.getLong(eventAddress + OFFSETOF_FD);
+        return UNSAFE.getLong(eventAddress + OFFSETOF_SOCK);
     }
 
     /**
