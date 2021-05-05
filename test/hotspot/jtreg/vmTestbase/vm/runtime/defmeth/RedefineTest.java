@@ -21,11 +21,28 @@
  * questions.
  */
 
+/*
+ * @test
+ *
+ * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /vmTestbase /test/lib
+ *
+ * @comment build retransform.jar in current dir
+ * @run driver vm.runtime.defmeth.shared.BuildJar
+ *
+ * @run driver jdk.test.lib.FileInstaller . .
+ * @run main/othervm/native
+ *      -agentlib:redefineClasses
+ *      -javaagent:retransform.jar
+ *      vm.runtime.defmeth.RedefineTest
+ */
 package vm.runtime.defmeth;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import nsk.share.Pair;
 import nsk.share.TestFailure;
 import nsk.share.test.TestBase;
@@ -39,6 +56,8 @@ import vm.runtime.defmeth.shared.data.Clazz;
 import vm.runtime.defmeth.shared.data.ConcreteClass;
 import vm.runtime.defmeth.shared.data.Interface;
 import vm.runtime.defmeth.shared.data.Tester;
+
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
 
 /*
@@ -47,7 +66,11 @@ import static vm.runtime.defmeth.shared.ExecutionMode.*;
 public class RedefineTest extends DefMethTest {
 
     public static void main(String[] args) {
-        TestBase.runTest(new RedefineTest(), args);
+        DefMethTest.runTest(RedefineTest.class,
+                /* majorVer */ Set.of(MIN_MAJOR_VER, MAX_MAJOR_VER),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED, ACC_STRICT, ACC_SYNCHRONIZED | ACC_STRICT),
+                /* redefine */ Set.of(true),
+                /* execMode */ Set.of(DIRECT, INVOKE_EXACT, INVOKE_GENERIC, INDY));
     }
 
     @Override

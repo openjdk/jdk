@@ -21,18 +21,33 @@
  * questions.
  */
 
+/*
+ * @test
+ *
+ * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /vmTestbase /test/lib
+ *
+ * @comment build retransform.jar in current dir
+ * @run driver vm.runtime.defmeth.shared.BuildJar
+ *
+ * @run driver jdk.test.lib.FileInstaller . .
+ * @run main/othervm/native
+ *      -agentlib:redefineClasses
+ *      -javaagent:retransform.jar
+ *      vm.runtime.defmeth.ObjectMethodOverridesTest
+ */
 package vm.runtime.defmeth;
 
 import nsk.share.TestFailure;
-import nsk.share.test.TestBase;
 import vm.runtime.defmeth.shared.DefMethTest;
 import vm.runtime.defmeth.shared.data.*;
-import static vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke.*;
+
+import static vm.runtime.defmeth.shared.ExecutionMode.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.IndexbyteOp.*;
 import vm.runtime.defmeth.shared.data.method.body.*;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 
-import java.lang.reflect.InvocationTargetException;
+import java.util.Set;
 
 /**
  * Test that default methods don't override methods inherited from Object class.
@@ -40,7 +55,11 @@ import java.lang.reflect.InvocationTargetException;
 public class ObjectMethodOverridesTest extends DefMethTest {
 
     public static void main(String[] args) {
-        TestBase.runTest(new ObjectMethodOverridesTest(), args);
+        DefMethTest.runTest(ObjectMethodOverridesTest.class,
+                /* majorVer */ Set.of(MAX_MAJOR_VER),
+                /* flags    */ Set.of(0),
+                /* redefine */ Set.of(false, true),
+                /* execMode */ Set.of(DIRECT, REFLECTION, INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY));
     }
 
     /* protected Object clone() */

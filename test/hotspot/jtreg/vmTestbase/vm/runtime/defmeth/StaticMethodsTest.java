@@ -21,6 +21,21 @@
  * questions.
  */
 
+/*
+ * @test
+ *
+ * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /vmTestbase /test/lib
+ *
+ * @comment build retransform.jar in current dir
+ * @run driver vm.runtime.defmeth.shared.BuildJar
+ *
+ * @run driver jdk.test.lib.FileInstaller . .
+ * @run main/othervm/native
+ *      -agentlib:redefineClasses
+ *      -javaagent:retransform.jar
+ *      vm.runtime.defmeth.StaticMethodsTest
+ */
 package vm.runtime.defmeth;
 
 import nsk.share.test.TestBase;
@@ -30,8 +45,9 @@ import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PRIVATE;
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STATIC;
+import java.util.Set;
+
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.IndexbyteOp.*;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
@@ -42,7 +58,11 @@ import static vm.runtime.defmeth.shared.ExecutionMode.*;
 public class StaticMethodsTest extends DefMethTest {
 
     public static void main(String[] args) {
-        TestBase.runTest(new StaticMethodsTest(), args);
+        DefMethTest.runTest(StaticMethodsTest.class,
+                /* majorVer */ Set.of(MIN_MAJOR_VER, MAX_MAJOR_VER),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED, ACC_STRICT, ACC_SYNCHRONIZED | ACC_STRICT),
+                /* redefine */ Set.of(false, true),
+                /* execMode */ Set.of(DIRECT, REFLECTION, INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY));
     }
 
     // static method in interface

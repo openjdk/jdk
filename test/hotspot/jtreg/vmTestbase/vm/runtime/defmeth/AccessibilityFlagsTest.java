@@ -21,14 +21,33 @@
  * questions.
  */
 
+/*
+ * @test
+ *
+ * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /vmTestbase /test/lib
+ *
+ * @comment build retransform.jar in current dir
+ * @run driver vm.runtime.defmeth.shared.BuildJar
+ *
+ * @run driver jdk.test.lib.FileInstaller . .
+ * @run main/othervm/native
+ *      -agentlib:redefineClasses
+ *      -javaagent:retransform.jar
+ *      vm.runtime.defmeth.AccessibilityFlagsTest
+ */
 package vm.runtime.defmeth;
 
-import nsk.share.test.TestBase;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static vm.runtime.defmeth.shared.ExecutionMode.*;
+import static vm.runtime.defmeth.shared.ExecutionMode.INDY;
+
 import vm.runtime.defmeth.shared.DefMethTest;
 import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.data.method.body.EmptyBody;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
+
+import java.util.Set;
 
 /*
  * Test allowed combinations of access flags on methods in interfaces.
@@ -36,7 +55,11 @@ import vm.runtime.defmeth.shared.builder.TestBuilder;
  */
 public class AccessibilityFlagsTest extends DefMethTest {
     public static void main(String[] args) {
-        TestBase.runTest(new AccessibilityFlagsTest(), args);
+        DefMethTest.runTest(AccessibilityFlagsTest.class,
+                /* majorVer */ Set.of(MAX_MAJOR_VER),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED, ACC_STRICT, ACC_SYNCHRONIZED | ACC_STRICT),
+                /* redefine */ Set.of(false, true),
+                /* execMode */ Set.of(DIRECT, REFLECTION, INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY));
     }
 
     /* ====================================================================== */
