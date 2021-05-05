@@ -1749,7 +1749,7 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
     trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) failed (%d)", p2i(requested_addr), size, errno);
     return NULL;
   } else if (requested_addr != NULL && addr != requested_addr) {
-    trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) succeeded, but at a different address than requested (" PTR_FORMAT ")",
+    trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) succeeded, but at a different address than requested (" PTR_FORMAT "), will unmap",
                p2i(requested_addr), size, p2i(addr));
     ::munmap(addr, extra_size);
     return NULL;
