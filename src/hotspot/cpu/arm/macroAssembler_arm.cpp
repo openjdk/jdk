@@ -735,8 +735,7 @@ void MacroAssembler::sign_extend(Register rd, Register rn, int bits) {
 
 
 void MacroAssembler::cmpoop(Register obj1, Register obj2) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, obj1, obj2);
+  cmp(obj1, obj2);
 }
 
 void MacroAssembler::long_move(Register rd_lo, Register rd_hi,
@@ -1886,15 +1885,6 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
   } else {
     bs->store_at(this, decorators, type, obj, new_val, tmp1, tmp2, tmp3, is_null);
   }
-}
-
-void MacroAssembler::resolve(DecoratorSet decorators, Register obj) {
-  // Use stronger ACCESS_WRITE|ACCESS_READ by default.
-  if ((decorators & (ACCESS_READ | ACCESS_WRITE)) == 0) {
-    decorators |= ACCESS_READ | ACCESS_WRITE;
-  }
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  return bs->resolve(this, decorators, obj);
 }
 
 void MacroAssembler::safepoint_poll(Register tmp1, Label& slow_path) {
