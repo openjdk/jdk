@@ -287,7 +287,7 @@ public class Lint
         STATIC("static"),
 
         /**
-         * Warning about unnecessary uses of the strictfp modifier
+         * Warn about unnecessary uses of the strictfp modifier
          */
         STRICTFP("strictfp"),
 
