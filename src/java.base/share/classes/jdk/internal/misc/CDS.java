@@ -250,6 +250,26 @@ public class CDS {
        return false;
     }
 
+    // Return a temp file name if the archive file exists. The temp file operation may
+    // cause permission exception which prevents real archive being created.
+    private static String getArchiveFileName(String name) throws Exception {
+        String tempFileName = name + ".temp";
+        File tempFile = new File(tempFileName);
+        if (tempFile.exists()) {
+            tempFile.delete();
+        } else {
+            if (tempFile.createNewFile()) {
+                tempFile.delete();
+            }
+        }
+
+        File archiveFile = new File(name);
+        if (!archiveFile.exists()) {
+            return name;
+        }
+        return tempFileName;
+    }
+
     /**
     * called from jcmd VM.cds to dump static or dynamic shared archive
     * @param isStatic true for dump static archive or false for dynnamic archive.
@@ -257,21 +277,19 @@ public class CDS {
     */
     private static void dumpSharedArchive(boolean isStatic, String fileName) throws Exception {
         String currentPid = String.valueOf(ProcessHandle.current().pid());
-        String archiveFile =  fileName != null ? fileName :
+        String archiveFileName =  fileName != null ? fileName :
             "java_pid" + currentPid + (isStatic ? "_static.jsa" : "_dynamic.jsa");
 
-        // delete if archive file aready exists
-        File fileArchive = new File(archiveFile);
-        if (fileArchive.exists()) {
-            fileArchive.delete();
-        }
+        String tempFileName = getArchiveFileName(archiveFileName);
+        File tempArchiveFile = new File(tempFileName);
+
         if (isStatic) {
-            String listFile = archiveFile + ".classlist";
-            File fileList = new File(listFile);
-            if (fileList.exists()) {
-                fileList.delete();
+            String listFileName = tempFileName + ".classlist";
+            File listFile = new File(listFileName);
+            if (listFile.exists()) {
+                listFile.delete();
             }
-            dumpClassList(listFile);
+            dumpClassList(listFileName);
             String jdkHome = System.getProperty("java.home");
             String classPath = System.getProperty("java.class.path");
             List<String> cmds = new ArrayList<String>();
@@ -281,7 +299,7 @@ public class CDS {
             cmds.add("-Xlog:cds");
             cmds.add("-Xshare:dump");
             cmds.add("-XX:SharedClassListFile=" + listFile);
-            cmds.add("-XX:SharedArchiveFile=" + archiveFile);
+            cmds.add("-XX:SharedArchiveFile=" + tempFileName);
 
             // All runtime args.
             String[] vmArgs = VM.getRuntimeArguments();
@@ -301,26 +319,36 @@ public class CDS {
 
             proc.waitFor();
             // done, delete classlist file.
-            if (fileList.exists()) {
-                fileList.delete();
+            if (listFile.exists()) {
+                listFile.delete();
             }
             // Check if archive has been successfully dumped. We won't reach here if exception happens.
             // Throw exception if file is not created.
-            if (!fileArchive.exists()) {
-                throw new RuntimeException("Archive file " + archiveFile +
+            if (!tempArchiveFile.exists()) {
+                throw new RuntimeException("Archive file " + tempFileName +
                                            " is not created, please check stdout file " +
                                             stdOutFile + " or stderr file " +
                                             stdErrFile + " for more detail");
             }
         } else {
-            dumpDynamicArchive(archiveFile);
-            if (!fileArchive.exists()) {
-                throw new RuntimeException("Archive file " + archiveFile +
+            dumpDynamicArchive(tempFileName);
+            if (!tempArchiveFile.exists()) {
+                throw new RuntimeException("Archive file " + tempFileName +
                                            " is not created, please check process " +
                                            currentPid + " output for more detail");
             }
         }
+        // Override the existing archive file
+        if (tempFileName != archiveFileName) {
+            File archiveFile = new File(archiveFileName);
+            if (archiveFile.exists()) {
+                archiveFile.delete();
+            }
+            if (!tempArchiveFile.renameTo(archiveFile)) {
+                throw new RuntimeException("Cannot rename temp file " + tempFileName + " to archive file" + archiveFileName);
+            }
+        }
         // Everyting goes well, print out the file name.
-        System.out.println((isStatic ? "Static" : " Dynamic") + " dump to file " + archiveFile);
+        System.out.println((isStatic ? "Static" : " Dynamic") + " dump to file " + archiveFileName);
     }
 }

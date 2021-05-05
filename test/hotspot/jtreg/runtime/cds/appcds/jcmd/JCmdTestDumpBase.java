@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.dcmd.CommandExecutorException;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 import jtreg.SkippedException;
@@ -73,6 +74,18 @@ public abstract class JCmdTestDumpBase {
     public static final boolean noBoot = !useBoot;
     public static final boolean EXPECT_PASS = true;
     public static final boolean EXPECT_FAIL = !EXPECT_PASS;
+
+    // If delete archive before/after test
+    private static boolean keepArchive = false;
+    public static void setKeepArchive(boolean v) { keepArchive = v; }
+    public static void checkFileExistence(String fileName, boolean checkExist) throws Exception {
+        File file = new File(fileName);
+        boolean exist = file.exists();
+        boolean resultIsTrue = checkExist ? exist : !exist;
+        if (!resultIsTrue) {
+            throw new RuntimeException("File " + fileName +  "should " + (checkExist ?  "exist " : "not exist"));
+        }
+    }
 
     protected static void buildJars() throws Exception {
         testJar = JarBuilder.build("test", TEST_CLASSES);
@@ -147,7 +160,7 @@ public abstract class JCmdTestDumpBase {
         args.add("-Xlog:class+load");
 
         LingeredApp app = createLingeredApp(args.toArray(new String[0]));
-        app.setLogFileName("JCmdTestDynamicDump.log." + (logFileCount++));
+        app.setLogFileName("JCmdTest-Run-" + (isStatic ? "Static.log" : "Dynamic.log.") + (logFileCount++));
         app.stopApp();
         String output = app.getOutput().getStdout();
         if (messages != null) {
@@ -165,7 +178,7 @@ public abstract class JCmdTestDumpBase {
         String fileName = archiveFile != null ? archiveFile :
             ("java_pid" + pid + (isStatic ? "_static.jsa" : "_dynamic.jsa"));
         File file = new File(fileName);
-        if (file.exists()) {
+        if (!keepArchive && file.exists()) {
             file.delete();
         }
 
@@ -175,20 +188,35 @@ public abstract class JCmdTestDumpBase {
         }
 
         PidJcmdExecutor cmdExecutor = new PidJcmdExecutor(String.valueOf(pid));
-        OutputAnalyzer output = cmdExecutor.execute(jcmd, true/*silent*/);
+        OutputAnalyzer output = null;
+        try {
+            output = cmdExecutor.execute(jcmd, true/*silent*/);
+        } catch (CommandExecutorException e) {
+            if (!expectOK) {
+                // When target archive permission changed, the exception is
+                //    "Static dump:java.io.IOException: Permission denied"  or
+                //    "executeProcess() failed: java.security.PrivilegedActionException: java.nio.file.AccessDeniedException: pid_<pid>-output.log" or
+                //     or java security related type.
+                // The printout below is just for displaying the real cause.
+                Throwable t = e.getCause();
+                if (t != null) {
+                    System.out.println("Cause: " + t);
+                }
+                return;
+            } else {
+                throw new RuntimeException("Failed with exception " + e);
+            }
+        }
 
         if (expectOK) {
             output.shouldHaveExitValue(0);
-            if (!file.exists()) {
-                throw new RuntimeException("Could not create shared archive: " + fileName);
-            } else {
-                runWithArchiveFile(fileName, useBoot, messages);
+            checkFileExistence(fileName, true);
+            runWithArchiveFile(fileName, useBoot, messages);
+            if (!keepArchive) {
                 file.delete();
             }
         } else {
-            if (file.exists()) {
-                throw new RuntimeException("Should not create shared archive " + fileName);
-            }
+            checkFileExistence(fileName, false);
         }
     }
 
