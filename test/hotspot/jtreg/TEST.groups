@@ -95,6 +95,7 @@ hotspot_slow_compiler = \
 
 tier1_compiler_1 = \
   compiler/arraycopy/ \
+  compiler/blackhole/ \
   compiler/c1/ \
   compiler/c2/ \
   -compiler/c2/Test6850611.java \
