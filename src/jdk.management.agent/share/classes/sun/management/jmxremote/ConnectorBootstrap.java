@@ -288,7 +288,7 @@ public final class ConnectorBootstrap {
                 registry = null;
             }
         } catch(NoSuchObjectException ex) {
-            // This exception can appears only if we attempt
+            // This exception can appear only if we attempt
             // to unexportRegistry second time. So it's safe
             // to ignore it without additional messages.
         }
@@ -297,7 +297,7 @@ public final class ConnectorBootstrap {
      /**
       * Initializes and starts the JMX Connector Server.
       * If the com.sun.management.jmxremote.port property is not defined,
-      * simply return. Otherwise, attempts to load the config file, and
+      * simply returns. Otherwise, attempts to load the config file, and
       * then calls {@link #startRemoteConnectorServer(java.lang.String,
       * java.util.Properties)}.
       *
@@ -305,7 +305,7 @@ public final class ConnectorBootstrap {
       **/
       public static synchronized JMXConnectorServer initialize() {
 
-         // Load a new management properties
+         // Load new management properties
          final Properties props = Agent.loadManagementProperties();
          if (props == null) {
               return null;
