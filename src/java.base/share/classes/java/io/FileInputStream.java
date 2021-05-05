@@ -276,19 +276,19 @@ public class FileInputStream extends InputStream
 
     public byte[] readAllBytes() throws IOException {
         long length = length();
-        int capacity;
-        if (length != 0L) {
-            long position = position();
-            long size = length - position;
-            if (size > (long)Integer.MAX_VALUE)
-                throw new OutOfMemoryError("Required array size too large");
-            if (size <= 0L)
-                return new byte[0];
-            capacity = (int)(length - position);
-        } else {
-            capacity = DEFAULT_BUFFER_SIZE;
-        }
+        if (length <= 0)
+            return super.readAllBytes();
 
+        long size = length - position();
+        if (size > (long) Integer.MAX_VALUE) {
+            String msg = String.format("Required array size too large: %d = %d + %d",
+                size, length, position());
+            throw new OutOfMemoryError(msg);
+        }
+        if (size <= 0L)
+            return new byte[0];
+
+        int capacity = (int)size;
         byte[] buf = new byte[capacity];
 
         int nread = 0;
@@ -318,18 +318,15 @@ public class FileInputStream extends InputStream
     public byte[] readNBytes(int len) throws IOException {
         if (len < 0)
             throw new IllegalArgumentException("len < 0");
-        if (len == 0L)
+        long length = length();
+        if (length <= 0)
+            return super.readNBytes(len);
+
+        long size = length - position();
+        if (size <= 0L)
             return new byte[0];
 
-        long length = length();
-        int capacity;
-        if (length == 0L) {
-            capacity = Math.min(len, DEFAULT_BUFFER_SIZE);
-        } else {
-            capacity = (int)Math.min(len, length - position());
-            if (capacity <= 0L)
-                return new byte[0];
-        }
+        int capacity = (int)Math.min(len, size);
         byte[] buf = new byte[capacity];
 
         int remaining = capacity;
