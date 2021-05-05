@@ -47,7 +47,7 @@ final class ConstantMap {
     // reference themselves (directly, or indirectly),
     // when making a transition from numeric id references
     // to normal Java references.
-    private final static class Reference {
+    private static final class Reference {
         private final long key;
         private final ConstantMap pool;
 

@@ -23,7 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
+#include "cds/heapShared.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
@@ -34,6 +35,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBehaviours.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
@@ -43,11 +45,9 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceCounters.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -329,7 +329,7 @@ void Universe::genesis(TRAPS) {
       }
     }
 
-    vmSymbols::initialize(CHECK);
+    vmSymbols::initialize();
 
     SystemDictionary::initialize(CHECK);
 
@@ -513,35 +513,35 @@ oop Universe::swap_reference_pending_list(oop list) {
 #undef assert_pll_locked
 #undef assert_pll_ownership
 
-void Universe::reinitialize_vtable_of(Klass* ko, TRAPS) {
+static void reinitialize_vtable_of(Klass* ko) {
   // init vtable of k and all subclasses
-  ko->vtable().initialize_vtable(false, CHECK);
+  ko->vtable().initialize_vtable();
   if (ko->is_instance_klass()) {
     for (Klass* sk = ko->subklass();
          sk != NULL;
          sk = sk->next_sibling()) {
-      reinitialize_vtable_of(sk, CHECK);
+      reinitialize_vtable_of(sk);
     }
   }
 }
 
-void Universe::reinitialize_vtables(TRAPS) {
+static void reinitialize_vtables() {
   // The vtables are initialized by starting at java.lang.Object and
   // initializing through the subclass links, so that the super
   // classes are always initialized first.
   Klass* ok = vmClasses::Object_klass();
-  Universe::reinitialize_vtable_of(ok, THREAD);
+  reinitialize_vtable_of(ok);
 }
 
 
-void initialize_itable_for_klass(InstanceKlass* k, TRAPS) {
-  k->itable().initialize_itable(false, CHECK);
+static void initialize_itable_for_klass(InstanceKlass* k) {
+  k->itable().initialize_itable();
 }
 
 
-void Universe::reinitialize_itables(TRAPS) {
-  MutexLocker mcld(THREAD, ClassLoaderDataGraph_lock);
-  ClassLoaderDataGraph::dictionary_classes_do(initialize_itable_for_klass, CHECK);
+static void reinitialize_itables() {
+  MutexLocker mcld(ClassLoaderDataGraph_lock);
+  ClassLoaderDataGraph::dictionary_classes_do(initialize_itable_for_klass);
 }
 
 
@@ -716,6 +716,10 @@ void* Universe::non_oop_word() {
   return (void*)_non_oop_bits;
 }
 
+bool Universe::contains_non_oop_word(void* p) {
+  return *(void**)p == non_oop_word();
+}
+
 static void initialize_global_behaviours() {
   CompiledICProtectionBehaviour::set_current(new DefaultICProtectionBehaviour());
 }
@@ -748,8 +752,6 @@ jint universe_init() {
   // Initialize performance counters for metaspaces
   MetaspaceCounters::initialize_performance_counters();
   CompressedClassSpaceCounters::initialize_performance_counters();
-
-  AOTLoader::universe_init();
 
   // Checks 'AfterMemoryInit' constraints.
   if (!JVMFlagLimit::check_all_constraints(JVMFlagConstraintPhase::AfterMemoryInit)) {
@@ -824,13 +826,17 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
 
-  bool use_large_pages = UseLargePages && is_aligned(alignment, os::large_page_size());
-  assert(!UseLargePages
-      || UseParallelGC
-      || use_large_pages, "Wrong alignment to use large pages");
+  size_t page_size = os::vm_page_size();
+  if (UseLargePages && is_aligned(alignment, os::large_page_size())) {
+    page_size = os::large_page_size();
+  } else {
+    // Parallel is the only collector that might opt out of using large pages
+    // for the heap.
+    assert(!UseLargePages || UseParallelGC , "Wrong alignment to use large pages");
+  }
 
   // Now create the space.
-  ReservedHeapSpace total_rs(total_reserved, alignment, use_large_pages, AllocateHeapAt);
+  ReservedHeapSpace total_rs(total_reserved, alignment, page_size, AllocateHeapAt);
 
   if (total_rs.is_reserved()) {
     assert((total_reserved == total_rs.size()) && ((uintptr_t)total_rs.base() % alignment == 0),
@@ -856,7 +862,7 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
 
   // satisfy compiler
   ShouldNotReachHere();
-  return ReservedHeapSpace(0, 0, false);
+  return ReservedHeapSpace(0, 0, os::vm_page_size());
 }
 
 OopStorage* Universe::vm_weak() {
@@ -868,8 +874,8 @@ OopStorage* Universe::vm_global() {
 }
 
 void Universe::oopstorage_init() {
-  Universe::_vm_global = OopStorageSet::create_strong("VM Global");
-  Universe::_vm_weak = OopStorageSet::create_weak("VM Weak");
+  Universe::_vm_global = OopStorageSet::create_strong("VM Global", mtInternal);
+  Universe::_vm_weak = OopStorageSet::create_weak("VM Weak", mtInternal);
 }
 
 void universe_oopstorage_init() {
@@ -942,9 +948,8 @@ bool universe_post_init() {
   Universe::_fully_initialized = true;
   EXCEPTION_MARK;
   if (!UseSharedSpaces) {
-    ResourceMark rm;
-    Universe::reinitialize_vtables(CHECK_false);
-    Universe::reinitialize_itables(CHECK_false);
+    reinitialize_vtables();
+    reinitialize_itables();
   }
 
   HandleMark hm(THREAD);

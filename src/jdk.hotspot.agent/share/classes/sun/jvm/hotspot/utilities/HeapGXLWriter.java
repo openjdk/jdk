@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,7 +286,7 @@ public class HeapGXLWriter extends AbstractHeapGraphWriter {
     // escapes XML meta-characters and illegal characters
     private static String escapeXMLChars(String s) {
         // FIXME: is there a better way or API?
-        StringBuffer result = null;
+        StringBuilder result = null;
         for(int i = 0, max = s.length(), delta = 0; i < max; i++) {
             char c = s.charAt(i);
             String replacement = null;
@@ -311,7 +311,7 @@ public class HeapGXLWriter extends AbstractHeapGraphWriter {
 
             if (replacement != null) {
                 if (result == null) {
-                    result = new StringBuffer(s);
+                    result = new StringBuilder(s);
                 }
                 result.replace(i + delta, i + delta + 1, replacement);
                 delta += (replacement.length() - 1);

@@ -813,8 +813,8 @@ public final class ZonedDateTime
      */
     @Override  // override for Javadoc and performance
     public int get(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
+        if (field instanceof ChronoField chronoField) {
+            switch (chronoField) {
                 case INSTANT_SECONDS:
                     throw new UnsupportedTemporalTypeException("Invalid field 'InstantSeconds' for get() method, use getLong() instead");
                 case OFFSET_SECONDS:
@@ -850,8 +850,8 @@ public final class ZonedDateTime
      */
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
+        if (field instanceof ChronoField chronoField) {
+            switch (chronoField) {
                 case INSTANT_SECONDS: return toEpochSecond();
                 case OFFSET_SECONDS: return getOffset().getTotalSeconds();
             }
@@ -1236,11 +1236,9 @@ public final class ZonedDateTime
             return resolveLocal(LocalDateTime.of(dateTime.toLocalDate(), (LocalTime) adjuster));
         } else if (adjuster instanceof LocalDateTime) {
             return resolveLocal((LocalDateTime) adjuster);
-        } else if (adjuster instanceof OffsetDateTime) {
-            OffsetDateTime odt = (OffsetDateTime) adjuster;
+        } else if (adjuster instanceof OffsetDateTime odt) {
             return ofLocal(odt.toLocalDateTime(), zone, odt.getOffset());
-        } else if (adjuster instanceof Instant) {
-            Instant instant = (Instant) adjuster;
+        } else if (adjuster instanceof Instant instant) {
             return create(instant.getEpochSecond(), instant.getNano(), zone);
         } else if (adjuster instanceof ZoneOffset) {
             return resolveOffset((ZoneOffset) adjuster);
@@ -1302,13 +1300,12 @@ public final class ZonedDateTime
      */
     @Override
     public ZonedDateTime with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            switch (f) {
+        if (field instanceof ChronoField chronoField) {
+            switch (chronoField) {
                 case INSTANT_SECONDS:
                     return create(newValue, getNano(), zone);
                 case OFFSET_SECONDS:
-                    ZoneOffset offset = ZoneOffset.ofTotalSeconds(f.checkValidIntValue(newValue));
+                    ZoneOffset offset = ZoneOffset.ofTotalSeconds(chronoField.checkValidIntValue(newValue));
                     return resolveOffset(offset);
             }
             return resolveLocal(dateTime.with(field, newValue));
@@ -1553,8 +1550,7 @@ public final class ZonedDateTime
      */
     @Override
     public ZonedDateTime plus(TemporalAmount amountToAdd) {
-        if (amountToAdd instanceof Period) {
-            Period periodToAdd = (Period) amountToAdd;
+        if (amountToAdd instanceof Period periodToAdd) {
             return resolveLocal(dateTime.plus(periodToAdd));
         }
         Objects.requireNonNull(amountToAdd, "amountToAdd");
@@ -1810,8 +1806,7 @@ public final class ZonedDateTime
      */
     @Override
     public ZonedDateTime minus(TemporalAmount amountToSubtract) {
-        if (amountToSubtract instanceof Period) {
-            Period periodToSubtract = (Period) amountToSubtract;
+        if (amountToSubtract instanceof Period periodToSubtract) {
             return resolveLocal(dateTime.minus(periodToSubtract));
         }
         Objects.requireNonNull(amountToSubtract, "amountToSubtract");
@@ -2190,13 +2185,10 @@ public final class ZonedDateTime
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ZonedDateTime) {
-            ZonedDateTime other = (ZonedDateTime) obj;
-            return dateTime.equals(other.dateTime) &&
-                offset.equals(other.offset) &&
-                zone.equals(other.zone);
-        }
-        return false;
+        return obj instanceof ZonedDateTime other
+                && dateTime.equals(other.dateTime)
+                && offset.equals(other.offset)
+                && zone.equals(other.zone);
     }
 
     /**

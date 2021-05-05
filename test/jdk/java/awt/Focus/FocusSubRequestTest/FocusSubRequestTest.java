@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ public class FocusSubRequestTest {
 
         try {
             robot = new Robot();
+            robot.setAutoDelay(100);
         } catch(Exception e) {
             throw new RuntimeException("Error: unable to create robot", e);
         }
@@ -77,7 +78,6 @@ public class FocusSubRequestTest {
 
         robot.delay(100);
         robot.keyPress(KeyEvent.VK_K);
-        robot.delay(100);
         robot.keyRelease(KeyEvent.VK_K);
 
         robot.waitForIdle();
@@ -90,14 +90,16 @@ public class FocusSubRequestTest {
     }
 
     private void waitTillShown(Component component) {
-        while (true) {
+        Point p = null;
+        while (p == null) {
             try {
-                Thread.sleep(100);
-                component.getLocationOnScreen();
-                break;
-            } catch(InterruptedException ie) {
-                throw new RuntimeException(ie);
-            } catch(IllegalComponentStateException icse) {}
+                p = component.getLocationOnScreen();
+            } catch (IllegalStateException e) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ie) {
+                }
+            }
         }
     }
 }

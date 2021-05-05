@@ -74,7 +74,7 @@ void ObjectSampler::oop_storage_gc_notification(size_t num_dead) {
 }
 
 bool ObjectSampler::create_oop_storage() {
-  _oop_storage = OopStorageSet::create_weak("Weak JFR Old Object Samples");
+  _oop_storage = OopStorageSet::create_weak("Weak JFR Old Object Samples", mtTracing);
   assert(_oop_storage != NULL, "invariant");
   _oop_storage->register_num_dead_callback(&oop_storage_gc_notification);
   return true;

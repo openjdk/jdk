@@ -23,12 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/filemap.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
@@ -41,14 +40,12 @@
 #include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceTracer.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/init.hpp"
@@ -566,7 +563,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
     assert(CompressedKlassPointers::is_valid_base(a), "Sanity");
     while (a < search_ranges[i].to) {
       ReservedSpace rs(size, Metaspace::reserve_alignment(),
-                       false /*large_pages*/, (char*)a);
+                       os::vm_page_size(), (char*)a);
       if (rs.is_reserved()) {
         assert(a == (address)rs.base(), "Sanity");
         return rs;
@@ -582,7 +579,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   return ReservedSpace();
 #else
   // Default implementation: Just reserve anywhere.
-  return ReservedSpace(size, Metaspace::reserve_alignment(), false, (char*)NULL);
+  return ReservedSpace(size, Metaspace::reserve_alignment(), os::vm_page_size(), (char*)NULL);
 #endif // AARCH64
 }
 
@@ -720,7 +717,7 @@ void Metaspace::global_initialize() {
     if (base != NULL) {
       if (CompressedKlassPointers::is_valid_base(base)) {
         rs = ReservedSpace(size, Metaspace::reserve_alignment(),
-                           false /* large */, (char*)base);
+                           os::vm_page_size(), (char*)base);
       }
     }
 
@@ -789,17 +786,14 @@ size_t Metaspace::max_allocation_word_size() {
   return metaspace::chunklevel::MAX_CHUNK_WORD_SIZE - max_overhead_words;
 }
 
+// This version of Metaspace::allocate does not throw OOM but simply returns NULL, and
+// is suitable for calling from non-Java threads.
+// Callers are responsible for checking null.
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
-                              MetaspaceObj::Type type, TRAPS) {
+                              MetaspaceObj::Type type) {
   assert(word_size <= Metaspace::max_allocation_word_size(),
          "allocation size too large (" SIZE_FORMAT ")", word_size);
   assert(!_frozen, "sanity");
-  assert(!(DumpSharedSpaces && THREAD->is_VM_thread()), "sanity");
-
-  if (HAS_PENDING_EXCEPTION) {
-    assert(false, "Should not allocate with exception pending");
-    return NULL;  // caller does a CHECK_NULL too
-  }
 
   assert(loader_data != NULL, "Should never pass around a NULL loader_data. "
         "ClassLoaderData::the_null_class_loader_data() should have been used.");
@@ -809,7 +803,30 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   // Try to allocate metadata.
   MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
 
+  if (result != NULL) {
+    // Zero initialize.
+    Copy::fill_to_words((HeapWord*)result, word_size, 0);
+
+    log_trace(metaspace)("Metaspace::allocate: type %d return " PTR_FORMAT ".", (int)type, p2i(result));
+  }
+
+  return result;
+}
+
+MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
+                              MetaspaceObj::Type type, TRAPS) {
+
+  assert(THREAD->is_Java_thread(), "can't allocate in non-Java thread because we cannot throw exception");
+
+  if (HAS_PENDING_EXCEPTION) {
+    assert(false, "Should not allocate with exception pending");
+    return NULL;  // caller does a CHECK_NULL too
+  }
+
+  MetaWord* result = allocate(loader_data, word_size, type);
+
   if (result == NULL) {
+    MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
     tracer()->report_metaspace_allocation_failure(loader_data, word_size, type, mdtype);
 
     // Allocation failed.
@@ -819,25 +836,18 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
       // expansion of the metaspace.
       result = Universe::heap()->satisfy_failed_metadata_allocation(loader_data, word_size, mdtype);
     }
-  }
 
-  if (result == NULL) {
-    if (DumpSharedSpaces) {
-      // CDS dumping keeps loading classes, so if we hit an OOM we probably will keep hitting OOM.
-      // We should abort to avoid generating a potentially bad archive.
-      vm_exit_during_cds_dumping(err_msg("Failed allocating metaspace object type %s of size " SIZE_FORMAT ". CDS dump aborted.",
-          MetaspaceObj::type_name(type), word_size * BytesPerWord),
-        err_msg("Please increase MaxMetaspaceSize (currently " SIZE_FORMAT " bytes).", MaxMetaspaceSize));
+    if (result == NULL) {
+      report_metadata_oome(loader_data, word_size, type, mdtype, THREAD);
+      assert(HAS_PENDING_EXCEPTION, "sanity");
+      return NULL;
     }
-    report_metadata_oome(loader_data, word_size, type, mdtype, THREAD);
-    assert(HAS_PENDING_EXCEPTION, "sanity");
-    return NULL;
+
+    // Zero initialize.
+    Copy::fill_to_words((HeapWord*)result, word_size, 0);
+
+    log_trace(metaspace)("Metaspace::allocate: type %d return " PTR_FORMAT ".", (int)type, p2i(result));
   }
-
-  // Zero initialize.
-  Copy::fill_to_words((HeapWord*)result, word_size, 0);
-
-  log_trace(metaspace)("Metaspace::allocate: type %d return " PTR_FORMAT ".", (int)type, p2i(result));
 
   return result;
 }

@@ -100,8 +100,8 @@ public:
   bool operator==(const oop& o) const  { return _o == o._o; }
   bool operator!=(const oop& o) const  { return _o != o._o; }
 
-  bool operator==(nullptr_t) const     { return _o == nullptr; }
-  bool operator!=(nullptr_t) const     { return _o != nullptr; }
+  bool operator==(std::nullptr_t) const     { return _o == nullptr; }
+  bool operator!=(std::nullptr_t) const     { return _o != nullptr; }
 
   oop& operator=(const oop& o)         { _o = o._o; return *this; }
 };

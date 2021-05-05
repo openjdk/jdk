@@ -111,7 +111,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   Node* ctrl = kit.control();
 #endif
   // Try to inline the intrinsic.
-  if ((CheckIntrinsics ? callee->intrinsic_candidate() : true) &&
+  if (callee->check_intrinsic_candidate() &&
       kit.try_to_inline(_last_predicate)) {
     const char *inline_msg = is_virtual() ? "(intrinsic, virtual)"
                                           : "(intrinsic)";
@@ -668,6 +668,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();
+
+  case vmIntrinsics::_blackhole:
+    return inline_blackhole();
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -1272,7 +1275,7 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
 
   // Check for allocation before we add nodes that would confuse
   // tightly_coupled_allocation()
-  AllocateArrayNode* alloc = tightly_coupled_allocation(dst, NULL);
+  AllocateArrayNode* alloc = tightly_coupled_allocation(dst);
 
   // Figure out the size and type of the elements we will be copying.
   const Type* src_type = src->Value(&_gvn);
@@ -1389,7 +1392,8 @@ bool LibraryCallKit::inline_string_toBytesU() {
     Node* size = _gvn.transform(new LShiftINode(length, intcon(1)));
     Node* klass_node = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_BYTE)));
     newcopy = new_array(klass_node, size, 0);  // no arguments to push
-    AllocateArrayNode* alloc = tightly_coupled_allocation(newcopy, NULL);
+    AllocateArrayNode* alloc = tightly_coupled_allocation(newcopy);
+    guarantee(alloc != NULL, "created above");
 
     // Calculate starting addresses.
     Node* src_start = array_element_address(value, offset, T_CHAR);
@@ -1407,26 +1411,22 @@ bool LibraryCallKit::inline_string_toBytesU() {
                       copyfunc_addr, copyfunc_name, TypeRawPtr::BOTTOM,
                       src_start, dst_start, ConvI2X(length) XTOP);
     // Do not let reads from the cloned object float above the arraycopy.
-    if (alloc != NULL) {
-      if (alloc->maybe_set_complete(&_gvn)) {
-        // "You break it, you buy it."
-        InitializeNode* init = alloc->initialization();
-        assert(init->is_complete(), "we just did this");
-        init->set_complete_with_arraycopy();
-        assert(newcopy->is_CheckCastPP(), "sanity");
-        assert(newcopy->in(0)->in(0) == init, "dest pinned");
-      }
-      // Do not let stores that initialize this object be reordered with
-      // a subsequent store that would make this object accessible by
-      // other threads.
-      // Record what AllocateNode this StoreStore protects so that
-      // escape analysis can go from the MemBarStoreStoreNode to the
-      // AllocateNode and eliminate the MemBarStoreStoreNode if possible
-      // based on the escape status of the AllocateNode.
-      insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
-    } else {
-      insert_mem_bar(Op_MemBarCPUOrder);
+    if (alloc->maybe_set_complete(&_gvn)) {
+      // "You break it, you buy it."
+      InitializeNode* init = alloc->initialization();
+      assert(init->is_complete(), "we just did this");
+      init->set_complete_with_arraycopy();
+      assert(newcopy->is_CheckCastPP(), "sanity");
+      assert(newcopy->in(0)->in(0) == init, "dest pinned");
     }
+    // Do not let stores that initialize this object be reordered with
+    // a subsequent store that would make this object accessible by
+    // other threads.
+    // Record what AllocateNode this StoreStore protects so that
+    // escape analysis can go from the MemBarStoreStoreNode to the
+    // AllocateNode and eliminate the MemBarStoreStoreNode if possible
+    // based on the escape status of the AllocateNode.
+    insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
   } // original reexecute is set back here
 
   C->set_has_split_ifs(true); // Has chance for split-if optimization
@@ -1454,7 +1454,7 @@ bool LibraryCallKit::inline_string_getCharsU() {
 
   // Check for allocation before we add nodes that would confuse
   // tightly_coupled_allocation()
-  AllocateArrayNode* alloc = tightly_coupled_allocation(dst, NULL);
+  AllocateArrayNode* alloc = tightly_coupled_allocation(dst);
 
   // Check if a null path was taken unconditionally.
   src = null_check(src);
@@ -1636,6 +1636,65 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
   return true;
 }
 
+//------------------------------inline_math_pow-----------------------------
+bool LibraryCallKit::inline_math_pow() {
+  Node* exp = round_double_node(argument(2));
+  const TypeD* d = _gvn.type(exp)->isa_double_constant();
+  if (d != NULL) {
+    if (d->getd() == 2.0) {
+      // Special case: pow(x, 2.0) => x * x
+      Node* base = round_double_node(argument(0));
+      set_result(_gvn.transform(new MulDNode(base, base)));
+      return true;
+    } else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
+      // Special case: pow(x, 0.5) => sqrt(x)
+      Node* base = round_double_node(argument(0));
+      Node* zero = _gvn.zerocon(T_DOUBLE);
+
+      RegionNode* region = new RegionNode(3);
+      Node* phi = new PhiNode(region, Type::DOUBLE);
+
+      Node* cmp  = _gvn.transform(new CmpDNode(base, zero));
+      // According to the API specs, pow(-0.0, 0.5) = 0.0 and sqrt(-0.0) = -0.0.
+      // So pow(-0.0, 0.5) shouldn't be replaced with sqrt(-0.0).
+      // -0.0/+0.0 are both excluded since floating-point comparison doesn't distinguish -0.0 from +0.0.
+      Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::le));
+
+      Node* if_pow = generate_slow_guard(test, NULL);
+      Node* value_sqrt = _gvn.transform(new SqrtDNode(C, control(), base));
+      phi->init_req(1, value_sqrt);
+      region->init_req(1, control());
+
+      if (if_pow != NULL) {
+        set_control(if_pow);
+        address target = StubRoutines::dpow() != NULL ? StubRoutines::dpow() :
+                                                        CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
+        const TypePtr* no_memory_effects = NULL;
+        Node* trig = make_runtime_call(RC_LEAF, OptoRuntime::Math_DD_D_Type(), target, "POW",
+                                       no_memory_effects, base, top(), exp, top());
+        Node* value_pow = _gvn.transform(new ProjNode(trig, TypeFunc::Parms+0));
+#ifdef ASSERT
+        Node* value_top = _gvn.transform(new ProjNode(trig, TypeFunc::Parms+1));
+        assert(value_top == top(), "second value must be top");
+#endif
+        phi->init_req(2, value_pow);
+        region->init_req(2, _gvn.transform(new ProjNode(trig, TypeFunc::Control)));
+      }
+
+      C->set_has_split_ifs(true); // Has chance for split-if optimization
+      set_control(_gvn.transform(region));
+      record_for_igvn(region);
+      set_result(_gvn.transform(phi));
+
+      return true;
+    }
+  }
+
+  return StubRoutines::dpow() != NULL ?
+    runtime_math(OptoRuntime::Math_DD_D_Type(), StubRoutines::dpow(),  "dpow") :
+    runtime_math(OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dpow),  "POW");
+}
+
 //------------------------------inline_math_native-----------------------------
 bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
 #define FN_PTR(f) CAST_FROM_FN_PTR(address, f)
@@ -1676,25 +1735,13 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
     return StubRoutines::dexp() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
       runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dexp),  "EXP");
-  case vmIntrinsics::_dpow: {
-    Node* exp = round_double_node(argument(2));
-    const TypeD* d = _gvn.type(exp)->isa_double_constant();
-    if (d != NULL && d->getd() == 2.0) {
-      // Special case: pow(x, 2.0) => x * x
-      Node* base = round_double_node(argument(0));
-      set_result(_gvn.transform(new MulDNode(base, base)));
-      return true;
-    }
-    return StubRoutines::dpow() != NULL ?
-      runtime_math(OptoRuntime::Math_DD_D_Type(), StubRoutines::dpow(),  "dpow") :
-      runtime_math(OptoRuntime::Math_DD_D_Type(), FN_PTR(SharedRuntime::dpow),  "POW");
-  }
 #undef FN_PTR
 
+  case vmIntrinsics::_dpow:      return inline_math_pow();
   case vmIntrinsics::_dcopySign: return inline_double_math(id);
   case vmIntrinsics::_fcopySign: return inline_math(id);
-  case vmIntrinsics::_dsignum: return inline_double_math(id);
-  case vmIntrinsics::_fsignum: return inline_math(id);
+  case vmIntrinsics::_dsignum: return Matcher::match_rule_supported(Op_SignumD) ? inline_double_math(id) : false;
+  case vmIntrinsics::_fsignum: return Matcher::match_rule_supported(Op_SignumF) ? inline_math(id) : false;
 
    // These intrinsics are not yet correctly implemented
   case vmIntrinsics::_datan2:
@@ -4395,7 +4442,7 @@ bool LibraryCallKit::inline_arraycopy() {
 
   // Check for allocation before we add nodes that would confuse
   // tightly_coupled_allocation()
-  AllocateArrayNode* alloc = tightly_coupled_allocation(dest, NULL);
+  AllocateArrayNode* alloc = tightly_coupled_allocation(dest);
 
   int saved_reexecute_sp = -1;
   JVMState* saved_jvms = arraycopy_restore_alloc_state(alloc, saved_reexecute_sp);
@@ -4431,7 +4478,7 @@ bool LibraryCallKit::inline_arraycopy() {
     // account: the null check is mandatory and if it caused an
     // uncommon trap to be emitted then the allocation can't be
     // considered tightly coupled in this context.
-    alloc = tightly_coupled_allocation(dest, NULL);
+    alloc = tightly_coupled_allocation(dest);
   }
 
   bool validated = false;
@@ -4644,8 +4691,7 @@ bool LibraryCallKit::inline_arraycopy() {
 // Helper function which determines if an arraycopy immediately follows
 // an allocation, with no intervening tests or other escapes for the object.
 AllocateArrayNode*
-LibraryCallKit::tightly_coupled_allocation(Node* ptr,
-                                           RegionNode* slow_region) {
+LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
   if (stopped())             return NULL;  // no fast path
   if (C->AliasLevel() == 0)  return NULL;  // no MergeMems around
 
@@ -4683,10 +4729,6 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr,
       IfNode* iff = ctl->in(0)->as_If();
       Node* not_ctl = iff->proj_out_or_null(1 - ctl->as_Proj()->_con);
       assert(not_ctl != NULL && not_ctl != ctl, "found alternate");
-      if (slow_region != NULL && slow_region->find_edge(not_ctl) >= 1) {
-        ctl = iff->in(0);       // This test feeds the known slow_region.
-        continue;
-      }
       // One more try:  Various low-level checks bottom out in
       // uncommon traps.  If the debug-info of the trap omits
       // any reference to the allocation, as we've already
@@ -6868,6 +6910,26 @@ bool LibraryCallKit::inline_getObjectSize() {
     }
 
     set_result(result_reg, result_val);
+  }
+
+  return true;
+}
+
+//------------------------------- inline_blackhole --------------------------------------
+//
+// Make sure all arguments to this node are alive.
+// This matches methods that were requested to be blackholed through compile commands.
+//
+bool LibraryCallKit::inline_blackhole() {
+  assert(callee()->is_static(), "Should have been checked before: only static methods here");
+  assert(callee()->is_empty(), "Should have been checked before: only empty methods here");
+  assert(callee()->holder()->is_loaded(), "Should have been checked before: only methods for loaded classes here");
+
+  // Bind call arguments as blackhole arguments to keep them alive
+  Node* bh = insert_mem_bar(Op_Blackhole);
+  uint nargs = callee()->arg_size();
+  for (uint i = 0; i < nargs; i++) {
+    bh->add_req(argument(i));
   }
 
   return true;

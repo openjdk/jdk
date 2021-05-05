@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +79,6 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
     }
   }
 
-
   // Make sure to set the oop's after the thread transition - since we can block there. No one is GC'ing
   // the JavaCallWrapper before the entry frame is on the stack.
   _callee_method = callee_method();
@@ -108,11 +108,15 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   if(clear_pending_exception) {
     _thread->clear_pending_exception();
   }
+
+  MACOS_AARCH64_ONLY(_thread->enable_wx(WXExec));
 }
 
 
 JavaCallWrapper::~JavaCallWrapper() {
   assert(_thread == JavaThread::current(), "must still be the same thread");
+
+  MACOS_AARCH64_ONLY(_thread->enable_wx(WXWrite));
 
   // restore previous handle block & Java frame linkage
   JNIHandleBlock *_old_handles = _thread->active_handles();

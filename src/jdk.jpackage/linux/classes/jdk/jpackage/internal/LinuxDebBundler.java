@@ -91,11 +91,11 @@ public class LinuxDebBundler extends LinuxPackageBundler {
                 return s;
             });
 
-    private final static String TOOL_DPKG_DEB = "dpkg-deb";
-    private final static String TOOL_DPKG = "dpkg";
-    private final static String TOOL_FAKEROOT = "fakeroot";
+    private static final String TOOL_DPKG_DEB = "dpkg-deb";
+    private static final String TOOL_DPKG = "dpkg";
+    private static final String TOOL_FAKEROOT = "fakeroot";
 
-    private final static String DEB_ARCH;
+    private static final String DEB_ARCH;
     static {
         String debArch;
         try {

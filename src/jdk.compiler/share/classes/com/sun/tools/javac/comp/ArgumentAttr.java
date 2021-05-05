@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,7 +356,7 @@ public class ArgumentAttr extends JCTree.Visitor {
         }
 
         @Override
-        final public Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
+        public final Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
             Assert.check(dt == this);
             if (deferredAttrContext.mode == AttrMode.SPECULATIVE) {
                 Type t = (resultInfo.pt == Type.recoveryType) ?
@@ -751,12 +751,9 @@ public class ArgumentAttr extends JCTree.Visitor {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof UniquePos) {
-                UniquePos that = (UniquePos)obj;
-                return pos == that.pos && source == that.source;
-            } else {
-                return false;
-            }
+            return (obj instanceof UniquePos uniquePos)
+                    && pos == uniquePos.pos
+                    && source == uniquePos.source;
         }
 
         @Override

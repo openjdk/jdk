@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8017191 8182765 8200432 8239804 8262992
+ * @bug      8017191 8182765 8200432 8239804 8250766 8262992
  * @summary  Javadoc is confused by at-link to imported classes outside of the set of generated packages
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -54,11 +54,13 @@ public class TestSeeTag extends JavadocTester {
                 <dl class="notes">
                 <dt>See Also:</dt>
                 <dd>
-                <ul class="see-list">
+                <ul class="see-list-long">
                 <li><a href="Test.InnerOne.html#foo()"><code>Test.InnerOne.foo()</code></a></li>
                 <li><a href="Test.InnerOne.html#bar(java.lang.Object)"><code>Test.InnerOne.bar(Object)</code></a></li>
                 <li><a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see">Javadoc</a></li>
                 <li><a href="Test.InnerOne.html#baz(float)"><code>something</code></a></li>
+                <li><a href="Test.InnerOne.html#format(java.lang.String,java.lang.Object...)"><code>\
+                Test.InnerOne.format(java.lang.String, java.lang.Object...)</code></a></li>
                 </ul>
                 </dd>
                 </dl>""");

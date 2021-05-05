@@ -39,7 +39,6 @@ import java.security.PrivilegedActionException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class IPAddressUtil {
     private static final int INADDR4SZ = 4;
@@ -359,7 +358,7 @@ public class IPAddressUtil {
                 .filter(a -> (a instanceof Inet6Address)
                         && address.equals(a)
                         && ((Inet6Address) a).getScopeId() != 0)
-                .collect(Collectors.toList());
+                .toList();
         List<InetAddress> result;
         try {
             result = AccessController.doPrivileged(pa);

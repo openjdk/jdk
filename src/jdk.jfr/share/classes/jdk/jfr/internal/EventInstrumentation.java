@@ -78,7 +78,7 @@ public final class EventInstrumentation {
     }
 
     static final class FieldInfo {
-        private final static Type STRING = Type.getType(String.class);
+        private static final Type STRING = Type.getType(String.class);
         final String fieldName;
         final String fieldDescriptor;
         final String internalClassName;

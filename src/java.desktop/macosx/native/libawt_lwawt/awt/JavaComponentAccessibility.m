@@ -25,9 +25,8 @@
 
 // External Java Accessibility links:
 //
-// <https://docs.oracle.com/javase/8/docs/technotes/guides/access/index.html>
-// <http://www-106.ibm.com/developerworks/library/j-access/?n-j-10172>
-// <http://archives.java.sun.com/archives/java-access.html> (Sun's mailing list for Java accessibility)
+// <https://docs.oracle.com/en/java/javase/11/access/java-accessibility-overview.html>
+// <https://www.ibm.com/able/guidelines/java/snsjavagjfc.html>
 
 #import "JavaComponentAccessibility.h"
 #import "a11y/CommonComponentAccessibility.h"

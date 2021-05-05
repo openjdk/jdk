@@ -39,7 +39,7 @@ import jdk.jfr.consumer.RecordedEvent;
  *
  */
 public final class EventFileStream extends AbstractEventStream {
-    private final static Comparator<? super RecordedEvent> EVENT_COMPARATOR = JdkJfrConsumer.instance().eventComparator();
+    private static final Comparator<? super RecordedEvent> EVENT_COMPARATOR = JdkJfrConsumer.instance().eventComparator();
 
     private final RecordingInput input;
 

@@ -91,7 +91,7 @@ public final class ChunkParser {
             return (mask & flags) != 0;
         }
     }
-    public final static RecordedEvent FLUSH_MARKER = JdkJfrConsumer.instance().newRecordedEvent(null, null, 0L, 0L);
+    public static final RecordedEvent FLUSH_MARKER = JdkJfrConsumer.instance().newRecordedEvent(null, null, 0L, 0L);
 
     private static final long CONSTANT_POOL_TYPE_ID = 1;
     private final RecordingInput input;
