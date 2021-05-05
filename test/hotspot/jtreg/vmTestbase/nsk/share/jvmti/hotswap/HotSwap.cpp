@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,8 @@ static char** names = NULL;
 static jvmtiClassDefinition* old_class_def = NULL;
 static jvmtiClassDefinition* new_class_def = NULL;
 static int classCount = 0;
+/* lock to access classCount */
+static jrawMonitorID classLoadLock = NULL;
 static int newFlag = NSK_FALSE;
 
 /* ========================================================================== */
@@ -96,26 +98,36 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
         jint *new_class_data_len, unsigned char** new_class_data) {
     jint name_len;
 
-    if (name != NULL && classCount < max_classes &&
+    if (name != NULL &&
             class_being_redefined == NULL &&
             (strcmp(name, PROFILE_CLASS_NAME) != 0) &&
             (strncmp(name, package_name, package_name_length) == 0)) {
-        NSK_DISPLAY1("ClassFileLoadHook: %s\n", name);
-        name_len = (jint) strlen(name) + 1;
-        if (!NSK_JVMTI_VERIFY(jvmti_env->Allocate(name_len, (unsigned char**) &names[classCount]))) {
+        if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorEnter(classLoadLock))) {
             nsk_jvmti_setFailStatus();
             return;
         }
-        memcpy(names[classCount], name, name_len);
-        if (!NSK_JVMTI_VERIFY(jvmti_env->Allocate(class_data_len, (unsigned char**)
-                &old_class_def[classCount].class_bytes))) {
-            nsk_jvmti_setFailStatus();
-            return;
+        // use while instead of if to exit the block on error
+        while (classCount < max_classes) {
+            NSK_DISPLAY1("ClassFileLoadHook: %s\n", name);
+            name_len = (jint)strlen(name) + 1;
+            if (!NSK_JVMTI_VERIFY(jvmti_env->Allocate(name_len, (unsigned char**)& names[classCount]))) {
+                nsk_jvmti_setFailStatus();
+                break;
+            }
+            memcpy(names[classCount], name, name_len);
+            if (!NSK_JVMTI_VERIFY(jvmti_env->Allocate(class_data_len, (unsigned char**)
+                    & old_class_def[classCount].class_bytes))) {
+                nsk_jvmti_setFailStatus();
+                break;
+            }
+            memcpy((unsigned char*)old_class_def[classCount].class_bytes,
+                class_data, class_data_len);
+            old_class_def[classCount].class_byte_count = class_data_len;
+            classCount++;
         }
-        memcpy((unsigned char*) old_class_def[classCount].class_bytes,
-            class_data, class_data_len);
-        old_class_def[classCount].class_byte_count = class_data_len;
-        classCount++;
+        if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorExit(classLoadLock))) {
+            nsk_jvmti_setFailStatus();
+        }
     }
 }
 
@@ -432,6 +444,9 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     if (!NSK_JVMTI_VERIFY(jvmti->Allocate(max_classes * sizeof(jvmtiClassDefinition),
             (unsigned char**) &old_class_def)))
+        return JNI_ERR;
+
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("classLoadLock", &classLoadLock)))
         return JNI_ERR;
 
     /* add capabilities */
