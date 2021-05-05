@@ -789,14 +789,20 @@ Java_sun_nio_ch_Net_sendOOB(JNIEnv* env, jclass this, jobject fdo, jbyte b)
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_discardOOB(JNIEnv* env, jclass clazz, jobject fdo)
 {
-    char data[8];
+    char buf[8];
     jboolean discarded = JNI_FALSE;
-    int n;
-    do {
-        n = recv(fdval(env, fdo), (char*)&data, sizeof(data), MSG_OOB);
-        if (n > 0) {
-            discarded = JNI_TRUE;
+    for (;;) {
+        int n = recv(fdval(env, fdo), (char*)&buf, sizeof(buf), MSG_OOB);
+        if (n == SOCKET_ERROR) {
+            if (WSAGetLastError() != WSAEWOULDBLOCK) {
+                JNU_ThrowIOExceptionWithLastError(env, "recv failed");
+            }
+            return discarded;
         }
-    } while (n > 0);
-    return discarded;
+        if (n <= 0)
+            return discarded;
+        if (n < (int)sizeof(buf))
+            return JNI_TRUE;
+        discarded = JNI_TRUE;
+    }
 }

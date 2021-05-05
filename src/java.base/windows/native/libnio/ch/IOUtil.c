@@ -154,7 +154,13 @@ Java_sun_nio_ch_IOUtil_drain(JNIEnv *env, jclass cl, jint fd)
     char buf[16];
     jboolean readBytes = JNI_FALSE;
     for (;;) {
-        int n = recv(fd, buf, sizeof(buf), 0);
+        int n = recv((SOCKET) fd, buf, sizeof(buf), 0);
+        if (n == SOCKET_ERROR) {
+            if (WSAGetLastError() != WSAEWOULDBLOCK) {
+                JNU_ThrowIOExceptionWithLastError(env, "recv failed");
+            }
+            return readBytes;
+        }
         if (n <= 0)
             return readBytes;
         if (n < (int)sizeof(buf))
@@ -166,8 +172,11 @@ Java_sun_nio_ch_IOUtil_drain(JNIEnv *env, jclass cl, jint fd)
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_IOUtil_write1(JNIEnv *env, jclass cl, jint fd, jbyte b)
 {
-    SOCKET s = (SOCKET) fd;
-    int n = send(s, &b, 1, 0);
+    int n = send((SOCKET) fd, &b, 1, 0);
+    if (n == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK) {
+        JNU_ThrowIOExceptionWithLastError(env, "send failed");
+        return IOS_THROWN;
+    }
     return (n == 1) ? 1 : 0;
 }
 
