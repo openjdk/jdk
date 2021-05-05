@@ -1748,6 +1748,11 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   if (addr == MAP_FAILED) {
     trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) failed (%d)", p2i(requested_addr), size, errno);
     return NULL;
+  } else if (requested_addr != NULL && addr != requested_addr) {
+    trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) succeeded, but at a different address than requested (" PTR_FORMAT "), will unmap",
+               p2i(requested_addr), size, p2i(addr));
+    ::munmap(addr, extra_size);
+    return NULL;
   }
 
   // Handle alignment.
@@ -1763,16 +1768,8 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   }
   addr = addr_aligned;
 
-  if (addr) {
-    trcVerbose("mmap-allocated " PTR_FORMAT " .. " PTR_FORMAT " (" UINTX_FORMAT " bytes)",
-      p2i(addr), p2i(addr + bytes), bytes);
-  } else {
-    if (requested_addr != NULL) {
-      trcVerbose("failed to mmap-allocate " UINTX_FORMAT " bytes at wish address " PTR_FORMAT ".", bytes, p2i(requested_addr));
-    } else {
-      trcVerbose("failed to mmap-allocate " UINTX_FORMAT " bytes at any address.", bytes);
-    }
-  }
+  trcVerbose("mmap-allocated " PTR_FORMAT " .. " PTR_FORMAT " (" UINTX_FORMAT " bytes)",
+    p2i(addr), p2i(addr + bytes), bytes);
 
   // bookkeeping
   vmembk_add(addr, size, 4*K, VMEM_MAPPED);
