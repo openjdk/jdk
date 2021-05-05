@@ -99,8 +99,8 @@ bool MetaspaceShared::_use_full_module_graph = true;
 //
 //     bm  - bitmap for relocating the above 7 regions.
 //
-// The rw, and ro regions are linearly allocated, in the order of rw->ro.
-// These regions are aligned with MetaspaceShared::reserved_space_alignment().
+// The rw and ro regions are linearly allocated, in the order of rw->ro.
+// These regions are aligned with MetaspaceShared::core_region_alignment().
 //
 // These 2 regions are populated in the following steps:
 // [0] All classes are loaded in MetaspaceShared::preload_classes(). All metadata are
@@ -361,6 +361,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
 
+  LambdaFormInvokers::serialize(soc);
   soc->do_tag(666);
 }
 
@@ -460,6 +461,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 
   SystemDictionaryShared::write_to_archive();
 
+  // Write lambform lines into archive
+  LambdaFormInvokers::dump_static_archive_invokers();
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
@@ -925,12 +928,12 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     char* cds_end =  dynamic_mapped ? dynamic_mapinfo->mapped_end() : static_mapinfo->mapped_end();
     set_shared_metaspace_range(cds_base, static_mapinfo->mapped_end(), cds_end);
     _relocation_delta = static_mapinfo->relocation_delta();
+    _requested_base_address = static_mapinfo->requested_base_address();
     if (dynamic_mapped) {
       FileMapInfo::set_shared_path_table(dynamic_mapinfo);
     } else {
       FileMapInfo::set_shared_path_table(static_mapinfo);
     }
-    _requested_base_address = static_mapinfo->requested_base_address();
   } else {
     set_shared_metaspace_range(NULL, NULL, NULL);
     UseSharedSpaces = false;
@@ -1220,7 +1223,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     // Get the simple case out of the way first:
     // no compressed class space, simple allocation.
     archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
-                                     false /* bool large */, (char*)base_address);
+                                     os::vm_page_size(), (char*)base_address);
     if (archive_space_rs.is_reserved()) {
       assert(base_address == NULL ||
              (address)archive_space_rs.base() == base_address, "Sanity");
@@ -1269,9 +1272,9 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       // via sequential file IO.
       address ccs_base = base_address + archive_space_size + gap_size;
       archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
-                                       false /* large */, (char*)base_address);
+                                       os::vm_page_size(), (char*)base_address);
       class_space_rs   = ReservedSpace(class_space_size, class_space_alignment,
-                                       false /* large */, (char*)ccs_base);
+                                       os::vm_page_size(), (char*)ccs_base);
     }
     if (!archive_space_rs.is_reserved() || !class_space_rs.is_reserved()) {
       release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
@@ -1280,7 +1283,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   } else {
     if (use_archive_base_addr && base_address != nullptr) {
       total_space_rs = ReservedSpace(total_range_size, archive_space_alignment,
-                                     false /* bool large */, (char*) base_address);
+                                     os::vm_page_size(), (char*) base_address);
     } else {
       // Reserve at any address, but leave it up to the platform to choose a good one.
       total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size);
@@ -1442,6 +1445,12 @@ void MetaspaceShared::initialize_shared_spaces() {
     SystemDictionaryShared::serialize_dictionary_headers(&rc, false);
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
+  }
+
+  // Set up LambdaFormInvokers::_lambdaform_lines for dynamic dump
+  if (DynamicDumpSharedSpaces) {
+    // Read stored LF format lines stored in static archive
+    LambdaFormInvokers::read_static_archive_invokers();
   }
 
   if (PrintSharedArchiveAndExit) {

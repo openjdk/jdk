@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public final class StaticProperty {
     private static final String SUN_BOOT_LIBRARY_PATH;
     private static final String JDK_SERIAL_FILTER;
     private static final String JAVA_IO_TMPDIR;
+    private static final String NATIVE_ENCODING;
 
     private StaticProperty() {}
 
@@ -61,6 +62,7 @@ public final class StaticProperty {
         JAVA_LIBRARY_PATH = getProperty(props, "java.library.path", "");
         SUN_BOOT_LIBRARY_PATH = getProperty(props, "sun.boot.library.path", "");
         JDK_SERIAL_FILTER = getProperty(props, "jdk.serialFilter", null);
+        NATIVE_ENCODING = getProperty(props, "native.encoding");
     }
 
     private static String getProperty(Properties props, String key) {
@@ -176,9 +178,22 @@ public final class StaticProperty {
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
      *
-     * @return the {@code user.name} system property
+     * @return the {@code jdk.serialFilter} system property
      */
     public static String jdkSerialFilter() {
         return JDK_SERIAL_FILTER;
+    }
+
+    /**
+     * Return the {@code native.encoding} system property.
+     *
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     *
+     * @return the {@code native.encoding} system property
+     */
+    public static String nativeEncoding() {
+        return NATIVE_ENCODING;
     }
 }

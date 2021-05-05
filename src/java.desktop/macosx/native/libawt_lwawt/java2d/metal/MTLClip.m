@@ -156,7 +156,8 @@ static void initTemplatePipelineDescriptors() {
         }
 
         _clipShapeSize = MTLSizeMake(0, 0, 1);
-        _clipShapeOrigin = MTLOriginMake(0, 0, 0);
+        // Use out of bounds origin to correctly calculate shape boundaries
+        _clipShapeOrigin = MTLOriginMake((NSUInteger) dstOps->width, (NSUInteger) dstOps->height, 0);
 
         MTLRenderPassDescriptor* clearPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
         // set color buffer properties

@@ -260,8 +260,8 @@ public class ClassFileReader implements Closeable {
             DirectoryIterator() throws IOException {
                 List<Path> paths = null;
                 try (Stream<Path> stream = Files.walk(path, Integer.MAX_VALUE)) {
-                    paths = stream.filter(ClassFileReader::isClass)
-                                  .collect(Collectors.toList());
+                    paths = stream.filter(ClassFileReader::isClass).toList();
+
                 }
                 this.entries = paths;
                 this.index = 0;

@@ -2025,7 +2025,7 @@ OptoReg::Name Matcher::find_receiver() {
   return OptoReg::as_OptoReg(regs.first());
 }
 
-bool Matcher::is_vshift_con_pattern(Node *n, Node *m) {
+bool Matcher::is_vshift_con_pattern(Node* n, Node* m) {
   if (n != NULL && m != NULL) {
     return VectorNode::is_vector_shift(n) &&
            VectorNode::is_vector_shift_count(m) && m->in(1)->is_Con();

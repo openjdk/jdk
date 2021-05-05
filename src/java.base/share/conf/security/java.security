@@ -634,7 +634,8 @@ sun.security.krb5.maxReferrals=5
 #
 #
 jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
-    RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224
+    RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224, \
+    SHA1 jdkCA & usage SignedJAR & denyAfter 2019-01-01
 
 #
 # Legacy algorithms for certification path (CertPath) processing and
@@ -698,7 +699,7 @@ jdk.security.legacyAlgorithms=SHA1, \
 # See "jdk.certpath.disabledAlgorithms" for syntax descriptions.
 #
 jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
-      DSA keySize < 1024
+      DSA keySize < 1024, SHA1 jdkCA & denyAfter 2019-01-01
 
 #
 # Algorithm restrictions for Secure Socket Layer/Transport Layer Security

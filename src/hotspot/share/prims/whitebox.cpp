@@ -251,7 +251,7 @@ WB_END
 
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(100 * granularity, granularity, false);
+  ReservedHeapSpace rhs(100 * granularity, granularity, os::vm_page_size());
   VirtualSpace vs;
   vs.initialize(rhs, 50 * granularity);
 
@@ -278,7 +278,7 @@ WB_END
 static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
                                            size_t magnitude, size_t iterations) {
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, false);
+  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, os::vm_page_size());
   VirtualSpace vs;
   if (!vs.initialize(rhs, 0)) {
     tty->print_cr("Failed to initialize VirtualSpace. Can't proceed.");
@@ -1039,7 +1039,7 @@ WB_END
 WB_ENTRY(jboolean, WB_EnqueueInitializerForCompilation(JNIEnv* env, jobject o, jclass klass, jint comp_level))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   Method* clinit = ik->class_initializer();
-  if (clinit == NULL) {
+  if (clinit == NULL || clinit->method_holder()->is_not_initialized()) {
     return false;
   }
   return WhiteBox::compile_method(clinit, comp_level, InvocationEntryBci, THREAD);

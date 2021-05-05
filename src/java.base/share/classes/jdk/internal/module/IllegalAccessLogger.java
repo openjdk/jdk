@@ -41,7 +41,6 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.WeakHashMap;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import static java.util.Collections.*;
 
 import jdk.internal.access.JavaLangAccess;
@@ -293,7 +292,7 @@ public final class IllegalAccessLogger {
         List<StackWalker.StackFrame> stack = StackWalkerHolder.INSTANCE.walk(s ->
             s.dropWhile(this::isJavaBase)
              .limit(32)
-             .collect(Collectors.toList())
+             .toList()
         );
 
         // record usage if this is the first (or not recently recorded)
