@@ -39,14 +39,15 @@ class ReservedSpace {
   size_t _size;
   size_t _noaccess_prefix;
   size_t _alignment;
+  size_t _page_size;
   bool   _special;
   int    _fd_for_heap;
  private:
   bool   _executable;
 
   // ReservedSpace
-  ReservedSpace(char* base, size_t size, size_t alignment, bool special,
-                bool executable);
+  ReservedSpace(char* base, size_t size, size_t alignment,
+                size_t page_size, bool special, bool executable);
  protected:
   // Helpers to clear and set members during initialization. Two members
   // require special treatment:
@@ -57,15 +58,13 @@ class ReservedSpace {
   //                       0 during initialization.
   void clear_members();
   void initialize_members(char* base, size_t size, size_t alignment,
-                          bool special, bool executable);
+                          size_t page_size, bool special, bool executable);
 
-  void initialize(size_t size, size_t alignment, bool large,
-                  char* requested_address,
-                  bool executable);
+  void initialize(size_t size, size_t alignment, size_t page_size,
+                  char* requested_address, bool executable);
 
-  void reserve(size_t size, size_t alignment, bool large,
-               char* requested_address,
-               bool executable);
+  void reserve(size_t size, size_t alignment, size_t page_size,
+               char* requested_address, bool executable);
  public:
   // Constructor
   ReservedSpace();
@@ -77,7 +76,7 @@ class ReservedSpace {
   // the given size is not aligned to that value, as the reservation will be
   // aligned up to the final alignment in this case.
   ReservedSpace(size_t size, size_t preferred_page_size);
-  ReservedSpace(size_t size, size_t alignment, bool large,
+  ReservedSpace(size_t size, size_t alignment, size_t page_size,
                 char* requested_address = NULL);
 
   // Accessors
@@ -85,6 +84,7 @@ class ReservedSpace {
   size_t size()            const { return _size;      }
   char*  end()             const { return _base + _size; }
   size_t alignment()       const { return _alignment; }
+  size_t page_size()       const { return _page_size; }
   bool   special()         const { return _special;   }
   bool   executable()      const { return _executable;   }
   size_t noaccess_prefix() const { return _noaccess_prefix;   }
@@ -107,8 +107,6 @@ class ReservedSpace {
   bool contains(const void* p) const {
     return (base() <= ((char*)p)) && (((char*)p) < (base() + size()));
   }
-
-  static size_t actual_reserved_page_size(const ReservedSpace& rs);
 };
 
 ReservedSpace
@@ -125,19 +123,19 @@ ReservedSpace ReservedSpace::last_part(size_t partition_size)
 // Class encapsulating behavior specific of memory space reserved for Java heap.
 class ReservedHeapSpace : public ReservedSpace {
  private:
-  void try_reserve_heap(size_t size, size_t alignment, bool large,
+  void try_reserve_heap(size_t size, size_t alignment, size_t page_size,
                         char *requested_address);
   void try_reserve_range(char *highest_start, char *lowest_start,
                          size_t attach_point_alignment, char *aligned_HBMA,
-                         char *upper_bound, size_t size, size_t alignment, bool large);
-  void initialize_compressed_heap(const size_t size, size_t alignment, bool large);
+                         char *upper_bound, size_t size, size_t alignment, size_t page_size);
+  void initialize_compressed_heap(const size_t size, size_t alignment, size_t page_size);
   // Create protection page at the beginning of the space.
   void establish_noaccess_prefix();
  public:
   // Constructor. Tries to find a heap that is good for compressed oops.
   // heap_allocation_directory is the path to the backing memory for Java heap. When set, Java heap will be allocated
   // on the device which is managed by the file system where the directory resides.
-  ReservedHeapSpace(size_t size, size_t forced_base_alignment, bool large, const char* heap_allocation_directory = NULL);
+  ReservedHeapSpace(size_t size, size_t forced_base_alignment, size_t page_size, const char* heap_allocation_directory = NULL);
   // Returns the base to be used for compression, i.e. so that null can be
   // encoded safely and implicit null checks can work.
   char *compressed_oop_base() const { return _base - _noaccess_prefix; }
@@ -148,7 +146,7 @@ class ReservedHeapSpace : public ReservedSpace {
 class ReservedCodeSpace : public ReservedSpace {
  public:
   // Constructor
-  ReservedCodeSpace(size_t r_size, size_t rs_align, bool large);
+  ReservedCodeSpace(size_t r_size, size_t rs_align, size_t page_size);
 };
 
 // VirtualSpace is data structure for committing a previously reserved address range in smaller chunks.
