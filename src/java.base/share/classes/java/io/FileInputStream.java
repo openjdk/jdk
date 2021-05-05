@@ -281,7 +281,7 @@ public class FileInputStream extends InputStream
 
         long size = length - position();
         if (size > (long) Integer.MAX_VALUE) {
-            String msg = String.format("Required array size too large: %d = %d + %d",
+            String msg = String.format("Required array size too large: %d = %d - %d",
                 size, length, position());
             throw new OutOfMemoryError(msg);
         }
