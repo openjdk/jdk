@@ -1700,14 +1700,13 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 // may not start from the requested address. Unlike Bsd mmap(), this
 // function returns NULL to indicate failure.
 static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
-  // MAP_FIXED is intentionally left out, to leave existing mappings intact.
-  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS
-      MACOS_ONLY(| (exec ? MAP_JIT : 0));
-#if defined(__APPLE__)
   // On macOS aarch64 MAP_JIT is required if we want to commit an executable chunk
   // later, so always reserve executable memory right from the start
   MACOS_AARCH64_ONLY(exec = true);
-#endif
+
+  // MAP_FIXED is intentionally left out, to leave existing mappings intact.
+  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS
+      MACOS_ONLY(| (exec ? MAP_JIT : 0));
 
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
   // touch an uncommitted page. Otherwise, the read/write might
