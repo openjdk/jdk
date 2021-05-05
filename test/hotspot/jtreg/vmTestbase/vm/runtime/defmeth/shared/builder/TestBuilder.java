@@ -513,8 +513,11 @@ public class TestBuilder {
      * from it.
      */
     public void run() {
+        if (!underConstruction.isEmpty()) {
+            throw new InternalError("Still under construction");
+        }
         if (tests.isEmpty()) {
-            throw new IllegalStateException("No tests to run");
+            throw new InternalError("No tests to run");
         }
 
         TestExecutor executor = prepare();

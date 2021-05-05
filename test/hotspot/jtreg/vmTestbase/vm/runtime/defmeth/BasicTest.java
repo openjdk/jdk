@@ -31,6 +31,7 @@ import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.data.*;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import vm.runtime.defmeth.shared.DefMethTest;
+import vm.runtime.defmeth.shared.executor.TestExecutor;
 
 import java.util.Map;
 
@@ -285,7 +286,8 @@ public class BasicTest extends DefMethTest {
     // disabling this test for REFLECTION and INVOKE for now until
     // loader constraint issue associated with those modes has been resolved
     @NotApplicableFor(modes = { REFLECTION, INVOKE_WITH_ARGS, INVOKE_EXACT, INVOKE_GENERIC, INDY })
-    public void testLoaderConstraint(TestBuilder b) {
+    public void testLoaderConstraint() {
+        TestBuilder b = factory.getBuilder();
         ConcreteClass A = b.clazz("A").build();
 
         Interface I = b.intf("I")
@@ -294,10 +296,10 @@ public class BasicTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().callSite(I, C, "m", "()LA;").throws_(LinkageError.class).done()
-         .test().callSite(C, C, "m", "()LA;").throws_(LinkageError.class).done()
+        b.test().callSite(I, C, "m", "()LA;").throws_(LinkageError.class).done();
+        b.test().callSite(C, C, "m", "()LA;").throws_(LinkageError.class).done();
 
-         .prepare(new TestBuilder.LoaderConstructor() {
+        TestExecutor executor = b.prepare(new TestBuilder.LoaderConstructor() {
                 @Override
                 public MemoryClassLoader construct(Map<String, byte[]> classFiles) {
                     final byte[] cfI = classFiles.get("I");
@@ -342,5 +344,7 @@ public class BasicTest extends DefMethTest {
                     return l2;
                 }
             });
+
+        executor.run();
     }
 }

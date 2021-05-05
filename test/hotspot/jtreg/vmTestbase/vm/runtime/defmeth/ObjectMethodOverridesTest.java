@@ -99,9 +99,6 @@ public class ObjectMethodOverridesTest extends DefMethTest {
                 .build()
             .build();
 
-        b.test().callSite(I, C, "m", "()V")
-                .ignoreResult()
-                .done();
         b.test().callSite(C, C, "m", "()V")
                 .ignoreResult()
                 .done();
@@ -179,8 +176,19 @@ public class ObjectMethodOverridesTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().callSite(I, C, "toString", "()Ljava/lang/String;");
-        b.test().callSite(C, C, "toString", "()Ljava/lang/String;");
+        if (factory.getExecutionMode() == "REFLECTION") {
+            // Class.get*Method() don't find any implicitly declared method from Object on interfaces.
+            b.test().callSite(I, C, "toString", "()Ljava/lang/String;")
+                    .throws_(NoSuchMethodException.class)
+                    .done();
+        } else {
+            b.test().callSite(I, C, "toString", "()Ljava/lang/String;")
+                    .ignoreResult()
+                    .done();
+        }
+        b.test().callSite(C, C, "toString", "()Ljava/lang/String;")
+                .ignoreResult()
+                .done();
     }
 
     /* final void wait() */

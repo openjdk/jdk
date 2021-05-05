@@ -194,7 +194,8 @@ public abstract class DefMethTest extends TestBase {
         Class<? extends DefMethTest> test = this.getClass();
 
         int acc = m.getModifiers();
-        if (!Modifier.isPublic(acc) || Modifier.isStatic(acc) || m.getParameterTypes().length != 0) {
+        if (!Modifier.isPublic(acc) || Modifier.isStatic(acc) ||
+            m.getParameterTypes().length != 0 && !requiresTestBuilder(m)) {
             return false; // not a test
         }
 
