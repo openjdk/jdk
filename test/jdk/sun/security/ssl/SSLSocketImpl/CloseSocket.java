@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 
 public class CloseSocket extends SSLSocketTemplate {
 
-    private static Thread clientThread = null;
+    private volatile Thread clientThread = null;
 
     @Override
     protected void runClientApplication(SSLSocket socket) throws Exception {
@@ -65,7 +65,7 @@ public class CloseSocket extends SSLSocketTemplate {
     @Override
     protected void runServerApplication(SSLSocket socket) throws Exception {
         System.out.println("Server accepted connection");
-        while(!isHandshakeStarted()) {
+        while (!isHandshakeStarted()) {
             // wait for a short time before checking again if handshake started
             TimeUnit.MILLISECONDS.sleep(100);
         }
