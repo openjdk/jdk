@@ -1039,7 +1039,7 @@ public class HtmlDocletWriter {
         Content labelContent = plainOrCode(isLinkPlain,
                 commentTagsToContent(see, element, label, context));
 
-        //The text from the @see tag.  We will output this text when a label is not specified.
+        // The signature from the @see tag. We will output this text when a label is not specified.
         Content text = plainOrCode(isLinkPlain,
                 Text.of(Objects.requireNonNullElse(ch.getReferencedSignature(see), "")));
 

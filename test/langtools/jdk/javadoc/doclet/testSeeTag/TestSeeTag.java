@@ -43,6 +43,7 @@ public class TestSeeTag extends JavadocTester {
     @Test
     public void test() {
         javadoc("-d", "out",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -55,7 +56,9 @@ public class TestSeeTag extends JavadocTester {
                 <dd><a href="Test.InnerOne.html#foo()"><code>Test.InnerOne.foo()</code></a>,\s
                 <a href="Test.InnerOne.html#bar(java.lang.Object)"><code>Test.InnerOne.bar(Object)</code></a>,\s
                 <a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see">Javadoc</a>,\s
-                <a href="Test.InnerOne.html#baz(float)"><code>something</code></a></dd>
+                <a href="Test.InnerOne.html#baz(float)"><code>something</code></a>,\s
+                <a href="Test.InnerOne.html#format(java.lang.String,java.lang.Object...)"><code>Test\
+                .InnerOne.format(java.lang.String, java.lang.Object...)</code></a></dd>
                 </dl>""");
 
         checkOutput("pkg/Test.html", false,
