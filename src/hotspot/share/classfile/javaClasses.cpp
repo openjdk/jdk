@@ -415,7 +415,7 @@ Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRA
 
   jstring js = NULL;
   {
-    JavaThread* thread = THREAD->as_Java_thread();
+    JavaThread* thread = THREAD;
     HandleMark hm(thread);
     ThreadToNativeFromVM ttn(thread);
     js = (_to_java_string_fn)(thread->jni_environment(), str);
@@ -441,7 +441,7 @@ char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
   }
 
   char *native_platform_string;
-  { JavaThread* thread = THREAD->as_Java_thread();
+  { JavaThread* thread = THREAD;
     jstring js = (jstring) JNIHandles::make_local(thread, java_string());
     bool is_copy;
     HandleMark hm(thread);
@@ -521,6 +521,14 @@ Handle java_lang_String::char_converter(Handle java_string, jchar from_char, jch
 }
 
 jchar* java_lang_String::as_unicode_string(oop java_string, int& length, TRAPS) {
+  jchar* result = as_unicode_string_or_null(java_string, length);
+  if (result == NULL) {
+    THROW_MSG_0(vmSymbols::java_lang_OutOfMemoryError(), "could not allocate Unicode string");
+  }
+  return result;
+}
+
+jchar* java_lang_String::as_unicode_string_or_null(oop java_string, int& length) {
   typeArrayOop value  = java_lang_String::value(java_string);
                length = java_lang_String::length(java_string, value);
   bool      is_latin1 = java_lang_String::is_latin1(java_string);
@@ -536,8 +544,6 @@ jchar* java_lang_String::as_unicode_string(oop java_string, int& length, TRAPS) 
         result[index] = ((jchar) value->byte_at(index)) & 0xff;
       }
     }
-  } else {
-    THROW_MSG_0(vmSymbols::java_lang_OutOfMemoryError(), "could not allocate Unicode string");
   }
   return result;
 }
@@ -1087,7 +1093,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
 
     // Set the module field in the java_lang_Class instance.  This must be done
     // after the mirror is set.
-    set_mirror_module_field(THREAD->as_Java_thread(), k, mirror, module);
+    set_mirror_module_field(THREAD, k, mirror, module);
 
     if (comp_mirror() != NULL) {
       // Set after k->java_mirror() is published, because compiled code running
@@ -1394,7 +1400,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   k->set_java_mirror(mirror);
 
-  set_mirror_module_field(THREAD->as_Java_thread(), k, mirror, module);
+  set_mirror_module_field(THREAD, k, mirror, module);
 
   if (log_is_enabled(Trace, cds, heap, mirror)) {
     ResourceMark rm(THREAD);
@@ -2403,7 +2409,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
   st->cr();
 
   // Now print the stack trace.
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   while (throwable.not_null()) {
     objArrayHandle result (THREAD, objArrayOop(backtrace(throwable())));
     if (result.is_null()) {
@@ -2468,7 +2474,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
   clear_stacktrace(throwable());
 
   int max_depth = MaxJavaStackTraceDepth;
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
 
   BacktraceBuilder bt(CHECK);
 
@@ -2604,7 +2610,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
     return;
   }
 
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   PreserveExceptionMark pm(THREAD);
 
   fill_in_stack_trace(throwable, method, THREAD);
@@ -2631,7 +2637,7 @@ void java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(Handle t
 
   assert(throwable->is_a(vmClasses::Throwable_klass()), "sanity check");
 
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
   objArrayHandle backtrace (THREAD, (objArrayOop)java_lang_Throwable::backtrace(throwable()));
   assert(backtrace.not_null(), "backtrace should have been preallocated");
@@ -2699,9 +2705,9 @@ void java_lang_Throwable::get_stack_trace_elements(Handle throwable,
 }
 
 bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method, int* bci) {
-  Thread* THREAD = Thread::current();
-  objArrayHandle result(THREAD, objArrayOop(backtrace(throwable)));
-  BacktraceIterator iter(result, THREAD);
+  JavaThread* current = JavaThread::current();
+  objArrayHandle result(current, objArrayOop(backtrace(throwable)));
+  BacktraceIterator iter(result, current);
   // No backtrace available.
   if (!iter.repeat()) return false;
 
@@ -2713,7 +2719,7 @@ bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method,
   }
 
   // Get first backtrace element.
-  BacktraceElement bte = iter.next(THREAD);
+  BacktraceElement bte = iter.next(current);
 
   InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(bte._mirror()));
   assert(holder != NULL, "first element should be non-null");

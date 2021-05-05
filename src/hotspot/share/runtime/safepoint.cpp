@@ -901,7 +901,7 @@ void ThreadSafepointState::print_on(outputStream *st) const {
 // Process pending operation.
 void ThreadSafepointState::handle_polling_page_exception() {
   JavaThread* self = thread();
-  assert(self == Thread::current()->as_Java_thread(), "must be self");
+  assert(self == JavaThread::current(), "must be self");
 
   // Step 1: Find the nmethod from the return address
   address real_return_addr = self->saved_exception_pc();

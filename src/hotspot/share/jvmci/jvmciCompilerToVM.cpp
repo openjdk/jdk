@@ -133,7 +133,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));       \
   ThreadInVMfromNative __tiv(thread);                             \
   HandleMarkCleaner __hm(thread);                                 \
-  Thread* THREAD = thread;                                        \
+  JavaThread* THREAD = thread;                                        \
   debug_only(VMNativeEntryWrapper __vew;)
 
 // Native method block that transitions current thread to '_thread_in_vm'.

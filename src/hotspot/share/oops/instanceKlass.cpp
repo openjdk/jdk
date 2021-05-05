@@ -225,27 +225,27 @@ bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
 
 // Called to verify that k is a permitted subclass of this class
 bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
-  Thread* THREAD = Thread::current();
+  Thread* current = Thread::current();
   assert(k != NULL, "sanity check");
   assert(_permitted_subclasses != NULL && _permitted_subclasses != Universe::the_empty_short_array(),
          "unexpected empty _permitted_subclasses array");
 
   if (log_is_enabled(Trace, class, sealed)) {
-    ResourceMark rm(THREAD);
+    ResourceMark rm(current);
     log_trace(class, sealed)("Checking for permitted subclass of %s in %s",
                              k->external_name(), this->external_name());
   }
 
   // Check that the class and its super are in the same module.
   if (k->module() != this->module()) {
-    ResourceMark rm(THREAD);
+    ResourceMark rm(current);
     log_trace(class, sealed)("Check failed for same module of permitted subclass %s and sealed class %s",
                              k->external_name(), this->external_name());
     return false;
   }
 
   if (!k->is_public() && !is_same_class_package(k)) {
-    ResourceMark rm(THREAD);
+    ResourceMark rm(current);
     log_trace(class, sealed)("Check failed, subclass %s not public and not in the same package as sealed class %s",
                              k->external_name(), this->external_name());
     return false;
@@ -805,7 +805,7 @@ void InstanceKlass::eager_initialize_impl() {
   EXCEPTION_MARK;
   HandleMark hm(THREAD);
   Handle h_init_lock(THREAD, init_lock());
-  ObjectLocker ol(h_init_lock, THREAD->as_Java_thread());
+  ObjectLocker ol(h_init_lock, THREAD);
 
   // abort if someone beat us to the initialization
   if (!is_not_initialized()) return;  // note: not equivalent to is_initialized()
@@ -894,7 +894,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 
   // Timing
   // timer handles recursion
-  JavaThread* jt = THREAD->as_Java_thread();
+  JavaThread* jt = THREAD;
 
   // link super class before linking this class
   Klass* super_klass = super();
@@ -996,7 +996,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 #endif
       set_init_state(linked);
       if (JvmtiExport::should_post_class_prepare()) {
-        JvmtiExport::post_class_prepare(THREAD->as_Java_thread(), this);
+        JvmtiExport::post_class_prepare(THREAD, this);
       }
     }
   }
@@ -1060,7 +1060,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
   bool wait = false;
 
-  JavaThread* jt = THREAD->as_Java_thread();
+  JavaThread* jt = THREAD;
 
   // refer to the JVM book page 47 for description of steps
   // Step 1
@@ -1206,7 +1206,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
 void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS) {
   Handle h_init_lock(THREAD, init_lock());
   if (h_init_lock() != NULL) {
-    ObjectLocker ol(h_init_lock, THREAD->as_Java_thread());
+    ObjectLocker ol(h_init_lock, THREAD);
     set_init_thread(NULL); // reset _init_thread before changing _init_state
     set_init_state(state);
     fence_and_clear_init_lock();
@@ -1431,7 +1431,7 @@ Klass* InstanceKlass::array_klass(int n, TRAPS) {
   // Need load-acquire for lock-free read
   if (array_klasses_acquire() == NULL) {
     ResourceMark rm(THREAD);
-    JavaThread *jt = THREAD->as_Java_thread();
+    JavaThread *jt = THREAD;
     {
       // Atomic creation of array_klasses
       MutexLocker ma(THREAD, MultiArray_lock);
@@ -3644,11 +3644,10 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
         info_stream.print(" source: %s", cfs->source());
       }
     } else if (loader_data == ClassLoaderData::the_null_class_loader_data()) {
-      Thread* THREAD = Thread::current();
-      Klass* caller =
-            THREAD->is_Java_thread()
-                ? THREAD->as_Java_thread()->security_get_caller_class(1)
-                : NULL;
+      Thread* current = Thread::current();
+      Klass* caller = current->is_Java_thread() ?
+        current->as_Java_thread()->security_get_caller_class(1):
+        NULL;
       // caller can be NULL, for example, during a JVMTI VM_Init hook
       if (caller != NULL) {
         info_stream.print(" source: instance of %s", caller->external_name());
