@@ -53,7 +53,7 @@ Java_sun_nio_ch_WEPoll_dataOffset(JNIEnv* env, jclass clazz)
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_WEPoll_create(JNIEnv *env, jclass clazz) {
     HANDLE h = epoll_create1(0);
-    if (h < 0) {
+    if (h == NULL) {
         JNU_ThrowIOExceptionWithLastError(env, "epoll_create1 failed");
     }
     return ptr_to_jlong(h);
