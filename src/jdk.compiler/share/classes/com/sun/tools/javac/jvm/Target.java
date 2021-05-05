@@ -194,4 +194,10 @@ public enum Target {
     public boolean hasSealedClasses() {
         return compareTo(JDK1_15) >= 0;
     }
+
+    /** Is the ACC_STRICT bit redundant and obsolete
+     */
+    public boolean obsoleteAccStrict() {
+        return compareTo(JDK1_17) >= 0;
+    }
 }

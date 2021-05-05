@@ -1699,8 +1699,8 @@ public class ClassWriter extends ClassFile {
         int result = (int)flags;
 
         // Elide strictfp bit in class files
-        if (Feature.REDUNDANT_STRICTFP.allowedInSource(source))
-            result = result & ~STRICTFP;
+        if (target.obsoleteAccStrict())
+            result &= ~STRICTFP;
 
         if ((flags & BRIDGE) != 0)
             result |= ACC_BRIDGE;

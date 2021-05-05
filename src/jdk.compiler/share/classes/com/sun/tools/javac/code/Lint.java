@@ -118,7 +118,7 @@ public class Lint
             if (source.compareTo(Source.JDK9) >= 0) {
                 values.add(LintCategory.DEP_ANN);
             }
-            if (source.compareTo(Source.JDK17) >= 0) {
+            if (Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source)) {
                 values.add(LintCategory.STRICTFP);
             }
             values.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);

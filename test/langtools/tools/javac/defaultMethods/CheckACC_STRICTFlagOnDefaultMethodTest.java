@@ -26,7 +26,7 @@
  * @bug 8012723
  * @summary strictfp interface misses strictfp modifer on default method
  * @modules jdk.jdeps/com.sun.tools.classfile
- * @compile -source 16 CheckACC_STRICTFlagOnDefaultMethodTest.java
+ * @compile -source 16 -target 16 CheckACC_STRICTFlagOnDefaultMethodTest.java
  * @run main CheckACC_STRICTFlagOnDefaultMethodTest
  */
 

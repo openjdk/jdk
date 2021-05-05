@@ -28,7 +28,8 @@
  * @compile --release 16 TestStrictfpRetention.java StrictfpInSource.java
  * @compile         -processor   TestStrictfpRetention --release 16                       StrictfpHost.java
  * @compile/process -processor   TestStrictfpRetention --release 16  -proc:only           StrictfpHost
- * @compile         -processor   TestStrictfpRetention                                    StrictfpHost.java
+ * @compile         -processor   TestStrictfpRetention               -proc:only           StrictfpHost.java
+ * @compile         -processor   TestStrictfpRetention -source 16                         StrictfpHost.java
  * @compile/process -processor   TestStrictfpRetention              -AstrictfpNotExpected StrictfpHost
  */
 
@@ -60,6 +61,9 @@ import static javax.lang.model.element.Modifier.*;
  * elements is as expected in the four combinations:
  *
  * (source, class file) X (--release 16, current release)
+ *
+ * As well as the mixed combination of -source 16 and current release
+ * as the implicit target.
  */
 @SupportedOptions("strictfpNotExpected")
 @SupportedAnnotationTypes("StrictfpInSource")

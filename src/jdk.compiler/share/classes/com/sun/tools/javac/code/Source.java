@@ -224,7 +224,6 @@ public enum Source {
         REIFIABLE_TYPES_INSTANCEOF(JDK16, Fragments.FeatureReifiableTypesInstanceof, DiagKind.PLURAL),
         RECORDS(JDK16, Fragments.FeatureRecords, DiagKind.PLURAL),
         SEALED_CLASSES(JDK17, Fragments.FeatureSealedClasses, DiagKind.PLURAL),
-        // todo: will need to supplement/replace with target feature for writing out classes
         REDUNDANT_STRICTFP(JDK17),
         ;
 

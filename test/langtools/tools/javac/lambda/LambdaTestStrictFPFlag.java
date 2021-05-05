@@ -26,7 +26,7 @@
  * @bug 8046060
  * @summary Different results of floating point multiplication for lambda code block
  * @modules jdk.jdeps/com.sun.tools.classfile
- * @compile -source 16 LambdaTestStrictFPFlag.java
+ * @compile -source 16 -target 16 LambdaTestStrictFPFlag.java
  * @run main LambdaTestStrictFPFlag
  */
 
