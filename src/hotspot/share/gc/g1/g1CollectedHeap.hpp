@@ -499,10 +499,13 @@ private:
   //   otherwise it's for a failed allocation.
   // - if clear_all_soft_refs is true, all soft references should be
   //   cleared during the GC.
+  // - if do_maximum_compaction is true, full gc will do a maximally
+  //   compacting collection, leaving no dead wood.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
   bool do_full_collection(bool explicit_gc,
-                          bool clear_all_soft_refs);
+                          bool clear_all_soft_refs,
+                          bool do_maximum_compaction);
 
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   virtual void do_full_collection(bool clear_all_soft_refs);
@@ -848,8 +851,8 @@ public:
   // The parallel task queues
   G1ScannerTasksQueueSet *_task_queues;
 
-  // True iff a evacuation has failed in the current collection.
-  bool _evacuation_failed;
+  // Number of regions evacuation failed in the current collection.
+  volatile uint _num_regions_failed_evacuation;
 
   EvacuationFailedInfo* _evacuation_failed_info_array;
 
@@ -1134,7 +1137,11 @@ public:
   bool try_collect(GCCause::Cause cause);
 
   // True iff an evacuation has failed in the most-recent collection.
-  bool evacuation_failed() { return _evacuation_failed; }
+  inline bool evacuation_failed() const;
+  inline uint num_regions_failed_evacuation() const;
+  // Notify that the garbage collection encountered an evacuation failure in a
+  // region. Should only be called once per region.
+  inline void notify_region_failed_evacuation();
 
   void remove_from_old_gen_sets(const uint old_regions_removed,
                                 const uint archive_regions_removed,

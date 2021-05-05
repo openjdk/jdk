@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "aot/aotLoader.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
@@ -45,7 +45,6 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/dynamicArchive.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
@@ -64,7 +63,6 @@
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/memprofiler.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -224,10 +222,6 @@ void print_bytecode_count() {
 
 // General statistics printing (profiling ...)
 void print_statistics() {
-  if (MemProfiling) {
-    MemProfiler::disengage();
-  }
-
   if (CITime) {
     CompileBroker::print_times();
   }
@@ -271,10 +265,6 @@ void print_statistics() {
 #endif // COMPILER1
 #endif // INCLUDE_JVMCI
 #endif // COMPILER2
-
-  if (PrintAOTStatistics) {
-    AOTLoader::print_statistics();
-  }
 
   if (PrintNMethodStatistics) {
     nmethod::print_statistics();
@@ -330,6 +320,11 @@ void print_statistics() {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);
     SystemDictionary::print();
+  }
+
+  if (PrintClassLoaderDataGraphAtExit) {
+    ResourceMark rm;
+    MutexLocker mcld(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::print();
   }
 
@@ -508,7 +503,15 @@ void before_exit(JavaThread* thread) {
 
 #if INCLUDE_CDS
   if (DynamicDumpSharedSpaces) {
-    DynamicArchive::dump();
+    ExceptionMark em(thread);
+    DynamicArchive::dump(thread);
+    if (thread->has_pending_exception()) {
+      ResourceMark rm(thread);
+      oop pending_exception = thread->pending_exception();
+      log_error(cds)("ArchiveClassesAtExit has failed %s: %s", pending_exception->klass()->external_name(),
+                     java_lang_String::as_utf8_string(java_lang_Throwable::message(pending_exception)));
+      thread->clear_pending_exception();
+    }
   }
 #endif
 

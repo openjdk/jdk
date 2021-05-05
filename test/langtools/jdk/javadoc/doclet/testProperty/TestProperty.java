@@ -77,9 +77,9 @@ public class TestProperty extends JavadocTester {
 
                 // no tab classes should be used in the property table
                 """
-                    <div class="col-first even-row-color"><code><a href="ObjectProperty.html" title="clas\
-                    s in pkg">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj<\
-                    /a>[]&gt;</code></div>
+                    <div class="col-first even-row-color"><code>final <a href="ObjectProperty.html" \
+                    title="class in pkg">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in \
+                    pkg">MyObj</a>[]&gt;</code></div>
                     <div class="col-second even-row-color"><code><a href="#badProperty" class="membe\
                     r-name-link">bad</a></code></div>
                     <div class="col-last even-row-color">""",
@@ -87,9 +87,9 @@ public class TestProperty extends JavadocTester {
                 // tab classes should be used in the method table
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code><a href="ObjectProperty.html" title="class in pk\
-                    g">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj</a>[]&g\
-                    t;</code></div>
+                    ab2 method-summary-table-tab4"><code>final <a href="ObjectProperty.html" title="\
+                    class in pkg">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">My\
+                    Obj</a>[]&gt;</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#badProperty()" class="member-nam\
                     e-link">badProperty</a>()</code></div>"""

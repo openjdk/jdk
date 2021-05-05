@@ -43,7 +43,6 @@ import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -165,6 +164,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         String pkgPrefix = lastdot > 0 ? pkgName.substring(0, lastdot) : null;
         List<PackageElement> packages = new ArrayList<>(
                 filterPackages(p -> p.getQualifiedName().toString().equals(pkgPrefix)));
+        boolean hasSuperPackage = !packages.isEmpty();
 
         // add subpackages unless there are very many of them
         Pattern subPattern = Pattern.compile(pkgName.replace(".", "\\.") + "\\.\\w+");
@@ -174,8 +174,9 @@ public class PackageWriterImpl extends HtmlDocletWriter
             packages.addAll(subpackages);
         }
 
-        // only add sibling packages if we are beneath threshold, and number of siblings is beneath threshold as well
-        if (pkgPrefix != null && packages.size() <= MAX_SIBLING_PACKAGES) {
+        // only add sibling packages if there is a non-empty super package, we are beneath threshold,
+        // and number of siblings is beneath threshold as well
+        if (hasSuperPackage && pkgPrefix != null && packages.size() <= MAX_SIBLING_PACKAGES) {
             Pattern siblingPattern = Pattern.compile(pkgPrefix.replace(".", "\\.") + "\\.\\w+");
 
             List<PackageElement> siblings = filterPackages(
@@ -186,6 +187,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         }
         return packages;
     }
+
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),

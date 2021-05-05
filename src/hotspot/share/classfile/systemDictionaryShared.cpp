@@ -23,8 +23,14 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveUtils.hpp"
+#include "cds/archiveBuilder.hpp"
+#include "cds/classListParser.hpp"
+#include "cds/dynamicArchive.hpp"
+#include "cds/filemap.hpp"
+#include "cds/heapShared.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/classListParser.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -43,14 +49,8 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
-#include "memory/archiveUtils.hpp"
-#include "memory/archiveBuilder.hpp"
-#include "memory/dynamicArchive.hpp"
-#include "memory/filemap.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -1361,7 +1361,7 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
   }
   if (is_jfr_event_class(k)) {
     // We cannot include JFR event classes because they need runtime-specific
-    // instrumentation in order to work with -XX:FlightRecorderOptions=retransform=false.
+    // instrumentation in order to work with -XX:FlightRecorderOptions:retransform=false.
     // There are only a small number of these classes, so it's not worthwhile to
     // support them and make CDS more complicated.
     warn_excluded(k, "JFR event class");
@@ -1380,15 +1380,25 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
     //    class loader doesn't expect it.
     if (has_class_failed_verification(k)) {
       warn_excluded(k, "Failed verification");
+      return true;
     } else {
-      warn_excluded(k, "Not linked");
+      if (!MetaspaceShared::is_old_class(k)) {
+        warn_excluded(k, "Not linked");
+        return true;
+      }
     }
-    return true;
   }
-  if (k->major_version() < 50 /*JAVA_6_VERSION*/) {
+  if (DynamicDumpSharedSpaces && k->major_version() < 50 /*JAVA_6_VERSION*/) {
+    // In order to support old classes during dynamic dump, class rewriting needs to
+    // be reverted. This would result in more complex code and testing but not much gain.
     ResourceMark rm;
     log_warning(cds)("Pre JDK 6 class not supported by CDS: %u.%u %s",
                      k->major_version(),  k->minor_version(), k->name()->as_C_string());
+    return true;
+  }
+
+  if (MetaspaceShared::is_old_class(k) && k->is_linked()) {
+    warn_excluded(k, "Old class has been linked");
     return true;
   }
 
@@ -2195,6 +2205,19 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
 
   unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(name);
   const RunTimeSharedClassInfo* record = NULL;
+  if (DynamicArchive::is_mapped()) {
+    // Those regenerated holder classes are in dynamic archive
+    if (name == vmSymbols::java_lang_invoke_Invokers_Holder() ||
+        name == vmSymbols::java_lang_invoke_DirectMethodHandle_Holder() ||
+        name == vmSymbols::java_lang_invoke_LambdaForm_Holder() ||
+        name == vmSymbols::java_lang_invoke_DelegatingMethodHandle_Holder()) {
+      record = dynamic_dict->lookup(name, hash, 0);
+      if (record != nullptr) {
+        return record;
+      }
+    }
+  }
+
   if (!MetaspaceShared::is_shared_dynamic(name)) {
     // The names of all shared classes in the static dict must also be in the
     // static archive
@@ -2251,7 +2274,7 @@ public:
 
   void do_value(const RunTimeSharedClassInfo* record) {
     ResourceMark rm;
-    _st->print_cr("%4d: %s %s", (_index++), record->_klass->external_name(),
+    _st->print_cr("%4d: %s %s", _index++, record->_klass->external_name(),
         class_loader_name_for_shared(record->_klass));
   }
   int index() const { return _index; }
@@ -2268,7 +2291,7 @@ public:
       ResourceMark rm;
       Klass* k = record->proxy_klass_head();
       while (k != nullptr) {
-        _st->print_cr("%4d: %s %s", (++_index), k->external_name(),
+        _st->print_cr("%4d: %s %s", _index++, k->external_name(),
                       class_loader_name_for_shared(k));
         k = k->next_link();
       }

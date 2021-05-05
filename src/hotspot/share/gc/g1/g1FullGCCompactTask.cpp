@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
+#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -34,19 +35,25 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 
-class G1ResetPinnedClosure : public HeapRegionClosure {
-  G1CMBitMap* _bitmap;
+// Do work for all skip-compacting regions.
+class G1ResetSkipCompactingClosure : public HeapRegionClosure {
+  G1FullCollector* _collector;
 
 public:
-  G1ResetPinnedClosure(G1CMBitMap* bitmap) : _bitmap(bitmap) { }
+  G1ResetSkipCompactingClosure(G1FullCollector* collector) : _collector(collector) { }
 
   bool do_heap_region(HeapRegion* r) {
-    if (!r->is_pinned()) {
+    uint region_index = r->hrm_index();
+    // Only for skip-compaction regions; early return otherwise.
+    if (!_collector->is_skip_compacting(region_index)) {
+
       return false;
     }
-    assert(!r->is_starts_humongous() || _bitmap->is_marked(cast_to_oop(r->bottom())),
-           "must be, otherwise reclaimed earlier");
-    r->reset_pinned_after_full_gc();
+    assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold() ||
+         !r->is_starts_humongous() ||
+         _collector->mark_bitmap()->is_marked(cast_to_oop(r->bottom())),
+         "must be, otherwise reclaimed earlier");
+    r->reset_skip_compacting_after_full_gc();
     return false;
   }
 };
@@ -91,7 +98,7 @@ void G1FullGCCompactTask::work(uint worker_id) {
     compact_region(*it);
   }
 
-  G1ResetPinnedClosure hc(collector()->mark_bitmap());
+  G1ResetSkipCompactingClosure hc(collector());
   G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&hc, &_claimer, worker_id);
   log_task("Compaction task", worker_id, start);
 }

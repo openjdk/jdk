@@ -101,8 +101,8 @@ class outputStream;
   f(final_roots_gross,                              "Pause Final Roots (G)")           \
   f(final_roots,                                    "Pause Final Roots (N)")           \
                                                                                        \
-  f(init_update_refs_gross,                         "Pause Init  Update Refs (G)")     \
-  f(init_update_refs,                               "Pause Init  Update Refs (N)")     \
+  f(init_update_refs_gross,                         "Pause Init Update Refs (G)")      \
+  f(init_update_refs,                               "Pause Init Update Refs (N)")      \
   f(init_update_refs_manage_gclabs,                 "  Manage GCLABs")                 \
                                                                                        \
   f(conc_update_refs,                               "Concurrent Update Refs")          \

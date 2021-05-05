@@ -32,6 +32,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -2807,11 +2808,11 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, bool 
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
     // we may safely use rsp instead to perform the stack watermark check.
-    cmpptr(in_nmethod ? rsp : rbp, Address(thread_reg, Thread::polling_word_offset()));
+    cmpptr(in_nmethod ? rsp : rbp, Address(thread_reg, JavaThread::polling_word_offset()));
     jcc(Assembler::above, slow_path);
     return;
   }
-  testb(Address(thread_reg, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
+  testb(Address(thread_reg, JavaThread::polling_word_offset()), SafepointMechanism::poll_bit());
   jcc(Assembler::notZero, slow_path); // handshake bit set implies poll
 }
 

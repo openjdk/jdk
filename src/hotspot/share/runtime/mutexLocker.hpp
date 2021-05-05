@@ -34,7 +34,6 @@
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method and OSR queues
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
-extern Mutex*   ProtectionDomainSet_lock;        // a lock on the pd_set list in the system dictionary
 extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
@@ -67,7 +66,6 @@ extern Mutex*   NonJavaThreadsListSync_lock;     // a lock for NonJavaThreads li
 extern Monitor* CGC_lock;                        // used for coordination between
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
-extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc
 extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
 extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card
                                                  // queue shared by
@@ -260,10 +258,9 @@ class MonitorLocker: public MutexLocker {
     assert(monitor != NULL, "NULL monitor not allowed");
   }
 
-  bool wait(int64_t timeout = 0,
-            bool as_suspend_equivalent = !Mutex::_as_suspend_equivalent_flag) {
+  bool wait(int64_t timeout = 0) {
     if (_flag == Mutex::_safepoint_check_flag) {
-      return as_monitor()->wait(timeout, as_suspend_equivalent);
+      return as_monitor()->wait(timeout);
     } else {
       return as_monitor()->wait_without_safepoint_check(timeout);
     }

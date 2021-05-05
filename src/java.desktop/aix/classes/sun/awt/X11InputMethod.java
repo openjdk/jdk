@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
 
         // Replace control character with a square box
         if (chgText != null) {
-            StringBuffer newChgText = new StringBuffer();
+            StringBuilder newChgText = new StringBuilder();
             for (int i=0; i < chgText.length(); i++){
                 char c = chgText.charAt(i);
                 if (Character.isISOControl(c)){

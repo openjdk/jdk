@@ -44,6 +44,7 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"

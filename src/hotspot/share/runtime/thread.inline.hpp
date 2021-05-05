@@ -29,9 +29,12 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
+
+#if defined(__APPLE__) && defined(AARCH64)
+#include "runtime/os.hpp"
+#endif
 
 inline void Thread::set_suspend_flag(SuspendFlags f) {
   uint32_t flags;
@@ -116,20 +119,6 @@ inline WXMode Thread::enable_wx(WXMode new_state) {
 }
 #endif // __APPLE__ && AARCH64
 
-inline void JavaThread::set_ext_suspended() {
-  set_suspend_flag (_ext_suspended);
-}
-inline void JavaThread::clear_ext_suspended() {
-  clear_suspend_flag(_ext_suspended);
-}
-
-inline void JavaThread::set_external_suspend() {
-  set_suspend_flag(_external_suspend);
-}
-inline void JavaThread::clear_external_suspend() {
-  clear_suspend_flag(_external_suspend);
-}
-
 inline void JavaThread::set_pending_async_exception(oop e) {
   _pending_async_exception = e;
   _special_runtime_exit_condition = _async_exception;
@@ -191,28 +180,20 @@ inline void JavaThread::set_done_attaching_via_jni() {
 inline bool JavaThread::is_exiting() const {
   // Use load-acquire so that setting of _terminated by
   // JavaThread::exit() is seen more quickly.
-  TerminatedTypes l_terminated = (TerminatedTypes)
-      Atomic::load_acquire((volatile jint *) &_terminated);
+  TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
   return l_terminated == _thread_exiting || check_is_terminated(l_terminated);
 }
 
 inline bool JavaThread::is_terminated() const {
   // Use load-acquire so that setting of _terminated by
   // JavaThread::exit() is seen more quickly.
-  TerminatedTypes l_terminated = (TerminatedTypes)
-      Atomic::load_acquire((volatile jint *) &_terminated);
+  TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
   return check_is_terminated(l_terminated);
 }
 
 inline void JavaThread::set_terminated(TerminatedTypes t) {
   // use release-store so the setting of _terminated is seen more quickly
-  Atomic::release_store((volatile jint *) &_terminated, (jint) t);
-}
-
-// special for Threads::remove() which is static:
-inline void JavaThread::set_terminated_value() {
-  // use release-store so the setting of _terminated is seen more quickly
-  Atomic::release_store((volatile jint *) &_terminated, (jint) _thread_terminated);
+  Atomic::release_store(&_terminated, t);
 }
 
 // Allow tracking of class initialization monitor use

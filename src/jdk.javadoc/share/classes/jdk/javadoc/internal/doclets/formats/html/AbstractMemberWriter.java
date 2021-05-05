@@ -243,6 +243,9 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         if (utils.isStatic(member)) {
             code.add("static ");
         }
+        if (!utils.isEnum(member) && utils.isFinal(member)) {
+            code.add("final ");
+        }
     }
 
     /**

@@ -444,7 +444,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
 #ifndef PRODUCT
 void trace_method_handle_stub(const char* adaptername,
-                              oop mh,
+                              oopDesc* mh,
                               intptr_t* saved_regs,
                               intptr_t* entry_sp) {  }
 

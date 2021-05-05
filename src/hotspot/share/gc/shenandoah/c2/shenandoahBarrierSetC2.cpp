@@ -247,7 +247,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
   // if (!marking)
   __ if_then(marking, BoolTest::ne, zero, unlikely); {
     BasicType index_bt = TypeX_X->basic_type();
-    assert(sizeof(size_t) == type2aelembytes(index_bt), "Loading G1 SATBMarkQueue::_index with wrong size.");
+    assert(sizeof(size_t) == type2aelembytes(index_bt), "Loading Shenandoah SATBMarkQueue::_index with wrong size.");
     Node* index   = __ load(__ ctrl(), index_adr, TypeX_X, index_bt, Compile::AliasIdxRaw);
 
     if (do_load) {
@@ -360,7 +360,7 @@ void ShenandoahBarrierSetC2::shenandoah_write_barrier_pre(GraphKit* kit,
 // Helper that guards and inserts a pre-barrier.
 void ShenandoahBarrierSetC2::insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* offset,
                                                 Node* pre_val, bool need_mem_bar) const {
-  // We could be accessing the referent field of a reference object. If so, when G1
+  // We could be accessing the referent field of a reference object. If so, when Shenandoah
   // is enabled, we need to log the value in the referent field in an SATB buffer.
   // This routine performs some compile time filters and generates suitable
   // runtime filters that guard the pre-barrier code.
@@ -978,7 +978,7 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
   if (ShenandoahVerifyOptoBarriers && phase == BarrierSetC2::BeforeMacroExpand) {
     ShenandoahBarrierC2Support::verify(Compile::current()->root());
   } else if (phase == BarrierSetC2::BeforeCodeGen) {
-    // Verify G1 pre-barriers
+    // Verify Shenandoah pre-barriers
     const int marking_offset = in_bytes(ShenandoahThreadLocalData::satb_mark_queue_active_offset());
 
     Unique_Node_List visited;
@@ -1174,7 +1174,7 @@ bool ShenandoahBarrierSetC2::escape_add_to_con_graph(ConnectionGraph* conn_graph
     case Op_StoreP: {
       Node* adr = n->in(MemNode::Address);
       const Type* adr_type = gvn->type(adr);
-      // Pointer stores in G1 barriers looks like unsafe access.
+      // Pointer stores in Shenandoah barriers looks like unsafe access.
       // Ignore such stores to be able scalar replace non-escaping
       // allocations.
       if (adr_type->isa_rawptr() && adr->is_AddP()) {

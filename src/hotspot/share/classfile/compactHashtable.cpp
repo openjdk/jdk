@@ -24,11 +24,11 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/archiveBuilder.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "logging/logMessage.hpp"
-#include "memory/archiveBuilder.hpp"
-#include "memory/heapShared.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"

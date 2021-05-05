@@ -95,24 +95,6 @@ inline InstanceKlass** InstanceKlass::adr_unsafe_anonymous_host() const {
   }
 }
 
-inline address InstanceKlass::adr_fingerprint() const {
-  if (has_stored_fingerprint()) {
-    InstanceKlass** adr_host = adr_unsafe_anonymous_host();
-    if (adr_host != NULL) {
-      return (address)(adr_host + 1);
-    }
-
-    InstanceKlass* volatile* adr_impl = adr_implementor();
-    if (adr_impl != NULL) {
-      return (address)(adr_impl + 1);
-    }
-
-    return (address)end_of_nonstatic_oop_maps();
-  } else {
-    return NULL;
-  }
-}
-
 inline ObjArrayKlass* InstanceKlass::array_klasses_acquire() const {
   return Atomic::load_acquire(&_array_klasses);
 }
