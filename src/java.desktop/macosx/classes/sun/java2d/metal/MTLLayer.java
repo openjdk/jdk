@@ -29,11 +29,8 @@ import sun.java2d.NullSurfaceData;
 import sun.java2d.SurfaceData;
 import sun.lwawt.LWWindowPeer;
 import sun.lwawt.macosx.CFLayer;
-
 import java.awt.GraphicsConfiguration;
 import java.awt.Insets;
-import java.awt.Rectangle;
-import java.awt.Transparency;
 
 public class MTLLayer extends CFLayer {
 
@@ -45,7 +42,6 @@ public class MTLLayer extends CFLayer {
     private static native void validate(long layerPtr, MTLSurfaceData mtlsd);
     private static native void blitTexture(long layerPtr);
 
-    private LWWindowPeer peer;
     private int scale = 1;
 
     public MTLLayer(LWWindowPeer peer) {
@@ -53,26 +49,6 @@ public class MTLLayer extends CFLayer {
 
         setPtr(nativeCreateLayer());
         this.peer = peer;
-    }
-
-    public Rectangle getBounds() {
-        return peer.getBounds();
-    }
-
-    public GraphicsConfiguration getGraphicsConfiguration() {
-        return peer.getGraphicsConfiguration();
-    }
-
-    public boolean isOpaque() {
-        return !peer.isTranslucent();
-    }
-
-    public int getTransparency() {
-        return isOpaque() ? Transparency.OPAQUE : Transparency.TRANSLUCENT;
-    }
-
-    public Object getDestination() {
-        return peer.getTarget();
     }
 
     public SurfaceData replaceSurfaceData() {
