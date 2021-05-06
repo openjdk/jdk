@@ -110,34 +110,42 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
   if (m->is_abstract()) return abstract;
 
   // Method handle primitive?
-  vmIntrinsics::ID id = m->intrinsic_id();
-  if (id != vmIntrinsics::_none) {
+  vmIntrinsics::ID iid = m->intrinsic_id();
+  if (iid != vmIntrinsics::_none) {
     if (m->is_method_handle_intrinsic()) {
       assert(MethodHandles::is_signature_polymorphic(id), "must match an intrinsic");
       MethodKind kind = (MethodKind)(method_handle_invoke_FIRST +
-                                    vmIntrinsics::as_int(id) -
+                                    vmIntrinsics::as_int(iid) -
                                     static_cast<int>(vmIntrinsics::FIRST_MH_SIG_POLY));
       assert(kind <= method_handle_invoke_LAST, "parallel enum ranges");
       return kind;
     }
 
+    switch (iid) {
 #ifndef ZERO
-    switch (m->intrinsic_id()) {
       // Use optimized stub code for CRC32 native methods.
-      case vmIntrinsics::_updateCRC32: return java_util_zip_CRC32_update;
-      case vmIntrinsics::_updateBytesCRC32: return java_util_zip_CRC32_updateBytes;
+      case vmIntrinsics::_updateCRC32:       return java_util_zip_CRC32_update;
+      case vmIntrinsics::_updateBytesCRC32:  return java_util_zip_CRC32_updateBytes;
       case vmIntrinsics::_updateByteBufferCRC32: return java_util_zip_CRC32_updateByteBuffer;
       // Use optimized stub code for CRC32C methods.
       case vmIntrinsics::_updateBytesCRC32C: return java_util_zip_CRC32C_updateBytes;
       case vmIntrinsics::_updateDirectByteBufferCRC32C: return java_util_zip_CRC32C_updateDirectByteBuffer;
-      case vmIntrinsics::_intBitsToFloat: return java_lang_Float_intBitsToFloat;
+      case vmIntrinsics::_intBitsToFloat:    return java_lang_Float_intBitsToFloat;
       case vmIntrinsics::_floatToRawIntBits: return java_lang_Float_floatToRawIntBits;
-      case vmIntrinsics::_longBitsToDouble: return java_lang_Double_longBitsToDouble;
+      case vmIntrinsics::_longBitsToDouble:  return java_lang_Double_longBitsToDouble;
       case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
-      case vmIntrinsics::_dsin: return java_lang_math_sin;
-      case vmIntrinsics::_dcos: return java_lang_math_cos;
-      case vmIntrinsics::_dtan: return java_lang_math_tan;
-      case vmIntrinsics::_dabs: return java_lang_math_abs;
+#endif
+      case vmIntrinsics::_dsin:              return java_lang_math_sin;
+      case vmIntrinsics::_dcos:              return java_lang_math_cos;
+      case vmIntrinsics::_dtan:              return java_lang_math_tan;
+      case vmIntrinsics::_dabs:              return java_lang_math_abs;
+      case vmIntrinsics::_dlog:              return java_lang_math_log;
+      case vmIntrinsics::_dlog10:            return java_lang_math_log10;
+      case vmIntrinsics::_dpow:              return java_lang_math_pow;
+      case vmIntrinsics::_dexp:              return java_lang_math_exp;
+      case vmIntrinsics::_fmaD:              return java_lang_math_fmaD;
+      case vmIntrinsics::_fmaF:              return java_lang_math_fmaF;
+      case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
       case vmIntrinsics::_dsqrt:
         // _dsqrt will be selected for both Math::sqrt and StrictMath::sqrt, but the latter
         // is native. Keep treating it like a native method in the interpreter
@@ -145,13 +153,6 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
                (m->klass_name() == vmSymbols::java_lang_Math() ||
                 m->klass_name() == vmSymbols::java_lang_StrictMath()), "must be");
         return m->is_native() ? native : java_lang_math_sqrt;
-      case vmIntrinsics::_dlog: return java_lang_math_log;
-      case vmIntrinsics::_dlog10: return java_lang_math_log10;
-      case vmIntrinsics::_dpow: return java_lang_math_pow;
-      case vmIntrinsics::_dexp: return java_lang_math_exp;
-      case vmIntrinsics::_fmaD: return java_lang_math_fmaD;
-      case vmIntrinsics::_fmaF: return java_lang_math_fmaF;
-      case vmIntrinsics::_Reference_get: return java_lang_ref_reference_get;
       case vmIntrinsics::_Object_init:
         if (RegisterFinalizersAtInit && m->code_size() == 1) {
           // We need to execute the special return bytecode to check for
