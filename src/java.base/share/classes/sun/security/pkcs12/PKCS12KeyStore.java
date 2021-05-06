@@ -808,7 +808,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
         byte[] salt = getSalt();
         if (KnownOIDs.findMatch(algorithm) == KnownOIDs.PBEWithMD5AndDES) {
-            // PBEWithMD5AndDES requires a 8-byte salt
+            // PBES1 scheme such as PBEWithMD5AndDES requires a 8-byte salt
             salt = Arrays.copyOf(salt, 8);
         }
 
