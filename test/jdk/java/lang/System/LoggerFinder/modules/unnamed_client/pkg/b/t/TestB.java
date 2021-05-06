@@ -39,12 +39,12 @@ public class TestB {
         assertTrue(args.length == 2);
         String loggerMode = args[0];
         String loggerClassName = args[1];
-        System.err.println("TestB starting at " + DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
+        System.err.println("TestB starting at " + Instant.now());
         try {
             testLogger(loggerMode, loggerClassName);
             testLog(loggerClassName);
         } finally {
-            System.err.println("TestB finished at " + DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
+            System.err.println("TestB finished at " + Instant.now());
         }
     }
 

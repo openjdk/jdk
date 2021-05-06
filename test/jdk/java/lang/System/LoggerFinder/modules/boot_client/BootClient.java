@@ -38,12 +38,12 @@ public final class BootClient {
         String loggerMode = args[0];
         String loggerClassName = args[1];
         String underlyingLoggerClassName = args.length >= 3 ? args[2] : null;
-        System.err.println("BootClient starting at " + DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
+        System.err.println("BootClient starting at " + Instant.now());
         try {
             testLogger(loggerMode, loggerClassName, underlyingLoggerClassName);
             testLog(underlyingLoggerClassName);
         } finally {
-            System.err.println("BootClient finished at " + DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
+            System.err.println("BootClient finished at " + Instant.now());
         }
     }
 
