@@ -178,16 +178,11 @@ public abstract class JCmdTestDumpBase {
         String archiveFileName = fileName != null ? fileName :
             ("java_pid" + pid + (isStatic ? "_static.jsa" : "_dynamic.jsa"));
 
-        // Use a temporay file name
-        String tempArchiveFileName = archiveFileName;
         File archiveFile = new File(archiveFileName);
-        if (keepArchive && archiveFile.exists()) {
-             tempArchiveFileName = archiveFileName + ".jcmd";
-        }
 
         String jcmd = "VM.cds " + (isStatic ? "static_dump" : "dynamic_dump");
         if (archiveFileName  != null) {
-          jcmd +=  " " + tempArchiveFileName;
+          jcmd +=  " " + archiveFileName;
         }
 
         PidJcmdExecutor cmdExecutor = new PidJcmdExecutor(String.valueOf(pid));
@@ -195,18 +190,15 @@ public abstract class JCmdTestDumpBase {
 
         if (expectOK) {
             output.shouldHaveExitValue(0);
-            checkFileExistence(tempArchiveFileName, true);
-            runWithArchiveFile(tempArchiveFileName, useBoot, messages);
-            File tempArchiveFile = new File(tempArchiveFileName);
+            checkFileExistence(archiveFileName, true);
+            runWithArchiveFile(archiveFileName, useBoot, messages);
             if (!keepArchive) {
-		tempArchiveFile.delete();
-            } else {
-                if (tempArchiveFileName != archiveFileName) {
-                    tempArchiveFile.renameTo(archiveFile);
-                }
+		archiveFile.delete();
             }
         } else {
-            checkFileExistence(tempArchiveFileName, false);
+            if (!keepArchive) {
+                checkFileExistence(archiveFileName, false);
+            }
         }
     }
 
