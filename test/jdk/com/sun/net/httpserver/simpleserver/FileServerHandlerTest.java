@@ -62,11 +62,11 @@ public class FileServerHandlerTest {
     }
 
     @Test
-    public void testBadRequestMethod() throws Exception {
+    public void testNotImplementedRequestMethod() throws Exception {
         var handler = SimpleFileServer.createFileHandler(CWD);
         var exchange = new MethodHttpExchange("GARBAGE");
         handler.handle(exchange);
-        assertEquals(exchange.rCode, 400);
+        assertEquals(exchange.rCode, 501);
     }
 
     static class MethodHttpExchange extends StubHttpExchange {
@@ -74,19 +74,21 @@ public class FileServerHandlerTest {
         volatile int rCode;
         volatile long responseLength;
         volatile Headers responseHeaders;
+        volatile InputStream requestBody;
+
         MethodHttpExchange(String method) {
             this.method = method;
             responseHeaders = new Headers();
+            requestBody = InputStream.nullInputStream();
         }
 
         @Override public String getRequestMethod() { return method; }
-
+        @Override public Headers getResponseHeaders() { return responseHeaders; }
+        @Override public InputStream getRequestBody() { return requestBody; }
         @Override public void sendResponseHeaders(int rCode, long responseLength) {
             this.rCode = rCode;
             this.responseLength = responseLength;
         }
-
-        @Override public Headers getResponseHeaders() { return responseHeaders; }
     }
 
     static class StubHttpExchange extends HttpExchange {

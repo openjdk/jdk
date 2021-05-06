@@ -67,7 +67,8 @@ public final class FileServerHandler implements HttpHandler {
             throw new IllegalArgumentException("Path is not a directory: " + root);
         if (!Files.isReadable(root))
             throw new IllegalArgumentException("Path is not readable: " + root);
-        if (root.getFileSystem() != FileSystems.getDefault())
+        if (root.getFileSystem() != FileSystems.getDefault()
+                || root.getFileSystem().getClass().getModule() != Object.class.getModule())
             throw new IllegalArgumentException("Path is not associated with " +
                     "the system-default file system: " + root);
         this.root = root;
@@ -79,19 +80,21 @@ public final class FileServerHandler implements HttpHandler {
     {
         var fallbackHandler =
                 HttpHandlers.handleOrElse(r -> UNSUPPORTED_METHODS.contains(r.getRequestMethod()),
-                FileServerHandler::handleNotAllowed, FileServerHandler::handleBadRequest);
+                FileServerHandler::handleNotAllowed, FileServerHandler::handleNotImplemented);
         return HttpHandlers.handleOrElse(r -> SUPPORTED_METHODS.contains(r.getRequestMethod()),
                 new FileServerHandler(root, mimeTable), fallbackHandler);
     }
 
-    static void handleBadRequest(HttpExchange exchange) throws IOException {
+    static void handleNotImplemented(HttpExchange exchange) throws IOException {
         try (exchange) {
-            exchange.sendResponseHeaders(400, -1);
+            discardRequestBody(exchange);
+            exchange.sendResponseHeaders(501, -1);
         }
     }
 
     static void handleNotAllowed(HttpExchange exchange) throws IOException {
         try (exchange) {
+            discardRequestBody(exchange);
             exchange.sendResponseHeaders(405, -1);
             exchange.getResponseHeaders().set("Allow", "HEAD, GET");
         }
@@ -147,7 +150,7 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
-    void discardRequestBody(HttpExchange exchange) throws IOException {
+    static void discardRequestBody(HttpExchange exchange) throws IOException {
         try (InputStream is = exchange.getRequestBody()) {
             is.readAllBytes();
         }
