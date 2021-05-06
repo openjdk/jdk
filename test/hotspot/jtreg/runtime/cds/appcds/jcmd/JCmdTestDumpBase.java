@@ -193,7 +193,7 @@ public abstract class JCmdTestDumpBase {
             checkFileExistence(archiveFileName, true);
             runWithArchiveFile(archiveFileName, useBoot, messages);
             if (!keepArchive) {
-		archiveFile.delete();
+                archiveFile.delete();
             }
         } else {
             if (!keepArchive) {
