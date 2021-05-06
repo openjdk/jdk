@@ -55,10 +55,14 @@ static void throwUnixException(JNIEnv* env, int errnum) {
 int fcopyfile_callback(int what, int stage, copyfile_state_t state,
     const char* src, const char* dst, void* cancel)
 {
-    if (what == COPYFILE_COPY_DATA && stage == COPYFILE_PROGRESS &&
-        *((int*)cancel) != 0) {
-        // errno will be set to ECANCELED
-        return COPYFILE_QUIT;
+    if (what == COPYFILE_COPY_DATA) {
+        if (stage == COPYFILE_ERR
+                || (stage == COPYFILE_PROGRESS && *((int*)cancel) != 0)) {
+            // errno will be set to ECANCELED if the operation is cancelled,
+            // or to the appropriate error number if there is an error,
+            // but in either case we need to quit.
+            return COPYFILE_QUIT;
+        }
     }
     return COPYFILE_CONTINUE;
 }
