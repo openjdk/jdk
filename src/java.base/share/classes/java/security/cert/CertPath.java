@@ -182,7 +182,7 @@ public abstract class CertPath implements Serializable {
             return true;
 
         return other instanceof CertPath that
-                && this.type.equals(that.getType())
+                && that.getType().equals(this.type)
                 && this.getCertificates().equals(that.getCertificates());
     }
 

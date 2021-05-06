@@ -171,9 +171,9 @@ public class EllipticCurve {
         if (this == obj) return true;
 
         return obj instanceof EllipticCurve other
-                && (field.equals(other.field)
+                && field.equals(other.field)
                 && a.equals(other.a)
-                && b.equals(other.b));
+                && b.equals(other.b);
     }
 
     /**
