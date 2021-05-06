@@ -46,7 +46,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.RELEASE;
@@ -411,8 +410,11 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         debianFiles.add(new DebianFile(
                 configDir.resolve("postrm"),
                 "resource.deb-postrm-script").setExecutable());
+        
+        final String installDir = LINUX_INSTALL_DIR.fetchFrom(params);
 
-        if (!StandardBundlerParam.isRuntimeInstaller(params)) {
+        if (!StandardBundlerParam.isRuntimeInstaller(params)
+                || (isInstallDirInUsrTree(installDir) || installDir.startsWith("/usr/"))) {
             debianFiles.add(new DebianFile(
                     getConfig_CopyrightFile(params),
                     "resource.copyright-file"));
