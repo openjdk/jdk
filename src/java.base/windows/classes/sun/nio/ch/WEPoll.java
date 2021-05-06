@@ -68,13 +68,16 @@ class WEPoll {
     static final int EPOLLHUP  = (1 << 4);
 
     // flags
-    static final int EPOLLONESHOT   = (1 << 31);
+    static final int EPOLLONESHOT = (1 << 31);
 
     /**
      * Allocates a poll array to handle up to {@code count} events.
      */
     static long allocatePollArray(int count) {
-        return UNSAFE.allocateMemory(count * SIZEOF_EPOLLEVENT);
+        long size = (long) count * SIZEOF_EPOLLEVENT;
+        long base = UNSAFE.allocateMemory(size);
+        UNSAFE.setMemory(base, size, (byte) 0);
+        return base;
     }
 
     /**
@@ -96,6 +99,16 @@ class WEPoll {
      */
     static long getSocket(long eventAddress) {
         return UNSAFE.getLong(eventAddress + OFFSETOF_SOCK);
+    }
+
+    /**
+     * Return event->data.socket as an int file descriptor
+     */
+    static int getDescriptor(long eventAddress) {
+        long s = getSocket(eventAddress);
+        int fd = (int) s;
+        assert ((long) fd) == s;
+        return fd;
     }
 
     /**

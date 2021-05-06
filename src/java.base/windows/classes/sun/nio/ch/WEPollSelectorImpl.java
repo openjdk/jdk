@@ -166,7 +166,7 @@ class WEPollSelectorImpl extends SelectorImpl {
         int numKeysUpdated = 0;
         for (int i = 0; i < numEntries; i++) {
             long event = WEPoll.getEvent(pollArrayAddress, i);
-            int fd = (int) WEPoll.getSocket(event);
+            int fd = WEPoll.getDescriptor(event);
             if (fd == fd0Val) {
                 interrupted = true;
             } else {
