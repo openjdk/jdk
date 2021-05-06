@@ -75,7 +75,7 @@ public abstract class JCmdTestDumpBase {
     public static final boolean EXPECT_PASS = true;
     public static final boolean EXPECT_FAIL = !EXPECT_PASS;
 
-    // If delete archive before/after test
+    // If delete the created archive after test.
     private static boolean keepArchive = false;
     public static void setKeepArchive(boolean v) { keepArchive = v; }
     public static void checkFileExistence(String fileName, boolean checkExist) throws Exception {
@@ -83,7 +83,7 @@ public abstract class JCmdTestDumpBase {
         boolean exist = file.exists();
         boolean resultIsTrue = checkExist ? exist : !exist;
         if (!resultIsTrue) {
-            throw new RuntimeException("File " + fileName +  "should " + (checkExist ?  "exist " : "not exist"));
+            throw new RuntimeException("File " + fileName +  " should " + (checkExist ?  "exist" : "not exist"));
         }
     }
 
@@ -172,51 +172,41 @@ public abstract class JCmdTestDumpBase {
         }
     }
 
-    protected static void test(String archiveFile, long pid,
+    protected static void test(String fileName, long pid,
                              boolean useBoot, boolean expectOK, String... messages) throws Exception {
         System.out.println("Expected: " + (expectOK ? "SUCCESS" : "FAIL"));
-        String fileName = archiveFile != null ? archiveFile :
+        String archiveFileName = fileName != null ? fileName :
             ("java_pid" + pid + (isStatic ? "_static.jsa" : "_dynamic.jsa"));
-        File file = new File(fileName);
-        if (!keepArchive && file.exists()) {
-            file.delete();
+
+        // Use a temporay file name
+        String tempArchiveFileName = archiveFileName;
+        File archiveFile = new File(archiveFileName);
+        if (keepArchive && archiveFile.exists()) {
+             tempArchiveFileName = archiveFileName + ".jcmd";
         }
 
         String jcmd = "VM.cds " + (isStatic ? "static_dump" : "dynamic_dump");
-        if (archiveFile  != null) {
-          jcmd +=  " " + archiveFile;
+        if (archiveFileName  != null) {
+          jcmd +=  " " + tempArchiveFileName;
         }
 
         PidJcmdExecutor cmdExecutor = new PidJcmdExecutor(String.valueOf(pid));
-        OutputAnalyzer output = null;
-        try {
-            output = cmdExecutor.execute(jcmd, true/*silent*/);
-        } catch (CommandExecutorException e) {
-            if (!expectOK) {
-                // When target archive permission changed, the exception is
-                //    "Static dump:java.io.IOException: Permission denied"  or
-                //    "executeProcess() failed: java.security.PrivilegedActionException: java.nio.file.AccessDeniedException: pid_<pid>-output.log" or
-                //     or java security related type.
-                // The printout below is just for displaying the real cause.
-                Throwable t = e.getCause();
-                if (t != null) {
-                    System.out.println("Cause: " + t);
-                }
-                return;
-            } else {
-                throw new RuntimeException("Failed with exception " + e);
-            }
-        }
+        OutputAnalyzer output = cmdExecutor.execute(jcmd, true/*silent*/);
 
         if (expectOK) {
             output.shouldHaveExitValue(0);
-            checkFileExistence(fileName, true);
-            runWithArchiveFile(fileName, useBoot, messages);
+            checkFileExistence(tempArchiveFileName, true);
+            runWithArchiveFile(tempArchiveFileName, useBoot, messages);
+            File tempArchiveFile = new File(tempArchiveFileName);
             if (!keepArchive) {
-                file.delete();
+		tempArchiveFile.delete();
+            } else {
+                if (tempArchiveFileName != archiveFileName) {
+                    tempArchiveFile.renameTo(archiveFile);
+                }
             }
         } else {
-            checkFileExistence(fileName, false);
+            checkFileExistence(tempArchiveFileName, false);
         }
     }
 

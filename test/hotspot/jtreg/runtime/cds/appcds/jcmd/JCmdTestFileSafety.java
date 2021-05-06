@@ -31,9 +31,9 @@
  * @modules jdk.jcmd/sun.tools.common:+open
  * @compile ../test-classes/Hello.java JCmdTestDumpBase.java
  * @build sun.hotspot.WhiteBox
- * @build JCmdTestLingeredApp JCmdTestFileSecurity
+ * @build JCmdTestLingeredApp JCmdTestFileSafety
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JCmdTestFileSecurity
+ * @run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JCmdTestFileSafety
  */
 
 import java.io.File;
@@ -42,7 +42,7 @@ import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Platform;
 
-public class JCmdTestFileSecurity extends JCmdTestDumpBase {
+public class JCmdTestFileSafety extends JCmdTestDumpBase {
 
     static void test() throws Exception {
         buildJars();
@@ -51,47 +51,57 @@ public class JCmdTestFileSecurity extends JCmdTestDumpBase {
         long pid;
 
         int  test_count = 1;
-        // Set target dir not accessible, do static dump
-        setIsStatic(true);
-        print2ln(test_count++ + " Set target dir not accessible, do static dump");
+        String subDir    = "subdir";
+        File outputDirFile = new File(subDir);
+        if (!outputDirFile.exists()) {
+            outputDirFile.mkdir();
+        }
+        outputDirFile.setWritable(true);
+        String localFileName = subDir + File.separator + "MyStaticDump.jsa";
+        setIsStatic(true/*static*/);
+        // Set target dir not writable, do static dump
+        print2ln(test_count++ + " Set target dir not writable, do static dump");
         setKeepArchive(true);
         app = createLingeredApp("-cp", allJars);
         pid = app.getPid();
-        String localFileName = "MyStaticDump.jsa";
         test(localFileName, pid, noBoot,  EXPECT_PASS);
-        File targetFile = CDSTestUtils.getOutputDirAsFile();
-        targetFile.setWritable(false);
+        outputDirFile.setWritable(false);
         test(localFileName, pid, noBoot,  EXPECT_FAIL);
-        targetFile.setWritable(true);
         app.stopApp();
-        // MyStaticDump.jsa should exist
-        checkFileExistence(localFileName, true);
+        outputDirFile.setWritable(true);
+        checkFileExistence(localFileName, true/*exist*/);
 
-        // test dynamic versoin
-        setIsStatic(false);
-        print2ln(test_count++ + " Set target dir not accessible, do dynamic dump");
+        setIsStatic(false/*dynamic*/);
+        //  Set target dir not writable, do dynamic dump
+        print2ln(test_count++ + " Set target dir not writable, do dynamic dump");
         setKeepArchive(true);
+        outputDirFile.setWritable(true);
         app = createLingeredApp("-cp", allJars, "-XX:+RecordDynamicDumpInfo");
         pid = app.getPid();
-        localFileName = "MyDynamicDump.jsa";
+        localFileName = subDir + File.separator + "MyDynamicDump.jsa";
         test(localFileName, pid, noBoot,  EXPECT_PASS);
         app.stopApp();
         // cannot dynamically dump twice, restart
         app = createLingeredApp("-cp", allJars, "-XX:+RecordDynamicDumpInfo");
         pid = app.getPid();
-        targetFile.setWritable(false);
+        outputDirFile.setWritable(false);
         test(localFileName, pid, noBoot,  EXPECT_FAIL);
-        targetFile.setWritable(true);
+        outputDirFile.setWritable(true);
         app.stopApp();
         // MyDynamicDump.jsa should exist
         checkFileExistence(localFileName, true);
+        File rmFile = new File(localFileName);
+        rmFile.delete();
+        outputDirFile.delete();
     }
 
     public static void main(String... args) throws Exception {
         if (Platform.isWindows()) {
             // ON windows, File operation resulted difference from other OS.
+            // Set dir to not accessible for write, we still can run the test
+            // to create archive successfully which is not expected.
             throw new jtreg.SkippedException("Test skipped on Windows");
         }
-        runTest(JCmdTestFileSecurity::test);
+        runTest(JCmdTestFileSafety::test);
     }
 }
