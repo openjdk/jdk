@@ -480,7 +480,7 @@ class Parse : public GraphKit {
 
   // Insert a compiler safepoint into the graph, if there is a back-branch.
   void maybe_add_safepoint(int target_bci) {
-    if (UseLoopSafepoints && target_bci <= bci()) {
+    if (target_bci <= bci()) {
       add_safepoint();
     }
   }
