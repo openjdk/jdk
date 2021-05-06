@@ -227,7 +227,7 @@ bool InstanceKlass::has_nest_member(InstanceKlass* k, bool can_resolve, TRAPS) c
           Klass* k2 = SystemDictionary::find_instance_klass(name, h_loader, h_prot);
           // If k2 is NULL the class is not recorded in the SD with our PD so we can't
           // go any further and we will just return false, which will be handled by our caller.
-          log_trace(class, nestmates)(" - class lookup in SD %s, class is %s a nest member",
+          log_trace(class, nestmates)(" - class lookup in systemDictionary %s: class is %s a nest member",
                                       k2 == NULL ? "failed" : "succeeded",
                                       k2 != k ? "NOT" : "");
           return k2 == k;
