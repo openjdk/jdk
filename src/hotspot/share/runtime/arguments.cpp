@@ -2426,10 +2426,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return res;
       }
     } else if (match_option(option, "--illegal-access=", &tail)) {
-      warning("Option --illegal-access is deprecated and will be removed in a future release.");
-      if (!create_module_property("jdk.module.illegalAccess", tail, ExternalProperty)) {
-        return JNI_ENOMEM;
-      }
+      char version[256];
+      JDK_Version::jdk(17).to_string(version, sizeof(version));
+      warning("Ignoring option %s; support was removed in %s", option->optionString, version);
     // -agentlib and -agentpath
     } else if (match_option(option, "-agentlib:", &tail) ||
           (is_absolute_path = match_option(option, "-agentpath:", &tail))) {
