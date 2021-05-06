@@ -32,6 +32,10 @@
  * @run main TestNestHostErrorWithMultiThread
  */
 
+// HostNoNestMember.jcod must be compiled after HostNoNestMember.java
+// because the class file from the jcod file must replace the
+// HostNoNestMember class file generated from HostNoNestMember.java.
+
 import java.util.concurrent.CountDownLatch;
 
 public class TestNestHostErrorWithMultiThread {

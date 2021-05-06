@@ -22,10 +22,14 @@
  */
 
 /*
- * This is used to produce a jcod file in which we modify the
- * NestMembers attribute to make it empty. The class
- * HostNoNestMember$Member has a class HostNoNestMember as its
- * NestHost, which will trigger an error when resolving .
+ * This class was used to produce a jcod file in which the
+ * NestMembers attribute was modified to make it empty. Class
+ * HostNoNestMember$Member has class HostNoNestMember as its
+ * NestHost, which will trigger an error when resolving.
+ *
+ * When compiled, this generates a HostNoNestMember class and
+ * a HostNoNestMember$Menber class.  The former class, HostNoNestMember,
+ * gets overwritten when HostNoNestMember.jcod gets compiled.
  */
 class HostNoNestMember {
   class Member {
