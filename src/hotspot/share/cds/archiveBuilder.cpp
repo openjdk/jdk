@@ -259,6 +259,7 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   log_info(cds)("    instance classes   = %5d", _num_instance_klasses);
   log_info(cds)("    obj array classes  = %5d", _num_obj_array_klasses);
   log_info(cds)("    type array classes = %5d", _num_type_array_klasses);
+  log_info(cds)("               symbols = %5d", _symbols->length());
 
   if (DumpSharedSpaces) {
     // To ensure deterministic contents in the static archive, we need to ensure that
@@ -341,7 +342,7 @@ size_t ArchiveBuilder::estimate_archive_size() {
 
 address ArchiveBuilder::reserve_buffer() {
   size_t buffer_size = estimate_archive_size();
-  ReservedSpace rs(buffer_size, MetaspaceShared::core_region_alignment(), false);
+  ReservedSpace rs(buffer_size, MetaspaceShared::core_region_alignment(), os::vm_page_size());
   if (!rs.is_reserved()) {
     log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
     vm_direct_exit(0);

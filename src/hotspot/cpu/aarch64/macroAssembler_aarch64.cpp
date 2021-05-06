@@ -3757,8 +3757,7 @@ void MacroAssembler::cmpptr(Register src1, Address src2) {
 }
 
 void MacroAssembler::cmpoop(Register obj1, Register obj2) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, obj1, obj2);
+  cmp(obj1, obj2);
 }
 
 void MacroAssembler::load_method_holder_cld(Register rresult, Register rmethod) {
@@ -4158,15 +4157,6 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
   } else {
     bs->store_at(this, decorators, type, dst, src, tmp1, thread_tmp);
   }
-}
-
-void MacroAssembler::resolve(DecoratorSet decorators, Register obj) {
-  // Use stronger ACCESS_WRITE|ACCESS_READ by default.
-  if ((decorators & (ACCESS_READ | ACCESS_WRITE)) == 0) {
-    decorators |= ACCESS_READ | ACCESS_WRITE;
-  }
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  return bs->resolve(this, decorators, obj);
 }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,

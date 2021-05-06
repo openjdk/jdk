@@ -526,8 +526,7 @@ java/awt/security/WarningWindowDisposeTest/WarningWindowDisposeTest.java 8266059
 java/awt/Robot/Delay/InterruptOfDelay.java 8265986 macosx-all
 java/awt/MenuBar/TestNoScreenMenuBar.java 8265987 macosx-all
 
-#linux-aarch64 failure
-java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8266283 linux-aarch64
+java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8266283 generic-all
 
 ############################################################################
 
