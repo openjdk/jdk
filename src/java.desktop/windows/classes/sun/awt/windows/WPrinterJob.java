@@ -1157,6 +1157,10 @@ public final class WPrinterJob extends RasterPrinterJob
     protected boolean setFont(String family, float size, int style,
                               int rotation, float awScale) {
 
+        if (family.isEmpty()) {
+            return false;
+        }
+
         boolean didSetFont = true;
 
         if (!family.equals(mLastFontFamily) ||

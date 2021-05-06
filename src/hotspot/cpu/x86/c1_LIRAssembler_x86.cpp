@@ -555,12 +555,12 @@ int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   int offset = __ offset();
 #ifdef _LP64
   const Register poll_addr = rscratch1;
-  __ movptr(poll_addr, Address(r15_thread, Thread::polling_page_offset()));
+  __ movptr(poll_addr, Address(r15_thread, JavaThread::polling_page_offset()));
 #else
   assert(tmp->is_cpu_register(), "needed");
   const Register poll_addr = tmp->as_register();
   __ get_thread(poll_addr);
-  __ movptr(poll_addr, Address(poll_addr, in_bytes(Thread::polling_page_offset())));
+  __ movptr(poll_addr, Address(poll_addr, in_bytes(JavaThread::polling_page_offset())));
 #endif
   add_debug_info_for_branch(info);
   __ relocate(relocInfo::poll_type);
@@ -3094,9 +3094,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   Register tmp = op->tmp()->as_register();
   Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
 
-  __ resolve(ACCESS_READ, src);
-  __ resolve(ACCESS_WRITE, dst);
-
   CodeStub* stub = op->stub();
   int flags = op->flags();
   BasicType basic_type = default_type != NULL ? default_type->element_type()->basic_type() : T_ILLEGAL;
@@ -3534,7 +3531,6 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
       scratch = op->scratch_opr()->as_register();
     }
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    __ resolve(ACCESS_READ | ACCESS_WRITE, obj);
     // add debug info for NullPointerException only if one is possible
     int null_check_offset = __ lock_object(hdr, obj, lock, scratch, *op->stub()->entry());
     if (op->info() != NULL) {

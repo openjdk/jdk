@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,33 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 6232281
- * @requires vm.debug == true & vm.compiler2.enabled
- * @summary Tests that C2 does not crash trivially with a "remove_useless_nodes
- *          missed this node" message when UseLoopSafepoints is disabled.
- * @run main/othervm -Xcomp -XX:-TieredCompilation
-        -XX:CompileOnly=TestDisableUseLoopSafepoints -XX:-UseLoopSafepoints
- *      compiler.arguments.TestDisableUseLoopSafepoints
+ * @bug 8265917
+ * @summary test the optimization of pow(x, 2.0)
+ * @run main/othervm TestPow2Opt
+ * @run main/othervm -Xint TestPow2Opt
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestPow2Opt
+ * @run main/othervm -Xbatch -XX:-TieredCompilation  TestPow2Opt
  */
 
-package compiler.arguments;
+public class TestPow2Opt {
 
-public class TestDisableUseLoopSafepoints {
-    public static void main(String[] args) {
-        System.out.println("Passed");
+  static void test(double a) {
+    double r1 = a * a;
+    double r2 = Math.pow(a, 2.0);
+    if (r1 != r2) {
+      throw new RuntimeException("pow(" + a + ", 2.0), expected: " + r1 + ", actual: " + r2);
     }
+  }
+
+  public static void main(String[] args) throws Exception {
+    for (int i = 0; i < 10; i++) {
+      for (int j = 1; j < 100000; j++) {
+        test(j * 1.0);
+        test(1.0 / j);
+      }
+    }
+  }
+
 }

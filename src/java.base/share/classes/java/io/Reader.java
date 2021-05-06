@@ -27,6 +27,7 @@ package java.io;
 
 
 import java.nio.CharBuffer;
+import java.nio.ReadOnlyBufferException;
 import java.util.Objects;
 
 /**
@@ -184,13 +185,14 @@ public abstract class Reader implements Readable, Closeable {
      * @since 1.5
      */
     public int read(CharBuffer target) throws IOException {
+        if (target.isReadOnly())
+            throw new ReadOnlyBufferException();
+
         int nread;
         if (target.hasArray()) {
             char[] cbuf = target.array();
             int pos = target.position();
-            int rem = target.limit() - pos;
-            if (rem <= 0)
-                return -1;
+            int rem = Math.max(target.limit() - pos, 0);
             int off = target.arrayOffset() + pos;
             nread = this.read(cbuf, off, rem);
             if (nread > 0)

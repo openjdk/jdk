@@ -46,6 +46,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Permission;
@@ -505,6 +506,18 @@ public final class SecuritySupport {
         @Override
         public boolean exists(Path p) throws IOException {
             return doPrivilegedIOWithReturn( () -> Files.exists(p));
+        }
+
+        @Override
+        public boolean isDirectory(Path p) {
+            return doPrivilegedWithReturn( () -> Files.isDirectory(p));
+        }
+
+        @Override
+        public FileTime getLastModified(Path p) throws IOException {
+            // Timestamp only needed when examining repository for other JVMs,
+            // in which case an unprivileged mode should be used.
+            throw new InternalError("Should not reach here");
         }
     }
 

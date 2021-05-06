@@ -561,7 +561,15 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
   _entry_field_records = NULL;
   _subgraph_object_klasses = NULL;
   _is_full_module_graph = info->is_full_module_graph();
-  _has_non_early_klasses = info->has_non_early_klasses();
+
+  if (_is_full_module_graph) {
+    // Consider all classes referenced by the full module graph as early -- we will be
+    // allocating objects of these classes during JVMTI early phase, so they cannot
+    // be processed by (non-early) JVMTI ClassFileLoadHook
+    _has_non_early_klasses = false;
+  } else {
+    _has_non_early_klasses = info->has_non_early_klasses();
+  }
 
   if (_has_non_early_klasses) {
     ResourceMark rm;
