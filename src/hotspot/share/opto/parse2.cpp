@@ -485,7 +485,7 @@ void Parse::do_tableswitch() {
   }
 
   // Safepoint in case if backward branch observed
-  if (makes_backward_branch && UseLoopSafepoints) {
+  if (makes_backward_branch) {
     add_safepoint();
   }
 
@@ -579,7 +579,7 @@ void Parse::do_lookupswitch() {
   }
 
   // Safepoint in case backward branch observed
-  if (makes_backward_branch && UseLoopSafepoints) {
+  if (makes_backward_branch) {
     add_safepoint();
   }
 
@@ -2555,8 +2555,7 @@ void Parse::do_one_bytecode() {
     // a SafePoint here and have it dominate and kill the safepoint added at a
     // following backwards branch.  At this point the JVM state merely holds 2
     // longs but not the 3-way value.
-    if( UseLoopSafepoints ) {
-      switch( iter().next_bc() ) {
+    switch (iter().next_bc()) {
       case Bytecodes::_ifgt:
       case Bytecodes::_iflt:
       case Bytecodes::_ifge:
@@ -2567,7 +2566,6 @@ void Parse::do_one_bytecode() {
         maybe_add_safepoint(iter().next_get_dest());
       default:
         break;
-      }
     }
     b = pop_pair();
     a = pop_pair();
