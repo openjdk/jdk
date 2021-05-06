@@ -5197,16 +5197,18 @@ public class Attr extends JCTree.Visitor {
                     log.error(TreeInfo.diagnosticPositionFor(c, env.tree), Errors.LocalClassesCantExtendSealed(c.isAnonymous() ? Fragments.Anonymous : Fragments.Local));
                 }
 
-                for (ClassSymbol supertypeSym : sealedSupers) {
-                    if (!supertypeSym.permitted.contains(c.type.tsym)) {
-                        log.error(TreeInfo.diagnosticPositionFor(c.type.tsym, env.tree), Errors.CantInheritFromSealed(supertypeSym));
+                if (!c.type.isCompound()) {
+                    for (ClassSymbol supertypeSym : sealedSupers) {
+                        if (!supertypeSym.permitted.contains(c.type.tsym)) {
+                            log.error(TreeInfo.diagnosticPositionFor(c.type.tsym, env.tree), Errors.CantInheritFromSealed(supertypeSym));
+                        }
                     }
-                }
-                if (!c.isNonSealed() && !c.isFinal() && !c.isSealed()) {
-                    log.error(TreeInfo.diagnosticPositionFor(c, env.tree),
-                            c.isInterface() ?
-                                    Errors.NonSealedOrSealedExpected :
-                                    Errors.NonSealedSealedOrFinalExpected);
+                    if (!c.isNonSealed() && !c.isFinal() && !c.isSealed()) {
+                        log.error(TreeInfo.diagnosticPositionFor(c, env.tree),
+                                c.isInterface() ?
+                                        Errors.NonSealedOrSealedExpected :
+                                        Errors.NonSealedSealedOrFinalExpected);
+                    }
                 }
             }
 
