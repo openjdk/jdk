@@ -1867,12 +1867,24 @@ void LIRGenerator::do_PreconditionsCheckIndex(Intrinsic* x, BasicType type) {
                                        Deoptimization::Action_make_not_entrant);
 
   if (length.result()->is_constant()) {
+#if defined(X86) && !defined(_LP64)
+    // BEWARE! On 32-bit x86 cmp clobbers its left argument so we need a temp copy.
+    LIR_Opr index_copy = new_register(index->type());
+    __ move(index, index_copy);
+    if (type == T_INT) {
+      __ cmp(lir_cond_aboveEqual, index_copy.result(), LIR_OprFact::intConst(length.result()->as_jint()));
+    } else {
+      assert(type == T_LONG, "sanity check");
+      __ cmp(lir_cond_aboveEqual, index_copy.result(), LIR_OprFact::longConst(length.result()->as_jlong()));
+    }
+#else
     if (type == T_INT) {
       __ cmp(lir_cond_aboveEqual, index.result(), LIR_OprFact::intConst(length.result()->as_jint()));
     } else {
       assert(type == T_LONG, "sanity check");
       __ cmp(lir_cond_aboveEqual, index.result(), LIR_OprFact::longConst(length.result()->as_jlong()));
     }
+#endif
     __ branch(lir_cond_aboveEqual, deopt);
   } else {
     __ cmp(lir_cond_belowEqual, length.result(), index.result());
