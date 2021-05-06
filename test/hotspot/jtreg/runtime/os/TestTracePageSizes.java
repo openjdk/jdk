@@ -25,8 +25,6 @@
  * @test id=no-options
  * @summary Run test with no arguments apart from the ones required by
  *          the test.
- * @library /test/lib
- * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log TestTracePageSizes
  */
@@ -35,8 +33,6 @@
  * @test id=explicit-large-page-size
  * @summary Run test explicitly with both 2m and 1g pages on x64. Excluding ZGC since
  *          it fail initialization if no large pages are available on the system.
- * @library /test/lib
- * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @requires vm.gc != "Z"
@@ -48,8 +44,6 @@
  * @test id=compiler-options
  * @summary Run test without segmented code cache. Excluding ZGC since it
  *          fail initialization if no large pages are available on the system.
- * @library /test/lib
- * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires vm.gc != "Z"
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache TestTracePageSizes
@@ -60,8 +54,6 @@
 /*
  * @test id=with-G1
  * @summary Run tests with G1
- * @library /test/lib
- * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires vm.gc.G1
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log -XX:+UseG1GC TestTracePageSizes
@@ -72,8 +64,6 @@
 /*
  * @test id=with-Parallel
  * @summary Run tests with Parallel
- * @library /test/lib
- * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires vm.gc.Parallel
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log -XX:+UseParallelGC TestTracePageSizes
@@ -84,8 +74,6 @@
 /*
  * @test id=with-Serial
  * @summary Run tests with Serial
- * @library /test/lib
- * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires vm.gc.Serial
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log -XX:+UseSerialGC TestTracePageSizes
@@ -98,9 +86,6 @@ import java.util.LinkedList;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import jdk.test.lib.Platform;
-import jtreg.SkippedException;
 
 // Check that page sizes logged match what is recorded in /proc/self/smaps.
 // For transparent huge pages the matching is best effort since we can't
@@ -118,7 +103,7 @@ public class TestTracePageSizes {
     private static void parseSmaps() throws Exception {
         String smapsPatternString = "(\\w+)-(\\w+).*?" +
                                     "KernelPageSize:\\s*(\\d*) kB.*?" +
-                                    "VmFlags: ([\\w ]*)";
+                                    "VmFlags: ([\\w\\? ]*)";
         Pattern smapsPattern = Pattern.compile(smapsPatternString, Pattern.DOTALL);
         Scanner smapsScanner = new Scanner(new File("/proc/self/smaps"));
         // Find all memory segments in the smaps-file.
@@ -174,14 +159,6 @@ public class TestTracePageSizes {
             debug = true;
         } else {
             debug = false;
-        }
-
-        // Older kernels do not have reliable madvise tag for this test to work.
-        // The first kernel version to work fine appears to be 4.15.
-        if (Platform.isLinux() &&
-              (Platform.getOsVersionMajor() < 4) ||
-              ((Platform.getOsVersionMajor() == 4) && (Platform.getOsVersionMinor() < 15))) {
-            throw new SkippedException("Skipped for kernel: " + Platform.getOsVersion());
         }
 
         // Parse /proc/self/smaps to compare with values logged in the VM.
