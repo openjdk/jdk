@@ -412,7 +412,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   }
 
   // Returns true if the item was inserted, duplicates are found with
-  // LOOKUP_FUNC and FOUND_FUNC is called.
+  // LOOKUP_FUNC then FOUND_FUNC is called.
   template <typename LOOKUP_FUNC, typename FOUND_FUNC>
   bool insert_get(Thread* thread, LOOKUP_FUNC& lookup_f, VALUE& value, FOUND_FUNC& foundf,
                   bool* grow_hint = NULL, bool* clean_hint = NULL) {
