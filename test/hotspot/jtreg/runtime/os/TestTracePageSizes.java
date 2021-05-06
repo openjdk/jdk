@@ -176,8 +176,11 @@ public class TestTracePageSizes {
             debug = false;
         }
 
-        // Older kernels do not have reliable madvise tag for this test to work
-        if (Platform.isLinux() && Platform.getOsVersionMajor() <= 4) {
+        // Older kernels do not have reliable madvise tag for this test to work.
+        // The first kernel version to work fine appears to be 4.15.
+        if (Platform.isLinux() &&
+              (Platform.getOsVersionMajor() < 4) ||
+              ((Platform.getOsVersionMajor() == 4) && (Platform.getOsVersionMinor() < 15))) {
             throw new SkippedException("Skipped for kernel: " + Platform.getOsVersion());
         }
 
