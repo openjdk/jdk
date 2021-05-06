@@ -1,2 +1,2 @@
-Error.java:10:1: compiler.err.premature.eof
+Error.java:9:22: compiler.err.premature.eof
 1 error

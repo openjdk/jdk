@@ -172,7 +172,7 @@ public class DiagnosticSource {
                     break;
                 }
             }
-            return bp <= bufLen;
+            return bp < bufLen;
         } catch (IOException e) {
             log.directError("source.unavailable");
             buf = new char[0];

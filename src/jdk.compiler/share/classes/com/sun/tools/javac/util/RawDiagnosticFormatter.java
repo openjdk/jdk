@@ -77,6 +77,10 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
             long diagLine = diag.getLineNumber();
             long expLine = diagSource.getLineNumber(exp.pos);
             long expCol = diagSource.getColumnNumber(exp.pos, false);
+            if (expLine == 0) {
+                expLine = diagSource.getLineNumber(exp.pos - 1);
+                expCol = diagSource.getColumnNumber(exp.pos - 1, false);
+            }
             return (expLine == diagLine) ?
                     String.valueOf(expCol) :
                     expLine + ":" + expCol;

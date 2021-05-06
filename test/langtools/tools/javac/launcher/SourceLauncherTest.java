@@ -416,7 +416,7 @@ public class SourceLauncherTest extends TestRunner {
         testError(file,
                 file + ":1: error: reached end of file while parsing\n" +
                 "class SyntaxErr {\n" +
-                "                 ^\n" +
+                "                ^\n" +
                 "1 error\n",
                 "error: compilation failed");
     }

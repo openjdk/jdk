@@ -587,10 +587,16 @@ public class Log extends AbstractLog {
      *  @param pos   Buffer index of the error position, must be on current line
      */
     private void printErrLine(int pos, PrintWriter writer) {
-        String line = (source == null ? null : source.getLine(pos));
+        String line;
+        if (source == null)
+            line = null;
+        else if ((line = source.getLine(pos)) == null)
+            line = source.getLine(pos - 1);
         if (line == null)
             return;
         int col = source.getColumnNumber(pos, false);
+        if (col == 0)
+            col = source.getColumnNumber(pos - 1, false);
 
         printRawLines(writer, line);
         for (int i = 0; i < col - 1; i++) {
@@ -846,6 +852,8 @@ public class Log extends AbstractLog {
             printRawLines(pw, prefix + msg);
         } else {
             int line = source.getLineNumber(pos);
+            if (line == 0)
+                line = source.getLineNumber(pos - 1);
             JavaFileObject file = source.getFile();
             if (file != null)
                 printRawLines(pw,

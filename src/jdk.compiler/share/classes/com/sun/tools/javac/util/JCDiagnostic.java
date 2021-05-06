@@ -459,8 +459,15 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             if (n == Position.NOPOS || source == null)
                 line = column = -1;
             else {
-                line = source.getLineNumber(n);
-                column = source.getColumnNumber(n, true);
+                int lineNum = source.getLineNumber(n);
+                int colNum = source.getColumnNumber(n, true);
+                if (lineNum == 0) {
+                    line = source.getLineNumber(n - 1);
+                    column = source.getColumnNumber(n - 1, true);
+                } else {
+                    line = lineNum;
+                    column = colNum;
+                }
             }
         }
 

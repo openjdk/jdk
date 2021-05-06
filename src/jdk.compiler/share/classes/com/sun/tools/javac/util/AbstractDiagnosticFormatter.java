@@ -313,11 +313,17 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         int pos = d.getIntPosition();
         if (d.getIntPosition() == Position.NOPOS)
             throw new AssertionError();
-        String line = (source == null ? null : source.getLine(pos));
+        String line;
+        if (source == null)
+            line = null;
+        else if ((line = source.getLine(pos)) == null)
+            line = source.getLine(pos - 1);
         if (line == null)
             return "";
         buf.append(indent(line, nSpaces));
         int col = source.getColumnNumber(pos, false);
+        if (col == 0)
+            col = source.getColumnNumber(pos - 1, false);
         if (config.isCaretEnabled()) {
             buf.append("\n");
             for (int i = 0; i < col - 1; i++)  {
