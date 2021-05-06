@@ -34,6 +34,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -68,9 +69,10 @@ public class SelectOne {
         peers = new ArrayList<SocketChannel>();
 
         try (ServerSocketChannel listener = ServerSocketChannel.open()) {
-            listener.bind(new InetSocketAddress(0));
-            SocketAddress remote = listener.getLocalAddress();
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            listener.bind(new InetSocketAddress(loopback, 0));
 
+            SocketAddress remote = listener.getLocalAddress();
             for (int i = 0; i < nchannels; i++) {
                 SocketChannel sc = SocketChannel.open(remote);
                 sc.configureBlocking(false);
