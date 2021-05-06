@@ -31,7 +31,6 @@
 
 import java.util.List;
 
-
 /*
  * Load classes and catch exceptions, or not depending on class file
  * version. A class or interface method with "abstract strictfp"
@@ -46,14 +45,20 @@ public class StrictfpModifierChecksTest {
         for (String version60ClassName : List.of("AbstractStrictfpMethod60",
                                                  "AbstractStrictfpIntMethod60")) {
             try {
-                // The AbstractStrictfp*Method60 classes have a combination of
-                // method modifiers, abstract & strictfp, illegal for
-                // class file version 60 per JVMS 4.6. An exception should
-                // be thrown when trying to load the class.
+                // The AbstractStrictfp*Method60 classes have a
+                // combination of method modifiers, abstract &
+                // strictfp, illegal for class file version 60 per
+                // JVMS 4.6. A ClassFormatError should be thrown when
+                // trying to load the classes.
                 Class<?> newClass = Class.forName(version60ClassName);
                 throw new RuntimeException("Should not reach; expected ClassFormatError not thrown");
             } catch (ClassFormatError cfe) {
-                ; // Expected
+                // Check of content will need updating if the error
+                // message is rephrased.
+                String message = cfe.getMessage();
+                if (!message.contains("has illegal modifier")) {
+                    throw new RuntimeException("Unexpected exception message: " + message);
+                }
             }
         }
 
