@@ -794,11 +794,6 @@ TEST_VM(os, iso8601_time) {
   EXPECT_EQ(result, buffer);
   EXPECT_TRUE(very_simple_string_matcher(pattern, result));
 
-  result = os::iso8601_time(buffer, sizeof(buffer), false);
-  tty->print_cr("%s", result);
-  EXPECT_EQ(result, buffer);
-  EXPECT_TRUE(very_simple_string_matcher(pattern, result));
-
   // Test with explicit timestamps
   result = os::iso8601_time(0, buffer, sizeof(buffer), true);
   tty->print_cr("%s", result);
