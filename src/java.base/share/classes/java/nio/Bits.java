@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,8 @@ class Bits {                            // package-private
         return PAGE_SIZE;
     }
 
-    static int pageCount(long size) {
-        return (int)(size + (long)pageSize() - 1L) / pageSize();
+    static long pageCount(long size) {
+        return (size + (long)pageSize() - 1L) / pageSize();
     }
 
     private static boolean UNALIGNED = UNSAFE.unalignedAccess();
@@ -106,7 +106,7 @@ class Bits {                            // package-private
     // These methods should be called whenever direct memory is allocated or
     // freed.  They allow the user to control the amount of direct memory
     // which a process may access.  All sizes are specified in bytes.
-    static void reserveMemory(long size, int cap) {
+    static void reserveMemory(long size, long cap) {
 
         if (!MEMORY_LIMIT_SET && VM.initLevel() >= 1) {
             MAX_MEMORY = VM.maxDirectMemory();
@@ -185,7 +185,7 @@ class Bits {                            // package-private
         }
     }
 
-    private static boolean tryReserveMemory(long size, int cap) {
+    private static boolean tryReserveMemory(long size, long cap) {
 
         // -XX:MaxDirectMemorySize limits the total capacity rather than the
         // actual memory usage, which will differ when buffers are page
@@ -203,7 +203,7 @@ class Bits {                            // package-private
     }
 
 
-    static void unreserveMemory(long size, int cap) {
+    static void unreserveMemory(long size, long cap) {
         long cnt = COUNT.decrementAndGet();
         long reservedMem = RESERVED_MEMORY.addAndGet(-size);
         long totalCap = TOTAL_CAPACITY.addAndGet(-cap);

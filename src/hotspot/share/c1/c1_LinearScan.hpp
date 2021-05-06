@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRGenerator.hpp"
+#include "compiler/oopMap.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
@@ -369,6 +370,7 @@ class LinearScan : public CompilationResourceObj {
   void        print_lir(int level, const char* label, bool hir_valid = true);
   static void print_reg_num(int reg_num) { print_reg_num(tty, reg_num); }
   static void print_reg_num(outputStream* out, int reg_num);
+  static LIR_Opr get_operand(int reg_num);
 #endif
 
 #ifdef ASSERT
@@ -435,6 +437,7 @@ class MoveResolver: public StackObj {
   void append_insertion_buffer();
   void insert_move(Interval* from_interval, Interval* to_interval);
   void insert_move(LIR_Opr from_opr, Interval* to_interval);
+  LIR_Opr get_virtual_register(Interval* interval);
 
   DEBUG_ONLY(void verify_before_resolve();)
   void resolve_mappings();
@@ -633,7 +636,11 @@ class Interval : public CompilationResourceObj {
   // printing
 #ifndef PRODUCT
   void print() const { print_on(tty); }
-  void print_on(outputStream* out) const;
+  void print_on(outputStream* out) const {
+    print_on(out, false);
+  }
+  // Special version for compatibility with C1 Visualizer.
+  void print_on(outputStream* out, bool is_cfg_printer) const;
 
   // Used for debugging
   void print_parent() const;

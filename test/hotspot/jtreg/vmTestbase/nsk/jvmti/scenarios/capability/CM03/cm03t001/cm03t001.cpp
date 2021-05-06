@@ -339,6 +339,10 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
         return NSK_FALSE;
 
+    /* klass is used by other threads - convert to global handle */
+    if (!NSK_JNI_VERIFY(jni, (klass = (jclass)jni->NewGlobalRef(klass)) != NULL))
+        return NSK_FALSE;
+
     /* get tested thread method 'delay' */
     if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(klass, "delay", "()V")) != NULL))
         return NSK_FALSE;
@@ -811,6 +815,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         nsk_jvmti_setFailStatus();
 
     NSK_TRACE(jni->DeleteGlobalRef(thread));
+    NSK_TRACE(jni->DeleteGlobalRef(klass));
 
     /* resume debugee and wait for sync */
     if (!nsk_jvmti_resumeSync())

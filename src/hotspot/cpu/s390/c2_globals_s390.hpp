@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,7 @@ define_pd_global(bool, PreferInterpreterNativeStubs, false);
 define_pd_global(bool, ProfileTraps,                 true);
 define_pd_global(bool, UseOnStackReplacement,        true);
 define_pd_global(bool, ProfileInterpreter,           true);
-define_pd_global(bool, TieredCompilation,            trueInTiered);
+define_pd_global(bool, TieredCompilation,            COMPILER1_PRESENT(true) NOT_COMPILER1(false));
 define_pd_global(intx, CompileThreshold,             10000);
 
 define_pd_global(intx, OnStackReplacePercentage,     140);
@@ -51,8 +51,6 @@ define_pd_global(intx, INTPRESSURE,                  10); // Medium size registe
 define_pd_global(intx, InteriorEntryAlignment,       2);
 define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 define_pd_global(intx, RegisterCostAreaRatio,        12000);
-define_pd_global(bool, UseTLAB,                      true);
-define_pd_global(bool, ResizeTLAB,                   true);
 define_pd_global(intx, LoopUnrollLimit,              60);
 define_pd_global(intx, LoopPercentProfileLimit,      10);
 define_pd_global(intx, MinJumpTableSize,             18);
@@ -83,9 +81,6 @@ define_pd_global(uintx, CodeCacheMinBlockLength,     4);
 define_pd_global(uintx, CodeCacheMinimumUseSpace,    400*K);
 
 define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed on z/Architecture.
-
-// Heap related flags
-define_pd_global(size_t, MetaspaceSize,              ScaleForWordSize(16*M));
 
 // Ergonomics related flags
 define_pd_global(bool, NeverActAsServerClassMachine, false);

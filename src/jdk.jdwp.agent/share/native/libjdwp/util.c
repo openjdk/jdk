@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -699,12 +699,12 @@ methodClass(jmethodID method, jclass *pclazz)
     jvmtiError error;
 
     *pclazz = NULL;
-    error = FUNC_PTR(gdata->jvmti,GetMethodDeclaringClass)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,GetMethodDeclaringClass)
                                 (gdata->jvmti, method, pclazz);
     return error;
 }
 
-/* Returns a local ref to the declaring class for a method, or NULL. */
+/* Returns the start and end locations of the specified method. */
 jvmtiError
 methodLocation(jmethodID method, jlocation *ploc1, jlocation *ploc2)
 {
@@ -727,7 +727,7 @@ methodSignature(jmethodID method,
     char *signature = NULL;
     char *generic_signature = NULL;
 
-    error = FUNC_PTR(gdata->jvmti,GetMethodName)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,GetMethodName)
             (gdata->jvmti, method, &name, &signature, &generic_signature);
 
     if ( pname != NULL ) {
@@ -962,16 +962,6 @@ jvmtiMicroVersion(void)
                     >> JVMTI_VERSION_SHIFT_MICRO;
 }
 
-jboolean
-canSuspendResumeThreadLists(void)
-{
-    jvmtiError error;
-    jvmtiCapabilities cap;
-
-    error = jvmtiGetCapabilities(&cap);
-    return (error == JVMTI_ERROR_NONE && cap.can_suspend);
-}
-
 jvmtiError
 getSourceDebugExtension(jclass clazz, char **extensionPtr)
 {
@@ -1018,16 +1008,9 @@ void
 debugMonitorEnter(jrawMonitorID monitor)
 {
     jvmtiError error;
-    while (JNI_TRUE) {
-        error = FUNC_PTR(gdata->jvmti,RawMonitorEnter)
-                        (gdata->jvmti, monitor);
-        error = ignore_vm_death(error);
-        if (error == JVMTI_ERROR_INTERRUPT) {
-            handleInterrupt();
-        } else {
-            break;
-        }
-    }
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorEnter)
+            (gdata->jvmti, monitor);
+    error = ignore_vm_death(error);
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error, "on raw monitor enter");
     }
@@ -1038,7 +1021,7 @@ debugMonitorExit(jrawMonitorID monitor)
 {
     jvmtiError error;
 
-    error = FUNC_PTR(gdata->jvmti,RawMonitorExit)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorExit)
                 (gdata->jvmti, monitor);
     error = ignore_vm_death(error);
     if (error != JVMTI_ERROR_NONE) {
@@ -1050,7 +1033,7 @@ void
 debugMonitorWait(jrawMonitorID monitor)
 {
     jvmtiError error;
-    error = FUNC_PTR(gdata->jvmti,RawMonitorWait)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorWait)
         (gdata->jvmti, monitor, ((jlong)(-1)));
 
     /*
@@ -1095,7 +1078,7 @@ void
 debugMonitorTimedWait(jrawMonitorID monitor, jlong millis)
 {
     jvmtiError error;
-    error = FUNC_PTR(gdata->jvmti,RawMonitorWait)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorWait)
         (gdata->jvmti, monitor, millis);
     if (error == JVMTI_ERROR_INTERRUPT) {
         /* See comment above */
@@ -1113,7 +1096,7 @@ debugMonitorNotify(jrawMonitorID monitor)
 {
     jvmtiError error;
 
-    error = FUNC_PTR(gdata->jvmti,RawMonitorNotify)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorNotify)
                 (gdata->jvmti, monitor);
     error = ignore_vm_death(error);
     if (error != JVMTI_ERROR_NONE) {
@@ -1126,7 +1109,7 @@ debugMonitorNotifyAll(jrawMonitorID monitor)
 {
     jvmtiError error;
 
-    error = FUNC_PTR(gdata->jvmti,RawMonitorNotifyAll)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorNotifyAll)
                 (gdata->jvmti, monitor);
     error = ignore_vm_death(error);
     if (error != JVMTI_ERROR_NONE) {
@@ -1140,7 +1123,7 @@ debugMonitorCreate(char *name)
     jrawMonitorID monitor;
     jvmtiError error;
 
-    error = FUNC_PTR(gdata->jvmti,CreateRawMonitor)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,CreateRawMonitor)
                 (gdata->jvmti, name, &monitor);
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error, "on creation of a raw monitor");
@@ -1153,7 +1136,7 @@ debugMonitorDestroy(jrawMonitorID monitor)
 {
     jvmtiError error;
 
-    error = FUNC_PTR(gdata->jvmti,DestroyRawMonitor)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,DestroyRawMonitor)
                 (gdata->jvmti, monitor);
     error = ignore_vm_death(error);
     if (error != JVMTI_ERROR_NONE) {
@@ -1212,7 +1195,7 @@ classSignature(jclass clazz, char **psignature, char **pgeneric_signature)
      * pgeneric_signature can be NULL, and GetClassSignature
      * accepts NULL.
      */
-    error = FUNC_PTR(gdata->jvmti,GetClassSignature)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,GetClassSignature)
                 (gdata->jvmti, clazz, &signature, pgeneric_signature);
 
     if ( psignature != NULL ) {
@@ -1784,7 +1767,7 @@ jvmtiAllocate(jint numBytes)
     if ( numBytes == 0 ) {
         return NULL;
     }
-    error = FUNC_PTR(gdata->jvmti,Allocate)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,Allocate)
                 (gdata->jvmti, numBytes, (unsigned char**)&ptr);
     if (error != JVMTI_ERROR_NONE ) {
         EXIT_ERROR(error, "Can't allocate jvmti memory");
@@ -1799,7 +1782,7 @@ jvmtiDeallocate(void *ptr)
     if ( ptr == NULL ) {
         return;
     }
-    error = FUNC_PTR(gdata->jvmti,Deallocate)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,Deallocate)
                 (gdata->jvmti, ptr);
     if (error != JVMTI_ERROR_NONE ) {
         EXIT_ERROR(error, "Can't deallocate jvmti memory");
@@ -1998,6 +1981,60 @@ eventIndex2jvmti(EventIndex i)
     }
     return index2jvmti[i-EI_min];
 }
+
+#ifdef DEBUG
+
+char*
+eventIndex2EventName(EventIndex ei)
+{
+    switch ( ei ) {
+        case EI_SINGLE_STEP:
+            return "EI_SINGLE_STEP";
+        case EI_BREAKPOINT:
+            return "EI_BREAKPOINT";
+        case EI_FRAME_POP:
+            return "EI_FRAME_POP";
+        case EI_EXCEPTION:
+            return "EI_EXCEPTION";
+        case EI_THREAD_START:
+            return "EI_THREAD_START";
+        case EI_THREAD_END:
+            return "EI_THREAD_END";
+        case EI_CLASS_PREPARE:
+            return "EI_CLASS_PREPARE";
+        case EI_GC_FINISH:
+            return "EI_GC_FINISH";
+        case EI_CLASS_LOAD:
+            return "EI_CLASS_LOAD";
+        case EI_FIELD_ACCESS:
+            return "EI_FIELD_ACCESS";
+        case EI_FIELD_MODIFICATION:
+            return "EI_FIELD_MODIFICATION";
+        case EI_EXCEPTION_CATCH:
+            return "EI_EXCEPTION_CATCH";
+        case EI_METHOD_ENTRY:
+            return "EI_METHOD_ENTRY";
+        case EI_METHOD_EXIT:
+            return "EI_METHOD_EXIT";
+        case EI_MONITOR_CONTENDED_ENTER:
+            return "EI_MONITOR_CONTENDED_ENTER";
+        case EI_MONITOR_CONTENDED_ENTERED:
+            return "EI_MONITOR_CONTENDED_ENTERED";
+        case EI_MONITOR_WAIT:
+            return "EI_MONITOR_WAIT";
+        case EI_MONITOR_WAITED:
+            return "EI_MONITOR_WAITED";
+        case EI_VM_INIT:
+            return "EI_VM_INIT";
+        case EI_VM_DEATH:
+            return "EI_VM_DEATH";
+        default:
+            JDI_ASSERT(JNI_FALSE);
+            return "Bad EI";
+    }
+}
+
+#endif
 
 EventIndex
 jdwp2EventIndex(jdwpEvent eventType)

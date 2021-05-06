@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,7 @@ class LinkResolver: AllStatic {
  JVMCI_ONLY(public:) // Needed for CompilerToVM.resolveMethod()
   // Not Linktime so doesn't take LinkInfo
   static Method* lookup_instance_method_in_klasses (Klass* klass, Symbol* name, Symbol* signature,
-                                                    Klass::PrivateLookupMode private_mode, TRAPS);
+                                                    Klass::PrivateLookupMode private_mode);
  JVMCI_ONLY(private:)
 
   // Similar loader constraint checking functions that throw

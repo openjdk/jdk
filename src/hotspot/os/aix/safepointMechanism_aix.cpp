@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,10 @@ void SafepointMechanism::pd_initialize() {
     default_initialize();
     return;
   }
+
+  // Poll bit values
+  _poll_word_armed_value    = poll_bit();
+  _poll_word_disarmed_value = ~_poll_word_armed_value;
 
   // Allocate one protected page
   char* map_address = (char*)MAP_FAILED;
@@ -104,8 +108,8 @@ void SafepointMechanism::pd_initialize() {
   if (!os::guard_memory((char*)_polling_page, page_size)) {
     fatal("Could not protect polling page");
   }
-  intptr_t bad_page_val  = reinterpret_cast<intptr_t>(map_address),
-           good_page_val = bad_page_val + os::vm_page_size();
-  _poll_armed_value    = reinterpret_cast<void*>(bad_page_val  + poll_bit());
-  _poll_disarmed_value = reinterpret_cast<void*>(good_page_val);
+  uintptr_t bad_page_val  = reinterpret_cast<uintptr_t>(map_address),
+            good_page_val = bad_page_val + os::vm_page_size();
+  _poll_page_armed_value    = bad_page_val;
+  _poll_page_disarmed_value = good_page_val;
 }

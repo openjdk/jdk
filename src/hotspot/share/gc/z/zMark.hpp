@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 #include "gc/z/zMarkStack.hpp"
 #include "gc/z/zMarkStackAllocator.hpp"
+#include "gc/z/zMarkStackEntry.hpp"
 #include "gc/z/zMarkTerminate.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -36,9 +37,7 @@ class ZPageTable;
 class ZWorkers;
 
 class ZMark {
-  friend class ZMarkRootsTask;
   friend class ZMarkTask;
-  friend class ZMarkTryCompleteTask;
 
 private:
   ZWorkers* const     _workers;
@@ -56,7 +55,6 @@ private:
   uint                _nworkers;
 
   size_t calculate_nstripes(uint nworkers) const;
-  void prepare_mark();
 
   bool is_array(uintptr_t addr) const;
   void push_partial_array(uintptr_t addr, size_t size, bool finalizable);
@@ -73,10 +71,8 @@ private:
                                    ZMarkThreadLocalStacks* stacks,
                                    ZMarkCache* cache,
                                    T* timeout);
-  template <typename T> bool drain_and_flush(ZMarkStripe* stripe,
-                                             ZMarkThreadLocalStacks* stacks,
-                                             ZMarkCache* cache,
-                                             T* timeout);
+  bool try_steal_local(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
+  bool try_steal_global(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
   bool try_steal(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks);
   void idle() const;
   bool flush(bool at_safepoint);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,12 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "assembler_arm.inline.hpp"
+#include "code/codeBlob.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/safepoint.hpp"
 
 #define __ masm->

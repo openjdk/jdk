@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @comment build test class and indify classes
  * @build vm.mlvm.indy.stress.gc.lotsOfCallSites.Test
@@ -62,11 +62,12 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.HashSet;
 
+import sun.hotspot.WhiteBox;
+
 import nsk.share.test.Stresser;
 import vm.mlvm.share.CustomClassLoaders;
 import vm.mlvm.share.Env;
 import vm.mlvm.share.MlvmTest;
-import vm.mlvm.share.WhiteBoxHelper;
 import vm.share.FileUtils;
 import vm.share.options.Option;
 
@@ -87,6 +88,7 @@ public class Test extends MlvmTest {
     @Option(name = "iterations", default_value = "100000", description = "Iterations: each iteration loads one new class")
     private int iterations = 100_000;
 
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final int GC_COUNT = 6;
     private static final boolean TERMINATE_ON_FULL_METASPACE = false;
 
@@ -133,15 +135,6 @@ public class Test extends MlvmTest {
         return null;
     }
 
-    private MethodHandle getFullGCMethod() throws NoSuchMethodException, IllegalAccessException {
-        try {
-            return WhiteBoxHelper.getMethod("fullGC", MethodType.methodType(void.class));
-        } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException e) {
-            Env.traceDebug(e, "No WhiteBox API. Will use System.gc() instead of WhiteBox.fullGC()");
-            return MethodHandles.lookup().findStatic(System.class, "gc", MethodType.methodType(void.class));
-        }
-    }
-
     @Override
     public boolean run() throws Throwable {
         setHeapDumpAfter(heapDumpOpt);
@@ -149,8 +142,6 @@ public class Test extends MlvmTest {
         final byte[] classBytes = FileUtils.readClass(TESTEE_CLASS_NAME);
         final MemoryPoolMXBean classMetadataPoolMXB = getClassMetadataMemoryPoolMXBean();
         final String memPoolName = classMetadataPoolMXB == null ? "" : classMetadataPoolMXB.getName();
-
-        MethodHandle mhCollectHeap = getFullGCMethod();
 
         int removedEntries = 0;
 
@@ -183,7 +174,7 @@ public class Test extends MlvmTest {
         }
 
         for (int i = 0; i < GC_COUNT; ++i) {
-            mhCollectHeap.invoke();
+            WHITE_BOX.fullGC();
             Thread.sleep(500);
             removedEntries += removeQueuedReferences();
         }

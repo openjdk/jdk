@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -354,6 +355,7 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map->include_argument_oops(), "should be set by clear");
   vmassert(jfa->last_Java_pc() != NULL, "not walkable");
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+
   return fr;
 }
 
@@ -594,7 +596,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
         oop* obj_p = (oop*)tos_addr;
         obj = (obj_p == NULL) ? (oop)NULL : *obj_p;
       }
-      assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
+      assert(Universe::is_in_heap_or_null(obj), "sanity check");
       *oop_result = obj;
       break;
     }
@@ -662,11 +664,12 @@ intptr_t* frame::real_fp() const {
 
 #undef DESCRIBE_FP_OFFSET
 
-#define DESCRIBE_FP_OFFSET(name)                                        \
-  {                                                                     \
-    uintptr_t *p = (uintptr_t *)fp;                                     \
-    printf("0x%016lx 0x%016lx %s\n", (uintptr_t)(p + frame::name##_offset), \
-           p[frame::name##_offset], #name);                             \
+#define DESCRIBE_FP_OFFSET(name)                     \
+  {                                                  \
+    uintptr_t *p = (uintptr_t *)fp;                  \
+    printf(INTPTR_FORMAT " " INTPTR_FORMAT " %s\n",  \
+           (uintptr_t)(p + frame::name##_offset),    \
+           p[frame::name##_offset], #name);          \
   }
 
 static THREAD_LOCAL uintptr_t nextfp;

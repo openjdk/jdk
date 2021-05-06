@@ -1067,12 +1067,8 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
               AwtClipboard::LostOwnership((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2));
           return 0;
       }
-      case WM_CHANGECBCHAIN: {
-          AwtClipboard::WmChangeCbChain(wParam, lParam);
-          return 0;
-      }
-      case WM_DRAWCLIPBOARD: {
-          AwtClipboard::WmDrawClipboard((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2), wParam, lParam);
+      case WM_CLIPBOARDUPDATE: {
+          AwtClipboard::WmClipboardUpdate((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2));
           return 0;
       }
       case WM_AWT_LIST_SETMULTISELECT: {
@@ -3008,6 +3004,9 @@ Java_sun_awt_windows_WToolkit_hideTouchKeyboard(JNIEnv *env, jobject self)
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_windows_WToolkit_syncNativeQueue(JNIEnv *env, jobject self, jlong timeout)
 {
+    if (timeout <= 0) {
+        return JNI_FALSE;
+    }
     AwtToolkit & tk = AwtToolkit::GetInstance();
     DWORD eventNumber = tk.eventNumber;
     tk.PostMessage(WM_SYNC_WAIT, 0, 0);
@@ -3216,10 +3215,12 @@ LRESULT AwtToolkit::InvokeInputMethodFunction(UINT msg, WPARAM wParam, LPARAM lP
      * function once the DND is active; otherwise a hang is possible since DND may wait for
      * the IME completion.
      */
+    CriticalSection::Lock lock(m_inputMethodLock);
     if (isInDoDragDropLoop) {
-        return SendMessage(msg, wParam, lParam);
+        SendMessage(msg, wParam, lParam);
+        ::ResetEvent(m_inputMethodWaitEvent);
+        return m_inputMethodData;
     } else {
-        CriticalSection::Lock lock(m_inputMethodLock);
         if (PostMessage(msg, wParam, lParam)) {
             ::WaitForSingleObject(m_inputMethodWaitEvent, INFINITE);
             return m_inputMethodData;

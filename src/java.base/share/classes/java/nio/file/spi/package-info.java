@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,10 @@
  *
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in any class or interface in this package will cause a {@link
- * java.lang.NullPointerException NullPointerException} to be thrown.
+ * java.lang.NullPointerException NullPointerException} to be thrown.  In some
+ * cases methods which are specified to throw an {@code IOException} may throw
+ * a more specific <i><a href="../package-summary.html#optspecex">optional
+ * specific exception</a></i>.
  *
  * @since 1.7
  */

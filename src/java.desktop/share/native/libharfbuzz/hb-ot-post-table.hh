@@ -35,8 +35,6 @@
 #undef HB_STRING_ARRAY_LIST
 #undef HB_STRING_ARRAY_NAME
 
-#define NUM_FORMAT1_NAMES 258
-
 /*
  * post -- PostScript
  * https://docs.microsoft.com/en-us/typography/opentype/spec/post
@@ -73,26 +71,24 @@ struct post
 {
   static constexpr hb_tag_t tableTag = HB_OT_TAG_post;
 
-  bool subset (hb_subset_plan_t *plan) const
+  void serialize (hb_serialize_context_t *c) const
   {
-    unsigned int post_prime_length;
-    hb_blob_t *post_blob = hb_sanitize_context_t ().reference_table<post>(plan->source);
-    hb_blob_t *post_prime_blob = hb_blob_create_sub_blob (post_blob, 0, post::min_size);
-    post *post_prime = (post *) hb_blob_get_data_writable (post_prime_blob, &post_prime_length);
-    hb_blob_destroy (post_blob);
+    post *post_prime = c->allocate_min<post> ();
+    if (unlikely (!post_prime))  return;
 
-    if (unlikely (!post_prime || post_prime_length != post::min_size))
-    {
-      hb_blob_destroy (post_prime_blob);
-      DEBUG_MSG(SUBSET, nullptr, "Invalid source post table with length %d.", post_prime_length);
-      return false;
-    }
+    memcpy (post_prime, this, post::min_size);
+    post_prime->version.major = 3; // Version 3 does not have any glyph names.
+  }
 
-    post_prime->version.major.set (3); // Version 3 does not have any glyph names.
-    bool result = plan->add_table (HB_OT_TAG_post, post_prime_blob);
-    hb_blob_destroy (post_prime_blob);
+  bool subset (hb_subset_context_t *c) const
+  {
+    TRACE_SUBSET (this);
+    post *post_prime = c->serializer->start_embed<post> ();
+    if (unlikely (!post_prime)) return_trace (false);
 
-    return result;
+    serialize (c->serializer);
+
+    return_trace (true);
   }
 
   struct accelerator_t
@@ -131,7 +127,7 @@ struct post
       hb_bytes_t s = find_glyph_name (glyph);
       if (!s.length) return false;
       if (!buf_len) return true;
-      unsigned int len = MIN (buf_len - 1, s.length);
+      unsigned int len = hb_min (buf_len - 1, s.length);
       strncpy (buf, s.arrayZ, len);
       buf[len] = '\0';
       return true;
@@ -158,7 +154,7 @@ struct post
 
         for (unsigned int i = 0; i < count; i++)
           gids[i] = i;
-        hb_sort_r (gids, count, sizeof (gids[0]), cmp_gids, (void *) this);
+        hb_qsort (gids, count, sizeof (gids[0]), cmp_gids, (void *) this);
 
         if (unlikely (!gids_sorted_by_name.cmpexch (nullptr, gids)))
         {
@@ -168,8 +164,7 @@ struct post
       }
 
       hb_bytes_t st (name, len);
-      const uint16_t *gid = (const uint16_t *) hb_bsearch_r (hb_addressof (st), gids, count,
-                                                             sizeof (gids[0]), cmp_key, (void *) this);
+      auto* gid = hb_bsearch (st, gids, count, sizeof (gids[0]), cmp_key, (void *) this);
       if (gid)
       {
         *glyph = *gid;
@@ -179,12 +174,14 @@ struct post
       return false;
     }
 
+    hb_blob_ptr_t<post> table;
+
     protected:
 
     unsigned int get_glyph_count () const
     {
       if (version == 0x00010000)
-        return NUM_FORMAT1_NAMES;
+        return format1_names_length;
 
       if (version == 0x00020000)
         return glyphNameIndex->len;
@@ -212,7 +209,7 @@ struct post
     {
       if (version == 0x00010000)
       {
-        if (glyph >= NUM_FORMAT1_NAMES)
+        if (glyph >= format1_names_length)
           return hb_bytes_t ();
 
         return format1_names (glyph);
@@ -222,9 +219,9 @@ struct post
         return hb_bytes_t ();
 
       unsigned int index = glyphNameIndex->arrayZ[glyph];
-      if (index < NUM_FORMAT1_NAMES)
+      if (index < format1_names_length)
         return format1_names (index);
-      index -= NUM_FORMAT1_NAMES;
+      index -= format1_names_length;
 
       if (index >= index_to_offset.length)
         return hb_bytes_t ();
@@ -238,13 +235,14 @@ struct post
     }
 
     private:
-    hb_blob_ptr_t<post> table;
     uint32_t version;
     const ArrayOf<HBUINT16> *glyphNameIndex;
     hb_vector_t<uint32_t> index_to_offset;
     const uint8_t *pool;
     hb_atomic_ptr_t<uint16_t *> gids_sorted_by_name;
   };
+
+  bool has_data () const { return version.to_int (); }
 
   bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -260,7 +258,7 @@ struct post
                                          * 0x00020000 for version 2.0
                                          * 0x00025000 for version 2.5 (deprecated)
                                          * 0x00030000 for version 3.0 */
-  Fixed         italicAngle;            /* Italic angle in counter-clockwise degrees
+  HBFixed       italicAngle;            /* Italic angle in counter-clockwise degrees
                                          * from the vertical. Zero for upright text,
                                          * negative for text that leans to the right
                                          * (forward). */

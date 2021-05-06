@@ -164,7 +164,7 @@ public class LogManager {
     // open for props.getProperties() to be called before the construcor
     // of Hashtable is actually completed).
     private volatile Properties props = new Properties();
-    private final static Level defaultLevel = Level.INFO;
+    private static final Level defaultLevel = Level.INFO;
 
     // LoggerContext for system loggers and user loggers
     private final LoggerContext systemContext = new SystemLoggerContext();
@@ -777,7 +777,7 @@ public class LogManager {
             }
             LoggerWeakRef ref = namedLoggers.get(name);
             if (ref != null) {
-                if (ref.get() == null) {
+                if (ref.refersTo(null)) {
                     // It's possible that the Logger was GC'ed after a
                     // drainLoggerRefQueueBounded() call above so allow
                     // a new one to be registered.
@@ -1153,7 +1153,7 @@ public class LogManager {
     //   - minimum: 0.02 ms
     //   - maximum: 10.9 ms
     //
-    private final static int MAX_ITERATIONS = 400;
+    private static final int MAX_ITERATIONS = 400;
     final void drainLoggerRefQueueBounded() {
         for (int i = 0; i < MAX_ITERATIONS; i++) {
             if (loggerRefQueue == null) {
@@ -1920,7 +1920,7 @@ public class LogManager {
      * </thead>
      * <tbody>
      * <tr>
-     * <th scope="row" valign="top">{@code <logger>.level}</th>
+     * <th scope="row" style="vertical-align:top">{@code <logger>.level}</th>
      * <td>
      * <ul>
      *   <li>If the resulting configuration defines a level for a logger and
@@ -1941,7 +1941,7 @@ public class LogManager {
      * </ul>
      * </td>
      * <tr>
-     * <th scope="row" valign="top">{@code <logger>.useParentHandlers}</th>
+     * <th scope="row" style="vertical-align:top">{@code <logger>.useParentHandlers}</th>
      * <td>
      * <ul>
      *   <li>If either the resulting or the old value for the useParentHandlers
@@ -1955,7 +1955,7 @@ public class LogManager {
      * </td>
      * </tr>
      * <tr>
-     * <th scope="row" valign="top">{@code <logger>.handlers}</th>
+     * <th scope="row" style="vertical-align:top">{@code <logger>.handlers}</th>
      * <td>
      * <ul>
      *   <li>If the resulting configuration defines a list of handlers for a
@@ -1979,7 +1979,7 @@ public class LogManager {
      * </td>
      * </tr>
      * <tr>
-     * <th scope="row" valign="top">{@code <handler-name>.*}</th>
+     * <th scope="row" style="vertical-align:top">{@code <handler-name>.*}</th>
      * <td>
      * <ul>
      *   <li>Properties configured/changed on handler classes will only affect
@@ -1991,7 +1991,7 @@ public class LogManager {
      * </td>
      * </tr>
      * <tr>
-     * <th scope="row" valign="top">{@code config} and any other property</th>
+     * <th scope="row" style="vertical-align:top">{@code config} and any other property</th>
      * <td>
      * <ul>
      *   <li>The resulting value for these property will be stored in the
@@ -2550,7 +2550,7 @@ public class LogManager {
      *
      * @since 1.5
      */
-    public final static String LOGGING_MXBEAN_NAME
+    public static final String LOGGING_MXBEAN_NAME
         = "java.util.logging:type=Logging";
 
     /**

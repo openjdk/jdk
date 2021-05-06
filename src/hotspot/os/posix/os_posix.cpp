@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,28 @@
  *
  */
 
+
 #include "jvm.h"
+#ifdef LINUX
+#include "classfile/classLoader.hpp"
+#endif
+#include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "os_posix.inline.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/osThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/perfMemory.hpp"
 #include "utilities/align.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -43,15 +53,23 @@
 #include <dirent.h>
 #include <dlfcn.h>
 #include <grp.h>
+#include <netdb.h>
 #include <pwd.h>
 #include <pthread.h>
 #include <signal.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/utsname.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 #include <utmpx.h>
+
+#ifdef __APPLE__
+  #include <crt_externs.h>
+#endif
 
 #define ROOT_UID 0
 
@@ -296,37 +314,18 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   return map_memory_to_file(base, size, fd);
 }
 
-// Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
-// so on posix, unmap the section at the start and at the end of the chunk that we mapped
-// rather than unmapping and remapping the whole chunk to get requested alignment.
-char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
+static size_t calculate_aligned_extra_size(size_t size, size_t alignment) {
   assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
       "Alignment must be a multiple of allocation granularity (page size)");
   assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
+  return extra_size;
+}
 
-  char* extra_base;
-  if (file_desc != -1) {
-    // For file mapping, we do not call os:reserve_memory_with_fd since:
-    // - we later chop away parts of the mapping using os::release_memory and that could fail if the
-    //   original mmap call had been tied to an fd.
-    // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
-    //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
-    //   chopping off and unmapping excess bits back and front (see below) would not work.
-    extra_base = reserve_mmapped_memory(extra_size, NULL);
-    if (extra_base != NULL) {
-      MemTracker::record_virtual_memory_reserve((address)extra_base, extra_size, CALLER_PC);
-    }
-  } else {
-    extra_base = os::reserve_memory(extra_size);
-  }
-
-  if (extra_base == NULL) {
-    return NULL;
-  }
-
+// After a bigger chunk was mapped, unmaps start and end parts to get the requested alignment.
+static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, size_t extra_size) {
   // Do manual alignment
   char* aligned_base = align_up(extra_base, alignment);
 
@@ -348,28 +347,40 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
       os::release_memory(extra_base + begin_offset + size, end_offset);
   }
 
-  if (file_desc != -1) {
-    // After we have an aligned address, we can replace anonymous mapping with file mapping
-    if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == NULL) {
-      vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
-    }
-    MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
-  }
   return aligned_base;
 }
 
-// On Posix platforms, reservations are done using mmap which can be released in parts. So splitting is a no-op.
-void os::split_reserved_memory(char *base, size_t size, size_t split) {
-  char* const split_address = base + split;
-  assert(size > 0, "Sanity");
-  assert(size > split, "Sanity");
-  assert(split > 0, "Sanity");
-  assert(is_aligned(base, os::vm_allocation_granularity()), "Sanity");
-  assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
+// Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
+// so on posix, unmap the section at the start and at the end of the chunk that we mapped
+// rather than unmapping and remapping the whole chunk to get requested alignment.
+char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+  size_t extra_size = calculate_aligned_extra_size(size, alignment);
+  char* extra_base = os::reserve_memory(extra_size, exec);
+  if (extra_base == NULL) {
+    return NULL;
+  }
+  return chop_extra_memory(size, alignment, extra_base, extra_size);
+}
 
-  // NMT: tell NMT to track both parts individually from now on.
-  MemTracker::record_virtual_memory_split_reserved(base, size, split);
-
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc) {
+  size_t extra_size = calculate_aligned_extra_size(size, alignment);
+  // For file mapping, we do not call os:map_memory_to_file(size,fd) since:
+  // - we later chop away parts of the mapping using os::release_memory and that could fail if the
+  //   original mmap call had been tied to an fd.
+  // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
+  //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
+  //   chopping off and unmapping excess bits back and front (see below) would not work.
+  char* extra_base = reserve_mmapped_memory(extra_size, NULL);
+  if (extra_base == NULL) {
+    return NULL;
+  }
+  char* aligned_base = chop_extra_memory(size, alignment, extra_base, extra_size);
+  // After we have an aligned address, we can replace anonymous mapping with file mapping
+  if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == NULL) {
+    vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
+  }
+  MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
+  return aligned_base;
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
@@ -538,7 +549,27 @@ bool os::get_host_name(char* buf, size_t buflen) {
   return true;
 }
 
-bool os::has_allocatable_memory_limit(julong* limit) {
+#ifndef _LP64
+// Helper, on 32bit, for os::has_allocatable_memory_limit
+static bool is_allocatable(size_t s) {
+  if (s < 2 * G) {
+    return true;
+  }
+  // Use raw anonymous mmap here; no need to go through any
+  // of our reservation layers. We will unmap right away.
+  void* p = ::mmap(NULL, s, PROT_NONE,
+                   MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS, -1, 0);
+  if (p == MAP_FAILED) {
+    return false;
+  } else {
+    ::munmap(p, s);
+    return true;
+  }
+}
+#endif // !_LP64
+
+
+bool os::has_allocatable_memory_limit(size_t* limit) {
   struct rlimit rlim;
   int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
   // if there was an error when calling getrlimit, assume that there is no limitation
@@ -547,7 +578,7 @@ bool os::has_allocatable_memory_limit(julong* limit) {
   if ((getrlimit_res != 0) || (rlim.rlim_cur == RLIM_INFINITY)) {
     result = false;
   } else {
-    *limit = (julong)rlim.rlim_cur;
+    *limit = (size_t)rlim.rlim_cur;
     result = true;
   }
 #ifdef _LP64
@@ -556,7 +587,7 @@ bool os::has_allocatable_memory_limit(julong* limit) {
   // arbitrary virtual space limit for 32 bit Unices found by testing. If
   // getrlimit above returned a limit, bound it with this limit. Otherwise
   // directly use it.
-  const julong max_virtual_limit = (julong)3800*M;
+  const size_t max_virtual_limit = 3800*M;
   if (result) {
     *limit = MIN2(*limit, max_virtual_limit);
   } else {
@@ -573,9 +604,9 @@ bool os::has_allocatable_memory_limit(julong* limit) {
   // until the difference between these limits is "small".
 
   // the minimum amount of memory we care about allocating.
-  const julong min_allocation_size = M;
+  const size_t min_allocation_size = M;
 
-  julong upper_limit = *limit;
+  size_t upper_limit = *limit;
 
   // first check a few trivial cases
   if (is_allocatable(upper_limit) || (upper_limit <= min_allocation_size)) {
@@ -586,9 +617,9 @@ bool os::has_allocatable_memory_limit(julong* limit) {
     *limit = min_allocation_size;
   } else {
     // perform the binary search.
-    julong lower_limit = min_allocation_size;
+    size_t lower_limit = min_allocation_size;
     while ((upper_limit - lower_limit) > min_allocation_size) {
-      julong temp_limit = ((upper_limit - lower_limit) / 2) + lower_limit;
+      size_t temp_limit = ((upper_limit - lower_limit) / 2) + lower_limit;
       temp_limit = align_down(temp_limit, min_allocation_size);
       if (is_allocatable(temp_limit)) {
         lower_limit = temp_limit;
@@ -602,6 +633,22 @@ bool os::has_allocatable_memory_limit(julong* limit) {
 #endif
 }
 
+void os::dll_unload(void *lib) {
+  ::dlclose(lib);
+}
+
+jlong os::lseek(int fd, jlong offset, int whence) {
+  return (jlong) BSD_ONLY(::lseek) NOT_BSD(::lseek64)(fd, offset, whence);
+}
+
+int os::fsync(int fd) {
+  return ::fsync(fd);
+}
+
+int os::ftruncate(int fd, jlong length) {
+   return BSD_ONLY(::ftruncate) NOT_BSD(::ftruncate64)(fd, length);
+}
+
 const char* os::get_current_directory(char *buf, size_t buflen) {
   return getcwd(buf, buflen);
 }
@@ -610,8 +657,18 @@ FILE* os::open(int fd, const char* mode) {
   return ::fdopen(fd, mode);
 }
 
+size_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  size_t res;
+  RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
+  return res;
+}
+
 ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
   return ::pread(fd, buf, nBytes, offset);
+}
+
+int os::close(int fd) {
+  return ::close(fd);
 }
 
 void os::flockfile(FILE* fp) {
@@ -635,6 +692,38 @@ struct dirent* os::readdir(DIR* dirp) {
 int os::closedir(DIR *dirp) {
   assert(dirp != NULL, "just checking");
   return ::closedir(dirp);
+}
+
+int os::socket_close(int fd) {
+  return ::close(fd);
+}
+
+int os::socket(int domain, int type, int protocol) {
+  return ::socket(domain, type, protocol);
+}
+
+int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, flags));
+}
+
+int os::send(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
+}
+
+int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
+  return os::send(fd, buf, nBytes, flags);
+}
+
+int os::connect(int fd, struct sockaddr* him, socklen_t len) {
+  RESTARTABLE_RETURN_INT(::connect(fd, him, len));
+}
+
+struct hostent* os::get_host_by_name(char* name) {
+  return ::gethostbyname(name);
+}
+
+void os::exit(int num) {
+  ::exit(num);
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
@@ -763,6 +852,14 @@ char * os::native_path(char *path) {
 }
 
 bool os::same_files(const char* file1, const char* file2) {
+  if (file1 == nullptr && file2 == nullptr) {
+    return true;
+  }
+
+  if (file1 == nullptr || file2 == nullptr) {
+    return false;
+  }
+
   if (strcmp(file1, file2) == 0) {
     return true;
   }
@@ -907,6 +1004,123 @@ size_t os::Posix::get_initial_stack_size(ThreadType thr_type, size_t req_stack_s
   return stack_size;
 }
 
+#ifndef ZERO
+#ifndef ARM
+static bool get_frame_at_stack_banging_point(JavaThread* thread, address pc, const void* ucVoid, frame* fr) {
+  if (Interpreter::contains(pc)) {
+    // interpreter performs stack banging after the fixed frame header has
+    // been generated while the compilers perform it before. To maintain
+    // semantic consistency between interpreted and compiled frames, the
+    // method returns the Java sender of the current frame.
+    *fr = os::fetch_frame_from_context(ucVoid);
+    if (!fr->is_first_java_frame()) {
+      // get_frame_at_stack_banging_point() is only called when we
+      // have well defined stacks so java_sender() calls do not need
+      // to assert safe_for_sender() first.
+      *fr = fr->java_sender();
+    }
+  } else {
+    // more complex code with compiled code
+    assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
+    CodeBlob* cb = CodeCache::find_blob(pc);
+    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
+      // Not sure where the pc points to, fallback to default
+      // stack overflow handling
+      return false;
+    } else {
+      // in compiled code, the stack banging is performed just after the return pc
+      // has been pushed on the stack
+      *fr = os::fetch_compiled_frame_from_context(ucVoid);
+      if (!fr->is_java_frame()) {
+        assert(!fr->is_first_frame(), "Safety check");
+        // See java_sender() comment above.
+        *fr = fr->java_sender();
+      }
+    }
+  }
+  assert(fr->is_java_frame(), "Safety check");
+  return true;
+}
+#endif // ARM
+
+// This return true if the signal handler should just continue, ie. return after calling this
+bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address pc,
+                                      const void* ucVoid, address* stub) {
+  // stack overflow
+  StackOverflow* overflow_state = thread->stack_overflow_state();
+  if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
+    if (thread->thread_state() == _thread_in_Java) {
+#ifndef ARM
+      // arm32 doesn't have this
+      if (overflow_state->in_stack_reserved_zone(addr)) {
+        frame fr;
+        if (get_frame_at_stack_banging_point(thread, pc, ucVoid, &fr)) {
+          assert(fr.is_java_frame(), "Must be a Java frame");
+          frame activation =
+            SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
+          if (activation.sp() != NULL) {
+            overflow_state->disable_stack_reserved_zone();
+            if (activation.is_interpreted_frame()) {
+              overflow_state->set_reserved_stack_activation((address)(activation.fp()
+                // Some platforms use frame pointers for interpreter frames, others use initial sp.
+#if !defined(PPC64) && !defined(S390)
+                + frame::interpreter_frame_initial_sp_offset
+#endif
+                ));
+            } else {
+              overflow_state->set_reserved_stack_activation((address)activation.unextended_sp());
+            }
+            return true; // just continue
+          }
+        }
+      }
+#endif // ARM
+      // Throw a stack overflow exception.  Guard pages will be reenabled
+      // while unwinding the stack.
+      overflow_state->disable_stack_yellow_reserved_zone();
+      *stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
+    } else {
+      // Thread was in the vm or native code.  Return and try to finish.
+      overflow_state->disable_stack_yellow_reserved_zone();
+      return true; // just continue
+    }
+  } else if (overflow_state->in_stack_red_zone(addr)) {
+    // Fatal red zone violation.  Disable the guard pages and fall through
+    // to handle_unexpected_exception way down below.
+    overflow_state->disable_stack_red_zone();
+    tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
+
+    // This is a likely cause, but hard to verify. Let's just print
+    // it as a hint.
+    tty->print_raw_cr("Please check if any of your loaded .so files has "
+                      "enabled executable stack (see man page execstack(8))");
+
+  } else {
+#if !defined(AIX) && !defined(__APPLE__)
+    // bsd and aix don't have this
+
+    // Accessing stack address below sp may cause SEGV if current
+    // thread has MAP_GROWSDOWN stack. This should only happen when
+    // current thread was created by user code with MAP_GROWSDOWN flag
+    // and then attached to VM. See notes in os_linux.cpp.
+    if (thread->osthread()->expanding_stack() == 0) {
+       thread->osthread()->set_expanding_stack();
+       if (os::Linux::manually_expand_stack(thread, addr)) {
+         thread->osthread()->clear_expanding_stack();
+         return true; // just continue
+       }
+       thread->osthread()->clear_expanding_stack();
+    } else {
+       fatal("recursive segv. expanding stack.");
+    }
+#else
+    tty->print_raw_cr("SIGSEGV happened inside stack but outside yellow and red zone.");
+#endif // AIX or BSD
+  }
+  return false;
+}
+#endif // ZERO
+
 bool os::Posix::is_root(uid_t uid){
     return ROOT_UID == uid;
 }
@@ -1004,23 +1218,6 @@ static void pthread_init_common(void) {
   os::PlatformMutex::init();
 }
 
-// Not all POSIX types and API's are available on all notionally "posix"
-// platforms. If we have build-time support then we will check for actual
-// runtime support via dlopen/dlsym lookup. This allows for running on an
-// older OS version compared to the build platform. But if there is no
-// build time support then there cannot be any runtime support as we do not
-// know what the runtime types would be (for example clockid_t might be an
-// int or int64_t).
-//
-#ifdef SUPPORTS_CLOCK_MONOTONIC
-
-// This means we have clockid_t, clock_gettime et al and CLOCK_MONOTONIC
-
-int (*os::Posix::_clock_gettime)(clockid_t, struct timespec *) = NULL;
-int (*os::Posix::_clock_getres)(clockid_t, struct timespec *) = NULL;
-
-bool os::Posix::_supports_monotonic_clock = false;
-
 static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t) = NULL;
 
 static bool _use_clock_monotonic_condattr = false;
@@ -1032,44 +1229,7 @@ void os::Posix::init(void) {
   // NOTE: no logging available when this is called. Put logging
   // statements in init_2().
 
-  // 1. Check for CLOCK_MONOTONIC support.
-
-  void* handle = NULL;
-
-  // For older linux we need librt, for other OS we can find
-  // this function in regular libc.
-#ifdef NEEDS_LIBRT
-  // We do dlopen's in this particular order due to bug in linux
-  // dynamic loader (see 6348968) leading to crash on exit.
-  handle = dlopen("librt.so.1", RTLD_LAZY);
-  if (handle == NULL) {
-    handle = dlopen("librt.so", RTLD_LAZY);
-  }
-#endif
-
-  if (handle == NULL) {
-    handle = RTLD_DEFAULT;
-  }
-
-  int (*clock_getres_func)(clockid_t, struct timespec*) =
-    (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_getres");
-  int (*clock_gettime_func)(clockid_t, struct timespec*) =
-    (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_gettime");
-  if (clock_getres_func != NULL && clock_gettime_func != NULL) {
-    _clock_gettime = clock_gettime_func;
-    _clock_getres = clock_getres_func;
-    // We assume that if both clock_gettime and clock_getres support
-    // CLOCK_MONOTONIC then the OS provides true high-res monotonic clock.
-    struct timespec res;
-    struct timespec tp;
-    if (clock_getres_func(CLOCK_MONOTONIC, &res) == 0 &&
-        clock_gettime_func(CLOCK_MONOTONIC, &tp) == 0) {
-      // Yes, monotonic clock is supported.
-      _supports_monotonic_clock = true;
-    }
-  }
-
-  // 2. Check for pthread_condattr_setclock support.
+  // Check for pthread_condattr_setclock support.
 
   // libpthread is already loaded.
   int (*condattr_setclock_func)(pthread_condattr_t*, clockid_t) =
@@ -1084,7 +1244,7 @@ void os::Posix::init(void) {
   pthread_init_common();
 
   int status;
-  if (_pthread_condattr_setclock != NULL && _clock_gettime != NULL) {
+  if (_pthread_condattr_setclock != NULL) {
     if ((status = _pthread_condattr_setclock(_condAttr, CLOCK_MONOTONIC)) != 0) {
       if (status == EINVAL) {
         _use_clock_monotonic_condattr = false;
@@ -1100,27 +1260,12 @@ void os::Posix::init(void) {
 }
 
 void os::Posix::init_2(void) {
-  log_info(os)("Use of CLOCK_MONOTONIC is%s supported",
-               (_clock_gettime != NULL ? "" : " not"));
+  log_info(os)("Use of CLOCK_MONOTONIC is supported");
   log_info(os)("Use of pthread_condattr_setclock is%s supported",
                (_pthread_condattr_setclock != NULL ? "" : " not"));
   log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with %s",
                _use_clock_monotonic_condattr ? "CLOCK_MONOTONIC" : "the default clock");
 }
-
-#else // !SUPPORTS_CLOCK_MONOTONIC
-
-void os::Posix::init(void) {
-  pthread_init_common();
-}
-
-void os::Posix::init_2(void) {
-  log_info(os)("Use of CLOCK_MONOTONIC is not supported");
-  log_info(os)("Use of pthread_condattr_setclock is not supported");
-  log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with the default clock");
-}
-
-#endif // SUPPORTS_CLOCK_MONOTONIC
 
 // Utility to convert the given timeout to an absolute timespec
 // (based on the appropriate clock) to use with pthread_cond_timewait,
@@ -1173,7 +1318,6 @@ static void calc_rel_time(timespec* abstime, jlong timeout, jlong now_sec,
 
 // Unpack the given deadline in milliseconds since the epoch, into the given timespec.
 // The current time in seconds is also passed in to enforce an upper bound as discussed above.
-// This is only used with gettimeofday, when clock_gettime is not available.
 static void unpack_abs_time(timespec* abstime, jlong deadline, jlong now_sec) {
   time_t max_secs = now_sec + MAX_SECS;
 
@@ -1208,38 +1352,21 @@ static void to_abstime(timespec* abstime, jlong timeout,
     timeout = 0;
   }
 
-#ifdef SUPPORTS_CLOCK_MONOTONIC
-
   clockid_t clock = CLOCK_MONOTONIC;
-  // need to ensure we have a runtime check for clock_gettime support
-  if (!isAbsolute && os::Posix::supports_monotonic_clock()) {
-    if (!_use_clock_monotonic_condattr || isRealtime) {
-      clock = CLOCK_REALTIME;
-    }
-    struct timespec now;
-    int status = os::Posix::clock_gettime(clock, &now);
-    assert_status(status == 0, status, "clock_gettime");
-    calc_rel_time(abstime, timeout, now.tv_sec, now.tv_nsec, NANOUNITS);
-    DEBUG_ONLY(max_secs += now.tv_sec;)
-  } else {
-
-#else
-
-  { // Match the block scope.
-
-#endif // SUPPORTS_CLOCK_MONOTONIC
-
-    // Time-of-day clock is all we can reliably use.
-    struct timeval now;
-    int status = gettimeofday(&now, NULL);
-    assert_status(status == 0, errno, "gettimeofday");
-    if (isAbsolute) {
-      unpack_abs_time(abstime, timeout, now.tv_sec);
-    } else {
-      calc_rel_time(abstime, timeout, now.tv_sec, now.tv_usec, MICROUNITS);
-    }
-    DEBUG_ONLY(max_secs += now.tv_sec;)
+  if (isAbsolute || (!_use_clock_monotonic_condattr || isRealtime)) {
+    clock = CLOCK_REALTIME;
   }
+
+  struct timespec now;
+  int status = clock_gettime(clock, &now);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+
+  if (!isAbsolute) {
+    calc_rel_time(abstime, timeout, now.tv_sec, now.tv_nsec, NANOUNITS);
+  } else {
+    unpack_abs_time(abstime, timeout, now.tv_sec);
+  }
+  DEBUG_ONLY(max_secs += now.tv_sec;)
 
   assert(abstime->tv_sec >= 0, "tv_sec < 0");
   assert(abstime->tv_sec <= max_secs, "tv_sec > max_secs");
@@ -1254,6 +1381,51 @@ void os::Posix::to_RTC_abstime(timespec* abstime, int64_t millis) {
              false /* not absolute */,
              true  /* use real-time clock */);
 }
+
+// Common (partly) shared time functions
+
+jlong os::javaTimeMillis() {
+  struct timespec ts;
+  int status = clock_gettime(CLOCK_REALTIME, &ts);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  return jlong(ts.tv_sec) * MILLIUNITS +
+    jlong(ts.tv_nsec) / NANOUNITS_PER_MILLIUNIT;
+}
+
+void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
+  struct timespec ts;
+  int status = clock_gettime(CLOCK_REALTIME, &ts);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  seconds = jlong(ts.tv_sec);
+  nanos = jlong(ts.tv_nsec);
+}
+
+// macOS and AIX have platform specific implementations for javaTimeNanos()
+// using native clock/timer access APIs. These have historically worked well
+// for those platforms, but it may be possible for them to switch to the
+// generic clock_gettime mechanism in the future.
+#if !defined(__APPLE__) && !defined(AIX)
+
+jlong os::javaTimeNanos() {
+  struct timespec tp;
+  int status = clock_gettime(CLOCK_MONOTONIC, &tp);
+  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
+  jlong result = jlong(tp.tv_sec) * NANOSECS_PER_SEC + jlong(tp.tv_nsec);
+  return result;
+}
+
+// for timer info max values which include all bits
+#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
+
+void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
+  // CLOCK_MONOTONIC - amount of time since some arbitrary point in the past
+  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
+  info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
+  info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
+}
+
+#endif // ! APPLE && !AIX
 
 // Shared pthread_mutex/cond based PlatformEvent implementation.
 // Not currently usable by Solaris.
@@ -1395,7 +1567,7 @@ void os::PlatformEvent::unpark() {
   // shake out uses of park() and unpark() without checking state conditions
   // properly. This spurious return doesn't manifest itself in any user code
   // but only in the correctly written condition checking loops of ObjectMonitor,
-  // Mutex/Monitor, Thread::muxAcquire and JavaThread::sleep
+  // Mutex/Monitor, and JavaThread::sleep
 
   if (Atomic::xchg(&_event, 1) >= 0) return;
 
@@ -1422,15 +1594,22 @@ void os::PlatformEvent::unpark() {
 
 // JSR166 support
 
- os::PlatformParker::PlatformParker() {
-  int status;
-  status = pthread_cond_init(&_cond[REL_INDEX], _condAttr);
+ os::PlatformParker::PlatformParker() : _counter(0), _cur_index(-1) {
+  int status = pthread_cond_init(&_cond[REL_INDEX], _condAttr);
   assert_status(status == 0, status, "cond_init rel");
   status = pthread_cond_init(&_cond[ABS_INDEX], NULL);
   assert_status(status == 0, status, "cond_init abs");
   status = pthread_mutex_init(_mutex, _mutexAttr);
   assert_status(status == 0, status, "mutex_init");
-  _cur_index = -1; // mark as unused
+}
+
+os::PlatformParker::~PlatformParker() {
+  int status = pthread_cond_destroy(&_cond[REL_INDEX]);
+  assert_status(status == 0, status, "cond_destroy rel");
+  status = pthread_cond_destroy(&_cond[ABS_INDEX]);
+  assert_status(status == 0, status, "cond_destroy abs");
+  status = pthread_mutex_destroy(_mutex);
+  assert_status(status == 0, status, "mutex_destroy");
 }
 
 // Parker::park decrements count if > 0, else does a condvar wait.  Unpark
@@ -1493,8 +1672,6 @@ void Parker::park(bool isAbsolute, jlong time) {
   }
 
   OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
-  jt->set_suspend_equivalent();
-  // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
 
   assert(_cur_index == -1, "invariant");
   if (time == 0) {
@@ -1517,11 +1694,6 @@ void Parker::park(bool isAbsolute, jlong time) {
   // Paranoia to ensure our locked and lock-free paths interact
   // correctly with each other and Java-level accesses.
   OrderAccess::fence();
-
-  // If externally suspended while waiting, re-suspend
-  if (jt->handle_special_suspend_equivalent_condition()) {
-    jt->java_suspend_self();
-  }
 }
 
 void Parker::unpark() {
@@ -1685,5 +1857,130 @@ int os::PlatformMonitor::wait(jlong millis) {
     assert_status(status == 0 MACOS_ONLY(|| status == ETIMEDOUT),
                   status, "cond_wait");
     return OS_OK;
+  }
+}
+
+// Darwin has no "environ" in a dynamic library.
+#ifdef __APPLE__
+  #define environ (*_NSGetEnviron())
+#else
+  extern char** environ;
+#endif
+
+char** os::get_environ() { return environ; }
+
+// Run the specified command in a separate process. Return its exit value,
+// or -1 on failure (e.g. can't fork a new process).
+// Notes: -Unlike system(), this function can be called from signal handler. It
+//         doesn't block SIGINT et al.
+//        -this function is unsafe to use in non-error situations, mainly
+//         because the child process will inherit all parent descriptors.
+int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
+  const char * argv[4] = {"sh", "-c", cmd, NULL};
+
+  pid_t pid ;
+
+  char** env = os::get_environ();
+
+  // Use always vfork on AIX, since its safe and helps with analyzing OOM situations.
+  // Otherwise leave it up to the caller.
+  AIX_ONLY(prefer_vfork = true;)
+  pid = prefer_vfork ? ::vfork() : ::fork();
+
+  if (pid < 0) {
+    // fork failed
+    return -1;
+
+  } else if (pid == 0) {
+    // child process
+
+    ::execve("/bin/sh", (char* const*)argv, env);
+
+    // execve failed
+    ::_exit(-1);
+
+  } else  {
+    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
+    // care about the actual exit code, for now.
+
+    int status;
+
+    // Wait for the child process to exit.  This returns immediately if
+    // the child has already exited. */
+    while (::waitpid(pid, &status, 0) < 0) {
+      switch (errno) {
+      case ECHILD: return 0;
+      case EINTR: break;
+      default: return -1;
+      }
+    }
+
+    if (WIFEXITED(status)) {
+      // The child exited normally; get its exit code.
+      return WEXITSTATUS(status);
+    } else if (WIFSIGNALED(status)) {
+      // The child exited because of a signal
+      // The best value to return is 0x80 + signal number,
+      // because that is what all Unix shells do, and because
+      // it allows callers to distinguish between process exit and
+      // process death by signal.
+      return 0x80 + WTERMSIG(status);
+    } else {
+      // Unknown exit code; pass it through
+      return status;
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// runtime exit support
+
+// Note: os::shutdown() might be called very early during initialization, or
+// called from signal handler. Before adding something to os::shutdown(), make
+// sure it is async-safe and can handle partially initialized VM.
+void os::shutdown() {
+
+  // allow PerfMemory to attempt cleanup of any persistent resources
+  perfMemory_exit();
+
+  // needs to remove object in file system
+  AttachListener::abort();
+
+  // flush buffered output, finish log files
+  ostream_abort();
+
+  // Check for abort hook
+  abort_hook_t abort_hook = Arguments::abort_hook();
+  if (abort_hook != NULL) {
+    abort_hook();
+  }
+
+}
+
+// Note: os::abort() might be called very early during initialization, or
+// called from signal handler. Before adding something to os::abort(), make
+// sure it is async-safe and can handle partially initialized VM.
+// Also note we can abort while other threads continue to run, so we can
+// easily trigger secondary faults in those threads. To reduce the likelihood
+// of that we use _exit rather than exit, so that no atexit hooks get run.
+// But note that os::shutdown() could also trigger secondary faults.
+void os::abort(bool dump_core, void* siginfo, const void* context) {
+  os::shutdown();
+  if (dump_core) {
+    LINUX_ONLY(if (DumpPrivateMappingsInCore) ClassLoader::close_jrt_image();)
+    ::abort(); // dump core
+  }
+  ::_exit(1);
+}
+
+// Die immediately, no exit hook, no abort hook, no cleanup.
+// Dump a core file, if possible, for debugging.
+void os::die() {
+  if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
+    // For TimeoutInErrorHandlingTest.java, we just kill the VM
+    // and don't take the time to generate a core file.
+    os::signal_raise(SIGKILL);
+  } else {
+    ::abort();
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "services/memTracker.hpp"
@@ -76,24 +77,26 @@ void SafepointMechanism::default_initialize() {
 }
 
 void SafepointMechanism::process(JavaThread *thread) {
-  if (global_poll()) {
-    // Any load in ::block must not pass the global poll load.
-    // Otherwise we might load an old safepoint counter (for example).
-    OrderAccess::loadload();
-    SafepointSynchronize::block(thread);
-  }
+  bool need_rechecking;
+  do {
+    if (global_poll()) {
+      // Any load in ::block() must not pass the global poll load.
+      // Otherwise we might load an old safepoint counter (for example).
+      OrderAccess::loadload();
+      SafepointSynchronize::block(thread);
+    }
 
-  // The call to start_processing fixes the thread's oops and the first few frames.
-  //
-  // The call has been carefully placed here to cater for a few situations:
-  // 1) After we exit from block after a global poll
-  // 2) After a thread races with the disarming of the global poll and transitions from native/blocked
-  // 3) Before the handshake code is run
-  StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
+    // The call to on_safepoint fixes the thread's oops and the first few frames.
+    //
+    // The call has been carefully placed here to cater to a few situations:
+    // 1) After we exit from block after a global poll
+    // 2) After a thread races with the disarming of the global poll and transitions from native/blocked
+    // 3) Before the handshake code is run
+    StackWatermarkSet::on_safepoint(thread);
 
-  if (thread->handshake_state()->should_process()) {
-    thread->handshake_state()->process_by_self(); // Recursive
-  }
+    need_rechecking = thread->handshake_state()->should_process() && thread->handshake_state()->process_by_self();
+
+  } while (need_rechecking);
 }
 
 uintptr_t SafepointMechanism::compute_poll_word(bool armed, uintptr_t stack_watermark) {
@@ -110,6 +113,8 @@ uintptr_t SafepointMechanism::compute_poll_word(bool armed, uintptr_t stack_wate
 }
 
 void SafepointMechanism::update_poll_values(JavaThread* thread) {
+  assert(thread->thread_state() != _thread_blocked, "Must not be");
+  assert(thread->thread_state() != _thread_in_native, "Must not be");
   for (;;) {
     bool armed = global_poll() || thread->handshake_state()->has_operation();
     uintptr_t stack_watermark = StackWatermarkSet::lowest_watermark(thread);

@@ -48,6 +48,7 @@ import static java.security.AccessController.doPrivileged;
  * @see Process
  * @since 9
  */
+@jdk.internal.ValueBased
 final class ProcessHandleImpl implements ProcessHandle {
     /**
      * Default size of stack for reaper processes.
@@ -518,14 +519,9 @@ final class ProcessHandleImpl implements ProcessHandle {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ProcessHandleImpl) {
-            ProcessHandleImpl other = (ProcessHandleImpl) obj;
-            return (pid == other.pid) &&
-                    (startTime == other.startTime
-                        || startTime == 0
-                        || other.startTime == 0);
-        }
-        return false;
+        return (obj instanceof ProcessHandleImpl other)
+                && (pid == other.pid)
+                && (startTime == other.startTime || startTime == 0 || other.startTime == 0);
     }
 
     /**

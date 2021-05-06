@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ class Linux {
   static address   _initial_thread_stack_bottom;
   static uintptr_t _initial_thread_stack_size;
 
-  static const char *_glibc_version;
+  static const char *_libc_version;
   static const char *_libpthread_version;
 
   static bool _supports_fast_thread_cpu_time;
@@ -69,7 +69,7 @@ class Linux {
   static int commit_memory_impl(char* addr, size_t bytes,
                                 size_t alignment_hint, bool exec);
 
-  static void set_glibc_version(const char *s)      { _glibc_version = s; }
+  static void set_libc_version(const char *s)       { _libc_version = s; }
   static void set_libpthread_version(const char *s) { _libpthread_version = s; }
 
   static void rebuild_cpu_to_node_map();
@@ -85,11 +85,13 @@ class Linux {
   static bool setup_large_page_type(size_t page_size);
   static bool transparent_huge_pages_sanity_check(bool warn, size_t pages_size);
   static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
+  static bool shm_hugetlbfs_sanity_check(bool warn, size_t page_size);
+
+  static int hugetlbfs_page_size_flag(size_t page_size);
 
   static char* reserve_memory_special_shm(size_t bytes, size_t alignment, char* req_addr, bool exec);
   static char* reserve_memory_special_huge_tlbfs(size_t bytes, size_t alignment, char* req_addr, bool exec);
-  static char* reserve_memory_special_huge_tlbfs_only(size_t bytes, char* req_addr, bool exec);
-  static char* reserve_memory_special_huge_tlbfs_mixed(size_t bytes, size_t alignment, char* req_addr, bool exec);
+  static bool commit_memory_special(size_t bytes, size_t page_size, char* req_addr, bool exec);
 
   static bool release_memory_special_impl(char* base, size_t bytes);
   static bool release_memory_special_shm(char* base, size_t bytes);
@@ -134,15 +136,11 @@ class Linux {
   static int page_size(void)                                        { return _page_size; }
   static void set_page_size(int val)                                { _page_size = val; }
 
-  static address   ucontext_get_pc(const ucontext_t* uc);
-  static void ucontext_set_pc(ucontext_t* uc, address pc);
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
 
-  static bool get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr);
-
   // GNU libc and libpthread version strings
-  static const char *glibc_version()          { return _glibc_version; }
+  static const char *libc_version()           { return _libc_version; }
   static const char *libpthread_version()     { return _libpthread_version; }
 
   static void libpthread_init();
@@ -173,6 +171,10 @@ class Linux {
 
   static jlong fast_thread_cpu_time(clockid_t clockid);
 
+  // Determine if the vmid is the parent pid for a child in a PID namespace.
+  // Return the namespace pid if so, otherwise -1.
+  static int get_namespace_pid(int vmid);
+
   // Stack repair handling
 
   // none present
@@ -183,6 +185,7 @@ class Linux {
 
   typedef int (*sched_getcpu_func_t)(void);
   typedef int (*numa_node_to_cpus_func_t)(int node, unsigned long *buffer, int bufferlen);
+  typedef int (*numa_node_to_cpus_v2_func_t)(int node, void *mask);
   typedef int (*numa_max_node_func_t)(void);
   typedef int (*numa_num_configured_nodes_func_t)(void);
   typedef int (*numa_available_func_t)(void);
@@ -199,6 +202,7 @@ class Linux {
 
   static sched_getcpu_func_t _sched_getcpu;
   static numa_node_to_cpus_func_t _numa_node_to_cpus;
+  static numa_node_to_cpus_v2_func_t _numa_node_to_cpus_v2;
   static numa_max_node_func_t _numa_max_node;
   static numa_num_configured_nodes_func_t _numa_num_configured_nodes;
   static numa_available_func_t _numa_available;
@@ -220,6 +224,7 @@ class Linux {
 
   static void set_sched_getcpu(sched_getcpu_func_t func) { _sched_getcpu = func; }
   static void set_numa_node_to_cpus(numa_node_to_cpus_func_t func) { _numa_node_to_cpus = func; }
+  static void set_numa_node_to_cpus_v2(numa_node_to_cpus_v2_func_t func) { _numa_node_to_cpus_v2 = func; }
   static void set_numa_max_node(numa_max_node_func_t func) { _numa_max_node = func; }
   static void set_numa_num_configured_nodes(numa_num_configured_nodes_func_t func) { _numa_num_configured_nodes = func; }
   static void set_numa_available(numa_available_func_t func) { _numa_available = func; }
@@ -247,11 +252,43 @@ class Linux {
   };
   static NumaAllocationPolicy _current_numa_policy;
 
+#ifdef __GLIBC__
+  struct glibc_mallinfo {
+    int arena;
+    int ordblks;
+    int smblks;
+    int hblks;
+    int hblkhd;
+    int usmblks;
+    int fsmblks;
+    int uordblks;
+    int fordblks;
+    int keepcost;
+  };
+
+  struct glibc_mallinfo2 {
+    size_t arena;
+    size_t ordblks;
+    size_t smblks;
+    size_t hblks;
+    size_t hblkhd;
+    size_t usmblks;
+    size_t fsmblks;
+    size_t uordblks;
+    size_t fordblks;
+    size_t keepcost;
+  };
+
+  typedef struct glibc_mallinfo (*mallinfo_func_t)(void);
+  typedef struct glibc_mallinfo2 (*mallinfo2_func_t)(void);
+
+  static mallinfo_func_t _mallinfo;
+  static mallinfo2_func_t _mallinfo2;
+#endif
+
  public:
   static int sched_getcpu()  { return _sched_getcpu != NULL ? _sched_getcpu() : -1; }
-  static int numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen) {
-    return _numa_node_to_cpus != NULL ? _numa_node_to_cpus(node, buffer, bufferlen) : -1;
-  }
+  static int numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen);
   static int numa_max_node() { return _numa_max_node != NULL ? _numa_max_node() : -1; }
   static int numa_num_configured_nodes() {
     return _numa_num_configured_nodes != NULL ? _numa_num_configured_nodes() : -1;

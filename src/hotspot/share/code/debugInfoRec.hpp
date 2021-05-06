@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,11 @@
 #include "code/debugInfo.hpp"
 #include "code/location.hpp"
 #include "code/pcDesc.hpp"
-#include "compiler/oopMap.hpp"
 #include "oops/oop.hpp"
 #include "utilities/growableArray.hpp"
+
+class OopMap;
+class OopMapSet;
 
 //** The DebugInformationRecorder collects debugging information
 //   for a compiled method.
@@ -104,7 +106,10 @@ class DebugInformationRecorder: public ResourceObj {
                       bool        reexecute,
                       bool        rethrow_exception = false,
                       bool        is_method_handle_invoke = false,
+                      bool        is_optimized_linkToNative = false,
                       bool        return_oop = false,
+                      bool        has_ea_local_in_scope = false,
+                      bool        arg_escape = false,
                       DebugToken* locals      = NULL,
                       DebugToken* expressions = NULL,
                       DebugToken* monitors    = NULL);

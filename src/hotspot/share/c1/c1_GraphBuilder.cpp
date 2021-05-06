@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "ci/ciField.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciMemberName.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
@@ -983,8 +984,10 @@ void GraphBuilder::load_indexed(BasicType type) {
   Value array = apop();
   Value length = NULL;
   if (CSEArrayLength ||
+      (array->as_Constant() != NULL) ||
       (array->as_AccessField() && array->as_AccessField()->field()->is_constant()) ||
-      (array->as_NewArray() && array->as_NewArray()->length() && array->as_NewArray()->length()->type()->is_constant())) {
+      (array->as_NewArray() && array->as_NewArray()->length() && array->as_NewArray()->length()->type()->is_constant()) ||
+      (array->as_NewMultiArray() && array->as_NewMultiArray()->dims()->at(0)->type()->is_constant())) {
     length = append(new ArrayLength(array, state_before));
   }
   push(as_ValueType(type), append(new LoadIndexed(array, index, length, type, state_before)));
@@ -1000,8 +1003,10 @@ void GraphBuilder::store_indexed(BasicType type) {
   Value array = apop();
   Value length = NULL;
   if (CSEArrayLength ||
+      (array->as_Constant() != NULL) ||
       (array->as_AccessField() && array->as_AccessField()->field()->is_constant()) ||
-      (array->as_NewArray() && array->as_NewArray()->length() && array->as_NewArray()->length()->type()->is_constant())) {
+      (array->as_NewArray() && array->as_NewArray()->length() && array->as_NewArray()->length()->type()->is_constant()) ||
+      (array->as_NewMultiArray() && array->as_NewMultiArray()->dims()->at(0)->type()->is_constant())) {
     length = append(new ArrayLength(array, state_before));
   }
   ciType* array_type = array->declared_type();
@@ -1477,7 +1482,7 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
 
   // The conditions for a memory barrier are described in Parse::do_exits().
   bool need_mem_bar = false;
-  if (method()->name() == ciSymbol::object_initializer_name() &&
+  if (method()->name() == ciSymbols::object_initializer_name() &&
        (scope()->wrote_final() ||
          (AlwaysSafeConstructors && scope()->wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && scope()->wrote_volatile()))) {
@@ -2080,7 +2085,6 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     code == Bytecodes::_invokeinterface;
   Values* args = state()->pop_arguments(target->arg_size_no_receiver() + patching_appendix_arg);
   Value recv = has_receiver ? apop() : NULL;
-  int vtable_index = Method::invalid_vtable_index;
 
   // A null check is required here (when there is a receiver) for any of the following cases
   // - invokespecial, always need a null check.
@@ -2120,7 +2124,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     }
   }
 
-  Invoke* result = new Invoke(code, result_type, recv, args, vtable_index, target, state_before);
+  Invoke* result = new Invoke(code, result_type, recv, args, target, state_before);
   // push result
   append_split(result);
 
@@ -3415,7 +3419,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
 
   // handle intrinsics
   if (callee->intrinsic_id() != vmIntrinsics::_none &&
-      (CheckIntrinsics ? callee->intrinsic_candidate() : true)) {
+      callee->check_intrinsic_candidate()) {
     if (try_inline_intrinsics(callee, ignore_return)) {
       print_inlining(callee, "intrinsic");
       if (callee->has_reserved_stack_access()) {
@@ -3457,7 +3461,6 @@ const char* GraphBuilder::check_can_parse(ciMethod* callee) const {
   // Certain methods cannot be parsed at all:
   if ( callee->is_native())            return "native method";
   if ( callee->is_abstract())          return "abstract method";
-  if (!callee->can_be_compiled())      return "not compilable (disabled)";
   if (!callee->can_be_parsed())        return "cannot be parsed";
   return NULL;
 }
@@ -3749,7 +3752,7 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
 
 bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
   assert(!callee->is_native(), "callee must not be native");
-  if (CompilationPolicy::policy()->should_not_inline(compilation()->env(), callee)) {
+  if (CompilationPolicy::should_not_inline(compilation()->env(), callee)) {
     INLINE_BAILOUT("inlining prohibited by policy");
   }
   // first perform tests of things it's not possible to inline
@@ -3820,7 +3823,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
     }
 
     // don't inline throwable methods unless the inlining tree is rooted in a throwable class
-    if (callee->name() == ciSymbol::object_initializer_name() &&
+    if (callee->name() == ciSymbols::object_initializer_name() &&
         callee->holder()->is_subclass_of(ciEnv::current()->Throwable_klass())) {
       // Throwable constructor call
       IRScope* top = scope();
@@ -4129,8 +4132,11 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
     }
     break;
 
+  case vmIntrinsics::_linkToNative:
+    break; // TODO: NYI
+
   default:
-    fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+    fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
     break;
   }
   set_state(state_before->copy_for_parsing());

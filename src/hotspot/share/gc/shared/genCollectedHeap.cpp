@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -56,9 +56,10 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workgroup.hpp"
-#include "memory/filemap.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "memory/metaspaceCounters.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -98,7 +99,6 @@ GenCollectedHeap::GenCollectedHeap(Generation::Name young,
   _gc_policy_counters(new GCPolicyCounters(policy_counters_name, 2, 2)),
   _incremental_collection_failed(false),
   _full_collections_completed(0),
-  _process_strong_tasks(new SubTasksDone(GCH_PS_NumElements)),
   _young_manager(NULL),
   _old_manager(NULL) {
 }
@@ -142,7 +142,7 @@ jint GenCollectedHeap::initialize() {
 }
 
 CardTableRS* GenCollectedHeap::create_rem_set(const MemRegion& reserved_region) {
-  return new CardTableRS(reserved_region, false /* scan_concurrently */);
+  return new CardTableRS(reserved_region);
 }
 
 void GenCollectedHeap::initialize_size_policy(size_t init_eden_size,
@@ -172,11 +172,12 @@ ReservedHeapSpace GenCollectedHeap::allocate(size_t alignment) {
          SIZE_FORMAT, total_reserved, alignment);
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(total_reserved, alignment);
+  size_t used_page_size = heap_rs.page_size();
 
   os::trace_page_sizes("Heap",
                        MinHeapSize,
                        total_reserved,
-                       alignment,
+                       used_page_size,
                        heap_rs.base(),
                        heap_rs.size());
 
@@ -253,28 +254,9 @@ size_t GenCollectedHeap::max_capacity() const {
 // Update the _full_collections_completed counter
 // at the end of a stop-world full GC.
 unsigned int GenCollectedHeap::update_full_collections_completed() {
-  MonitorLocker ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
   assert(_full_collections_completed <= _total_full_collections,
          "Can't complete more collections than were started");
   _full_collections_completed = _total_full_collections;
-  ml.notify_all();
-  return _full_collections_completed;
-}
-
-// Update the _full_collections_completed counter, as appropriate,
-// at the end of a concurrent GC cycle. Note the conditional update
-// below to allow this method to be called by a concurrent collector
-// without synchronizing in any manner with the VM thread (which
-// may already have initiated a STW full collection "concurrently").
-unsigned int GenCollectedHeap::update_full_collections_completed(unsigned int count) {
-  MonitorLocker ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
-  assert((_full_collections_completed <= _total_full_collections) &&
-         (count <= _total_full_collections),
-         "Can't complete more collections than were started");
-  if (count > _full_collections_completed) {
-    _full_collections_completed = count;
-    ml.notify_all();
-  }
   return _full_collections_completed;
 }
 
@@ -545,9 +527,7 @@ void GenCollectedHeap::do_collection(bool           full,
   DEBUG_ONLY(Thread* my_thread = Thread::current();)
 
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
-  assert(my_thread->is_VM_thread() ||
-         my_thread->is_ConcurrentGC_thread(),
-         "incorrect thread type capability");
+  assert(my_thread->is_VM_thread(), "only VM thread");
   assert(Heap_lock->is_locked(),
          "the requesting thread should have the Heap_lock");
   guarantee(!is_gc_active(), "collection is not reentrant");
@@ -662,7 +642,7 @@ void GenCollectedHeap::do_collection(bool           full,
 
     // Delete metaspaces for unloaded class loaders and clean up loader_data graph
     ClassLoaderDataGraph::purge(/*at_safepoint*/true);
-    MetaspaceUtils::verify_metrics();
+    DEBUG_ONLY(MetaspaceUtils::verify();)
     // Resize the metaspace capacity after full collections
     MetaspaceGC::compute_new_size();
     update_full_collections_completed();
@@ -794,61 +774,43 @@ public:
 static AssertNonScavengableClosure assert_is_non_scavengable_closure;
 #endif
 
-void GenCollectedHeap::process_roots(StrongRootsScope* scope,
-                                     ScanningOption so,
+void GenCollectedHeap::process_roots(ScanningOption so,
                                      OopClosure* strong_roots,
                                      CLDClosure* strong_cld_closure,
                                      CLDClosure* weak_cld_closure,
                                      CodeBlobToOopClosure* code_roots) {
   // General roots.
   assert(code_roots != NULL, "code root closure should always be set");
-  // _n_termination for _process_strong_tasks should be set up stream
-  // in a method not running in a GC worker.  Otherwise the GC worker
-  // could be trying to change the termination condition while the task
-  // is executing in another GC worker.
 
-  if (_process_strong_tasks->try_claim_task(GCH_PS_ClassLoaderDataGraph_oops_do)) {
-    ClassLoaderDataGraph::roots_cld_do(strong_cld_closure, weak_cld_closure);
-  }
+  ClassLoaderDataGraph::roots_cld_do(strong_cld_closure, weak_cld_closure);
 
   // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
   CodeBlobToOopClosure* roots_from_code_p = (so & SO_AllCodeCache) ? NULL : code_roots;
 
-  bool is_par = scope->n_threads() > 1;
-  Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_code_p);
+  Threads::oops_do(strong_roots, roots_from_code_p);
 
-#if INCLUDE_AOT
-  if (UseAOT && _process_strong_tasks->try_claim_task(GCH_PS_aot_oops_do)) {
-    AOTLoader::oops_do(strong_roots);
+  OopStorageSet::strong_oops_do(strong_roots);
+
+  if (so & SO_ScavengeCodeCache) {
+    assert(code_roots != NULL, "must supply closure for code cache");
+
+    // We only visit parts of the CodeCache when scavenging.
+    ScavengableNMethods::nmethods_do(code_roots);
   }
-#endif
-  if (_process_strong_tasks->try_claim_task(GCH_PS_OopStorageSet_oops_do)) {
-    OopStorageSet::strong_oops_do(strong_roots);
+  if (so & SO_AllCodeCache) {
+    assert(code_roots != NULL, "must supply closure for code cache");
+
+    // CMSCollector uses this to do intermediate-strength collections.
+    // We scan the entire code cache, since CodeCache::do_unloading is not called.
+    CodeCache::blobs_do(code_roots);
   }
-
-  if (_process_strong_tasks->try_claim_task(GCH_PS_CodeCache_oops_do)) {
-    if (so & SO_ScavengeCodeCache) {
-      assert(code_roots != NULL, "must supply closure for code cache");
-
-      // We only visit parts of the CodeCache when scavenging.
-      ScavengableNMethods::nmethods_do(code_roots);
-    }
-    if (so & SO_AllCodeCache) {
-      assert(code_roots != NULL, "must supply closure for code cache");
-
-      // CMSCollector uses this to do intermediate-strength collections.
-      // We scan the entire code cache, since CodeCache::do_unloading is not called.
-      CodeCache::blobs_do(code_roots);
-    }
-    // Verify that the code cache contents are not subject to
-    // movement by a scavenging collection.
-    DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, !CodeBlobToOopClosure::FixRelocations));
-    DEBUG_ONLY(ScavengableNMethods::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
-  }
+  // Verify that the code cache contents are not subject to
+  // movement by a scavenging collection.
+  DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, !CodeBlobToOopClosure::FixRelocations));
+  DEBUG_ONLY(ScavengableNMethods::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
 }
 
-void GenCollectedHeap::full_process_roots(StrongRootsScope* scope,
-                                          bool is_adjust_phase,
+void GenCollectedHeap::full_process_roots(bool is_adjust_phase,
                                           ScanningOption so,
                                           bool only_strong_roots,
                                           OopClosure* root_closure,
@@ -856,8 +818,7 @@ void GenCollectedHeap::full_process_roots(StrongRootsScope* scope,
   MarkingCodeBlobClosure mark_code_closure(root_closure, is_adjust_phase);
   CLDClosure* weak_cld_closure = only_strong_roots ? NULL : cld_closure;
 
-  process_roots(scope, so, root_closure, cld_closure, weak_cld_closure, &mark_code_closure);
-  _process_strong_tasks->all_tasks_completed(scope->n_threads());
+  process_roots(so, root_closure, cld_closure, weak_cld_closure, &mark_code_closure);
 }
 
 void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
@@ -1258,17 +1219,13 @@ void GenCollectedHeap::gc_epilogue(bool full) {
 #if COMPILER2_OR_JVMCI
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
   size_t actual_gap = pointer_delta((HeapWord*) (max_uintx-3), *(end_addr()));
-  guarantee(is_client_compilation_mode_vm() || actual_gap > (size_t)FastAllocateSizeLimit, "inline allocation wraps");
+  guarantee(!CompilerConfig::is_c2_or_jvmci_compiler_enabled() || actual_gap > (size_t)FastAllocateSizeLimit, "inline allocation wraps");
 #endif // COMPILER2_OR_JVMCI
 
   resize_all_tlabs();
 
   GenGCEpilogueClosure blk(full);
   generation_iterate(&blk, false);  // not old-to-young.
-
-  if (!CleanChunkPoolAsync) {
-    Chunk::clean_chunk_pool();
-  }
 
   MetaspaceCounters::update_performance_counters();
   CompressedClassSpaceCounters::update_performance_counters();
@@ -1316,5 +1273,5 @@ oop GenCollectedHeap::handle_failed_promotion(Generation* old_gen,
   if (result != NULL) {
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
   }
-  return oop(result);
+  return cast_to_oop(result);
 }

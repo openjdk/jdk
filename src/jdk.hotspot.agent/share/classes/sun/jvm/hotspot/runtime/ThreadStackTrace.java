@@ -47,7 +47,6 @@ public class ThreadStackTrace {
 
     public void dumpStack(int maxDepth) {
         if (!thread.isJavaThread()) {
-            System.out.println("dumpStack: not java Thread.");
             return;
         }
         try {

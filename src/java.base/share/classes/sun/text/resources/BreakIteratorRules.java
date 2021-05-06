@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,7 +310,7 @@ public class BreakIteratorRules extends ListResourceBundle {
               // punctuation" and quotation marks
               + "<start-punctuation>=[:Ps::Pi:\\\"\\\'];"
 
-              // punctuation with may occur at the end of a sentence: "ending punctuation"
+              // punctuation which may occur at the end of a sentence: "ending punctuation"
               // and quotation marks
               + "<end>=[:Pe::Pf:\\\"\\\'];"
 
@@ -323,9 +323,12 @@ public class BreakIteratorRules extends ListResourceBundle {
               // periods, which MAY signal the end of a sentence
               + "<period>=[\\.\uff0e];"
 
+              // comma, which may not occur at the start of a sentence
+              + "<comma>=[\\,];"
+
               // characters that may occur at the beginning of a sentence: basically anything
               // not mentioned above (letters and digits are specifically excluded)
-              + "<sent-start>=[^[:L:<space><start-punctuation><end><digit><term><period>\u2029<ignore>]];"
+              + "<sent-start>=[^[:L:<space><start-punctuation><end><digit><term><period><comma>\u2029<ignore>]];"
 
               // Hindi phrase separator
               + "<danda>=[\u0964\u0965];"

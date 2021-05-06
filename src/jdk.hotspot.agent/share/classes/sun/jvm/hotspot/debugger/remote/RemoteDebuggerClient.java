@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,5 +414,18 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
 
   public void writeBytesToProcess(long a, long b, byte[] c) {
      throw new DebuggerException("Unimplemented!");
+  }
+
+  public String execCommandOnServer(String command, Map<String, Object> options) {
+    try {
+      return remoteDebugger.execCommandOnServer(command, options);
+    } catch (RemoteException e) {
+      throw new DebuggerException(e);
+    }
+  }
+
+  @Override
+  public String findSymbol(String symbol) {
+    return execCommandOnServer("findsym", Map.of("symbol", symbol));
   }
 }

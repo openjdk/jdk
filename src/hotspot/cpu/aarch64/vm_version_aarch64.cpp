@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -95,6 +95,9 @@ void VM_Version::initialize() {
     SoftwarePrefetchHintDistance &= ~7;
   }
 
+  if (FLAG_IS_DEFAULT(ContendedPaddingWidth) && (dcache_line > ContendedPaddingWidth)) {
+    ContendedPaddingWidth = dcache_line;
+  }
 
   if (os::supports_map_sync()) {
     // if dcpop is available publish data cache line flush size via
@@ -174,6 +177,13 @@ void VM_Version::initialize() {
     }
   }
 
+  // Neoverse N1
+  if (_cpu == CPU_ARM && (_model == 0xd0c || _model2 == 0xd0c)) {
+    if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
+      FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
+    }
+  }
+
   if (_cpu == CPU_ARM) {
     if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
@@ -181,23 +191,13 @@ void VM_Version::initialize() {
   }
 
   if (_cpu == CPU_ARM && (_model == 0xd07 || _model2 == 0xd07)) _features |= CPU_STXR_PREFETCH;
-  // If an olde style /proc/cpuinfo (cores == 1) then if _model is an A57 (0xd07)
-  // we assume the worst and assume we could be on a big little system and have
-  // undisclosed A53 cores which we could be swapped to at any stage
-  if (_cpu == CPU_ARM && os::processor_count() == 1 && _model == 0xd07) _features |= CPU_A53MAC;
 
   char buf[512];
   sprintf(buf, "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
   if (_model2) sprintf(buf+strlen(buf), "(0x%03x)", _model2);
-  if (_features & CPU_ASIMD) strcat(buf, ", simd");
-  if (_features & CPU_CRC32) strcat(buf, ", crc");
-  if (_features & CPU_AES)   strcat(buf, ", aes");
-  if (_features & CPU_SHA1)  strcat(buf, ", sha1");
-  if (_features & CPU_SHA2)  strcat(buf, ", sha256");
-  if (_features & CPU_SHA512) strcat(buf, ", sha512");
-  if (_features & CPU_LSE) strcat(buf, ", lse");
-  if (_features & CPU_SVE) strcat(buf, ", sve");
-  if (_features & CPU_SVE2) strcat(buf, ", sve2");
+#define ADD_FEATURE_IF_SUPPORTED(id, name, bit) if (_features & CPU_##id) strcat(buf, ", " name);
+  CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
+#undef ADD_FEATURE_IF_SUPPORTED
 
   _features_string = os::strdup(buf);
 
@@ -275,7 +275,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
   }
 
-  if (_features & (CPU_SHA1 | CPU_SHA2)) {
+  if (_features & (CPU_SHA1 | CPU_SHA2 | CPU_SHA3 | CPU_SHA512)) {
     if (FLAG_IS_DEFAULT(UseSHA)) {
       FLAG_SET_DEFAULT(UseSHA, true);
     }
@@ -302,6 +302,16 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
   }
 
+  if (UseSHA && (_features & CPU_SHA3)) {
+    // Do not auto-enable UseSHA3Intrinsics until it has been fully tested on hardware
+    // if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
+      // FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
+    // }
+  } else if (UseSHA3Intrinsics) {
+    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+  }
+
   if (UseSHA && (_features & CPU_SHA512)) {
     // Do not auto-enable UseSHA512Intrinsics until it has been fully tested on hardware
     // if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
@@ -312,7 +322,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
+  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA3Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
@@ -323,6 +333,10 @@ void VM_Version::initialize() {
   } else if (UseGHASHIntrinsics) {
     warning("GHASH intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  }
+
+  if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
+    UseBASE64Intrinsics = true;
   }
 
   if (is_zva_enabled()) {
@@ -390,7 +404,7 @@ void VM_Version::initialize() {
       warning("SVE does not support vector length less than 16 bytes. Disabling SVE.");
       UseSVE = 0;
     } else if ((MaxVectorSize % 16) == 0 && is_power_of_2(MaxVectorSize)) {
-      int new_vl = set_and_get_current_sve_vector_lenght(MaxVectorSize);
+      int new_vl = set_and_get_current_sve_vector_length(MaxVectorSize);
       _initial_sve_vector_length = new_vl;
       // Update MaxVectorSize to the largest supported value.
       if (new_vl < 0) {

@@ -51,7 +51,7 @@ class PSCardTable: public CardTable {
   };
 
  public:
-  PSCardTable(MemRegion whole_heap) : CardTable(whole_heap, /* scanned_concurrently */ false) {}
+  PSCardTable(MemRegion whole_heap) : CardTable(whole_heap) {}
 
   static CardValue youngergen_card_val() { return youngergen_card; }
   static CardValue verify_card_val()     { return verify_card; }

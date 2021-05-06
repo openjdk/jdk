@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,9 @@ class Dict;
 class Type;
 class   TypeD;
 class   TypeF;
-class   TypeInt;
-class   TypeLong;
+class   TypeInteger;
+class     TypeInt;
+class     TypeLong;
 class   TypeNarrowPtr;
 class     TypeNarrowOop;
 class     TypeNarrowKlass;
@@ -59,6 +60,7 @@ class     TypeVectD;
 class     TypeVectX;
 class     TypeVectY;
 class     TypeVectZ;
+class     TypeVectMask;
 class   TypePtr;
 class     TypeRawPtr;
 class     TypeOopPtr;
@@ -88,6 +90,8 @@ public:
 
     Tuple,                      // Method signature or object layout
     Array,                      // Array types
+
+    VectorMask,                 // Vector predicate/mask type
     VectorA,                    // (Scalable) Vector types for vector length agnostic
     VectorS,                    //  32bit Vector types
     VectorD,                    //  64bit Vector types
@@ -159,8 +163,6 @@ private:
   // join to ensure my lattice is symmetric up and down.  Dual is computed
   // lazily, on demand, and cached in _dual.
   const Type *_dual;            // Cached dual value
-  // Table for efficient dualing of base types
-  static const TYPES dual_type[lastype];
 
 #ifdef ASSERT
   // One type is interface, the other is oop
@@ -283,6 +285,8 @@ public:
 
   const TypeInt    *is_int() const;
   const TypeInt    *isa_int() const;             // Returns NULL if not an Int
+  const TypeInteger* is_integer(BasicType bt) const;
+  const TypeInteger* isa_integer(BasicType bt) const;
   const TypeLong   *is_long() const;
   const TypeLong   *isa_long() const;            // Returns NULL if not a Long
   const TypeD      *isa_double() const;          // Returns NULL if not a Double{Top,Con,Bot}
@@ -296,6 +300,8 @@ public:
   const TypeAry    *isa_ary() const;             // Returns NULL of not ary
   const TypeVect   *is_vect() const;             // Vector
   const TypeVect   *isa_vect() const;            // Returns NULL if not a Vector
+  const TypeVectMask *is_vectmask() const;       // Predicate/Mask Vector
+  const TypeVectMask *isa_vectmask() const;      // Returns NULL if not a Vector Predicate/Mask
   const TypePtr    *is_ptr() const;              // Asserts it is a ptr type
   const TypePtr    *isa_ptr() const;             // Returns NULL if not ptr type
   const TypeRawPtr *isa_rawptr() const;          // NOT Java oop
@@ -361,6 +367,17 @@ public:
   }
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
   static  void dump_stats();
+  // Groups of types, for debugging and visualization only.
+  enum class Category {
+    Data,
+    Memory,
+    Mixed,   // Tuples with types of different categories.
+    Control,
+    Other,   // {Type::Top, Type::Abio, Type::Bottom}.
+    Undef    // {Type::Bad, Type::lastype}, for completeness.
+  };
+  // Return the category of this type.
+  Category category() const;
 
   static const char* str(const Type* t);
 #endif
@@ -483,6 +500,8 @@ public:
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
   // Convenience common pre-built types.
+  static const TypeF *MAX;
+  static const TypeF *MIN;
   static const TypeF *ZERO; // positive zero only
   static const TypeF *ONE;
   static const TypeF *POS_INF;
@@ -512,6 +531,8 @@ public:
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
   // Convenience common pre-built types.
+  static const TypeD *MAX;
+  static const TypeD *MIN;
   static const TypeD *ZERO; // positive zero only
   static const TypeD *ONE;
   static const TypeD *POS_INF;
@@ -521,10 +542,26 @@ public:
 #endif
 };
 
+class TypeInteger : public Type {
+protected:
+  TypeInteger(TYPES t) : Type(t) {}
+
+public:
+  virtual jlong hi_as_long() const = 0;
+  virtual jlong lo_as_long() const = 0;
+  jlong get_con_as_long(BasicType bt) const;
+
+  static const TypeInteger* make(jlong lo, jlong hi, int w, BasicType bt);
+
+  static const TypeInteger* bottom(BasicType type);
+};
+
+
+
 //------------------------------TypeInt----------------------------------------
 // Class of integer ranges, the set of integers between a lower bound and an
 // upper bound, inclusive.
-class TypeInt : public Type {
+class TypeInt : public TypeInteger {
   TypeInt( jint lo, jint hi, int w );
 protected:
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
@@ -553,8 +590,14 @@ public:
   virtual const Type *xdual() const;    // Compute dual right now.
   virtual const Type *widen( const Type *t, const Type* limit_type ) const;
   virtual const Type *narrow( const Type *t ) const;
+
+  virtual jlong hi_as_long() const { return _hi; }
+  virtual jlong lo_as_long() const { return _lo; }
+
   // Do not kill _widen bits.
   // Convenience common pre-built types.
+  static const TypeInt *MAX;
+  static const TypeInt *MIN;
   static const TypeInt *MINUS_1;
   static const TypeInt *ZERO;
   static const TypeInt *ONE;
@@ -585,7 +628,7 @@ public:
 //------------------------------TypeLong---------------------------------------
 // Class of long integer ranges, the set of integers between a lower bound and
 // an upper bound, inclusive.
-class TypeLong : public Type {
+class TypeLong : public TypeInteger {
   TypeLong( jlong lo, jlong hi, int w );
 protected:
   // Do not kill _widen bits.
@@ -614,12 +657,16 @@ public:
 
   virtual bool        is_finite() const;  // Has a finite value
 
+  virtual jlong hi_as_long() const { return _hi; }
+  virtual jlong lo_as_long() const { return _lo; }
 
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
   virtual const Type *widen( const Type *t, const Type* limit_type ) const;
   virtual const Type *narrow( const Type *t ) const;
   // Convenience common pre-built types.
+  static const TypeLong *MAX;
+  static const TypeLong *MIN;
   static const TypeLong *MINUS_1;
   static const TypeLong *ZERO;
   static const TypeLong *ONE;
@@ -756,6 +803,13 @@ public:
   // Used directly by Replicate nodes to construct singleton vector.
   static const TypeVect *make(const Type* elem, uint length);
 
+  static const TypeVect *makemask(const BasicType elem_bt, uint length) {
+    // Use bottom primitive type.
+    return makemask(get_const_basic_type(elem_bt), length);
+  }
+  static const TypeVect *makemask(const Type* elem, uint length);
+
+
   virtual const Type *xmeet( const Type *t) const;
   virtual const Type *xdual() const;     // Compute dual right now.
 
@@ -765,6 +819,7 @@ public:
   static const TypeVect *VECTX;
   static const TypeVect *VECTY;
   static const TypeVect *VECTZ;
+  static const TypeVect *VECTMASK;
 
 #ifndef PRODUCT
   virtual void dump2(Dict &d, uint, outputStream *st) const; // Specialized per-Type dumping
@@ -799,6 +854,14 @@ class TypeVectY : public TypeVect {
 class TypeVectZ : public TypeVect {
   friend class TypeVect;
   TypeVectZ(const Type* elem, uint length) : TypeVect(VectorZ, elem, length) {}
+};
+
+class TypeVectMask : public TypeVect {
+public:
+  friend class TypeVect;
+  TypeVectMask(const Type* elem, uint length) : TypeVect(VectorMask, elem, length) {}
+  virtual bool eq(const Type *t) const;
+  virtual const Type *xdual() const;
 };
 
 //------------------------------TypePtr----------------------------------------
@@ -1567,6 +1630,15 @@ inline double Type::getd() const {
   return ((TypeD*)this)->_d;
 }
 
+inline const TypeInteger *Type::is_integer(BasicType bt) const {
+  assert((bt == T_INT && _base == Int) || (bt == T_LONG && _base == Long), "Not an Int");
+  return (TypeInteger*)this;
+}
+
+inline const TypeInteger *Type::isa_integer(BasicType bt) const {
+  return (((bt == T_INT && _base == Int) || (bt == T_LONG && _base == Long)) ? (TypeInteger*)this : NULL);
+}
+
 inline const TypeInt *Type::is_int() const {
   assert( _base == Int, "Not an Int" );
   return (TypeInt*)this;
@@ -1629,13 +1701,22 @@ inline const TypeAry *Type::isa_ary() const {
   return ((_base == Array) ? (TypeAry*)this : NULL);
 }
 
+inline const TypeVectMask *Type::is_vectmask() const {
+  assert( _base == VectorMask, "Not a Vector Mask" );
+  return (TypeVectMask*)this;
+}
+
+inline const TypeVectMask *Type::isa_vectmask() const {
+  return (_base == VectorMask) ? (TypeVectMask*)this : NULL;
+}
+
 inline const TypeVect *Type::is_vect() const {
-  assert( _base >= VectorA && _base <= VectorZ, "Not a Vector" );
+  assert( _base >= VectorMask && _base <= VectorZ, "Not a Vector" );
   return (TypeVect*)this;
 }
 
 inline const TypeVect *Type::isa_vect() const {
-  return (_base >= VectorA && _base <= VectorZ) ? (TypeVect*)this : NULL;
+  return (_base >= VectorMask && _base <= VectorZ) ? (TypeVect*)this : NULL;
 }
 
 inline const TypePtr *Type::is_ptr() const {

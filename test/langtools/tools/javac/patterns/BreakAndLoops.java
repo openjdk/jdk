@@ -27,7 +27,6 @@
  * @summary Verify proper scope of binding related to loops and breaks.
  * @library /tools/lib /tools/javac/lib
  * @modules
- *      java.base/jdk.internal
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.file
  *      jdk.compiler/com.sun.tools.javac.main
@@ -95,10 +94,7 @@ public class BreakAndLoops extends ComboInstance<BreakAndLoops> {
                         case "NESTED" -> brk;
                         case "BODY" -> innerLabel;
                         default -> throw new UnsupportedOperationException(pname);
-                    })
-                .withOption("--enable-preview")
-                .withOption("-source")
-                .withOption(String.valueOf(Runtime.version().feature()));
+                    });
 
         task.generate(result -> {
             boolean shouldPass;

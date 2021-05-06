@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,46 +25,56 @@
 #define SHARE_GC_Z_ZARRAY_INLINE_HPP
 
 #include "gc/z/zArray.hpp"
-#include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
 
-template <typename T>
-inline ZArray<T>::ZArray() :
-    GrowableArrayCHeap<T, mtGC>(0) {}
-
-template <typename T>
-inline void ZArray<T>::transfer(ZArray<T>* from) {
-  assert(this->_data == NULL, "Should be empty");
-  this->_data = from->_data;
-  this->_len = from->_len;
-  this->_max = from->_max;
-  from->_data = NULL;
-  from->_len = 0;
-  from->_max = 0;
-}
-
-template <typename T, bool parallel>
-inline ZArrayIteratorImpl<T, parallel>::ZArrayIteratorImpl(ZArray<T>* array) :
-    _array(array),
-    _next(0) {}
-
-template <typename T, bool parallel>
-inline bool ZArrayIteratorImpl<T, parallel>::next(T* elem) {
-  if (parallel) {
-    const int next = Atomic::fetch_and_add(&_next, 1);
-    if (next < _array->length()) {
-      *elem = _array->at(next);
-      return true;
-    }
-  } else {
-    if (_next < _array->length()) {
-      *elem = _array->at(_next++);
-      return true;
-    }
+template <typename T, bool Parallel>
+inline bool ZArrayIteratorImpl<T, Parallel>::next_serial(T* elem) {
+  if (_next == _end) {
+    return false;
   }
 
-  // No more elements
-  return false;
+  *elem = *_next;
+  _next++;
+
+  return true;
+}
+
+template <typename T, bool Parallel>
+inline bool ZArrayIteratorImpl<T, Parallel>::next_parallel(T* elem) {
+  const T* old_next = Atomic::load(&_next);
+
+  for (;;) {
+    if (old_next == _end) {
+      return false;
+    }
+
+    const T* const new_next = old_next + 1;
+    const T* const prev_next = Atomic::cmpxchg(&_next, old_next, new_next);
+    if (prev_next == old_next) {
+      *elem = *old_next;
+      return true;
+    }
+
+    old_next = prev_next;
+  }
+}
+
+template <typename T, bool Parallel>
+inline ZArrayIteratorImpl<T, Parallel>::ZArrayIteratorImpl(const T* array, size_t length) :
+    _next(array),
+    _end(array + length) {}
+
+template <typename T, bool Parallel>
+inline ZArrayIteratorImpl<T, Parallel>::ZArrayIteratorImpl(const ZArray<T>* array) :
+    ZArrayIteratorImpl<T, Parallel>(array->is_empty() ? NULL : array->adr_at(0), array->length()) {}
+
+template <typename T, bool Parallel>
+inline bool ZArrayIteratorImpl<T, Parallel>::next(T* elem) {
+  if (Parallel) {
+    return next_parallel(elem);
+  } else {
+    return next_serial(elem);
+  }
 }
 
 #endif // SHARE_GC_Z_ZARRAY_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,10 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.openjdk.bench.java.math;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -34,6 +30,7 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.math.BigInteger;
@@ -45,10 +42,13 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class BigIntegers {
 
-    private BigInteger[] hugeArray, largeArray, smallArray, shiftArray;
+    private BigInteger[] hugeArray, largeArray, smallArray, shiftArray, smallShiftArray;
     public String[] dummyStringArray;
     public Object[] dummyArr;
     private static final int TESTSIZE = 1000;
+
+    @Param({"32", "64", "96", "128", "160", "192", "224", "256"})
+    private int maxNumbits;
 
     @Setup
     public void setup() {
@@ -72,6 +72,9 @@ public class BigIntegers {
          * Each array entry is atmost 16k bits
          * in size
          */
+        smallShiftArray = new BigInteger[TESTSIZE]; /*
+        * Small numbers, bits count in range [maxNumbits - 31, maxNumbits]
+        */
 
         dummyStringArray = new String[TESTSIZE];
         dummyArr = new Object[TESTSIZE];
@@ -84,6 +87,7 @@ public class BigIntegers {
             largeArray[i] = new BigInteger("" + ((long) value + (long) Integer.MAX_VALUE));
             smallArray[i] = new BigInteger("" + ((long) value / 1000));
             shiftArray[i] = new BigInteger(numbits, r);
+            smallShiftArray[i] = new BigInteger(Math.max(maxNumbits - value % 32, 0), r);
         }
     }
 
@@ -176,5 +180,31 @@ public class BigIntegers {
             tmp = tmp.shiftRight(shift);
         }
         bh.consume(tmp);
+    }
+
+    /** Invokes the shiftLeft method of small BigInteger with different values. */
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testSmallLeftShift(Blackhole bh) {
+        Random rand = new Random();
+        int shift = rand.nextInt(30) + 1;
+        BigInteger tmp = null;
+        for (BigInteger s : smallShiftArray) {
+            tmp = s.shiftLeft(shift);
+            bh.consume(tmp);
+        }
+    }
+
+    /** Invokes the shiftRight method of small BigInteger with different values. */
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testSmallRightShift(Blackhole bh) {
+        Random rand = new Random();
+        int shift = rand.nextInt(30) + 1;
+        BigInteger tmp = null;
+        for (BigInteger s : smallShiftArray) {
+            tmp = s.shiftRight(shift);
+            bh.consume(tmp);
+        }
     }
 }

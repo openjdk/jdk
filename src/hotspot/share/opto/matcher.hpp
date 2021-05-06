@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ private:
   bool find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_op, int& mem_addr_idx);
   void find_shared_post_visit(Node* n, uint opcode);
 
-  bool is_vshift_con_pattern(Node *n, Node *m);
+  bool is_vshift_con_pattern(Node* n, Node* m);
 
   // Debug and profile information for nodes in old space:
   GrowableArray<Node_Notes*>* _old_node_note_array;
@@ -135,8 +135,11 @@ private:
 
   Node_Array _shared_nodes;
 
-  debug_only(Node_Array _old2new_map;)   // Map roots of ideal-trees to machine-roots
-  debug_only(Node_Array _new2old_map;)   // Maps machine nodes back to ideal
+#ifndef PRODUCT
+  Node_Array _old2new_map;    // Map roots of ideal-trees to machine-roots
+  Node_Array _new2old_map;    // Maps machine nodes back to ideal
+  VectorSet _reused;          // Ideal IGV identifiers reused by machine nodes
+#endif // !PRODUCT
 
   // Accessors for the inherited field PhaseTransform::_nodes:
   void   grow_new_node_array(uint idx_limit) {
@@ -319,6 +322,8 @@ public:
 
   // Some microarchitectures have mask registers used on vectors
   static const bool has_predicated_vectors(void);
+  static const RegMask* predicate_reg_mask(void);
+  static const TypeVect* predicate_reg_type(const Type* elemTy, int length);
 
   // Some uarchs have different sized float register resources
   static const int float_pressure(int default_pressure_threshold);
@@ -345,11 +350,14 @@ public:
   // Vector ideal reg
   static const uint vector_ideal_reg(int len);
 
+  // Does the CPU supports vector variable shift instructions?
+  static bool supports_vector_variable_shifts(void);
+
+  // Does the CPU supports vector vairable rotate instructions?
+  static bool supports_vector_variable_rotates(void);
+
   // CPU supports misaligned vectors store/load.
   static const bool misaligned_vectors_ok();
-
-  // Should original key array reference be passed to AES stubs
-  static const bool pass_original_key_for_aes();
 
   // Used to determine a "low complexity" 64-bit constant.  (Zero is simple.)
   // The standard of comparison is one (StoreL ConL) vs. two (StoreI ConI).
@@ -370,20 +378,16 @@ public:
     return stack_alignment_in_bytes() / (VMRegImpl::stack_slot_size);
   }
 
-  // Array mapping arguments to registers.  Argument 0 is usually the 'this'
-  // pointer.  Registers can include stack-slots and regular registers.
-  static void calling_convention( BasicType *, VMRegPair *, uint len, bool is_outgoing );
-
   // Convert a sig into a calling convention register layout
   // and find interesting things about it.
-  static OptoReg::Name  find_receiver( bool is_outgoing );
+  static OptoReg::Name  find_receiver();
   // Return address register.  On Intel it is a stack-slot.  On PowerPC
   // it is the Link register.  On Sparc it is r31?
   virtual OptoReg::Name return_addr() const;
   RegMask              _return_addr_mask;
-  // Return value register.  On Intel it is EAX.  On Sparc i0/o0.
-  static OptoRegPair   return_value(uint ideal_reg, bool is_outgoing);
-  static OptoRegPair c_return_value(uint ideal_reg, bool is_outgoing);
+  // Return value register.  On Intel it is EAX.
+  static OptoRegPair   return_value(uint ideal_reg);
+  static OptoRegPair c_return_value(uint ideal_reg);
   RegMask                     _return_value_mask;
   // Inline Cache Register
   static OptoReg::Name  inline_cache_reg();
@@ -415,22 +419,12 @@ public:
   // The Method-klass-holder may be passed in the inline_cache_reg
   // and then expanded into the inline_cache_reg and a method_ptr register
 
-  static OptoReg::Name  interpreter_method_reg();
-  static int            interpreter_method_reg_encode();
-
-  static OptoReg::Name  compiler_method_reg();
-  static const RegMask &compiler_method_reg_mask();
-  static int            compiler_method_reg_encode();
-
   // Interpreter's Frame Pointer Register
   static OptoReg::Name  interpreter_frame_pointer_reg();
 
   // Java-Native calling convention
   // (what you use when intercalling between Java and C++ code)
 
-  // Array mapping arguments to registers.  Argument 0 is usually the 'this'
-  // pointer.  Registers can include stack-slots and regular registers.
-  static void c_calling_convention( BasicType*, VMRegPair *, uint );
   // Frame pointer. The frame pointer is kept at the base of the stack
   // and so is probably the stack pointer for most machines.  On Intel
   // it is ESP.  On the PowerPC it is R1.  On Sparc it is SP.
@@ -532,10 +526,6 @@ public:
   DEBUG_ONLY( bool verify_after_postselect_cleanup(); )
 
  public:
-  // Perform a platform dependent implicit null fixup.  This is needed
-  // on windows95 to take care of some unusual register constraints.
-  void pd_implicit_null_fixup(MachNode *load, uint idx);
-
   // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
   static const bool strict_fp_requires_explicit_rounding;
 
@@ -569,13 +559,16 @@ public:
   // Does n lead to an uncommon trap that can cause deoptimization?
   static bool branches_to_uncommon_trap(const Node *n);
 
-#ifdef ASSERT
+#ifndef PRODUCT
+  // Record mach-to-Ideal mapping, reusing the Ideal IGV identifier if possible.
+  void record_new2old(Node* newn, Node* old);
+
   void dump_old2new_map();      // machine-independent to machine-dependent
 
   Node* find_old_node(Node* new_node) {
     return _new2old_map[new_node->_idx];
   }
-#endif
+#endif // !PRODUCT
 };
 
 #endif // SHARE_OPTO_MATCHER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,18 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDirector.hpp"
 #include "gc/z/zHeap.inline.hpp"
+#include "gc/z/zHeuristics.hpp"
 #include "gc/z/zStat.hpp"
-#include "gc/z/zUtils.hpp"
 #include "logging/log.hpp"
 
 const double ZDirector::one_in_1000 = 3.290527;
 
 ZDirector::ZDirector() :
+    _relocation_headroom(ZHeuristics::relocation_headroom()),
     _metronome(ZStatAllocRate::sample_hz) {
   set_name("ZDirector");
   create_and_start();
@@ -49,7 +51,7 @@ void ZDirector::sample_allocation_rate() const {
 }
 
 bool ZDirector::rule_timer() const {
-  if (ZCollectionInterval == 0) {
+  if (ZCollectionInterval <= 0) {
     // Rule disabled
     return false;
   }
@@ -58,7 +60,7 @@ bool ZDirector::rule_timer() const {
   const double time_since_last_gc = ZStatCycle::time_since_last();
   const double time_until_gc = ZCollectionInterval - time_since_last_gc;
 
-  log_debug(gc, director)("Rule: Timer, Interval: %us, TimeUntilGC: %.3fs",
+  log_debug(gc, director)("Rule: Timer, Interval: %.3fs, TimeUntilGC: %.3fs",
                           ZCollectionInterval, time_until_gc);
 
   return time_until_gc <= 0;
@@ -96,14 +98,12 @@ bool ZDirector::rule_allocation_rate() const {
   // margin based on variations in the allocation rate and unforeseen
   // allocation spikes.
 
-  // Calculate amount of free memory available to Java threads. Note that
-  // the heap reserve is not available to Java threads and is therefore not
-  // considered part of the free memory.
+  // Calculate amount of free memory available. Note that we take the
+  // relocation headroom into account to avoid in-place relocation.
   const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
-  const size_t max_reserve = ZHeap::heap()->max_reserve();
   const size_t used = ZHeap::heap()->used();
-  const size_t free_with_reserve = soft_max_capacity - MIN2(soft_max_capacity, used);
-  const size_t free = free_with_reserve - MIN2(free_with_reserve, max_reserve);
+  const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
+  const size_t free = free_including_headroom - MIN2(free_including_headroom, _relocation_headroom);
 
   // Calculate time until OOM given the max allocation rate and the amount
   // of free memory. The allocation rate is a moving average and we multiply
@@ -180,14 +180,12 @@ bool ZDirector::rule_high_usage() const {
   // memory is still slowly but surely heading towards zero. In this situation,
   // we start a GC cycle to avoid a potential allocation stall later.
 
-  // Calculate amount of free memory available to Java threads. Note that
-  // the heap reserve is not available to Java threads and is therefore not
-  // considered part of the free memory.
+  // Calculate amount of free memory available. Note that we take the
+  // relocation headroom into account to avoid in-place relocation.
   const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
-  const size_t max_reserve = ZHeap::heap()->max_reserve();
   const size_t used = ZHeap::heap()->used();
-  const size_t free_with_reserve = soft_max_capacity - MIN2(soft_max_capacity, used);
-  const size_t free = free_with_reserve - MIN2(free_with_reserve, max_reserve);
+  const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
+  const size_t free = free_including_headroom - MIN2(free_including_headroom, _relocation_headroom);
   const double free_percent = percent_of(free, soft_max_capacity);
 
   log_debug(gc, director)("Rule: High Usage, Free: " SIZE_FORMAT "MB(%.1f%%)",

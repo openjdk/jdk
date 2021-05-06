@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,8 @@ import jdk.internal.icu.impl.Norm2AllModes;
  * The primary functions are to produce a normalized string and to detect whether
  * a string is already normalized.
  * The most commonly used normalization forms are those defined in
- * http://www.unicode.org/unicode/reports/tr15/
+ * <a href="http://www.unicode.org/reports/tr15/">Unicode Standard Annex #15:
+ * Unicode Normalization Forms</a>.
  * However, this API supports additional normalization forms for specialized purposes.
  * For example, NFKC_Casefold is provided via getInstance("nfkc_cf", COMPOSE)
  * and can be used in implementations of UTS #46.

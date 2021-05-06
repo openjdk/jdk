@@ -222,14 +222,6 @@ public:
   // returning false to preserve all relocation information.
   inline bool ignore_non_patchable_relocations() { return true; }
 
-  // Initially added to the Assembler interface as a pure virtual:
-  //   RegisterConstant delayed_value(..)
-  // for:
-  //   6812678 macro assembler needs delayed binding of a few constants (for 6655638)
-  // this was subsequently modified to its present name and return type
-  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr, Register tmp, int offset);
-
-
   void align(int modulus);
 
   // Support for VM calls
@@ -885,11 +877,6 @@ public:
 
   void access_load_at(BasicType type, DecoratorSet decorators, Address src, Register dst, Register tmp1, Register tmp2, Register tmp3);
   void access_store_at(BasicType type, DecoratorSet decorators, Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null);
-
-  // Resolves obj for access. Result is placed in the same register.
-  // All other registers are preserved.
-  void resolve(DecoratorSet decorators, Register obj);
-
 
   void ldr_global_ptr(Register reg, address address_of_global);
   void ldr_global_s32(Register reg, address address_of_global);

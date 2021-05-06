@@ -123,12 +123,12 @@ import java.util.stream.Stream;
  * For most applications written today, the ISO-8601 rules are entirely suitable.
  * However, any application that makes use of historical dates, and requires them
  * to be accurate will find the ISO-8601 approach unsuitable.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code LocalDate} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -136,6 +136,7 @@ import java.util.stream.Stream;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class LocalDate
         implements Temporal, TemporalAdjuster, ChronoLocalDate, Serializable {
 
@@ -601,10 +602,9 @@ public final class LocalDate
      */
     @Override
     public ValueRange range(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            if (f.isDateBased()) {
-                switch (f) {
+        if (field instanceof ChronoField chronoField) {
+            if (chronoField.isDateBased()) {
+                switch (chronoField) {
                     case DAY_OF_MONTH: return ValueRange.of(1, lengthOfMonth());
                     case DAY_OF_YEAR: return ValueRange.of(1, lengthOfYear());
                     case ALIGNED_WEEK_OF_MONTH: return ValueRange.of(1, getMonth() == Month.FEBRUARY && isLeapYear() == false ? 4 : 5);
@@ -1044,10 +1044,9 @@ public final class LocalDate
      */
     @Override
     public LocalDate with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            f.checkValidValue(newValue);
-            switch (f) {
+        if (field instanceof ChronoField chronoField) {
+            chronoField.checkValidValue(newValue);
+            switch (chronoField) {
                 case DAY_OF_WEEK: return plusDays(newValue - getDayOfWeek().getValue());
                 case ALIGNED_DAY_OF_WEEK_IN_MONTH: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_MONTH));
                 case ALIGNED_DAY_OF_WEEK_IN_YEAR: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_YEAR));
@@ -1167,8 +1166,7 @@ public final class LocalDate
      */
     @Override
     public LocalDate plus(TemporalAmount amountToAdd) {
-        if (amountToAdd instanceof Period) {
-            Period periodToAdd = (Period) amountToAdd;
+        if (amountToAdd instanceof Period periodToAdd) {
             return plusMonths(periodToAdd.toTotalMonths()).plusDays(periodToAdd.getDays());
         }
         Objects.requireNonNull(amountToAdd, "amountToAdd");
@@ -1258,9 +1256,8 @@ public final class LocalDate
      */
     @Override
     public LocalDate plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            ChronoUnit f = (ChronoUnit) unit;
-            switch (f) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            switch (chronoUnit) {
                 case DAYS: return plusDays(amountToAdd);
                 case WEEKS: return plusWeeks(amountToAdd);
                 case MONTHS: return plusMonths(amountToAdd);
@@ -1417,8 +1414,7 @@ public final class LocalDate
      */
     @Override
     public LocalDate minus(TemporalAmount amountToSubtract) {
-        if (amountToSubtract instanceof Period) {
-            Period periodToSubtract = (Period) amountToSubtract;
+        if (amountToSubtract instanceof Period periodToSubtract) {
             return minusMonths(periodToSubtract.toTotalMonths()).minusDays(periodToSubtract.getDays());
         }
         Objects.requireNonNull(amountToSubtract, "amountToSubtract");
@@ -1939,7 +1935,7 @@ public final class LocalDate
         // need to handle case where there is a gap from 11:30 to 00:30
         // standard ZDT factory would result in 01:00 rather than 00:30
         LocalDateTime ldt = atTime(LocalTime.MIDNIGHT);
-        if (zone instanceof ZoneOffset == false) {
+        if (!(zone instanceof ZoneOffset)) {
             ZoneRules rules = zone.getRules();
             ZoneOffsetTransition trans = rules.getTransition(ldt);
             if (trans != null && trans.isGap()) {

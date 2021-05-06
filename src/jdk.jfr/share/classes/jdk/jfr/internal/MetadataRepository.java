@@ -70,12 +70,12 @@ public final class MetadataRepository {
     private void initializeJVMEventTypes() {
         List<RequestHook> requestHooks = new ArrayList<>();
         for (Type type : typeLibrary.getTypes()) {
-            if (type instanceof PlatformEventType) {
-                PlatformEventType pEventType = (PlatformEventType) type;
+            if (type instanceof PlatformEventType pEventType) {
                 EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
                 pEventType.setHasDuration(eventType.getAnnotation(Threshold.class) != null);
                 pEventType.setHasStackTrace(eventType.getAnnotation(StackTrace.class) != null);
                 pEventType.setHasCutoff(eventType.getAnnotation(Cutoff.class) != null);
+                pEventType.setHasThrottle(eventType.getAnnotation(Throttle.class) != null);
                 pEventType.setHasPeriod(eventType.getAnnotation(Period.class) != null);
                 // Must add hook before EventControl is created as it removes
                 // annotations, such as Period and Threshold.
@@ -290,9 +290,8 @@ public final class MetadataRepository {
                 knownIds.add(Type.getTypeId(ec));
             }
             for (Type type : typeLibrary.getTypes()) {
-                if (type instanceof PlatformEventType) {
-                    if (!knownIds.contains(type.getId())) {
-                        PlatformEventType pe = (PlatformEventType) type;
+                if (type instanceof PlatformEventType pe) {
+                    if (!knownIds.contains(pe.getId())) {
                         if (!pe.isJVM()) {
                             pe.setRegistered(false);
                         }

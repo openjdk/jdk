@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #ifndef CPU_PPC_ASSEMBLER_PPC_HPP
 #define CPU_PPC_ASSEMBLER_PPC_HPP
 
+#include "asm/assembler.hpp"
 #include "asm/register.hpp"
 
 // Address is an abstraction used to represent a memory location
@@ -220,6 +221,12 @@ class Assembler : public AbstractAssembler {
     SPR_0_4_SHIFT  = 16u, // SPR_0_4 field in bits 16 -- 20
     RS_SHIFT       = 21u, // RS field in bits 21 -- 25
     OPCODE_SHIFT   = 26u, // opcode in bits 26 -- 31
+
+    // Shift counts in prefix word
+    PRE_TYPE_SHIFT = 24u, // Prefix type in bits 24 -- 25
+    PRE_ST1_SHIFT  = 23u, // ST1 field in bits 23 -- 23
+    PRE_R_SHIFT    = 20u, // R-bit in bits 20 -- 20
+    PRE_ST4_SHIFT  = 20u, // ST4 field in bits 23 -- 20
   };
 
   enum opcdxos_masks {
@@ -264,6 +271,7 @@ class Assembler : public AbstractAssembler {
     SUBFME_OPCODE = (31u << OPCODE_SHIFT | 232u << 1),
     SUBFZE_OPCODE = (31u << OPCODE_SHIFT | 200u << 1),
     DIVW_OPCODE   = (31u << OPCODE_SHIFT | 491u << 1),
+    DIVWU_OPCODE  = (31u << OPCODE_SHIFT | 459u << 1),
     MULLW_OPCODE  = (31u << OPCODE_SHIFT | 235u << 1),
     MULHW_OPCODE  = (31u << OPCODE_SHIFT |  75u << 1),
     MULHWU_OPCODE = (31u << OPCODE_SHIFT |  11u << 1),
@@ -338,7 +346,11 @@ class Assembler : public AbstractAssembler {
     MTCRF_OPCODE  = (31u << OPCODE_SHIFT | 144u << 1),
     MFCR_OPCODE   = (31u << OPCODE_SHIFT | 19u << 1),
     MCRF_OPCODE   = (19u << OPCODE_SHIFT | 0u << 1),
+    MCRXRX_OPCODE = (31u << OPCODE_SHIFT | 576u << 1),
     SETB_OPCODE   = (31u << OPCODE_SHIFT | 128u << 1),
+
+    SETBC_OPCODE  = (31u << OPCODE_SHIFT | 384u << 1),
+    SETNBC_OPCODE = (31u << OPCODE_SHIFT | 448u << 1),
 
     // condition register logic instructions
     CRAND_OPCODE  = (19u << OPCODE_SHIFT | 257u << 1),
@@ -519,9 +531,14 @@ class Assembler : public AbstractAssembler {
     LVSR_OPCODE    = (31u << OPCODE_SHIFT |   38u << 1),
 
     // Vector-Scalar (VSX) instruction support.
+    LXV_OPCODE     = (61u << OPCODE_SHIFT |    1u     ),
+    LXVL_OPCODE    = (31u << OPCODE_SHIFT |  269u << 1),
+    STXV_OPCODE    = (61u << OPCODE_SHIFT |    5u     ),
+    STXVL_OPCODE   = (31u << OPCODE_SHIFT |  397u << 1),
     LXVD2X_OPCODE  = (31u << OPCODE_SHIFT |  844u << 1),
     STXVD2X_OPCODE = (31u << OPCODE_SHIFT |  972u << 1),
     MTVSRD_OPCODE  = (31u << OPCODE_SHIFT |  179u << 1),
+    MTVSRDD_OPCODE = (31u << OPCODE_SHIFT |  435u << 1),
     MTVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  243u << 1),
     MFVSRD_OPCODE  = (31u << OPCODE_SHIFT |   51u << 1),
     MTVSRWA_OPCODE = (31u << OPCODE_SHIFT |  211u << 1),
@@ -530,12 +547,16 @@ class Assembler : public AbstractAssembler {
     XXMRGHW_OPCODE = (60u << OPCODE_SHIFT |   18u << 3),
     XXMRGLW_OPCODE = (60u << OPCODE_SHIFT |   50u << 3),
     XXSPLTW_OPCODE = (60u << OPCODE_SHIFT |  164u << 2),
+    XXLAND_OPCODE  = (60u << OPCODE_SHIFT |  130u << 3),
     XXLOR_OPCODE   = (60u << OPCODE_SHIFT |  146u << 3),
     XXLXOR_OPCODE  = (60u << OPCODE_SHIFT |  154u << 3),
     XXLEQV_OPCODE  = (60u << OPCODE_SHIFT |  186u << 3),
     XVDIVSP_OPCODE = (60u << OPCODE_SHIFT |   88u << 3),
     XXBRD_OPCODE   = (60u << OPCODE_SHIFT |  475u << 2 | 23u << 16), // XX2-FORM
     XXBRW_OPCODE   = (60u << OPCODE_SHIFT |  475u << 2 | 15u << 16), // XX2-FORM
+    XXPERM_OPCODE  = (60u << OPCODE_SHIFT |   26u << 3),
+    XXSEL_OPCODE   = (60u << OPCODE_SHIFT |    3u << 4),
+    XXSPLTIB_OPCODE= (60u << OPCODE_SHIFT |  360u << 1),
     XVDIVDP_OPCODE = (60u << OPCODE_SHIFT |  120u << 3),
     XVABSSP_OPCODE = (60u << OPCODE_SHIFT |  409u << 2),
     XVABSDP_OPCODE = (60u << OPCODE_SHIFT |  473u << 2),
@@ -592,6 +613,7 @@ class Assembler : public AbstractAssembler {
     VSPLTISH_OPCODE= (4u  << OPCODE_SHIFT |  844u     ),
     VSPLTISW_OPCODE= (4u  << OPCODE_SHIFT |  908u     ),
 
+    VPEXTD_OPCODE  = (4u  << OPCODE_SHIFT | 1421u     ),
     VPERM_OPCODE   = (4u  << OPCODE_SHIFT |   43u     ),
     VSEL_OPCODE    = (4u  << OPCODE_SHIFT |   42u     ),
 
@@ -779,6 +801,28 @@ class Assembler : public AbstractAssembler {
     STDCX_OPCODE   = (31u << OPCODE_SHIFT |  214u << 1),
     STQCX_OPCODE   = (31u << OPCODE_SHIFT |  182u << 1)
 
+  };
+
+  enum opcdeos_mask {
+    // Mask for prefix primary opcode field
+    PREFIX_OPCODE_MASK        = (63u << OPCODE_SHIFT),
+    // Mask for prefix opcode and type fields
+    PREFIX_OPCODE_TYPE_MASK   = (63u << OPCODE_SHIFT) | (3u << PRE_TYPE_SHIFT),
+    // Masks for type 00/10 and type 01/11, including opcode, type, and st fieds
+    PREFIX_OPCODE_TYPEx0_MASK = PREFIX_OPCODE_TYPE_MASK | ( 1u << PRE_ST1_SHIFT),
+    PREFIX_OPCODE_TYPEx1_MASK = PREFIX_OPCODE_TYPE_MASK | (15u << PRE_ST4_SHIFT),
+
+    // Masks for each instructions
+    PADDI_PREFIX_OPCODE_MASK  = PREFIX_OPCODE_TYPEx0_MASK,
+    PADDI_SUFFIX_OPCODE_MASK  = ADDI_OPCODE_MASK,
+  };
+
+  enum opcdeos {
+    PREFIX_PRIMARY_OPCODE = (1u << OPCODE_SHIFT),
+
+    // Prefixed addi/li
+    PADDI_PREFIX_OPCODE   = PREFIX_PRIMARY_OPCODE | (2u << PRE_TYPE_SHIFT),
+    PADDI_SUFFIX_OPCODE   = ADDI_OPCODE,
   };
 
   // Trap instructions TO bits
@@ -1066,6 +1110,20 @@ class Assembler : public AbstractAssembler {
   static int inv_bo_field(int x)  { return inv_opp_u_field(x, 10,  6); }
   static int inv_bi_field(int x)  { return inv_opp_u_field(x, 15, 11); }
 
+  // For extended opcodes (prefixed instructions) introduced with Power 10
+  static long inv_r_eo(   int x)  { return  inv_opp_u_field(x, 11, 11); }
+  static long inv_type(   int x)  { return  inv_opp_u_field(x,  7,  6); }
+  static long inv_st_x0(  int x)  { return  inv_opp_u_field(x,  8,  8); }
+  static long inv_st_x1(  int x)  { return  inv_opp_u_field(x, 11,  8); }
+
+  //  - 8LS:D/MLS:D Formats
+  static long inv_d0_eo( long x)  { return  inv_opp_u_field(x, 31, 14); }
+
+  //  - 8RR:XX4/8RR:D Formats
+  static long inv_imm0_eo(int x)  { return  inv_opp_u_field(x, 31, 16); }
+  static long inv_uimm_eo(int x)  { return  inv_opp_u_field(x, 31, 29); }
+  static long inv_imm_eo( int x)  { return  inv_opp_u_field(x, 31, 24); }
+
   #define opp_u_field(x, hi_bit, lo_bit) u_field(x, 31-(lo_bit), 31-(hi_bit))
   #define opp_s_field(x, hi_bit, lo_bit) s_field(x, 31-(lo_bit), 31-(hi_bit))
 
@@ -1099,6 +1157,7 @@ class Assembler : public AbstractAssembler {
   static int frs(      int         x)  { return  opp_u_field(x,             10,  6); }
   static int frt(      int         x)  { return  opp_u_field(x,             10,  6); }
   static int fxm(      int         x)  { return  opp_u_field(x,             19, 12); }
+  static int imm8(     int         x)  { return  opp_u_field(uimm(x, 8),    20, 13); }
   static int l10(      int         x)  { assert(x == 0 || x == 1,  "must be 0 or 1"); return opp_u_field(x, 10, 10); }
   static int l14(      int         x)  { return  opp_u_field(x,             15, 14); }
   static int l15(      int         x)  { return  opp_u_field(x,             15, 15); }
@@ -1165,20 +1224,44 @@ class Assembler : public AbstractAssembler {
   // Support Vector-Scalar (VSX) instructions.
   static int vsra(      int         x)  { return  opp_u_field(x & 0x1F,     15, 11) | opp_u_field((x & 0x20) >> 5, 29, 29); }
   static int vsrb(      int         x)  { return  opp_u_field(x & 0x1F,     20, 16) | opp_u_field((x & 0x20) >> 5, 30, 30); }
+  static int vsrc(      int         x)  { return  opp_u_field(x & 0x1F,     25, 21) | opp_u_field((x & 0x20) >> 5, 28, 28); }
   static int vsrs(      int         x)  { return  opp_u_field(x & 0x1F,     10,  6) | opp_u_field((x & 0x20) >> 5, 31, 31); }
   static int vsrt(      int         x)  { return  vsrs(x); }
   static int vsdm(      int         x)  { return  opp_u_field(x,            23, 22); }
+  static int vsrs_dq(   int         x)  { return  opp_u_field(x & 0x1F,     10,  6) | opp_u_field((x & 0x20) >> 5, 28, 28); }
+  static int vsrt_dq(   int         x)  { return  vsrs_dq(x); }
 
   static int vsra(   VectorSRegister r)  { return  vsra(r->encoding());}
   static int vsrb(   VectorSRegister r)  { return  vsrb(r->encoding());}
+  static int vsrc(   VectorSRegister r)  { return  vsrc(r->encoding());}
   static int vsrs(   VectorSRegister r)  { return  vsrs(r->encoding());}
   static int vsrt(   VectorSRegister r)  { return  vsrt(r->encoding());}
+  static int vsrs_dq(VectorSRegister r)  { return  vsrs_dq(r->encoding());}
+  static int vsrt_dq(VectorSRegister r)  { return  vsrt_dq(r->encoding());}
 
   static int vsplt_uim( int        x)  { return  opp_u_field(x,             15, 12); } // for vsplt* instructions
   static int vsplti_sim(int        x)  { return  opp_u_field(x,             15, 11); } // for vsplti* instructions
   static int vsldoi_shb(int        x)  { return  opp_u_field(x,             25, 22); } // for vsldoi instruction
   static int vcmp_rc(   int        x)  { return  opp_u_field(x,             21, 21); } // for vcmp* instructions
   static int xxsplt_uim(int        x)  { return  opp_u_field(x,             15, 14); } // for xxsplt* instructions
+
+  // For extended opcodes (prefixed instructions) introduced with Power 10
+  static long r_eo(     int        x)  { return  opp_u_field(x,             11, 11); }
+  static long type(     int        x)  { return  opp_u_field(x,              7,  6); }
+  static long st_x0(    int        x)  { return  opp_u_field(x,              8,  8); }
+  static long st_x1(    int        x)  { return  opp_u_field(x,             11,  8); }
+
+  //  - 8LS:D/MLS:D Formats
+  static long d0_eo(    long       x)  { return  opp_u_field((x >> 16) & 0x3FFFF, 31, 14); }
+  static long d1_eo(    long       x)  { return  opp_u_field(x & 0xFFFF,    31, 16); }
+  static long s0_eo(    long       x)  { return  d0_eo(x); }
+  static long s1_eo(    long       x)  { return  d1_eo(x); }
+
+  //  - 8RR:XX4/8RR:D Formats
+  static long imm0_eo(  int        x)  { return  opp_u_field(x >> 16,       31, 16); }
+  static long imm1_eo(  int        x)  { return  opp_u_field(x & 0xFFFF,    31, 16); }
+  static long uimm_eo(  int        x)  { return  opp_u_field(x,             31, 29); }
+  static long imm_eo(   int        x)  { return  opp_u_field(x,             31, 24); }
 
   //static int xo1(     int        x)  { return  opp_u_field(x,             29, 21); }// is contained in our opcodes
   //static int xo2(     int        x)  { return  opp_u_field(x,             30, 21); }// is contained in our opcodes
@@ -1279,9 +1362,15 @@ class Assembler : public AbstractAssembler {
   // PPC 1, section 3.3.8, Fixed-Point Arithmetic Instructions
   inline void addi( Register d, Register a, int si16);
   inline void addis(Register d, Register a, int si16);
+
+  // Prefixed add immediate, introduced by POWER10
+  inline void paddi(Register d, Register a, long si34, bool r);
+  inline void pli(  Register d, long si34);
+
  private:
   inline void addi_r0ok( Register d, Register a, int si16);
   inline void addis_r0ok(Register d, Register a, int si16);
+  inline void paddi_r0ok(Register d, Register a, long si34, bool r);
  public:
   inline void addic_( Register d, Register a, int si16);
   inline void subfic( Register d, Register a, int si16);
@@ -1325,6 +1414,8 @@ class Assembler : public AbstractAssembler {
   inline void divd_(  Register d, Register a, Register b);
   inline void divw(   Register d, Register a, Register b);
   inline void divw_(  Register d, Register a, Register b);
+  inline void divwu(  Register d, Register a, Register b);
+  inline void divwu_( Register d, Register a, Register b);
 
   // Fixed-Point Arithmetic Instructions with Overflow detection
   inline void addo(    Register d, Register a, Register b);
@@ -1675,7 +1766,14 @@ class Assembler : public AbstractAssembler {
   inline void mcrf( ConditionRegister crd, ConditionRegister cra);
   inline void mtcr( Register s);
   // >= Power9
+  inline void mcrxrx(ConditionRegister cra);
   inline void setb( Register d, ConditionRegister cra);
+
+  // >= Power10
+  inline void setbc( Register d, int biint);
+  inline void setbc( Register d, ConditionRegister cr, Condition cc);
+  inline void setnbc(Register d, int biint);
+  inline void setnbc(Register d, ConditionRegister cr, Condition cc);
 
   // Special purpose registers
   // Exception Register
@@ -2119,6 +2217,7 @@ class Assembler : public AbstractAssembler {
   inline void vspltish( VectorRegister d, int si5);
   inline void vspltisw( VectorRegister d, int si5);
   inline void vperm(    VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
+  inline void vpextd(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vsel(     VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vsl(      VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vsldoi(   VectorRegister d, VectorRegister a, VectorRegister b, int ui4);
@@ -2235,6 +2334,10 @@ class Assembler : public AbstractAssembler {
   inline void mfvscr(   VectorRegister d);
 
   // Vector-Scalar (VSX) instructions.
+  inline void lxv(      VectorSRegister d, int si16, Register a);
+  inline void stxv(     VectorSRegister d, int si16, Register a);
+  inline void lxvl(     VectorSRegister d, Register a, Register b);
+  inline void stxvl(    VectorSRegister d, Register a, Register b);
   inline void lxvd2x(   VectorSRegister d, Register a);
   inline void lxvd2x(   VectorSRegister d, Register a, Register b);
   inline void stxvd2x(  VectorSRegister d, Register a);
@@ -2243,11 +2346,13 @@ class Assembler : public AbstractAssembler {
   inline void mfvrwz(   Register        a, VectorRegister d);
   inline void mtvrd(    VectorRegister  d, Register a);
   inline void mfvrd(    Register        a, VectorRegister d);
+  inline void xxperm(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxpermdi( VectorSRegister d, VectorSRegister a, VectorSRegister b, int dm);
   inline void xxmrghw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxmrglw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void mtvsrd(   VectorSRegister d, Register a);
   inline void mfvsrd(   Register        d, VectorSRegister a);
+  inline void mtvsrdd(  VectorSRegister d, Register a, Register b);
   inline void mtvsrwz(  VectorSRegister d, Register a);
   inline void mfvsrwz(  Register        d, VectorSRegister a);
   inline void xxspltw(  VectorSRegister d, VectorSRegister b, int ui2);
@@ -2256,6 +2361,9 @@ class Assembler : public AbstractAssembler {
   inline void xxleqv(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxbrd(    VectorSRegister d, VectorSRegister b);
   inline void xxbrw(    VectorSRegister d, VectorSRegister b);
+  inline void xxland(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xxsel(    VectorSRegister d, VectorSRegister a, VectorSRegister b, VectorSRegister c);
+  inline void xxspltib( VectorSRegister d, int ui8);
   inline void xvdivsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvdivdp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvabssp(  VectorSRegister d, VectorSRegister b);

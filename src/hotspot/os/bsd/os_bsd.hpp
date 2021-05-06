@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,6 @@ class Bsd {
   // mach_absolute_time
   static mach_timebase_info_data_t _timebase_info;
   static volatile uint64_t         _max_abstime;
-#else
-  static int (*_clock_gettime)(clockid_t, struct timespec *);
 #endif
 
   static GrowableArray<int>* _cpu_to_node;
@@ -68,8 +66,6 @@ class Bsd {
   static int page_size(void)                                        { return _page_size; }
   static void set_page_size(int val)                                { _page_size = val; }
 
-  static address   ucontext_get_pc(const ucontext_t* uc);
-  static void ucontext_set_pc(ucontext_t* uc, address pc);
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,13 +132,13 @@ public class Log extends AbstractLog {
      */
     public static class DeferredDiagnosticHandler extends DiagnosticHandler {
         private Queue<JCDiagnostic> deferred = new ListBuffer<>();
-        private final Filter<JCDiagnostic> filter;
+        private final Predicate<JCDiagnostic> filter;
 
         public DeferredDiagnosticHandler(Log log) {
             this(log, null);
         }
 
-        public DeferredDiagnosticHandler(Log log, Filter<JCDiagnostic> filter) {
+        public DeferredDiagnosticHandler(Log log, Predicate<JCDiagnostic> filter) {
             this.filter = filter;
             install(log);
         }
@@ -146,7 +146,7 @@ public class Log extends AbstractLog {
         @Override
         public void report(JCDiagnostic diag) {
             if (!diag.isFlagSet(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE) &&
-                (filter == null || filter.accepts(diag))) {
+                (filter == null || filter.test(diag))) {
                 deferred.add(diag);
             } else {
                 prev.report(diag);
@@ -548,8 +548,8 @@ public class Log extends AbstractLog {
         private void getCodeRecursive(ListBuffer<String> buf, JCDiagnostic d) {
             buf.add(d.getCode());
             for (Object o : d.getArgs()) {
-                if (o instanceof JCDiagnostic) {
-                    getCodeRecursive(buf, (JCDiagnostic)o);
+                if (o instanceof JCDiagnostic diagnostic) {
+                    getCodeRecursive(buf, diagnostic);
                 }
             }
         }

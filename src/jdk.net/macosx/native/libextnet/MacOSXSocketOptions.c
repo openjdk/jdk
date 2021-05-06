@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  * questions.
  */
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -122,6 +123,25 @@ JNIEXPORT jint JNICALL Java_jdk_net_MacOSXSocketOptions_getTcpkeepAliveProbes0
     handleError(env, rv, "get option TCP_KEEPCNT failed");
     return optval;
 }
+
+/*
+ * Class:     jdk_net_MacOSXSocketOptions
+ * Method:    getSoPeerCred0
+ * Signature: (I)L
+ */
+JNIEXPORT jlong JNICALL Java_jdk_net_MacOSXSocketOptions_getSoPeerCred0
+  (JNIEnv *env, jclass clazz, jint fd) {
+
+    jint rv;
+    int uid, gid;
+    rv = getpeereid(fd, (uid_t *)&uid, (gid_t *)&gid);
+    handleError(env, rv, "get peer eid failed");
+    if (rv == -1) {
+        uid = gid = -1;
+    }
+    return (((long)uid) << 32) | (gid & 0xffffffffL);
+}
+
 
 /*
  * Class:     jdk_net_MacOSXSocketOptions

@@ -48,21 +48,6 @@
 /* Defined externally, i.e. in config.h; must have typedef'ed hb_mutex_impl_t as well. */
 
 
-#elif !defined(HB_NO_MT) && defined(_WIN32)
-
-#include <windows.h>
-typedef CRITICAL_SECTION hb_mutex_impl_t;
-#define HB_MUTEX_IMPL_INIT      {0}
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY==WINAPI_FAMILY_PC_APP || WINAPI_FAMILY==WINAPI_FAMILY_PHONE_APP)
-#define hb_mutex_impl_init(M)   InitializeCriticalSectionEx (M, 0, 0)
-#else
-#define hb_mutex_impl_init(M)   InitializeCriticalSection (M)
-#endif
-#define hb_mutex_impl_lock(M)   EnterCriticalSection (M)
-#define hb_mutex_impl_unlock(M) LeaveCriticalSection (M)
-#define hb_mutex_impl_finish(M) DeleteCriticalSection (M)
-
-
 #elif !defined(HB_NO_MT) && (defined(HAVE_PTHREAD) || defined(__APPLE__))
 
 #include <pthread.h>
@@ -74,43 +59,21 @@ typedef pthread_mutex_t hb_mutex_impl_t;
 #define hb_mutex_impl_finish(M) pthread_mutex_destroy (M)
 
 
-#elif !defined(HB_NO_MT) && defined(HAVE_INTEL_ATOMIC_PRIMITIVES)
+#elif !defined(HB_NO_MT) && defined(_WIN32)
 
-#if defined(HAVE_SCHED_H) && defined(HAVE_SCHED_YIELD)
-# include <sched.h>
-# define HB_SCHED_YIELD() sched_yield ()
+typedef CRITICAL_SECTION hb_mutex_impl_t;
+#define HB_MUTEX_IMPL_INIT      {0}
+#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#define hb_mutex_impl_init(M)   InitializeCriticalSectionEx (M, 0, 0)
 #else
-# define HB_SCHED_YIELD() HB_STMT_START {} HB_STMT_END
+#define hb_mutex_impl_init(M)   InitializeCriticalSection (M)
 #endif
-
-/* This actually is not a totally awful implementation. */
-typedef volatile int hb_mutex_impl_t;
-#define HB_MUTEX_IMPL_INIT      0
-#define hb_mutex_impl_init(M)   *(M) = 0
-#define hb_mutex_impl_lock(M)   HB_STMT_START { while (__sync_lock_test_and_set((M), 1)) HB_SCHED_YIELD (); } HB_STMT_END
-#define hb_mutex_impl_unlock(M) __sync_lock_release (M)
-#define hb_mutex_impl_finish(M) HB_STMT_START {} HB_STMT_END
+#define hb_mutex_impl_lock(M)   EnterCriticalSection (M)
+#define hb_mutex_impl_unlock(M) LeaveCriticalSection (M)
+#define hb_mutex_impl_finish(M) DeleteCriticalSection (M)
 
 
-#elif !defined(HB_NO_MT)
-
-#if defined(HAVE_SCHED_H) && defined(HAVE_SCHED_YIELD)
-# include <sched.h>
-# define HB_SCHED_YIELD() sched_yield ()
-#else
-# define HB_SCHED_YIELD() HB_STMT_START {} HB_STMT_END
-#endif
-
-#define HB_MUTEX_INT_NIL 1 /* Warn that fallback implementation is in use. */
-typedef volatile int hb_mutex_impl_t;
-#define HB_MUTEX_IMPL_INIT      0
-#define hb_mutex_impl_init(M)   *(M) = 0
-#define hb_mutex_impl_lock(M)   HB_STMT_START { while (*(M)) HB_SCHED_YIELD (); (*(M))++; } HB_STMT_END
-#define hb_mutex_impl_unlock(M) (*(M))--;
-#define hb_mutex_impl_finish(M) HB_STMT_START {} HB_STMT_END
-
-
-#else /* HB_NO_MT */
+#elif defined(HB_NO_MT)
 
 typedef int hb_mutex_impl_t;
 #define HB_MUTEX_IMPL_INIT      0
@@ -120,6 +83,11 @@ typedef int hb_mutex_impl_t;
 #define hb_mutex_impl_finish(M) HB_STMT_START {} HB_STMT_END
 
 
+#else
+
+#error "Could not find any system to define mutex macros."
+#error "Check hb-mutex.hh for possible resolutions."
+
 #endif
 
 
@@ -127,8 +95,6 @@ typedef int hb_mutex_impl_t;
 
 struct hb_mutex_t
 {
-  /* TODO Add tracing. */
-
   hb_mutex_impl_t m;
 
   void init   () { hb_mutex_impl_init   (&m); }

@@ -43,7 +43,7 @@ namespace OT {
 
 struct head
 {
-  friend struct OffsetTable;
+  friend struct OpenTypeOffsetTable;
 
   static constexpr hb_tag_t tableTag = HB_OT_TAG_head;
 
@@ -52,6 +52,18 @@ struct head
     unsigned int upem = unitsPerEm;
     /* If no valid head table found, assume 1000, which matches typical Type1 usage. */
     return 16 <= upem && upem <= 16384 ? upem : 1000;
+  }
+
+  bool serialize (hb_serialize_context_t *c) const
+  {
+    TRACE_SERIALIZE (this);
+    return_trace ((bool) c->embed (this));
+  }
+
+  bool subset (hb_subset_context_t *c) const
+  {
+    TRACE_SUBSET (this);
+    return_trace (serialize (c->serializer));
   }
 
   enum mac_style_flag_t {

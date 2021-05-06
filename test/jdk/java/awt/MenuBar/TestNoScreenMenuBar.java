@@ -29,29 +29,36 @@
  * @bug 8146310
  * @summary [macosx] setDefaultMenuBar does not initialize screen menu bar
  * @author Alan Snyder
+ * @library /test/lib
  * @run main/othervm TestNoScreenMenuBar
  * @requires (os.family == "mac")
  */
 
 import java.awt.AWTException;
 import java.awt.Desktop;
+import java.awt.Frame;
+import java.awt.Menu;
+import java.awt.MenuBar;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 
+import jdk.test.lib.process.ProcessTools;
+
 public class TestNoScreenMenuBar
 {
     static TestNoScreenMenuBar theTest;
     private Robot robot;
-    private boolean isApplicationOpened;
+    private Process process;
     private boolean isActionPerformed;
 
-    public TestNoScreenMenuBar(String[] args)
+    public TestNoScreenMenuBar()
     {
         try {
             robot = new Robot();
@@ -60,11 +67,9 @@ public class TestNoScreenMenuBar
             throw new RuntimeException(ex);
         }
 
-        if (!(args.length > 0 && args[0].equals("baseline"))) {
-            // activate another application
-            openOtherApplication();
-            robot.delay(500);
-        }
+        // activate another java application
+        openOtherApplication();
+        robot.delay(2000);
 
         // The failure mode is installing the default menu bar while the application is inactive
         Desktop desktop = Desktop.getDesktop();
@@ -134,23 +139,21 @@ public class TestNoScreenMenuBar
     }
 
     private void openOtherApplication() {
-        String[] cmd = { "/usr/bin/open", "/Applications/System Preferences.app" };
-        execute(cmd);
-        isApplicationOpened = true;
+        process = execute();
     }
 
     private void closeOtherApplication() {
-        if (isApplicationOpened) {
-            String[] cmd = { "/usr/bin/osascript", "-e", "tell application \"System Preferences\" to close window 1" };
-            execute(cmd);
+        if (process != null) {
+            process.destroyForcibly();
         }
     }
 
-    private void execute(String[] cmd) {
+    private Process execute() {
         try {
-            Process p = Runtime.getRuntime().exec(cmd);
-            p.waitFor();
-        } catch (IOException | InterruptedException ex) {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                    TestNoScreenMenuBar.class.getSimpleName(), "mark");
+            return ProcessTools.startProcess("Other frame", pb);
+        } catch (IOException ex) {
             throw new RuntimeException("Unable to execute command");
         }
     }
@@ -171,10 +174,20 @@ public class TestNoScreenMenuBar
             System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
             return;
         }
-
+        if (args.length != 0) {
+            Frame frame = new Frame();
+            MenuBar mb = new MenuBar();
+            mb.add(new Menu("Hello"));
+            frame.setMenuBar(mb);
+            frame.setSize(300, 300);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+            frame.toFront();
+            return;
+        }
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         try {
-            runSwing(() -> theTest = new TestNoScreenMenuBar(args));
+            runSwing(() -> theTest = new TestNoScreenMenuBar());
             theTest.performMenuItemTest();
         } finally {
             if (theTest != null) {

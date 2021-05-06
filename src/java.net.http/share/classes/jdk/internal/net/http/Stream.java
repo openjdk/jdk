@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -451,18 +451,11 @@ class Stream<T> extends ExchangeImpl<T> {
 
     void otherFrame(Http2Frame frame) throws IOException {
         switch (frame.type()) {
-            case WindowUpdateFrame.TYPE:
-                incoming_windowUpdate((WindowUpdateFrame) frame);
-                break;
-            case ResetFrame.TYPE:
-                incoming_reset((ResetFrame) frame);
-                break;
-            case PriorityFrame.TYPE:
-                incoming_priority((PriorityFrame) frame);
-                break;
-            default:
-                String msg = "Unexpected frame: " + frame.toString();
-                throw new IOException(msg);
+            case WindowUpdateFrame.TYPE ->  incoming_windowUpdate((WindowUpdateFrame) frame);
+            case ResetFrame.TYPE        ->  incoming_reset((ResetFrame) frame);
+            case PriorityFrame.TYPE     ->  incoming_priority((PriorityFrame) frame);
+
+            default -> throw new IOException("Unexpected frame: " + frame.toString());
         }
     }
 
@@ -933,7 +926,6 @@ class Stream<T> extends ExchangeImpl<T> {
                     // handle bytes to send downstream
                     while (item.hasRemaining() && state == 0) {
                         if (debug.on()) debug.log("trySend: %d", item.remaining());
-                        assert !endStreamSent : "internal error, send data after END_STREAM flag";
                         DataFrame df = getDataFrame(item);
                         if (df == null) {
                             if (debug.on())
@@ -954,9 +946,12 @@ class Stream<T> extends ExchangeImpl<T> {
                                 connection.resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
                                 throw new IOException(msg);
                             } else if (remainingContentLength == 0) {
+                                assert !endStreamSent : "internal error, send data after END_STREAM flag";
                                 df.setFlag(DataFrame.END_STREAM);
                                 endStreamSent = true;
                             }
+                        } else {
+                            assert !endStreamSent : "internal error, send data after END_STREAM flag";
                         }
                         if ((state = streamState) != 0) {
                             if (debug.on()) debug.log("trySend: cancelled: %s", String.valueOf(t));

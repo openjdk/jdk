@@ -112,12 +112,12 @@ import java.util.Objects;
  * It is intended that {@code ZonedDateTime} or {@code Instant} is used to model data
  * in simpler applications. This class may be used when modeling date-time concepts in
  * more detail, or when communicating to a database or in a network protocol.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code OffsetDateTime} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -125,6 +125,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class OffsetDateTime
         implements Temporal, TemporalAdjuster, Comparable<OffsetDateTime>, Serializable {
 
@@ -595,8 +596,8 @@ public final class OffsetDateTime
      */
     @Override
     public int get(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
+        if (field instanceof ChronoField chronoField) {
+            switch (chronoField) {
                 case INSTANT_SECONDS:
                     throw new UnsupportedTemporalTypeException("Invalid field 'InstantSeconds' for get() method, use getLong() instead");
                 case OFFSET_SECONDS:
@@ -632,8 +633,8 @@ public final class OffsetDateTime
      */
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
+        if (field instanceof ChronoField chronoField) {
+            switch (chronoField) {
                 case INSTANT_SECONDS: return toEpochSecond();
                 case OFFSET_SECONDS: return getOffset().getTotalSeconds();
             }
@@ -966,12 +967,11 @@ public final class OffsetDateTime
      */
     @Override
     public OffsetDateTime with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            switch (f) {
+        if (field instanceof ChronoField chronoField) {
+            switch (chronoField) {
                 case INSTANT_SECONDS: return ofInstant(Instant.ofEpochSecond(newValue, getNano()), offset);
                 case OFFSET_SECONDS: {
-                    return with(dateTime, ZoneOffset.ofTotalSeconds(f.checkValidIntValue(newValue)));
+                    return with(dateTime, ZoneOffset.ofTotalSeconds(chronoField.checkValidIntValue(newValue)));
                 }
             }
             return with(dateTime.with(field, newValue), offset);
@@ -1880,11 +1880,9 @@ public final class OffsetDateTime
         if (this == obj) {
             return true;
         }
-        if (obj instanceof OffsetDateTime) {
-            OffsetDateTime other = (OffsetDateTime) obj;
-            return dateTime.equals(other.dateTime) && offset.equals(other.offset);
-        }
-        return false;
+        return (obj instanceof OffsetDateTime other)
+                && dateTime.equals(other.dateTime)
+                && offset.equals(other.offset);
     }
 
     /**

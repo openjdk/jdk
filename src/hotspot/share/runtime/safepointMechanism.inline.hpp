@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,24 +60,21 @@ bool SafepointMechanism::global_poll() {
   return (SafepointSynchronize::_state != SafepointSynchronize::_not_synchronized);
 }
 
-bool SafepointMechanism::local_poll(Thread* thread) {
-  if (thread->is_Java_thread()) {
-    return local_poll_armed(thread->as_Java_thread());
-  } else {
-    // If the poll is on a non-java thread we can only check the global state.
-    return global_poll();
+bool SafepointMechanism::should_process(JavaThread* thread) {
+  return local_poll_armed(thread);
+}
+
+void SafepointMechanism::process_if_requested(JavaThread* thread) {
+  if (local_poll_armed(thread)) {
+    process_if_requested_slow(thread);
   }
 }
 
-bool SafepointMechanism::should_process(Thread* thread) {
-  return local_poll(thread);
-}
-
-void SafepointMechanism::process_if_requested(JavaThread *thread) {
-  if (!local_poll_armed(thread)) {
-    return;
+void SafepointMechanism::process_if_requested_with_exit_check(JavaThread* thread, bool check_asyncs) {
+  process_if_requested(thread);
+  if (thread->has_special_runtime_exit_condition()) {
+    thread->handle_special_runtime_exit_condition(check_asyncs);
   }
-  process_if_requested_slow(thread);
 }
 
 void SafepointMechanism::arm_local_poll(JavaThread* thread) {

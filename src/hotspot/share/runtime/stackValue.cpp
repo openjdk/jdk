@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 #include "gc/z/zBarrier.inline.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #endif
 
 StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv) {
@@ -141,6 +141,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
       return new StackValue(h);
     }
     case Location::addr: {
+      loc.print_on(tty);
       ShouldNotReachHere(); // both C1 and C2 now inline jsrs
     }
     case Location::normal: {
@@ -150,9 +151,15 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
       value.ji = *(jint*)value_addr;
       return new StackValue(value.p);
     }
-    case Location::invalid:
+    case Location::invalid: {
       return new StackValue();
+    }
+    case Location::vector: {
+      loc.print_on(tty);
+      ShouldNotReachHere(); // should be handled by VectorSupport::allocate_vector()
+    }
     default:
+      loc.print_on(tty);
       ShouldNotReachHere();
     }
 
@@ -222,7 +229,7 @@ void StackValue::print_on(outputStream* st) const {
         st->print("NULL");
       }
       st->print(" <" INTPTR_FORMAT ">", p2i(_handle_value()));
-     break;
+      break;
 
     case T_CONFLICT:
      st->print("conflict");

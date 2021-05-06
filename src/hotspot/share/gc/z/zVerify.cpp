@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "gc/z/zAddress.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
+#include "gc/z/zNMethod.hpp"
 #include "gc/z/zOop.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zResurrection.hpp"
@@ -33,11 +35,18 @@
 #include "gc/z/zStat.hpp"
 #include "gc/z/zVerify.hpp"
 #include "memory/iterator.inline.hpp"
-#include "memory/resourceArea.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
 
 #define BAD_OOP_ARG(o, p)   "Bad oop " PTR_FORMAT " found at " PTR_FORMAT, p2i(o), p2i(p)
@@ -60,7 +69,7 @@ static void z_verify_possibly_weak_oop(oop* p) {
   }
 }
 
-class ZVerifyRootClosure : public ZRootsIteratorClosure {
+class ZVerifyRootClosure : public OopClosure {
 private:
   const bool _verify_fixed;
 
@@ -82,8 +91,6 @@ public:
   virtual void do_oop(narrowOop*) {
     ShouldNotReachHere();
   }
-
-  virtual void do_thread(Thread* thread);
 
   bool verify_fixed() const {
     return _verify_fixed;
@@ -170,19 +177,7 @@ public:
   }
 };
 
-void ZVerifyRootClosure::do_thread(Thread* thread) {
-  thread->oops_do_no_frames(this, NULL);
-
-  JavaThread* const jt = thread->as_Java_thread();
-  if (!jt->has_last_Java_frame()) {
-    return;
-  }
-
-  ZVerifyStack verify_stack(this, jt);
-  verify_stack.verify_frames();
-}
-
-class ZVerifyOopClosure : public ClaimMetadataVisitingOopIterateClosure, public ZRootsIteratorClosure  {
+class ZVerifyOopClosure : public ClaimMetadataVisitingOopIterateClosure {
 private:
   const bool _verify_weaks;
 
@@ -208,50 +203,79 @@ public:
   virtual ReferenceIterationMode reference_iteration_mode() {
     return _verify_weaks ? DO_FIELDS : DO_FIELDS_EXCEPT_REFERENT;
   }
-
-#ifdef ASSERT
-  // Verification handled by the closure itself
-  virtual bool should_verify_oops() {
-    return false;
-  }
-#endif
 };
 
-template <typename RootsIterator>
-void ZVerify::roots(bool verify_fixed) {
+typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_none> ZVerifyCLDClosure;
+
+class ZVerifyThreadClosure : public ThreadClosure {
+private:
+  ZVerifyRootClosure* const _cl;
+
+public:
+  ZVerifyThreadClosure(ZVerifyRootClosure* cl) :
+      _cl(cl) {}
+
+  virtual void do_thread(Thread* thread) {
+    thread->oops_do_no_frames(_cl, NULL);
+
+    JavaThread* const jt = thread->as_Java_thread();
+    if (!jt->has_last_Java_frame()) {
+      return;
+    }
+
+    ZVerifyStack verify_stack(_cl, jt);
+    verify_stack.verify_frames();
+  }
+};
+
+class ZVerifyNMethodClosure : public NMethodClosure {
+private:
+  OopClosure* const        _cl;
+  BarrierSetNMethod* const _bs_nm;
+  const bool               _verify_fixed;
+
+  bool trust_nmethod_state() const {
+    // The root iterator will visit non-processed
+    // nmethods class unloading is turned off.
+    return ClassUnloading || _verify_fixed;
+  }
+
+public:
+  ZVerifyNMethodClosure(OopClosure* cl, bool verify_fixed) :
+      _cl(cl),
+      _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()),
+      _verify_fixed(verify_fixed) {}
+
+  virtual void do_nmethod(nmethod* nm) {
+    assert(!trust_nmethod_state() || !_bs_nm->is_armed(nm), "Should not encounter any armed nmethods");
+
+    ZNMethod::nmethod_oops_do(nm, _cl);
+  }
+};
+
+void ZVerify::roots_strong(bool verify_fixed) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
-  if (ZVerifyRoots) {
-    ZVerifyRootClosure cl(verify_fixed);
-    RootsIterator iter;
-    iter.oops_do(&cl);
-  }
-}
+  ZVerifyRootClosure cl(verify_fixed);
+  ZVerifyCLDClosure cld_cl(&cl);
+  ZVerifyThreadClosure thread_cl(&cl);
+  ZVerifyNMethodClosure nm_cl(&cl, verify_fixed);
 
-void ZVerify::roots_strong() {
-  roots<ZRootsIterator>(true /* verify_fixed */);
+  ZRootsIterator iter(ClassLoaderData::_claim_none);
+  iter.apply(&cl,
+             &cld_cl,
+             &thread_cl,
+             &nm_cl);
 }
 
 void ZVerify::roots_weak() {
-  roots<ZWeakRootsIterator>(true /* verify_fixed */);
-}
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+  assert(!ZResurrection::is_blocked(), "Invalid phase");
 
-void ZVerify::roots_concurrent_strong(bool verify_fixed) {
-  roots<ZConcurrentRootsIteratorClaimNone>(verify_fixed);
-}
-
-void ZVerify::roots_concurrent_weak() {
-  roots<ZConcurrentWeakRootsIterator>(true /* verify_fixed */);
-}
-
-void ZVerify::roots(bool verify_concurrent_strong, bool verify_weaks) {
-  roots_strong();
-  roots_concurrent_strong(verify_concurrent_strong);
-  if (verify_weaks) {
-    roots_weak();
-    roots_concurrent_weak();
-  }
+  ZVerifyRootClosure cl(true /* verify_fixed */);
+  ZWeakRootsIterator iter;
+  iter.apply(&cl);
 }
 
 void ZVerify::objects(bool verify_weaks) {
@@ -259,34 +283,40 @@ void ZVerify::objects(bool verify_weaks) {
   assert(ZGlobalPhase == ZPhaseMarkCompleted, "Invalid phase");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
-  if (ZVerifyObjects) {
-    ZVerifyOopClosure cl(verify_weaks);
-    ObjectToOopClosure object_cl(&cl);
-    ZHeap::heap()->object_iterate(&object_cl, verify_weaks);
-  }
-}
-
-void ZVerify::roots_and_objects(bool verify_concurrent_strong, bool verify_weaks) {
-  roots(verify_concurrent_strong, verify_weaks);
-  objects(verify_weaks);
+  ZVerifyOopClosure cl(verify_weaks);
+  ObjectToOopClosure object_cl(&cl);
+  ZHeap::heap()->object_iterate(&object_cl, verify_weaks);
 }
 
 void ZVerify::before_zoperation() {
   // Verify strong roots
   ZStatTimerDisable disable;
-  roots(false /* verify_concurrent_strong */, false /* verify_weaks */);
+  if (ZVerifyRoots) {
+    roots_strong(false /* verify_fixed */);
+  }
 }
 
 void ZVerify::after_mark() {
   // Verify all strong roots and strong references
   ZStatTimerDisable disable;
-  roots_and_objects(true /* verify_concurrent_strong*/, false /* verify_weaks */);
+  if (ZVerifyRoots) {
+    roots_strong(true /* verify_fixed */);
+  }
+  if (ZVerifyObjects) {
+    objects(false /* verify_weaks */);
+  }
 }
 
 void ZVerify::after_weak_processing() {
   // Verify all roots and all references
   ZStatTimerDisable disable;
-  roots_and_objects(true /* verify_concurrent_strong*/, true /* verify_weaks */);
+  if (ZVerifyRoots) {
+    roots_strong(true /* verify_fixed */);
+    roots_weak();
+  }
+  if (ZVerifyObjects) {
+    objects(true /* verify_weaks */);
+  }
 }
 
 template <bool Map>
@@ -351,10 +381,10 @@ class StackWatermarkProcessingMark {
 
 public:
   StackWatermarkProcessingMark(Thread* thread) :
-    _rnhm(),
-    _hm(thread),
-    _pem(thread),
-    _rm(thread) { }
+      _rnhm(),
+      _hm(thread),
+      _pem(thread),
+      _rm(thread) {}
 };
 
 void ZVerify::verify_frame_bad(const frame& fr, RegisterMap& register_map) {

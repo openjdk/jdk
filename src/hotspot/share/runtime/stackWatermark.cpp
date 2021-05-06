@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
@@ -163,7 +165,8 @@ StackWatermark::StackWatermark(JavaThread* jt, StackWatermarkKind kind, uint32_t
     _jt(jt),
     _iterator(NULL),
     _lock(Mutex::tty - 1, "stack_watermark_lock", true, Mutex::_safepoint_check_never),
-    _kind(kind) {
+    _kind(kind),
+    _linked_watermark(NULL) {
 }
 
 StackWatermark::~StackWatermark() {
@@ -247,6 +250,11 @@ void StackWatermark::process_one() {
   }
 }
 
+void StackWatermark::link_watermark(StackWatermark* watermark) {
+  assert(watermark == NULL || _linked_watermark == NULL, "nesting not supported");
+  _linked_watermark = watermark;
+}
+
 uintptr_t StackWatermark::watermark() {
   return Atomic::load_acquire(&_watermark);
 }
@@ -278,6 +286,14 @@ bool StackWatermark::processing_completed() const {
 
 bool StackWatermark::processing_completed_acquire() const {
   return processing_completed(Atomic::load_acquire(&_state));
+}
+
+void StackWatermark::on_safepoint() {
+  start_processing();
+  StackWatermark* linked_watermark = _linked_watermark;
+  if (linked_watermark != NULL) {
+    linked_watermark->finish_processing(NULL /* context */);
+  }
 }
 
 void StackWatermark::start_processing() {

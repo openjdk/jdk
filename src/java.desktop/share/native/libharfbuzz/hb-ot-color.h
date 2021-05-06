@@ -26,7 +26,7 @@
  * Google Author(s): Sascha Brawer, Behdad Esfahbod
  */
 
-#ifndef HB_OT_H_IN
+#if !defined(HB_OT_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb-ot.h> instead."
 #endif
 
@@ -59,12 +59,14 @@ hb_ot_color_palette_color_get_name_id (hb_face_t *face,
 
 /**
  * hb_ot_color_palette_flags_t:
- * @HB_OT_COLOR_PALETTE_FLAG_DEFAULT: default indicating that there is nothing special
+ * @HB_OT_COLOR_PALETTE_FLAG_DEFAULT: Default indicating that there is nothing special
  *   to note about a color palette.
- * @HB_OT_COLOR_PALETTE_FLAG_USABLE_WITH_LIGHT_BACKGROUND: flag indicating that the color
+ * @HB_OT_COLOR_PALETTE_FLAG_USABLE_WITH_LIGHT_BACKGROUND: Flag indicating that the color
  *   palette is appropriate to use when displaying the font on a light background such as white.
- * @HB_OT_COLOR_PALETTE_FLAG_USABLE_WITH_DARK_BACKGROUND: flag indicating that the color
+ * @HB_OT_COLOR_PALETTE_FLAG_USABLE_WITH_DARK_BACKGROUND: Flag indicating that the color
  *   palette is appropriate to use when displaying the font on a dark background such as black.
+ *
+ * Flags that describe the properties of color palette.
  *
  * Since: 2.1.0
  */
@@ -95,13 +97,14 @@ hb_ot_color_has_layers (hb_face_t *face);
 
 /**
  * hb_ot_color_layer_t:
+ * @glyph: the glyph ID of the layer
+ * @color_index: the palette color index of the layer
  *
  * Pairs of glyph and color index.
  *
  * Since: 2.1.0
  **/
-typedef struct hb_ot_color_layer_t
-{
+typedef struct hb_ot_color_layer_t {
   hb_codepoint_t glyph;
   unsigned int   color_index;
 } hb_ot_color_layer_t;
@@ -110,7 +113,7 @@ HB_EXTERN unsigned int
 hb_ot_color_glyph_get_layers (hb_face_t           *face,
                               hb_codepoint_t       glyph,
                               unsigned int         start_offset,
-                              unsigned int        *count, /* IN/OUT.  May be NULL. */
+                              unsigned int        *layer_count, /* IN/OUT.  May be NULL. */
                               hb_ot_color_layer_t *layers /* OUT.     May be NULL. */);
 
 /*

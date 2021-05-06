@@ -22,12 +22,15 @@
  */
 package com.sun.org.apache.xml.internal.security;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 import com.sun.org.apache.xml.internal.security.algorithms.JCEMapper;
@@ -89,13 +92,18 @@ public class Init {
                         if (cfile == null) {
                             return null;
                         }
-                        return Init.class.getResourceAsStream(cfile);
+                        return getResourceAsStream(cfile, Init.class);
                     }
                 );
         if (is == null) {
             dynamicInit();
         } else {
             fileInit(is);
+            try {
+                is.close();
+            } catch (IOException ex) {
+                LOG.warn(ex.getMessage());
+            }
         }
 
         alreadyInitialized = true;
@@ -168,7 +176,7 @@ public class Init {
     private static void fileInit(InputStream is) {
         try {
             /* read library configuration file */
-            Document doc = XMLUtils.read(is, false);
+            Document doc = XMLUtils.read(is, true);
             Node config = doc.getFirstChild();
             for (; config != null; config = config.getNextSibling()) {
                 if ("Configuration".equals(config.getLocalName())) {
@@ -208,7 +216,7 @@ public class Init {
                             Canonicalizer.register(uri, javaClass);
                             LOG.debug("Canonicalizer.register({}, {})", uri, javaClass);
                         } catch (ClassNotFoundException e) {
-                            Object exArgs[] = { uri, javaClass };
+                            Object[] exArgs = { uri, javaClass };
                             LOG.error(I18n.translate("algorithm.classDoesNotExist", exArgs));
                         }
                     }
@@ -226,7 +234,7 @@ public class Init {
                             Transform.register(uri, javaClass);
                             LOG.debug("Transform.register({}, {})", uri, javaClass);
                         } catch (ClassNotFoundException e) {
-                            Object exArgs[] = { uri, javaClass };
+                            Object[] exArgs = { uri, javaClass };
 
                             LOG.error(I18n.translate("algorithm.classDoesNotExist", exArgs));
                         } catch (NoClassDefFoundError ex) {
@@ -262,7 +270,7 @@ public class Init {
                             SignatureAlgorithm.register(uri, javaClass);
                             LOG.debug("SignatureAlgorithm.register({}, {})", uri, javaClass);
                         } catch (ClassNotFoundException e) {
-                            Object exArgs[] = { uri, javaClass };
+                            Object[] exArgs = { uri, javaClass };
 
                             LOG.error(I18n.translate("algorithm.classDoesNotExist", exArgs));
                         }
@@ -272,7 +280,7 @@ public class Init {
                 if ("ResourceResolvers".equals(tag)) {
                     Element[] resolverElem =
                         XMLUtils.selectNodes(el.getFirstChild(), CONF_NS, "Resolver");
-
+                    List<String> classNames = new ArrayList<>(resolverElem.length);
                     for (Element element : resolverElem) {
                         String javaClass =
                             element.getAttributeNS(null, "JAVACLASS");
@@ -284,16 +292,9 @@ public class Init {
                         } else {
                             LOG.debug("Register Resolver: {}: For unknown purposes", javaClass);
                         }
-                        try {
-                            ResourceResolver.register(javaClass);
-                        } catch (Throwable e) {
-                            LOG.warn(
-                                 "Cannot register:" + javaClass
-                                 + " perhaps some needed jars are not installed",
-                                 e
-                             );
-                        }
+                        classNames.add(javaClass);
                     }
+                    ResourceResolver.registerClassNames(classNames);
                 }
 
                 if ("KeyResolver".equals(tag)){
@@ -335,6 +336,170 @@ public class Init {
             LOG.error("Bad: ", e);
         }
     }
+    /**
+     * Load a given resource. <p></p> This method will try to load the resource
+     * using the following methods (in order):
+     * <ul>
+     * <li>From Thread.currentThread().getContextClassLoader()
+     * <li>From ClassLoaderUtil.class.getClassLoader()
+     * <li>callingClass.getClassLoader()
+     * </ul>
+     *
+     * @param resourceName The name of the resource to load
+     * @param callingClass The Class object of the calling object
+     */
+    public static URL getResource(String resourceName, Class<?> callingClass) {
+        URL url = Thread.currentThread().getContextClassLoader().getResource(resourceName);
+        if (url == null && resourceName.charAt(0) == '/') {
+            //certain classloaders need it without the leading /
+            url =
+                    Thread.currentThread().getContextClassLoader().getResource(
+                            resourceName.substring(1)
+                    );
+        }
 
+        ClassLoader cluClassloader = Init.class.getClassLoader();
+        if (cluClassloader == null) {
+            cluClassloader = ClassLoader.getSystemClassLoader();
+        }
+        if (url == null) {
+            url = cluClassloader.getResource(resourceName);
+        }
+        if (url == null && resourceName.charAt(0) == '/') {
+            //certain classloaders need it without the leading /
+            url = cluClassloader.getResource(resourceName.substring(1));
+        }
+
+        if (url == null) {
+            ClassLoader cl = callingClass.getClassLoader();
+
+            if (cl != null) {
+                url = cl.getResource(resourceName);
+            }
+        }
+
+        if (url == null) {
+            url = callingClass.getResource(resourceName);
+        }
+
+        if (url == null && resourceName.charAt(0) != '/') {
+            return getResource('/' + resourceName, callingClass);
+        }
+
+        return url;
+    }
+
+    /**
+     * Load a given resources. <p></p> This method will try to load the resources
+     * using the following methods (in order):
+     * <ul>
+     * <li>From Thread.currentThread().getContextClassLoader()
+     * <li>From ClassLoaderUtil.class.getClassLoader()
+     * <li>callingClass.getClassLoader()
+     * </ul>
+     *
+     * @param resourceName The name of the resource to load
+     * @param callingClass The Class object of the calling object
+     */
+    private static List<URL> getResources(String resourceName, Class<?> callingClass) {
+        List<URL> ret = new ArrayList<>();
+        Enumeration<URL> urls = new Enumeration<URL>() {
+            public boolean hasMoreElements() {
+                return false;
+            }
+            public URL nextElement() {
+                return null;
+            }
+
+        };
+        try {
+            urls = Thread.currentThread().getContextClassLoader().getResources(resourceName);
+        } catch (IOException e) {
+            LOG.debug(e.getMessage(), e);
+            //ignore
+        }
+        if (!urls.hasMoreElements() && resourceName.charAt(0) == '/') {
+            //certain classloaders need it without the leading /
+            try {
+                urls =
+                        Thread.currentThread().getContextClassLoader().getResources(
+                                resourceName.substring(1)
+                        );
+            } catch (IOException e) {
+                LOG.debug(e.getMessage(), e);
+                // ignore
+            }
+        }
+
+        ClassLoader cluClassloader = Init.class.getClassLoader();
+        if (cluClassloader == null) {
+            cluClassloader = ClassLoader.getSystemClassLoader();
+        }
+        if (!urls.hasMoreElements()) {
+            try {
+                urls = cluClassloader.getResources(resourceName);
+            } catch (IOException e) {
+                LOG.debug(e.getMessage(), e);
+                // ignore
+            }
+        }
+        if (!urls.hasMoreElements() && resourceName.charAt(0) == '/') {
+            //certain classloaders need it without the leading /
+            try {
+                urls = cluClassloader.getResources(resourceName.substring(1));
+            } catch (IOException e) {
+                LOG.debug(e.getMessage(), e);
+                // ignore
+            }
+        }
+
+        if (!urls.hasMoreElements()) {
+            ClassLoader cl = callingClass.getClassLoader();
+
+            if (cl != null) {
+                try {
+                    urls = cl.getResources(resourceName);
+                } catch (IOException e) {
+                    LOG.debug(e.getMessage(), e);
+                    // ignore
+                }
+            }
+        }
+
+        if (!urls.hasMoreElements()) {
+            URL url = callingClass.getResource(resourceName);
+            if (url != null) {
+                ret.add(url);
+            }
+        }
+        while (urls.hasMoreElements()) {
+            ret.add(urls.nextElement());
+        }
+
+
+        if (ret.isEmpty() && resourceName != null && resourceName.charAt(0) != '/') {
+            return getResources('/' + resourceName, callingClass);
+        }
+        return ret;
+    }
+
+
+    /**
+     * This is a convenience method to load a resource as a stream. <p></p> The
+     * algorithm used to find the resource is given in getResource()
+     *
+     * @param resourceName The name of the resource to load
+     * @param callingClass The Class object of the calling object
+     */
+    private static InputStream getResourceAsStream(String resourceName, Class<?> callingClass) {
+        URL url = getResource(resourceName, callingClass);
+
+        try {
+            return (url != null) ? url.openStream() : null;
+        } catch (IOException e) {
+            LOG.debug(e.getMessage(), e);
+            return null;
+        }
+    }
 }
 

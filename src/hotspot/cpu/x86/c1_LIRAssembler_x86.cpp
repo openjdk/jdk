@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,15 @@
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_x86.inline.hpp"
 
@@ -535,17 +538,14 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   // the poll sets the condition code, but no data registers
 
 #ifdef _LP64
+  const Register thread = r15_thread;
+#else
+  const Register thread = rbx;
+  __ get_thread(thread);
+#endif
   code_stub->set_safepoint_offset(__ offset());
   __ relocate(relocInfo::poll_return_type);
-  __ safepoint_poll(*code_stub->entry(), r15_thread, true /* at_return */, true /* in_nmethod */);
-#else
-  const Register poll_addr = rbx;
-  assert(FrameMap::is_caller_save_register(poll_addr), "will overwrite");
-  __ get_thread(poll_addr);
-  __ movptr(poll_addr, Address(poll_addr, Thread::polling_page_offset()));
-  __ relocate(relocInfo::poll_return_type);
-  __ testl(rax, Address(poll_addr, 0));
-#endif
+  __ safepoint_poll(*code_stub->entry(), thread, true /* at_return */, true /* in_nmethod */);
   __ ret(0);
 }
 
@@ -555,12 +555,12 @@ int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   int offset = __ offset();
 #ifdef _LP64
   const Register poll_addr = rscratch1;
-  __ movptr(poll_addr, Address(r15_thread, Thread::polling_page_offset()));
+  __ movptr(poll_addr, Address(r15_thread, JavaThread::polling_page_offset()));
 #else
   assert(tmp->is_cpu_register(), "needed");
   const Register poll_addr = tmp->as_register();
   __ get_thread(poll_addr);
-  __ movptr(poll_addr, Address(poll_addr, in_bytes(Thread::polling_page_offset())));
+  __ movptr(poll_addr, Address(poll_addr, in_bytes(JavaThread::polling_page_offset())));
 #endif
   add_debug_info_for_branch(info);
   __ relocate(relocInfo::poll_type);
@@ -2632,7 +2632,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
         __ andl(rdx, divisor - 1);
         __ addl(lreg, rdx);
       }
-      __ sarl(lreg, log2_jint(divisor));
+      __ sarl(lreg, log2i_exact(divisor));
       move_regs(lreg, dreg);
     } else if (code == lir_irem) {
       Label done;
@@ -2885,7 +2885,6 @@ void LIR_Assembler::align_call(LIR_Code code) {
   case lir_icvirtual_call:
     offset += NativeCall::displacement_offset + NativeMovConstReg::instruction_size;
     break;
-  case lir_virtual_call:  // currently, sparc-specific for niagara
   default: ShouldNotReachHere();
   }
   __ align(BytesPerWord, offset);
@@ -2908,12 +2907,6 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
 }
 
 
-/* Currently, vtable-dispatch is only enabled for sparc platforms */
-void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
-  ShouldNotReachHere();
-}
-
-
 void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
   address stub = __ start_a_stub(call_stub_size());
@@ -2926,23 +2919,13 @@ void LIR_Assembler::emit_static_call_stub() {
 
   // make sure that the displacement word of the call ends up word aligned
   __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size + NativeCall::displacement_offset);
-  __ relocate(static_stub_Relocation::spec(call_pc, false /* is_aot */));
+  __ relocate(static_stub_Relocation::spec(call_pc));
   __ mov_metadata(rbx, (Metadata*)NULL);
   // must be set to -1 at code generation time
   assert(((__ offset() + 1) % BytesPerWord) == 0, "must be aligned");
   // On 64bit this will die since it will take a movq & jmp, must be only a jmp
   __ jump(RuntimeAddress(__ pc()));
 
-  if (UseAOT) {
-    // Trampoline to aot code
-    __ relocate(static_stub_Relocation::spec(call_pc, true /* is_aot */));
-#ifdef _LP64
-    __ mov64(rax, CONST64(0));  // address is zapped till fixup time.
-#else
-    __ movl(rax, 0xdeadffff);  // address is zapped till fixup time.
-#endif
-    __ jmp(rax);
-  }
   assert(__ offset() - start <= call_stub_size(), "stub too big");
   __ end_a_stub();
 }
@@ -3110,9 +3093,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   Register length  = op->length()->as_register();
   Register tmp = op->tmp()->as_register();
   Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
-
-  __ resolve(ACCESS_READ, src);
-  __ resolve(ACCESS_WRITE, dst);
 
   CodeStub* stub = op->stub();
   int flags = op->flags();
@@ -3551,7 +3531,6 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
       scratch = op->scratch_opr()->as_register();
     }
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    __ resolve(ACCESS_READ | ACCESS_WRITE, obj);
     // add debug info for NullPointerException only if one is possible
     int null_check_offset = __ lock_object(hdr, obj, lock, scratch, *op->stub()->entry());
     if (op->info() != NULL) {

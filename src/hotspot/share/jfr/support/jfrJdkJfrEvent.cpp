@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/stack.inline.hpp"
@@ -42,7 +44,7 @@ static oop new_java_util_arraylist(TRAPS) {
   JavaValue result(T_OBJECT);
   JfrJavaArguments args(&result, "java/util/ArrayList", "<init>", "()V", CHECK_NULL);
   JfrJavaSupport::new_object(&args, CHECK_NULL);
-  return (oop)result.get_jobject();
+  return result.get_oop();
 }
 
 static const int initial_array_size = 64;
@@ -69,7 +71,7 @@ static bool initialize(TRAPS) {
  * it is also filtered out so we don't accidentally
  * trigger initialization.
  */
-static bool is_whitelisted(const Klass* k) {
+static bool is_allowed(const Klass* k) {
   assert(k != NULL, "invariant");
   return !(k->is_abstract() || k->should_be_initialized());
 }
@@ -86,7 +88,7 @@ static void fill_klasses(GrowableArray<const void*>& event_subklasses, const Kla
     const Klass* const current = mark_stack.pop();
     assert(current != NULL, "null element in stack!");
 
-    if (is_whitelisted(current)) {
+    if (is_allowed(current)) {
       event_subklasses.append(current);
     }
 
@@ -111,7 +113,7 @@ static void transform_klasses_to_local_jni_handles(GrowableArray<const void*>& e
 
   for (int i = 0; i < event_subklasses.length(); ++i) {
     const InstanceKlass* k = static_cast<const InstanceKlass*>(event_subklasses.at(i));
-    assert(is_whitelisted(k), "invariant");
+    assert(is_allowed(k), "invariant");
     event_subklasses.at_put(i, JfrJavaSupport::local_jni_handle(k->java_mirror(), thread));
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.util.Objects;
 
 /**
  * Piped character-input streams.
@@ -270,23 +271,22 @@ public class PipedReader extends Reader {
     }
 
     /**
-     * Reads up to {@code len} characters of data from this piped
-     * stream into an array of characters. Less than {@code len} characters
-     * will be read if the end of the data stream is reached or if
-     * {@code len} exceeds the pipe's buffer size. This method
-     * blocks until at least one character of input is available.
+     * {@inheritDoc}
      *
-     * @param      cbuf     the buffer into which the data is read.
-     * @param      off   the start offset of the data.
-     * @param      len   the maximum number of characters read.
-     * @return     the total number of characters read into the buffer, or
-     *             {@code -1} if there is no more data because the end of
-     *             the stream has been reached.
+     * <p> Fewer than {@code len} characters will be read if
+     * {@code len} exceeds the pipe's buffer size.
+     *
+     * @param      cbuf  {@inheritDoc}
+     * @param      off   {@inheritDoc}
+     * @param      len   {@inheritDoc}
+     *
+     * @return     {@inheritDoc}
+     *
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      * @throws     IOException  if the pipe is
      *             <a href=PipedInputStream.html#BROKEN> {@code broken}</a>,
      *             {@link #connect(java.io.PipedWriter) unconnected}, closed,
      *             or an I/O error occurs.
-     * @throws     IndexOutOfBoundsException {@inheritDoc}
      */
     public synchronized int read(char cbuf[], int off, int len)  throws IOException {
         if (!connected) {
@@ -298,10 +298,8 @@ public class PipedReader extends Reader {
             throw new IOException("Write end dead");
         }
 
-        if ((off < 0) || (off > cbuf.length) || (len < 0) ||
-            ((off + len) > cbuf.length) || ((off + len) < 0)) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        Objects.checkFromIndexSize(off, len, cbuf.length);
+        if (len == 0) {
             return 0;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,8 +118,8 @@ public final class LdapClient implements PooledConnection {
     final Connection conn;  // Connection to server; has reader thread
                       // used by LdapCtx for StartTLS
 
-    final private PoolCallback pcb;
-    final private boolean pooled;
+    private final PoolCallback pcb;
+    private final boolean pooled;
     private boolean authenticateCalled = false;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -394,6 +394,12 @@ public final class LdapClient implements PooledConnection {
      */
     boolean usingSaslStreams() {
         return (conn.inStream instanceof SaslInputStream);
+    }
+
+    // Returns true if client connection was upgraded
+    // with STARTTLS extended operation on the server side
+    boolean isUpgradedToStartTls() {
+        return conn.isUpgradedToStartTls();
     }
 
     synchronized void incRefCount() {

@@ -21,10 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
- */
-/*
- * $Id: DOMDigestMethod.java 1854026 2019-02-21 09:30:01Z coheigea $
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -229,7 +226,7 @@ public abstract class DOMDigestMethod extends DOMStructure
      * parameters. Subclasses should override it if they have parameters.
      *
      * @param parent the parent element to append the parameters to
-     * @param the namespace prefix to use
+     * @param prefix the namespace prefix to use
      * @throws MarshalException if the parameters cannot be marshalled
      */
     void marshalParams(Element parent, String prefix)

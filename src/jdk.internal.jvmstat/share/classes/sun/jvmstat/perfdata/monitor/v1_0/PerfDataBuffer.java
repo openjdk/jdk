@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,21 +54,21 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
      * the following constants must be kept in sync with struct
      * PerfDataEntry in perfMemory.hpp
      */
-    private final static int PERFDATA_ENTRYLENGTH_OFFSET=0;
-    private final static int PERFDATA_ENTRYLENGTH_SIZE=4;   // sizeof(int)
-    private final static int PERFDATA_NAMELENGTH_OFFSET=4;
-    private final static int PERFDATA_NAMELENGTH_SIZE=4;    // sizeof(int)
-    private final static int PERFDATA_VECTORLENGTH_OFFSET=8;
-    private final static int PERFDATA_VECTORLENGTH_SIZE=4;  // sizeof(int)
-    private final static int PERFDATA_DATATYPE_OFFSET=12;
-    private final static int PERFDATA_DATATYPE_SIZE=1;      // sizeof(byte)
-    private final static int PERFDATA_FLAGS_OFFSET=13;
-    private final static int PERFDATA_FLAGS_SIZE=1;        // sizeof(byte)
-    private final static int PERFDATA_DATAUNITS_OFFSET=14;
-    private final static int PERFDATA_DATAUNITS_SIZE=1;     // sizeof(byte)
-    private final static int PERFDATA_DATAATTR_OFFSET=15;
-    private final static int PERFDATA_DATAATTR_SIZE=1;      // sizeof(byte)
-    private final static int PERFDATA_NAME_OFFSET=16;
+    private static final int PERFDATA_ENTRYLENGTH_OFFSET=0;
+    private static final int PERFDATA_ENTRYLENGTH_SIZE=4;   // sizeof(int)
+    private static final int PERFDATA_NAMELENGTH_OFFSET=4;
+    private static final int PERFDATA_NAMELENGTH_SIZE=4;    // sizeof(int)
+    private static final int PERFDATA_VECTORLENGTH_OFFSET=8;
+    private static final int PERFDATA_VECTORLENGTH_SIZE=4;  // sizeof(int)
+    private static final int PERFDATA_DATATYPE_OFFSET=12;
+    private static final int PERFDATA_DATATYPE_SIZE=1;      // sizeof(byte)
+    private static final int PERFDATA_FLAGS_OFFSET=13;
+    private static final int PERFDATA_FLAGS_SIZE=1;        // sizeof(byte)
+    private static final int PERFDATA_DATAUNITS_OFFSET=14;
+    private static final int PERFDATA_DATAUNITS_SIZE=1;     // sizeof(byte)
+    private static final int PERFDATA_DATAATTR_OFFSET=15;
+    private static final int PERFDATA_DATAATTR_SIZE=1;      // sizeof(byte)
+    private static final int PERFDATA_NAME_OFFSET=16;
 
     PerfDataBufferPrologue prologue;
     int nextEntry;

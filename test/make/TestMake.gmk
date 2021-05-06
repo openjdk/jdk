@@ -36,6 +36,9 @@ java-compilation:
 copy-files:
 	+$(MAKE) -f TestCopyFiles.gmk $(TEST_SUBTARGET)
 
+fix-deps-file:
+	+$(MAKE) -f TestFixDepsFile.gmk $(TEST_SUBTARGET)
+
 idea:
 	+$(MAKE) -f TestIdea.gmk $(TEST_SUBTARGET)
 
@@ -46,7 +49,8 @@ configure:
 	$(BASH) $(TOPDIR)/test/make/autoconf/test-configure.sh \
 	    "$(AUTOCONF)" "$(TOPDIR)" "$(TEST_SUPPORT_DIR)"
 
-TARGETS += make-base java-compilation copy-files idea compile-commands configure
+TARGETS += make-base java-compilation copy-files fix-deps-file idea \
+    compile-commands configure
 
 all: $(TARGETS)
 

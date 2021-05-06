@@ -26,8 +26,8 @@
  * @bug 8231827
  * @summary Ensure the LV table entries are generated for bindings
  * @modules jdk.jdeps/com.sun.tools.classfile
- * @compile -g --enable-preview -source ${jdk.version} LocalVariableTable.java
- * @run main/othervm --enable-preview LocalVariableTable
+ * @compile -g LocalVariableTable.java
+ * @run main LocalVariableTable
  */
 
 import java.io.*;

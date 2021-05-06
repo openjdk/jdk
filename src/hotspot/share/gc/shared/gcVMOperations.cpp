@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,18 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoader.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
+#include "memory/classLoaderMetaspace.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "runtime/handles.inline.hpp"
@@ -44,6 +47,20 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #endif // INCLUDE_G1GC
+
+bool VM_GC_Sync_Operation::doit_prologue() {
+  Heap_lock->lock();
+  return true;
+}
+
+void VM_GC_Sync_Operation::doit_epilogue() {
+  Heap_lock->unlock();
+}
+
+void VM_Verify::doit() {
+  Universe::heap()->prepare_for_verify();
+  Universe::verify();
+}
 
 VM_GC_Operation::~VM_GC_Operation() {
   CollectedHeap* ch = Universe::heap();
@@ -93,8 +110,7 @@ bool VM_GC_Operation::doit_prologue() {
               proper_unit_for_byte_size(NewSize)));
   }
 
-  // If the GC count has changed someone beat us to the collection
-  Heap_lock->lock();
+  VM_GC_Sync_Operation::doit_prologue();
 
   // Check invocations
   if (skip_operation()) {
@@ -115,7 +131,7 @@ void VM_GC_Operation::doit_epilogue() {
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();
   }
-  Heap_lock->unlock();
+  VM_GC_Sync_Operation::doit_epilogue();
 }
 
 bool VM_GC_HeapInspection::skip_operation() const {

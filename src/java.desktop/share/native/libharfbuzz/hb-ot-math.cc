@@ -24,9 +24,10 @@
  * Igalia Author(s): Frédéric Wang
  */
 
-#include "hb-open-type.hh"
+#include "hb.hh"
 
-#include "hb-ot-face.hh"
+#ifndef HB_NO_MATH
+
 #include "hb-ot-math-table.hh"
 
 
@@ -37,6 +38,11 @@
  * @include: hb-ot.h
  *
  * Functions for fetching mathematics layout data from OpenType fonts.
+ *
+ * HarfBuzz itself does not implement a math layout solution. The
+ * functions and types provided can be used by client programs to access
+ * the font data necessary for typesetting OpenType Math layout.
+ *
  **/
 
 
@@ -48,10 +54,9 @@
  * hb_ot_math_has_data:
  * @face: #hb_face_t to test
  *
- * This function allows to verify the presence of an OpenType MATH table on the
- * face.
+ * Tests whether a face has a `MATH` table.
  *
- * Return value: true if face has a MATH table, false otherwise
+ * Return value: %true if the table is found, %false otherwise
  *
  * Since: 1.3.3
  **/
@@ -63,16 +68,18 @@ hb_ot_math_has_data (hb_face_t *face)
 
 /**
  * hb_ot_math_get_constant:
- * @font: #hb_font_t from which to retrieve the value
+ * @font: #hb_font_t to work upon
  * @constant: #hb_ot_math_constant_t the constant to retrieve
  *
- * This function returns the requested math constants as a #hb_position_t.
- * If the request constant is HB_OT_MATH_CONSTANT_SCRIPT_PERCENT_SCALE_DOWN,
- * HB_OT_MATH_CONSTANT_SCRIPT_SCRIPT_PERCENT_SCALE_DOWN or
- * HB_OT_MATH_CONSTANT_SCRIPT_PERCENT_SCALE_DOWN then the return value is
- * actually an integer between 0 and 100 representing that percentage.
+ * Fetches the specified math constant. For most constants, the value returned
+ * is an #hb_position_t.
  *
- * Return value: the requested constant or 0
+ * However, if the requested constant is #HB_OT_MATH_CONSTANT_SCRIPT_PERCENT_SCALE_DOWN,
+ * #HB_OT_MATH_CONSTANT_SCRIPT_SCRIPT_PERCENT_SCALE_DOWN or
+ * #HB_OT_MATH_CONSTANT_SCRIPT_PERCENT_SCALE_DOWN, then the return value is
+ * an integer between 0 and 100 representing that percentage.
+ *
+ * Return value: the requested constant or zero
  *
  * Since: 1.3.3
  **/
@@ -85,10 +92,13 @@ hb_ot_math_get_constant (hb_font_t *font,
 
 /**
  * hb_ot_math_get_glyph_italics_correction:
- * @font: #hb_font_t from which to retrieve the value
- * @glyph: glyph index from which to retrieve the value
+ * @font: #hb_font_t to work upon
+ * @glyph: The glyph index from which to retrieve the value
  *
- * Return value: the italics correction of the glyph or 0
+ * Fetches an italics-correction value (if one exists) for the specified
+ * glyph index.
+ *
+  * Return value: the italics correction of the glyph or zero
  *
  * Since: 1.3.3
  **/
@@ -101,10 +111,20 @@ hb_ot_math_get_glyph_italics_correction (hb_font_t *font,
 
 /**
  * hb_ot_math_get_glyph_top_accent_attachment:
- * @font: #hb_font_t from which to retrieve the value
- * @glyph: glyph index from which to retrieve the value
+ * @font: #hb_font_t to work upon
+ * @glyph: The glyph index from which to retrieve the value
  *
- * Return value: the top accent attachment of the glyph or 0
+ * Fetches a top-accent-attachment value (if one exists) for the specified
+ * glyph index.
+ *
+ * For any glyph that does not have a top-accent-attachment value - that is,
+ * a glyph not covered by the `MathTopAccentAttachment` table (or, when
+ * @font has no `MathTopAccentAttachment` table or no `MATH` table, any
+ * glyph) - the function synthesizes a value, returning the position at
+ * one-half the glyph's advance width.
+ *
+ * Return value: the top accent attachment of the glyph or 0.5 * the advance
+ *               width of @glyph
  *
  * Since: 1.3.3
  **/
@@ -117,10 +137,12 @@ hb_ot_math_get_glyph_top_accent_attachment (hb_font_t *font,
 
 /**
  * hb_ot_math_is_glyph_extended_shape:
- * @face: a #hb_face_t to test
- * @glyph: a glyph index to test
+ * @face: #hb_face_t to work upon
+ * @glyph: The glyph index to test
  *
- * Return value: true if the glyph is an extended shape, false otherwise
+ * Tests whether the given glyph index is an extended shape in the face.
+ *
+ * Return value: %true if the glyph is an extended shape, %false otherwise
  *
  * Since: 1.3.3
  **/
@@ -133,18 +155,20 @@ hb_ot_math_is_glyph_extended_shape (hb_face_t *face,
 
 /**
  * hb_ot_math_get_glyph_kerning:
- * @font: #hb_font_t from which to retrieve the value
- * @glyph: glyph index from which to retrieve the value
- * @kern: the #hb_ot_math_kern_t from which to retrieve the value
+ * @font: #hb_font_t to work upon
+ * @glyph: The glyph index from which to retrieve the value
+ * @kern: The #hb_ot_math_kern_t from which to retrieve the value
  * @correction_height: the correction height to use to determine the kerning.
  *
- * This function tries to retrieve the MathKern table for the specified font,
- * glyph and #hb_ot_math_kern_t. Then it browses the list of heights from the
- * MathKern table to find one value that is greater or equal to specified
- * correction_height. If one is found the corresponding value from the list of
- * kerns is returned and otherwise the last kern value is returned.
+ * Fetches the math kerning (cut-ins) value for the specified font, glyph index, and
+ * @kern.
  *
- * Return value: requested kerning or 0
+ * If the MathKern table is found, the function examines it to find a height
+ * value that is greater or equal to @correction_height. If such a height
+ * value is found, corresponding kerning value from the table is returned. If
+ * no such height value is found, the last kerning value is returned.
+ *
+ * Return value: requested kerning value or zero
  *
  * Since: 1.3.3
  **/
@@ -162,20 +186,24 @@ hb_ot_math_get_glyph_kerning (hb_font_t *font,
 
 /**
  * hb_ot_math_get_glyph_variants:
- * @font: #hb_font_t from which to retrieve the values
- * @glyph: index of the glyph to stretch
- * @direction: direction of the stretching
+ * @font: #hb_font_t to work upon
+ * @glyph: The index of the glyph to stretch
+ * @direction: The direction of the stretching (horizontal or vertical)
  * @start_offset: offset of the first variant to retrieve
- * @variants_count: maximum number of variants to retrieve after start_offset
- * (IN) and actual number of variants retrieved (OUT)
- * @variants: array of size at least @variants_count to store the result
+ * @variants_count: (inout): Input = the maximum number of variants to return;
+ *                           Output = the actual number of variants returned
+ * @variants: (out) (array length=variants_count): array of variants returned
  *
- * This function tries to retrieve the MathGlyphConstruction for the specified
- * font, glyph and direction. Note that only the value of
- * #HB_DIRECTION_IS_HORIZONTAL is considered. It provides the corresponding list
- * of size variants as an array of hb_ot_math_glyph_variant_t structs.
+ * Fetches the MathGlyphConstruction for the specified font, glyph index, and
+ * direction. The corresponding list of size variants is returned as a list of
+ * #hb_ot_math_glyph_variant_t structs.
  *
- * Return value: the total number of size variants available or 0
+ * <note>The @direction parameter is only used to select between horizontal
+ * or vertical directions for the construction. Even though all #hb_direction_t
+ * values are accepted, only the result of #HB_DIRECTION_IS_HORIZONTAL is
+ * considered.</note>
+ *
+ * Return value: the total number of size variants available or zero
  *
  * Since: 1.3.3
  **/
@@ -195,15 +223,19 @@ hb_ot_math_get_glyph_variants (hb_font_t *font,
 
 /**
  * hb_ot_math_get_min_connector_overlap:
- * @font: #hb_font_t from which to retrieve the value
- * @direction: direction of the stretching
+ * @font: #hb_font_t to work upon
+ * @direction: direction of the stretching (horizontal or vertical)
  *
- * This function tries to retrieve the MathVariants table for the specified
- * font and returns the minimum overlap of connecting glyphs to draw a glyph
- * assembly in the specified direction. Note that only the value of
- * #HB_DIRECTION_IS_HORIZONTAL is considered.
+ * Fetches the MathVariants table for the specified font and returns the
+ * minimum overlap of connecting glyphs that are required to draw a glyph
+ * assembly in the specified direction.
  *
- * Return value: requested min connector overlap or 0
+ * <note>The @direction parameter is only used to select between horizontal
+ * or vertical directions for the construction. Even though all #hb_direction_t
+ * values are accepted, only the result of #HB_DIRECTION_IS_HORIZONTAL is
+ * considered.</note>
+ *
+ * Return value: requested minimum connector overlap or zero
  *
  * Since: 1.3.3
  **/
@@ -216,19 +248,24 @@ hb_ot_math_get_min_connector_overlap (hb_font_t *font,
 
 /**
  * hb_ot_math_get_glyph_assembly:
- * @font: #hb_font_t from which to retrieve the values
- * @glyph: index of the glyph to stretch
- * @direction: direction of the stretching
+ * @font: #hb_font_t to work upon
+ * @glyph: The index of the glyph to stretch
+ * @direction: direction of the stretching (horizontal or vertical)
  * @start_offset: offset of the first glyph part to retrieve
- * @parts_count: maximum number of glyph parts to retrieve after start_offset
- * (IN) and actual number of parts retrieved (OUT)
- * @parts: array of size at least @parts_count to store the result
- * @italics_correction: italic correction of the glyph assembly
+ * @parts_count: (inout): Input = maximum number of glyph parts to return;
+ *               Output = actual number of parts returned
+ * @parts: (out) (array length=parts_count): the glyph parts returned
+ * @italics_correction: (out): italics correction of the glyph assembly
  *
- * This function tries to retrieve the GlyphAssembly for the specified font,
- * glyph and direction. Note that only the value of #HB_DIRECTION_IS_HORIZONTAL
- * is considered. It provides the information necessary to draw the glyph
- * assembly as an array of #hb_ot_math_glyph_part_t.
+ * Fetches the GlyphAssembly for the specified font, glyph index, and direction.
+ * Returned are a list of #hb_ot_math_glyph_part_t glyph parts that can be
+ * used to draw the glyph and an italics-correction value (if one is defined
+ * in the font).
+ *
+ * <note>The @direction parameter is only used to select between horizontal
+ * or vertical directions for the construction. Even though all #hb_direction_t
+ * values are accepted, only the result of #HB_DIRECTION_IS_HORIZONTAL is
+ * considered.</note>
  *
  * Return value: the total number of parts in the glyph assembly
  *
@@ -251,3 +288,6 @@ hb_ot_math_get_glyph_assembly (hb_font_t *font,
                                                                  parts,
                                                                  italics_correction);
 }
+
+
+#endif

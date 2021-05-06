@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,19 +30,34 @@
 #import "sun_lwawt_macosx_CPrinterPageDialog.h"
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "PrinterView.h"
 #import "PrintModel.h"
 #import "ThreadUtilities.h"
 #import "GeomUtilities.h"
+#import "JNIUtilities.h"
 
-static JNF_CLASS_CACHE(sjc_Paper, "java/awt/print/Paper");
-static JNF_CLASS_CACHE(sjc_PageFormat, "java/awt/print/PageFormat");
-static JNF_CLASS_CACHE(sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob");
-static JNF_CLASS_CACHE(sjc_CPrinterDialog, "sun/lwawt/macosx/CPrinterDialog");
-static JNF_MEMBER_CACHE(sjm_getNSPrintInfo, sjc_CPrinterJob, "getNSPrintInfo", "()J");
-static JNF_MEMBER_CACHE(sjm_printerJob, sjc_CPrinterDialog, "fPrinterJob", "Lsun/lwawt/macosx/CPrinterJob;");
+static jclass sjc_Paper = NULL;
+static jclass sjc_PageFormat = NULL;
+static jclass sjc_CPrinterJob = NULL;
+static jclass sjc_CPrinterDialog = NULL;
+static jmethodID sjm_getNSPrintInfo = NULL;
+static jmethodID sjm_printerJob = NULL;
+
+#define GET_PAPER_CLASS() GET_CLASS(sjc_Paper, "java/awt/print/Paper");
+#define GET_PAGEFORMAT_CLASS() GET_CLASS(sjc_PageFormat, "java/awt/print/PageFormat");
+#define GET_CPRINTERDIALOG_CLASS() GET_CLASS(sjc_CPrinterDialog, "sun/lwawt/macosx/CPrinterDialog");
+#define GET_CPRINTERDIALOG_CLASS_RETURN(ret) GET_CLASS_RETURN(sjc_CPrinterDialog, "sun/lwawt/macosx/CPrinterDialog", ret);
+#define GET_CPRINTERJOB_CLASS() GET_CLASS(sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob");
+#define GET_CPRINTERJOB_CLASS_RETURN(ret) GET_CLASS_RETURN(sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob", ret);
+
+#define GET_NSPRINTINFO_METHOD_RETURN(ret) \
+    GET_CPRINTERJOB_CLASS_RETURN(ret); \
+    GET_METHOD_RETURN(sjm_getNSPrintInfo, sjc_CPrinterJob, "getNSPrintInfo", "()J", ret);
+
+#define GET_CPRINTERDIALOG_FIELD_RETURN(ret) \
+   GET_CPRINTERDIALOG_CLASS_RETURN(ret); \
+   GET_FIELD_RETURN(sjm_printerJob, sjc_CPrinterDialog, "fPrinterJob", "Lsun/lwawt/macosx/CPrinterJob;", ret);
 
 static NSPrintInfo* createDefaultNSPrintInfo();
 
@@ -71,7 +86,7 @@ static NSPrintInfo* createDefaultNSPrintInfo(JNIEnv* env, jstring printer)
     NSPrintInfo* defaultPrintInfo = [[NSPrintInfo sharedPrintInfo] copy];
     if (printer != NULL)
     {
-        NSPrinter* nsPrinter = [NSPrinter printerWithName:JNFJavaToNSString(env, printer)];
+        NSPrinter* nsPrinter = [NSPrinter printerWithName:JavaStringToNSString(env, printer)];
         if (nsPrinter != nil)
         {
             [defaultPrintInfo setPrinter:nsPrinter];
@@ -140,8 +155,10 @@ static void makeBestFit(NSPrintInfo* src)
 
 static void nsPrintInfoToJavaPaper(JNIEnv* env, NSPrintInfo* src, jobject dst)
 {
-    static JNF_MEMBER_CACHE(jm_setSize, sjc_Paper, "setSize", "(DD)V");
-    static JNF_MEMBER_CACHE(jm_setImageableArea, sjc_Paper, "setImageableArea", "(DDDD)V");
+    GET_PAGEFORMAT_CLASS();
+    GET_PAPER_CLASS();
+    DECLARE_METHOD(jm_setSize, sjc_Paper, "setSize", "(DD)V");
+    DECLARE_METHOD(jm_setImageableArea, sjc_Paper, "setImageableArea", "(DDDD)V");
 
     jdouble jPaperW, jPaperH;
 
@@ -167,7 +184,8 @@ static void nsPrintInfoToJavaPaper(JNIEnv* env, NSPrintInfo* src, jobject dst)
             break;
     }
 
-    JNFCallVoidMethod(env, dst, jm_setSize, jPaperW, jPaperH); // AWT_THREADING Safe (known object - always actual Paper)
+    (*env)->CallVoidMethod(env, dst, jm_setSize, jPaperW, jPaperH); // AWT_THREADING Safe (known object - always actual Paper)
+    CHECK_EXCEPTION();
 
     // Set the imageable area from the margins
     CGFloat leftM = [src leftMargin];
@@ -180,35 +198,44 @@ static void nsPrintInfoToJavaPaper(JNIEnv* env, NSPrintInfo* src, jobject dst)
     jdouble jImageW = jPaperW - (leftM + rightM);
     jdouble jImageH = jPaperH - (topM + bottomM);
 
-    JNFCallVoidMethod(env, dst, jm_setImageableArea, jImageX, jImageY, jImageW, jImageH); // AWT_THREADING Safe (known object - always actual Paper)
+    (*env)->CallVoidMethod(env, dst, jm_setImageableArea, jImageX, jImageY, jImageW, jImageH); // AWT_THREADING Safe (known object - always actual Paper)
+    CHECK_EXCEPTION();
 }
 
 static void javaPaperToNSPrintInfo(JNIEnv* env, jobject src, NSPrintInfo* dst)
 {
     AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    static JNF_MEMBER_CACHE(jm_getWidth, sjc_Paper, "getWidth", "()D");
-    static JNF_MEMBER_CACHE(jm_getHeight, sjc_Paper, "getHeight", "()D");
-    static JNF_MEMBER_CACHE(jm_getImageableX, sjc_Paper, "getImageableX", "()D");
-    static JNF_MEMBER_CACHE(jm_getImageableY, sjc_Paper, "getImageableY", "()D");
-    static JNF_MEMBER_CACHE(jm_getImageableW, sjc_Paper, "getImageableWidth", "()D");
-    static JNF_MEMBER_CACHE(jm_getImageableH, sjc_Paper, "getImageableHeight", "()D");
+    GET_PAGEFORMAT_CLASS();
+    GET_PAPER_CLASS();
+    DECLARE_METHOD(jm_getWidth, sjc_Paper, "getWidth", "()D");
+    DECLARE_METHOD(jm_getHeight, sjc_Paper, "getHeight", "()D");
+    DECLARE_METHOD(jm_getImageableX, sjc_Paper, "getImageableX", "()D");
+    DECLARE_METHOD(jm_getImageableY, sjc_Paper, "getImageableY", "()D");
+    DECLARE_METHOD(jm_getImageableW, sjc_Paper, "getImageableWidth", "()D");
+    DECLARE_METHOD(jm_getImageableH, sjc_Paper, "getImageableHeight", "()D");
 
     // java Paper is always Portrait oriented. Set NSPrintInfo with this
     //  rectangle, and it's orientation may change. If necessary, be sure to call
     //  -[NSPrintInfo setOrientation] after this call, which will then
     //  adjust the -[NSPrintInfo paperSize] as well.
 
-    jdouble jPhysicalWidth = JNFCallDoubleMethod(env, src, jm_getWidth); // AWT_THREADING Safe (!appKit)
-    jdouble jPhysicalHeight = JNFCallDoubleMethod(env, src, jm_getHeight); // AWT_THREADING Safe (!appKit)
+    jdouble jPhysicalWidth = (*env)->CallDoubleMethod(env, src, jm_getWidth); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
+    jdouble jPhysicalHeight = (*env)->CallDoubleMethod(env, src, jm_getHeight); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
 
     [dst setPaperSize:NSMakeSize(jPhysicalWidth, jPhysicalHeight)];
 
     // Set the margins from the imageable area
-    jdouble jImageX = JNFCallDoubleMethod(env, src, jm_getImageableX); // AWT_THREADING Safe (!appKit)
-    jdouble jImageY = JNFCallDoubleMethod(env, src, jm_getImageableY); // AWT_THREADING Safe (!appKit)
-    jdouble jImageW = JNFCallDoubleMethod(env, src, jm_getImageableW); // AWT_THREADING Safe (!appKit)
-    jdouble jImageH = JNFCallDoubleMethod(env, src, jm_getImageableH); // AWT_THREADING Safe (!appKit)
+    jdouble jImageX = (*env)->CallDoubleMethod(env, src, jm_getImageableX); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
+    jdouble jImageY = (*env)->CallDoubleMethod(env, src, jm_getImageableY); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
+    jdouble jImageW = (*env)->CallDoubleMethod(env, src, jm_getImageableW); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
+    jdouble jImageH = (*env)->CallDoubleMethod(env, src, jm_getImageableH); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
 
     [dst setLeftMargin:(CGFloat)jImageX];
     [dst setTopMargin:(CGFloat)jImageY];
@@ -220,9 +247,12 @@ static void nsPrintInfoToJavaPageFormat(JNIEnv* env, NSPrintInfo* src, jobject d
 {
     AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    static JNF_MEMBER_CACHE(jm_setOrientation, sjc_PageFormat, "setOrientation", "(I)V");
-    static JNF_MEMBER_CACHE(jm_setPaper, sjc_PageFormat, "setPaper", "(Ljava/awt/print/Paper;)V");
-    static JNF_CTOR_CACHE(jm_Paper_ctor, sjc_Paper, "()V");
+    GET_CPRINTERJOB_CLASS();
+    GET_PAGEFORMAT_CLASS();
+    GET_PAPER_CLASS();
+    DECLARE_METHOD(jm_setOrientation, sjc_PageFormat, "setOrientation", "(I)V");
+    DECLARE_METHOD(jm_setPaper, sjc_PageFormat, "setPaper", "(Ljava/awt/print/Paper;)V");
+    DECLARE_METHOD(jm_Paper_ctor, sjc_Paper, "<init>", "()V");
 
     jint jOrientation;
     switch ([src orientation]) {
@@ -246,15 +276,21 @@ static void nsPrintInfoToJavaPageFormat(JNIEnv* env, NSPrintInfo* src, jobject d
             break;
     }
 
-    JNFCallVoidMethod(env, dst, jm_setOrientation, jOrientation); // AWT_THREADING Safe (!appKit)
+    (*env)->CallVoidMethod(env, dst, jm_setOrientation, jOrientation); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
 
     // Create a new Paper
-    jobject paper = JNFNewObject(env, jm_Paper_ctor); // AWT_THREADING Safe (known object)
+    jobject paper = (*env)->NewObject(env, sjc_Paper, jm_Paper_ctor); // AWT_THREADING Safe (known object)
+    CHECK_EXCEPTION();
+    if (paper == NULL) {
+        return;
+    }
 
     nsPrintInfoToJavaPaper(env, src, paper);
 
     // Set the Paper in the PageFormat
-    JNFCallVoidMethod(env, dst, jm_setPaper, paper); // AWT_THREADING Safe (!appKit)
+    (*env)->CallVoidMethod(env, dst, jm_setPaper, paper); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
 
     (*env)->DeleteLocalRef(env, paper);
 }
@@ -263,9 +299,12 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrintJob, jobjec
 {
     AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    static JNF_MEMBER_CACHE(jm_getOrientation, sjc_PageFormat, "getOrientation", "()I");
-    static JNF_MEMBER_CACHE(jm_getPaper, sjc_PageFormat, "getPaper", "()Ljava/awt/print/Paper;");
-    static JNF_MEMBER_CACHE(jm_getPrinterName, sjc_CPrinterJob, "getPrinterName", "()Ljava/lang/String;");
+    GET_CPRINTERJOB_CLASS();
+    GET_PAGEFORMAT_CLASS();
+    GET_PAPER_CLASS();
+    DECLARE_METHOD(jm_getOrientation, sjc_PageFormat, "getOrientation", "()I");
+    DECLARE_METHOD(jm_getPaper, sjc_PageFormat, "getPaper", "()Ljava/awt/print/Paper;");
+    DECLARE_METHOD(jm_getPrinterName, sjc_CPrinterJob, "getPrinterName", "()Ljava/lang/String;");
 
     // When setting page information (orientation, size) in NSPrintInfo, set the
     //  rectangle first. This is because setting the orientation will change the
@@ -274,11 +313,12 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrintJob, jobjec
     // Set up the paper. This will force Portrait since java Paper is
     //  not oriented. Then setting the NSPrintInfo orientation below
     //  will flip NSPrintInfo's info as necessary.
-    jobject paper = JNFCallObjectMethod(env, srcPageFormat, jm_getPaper); // AWT_THREADING Safe (!appKit)
+    jobject paper = (*env)->CallObjectMethod(env, srcPageFormat, jm_getPaper); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
     javaPaperToNSPrintInfo(env, paper, dstPrintInfo);
     (*env)->DeleteLocalRef(env, paper);
 
-    switch (JNFCallIntMethod(env, srcPageFormat, jm_getOrientation)) { // AWT_THREADING Safe (!appKit)
+    switch ((*env)->CallIntMethod(env, srcPageFormat, jm_getOrientation)) { // AWT_THREADING Safe (!appKit)
         case java_awt_print_PageFormat_PORTRAIT:
             [dstPrintInfo setOrientation:NS_PORTRAIT];
             break;
@@ -296,13 +336,15 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrintJob, jobjec
             [dstPrintInfo setOrientation:NS_PORTRAIT];
             break;
     }
+    CHECK_EXCEPTION();
 
     // <rdar://problem/4022422> NSPrinterInfo is not correctly set to the selected printer
     // from the Java side of CPrinterJob. Has always assumed the default printer was the one we wanted.
     if (srcPrintJob == NULL) return;
-    jobject printerNameObj = JNFCallObjectMethod(env, srcPrintJob, jm_getPrinterName);
+    jobject printerNameObj = (*env)->CallObjectMethod(env, srcPrintJob, jm_getPrinterName);
+    CHECK_EXCEPTION();
     if (printerNameObj == NULL) return;
-    NSString *printerName = JNFJavaToNSString(env, printerNameObj);
+    NSString *printerName = JavaStringToNSString(env, printerNameObj);
     if (printerName == nil) return;
     NSPrinter *printer = [NSPrinter printerWithName:printerName];
     if (printer == nil) return;
@@ -311,40 +353,47 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrintJob, jobjec
 
 static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject dstPrinterJob, jobject dstPageable)
 {
-    static JNF_MEMBER_CACHE(jm_setService, sjc_CPrinterJob, "setPrinterServiceFromNative", "(Ljava/lang/String;)V");
-    static JNF_MEMBER_CACHE(jm_setCopiesAttribute, sjc_CPrinterJob, "setCopiesAttribute", "(I)V");
-    static JNF_MEMBER_CACHE(jm_setCollated, sjc_CPrinterJob, "setCollated", "(Z)V");
-    static JNF_MEMBER_CACHE(jm_setPageRangeAttribute, sjc_CPrinterJob, "setPageRangeAttribute", "(IIZ)V");
-    static JNF_MEMBER_CACHE(jm_setPrintToFile, sjc_CPrinterJob, "setPrintToFile", "(Z)V");
-    static JNF_MEMBER_CACHE(jm_setDestinationFile, sjc_CPrinterJob, "setDestinationFile", "(Ljava/lang/String;)V");
+    GET_CPRINTERJOB_CLASS();
+    DECLARE_METHOD(jm_setService, sjc_CPrinterJob, "setPrinterServiceFromNative", "(Ljava/lang/String;)V");
+    DECLARE_METHOD(jm_setCopiesAttribute, sjc_CPrinterJob, "setCopiesAttribute", "(I)V");
+    DECLARE_METHOD(jm_setCollated, sjc_CPrinterJob, "setCollated", "(Z)V");
+    DECLARE_METHOD(jm_setPageRangeAttribute, sjc_CPrinterJob, "setPageRangeAttribute", "(IIZ)V");
+    DECLARE_METHOD(jm_setPrintToFile, sjc_CPrinterJob, "setPrintToFile", "(Z)V");
+    DECLARE_METHOD(jm_setDestinationFile, sjc_CPrinterJob, "setDestinationFile", "(Ljava/lang/String;)V");
 
     // get the selected printer's name, and set the appropriate PrintService on the Java side
     NSString *name = [[src printer] name];
-    jstring printerName = JNFNSToJavaString(env, name);
-    JNFCallVoidMethod(env, dstPrinterJob, jm_setService, printerName);
+    jstring printerName = NSStringToJavaString(env, name);
+    (*env)->CallVoidMethod(env, dstPrinterJob, jm_setService, printerName);
+    CHECK_EXCEPTION();
 
     NSMutableDictionary* printingDictionary = [src dictionary];
 
     if (src.jobDisposition == NSPrintSaveJob) {
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, true);
+        (*env)->CallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, true);
+        CHECK_EXCEPTION();
         NSURL *url = [printingDictionary objectForKey:NSPrintJobSavingURL];
         NSString *nsStr = [url absoluteString];
-        jstring str = JNFNSToJavaString(env, nsStr);
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setDestinationFile, str);
+        jstring str = NSStringToJavaString(env, nsStr);
+        (*env)->CallVoidMethod(env, dstPrinterJob, jm_setDestinationFile, str);
+        CHECK_EXCEPTION();
     } else {
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, false);
+        (*env)->CallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, false);
+        CHECK_EXCEPTION();
     }
 
     NSNumber* nsCopies = [printingDictionary objectForKey:NSPrintCopies];
     if ([nsCopies respondsToSelector:@selector(integerValue)])
     {
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setCopiesAttribute, [nsCopies integerValue]); // AWT_THREADING Safe (known object)
+        (*env)->CallVoidMethod(env, dstPrinterJob, jm_setCopiesAttribute, [nsCopies integerValue]); // AWT_THREADING Safe (known object)
+        CHECK_EXCEPTION();
     }
 
     NSNumber* nsCollated = [printingDictionary objectForKey:NSPrintMustCollate];
     if ([nsCollated respondsToSelector:@selector(boolValue)])
     {
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setCollated, [nsCollated boolValue] ? JNI_TRUE : JNI_FALSE); // AWT_THREADING Safe (known object)
+        (*env)->CallVoidMethod(env, dstPrinterJob, jm_setCollated, [nsCollated boolValue] ? JNI_TRUE : JNI_FALSE); // AWT_THREADING Safe (known object)
+        CHECK_EXCEPTION();
     }
 
     NSNumber* nsPrintAllPages = [printingDictionary objectForKey:NSPrintAllPages];
@@ -367,9 +416,9 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
             }
             isRangeSet = true;
         }
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setPageRangeAttribute,
-                          jFirstPage, jLastPage, isRangeSet);
-            // AWT_THREADING Safe (known object)
+        (*env)->CallVoidMethod(env, dstPrinterJob, jm_setPageRangeAttribute,
+                          jFirstPage, jLastPage, isRangeSet); // AWT_THREADING Safe (known object)
+        CHECK_EXCEPTION();
 
     }
 }
@@ -378,29 +427,33 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
 {
     AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    static JNF_CLASS_CACHE(jc_Pageable, "java/awt/print/Pageable");
-    static JNF_MEMBER_CACHE(jm_getCopies, sjc_CPrinterJob, "getCopiesInt", "()I");
-    static JNF_MEMBER_CACHE(jm_isCollated, sjc_CPrinterJob, "isCollated", "()Z");
-    static JNF_MEMBER_CACHE(jm_getFromPage, sjc_CPrinterJob, "getFromPageAttrib", "()I");
-    static JNF_MEMBER_CACHE(jm_getToPage, sjc_CPrinterJob, "getToPageAttrib", "()I");
-    static JNF_MEMBER_CACHE(jm_getMinPage, sjc_CPrinterJob, "getMinPageAttrib", "()I");
-    static JNF_MEMBER_CACHE(jm_getMaxPage, sjc_CPrinterJob, "getMaxPageAttrib", "()I");
-    static JNF_MEMBER_CACHE(jm_getSelectAttrib, sjc_CPrinterJob, "getSelectAttrib", "()I");
-    static JNF_MEMBER_CACHE(jm_getNumberOfPages, jc_Pageable, "getNumberOfPages", "()I");
-    static JNF_MEMBER_CACHE(jm_getPageFormat, sjc_CPrinterJob, "getPageFormatFromAttributes", "()Ljava/awt/print/PageFormat;");
-    static JNF_MEMBER_CACHE(jm_getDestinationFile, sjc_CPrinterJob,
-                            "getDestinationFile", "()Ljava/lang/String;");
+    DECLARE_CLASS(jc_Pageable, "java/awt/print/Pageable");
+    DECLARE_METHOD(jm_getCopies, sjc_CPrinterJob, "getCopiesInt", "()I");
+    DECLARE_METHOD(jm_isCollated, sjc_CPrinterJob, "isCollated", "()Z");
+    DECLARE_METHOD(jm_getFromPage, sjc_CPrinterJob, "getFromPageAttrib", "()I");
+    DECLARE_METHOD(jm_getToPage, sjc_CPrinterJob, "getToPageAttrib", "()I");
+    DECLARE_METHOD(jm_getMinPage, sjc_CPrinterJob, "getMinPageAttrib", "()I");
+    DECLARE_METHOD(jm_getMaxPage, sjc_CPrinterJob, "getMaxPageAttrib", "()I");
+    DECLARE_METHOD(jm_getSelectAttrib, sjc_CPrinterJob, "getSelectAttrib", "()I");
+    DECLARE_METHOD(jm_getNumberOfPages, jc_Pageable, "getNumberOfPages", "()I");
+    DECLARE_METHOD(jm_getPageFormat, sjc_CPrinterJob, "getPageFormatFromAttributes", "()Ljava/awt/print/PageFormat;");
+    DECLARE_METHOD(jm_getDestinationFile, sjc_CPrinterJob, "getDestinationFile", "()Ljava/lang/String;");
 
     NSMutableDictionary* printingDictionary = [dst dictionary];
 
-    jint copies = JNFCallIntMethod(env, srcPrinterJob, jm_getCopies); // AWT_THREADING Safe (known object)
+    jint copies = (*env)->CallIntMethod(env, srcPrinterJob, jm_getCopies); // AWT_THREADING Safe (known object)
+    CHECK_EXCEPTION();
     [printingDictionary setObject:[NSNumber numberWithInteger:copies] forKey:NSPrintCopies];
 
-    jboolean collated = JNFCallBooleanMethod(env, srcPrinterJob, jm_isCollated); // AWT_THREADING Safe (known object)
+    jboolean collated = (*env)->CallBooleanMethod(env, srcPrinterJob, jm_isCollated); // AWT_THREADING Safe (known object)
+    CHECK_EXCEPTION();
     [printingDictionary setObject:[NSNumber numberWithBool:collated ? YES : NO] forKey:NSPrintMustCollate];
-    jint selectID = JNFCallIntMethod(env, srcPrinterJob, jm_getSelectAttrib);
-    jint fromPage = JNFCallIntMethod(env, srcPrinterJob, jm_getFromPage);
-    jint toPage = JNFCallIntMethod(env, srcPrinterJob, jm_getToPage);
+    jint selectID = (*env)->CallIntMethod(env, srcPrinterJob, jm_getSelectAttrib);
+    CHECK_EXCEPTION();
+    jint fromPage = (*env)->CallIntMethod(env, srcPrinterJob, jm_getFromPage);
+    CHECK_EXCEPTION();
+    jint toPage = (*env)->CallIntMethod(env, srcPrinterJob, jm_getToPage);
+    CHECK_EXCEPTION();
     if (selectID ==0) {
         [printingDictionary setObject:[NSNumber numberWithBool:YES] forKey:NSPrintAllPages];
     } else if (selectID == 2) {
@@ -409,8 +462,10 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
         [printingDictionary setObject:[NSNumber numberWithBool:NO] forKey:NSPrintAllPages];
         [printingDictionary setObject:[NSNumber numberWithBool:YES] forKey:NSPrintSelectionOnly];
     } else {
-        jint minPage = JNFCallIntMethod(env, srcPrinterJob, jm_getMinPage);
-        jint maxPage = JNFCallIntMethod(env, srcPrinterJob, jm_getMaxPage);
+        jint minPage = (*env)->CallIntMethod(env, srcPrinterJob, jm_getMinPage);
+        CHECK_EXCEPTION();
+        jint maxPage = (*env)->CallIntMethod(env, srcPrinterJob, jm_getMaxPage);
+        CHECK_EXCEPTION();
 
         // for PD_SELECTION or PD_NOSELECTION, check from/to page
         // to determine which radio button to select
@@ -425,15 +480,17 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     [printingDictionary setObject:[NSNumber numberWithInteger:fromPage] forKey:NSPrintFirstPage];
     [printingDictionary setObject:[NSNumber numberWithInteger:toPage] forKey:NSPrintLastPage];
 
-    jobject page = JNFCallObjectMethod(env, srcPrinterJob, jm_getPageFormat);
+    jobject page = (*env)->CallObjectMethod(env, srcPrinterJob, jm_getPageFormat);
+    CHECK_EXCEPTION();
     if (page != NULL) {
         javaPageFormatToNSPrintInfo(env, NULL, page, dst);
     }
 
-    jstring dest = JNFCallObjectMethod(env, srcPrinterJob, jm_getDestinationFile);
+    jstring dest = (*env)->CallObjectMethod(env, srcPrinterJob, jm_getDestinationFile);
+    CHECK_EXCEPTION();
     if (dest != NULL) {
        [dst setJobDisposition:NSPrintSaveJob];
-       NSString *nsDestStr = JNFJavaToNSString(env, dest);
+       NSString *nsDestStr = JavaStringToNSString(env, dest);
        NSURL *nsURL = [NSURL fileURLWithPath:nsDestStr isDirectory:NO];
        [printingDictionary setObject:nsURL forKey:NSPrintJobSavingURL];
     } else {
@@ -449,12 +506,12 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob_abortDoc
   (JNIEnv *env, jobject jthis)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     // This is only called during the printLoop from the printLoop thread
     NSPrintOperation* printLoop = [NSPrintOperation currentOperation];
     NSPrintInfo* printInfo = [printLoop printInfo];
     [printInfo setJobDisposition:NSPrintCancelJob];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -465,13 +522,13 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob_getDefaultPage
   (JNIEnv *env, jobject jthis, jobject page)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     NSPrintInfo* printInfo = createDefaultNSPrintInfo(env, NULL);
 
     nsPrintInfoToJavaPageFormat(env, printInfo, page);
 
     [printInfo release];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -482,7 +539,8 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob_validatePaper
   (JNIEnv *env, jobject jthis, jobject origpaper, jobject newpaper)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
+
 
     NSPrintInfo* printInfo = createDefaultNSPrintInfo(env, NULL);
     javaPaperToNSPrintInfo(env, origpaper, printInfo);
@@ -490,7 +548,7 @@ JNF_COCOA_ENTER(env);
     nsPrintInfoToJavaPaper(env, printInfo, newpaper);
     [printInfo release];
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -502,7 +560,7 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CPrinterJob_createNSPrintInfo
   (JNIEnv *env, jobject jthis)
 {
     jlong result = -1;
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     // This is used to create the NSPrintInfo for this PrinterJob. Thread
     //  safety is assured by the java side of this call.
 
@@ -510,7 +568,7 @@ JNF_COCOA_ENTER(env);
 
     result = ptr_to_jlong(printInfo);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return result;
 }
 
@@ -522,13 +580,13 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPrinterJob_dispose
   (JNIEnv *env, jobject jthis, jlong nsPrintInfo)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     if (nsPrintInfo != -1)
     {
         NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr(nsPrintInfo);
         [printInfo release];
     }
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 
@@ -542,33 +600,48 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterJob_printLoop
 {
     AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    static JNF_MEMBER_CACHE(jm_getPageFormat, sjc_CPrinterJob, "getPageFormat", "(I)Ljava/awt/print/PageFormat;");
-    static JNF_MEMBER_CACHE(jm_getPageFormatArea, sjc_CPrinterJob, "getPageFormatArea", "(Ljava/awt/print/PageFormat;)Ljava/awt/geom/Rectangle2D;");
-    static JNF_MEMBER_CACHE(jm_getPrinterName, sjc_CPrinterJob, "getPrinterName", "()Ljava/lang/String;");
-    static JNF_MEMBER_CACHE(jm_getPageable, sjc_CPrinterJob, "getPageable", "()Ljava/awt/print/Pageable;");
+    GET_CPRINTERJOB_CLASS_RETURN(NO);
+    DECLARE_METHOD_RETURN(jm_getPageFormat, sjc_CPrinterJob, "getPageFormat", "(I)Ljava/awt/print/PageFormat;", NO);
+    DECLARE_METHOD_RETURN(jm_getPageFormatArea, sjc_CPrinterJob, "getPageFormatArea", "(Ljava/awt/print/PageFormat;)Ljava/awt/geom/Rectangle2D;", NO);
+    DECLARE_METHOD_RETURN(jm_getPrinterName, sjc_CPrinterJob, "getPrinterName", "()Ljava/lang/String;", NO);
+    DECLARE_METHOD_RETURN(jm_getPageable, sjc_CPrinterJob, "getPageable", "()Ljava/awt/print/Pageable;", NO);
+    DECLARE_METHOD_RETURN(jm_getPrinterTray, sjc_CPrinterJob, "getPrinterTray", "()Ljava/lang/String;", NO);
 
     jboolean retVal = JNI_FALSE;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     // Get the first page's PageFormat for setting things up (This introduces
     //  and is a facet of the same problem in Radar 2818593/2708932).
-    jobject page = JNFCallObjectMethod(env, jthis, jm_getPageFormat, 0); // AWT_THREADING Safe (!appKit)
+    jobject page = (*env)->CallObjectMethod(env, jthis, jm_getPageFormat, 0); // AWT_THREADING Safe (!appKit)
+    CHECK_EXCEPTION();
     if (page != NULL) {
-        jobject pageFormatArea = JNFCallObjectMethod(env, jthis, jm_getPageFormatArea, page); // AWT_THREADING Safe (!appKit)
+        jobject pageFormatArea = (*env)->CallObjectMethod(env, jthis, jm_getPageFormatArea, page); // AWT_THREADING Safe (!appKit)
+        CHECK_EXCEPTION();
 
         PrinterView* printerView = [[PrinterView alloc] initWithFrame:JavaToNSRect(env, pageFormatArea) withEnv:env withPrinterJob:jthis];
         [printerView setFirstPage:firstPage lastPage:lastPage];
 
-        NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr(JNFCallLongMethod(env, jthis, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
+        GET_NSPRINTINFO_METHOD_RETURN(NO)
+        NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr((*env)->CallLongMethod(env, jthis, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
+        CHECK_EXCEPTION();
+        jobject printerTrayObj = (*env)->CallObjectMethod(env, jthis, jm_getPrinterTray);
+        CHECK_EXCEPTION();
+        if (printerTrayObj != NULL) {
+            NSString *printerTray = JavaStringToNSString(env, printerTrayObj);
+            if (printerTray != nil) {
+                [[printInfo printSettings] setObject:printerTray forKey:@"InputSlot"];
+            }
+        }
 
         // <rdar://problem/4156975> passing jthis CPrinterJob as well, so we can extract the printer name from the current job
         javaPageFormatToNSPrintInfo(env, jthis, page, printInfo);
 
         // <rdar://problem/4093799> NSPrinterInfo is not correctly set to the selected printer
         // from the Java side of CPrinterJob. Had always assumed the default printer was the one we wanted.
-        jobject printerNameObj = JNFCallObjectMethod(env, jthis, jm_getPrinterName);
+        jobject printerNameObj = (*env)->CallObjectMethod(env, jthis, jm_getPrinterName);
+        CHECK_EXCEPTION();
         if (printerNameObj != NULL) {
-            NSString *printerName = JNFJavaToNSString(env, printerNameObj);
+            NSString *printerName = JavaStringToNSString(env, printerNameObj);
             if (printerName != nil) {
                 NSPrinter *printer = [NSPrinter printerWithName:printerName];
                 if (printer != nil) [printInfo setPrinter:printer];
@@ -576,7 +649,8 @@ JNF_COCOA_ENTER(env);
         }
 
         // <rdar://problem/4367998> JTable.print attributes are ignored
-        jobject pageable = JNFCallObjectMethod(env, jthis, jm_getPageable); // AWT_THREADING Safe (!appKit)
+        jobject pageable = (*env)->CallObjectMethod(env, jthis, jm_getPageable); // AWT_THREADING Safe (!appKit)
+        CHECK_EXCEPTION();
         javaPrinterJobToNSPrintInfo(env, jthis, pageable, printInfo);
 
         PrintModel* printModel = [[PrintModel alloc] initWithPrintInfo:printInfo];
@@ -599,7 +673,7 @@ JNF_COCOA_ENTER(env);
             (*env)->DeleteLocalRef(env, pageFormatArea);
         }
     }
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return retVal;
 }
 
@@ -612,15 +686,21 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterPageDialog_showDialog
   (JNIEnv *env, jobject jthis)
 {
 
-    static JNF_CLASS_CACHE(jc_CPrinterPageDialog, "sun/lwawt/macosx/CPrinterPageDialog");
-    static JNF_MEMBER_CACHE(jm_page, jc_CPrinterPageDialog, "fPage", "Ljava/awt/print/PageFormat;");
+    DECLARE_CLASS_RETURN(jc_CPrinterPageDialog, "sun/lwawt/macosx/CPrinterPageDialog", NO);
+    DECLARE_FIELD_RETURN(jm_page, jc_CPrinterPageDialog, "fPage", "Ljava/awt/print/PageFormat;", NO);
 
     jboolean result = JNI_FALSE;
-JNF_COCOA_ENTER(env);
-    jobject printerJob = JNFGetObjectField(env, jthis, sjm_printerJob);
-    NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr(JNFCallLongMethod(env, printerJob, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
+JNI_COCOA_ENTER(env);
+    GET_CPRINTERDIALOG_FIELD_RETURN(NO);
+    GET_NSPRINTINFO_METHOD_RETURN(NO)
+    jobject printerJob = (*env)->GetObjectField(env, jthis, sjm_printerJob);
+    if (printerJob == NULL) return NO;
+    NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr((*env)->CallLongMethod(env, printerJob, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
+    CHECK_EXCEPTION();
+    if (printInfo == NULL) return result;
 
-    jobject page = JNFGetObjectField(env, jthis, jm_page);
+    jobject page = (*env)->GetObjectField(env, jthis, jm_page);
+    if (page == NULL) return NO;
 
     // <rdar://problem/4156975> passing NULL, because only a CPrinterJob has a real printer associated with it
     javaPageFormatToNSPrintInfo(env, NULL, page, printInfo);
@@ -644,7 +724,7 @@ JNF_COCOA_ENTER(env);
         (*env)->DeleteLocalRef(env, page);
     }
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return result;
 }
 
@@ -656,15 +736,19 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterJobDialog_showDialog
   (JNIEnv *env, jobject jthis)
 {
-    static JNF_CLASS_CACHE(jc_CPrinterJobDialog, "sun/lwawt/macosx/CPrinterJobDialog");
-    static JNF_MEMBER_CACHE(jm_pageable, jc_CPrinterJobDialog, "fPageable", "Ljava/awt/print/Pageable;");
+    DECLARE_CLASS_RETURN(jc_CPrinterJobDialog, "sun/lwawt/macosx/CPrinterJobDialog", NO);
+    DECLARE_FIELD_RETURN(jm_pageable, jc_CPrinterJobDialog, "fPageable", "Ljava/awt/print/Pageable;", NO);
 
     jboolean result = JNI_FALSE;
-JNF_COCOA_ENTER(env);
-    jobject printerJob = JNFGetObjectField(env, jthis, sjm_printerJob);
-    NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr(JNFCallLongMethod(env, printerJob, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
+JNI_COCOA_ENTER(env);
+    GET_CPRINTERDIALOG_FIELD_RETURN(NO);
+    jobject printerJob = (*env)->GetObjectField(env, jthis, sjm_printerJob);
+    if (printerJob == NULL) return NO;
+    GET_NSPRINTINFO_METHOD_RETURN(NO)
+    NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr((*env)->CallLongMethod(env, printerJob, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
 
-    jobject pageable = JNFGetObjectField(env, jthis, jm_pageable);
+    jobject pageable = (*env)->GetObjectField(env, jthis, jm_pageable);
+    if (pageable == NULL) return NO;
 
     javaPrinterJobToNSPrintInfo(env, printerJob, pageable, printInfo);
 
@@ -687,6 +771,6 @@ JNF_COCOA_ENTER(env);
         (*env)->DeleteLocalRef(env, pageable);
     }
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
     return result;
 }

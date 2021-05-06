@@ -84,19 +84,19 @@ class PluralsParseHandler extends AbstractLDMLHandler<Map<String, String>> {
                 assert !(currentContainer instanceof Entry);
                 Entry<?> entry = (Entry<?>)currentContainer;
                 final String count = entry.getKey();
-                final String rule = (String)entry.getValue();
-                String locales = ((KeyContainer)(currentContainer.getParent())).getKey();
-                Arrays.stream(locales.split("\\s"))
+                if (!count.equals("other")) {
+                    final String rule = (String)entry.getValue();
+                    String locales = ((KeyContainer)(currentContainer.getParent())).getKey();
+                    Arrays.stream(locales.split("\\s"))
                         .forEach(loc -> {
                             Map<String, String> rules = get(loc);
                             if (rules == null) {
                                 rules = new HashMap<>();
                                 put(loc, rules);
                             }
-                            if (!count.equals("other")) {
-                                rules.put(count, rule);
-                            }
+                            rules.put(count, rule);
                         });
+                }
                 break;
         }
 

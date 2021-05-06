@@ -498,7 +498,7 @@ public class Enter extends JCTree.Visitor {
 
         // Add non-local class to uncompleted, to make sure it will be
         // completed later.
-        if (!c.isLocal() && uncompleted != null) uncompleted.append(c);
+        if (!c.isDirectlyOrIndirectlyLocal() && uncompleted != null) uncompleted.append(c);
 //      System.err.println("entering " + c.fullname + " in " + c.owner);//DEBUG
 
         // Recursively enter all member classes.

@@ -98,7 +98,7 @@ public class TestCaretPositionJTextPane {
 
             robot.waitForIdle();
             Point p = textPane.getLocationOnScreen();
-            robot.mouseMove(p.x+ 480, p.y+6);
+            robot.mouseMove(p.x+ 380, p.y+6);
             robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();

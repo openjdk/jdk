@@ -48,7 +48,8 @@ public class CustomLoaderApp {
                                        ", expected == " + urlClassLoader);
         }
 
-        Method method = c.getDeclaredMethod("doTest");
-        method.invoke(o);
+        Method method = c.getMethod("main", String[].class);
+        String[] params = null;
+        method.invoke(null, (Object)params);
     }
 }

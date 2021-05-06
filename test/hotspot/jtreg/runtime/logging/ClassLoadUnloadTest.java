@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 8142506
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
- * @library /test/lib /runtime/testlibrary
+ * @library /test/lib
  * @library classes
  * @build test.Empty
  * @run driver ClassLoadUnloadTest
@@ -40,6 +40,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class ClassLoadUnloadTest {
     private static OutputAnalyzer out;
@@ -90,14 +92,6 @@ public class ClassLoadUnloadTest {
         pb = exec("-Xlog:class+unload=off");
         checkAbsent("[class,unload]");
 
-        //  -XX:+TraceClassUnloading
-        pb = exec("-XX:+TraceClassUnloading");
-        checkFor("[class,unload]", "unloading class");
-
-        //  -XX:-TraceClassUnloading
-        pb = exec("-XX:-TraceClassUnloading");
-        checkAbsent("[class,unload]");
-
         //  -Xlog:class+load=info
         pb = exec("-Xlog:class+load=info");
         checkFor("[class,load]", "java.lang.Object", "source:");
@@ -108,14 +102,6 @@ public class ClassLoadUnloadTest {
 
         //  -Xlog:class+load=off
         pb = exec("-Xlog:class+load=off");
-        checkAbsent("[class,load]");
-
-        //  -XX:+TraceClassLoading
-        pb = exec("-XX:+TraceClassLoading");
-        checkFor("[class,load]", "java.lang.Object", "source:");
-
-        //  -XX:-TraceClassLoading
-        pb = exec("-XX:-TraceClassLoading");
         checkAbsent("[class,load]");
 
         //  -verbose:class

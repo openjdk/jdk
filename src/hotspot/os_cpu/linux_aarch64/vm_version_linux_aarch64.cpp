@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 
 #include <asm/hwcap.h>
@@ -59,6 +60,10 @@
 #define HWCAP_DCPOP (1<<16)
 #endif
 
+#ifndef HWCAP_SHA3
+#define HWCAP_SHA3 (1 << 17)
+#endif
+
 #ifndef HWCAP_SHA512
 #define HWCAP_SHA512 (1 << 21)
 #endif
@@ -82,7 +87,7 @@ int VM_Version::get_current_sve_vector_length() {
   return prctl(PR_SVE_GET_VL);
 }
 
-int VM_Version::set_and_get_current_sve_vector_lenght(int length) {
+int VM_Version::set_and_get_current_sve_vector_length(int length) {
   assert(_features & CPU_SVE, "should not call this");
   int new_length = prctl(PR_SVE_SET_VL, length);
   return new_length;
@@ -93,18 +98,19 @@ void VM_Version::get_os_cpu_info() {
   uint64_t auxv = getauxval(AT_HWCAP);
   uint64_t auxv2 = getauxval(AT_HWCAP2);
 
-  static_assert(CPU_FP      == HWCAP_FP);
-  static_assert(CPU_ASIMD   == HWCAP_ASIMD);
-  static_assert(CPU_EVTSTRM == HWCAP_EVTSTRM);
-  static_assert(CPU_AES     == HWCAP_AES);
-  static_assert(CPU_PMULL   == HWCAP_PMULL);
-  static_assert(CPU_SHA1    == HWCAP_SHA1);
-  static_assert(CPU_SHA2    == HWCAP_SHA2);
-  static_assert(CPU_CRC32   == HWCAP_CRC32);
-  static_assert(CPU_LSE     == HWCAP_ATOMICS);
-  static_assert(CPU_DCPOP   == HWCAP_DCPOP);
-  static_assert(CPU_SHA512  == HWCAP_SHA512);
-  static_assert(CPU_SVE     == HWCAP_SVE);
+  static_assert(CPU_FP      == HWCAP_FP,      "Flag CPU_FP must follow Linux HWCAP");
+  static_assert(CPU_ASIMD   == HWCAP_ASIMD,   "Flag CPU_ASIMD must follow Linux HWCAP");
+  static_assert(CPU_EVTSTRM == HWCAP_EVTSTRM, "Flag CPU_EVTSTRM must follow Linux HWCAP");
+  static_assert(CPU_AES     == HWCAP_AES,     "Flag CPU_AES must follow Linux HWCAP");
+  static_assert(CPU_PMULL   == HWCAP_PMULL,   "Flag CPU_PMULL must follow Linux HWCAP");
+  static_assert(CPU_SHA1    == HWCAP_SHA1,    "Flag CPU_SHA1 must follow Linux HWCAP");
+  static_assert(CPU_SHA2    == HWCAP_SHA2,    "Flag CPU_SHA2 must follow Linux HWCAP");
+  static_assert(CPU_CRC32   == HWCAP_CRC32,   "Flag CPU_CRC32 must follow Linux HWCAP");
+  static_assert(CPU_LSE     == HWCAP_ATOMICS, "Flag CPU_LSE must follow Linux HWCAP");
+  static_assert(CPU_DCPOP   == HWCAP_DCPOP,   "Flag CPU_DCPOP must follow Linux HWCAP");
+  static_assert(CPU_SHA3    == HWCAP_SHA3,    "Flag CPU_SHA3 must follow Linux HWCAP");
+  static_assert(CPU_SHA512  == HWCAP_SHA512,  "Flag CPU_SHA512 must follow Linux HWCAP");
+  static_assert(CPU_SVE     == HWCAP_SVE,     "Flag CPU_SVE must follow Linux HWCAP");
   _features = auxv & (
       HWCAP_FP      |
       HWCAP_ASIMD   |
@@ -116,6 +122,7 @@ void VM_Version::get_os_cpu_info() {
       HWCAP_CRC32   |
       HWCAP_ATOMICS |
       HWCAP_DCPOP   |
+      HWCAP_SHA3    |
       HWCAP_SHA512  |
       HWCAP_SVE);
 
@@ -136,7 +143,6 @@ void VM_Version::get_os_cpu_info() {
     _zva_length = 4 << (dczid_el0 & 0xf);
   }
 
-  int cpu_lines = 0;
   if (FILE *f = fopen("/proc/cpuinfo", "r")) {
     // need a large buffer as the flags line may include lots of text
     char buf[1024], *p;
@@ -145,7 +151,6 @@ void VM_Version::get_os_cpu_info() {
         long v = strtol(p+1, NULL, 0);
         if (strncmp(buf, "CPU implementer", sizeof "CPU implementer" - 1) == 0) {
           _cpu = v;
-          cpu_lines++;
         } else if (strncmp(buf, "CPU variant", sizeof "CPU variant" - 1) == 0) {
           _variant = v;
         } else if (strncmp(buf, "CPU part", sizeof "CPU part" - 1) == 0) {
@@ -162,5 +167,45 @@ void VM_Version::get_os_cpu_info() {
     }
     fclose(f);
   }
-  guarantee(cpu_lines == os::processor_count(), "core count should be consistent");
+}
+
+static bool read_fully(const char *fname, char *buf, size_t buflen) {
+  assert(buf != NULL, "invalid argument");
+  assert(buflen >= 1, "invalid argument");
+  int fd = os::open(fname, O_RDONLY, 0);
+  if (fd != -1) {
+    ssize_t read_sz = os::read(fd, buf, buflen);
+    os::close(fd);
+
+    // Skip if the contents is just "\n" because some machine only sets
+    // '\n' to the board name.
+    // (e.g. esys/devices/virtual/dmi/id/board_name)
+    if (read_sz > 0 && !(read_sz == 1 && *buf == '\n')) {
+      // Replace '\0' to ' '
+      for (char *ch = buf; ch < buf + read_sz - 1; ch++) {
+        if (*ch == '\0') {
+          *ch = ' ';
+        }
+      }
+      buf[read_sz - 1] = '\0';
+      return true;
+    }
+  }
+  *buf = '\0';
+  return false;
+}
+
+void VM_Version::get_compatible_board(char *buf, int buflen) {
+  const char *board_name_file_list[] = {
+    "/proc/device-tree/compatible",
+    "/sys/devices/virtual/dmi/id/board_name",
+    "/sys/devices/virtual/dmi/id/product_name",
+    NULL
+  };
+
+  for (const char **fname = board_name_file_list; *fname != NULL; fname++) {
+    if (read_fully(*fname, buf, buflen)) {
+      return;
+    }
+  }
 }

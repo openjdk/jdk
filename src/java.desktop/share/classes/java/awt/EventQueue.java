@@ -95,7 +95,7 @@ import jdk.internal.access.JavaSecurityAccess;
  * @since       1.1
  */
 public class EventQueue {
-    private static final AtomicInteger threadInitNumber = new AtomicInteger(0);
+    private static final AtomicInteger threadInitNumber = new AtomicInteger();
 
     private static final int LOW_PRIORITY = 0;
     private static final int NORM_PRIORITY = 1;
@@ -1019,8 +1019,8 @@ public class EventQueue {
     }
 
     private class FwSecondaryLoopWrapper implements SecondaryLoop {
-        final private SecondaryLoop loop;
-        final private EventFilter filter;
+        private final SecondaryLoop loop;
+        private final EventFilter filter;
 
         public FwSecondaryLoopWrapper(SecondaryLoop loop, EventFilter filter) {
             this.loop = loop;
@@ -1105,6 +1105,7 @@ public class EventQueue {
         }
     }
 
+    @SuppressWarnings({"deprecation", "removal"})
     final void initDispatchThread() {
         pushPopLock.lock();
         try {

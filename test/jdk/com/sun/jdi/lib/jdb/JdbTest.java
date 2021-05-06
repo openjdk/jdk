@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,9 +94,9 @@ public abstract class JdbTest {
             setup();
             runCases();
         } catch (Throwable e) {
-            jdb.log("=======================================");
-            jdb.log("Exception thrown during test execution: " + e.getMessage());
-            jdb.log("=======================================");
+            System.out.println("=======================================");
+            System.out.println("Exception thrown during test execution: " + e.getMessage());
+            System.out.println("=======================================");
             throw e;
         } finally {
             shutdown();

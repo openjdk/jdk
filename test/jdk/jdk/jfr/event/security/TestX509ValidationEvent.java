@@ -47,8 +47,8 @@ public class TestX509ValidationEvent {
         try (Recording recording = new Recording()) {
             recording.enable(EventNames.X509Validation);
             recording.start();
-            // intermeditate certificate test
-            TestCertificate.generateChain(false);
+            // intermediate certificate test
+            TestCertificate.generateChain(false, true);
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
             Asserts.assertEquals(events.size(), 3, "Incorrect number of events");
@@ -59,11 +59,22 @@ public class TestX509ValidationEvent {
             recording.enable(EventNames.X509Validation);
             recording.start();
             // self signed certificate test
-            TestCertificate.generateChain(true);
+            TestCertificate.generateChain(true, true);
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
             Asserts.assertEquals(events.size(), 2, "Incorrect number of events");
             assertEvent2(events);
+        }
+
+        try (Recording recording = new Recording()) {
+            recording.enable(EventNames.X509Validation);
+            recording.start();
+            // intermediate certificate test, with no Cert for trust anchor
+            TestCertificate.generateChain(true, false);
+            recording.stop();
+            List<RecordedEvent> events = Events.fromRecording(recording);
+            Asserts.assertEquals(events.size(), 2, "Incorrect number of events");
+            assertEvent3(events);
         }
     }
 
@@ -98,6 +109,28 @@ public class TestX509ValidationEvent {
             int pos = e.getInt("certificatePosition");
             switch (pos) {
                 case 1:
+                case 2:
+                    Events.assertField(e, "certificateId")
+                            .equal(TestCertificate.ROOT_CA.certId);
+                    break;
+                default:
+                    System.out.println(events);
+                    throw new Exception("Unexpected position:" + pos);
+            }
+        }
+    }
+    /*
+     * Self signed certificate test
+     */
+    private static void assertEvent3(List<RecordedEvent> events) throws Exception {
+        for (RecordedEvent e : events) {
+            int pos = e.getInt("certificatePosition");
+            switch (pos) {
+                // use public key of cert provided in TrustAnchor
+                case 1:
+                    Asserts.assertEquals(e.getLong("certificateId"),
+                        Long.valueOf(TestCertificate.ROOT_CA.certificate().getPublicKey().hashCode()));
+                    break;
                 case 2:
                     Events.assertField(e, "certificateId")
                             .equal(TestCertificate.ROOT_CA.certId);

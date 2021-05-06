@@ -35,8 +35,8 @@
 
 
 /* buffer var allocations, used by complex shapers */
-#define complex_var_u8_0()      var2.u8[2]
-#define complex_var_u8_1()      var2.u8[3]
+#define complex_var_u8_category()       var2.u8[2]
+#define complex_var_u8_auxiliary()      var2.u8[3]
 
 
 #define HB_OT_SHAPE_COMPLEX_MAX_COMBINING_MARKS 32
@@ -50,8 +50,9 @@ enum hb_ot_shape_zero_width_marks_type_t {
 
 /* Master OT shaper list */
 #define HB_COMPLEX_SHAPERS_IMPLEMENT_SHAPERS \
-  HB_COMPLEX_SHAPER_IMPLEMENT (default) /* should be first */ \
   HB_COMPLEX_SHAPER_IMPLEMENT (arabic) \
+  HB_COMPLEX_SHAPER_IMPLEMENT (default) \
+  HB_COMPLEX_SHAPER_IMPLEMENT (dumber) \
   HB_COMPLEX_SHAPER_IMPLEMENT (hangul) \
   HB_COMPLEX_SHAPER_IMPLEMENT (hebrew) \
   HB_COMPLEX_SHAPER_IMPLEMENT (indic) \
@@ -60,7 +61,7 @@ enum hb_ot_shape_zero_width_marks_type_t {
   HB_COMPLEX_SHAPER_IMPLEMENT (myanmar_zawgyi) \
   HB_COMPLEX_SHAPER_IMPLEMENT (thai) \
   HB_COMPLEX_SHAPER_IMPLEMENT (use) \
-  /* ^--- Add new shapers here */
+  /* ^--- Add new shapers here; keep sorted. */
 
 
 struct hb_ot_complex_shaper_t
@@ -185,26 +186,7 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     case HB_SCRIPT_ARABIC:
 
     /* Unicode-3.0 additions */
-    case HB_SCRIPT_MONGOLIAN:
     case HB_SCRIPT_SYRIAC:
-
-    /* Unicode-5.0 additions */
-    case HB_SCRIPT_NKO:
-    case HB_SCRIPT_PHAGS_PA:
-
-    /* Unicode-6.0 additions */
-    case HB_SCRIPT_MANDAIC:
-
-    /* Unicode-7.0 additions */
-    case HB_SCRIPT_MANICHAEAN:
-    case HB_SCRIPT_PSALTER_PAHLAVI:
-
-    /* Unicode-9.0 additions */
-    case HB_SCRIPT_ADLAM:
-
-    /* Unicode-11.0 additions */
-    case HB_SCRIPT_HANIFI_ROHINGYA:
-    case HB_SCRIPT_SOGDIAN:
 
       /* For Arabic script, use the Arabic shaper even if no OT script tag was found.
        * This is because we do fallback shaping for Arabic script (and not others).
@@ -283,8 +265,9 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
         return &_hb_ot_complex_shaper_myanmar;
 
 
-    /* https://github.com/harfbuzz/harfbuzz/issues/1162 */
+#define HB_SCRIPT_MYANMAR_ZAWGYI        ((hb_script_t) HB_TAG ('Q','a','a','g'))
     case HB_SCRIPT_MYANMAR_ZAWGYI:
+    /* https://github.com/harfbuzz/harfbuzz/issues/1162 */
 
       return &_hb_ot_complex_shaper_myanmar_zawgyi;
 
@@ -293,7 +276,7 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     case HB_SCRIPT_TIBETAN:
 
     /* Unicode-3.0 additions */
-    //case HB_SCRIPT_MONGOLIAN:
+    case HB_SCRIPT_MONGOLIAN:
     //case HB_SCRIPT_SINHALA:
 
     /* Unicode-3.2 additions */
@@ -314,8 +297,8 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
 
     /* Unicode-5.0 additions */
     case HB_SCRIPT_BALINESE:
-    //case HB_SCRIPT_NKO:
-    //case HB_SCRIPT_PHAGS_PA:
+    case HB_SCRIPT_NKO:
+    case HB_SCRIPT_PHAGS_PA:
 
     /* Unicode-5.1 additions */
     case HB_SCRIPT_CHAM:
@@ -336,10 +319,11 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     /* Unicode-6.0 additions */
     case HB_SCRIPT_BATAK:
     case HB_SCRIPT_BRAHMI:
-    //case HB_SCRIPT_MANDAIC:
+    case HB_SCRIPT_MANDAIC:
 
     /* Unicode-6.1 additions */
     case HB_SCRIPT_CHAKMA:
+    case HB_SCRIPT_MIAO:
     case HB_SCRIPT_SHARADA:
     case HB_SCRIPT_TAKRI:
 
@@ -349,18 +333,19 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     case HB_SCRIPT_KHOJKI:
     case HB_SCRIPT_KHUDAWADI:
     case HB_SCRIPT_MAHAJANI:
-    //case HB_SCRIPT_MANICHAEAN:
+    case HB_SCRIPT_MANICHAEAN:
     case HB_SCRIPT_MODI:
     case HB_SCRIPT_PAHAWH_HMONG:
-    //case HB_SCRIPT_PSALTER_PAHLAVI:
+    case HB_SCRIPT_PSALTER_PAHLAVI:
     case HB_SCRIPT_SIDDHAM:
     case HB_SCRIPT_TIRHUTA:
 
     /* Unicode-8.0 additions */
     case HB_SCRIPT_AHOM:
+    case HB_SCRIPT_MULTANI:
 
     /* Unicode-9.0 additions */
-    //case HB_SCRIPT_ADLAM:
+    case HB_SCRIPT_ADLAM:
     case HB_SCRIPT_BHAIKSUKI:
     case HB_SCRIPT_MARCHEN:
     case HB_SCRIPT_NEWA:
@@ -373,9 +358,21 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     /* Unicode-11.0 additions */
     case HB_SCRIPT_DOGRA:
     case HB_SCRIPT_GUNJALA_GONDI:
-    //case HB_SCRIPT_HANIFI_ROHINGYA:
+    case HB_SCRIPT_HANIFI_ROHINGYA:
     case HB_SCRIPT_MAKASAR:
-    //case HB_SCRIPT_SOGDIAN:
+    case HB_SCRIPT_MEDEFAIDRIN:
+    case HB_SCRIPT_OLD_SOGDIAN:
+    case HB_SCRIPT_SOGDIAN:
+
+    /* Unicode-12.0 additions */
+    case HB_SCRIPT_ELYMAIC:
+    case HB_SCRIPT_NANDINAGARI:
+    case HB_SCRIPT_NYIAKENG_PUACHUE_HMONG:
+    case HB_SCRIPT_WANCHO:
+
+    /* Unicode-13.0 additions */
+    case HB_SCRIPT_CHORASMIAN:
+    case HB_SCRIPT_DIVES_AKURU:
 
       /* If the designer designed the font for the 'DFLT' script,
        * (or we ended up arbitrarily pick 'latn'), use the default shaper.

@@ -25,11 +25,9 @@
  * Google Author(s): Behdad Esfahbod
  */
 
-#include "hb-open-type.hh"
+#include "hb.hh"
 
-#include "hb-ot-face.hh"
 #include "hb-aat-layout.hh"
-#include "hb-aat-fdsc-table.hh" // Just so we compile it; unused otherwise.
 #include "hb-aat-layout-ankr-table.hh"
 #include "hb-aat-layout-bsln-table.hh" // Just so we compile it; unused otherwise.
 #include "hb-aat-layout-feat-table.hh"
@@ -40,17 +38,59 @@
 #include "hb-aat-ltag-table.hh"
 
 
+/*
+ * hb_aat_apply_context_t
+ */
+
+/* Note: This context is used for kerning, even without AAT, hence the condition. */
+#if !defined(HB_NO_AAT) || !defined(HB_NO_OT_KERN)
+
+AAT::hb_aat_apply_context_t::hb_aat_apply_context_t (const hb_ot_shape_plan_t *plan_,
+                                                     hb_font_t *font_,
+                                                     hb_buffer_t *buffer_,
+                                                     hb_blob_t *blob) :
+                                                       plan (plan_),
+                                                       font (font_),
+                                                       face (font->face),
+                                                       buffer (buffer_),
+                                                       sanitizer (),
+                                                       ankr_table (&Null (AAT::ankr)),
+                                                       lookup_index (0)
+{
+  sanitizer.init (blob);
+  sanitizer.set_num_glyphs (face->get_num_glyphs ());
+  sanitizer.start_processing ();
+  sanitizer.set_max_ops (HB_SANITIZE_MAX_OPS_MAX);
+}
+
+AAT::hb_aat_apply_context_t::~hb_aat_apply_context_t ()
+{ sanitizer.end_processing (); }
+
+void
+AAT::hb_aat_apply_context_t::set_ankr_table (const AAT::ankr *ankr_table_)
+{ ankr_table = ankr_table_; }
+
+#endif
+
+
 /**
  * SECTION:hb-aat-layout
  * @title: hb-aat-layout
  * @short_description: Apple Advanced Typography Layout
  * @include: hb-aat.h
  *
- * Functions for querying OpenType Layout features in the font face.
+ * Functions for querying AAT Layout features in the font face.
+ *
+ * HarfBuzz supports all of the AAT tables used to implement shaping. Other
+ * AAT tables and their associated features are not supported.
  **/
 
 
-/* Table data courtesy of Apple.  Converted from mnemonics to integers
+#if !defined(HB_NO_AAT) || defined(HAVE_CORETEXT)
+
+/* Mapping from OpenType feature tags to AAT feature names and selectors.
+ *
+ * Table data courtesy of Apple.  Converted from mnemonics to integers
  * when moving to this file. */
 static const hb_aat_feature_mapping_t feature_mappings[] =
 {
@@ -132,47 +172,26 @@ static const hb_aat_feature_mapping_t feature_mappings[] =
   {HB_TAG ('z','e','r','o'), HB_AAT_LAYOUT_FEATURE_TYPE_TYPOGRAPHIC_EXTRAS,      HB_AAT_LAYOUT_FEATURE_SELECTOR_SLASHED_ZERO_ON,                HB_AAT_LAYOUT_FEATURE_SELECTOR_SLASHED_ZERO_OFF},
 };
 
+/**
+ * hb_aat_layout_find_feature_mapping:
+ * @tag: The requested #hb_tag_t feature tag
+ *
+ * Fetches the AAT feature-and-selector combination that corresponds
+ * to a given OpenType feature tag.
+ *
+ * Return value: the AAT features and selectors corresponding to the
+ * OpenType feature tag queried
+ *
+ **/
 const hb_aat_feature_mapping_t *
 hb_aat_layout_find_feature_mapping (hb_tag_t tag)
 {
-  return (const hb_aat_feature_mapping_t *) bsearch (&tag,
-                                                     feature_mappings,
-                                                     ARRAY_LENGTH (feature_mappings),
-                                                     sizeof (feature_mappings[0]),
-                                                     hb_aat_feature_mapping_t::cmp);
+  return hb_sorted_array (feature_mappings).bsearch (tag);
 }
+#endif
 
 
-/*
- * hb_aat_apply_context_t
- */
-
-AAT::hb_aat_apply_context_t::hb_aat_apply_context_t (const hb_ot_shape_plan_t *plan_,
-                                                     hb_font_t *font_,
-                                                     hb_buffer_t *buffer_,
-                                                     hb_blob_t *blob) :
-                                                       plan (plan_),
-                                                       font (font_),
-                                                       face (font->face),
-                                                       buffer (buffer_),
-                                                       sanitizer (),
-                                                       ankr_table (&Null(AAT::ankr)),
-                                                       lookup_index (0),
-                                                       debug_depth (0)
-{
-  sanitizer.init (blob);
-  sanitizer.set_num_glyphs (face->get_num_glyphs ());
-  sanitizer.start_processing ();
-  sanitizer.set_max_ops (HB_SANITIZE_MAX_OPS_MAX);
-}
-
-AAT::hb_aat_apply_context_t::~hb_aat_apply_context_t ()
-{ sanitizer.end_processing (); }
-
-void
-AAT::hb_aat_apply_context_t::set_ankr_table (const AAT::ankr *ankr_table_)
-{ ankr_table = ankr_table_; }
-
+#ifndef HB_NO_AAT
 
 /*
  * mort/morx/kerx/trak
@@ -199,11 +218,17 @@ hb_aat_layout_compile_map (const hb_aat_map_builder_t *mapper,
 }
 
 
-/*
+/**
  * hb_aat_layout_has_substitution:
- * @face:
+ * @face: #hb_face_t to work upon
  *
- * Returns:
+ * Tests whether the specified face includes any substitutions in the
+ * `morx` or `mort` tables.
+ *
+ * <note>Note: does not examine the `GSUB` table.</note>
+ *
+ * Return value: %true if data found, %false otherwise
+ *
  * Since: 2.3.0
  */
 hb_bool_t
@@ -260,11 +285,17 @@ hb_aat_layout_remove_deleted_glyphs (hb_buffer_t *buffer)
   hb_ot_layout_delete_glyphs_inplace (buffer, is_deleted_glyph);
 }
 
-/*
+/**
  * hb_aat_layout_has_positioning:
- * @face:
+ * @face: #hb_face_t to work upon
  *
- * Returns:
+ * Tests whether the specified face includes any positioning information
+ * in the `kerx` table.
+ *
+ * <note>Note: does not examine the `GPOS` table.</note>
+ *
+ * Return value: %true if data found, %false otherwise
+ *
  * Since: 2.3.0
  */
 hb_bool_t
@@ -287,11 +318,15 @@ hb_aat_layout_position (const hb_ot_shape_plan_t *plan,
 }
 
 
-/*
+/**
  * hb_aat_layout_has_tracking:
- * @face:
+ * @face:: #hb_face_t to work upon
  *
- * Returns:
+ * Tests whether the specified face includes any tracking information
+ * in the `trak` table.
+ *
+ * Return value: %true if data found, %false otherwise
+ *
  * Since: 2.3.0
  */
 hb_bool_t
@@ -311,20 +346,15 @@ hb_aat_layout_track (const hb_ot_shape_plan_t *plan,
   trak.apply (&c);
 }
 
-
-hb_language_t
-_hb_aat_language_get (hb_face_t *face,
-                      unsigned int i)
-{
-  return face->table.ltag->get_language (i);
-}
-
 /**
  * hb_aat_layout_get_feature_types:
- * @face: a face object
- * @start_offset: iteration's start offset
- * @feature_count:(inout) (allow-none): buffer size as input, filled size as output
- * @features: (out caller-allocates) (array length=feature_count): features buffer
+ * @face: #hb_face_t to work upon
+ * @start_offset: offset of the first feature type to retrieve
+ * @feature_count: (inout) (optional): Input = the maximum number of feature types to return;
+ *                 Output = the actual number of feature types returned (may be zero)
+ * @features: (out caller-allocates) (array length=feature_count): Array of feature types found
+ *
+ * Fetches a list of the AAT feature types included in the specified face.
  *
  * Return value: Number of all available feature types.
  *
@@ -341,10 +371,12 @@ hb_aat_layout_get_feature_types (hb_face_t                    *face,
 
 /**
  * hb_aat_layout_feature_type_get_name_id:
- * @face: a face object
- * @feature_type: feature id
+ * @face: #hb_face_t to work upon
+ * @feature_type: The #hb_aat_layout_feature_type_t of the requested feature type
  *
- * Return value: Name ID index
+ * Fetches the name identifier of the specified feature type in the face's `name` table.
+ *
+ * Return value: Name identifier of the requested feature type
  *
  * Since: 2.2.0
  */
@@ -356,19 +388,23 @@ hb_aat_layout_feature_type_get_name_id (hb_face_t                    *face,
 }
 
 /**
- * hb_aat_layout_feature_type_get_selectors:
- * @face:    a face object
- * @feature_type: feature id
- * @start_offset:    iteration's start offset
- * @selector_count: (inout) (allow-none): buffer size as input, filled size as output
- * @selectors: (out caller-allocates) (array length=selector_count): settings buffer
- * @default_index: (out) (allow-none): index of default selector if any
+ * hb_aat_layout_feature_type_get_selector_infos:
+ * @face: #hb_face_t to work upon
+ * @feature_type: The #hb_aat_layout_feature_type_t of the requested feature type
+ * @start_offset: offset of the first feature type to retrieve
+ * @selector_count: (inout) (optional): Input = the maximum number of selectors to return;
+ *                  Output = the actual number of selectors returned (may be zero)
+ * @selectors: (out caller-allocates) (array length=selector_count) (optional):
+ *             A buffer pointer. The selectors available for the feature type queries.
+ * @default_index: (out) (optional): The index of the feature's default selector, if any
+ *
+ * Fetches a list of the selectors available for the specified feature in the given face.
  *
  * If upon return, @default_index is set to #HB_AAT_LAYOUT_NO_SELECTOR_INDEX, then
  * the feature type is non-exclusive.  Otherwise, @default_index is the index of
  * the selector that is selected by default.
  *
- * Return value: Number of all available feature selectors.
+ * Return value: Number of all available feature selectors
  *
  * Since: 2.2.0
  */
@@ -382,3 +418,6 @@ hb_aat_layout_feature_type_get_selector_infos (hb_face_t                        
 {
   return face->table.feat->get_selector_infos (feature_type, start_offset, selector_count, selectors, default_index);
 }
+
+
+#endif

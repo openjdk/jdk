@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2021, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ dnl
 
 // AArch64 SVE Architecture Description File
 
+
+// 4 bit signed offset -- for predicated load/store
 dnl
 dnl OPERAND_VMEMORYA_IMMEDIATE_OFFSET($1,            $2,       $3     )
 dnl OPERAND_VMEMORYA_IMMEDIATE_OFFSET(imm_type_abbr, imm_type, imm_len)
@@ -42,9 +44,7 @@ operand vmemA_imm$1Offset$3()
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
-%}')
-dnl
-// 4 bit signed offset -- for predicated load/store
+%}')dnl
 OPERAND_VMEMORYA_IMMEDIATE_OFFSET(I, int,  4)
 OPERAND_VMEMORYA_IMMEDIATE_OFFSET(L, long, 4)
 dnl
@@ -63,8 +63,7 @@ operand vmemA_indOff$1$2(iRegP reg, vmemA_imm$1Offset$2 off)
     scale(0x0);
     disp($off);
   %}
-%}')
-dnl
+%}')dnl
 OPERAND_VMEMORYA_INDIRECT_OFFSET(I, 4)
 OPERAND_VMEMORYA_INDIRECT_OFFSET(L, 4)
 
@@ -75,7 +74,6 @@ source_hpp %{
 %}
 
 source %{
-
   static inline BasicType vector_element_basic_type(const MachNode* n) {
     const TypeVect* vt = n->bottom_type()->is_vect();
     return vt->element_basic_type();
@@ -86,6 +84,27 @@ source %{
     Node* def = use->in(def_idx);
     const TypeVect* vt = def->bottom_type()->is_vect();
     return vt->element_basic_type();
+  }
+
+  static Assembler::SIMD_RegVariant elemBytes_to_regVariant(int esize) {
+    switch(esize) {
+      case 1:
+        return Assembler::B;
+      case 2:
+        return Assembler::H;
+      case 4:
+        return Assembler::S;
+      case 8:
+        return Assembler::D;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+    return Assembler::INVALID;
+  }
+
+  static Assembler::SIMD_RegVariant elemType_to_regVariant(BasicType bt) {
+    return elemBytes_to_regVariant(type2aelembytes(bt));
   }
 
   typedef void (C2_MacroAssembler::* sve_mem_insn_predicate)(FloatRegister Rt, Assembler::SIMD_RegVariant T,
@@ -146,18 +165,41 @@ source %{
       case Op_ExtractL:
       case Op_ExtractS:
       case Op_ExtractUB:
+      // Vector API specific
+      case Op_AndReductionV:
+      case Op_OrReductionV:
+      case Op_XorReductionV:
+      case Op_MaxReductionV:
+      case Op_MinReductionV:
+      case Op_LoadVectorGather:
+      case Op_StoreVectorScatter:
+      case Op_VectorBlend:
+      case Op_VectorCast:
+      case Op_VectorCastB2X:
+      case Op_VectorCastD2X:
+      case Op_VectorCastF2X:
+      case Op_VectorCastI2X:
+      case Op_VectorCastL2X:
+      case Op_VectorCastS2X:
+      case Op_VectorInsert:
+      case Op_VectorLoadConst:
+      case Op_VectorLoadMask:
+      case Op_VectorLoadShuffle:
+      case Op_VectorMaskCmp:
+      case Op_VectorRearrange:
+      case Op_VectorReinterpret:
+      case Op_VectorStoreMask:
+      case Op_VectorTest:
         return false;
       default:
         return true;
     }
   }
-
 %}
 
 definitions %{
   int_def SVE_COST             (200, 200);
 %}
-
 
 dnl
 dnl ELEMENT_SHORT_CHART($1, $2)
@@ -165,7 +207,7 @@ dnl ELEMENT_SHORT_CHART(etype, node)
 define(`ELEMENT_SHORT_CHAR',`ifelse(`$1', `T_SHORT',
   `($2->bottom_type()->is_vect()->element_basic_type() == T_SHORT ||
             ($2->bottom_type()->is_vect()->element_basic_type() == T_CHAR))',
-   `($2->bottom_type()->is_vect()->element_basic_type() == $1)')')
+   `($2->bottom_type()->is_vect()->element_basic_type() == $1)')')dnl
 dnl
 
 // All SVE instructions
@@ -217,7 +259,7 @@ instruct $1(vReg dst, vReg src) %{
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-
+dnl
 // vector abs
 UNARY_OP_TRUE_PREDICATE_ETYPE(vabsB, AbsVB, T_BYTE,   B, 16, sve_abs)
 UNARY_OP_TRUE_PREDICATE_ETYPE(vabsS, AbsVS, T_SHORT,  H, 8,  sve_abs)
@@ -274,6 +316,57 @@ BINARY_OP_UNSIZED(vor, OrV, 16, sve_orr)
 
 // vector xor
 BINARY_OP_UNSIZED(vxor, XorV, 16, sve_eor)
+
+// vector not
+dnl
+define(`MATCH_RULE', `ifelse($1, I,
+`match(Set dst (XorV src (ReplicateB m1)));
+  match(Set dst (XorV src (ReplicateS m1)));
+  match(Set dst (XorV src (ReplicateI m1)));',
+`match(Set dst (XorV src (ReplicateL m1)));')')dnl
+dnl
+define(`VECTOR_NOT', `
+instruct vnot$1`'(vReg dst, vReg src, imm$1_M1 m1) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  MATCH_RULE($1)
+  ins_cost(SVE_COST);
+  format %{ "sve_not $dst, $src\t# vector (sve) $2" %}
+  ins_encode %{
+    __ sve_not(as_FloatRegister($dst$$reg), __ D,
+               ptrue, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl        $1,$2
+VECTOR_NOT(I, B/H/S)
+VECTOR_NOT(L, D)
+undefine(MATCH_RULE)
+
+// vector and_not
+dnl
+define(`MATCH_RULE', `ifelse($1, I,
+`match(Set dst (AndV src1 (XorV src2 (ReplicateB m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateS m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateI m1))));',
+`match(Set dst (AndV src1 (XorV src2 (ReplicateL m1))));')')dnl
+dnl
+define(`VECTOR_AND_NOT', `
+instruct vand_not$1`'(vReg dst, vReg src1, vReg src2, imm$1_M1 m1) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  MATCH_RULE($1)
+  ins_cost(SVE_COST);
+  format %{ "sve_bic $dst, $src1, $src2\t# vector (sve) $2" %}
+  ins_encode %{
+    __ sve_bic(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg),
+               as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl            $1,$2
+VECTOR_AND_NOT(I, B/H/S)
+VECTOR_AND_NOT(L, D)
+undefine(MATCH_RULE)
 dnl
 dnl VDIVF($1,          $2  , $3         )
 dnl VDIVF(name_suffix, size, min_vec_len)
@@ -294,28 +387,47 @@ instruct vdiv$1(vReg dst_src1, vReg src2) %{
 VDIVF(F, S, 4)
 VDIVF(D, D, 2)
 
-dnl
-dnl BINARY_OP_TRUE_PREDICATE_ETYPE($1,        $2,      $3,           $4,   $5,          $6  )
-dnl BINARY_OP_TRUE_PREDICATE_ETYPE(insn_name, op_name, element_type, size, min_vec_len, insn)
-define(`BINARY_OP_TRUE_PREDICATE_ETYPE', `
-instruct $1(vReg dst_src1, vReg src2) %{
-  predicate(UseSVE > 0 && n->as_Vector()->length() >= $5 &&
-            n->bottom_type()->is_vect()->element_basic_type() == $3);
-  match(Set dst_src1 ($2 dst_src1 src2));
+// vector min/max
+
+instruct vmin(vReg dst_src1, vReg src2) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  match(Set dst_src1 (MinV dst_src1 src2));
   ins_cost(SVE_COST);
-  format %{ "$6 $dst_src1, $dst_src1, $src2\t # vector (sve) ($4)" %}
+  format %{ "sve_min $dst_src1, $dst_src1, $src2\t # vector (sve)" %}
   ins_encode %{
-    __ $6(as_FloatRegister($dst_src1$$reg), __ $4,
-         ptrue, as_FloatRegister($src2$$reg));
+    BasicType bt = vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+    if (is_floating_point_type(bt)) {
+      __ sve_fmin(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    } else {
+      assert(is_integral_type(bt), "Unsupported type");
+      __ sve_smin(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    }
   %}
   ins_pipe(pipe_slow);
-%}')dnl
-dnl
-// vector max
-BINARY_OP_TRUE_PREDICATE_ETYPE(vmaxF, MaxV, T_FLOAT,  S, 4,  sve_fmax)
-BINARY_OP_TRUE_PREDICATE_ETYPE(vmaxD, MaxV, T_DOUBLE, D, 2,  sve_fmax)
-BINARY_OP_TRUE_PREDICATE_ETYPE(vminF, MinV, T_FLOAT,  S, 4,  sve_fmin)
-BINARY_OP_TRUE_PREDICATE_ETYPE(vminD, MinV, T_DOUBLE, D, 2,  sve_fmin)
+%}
+
+instruct vmax(vReg dst_src1, vReg src2) %{
+  predicate(UseSVE > 0 && n->as_Vector()->length_in_bytes() >= 16);
+  match(Set dst_src1 (MaxV dst_src1 src2));
+  ins_cost(SVE_COST);
+  format %{ "sve_max $dst_src1, $dst_src1, $src2\t # vector (sve)" %}
+  ins_encode %{
+    BasicType bt = vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+    if (is_floating_point_type(bt)) {
+      __ sve_fmax(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    } else {
+      assert(is_integral_type(bt), "Unsupported type");
+      __ sve_smax(as_FloatRegister($dst_src1$$reg), size,
+                  ptrue, as_FloatRegister($src2$$reg));
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
 
 dnl
 dnl VFMLA($1           $2    $3         )
@@ -507,15 +619,38 @@ instruct vpopcountI(vReg dst, vReg src) %{
      __ sve_cnt(as_FloatRegister($dst$$reg), __ S, ptrue, as_FloatRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
-%}
+%}dnl
 
+dnl
+dnl REDUCE_ADD_EXT($1,        $2,      $3,      $4,      $5,   $6,        $7   )
+dnl REDUCE_ADD_EXT(insn_name, op_name, reg_dst, reg_src, size, elem_type, insn1)
+define(`REDUCE_ADD_EXT', `
+instruct $1($3 dst, $4 src1, vReg src2, vRegD tmp) %{
+  predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() >= 16 &&
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == $6);
+  match(Set dst ($2 src1 src2));
+  effect(TEMP_DEF dst, TEMP tmp);
+  ins_cost(SVE_COST);
+  format %{ "sve_uaddv $tmp, $src2\t# vector (sve) ($5)\n\t"
+            "smov  $dst, $tmp, $5, 0\n\t"
+            "addw  $dst, $dst, $src1\n\t"
+            "$7  $dst, $dst\t # add reduction $5" %}
+  ins_encode %{
+    __ sve_uaddv(as_FloatRegister($tmp$$reg), __ $5,
+         ptrue, as_FloatRegister($src2$$reg));
+    __ smov($dst$$Register, as_FloatRegister($tmp$$reg), __ $5, 0);
+    __ addw($dst$$Register, $dst$$Register, $src1$$Register);
+    __ $7($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
 dnl
 dnl REDUCE_ADD($1,        $2,      $3,      $4,      $5,   $6,        $7   )
 dnl REDUCE_ADD(insn_name, op_name, reg_dst, reg_src, size, elem_type, insn1)
 define(`REDUCE_ADD', `
 instruct $1($3 dst, $4 src1, vReg src2, vRegD tmp) %{
   predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() >= 16 &&
-            ELEMENT_SHORT_CHAR($6, n->in(2)));
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == $6);
   match(Set dst ($2 src1 src2));
   effect(TEMP_DEF dst, TEMP tmp);
   ins_cost(SVE_COST);
@@ -545,8 +680,10 @@ instruct $1($3 src1_dst, vReg src2) %{
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-dnl
+
 // vector add reduction
+REDUCE_ADD_EXT(reduce_addB, AddReductionVI, iRegINoSp, iRegIorL2I, B, T_BYTE,  sxtb)
+REDUCE_ADD_EXT(reduce_addS, AddReductionVI, iRegINoSp, iRegIorL2I, H, T_SHORT, sxth)
 REDUCE_ADD(reduce_addI, AddReductionVI, iRegINoSp, iRegIorL2I, S, T_INT, addw)
 REDUCE_ADD(reduce_addL, AddReductionVL, iRegLNoSp, iRegL, D, T_LONG, add)
 REDUCE_ADDF(reduce_addF, AddReductionVF, vRegF, S)
@@ -653,12 +790,10 @@ REPLICATE(replicateB, ReplicateB, iRegIorL2I, B, 16)
 REPLICATE(replicateS, ReplicateS, iRegIorL2I, H, 8)
 REPLICATE(replicateI, ReplicateI, iRegIorL2I, S, 4)
 REPLICATE(replicateL, ReplicateL, iRegL,      D, 2)
-
 REPLICATE_IMM8(replicateB_imm8, ReplicateB, immI8,        B, 16)
 REPLICATE_IMM8(replicateS_imm8, ReplicateS, immI8_shift8, H, 8)
 REPLICATE_IMM8(replicateI_imm8, ReplicateI, immI8_shift8, S, 4)
 REPLICATE_IMM8(replicateL_imm8, ReplicateL, immL8_shift8, D, 2)
-
 FREPLICATE(replicateF, ReplicateF, vRegF, S, 4)
 FREPLICATE(replicateD, ReplicateD, vRegD, D, 2)
 dnl
@@ -677,14 +812,14 @@ instruct $1(vReg dst, vReg shift) %{
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
-dnl VSHIFT_IMM_UNPREDICATE($1,        $2,      $3,   $4,          $5  )
-dnl VSHIFT_IMM_UNPREDICATE(insn_name, op_name, size, min_vec_len, insn)
-define(`VSHIFT_IMM_UNPREDICATE', `
+dnl VSHIFT_IMM_UNPREDICATED($1,        $2,      $3,       $4,   $5,          $6  )
+dnl VSHIFT_IMM_UNPREDICATED(insn_name, op_name, op_name2, size, min_vec_len, insn)
+define(`VSHIFT_IMM_UNPREDICATED', `
 instruct $1(vReg dst, vReg src, immI shift) %{
-  predicate(UseSVE > 0 && n->as_Vector()->length() >= $4);
-  match(Set dst ($2 src shift));
+  predicate(UseSVE > 0 && n->as_Vector()->length() >= $5);
+  match(Set dst ($2 src ($3 shift)));
   ins_cost(SVE_COST);
-  format %{ "$5 $dst, $src, $shift\t# vector (sve) ($3)" %}
+  format %{ "$6 $dst, $src, $shift\t# vector (sve) ($4)" %}
   ins_encode %{
     int con = (int)$shift$$constant;dnl
 ifelse(eval(index(`$1', `vasr') == 0 || index(`$1', `vlsr') == 0), 1, `
@@ -693,16 +828,21 @@ ifelse(eval(index(`$1', `vasr') == 0 || index(`$1', `vlsr') == 0), 1, `
            as_FloatRegister($src$$reg));
       return;
     }')dnl
-ifelse(eval(index(`$1', `vasr') == 0), 1, `ifelse(eval(index(`$3', `B') == 0), 1, `
-    if (con >= 8) con = 7;')ifelse(eval(index(`$3', `H') == 0), 1, `
+ifelse(eval(index(`$1', `vasr') == 0), 1, `ifelse(eval(index(`$4', `B') == 0), 1, `
+    if (con >= 8) con = 7;')ifelse(eval(index(`$4', `H') == 0), 1, `
     if (con >= 16) con = 15;')')dnl
-ifelse(eval((index(`$1', `vlsl') == 0 || index(`$1', `vlsr') == 0) && (index(`$3', `B') == 0 || index(`$3', `H') == 0)), 1, `
+ifelse(eval(index(`$1', `vlsl') == 0  || index(`$1', `vlsr') == 0), 1, `ifelse(eval(index(`$4', `B') == 0), 1, `
     if (con >= 8) {
       __ sve_eor(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
            as_FloatRegister($src$$reg));
       return;
-    }')
-    __ $5(as_FloatRegister($dst$$reg), __ $3,
+    }')ifelse(eval(index(`$4', `H') == 0), 1, `
+    if (con >= 16) {
+      __ sve_eor(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+           as_FloatRegister($src$$reg));
+      return;
+    }')')
+    __ $6(as_FloatRegister($dst$$reg), __ $4,
          as_FloatRegister($src$$reg), con);
   %}
   ins_pipe(pipe_slow);
@@ -736,18 +876,18 @@ VSHIFT_TRUE_PREDICATE(vlsrB, URShiftVB, B, 16, sve_lsr)
 VSHIFT_TRUE_PREDICATE(vlsrS, URShiftVS, H,  8, sve_lsr)
 VSHIFT_TRUE_PREDICATE(vlsrI, URShiftVI, S,  4, sve_lsr)
 VSHIFT_TRUE_PREDICATE(vlsrL, URShiftVL, D,  2, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vasrB_imm, RShiftVB,  B, 16, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vasrS_imm, RShiftVS,  H,  8, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vasrI_imm, RShiftVI,  S,  4, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vasrL_imm, RShiftVL,  D,  2, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vlsrB_imm, URShiftVB, B, 16, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlsrS_imm, URShiftVS, H,  8, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlsrI_imm, URShiftVI, S,  4, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlsrL_imm, URShiftVL, D,  2, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlslB_imm, LShiftVB,  B, 16, sve_lsl)
-VSHIFT_IMM_UNPREDICATE(vlslS_imm, LShiftVS,  H,  8, sve_lsl)
-VSHIFT_IMM_UNPREDICATE(vlslI_imm, LShiftVI,  S,  4, sve_lsl)
-VSHIFT_IMM_UNPREDICATE(vlslL_imm, LShiftVL,  D,  2, sve_lsl)
+VSHIFT_IMM_UNPREDICATED(vasrB_imm, RShiftVB,  RShiftCntV, B, 16, sve_asr)
+VSHIFT_IMM_UNPREDICATED(vasrS_imm, RShiftVS,  RShiftCntV, H,  8, sve_asr)
+VSHIFT_IMM_UNPREDICATED(vasrI_imm, RShiftVI,  RShiftCntV, S,  4, sve_asr)
+VSHIFT_IMM_UNPREDICATED(vasrL_imm, RShiftVL,  RShiftCntV, D,  2, sve_asr)
+VSHIFT_IMM_UNPREDICATED(vlsrB_imm, URShiftVB, RShiftCntV, B, 16, sve_lsr)
+VSHIFT_IMM_UNPREDICATED(vlsrS_imm, URShiftVS, RShiftCntV, H,  8, sve_lsr)
+VSHIFT_IMM_UNPREDICATED(vlsrI_imm, URShiftVI, RShiftCntV, S,  4, sve_lsr)
+VSHIFT_IMM_UNPREDICATED(vlsrL_imm, URShiftVL, RShiftCntV, D,  2, sve_lsr)
+VSHIFT_IMM_UNPREDICATED(vlslB_imm, LShiftVB,  LShiftCntV, B, 16, sve_lsl)
+VSHIFT_IMM_UNPREDICATED(vlslS_imm, LShiftVS,  LShiftCntV, H,  8, sve_lsl)
+VSHIFT_IMM_UNPREDICATED(vlslI_imm, LShiftVI,  LShiftCntV, S,  4, sve_lsl)
+VSHIFT_IMM_UNPREDICATED(vlslL_imm, LShiftVL,  LShiftCntV, D,  2, sve_lsl)
 VSHIFT_COUNT(vshiftcntB, B, 16, T_BYTE)
 VSHIFT_COUNT(vshiftcntS, H,  8, T_SHORT)
 VSHIFT_COUNT(vshiftcntI, S,  4, T_INT)
@@ -764,4 +904,18 @@ BINARY_OP_UNPREDICATED(vsubI, SubVI, S, 4, sve_sub)
 BINARY_OP_UNPREDICATED(vsubL, SubVL, D, 2, sve_sub)
 BINARY_OP_UNPREDICATED(vsubF, SubVF, S, 4, sve_fsub)
 BINARY_OP_UNPREDICATED(vsubD, SubVD, D, 2, sve_fsub)
+
+// vector mask cast
+
+instruct vmaskcast(vReg dst) %{
+  predicate(UseSVE > 0 && n->bottom_type()->is_vect()->length() == n->in(1)->bottom_type()->is_vect()->length() &&
+            n->bottom_type()->is_vect()->length_in_bytes() == n->in(1)->bottom_type()->is_vect()->length_in_bytes());
+  match(Set dst (VectorMaskCast dst));
+  ins_cost(0);
+  format %{ "vmaskcast $dst\t# empty (sve)" %}
+  ins_encode %{
+    // empty
+  %}
+  ins_pipe(pipe_class_empty);
+%}
 

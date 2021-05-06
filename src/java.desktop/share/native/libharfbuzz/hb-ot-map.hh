@@ -68,7 +68,7 @@ struct hb_ot_map_t
     unsigned short random : 1;
     hb_mask_t mask;
 
-    static int cmp (const void *pa, const void *pb)
+    HB_INTERNAL static int cmp (const void *pa, const void *pb)
     {
       const lookup_map_t *a = (const lookup_map_t *) pa;
       const lookup_map_t *b = (const lookup_map_t *) pb;
@@ -134,18 +134,18 @@ struct hb_ot_map_t
   unsigned int get_feature_stage (unsigned int table_index, hb_tag_t feature_tag) const
   {
     const feature_map_t *map = features.bsearch (feature_tag);
-    return map ? map->stage[table_index] : (unsigned int) -1;
+    return map ? map->stage[table_index] : UINT_MAX;
   }
 
   void get_stage_lookups (unsigned int table_index, unsigned int stage,
                           const struct lookup_map_t **plookups, unsigned int *lookup_count) const
   {
-    if (unlikely (stage == (unsigned int) -1)) {
+    if (unlikely (stage > stages[table_index].length))
+    {
       *plookups = nullptr;
       *lookup_count = 0;
       return;
     }
-    assert (stage <= stages[table_index].length);
     unsigned int start = stage ? stages[table_index][stage - 1].last_lookup : 0;
     unsigned int end   = stage < stages[table_index].length ? stages[table_index][stage].last_lookup : lookups[table_index].length;
     *plookups = end == start ? nullptr : &lookups[table_index][start];
@@ -154,8 +154,8 @@ struct hb_ot_map_t
 
   HB_INTERNAL void collect_lookups (unsigned int table_index, hb_set_t *lookups) const;
   template <typename Proxy>
-  HB_INTERNAL inline void apply (const Proxy &proxy,
-                                 const struct hb_ot_shape_plan_t *plan, hb_font_t *font, hb_buffer_t *buffer) const;
+  HB_INTERNAL void apply (const Proxy &proxy,
+                          const struct hb_ot_shape_plan_t *plan, hb_font_t *font, hb_buffer_t *buffer) const;
   HB_INTERNAL void substitute (const struct hb_ot_shape_plan_t *plan, hb_font_t *font, hb_buffer_t *buffer) const;
   HB_INTERNAL void position (const struct hb_ot_shape_plan_t *plan, hb_font_t *font, hb_buffer_t *buffer) const;
 
@@ -167,7 +167,7 @@ struct hb_ot_map_t
 
   hb_mask_t global_mask;
 
-  hb_vector_t<feature_map_t> features;
+  hb_sorted_vector_t<feature_map_t> features;
   hb_vector_t<lookup_map_t> lookups[2]; /* GSUB/GPOS */
   hb_vector_t<stage_map_t> stages[2]; /* GSUB/GPOS */
 };
@@ -213,8 +213,8 @@ struct hb_ot_map_builder_t
   { add_feature (feat.tag, feat.flags); }
 
   void enable_feature (hb_tag_t tag,
-                              hb_ot_map_feature_flags_t flags=F_NONE,
-                              unsigned int value=1)
+                       hb_ot_map_feature_flags_t flags=F_NONE,
+                       unsigned int value=1)
   { add_feature (tag, F_GLOBAL | flags, value); }
 
   void disable_feature (hb_tag_t tag)
@@ -247,7 +247,7 @@ struct hb_ot_map_builder_t
     unsigned int default_value; /* for non-global features, what should the unset glyphs take */
     unsigned int stage[2]; /* GSUB/GPOS */
 
-    static int cmp (const void *pa, const void *pb)
+    HB_INTERNAL static int cmp (const void *pa, const void *pb)
     {
       const feature_info_t *a = (const feature_info_t *) pa;
       const feature_info_t *b = (const feature_info_t *) pb;

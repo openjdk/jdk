@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,13 +29,12 @@
 
 // no precompiled headers
 #include "jvm.h"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "libo4.hpp"
@@ -43,7 +42,6 @@
 #include "libodm_aix.hpp"
 #include "loadlib_aix.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "misc_aix.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_aix.inline.hpp"
@@ -63,9 +61,9 @@
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
@@ -109,7 +107,6 @@
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/vminfo.h>
-#include <sys/wait.h>
 
 // Missing prototypes for various system APIs.
 extern "C"
@@ -932,7 +929,6 @@ void os::free_thread(OSThread* osthread) {
 // time support
 
 // Time since start-up in seconds to a fine granularity.
-// Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
   return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
 }
@@ -956,21 +952,6 @@ double os::elapsedVTime() {
     // better than nothing, but not much
     return elapsedTime();
   }
-}
-
-jlong os::javaTimeMillis() {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "aix error at gettimeofday()");
-  return jlong(time.tv_sec) * 1000 + jlong(time.tv_usec / 1000);
-}
-
-void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "aix error at gettimeofday()");
-  seconds = jlong(time.tv_sec);
-  nanos = jlong(time.tv_usec) * 1000;
 }
 
 // We use mread_real_time here.
@@ -1061,54 +1042,6 @@ char * os::local_time_string(char *buf, size_t buflen) {
 
 struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
   return localtime_r(clock, res);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// runtime exit support
-
-// Note: os::shutdown() might be called very early during initialization, or
-// called from signal handler. Before adding something to os::shutdown(), make
-// sure it is async-safe and can handle partially initialized VM.
-void os::shutdown() {
-
-  // allow PerfMemory to attempt cleanup of any persistent resources
-  perfMemory_exit();
-
-  // needs to remove object in file system
-  AttachListener::abort();
-
-  // flush buffered output, finish log files
-  ostream_abort();
-
-  // Check for abort hook
-  abort_hook_t abort_hook = Arguments::abort_hook();
-  if (abort_hook != NULL) {
-    abort_hook();
-  }
-}
-
-// Note: os::abort() might be called very early during initialization, or
-// called from signal handler. Before adding something to os::abort(), make
-// sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, const void* context) {
-  os::shutdown();
-  if (dump_core) {
-    ::abort(); // dump core
-  }
-
-  ::exit(1);
-}
-
-// Die immediately, no exit hook, no abort hook, no cleanup.
-// Dump a core file, if possible, for debugging.
-void os::die() {
-  if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
-    // For TimeoutInErrorHandlingTest.java, we just kill the VM
-    // and don't take the time to generate a core file.
-    os::signal_raise(SIGKILL);
-  } else {
-    ::abort();
-  }
 }
 
 intx os::current_thread_id() {
@@ -1439,25 +1372,6 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // Nothing to do beyond of what os::print_cpu_info() does.
 }
 
-void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
-  st->print_cr("Signal Handlers:");
-  PosixSignals::print_signal_handler(st, SIGSEGV, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGBUS , buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGFPE , buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGPIPE, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGXFSZ, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGILL , buf, buflen);
-  PosixSignals::print_signal_handler(st, SR_signum, buf, buflen);
-  PosixSignals::print_signal_handler(st, SHUTDOWN1_SIGNAL, buf, buflen);
-  PosixSignals::print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
-  PosixSignals::print_signal_handler(st, SHUTDOWN3_SIGNAL , buf, buflen);
-  PosixSignals::print_signal_handler(st, BREAK_SIGNAL, buf, buflen);
-  PosixSignals::print_signal_handler(st, SIGTRAP, buf, buflen);
-  // We also want to know if someone else adds a SIGDANGER handler because
-  // that will interfere with OOM killling.
-  PosixSignals::print_signal_handler(st, SIGDANGER, buf, buflen);
-}
-
 static char saved_jvm_path[MAXPATHLEN] = {0};
 
 // Find the full path to the current module, libjvm.so.
@@ -1660,10 +1574,10 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // We must prevent anyone from attaching too close to the
   // BRK because that may cause malloc OOM.
   if (requested_addr != NULL && is_close_to_brk((address)requested_addr)) {
-    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment. "
-      "Will attach anywhere.", p2i(requested_addr));
-    // Act like the OS refused to attach there.
-    requested_addr = NULL;
+    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
+    // Since we treat an attach to the wrong address as an error later anyway,
+    // we return NULL here
+    return NULL;
   }
 
   // For old AS/400's (V5R4 and older) we should not even be here - System V shared memory is not
@@ -1789,10 +1703,10 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   // We must prevent anyone from attaching too close to the
   // BRK because that may cause malloc OOM.
   if (requested_addr != NULL && is_close_to_brk((address)requested_addr)) {
-    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment. "
-      "Will attach anywhere.", p2i(requested_addr));
-    // Act like the OS refused to attach there.
-    requested_addr = NULL;
+    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
+    // Since we treat an attach to the wrong address as an error later anyway,
+    // we return NULL here
+    return NULL;
   }
 
   // In 64K mode, we lie and claim the global page size (os::vm_page_size()) is 64K
@@ -1834,6 +1748,11 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   if (addr == MAP_FAILED) {
     trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) failed (%d)", p2i(requested_addr), size, errno);
     return NULL;
+  } else if (requested_addr != NULL && addr != requested_addr) {
+    trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) succeeded, but at a different address than requested (" PTR_FORMAT "), will unmap",
+               p2i(requested_addr), size, p2i(addr));
+    ::munmap(addr, extra_size);
+    return NULL;
   }
 
   // Handle alignment.
@@ -1849,16 +1768,8 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   }
   addr = addr_aligned;
 
-  if (addr) {
-    trcVerbose("mmap-allocated " PTR_FORMAT " .. " PTR_FORMAT " (" UINTX_FORMAT " bytes)",
-      p2i(addr), p2i(addr + bytes), bytes);
-  } else {
-    if (requested_addr != NULL) {
-      trcVerbose("failed to mmap-allocate " UINTX_FORMAT " bytes at wish address " PTR_FORMAT ".", bytes, p2i(requested_addr));
-    } else {
-      trcVerbose("failed to mmap-allocate " UINTX_FORMAT " bytes at any address.", bytes);
-    }
-  }
+  trcVerbose("mmap-allocated " PTR_FORMAT " .. " PTR_FORMAT " (" UINTX_FORMAT " bytes)",
+    p2i(addr), p2i(addr + bytes), bytes);
 
   // bookkeeping
   vmembk_add(addr, size, 4*K, VMEM_MAPPED);
@@ -1976,7 +1887,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
-bool os::pd_uncommit_memory(char* addr, size_t size) {
+bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   assert(is_aligned_to(addr, os::vm_page_size()),
     "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
     p2i(addr), os::vm_page_size());
@@ -2053,7 +1964,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 }
 
 // Reserves and attaches a shared memory segment.
-char* os::pd_reserve_memory(size_t bytes) {
+char* os::pd_reserve_memory(size_t bytes, bool exec) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
 
@@ -2075,6 +1986,7 @@ bool os::pd_release_memory(char* addr, size_t size) {
   // Dynamically do different things for mmap/shmat.
   vmembk_t* const vmi = vmembk_find(addr);
   guarantee0(vmi);
+  vmi->assert_is_valid_subrange(addr, size);
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
   size = align_up(size, os::vm_page_size());
@@ -2088,7 +2000,6 @@ bool os::pd_release_memory(char* addr, size_t size) {
     // - If user only wants to release a partial range, uncommit (disclaim) that
     //   range. That way, at least, we do not use memory anymore (bust still page
     //   table space).
-    vmi->assert_is_valid_subrange(addr, size);
     if (addr == vmi->addr && size == vmi->size) {
       rc = release_shmated_memory(addr, size);
       remove_bookkeeping = true;
@@ -2096,12 +2007,30 @@ bool os::pd_release_memory(char* addr, size_t size) {
       rc = uncommit_shmated_memory(addr, size);
     }
   } else {
-    // User may unmap partial regions but region has to be fully contained.
-#ifdef ASSERT
-    vmi->assert_is_valid_subrange(addr, size);
-#endif
+    // In mmap-mode:
+    //  - If the user wants to release the full range, we do that and remove the mapping.
+    //  - If the user wants to release part of the range, we release that part, but need
+    //    to adjust bookkeeping.
+    assert(is_aligned(size, 4 * K), "Sanity");
     rc = release_mmaped_memory(addr, size);
-    remove_bookkeeping = true;
+    if (addr == vmi->addr && size == vmi->size) {
+      remove_bookkeeping = true;
+    } else {
+      if (addr == vmi->addr && size < vmi->size) {
+        // Chopped from head
+        vmi->addr += size;
+        vmi->size -= size;
+      } else if (addr + size == vmi->addr + vmi->size) {
+        // Chopped from tail
+        vmi->size -= size;
+      } else {
+        // releasing a mapping in the middle of the original mapping:
+        // For now we forbid this, since this is an invalid scenario
+        // (the bookkeeping is easy enough to fix if needed but there
+        //  is no use case for it; any occurrence is likely an error.
+        ShouldNotReachHere();
+      }
+    }
   }
 
   // update bookkeeping
@@ -2236,7 +2165,7 @@ bool os::can_execute_large_page_memory() {
   return false;
 }
 
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, int file_desc) {
+char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   char* result = NULL;
 
@@ -2254,7 +2183,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, int f
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
   char* addr = NULL;
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
@@ -2459,7 +2388,7 @@ void os::init(void) {
 
   // For now UseLargePages is just ignored.
   FLAG_SET_ERGO(UseLargePages, false);
-  _page_sizes[0] = 0;
+  _page_sizes.add(Aix::_page_size);
 
   // debug trace
   trcVerbose("os::vm_page_size %s", describe_pagesize(os::vm_page_size()));
@@ -2481,8 +2410,6 @@ void os::init(void) {
   os::Aix::initialize_system_info();
 
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
-
-  init_random(1234567);
 
   // _main_thread points to the thread that created/loaded the JVM.
   Aix::_main_thread = pthread_self();
@@ -2517,17 +2444,8 @@ jint os::init_2(void) {
     LoadedLibraries::print(tty);
   }
 
-  // initialize suspend/resume support - must do this before signal_sets_init()
-  if (PosixSignals::SR_initialize() != 0) {
-    perror("SR_initialize failed");
+  if (PosixSignals::init() == JNI_ERR) {
     return JNI_ERR;
-  }
-
-  PosixSignals::signal_sets_init();
-  PosixSignals::install_signal_handlers();
-  // Initialize data for jdk.internal.misc.Signal
-  if (!ReduceSignalUsage) {
-    PosixSignals::jdk_misc_signal_init();
   }
 
   // Check and sets minimum stack sizes against command line options
@@ -2597,14 +2515,6 @@ void os::set_native_thread_name(const char *name) {
 bool os::bind_to_processor(uint processor_id) {
   // Not yet implemented.
   return false;
-}
-
-void os::SuspendedThreadTask::internal_do_task() {
-  if (PosixSignals::do_suspend(_thread->osthread())) {
-    SuspendedThreadTaskContext context(_thread, _thread->osthread()->ucontext());
-    do_task(context);
-    PosixSignals::do_resume(_thread->osthread());
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3204,64 +3114,6 @@ size_t os::current_stack_size() {
   return s;
 }
 
-extern char** environ;
-
-// Run the specified command in a separate process. Return its exit value,
-// or -1 on failure (e.g. can't fork a new process).
-// Unlike system(), this function can be called from signal handler. It
-// doesn't block SIGINT et al.
-int os::fork_and_exec(char* cmd, bool use_vfork_if_available) {
-  char* argv[4] = { (char*)"sh", (char*)"-c", cmd, NULL};
-
-  pid_t pid = fork();
-
-  if (pid < 0) {
-    // fork failed
-    return -1;
-
-  } else if (pid == 0) {
-    // child process
-
-    // Try to be consistent with system(), which uses "/usr/bin/sh" on AIX.
-    execve("/usr/bin/sh", argv, environ);
-
-    // execve failed
-    _exit(-1);
-
-  } else {
-    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
-    // care about the actual exit code, for now.
-
-    int status;
-
-    // Wait for the child process to exit. This returns immediately if
-    // the child has already exited. */
-    while (waitpid(pid, &status, 0) < 0) {
-      switch (errno) {
-        case ECHILD: return 0;
-        case EINTR: break;
-        default: return -1;
-      }
-    }
-
-    if (WIFEXITED(status)) {
-      // The child exited normally; get its exit code.
-      return WEXITSTATUS(status);
-    } else if (WIFSIGNALED(status)) {
-      // The child exited because of a signal.
-      // The best value to return is 0x80 + signal number,
-      // because that is what all Unix shells do, and because
-      // it allows callers to distinguish between process exit and
-      // process death by signal.
-      return 0x80 + WTERMSIG(status);
-    } else {
-      // Unknown exit code; pass it through.
-      return status;
-    }
-  }
-  return -1;
-}
-
 // Get the default path to the core file
 // Returns the length of the string
 int os::get_core_path(char* buffer, size_t bufferSize) {
@@ -3277,12 +3129,6 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
 
   return strlen(buffer);
 }
-
-#ifndef PRODUCT
-void TestReserveMemorySpecial_test() {
-  // No tests available for this platform
-}
-#endif
 
 bool os::start_debugging(char *buf, int buflen) {
   int len = (int)strlen(buf);
@@ -3325,3 +3171,5 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
 bool os::supports_map_sync() {
   return false;
 }
+
+void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,11 +155,11 @@ public class TypeAnnotations {
         }
 
         Attribute atValue = atTarget.member(names.value);
-        if (!(atValue instanceof Attribute.Array)) {
+        if (!(atValue instanceof Attribute.Array arrayVal)) {
             return null;
         }
 
-        List<Attribute> targets = ((Array)atValue).getValue();
+        List<Attribute> targets = arrayVal.getValue();
         if (targets.stream().anyMatch(a -> !(a instanceof Attribute.Enum))) {
             return null;
         }
@@ -389,7 +389,8 @@ public class TypeAnnotations {
             if (sym.getKind() == ElementKind.PARAMETER ||
                 sym.getKind() == ElementKind.LOCAL_VARIABLE ||
                 sym.getKind() == ElementKind.RESOURCE_VARIABLE ||
-                sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
+                sym.getKind() == ElementKind.EXCEPTION_PARAMETER ||
+                sym.getKind() == ElementKind.BINDING_VARIABLE) {
                 appendTypeAnnotationsToOwner(sym, typeAnnotations);
             }
         }
@@ -951,9 +952,8 @@ public class TypeAnnotations {
                                                  " within frame " + frame);
                     }
 
-                case BINDING_PATTERN:
                 case VARIABLE:
-                    VarSymbol v = frame.hasTag(Tag.BINDINGPATTERN) ? ((JCBindingPattern) frame).symbol : ((JCVariableDecl) frame).sym;
+                    VarSymbol v = ((JCVariableDecl) frame).sym;
                     if (v.getKind() != ElementKind.FIELD) {
                         appendTypeAnnotationsToOwner(v, v.getRawTypeAttributes());
                     }
@@ -1265,6 +1265,11 @@ public class TypeAnnotations {
                 if (!tree.isImplicitlyTyped()) {
                     separateAnnotationsKinds(tree.vartype, tree.sym.type, tree.sym, pos);
                 }
+            } else if (tree.sym.getKind() == ElementKind.BINDING_VARIABLE) {
+                final TypeAnnotationPosition pos =
+                    TypeAnnotationPosition.localVariable(currentLambda,
+                                                         tree.pos);
+                separateAnnotationsKinds(tree.vartype, tree.sym.type, tree.sym, pos);
             } else if (tree.sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
                 final TypeAnnotationPosition pos =
                     TypeAnnotationPosition.exceptionParameter(currentLambda,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.beans.VetoableChangeSupport;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -55,7 +56,11 @@ import java.io.Serializable;
 
 public class BeanContextChildSupport implements BeanContextChild, BeanContextServicesListener, Serializable {
 
-    static final long serialVersionUID = 6328947014421475877L;
+    /**
+     * Use serialVersionUID from JDK 1.2 for interoperability.
+     */
+    @Serial
+    private static final long serialVersionUID = 6328947014421475877L;
 
     /**
      * construct a BeanContextChildSupport where this class has been
@@ -313,6 +318,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * @param  oos the {@code ObjectOutputStream} to write
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void writeObject(ObjectOutputStream oos) throws IOException {
 
         /*
@@ -338,6 +344,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      *         not be found
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
     }

@@ -137,13 +137,13 @@ public class JNIWriter {
     static boolean isNative(Symbol s) {
         return hasFlag(s, Flags.NATIVE);
     }
-    static private boolean hasFlag(Symbol m, int flag) {
+    private static boolean hasFlag(Symbol m, int flag) {
         return (m.flags() & flag) != 0;
     }
 
     public boolean needsHeader(ClassSymbol c) {
         lazyInit();
-        if (c.isLocal() || isSynthetic(c))
+        if (c.isDirectlyOrIndirectlyLocal() || isSynthetic(c))
             return false;
         return (checkAll)
                 ? needsHeader(c.outermostClass(), true)
@@ -151,7 +151,7 @@ public class JNIWriter {
     }
 
     private boolean needsHeader(ClassSymbol c, boolean checkNestedClasses) {
-        if (c.isLocal() || isSynthetic(c))
+        if (c.isDirectlyOrIndirectlyLocal() || isSynthetic(c))
             return false;
 
         for (Symbol sym : c.members_field.getSymbols(NON_RECURSIVE)) {

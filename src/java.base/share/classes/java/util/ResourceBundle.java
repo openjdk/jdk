@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.jar.JarEntry;
 import java.util.spi.ResourceBundleControlProvider;
 import java.util.spi.ResourceBundleProvider;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.BootLoader;
@@ -372,7 +371,6 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * @see ResourceBundleProvider
  * @since 1.1
  * @revised 9
- * @spec JPMS
  */
 public abstract class ResourceBundle {
 
@@ -893,7 +891,6 @@ public abstract class ResourceBundle {
      *         if this method is called in a named module
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static final ResourceBundle getBundle(String baseName,
@@ -953,7 +950,6 @@ public abstract class ResourceBundle {
      *         specified module
      * @return a resource bundle for the given base name and the default locale
      * @since 9
-     * @spec JPMS
      * @see ResourceBundleProvider
      * @see <a href="#default_behavior">Resource Bundle Search and Loading Strategy</a>
      * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
@@ -1007,7 +1003,6 @@ public abstract class ResourceBundle {
      *         be found in the specified {@code module}
      * @return a resource bundle for the given base name and locale in the module
      * @since 9
-     * @spec JPMS
      * @see <a href="#default_behavior">Resource Bundle Search and Loading Strategy</a>
      * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
      */
@@ -1056,7 +1051,6 @@ public abstract class ResourceBundle {
      *         if this method is called in a named module
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static final ResourceBundle getBundle(String baseName, Locale targetLocale,
@@ -1270,7 +1264,6 @@ public abstract class ResourceBundle {
      *        if no resource bundle for the specified base name can be found
      * @since 1.2
      * @revised 9
-     * @spec JPMS
      * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
      */
     @CallerSensitive
@@ -1496,7 +1489,6 @@ public abstract class ResourceBundle {
      *         if this method is called in a named module
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static ResourceBundle getBundle(String baseName, Locale targetLocale,
@@ -1521,13 +1513,10 @@ public abstract class ResourceBundle {
 
     private static class ResourceBundleControlProviderHolder {
         private static final PrivilegedAction<List<ResourceBundleControlProvider>> pa =
-            () -> {
-                return Collections.unmodifiableList(
-                    ServiceLoader.load(ResourceBundleControlProvider.class,
-                                       ClassLoader.getSystemClassLoader()).stream()
-                        .map(ServiceLoader.Provider::get)
-                        .collect(Collectors.toList()));
-            };
+            () -> ServiceLoader.load(ResourceBundleControlProvider.class,
+                                   ClassLoader.getSystemClassLoader()).stream()
+                             .map(ServiceLoader.Provider::get)
+                             .toList();
 
         private static final List<ResourceBundleControlProvider> CONTROL_PROVIDERS =
             AccessController.doPrivileged(pa);
@@ -1762,7 +1751,7 @@ public abstract class ResourceBundle {
                 // Otherwise, remove the cached one since we can't keep
                 // the same bundles having different parents.
                 BundleReference bundleRef = cacheList.get(cacheKey);
-                if (bundleRef != null && bundleRef.get() == bundle) {
+                if (bundleRef != null && bundleRef.refersTo(bundle)) {
                     cacheList.remove(cacheKey, bundleRef);
                 }
             }
@@ -2234,7 +2223,6 @@ public abstract class ResourceBundle {
      *
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      * @see ResourceBundle.Control#getTimeToLive(String,Locale)
      */
     @CallerSensitive
@@ -2524,7 +2512,6 @@ public abstract class ResourceBundle {
      *
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      * @see java.util.spi.ResourceBundleProvider
      */
     public static class Control {
@@ -2899,15 +2886,17 @@ public abstract class ResourceBundle {
                 }
                 if (language.equals("nb") || isNorwegianBokmal) {
                     List<Locale> tmpList = getDefaultList("nb", script, region, variant);
-                    // Insert a locale replacing "nb" with "no" for every list entry
+                    // Insert a locale replacing "nb" with "no" for every list entry with precedence
                     List<Locale> bokmalList = new LinkedList<>();
-                    for (Locale l : tmpList) {
-                        bokmalList.add(l);
-                        if (l.getLanguage().isEmpty()) {
+                    for (Locale l_nb : tmpList) {
+                        var isRoot = l_nb.getLanguage().isEmpty();
+                        var l_no = Locale.getInstance(isRoot ? "" : "no",
+                                l_nb.getScript(), l_nb.getCountry(), l_nb.getVariant(), null);
+                        bokmalList.add(isNorwegianBokmal ? l_no : l_nb);
+                        if (isRoot) {
                             break;
                         }
-                        bokmalList.add(Locale.getInstance("no", l.getScript(), l.getCountry(),
-                                l.getVariant(), null));
+                        bokmalList.add(isNorwegianBokmal ? l_nb : l_no);
                     }
                     return bokmalList;
                 } else if (language.equals("nn") || isNorwegianNynorsk) {
@@ -3154,7 +3143,6 @@ public abstract class ResourceBundle {
          *        any I/O operations
          * @see java.util.spi.ResourceBundleProvider#getBundle(String, Locale)
          * @revised 9
-         * @spec JPMS
          */
         public ResourceBundle newBundle(String baseName, Locale locale, String format,
                                         ClassLoader loader, boolean reload)
@@ -3203,7 +3191,7 @@ public abstract class ResourceBundle {
                         } catch (InvocationTargetException e) {
                             uncheckedThrow(e);
                         } catch (PrivilegedActionException e) {
-                            assert e.getException() instanceof NoSuchMethodException;
+                            assert e.getCause() instanceof NoSuchMethodException;
                             throw new InstantiationException("public no-arg constructor " +
                                 "does not exist in " + bundleClass.getName());
                         }
@@ -3238,7 +3226,7 @@ public abstract class ResourceBundle {
                             }
                         });
                 } catch (PrivilegedActionException e) {
-                    throw (IOException) e.getException();
+                    throw (IOException) e.getCause();
                 }
                 if (stream != null) {
                     try {

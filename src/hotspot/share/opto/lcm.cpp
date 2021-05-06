@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/compressedOops.hpp"
 #include "opto/ad.hpp"
@@ -373,7 +374,21 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     // Check if we need to hoist decodeHeapOop_not_null first.
     Block *valb = get_block_for_node(val);
     if( block != valb && block->_dom_depth < valb->_dom_depth ) {
-      // Hoist it up to the end of the test block.
+      // Hoist it up to the end of the test block together with its inputs if they exist.
+      for (uint i = 2; i < val->req(); i++) {
+        // DecodeN has 2 regular inputs + optional MachTemp or load Base inputs.
+        Node *temp = val->in(i);
+        Block *tempb = get_block_for_node(temp);
+        if (!tempb->dominates(block)) {
+          assert(block->dominates(tempb), "sanity check: temp node placement");
+          // We only expect nodes without further inputs, like MachTemp or load Base.
+          assert(temp->req() == 0 || (temp->req() == 1 && temp->in(0) == (Node*)C->root()),
+                 "need for recursive hoisting not expected");
+          tempb->find_remove(temp);
+          block->add_inst(temp);
+          map_node_to_block(temp, block);
+        }
+      }
       valb->find_remove(val);
       block->add_inst(val);
       map_node_to_block(val, block);
@@ -430,7 +445,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     tmp1->replace_by(tmp);
     tmp2->replace_by(tmp1);
     tmp->replace_by(tmp2);
-    tmp->destruct();
+    tmp->destruct(NULL);
   }
 
   // Remove the existing null check; use a new implicit null check instead.
@@ -449,7 +464,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     old_tst->set_req(i3, NULL);
     if (in->outcnt() == 0) {
       // Remove dead input node
-      in->disconnect_inputs(NULL, C);
+      in->disconnect_inputs(C);
       block->find_remove(in);
     }
   }
@@ -632,7 +647,7 @@ Node* PhaseCFG::select(
     cand_cnt++;
     if (choice < n_choice ||
         (choice == n_choice &&
-         ((StressLCM && Compile::randomized_select(cand_cnt)) ||
+         ((StressLCM && C->randomized_select(cand_cnt)) ||
           (!StressLCM &&
            (latency < n_latency ||
             (latency == n_latency &&
@@ -686,6 +701,8 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
         case Op_StoreP:
         case Op_StoreN:
         case Op_StoreVector:
+        case Op_StoreVectorScatter:
+        case Op_StoreVectorMasked:
         case Op_StoreNKlass:
           for (uint k = 1; k < m->req(); k++) {
             Node *in = m->in(k);
@@ -861,6 +878,12 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       // Calling Java code so use Java calling convention
       save_policy = _matcher._register_save_policy;
       break;
+    case Op_CallNative:
+      // We use the c reg save policy here since Panama
+      // only supports the C ABI currently.
+      // TODO compute actual save policy based on nep->abi
+      save_policy = _matcher._c_reg_save_policy;
+      break;
 
     default:
       ShouldNotReachHere();
@@ -874,7 +897,14 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
   // done for oops since idealreg2debugmask takes care of debug info
   // references but there no way to handle oops differently than other
   // pointers as far as the kill mask goes.
-  bool exclude_soe = op == Op_CallRuntime;
+  //
+  // Also, native callees can not save oops, so we kill the SOE registers
+  // here in case a native call has a safepoint. This doesn't work for
+  // RBP though, which seems to be special-cased elsewhere to always be
+  // treated as alive, so we instead manually save the location of RBP
+  // before doing the native call (see NativeInvokerGenerator::generate).
+  bool exclude_soe = op == Op_CallRuntime
+    || (op == Op_CallNative && mcall->guaranteed_safepoint());
 
   // If the call is a MethodHandle invoke, we need to exclude the
   // register which is used to save the SP value over MH invokes from
@@ -1369,20 +1399,46 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
 
   // Remove the now-dead cloned ops
   for(uint i3 = beg; i3 < end; i3++ ) {
-    block->get_node(beg)->disconnect_inputs(NULL, C);
+    block->get_node(beg)->disconnect_inputs(C);
     block->remove_node(beg);
   }
 
   // If the successor blocks have a CreateEx node, move it back to the top
-  for(uint i4 = 0; i4 < block->_num_succs; i4++ ) {
+  for (uint i4 = 0; i4 < block->_num_succs; i4++) {
     Block *sb = block->_succs[i4];
     uint new_cnt = end - beg;
-    // Remove any newly created, but dead, nodes.
-    for( uint j = new_cnt; j > 0; j-- ) {
+    // Remove any newly created, but dead, nodes by traversing their schedule
+    // backwards. Here, a dead node is a node whose only outputs (if any) are
+    // unused projections.
+    for (uint j = new_cnt; j > 0; j--) {
       Node *n = sb->get_node(j);
-      if (n->outcnt() == 0 &&
-          (!n->is_Proj() || n->as_Proj()->in(0)->outcnt() == 1) ){
-        n->disconnect_inputs(NULL, C);
+      // Individual projections are examined together with all siblings when
+      // their parent is visited.
+      if (n->is_Proj()) {
+        continue;
+      }
+      bool dead = true;
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* out = n->fast_out(i);
+        // n is live if it has a non-projection output or a used projection.
+        if (!out->is_Proj() || out->outcnt() > 0) {
+          dead = false;
+          break;
+        }
+      }
+      if (dead) {
+        // n's only outputs (if any) are unused projections scheduled next to n
+        // (see PhaseCFG::select()). Remove these projections backwards.
+        for (uint k = j + n->outcnt(); k > j; k--) {
+          Node* proj = sb->get_node(k);
+          assert(proj->is_Proj() && proj->in(0) == n,
+                 "projection should correspond to dead node");
+          proj->disconnect_inputs(C);
+          sb->remove_node(k);
+          new_cnt--;
+        }
+        // Now remove the node itself.
+        n->disconnect_inputs(C);
         sb->remove_node(j);
         new_cnt--;
       }
