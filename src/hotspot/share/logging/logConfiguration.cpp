@@ -427,7 +427,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
 
   ConfigurationLock cl;
   size_t idx;
-  bool is_added = false;
+  bool added = false;
   if (outputstr[0] == '#') { // Output specified using index
     int ret = sscanf(outputstr + 1, SIZE_FORMAT, &idx);
     if (ret != 1 || idx >= _n_outputs) {
@@ -448,7 +448,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
       LogOutput* output = new_output(normalized, output_options, errstream);
       if (output != NULL) {
         idx = add_output(output);
-        is_added = true;
+        added = true;
       }
     }
 
@@ -457,7 +457,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
       return false;
     }
   }
-  if (!is_added && output_options != NULL && strlen(output_options) > 0) {
+  if (!added && output_options != NULL && strlen(output_options) > 0) {
     errstream->print_cr("Output options for existing outputs are ignored.");
   }
   configure_output(idx, selections, decorators);
