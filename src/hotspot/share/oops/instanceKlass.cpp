@@ -185,9 +185,7 @@ bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
   for (int i = 0; i < _nest_members->length(); i++) {
     int cp_index = _nest_members->at(i);
     if (_constants->tag_at(cp_index).is_klass()) {
-      Klass* k2 = _constants->klass_at(cp_index, THREAD);
-      assert(!HAS_PENDING_EXCEPTION || PENDING_EXCEPTION->is_a(vmClasses::VirtualMachineError_klass()),
-             "Exceptions should not be possible here");
+      Klass* k2 = _constants->resolved_klass_at(cp_index);
       if (k2 == k) {
         log_trace(class, nestmates)("- class is listed at nest_members[%d] => cp[%d]", i, cp_index);
         return true;
