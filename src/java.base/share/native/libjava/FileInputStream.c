@@ -73,7 +73,7 @@ Java_java_io_FileInputStream_readBytes(JNIEnv *env, jobject this,
 }
 
 JNIEXPORT jlong JNICALL
-Java_java_io_FileInputStream_length(JNIEnv *env, jobject this) {
+Java_java_io_FileInputStream_length0(JNIEnv *env, jobject this) {
 
     FD fd;
     jlong length = jlong_zero;
@@ -90,7 +90,7 @@ Java_java_io_FileInputStream_length(JNIEnv *env, jobject this) {
 }
 
 JNIEXPORT jlong JNICALL
-Java_java_io_FileInputStream_position(JNIEnv *env, jobject this) {
+Java_java_io_FileInputStream_position0(JNIEnv *env, jobject this) {
     FD fd;
     jlong ret;
 

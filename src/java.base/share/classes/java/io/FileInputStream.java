@@ -284,8 +284,8 @@ public class FileInputStream extends InputStream
 
         if (size > (long) Integer.MAX_VALUE) {
             String msg =
-                String.format("Required array size too large: %d = %d - %d",
-                    size, length, position);
+                String.format("Required array size too large for %s: %d = %d - %d",
+                    path, size, length, position);
             throw new OutOfMemoryError(msg);
         }
 
@@ -350,8 +350,15 @@ public class FileInputStream extends InputStream
         return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
     }
 
-    private native long length() throws IOException;
-    private native long position() throws IOException;
+    private long length() throws IOException {
+        return length0();
+    }
+    private native long length0() throws IOException;
+
+    private long position() throws IOException {
+        return position0();
+    }
+    private native long position0() throws IOException;
 
     /**
      * Skips over and discards {@code n} bytes of data from the
