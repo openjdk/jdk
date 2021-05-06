@@ -237,7 +237,7 @@ CompressionBackend::~CompressionBackend() {
   delete _lock;
 }
 
-void CompressionBackend::flush_buffer_without_lock(MonitorLocker* ml) {
+void CompressionBackend::flush_buffer(MonitorLocker* ml) {
 
   // Make sure we write the last partially filled buffer.
   if ((_current != NULL) && (_current->_in_used > 0)) {
@@ -263,14 +263,14 @@ void CompressionBackend::flush_buffer() {
   assert(_active, "Must be active");
 
   MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-  flush_buffer_without_lock(&ml);
+  flush_buffer(&ml);
 }
 
 void CompressionBackend::deactivate() {
   assert(_active, "Must be active");
 
   MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-  flush_buffer_without_lock(&ml);
+  flush_buffer(&ml);
 
   _active = false;
   ml.notify_all();
