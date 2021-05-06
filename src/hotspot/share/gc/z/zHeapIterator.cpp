@@ -130,7 +130,7 @@ private:
   const oop                   _base;
 
   oop load_oop(oop* p) {
-    assert(ZCollectedHeap::heap()->is_in(p), "p should be in-heap");
+    assert(ZCollectedHeap::heap()->is_in(p), "Should be in heap");
 
     if (VisitReferents) {
       return HeapAccess<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>::oop_load_at(_base, _base->field_offset(p));
@@ -141,7 +141,7 @@ private:
 
 public:
   ZHeapIteratorOopClosure(const ZHeapIteratorContext& context, oop base) :
-      OopIterateClosure(nullptr),
+      OopIterateClosure(),
       _context(context),
       _base(base) {}
 
@@ -158,10 +158,12 @@ public:
     ShouldNotReachHere();
   }
 
-  virtual bool do_metadata() { return true; }
+  virtual bool do_metadata() {
+    return true;
+  }
 
   virtual void do_klass(Klass* k) {
-    ClassLoaderData* cld = k->class_loader_data();
+    ClassLoaderData* const cld = k->class_loader_data();
     ZHeapIteratorOopClosure::do_cld(cld);
   }
 
@@ -170,12 +172,12 @@ public:
     private:
       const ZHeapIteratorContext& _context;
 
-     public:
+    public:
       explicit NativeAccessClosure(const ZHeapIteratorContext& context) :
           _context(context) {}
 
       virtual void do_oop(oop* p) {
-        assert(!ZCollectedHeap::heap()->is_in(p), "p lives outside heap");
+        assert(!ZCollectedHeap::heap()->is_in(p), "Should not be in heap");
         const oop obj = NativeAccess<AS_NO_KEEPALIVE>::oop_load(p);
         _context.mark_and_push(obj);
       }
@@ -183,9 +185,10 @@ public:
       virtual void do_oop(narrowOop* p) {
         ShouldNotReachHere();
       }
-    } closure{_context};
+    };
 
-    cld->oops_do(&closure, ClassLoaderData::_claim_other);
+    NativeAccessClosure cl(_context);
+    cld->oops_do(&cl, ClassLoaderData::_claim_other);
   }
 };
 
