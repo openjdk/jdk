@@ -28,6 +28,7 @@
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
+#include "cds/lambdaFormInvokers.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -3645,7 +3646,7 @@ JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
 #if INCLUDE_CDS
-  return ClassListWriter::is_enabled();
+  return ClassListWriter::is_enabled() || DynamicDumpSharedSpaces;
 #else
   return false;
 #endif // INCLUDE_CDS
@@ -3653,13 +3654,20 @@ JVM_END
 
 JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
 #if INCLUDE_CDS
-  assert(ClassListWriter::is_enabled(), "Should be set and open");
+  assert(ClassListWriter::is_enabled() || DynamicDumpSharedSpaces,  "Should be set and open or do dynamic dump");
   if (line != NULL) {
     ResourceMark rm(THREAD);
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
-    ClassListWriter w;
-    w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
+    if (DynamicDumpSharedSpaces) {
+      // Note: LambdaFormInvokers::append_filtered and LambdaFormInvokers::append take same format which is not
+      // same as below the print format. The line does not include LAMBDA_FORM_TAG.
+      LambdaFormInvokers::append_filtered(os::strdup((const char*)c_line, mtInternal));
+    }
+    if (ClassListWriter::is_enabled()) {
+      ClassListWriter w;
+      w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
+    }
   }
 #endif // INCLUDE_CDS
 JVM_END

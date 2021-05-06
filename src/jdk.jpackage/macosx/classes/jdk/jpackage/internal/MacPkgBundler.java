@@ -284,6 +284,8 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             xml.writeStartElement("options");
             xml.writeAttribute("customize", "never");
             xml.writeAttribute("require-scripts", "false");
+            xml.writeAttribute("hostArchitectures",
+                    Platform.isArmMac() ? "arm64" : "x86_64");
             xml.writeEndElement(); // </options>
             xml.writeStartElement("choices-outline");
             xml.writeStartElement("line");

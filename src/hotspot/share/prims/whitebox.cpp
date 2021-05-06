@@ -180,6 +180,25 @@ public:
       Symbol* ksym = k->name();
       if (ksym->fast_compare(_name) == 0) {
         _count++;
+      } else if (k->is_instance_klass()) {
+        // Need special handling for hidden classes because the JVM
+        // appends "+<hex-address>" to hidden class names.
+        InstanceKlass *ik = InstanceKlass::cast(k);
+        if (ik->is_hidden()) {
+          ResourceMark rm;
+          char* k_name = ksym->as_C_string();
+          // Find the first '+' char and truncate the string at that point.
+          // NOTE: This will not work correctly if the original hidden class
+          // name contains a '+'.
+          char* plus_char = strchr(k_name, '+');
+          if (plus_char != NULL) {
+            *plus_char = 0;
+            char* c_name = _name->as_C_string();
+            if (strcmp(c_name, k_name) == 0) {
+              _count++;
+            }
+          }
+        }
       }
     }
 
@@ -251,7 +270,7 @@ WB_END
 
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(100 * granularity, granularity, false);
+  ReservedHeapSpace rhs(100 * granularity, granularity, os::vm_page_size());
   VirtualSpace vs;
   vs.initialize(rhs, 50 * granularity);
 
@@ -278,7 +297,7 @@ WB_END
 static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
                                            size_t magnitude, size_t iterations) {
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, false);
+  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, os::vm_page_size());
   VirtualSpace vs;
   if (!vs.initialize(rhs, 0)) {
     tty->print_cr("Failed to initialize VirtualSpace. Can't proceed.");
