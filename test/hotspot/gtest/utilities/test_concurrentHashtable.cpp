@@ -115,7 +115,7 @@ static void cht_insert_get(Thread* thr) {
   EXPECT_EQ(val, vg.get_value()) << "Getting an inserted value failed.";
   ValueGet vg_dup;
   EXPECT_FALSE(cht->insert_get(thr, stl, val, vg_dup)) << "Insert duplicate value succeeded.";
-  EXPECT_EQ(val, vg_dup.get_value()) << "Getting an inserted value failed.";
+  EXPECT_EQ(val, vg_dup.get_value()) << "Getting an existing value failed.";
 }
 
 static void cht_get_insert(Thread* thr) {
