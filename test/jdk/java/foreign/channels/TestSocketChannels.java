@@ -27,7 +27,7 @@
  * @modules java.base/sun.nio.ch
  *          jdk.incubator.foreign/jdk.internal.foreign
  * @key randomness
- * @run testng/othervm -Dforeign.restricted=permit TestSocketChannels
+ * @run testng/othervm TestSocketChannels
  */
 
 import java.net.InetAddress;

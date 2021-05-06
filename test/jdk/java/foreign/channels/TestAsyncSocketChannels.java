@@ -27,9 +27,9 @@
  * @modules java.base/sun.nio.ch
  *          jdk.incubator.foreign/jdk.internal.foreign
  * @key randomness
- * @run testng/othervm -Dforeign.restricted=permit TestAsyncSocketChannels
- * @run testng/othervm -Dforeign.restricted=permit -Dsun.nio.ch.disableSynchronousRead=true TestAsyncSocketChannels
- * @run testng/othervm -Dforeign.restricted=permit -Dsun.nio.ch.disableSynchronousRead=false TestAsyncSocketChannels
+ * @run testng/othervm TestAsyncSocketChannels
+ * @run testng/othervm -Dsun.nio.ch.disableSynchronousRead=true TestAsyncSocketChannels
+ * @run testng/othervm -Dsun.nio.ch.disableSynchronousRead=false TestAsyncSocketChannels
  */
 
 import java.io.IOException;

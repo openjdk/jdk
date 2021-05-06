@@ -25,7 +25,7 @@
  * @test
  * @modules java.base/jdk.internal.ref
  *          jdk.incubator.foreign/jdk.incubator.foreign
- * @run testng/othervm -Dforeign.restricted=permit TestResourceScope
+ * @run testng/othervm TestResourceScope
  */
 
 import java.lang.ref.Cleaner;
