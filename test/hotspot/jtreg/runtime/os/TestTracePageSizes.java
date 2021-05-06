@@ -25,6 +25,8 @@
  * @test id=no-options
  * @summary Run test with no arguments apart from the ones required by
  *          the test.
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log TestTracePageSizes
  */
@@ -33,6 +35,8 @@
  * @test id=explicit-large-page-size
  * @summary Run test explicitly with both 2m and 1g pages on x64. Excluding ZGC since
  *          it fail initialization if no large pages are available on the system.
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @requires vm.gc != "Z"
@@ -44,6 +48,8 @@
  * @test id=compiler-options
  * @summary Run test without segmented code cache. Excluding ZGC since it
  *          fail initialization if no large pages are available on the system.
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires vm.gc != "Z"
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache TestTracePageSizes
@@ -54,6 +60,8 @@
 /*
  * @test id=with-G1
  * @summary Run tests with G1
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires vm.gc.G1
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log -XX:+UseG1GC TestTracePageSizes
@@ -64,6 +72,8 @@
 /*
  * @test id=with-Parallel
  * @summary Run tests with Parallel
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires vm.gc.Parallel
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log -XX:+UseParallelGC TestTracePageSizes
@@ -74,6 +84,8 @@
 /*
  * @test id=with-Serial
  * @summary Run tests with Serial
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires vm.gc.Serial
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log -XX:+UseSerialGC TestTracePageSizes
@@ -82,60 +94,42 @@
 */
 
 import java.io.File;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 
 // Check that page sizes logged match what is recorded in /proc/self/smaps.
 // For transparent huge pages the matching is best effort since we can't
 // know for sure what the underlying page size is.
 public class TestTracePageSizes {
     // Store address ranges with known page size.
-    private static Set<Range> ranges = new HashSet<>();
+    private static LinkedList<RangeWithPageSize> ranges = new LinkedList<>();
     private static boolean debug;
 
     // Parse /proc/self/smaps using a regexp capturing the address
     // ranges, what page size they have and if they might use
     // transparent huge pages. The pattern is not greedy and will
     // match as little as possible so each "segment" in the file
-    // will generate a match. The order of KernelPageSize and
-    // AnonHugePages can be different, so we need to match the block
-    // body first, assuming VmFlags are the last, and then parse out
-    // the individual fields out of it.
+    // will generate a match.
     private static void parseSmaps() throws Exception {
-        Pattern blockPatt = Pattern.compile("(\\w+)-(\\w+)(.*?)" +
-                                            "VmFlags: ([\\w ]*)", Pattern.DOTALL);
-        Pattern psPatt  = Pattern.compile(".*KernelPageSize:\\s*(\\d*) kB.*?", Pattern.DOTALL);
-        Pattern ahpPatt = Pattern.compile(".*AnonHugePages:\\s*(\\d*).*?", Pattern.DOTALL);
-
-        // Find all memory segments in the smaps-file with pattern 1
+        String smapsPatternString = "(\\w+)-(\\w+).*?" +
+                                    "KernelPageSize:\\s*(\\d*) kB.*?" +
+                                    "VmFlags: ([\\w ]*)";
+        Pattern smapsPattern = Pattern.compile(smapsPatternString, Pattern.DOTALL);
         Scanner smapsScanner = new Scanner(new File("/proc/self/smaps"));
-        smapsScanner.findAll(blockPatt).forEach(mr -> {
+        // Find all memory segments in the smaps-file.
+        smapsScanner.findAll(smapsPattern).forEach(mr -> {
             String start = mr.group(1);
             String end = mr.group(2);
-            String body = mr.group(3);
+            String ps = mr.group(3);
             String vmFlags = mr.group(4);
 
-            String ps = null;
-            Matcher psMatcher = psPatt.matcher(body);
-            if (psMatcher.matches()) {
-                ps = psMatcher.group(1);
-            } else {
-                throw new IllegalStateException("Cannot parse page size out of " + body);
-            }
-
-            String ahp = null;
-            Matcher ahpMatcher = ahpPatt.matcher(body);
-            if (ahpMatcher.matches()) {
-                ahp = ahpMatcher.group(1);
-            } else {
-                throw new IllegalStateException("Cannot parse anon huge pages out of " + body);
-            }
-
             // Create a range given the match and add it to the list.
-            Range range = new Range(start, end, ahp, ps, vmFlags);
+            RangeWithPageSize range = new RangeWithPageSize(start, end, ps, vmFlags);
             ranges.add(range);
             debug("Added range: " + range);
         });
@@ -143,9 +137,9 @@ public class TestTracePageSizes {
     }
 
     // Search for a range including the given address.
-    private static Range getRange(String addr) {
+    private static RangeWithPageSize getRange(String addr) {
         long laddr = Long.decode(addr);
-        for (Range range : ranges) {
+        for (RangeWithPageSize range : ranges) {
             if (range.includes(laddr)) {
                 return range;
             }
@@ -182,6 +176,11 @@ public class TestTracePageSizes {
             debug = false;
         }
 
+	// Older kernels do not have reliable madvise tag for this test to work
+        if (Platform.isLinux() && Platform.getOsVersionMajor() <= 4) {
+	    throw new SkippedException("Skipped for kernel: " + Platform.getOsVersion());
+	}
+
         // Parse /proc/self/smaps to compare with values logged in the VM.
         parseSmaps();
 
@@ -200,7 +199,7 @@ public class TestTracePageSizes {
                 String address = trace.group(1);
                 String pageSize = trace.group(2);
 
-                Range range = getRange(address);
+                RangeWithPageSize range = getRange(address);
                 if (range == null) {
                     debug("Could not find range for: " + line);
                     throw new AssertionError("No memory range found for address: " + address);
@@ -243,29 +242,23 @@ public class TestTracePageSizes {
 // lines we care about are:
 // 700000000-73ea00000 rw-p 00000000 00:00 0
 // ...
-// AnonHugePages:         4096
 // KernelPageSize:        4 kB
 // ...
 // VmFlags: rd wr mr mw me ac sd
 //
 // We use the VmFlags to know what kind of huge pages are used.
-// Unfortunately, old kernels do not print the madvise flag.
-// To handle that case, we need to check for non-zero AnonHugePages.
-//
 // For transparent huge pages the KernelPageSize field will not
 // report the large page size.
-class Range {
-    private final long start;
-    private final long end;
-    private final long anonHugePages;
-    private final long pageSize;
+class RangeWithPageSize {
+    private long start;
+    private long end;
+    private long pageSize;
     private boolean vmFlagHG;
     private boolean vmFlagHT;
 
-    public Range(String start, String end, String anonHugePages, String pageSize, String vmFlags) {
+    public RangeWithPageSize(String start, String end, String pageSize, String vmFlags) {
         this.start = Long.parseUnsignedLong(start, 16);
         this.end = Long.parseUnsignedLong(end, 16);
-        this.anonHugePages = Long.parseLong(anonHugePages);
         this.pageSize = Long.parseLong(pageSize);
 
         vmFlagHG = false;
@@ -287,7 +280,7 @@ class Range {
     }
 
     public boolean isTransparentHuge() {
-        return vmFlagHG || (!vmFlagHT && anonHugePages > 0);
+        return vmFlagHG;
     }
 
     public boolean isExplicitHuge() {
@@ -300,18 +293,6 @@ class Range {
 
     public String toString() {
         return "[" + Long.toHexString(start) + ", " + Long.toHexString(end) + ") " +
-               "anonHugePages = " + anonHugePages + " pageSize=" + pageSize +
-               "KB isTHP=" + vmFlagHG + " isHUGETLB=" + vmFlagHT;
-    }
-
-    public int hashCode() {
-        return (int)(start ^ end);
-    }
-
-    public boolean equals(Object o) {
-        Range r = ((Range) o);
-        if (start != r.start) return false;
-        if (end != r.end) return false;
-        return true;
+               "pageSize=" + pageSize + "KB isTHP=" + vmFlagHG + " isHUGETLB=" + vmFlagHT;
     }
 }
