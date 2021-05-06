@@ -480,7 +480,7 @@ class InstanceKlass: public Klass {
 
 private:
   // Called to verify that k is a member of this nest - does not look at k's nest-host
-  bool has_nest_member(InstanceKlass* k, TRAPS) const;
+  bool has_nest_member(InstanceKlass* k, bool can_resolve, TRAPS) const;
 
 public:
   // Used to construct informative IllegalAccessError messages at a higher level,

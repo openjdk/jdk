@@ -163,7 +163,7 @@ static inline bool is_class_loader(const Symbol* class_name,
 // private: called to verify that k is a static member of this nest.
 // We know that k is an instance class in the same package and hence the
 // same classloader.
-bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
+bool InstanceKlass::has_nest_member(InstanceKlass* k, bool can_resolve, TRAPS) const {
   assert(!is_hidden(), "unexpected hidden class");
   if (_nest_members == NULL || _nest_members == Universe::the_empty_short_array()) {
     if (log_is_enabled(Trace, class, nestmates)) {
@@ -196,23 +196,41 @@ bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
       if (name == k->name()) {
         log_trace(class, nestmates)("- Found it at nest_members[%d] => cp[%d]", i, cp_index);
 
-        // Names match so check actual klass. This may trigger class loading if
-        // it doesn't match though that should be impossible as it means one classloader
-        // has defined two different classes with the same name! A compiler thread won't be
-        // able to perform that loading but we can't exclude the compiler threads from
-        // executing this logic. But it should actually be impossible to trigger loading here.
-        Klass* k2 = _constants->klass_at(cp_index, THREAD);
-        assert(!HAS_PENDING_EXCEPTION || PENDING_EXCEPTION->is_a(vmClasses::VirtualMachineError_klass()),
-               "Exceptions should not be possible here");
-        if (k2 == k) {
-          log_trace(class, nestmates)("- class is listed as a nest member");
-          return true;
-        }
-        else {
-          // same name but different klass!
-          log_trace(class, nestmates)(" - klass comparison failed!");
-          // can't have two names the same, so we're done
-          return false;
+        // Names match so check actual klass, as we need identity between classes not equivalence.
+        // It should not be possible for constant-pool resolution to trigger actual class-loading,
+        // as that would imply one classloader has defined two classes with the same name. But it
+        // is possible that the resolution process could require protection domain validation, which
+        // requires executing Java code, and can lead to exceptions (like OOME or StackOverflow).
+        // So we have to skip constant-pool resolution in that case.
+        if (can_resolve) {
+          Klass* k2 = _constants->klass_at(cp_index, THREAD);
+          if (k2 == k) {
+            log_trace(class, nestmates)("- class is listed as a nest member");
+            return true;
+          } else if (HAS_PENDING_EXCEPTION) {
+            assert(PENDING_EXCEPTION->is_a(vmClasses::VirtualMachineError_klass()),
+                   "General exceptions should not be possible here");
+            ResourceMark rm(THREAD);
+            log_trace(class, nestmates)("- class resolution failed: %s", PENDING_EXCEPTION->klass()->external_name());
+            return false;
+          } else {
+            // Same name but different klass!
+            log_trace(class, nestmates)(" - klass comparison failed!");
+            // can't have two names the same, so we're done searching
+            return false;
+          }
+        } else {
+          // We could just give up at this point but that would mean deferring compilation
+          // unnecessarily, so we instead emulate the initial lookup that klass_at would perform.
+          Handle h_prot(THREAD, protection_domain());
+          Handle h_loader(THREAD, class_loader());
+          Klass* k2 = SystemDictionary::find_instance_klass(name, h_loader, h_prot);
+          // If k2 is NULL the class is not recorded in the SD with our PD so we can't
+          // go any further and we will just return false, which will be handled by our caller.
+          log_trace(class, nestmates)(" - class lookup in SD %s, class is %s a nest member",
+                                      k2 == NULL ? "failed" : "succeeded",
+                                      k2 != k ? "NOT" : "");
+          return k2 == k;
         }
       }
     }
@@ -285,7 +303,8 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
   // need to resolve and save our nest-host class.
   if (_nest_host_index != 0) { // we have a real nest_host
     // Before trying to resolve check if we're in a suitable context
-    if (!THREAD->can_call_java() && !_constants->tag_at(_nest_host_index).is_klass()) {
+    bool can_resolve = THREAD->can_call_java();
+    if (!can_resolve && !_constants->tag_at(_nest_host_index).is_klass()) {
       log_trace(class, nestmates)("Rejected resolution of nest-host of %s in unsuitable thread",
                                   this->external_name());
       return NULL; // sentinel to say "try again from a different context"
@@ -323,7 +342,7 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
         // not an instance class.
         if (k->is_instance_klass()) {
           nest_host_k = InstanceKlass::cast(k);
-          bool is_member = nest_host_k->has_nest_member(this, THREAD);
+          bool is_member = nest_host_k->has_nest_member(this, can_resolve, THREAD);
           // exception is rare, perhaps impossible
           if (!HAS_PENDING_EXCEPTION) {
             if (is_member) {
@@ -333,7 +352,15 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
                                           this->external_name(), k->external_name());
               return nest_host_k;
             } else {
-              error = "current type is not listed as a nest member";
+              if (can_resolve) {
+                error = "current type is not listed as a nest member";
+              } else {
+                // We aren't in a context where we could resolve the nest member and confirm
+                // identity, so we can't discern "not a member" from "cannot determine if a member".
+                // So we conservatively return NULL, which again is a sentinel to say "try again
+                // from a different context".
+                return NULL;
+              }
             }
           } else {
             if (PENDING_EXCEPTION->is_a(vmClasses::VirtualMachineError_klass())) {
