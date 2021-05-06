@@ -36,6 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import com.sun.tools.javac.util.DiagnosticSource;
 import static com.sun.tools.javac.util.LayoutCharacters.*;
@@ -48,45 +49,28 @@ public class DiagnosticSourceTest {
         String code = "public class T {\n}"; // 18 characters
         var fileObject = new ToolBox.JavaSource(code);
         DiagnosticSource ds = new DiagnosticSource(fileObject, null);
-        tb.checkEqual(Arrays.asList("1", "1", "public class T {"),
-                Arrays.asList(Integer.toString(ds.getLineNumber(0)),
-                        Integer.toString(ds.getColumnNumber(0, false)), ds.getLine(0)));
-        tb.checkEqual(Arrays.asList("1", "4", "public class T {"),
-                Arrays.asList(Integer.toString(ds.getLineNumber(3)),
-                        Integer.toString(ds.getColumnNumber(3, false)), ds.getLine(3)));
-        tb.checkEqual(Arrays.asList("2", "1", "}"),
-                Arrays.asList(Integer.toString(ds.getLineNumber(17)),
-                        Integer.toString(ds.getColumnNumber(17, false)), ds.getLine(17)));
-        tb.checkEqual(Arrays.asList("0", "0", null),
-                Arrays.asList(Integer.toString(ds.getLineNumber(18)),
-                        Integer.toString(ds.getColumnNumber(18, false)), ds.getLine(18)));
-        tb.checkEqual(Arrays.asList("0", "0", null),
-                Arrays.asList(Integer.toString(ds.getLineNumber(19)),
-                        Integer.toString(ds.getColumnNumber(19, false)), ds.getLine(19)));
-        tb.checkEqual(Arrays.asList("0", "0", null),
-                Arrays.asList(Integer.toString(ds.getLineNumber(20)),
-                        Integer.toString(ds.getColumnNumber(20, false)), ds.getLine(20)));
+        tb.checkEqual(Arrays.asList("1", "1", "public class T {"), getActualOutputList(ds, 0));
+        tb.checkEqual(Arrays.asList("1", "4", "public class T {"), getActualOutputList(ds, 3));
+        tb.checkEqual(Arrays.asList("2", "1", "}"), getActualOutputList(ds, 17));
+        tb.checkEqual(Arrays.asList("0", "0", null), getActualOutputList(ds,18));
+        tb.checkEqual(Arrays.asList("0", "0", null), getActualOutputList(ds, 19));
+        tb.checkEqual(Arrays.asList("0", "0", null), getActualOutputList(ds, 20));
 
         code = "public class T {\n}\n"; // 19 characters
         fileObject = new ToolBox.JavaSource(code);
         ds = new DiagnosticSource(fileObject, null);
-        tb.checkEqual(Arrays.asList("1", "1", "public class T {"),
-                Arrays.asList(Integer.toString(ds.getLineNumber(0)),
-                        Integer.toString(ds.getColumnNumber(0, false)), ds.getLine(0)));
-        tb.checkEqual(Arrays.asList("1", "4", "public class T {"),
-                Arrays.asList(Integer.toString(ds.getLineNumber(3)),
-                        Integer.toString(ds.getColumnNumber(3, false)), ds.getLine(3)));
-        tb.checkEqual(Arrays.asList("2", "1", "}"),
-                Arrays.asList(Integer.toString(ds.getLineNumber(17)),
-                        Integer.toString(ds.getColumnNumber(17, false)), ds.getLine(17)));
-        tb.checkEqual(Arrays.asList("2", "2", "}"),
-                Arrays.asList(Integer.toString(ds.getLineNumber(18)),
-                        Integer.toString(ds.getColumnNumber(18, false)), ds.getLine(18)));
-        tb.checkEqual(Arrays.asList("0", "0", null),
-                Arrays.asList(Integer.toString(ds.getLineNumber(19)),
-                        Integer.toString(ds.getColumnNumber(19, false)), ds.getLine(19)));
-        tb.checkEqual(Arrays.asList("0", "0", null),
-                Arrays.asList(Integer.toString(ds.getLineNumber(20)),
-                        Integer.toString(ds.getColumnNumber(20, false)), ds.getLine(20)));
+        tb.checkEqual(Arrays.asList("1", "1", "public class T {"), getActualOutputList(ds, 0));
+        tb.checkEqual(Arrays.asList("1", "4", "public class T {"), getActualOutputList(ds, 3));
+        tb.checkEqual(Arrays.asList("2", "1", "}"), getActualOutputList(ds, 17));
+        tb.checkEqual(Arrays.asList("2", "2", "}"), getActualOutputList(ds, 18));
+        tb.checkEqual(Arrays.asList("0", "0", null), getActualOutputList(ds, 19));
+        tb.checkEqual(Arrays.asList("0", "0", null), getActualOutputList(ds, 20));
+    }
+
+    public static List<String> getActualOutputList(DiagnosticSource ds, int pos) {
+        return Arrays.asList(
+                Integer.toString(ds.getLineNumber(pos)),
+                Integer.toString(ds.getColumnNumber(pos, false)),
+                ds.getLine(pos));
     }
 }
