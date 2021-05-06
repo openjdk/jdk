@@ -368,11 +368,6 @@ void DynamicArchive::dump(TRAPS) {
     return;
   }
 
-  // regenerate lambdaform holder classes
-  log_info(cds, dynamic)("Regenerate lambdaform holder classes ...");
-  LambdaFormInvokers::regenerate_holder_classes(CHECK);
-  log_info(cds, dynamic)("Regenerate lambdaform holder classes ...done");
-
   VM_PopulateDynamicDumpSharedSpace op;
   VMThread::execute(&op);
 }

@@ -622,6 +622,15 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
 void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
   // Collect all loaded ClassLoaderData.
   ResourceMark rm;
+
+  if (DynamicDumpSharedSpaces) {
+    // regenerate lambdaform holder classes
+    log_info(cds, dynamic)("Regenerate lambdaform holder classes ...");
+    LambdaFormInvokers::regenerate_holder_classes(CHECK);
+    log_info(cds, dynamic)("Regenerate lambdaform holder classes ...done");
+  }
+
+
   CollectCLDClosure collect_cld;
   {
     // ClassLoaderDataGraph::loaded_cld_do requires ClassLoaderDataGraph_lock.
