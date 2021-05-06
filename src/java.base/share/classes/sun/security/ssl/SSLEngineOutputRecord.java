@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
         recordLock.lock();
         try {
             if (!isClosed) {
-                if (fragmenter != null && fragmenter.hasAlert()) {
+                if (fragmenter != null && !fragmenter.isEmpty()) {
                     isCloseWaiting = true;
                 } else {
                     super.close();
@@ -533,32 +533,23 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             dstBuf.limit(dstLim);
 
             // Reset the fragmentation offset.
-            if (hsMemo != null) {
-                return new Ciphertext(hsMemo.contentType,
-                        hsMemo.handshakeType, recordSN);
-            } else {
-                if (isCloseWaiting &&
-                        memo.contentType == ContentType.ALERT.id) {
+            try {
+                if (hsMemo != null) {
+                    return new Ciphertext(hsMemo.contentType,
+                            hsMemo.handshakeType, recordSN);
+                } else {
+                    return new Ciphertext(memo.contentType,
+                            SSLHandshake.NOT_APPLICABLE.id, recordSN);
+                }
+            } finally {
+                if (isCloseWaiting && isEmpty()) {
                     close();
                 }
-
-                return new Ciphertext(memo.contentType,
-                        SSLHandshake.NOT_APPLICABLE.id, recordSN);
             }
         }
 
         boolean isEmpty() {
             return handshakeMemos.isEmpty();
-        }
-
-        boolean hasAlert() {
-            for (RecordMemo memo : handshakeMemos) {
-                if (memo.contentType == ContentType.ALERT.id) {
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 

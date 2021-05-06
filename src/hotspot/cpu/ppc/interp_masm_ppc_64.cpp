@@ -225,7 +225,7 @@ void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, Register byt
     address *sfpt_tbl = Interpreter::safept_table(state);
     if (table != sfpt_tbl) {
       Label dispatch;
-      ld(R0, in_bytes(Thread::polling_word_offset()), R16_thread);
+      ld(R0, in_bytes(JavaThread::polling_word_offset()), R16_thread);
       // Armed page has poll_bit set, if poll bit is cleared just continue.
       andi_(R0, R0, SafepointMechanism::poll_bit());
       beq(CCR0, dispatch);

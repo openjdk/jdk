@@ -1420,13 +1420,12 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Type> getInterfaces() {
             apiComplete();
-            if (type instanceof ClassType) {
-                ClassType t = (ClassType)type;
-                if (t.interfaces_field == null) // FIXME: shouldn't be null
-                    t.interfaces_field = List.nil();
-                if (t.all_interfaces_field != null)
-                    return Type.getModelTypes(t.all_interfaces_field);
-                return t.interfaces_field;
+            if (type instanceof ClassType classType) {
+                if (classType.interfaces_field == null) // FIXME: shouldn't be null
+                    classType.interfaces_field = List.nil();
+                if (classType.all_interfaces_field != null)
+                    return Type.getModelTypes(classType.all_interfaces_field);
+                return classType.interfaces_field;
             } else {
                 return List.nil();
             }
@@ -1435,14 +1434,13 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @DefinedBy(Api.LANGUAGE_MODEL)
         public Type getSuperclass() {
             apiComplete();
-            if (type instanceof ClassType) {
-                ClassType t = (ClassType)type;
-                if (t.supertype_field == null) // FIXME: shouldn't be null
-                    t.supertype_field = Type.noType;
+            if (type instanceof ClassType classType) {
+                if (classType.supertype_field == null) // FIXME: shouldn't be null
+                    classType.supertype_field = Type.noType;
                 // An interface has no superclass; its supertype is Object.
-                return t.isInterface()
+                return classType.isInterface()
                     ? Type.noType
-                    : t.supertype_field.getModelType();
+                    : classType.supertype_field.getModelType();
             } else {
                 return Type.noType;
             }
@@ -1585,15 +1583,14 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             erasure_field = null;
             members_field = null;
             flags_field = 0;
-            if (type instanceof ClassType) {
-                ClassType t = (ClassType)type;
-                t.setEnclosingType(Type.noType);
-                t.rank_field = -1;
-                t.typarams_field = null;
-                t.allparams_field = null;
-                t.supertype_field = null;
-                t.interfaces_field = null;
-                t.all_interfaces_field = null;
+            if (type instanceof ClassType classType) {
+                classType.setEnclosingType(Type.noType);
+                classType.rank_field = -1;
+                classType.typarams_field = null;
+                classType.allparams_field = null;
+                classType.supertype_field = null;
+                classType.interfaces_field = null;
+                classType.all_interfaces_field = null;
             }
             clearAnnotationMetadata();
         }
@@ -1754,13 +1751,12 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             if (data == ElementKind.EXCEPTION_PARAMETER ||
                 data == ElementKind.RESOURCE_VARIABLE) {
                 return null;
-            } else if (data instanceof Callable<?>) {
+            } else if (data instanceof Callable<?> callableData) {
                 // In this case, this is a final variable, with an as
                 // yet unevaluated initializer.
-                Callable<?> eval = (Callable<?>)data;
                 data = null; // to make sure we don't evaluate this twice.
                 try {
-                    data = eval.call();
+                    data = callableData.call();
                 } catch (Exception ex) {
                     throw new AssertionError(ex);
                 }

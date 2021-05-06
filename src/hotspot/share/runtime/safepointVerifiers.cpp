@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,20 +32,28 @@
 #ifdef ASSERT
 
 NoSafepointVerifier::NoSafepointVerifier() : _thread(Thread::current()) {
-  _thread->_no_safepoint_count++;
+  if (_thread->is_Java_thread()) {
+    _thread->as_Java_thread()->inc_no_safepoint_count();
+  }
 }
 
 NoSafepointVerifier::~NoSafepointVerifier() {
-  _thread->_no_safepoint_count--;
+  if (_thread->is_Java_thread()) {
+    _thread->as_Java_thread()->dec_no_safepoint_count();
+  }
 }
 
 PauseNoSafepointVerifier::PauseNoSafepointVerifier(NoSafepointVerifier* nsv)
     : _nsv(nsv) {
   assert(_nsv->_thread == Thread::current(), "must be");
-  _nsv->_thread->_no_safepoint_count--;
+  if (_nsv->_thread->is_Java_thread()) {
+    _nsv->_thread->as_Java_thread()->dec_no_safepoint_count();
+  }
 }
 
 PauseNoSafepointVerifier::~PauseNoSafepointVerifier() {
-  _nsv->_thread->_no_safepoint_count++;
+  if (_nsv->_thread->is_Java_thread()) {
+    _nsv->_thread->as_Java_thread()->inc_no_safepoint_count();
+  }
 }
 #endif // ASSERT
