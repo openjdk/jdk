@@ -53,7 +53,7 @@ LogFileStreamInitializer::LogFileStreamInitializer() {
 
 int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
   int total_written = 0;
-  char buf[255];
+  char buf[LogDecorations::max_decoration_size + 1];
 
   for (uint i = 0; i < LogDecorators::Count; i++) {
     LogDecorators::Decorator decorator = static_cast<LogDecorators::Decorator>(i);

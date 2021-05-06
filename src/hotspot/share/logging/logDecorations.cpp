@@ -31,6 +31,7 @@
 #include "services/management.hpp"
 
 const char* volatile LogDecorations::_host_name = NULL;
+const int LogDecorations::_pid = os::current_process_id(); // This is safe to call during dynamic initialization.
 
 const char* LogDecorations::host_name() {
   const char* host_name = Atomic::load_acquire(&_host_name);
@@ -63,8 +64,6 @@ LogDecorations::LogDecorations(LogLevelType level, const LogTagSet &tagset, cons
       (decorators.is_decorator(LogDecorators::uptime_decorator) ||
        decorators.is_decorator(LogDecorators::uptimemillis_decorator) ||
        decorators.is_decorator(LogDecorators::uptimenanos_decorator)) ? os::elapsedTime() : 0),
-  // pid
-  _pid(decorators.is_decorator(LogDecorators::pid_decorator) ? os::current_process_id() : 0),
   // tid
   _tid(decorators.is_decorator(LogDecorators::tid_decorator) ? os::current_thread_id() : 0),
   // the rest is handed down by the caller
@@ -89,12 +88,14 @@ const char* LogDecorations::decoration(LogDecorators::Decorator decorator, char*
 
 void LogDecorations::print_time_decoration(outputStream* st) const {
   char buf[29];
-  st->print_raw(os::iso8601_time(_millis, buf, sizeof(buf), false));
+  char* result = os::iso8601_time(_millis, buf, sizeof(buf), false);
+  st->print_raw(result ? result : "");
 }
 
 void LogDecorations::print_utctime_decoration(outputStream* st) const {
   char buf[29];
-  st->print_raw(os::iso8601_time(_millis, buf, sizeof(buf), true));
+  char* result = os::iso8601_time(_millis, buf, sizeof(buf), true);
+  st->print_raw(result ? result : "");
 }
 
 void LogDecorations::print_uptime_decoration(outputStream* st) const {
@@ -130,9 +131,7 @@ void LogDecorations::print_level_decoration(outputStream* st) const {
 }
 
 void LogDecorations::print_tags_decoration(outputStream* st) const {
-  char tmp[255];
-  _tagset.label(tmp, sizeof(tmp)); // Todo: add a LogTagSet::label(outputStream*) to avoid this copy step
-  st->print_raw(tmp);
+  _tagset.label(st);
 }
 
 void LogDecorations::print_hostname_decoration(outputStream* st) const {

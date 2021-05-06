@@ -32,7 +32,7 @@ static const LogTagSet& tagset = LogTagSetMapping<LOG_TAGS(logging, safepoint)>:
 static const LogDecorators default_decorators;
 
 TEST_VM(LogDecorations, level) {
-  char buf[1024];
+  char buf[LogDecorations::max_decoration_size + 1];
   for (uint l = LogLevel::First; l <= LogLevel::Last; l++) {
     LogLevelType level = static_cast<LogLevelType>(l);
     // Create a decorations object for the current level
@@ -54,7 +54,7 @@ TEST_VM(LogDecorations, level) {
 }
 
 TEST_VM(LogDecorations, uptime) {
-  char buf[1024];
+  char buf[LogDecorations::max_decoration_size + 1];
   // Verify the format of the decoration
   int a, b;
   char decimal_point;
@@ -76,7 +76,7 @@ TEST_VM(LogDecorations, uptime) {
 }
 
 TEST_VM(LogDecorations, tags) {
-  char buf[1024];
+  char buf[LogDecorations::max_decoration_size + 1];
   char expected_tags[1 * K];
   tagset.label(expected_tags, sizeof(expected_tags));
   // Verify that the expected tags are included in the tags decoration
@@ -86,7 +86,7 @@ TEST_VM(LogDecorations, tags) {
 
 // Test each variation of the different timestamp decorations (ms, ns, uptime ms, uptime ns)
 TEST_VM(LogDecorations, timestamps) {
-  char buf[1024];
+  char buf[LogDecorations::max_decoration_size + 1];
   struct {
     const LogDecorators::Decorator decorator;
     const char* suffix;
@@ -133,7 +133,7 @@ TEST_VM(LogDecorations, timestamps) {
 
 // Test the time decoration
 TEST(LogDecorations, iso8601_time) {
-  char buf[1024];
+  char buf[LogDecorations::max_decoration_size + 1];
   LogDecorators decorator_selection;
   ASSERT_TRUE(decorator_selection.parse("time"));
   LogDecorations decorations(LogLevel::Info, tagset, decorator_selection);
@@ -168,7 +168,7 @@ TEST(LogDecorations, iso8601_time) {
 
 // Test the utctime decoration
 TEST(LogDecorations, iso8601_utctime) {
-  char buf[1024];
+  char buf[LogDecorations::max_decoration_size + 1];
   LogDecorators decorator_selection;
   ASSERT_TRUE(decorator_selection.parse("utctime"));
   LogDecorations decorations(LogLevel::Info, tagset, decorator_selection);
@@ -210,7 +210,7 @@ TEST(LogDecorations, iso8601_utctime) {
 
 // Test the pid and tid decorations
 TEST(LogDecorations, identifiers) {
-  char buf[1024];
+  char buf[LogDecorations::max_decoration_size + 1];
   LogDecorators decorator_selection;
   ASSERT_TRUE(decorator_selection.parse("pid,tid"));
   LogDecorations decorations(LogLevel::Info, tagset, decorator_selection);

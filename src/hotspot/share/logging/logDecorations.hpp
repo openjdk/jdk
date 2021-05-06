@@ -39,18 +39,22 @@ class LogDecorations {
   const jlong _millis;            // for "time", "utctime", "timemillis"
   const jlong _nanos;             // for "timenanos"
   const double _elapsed_seconds;  // for "uptime", "uptimemillis", "uptimenanos"
-  const int _pid;                 // for "pid"
   const intx _tid;                // for "tid"
   LogLevelType _level;            // for "level" (needs to be nonconst)
   const LogTagSet& _tagset;       // for "tags"
   static const char* volatile _host_name;
   static const char* host_name();
+  static const int _pid;          // for "pid"
 
 #define DECORATOR(name, abbr) void print_##name##_decoration(outputStream* st) const;
   DECORATOR_LIST
 #undef DECORATOR
 
  public:
+
+  // max size of a single decoration.
+  static const size_t max_decoration_size = 255;
+
   LogDecorations(LogLevelType level, const LogTagSet& tagset, const LogDecorators& decorators);
 
   void set_level(LogLevelType level) {

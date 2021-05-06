@@ -86,18 +86,20 @@ void LogTagSet::log(const LogMessageBuffer& msg) {
   }
 }
 
-int LogTagSet::label(char* buf, size_t len, const char* separator) const {
-  int tot_written = 0;
+void LogTagSet::label(outputStream* st, const char* separator) const {
   for (size_t i = 0; i < _ntags; i++) {
-    int written = jio_snprintf(buf + tot_written, len - tot_written, "%s%s",
-                               (i == 0 ? "" : separator),
-                               LogTag::name(_tag[i]));
-    if (written < 0) {
-      return -1;
-    }
-    tot_written += written;
+    st->print("%s%s", (i == 0 ? "" : separator), LogTag::name(_tag[i]));
   }
-  return tot_written;
+}
+
+int LogTagSet::label(char* buf, size_t len, const char* separator) const {
+  stringStream ss(buf, len);
+  label(&ss, separator);
+  size_t written = ss.size();
+  if (written >= len - 1) {
+    return -1; // truncation
+  }
+  return (int)written;
 }
 
 void LogTagSet::write(LogLevelType level, const char* fmt, ...) {
