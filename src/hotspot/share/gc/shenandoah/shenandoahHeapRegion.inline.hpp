@@ -135,4 +135,16 @@ inline void ShenandoahHeapRegion::set_update_watermark_at_safepoint(HeapWord* w)
   _update_watermark = w;
 }
 
+inline void ShenandoahHeapRegion::clear_young_lab_flags() {
+  _has_young_lab = false;
+}
+
+inline void ShenandoahHeapRegion::set_young_lab_flag() {
+  _has_young_lab = true;
+}
+
+inline bool ShenandoahHeapRegion::has_young_lab_flag() {
+  return _has_young_lab;
+}
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP

@@ -1012,43 +1012,6 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
 HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req, bool& in_new_region) {
   ShenandoahHeapLocker locker(lock());
   HeapWord* result = _free_set->allocate(req, in_new_region);
-  // Register the newly allocated object while we're holding the global lock since there's no synchronization
-  // built in to the implementation of register_object().  There are potential races when multiple independent
-  // threads are allocating objects, some of which might span the same card region.  For example, consider
-  // a card table's memory region within which three objects are being allocated by three different threads:
-  //
-  // objects being "concurrently" allocated:
-  //    [-----a------][-----b-----][--------------c------------------]
-  //            [---- card table memory range --------------]
-  //
-  // Before any objects are allocated, this card's memory range holds no objects.  Note that:
-  //   allocation of object a wants to set the has-object, first-start, and last-start attributes of the preceding card region.
-  //   allocation of object b wants to set the has-object, first-start, and last-start attributes of this card region.
-  //   allocation of object c also wants to set the has-object, first-start, and last-start attributes of this card region.
-  //
-  // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as last-start
-  // representing object b while first-start represents object c.  This is why we need to require all register_object()
-  // invocations to be "mutually exclusive".  Later, when we use GCLABs and PLABs to allocate memory for promotions and evacuations,
-  // the protocol may work something like the following:
-  //   1. The GCLAB/PLAB is allocated by this (or similar) function, while holding the global lock.
-  //   2. The GCLAB/PLAB is always aligned at the start of a card memory range
-  //      and is always a multiple of the card-table memory range size.
-  //   3. Individual allocations carved from a GCLAB/PLAB are not immediately registered.
-  //   4. A PLAB is registered as a single object.
-  //   5. When a PLAB is eventually retired, all of the objects allocated within the GCLAB/PLAB are registered in batch by a
-   //      single thread.  No further synchronization is required because no other allocations will pertain to the same
-  //      card-table memory ranges.
-  //
-  // The other case that needs special handling is region promotion.  When a region is promoted, all objects contained
-  // in it are registered.  Since the region is a multiple of card table memory range sizes, there is no need for
-  // synchronization.
-  // TODO: figure out how to allow multiple threads to work together to register all of the objects in
-  // a promoted region, or at least try to balance the efforts so that different GC threads work
-  // on registering the objects of different heap regions.
-  //
-  if (mode()->is_generational() && result != NULL && req.affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
-    ShenandoahHeap::heap()->card_scan()->register_object(result);
-  }
   return result;
 }
 
@@ -1296,6 +1259,37 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
 
   if (safepoint_workers() != NULL) {
     safepoint_workers()->threads_do(&cl);
+  }
+}
+
+class ShenandoahTagGCLABClosure : public ThreadClosure {
+public:
+  void do_thread(Thread* thread) {
+    PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
+    assert(gclab != NULL, "GCLAB should be initialized for %s", thread->name());
+    if (gclab->words_remaining() > 0) {
+      ShenandoahHeapRegion* r = ShenandoahHeap::heap()->heap_region_containing(gclab->allocate(0));
+      r->set_young_lab_flag();
+    }
+  }
+};
+
+void ShenandoahHeap::set_young_lab_region_flags() {
+  if (!UseTLAB) {
+    return;
+  }
+  for (size_t i = 0; i < _num_regions; i++) {
+    _regions[i]->clear_young_lab_flags();
+  }
+  ShenandoahTagGCLABClosure cl;
+  workers()->threads_do(&cl);
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
+    cl.do_thread(t);
+    ThreadLocalAllocBuffer& tlab = t->tlab();
+    if (tlab.end() != NULL) {
+      ShenandoahHeapRegion* r = heap_region_containing(tlab.start());
+      r->set_young_lab_flag();
+    }
   }
 }
 

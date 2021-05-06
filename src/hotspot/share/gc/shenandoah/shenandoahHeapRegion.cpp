@@ -71,6 +71,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _tlab_allocs(0),
   _gclab_allocs(0),
   _plab_allocs(0),
+  _has_young_lab(false),
   _live_data(0),
   _critical_pins(0),
   _update_watermark(start),
@@ -867,44 +868,37 @@ size_t ShenandoahHeapRegion::promote() {
   if (is_humongous_start()) {
     oop obj = oop(bottom());
     assert(marking_context->is_marked(obj), "promoted humongous object should be alive");
-
-    size_t index_limit = index() + ShenandoahHeapRegion::required_regions(obj->size() * HeapWordSize);
     heap->card_scan()->register_object(bottom());
+    size_t index_limit = index() + ShenandoahHeapRegion::required_regions(obj->size() * HeapWordSize);
     for (size_t i = index(); i < index_limit; i++) {
       ShenandoahHeapRegion* r = heap->get_region(i);
-      log_debug(gc)("promoting region " SIZE_FORMAT ", clear cards from " SIZE_FORMAT " to " SIZE_FORMAT,
+      log_debug(gc)("promoting region " SIZE_FORMAT ", from " SIZE_FORMAT " to " SIZE_FORMAT,
         r->index(), (size_t) r->bottom(), (size_t) r->top());
-
-      ShenandoahBarrierSet::barrier_set()->card_table()->clear_MemRegion(MemRegion(r->bottom(), r->end()));
+      if (top() < end()) {
+        ShenandoahHeap::fill_with_object(top(), (end() - top()) / HeapWordSize);
+        heap->card_scan()->register_object(top());
+        ShenandoahBarrierSet::barrier_set()->card_table()->clear_MemRegion(MemRegion(top(), end()));
+      }
+      ShenandoahBarrierSet::barrier_set()->card_table()->dirty_MemRegion(MemRegion(bottom(), top()));
       r->set_affiliation(OLD_GENERATION);
       old_generation->increase_used(r->used());
       young_generation->decrease_used(r->used());
     }
-    // HEY!  Better to call ShenandoahHeap::heap()->card_scan()->mark_range_as_clean(r->bottom(), obj->size())
-    //  and skip the calls to clear_MemRegion() above.
-
-    // Iterate over all humongous regions that are spanned by the humongous object obj.  The remnant
-    // of memory in the last humongous region that is not spanned by obj is currently not used.
-    obj->oop_iterate(&update_card_values);
     return index_limit - index();
   } else {
-    log_debug(gc)("promoting region " SIZE_FORMAT ", clear cards from " SIZE_FORMAT " to " SIZE_FORMAT,
+    log_debug(gc)("promoting region " SIZE_FORMAT ", from " SIZE_FORMAT " to " SIZE_FORMAT,
       index(), (size_t) bottom(), (size_t) top());
     assert(!is_humongous_continuation(), "should not promote humongous object continuation in isolation");
 
-    // Rather than scanning entire contents of the promoted region right now to determine which
-    // cards to mark dirty, we just mark them all as dirty.  Later, when we scan the remembered
-    // set, we will clear cards that are found to not contain live references to young memory.
-    // Ultimately, this approach is more efficient as it only scans the "dirty" cards once and
-    // the clean cards once.  The alternative approach of scanning all cards now and then scanning
-    // dirty cards again at next concurrent mark pass scans the clean cards once and the dirty
-    // cards twice.
-
-    // HEY!  Better to call ShenandoahHeap::heap()->card_scan()->mark_range_as_dirty(r->bottom(), obj->size());
-    ShenandoahBarrierSet::barrier_set()->card_table()->dirty_MemRegion(MemRegion(bottom(), end()));
     set_affiliation(OLD_GENERATION);
     old_generation->increase_used(used());
     young_generation->decrease_used(used());
+
+    ShenandoahBarrierSet::barrier_set()->card_table()->clear_MemRegion(MemRegion(top(), end()));
+    // In terms of card marking, We could just set the whole occupied range in this region to dirty instead of iterating here.
+    // Card scanning could correct false positives later and that would be more efficient.
+    // But oop_iterate_objects() has other, indispensable effects: filling dead objects and registering object starts.
+    // So while we are already doing this here, we may as well also set more precise card values.
     oop_iterate_objects(&update_card_values, /*fill_dead_objects*/ true, /* reregister_coalesced_objects */ false);
     return 1;
   }

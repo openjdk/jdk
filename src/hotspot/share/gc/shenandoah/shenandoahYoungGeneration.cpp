@@ -68,14 +68,11 @@ public:
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahHeapRegion* r = _regions->next();
     while (r != NULL) {
-      if (r->is_young()) {
-        // The thread that first encounters a humongous start region is responsible
-        // for promoting the continuation regions so we need this guard here to
-        // keep other worker threads from trying to promote the continuations.
-        if (r->age() >= InitialTenuringThreshold && !r->is_humongous_continuation()) {
-          size_t promoted = r->promote();
-          Atomic::add(&_promoted, promoted);
-        }
+      if (r->is_young() && r->age() >= InitialTenuringThreshold && ((r->is_regular() && !r->has_young_lab_flag()) || r->is_humongous_start())) {
+        // The above condition filtered out humongous continuations, among other states.
+        // Here we rely on promote() below promoting related continuation regions when encountering a homongous start.
+        size_t promoted = r->promote();
+        Atomic::add(&_promoted, promoted);
       }
       r = _regions->next();
     }
@@ -83,6 +80,7 @@ public:
 };
 
 void ShenandoahYoungGeneration::promote_tenured_regions() {
+  ShenandoahHeap::heap()->set_young_lab_region_flags();
   ShenandoahRegionIterator regions;
   ShenandoahPromoteTenuredRegionsTask task(&regions);
   ShenandoahHeap::heap()->workers()->run_task(&task);

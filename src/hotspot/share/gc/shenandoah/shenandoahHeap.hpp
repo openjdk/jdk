@@ -598,6 +598,8 @@ public:
   void tlabs_retire(bool resize);
   void gclabs_retire(bool resize);
 
+  void set_young_lab_region_flags();
+
 // ---------- Marking support
 //
 private:

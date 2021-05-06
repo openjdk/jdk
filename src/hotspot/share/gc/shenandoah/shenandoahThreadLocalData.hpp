@@ -45,10 +45,19 @@ private:
   uint8_t                 _oom_scope_nesting_level;
   bool                    _oom_during_evac;
   SATBMarkQueue           _satb_mark_queue;
+
+  // Thread-local allocation buffer for object evacuations.
+  // In generational mode, it is exclusive to the young generation.
   PLAB* _gclab;
   size_t _gclab_size;
+
+  // Thread-local allocation buffer only used in generational mode.
+  // Used both by mutator threads and by GC worker threads
+  // for evacuations within the old generation and
+  // for promotions from the young generation into the old generation.
   PLAB* _plab;
   size_t _plab_size;
+
   uint  _worker_id;
   int  _disarmed_value;
   double _paced_time;
