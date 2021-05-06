@@ -730,7 +730,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(ThreadShadow,                _pending_exception,                            oop)                                   \
   nonstatic_field(ThreadShadow,                _exception_file,                               const char*)                           \
   nonstatic_field(ThreadShadow,                _exception_line,                               int)                                   \
-  volatile_nonstatic_field(Thread,             _suspend_flags,                                uint32_t)                              \
   nonstatic_field(Thread,                      _active_handles,                               JNIHandleBlock*)                       \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                      _allocated_bytes,                              jlong)                                 \
@@ -743,11 +742,12 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(JavaThread,                  _current_pending_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(JavaThread,                  _current_pending_monitor_is_from_java,         bool)                                  \
   nonstatic_field(JavaThread,                  _current_waiting_monitor,                      ObjectMonitor*)                        \
+  volatile_nonstatic_field(JavaThread,         _suspend_flags,                                uint32_t)                              \
+  nonstatic_field(JavaThread,                  _async_exception_condition,                    JavaThread::AsyncExceptionCondition)   \
   nonstatic_field(JavaThread,                  _pending_async_exception,                      oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
-  nonstatic_field(JavaThread,                  _special_runtime_exit_condition,               JavaThread::AsyncRequests)             \
   nonstatic_field(JavaThread,                  _saved_exception_pc,                           address)                               \
   volatile_nonstatic_field(JavaThread,         _thread_state,                                 JavaThreadState)                       \
   nonstatic_field(JavaThread,                  _osthread,                                     OSThread*)                             \
@@ -1983,7 +1983,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_toplevel_type(JavaThread*)                                      \
   declare_toplevel_type(JavaThread *const *const)                         \
   declare_toplevel_type(java_lang_Class)                                  \
-  declare_integer_type(JavaThread::AsyncRequests)                         \
+  declare_integer_type(JavaThread::AsyncExceptionCondition)               \
   declare_integer_type(JavaThread::TerminatedTypes)                       \
   declare_toplevel_type(jbyte*)                                           \
   declare_toplevel_type(jbyte**)                                          \
@@ -2143,7 +2143,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* Thread::SuspendFlags enum */                                         \
   /*****************************/                                         \
                                                                           \
-  declare_constant(Thread::_has_async_exception)                          \
+  declare_constant(JavaThread::_has_async_exception)                      \
                                                                           \
   /*******************/                                                   \
   /* JavaThreadState */                                                   \
