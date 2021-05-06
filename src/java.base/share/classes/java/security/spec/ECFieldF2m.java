@@ -217,6 +217,7 @@ public class ECFieldF2m implements ECField {
      */
     public boolean equals(Object obj) {
         if (this == obj) return true;
+
         return obj instanceof ECFieldF2m other
             // no need to compare rp here since ks and rp
             // should be equivalent

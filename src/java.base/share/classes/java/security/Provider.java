@@ -2000,7 +2000,7 @@ public abstract class Provider extends Properties {
                 // unknown engine type, return true by default
                 return true;
             }
-            if (!(cap.supportsParameter)) {
+            if (!cap.supportsParameter) {
                 throw new InvalidParameterException("supportsParameter() not "
                     + "used with " + type + " engines");
             }
@@ -2009,7 +2009,7 @@ public abstract class Provider extends Properties {
                 throw new InvalidParameterException
                     ("Parameter must be instanceof Key for engine " + type);
             }
-            if (!(hasKeyAttributes())) {
+            if (!hasKeyAttributes()) {
                 return true;
             }
             if (parameter == null) {

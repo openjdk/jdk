@@ -173,15 +173,15 @@ public abstract class CertPath implements Serializable {
      * This algorithm is implemented by this method. If it is overridden,
      * the behavior specified here must be maintained.
      *
-     * @param obj the object to test for equality with this certification path
+     * @param other the object to test for equality with this certification path
      * @return true if the specified object is equal to this certification path,
      * false otherwise
      */
-    public boolean equals(Object obj) {
-        if (this == obj)
+    public boolean equals(Object other) {
+        if (this == other)
             return true;
 
-        return obj instanceof CertPath that
+        return other instanceof CertPath that
                 && this.type.equals(that.getType())
                 && this.getCertificates().equals(that.getCertificates());
     }

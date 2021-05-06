@@ -118,16 +118,16 @@ public final class URICertStoreParameters implements CertStoreParameters {
      * Two URICertStoreParameters are considered equal if the URIs used
      * to construct them are equal.
      *
-     * @param obj the object to test for equality with this parameters.
+     * @param p the object to test for equality with this parameters.
      *
      * @return true if the specified object is equal to this parameters object.
      */
     @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
+    public boolean equals(Object p) {
+        if (p == this) {
             return true;
         }
-        return obj instanceof URICertStoreParameters other
+        return p instanceof URICertStoreParameters other
                 && uri.equals(other.getURI());
     }
 

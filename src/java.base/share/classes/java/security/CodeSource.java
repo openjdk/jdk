@@ -34,6 +34,8 @@ import java.util.Hashtable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.cert.*;
+import java.util.Objects;
+
 import sun.net.util.URLUtil;
 import sun.security.util.IOUtils;
 
@@ -157,20 +159,9 @@ public class CodeSource implements java.io.Serializable {
             return true;
 
         // objects types must be equal
-        if (!(obj instanceof CodeSource other))
-            return false;
-
-        // URLs must match
-        if (location == null) {
-            // if location is null, then other.location must be null as well
-            if (other.location != null) return false;
-        } else {
-            // if location is not null, then it must equal other.location
-            if (!location.equals(other.location)) return false;
-        }
-
-        // certs must match
-        return matchCerts(other, true);
+        return (obj instanceof CodeSource other)
+                && Objects.equals(location, other.location)
+                && matchCerts(other, true);
     }
 
     /**
