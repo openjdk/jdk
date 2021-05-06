@@ -176,10 +176,10 @@ public class TestTracePageSizes {
             debug = false;
         }
 
-	// Older kernels do not have reliable madvise tag for this test to work
+        // Older kernels do not have reliable madvise tag for this test to work
         if (Platform.isLinux() && Platform.getOsVersionMajor() <= 4) {
-	    throw new SkippedException("Skipped for kernel: " + Platform.getOsVersion());
-	}
+            throw new SkippedException("Skipped for kernel: " + Platform.getOsVersion());
+        }
 
         // Parse /proc/self/smaps to compare with values logged in the VM.
         parseSmaps();
