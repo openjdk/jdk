@@ -2425,7 +2425,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // membar it's possible for a simple Dekker test to fail if loads
   // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only_no_aot_or_jvmci()){
+  if (!CompilerConfig::is_c1_or_interpreter_only_no_jvmci()){
     Label notVolatile;
     __ tbz(raw_flags, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
@@ -3028,7 +3028,7 @@ void TemplateTable::fast_accessfield(TosState state)
   // membar it's possible for a simple Dekker test to fail if loads
   // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only_no_aot_or_jvmci()) {
+  if (!CompilerConfig::is_c1_or_interpreter_only_no_jvmci()) {
     Label notVolatile;
     __ tbz(r3, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
@@ -3090,7 +3090,7 @@ void TemplateTable::fast_xaccess(TosState state)
   // membar it's possible for a simple Dekker test to fail if loads
   // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only_no_aot_or_jvmci()) {
+  if (!CompilerConfig::is_c1_or_interpreter_only_no_jvmci()) {
     Label notVolatile;
     __ ldrw(r3, Address(r2, in_bytes(ConstantPoolCache::base_offset() +
                                      ConstantPoolCacheEntry::flags_offset())));
@@ -3784,8 +3784,6 @@ void TemplateTable::monitorenter()
   // check for NULL object
   __ null_check(r0);
 
-  __ resolve(IS_NOT_NULL, r0);
-
   const Address monitor_block_top(
         rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   const Address monitor_block_bot(
@@ -3884,8 +3882,6 @@ void TemplateTable::monitorexit()
 
   // check for NULL object
   __ null_check(r0);
-
-  __ resolve(IS_NOT_NULL, r0);
 
   const Address monitor_block_top(
         rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize);

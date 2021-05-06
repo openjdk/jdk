@@ -347,7 +347,7 @@ public class TestOverrideMethods  extends JavadocTester {
                     <div class="block">This is Base::m5.</div>
                     </div>
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    b2 method-summary-table-tab4"><code>final java.lang.Object</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
                     ab2 method-summary-table-tab4"><code><a href="#m6()" class="member-name-link">m6\
                     </a>()</code></div>

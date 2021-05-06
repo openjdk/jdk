@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -31,7 +32,6 @@
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -51,7 +51,7 @@ inline InstanceKlass* klassVtable::ik() const {
 }
 
 bool klassVtable::is_preinitialized_vtable() {
-  return _klass->is_shared() && !MetaspaceShared::remapped_readwrite();
+  return _klass->is_shared() && !MetaspaceShared::remapped_readwrite() && !_klass->is_shared_old_klass();
 }
 
 
@@ -1093,7 +1093,8 @@ void itableMethodEntry::initialize(Method* m) {
 
 #ifdef ASSERT
   if (MetaspaceShared::is_in_shared_metaspace((void*)&_method) &&
-     !MetaspaceShared::remapped_readwrite()) {
+     !MetaspaceShared::remapped_readwrite() &&
+     !MetaspaceShared::is_old_class(m->method_holder())) {
     // At runtime initialize_itable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader.
     // The dumptime itable method entry should be the same as the runtime entry.

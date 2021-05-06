@@ -59,7 +59,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
@@ -6649,8 +6648,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                 iterationVariableTypes.add(in == null ? st.type().returnType() : in.type().returnType());
             }
         }
-        final List<Class<?>> commonPrefix = iterationVariableTypes.stream().filter(t -> t != void.class).
-                collect(Collectors.toList());
+        final List<Class<?>> commonPrefix = iterationVariableTypes.stream().filter(t -> t != void.class).toList();
 
         // Step 1B: determine loop parameters (A...).
         final List<Class<?>> commonSuffix = buildCommonSuffix(init, step, pred, fini, commonPrefix.size());
@@ -6779,11 +6777,11 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             int pc = h.type().parameterCount();
             int tpsize = targetParams.size();
             return pc < tpsize ? dropArguments0(h, pc, targetParams.subList(pc, tpsize)) : h;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     private static List<MethodHandle> fixArities(List<MethodHandle> hs) {
-        return hs.stream().map(MethodHandle::asFixedArity).collect(Collectors.toList());
+        return hs.stream().map(MethodHandle::asFixedArity).toList();
     }
 
     /**

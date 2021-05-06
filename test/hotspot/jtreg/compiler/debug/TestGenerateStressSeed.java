@@ -26,7 +26,6 @@ package compiler.debug;
 import java.nio.file.Paths;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.Asserts;
 
 /*
  * @test
@@ -58,7 +57,8 @@ public class TestGenerateStressSeed {
                 "-Xcomp", "-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:CompileOnly=" + className + "::sum", "-XX:+" + stressOpt,
                 "-XX:+LogCompilation", "-XX:LogFile=" + log, className, "10"};
-            ProcessTools.createJavaProcessBuilder(procArgs).start().waitFor();
+            new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(procArgs).start())
+                .shouldHaveExitValue(0);
             new OutputAnalyzer(Paths.get(log))
                 .shouldContain("stress_test seed");
         } else {

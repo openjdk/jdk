@@ -77,8 +77,8 @@ namespace {
 
   static void test_reserved_size_alignment(size_t size, size_t alignment) {
     ASSERT_PRED2(is_size_aligned, size, alignment) << "Incorrect input parameters";
-
-    ReservedSpace rs(size, alignment, UseLargePages, (char *) NULL);
+    size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
+    ReservedSpace rs(size, alignment, page_size, (char *) NULL);
 
     ASSERT_TRUE(rs.base() != NULL) << "rs.special = " << rs.special();
     ASSERT_EQ(size, rs.size()) << "rs.special = " << rs.special();
@@ -104,8 +104,9 @@ namespace {
     ASSERT_PRED2(is_size_aligned, size, alignment) << "Must be at least AG aligned";
 
     bool large = maybe_large && UseLargePages && size >= os::large_page_size();
+    size_t page_size = large ? os::large_page_size() : os::vm_page_size();
 
-    ReservedSpace rs(size, alignment, large);
+    ReservedSpace rs(size, alignment, page_size);
     MemoryReleaser releaser(&rs);
 
     EXPECT_TRUE(rs.base() != NULL) << "rs.special: " << rs.special();
@@ -219,7 +220,7 @@ namespace {
       case Commit:
         return ReservedSpace(reserve_size_aligned,
                              os::vm_allocation_granularity(),
-                             /* large */ false);
+                             os::vm_page_size());
     }
   }
 
@@ -298,7 +299,7 @@ TEST_VM(VirtualSpace, actual_committed_space_one_large_page) {
 
   size_t large_page_size = os::large_page_size();
 
-  ReservedSpace reserved(large_page_size, large_page_size, true);
+  ReservedSpace reserved(large_page_size, large_page_size, large_page_size);
   ReservedSpaceReleaser releaser(&reserved);
   ASSERT_TRUE(reserved.is_reserved());
 
@@ -364,10 +365,10 @@ class TestReservedSpace : AllStatic {
 
   static void test_reserved_space1(size_t size, size_t alignment) {
     ASSERT_TRUE(is_aligned(size, alignment)) << "Incorrect input parameters";
-
+    size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
     ReservedSpace rs(size,          // size
                      alignment,     // alignment
-                     UseLargePages, // large
+                     page_size, // page size
                      (char *)NULL); // requested_address
 
     EXPECT_TRUE(rs.base() != NULL);
@@ -409,8 +410,9 @@ class TestReservedSpace : AllStatic {
     EXPECT_TRUE(is_aligned(size, alignment)) << "Must be at least aligned against alignment";
 
     bool large = maybe_large && UseLargePages && size >= os::large_page_size();
+    size_t page_size = large ? os::large_page_size() : os::vm_page_size();
 
-    ReservedSpace rs(size, alignment, large);
+    ReservedSpace rs(size, alignment, page_size);
 
     EXPECT_TRUE(rs.base() != NULL);
     EXPECT_EQ(rs.size(), size) <<  "rs.size: " << rs.size();
@@ -519,7 +521,7 @@ class TestVirtualSpace : AllStatic {
     case Commit:
       return ReservedSpace(reserve_size_aligned,
                            os::vm_allocation_granularity(),
-                           /* large */ false);
+                           os::vm_page_size());
     }
   }
 
@@ -574,7 +576,7 @@ class TestVirtualSpace : AllStatic {
 
     size_t large_page_size = os::large_page_size();
 
-    ReservedSpace reserved(large_page_size, large_page_size, true);
+    ReservedSpace reserved(large_page_size, large_page_size, large_page_size);
 
     EXPECT_TRUE(reserved.is_reserved());
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,11 +259,7 @@ class LIR_Assembler: public CompilationResourceObj {
  public:
 
   static int call_stub_size() {
-    if (UseAOT) {
-      return _call_stub_size + _call_aot_stub_size;
-    } else {
-      return _call_stub_size;
-    }
+    return _call_stub_size;
   }
 
   static int exception_handler_size() {
