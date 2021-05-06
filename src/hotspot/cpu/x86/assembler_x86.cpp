@@ -7856,7 +7856,7 @@ void Assembler::vbroadcastsd(XMMRegister dst, Address src, int vector_len) {
 
 void Assembler::vbroadcastf128(XMMRegister dst, Address src, int vector_len) {
   assert(VM_Version::supports_avx(), "");
-  assert(vector_len == AVX_256bit || vector_len == AVX_512bit, "");
+  assert(vector_len == AVX_256bit, "");
   assert(dst != xnoreg, "sanity");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);

@@ -3245,7 +3245,7 @@ void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, Address src, int 
 }
 
 void MacroAssembler::vpmulld(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg) {
-  assert((UseAVX > 0), "SSE mode requires address alignment 16 bytes");
+  assert((UseAVX > 0), "AVX support is needed");
   if (reachable(src)) {
     Assembler::vpmulld(dst, nds, as_Address(src), vector_len);
   } else {
