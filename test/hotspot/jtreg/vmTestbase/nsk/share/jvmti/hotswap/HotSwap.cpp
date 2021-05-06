@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <atomic>
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 #include "Injector.h"
@@ -124,6 +125,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
                 class_data, class_data_len);
             old_class_def[classCount].class_byte_count = class_data_len;
             classCount++;
+            break;
         }
         if (!NSK_JVMTI_VERIFY(jvmti_env->RawMonitorExit(classLoadLock))) {
             nsk_jvmti_setFailStatus();
@@ -131,7 +133,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
     }
 }
 
-static int CompiledMethodLoadEventsCount = 0;
+static std::atomic<int> CompiledMethodLoadEventsCount(0);
 
 static void JNICALL
 CompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method,
@@ -154,7 +156,7 @@ CompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method,
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
-static int SingleStepEventsCount = 0;
+static std::atomic<int> SingleStepEventsCount(0);
 
 static void JNICALL
 SingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
@@ -163,7 +165,7 @@ SingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
     SingleStepEventsCount++;
 }
 
-static int ExceptionEventsCount = 0;
+static std::atomic<int> ExceptionEventsCount(0);
 
 static void JNICALL
 Exception(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
@@ -185,7 +187,7 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
                 return;
             }
             NSK_DISPLAY2("Exception event %d: %s\n",
-                ExceptionEventsCount, signature);
+                ExceptionEventsCount.load(), signature);
             if (signature != NULL)
                 jvmti_env->Deallocate((unsigned char*)signature);
         }
@@ -194,7 +196,7 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread,
                 new_class_def : old_class_def))
             nsk_jvmti_setFailStatus();
 
-        NSK_DISPLAY1("SingleStepEventsCount: %d\n", SingleStepEventsCount);
+        NSK_DISPLAY1("SingleStepEventsCount: %d\n", SingleStepEventsCount.load());
         if (vm_mode == VM_MODE_MIXED) {
             if (!NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(
                     ((newFlag) ? JVMTI_DISABLE : JVMTI_ENABLE),
@@ -327,7 +329,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
                     new_class_def : old_class_def))
                 nsk_jvmti_setFailStatus();
 
-            NSK_DISPLAY1("SingleStepEventsCount: %d\n", SingleStepEventsCount);
+            NSK_DISPLAY1("SingleStepEventsCount: %d\n", SingleStepEventsCount.load());
             if (vm_mode == VM_MODE_MIXED) {
                 if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(
                         (((i % 2) == 0) ? JVMTI_DISABLE : JVMTI_ENABLE),
