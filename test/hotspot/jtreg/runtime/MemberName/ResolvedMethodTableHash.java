@@ -25,6 +25,8 @@
  * @test
  * @bug 8249719
  * @summary ResolvedMethodTable hash function should take method class into account
+ * @modules java.base/jdk.internal.misc
+ *
  * @run main/othervm/manual -Xmx256m -XX:MaxMetaspaceSize=256m ResolvedMethodTableHash 200000
  */
 
@@ -33,7 +35,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import jdk.internal.misc.Unsafe;
 
 // The test generates thousands MethodHandles to the methods of the same name
 // and the same signature. This should not take too long, unless Method hash
@@ -45,6 +49,13 @@ public class ResolvedMethodTableHash extends ClassLoader {
         byte[] buf = new byte[100];
         int size = writeClass(buf, className);
         Class<?> cls = defineClass(null, buf, 0, size);
+        return MethodHandles.publicLookup().findStatic(cls, "m", MethodType.methodType(void.class));
+    }
+
+    private MethodHandle generateWithSameName() throws ReflectiveOperationException {
+        byte[] buf = new byte[100];
+        int size = writeClass(buf, "MH$$");
+        Class<?> cls = Unsafe.getUnsafe().defineAnonymousClass(ResolvedMethodTableHash.class, Arrays.copyOf(buf, size), null);
         return MethodHandles.publicLookup().findStatic(cls, "m", MethodType.methodType(void.class));
     }
 
@@ -82,7 +93,11 @@ public class ResolvedMethodTableHash extends ClassLoader {
         int count = args.length > 0 ? Integer.parseInt(args[0]) : 200000;
 
         for (int i = 0; i < count; i++) {
-            handles.add(generator.generate("MH$" + i));
+            if (i % 5 != 0) {
+                handles.add(generator.generate("MH$" + i));
+            } else {
+                handles.add(generator.generateWithSameName());
+            }
             if (i % 1000 == 0) {
                 System.out.println("Generated " + i + " handles");
             }
