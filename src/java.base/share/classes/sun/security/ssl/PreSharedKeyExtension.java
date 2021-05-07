@@ -369,25 +369,23 @@ final class PreSharedKeyExtension {
                 SSLSessionContextImpl sessionCache = (SSLSessionContextImpl)
                         shc.sslContext.engineGetServerSessionContext();
                 int idIndex = 0;
+                SSLSessionImpl s = null;
 
                 for (PskIdentity requestedId : pskSpec.identities) {
-                    SSLSessionImpl s = null;
                     // If we are keeping state, see if the identity is in the cache
                     if (requestedId.identity.length == SessionId.MAX_LENGTH) {
-                        s = sessionCache.consumeRejoinableSession(
-                                clientHello, shc, requestedId.identity);
-                    } else if (requestedId.identity.length > SessionId.MAX_LENGTH &&
-                                sessionCache.statelessEnabled()) {
-                        // Identity is a stateless ticket
+                        s = sessionCache.pull(requestedId.identity);
+                    }
+                    // See if the identity is a stateless ticket
+                    if (s == null &&
+                            requestedId.identity.length > SessionId.MAX_LENGTH &&
+                            sessionCache.statelessEnabled()) {
                         ByteBuffer b =
-                                new SessionTicketSpec(shc, requestedId.identity).
+                            new SessionTicketSpec(shc, requestedId.identity).
                                         decrypt(shc);
                         if (b != null) {
                             try {
                                 s = new SSLSessionImpl(shc, b);
-                                if (!s.canRejoin(clientHello, shc)) {
-                                    s = null;
-                                }
                             } catch (IOException | RuntimeException e) {
                                 s = null;
                             }
@@ -400,7 +398,8 @@ final class PreSharedKeyExtension {
                             }
                         }
                     }
-                    if (s != null) {
+
+                    if (s != null && canRejoin(clientHello, shc, s)) {
                         if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                             SSLLogger.fine("Resuming session: ", s);
                         }
@@ -425,6 +424,92 @@ final class PreSharedKeyExtension {
             shc.handshakeExtensions.put(
                 SSLExtension.CH_PRE_SHARED_KEY, pskSpec);
         }
+    }
+
+    private static boolean canRejoin(ClientHelloMessage clientHello,
+        ServerHandshakeContext shc, SSLSessionImpl s) {
+
+        boolean result = s.isRejoinable() && (s.getPreSharedKey() != null);
+
+        // Check protocol version
+        if (result && s.getProtocolVersion() != shc.negotiatedProtocol) {
+            if (SSLLogger.isOn &&
+                SSLLogger.isOn("ssl,handshake,verbose")) {
+
+                SSLLogger.finest("Can't resume, incorrect protocol version");
+            }
+            result = false;
+        }
+
+        // Make sure that the server handshake context's localSupportedSignAlgs
+        // field is populated.  This is particularly important when
+        // client authentication was used in an initial session and it is
+        // now being resumed.
+        if (shc.localSupportedSignAlgs == null) {
+            shc.localSupportedSignAlgs =
+                    SignatureScheme.getSupportedAlgorithms(
+                            shc.sslConfig,
+                            shc.algorithmConstraints, shc.activeProtocols);
+        }
+
+        // Validate the required client authentication.
+        if (result &&
+            (shc.sslConfig.clientAuthType == CLIENT_AUTH_REQUIRED)) {
+            try {
+                s.getPeerPrincipal();
+            } catch (SSLPeerUnverifiedException e) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
+                    SSLLogger.finest(
+                        "Can't resume, " +
+                        "client authentication is required");
+                }
+                result = false;
+            }
+
+            // Make sure the list of supported signature algorithms matches
+            Collection<SignatureScheme> sessionSigAlgs =
+                s.getLocalSupportedSignatureSchemes();
+            if (result &&
+                !shc.localSupportedSignAlgs.containsAll(sessionSigAlgs)) {
+
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("Can't resume. Session uses different " +
+                        "signature algorithms");
+                }
+                result = false;
+            }
+        }
+
+        // ensure that the endpoint identification algorithm matches the
+        // one in the session
+        String identityAlg = shc.sslConfig.identificationProtocol;
+        if (result && identityAlg != null) {
+            String sessionIdentityAlg = s.getIdentificationProtocol();
+            if (!identityAlg.equalsIgnoreCase(sessionIdentityAlg)) {
+                if (SSLLogger.isOn &&
+                    SSLLogger.isOn("ssl,handshake,verbose")) {
+
+                    SSLLogger.finest("Can't resume, endpoint id" +
+                        " algorithm does not match, requested: " +
+                        identityAlg + ", cached: " + sessionIdentityAlg);
+                }
+                result = false;
+            }
+        }
+
+        // Ensure cipher suite can be negotiated
+        if (result && (!shc.isNegotiable(s.getSuite()) ||
+            !clientHello.cipherSuites.contains(s.getSuite()))) {
+            if (SSLLogger.isOn &&
+                    SSLLogger.isOn("ssl,handshake,verbose")) {
+                SSLLogger.finest(
+                    "Can't resume, unavailable session cipher suite");
+            }
+            result = false;
+        }
+
+        return result;
     }
 
     private static final
