@@ -92,42 +92,32 @@ void PreservedMarksSet::init(uint num) {
   assert_empty();
 }
 
-class RestorePreservedMarksTask : public AbstractGangTask {
-  PreservedMarksSet* const _preserved_marks_set;
-  SequentialSubTasksDone _sub_tasks;
-  volatile size_t _total_size;
+void RestorePreservedMarksTask::work(uint worker_id) {
+  uint task_id = 0;
+  while (_sub_tasks.try_claim_task(task_id)) {
+    _preserved_marks_set->get(task_id)->restore_and_increment(&_total_size);
+  }
+}
+
+RestorePreservedMarksTask::RestorePreservedMarksTask(PreservedMarksSet* preserved_marks_set)
+  : AbstractGangTask("Restore Preserved Marks"),
+    _preserved_marks_set(preserved_marks_set),
+    _sub_tasks(preserved_marks_set->num()),
+    _total_size(0)
+    DEBUG_ONLY(COMMA _total_size_before(0)) {
 #ifdef ASSERT
-  size_t _total_size_before;
+  // This is to make sure the total_size we'll calculate below is correct.
+  for (uint i = 0; i < _preserved_marks_set->num(); ++i) {
+    _total_size_before += _preserved_marks_set->get(i)->size();
+  }
 #endif // ASSERT
+}
 
-public:
-  void work(uint worker_id) override {
-    uint task_id = 0;
-    while (_sub_tasks.try_claim_task(task_id)) {
-      _preserved_marks_set->get(task_id)->restore_and_increment(&_total_size);
-    }
-  }
+RestorePreservedMarksTask::~RestorePreservedMarksTask() {
+  assert(_total_size == _total_size_before, "total_size = %zu before = %zu", _total_size, _total_size_before);
 
-  RestorePreservedMarksTask(PreservedMarksSet* preserved_marks_set)
-    : AbstractGangTask("Restore Preserved Marks"),
-      _preserved_marks_set(preserved_marks_set),
-      _sub_tasks(preserved_marks_set->num()),
-      _total_size(0)
-      DEBUG_ONLY(COMMA _total_size_before(0)) {
-#ifdef ASSERT
-    // This is to make sure the total_size we'll calculate below is correct.
-    for (uint i = 0; i < _preserved_marks_set->num(); ++i) {
-      _total_size_before += _preserved_marks_set->get(i)->size();
-    }
-#endif // ASSERT
-  }
-
-  ~RestorePreservedMarksTask() {
-    assert(_total_size == _total_size_before, "total_size = %zu before = %zu", _total_size, _total_size_before);
-
-    log_trace(gc)("Restored %zu marks", _total_size);
-  }
-};
+  log_trace(gc)("Restored %zu marks", _total_size);
+}
 
 void PreservedMarksSet::restore(WorkGang* workers) {
   {
@@ -140,10 +130,6 @@ void PreservedMarksSet::restore(WorkGang* workers) {
   }
 
   assert_empty();
-}
-
-AbstractGangTask* PreservedMarksSet::create_task() {
-  return new RestorePreservedMarksTask(this);
 }
 
 void PreservedMarksSet::reclaim() {

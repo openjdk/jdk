@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP
 #define SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP
 
+#include "gc/shared/preservedMarks.hpp"
 #include "gc/g1/g1BatchedGangTask.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 
@@ -98,7 +99,7 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedGangTask {
 #endif
 
   class RedirtyLoggedCardsTask;
-  class RestorePreservedMarksTask;
+  class RestorePreservedMarksTaskProxy;
   class FreeCollectionSetTask;
 
 public:
@@ -148,13 +149,12 @@ public:
   void do_work(uint worker_id) override;
 };
 
-class G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask : public G1AbstractSubTask {
+class G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTaskProxy : public G1AbstractSubTask {
   PreservedMarksSet* _preserved_marks;
-  AbstractGangTask* _task;
+  RestorePreservedMarksTask _task;
 
 public:
-  RestorePreservedMarksTask(PreservedMarksSet* preserved_marks);
-  virtual ~RestorePreservedMarksTask();
+  RestorePreservedMarksTaskProxy(PreservedMarksSet* preserved_marks);
 
   static bool should_execute();
 

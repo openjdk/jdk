@@ -29,6 +29,7 @@
 #include "memory/padded.hpp"
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
+#include "workgroup.hpp"
 
 class AbstractGangTask;
 class PreservedMarksSet;
@@ -114,8 +115,6 @@ public:
   // is NULL, perform the work serially in the current thread.
   void restore(WorkGang* workers);
 
-  AbstractGangTask* create_task();
-
   // Reclaim stack array.
   void reclaim();
 
@@ -128,6 +127,22 @@ public:
   ~PreservedMarksSet() {
     assert(_stacks == NULL && _num == 0, "stacks should have been reclaimed");
   }
+};
+
+class RestorePreservedMarksTask : public AbstractGangTask {
+  PreservedMarksSet* const _preserved_marks_set;
+  SequentialSubTasksDone _sub_tasks;
+  volatile size_t _total_size;
+#ifdef ASSERT
+  size_t _total_size_before;
+#endif // ASSERT
+
+public:
+  void work(uint worker_id) override;
+
+  explicit RestorePreservedMarksTask(PreservedMarksSet* preserved_marks_set);
+
+  ~RestorePreservedMarksTask();
 };
 
 #endif // SHARE_GC_SHARED_PRESERVEDMARKS_HPP

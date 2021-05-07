@@ -246,24 +246,22 @@ G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask::~Ea
   g1h->decrement_summary_bytes(_bytes_freed);
 }
 
-bool G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::should_execute() {
+bool G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTaskProxy::should_execute() {
   return G1CollectedHeap::heap()->evacuation_failed();
 }
 
-G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::RestorePreservedMarksTask(PreservedMarksSet* preserved_marks) :
-  G1AbstractSubTask(G1GCPhaseTimes::RestorePreservedMarks), _preserved_marks(preserved_marks), _task(preserved_marks->create_task()) { }
+G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTaskProxy::RestorePreservedMarksTaskProxy(PreservedMarksSet* preserved_marks) :
+  G1AbstractSubTask(G1GCPhaseTimes::RestorePreservedMarks),
+  _preserved_marks(preserved_marks),
+  _task(preserved_marks) { }
 
-G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::~RestorePreservedMarksTask() {
-  delete _task;
-}
-
-double G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::worker_cost() const {
+double G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTaskProxy::worker_cost() const {
   assert(should_execute(), "Should not call this if not executed");
   return _preserved_marks->num();
 }
 
-void G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::do_work(uint worker_id) {
-  _task->work(worker_id);
+void G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTaskProxy::do_work(uint worker_id) {
+  _task.work(worker_id);
 }
 
 class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
@@ -598,8 +596,8 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
     add_serial_task(new EagerlyReclaimHumongousObjectsTask());
   }
 
-  if (RestorePreservedMarksTask::should_execute()) {
-    add_parallel_task(new RestorePreservedMarksTask(preserved_marks_set));
+  if (RestorePreservedMarksTaskProxy::should_execute()) {
+    add_parallel_task(new RestorePreservedMarksTaskProxy(preserved_marks_set));
   }
   add_parallel_task(new RedirtyLoggedCardsTask(rdcqs));
   add_parallel_task(new FreeCollectionSetTask(evacuation_info, surviving_young_words));
