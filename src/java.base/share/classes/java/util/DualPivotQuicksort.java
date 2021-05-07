@@ -1542,7 +1542,7 @@ final class DualPivotQuicksort {
 
             if (b == null) {
                 return false;
-            }            
+            }
         } else {
             offset = sorter.offset;
         }
@@ -3217,7 +3217,7 @@ final class DualPivotQuicksort {
 
             if (b == null) {
                 return false;
-            }            
+            }
         } else {
             offset = sorter.offset;
         }
@@ -4138,7 +4138,7 @@ final class DualPivotQuicksort {
 
             if (b == null) {
                 return false;
-            }            
+            }
         } else {
             offset = sorter.offset;
         }
