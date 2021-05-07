@@ -259,7 +259,7 @@ public class TestSpecFile extends JavadocTester {
         checkOutput("external-specs.html", false, "silly");
         checkOutput("external-specs.html", true,
                 """
-                    <div class="col-first even-row-color"><a href="http://example.com/spec/file1.html">Canonical Title</a></div>
+                    <div class="col-first even-row-color"><a href="http://example.com/spec/index.html">Canonical Title</a></div>
                     <div class="col-last even-row-color">
                     <ul class="ref-list">
                     <li><code><a href="p/C.html#CanonicalTitle">class p.C</a></code></li>
