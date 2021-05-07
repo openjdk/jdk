@@ -252,8 +252,10 @@ handleGetLength(FD fd)
     }
     #ifdef BLKGETSIZE64
     if (S_ISBLK(sb.st_mode)) {
-        uint64_t size = -1;
-        ioctl(fd, BLKGETSIZE64, &size);
+        uint64_t size;
+        if(ioctl(fd, BLKGETSIZE64, &size) < 0) {
+            return -1;
+        }
         return (jlong)size;
     }
     #endif
