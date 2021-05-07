@@ -33,6 +33,7 @@ import jdk.internal.misc.Unsafe;
  */
 class WEPoll {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final int ADDRESS_SIZE = UNSAFE.addressSize();
 
     private WEPoll() { }
 
@@ -98,7 +99,11 @@ class WEPoll {
      * Returns event->data.socket
      */
     static long getSocket(long eventAddress) {
-        return UNSAFE.getLong(eventAddress + OFFSETOF_SOCK);
+        if (ADDRESS_SIZE == 8) {
+            return UNSAFE.getLong(eventAddress + OFFSETOF_SOCK);
+        } else {
+            return UNSAFE.getInt(eventAddress + OFFSETOF_SOCK);
+        }
     }
 
     /**
