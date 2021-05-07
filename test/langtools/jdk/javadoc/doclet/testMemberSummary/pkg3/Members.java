@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,34 @@
  * questions.
  */
 
+package pkg3;
+
 /**
- * @test
- * @bug 6232281
- * @requires vm.debug == true & vm.compiler2.enabled
- * @summary Tests that C2 does not crash trivially with a "remove_useless_nodes
- *          missed this node" message when UseLoopSafepoints is disabled.
- * @run main/othervm -Xcomp -XX:-TieredCompilation
-        -XX:CompileOnly=TestDisableUseLoopSafepoints -XX:-UseLoopSafepoints
- *      compiler.arguments.TestDisableUseLoopSafepoints
+ * Test class for member and nested class summaries
  */
+public class Members {
 
-package compiler.arguments;
+    private Members() {}
 
-public class TestDisableUseLoopSafepoints {
-    public static void main(String[] args) {
-        System.out.println("Passed");
+    private static final int F = 3;
+
+    private static final class C {}
+
+    private static final void M() {}
+
+    private enum E {
+        C;
     }
+
+    private interface I {
+        default void i() {}
+    }
+
+    private @interface A {
+        int v();
+        String s() default "";
+    }
+
+    private record R(int i) {}
+
 }

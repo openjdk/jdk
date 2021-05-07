@@ -257,21 +257,24 @@ public class CDS {
     */
     private static void dumpSharedArchive(boolean isStatic, String fileName) throws Exception {
         String currentPid = String.valueOf(ProcessHandle.current().pid());
-        String archiveFile =  fileName != null ? fileName :
+        String archiveFileName =  fileName != null ? fileName :
             "java_pid" + currentPid + (isStatic ? "_static.jsa" : "_dynamic.jsa");
 
-        // delete if archive file aready exists
-        File fileArchive = new File(archiveFile);
-        if (fileArchive.exists()) {
-            fileArchive.delete();
+        String tempArchiveFileName = archiveFileName + ".temp";
+        File tempArchiveFile = new File(tempArchiveFileName);
+        // The operation below may cause exception if the file or its dir is protected.
+        if (!tempArchiveFile.exists()) {
+            tempArchiveFile.createNewFile();
         }
+        tempArchiveFile.delete();
+
         if (isStatic) {
-            String listFile = archiveFile + ".classlist";
-            File fileList = new File(listFile);
-            if (fileList.exists()) {
-                fileList.delete();
+            String listFileName = archiveFileName + ".classlist";
+            File listFile = new File(listFileName);
+            if (listFile.exists()) {
+                listFile.delete();
             }
-            dumpClassList(listFile);
+            dumpClassList(listFileName);
             String jdkHome = System.getProperty("java.home");
             String classPath = System.getProperty("java.class.path");
             List<String> cmds = new ArrayList<String>();
@@ -280,8 +283,8 @@ public class CDS {
             cmds.add(classPath);
             cmds.add("-Xlog:cds");
             cmds.add("-Xshare:dump");
-            cmds.add("-XX:SharedClassListFile=" + listFile);
-            cmds.add("-XX:SharedArchiveFile=" + archiveFile);
+            cmds.add("-XX:SharedClassListFile=" + listFileName);
+            cmds.add("-XX:SharedArchiveFile=" + tempArchiveFileName);
 
             // All runtime args.
             String[] vmArgs = VM.getRuntimeArguments();
@@ -301,26 +304,33 @@ public class CDS {
 
             proc.waitFor();
             // done, delete classlist file.
-            if (fileList.exists()) {
-                fileList.delete();
-            }
+            listFile.delete();
+
             // Check if archive has been successfully dumped. We won't reach here if exception happens.
             // Throw exception if file is not created.
-            if (!fileArchive.exists()) {
-                throw new RuntimeException("Archive file " + archiveFile +
+            if (!tempArchiveFile.exists()) {
+                throw new RuntimeException("Archive file " + tempArchiveFileName +
                                            " is not created, please check stdout file " +
                                             stdOutFile + " or stderr file " +
                                             stdErrFile + " for more detail");
             }
         } else {
-            dumpDynamicArchive(archiveFile);
-            if (!fileArchive.exists()) {
-                throw new RuntimeException("Archive file " + archiveFile +
+            dumpDynamicArchive(tempArchiveFileName);
+            if (!tempArchiveFile.exists()) {
+                throw new RuntimeException("Archive file " + tempArchiveFileName +
                                            " is not created, please check process " +
                                            currentPid + " output for more detail");
             }
         }
+        // Override the existing archive file
+        File archiveFile = new File(archiveFileName);
+        if (archiveFile.exists()) {
+            archiveFile.delete();
+        }
+        if (!tempArchiveFile.renameTo(archiveFile)) {
+            throw new RuntimeException("Cannot rename temp file " + tempArchiveFileName + " to archive file" + archiveFileName);
+        }
         // Everyting goes well, print out the file name.
-        System.out.println((isStatic ? "Static" : " Dynamic") + " dump to file " + archiveFile);
+        System.out.println((isStatic ? "Static" : " Dynamic") + " dump to file " + archiveFileName);
     }
 }

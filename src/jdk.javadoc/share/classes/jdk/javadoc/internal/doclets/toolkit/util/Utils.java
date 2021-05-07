@@ -402,6 +402,10 @@ public class Utils {
         return e.getModifiers().contains(Modifier.DEFAULT);
     }
 
+    public boolean isFinal(Element e) {
+        return e.getModifiers().contains(Modifier.FINAL);
+    }
+
     public boolean isPackagePrivate(Element e) {
         return !(isPublic(e) || isPrivate(e) || isProtected(e));
     }

@@ -95,6 +95,7 @@ hotspot_slow_compiler = \
 
 tier1_compiler_1 = \
   compiler/arraycopy/ \
+  compiler/blackhole/ \
   compiler/c1/ \
   compiler/c2/ \
   -compiler/c2/Test6850611.java \
@@ -314,6 +315,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/javaldr/LockDuringDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestStaticDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestDynamicDump.java \
+ -runtime/cds/appcds/jcmd/JCmdTestFileSafety.java \
  -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/sharedStrings \
  -runtime/cds/appcds/ArchiveRelocationTest.java \

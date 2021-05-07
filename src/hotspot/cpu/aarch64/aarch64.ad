@@ -3115,32 +3115,6 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strw_immn(immN src, memory1 mem) %{
-    C2_MacroAssembler _masm(&cbuf);
-    address con = (address)$src$$constant;
-    // need to do this the hard way until we can manage relocs
-    // for 32 bit constants
-    __ movoop(rscratch2, (jobject)con);
-    if (con) __ encode_heap_oop_not_null(rscratch2);
-    loadStore(_masm, &MacroAssembler::strw, rscratch2, $mem->opcode(),
-               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
-  %}
-
-  // This encoding class is generated automatically from ad_encode.m4.
-  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strw_immnk(immN src, memory4 mem) %{
-    C2_MacroAssembler _masm(&cbuf);
-    address con = (address)$src$$constant;
-    // need to do this the hard way until we can manage relocs
-    // for 32 bit constants
-    __ movoop(rscratch2, (jobject)con);
-    __ encode_klass_not_null(rscratch2);
-    loadStore(_masm, &MacroAssembler::strw, rscratch2, $mem->opcode(),
-               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
-  %}
-
-  // This encoding class is generated automatically from ad_encode.m4.
-  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strb0_ordered(memory4 mem) %{
       C2_MacroAssembler _masm(&cbuf);
       __ membar(Assembler::StoreStore);
