@@ -224,6 +224,16 @@ class os: AllStatic {
   static char*      local_time_string(char *buf, size_t buflen);
   static struct tm* localtime_pd     (const time_t* clock, struct tm*  res);
   static struct tm* gmtime_pd        (const time_t* clock, struct tm*  res);
+
+  // "YYYY-MM-DDThh:mm:ss.mmm+zzzz" incl. terminating zero
+  static const size_t iso8601_timestamp_size = 29;
+
+  // Fill in buffer with an ISO-8601 string corresponding to the given javaTimeMillis value
+  // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
+  // Returns buffer, or NULL if it failed.
+  static char* iso8601_time(jlong milliseconds_since_19700101, char* buffer,
+                            size_t buffer_length, bool utc = false);
+
   // Fill in buffer with current local time as an ISO-8601 string.
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
   // Returns buffer, or NULL if it failed.
