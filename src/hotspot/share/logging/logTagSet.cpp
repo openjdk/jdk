@@ -174,9 +174,9 @@ static const size_t TagSetBufferSize = 128;
 void LogTagSet::describe_tagsets(outputStream* out) {
   out->print_cr("Described tag sets:");
   for (const LogTagSetDescription* d = tagset_descriptions; d->tagset != NULL; d++) {
-    char buf[TagSetBufferSize];
-    d->tagset->label(buf, sizeof(buf), "+");
-    out->print_cr(" %s: %s", buf, d->descr);
+    out->sp();
+    d->tagset->label(out, "+");
+    out->print_cr(": %s", d->descr);
   }
 }
 
