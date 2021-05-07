@@ -68,10 +68,14 @@ LogDecorations::LogDecorations(LogLevelType level, const LogTagSet &tagset, cons
   _tid(decorators.is_decorator(LogDecorators::tid_decorator) ? os::current_thread_id() : 0),
   // the rest is handed down by the caller
   _level(level), _tagset(tagset)
+#ifdef ASSERT
+  , _decorators(decorators)
+#endif
 {
 }
 
 void LogDecorations::print_decoration(LogDecorators::Decorator decorator, outputStream* st) const {
+  assert(_decorators.is_decorator(decorator), "decorator was not part of the decorator set specified at creation.");
   switch(decorator) {
 #define DECORATOR(name, abbr) case LogDecorators:: name##_decorator: print_##name##_decoration(st); break;
   DECORATOR_LIST

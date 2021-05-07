@@ -42,6 +42,9 @@ class LogDecorations {
   const intx _tid;                // for "tid"
   LogLevelType _level;            // for "level" (needs to be nonconst)
   const LogTagSet& _tagset;       // for "tags"
+  // In debug mode we keep the decorators around for sanity checking when printing
+  DEBUG_ONLY(const LogDecorators& _decorators;)
+
   static const char* volatile _host_name;
   static const char* host_name();
   static const int _pid;          // for "pid"
