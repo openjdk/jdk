@@ -193,8 +193,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * @param packageSerializedTree content tree to which the documentation will be added
      */
     protected void buildPackageHeader(Content packageSerializedTree) {
-        packageSerializedTree.add(writer.getPackageHeader(
-                utils.getPackageName(currentPackage)));
+        packageSerializedTree.add(writer.getPackageHeader(currentPackage));
     }
 
     /**
