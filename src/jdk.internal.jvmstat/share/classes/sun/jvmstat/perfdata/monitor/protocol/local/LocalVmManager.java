@@ -45,7 +45,6 @@ import java.io.*;
  */
 public class LocalVmManager {
     private String userName;                 // user name for monitored jvm
-    private List<String> tmpdirs;
     private Pattern userPattern;
     private Matcher userMatcher;
     private FilenameFilter userFilter;
@@ -76,7 +75,6 @@ public class LocalVmManager {
      */
     public LocalVmManager(String user) {
         this.userName = user;
-        setTempDirs();
 
         if (userName == null) {
             userPattern = Pattern.compile(PerfDataFile.userDirNamePattern);
@@ -111,10 +109,6 @@ public class LocalVmManager {
         };
     }
 
-    private void setTempDirs() {
-        tmpdirs = PerfDataFile.getTempDirectories(userName, 0);
-    }
-
     /**
      * Return the current set of monitorable Java Virtual Machines.
      * <p>
@@ -135,7 +129,7 @@ public class LocalVmManager {
          * we'd see strange file names being matched by the matcher.
          */
         Set<Integer> jvmSet = new HashSet<Integer>();
-        setTempDirs(); // Refresh temp dirs to find new JVMs.
+        List<String> tmpdirs = PerfDataFile.getTempDirectories(userName, 0);
 
         for (String dir : tmpdirs) {
             File tmpdir = new File(dir);
