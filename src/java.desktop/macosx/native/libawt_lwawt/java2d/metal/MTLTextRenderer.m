@@ -324,7 +324,7 @@ void MTLTR_FreeGlyphCaches() {
     }
 }
 
-MTLPaint* storedPaint = nil;
+static MTLPaint* storedPaint = nil;
 
 static void EnableColorGlyphPainting(MTLContext *mtlc) {
     storedPaint = mtlc.paint;
