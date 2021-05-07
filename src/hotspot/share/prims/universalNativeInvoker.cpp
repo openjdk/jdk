@@ -31,8 +31,8 @@ ProgrammableInvoker::Generator::Generator(CodeBuffer* code, const ABIDescriptor*
     _layout(layout) {}
 
 void ProgrammableInvoker::invoke_native(Stub stub, address buff, JavaThread* thread) {
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
   ThreadToNativeFromVM ttnfvm(thread);
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
   stub(buff);
 }
 
