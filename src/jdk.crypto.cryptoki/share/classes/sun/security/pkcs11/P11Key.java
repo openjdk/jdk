@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,13 +164,12 @@ abstract class P11Key implements Key, Length {
         return (b == null) ? null : b.clone();
     }
 
+    // Called by the NativeResourceCleaner at specified intervals
+    // See NativeResourceCleaner for more information
     static boolean drainRefQueue() {
         boolean found = false;
-        while (true) {
-            SessionKeyRef next = (SessionKeyRef) SessionKeyRef.refQueue.poll();
-            if (next == null) {
-                break;
-            }
+        SessionKeyRef next;
+        while ((next = (SessionKeyRef) SessionKeyRef.refQueue.poll()) != null) {
             found = true;
             next.dispose();
         }
@@ -1338,10 +1337,9 @@ final class NativeKeyHolder {
  * still use these keys during finalization such as SSLSocket.
  */
 final class SessionKeyRef extends PhantomReference<P11Key> {
-    static ReferenceQueue<P11Key> refQueue =
-        new ReferenceQueue<P11Key>();
+    static ReferenceQueue<P11Key> refQueue = new ReferenceQueue<>();
     private static Set<SessionKeyRef> refSet =
-        Collections.synchronizedSet(new HashSet<SessionKeyRef>());
+        Collections.synchronizedSet(new HashSet<>());
 
     // handle to the native key and the session it is generated under
     private long keyID;

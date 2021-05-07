@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -431,17 +431,17 @@ final class Config {
                 if (insertionCheckInterval < 100) {
                     throw excLine(word + " must be at least 100 ms");
                 }
-            } else if (word.endsWith("cleaner.shortInterval")) {
+            } else if (word.equals("cleaner.shortInterval")) {
                 resourceCleanerShortInterval = parseIntegerEntry(word);
                 if (resourceCleanerShortInterval < 1_000) {
                     throw excLine(word + " must be at least 1000 ms");
                 }
-            } else if (word.endsWith("cleaner.longInterval")) {
+            } else if (word.equals("cleaner.longInterval")) {
                 resourceCleanerLongInterval = parseIntegerEntry(word);
                 if (resourceCleanerLongInterval < 1_000) {
                     throw excLine(word + " must be at least 1000 ms");
                 }
-            } else if (word.endsWith("destroyTokenAfterLogout")) {
+            } else if (word.equals("destroyTokenAfterLogout")) {
                 destroyTokenAfterLogout = parseBooleanEntry(word);
             } else if (word.equals("showInfo")) {
                 showInfo = parseBooleanEntry(word);

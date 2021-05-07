@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -960,7 +960,7 @@ public final class SunPKCS11 extends AuthProvider {
     private class NativeResourceCleaner extends Thread {
         private long sleepMillis = config.getResourceCleanerShortInterval();
         private int count = 0;
-        boolean p11RefFound, SessRefFound;
+        boolean keyRefFound, sessRefFound;
 
         private NativeResourceCleaner() {
             super((ThreadGroup)null, "Cleanup-SunPKCS11");
@@ -969,6 +969,19 @@ public final class SunPKCS11 extends AuthProvider {
             setPriority(Thread.MIN_PRIORITY);
         }
 
+        /*
+         * The cleaner.shortInterval and cleaner.longInterval properties
+         * may be defined in the pkcs11 config file and are specified in milliseconds
+         * Minimum value is 1000ms.  Default values :
+         *  cleaner.shortInterval : 2000ms
+         *  cleaner.longInterval  : 60000ms
+         *
+         * The cleaner thread runs at cleaner.shortInterval intervals
+         * while P11Key or Session references continue to be found for cleaning.
+         * If 100 iterations occur with no references being found, then the interval
+         * period moves to cleaner.longInterval value. The cleaner thread moves back
+         * to short interval checking if a resource is found
+         */
         @Override
         public void run() {
             while (true) {
@@ -977,18 +990,18 @@ public final class SunPKCS11 extends AuthProvider {
                 } catch (InterruptedException ie) {
                     break;
                 }
-                p11RefFound = P11Key.drainRefQueue();
-                SessRefFound = Session.drainRefQueue();
-                if (!p11RefFound && !SessRefFound) {
+                keyRefFound = P11Key.drainRefQueue();
+                sessRefFound = Session.drainRefQueue();
+                if (!keyRefFound && !sessRefFound) {
                     count++;
+                    if (count > 100) {
+                        // no reference freed for some time
+                        // increase the sleep time
+                        sleepMillis = config.getResourceCleanerLongInterval();
+                    }
                 } else {
                     count = 0;
                     sleepMillis = config.getResourceCleanerShortInterval();
-                }
-                if (count > 100) {
-                    // no reference freed for some time
-                    // increase the sleep time
-                    sleepMillis = config.getResourceCleanerLongInterval();
                 }
             }
         }

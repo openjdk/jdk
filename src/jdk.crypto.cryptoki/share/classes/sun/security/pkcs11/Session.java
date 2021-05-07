@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,11 +130,12 @@ final class Session implements Comparable<Session> {
         sessionRef.dispose();
     }
 
+    // Called by the NativeResourceCleaner at specified intervals
+    // See NativeResourceCleaner for more information
     static boolean drainRefQueue() {
         boolean found = false;
-        while (true) {
-            SessionRef next = (SessionRef) SessionRef.refQueue.poll();
-            if (next == null) break;
+        SessionRef next;
+        while ((next = (SessionRef) SessionRef.refQueue.poll())!= null) {
             found = true;
             next.dispose();
         }
@@ -149,11 +150,10 @@ final class Session implements Comparable<Session> {
 final class SessionRef extends PhantomReference<Session>
         implements Comparable<SessionRef> {
 
-    static ReferenceQueue<Session> refQueue =
-        new ReferenceQueue<Session>();
+    static ReferenceQueue<Session> refQueue = new ReferenceQueue<>();
 
     private static Set<SessionRef> refList =
-        Collections.synchronizedSortedSet(new TreeSet<SessionRef>());
+        Collections.synchronizedSortedSet(new TreeSet<>());
 
     // handle to the native session
     private long id;

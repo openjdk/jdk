@@ -109,8 +109,6 @@ ${CHMOD} +w ${TESTCLASSES}${FS}key3.db
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         -classpath ${TESTSRC}${FS}.. \
         -d ${TESTCLASSES} \
-        --add-modules jdk.crypto.cryptoki \
-        --add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED \
         ${TESTSRC}${FS}..${FS}..${FS}..${FS}..${FS}..${FS}lib${FS}jdk${FS}test${FS}lib${FS}artifacts${FS}*.java \
         ${TESTSRC}${FS}Login.java \
         ${TESTSRC}${FS}..${FS}PKCS11Test.java
@@ -119,8 +117,6 @@ ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
 
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
         -classpath ${TESTCLASSES}${PS}${CPAPPEND} \
-        --add-modules jdk.crypto.cryptoki \
-        --add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED \
         -DCUSTOM_DB_DIR=${TESTCLASSES} \
         -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}Login-nss.txt \
         -DNO_DEFAULT=true \

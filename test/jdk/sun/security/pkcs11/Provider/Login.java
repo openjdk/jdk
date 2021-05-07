@@ -22,33 +22,20 @@
  */
 
 import java.io.*;
-import java.lang.ref.WeakReference;
+import java.util.*;
 import java.security.*;
 import javax.security.auth.callback.*;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.FailedLoginException;
-import javax.security.auth.login.LoginException;
-
-import sun.security.pkcs11.SunPKCS11;
 
 public class Login extends PKCS11Test {
 
     private static final String KS_TYPE = "PKCS11";
     private static char[] password;
-    private static SunPKCS11 pkcs11Provider = null;
 
     public static void main(String[] args) throws Exception {
         main(new Login(), args);
-
-        pkcs11Provider.logout();
-        WeakReference<SunPKCS11> weakRef = new WeakReference<>(pkcs11Provider);
-        pkcs11Provider = null;
-        for (int i = 0; i > 100; i++) {
-            System.gc();
-            Thread.sleep(100);
-        }
-        System.out.println("Finish: "+ weakRef.refersTo(null));
     }
 
     public void main(Provider p) throws Exception {
@@ -65,15 +52,15 @@ public class Login extends PKCS11Test {
             throw new SecurityException("did not get AuthProvider KeyStore");
         }
 
-        pkcs11Provider = (SunPKCS11)ks.getProvider();
+        AuthProvider ap = (AuthProvider)ks.getProvider();
         try {
 
             // test app-provided callback
             System.out.println("*** enter [foo] as the password ***");
             password = new char[] { 'f', 'o', 'o' };
 
-            pkcs11Provider.login(new Subject(), new PasswordCallbackHandler());
-            pkcs11Provider.logout();
+            ap.login(new Subject(), new PasswordCallbackHandler());
+            ap.logout();
             throw new SecurityException("test failed, expected LoginException");
         } catch (FailedLoginException fle) {
             System.out.println("test " + testnum++ + " passed");
@@ -87,8 +74,8 @@ public class Login extends PKCS11Test {
 
             Security.setProperty("auth.login.defaultCallbackHandler",
                 "Login$PasswordCallbackHandler");
-            pkcs11Provider.login(new Subject(), null);
-            pkcs11Provider.logout();
+            ap.login(new Subject(), null);
+            ap.logout();
             throw new SecurityException("test failed, expected LoginException");
         } catch (FailedLoginException fle) {
             System.out.println("test " + testnum++ + " passed");
@@ -99,30 +86,21 @@ public class Login extends PKCS11Test {
         password = new char[] { 't', 'e', 's', 't', '1', '2' };
 
         Security.setProperty("auth.login.defaultCallbackHandler", "");
-        pkcs11Provider.setCallbackHandler(new PasswordCallbackHandler());
-        pkcs11Provider.login(new Subject(), null);
+        ap.setCallbackHandler(new PasswordCallbackHandler());
+        ap.login(new Subject(), null);
         System.out.println("test " + testnum++ + " passed");
 
         // test user already logged in
-        pkcs11Provider.setCallbackHandler(null);
-        pkcs11Provider.login(new Subject(), null);
+        ap.setCallbackHandler(null);
+        ap.login(new Subject(), null);
         System.out.println("test " + testnum++ + " passed");
 
         // logout
-        pkcs11Provider.logout();
+        ap.logout();
 
         // call KeyStore.load with a NULL password, and get prompted for PIN
-        pkcs11Provider.setCallbackHandler(new PasswordCallbackHandler());
-        try {
-            ks.load(null, (char[]) null);
-        } catch (IOException e) {
-            if (e.getCause() instanceof LoginException &&
-                    e.getCause().getMessage().contains("No token present")) {
-                //ignore
-            } else {
-                throw new RuntimeException("Unexpected result", e);
-            }
-        }
+        ap.setCallbackHandler(new PasswordCallbackHandler());
+        ks.load(null, (char[])null);
         System.out.println("test " + testnum++ + " passed");
     }
 
