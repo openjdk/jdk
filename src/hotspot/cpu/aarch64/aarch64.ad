@@ -2501,7 +2501,7 @@ const int Matcher::min_vector_size(const BasicType bt) {
   }
 }
 
-const bool Matcher::supports_scalable_vector() {
+const bool Matcher::scalable_vector_enabled() {
   return UseSVE > 0;
 }
 

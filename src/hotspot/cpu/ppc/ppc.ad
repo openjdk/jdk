@@ -2240,7 +2240,7 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
 }
 
-const bool Matcher::supports_scalable_vector() {
+const bool Matcher::scalable_vector_enabled() {
   return false;
 }
 

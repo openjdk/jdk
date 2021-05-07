@@ -343,7 +343,13 @@ public:
             Matcher::min_vector_size(bt) <= size);
   }
 
-  static const bool supports_scalable_vector();
+
+  static const bool implements_scalable_vector = AARCH64_ONLY(true) NOT_AARCH64(false);
+
+  static const bool scalable_vector_enabled();
+  static const bool supports_scalable_vector() {
+    return implements_scalable_vector && scalable_vector_enabled();
+  }
   // Actual max scalable vector register length.
   static const int scalable_vector_reg_size(const BasicType bt);
 

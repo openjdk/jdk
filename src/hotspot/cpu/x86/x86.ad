@@ -1966,7 +1966,7 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size,max_size);
 }
 
-const bool Matcher::supports_scalable_vector() {
+const bool Matcher::scalable_vector_enabled() {
   return false;
 }
 

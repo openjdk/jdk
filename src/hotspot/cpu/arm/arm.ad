@@ -1012,7 +1012,7 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
   return MaxVectorSize;
 }
 
-const bool Matcher::supports_scalable_vector() {
+const bool Matcher::scalable_vector_enabled() {
   return false;
 }
 
