@@ -28,13 +28,16 @@
 //
 // Declare Bsd specific flags. They are not available on other platforms.
 //
-#define RUNTIME_OS_FLAGS(develop,     \
-                         develop_pd,  \
-                         product,     \
-                         product_pd,  \
-                         notproduct,  \
-                         range,       \
-                         constraint)
+#define RUNTIME_OS_FLAGS(develop,                                       \
+                         develop_pd,                                    \
+                         product,                                       \
+                         product_pd,                                    \
+                         notproduct,                                    \
+                         range,                                         \
+                         constraint)                                    \
+                                                                        \
+  AARCH64_ONLY(develop(bool, WXCheckAtSafepoint, false,                 \
+          "Conservatively check W^X thread state at possible safepoint"))
 
 // end of RUNTIME_OS_FLAGS
 
