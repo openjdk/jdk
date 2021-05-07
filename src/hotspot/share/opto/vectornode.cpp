@@ -1294,6 +1294,37 @@ Node* ShiftVNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
+Node* VectorMaskOpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* mask = in(1);
+  if (mask->Opcode() == Op_VectorLoadMask) {
+    set_req(1, in(1)->in(1));
+    return this;
+  } else {
+    const TypeVect* mask_vt = mask->bottom_type()->is_vect();
+    if (mask_vt->element_basic_type() != T_BOOLEAN) {
+      Node* value = phase->transform(VectorStoreMaskNode::make(*phase, mask, T_BOOLEAN,
+                                                               mask_vt->length()));
+      return VectorMaskOpNode::make(value, bottom_type(), get_elem_type(), get_mask_Opcode());
+    }
+  }
+  return NULL;
+}
+
+Node* VectorMaskOpNode::make(Node* mask, const Type* ty, const Type* ety, int mopc) {
+  switch(mopc) {
+    case Op_VectorMaskTrueCount:
+      return new VectorMaskTrueCountNode(mask, ty, ety);
+    case Op_VectorMaskLastTrue:
+      return new VectorMaskLastTrueNode(mask, ty, ety);
+    case Op_VectorMaskFirstTrue:
+      return new VectorMaskFirstTrueNode(mask, ty, ety);
+    default:
+      assert(false, "Unhandled operation");
+  }
+  return NULL;
+}
+
+
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);

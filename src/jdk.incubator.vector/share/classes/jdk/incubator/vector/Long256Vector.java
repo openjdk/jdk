@@ -646,6 +646,29 @@ final class Long256Vector extends LongVector {
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
 
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskOp(VECTOR_OP_MASK_TRUECOUNT, Long256Mask.class, long.class, VLENGTH, this,
+                                        (m) -> trueCountHelper(((Long256Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskOp(VECTOR_OP_MASK_FIRSTTRUE, Long256Mask.class, long.class, VLENGTH, this,
+                                        (m) -> firstTrueHelper(((Long256Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskOp(VECTOR_OP_MASK_LASTTRUE, Long256Mask.class, long.class, VLENGTH, this,
+                                        (m) -> lastTrueHelper(((Long256Mask)m).getBits()));
+        }
+
         // Reductions
 
         @Override

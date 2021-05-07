@@ -362,6 +362,42 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       }
       break;
     }
+    case VECTOR_OP_MASK_LASTTRUE: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_VectorMaskLastTrue;
+        default: fatal("MASK_LASTTRUE: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_MASK_FIRSTTRUE: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_VectorMaskFirstTrue;
+        default: fatal("MASK_FIRSTTRUE: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_MASK_TRUECOUNT: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_VectorMaskTrueCount;
+        default: fatal("MASK_TRUECOUNT: %s", type2name(bt));
+      }
+      break;
+    }
     default: fatal("unknown op: %d", vop);
   }
   return 0; // Unimplemented

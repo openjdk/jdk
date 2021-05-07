@@ -1581,6 +1581,13 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_VectorMaskFirstTrue:
+    case Op_VectorMaskLastTrue:
+    case Op_VectorMaskTrueCount:
+      if (UseAVX < 1) {
+         return false;
+      }
+      break;
 #ifndef _LP64
     case Op_AddReductionVF:
     case Op_AddReductionVD:
@@ -8051,6 +8058,44 @@ instruct vmasked_store64(memory mem, vec src, kReg mask) %{
     BasicType elmType =  src_node->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(src_node);
     __ evmovdqu(elmType, $mask$$KRegister, $mem$$Address, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmask_true_count_evex(rRegI dst, vec mask, rRegL tmp, kReg ktmp, vec xtmp) %{
+  predicate(VM_Version::supports_avx512bw());
+  match(Set dst (VectorMaskTrueCount mask));
+  match(Set dst (VectorMaskFirstTrue mask));
+  match(Set dst (VectorMaskLastTrue mask));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP ktmp, TEMP xtmp);
+  format %{ "vector_mask_true_count_evex $mask \t! vector mask true count" %}
+  ins_encode %{
+    const MachNode* mask_node = static_cast<const MachNode*>(this->in(this->operand_index($mask)));
+    assert(mask_node->bottom_type()->isa_vect(), "");
+    int vector_len = vector_length_encoding(mask_node);
+    int opcode = this->ideal_Opcode();
+    int mask_len = mask_node->bottom_type()->is_vect()->length();
+    __ vector_mask_oper(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
+                        $tmp$$Register, $ktmp$$KRegister, mask_len, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmask_true_count_avx(rRegI dst, vec mask, rRegL tmp, vec xtmp, vec xtmp1) %{
+  predicate(!VM_Version::supports_avx512bw());
+  match(Set dst (VectorMaskTrueCount mask));
+  match(Set dst (VectorMaskFirstTrue mask));
+  match(Set dst (VectorMaskLastTrue mask));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, TEMP xtmp1);
+  format %{ "vector_mask_true_count_evex $mask \t! vector mask true count" %}
+  ins_encode %{
+    const MachNode* mask_node = static_cast<const MachNode*>(this->in(this->operand_index($mask)));
+    assert(mask_node->bottom_type()->isa_vect(), "");
+    int vector_len = vector_length_encoding(mask_node);
+    int opcode = this->ideal_Opcode();
+    int mask_len = mask_node->bottom_type()->is_vect()->length();
+    __ vector_mask_oper(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
+                        $xtmp1$$XMMRegister, $tmp$$Register, mask_len, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
