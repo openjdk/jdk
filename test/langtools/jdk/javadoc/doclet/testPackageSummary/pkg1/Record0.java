@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,7 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6232281
- * @requires vm.debug == true & vm.compiler2.enabled
- * @summary Tests that C2 does not crash trivially with a "remove_useless_nodes
- *          missed this node" message when UseLoopSafepoints is disabled.
- * @run main/othervm -Xcomp -XX:-TieredCompilation
-        -XX:CompileOnly=TestDisableUseLoopSafepoints -XX:-UseLoopSafepoints
- *      compiler.arguments.TestDisableUseLoopSafepoints
- */
+package pkg1;
 
-package compiler.arguments;
-
-public class TestDisableUseLoopSafepoints {
-    public static void main(String[] args) {
-        System.out.println("Passed");
-    }
+public record Record0() {
 }

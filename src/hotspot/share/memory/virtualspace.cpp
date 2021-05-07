@@ -169,14 +169,14 @@ static char* reserve_memory(char* requested_address, const size_t size,
 }
 
 static char* reserve_memory_special(char* requested_address, const size_t size,
-                                    const size_t alignment,  bool exec) {
+                                    const size_t alignment, const size_t page_size, bool exec) {
 
   log_trace(pagesize)("Attempt special mapping: size: " SIZE_FORMAT "%s, "
                       "alignment: " SIZE_FORMAT "%s",
                       byte_size_in_exact_unit(size), exact_unit_for_byte_size(size),
                       byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
 
-  char* base = os::reserve_memory_special(size, alignment, requested_address, exec);
+  char* base = os::reserve_memory_special(size, alignment, page_size, requested_address, exec);
   if (base != NULL) {
     // Check alignment constraints.
     assert(is_aligned(base, alignment),
@@ -236,7 +236,7 @@ void ReservedSpace::reserve(size_t size,
     // explicit large pages and these have to be committed up front to ensure
     // no reservations are lost.
 
-    char* base = reserve_memory_special(requested_address, size, alignment, executable);
+    char* base = reserve_memory_special(requested_address, size, alignment, page_size, executable);
     if (base != NULL) {
       // Successful reservation using large pages.
       initialize_members(base, size, alignment, page_size, true, executable);

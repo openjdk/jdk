@@ -197,11 +197,16 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         return super.getNavBar(pageMode, element)
-                .setDisplaySummaryModuleDescLink(!utils.getFullBody(mdle).isEmpty() && !options.noComment())
-                .setDisplaySummaryModulesLink(display(requires) || display(indirectModules))
-                .setDisplaySummaryPackagesLink(display(packages) || display(indirectPackages)
-                        || display(indirectOpenPackages))
-                .setDisplaySummaryServicesLink(displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees));
+                .setSubNavLinks(() -> List.of(
+                        links.createLink(HtmlIds.MODULE_DESCRIPTION, contents.navDescription,
+                            !utils.getFullBody(mdle).isEmpty() && !options.noComment()),
+                        links.createLink(HtmlIds.MODULES, contents.navModules,
+                            display(requires) || display(indirectModules)),
+                        links.createLink(HtmlIds.PACKAGES, contents.navPackages,
+                            display(packages) || display(indirectPackages) || display(indirectOpenPackages)),
+                        links.createLink(HtmlIds.SERVICES, contents.navServices,
+                            displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees))
+                ));
     }
 
     /**

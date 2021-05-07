@@ -74,6 +74,7 @@ class ObjectClosure;
 class SpaceClosure;
 class CompactibleSpaceClosure;
 class Space;
+class G1BatchedGangTask;
 class G1CardTableEntryClosure;
 class G1CollectionSet;
 class G1Policy;
@@ -171,8 +172,6 @@ private:
   HeapRegionSet _archive_set;
   HeapRegionSet _humongous_set;
 
-  void eagerly_reclaim_humongous_regions();
-
   void rebuild_free_region_list();
   // Start a new incremental collection set for the next pause.
   void start_new_collection_set();
@@ -245,9 +244,9 @@ private:
   // candidates removed from the set as they are found reachable from
   // roots or the young generation.
   class HumongousReclaimCandidates : public G1BiasedMappedArray<bool> {
-   protected:
+  protected:
     bool default_value() const { return false; }
-   public:
+  public:
     void clear() { G1BiasedMappedArray<bool>::clear(); }
     void set_candidate(uint region, bool value) {
       set_by_index(region, value);
@@ -258,9 +257,16 @@ private:
   };
 
   HumongousReclaimCandidates _humongous_reclaim_candidates;
-  // Stores whether during humongous object registration we found candidate regions.
-  // If not, we can skip a few steps.
-  bool _has_humongous_reclaim_candidates;
+  uint _num_humongous_objects; // Current amount of (all) humongous objects found in the heap.
+  uint _num_humongous_reclaim_candidates; // Number of humongous object eager reclaim candidates.
+public:
+  uint num_humongous_objects() const { return _num_humongous_objects; }
+  uint num_humongous_reclaim_candidates() const { return _num_humongous_reclaim_candidates; }
+  bool has_humongous_reclaim_candidates() const { return _num_humongous_reclaim_candidates > 0; }
+
+  bool should_do_eager_reclaim() const;
+
+private:
 
   G1HRPrinter _hr_printer;
 
@@ -546,10 +552,6 @@ private:
   // to discover.
   void make_pending_list_reachable();
 
-  // Merges the information gathered on a per-thread basis for all worker threads
-  // during GC into global variables.
-  void merge_per_thread_state_info(G1ParScanThreadStateSet* per_thread_states);
-
   void verify_numa_regions(const char* desc);
 
 public:
@@ -560,6 +562,8 @@ public:
   // Runs the given AbstractGangTask with the current active workers,
   // returning the total time taken.
   Tickspan run_task_timed(AbstractGangTask* task);
+  // Run the given batch task using the work gang.
+  void run_batch_task(G1BatchedGangTask* cl);
 
   G1Allocator* allocator() {
     return _allocator;
@@ -608,7 +612,6 @@ public:
   // These are only valid for starts_humongous regions.
   inline void set_humongous_reclaim_candidate(uint region, bool value);
   inline bool is_humongous_reclaim_candidate(uint region);
-  inline void set_has_humongous_reclaim_candidate(bool value);
 
   // Remove from the reclaim candidate set.  Also remove from the
   // collection set so that later encounters avoid the slow path.
@@ -833,9 +836,16 @@ public:
   // The g1 remembered set of the heap.
   G1RemSet* _rem_set;
 
-  // After a collection pause, convert the regions in the collection set into free
-  // regions.
-  void free_collection_set(G1CollectionSet* collection_set, G1EvacuationInfo& evacuation_info, const size_t* surviving_young_words);
+  void post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states,
+                               G1RedirtyCardsQueueSet* rdcqs);
+  void post_evacuate_cleanup_2(PreservedMarksSet* preserved_marks,
+                               G1RedirtyCardsQueueSet* rdcqs,
+                               G1EvacuationInfo* evacuation_info,
+                               const size_t* surviving_young_words);
+
+  // After a collection pause, reset eden and the collection set.
+  void clear_eden();
+  void clear_collection_set();
 
   // Abandon the current collection set without recording policy
   // statistics or updating free lists.
@@ -855,14 +865,6 @@ public:
   volatile uint _num_regions_failed_evacuation;
 
   EvacuationFailedInfo* _evacuation_failed_info_array;
-
-  // Failed evacuations cause some logical from-space objects to have
-  // forwarding pointers to themselves.  Reset them.
-  void remove_self_forwarding_pointers(G1RedirtyCardsQueueSet* rdcqs);
-
-  // Restore the objects in the regions in the collection set after an
-  // evacuation failure.
-  void restore_after_evac_failure(G1RedirtyCardsQueueSet* rdcqs);
 
   PreservedMarksSet _preserved_marks_set;
 
@@ -1385,6 +1387,13 @@ public:
   // No nmethod verification implemented.
   virtual void verify_nmethod(nmethod* nm) {}
 
+  // Recalculate amount of used memory after GC. Must be called after all allocation
+  // has finished.
+  void update_used_after_gc();
+  // Reset and re-enable the hot card cache.
+  // Note the counts for the cards in the regions in the
+  // collection set are reset when the collection set is freed.
+  void reset_hot_card_cache();
   // Free up superfluous code root memory.
   void purge_code_root_memory();
 
@@ -1399,9 +1408,6 @@ public:
 
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);
-
-  // Redirty logged cards in the refinement queue.
-  void redirty_logged_cards(G1RedirtyCardsQueueSet* rdcqs);
 
   // Verification
 
