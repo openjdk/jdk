@@ -177,7 +177,6 @@ LogOutput* LogConfiguration::new_output(const char* name,
                                         outputStream* errstream) {
   LogOutput* output;
   if (strncmp(name, LogFileOutput::Prefix, strlen(LogFileOutput::Prefix)) == 0) {
-printf("COUNTER\n");
     output = new LogFileOutput(name);
   } else {
     errstream->print_cr("Unsupported log output type: %s", name);
