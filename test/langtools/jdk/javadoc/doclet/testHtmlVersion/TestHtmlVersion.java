@@ -241,7 +241,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <div class="header">""",
                 """
                     <section class="serialized-package-container">
-                    <h2 title="Package">Package&nbsp;pkg</h2>
+                    <h2 title="Package">Package&nbsp;<a href="pkg/package-summary.html">pkg</a></h2>
                     """,
                 """
                     <footer role="contentinfo">""",
