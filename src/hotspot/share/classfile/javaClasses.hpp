@@ -261,7 +261,7 @@ class java_lang_Class : AllStatic {
   static void set_component_mirror(oop java_class, oop comp_mirror);
   static void initialize_mirror_fields(Klass* k, Handle mirror, Handle protection_domain,
                                        Handle classData, TRAPS);
-  static void set_mirror_module_field(Klass* K, Handle mirror, Handle module, TRAPS);
+  static void set_mirror_module_field(JavaThread* current, Klass* K, Handle mirror, Handle module);
  public:
   static void allocate_fixup_lists();
   static void compute_offsets();
@@ -383,8 +383,6 @@ class java_lang_Thread : AllStatic {
  public:
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
-  // Instance creation
-  static oop create();
   // Returns the JavaThread associated with the thread obj
   static JavaThread* thread(oop java_thread);
   // Set JavaThread for instance
@@ -499,6 +497,7 @@ class java_lang_Throwable: AllStatic {
   static int _detailMessage_offset;
   static int _stackTrace_offset;
   static int _depth_offset;
+  static int _cause_offset;
   static int _static_unassigned_stacktrace_offset;
 
   // StackTrace (programmatic access, new since 1.4)
@@ -516,10 +515,10 @@ class java_lang_Throwable: AllStatic {
   static int get_detailMessage_offset() { CHECK_INIT(_detailMessage_offset); }
   // Message
   static oop message(oop throwable);
+  static oop cause(oop throwable);
   static void set_message(oop throwable, oop value);
   static Symbol* detail_message(oop throwable);
   static void print_stack_element(outputStream *st, Method* method, int bci);
-  static void print_stack_usage(Handle stream);
 
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
@@ -704,8 +703,6 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
 
   static void set_signature(oop constructor, oop value);
   static void set_annotations(oop constructor, oop value);
-  static void set_parameter_annotations(oop method, oop value);
-  static void set_annotation_default(oop method, oop value);
 
   // Debugging
   friend class JavaClasses;
@@ -886,8 +883,6 @@ class java_lang_ref_Reference: AllStatic {
   static inline void set_discovered(oop ref, oop value);
   static inline void set_discovered_raw(oop ref, oop value);
   static inline HeapWord* discovered_addr_raw(oop ref);
-  static inline oop queue(oop ref);
-  static inline void set_queue(oop ref, oop value);
   static bool is_referent_field(oop obj, ptrdiff_t offset);
   static inline bool is_final(oop ref);
   static inline bool is_phantom(oop ref);
@@ -921,8 +916,6 @@ class java_lang_ref_SoftReference: public java_lang_ref_Reference {
 };
 
 // Interface to java.lang.invoke.MethodHandle objects
-
-class MethodHandleEntry;
 
 class java_lang_invoke_MethodHandle: AllStatic {
   friend class JavaClasses;
@@ -996,7 +989,6 @@ class java_lang_invoke_LambdaForm: AllStatic {
 
   // Accessors
   static oop            vmentry(oop lform);
-  static void       set_vmentry(oop lform, oop invoker);
 
   // Testers
   static bool is_subclass(Klass* klass) {

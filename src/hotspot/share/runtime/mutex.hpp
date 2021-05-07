@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,6 @@
 // The underlying PlatformMutex may support recursive locking but this is not exposed
 // and we account for that possibility in try_lock.
 
-// The default length of mutex name was originally chosen to be 64 to avoid
-// false sharing. Now, PaddedMutex and PaddedMonitor are available for this purpose.
-// TODO: Check if _name[MUTEX_NAME_LEN] should better get replaced by const char*.
-static const int MUTEX_NAME_LEN = 64;
-
 class Mutex : public CHeapObj<mtSynchronizer> {
 
  public:
@@ -72,8 +67,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
        access         = event          +   1,
        tty            = access         +   2,
        special        = tty            +   3,
-       suspend_resume = special        +   1,
-       oopstorage     = suspend_resume +   2,
+       oopstorage     = special        +   3,
        leaf           = oopstorage     +   2,
        safepoint      = leaf           +  10,
        barrier        = safepoint      +   1,
@@ -91,7 +85,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
  protected:                              // Monitor-Mutex metadata
   os::PlatformMonitor _lock;             // Native monitor implementation
-  char _name[MUTEX_NAME_LEN];            // Name of mutex/monitor
+  const char* _name;                     // Name of mutex/monitor
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
 #ifndef PRODUCT
@@ -124,11 +118,9 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void check_no_safepoint_state(Thread* thread)                       NOT_DEBUG_RETURN;
   void check_rank              (Thread* thread)                       NOT_DEBUG_RETURN;
   void assert_owner            (Thread* expected)                     NOT_DEBUG_RETURN;
-  void no_safepoint_verifier   (Thread* thread, bool enable)          NOT_DEBUG_RETURN;
 
  public:
   static const bool _allow_vm_block_flag        = true;
-  static const bool _as_suspend_equivalent_flag = true;
 
   // Locks can be acquired with or without a safepoint check. NonJavaThreads do not follow
   // the safepoint protocol when acquiring locks.
@@ -227,10 +219,8 @@ class Monitor : public Mutex {
 
   // Wait until monitor is notified (or times out).
   // Defaults are to make safepoint checks, wait time is forever (i.e.,
-  // zero), and not a suspend-equivalent condition. Returns true if wait
-  // times out; otherwise returns false.
-  bool wait(int64_t timeout = 0,
-            bool as_suspend_equivalent = !_as_suspend_equivalent_flag);
+  // zero). Returns true if wait times out; otherwise returns false.
+  bool wait(int64_t timeout = 0);
   bool wait_without_safepoint_check(int64_t timeout = 0);
   void notify();
   void notify_all();

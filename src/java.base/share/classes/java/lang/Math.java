@@ -1886,32 +1886,21 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static float fma(float a, float b, float c) {
-        /*
-         *  Since the double format has more than twice the precision
-         *  of the float format, the multiply of a * b is exact in
-         *  double. The add of c to the product then incurs one
-         *  rounding error. Since the double format moreover has more
-         *  than (2p + 2) precision bits compared to the p bits of the
-         *  float format, the two roundings of (a * b + c), first to
-         *  the double format and then secondarily to the float format,
-         *  are equivalent to rounding the intermediate result directly
-         *  to the float format.
-         *
-         * In terms of strictfp vs default-fp concerns related to
-         * overflow and underflow, since
-         *
-         * (Float.MAX_VALUE * Float.MAX_VALUE) << Double.MAX_VALUE
-         * (Float.MIN_VALUE * Float.MIN_VALUE) >> Double.MIN_VALUE
-         *
-         * neither the multiply nor add will overflow or underflow in
-         * double. Therefore, it is not necessary for this method to
-         * be declared strictfp to have reproducible
-         * behavior. However, it is necessary to explicitly store down
-         * to a float variable to avoid returning a value in the float
-         * extended value set.
-         */
-        float result = (float)(((double) a * (double) b ) + (double) c);
-        return result;
+        if (Float.isFinite(a) && Float.isFinite(b) && Float.isFinite(c)) {
+            if (a == 0.0 || b == 0.0) {
+                return a * b + c; // Handled signed zero cases
+            } else {
+                return (new BigDecimal((double)a * (double)b) // Exact multiply
+                        .add(new BigDecimal((double)c)))      // Exact sum
+                    .floatValue();                            // One rounding
+                                                              // to a float value
+            }
+        } else {
+            // At least one of a,b, and c is non-finite. The result
+            // will be non-finite as well and will be the same
+            // non-finite value under double as float arithmetic.
+            return (float)fma((double)a, (double)b, (double)c);
+        }
     }
 
     /**

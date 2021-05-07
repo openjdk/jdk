@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,7 +228,7 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
   if (scope() == NULL) {
     CompiledMethod* nm = code();
     Method* method = nm->method();
-    assert(method->is_native() || nm->is_aot(), "Expect a native method or precompiled method");
+    assert(method->is_native(), "Expect a native method");
     if (!method->is_synchronized()) {
       return new GrowableArray<MonitorInfo*>(0);
     }
@@ -459,7 +459,7 @@ void jvmtiDeferredLocalVariableSet::update_value(StackValueCollection* locals, B
       break;
     case T_OBJECT:
       {
-        Handle obj(Thread::current(), (oop)value.l);
+        Handle obj(Thread::current(), cast_to_oop(value.l));
         locals->set_obj_at(index, obj);
       }
       break;

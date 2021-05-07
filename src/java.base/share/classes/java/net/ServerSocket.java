@@ -373,9 +373,8 @@ public class ServerSocket implements java.io.Closeable {
             throw new SocketException("Already bound");
         if (endpoint == null)
             endpoint = new InetSocketAddress(0);
-        if (!(endpoint instanceof InetSocketAddress))
+        if (!(endpoint instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type");
-        InetSocketAddress epoint = (InetSocketAddress) endpoint;
         if (epoint.isUnresolved())
             throw new SocketException("Unresolved address");
         if (backlog < 1)

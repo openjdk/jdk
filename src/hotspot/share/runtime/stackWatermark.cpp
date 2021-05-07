@@ -28,6 +28,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"

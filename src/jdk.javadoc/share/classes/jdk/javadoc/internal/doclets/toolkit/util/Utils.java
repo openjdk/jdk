@@ -402,6 +402,10 @@ public class Utils {
         return e.getModifiers().contains(Modifier.DEFAULT);
     }
 
+    public boolean isFinal(Element e) {
+        return e.getModifiers().contains(Modifier.FINAL);
+    }
+
     public boolean isPackagePrivate(Element e) {
         return !(isPublic(e) || isPrivate(e) || isProtected(e));
     }
@@ -767,14 +771,20 @@ public class Utils {
             }
 
             @Override
-            public StringBuilder visitTypeVariable(javax.lang.model.type.TypeVariable t, Void p) {
+            public StringBuilder visitPrimitive(PrimitiveType t, Void p) {
+                sb.append(t.getKind().toString().toLowerCase(Locale.ROOT));
+                return sb;
+            }
+
+            @Override
+            public StringBuilder visitTypeVariable(TypeVariable t, Void p) {
                 Element e = t.asElement();
                 sb.append(qualifiedName ? getFullyQualifiedName(e, false) : getSimpleName(e));
                 return sb;
             }
 
             @Override
-            public StringBuilder visitWildcard(javax.lang.model.type.WildcardType t, Void p) {
+            public StringBuilder visitWildcard(WildcardType t, Void p) {
                 sb.append("?");
                 TypeMirror upperBound = t.getExtendsBound();
                 if (upperBound != null) {
@@ -1112,20 +1122,6 @@ public class Utils {
             pkgname = pkgname.substring(0, index);
         }
         return pkgname;
-    }
-
-    /**
-     * Given a string, replace all occurrences of 'newStr' with 'oldStr'.
-     * @param originalStr the string to modify.
-     * @param oldStr the string to replace.
-     * @param newStr the string to insert in place of the old string.
-     */
-    public String replaceText(String originalStr, String oldStr,
-            String newStr) {
-        if (oldStr == null || newStr == null || oldStr.equals(newStr)) {
-            return originalStr;
-        }
-        return originalStr.replace(oldStr, newStr);
     }
 
     /**
@@ -2105,21 +2101,21 @@ public class Utils {
     public List<TypeElement> getOrdinaryClasses(Element e) {
         return getClasses(e).stream()
                 .filter(te -> (!isException(te) && !isError(te)))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<TypeElement> getErrors(Element e) {
         return getClasses(e)
                 .stream()
                 .filter(this::isError)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<TypeElement> getExceptions(Element e) {
         return getClasses(e)
                 .stream()
                 .filter(this::isException)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @SuppressWarnings("preview")
@@ -2433,13 +2429,15 @@ public class Utils {
 
     /**
      * Get the package name for a given package element. An unnamed package is returned as &lt;Unnamed&gt;
+     * Use {@link jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter#getLocalizedPackageName(PackageElement)}
+     * to get a localized string for the unnamed package instead.
      *
      * @param pkg
      * @return
      */
     public String getPackageName(PackageElement pkg) {
         if (pkg == null || pkg.isUnnamed()) {
-            return DocletConstants.DEFAULT_PACKAGE_NAME;
+            return DocletConstants.DEFAULT_ELEMENT_NAME;
         }
         return pkg.getQualifiedName().toString();
     }
@@ -2607,7 +2605,7 @@ public class Utils {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
                 .filter(filter)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public <T extends DocTree> List<? extends T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
@@ -2615,7 +2613,7 @@ public class Utils {
                 .filter(t -> t.getKind() != ERRONEOUS)
                 .filter(filter)
                 .map(t -> tClass.cast(t))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind) {
@@ -3033,7 +3031,7 @@ public class Utils {
                 usedInDeclaration.addAll(types2Classes(List.of(te.getSuperclass())));
                 usedInDeclaration.addAll(types2Classes(te.getInterfaces()));
                 usedInDeclaration.addAll(types2Classes(te.getPermittedSubclasses()));
-                usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(c -> c.asType()).collect(Collectors.toList()))); //TODO: annotations on record components???
+                usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(c -> c.asType()).toList())); //TODO: annotations on record components???
             }
             case CONSTRUCTOR, METHOD -> {
                 ExecutableElement ee = (ExecutableElement) el;
@@ -3043,7 +3041,7 @@ public class Utils {
                 usedInDeclaration.addAll(types2Classes(List.of(ee.getReturnType())));
                 usedInDeclaration.addAll(types2Classes(List.of(ee.getReceiverType())));
                 usedInDeclaration.addAll(types2Classes(ee.getThrownTypes()));
-                usedInDeclaration.addAll(types2Classes(ee.getParameters().stream().map(p -> p.asType()).collect(Collectors.toList())));
+                usedInDeclaration.addAll(types2Classes(ee.getParameters().stream().map(p -> p.asType()).toList()));
                 usedInDeclaration.addAll(annotationValue2Classes(ee.getDefaultValue()));
             }
             case FIELD, ENUM_CONSTANT, RECORD_COMPONENT -> {
@@ -3181,7 +3179,7 @@ public class Utils {
         boolean parentPreviewAPI = false;
         Element enclosing = el.getEnclosingElement();
         if (enclosing != null && (enclosing.getKind().isClass() || enclosing.getKind().isInterface())) {
-            parentPreviewAPI = configuration.workArounds.isPreviewAPI(el.getEnclosingElement());
+            parentPreviewAPI = configuration.workArounds.isPreviewAPI(enclosing);
         }
         boolean previewAPI = configuration.workArounds.isPreviewAPI(el);
         return !parentPreviewAPI && previewAPI;

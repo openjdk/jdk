@@ -183,13 +183,15 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
   Node* in_mem = in(TypeFunc::Memory);
 
   const Type* src_type = phase->type(base_src);
-
-  MergeMemNode* mem = phase->transform(MergeMemNode::make(in_mem))->as_MergeMem();
-
   const TypeInstPtr* inst_src = src_type->isa_instptr();
-
   if (inst_src == NULL) {
     return NULL;
+  }
+
+  MergeMemNode* mem = phase->transform(MergeMemNode::make(in_mem))->as_MergeMem();
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  if (igvn != NULL) {
+    igvn->_worklist.push(mem);
   }
 
   if (!inst_src->klass_is_exact()) {

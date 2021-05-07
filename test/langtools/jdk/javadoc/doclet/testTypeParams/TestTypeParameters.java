@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4927167 4974929 7010344 8025633 8081854 8182765 8187288
+ * @bug      4927167 4974929 7010344 8025633 8081854 8182765 8187288 8261976
  * @summary  When the type parameters are more than 10 characters in length,
  *           make sure there is a line break between type params and return type
  *           in member summary. Also, test for type parameter links in package-summary and
@@ -90,7 +90,7 @@ public class TestTypeParameters extends JavadocTester {
         checkOutput("pkg/ClassUseTest3.html", true,
                 """
                     public class </span><span class="element-name"><a href="../src-html/pkg/ClassUse\
-                    Test3.html#line.28">ClassUseTest3</a>&lt;T extends <a href="ParamTest2.html" tit\
+                    Test3.html#line-28">ClassUseTest3</a>&lt;T extends <a href="ParamTest2.html" tit\
                     le="class in pkg">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="Foo4.ht\
                     ml" title="class in pkg">Foo4</a>&gt;&gt;&gt;""");
     }

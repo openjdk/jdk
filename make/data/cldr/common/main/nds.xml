@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -353,7 +353,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ro" draft="unconfirmed">Rumäänsch</language>
 			<language type="ro_MD" draft="unconfirmed">Moldaawsch</language>
 			<language type="rom" draft="unconfirmed">Romani</language>
-			<language type="root" draft="unconfirmed">Wortel</language>
 			<language type="ru" draft="unconfirmed">Russ’sch</language>
 			<language type="rup" draft="unconfirmed">Aromuunsch</language>
 			<language type="rw" draft="unconfirmed">Ruandsch</language>

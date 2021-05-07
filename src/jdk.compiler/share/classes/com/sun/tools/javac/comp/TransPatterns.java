@@ -56,6 +56,7 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -70,7 +71,6 @@ import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.List;
-import java.util.HashMap;
 
 /**
  * This pass translates pattern-matching constructs, such as instanceof <pattern>.
@@ -387,7 +387,7 @@ public class TransPatterns extends TreeTranslator {
 
         public BasicBindingContext() {
             this.parent = bindingContext;
-            this.hoistedVarMap = new HashMap<>();
+            this.hoistedVarMap = new LinkedHashMap<>();
         }
 
         @Override

@@ -116,7 +116,6 @@ class AbstractInterpreter: AllStatic {
 
   // method entry points
   static address    _entry_table[number_of_method_entries];     // entry points for a given method
-  static address    _cds_entry_table[number_of_method_entries]; // entry points for methods in the CDS archive
   static address    _native_abi_to_tosca[number_of_result_handlers];  // for native method result handlers
   static address    _slow_signature_handler;                              // the native method generic (slow) signature handler
 
@@ -135,11 +134,6 @@ class AbstractInterpreter: AllStatic {
   static MethodKind method_kind(const methodHandle& m);
   static address    entry_for_kind(MethodKind k)                { assert(0 <= k && k < number_of_method_entries, "illegal kind"); return _entry_table[k]; }
   static address    entry_for_method(const methodHandle& m)     { return entry_for_kind(method_kind(m)); }
-
-  // used by class data sharing
-  static address    entry_for_cds_method(const methodHandle& m) NOT_CDS_RETURN_(NULL);
-  static address    entry_for_cds_method(AbstractInterpreter::MethodKind kind) NOT_CDS_RETURN_(NULL);
-  static void       generate_entry_for_cds_method(MethodKind kind) NOT_CDS_RETURN;
 
   // used for bootstrapping method handles:
   static void       set_entry_for_kind(MethodKind k, address e);

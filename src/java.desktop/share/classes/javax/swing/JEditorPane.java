@@ -2061,7 +2061,7 @@ public class JEditorPane extends JTextComponent {
         }
 
         /**
-         * Make one of these puppies
+         * Constructs a {@code JEditorPaneAccessibleHypertextSupport}.
          */
         public JEditorPaneAccessibleHypertextSupport() {
             hyperlinks = new LinkVector();

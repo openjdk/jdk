@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1213,7 +1213,7 @@ public class Lower extends TreeTranslator {
                 //sym is a local variable - check the lambda translation map to
                 //see if sym has been translated to something else in the current
                 //scope (by LambdaToMethod)
-                Symbol translatedSym = lambdaTranslationMap.get(sym);
+                Symbol translatedSym = lambdaTranslationMap.get(sym.baseSymbol());
                 if (translatedSym != null) {
                     tree = make.at(tree.pos).Ident(translatedSym);
                 }
@@ -1603,11 +1603,10 @@ public class Lower extends TreeTranslator {
         JCTree resource = resources.head;
         JCExpression resourceUse;
         boolean resourceNonNull;
-        if (resource instanceof JCVariableDecl) {
-            JCVariableDecl var = (JCVariableDecl) resource;
-            resourceUse = make.Ident(var.sym).setType(resource.type);
-            resourceNonNull = var.init != null && TreeInfo.skipParens(var.init).hasTag(NEWCLASS);
-            stats.add(var);
+        if (resource instanceof JCVariableDecl variableDecl) {
+            resourceUse = make.Ident(variableDecl.sym).setType(resource.type);
+            resourceNonNull = variableDecl.init != null && TreeInfo.skipParens(variableDecl.init).hasTag(NEWCLASS);
+            stats.add(variableDecl);
         } else {
             Assert.check(resource instanceof JCExpression);
             VarSymbol syntheticTwrVar =
@@ -3877,7 +3876,9 @@ public class Lower extends TreeTranslator {
 
                 stmtList.append(switch2);
 
-                return make.Block(0L, stmtList.toList());
+                JCBlock res = make.Block(0L, stmtList.toList());
+                res.endpos = TreeInfo.endPos(tree);
+                return res;
             } else {
                 JCSwitchExpression switch2 = make.SwitchExpression(make.Ident(dollar_tmp), lb.toList());
 

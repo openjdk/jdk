@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.Callable;
@@ -38,8 +37,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 
-import sun.awt.SunToolkit;
-
 /*
    @test
    @key headful
@@ -47,7 +44,6 @@ import sun.awt.SunToolkit;
    @summary Version 7 doesn't support translucent popup menus against a
             translucent window
    @library ../../regtesthelpers
-   @modules java.desktop/sun.awt
 */
 public class bug7156657 {
     private static JFrame lowerFrame;
@@ -58,7 +54,6 @@ public class bug7156657 {
 
     public static void main(String[] args) throws Exception {
         final Robot robot = new Robot();
-        final SunToolkit toolkit = ((SunToolkit) Toolkit.getDefaultToolkit());
 
         Boolean skipTest = Util.invokeOnEDT(new Callable<Boolean>() {
             @Override
@@ -94,7 +89,7 @@ public class bug7156657 {
             return;
         }
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -103,7 +98,7 @@ public class bug7156657 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Rectangle popupRectangle = Util.invokeOnEDT(new Callable<Rectangle>() {
             @Override
@@ -121,7 +116,7 @@ public class bug7156657 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         BufferedImage greenBackgroundCapture = robot.createScreenCapture(popupRectangle);
 

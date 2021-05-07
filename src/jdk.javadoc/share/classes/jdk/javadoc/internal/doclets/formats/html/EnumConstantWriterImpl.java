@@ -33,7 +33,7 @@ import javax.lang.model.element.VariableElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.EnumConstantWriter;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -88,7 +88,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
             Content enumConstantsDetailsTree) {
         Content enumConstantsTree = new ContentBuilder();
         HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
-                new StringContent(name(enumConstant)));
+                Text.of(name(enumConstant)));
         enumConstantsTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, enumConstantsTree)
                 .setId(htmlIds.forMember(enumConstant));

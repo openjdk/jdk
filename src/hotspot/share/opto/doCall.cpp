@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "prims/methodHandles.hpp"
-#include "prims/nativeLookup.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
@@ -170,17 +169,10 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // Try inlining a bytecoded method:
     if (!call_does_dispatch) {
       InlineTree* ilt = InlineTree::find_subtree_from_root(this->ilt(), jvms->caller(), jvms->method());
-      WarmCallInfo scratch_ci;
       bool should_delay = false;
-      WarmCallInfo* ci = ilt->ok_to_inline(callee, jvms, profile, &scratch_ci, should_delay);
-      assert(ci != &scratch_ci, "do not let this pointer escape");
-      bool allow_inline   = (ci != NULL && !ci->is_cold());
-      bool require_inline = (allow_inline && ci->is_hot());
-
-      if (allow_inline) {
+      if (ilt->ok_to_inline(callee, jvms, profile, should_delay)) {
         CallGenerator* cg = CallGenerator::for_inline(callee, expected_uses);
-
-        if (require_inline && cg != NULL) {
+        if (cg != NULL) {
           // Delay the inlining of this method to give us the
           // opportunity to perform some high level optimizations
           // first.
@@ -192,15 +184,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             return CallGenerator::for_vector_reboxing_late_inline(callee, cg);
           } else if ((should_delay || AlwaysIncrementalInline)) {
             return CallGenerator::for_late_inline(callee, cg);
+          } else {
+            return cg;
           }
-        }
-        if (cg == NULL || should_delay) {
-          // Fall through.
-        } else if (require_inline || !InlineWarmCalls) {
-          return cg;
-        } else {
-          CallGenerator* cold_cg = call_generator(callee, vtable_index, call_does_dispatch, jvms, false, prof_factor);
-          return CallGenerator::for_warm_call(ci, cold_cg, cg);
         }
       }
     }

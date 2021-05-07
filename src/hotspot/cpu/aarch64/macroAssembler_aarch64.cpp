@@ -35,6 +35,7 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
@@ -178,7 +179,7 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   // instruction.
   if (Instruction_aarch64::extract(insn, 31, 21) == 0b11010010101) {
     // Move narrow OOP
-    uint32_t n = CompressedOops::narrow_oop_value((oop)o);
+    uint32_t n = CompressedOops::narrow_oop_value(cast_to_oop(o));
     Instruction_aarch64::patch(insn_addr, 20, 5, n >> 16);
     Instruction_aarch64::patch(insn_addr+4, 20, 5, n & 0xffff);
     instructions = 2;
@@ -293,10 +294,10 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
 
 void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod) {
   if (acquire) {
-    lea(rscratch1, Address(rthread, Thread::polling_word_offset()));
+    lea(rscratch1, Address(rthread, JavaThread::polling_word_offset()));
     ldar(rscratch1, rscratch1);
   } else {
-    ldr(rscratch1, Address(rthread, Thread::polling_word_offset()));
+    ldr(rscratch1, Address(rthread, JavaThread::polling_word_offset()));
   }
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
@@ -320,8 +321,6 @@ void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
 
   // Always clear the pc because it could have been set by make_walkable()
   str(zr, Address(rthread, JavaThread::last_Java_pc_offset()));
-
-  str(zr, Address(rthread, JavaThread::saved_fp_address_offset()));
 }
 
 // Calls to C land
@@ -4394,7 +4393,7 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
 
 // Move the address of the polling page into dest.
 void MacroAssembler::get_polling_page(Register dest, relocInfo::relocType rtype) {
-  ldr(dest, Address(rthread, Thread::polling_page_offset()));
+  ldr(dest, Address(rthread, JavaThread::polling_page_offset()));
 }
 
 // Read the polling page.  The address of the polling page must
@@ -5155,7 +5154,7 @@ address MacroAssembler::byte_array_inflate(Register src, Register dst, Register 
 
   assert_different_registers(src, dst, len, tmp4, rscratch1);
 
-  fmovd(vtmp1, zr);
+  fmovd(vtmp1, 0.0);
   lsrw(tmp4, len, 3);
   bind(after_init);
   cbnzw(tmp4, big);

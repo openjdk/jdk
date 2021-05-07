@@ -402,7 +402,7 @@ public class TestOrdering extends JavadocTester {
                         <a href="Add.ADD.html" class="type-name-link" title="enum class in add0.add">""");
             checkOrder("overview-tree.html",
                     """
-                        <a href="Add.add.html" class="type-name-link" title="enum class in &lt;Unnamed&gt;">""",
+                        <a href="Add.add.html" class="type-name-link" title="enum class in Unnamed Package">""",
                     """
                         <a href="add0/Add.add.html" class="type-name-link" title="enum class in add0">""",
                     """
@@ -436,7 +436,7 @@ public class TestOrdering extends JavadocTester {
                     """
                         <a href="add3/add/add/add/Add.add.html" class="type-name-link" title="enum class in add3.add.add.add">""",
                     """
-                        <a href="Add.ADD.html" class="type-name-link" title="enum class in &lt;Unnamed&gt;">""",
+                        <a href="Add.ADD.html" class="type-name-link" title="enum class in Unnamed Package">""",
                     """
                         <a href="add0/Add.ADD.html" class="type-name-link" title="enum class in add0">""",
                     """
@@ -503,7 +503,7 @@ public class TestOrdering extends JavadocTester {
             List<String> testList = new ArrayList<>();
 
             for (String x : expectedEnumOrdering) {
-                testList.add(x.replace("REPLACE_ME", "&lt;Unnamed&gt;"));
+                testList.add(x.replace("REPLACE_ME", "Unnamed Package"));
             }
             for (int i = 0; i < MAX_PACKAGES; i++) {
                 String wpkg = "add" + i;

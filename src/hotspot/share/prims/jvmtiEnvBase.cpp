@@ -1079,13 +1079,12 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
             nWait = j;
             break;
           }
-          Thread *t = mon->thread_of_waiter(waiter);
-          if (t != NULL && t->is_Java_thread()) {
-            JavaThread *wjava_thread = t->as_Java_thread();
+          JavaThread *w = mon->thread_of_waiter(waiter);
+          if (w != NULL) {
             // If the thread was found on the ObjectWaiter list, then
             // it has not been notified. This thread can't change the
             // state of the monitor so it doesn't need to be suspended.
-            Handle th(current_thread, wjava_thread->threadObj());
+            Handle th(current_thread, w->threadObj());
             ret.waiters[offset + j] = (jthread)jni_reference(calling_thread, th);
             ret.notify_waiters[j++] = (jthread)jni_reference(calling_thread, th);
           }
@@ -1182,8 +1181,7 @@ MultipleStackTracesCollector::fill_frames(jthread jt, JavaThread *thr, oop threa
   }
 
   if (thr != NULL) {    // add more state bits if there is a JavaThead to query
-    // same as is_being_ext_suspended() but without locking
-    if (thr->is_ext_suspended() || thr->is_external_suspend()) {
+    if (thr->is_suspended()) {
       state |= JVMTI_THREAD_STATE_SUSPENDED;
     }
     JavaThreadState jts = thr->thread_state();
@@ -1401,7 +1399,7 @@ SetForceEarlyReturn::doit(Thread *target, bool self) {
   HandleMark   hm(current_thread);
 
   if (!self) {
-    if (!java_thread->is_external_suspend()) {
+    if (!java_thread->is_suspended()) {
       _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
       return;
     }
@@ -1534,7 +1532,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   JavaThread* java_thread = target->as_Java_thread();
   assert(java_thread == _state->get_thread(), "Must be");
 
-  if (!self && !java_thread->is_external_suspend()) {
+  if (!self && !java_thread->is_suspended()) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return;
   }
@@ -1625,7 +1623,7 @@ SetFramePopClosure::doit(Thread *target, bool self) {
 
   assert(_state->get_thread() == java_thread, "Must be");
 
-  if (!self && !java_thread->is_external_suspend()) {
+  if (!self && !java_thread->is_suspended()) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return;
   }

@@ -35,7 +35,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -106,10 +106,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
 
     @Override
     public Content getAnnotationDocTreeHeader(Element member) {
-        String simpleName = name(member);
         Content annotationDocTree = new ContentBuilder();
         Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
-                new StringContent(simpleName));
+                Text.of(name(member)));
         annotationDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, annotationDocTree)
                 .setId(htmlIds.forMember(typeElement, (ExecutableElement) member));
