@@ -91,13 +91,13 @@ const char* LogDecorations::decoration(LogDecorators::Decorator decorator, char*
 }
 
 void LogDecorations::print_time_decoration(outputStream* st) const {
-  char buf[29];
+  char buf[os::iso8601_timestamp_size];
   char* result = os::iso8601_time(_millis, buf, sizeof(buf), false);
   st->print_raw(result ? result : "");
 }
 
 void LogDecorations::print_utctime_decoration(outputStream* st) const {
-  char buf[29];
+  char buf[os::iso8601_timestamp_size];
   char* result = os::iso8601_time(_millis, buf, sizeof(buf), true);
   st->print_raw(result ? result : "");
 }
