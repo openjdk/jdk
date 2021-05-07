@@ -5868,11 +5868,11 @@ address generate_avx_ghash_processBlocks() {
     __ cmpl(length, 64 * 4);
     __ jcc(Assembler::less, L_process64);
 
-    __ movl(ecx, 0x01400140);
-    __ vpbroadcastd(merged_op, ecx, Assembler::AVX_512bit);
+    __ movl(rcx, 0x01400140);
+    __ vpbroadcastd(merged_op, rcx, Assembler::AVX_512bit);
 
-    __ movl(ecx, 0x0011000);
-    __ vpbroadcastd(xlate_op, ecx, Assembler::AVX_512bit);
+    __ movl(rcx, 0x0011000);
+    __ vpbroadcastd(xlate_op, rcx, Assembler::AVX_512bit);
 
     // Load lookup tables based on isURL
     __ vmovdqa64(lookup_lo, StubRoutines::x86::base64_vbmi_lookup_lo_addr());
