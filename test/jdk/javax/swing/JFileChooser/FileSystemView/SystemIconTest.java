@@ -31,6 +31,7 @@
  */
 import javax.swing.ImageIcon;
 import javax.swing.filechooser.FileSystemView;
+import java.awt.image.MultiResolutionImage;
 import java.io.File;
 
 public class SystemIconTest {
@@ -64,6 +65,16 @@ public class SystemIconTest {
             if (icon.getIconWidth() != size) {
                 throw new RuntimeException("Wrong icon size " +
                         icon.getIconWidth() + " when requested " + size);
+            }
+
+            if (icon.getImage() instanceof MultiResolutionImage) {
+                MultiResolutionImage mri = (MultiResolutionImage) icon.getImage();
+                if (mri.getResolutionVariant(size, size) == null) {
+                    throw new RuntimeException("There is no suitable variant for the size "
+                            + size + " in the multi resolution icon");
+                }
+            } else {
+                throw new RuntimeException("icon is supposed to be multi-resolution but it is not");
             }
         }
     }

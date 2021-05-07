@@ -1146,7 +1146,7 @@ final class Win32ShellFolder2 extends ShellFolder {
             for (int i = start; i != end; i += increment) {
                 int s = ICON_RESOLUTIONS[i];
                 if (size < MIN_QUALITY_ICON || size > MAX_QUALITY_ICON
-                        || (s >= size/2 && s <= size*2)) {
+                        || (s >= size && s <= size*2)) {
                     long hIcon = extractIcon(getParentIShellFolder(),
                             getRelativePIDL(), s, false);
 
@@ -1189,9 +1189,6 @@ final class Win32ShellFolder2 extends ShellFolder {
      * Gets an icon from the Windows system icon list as an {@code Image}
      */
     static Image getShell32Icon(int iconID, int size) {
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        String shellIconBPP = (String)toolkit.getDesktopProperty("win.icon.shellIconBPP");
-
         long hIcon = getIconResource("shell32.dll", iconID, size, size);
         if (hIcon != 0) {
             Image icon = makeIcon(hIcon);
