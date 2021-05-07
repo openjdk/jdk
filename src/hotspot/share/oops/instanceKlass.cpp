@@ -181,7 +181,7 @@ bool InstanceKlass::has_nest_member(InstanceKlass* k, JavaThread* current) const
   }
 
   // Check for the named class in _nest_members.
-  // We don't want resolve, or load, any classes.
+  // We don't resolve, or load, any classes.
   for (int i = 0; i < _nest_members->length(); i++) {
     int cp_index = _nest_members->at(i);
     Symbol* name = _constants->klass_name_at(cp_index);
