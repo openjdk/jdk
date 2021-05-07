@@ -27,9 +27,9 @@
 
 // String Deduplication
 //
-// String deduplication aims to reduce the heap live-set by deduplicating
-// identical instances of String so that they share the same backing byte
-// array (the String's value).
+// String deduplication aims to reduce the heap live-set by modifying equal
+// instances of java.lang.String so they share the same backing byte array
+// (the String's value).
 //
 // The deduplication process is divided in two main parts, 1) finding the
 // objects to deduplicate, and 2) deduplicating those objects.
@@ -40,13 +40,12 @@
 // added to the set of deduplication requests for later processing.
 //
 // The second part, processing the deduplication requests, is a concurrent
-// phase which starts after marking is complete.  This phase is executed by
-// the deduplication thread, which takes candidates from the set of requests
-// and tries to deduplicate them.
+// phase.  This phase is executed by the deduplication thread, which takes
+// candidates from the set of requests and tries to deduplicate them.
 //
 // A deduplication table is used to keep track of unique byte arrays used by
 // String objects.  When deduplicating, a lookup is made in this table to
-// see if there is already an identical byte array that was used by some
+// see if there is already an equivalent byte array that was used by some
 // other String.  If so, the String object is adjusted to point to that byte
 // array, and the original array is released, allowing it to eventually be
 // garbage collected.  If the lookup fails the byte array is instead
@@ -63,14 +62,14 @@
 // used so there isn't any conflict between adding and removing entries by
 // different threads.
 //
-// The table uses entries from another weak OopStorage to hold the byte
-// arrays.  This permits reclamation of arrays that become unused.  This is
-// separate from the request storage objects because dead count tracking is
-// used by the table implementation as part of resizing decisions and for
-// deciding when to cleanup dead entries in the table.  The usage pattern
-// for the table is also very different from that of the request storages.
-// The request/processing storages are used in a way that supports bulk
-// allocation and release of entries.
+// The deduplication table uses entries from another weak OopStorage to hold
+// the byte arrays.  This permits reclamation of arrays that become unused.
+// This is separate from the request storage objects because dead count
+// tracking is used by the table implementation as part of resizing
+// decisions and for deciding when to cleanup dead entries in the table.
+// The usage pattern for the table is also very different from that of the
+// request storages.  The request/processing storages are used in a way that
+// supports bulk allocation and release of entries.
 //
 // Candidate selection criteria is GC specific.  This class provides some
 // helper functions that may be of use when implementing candidate
@@ -80,11 +79,11 @@
 // String has been added to the StringTable, its byte array must not change.
 // Doing so would counteract C2 optimizations on string literals.  But an
 // interned string might later become a deduplication candidate through the
-// normal GC discovery mechanism.  This is handled by setting the
-// deduplication_forbidden flag in a String before interning it.  A String with
-// that flag set may have its byte array added to the deduplication table,
-// but will not have its byte array replaced by a different but equivalent
-// array from the table.
+// normal GC discovery mechanism.  To prevent such modificatoins, the
+// deduplication_forbidden flag of a String is set before interning it.  A
+// String with that flag set may have its byte array added to the
+// deduplication table, but will not have its byte array replaced by a
+// different but equivalent array from the table.
 //
 // A GC must opt-in to support string deduplication. This primarily involves
 // making deduplication requests. As the GC is processing objects it must
