@@ -3964,7 +3964,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
   assert(is_aligned(req_addr, alignment), "Must be");
   assert(is_aligned(req_addr, page_size), "Must be");
   assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
-  assert(is_power_of_2(page_size), "Must be");
+  assert(_page_sizes.contains(page_size), "Must be a valid page size");
   assert(bytes >= page_size, "Shouldn't allocate large pages for small sizes");
 
   // We only end up here when at least 1 large page can be used.
