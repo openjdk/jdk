@@ -3972,14 +3972,10 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
                                                    size_t page_size,
                                                    char* req_addr,
                                                    bool exec) {
-  // Select large_page_size from _page_sizes
-  // that is smaller than size_t bytes
-  size_t large_page_size = os::page_size_for_region_aligned(bytes, 1);
-
-  assert(large_page_size > (size_t)os::vm_page_size(), "large page size: "
+  assert(page_size > (size_t)os::vm_page_size(), "large page size: "
                                                         SIZE_FORMAT " not larger than small page size: "
                                                         SIZE_FORMAT,
-                                                        large_page_size,
+                                                        page_size,
                                                         (size_t)os::vm_page_size());
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
