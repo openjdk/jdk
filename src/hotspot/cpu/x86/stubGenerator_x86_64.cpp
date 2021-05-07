@@ -5731,14 +5731,14 @@ address generate_avx_ghash_processBlocks() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "lookup_hi_url");
     address start = __ pc();
-		__ emit_data64(0x0605040302010080, relocInfo::none);
-		__ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
-		__ emit_data64(0x161514131211100f, relocInfo::none);
-		__ emit_data64(0x3f80808080191817, relocInfo::none);
-		__ emit_data64(0x201f1e1d1c1b1a80, relocInfo::none);
-		__ emit_data64(0x2827262524232221, relocInfo::none);
-		__ emit_data64(0x302f2e2d2c2b2a29, relocInfo::none);
-		__ emit_data64(0x8080808080333231, relocInfo::none);
+    __ emit_data64(0x0605040302010080, relocInfo::none);
+    __ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
+    __ emit_data64(0x161514131211100f, relocInfo::none);
+    __ emit_data64(0x3f80808080191817, relocInfo::none);
+    __ emit_data64(0x201f1e1d1c1b1a80, relocInfo::none);
+    __ emit_data64(0x2827262524232221, relocInfo::none);
+    __ emit_data64(0x302f2e2d2c2b2a29, relocInfo::none);
+    __ emit_data64(0x8080808080333231, relocInfo::none);
     return start;
   }
 
@@ -5746,14 +5746,14 @@ address generate_avx_ghash_processBlocks() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "pack_vec");
     address start = __ pc();
-		__ emit_data64(0x090a040506000102, relocInfo::none);
-		__ emit_data64(0x161011120c0d0e08, relocInfo::none);
-		__ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
-		__ emit_data64(0x292a242526202122, relocInfo::none);
-		__ emit_data64(0x363031322c2d2e28, relocInfo::none);
-		__ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
-		__ emit_data64(0x0000000000000000, relocInfo::none);
-		__ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x090a040506000102, relocInfo::none);
+    __ emit_data64(0x161011120c0d0e08, relocInfo::none);
+    __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
+    __ emit_data64(0x292a242526202122, relocInfo::none);
+    __ emit_data64(0x363031322c2d2e28, relocInfo::none);
+    __ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
     return start;
   }
 
@@ -5761,14 +5761,14 @@ address generate_avx_ghash_processBlocks() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "join_0_1");
     address start = __ pc();
-		__ emit_data64(0x090a040506000102, relocInfo::none);
-		__ emit_data64(0x161011120c0d0e08, relocInfo::none);
-		__ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
-		__ emit_data64(0x292a242526202122, relocInfo::none);
-		__ emit_data64(0x363031322c2d2e28, relocInfo::none);
-		__ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
-		__ emit_data64(0x494a444546404142, relocInfo::none);
-		__ emit_data64(0x565051524c4d4e48, relocInfo::none);
+    __ emit_data64(0x090a040506000102, relocInfo::none);
+    __ emit_data64(0x161011120c0d0e08, relocInfo::none);
+    __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
+    __ emit_data64(0x292a242526202122, relocInfo::none);
+    __ emit_data64(0x363031322c2d2e28, relocInfo::none);
+    __ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
+    __ emit_data64(0x494a444546404142, relocInfo::none);
+    __ emit_data64(0x565051524c4d4e48, relocInfo::none);
     return start;
   }
 
@@ -5776,14 +5776,14 @@ address generate_avx_ghash_processBlocks() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "join_1_2");
     address start = __ pc();
-		__ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
-		__ emit_data64(0x292a242526202122, relocInfo::none);
-		__ emit_data64(0x363031322c2d2e28, relocInfo::none);
-		__ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
-		__ emit_data64(0x494a444546404142, relocInfo::none);
-		__ emit_data64(0x565051524c4d4e48, relocInfo::none);
-		__ emit_data64(0x5c5d5e58595a5455, relocInfo::none);
-		__ emit_data64(0x696a646566606162, relocInfo::none);
+    __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
+    __ emit_data64(0x292a242526202122, relocInfo::none);
+    __ emit_data64(0x363031322c2d2e28, relocInfo::none);
+    __ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
+    __ emit_data64(0x494a444546404142, relocInfo::none);
+    __ emit_data64(0x565051524c4d4e48, relocInfo::none);
+    __ emit_data64(0x5c5d5e58595a5455, relocInfo::none);
+    __ emit_data64(0x696a646566606162, relocInfo::none);
     return start;
   }
 
@@ -5791,14 +5791,14 @@ address generate_avx_ghash_processBlocks() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "join_2_3");
     address start = __ pc();
-		__ emit_data64(0x363031322c2d2e28, relocInfo::none);
-		__ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
-		__ emit_data64(0x494a444546404142, relocInfo::none);
-		__ emit_data64(0x565051524c4d4e48, relocInfo::none);
-		__ emit_data64(0x5c5d5e58595a5455, relocInfo::none);
-		__ emit_data64(0x696a646566606162, relocInfo::none);
-		__ emit_data64(0x767071726c6d6e68, relocInfo::none);
-		__ emit_data64(0x7c7d7e78797a7475, relocInfo::none);
+    __ emit_data64(0x363031322c2d2e28, relocInfo::none);
+    __ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
+    __ emit_data64(0x494a444546404142, relocInfo::none);
+    __ emit_data64(0x565051524c4d4e48, relocInfo::none);
+    __ emit_data64(0x5c5d5e58595a5455, relocInfo::none);
+    __ emit_data64(0x696a646566606162, relocInfo::none);
+    __ emit_data64(0x767071726c6d6e68, relocInfo::none);
+    __ emit_data64(0x7c7d7e78797a7475, relocInfo::none);
     return start;
   }
 
@@ -5837,25 +5837,25 @@ address generate_avx_ghash_processBlocks() {
 #endif
 
     const Register length = r14;
-    const Register merged1 = zmm0;
-    const Register merged0 = zmm1;
-    const Register merged2 = zmm2;
-    const Register xlate_op = zmm3;
-    const Register merged_op = zmm4;
-    const Register lookup_hi = zmm5;
-    const Register lookup_lo = zmm6;
-    const Register merged3 = zmm7;
-    const Register input0 = zmm8;
-    const Register input3 = zmm9;
-    const Register merge_ab_bc2 = zmm10;
-    const Register merge_ab_bc0 = zmm11;
-    const Register merge_ab_bc1 = zmm12;
-    const Register merge_ab_bc3 = zmm13;
-    const Register input1 = zmm14;
-    const Register input2 = zmm15;
-    const Register join23 = zmm16;
-    const Register join12 = zmm17;
-    const Register join01 = zmm18;
+    const Register merged1 = xmm0;
+    const Register merged0 = xmm1;
+    const Register merged2 = xmm2;
+    const Register xlate_op = xmm3;
+    const Register merged_op = xmm4;
+    const Register lookup_hi = xmm5;
+    const Register lookup_lo = xmm6;
+    const Register merged3 = xmm7;
+    const Register input0 = xmm8;
+    const Register input3 = xmm9;
+    const Register merge_ab_bc2 = xmm10;
+    const Register merge_ab_bc0 = xmm11;
+    const Register merge_ab_bc1 = xmm12;
+    const Register merge_ab_bc3 = xmm13;
+    const Register input1 = xmm14;
+    const Register input2 = xmm15;
+    const Register join23 = xmm16;
+    const Register join12 = xmm17;
+    const Register join01 = xmm18;
 
     Label L_process256, L_process64, L_exit, L_processdata;
 
