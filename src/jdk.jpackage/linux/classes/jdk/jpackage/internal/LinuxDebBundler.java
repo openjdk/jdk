@@ -410,7 +410,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         debianFiles.add(new DebianFile(
                 configDir.resolve("postrm"),
                 "resource.deb-postrm-script").setExecutable());
-        
+
         final String installDir = LINUX_INSTALL_DIR.fetchFrom(params);
 
         if (!StandardBundlerParam.isRuntimeInstaller(params)
