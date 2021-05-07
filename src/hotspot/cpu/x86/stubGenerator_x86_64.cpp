@@ -5837,25 +5837,25 @@ address generate_avx_ghash_processBlocks() {
 #endif
 
     const Register length = r14;
-    const Register merged1 = xmm0;
-    const Register merged0 = xmm1;
-    const Register merged2 = xmm2;
-    const Register xlate_op = xmm3;
-    const Register merged_op = xmm4;
-    const Register lookup_hi = xmm5;
-    const Register lookup_lo = xmm6;
-    const Register merged3 = xmm7;
-    const Register input0 = xmm8;
-    const Register input3 = xmm9;
-    const Register merge_ab_bc2 = xmm10;
-    const Register merge_ab_bc0 = xmm11;
-    const Register merge_ab_bc1 = xmm12;
-    const Register merge_ab_bc3 = xmm13;
-    const Register input1 = xmm14;
-    const Register input2 = xmm15;
-    const Register join23 = xmm16;
-    const Register join12 = xmm17;
-    const Register join01 = xmm18;
+    const XMMRegister merged1 = xmm0;
+    const XMMRegister merged0 = xmm1;
+    const XMMRegister merged2 = xmm2;
+    const XMMRegister xlate_op = xmm3;
+    const XMMRegister merged_op = xmm4;
+    const XMMRegister lookup_hi = xmm5;
+    const XMMRegister lookup_lo = xmm6;
+    const XMMRegister merged3 = xmm7;
+    const XMMRegister input0 = xmm8;
+    const XMMRegister input3 = xmm9;
+    const XMMRegister merge_ab_bc2 = xmm10;
+    const XMMRegister merge_ab_bc0 = xmm11;
+    const XMMRegister merge_ab_bc1 = xmm12;
+    const XMMRegister merge_ab_bc3 = xmm13;
+    const XMMRegister input1 = xmm14;
+    const XMMRegister input2 = xmm15;
+    const XMMRegister join23 = xmm16;
+    const XMMRegister join12 = xmm17;
+    const XMMRegister join01 = xmm18;
 
     Label L_process256, L_process64, L_exit, L_processdata;
 
