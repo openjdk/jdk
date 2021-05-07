@@ -724,12 +724,10 @@ void Matcher::init_first_stack_mask() {
 }
 
 //---------------------------is_save_on_entry----------------------------------
-bool Matcher::is_save_on_entry( int reg ) {
+bool Matcher::is_save_on_entry(int reg) {
   return
     _register_save_policy[reg] == 'E' ||
-    _register_save_policy[reg] == 'A' || // Save-on-entry register?
-    // Also save argument registers in the trampolining stubs
-    (C->save_argument_registers() && is_spillable_arg(reg));
+    _register_save_policy[reg] == 'A'; // Save-on-entry register?
 }
 
 //---------------------------Fixup_Save_On_Entry-------------------------------
@@ -744,12 +742,6 @@ void Matcher::Fixup_Save_On_Entry( ) {
   // Find the procedure Start Node
   StartNode *start = C->start();
   assert( start, "Expect a start node" );
-
-  // Save argument registers in the trampolining stubs
-  if( C->save_argument_registers() )
-    for( i = 0; i < _last_Mach_Reg; i++ )
-      if( is_spillable_arg(i) )
-        soe_cnt++;
 
   // Input RegMask array shared by all Returns.
   // The type for doubles and longs has a count of 2, but

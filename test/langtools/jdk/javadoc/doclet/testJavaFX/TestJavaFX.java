@@ -61,8 +61,12 @@ public class TestJavaFX extends JavadocTester {
         checkOutput("pkg1/C.html", true,
                 """
                     <dt>See Also:</dt>
-                    <dd><a href="#getRate()"><code>getRate()</code></a>,\s
-                    <a href="#setRate(double)"><code>setRate(double)</code></a></dd>""",
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="#getRate()"><code>getRate()</code></a></li>
+                    <li><a href="#setRate(double)"><code>setRate(double)</code></a></li>
+                    </ul>
+                    </dd>""",
                 """
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">void</span>&nbsp;<span class="element-name">setRate</span>&#820\

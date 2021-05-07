@@ -374,10 +374,7 @@ void LIR_Assembler::jobject2reg_with_patching(Register reg, CodeEmitInfo *info) 
 int LIR_Assembler::initial_frame_size_in_bytes() const {
   // if rounding, must let FrameMap know!
 
-  // The frame_map records size in slots (32bit word)
-
-  // subtract two words to account for return address and link
-  return (frame_map()->framesize() - (2*VMRegImpl::slots_per_word))  * VMRegImpl::stack_slot_size;
+  return in_bytes(frame_map()->framesize_in_bytes());
 }
 
 
