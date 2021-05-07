@@ -54,7 +54,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
@@ -232,9 +231,10 @@ public class Utils {
     /**
      * Search for the given method in the given class.
      *
-     * @param  te        Class to search into.
-     * @param  method    Method to be searched.
-     * @return ExecutableElement Method found, null otherwise.
+     * @param te     Class to search into.
+     * @param method Method to be searched.
+     *
+     * @return Method found, null otherwise.
      */
     public ExecutableElement findMethod(TypeElement te, ExecutableElement method) {
         for (ExecutableElement m : getMethods(te)) {
@@ -698,7 +698,7 @@ public class Utils {
      *
      * @param e the executable element
      * @param site the contextual site
-     * @return String signature with simple (unqualified) parameter types
+     * @return signature with simple (unqualified) parameter types
      */
     public String flatSignature(ExecutableElement e, TypeElement site) {
         return makeSignature(e, site, false);
@@ -2112,10 +2112,11 @@ public class Utils {
 
     /**
      * Returns a list of elements of a given type that match a predicate.
-     * If the root of the search is a package, the search is recursive through documented packages
+     * If the root of the search is a package, the search is recursive through packages
      * and classes.
      *
      * @param e      the element, such as a package element or type element
+     * @param all    whether to search through all packages and classes, or just documented ones
      * @param select the predicate to select members
      * @param clazz  the class of the filtered members
      * @param <T>    the class of the filtered members
@@ -2137,6 +2138,7 @@ public class Utils {
      * The recursion is through nested types.
      *
      * @param e      the element, such as a package element or type element
+     * @param all    whether to search all packages and classes, or just documented ones
      * @param filter the filter
      * @param clazz  the class of the filtered members
      * @param <T>    the class of the filtered members
@@ -2145,7 +2147,6 @@ public class Utils {
         list.addAll(getItems0(e, all, filter, clazz));
         List<TypeElement> classes = getItems0(e, all, this::isTypeElement, TypeElement.class);
         for (TypeElement c : classes) {
-            list.addAll(getItems0(c, all, filter, clazz));
             recursiveGetItems(list, c, all, filter, clazz);
         }
     }
@@ -2154,6 +2155,7 @@ public class Utils {
      * Returns a list of immediately enclosed elements of a given class that match a predicate.
      *
      * @param e      the element, such as a package element or type element
+     * @param all    whether to search all packages and classes, or just documented ones
      * @param select the predicate for the selected members
      * @param clazz  the class of the filtered members
      * @param <T>    the class of the filtered members
@@ -2163,7 +2165,7 @@ public class Utils {
     private <T extends Element> List<T> getItems0(Element e, boolean all, Predicate<Element> select, Class<T> clazz) {
         return e.getEnclosedElements().stream()
                 .filter(e_ -> select.test(e_) && (all || shouldDocument(e_)))
-                .map(ee -> clazz.cast(ee))
+                .map(clazz::cast)
                 .toList();
     }
 
