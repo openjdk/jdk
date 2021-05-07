@@ -34,7 +34,7 @@ import org.openjdk.jmh.infra.Blackhole;
 public class MaskQueryOperationsBenchmark {
     @Param({"128","256","512"})
     int bits;
-  
+
     @Param({"1","2","3"})
     int inputs;
 
@@ -48,7 +48,7 @@ public class MaskQueryOperationsBenchmark {
     VectorMask    lmask;
     boolean []    mask_arr;
 
-   
+
     static final boolean [] mask_avg_case = {
        false, false, false, true, false, false, false, false,
        false, false, false, true, false, false, false, false,
@@ -81,7 +81,7 @@ public class MaskQueryOperationsBenchmark {
        false, false, false, false, false, false, false, false,
        false, false, false, false, false, false, false, false
     };
-  
+
     @Setup(Level.Trial)
     public void BmSetup() {
         bspecies = VectorSpecies.of(int.class, VectorShape.forBitSize(bits));
@@ -102,12 +102,12 @@ public class MaskQueryOperationsBenchmark {
         imask   = VectorMask.fromArray(ispecies, mask_arr, 0);
         lmask   = VectorMask.fromArray(lspecies, mask_arr, 0);
     }
-  
+
     @Benchmark
     public void testTrueCountByte(Blackhole bh) {
         bh.consume(bmask.trueCount());
     }
-  
+
     @Benchmark
     public void testTrueCountShort(Blackhole bh) {
         bh.consume(smask.trueCount());
@@ -125,7 +125,7 @@ public class MaskQueryOperationsBenchmark {
     public void testFirstTrueByte(Blackhole bh) {
         bh.consume(bmask.firstTrue());
     }
-  
+
     @Benchmark
     public void testFirstTrueShort(Blackhole bh) {
         bh.consume(smask.firstTrue());
@@ -143,7 +143,7 @@ public class MaskQueryOperationsBenchmark {
     public void testLastTrueByte(Blackhole bh) {
         bh.consume(bmask.lastTrue());
     }
-  
+
     @Benchmark
     public void testLastTrueShort(Blackhole bh) {
         bh.consume(smask.lastTrue());
