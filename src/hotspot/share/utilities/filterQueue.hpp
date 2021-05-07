@@ -67,10 +67,10 @@ class FilterQueue {
   template <typename MATCH_FUNC>
   bool contains(MATCH_FUNC& match_func);
 
-  // Same as pop(MATCH_FUNC& match_func) but matches everything, thus returning
+  // Same as peek(MATCH_FUNC& match_func) but matches everything, thus returning
   // the first inserted item.
-  E pop() {
-    return pop(match_all);
+  E peek() {
+    return peek(match_all);
   }
 
   // Applies the match_func to each item in the queue and returns the first
@@ -81,6 +81,9 @@ class FilterQueue {
   // calls.
   template <typename MATCH_FUNC>
   E pop(MATCH_FUNC& match_func);
+
+  template <typename MATCH_FUNC>
+  E peek(MATCH_FUNC& match_func);
 };
 
 #endif

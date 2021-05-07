@@ -111,4 +111,29 @@ E FilterQueue<E>::pop(MATCH_FUNC& match_func) {
   } while (true);
 }
 
+// MT-Unsafe, external serialization needed.
+template <class E>
+template <typename MATCH_FUNC>
+E FilterQueue<E>::peek(MATCH_FUNC& match_func) {
+  Node*  first       = load_first();
+  Node*  cur         = first;
+  Node*  match       = NULL;
+
+  if (cur == NULL) {
+    return (E)NULL;
+  }
+  do {
+    if (match_func(cur->_data)) {
+      match = cur;
+    }
+    cur = cur->_next;
+  } while (cur != NULL);
+
+  if (match == NULL) {
+    return (E)NULL;
+  }
+
+  return (E)match->_data;
+}
+
 #endif // SHARE_UTILITIES_FILTERQUEUE_INLINE_HPP

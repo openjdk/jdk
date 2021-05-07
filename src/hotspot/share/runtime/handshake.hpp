@@ -29,6 +29,7 @@
 #include "memory/iterator.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/filterQueue.hpp"
 
 class HandshakeOperation;
@@ -100,8 +101,20 @@ class HandshakeState {
   bool process_self_inner();
 
   bool have_non_self_executable_operation();
-  HandshakeOperation* pop_for_self();
-  HandshakeOperation* pop();
+  HandshakeOperation* get_op_for_self();
+  HandshakeOperation* get_op();
+  void remove_op(HandshakeOperation* op);
+
+  void set_active_handshaker(Thread* thread) { Atomic::store(&_active_handshaker, thread); }
+
+  class MatchOp {
+    HandshakeOperation* _op;
+   public:
+    MatchOp(HandshakeOperation* op) : _op(op) {}
+    bool operator()(HandshakeOperation* op) {
+      return op == _op;
+    }
+  };
 
   void lock();
   void unlock();
@@ -117,28 +130,6 @@ class HandshakeState {
 
   bool operation_pending(HandshakeOperation* op);
 
-  // Both _queue and _lock must be checked. If a thread has seen this _handshakee
-  // as safe it will execute all possible handshake operations in a loop while
-  // holding _lock. We use lock free addition to the queue, which means it is
-  // possible for the queue to be seen as empty by _handshakee but as non-empty
-  // by the thread executing in the loop. To avoid the _handshakee continuing
-  // while handshake operations are being executed, the _handshakee
-  // must take slow path, process_by_self(), if _lock is held.
-  bool should_process() {
-    // The holder of the _lock can add an asynchronous handshake to queue.
-    // To make sure it is seen by the handshakee, the handshakee must first
-    // check the _lock, and if held go to slow path.
-    // Since the handshakee is unsafe if _lock gets locked after this check
-    // we know other threads cannot process any handshakes.
-    // Now we can check the queue to see if there is anything we should processs.
-    if (_lock.is_locked()) {
-      return true;
-    }
-    // Lock check must be done before queue check, force ordering.
-    OrderAccess::loadload();
-    return !_queue.is_empty();
-  }
-
   bool process_by_self();
 
   enum ProcessResult {
@@ -151,7 +142,7 @@ class HandshakeState {
   };
   ProcessResult try_process(HandshakeOperation* match_op);
 
-  Thread* active_handshaker() const { return _active_handshaker; }
+  Thread* active_handshaker() const { return Atomic::load(&_active_handshaker); }
 
   // Suspend/resume support
  private:
