@@ -5682,6 +5682,273 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
 
+  // base64 AVX512vbmi tables
+  address base64_vbmi_lookup_lo_addr() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "lookup_lo");
+    address start = __ pc();
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x3f8080803e808080, relocInfo::none);
+    __ emit_data64(0x3b3a393837363534, relocInfo::none);
+    __ emit_data64(0x8080808080803d3c, relocInfo::none);
+    return start;
+  }
+
+  address base64_vbmi_lookup_hi_addr() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "lookup_hi");
+    address start = __ pc();
+    __ emit_data64(0x0605040302010080, relocInfo::none);
+    __ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
+    __ emit_data64(0x161514131211100f, relocInfo::none);
+    __ emit_data64(0x8080808080191817, relocInfo::none);
+    __ emit_data64(0x201f1e1d1c1b1a80, relocInfo::none);
+    __ emit_data64(0x2827262524232221, relocInfo::none);
+    __ emit_data64(0x302f2e2d2c2b2a29, relocInfo::none);
+    __ emit_data64(0x8080808080333231, relocInfo::none);
+    return start;
+  }
+  address base64_vbmi_lookup_lo_url_addr() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "lookup_lo_url");
+    address start = __ pc();
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x8080808080808080, relocInfo::none);
+    __ emit_data64(0x80803e8080808080, relocInfo::none);
+    __ emit_data64(0x3b3a393837363534, relocInfo::none);
+    __ emit_data64(0x8080808080803d3c, relocInfo::none);
+    return start;
+  }
+
+  address base64_vbmi_lookup_hi_url_addr() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "lookup_hi_url");
+    address start = __ pc();
+		__ emit_data64(0x0605040302010080, relocInfo::none);
+		__ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
+		__ emit_data64(0x161514131211100f, relocInfo::none);
+		__ emit_data64(0x3f80808080191817, relocInfo::none);
+		__ emit_data64(0x201f1e1d1c1b1a80, relocInfo::none);
+		__ emit_data64(0x2827262524232221, relocInfo::none);
+		__ emit_data64(0x302f2e2d2c2b2a29, relocInfo::none);
+		__ emit_data64(0x8080808080333231, relocInfo::none);
+    return start;
+  }
+
+  address base64_vbmi_pack_vec_addr() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "pack_vec");
+    address start = __ pc();
+		__ emit_data64(0x090a040506000102, relocInfo::none);
+		__ emit_data64(0x161011120c0d0e08, relocInfo::none);
+		__ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
+		__ emit_data64(0x292a242526202122, relocInfo::none);
+		__ emit_data64(0x363031322c2d2e28, relocInfo::none);
+		__ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
+		__ emit_data64(0x0000000000000000, relocInfo::none);
+		__ emit_data64(0x0000000000000000, relocInfo::none);
+    return start;
+  }
+
+  address base64_vbmi_join_0_1_addr() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "join_0_1");
+    address start = __ pc();
+		__ emit_data64(0x090a040506000102, relocInfo::none);
+		__ emit_data64(0x161011120c0d0e08, relocInfo::none);
+		__ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
+		__ emit_data64(0x292a242526202122, relocInfo::none);
+		__ emit_data64(0x363031322c2d2e28, relocInfo::none);
+		__ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
+		__ emit_data64(0x494a444546404142, relocInfo::none);
+		__ emit_data64(0x565051524c4d4e48, relocInfo::none);
+    return start;
+  }
+
+  address base64_vbmi_join_1_2_addr() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "join_1_2");
+    address start = __ pc();
+		__ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
+		__ emit_data64(0x292a242526202122, relocInfo::none);
+		__ emit_data64(0x363031322c2d2e28, relocInfo::none);
+		__ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
+		__ emit_data64(0x494a444546404142, relocInfo::none);
+		__ emit_data64(0x565051524c4d4e48, relocInfo::none);
+		__ emit_data64(0x5c5d5e58595a5455, relocInfo::none);
+		__ emit_data64(0x696a646566606162, relocInfo::none);
+    return start;
+  }
+
+  address base64_vbmi_join_2_3_addr() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "join_2_3");
+    address start = __ pc();
+		__ emit_data64(0x363031322c2d2e28, relocInfo::none);
+		__ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
+		__ emit_data64(0x494a444546404142, relocInfo::none);
+		__ emit_data64(0x565051524c4d4e48, relocInfo::none);
+		__ emit_data64(0x5c5d5e58595a5455, relocInfo::none);
+		__ emit_data64(0x696a646566606162, relocInfo::none);
+		__ emit_data64(0x767071726c6d6e68, relocInfo::none);
+		__ emit_data64(0x7c7d7e78797a7475, relocInfo::none);
+    return start;
+  }
+
+
+// Code for generating Base64 decoding.
+// Intrinsic function prototype in Base64.java:
+// private void decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
+  address generate_base64_decodeBlock() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "implDecode");
+    address start = __ pc();
+    __ enter();
+
+    // Save callee-saved registers before using them
+    __ push(r12);
+    __ push(r13);
+    __ push(r14);
+    __ push(r15);
+
+    // arguments
+    const Register source = c_rarg0; // Source Array
+    const Register start_offset = c_rarg1; // start offset
+    const Register end_offset = c_rarg2; // end offset
+    const Register dest = c_rarg3; // destination array
+
+#ifndef _WIN64
+    const Register dp = c_rarg4;  // Position for writing to dest array
+    const Register isURL = c_rarg5;// Base64 or URL character set
+#else
+    const Address  dp_mem(rbp, 6 * wordSize);  // length is on stack on Win64
+    const Address isURL_mem(rbp, 7 * wordSize);
+    const Register isURL = r10;      // pick the volatile windows register
+    const Register dp = r12;
+    __ movl(dp, dp_mem);
+    __ movl(isURL, isURL_mem);
+#endif
+
+    const Register length = r14;
+    const Register merged1 = zmm0;
+    const Register merged0 = zmm1;
+    const Register merged2 = zmm2;
+    const Register xlate_op = zmm3;
+    const Register merged_op = zmm4;
+    const Register lookup_hi = zmm5;
+    const Register lookup_lo = zmm6;
+    const Register merged3 = zmm7;
+    const Register input0 = zmm8;
+    const Register input3 = zmm9;
+    const Register merge_ab_bc2 = zmm10;
+    const Register merge_ab_bc0 = zmm11;
+    const Register merge_ab_bc1 = zmm12;
+    const Register merge_ab_bc3 = zmm13;
+    const Register input1 = zmm14;
+    const Register input2 = zmm15;
+    const Register join23 = zmm16;
+    const Register join12 = zmm17;
+    const Register join01 = zmm18;
+
+    Label L_process256, L_process64, L_exit, L_processdata;
+
+    // calculate length from offsets
+    __ movl(length, end_offset);
+    __ subl(length, start_offset);
+    __ cmpl(length, 0);
+    __ jcc(Assembler::lessEqual, L_exit);
+
+    __ cmpl(length, 64 * 4);
+    __ jcc(Assembler::less, L_process64);
+
+    __ movl(ecx, 0x01400140);
+    __ vpbroadcastd(merged_op, ecx, Assembler::AVX_512bit);
+
+    __ movl(ecx, 0x0011000);
+    __ vpbroadcastd(xlate_op, ecx, Assembler::AVX_512bit);
+
+    // Load lookup tables based on isURL
+    __ vmovdqa64(lookup_lo, StubRoutines::x86::base64_vbmi_lookup_lo_addr());
+    __ vmovdqa64(lookup_hi, StubRoutines::x86::base64_vbmi_lookup_hi_addr());
+
+    // check if base64 tables(isURL=0) or base64 url tables(isURL=1) need to be loaded
+    __ cmpl(isURL, 0);
+    __ jcc(Assembler::equal, L_processdata);
+    __ vmovdqa64(lookup_lo, StubRoutines::x86::base64_vbmi_lookup_lo_url_addr());
+    __ vmovdqa64(lookup_hi, StubRoutines::x86::base64_vbmi_lookup_hi_url_addr());
+
+    // load masks required for decoding data
+    __ BIND(L_processdata);
+    __ vmovdqa64(join01, StubRoutines::x86::base64_vbmi_join_0_1_addr());
+    __ vmovdqa64(join12, StubRoutines::x86::base64_vbmi_join_1_2_addr());
+    __ vmovdqa64(join23, StubRoutines::x86::base64_vbmi_join_2_3_addr());
+
+    __ align(32);
+    __ BIND(L_process256);
+    // Grab input data
+    __ vmovdqu64(input0, Address(source, start_offset, Address::times_1, 0x00), Assembler::AVX_512bit);
+    __ vmovdqu64(input1, Address(source, start_offset, Address::times_1, 0x40), Assembler::AVX_512bit);
+    __ vmovdqu64(input2, Address(source, start_offset, Address::times_1, 0x80), Assembler::AVX_512bit);
+    __ vmovdqu64(input3, Address(source, start_offset, Address::times_1, 0xc0), Assembler::AVX_512bit);
+
+
+    // 3. pack four 6-bit values into 24-bit words (all within 32-bit lanes)
+    // Note: exactly the same procedure as we have in AVX2 version
+    // input:  packed_dword([00dddddd|00cccccc|00bbbbbb|00aaaaaa] x 4)
+    // merged: packed_dword([00000000|aaaaabbb|bbbbcccc|ccdddddd] x 4)
+    __ vmovdqa64(merge_ab_bc0, lookup_lo, Assembler::AVX_512bit);
+    __ vmovdqa64(merge_ab_bc1, lookup_lo, Assembler::AVX_512bit);
+    __ vmovdqa64(merge_ab_bc2, lookup_lo, Assembler::AVX_512bit);
+    __ vmovdqa64(merge_ab_bc3, lookup_lo, Assembler::AVX_512bit);
+
+    __ vpermt2b(merge_ab_bc0, input0, lookup_hi, Assembler::AVX_512bit);
+    __ vpermt2b(merge_ab_bc1, input1, lookup_hi, Assembler::AVX_512bit);
+    __ vpermt2b(merge_ab_bc2, input2, lookup_hi, Assembler::AVX_512bit);
+    __ vpermt2b(merge_ab_bc3, input3, lookup_hi, Assembler::AVX_512bit);
+
+    __ vpmaddubsw(merged2, merge_ab_bc0, merged_op, Assembler::AVX_512bit);
+    __ vpmaddubsw(merged0, merge_ab_bc1, merged_op, Assembler::AVX_512bit);
+    __ vpmaddubsw(merged1, merge_ab_bc2, merged_op, Assembler::AVX_512bit);
+    __ vpmaddubsw(merged3, merge_ab_bc3, merged_op, Assembler::AVX_512bit);
+
+    __ vpmaddwd(merged0, merged0, xlate_op, Assembler::AVX_512bit);
+    __ vpmaddwd(merged1, merged1, xlate_op, Assembler::AVX_512bit);
+    __ vpmaddwd(merged2, merged2, xlate_op, Assembler::AVX_512bit);
+    __ vpmaddwd(merged3, merged3, xlate_op, Assembler::AVX_512bit);
+
+    __ vpermt2b(merged2, join01, merged0, Assembler::AVX_512bit);
+    __ vpermt2b(merged0, join12, merged1, Assembler::AVX_512bit);
+    __ vpermt2b(merged1, join23, merged3, Assembler::AVX_512bit);
+
+    // Store result
+    __ vmovdqu64(Address(dest, dp, Address::times_1, 0x00), merged2, Assembler::AVX_512bit);
+    __ vmovdqu64(Address(dest, dp, Address::times_1, 0x40), merged0, Assembler::AVX_512bit);
+    __ vmovdqu64(Address(dest, dp, Address::times_1, 0x80), merged1, Assembler::AVX_512bit);
+
+    __ addq(source, 0x100);
+    __ addq(dest, 0xc0);
+    __ subq(length, 0x100);
+    __ cmpl(length, 64 * 4);
+    __ jcc(Assembler::belowEqual, L_process256);
+
+    __ BIND(L_exit);
+    __ pop(r15);
+    __ pop(r14);
+    __ pop(r13);
+    __ pop(r12);
+    __ leave();
+    __ ret(0);
+    return start;
+  }
+
+
   /**
    *  Arguments:
    *
