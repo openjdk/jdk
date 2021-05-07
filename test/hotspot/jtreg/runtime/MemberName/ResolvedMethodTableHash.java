@@ -26,7 +26,6 @@
  * @bug 8249719
  * @summary ResolvedMethodTable hash function should take method class into account
  * @modules java.base/jdk.internal.misc
- *
  * @run main/othervm/manual -Xmx256m -XX:MaxMetaspaceSize=256m ResolvedMethodTableHash 200000
  */
 
@@ -93,6 +92,7 @@ public class ResolvedMethodTableHash extends ClassLoader {
         int count = args.length > 0 ? Integer.parseInt(args[0]) : 200000;
 
         for (int i = 0; i < count; i++) {
+            // prevents metaspace oom
             if (i % 5 != 0) {
                 handles.add(generator.generate("MH$" + i));
             } else {
