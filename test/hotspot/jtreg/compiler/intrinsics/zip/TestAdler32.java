@@ -24,9 +24,12 @@
 /**
  * @test
  * @bug 8132081
+ * @bug 8266332
  * @summary C2 support for Adler32 on SPARC
+ * @comment 8266332: -XX:+UnlockDiagnosticVMOptions -XX:+UseAdler32Intrinsics shows performance gain
  *
  * @run main/othervm/timeout=600 -Xbatch compiler.intrinsics.zip.TestAdler32 -m
+ * @run main/othervm/timeout=600 -XX:+UnlockDiagnosticVMOptions -XX:+UseAdler32Intrinsics compiler.intrinsics.zip.TestAdler32 -m
  */
 
 package compiler.intrinsics.zip;
