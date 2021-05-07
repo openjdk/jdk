@@ -233,6 +233,7 @@ public class TestSingletonLists extends JavadocTester {
         private boolean inheritanceClass;
         private List<String> excludeFiles = List.of(
                 "overview-tree.html",
+                "package-summary.html",
                 "package-tree.html",
                 "module-summary.html",
                 "help-doc.html");

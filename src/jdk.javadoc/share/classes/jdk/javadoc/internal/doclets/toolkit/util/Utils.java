@@ -603,7 +603,7 @@ public class Utils {
     }
 
     public boolean isOrdinaryClass(TypeElement te) {
-        if (isEnum(te) || isInterface(te) || isAnnotationType(te)) {
+        if (isEnum(te) || isInterface(te) || isAnnotationType(te) || isRecord(te)) {
             return false;
         }
         if (isError(te) || isException(te)) {
