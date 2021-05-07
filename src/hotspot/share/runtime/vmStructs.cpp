@@ -299,7 +299,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
   nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
-  AOT_ONLY(nonstatic_field(MethodCounters,     _method,                                       Method*))                              \
   nonstatic_field(Method,                      _constMethod,                                  ConstMethod*)                          \
   nonstatic_field(Method,                      _method_data,                                  MethodData*)                           \
   nonstatic_field(Method,                      _method_counters,                              MethodCounters*)                       \
@@ -735,15 +734,15 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(Thread,                      _active_handles,                               JNIHandleBlock*)                       \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                      _allocated_bytes,                              jlong)                                 \
-  nonstatic_field(Thread,                      _current_pending_monitor,                      ObjectMonitor*)                        \
-  nonstatic_field(Thread,                      _current_pending_monitor_is_from_java,         bool)                                  \
-  nonstatic_field(Thread,                      _current_waiting_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(NamedThread,                 _name,                                         char*)                                 \
   nonstatic_field(NamedThread,                 _processed_thread,                             Thread*)                               \
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _vm_result_2,                                  Metadata*)                             \
+  nonstatic_field(JavaThread,                  _current_pending_monitor,                      ObjectMonitor*)                        \
+  nonstatic_field(JavaThread,                  _current_pending_monitor_is_from_java,         bool)                                  \
+  nonstatic_field(JavaThread,                  _current_waiting_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(JavaThread,                  _pending_async_exception,                      oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
@@ -913,7 +912,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   c2_nonstatic_field(Compile,                  _regalloc,                                     PhaseRegAlloc*)                        \
   c2_nonstatic_field(Compile,                  _method,                                       ciMethod*)                             \
   c2_nonstatic_field(Compile,                  _compile_id,                                   const int)                             \
-  c2_nonstatic_field(Compile,                  _save_argument_registers,                      const bool)                            \
   c2_nonstatic_field(Compile,                  _subsume_loads,                                const bool)                            \
   c2_nonstatic_field(Compile,                  _do_escape_analysis,                           const bool)                            \
   c2_nonstatic_field(Compile,                  _eliminate_boxing,                             const bool)                            \
@@ -1597,6 +1595,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(MemBarVolatileNode, MemBarNode)                         \
   declare_c2_type(MemBarCPUOrderNode, MemBarNode)                         \
   declare_c2_type(OnSpinWaitNode, MemBarNode)                             \
+  declare_c2_type(BlackholeNode, MemBarNode)                              \
   declare_c2_type(InitializeNode, MemBarNode)                             \
   declare_c2_type(ThreadLocalNode, Node)                                  \
   declare_c2_type(Opaque1Node, Node)                                      \
@@ -2302,7 +2301,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_constant(InstanceKlass::_misc_has_nonstatic_concrete_methods)   \
   declare_constant(InstanceKlass::_misc_declares_nonstatic_concrete_methods)\
   declare_constant(InstanceKlass::_misc_has_been_redefined)               \
-  declare_constant(InstanceKlass::_misc_has_passed_fingerprint_check)     \
   declare_constant(InstanceKlass::_misc_is_scratch_class)                 \
   declare_constant(InstanceKlass::_misc_is_shared_boot_class)             \
   declare_constant(InstanceKlass::_misc_is_shared_platform_class)         \
@@ -2493,7 +2491,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_constant(CompLevel_limited_profile)                             \
   declare_constant(CompLevel_full_profile)                                \
   declare_constant(CompLevel_full_optimization)                           \
-  declare_constant(CompLevel_aot)                                         \
                                                                           \
   /***************/                                                       \
   /* OopMapValue */                                                       \
@@ -2910,6 +2907,9 @@ VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
                           GENERATE_C1_VM_INT_CONSTANT_ENTRY,
                           GENERATE_C2_VM_INT_CONSTANT_ENTRY,
                           GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+#ifdef VM_INT_CPU_FEATURE_CONSTANTS
+  VM_INT_CPU_FEATURE_CONSTANTS
+#endif
 
   GENERATE_VM_INT_CONSTANT_LAST_ENTRY()
 };
@@ -2943,6 +2943,9 @@ VMLongConstantEntry VMStructs::localHotSpotVMLongConstants[] = {
                            GENERATE_C1_VM_LONG_CONSTANT_ENTRY,
                            GENERATE_C2_VM_LONG_CONSTANT_ENTRY,
                            GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
+#ifdef VM_LONG_CPU_FEATURE_CONSTANTS
+  VM_LONG_CPU_FEATURE_CONSTANTS
+#endif
 
   GENERATE_VM_LONG_CONSTANT_LAST_ENTRY()
 };

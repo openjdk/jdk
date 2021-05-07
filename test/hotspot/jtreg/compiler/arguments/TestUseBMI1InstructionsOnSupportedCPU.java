@@ -27,8 +27,10 @@
  * @summary Verify processing of UseBMI1Instructions option on CPU with
  *          BMI1 feature support.
  * @library /test/lib /
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions

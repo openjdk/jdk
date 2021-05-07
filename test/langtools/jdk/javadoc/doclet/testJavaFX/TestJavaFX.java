@@ -61,8 +61,12 @@ public class TestJavaFX extends JavadocTester {
         checkOutput("pkg1/C.html", true,
                 """
                     <dt>See Also:</dt>
-                    <dd><a href="#getRate()"><code>getRate()</code></a>,\s
-                    <a href="#setRate(double)"><code>setRate(double)</code></a></dd>""",
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="#getRate()"><code>getRate()</code></a></li>
+                    <li><a href="#setRate(double)"><code>setRate(double)</code></a></li>
+                    </ul>
+                    </dd>""",
                 """
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type">void</span>&nbsp;<span class="element-name">setRate</span>&#820\
@@ -78,7 +82,7 @@ public class TestJavaFX extends JavadocTester {
                     <dl class="notes">
                     <dt>Property description:</dt>""",
                 """
-                    <div class="col-first odd-row-color"><code><a href="C.DoubleProperty.html" title\
+                    <div class="col-first odd-row-color"><code>final <a href="C.DoubleProperty.html" title\
                     ="class in pkg1">C.DoubleProperty</a></code></div>
                     <div class="col-second odd-row-color"><code><a href="#rateProperty" class="membe\
                     r-name-link">rate</a></code></div>
@@ -181,10 +185,10 @@ public class TestJavaFX extends JavadocTester {
                     <div class="caption"><span>Properties</span></div>
                     <div class="summary-table three-column-summary">""",
                 """
-                    <div class="col-first even-row-color"><code><a href="C.BooleanProperty.html" title="class in pkg1">C.BooleanProperty</a></code></div>
+                    <div class="col-first even-row-color"><code>final <a href="C.BooleanProperty.html" title="class in pkg1">C.BooleanProperty</a></code></div>
                     """,
                 """
-                    <div class="col-first odd-row-color"><code><a href="C.DoubleProperty.html" title="class in pkg1">C.DoubleProperty</a></code></div>
+                    <div class="col-first odd-row-color"><code>final <a href="C.DoubleProperty.html" title="class in pkg1">C.DoubleProperty</a></code></div>
                     """);
 
         checkOutput("pkg1/C.html", false,
@@ -335,16 +339,16 @@ public class TestJavaFX extends JavadocTester {
                     <div class="col-last odd-row-color method-summary-table method-summary-table-tab\
                     2 method-summary-table-tab4">&nbsp;</div>
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code>java.util.List&lt;java.util.Set&lt;? super \
-                    java.lang.Object&gt;&gt;</code></div>
+                    ab2 method-summary-table-tab4"><code>final java.util.List&lt;java.util.Set&lt;? \
+                    super java.lang.Object&gt;&gt;</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#deltaProperty()" class="member-n\
                     ame-link">deltaProperty</a>()</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
                     b2 method-summary-table-tab4">&nbsp;</div>
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4"><code>java.util.List&lt;java.lang.String&gt;</code\
-                    ></div>
+                    b2 method-summary-table-tab4"><code>final java.util.List&lt;java.lang.String&gt;\
+                    </code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
                     ab2 method-summary-table-tab4"><code><a href="#gammaProperty()" class="member-na\
                     me-link">gammaProperty</a>()</code></div>

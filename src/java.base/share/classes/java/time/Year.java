@@ -619,10 +619,9 @@ public final class Year
      */
     @Override
     public Year with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            f.checkValidValue(newValue);
-            switch (f) {
+        if (field instanceof ChronoField chronoField) {
+            chronoField.checkValidValue(newValue);
+            switch (chronoField) {
                 case YEAR_OF_ERA: return Year.of((int) (year < 1 ? 1 - newValue : newValue));
                 case YEAR: return Year.of((int) newValue);
                 case ERA: return (getLong(ERA) == newValue ? this : Year.of(1 - year));

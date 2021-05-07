@@ -1146,9 +1146,6 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, CollectIndexSetStatistics, false,                        \
           "Collect information about IndexSets")                            \
                                                                             \
-  develop(bool, UseLoopSafepoints, true,                                    \
-          "Generate Safepoint nodes in every loop")                         \
-                                                                            \
   develop(intx, FastAllocateSizeLimit, 128*K,                               \
           /* Note:  This value is zero mod 1<<13 for a cheap sparc set. */  \
           "Inline allocations larger than this in doublewords must go slow")\
@@ -1633,25 +1630,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Segmented code cache: X[%] of the non-profiled heap."            \
           "Non-segmented code cache: X[%] of the total code cache")         \
           range(0, 100)                                                     \
-                                                                            \
-  /* AOT parameters */                                                      \
-  product(bool, UseAOT, false, EXPERIMENTAL,                                \
-          "Use AOT compiled files")                                         \
-                                                                            \
-  product(ccstrlist, AOTLibrary, NULL, EXPERIMENTAL,                        \
-          "AOT library")                                                    \
-                                                                            \
-  product(bool, PrintAOT, false, EXPERIMENTAL,                              \
-          "Print used AOT klasses and methods")                             \
-                                                                            \
-  notproduct(bool, PrintAOTStatistics, false,                               \
-          "Print AOT statistics")                                           \
-                                                                            \
-  product(bool, UseAOTStrictLoading, false, DIAGNOSTIC,                     \
-          "Exit the VM if any of the AOT libraries has invalid config")     \
-                                                                            \
-  product(bool, CalculateClassFingerprint, false,                           \
-          "Calculate class fingerprint")                                    \
                                                                             \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \

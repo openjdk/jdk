@@ -68,6 +68,8 @@ compiler/whitebox/ClearMethodStateTest.java 8265360 macosx-aarch64
 compiler/whitebox/EnqueueMethodForCompilationTest.java 8265360 macosx-aarch64
 compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-aarch64
 
+compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-x64
+
 #############################################################################
 
 # :hotspot_gc
@@ -102,6 +104,7 @@ resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8262386 generic-al
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214032 generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8224150 generic-all
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
+serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-x64
 
 #############################################################################
 
@@ -125,8 +128,6 @@ vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded005
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Deadlock/JavaDeadlock001/TestDescription.java 8060733 generic-all
 
 vmTestbase/nsk/jdi/ThreadReference/stop/stop001/TestDescription.java 7034630 generic-all
-
-vmTestbase/nsk/jdb/eval/eval001/eval001.java 8221503 generic-all
 
 vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all

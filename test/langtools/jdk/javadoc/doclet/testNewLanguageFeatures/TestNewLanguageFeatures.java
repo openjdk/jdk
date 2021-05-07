@@ -122,7 +122,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 """
                     <dl class="notes">
                     <dt>See Also:</dt>
-                    <dd><a href="TypeParameters.html" title="class in pkg"><code>TypeParameters</code></a></dd>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="TypeParameters.html" title="class in pkg"><code>TypeParameters</code></a></li>
+                    </ul>
+                    </dd>
                     </dl>""",
                 // Method that uses class type parameter.
                 """

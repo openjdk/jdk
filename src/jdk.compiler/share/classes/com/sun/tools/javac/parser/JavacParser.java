@@ -3584,8 +3584,8 @@ public class JavacParser implements Parser {
                     }
                 }
                 JCTree def = typeDeclaration(mods, docComment);
-                if (def instanceof JCExpressionStatement)
-                    def = ((JCExpressionStatement)def).expr;
+                if (def instanceof JCExpressionStatement statement)
+                    def = statement.expr;
                 defs.append(def);
                 if (def instanceof JCClassDecl)
                     checkForImports = false;
