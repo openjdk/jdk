@@ -69,7 +69,7 @@ for (int i = 0 ; i < 10 ; i++) {
  * with a memory segment. This can be done, using the {@link jdk.incubator.foreign.ResourceScope} abstraction, as shown below:
  *
  * <pre>{@code
-try (ResourceScope scope = ResourceScope.ofConfined()) {
+try (ResourceScope scope = ResourceScope.newConfinedScope()) {
     MemorySegment segment = MemorySegment.allocateNative(10 * 4, scope);
     for (int i = 0 ; i < 10 ; i++) {
         MemoryAccess.setIntAtIndex(segment, i, 42);
