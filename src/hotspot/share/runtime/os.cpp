@@ -122,7 +122,7 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
   //                                      1         2
   //                             12345678901234567890123456789
   // format string: "%04d-%02d-%02dT%02d:%02d:%02d.%03d%c%02d%02d"
-  static const size_t needed_buffer = 29;
+  static const size_t needed_buffer = os::iso8601_timestamp_size;
 
   // Sanity check the arguments
   if (buffer == NULL) {

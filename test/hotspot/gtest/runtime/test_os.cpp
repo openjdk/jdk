@@ -778,8 +778,8 @@ static bool very_simple_string_matcher(const char* pattern, const char* s) {
 }
 
 TEST_VM(os, iso8601_time) {
-  char buffer[30];
-  buffer[29] = 'X'; // canary
+  char buffer[os::iso8601_timestamp_size + 1]; // + space for canary
+  buffer[os::iso8601_timestamp_size] = 'X'; // canary
   const char* result = NULL;
   // YYYY-MM-DDThh:mm:ss.mmm+zzzz
   const char* const pattern = "dddd-dd-dd.dd:dd:dd.ddd+dddd";
@@ -806,5 +806,5 @@ TEST_VM(os, iso8601_time) {
   EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.017+dddd", result));
 
   // Canary should still be intact
-  EXPECT_EQ(buffer[29], 'X');
+  EXPECT_EQ(buffer[os::iso8601_timestamp_size], 'X');
 }
