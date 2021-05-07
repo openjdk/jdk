@@ -5859,9 +5859,9 @@ instruct vshiftB(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
 
 instruct vshiftB_imm(vec dst, vec src, immI8 shift, vec tmp, rRegI scratch) %{
   predicate(vector_length(n) <= 8);
-  match(Set dst ( LShiftVB src shift));
-  match(Set dst ( RShiftVB src shift));
-  match(Set dst (URShiftVB src shift));
+  match(Set dst (LShiftVB src (LShiftCntV shift)));
+  match(Set dst (RShiftVB src (RShiftCntV shift)));
+  match(Set dst (URShiftVB src (RShiftCntV shift)));
   effect(TEMP dst, USE src, TEMP tmp, TEMP scratch);
   format %{"vshiftB_imm $dst,$src,$shift" %}
   ins_encode %{
@@ -5904,9 +5904,9 @@ instruct vshift16B(vec dst, vec src, vec shift, vec tmp1, vec tmp2, rRegI scratc
 
 instruct vshift16B_imm(vec dst, vec src, immI8 shift, vec tmp1, vec tmp2, rRegI scratch) %{
   predicate(vector_length(n) == 16 && UseAVX <= 1);
-  match(Set dst ( LShiftVB src shift));
-  match(Set dst ( RShiftVB src shift));
-  match(Set dst (URShiftVB src shift));
+  match(Set dst (LShiftVB src (LShiftCntV shift)));
+  match(Set dst (RShiftVB src (RShiftCntV shift)));
+  match(Set dst (URShiftVB src (RShiftCntV shift)));
   effect(TEMP dst, USE src, TEMP tmp1, TEMP tmp2, TEMP scratch);
   format %{"vshift16B_imm $dst,$src,$shift" %}
   ins_encode %{
@@ -5949,9 +5949,9 @@ instruct vshift16B_avx(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
 
 instruct vshift16B_avx_imm(vec dst, vec src, immI8 shift, vec tmp, rRegI scratch) %{
   predicate(vector_length(n) == 16 && UseAVX > 1);
-  match(Set dst ( LShiftVB src shift));
-  match(Set dst ( RShiftVB src shift));
-  match(Set dst (URShiftVB src shift));
+  match(Set dst (LShiftVB src (LShiftCntV shift)));
+  match(Set dst (RShiftVB src (RShiftCntV shift)));
+  match(Set dst (URShiftVB src (RShiftCntV shift)));
   effect(TEMP dst, TEMP tmp, TEMP scratch);
   format %{"vshift16B_avx_imm $dst,$src,$shift" %}
   ins_encode %{
@@ -5994,9 +5994,9 @@ instruct vshift32B_avx(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
 
 instruct vshift32B_avx_imm(vec dst, vec src, immI8 shift, vec tmp, rRegI scratch) %{
   predicate(vector_length(n) == 32);
-  match(Set dst ( LShiftVB src shift));
-  match(Set dst ( RShiftVB src shift));
-  match(Set dst (URShiftVB src shift));
+  match(Set dst (LShiftVB src (LShiftCntV shift)));
+  match(Set dst (RShiftVB src (RShiftCntV shift)));
+  match(Set dst (URShiftVB src (RShiftCntV shift)));
   effect(TEMP dst, TEMP tmp, TEMP scratch);
   format %{"vshift32B_avx_imm $dst,$src,$shift" %}
   ins_encode %{
@@ -6047,9 +6047,9 @@ instruct vshift64B_avx(vec dst, vec src, vec shift, vec tmp1, vec tmp2, rRegI sc
 
 instruct vshift64B_avx_imm(vec dst, vec src, immI8 shift, vec tmp1, vec tmp2, rRegI scratch) %{
   predicate(vector_length(n) == 64);
-  match(Set dst ( LShiftVB src shift));
-  match(Set dst ( RShiftVB src shift));
-  match(Set dst (URShiftVB src shift));
+  match(Set dst (LShiftVB src (LShiftCntV shift)));
+  match(Set dst (RShiftVB src (RShiftCntV shift)));
+  match(Set dst (URShiftVB src (RShiftCntV shift)));
   effect(TEMP dst, TEMP tmp1, TEMP tmp2, TEMP scratch);
   format %{"vshift64B_avx_imm $dst,$src,$shift" %}
   ins_encode %{
