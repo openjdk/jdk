@@ -409,9 +409,6 @@ void NodeHash::operator=(const NodeHash& nh) {
 PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List* worklist, PhaseNumber phase_num) : Phase(phase_num) {
   // Implementation requires an edge from root to each SafePointNode
   // at a backward branch. Inserted in add_safepoint().
-  if (!OptoRemoveUseless) {
-    return;
-  }
 
   // Identify nodes that are reachable from below, useful.
   C->identify_useful_nodes(_useful);
@@ -994,7 +991,7 @@ PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : PhaseGVN(gvn),
     if(n != NULL && n != _table.sentinel() && n->outcnt() == 0) {
       if( n->is_top() ) continue;
       // If remove_useless_nodes() has run, we expect no such nodes left.
-      assert(!OptoRemoveUseless, "remove_useless_nodes missed this node");
+      assert(false, "remove_useless_nodes missed this node");
       hash_delete(n);
     }
   }

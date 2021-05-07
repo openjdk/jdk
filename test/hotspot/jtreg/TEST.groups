@@ -315,6 +315,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/javaldr/LockDuringDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestStaticDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestDynamicDump.java \
+ -runtime/cds/appcds/jcmd/JCmdTestFileSafety.java \
  -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/sharedStrings \
  -runtime/cds/appcds/ArchiveRelocationTest.java \
