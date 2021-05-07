@@ -804,11 +804,17 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      */
     private AlgorithmParameters getPBEAlgorithmParameters(
             String algorithm, int iterationCount) throws IOException {
-        AlgorithmParameters algParams = null;
+        AlgorithmParameters algParams;
+
+        byte[] salt = getSalt();
+        if (KnownOIDs.findMatch(algorithm) == KnownOIDs.PBEWithMD5AndDES) {
+            // PBES1 scheme such as PBEWithMD5AndDES requires a 8-byte salt
+            salt = Arrays.copyOf(salt, 8);
+        }
 
         // create PBE parameters from salt and iteration count
         PBEParameterSpec paramSpec =
-                new PBEParameterSpec(getSalt(), iterationCount);
+                new PBEParameterSpec(salt, iterationCount);
         try {
            algParams = AlgorithmParameters.getInstance(algorithm);
            algParams.init(paramSpec);

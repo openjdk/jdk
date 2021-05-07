@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,12 @@ static class_info classes[] = {
     { "Lnsk/jvmti/ClassPrepare/classprep001$TestInterface;", EXP_STATUS, 2, 1, 0 },
     { "Lnsk/jvmti/ClassPrepare/classprep001$TestClass;", EXP_STATUS, 3, 2, 1 }
 };
+// These classes are loaded on a different thread.
+// We should not get ClassPrepare events for them.
+static const class_info unexpectedClasses[] = {
+    { "Lnsk/jvmti/ClassPrepare/classprep001$TestInterface2;", 0, 0, 0, 0 },
+    { "Lnsk/jvmti/ClassPrepare/classprep001$TestClass2;", 0, 0, 0, 0}
+};
 
 void printStatus(jint status) {
     int flags = 0;
@@ -85,6 +91,17 @@ void printStatus(jint status) {
         flags++;
     }
     printf(" (0x%x)\n", status);
+}
+
+const size_t NOT_FOUND = (size_t)(-1);
+
+size_t findClass(const char *classSig, const class_info *arr, int size) {
+    for (int i = 0; i < size; i++) {
+        if (strcmp(classSig, arr[i].sig) == 0) {
+            return i;
+        }
+    }
+    return NOT_FOUND;
 }
 
 void JNICALL ClassPrepare(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -188,19 +205,25 @@ void JNICALL ClassPrepare(jvmtiEnv *jvmti_env, JNIEnv *env,
         printf("\n");
     }
 
-    if (eventsCount >= eventsExpected) {
-        printf("(#%" PRIuPTR ") too many events: %" PRIuPTR ", expected: %" PRIuPTR "\n",
-               eventsCount, eventsCount + 1, eventsExpected);
+    size_t expectedClassIdx = findClass(inf.sig, classes, sizeof(classes)/sizeof(class_info));
+    // Test classes loading may cause system classes loading - skip them.
+    if (expectedClassIdx == NOT_FOUND) {
+        size_t unexpectedClassIdx = findClass(inf.sig, unexpectedClasses,
+                                              sizeof(unexpectedClasses)/sizeof(class_info));
+        if (unexpectedClassIdx != NOT_FOUND) {
+            printf("# wrong class: \"%s\"\n", inf.sig);
+            result = STATUS_FAILED;
+        }
+        return;
+    }
+
+    if (eventsCount != expectedClassIdx) {
+        printf("(#%" PRIuPTR ") unexpected order: %" PRIuPTR ", expected: %" PRIuPTR "\n",
+               eventsCount, expectedClassIdx, eventsCount);
         result = STATUS_FAILED;
         return;
     }
 
-    if (inf.sig == NULL || strcmp(inf.sig, classes[eventsCount].sig) != 0) {
-        printf("(#%" PRIuPTR ") wrong class: \"%s\"",
-               eventsCount, inf.sig);
-        printf(", expected: \"%s\"\n", classes[eventsCount].sig);
-        result = STATUS_FAILED;
-    }
     if (inf.status != classes[eventsCount].status) {
         printf("(#%" PRIuPTR ") wrong status: ", eventsCount);
         printStatus(inf.status);
@@ -266,24 +289,16 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 }
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_ClassPrepare_classprep001_getReady(JNIEnv *env, jclass cls) {
+Java_nsk_jvmti_ClassPrepare_classprep001_getReady(JNIEnv *env, jclass cls, jthread thread) {
     jvmtiError err;
-    jthread prep_thread;
 
     if (jvmti == NULL) {
         printf("JVMTI client was not properly loaded!\n");
         return;
     }
 
-    err = jvmti->GetCurrentThread(&prep_thread);
-    if (err != JVMTI_ERROR_NONE) {
-        printf("Failed to get current thread: %s (%d)\n", TranslateError(err), err);
-        result = STATUS_FAILED;
-        return;
-    }
-
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-            JVMTI_EVENT_CLASS_PREPARE, prep_thread);
+            JVMTI_EVENT_CLASS_PREPARE, thread);
     if (err == JVMTI_ERROR_NONE) {
         eventsExpected = sizeof(classes)/sizeof(class_info);
     } else {
@@ -294,23 +309,16 @@ Java_nsk_jvmti_ClassPrepare_classprep001_getReady(JNIEnv *env, jclass cls) {
 }
 
 JNIEXPORT jint JNICALL
-Java_nsk_jvmti_ClassPrepare_classprep001_check(JNIEnv *env, jclass cls) {
+Java_nsk_jvmti_ClassPrepare_classprep001_check(JNIEnv *env, jclass cls, jthread thread) {
     jvmtiError err;
-    jthread prep_thread;
 
     if (jvmti == NULL) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
 
-    err = jvmti->GetCurrentThread(&prep_thread);
-    if (err != JVMTI_ERROR_NONE) {
-        printf("Failed to get current thread: %s (%d)\n", TranslateError(err), err);
-        return STATUS_FAILED;
-    }
-
     err = jvmti->SetEventNotificationMode(JVMTI_DISABLE,
-            JVMTI_EVENT_CLASS_PREPARE, prep_thread);
+            JVMTI_EVENT_CLASS_PREPARE, thread);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to disable JVMTI_EVENT_CLASS_PREPARE: %s (%d)\n",
                TranslateError(err), err);

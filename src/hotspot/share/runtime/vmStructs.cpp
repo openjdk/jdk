@@ -912,7 +912,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   c2_nonstatic_field(Compile,                  _regalloc,                                     PhaseRegAlloc*)                        \
   c2_nonstatic_field(Compile,                  _method,                                       ciMethod*)                             \
   c2_nonstatic_field(Compile,                  _compile_id,                                   const int)                             \
-  c2_nonstatic_field(Compile,                  _save_argument_registers,                      const bool)                            \
   c2_nonstatic_field(Compile,                  _subsume_loads,                                const bool)                            \
   c2_nonstatic_field(Compile,                  _do_escape_analysis,                           const bool)                            \
   c2_nonstatic_field(Compile,                  _eliminate_boxing,                             const bool)                            \
