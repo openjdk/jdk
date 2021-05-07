@@ -143,6 +143,11 @@ class LogAsyncFlusher : public NonJavaThread {
   AsyncLogMap _stats; // statistics of dropping messages.
   AsyncLogBuffer _buffer;
 
+  // The memory use of each AsyncLogMessage(payload) consist of itself, a logDecoration object
+  // and a variable-length c-string message.
+  // A normal logging  message is smaller than vwrite_buffer_size, which is defined in logtagset.cpp
+  const size_t _buffer_max_size = {AsyncLogBufferSize / (sizeof(AsyncLogMessage) + sizeof(LogDecorations) + vwrite_buffer_size)};
+
   LogAsyncFlusher();
   void enqueue_impl(const AsyncLogMessage& msg);
   static void writeback(const LinkedList<AsyncLogMessage>& logs);

@@ -235,7 +235,7 @@ TEST_VM_F(AsyncLogTest, droppingMessage) {
   LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
   ASSERT_NE(flusher, nullptr) <<  "async flusher must not be null";
   // shrink async buffer.
-  AutoModifyRestore<size_t> saver(AsyncLogBufferEntries, sz);
+  AutoModifyRestore<size_t> saver(AsyncLogBufferSize, sz * 1024 /*in byte*/);
   LogMessage(logging) lm;
 
   // write 100x more messages than its capacity in burst

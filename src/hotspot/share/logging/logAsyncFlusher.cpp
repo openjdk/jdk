@@ -39,7 +39,7 @@ void AsyncLogMessage::writeback() {
 void LogAsyncFlusher::enqueue_impl(const AsyncLogMessage& msg) {
   assert_lock_strong(&_lock);
 
-  if (_buffer.size() >= AsyncLogBufferEntries)  {
+  if (_buffer.size() >= _buffer_max_size)  {
     const AsyncLogMessage* h = _buffer.front();
     assert(h != NULL, "sanity check");
 
@@ -60,12 +60,12 @@ void LogAsyncFlusher::enqueue_impl(const AsyncLogMessage& msg) {
 
     _buffer.pop_front();
   }
-  assert(_buffer.size() < AsyncLogBufferEntries, "_buffer is over-sized.");
+  assert(_buffer.size() < _buffer_max_size, "_buffer is over-sized.");
   _buffer.push_back(msg);
 
   // notify asynclog thread if occupancy is over 3/4
   size_t sz = _buffer.size();
-  if (sz > (AsyncLogBufferEntries >> 2) * 3 ) {
+  if (sz > (_buffer_max_size >> 2) * 3 ) {
     _lock.notify();
   }
 }
@@ -101,6 +101,9 @@ LogAsyncFlusher::LogAsyncFlusher()
   if (os::create_thread(this, os::asynclog_thread)) {
     os::start_thread(this);
   }
+
+  log_info(logging)("The maximum entries of AsyncLogBuffer: " SIZE_FORMAT ", estimated memory use: " SIZE_FORMAT " bytes",
+                    _buffer_max_size, AsyncLogBufferSize);
 }
 
 bool AsyncLogMapIterator::do_entry(LogFileOutput* output, uintx* counter) {

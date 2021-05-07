@@ -2021,12 +2021,9 @@ const intx ObjectAlignmentInBytes = 8;
              "Use the FP register for holding the frame pointer "           \
              "and not as a general purpose register.")                      \
                                                                             \
-  product(size_t, AsyncLogBufferEntries, 2*K,                               \
-          "Entries of the buffer for AsyncLogging. "                        \
-          "Each entry consists of the log messages and decorations "        \
-          "which are variable-length. The maximal memory taken by "         \
-          "an entry is roughly 520 bytes")                                  \
-          range(100, 500*K)                                                 \
+  product(size_t, AsyncLogBufferSize, 2*M,                                  \
+          "Memory budget(in bytes) for the buffer of AsyncLogging. ")       \
+          range(100*K, 50*M)                                                \
                                                                             \
   product(bool, CheckIntrinsics, true, DIAGNOSTIC,                          \
              "When a class C is loaded, check that "                        \

@@ -554,9 +554,9 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->cr();
   out->print_cr("\nAsynchronous logging(off by default):");
   out->print_cr(" -Xlog:async");
-  out->print_cr("  All log messages write to an intermediate buffer first defined by AsyncLogBufferEntries "
-                " and then will be flushed to the corresponding log outputs by a standalone thread. Write operation at logsites "
-                " guarantee non-blocking.");
+  out->print_cr("  All log messages write to an intermediate buffer first and then will be flushed"
+                " to the corresponding log outputs by a standalone thread. Write operations at logsites are"
+                " guaranteed non-blocking.");
   out->cr();
 
   out->print_cr("Some examples:");
