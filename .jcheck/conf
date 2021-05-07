@@ -18,7 +18,7 @@ files=.*\.cpp|.*\.hpp|.*\.c|.*\.h|.*\.java|.*\.cc|.*\.hh|.*\.m|.*\.mm|.*\.gmk|.*
 ignore-tabs=.*\.gmk|Makefile
 
 [checks "reviewers"]
-reviewers=1
+committers=1
 ignore=duke
 
 [checks "committer"]
