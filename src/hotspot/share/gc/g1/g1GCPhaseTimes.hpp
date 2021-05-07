@@ -162,7 +162,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_post_evacuate_cleanup_1_time_ms;
   double _cur_post_evacuate_cleanup_2_time_ms;
 
-  double _cur_clear_ct_time_ms;
   double _cur_expand_heap_time_ms;
   double _cur_ref_proc_time_ms;
 
@@ -179,8 +178,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_non_young_cset_choice_time_ms;
 
   double _recorded_preserve_cm_referents_time_ms;
-
-  double _recorded_merge_pss_time_ms;
 
   double _recorded_start_new_cset_time_ms;
 

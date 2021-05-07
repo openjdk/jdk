@@ -69,13 +69,13 @@ bool G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::should_
 }
 
 G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs) :
-  G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr), _cl(rdcqs) { }
+  G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr), _task(rdcqs) { }
 
 G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::~RemoveSelfForwardPtrsTask() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  assert(_cl.num_failed_regions() == g1h->num_regions_failed_evacuation(),
+  assert(_task.num_failed_regions() == g1h->num_regions_failed_evacuation(),
          "Removed regions %u inconsistent with expected %u",
-         _cl.num_failed_regions(), g1h->num_regions_failed_evacuation());
+         _task.num_failed_regions(), g1h->num_regions_failed_evacuation());
 }
 
 double G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::worker_cost() const {
@@ -84,7 +84,7 @@ double G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::worke
 }
 
 void G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask::do_work(uint worker_id) {
-  _cl.work(worker_id);
+  _task.work(worker_id);
 }
 
 class G1FreeHumongousRegionClosure : public HeapRegionClosure {
@@ -217,7 +217,7 @@ void G1PostEvacuateCollectionSetCleanupTask2::UpdateDerivedPointersTask::do_work
 #endif
 
 bool G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask::should_execute() {
-  return G1CollectedHeap::heap()->eagerly_reclaim_enabled();
+  return G1CollectedHeap::heap()->should_do_eager_reclaim();
 }
 
 G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask::EagerlyReclaimHumongousObjectsTask() :
@@ -231,8 +231,8 @@ void G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask
   G1FreeHumongousRegionClosure cl;
   g1h->heap_region_iterate(&cl);
 
-  record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumTotal, g1h->num_humongous_total_objects());
-  record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumCandidates, g1h->num_humongous_reclaim_candidate_objects());
+  record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumTotal, g1h->num_humongous_objects());
+  record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumCandidates, g1h->num_humongous_reclaim_candidates());
   record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumReclaimed, cl.humongous_objects_reclaimed());
 
   _humongous_regions_reclaimed = cl.humongous_regions_reclaimed();
@@ -251,10 +251,10 @@ bool G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::should_
 }
 
 G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::RestorePreservedMarksTask(PreservedMarksSet* preserved_marks) :
-  G1AbstractSubTask(G1GCPhaseTimes::RestorePreservedMarks), _preserved_marks(preserved_marks), _cl(preserved_marks->create_task()) { }
+  G1AbstractSubTask(G1GCPhaseTimes::RestorePreservedMarks), _preserved_marks(preserved_marks), _task(preserved_marks->create_task()) { }
 
 G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::~RestorePreservedMarksTask() {
-  delete _cl;
+  delete _task;
 }
 
 double G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::worker_cost() const {
@@ -263,7 +263,7 @@ double G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::worke
 }
 
 void G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask::do_work(uint worker_id) {
-  _cl->work(worker_id);
+  _task->work(worker_id);
 }
 
 class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {

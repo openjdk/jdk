@@ -69,7 +69,7 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : public G1AbstractSubTask {
-  G1ParRemoveSelfForwardPtrsTask _cl;
+  G1ParRemoveSelfForwardPtrsTask _task;
 
 public:
   RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs);
@@ -150,7 +150,7 @@ public:
 
 class G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask : public G1AbstractSubTask {
   PreservedMarksSet* _preserved_marks;
-  AbstractGangTask* _cl;
+  AbstractGangTask* _task;
 
 public:
   RestorePreservedMarksTask(PreservedMarksSet* preserved_marks);

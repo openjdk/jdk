@@ -505,7 +505,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
 #if COMPILER2_OR_JVMCI
   debug_phase(_gc_par_phases[UpdateDerivedPointers], 1);
 #endif
-  if (G1CollectedHeap::heap()->eagerly_reclaim_enabled()) {
+  if (G1CollectedHeap::heap()->should_do_eager_reclaim()) {
     debug_phase(_gc_par_phases[EagerlyReclaimHumongousObjects], 1);
   }
   debug_phase(_gc_par_phases[RedirtyCards], 1);

@@ -1398,8 +1398,8 @@ G1CollectedHeap::G1CollectedHeap() :
   _expand_heap_after_alloc_failure(true),
   _g1mm(NULL),
   _humongous_reclaim_candidates(),
-  _num_humongous_reclaim_total_objects(0),
-  _num_humongous_reclaim_candidate_objects(0),
+  _num_humongous_objects(0),
+  _num_humongous_reclaim_candidates(0),
   _hr_printer(),
   _collector_state(),
   _old_marking_cycles_started(0),
@@ -3417,9 +3417,16 @@ void G1CollectedHeap::make_pending_list_reachable() {
   }
 }
 
-bool G1CollectedHeap::eagerly_reclaim_enabled() const {
+static bool do_humongous_object_logging() {
+  return log_is_enabled(Debug, gc, humongous);
+}
+
+bool G1CollectedHeap::should_do_eager_reclaim() const {
+  // As eager reclaim logging also gives information about humongous objects in
+  // the heap in general, always do the eager reclaim pass even without known
+  // candidates.
   return (G1EagerReclaimHumongousObjects &&
-          (G1CollectedHeap::heap()->has_humongous_reclaim_candidate_objects() || log_is_enabled(Debug, gc, humongous)));
+          (has_humongous_reclaim_candidates() || do_humongous_object_logging()));
 }
 
 class G1PrepareEvacuationTask : public AbstractGangTask {
@@ -3581,8 +3588,8 @@ void G1CollectedHeap::pre_evacuate_collection_set(G1EvacuationInfo& evacuation_i
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
     phase_times()->record_register_regions(task_time.seconds() * 1000.0);
-    _num_humongous_reclaim_total_objects = g1_prep_task.humongous_total();
-    _num_humongous_reclaim_candidate_objects = g1_prep_task.humongous_candidates();
+    _num_humongous_objects = g1_prep_task.humongous_total();
+    _num_humongous_reclaim_candidates = g1_prep_task.humongous_candidates();
   }
 
   assert(_verifier->check_region_attr_table(), "Inconsistency in the region attributes table.");

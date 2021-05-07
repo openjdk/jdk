@@ -1307,7 +1307,7 @@ public:
     // We schedule flushing the remembered sets of humongous fast reclaim candidates
     // onto the card table first to allow the remaining parallelized tasks hide it.
     if (_initial_evacuation &&
-        g1h->has_humongous_reclaim_candidate_objects() &&
+        g1h->has_humongous_reclaim_candidates() &&
         !_fast_reclaim_handled &&
         !Atomic::cmpxchg(&_fast_reclaim_handled, false, true)) {
 
