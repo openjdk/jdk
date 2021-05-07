@@ -209,16 +209,16 @@ bool java_lang_String::is_instance(oop obj) {
   return is_instance_inlined(obj);
 }
 
-bool java_lang_String::set_flag(oop java_string, uint8_t flag_mask) {
+bool java_lang_String::test_and_set_flag(oop java_string, uint8_t flag_mask) {
   uint8_t* addr = flags_addr(java_string);
   uint8_t value = Atomic::load(addr);
   while ((value & flag_mask) == 0) {
     uint8_t old_value = value;
     value |= flag_mask;
     value = Atomic::cmpxchg(addr, old_value, value);
-    if (value == old_value) return true; // Flag bit changed to 1.
+    if (value == old_value) return false; // Flag bit changed from 0 to 1.
   }
-  return false;                 // Flag bit unchanged, already 1.
+  return true;                  // Flag bit is already 1.
 }
 
 #define STRING_FIELDS_DO(macro) \

@@ -593,17 +593,18 @@ bool StringDedup::Table::try_deduplicate_found_shared(oop java_string, oop found
     return true;
   } else if (deduplicate_if_permitted(java_string, found_value)) {
     // If java_string has the same coder as found then it won't have
-    // no-deduplication set; interning would have found the matching shared
-    // string.  But if they have different coders but happen to have the
-    // same sequence of bytes in their value arrays, then java_string could
-    // have been interned and marked no-deduplicate.
+    // deduplication_forbidden set; interning would have found the matching
+    // shared string.  But if they have different coders but happen to have
+    // the same sequence of bytes in their value arrays, then java_string
+    // could have been interned and marked deduplication-forbidden.
     _cur_stat.inc_deduped(found_value->size() * HeapWordSize);
     return true;
   } else {
     // Must be a mismatch between java_string and found string encodings,
-    // and java_string has been marked no-deduplicate, so is (being)
-    // interned in the StringTable.  Return false to allow additional
-    // processing that might still lead to some benefit for deduplication.
+    // and java_string has been marked deduplication_forbidden, so is
+    // (being) interned in the StringTable.  Return false to allow
+    // additional processing that might still lead to some benefit for
+    // deduplication.
     return false;
   }
 }
@@ -624,7 +625,7 @@ bool StringDedup::Table::deduplicate_if_permitted(oop java_string,
                                                   typeArrayOop value) {
   // The non-dedup check and value assignment must be under lock.
   MutexLocker ml(StringDedupIntern_lock, Mutex::_no_safepoint_check_flag);
-  if (java_lang_String::no_deduplication(java_string)) {
+  if (java_lang_String::deduplication_forbidden(java_string)) {
     return false;
   } else {
     java_lang_String::set_value(java_string, value); // Dedup!
@@ -654,11 +655,11 @@ void StringDedup::Table::deduplicate(oop java_string) {
       if (deduplicate_if_permitted(java_string, found)) {
         _cur_stat.inc_deduped(found->size() * HeapWordSize);
       } else {
-        // If string marked no-dedup then we can't update its value.
-        // Instead, replace the array in the table with the new one, as
-        // java_string is probably in the StringTable.  That makes it a good
-        // target for future deduplications as it is probably intended to
-        // live for some time.
+        // If string marked deduplication_forbidden then we can't update its
+        // value.  Instead, replace the array in the table with the new one,
+        // as java_string is probably in the StringTable.  That makes it a
+        // good target for future deduplications as it is probably intended
+        // to live for some time.
         tv.replace(value);
         _cur_stat.inc_replaced();
       }

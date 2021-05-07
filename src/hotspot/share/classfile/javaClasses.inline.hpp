@@ -83,20 +83,20 @@ bool java_lang_String::is_flag_set(oop java_string, uint8_t flag_mask) {
   return (Atomic::load(flags_addr(java_string)) & flag_mask) != 0;
 }
 
-bool java_lang_String::no_deduplication(oop java_string) {
-  return is_flag_set(java_string, _no_deduplication_mask);
+bool java_lang_String::deduplication_forbidden(oop java_string) {
+  return is_flag_set(java_string, _deduplication_forbidden_mask);
 }
 
 bool java_lang_String::deduplication_requested(oop java_string) {
   return is_flag_set(java_string, _deduplication_requested_mask);
 }
 
-void java_lang_String::set_no_deduplication(oop java_string) {
-  set_flag(java_string, _no_deduplication_mask);
+void java_lang_String::set_deduplication_forbidden(oop java_string) {
+  test_and_set_flag(java_string, _deduplication_forbidden_mask);
 }
 
-bool java_lang_String::set_deduplication_requested(oop java_string) {
-  return set_flag(java_string, _deduplication_requested_mask);
+bool java_lang_String::test_and_set_deduplication_requested(oop java_string) {
+  return test_and_set_flag(java_string, _deduplication_requested_mask);
 }
 
 int java_lang_String::length(oop java_string, typeArrayOop value) {

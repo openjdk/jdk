@@ -737,7 +737,7 @@ oop StringTable::create_archived_string(oop s) {
   // Prevent string deduplication from changing the 'value' field to
   // something not in the archive before building the archive.  Also marks
   // the shared string when loaded.
-  java_lang_String::set_no_deduplication(new_s);
+  java_lang_String::set_deduplication_forbidden(new_s);
   return new_s;
 }
 

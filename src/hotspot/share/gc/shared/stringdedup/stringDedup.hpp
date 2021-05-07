@@ -81,7 +81,7 @@
 // Doing so would counteract C2 optimizations on string literals.  But an
 // interned string might later become a deduplication candidate through the
 // normal GC discovery mechanism.  This is handled by setting the
-// no_deduplication flag in a string before interning it.  A string with
+// deduplication_forbidden flag in a String before interning it.  A String with
 // that flag set may have its byte array added to the deduplication table,
 // but will not have its byte array replaced by a different but equivalent
 // array from the table.
