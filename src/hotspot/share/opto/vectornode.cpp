@@ -1157,13 +1157,15 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
   // later swap them in case of left rotation.
   Node* shiftRCnt = NULL;
   Node* shiftLCnt = NULL;
-  if (cnt->is_Con() && cnt->bottom_type()->isa_int()) {
-    // Constant shift case.
-    int shift = cnt->get_int() & shift_mask;
+  const TypeInt* cnt_type = cnt->bottom_type()->isa_int();
+  bool is_binary_vector_op = false;
+  if (cnt_type && cnt_type->is_con()) {
+    // Constant shift.
+    int shift = cnt_type->get_con() & shift_mask;
     shiftRCnt = phase->intcon(shift);
     shiftLCnt = phase->intcon(shift_mask + 1 - shift);
-  } else {
-    // Variable shift case.
+  } else if (VectorNode::is_invariant_vector(cnt)) {
+    // Scalar variable shift.
     assert(VectorNode::is_invariant_vector(cnt), "Broadcast expected");
     cnt = cnt->in(1);
     if (bt == T_LONG) {
@@ -1173,6 +1175,17 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
     }
     shiftRCnt = phase->transform(new AndINode(cnt, phase->intcon(shift_mask)));
     shiftLCnt = phase->transform(new SubINode(phase->intcon(shift_mask + 1), shiftRCnt));
+  } else {
+    // Vector variable shift.
+    assert(cnt->bottom_type()->isa_vect(), "Unexpected shift");
+    const Type* elem_ty = Type::get_const_basic_type(bt);
+    Node* shift_mask_node = (bt == T_LONG) ? (Node*)(phase->longcon(shift_mask + 1L)) :
+                                             (Node*)(phase->intcon(shift_mask + 1));
+    Node* vector_mask = phase->transform(VectorNode::scalar2vector(shift_mask_node,vlen, elem_ty));
+    int subVopc = VectorNode::opcode((bt == T_LONG) ? Op_SubL : Op_SubI, bt);
+    shiftRCnt = cnt;
+    shiftLCnt = phase->transform(VectorNode::make(subVopc, vector_mask, shiftRCnt, vt));
+    is_binary_vector_op = true;
   }
 
   // Swap the computed left and right shift counts.
@@ -1180,8 +1193,10 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
     swap(shiftRCnt,shiftLCnt);
   }
 
-  shiftLCnt = phase->transform(new LShiftCntVNode(shiftLCnt, vt));
-  shiftRCnt = phase->transform(new RShiftCntVNode(shiftRCnt, vt));
+  if (!is_binary_vector_op) {
+    shiftLCnt = phase->transform(new LShiftCntVNode(shiftLCnt, vt));
+    shiftRCnt = phase->transform(new RShiftCntVNode(shiftRCnt, vt));
+  }
 
   return new OrVNode(phase->transform(VectorNode::make(shiftLOpc, src, shiftLCnt, vlen, bt)),
                      phase->transform(VectorNode::make(shiftROpc, src, shiftRCnt, vlen, bt)),

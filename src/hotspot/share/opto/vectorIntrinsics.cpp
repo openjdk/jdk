@@ -240,14 +240,45 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
-  // TODO When mask usage is supported, VecMaskNotUsed needs to be VecMaskUseLoad.
-  if (!arch_supports_vector(sopc, num_elem, elem_bt, is_vector_mask(vbox_klass) ? VecMaskUseAll : VecMaskNotUsed)) {
-    if (C->print_intrinsics()) {
-      tty->print_cr("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=%d",
-                    n, sopc, num_elem, type2name(elem_bt),
-                    is_vector_mask(vbox_klass) ? 1 : 0);
+  if (VectorNode::is_rotate_opcode(opc)) {
+    bool is_unsupported = false;
+    if (!arch_supports_vector(sopc, num_elem, elem_bt, VecMaskNotUsed, true /*has_scalar_args*/)) {
+      is_unsupported = true;
     }
-    return false; // not supported
+    int lshiftopc = VectorNode::opcode(elem_bt == T_LONG ? Op_LShiftL : Op_LShiftI, elem_bt);
+    auto urshiftopc = [&]() {
+      switch(elem_bt) {
+        case T_INT: return Op_URShiftI;
+        case T_LONG: return Op_URShiftL;
+        case T_BYTE: return Op_URShiftB;
+        case T_SHORT: return Op_URShiftS;
+        default: return (Opcodes)0;
+      }
+    };
+    int rshiftopc = VectorNode::opcode(urshiftopc(), elem_bt);
+    if (is_unsupported &&
+        arch_supports_vector(lshiftopc, num_elem, elem_bt, VecMaskNotUsed) &&
+        arch_supports_vector(rshiftopc, num_elem, elem_bt, VecMaskNotUsed) &&
+        arch_supports_vector(Op_OrV, num_elem, elem_bt, VecMaskNotUsed)) {
+      is_unsupported = false;
+    }
+    if (is_unsupported) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: arity=0 op=int/%d vlen=%d etype=%s ismask=no",
+                      sopc, num_elem, type2name(elem_bt));
+      }
+      return false; // not supported
+    }
+  } else {
+    // TODO When mask usage is supported, VecMaskNotUsed needs to be VecMaskUseLoad.
+    if (!arch_supports_vector(sopc, num_elem, elem_bt, is_vector_mask(vbox_klass) ? VecMaskUseAll : VecMaskNotUsed)) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=%d",
+                      n, sopc, num_elem, type2name(elem_bt),
+                      is_vector_mask(vbox_klass) ? 1 : 0);
+      }
+      return false; // not supported
+    }
   }
 
   Node* opd1 = NULL; Node* opd2 = NULL; Node* opd3 = NULL;
@@ -1296,8 +1327,9 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   Node* cnt  = argument(5);
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
-  bool is_const_rotate = is_rotate && cnt->is_Con() && -0x80 <= cnt->get_int() && cnt->get_int() < 0x80;
-
+  const TypeInt* cnt_type = cnt->bottom_type()->isa_int();
+  bool is_const_rotate = is_rotate && cnt_type && cnt_type->is_con() &&
+                         -0x80 <= cnt_type->get_con() && cnt_type->get_con() < 0x80;
   if (is_rotate) {
     bool is_unsupported = false;
     if (!arch_supports_vector(sopc, num_elem, elem_bt, VecMaskNotUsed, true /*has_scalar_args*/) ||
@@ -1305,7 +1337,7 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
       is_unsupported = true;
     }
     int lshiftopc = VectorNode::opcode(elem_bt == T_LONG ? Op_LShiftL : Op_LShiftI, elem_bt);
-    auto urshiftopc = [=]() {
+    auto urshiftopc = [&]() {
       switch(elem_bt) {
         case T_INT: return Op_URShiftI;
         case T_LONG: return Op_URShiftL;

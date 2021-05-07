@@ -368,7 +368,7 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
         case T_SHORT:  // fall-through
         case T_INT:    // fall-through
         case T_LONG:  return Op_RotateLeft;
-        default: fatal("URSHIFT: %s", type2name(bt));
+        default: fatal("LROTATE: %s", type2name(bt));
       }
       break;
     }
@@ -378,7 +378,7 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
         case T_SHORT:  // fall-through
         case T_INT:    // fall-through
         case T_LONG:  return Op_RotateRight;
-        default: fatal("URSHIFT: %s", type2name(bt));
+        default: fatal("RROTATE: %s", type2name(bt));
       }
       break;
     }
