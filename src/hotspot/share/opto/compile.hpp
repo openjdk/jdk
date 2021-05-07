@@ -88,7 +88,6 @@ class TypeFunc;
 class TypeVect;
 class Unique_Node_List;
 class nmethod;
-class WarmCallInfo;
 class Node_Stack;
 struct Final_Reshape_Counts;
 
@@ -245,7 +244,6 @@ class Compile : public Phase {
  private:
   // Fixed parameters to this compilation.
   const int             _compile_id;
-  const bool            _save_argument_registers; // save/restore arg regs for trampolines
   const bool            _subsume_loads;         // Load can be matched as part of a larger op.
   const bool            _do_escape_analysis;    // Do escape analysis.
   const bool            _install_code;          // Install the code that was compiled
@@ -378,7 +376,6 @@ class Compile : public Phase {
   // Parsing, optimization
   PhaseGVN*             _initial_gvn;           // Results of parse-time PhaseGVN
   Unique_Node_List*     _for_igvn;              // Initial work-list for next round of Iterative GVN
-  WarmCallInfo*         _warm_calls;            // Sorted work-list for heat-based inlining.
 
   GrowableArray<CallGenerator*> _late_inlines;        // List of CallGenerators to be revisited after main parsing has finished.
   GrowableArray<CallGenerator*> _string_late_inlines; // same but for string operations
@@ -512,7 +509,6 @@ class Compile : public Phase {
   bool              eliminate_boxing() const    { return _eliminate_boxing; }
   /** Do aggressive boxing elimination. */
   bool              aggressive_unboxing() const { return _eliminate_boxing && AggressiveUnboxing; }
-  bool              save_argument_registers() const { return _save_argument_registers; }
   bool              should_install_code() const { return _install_code; }
 
   // Other fixed compilation parameters.
@@ -927,10 +923,6 @@ class Compile : public Phase {
 
   void              remove_useless_node(Node* dead);
 
-  WarmCallInfo*     warm_calls() const          { return _warm_calls; }
-  void          set_warm_calls(WarmCallInfo* l) { _warm_calls = l; }
-  WarmCallInfo* pop_warm_call();
-
   // Record this CallGenerator for inlining at the end of parsing.
   void              add_late_inline(CallGenerator* cg)        {
     _late_inlines.insert_before(_late_inlines_pos, cg);
@@ -1036,7 +1028,7 @@ class Compile : public Phase {
   Compile(ciEnv* ci_env, const TypeFunc *(*gen)(),
           address stub_function, const char *stub_name,
           int is_fancy_jump, bool pass_tls,
-          bool save_arg_registers, bool return_pc, DirectiveSet* directive);
+          bool return_pc, DirectiveSet* directive);
 
   // Are we compiling a method?
   bool has_method() { return method() != NULL; }

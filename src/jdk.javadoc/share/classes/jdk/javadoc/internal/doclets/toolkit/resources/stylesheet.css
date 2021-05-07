@@ -340,6 +340,18 @@ ul.ref-list > li {
     margin-top:0;
     margin-bottom:1px;
 }
+ul.see-list, ul.see-list-long {
+    padding-left: 0;
+    list-style: none;
+}
+ul.see-list li {
+    display: inline;
+}
+ul.see-list li:not(:last-child):after,
+ul.see-list-long li:not(:last-child):after {
+    content: ", ";
+    white-space: pre-wrap;
+}
 /*
  * Styles for tables.
  */
@@ -361,10 +373,10 @@ ul.ref-list > li {
     font-weight:bold;
     clear:none;
     overflow:hidden;
-    padding:0px;
+    padding:0;
     padding-top:10px;
     padding-left:1px;
-    margin:0px;
+    margin:0;
     white-space:pre;
 }
 .caption a:link, .caption a:visited {
@@ -386,7 +398,10 @@ ul.ref-list > li {
     border: none;
     height:16px;
 }
-
+div.table-tabs {
+    padding:10px 0 0 1px;
+    margin:0;
+}
 div.table-tabs > button {
    border: none;
    cursor: pointer;

@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1027,7 +1028,6 @@ public class HtmlDocletWriter {
                     case REFERENCE -> {
                         // @see reference label...
                         label = ref.subList(1, ref.size());
-                        break;
                     }
                     default ->
                         throw new IllegalStateException(ref.get(0).getKind().toString());
@@ -1042,8 +1042,9 @@ public class HtmlDocletWriter {
         Content labelContent = plainOrCode(isLinkPlain,
                 commentTagsToContent(see, element, label, context));
 
-        //The text from the @see tag.  We will output this text when a label is not specified.
-        Content text = plainOrCode(kind == LINK_PLAIN, Text.of(removeTrailingSlash(seeText)));
+        // The signature from the @see tag. We will output this text when a label is not specified.
+        Content text = plainOrCode(isLinkPlain,
+                Text.of(Objects.requireNonNullElse(ch.getReferencedSignature(see), "")));
 
         TypeElement refClass = ch.getReferencedClass(see);
         Element refMem =       ch.getReferencedMember(see);
@@ -1152,10 +1153,10 @@ public class HtmlDocletWriter {
                 }
             }
 
-            text = plainOrCode(kind == LINK_PLAIN, Text.of(refMemName));
-
             return getDocLink(HtmlLinkInfo.Kind.SEE_TAG, containing,
-                    refMem, (labelContent.isEmpty() ? text: labelContent), null, false);
+                    refMem, (labelContent.isEmpty()
+                            ? plainOrCode(isLinkPlain, Text.of(refMemName))
+                            : labelContent), null, false);
         }
     }
 

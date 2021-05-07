@@ -70,7 +70,11 @@ public class TestSerializedForm extends JavadocTester {
                     <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
                     <dl class="notes">
                     <dt>See Also:</dt>
-                    <dd><code>TestSerializedForm</code></dd>
+                    <dd>
+                    <ul class="see-list">
+                    <li><code>TestSerializedForm</code></li>
+                    </ul>
+                    </dd>
                     </dl>""",
                 "<h3>Class pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass "
                 + "extends java.lang.Object implements Serializable</h3>",

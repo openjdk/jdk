@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.List;
+import javax.lang.model.element.Element;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -141,6 +142,15 @@ public class HelpWriter extends HtmlDocletWriter {
                 .add(new HtmlTree(TagName.HR))
                 .add(HtmlTree.SPAN(HtmlStyle.helpFootnote,
                         getContent("doclet.help.footnote")));
+    }
+
+    @Override
+    protected Navigation getNavBar(PageMode pageMode, Element element) {
+        return super.getNavBar(pageMode, element)
+                .setSubNavLinks(() -> List.of(
+                        links.createLink(HtmlIds.HELP_NAVIGATION, contents.navHelpNavigation),
+                        links.createLink(HtmlIds.HELP_PAGES, contents.navHelpPages))
+                );
     }
 
     /**

@@ -3989,30 +3989,6 @@ void InstanceKlass::purge_previous_version_list() {
       _has_previous_versions = true;
     }
 
-    // At least one method is live in this previous version.
-    // Reset dead EMCP methods not to get breakpoints.
-    // All methods are deallocated when all of the methods for this class are no
-    // longer running.
-    Array<Method*>* method_refs = pv_node->methods();
-    if (method_refs != NULL) {
-      log_trace(redefine, class, iklass, purge)("previous methods length=%d", method_refs->length());
-      for (int j = 0; j < method_refs->length(); j++) {
-        Method* method = method_refs->at(j);
-
-        if (!method->on_stack()) {
-          // no breakpoints for non-running methods
-          if (method->is_running_emcp()) {
-            method->set_running_emcp(false);
-          }
-        } else {
-          assert (method->is_obsolete() || method->is_running_emcp(),
-                  "emcp method cannot run after emcp bit is cleared");
-          log_trace(redefine, class, iklass, purge)
-            ("purge: %s(%s): prev method @%d in version @%d is alive",
-             method->name()->as_C_string(), method->signature()->as_C_string(), j, version);
-        }
-      }
-    }
     // next previous version
     last = pv_node;
     pv_node = pv_node->previous_versions();
@@ -4110,29 +4086,6 @@ void InstanceKlass::add_previous_version(InstanceKlass* scratch_class,
     scratch_class->set_is_scratch_class();
     scratch_class->class_loader_data()->add_to_deallocate_list(scratch_class);
     return;
-  }
-
-  if (emcp_method_count != 0) {
-    // At least one method is still running, check for EMCP methods
-    for (int i = 0; i < old_methods->length(); i++) {
-      Method* old_method = old_methods->at(i);
-      if (!old_method->is_obsolete() && old_method->on_stack()) {
-        // if EMCP method (not obsolete) is on the stack, mark as EMCP so that
-        // we can add breakpoints for it.
-
-        // We set the method->on_stack bit during safepoints for class redefinition
-        // and use this bit to set the is_running_emcp bit.
-        // After the safepoint, the on_stack bit is cleared and the running emcp
-        // method may exit.   If so, we would set a breakpoint in a method that
-        // is never reached, but this won't be noticeable to the programmer.
-        old_method->set_running_emcp(true);
-        log_trace(redefine, class, iklass, add)
-          ("EMCP method %s is on_stack " INTPTR_FORMAT, old_method->name_and_sig_as_C_string(), p2i(old_method));
-      } else if (!old_method->is_obsolete()) {
-        log_trace(redefine, class, iklass, add)
-          ("EMCP method %s is NOT on_stack " INTPTR_FORMAT, old_method->name_and_sig_as_C_string(), p2i(old_method));
-      }
-    }
   }
 
   // Add previous version if any methods are still running.

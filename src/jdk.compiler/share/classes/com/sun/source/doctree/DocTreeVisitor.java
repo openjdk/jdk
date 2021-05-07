@@ -289,13 +289,19 @@ public interface DocTreeVisitor<R,P> {
 
     /**
      * Visits a SpecTree node.
+     *
+     * @implSpec Visits the provided {@code SpecTree} node
+     * by calling {@code visitOther(node, p)}.
+     *
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
      *
      * @since 17
      */
-    R visitSpec(SpecTree node, P p);
+    default R visitSpec(SpecTree node, P p) {
+        return visitOther(node, p);
+    }
 
     /**
      * Visits a StartElementTree node.
