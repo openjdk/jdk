@@ -82,6 +82,9 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                      "java.lang.constant.ConstantDesc",
                      "java.io.Serializable");
 
+    private static final Set<String> previewModifiers
+            = Set.of("sealed", "non-sealed");
+
     protected final TypeElement typeElement;
 
     protected final ClassTree classtree;
@@ -182,9 +185,28 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     }
 
     @Override @SuppressWarnings("preview")
-    public void addClassSignature(Content classInfoTree) {
+    public void addClassSignature(String modifiers, Content classInfoTree) {
+        ContentBuilder mods = new ContentBuilder();
+        String sep = null;
+        for (String modifiersPart : modifiers.split(" ")) {
+            if (sep != null) {
+                mods.add(sep);
+            }
+            if (previewModifiers.contains(modifiersPart)) {
+                mods.add(modifiersPart);
+                mods.add(HtmlTree.SUP(links.createLink(htmlIds.forPreviewSection(typeElement),
+                                                       contents.previewMark)));
+            } else {
+                mods.add(modifiersPart);
+            }
+            sep = " ";
+        }
+        if (modifiers.endsWith(" ")) {
+            mods.add(" ");
+        }
         classInfoTree.add(new HtmlTree(TagName.HR));
         classInfoTree.add(new Signatures.TypeSignature(typeElement, this)
+                .setModifiers(mods)
                 .toContent());
     }
 
