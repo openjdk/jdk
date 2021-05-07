@@ -575,7 +575,7 @@ double G1Policy::other_time_ms(double pause_time_ms) const {
 }
 
 double G1Policy::constant_other_time_ms(double pause_time_ms) const {
-  return other_time_ms(pause_time_ms) - phase_times()->total_free_cset_time_ms() - phase_times()->total_rebuild_freelist_time_ms();
+  return other_time_ms(pause_time_ms) - phase_times()->total_rebuild_freelist_time_ms();
 }
 
 bool G1Policy::about_to_start_mixed_phase() const {

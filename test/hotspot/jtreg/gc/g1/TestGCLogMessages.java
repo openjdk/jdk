@@ -127,11 +127,10 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("JNI Global Roots", Level.TRACE),
         new LogMessageWithLevel("VM Global Roots", Level.TRACE),
         // Redirty Cards
-        new LogMessageWithLevel("Redirty Cards", Level.DEBUG),
-        new LogMessageWithLevel("Parallel Redirty", Level.TRACE),
-        new LogMessageWithLevel("Redirtied Cards", Level.TRACE),
+        new LogMessageWithLevel("Redirty Logged Cards", Level.DEBUG),
+        new LogMessageWithLevel("Redirtied Cards", Level.DEBUG),
         // Misc Top-level
-        new LogMessageWithLevel("Code Roots Purge", Level.DEBUG),
+        new LogMessageWithLevel("Purge Code Roots", Level.DEBUG),
         new LogMessageWithLevel("String Deduplication", Level.DEBUG),
         new LogMessageWithLevel("Queue Fixup", Level.DEBUG),
         new LogMessageWithLevel("Table Fixup", Level.DEBUG),
@@ -142,7 +141,6 @@ public class TestGCLogMessages {
         // Free CSet
         new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
         new LogMessageWithLevel("Serial Free Collection Set", Level.TRACE),
-        new LogMessageWithLevel("Parallel Free Collection Set", Level.TRACE),
         new LogMessageWithLevel("Young Free Collection Set", Level.TRACE),
         new LogMessageWithLevel("Non-Young Free Collection Set", Level.TRACE),
         // Rebuild Free List
@@ -150,8 +148,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Serial Rebuild Free List", Level.TRACE),
         new LogMessageWithLevel("Parallel Rebuild Free List", Level.TRACE),
 
-        // Humongous Eager Reclaim
-        new LogMessageWithLevel("Humongous Reclaim", Level.DEBUG),
         // Merge PSS
         new LogMessageWithLevel("Merge Per-Thread State", Level.DEBUG),
         // TLAB handling
@@ -166,7 +162,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("ResolvedMethodTable Weak", Level.DEBUG),
         new LogMessageWithLevel("VM Weak", Level.DEBUG),
 
-        new LogMessageWithLevelC2OrJVMCIOnly("DerivedPointerTable Update", Level.DEBUG),
+        new LogMessageWithLevelC2OrJVMCIOnly("Update Derived Pointers", Level.DEBUG),
         new LogMessageWithLevel("Start New Collection Set", Level.DEBUG),
     };
 
@@ -238,9 +234,9 @@ public class TestGCLogMessages {
     }
 
     LogMessageWithLevel exhFailureMessages[] = new LogMessageWithLevel[] {
-        new LogMessageWithLevel("Evacuation Failure", Level.DEBUG),
-        new LogMessageWithLevel("Recalculate Used", Level.TRACE),
-        new LogMessageWithLevel("Remove Self Forwards", Level.TRACE),
+        new LogMessageWithLevel("Recalculate Used Memory", Level.DEBUG),
+        new LogMessageWithLevel("Restore Preserved Marks", Level.DEBUG),
+        new LogMessageWithLevel("Remove Self Forwards", Level.DEBUG),
     };
 
     private void testWithEvacuationFailureLogs() throws Exception {
