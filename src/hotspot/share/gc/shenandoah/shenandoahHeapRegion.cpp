@@ -574,10 +574,6 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   guarantee(RegionSizeBytesMask == 0, "we should only set it once");
   RegionSizeBytesMask = RegionSizeBytes - 1;
 
-  guarantee(RegionCount == 0, "we should only set it once");
-  RegionCount = align_up(max_heap_size, RegionSizeBytes) / RegionSizeBytes;
-  guarantee(RegionCount >= MIN_NUM_REGIONS, "Should have at least minimum regions");
-
   guarantee(HumongousThresholdWords == 0, "we should only set it once");
   HumongousThresholdWords = RegionSizeWords * ShenandoahHumongousThreshold / 100;
   HumongousThresholdWords = align_down(HumongousThresholdWords, MinObjAlignment);
@@ -612,6 +608,14 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   guarantee(MaxTLABSizeBytes == 0, "we should only set it once");
   MaxTLABSizeBytes = MaxTLABSizeWords * HeapWordSize;
   assert (MaxTLABSizeBytes > MinTLABSize, "should be larger");
+}
+
+size_t ShenandoahHeapRegion::setup_region_count(size_t max_heap_size) {
+  assert(is_aligned(max_heap_size, RegionSizeBytes), "Must align");
+  guarantee(RegionCount == 0, "we should only set it once");
+  RegionCount = max_heap_size / RegionSizeBytes;
+  guarantee(RegionCount >= MIN_NUM_REGIONS, "Should have at least minimum regions");
+  return RegionCount;
 }
 
 void ShenandoahHeapRegion::do_commit() {

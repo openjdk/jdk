@@ -252,6 +252,7 @@ public:
   static const size_t MIN_NUM_REGIONS = 10;
 
   static void setup_sizes(size_t max_heap_size);
+  static size_t setup_region_count(size_t max_heap_size);
 
   double empty_time() {
     return _empty_time;
