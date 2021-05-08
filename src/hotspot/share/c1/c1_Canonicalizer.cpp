@@ -468,8 +468,6 @@ void Canonicalizer::do_CompareOp      (CompareOp*       x) {
 }
 
 
-void Canonicalizer::do_IfInstanceOf(IfInstanceOf*    x) {}
-
 void Canonicalizer::do_IfOp(IfOp* x) {
   // Caution: do not use do_Op2(x) here for now since
   //          we map the condition to the op for now!
@@ -795,23 +793,6 @@ void Canonicalizer::do_If(If* x) {
           set_bci(cmp->state_before()->bci());
           set_canonical(canon);
         }
-      }
-    } else if (l->as_InstanceOf() != NULL) {
-      // NOTE: Code permanently disabled for now since it leaves the old InstanceOf
-      //       instruction in the graph (it is pinned). Need to fix this at some point.
-      //       It should also be left in the graph when generating a profiled method version or Goto
-      //       has to know that it was an InstanceOf.
-      return;
-      // pattern: If ((obj instanceof klass) cond rc) => simplify to: IfInstanceOf or: Goto
-      InstanceOf* inst = l->as_InstanceOf();
-      BlockBegin* is_inst_sux = x->sux_for(is_true(1, x->cond(), rc)); // successor for instanceof == 1
-      BlockBegin* no_inst_sux = x->sux_for(is_true(0, x->cond(), rc)); // successor for instanceof == 0
-      if (is_inst_sux == no_inst_sux && inst->is_loaded()) {
-        // both successors identical and klass is loaded => simplify to: Goto
-        set_canonical(new Goto(is_inst_sux, x->state_before(), x->is_safepoint()));
-      } else {
-        // successors differ => simplify to: IfInstanceOf
-        set_canonical(new IfInstanceOf(inst->klass(), inst->obj(), true, inst->state_before()->bci(), is_inst_sux, no_inst_sux));
       }
     }
   } else if (rt == objectNull &&
