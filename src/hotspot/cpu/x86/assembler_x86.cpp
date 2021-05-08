@@ -10696,7 +10696,7 @@ void Assembler::rorxd(Register dst, Register src, int imm8) {
 #ifdef _LP64
 void Assembler::salq(Address dst, int imm8) {
   InstructionMark im(this);
-  assert(isShiftCount(imm8), "illegal shift count");
+  assert(isShiftCount(imm8 >> 1), "illegal shift count");
   if (imm8 == 1) {
     emit_int16(get_prefixq(dst), (unsigned char)0xD1);
     emit_operand(as_Register(4), dst);
@@ -10715,7 +10715,7 @@ void Assembler::salq(Address dst) {
 }
 
 void Assembler::salq(Register dst, int imm8) {
-  assert(isByte(imm8), "not a byte");
+  assert(isShiftCount(imm8 >> 1), "illegal shift count");
   int encode = prefixq_and_encode(dst->encoding());
   if (imm8 == 1) {
     emit_int16((unsigned char)0xD1, (0xE0 | encode));
@@ -10731,7 +10731,7 @@ void Assembler::salq(Register dst) {
 
 void Assembler::sarq(Address dst, int imm8) {
   InstructionMark im(this);
-  assert(isByte(imm8), "not a byte");
+  assert(isShiftCount(imm8 >> 1), "illegal shift count");
   if (imm8 == 1) {
     emit_int16(get_prefixq(dst), (unsigned char)0xD1);
     emit_operand(as_Register(7), dst);
@@ -10750,7 +10750,7 @@ void Assembler::sarq(Address dst) {
 }
 
 void Assembler::sarq(Register dst, int imm8) {
-  assert(isByte(imm8), "not a byte");
+  assert(isShiftCount(imm8 >> 1), "illegal shift count");
   int encode = prefixq_and_encode(dst->encoding());
   if (imm8 == 1) {
     emit_int16((unsigned char)0xD1, (0xF8 | encode));
@@ -10826,7 +10826,7 @@ void Assembler::shrq(Address dst) {
 
 void Assembler::shrq(Address dst, int imm8) {
   InstructionMark im(this);
-  assert(isByte(imm8), "not a byte");
+  assert(isShiftCount(imm8 >> 1), "illegal shift count");
   if (imm8 == 1) {
     emit_int16(get_prefixq(dst), (unsigned char)0xD1);
     emit_operand(as_Register(5), dst);

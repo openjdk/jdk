@@ -9066,7 +9066,7 @@ instruct sarL_rReg_imm(rRegL dst, immI8 shift, rFlagsReg cr)
 
   format %{ "sarq    $dst, $shift" %}
   ins_encode %{
-    __ sarq($dst$$Register, $shift$$constant);
+    __ sarq($dst$$Register, (unsigned char)($shift$$constant & 0x3F));
   %}
   ins_pipe(ialu_mem_imm);
 %}
@@ -9079,7 +9079,7 @@ instruct sarL_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 
   format %{ "sarq    $dst, $shift" %}
   ins_encode %{
-    __ sarq($dst$$Address, $shift$$constant);
+    __ sarq($dst$$Address, (unsigned char)($shift$$constant & 0x3F));
   %}
   ins_pipe(ialu_mem_imm);
 %}
