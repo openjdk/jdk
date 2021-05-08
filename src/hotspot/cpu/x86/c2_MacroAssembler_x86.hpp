@@ -99,9 +99,7 @@ public:
   void vshiftd(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vlen_enc);
   void vshiftd_imm(int opcode, XMMRegister dst, XMMRegister nds, int shift, int vector_len);
   void vshiftw(int opcode, XMMRegister dst, XMMRegister shift);
-  void vshiftw_imm(int opcode, XMMRegister dst, int shift);
   void vshiftw(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vlen_enc);
-  void vshiftw_imm(int opcode, XMMRegister dst, XMMRegister nds, int shift, int vector_len);
   void vshiftq(int opcode, XMMRegister dst, XMMRegister shift);
   void vshiftq_imm(int opcode, XMMRegister dst, int shift);
   void vshiftq(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vlen_enc);

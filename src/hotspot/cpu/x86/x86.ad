@@ -5857,26 +5857,6 @@ instruct vshiftB(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vshiftB_imm(vec dst, vec src, immI8 shift, vec tmp, rRegI scratch) %{
-  predicate(vector_length(n) <= 8);
-  match(Set dst (LShiftVB src (LShiftCntV shift)));
-  match(Set dst (RShiftVB src (RShiftCntV shift)));
-  match(Set dst (URShiftVB src (RShiftCntV shift)));
-  effect(TEMP dst, USE src, TEMP tmp, TEMP scratch);
-  format %{"vshiftB_imm $dst,$src,$shift" %}
-  ins_encode %{
-    assert(UseSSE > 3, "required");
-    int opcode = this->ideal_Opcode();
-    bool sign = (opcode != Op_URShiftVB);
-    __ vextendbw(sign, $tmp$$XMMRegister, $src$$XMMRegister);
-    __ vshiftw_imm(opcode, $tmp$$XMMRegister, $shift$$constant);
-    __ movdqu($dst$$XMMRegister, ExternalAddress(vector_short_to_byte_mask()), $scratch$$Register);
-    __ pand($dst$$XMMRegister, $tmp$$XMMRegister);
-    __ packuswb($dst$$XMMRegister, $dst$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct vshift16B(vec dst, vec src, vec shift, vec tmp1, vec tmp2, rRegI scratch) %{
   predicate(vector_length(n) == 16 && VectorNode::is_vshift_cnt(n->in(2)) &&
             UseAVX <= 1);
@@ -5902,30 +5882,6 @@ instruct vshift16B(vec dst, vec src, vec shift, vec tmp1, vec tmp2, rRegI scratc
   ins_pipe( pipe_slow );
 %}
 
-instruct vshift16B_imm(vec dst, vec src, immI8 shift, vec tmp1, vec tmp2, rRegI scratch) %{
-  predicate(vector_length(n) == 16 && UseAVX <= 1);
-  match(Set dst (LShiftVB src (LShiftCntV shift)));
-  match(Set dst (RShiftVB src (RShiftCntV shift)));
-  match(Set dst (URShiftVB src (RShiftCntV shift)));
-  effect(TEMP dst, USE src, TEMP tmp1, TEMP tmp2, TEMP scratch);
-  format %{"vshift16B_imm $dst,$src,$shift" %}
-  ins_encode %{
-    assert(UseSSE > 3, "required");
-    int opcode = this->ideal_Opcode();
-    bool sign = (opcode != Op_URShiftVB);
-    __ vextendbw(sign, $tmp1$$XMMRegister, $src$$XMMRegister);
-    __ vshiftw_imm(opcode, $tmp1$$XMMRegister, $shift$$constant);
-    __ pshufd($tmp2$$XMMRegister, $src$$XMMRegister, 0xE);
-    __ vextendbw(sign, $tmp2$$XMMRegister, $tmp2$$XMMRegister);
-    __ vshiftw_imm(opcode, $tmp2$$XMMRegister, $shift$$constant);
-    __ movdqu($dst$$XMMRegister, ExternalAddress(vector_short_to_byte_mask()), $scratch$$Register);
-    __ pand($tmp2$$XMMRegister, $dst$$XMMRegister);
-    __ pand($dst$$XMMRegister, $tmp1$$XMMRegister);
-    __ packuswb($dst$$XMMRegister, $tmp2$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct vshift16B_avx(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
   predicate(vector_length(n) == 16 && VectorNode::is_vshift_cnt(n->in(2)) &&
             UseAVX > 1);
@@ -5940,26 +5896,6 @@ instruct vshift16B_avx(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
     int vlen_enc = Assembler::AVX_256bit;
     __ vextendbw(sign, $tmp$$XMMRegister, $src$$XMMRegister, vlen_enc);
     __ vshiftw(opcode, $tmp$$XMMRegister, $tmp$$XMMRegister, $shift$$XMMRegister, vlen_enc);
-    __ vpand($tmp$$XMMRegister, $tmp$$XMMRegister, ExternalAddress(vector_short_to_byte_mask()), vlen_enc, $scratch$$Register);
-    __ vextracti128_high($dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vpackuswb($dst$$XMMRegister, $tmp$$XMMRegister, $dst$$XMMRegister, 0);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vshift16B_avx_imm(vec dst, vec src, immI8 shift, vec tmp, rRegI scratch) %{
-  predicate(vector_length(n) == 16 && UseAVX > 1);
-  match(Set dst (LShiftVB src (LShiftCntV shift)));
-  match(Set dst (RShiftVB src (RShiftCntV shift)));
-  match(Set dst (URShiftVB src (RShiftCntV shift)));
-  effect(TEMP dst, TEMP tmp, TEMP scratch);
-  format %{"vshift16B_avx_imm $dst,$src,$shift" %}
-  ins_encode %{
-    int opcode = this->ideal_Opcode();
-    bool sign = (opcode != Op_URShiftVB);
-    int vlen_enc = Assembler::AVX_256bit;
-    __ vextendbw(sign, $tmp$$XMMRegister, $src$$XMMRegister, vlen_enc);
-    __ vshiftw_imm(opcode, $tmp$$XMMRegister, $tmp$$XMMRegister, $shift$$constant, vlen_enc);
     __ vpand($tmp$$XMMRegister, $tmp$$XMMRegister, ExternalAddress(vector_short_to_byte_mask()), vlen_enc, $scratch$$Register);
     __ vextracti128_high($dst$$XMMRegister, $tmp$$XMMRegister);
     __ vpackuswb($dst$$XMMRegister, $tmp$$XMMRegister, $dst$$XMMRegister, 0);
@@ -5992,31 +5928,6 @@ instruct vshift32B_avx(vec dst, vec src, vec shift, vec tmp, rRegI scratch) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vshift32B_avx_imm(vec dst, vec src, immI8 shift, vec tmp, rRegI scratch) %{
-  predicate(vector_length(n) == 32);
-  match(Set dst (LShiftVB src (LShiftCntV shift)));
-  match(Set dst (RShiftVB src (RShiftCntV shift)));
-  match(Set dst (URShiftVB src (RShiftCntV shift)));
-  effect(TEMP dst, TEMP tmp, TEMP scratch);
-  format %{"vshift32B_avx_imm $dst,$src,$shift" %}
-  ins_encode %{
-    assert(UseAVX > 1, "required");
-    int opcode = this->ideal_Opcode();
-    bool sign = (opcode != Op_URShiftVB);
-    int vlen_enc = Assembler::AVX_256bit;
-    __ vextracti128_high($tmp$$XMMRegister, $src$$XMMRegister);
-    __ vextendbw(sign, $tmp$$XMMRegister, $tmp$$XMMRegister, vlen_enc);
-    __ vextendbw(sign, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-    __ vshiftw_imm(opcode, $tmp$$XMMRegister, $tmp$$XMMRegister, $shift$$constant, vlen_enc);
-    __ vshiftw_imm(opcode, $dst$$XMMRegister, $dst$$XMMRegister, $shift$$constant, vlen_enc);
-    __ vpand($tmp$$XMMRegister, $tmp$$XMMRegister, ExternalAddress(vector_short_to_byte_mask()), vlen_enc, $scratch$$Register);
-    __ vpand($dst$$XMMRegister, $dst$$XMMRegister, ExternalAddress(vector_short_to_byte_mask()), vlen_enc, $scratch$$Register);
-    __ vpackuswb($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister, vlen_enc);
-    __ vpermq($dst$$XMMRegister, $dst$$XMMRegister, 0xD8, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct vshift64B_avx(vec dst, vec src, vec shift, vec tmp1, vec tmp2, rRegI scratch) %{
   predicate(vector_length(n) == 64 && VectorNode::is_vshift_cnt(n->in(2)));
   match(Set dst ( LShiftVB src shift));
@@ -6034,34 +5945,6 @@ instruct vshift64B_avx(vec dst, vec src, vec shift, vec tmp1, vec tmp2, rRegI sc
     __ vextendbw(sign, $tmp2$$XMMRegister, $src$$XMMRegister, vlen_enc);
     __ vshiftw(opcode, $tmp1$$XMMRegister, $tmp1$$XMMRegister, $shift$$XMMRegister, vlen_enc);
     __ vshiftw(opcode, $tmp2$$XMMRegister, $tmp2$$XMMRegister, $shift$$XMMRegister, vlen_enc);
-    __ vmovdqu($dst$$XMMRegister, ExternalAddress(vector_short_to_byte_mask()), $scratch$$Register);
-    __ vpbroadcastd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vpand($tmp1$$XMMRegister, $tmp1$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vpand($tmp2$$XMMRegister, $tmp2$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    __ vpackuswb($dst$$XMMRegister, $tmp1$$XMMRegister, $tmp2$$XMMRegister, vlen_enc);
-    __ evmovdquq($tmp2$$XMMRegister, ExternalAddress(vector_byte_perm_mask()), vlen_enc, $scratch$$Register);
-    __ vpermq($dst$$XMMRegister, $tmp2$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vshift64B_avx_imm(vec dst, vec src, immI8 shift, vec tmp1, vec tmp2, rRegI scratch) %{
-  predicate(vector_length(n) == 64);
-  match(Set dst (LShiftVB src (LShiftCntV shift)));
-  match(Set dst (RShiftVB src (RShiftCntV shift)));
-  match(Set dst (URShiftVB src (RShiftCntV shift)));
-  effect(TEMP dst, TEMP tmp1, TEMP tmp2, TEMP scratch);
-  format %{"vshift64B_avx_imm $dst,$src,$shift" %}
-  ins_encode %{
-    assert(UseAVX > 2, "required");
-    int opcode = this->ideal_Opcode();
-    bool sign = (opcode != Op_URShiftVB);
-    int vlen_enc = Assembler::AVX_512bit;
-    __ vextracti64x4($tmp1$$XMMRegister, $src$$XMMRegister, 1);
-    __ vextendbw(sign, $tmp1$$XMMRegister, $tmp1$$XMMRegister, vlen_enc);
-    __ vextendbw(sign, $tmp2$$XMMRegister, $src$$XMMRegister, vlen_enc);
-    __ vshiftw_imm(opcode, $tmp1$$XMMRegister, $tmp1$$XMMRegister, $shift$$constant, vlen_enc);
-    __ vshiftw_imm(opcode, $tmp2$$XMMRegister, $tmp2$$XMMRegister, $shift$$constant, vlen_enc);
     __ vmovdqu($dst$$XMMRegister, ExternalAddress(vector_short_to_byte_mask()), $scratch$$Register);
     __ vpbroadcastd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     __ vpand($tmp1$$XMMRegister, $tmp1$$XMMRegister, $dst$$XMMRegister, vlen_enc);

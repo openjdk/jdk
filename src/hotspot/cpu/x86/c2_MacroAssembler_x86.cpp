@@ -1174,17 +1174,6 @@ void C2_MacroAssembler::vshiftw(int opcode, XMMRegister dst, XMMRegister shift) 
   }
 }
 
-void C2_MacroAssembler::vshiftw_imm(int opcode, XMMRegister dst, int shift) {
-  if (opcode == Op_RShiftVB) {
-    psraw(dst, shift);
-  } else if (opcode == Op_LShiftVB) {
-    psllw(dst, shift);
-  } else {
-    assert((opcode == Op_URShiftVB),"opcode should be Op_URShiftVB");
-    psrlw(dst, shift);
-  }
-}
-
 void C2_MacroAssembler::vshiftw(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vlen_enc) {
   switch (opcode) {
     case Op_RShiftVB:  // fall-through
@@ -1197,17 +1186,6 @@ void C2_MacroAssembler::vshiftw(int opcode, XMMRegister dst, XMMRegister src, XM
     case Op_URShiftVB: vpsrlw(dst, src, shift, vlen_enc); break;
 
     default: assert(false, "%s", NodeClassNames[opcode]);
-  }
-}
-
-void C2_MacroAssembler::vshiftw_imm(int opcode, XMMRegister dst, XMMRegister nds, int shift, int vector_len) {
-  if (opcode == Op_RShiftVB) {
-    vpsraw(dst, nds, shift, vector_len);
-  } else if (opcode == Op_LShiftVB) {
-    vpsllw(dst, nds, shift, vector_len);
-  } else {
-    assert((opcode == Op_URShiftVB),"opcode should be Op_URShiftVB");
-    vpsrlw(dst, nds, shift, vector_len);
   }
 }
 
