@@ -383,10 +383,10 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
     // Wrap the indices greater than lane count.
     res = gvn().transform(VectorNode::make(Op_AndI, res, bcast_mod, num_elem, elem_bt));
   } else {
-    ConINode* pred_node = (ConINode*)gvn().makecon(TypeInt::make(1));
+    ConINode* pred_node = (ConINode*)gvn().makecon(TypeInt::make(BoolTest::gt));
     Node * lane_cnt  = gvn().makecon(TypeInt::make(num_elem));
     Node * bcast_lane_cnt = gvn().transform(VectorNode::scalar2vector(lane_cnt, num_elem, type_bt));
-    Node* mask = gvn().transform(new VectorMaskCmpNode(BoolTest::ge, bcast_lane_cnt, res, pred_node, vt));
+    Node* mask = gvn().transform(new VectorMaskCmpNode(BoolTest::gt, bcast_lane_cnt, res, pred_node, vt));
 
     // Make the indices greater than lane count as -ve values. This matches the java side implementation.
     res = gvn().transform(VectorNode::make(Op_AndI, res, bcast_mod, num_elem, elem_bt));
