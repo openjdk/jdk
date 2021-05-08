@@ -1070,27 +1070,11 @@ const bool Matcher::isSimpleConstant64(jlong value) {
   return false;
 }
 
-// No scaling for the parameter the ClearArray node.
-const bool Matcher::init_array_count_is_in_bytes = true;
-
 // Needs 2 CMOV's for longs.
 const int Matcher::long_cmove_cost() { return 2; }
 
 // CMOVF/CMOVD are expensive on ARM.
 const int Matcher::float_cmove_cost() { return ConditionalMoveLimit; }
-
-// Does the CPU require late expand (see block.cpp for description of late expand)?
-const bool Matcher::require_postalloc_expand = false;
-
-// Do we need to mask the count passed to shift instructions or does
-// the cpu only look at the lower 5/6 bits anyway?
-// FIXME: does this handle vector shifts as well?
-const bool Matcher::need_masked_shift_count = true;
-
-const bool Matcher::convi2l_type_required = true;
-
-// No support for generic vector operands.
-const bool Matcher::supports_generic_vector_operands  = false;
 
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg, bool is_temp) {
   ShouldNotReachHere(); // generic vector operands not supported
@@ -1148,37 +1132,11 @@ bool Matcher::const_klass_prefer_decode() {
   return true;
 }
 
-// Is it better to copy float constants, or load them directly from memory?
-// Intel can load a float constant from a direct address, requiring no
-// extra registers.  Most RISCs will have to materialize an address into a
-// register first, so they would do better to copy the constant from stack.
-const bool Matcher::rematerialize_float_constants = false;
-
-// If CPU can load and store mis-aligned doubles directly then no fixup is
-// needed.  Else we split the double into 2 integer pieces and move it
-// piece-by-piece.  Only happens when passing doubles into C code as the
-// Java calling convention forces doubles to be aligned.
-const bool Matcher::misaligned_doubles_ok = false;
-
-// Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-const bool Matcher::strict_fp_requires_explicit_rounding = false;
-
 // Are floats converted to double when stored to stack during deoptimization?
 // ARM does not handle callee-save floats.
 bool Matcher::float_in_double() {
   return false;
 }
-
-// Do ints take an entire long register or just half?
-// Note that we if-def off of _LP64.
-// The relevant question is how the int is callee-saved.  In _LP64
-// the whole long is written but de-opt'ing will have to extract
-// the relevant 32 bits, in not-_LP64 only the low 32 bits is written.
-#ifdef _LP64
-const bool Matcher::int_in_long = true;
-#else
-const bool Matcher::int_in_long = false;
-#endif
 
 // Return whether or not this register is ever used as an argument.  This
 // function is used on startup to build the trampoline stubs in generateOptoStub.

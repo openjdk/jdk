@@ -43,6 +43,9 @@ class Matcher : public PhaseTransform {
 
 public:
 
+  // Machine-dependent definitions
+#include CPU_HEADER(matcher)
+
   // State and MStack class used in xform() and find_shared() iterative methods.
   enum Node_State { Pre_Visit,  // node has to be pre-visited
                     Visit,  // visit node
@@ -343,9 +346,6 @@ public:
             Matcher::min_vector_size(bt) <= size);
   }
 
-
-  static const bool implements_scalable_vector = AARCH64_ONLY(true) NOT_AARCH64(false);
-
   static const bool scalable_vector_enabled();
   static const bool supports_scalable_vector() {
     return implements_scalable_vector && scalable_vector_enabled();
@@ -440,9 +440,6 @@ public:
   // Is this branch offset small enough to be addressed by a short branch?
   bool is_short_branch_offset(int rule, int br_size, int offset);
 
-  // Optional scaling for the parameter to the ClearArray/CopyArray node.
-  static const bool init_array_count_is_in_bytes;
-
   // Some hardware needs 2 CMOV's for longs.
   static const int long_cmove_cost();
 
@@ -493,27 +490,6 @@ public:
   //
   static bool gen_narrow_oop_implicit_null_checks();
 
-  // Is it better to copy float constants, or load them directly from memory?
-  // Intel can load a float constant from a direct address, requiring no
-  // extra registers.  Most RISCs will have to materialize an address into a
-  // register first, so they may as well materialize the constant immediately.
-  static const bool rematerialize_float_constants;
-
-  // If CPU can load and store mis-aligned doubles directly then no fixup is
-  // needed.  Else we split the double into 2 integer pieces and move it
-  // piece-by-piece.  Only happens when passing doubles into C code or when
-  // calling i2c adapters as the Java calling convention forces doubles to be
-  // aligned.
-  static const bool misaligned_doubles_ok;
-
-  // Does the CPU require postalloc expand (see block.cpp for description of
-  // postalloc expand)?
-  static const bool require_postalloc_expand;
-
-  // Does the platform support generic vector operands?
-  // Requires cleanup after selection phase.
-  static const bool supports_generic_vector_operands;
-
  private:
   void do_postselect_cleanup();
 
@@ -532,21 +508,9 @@ public:
   DEBUG_ONLY( bool verify_after_postselect_cleanup(); )
 
  public:
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-  static const bool strict_fp_requires_explicit_rounding;
 
   // Are floats conerted to double when stored to stack during deoptimization?
   static bool float_in_double();
-  // Do ints take an entire long register or just half?
-  static const bool int_in_long;
-
-  // Do the processor's shift instructions only use the low 5/6 bits
-  // of the count for 32/64 bit ints? If not we need to do the masking
-  // ourselves.
-  static const bool need_masked_shift_count;
-
-  // Whether code generation need accurate ConvI2L types.
-  static const bool convi2l_type_required;
 
   // This routine is run whenever a graph fails to match.
   // If it returns, the compiler should bailout to interpreter without error.
