@@ -2099,8 +2099,7 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
 
   LIR_Opr result = rlock_result(x, type);
   if (!x->is_raw_get()) {
-    access_load_at(decorators, type,
-                  src, off.result(), result);
+    access_load_at(decorators, type, src, off.result(), result);
   } else {
 #ifdef _LP64
   LIR_Opr offset = new_register(T_LONG);
@@ -2108,8 +2107,12 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
 #else
   LIR_Opr offset = off.result();
 #endif
-    access_load(IN_NATIVE, type,
-                LIR_OprFact::address(new LIR_Address(src.result(), offset, type)), result);
+    LIR_Address* addr = new LIR_Address(src.result(), offset, type);
+    if (type == T_LONG || type == T_DOUBLE) {
+      __ unaligned_move(addr, result);
+    } else {
+      access_load(IN_NATIVE, type, LIR_OprFact::address(addr), result);
+    }
   }
 }
 
