@@ -245,17 +245,10 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   if (is_strong) {
     __ tbz(rscratch2, ShenandoahHeap::HAS_FORWARDED_BITPOS, heap_stable);
   } else {
-    if (dst == rscratch1) {
-      __ push(rscratch1, sp);
-    }
-    __ mov(rscratch1, ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::WEAK_ROOTS);
-    __ tst(rscratch1, rscratch2);
-
-    if (dst == rscratch1) {
-      __ pop(rscratch1, sp);
-    }
-
-    __ br(Assembler::EQ, heap_stable);
+    Label lrb;
+    __ tbnz(rscratch2, ShenandoahHeap::WEAK_ROOTS_BITPOS, lrb);
+    __ tbz(rscratch2, ShenandoahHeap::HAS_FORWARDED_BITPOS, heap_stable);
+    __ bind(lrb);
   }
 
   // use r1 for load address
