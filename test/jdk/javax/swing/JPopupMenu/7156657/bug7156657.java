@@ -153,8 +153,10 @@ public class bug7156657 {
                 ImageIO.write(greenFrame, "png", new File("greenframe.png"));
                 ImageIO.write(greenBackgroundCapture, "png", new File("greenbg.png"));
             } finally {
-                frame.dispose();
-                lowerFrame.dispose();
+                SwingUtilities.invokeAndWait(() -> {
+                    frame.dispose();
+                    lowerFrame.dispose();
+                });
             }
             robot.waitForIdle();
             throw new RuntimeException("The test failed");
@@ -184,8 +186,8 @@ public class bug7156657 {
     private static JFrame createFrame() {
         JFrame result = new JFrame();
 
-        result.setLocation(0, 0);
         result.setSize(400, 300);
+        result.setLocationRelativeTo(null);
         result.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         result.setUndecorated(true);
 
