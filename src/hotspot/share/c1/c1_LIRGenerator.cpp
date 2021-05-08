@@ -3109,7 +3109,7 @@ void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
 
   __ move(trace_id_raw, result);
   __ shift_right(result, TRACE_ID_SHIFT, result);
-  __ cmp(lir_cond_equal, this_epoch_bit, trace_id_raw_and_mask);
+  __ cmp(lir_cond_equal, trace_id_raw_and_mask, this_epoch_bit);
   __ branch(lir_cond_equal, L_end->label());
 
 #ifdef VM_LITTLE_ENDIAN
