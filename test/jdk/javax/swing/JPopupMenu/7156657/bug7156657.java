@@ -109,13 +109,8 @@ public class bug7156657 {
         Rectangle popupRectangle = Util.invokeOnEDT(new Callable<Rectangle>() {
             @Override
             public Rectangle call() throws Exception {
-                Rectangle bounds = popupMenu.getBounds();
-                Point anchor = popupMenu.getLocationOnScreen();
-                Point location = popupMenu.getLocation();
-                int offsetX = anchor.x - location.x;
-                int offsetY = anchor.y - location.y;
-                bounds.setLocation(bounds.x + offsetX, bounds.y + offsetY);
-                return bounds;
+                return new Rectangle(popupMenu.getLocationOnScreen(),
+                        popupMenu.getSize());
             }
         });
 
