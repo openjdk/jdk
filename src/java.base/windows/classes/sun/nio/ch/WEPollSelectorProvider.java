@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,11 @@
 
 package sun.nio.ch;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.io.IOException;
+import java.nio.channels.spi.AbstractSelector;
 
-/**
- * Creates this platform's default SelectorProvider
- */
-
-public class DefaultSelectorProvider {
-    private static final SelectorProviderImpl INSTANCE;
-    static {
-        PrivilegedAction<SelectorProviderImpl> pa = WEPollSelectorProvider::new;
-        INSTANCE = AccessController.doPrivileged(pa);
-    }
-
-    /**
-     * Prevent instantiation.
-     */
-    private DefaultSelectorProvider() { }
-
-    /**
-     * Returns the default SelectorProvider implementation.
-     */
-    public static SelectorProviderImpl get() {
-        return INSTANCE;
+public class WEPollSelectorProvider extends SelectorProviderImpl {
+    public AbstractSelector openSelector() throws IOException {
+        return new WEPollSelectorImpl(this);
     }
 }
