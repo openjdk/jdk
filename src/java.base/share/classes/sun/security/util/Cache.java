@@ -428,18 +428,17 @@ class MemoryCache<K,V> extends Cache<K,V> {
             return null;
         }
 
-        V value;
         long time = (lifetime == 0) ? 0 : System.currentTimeMillis();
         if (entry.isValid(time)) {
-            value = entry.getValue();
+            V value = entry.getValue();
+            entry.invalidate();
+            return value;
         } else {
             if (DEBUG) {
                 System.out.println("Ignoring expired entry");
             }
-            value = null;
+            return null;
         }
-        entry.invalidate();
-        return value;
     }
 
     public synchronized void setCapacity(int size) {
