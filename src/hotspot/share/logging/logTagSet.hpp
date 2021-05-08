@@ -33,6 +33,8 @@
 
 class LogMessageBuffer;
 
+class outputStream;
+
 // The tagset represents a combination of tags that occur in a log call somewhere.
 // Tagsets are created automatically by the LogTagSetMappings and should never be
 // instantiated directly somewhere else.
@@ -110,6 +112,7 @@ class LogTagSet {
   // of its current outputs combined with the given decorators.
   void update_decorators(const LogDecorators& decorator = LogDecorators::None);
 
+  void label(outputStream* st, const char* separator = ",") const;
   int label(char *buf, size_t len, const char* separator = ",") const;
   bool has_output(const LogOutput* output);
 

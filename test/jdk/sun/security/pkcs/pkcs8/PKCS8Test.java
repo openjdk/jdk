@@ -76,8 +76,7 @@ public class PKCS8Test {
                         .formatter(ASN1Formatter.formatter())
                         .toString(encodedKey));
 
-        PKCS8Key decodedKey = (PKCS8Key)PKCS8Key.parseKey(
-                new DerValue(encodedKey));
+        PKCS8Key decodedKey = (PKCS8Key)PKCS8Key.parseKey(encodedKey);
 
         Assert.assertEquals(decodedKey.getAlgorithm(), ALGORITHM);
         Assert.assertEquals(decodedKey.getFormat(), FORMAT);
@@ -120,6 +119,6 @@ public class PKCS8Test {
         Assert.assertTrue(length < 127);
         original[1] = (byte)(length - 2);   // the length field inside DER
         original[4] = (byte)newVersion;     // the version inside DER
-        PKCS8Key.parseKey(new DerValue(original));
+        PKCS8Key.parseKey(original);
     }
 }
