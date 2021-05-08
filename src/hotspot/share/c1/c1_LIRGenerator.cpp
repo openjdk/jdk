@@ -1887,8 +1887,15 @@ void LIRGenerator::do_PreconditionsCheckIndex(Intrinsic* x, BasicType type) {
 #endif
     __ branch(lir_cond_aboveEqual, deopt);
   } else {
-    __ cmp(lir_cond_belowEqual, length.result(), index.result());
-    __ branch(lir_cond_belowEqual, deopt);
+#if defined(X86) && !defined(_LP64)
+    // BEWARE! On 32-bit x86 cmp clobbers its left argument so we need a temp copy.
+    LIR_Opr index_copy = new_register(index.type());
+    __ move(index.result(), index_copy);
+    __ cmp(lir_cond_aboveEqual, index_copy, length.result());
+#else
+    __ cmp(lir_cond_aboveEqual, index.result(), length.result());
+#endif
+    __ branch(lir_cond_aboveEqual, deopt);
   }
   __ move(index.result(), result);
 }
