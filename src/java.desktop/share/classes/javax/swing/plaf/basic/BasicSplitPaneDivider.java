@@ -299,7 +299,7 @@ public class BasicSplitPaneDivider extends Container
     }
 
     /**
-     * Returns the preferrred {@code Dimension} of the divider.
+     * Returns the preferred size of the divider.
      * @implSpec In current implementation,
      * if the splitpane is HORIZONTAL_SPLIT, the preferred size is obtained from
      * width of {@code getDividerSize} pixels and height of 1 pixel
@@ -321,7 +321,7 @@ public class BasicSplitPaneDivider extends Container
     }
 
     /**
-     * Returns the minimum {@code Dimension} of the divider.
+     * Returns the minimum size of the divider.
      * @implSpec In current implementation,
      * if the splitpane is HORIZONTAL_SPLIT, the minimum size is obtained from
      * width of {@code getDividerSize} pixels and height of 1 pixel
