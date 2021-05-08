@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@ package java.util;
  *
  * @author Vladimir Yaroslavskiy
  *
- * @version 2019.09.19
+ * @version 2020.06.14
  *
- * @since 14
+ * @since 14 & 17
  */
 public enum SortingHelper {
 
@@ -80,16 +80,6 @@ public enum SortingHelper {
                 fail(a);
             }
         }
-
-        @Override
-        public void sort(Object[] a) {
-            fail(a);
-        }
-
-        @Override
-        public void sort(Object[] a, Comparator comparator) {
-            fail(a);
-        }
     },
 
     PARALLEL_SORT("Parallel sort") {
@@ -134,16 +124,6 @@ public enum SortingHelper {
             } else {
                 fail(a);
             }
-        }
-
-        @Override
-        public void sort(Object[] a) {
-            fail(a);
-        }
-
-        @Override
-        public void sort(Object[] a, Comparator comparator) {
-            fail(a);
         }
     },
 
@@ -190,15 +170,50 @@ public enum SortingHelper {
                 fail(a);
             }
         }
+    },
+
+    RADIX_SORT("Radix sort") {
 
         @Override
-        public void sort(Object[] a) {
-            fail(a);
+        public void sort(Object a) {
+            if (a instanceof int[]) {
+                DualPivotQuicksort.radixSort(null, (int[]) a, 0, ((int[]) a).length);
+            } else if (a instanceof long[]) {
+                DualPivotQuicksort.radixSort(null, (long[]) a, 0, ((long[]) a).length);
+            } else if (a instanceof byte[]) {
+                DualPivotQuicksort.sort((byte[]) a, 0, ((byte[]) a).length);
+            } else if (a instanceof char[]) {
+                DualPivotQuicksort.sort((char[]) a, 0, ((char[]) a).length);
+            } else if (a instanceof short[]) {
+                DualPivotQuicksort.sort((short[]) a, 0, ((short[]) a).length);
+            } else if (a instanceof float[]) {
+                DualPivotQuicksort.radixSort(null, (float[]) a, 0, ((float[]) a).length);
+            } else if (a instanceof double[]) {
+                DualPivotQuicksort.radixSort(null, (double[]) a, 0, ((double[]) a).length);
+            } else {
+                fail(a);
+            }
         }
 
         @Override
-        public void sort(Object[] a, Comparator comparator) {
-            fail(a);
+        public void sort(Object a, int low, int high) {
+            if (a instanceof int[]) {
+                DualPivotQuicksort.radixSort(null, (int[]) a, low, high);
+            } else if (a instanceof long[]) {
+                DualPivotQuicksort.radixSort(null, (long[]) a, low, high);
+            } else if (a instanceof byte[]) {
+                DualPivotQuicksort.sort((byte[]) a, low, high);
+            } else if (a instanceof char[]) {
+                DualPivotQuicksort.sort((char[]) a, 0, low, high);
+            } else if (a instanceof short[]) {
+                DualPivotQuicksort.sort((short[]) a, 0, low, high);
+            } else if (a instanceof float[]) {
+                DualPivotQuicksort.radixSort(null, (float[]) a, low, high);
+            } else if (a instanceof double[]) {
+                DualPivotQuicksort.radixSort(null, (double[]) a, low, high);
+            } else {
+                fail(a);
+            }
         }
     },
 
@@ -319,9 +334,13 @@ public enum SortingHelper {
 
     abstract public void sort(Object a, int low, int high);
 
-    abstract public void sort(Object[] a);
+    public void sort(Object[] a) {
+        fail(a);
+    }
 
-    abstract public void sort(Object[] a, Comparator comparator);
+    public void sort(Object[] a, Comparator comparator) {
+        fail(a);
+    }
 
     private SortingHelper(String name) {
         this.name = name;
@@ -339,10 +358,14 @@ public enum SortingHelper {
     private String name;
 
     /**
-     * Parallelism level for sequential and parallel sorting.
+     * Parallelism level for sequential sorting.
      */
     private static final int SEQUENTIAL = 0;
-    private static final int PARALLEL = 87;
+
+    /**
+     * Parallelism level for parallel sorting.
+     */
+    private static final int PARALLEL = 88;
 
     /**
      * Heap sort will be invoked, if recursion depth is too big.
