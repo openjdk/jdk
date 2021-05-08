@@ -427,6 +427,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
         if (entry == null) {
             return null;
         }
+
         V value;
         long time = (lifetime == 0) ? 0 : System.currentTimeMillis();
         if (entry.isValid(time)) {

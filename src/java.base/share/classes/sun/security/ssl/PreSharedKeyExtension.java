@@ -372,7 +372,9 @@ final class PreSharedKeyExtension {
                 SSLSessionImpl s = null;
 
                 for (PskIdentity requestedId : pskSpec.identities) {
-                    // If we are keeping state, see if the identity is in the cache
+                    // If we are keeping state, see if the identity is in the
+                    // cache. Note that for TLS 1.3, we would also clean
+                    // up the cached session if it is not rejoinable.
                     if (requestedId.identity.length == SessionId.MAX_LENGTH) {
                         s = sessionCache.pull(requestedId.identity);
                     }

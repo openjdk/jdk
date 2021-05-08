@@ -178,8 +178,9 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     // package-private method, find and remove session from cache
     // return found session
     SSLSessionImpl pull(byte[] id) {
-        if (id != null)
+        if (id != null) {
             return sessionCache.pull(new SessionId(id));
+        }
         return null;
     }
 
