@@ -32,8 +32,9 @@
 
 #if defined(__linux__)
 #include <sys/sendfile.h>
+#elif defined(_ALLBSD_SOURCE)
+#include <copyfile.h>
 #endif
-
 #include "sun_nio_fs_UnixCopyFile.h"
 
 #define RESTARTABLE(_cmd, _result) do { \
@@ -50,6 +51,23 @@ static void throwUnixException(JNIEnv* env, int errnum) {
     }
 }
 
+#if defined(_ALLBSD_SOURCE)
+int fcopyfile_callback(int what, int stage, copyfile_state_t state,
+    const char* src, const char* dst, void* cancel)
+{
+    if (what == COPYFILE_COPY_DATA) {
+        if (stage == COPYFILE_ERR
+                || (stage == COPYFILE_PROGRESS && *((int*)cancel) != 0)) {
+            // errno will be set to ECANCELED if the operation is cancelled,
+            // or to the appropriate error number if there is an error,
+            // but in either case we need to quit.
+            return COPYFILE_QUIT;
+        }
+    }
+    return COPYFILE_CONTINUE;
+}
+#endif
+
 /**
  * Transfer all bytes from src to dst within the kernel if possible (Linux),
  * otherwise via user-space buffers
@@ -62,10 +80,11 @@ Java_sun_nio_fs_UnixCopyFile_transfer
 
 #if defined(__linux__)
     // Transfer within the kernel
-    const size_t count = 1048576; // 1 MB to give cancellation a chance
+    const size_t count = cancel != NULL ?
+        1048576 :   // 1 MB to give cancellation a chance
+        0x7ffff000; // maximum number of bytes that sendfile() can transfer
     ssize_t bytes_sent;
     do {
-        // sendfile() can transfer at most 0x7ffff000 bytes
         RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);
         if (bytes_sent == -1) {
             throwUnixException(env, errno);
@@ -76,6 +95,24 @@ Java_sun_nio_fs_UnixCopyFile_transfer
             return;
         }
     } while (bytes_sent > 0);
+#elif defined(_ALLBSD_SOURCE)
+    copyfile_state_t state;
+    if (cancel != NULL) {
+        state = copyfile_state_alloc();
+        copyfile_state_set(state, COPYFILE_STATE_STATUS_CB, fcopyfile_callback);
+        copyfile_state_set(state, COPYFILE_STATE_STATUS_CTX, (void*)cancel);
+    } else {
+        state = NULL;
+    }
+    if (fcopyfile(src, dst, state, COPYFILE_DATA) < 0) {
+        int errno_fcopyfile = errno;
+        if (state != NULL)
+            copyfile_state_free(state);
+        throwUnixException(env, errno_fcopyfile);
+        return;
+    }
+    if (state != NULL)
+        copyfile_state_free(state);
 #else
     // Transfer via user-space buffers
     char buf[8192];

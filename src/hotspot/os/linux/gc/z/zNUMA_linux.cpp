@@ -24,6 +24,7 @@
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zNUMA.hpp"
+#include "gc/z/zNUMA.inline.hpp"
 #include "gc/z/zSyscall_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
@@ -47,11 +48,15 @@ static bool is_numa_supported() {
 }
 
 void ZNUMA::pd_initialize() {
-  _enabled = UseNUMA && is_numa_supported();
+  if (!UseNUMA) {
+    _state = Disabled;
+  } else {
+    _state = is_numa_supported() ? Enabled : Unsupported;
+  }
 }
 
 uint32_t ZNUMA::count() {
-  if (!_enabled) {
+  if (!is_enabled()) {
     // NUMA support not enabled
     return 1;
   }
@@ -60,7 +65,7 @@ uint32_t ZNUMA::count() {
 }
 
 uint32_t ZNUMA::id() {
-  if (!_enabled) {
+  if (!is_enabled()) {
     // NUMA support not enabled
     return 0;
   }
@@ -69,7 +74,7 @@ uint32_t ZNUMA::id() {
 }
 
 uint32_t ZNUMA::memory_id(uintptr_t addr) {
-  if (!_enabled) {
+  if (!is_enabled()) {
     // NUMA support not enabled, assume everything belongs to node zero
     return 0;
   }

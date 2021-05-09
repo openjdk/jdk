@@ -501,12 +501,9 @@ extern "C" JNIEXPORT void ps() { // print stack
   if (p->has_last_Java_frame()) {
     // If the last_Java_fp is set we are in C land and
     // can call the standard stack_trace function.
-#ifdef PRODUCT
     p->print_stack();
-  } else {
-    tty->print_cr("Cannot find the last Java frame, printing stack disabled.");
-#else // !PRODUCT
-    p->trace_stack();
+#ifndef PRODUCT
+    if (Verbose) p->trace_stack();
   } else {
     frame f = os::current_frame();
     RegisterMap reg_map(p);
@@ -514,9 +511,8 @@ extern "C" JNIEXPORT void ps() { // print stack
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
     f.pd_ps();
-#endif // PRODUCT
+#endif
   }
-
 }
 
 extern "C" JNIEXPORT void pfl() {
@@ -603,14 +599,6 @@ extern "C" JNIEXPORT nmethod* findnm(intptr_t addr) {
   Command c("findnm");
   return  CodeCache::find_nmethod((address)addr);
 }
-
-// Another interface that isn't ambiguous in dbx.
-// Can we someday rename the other find to hsfind?
-extern "C" JNIEXPORT void hsfind(intptr_t x) {
-  Command c("hsfind");
-  os::print_location(tty, x, false);
-}
-
 
 extern "C" JNIEXPORT void find(intptr_t x) {
   Command c("find");

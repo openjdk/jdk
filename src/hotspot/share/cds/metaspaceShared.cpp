@@ -1220,7 +1220,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     // Get the simple case out of the way first:
     // no compressed class space, simple allocation.
     archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
-                                     false /* bool large */, (char*)base_address);
+                                     os::vm_page_size(), (char*)base_address);
     if (archive_space_rs.is_reserved()) {
       assert(base_address == NULL ||
              (address)archive_space_rs.base() == base_address, "Sanity");
@@ -1269,9 +1269,9 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       // via sequential file IO.
       address ccs_base = base_address + archive_space_size + gap_size;
       archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
-                                       false /* large */, (char*)base_address);
+                                       os::vm_page_size(), (char*)base_address);
       class_space_rs   = ReservedSpace(class_space_size, class_space_alignment,
-                                       false /* large */, (char*)ccs_base);
+                                       os::vm_page_size(), (char*)ccs_base);
     }
     if (!archive_space_rs.is_reserved() || !class_space_rs.is_reserved()) {
       release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
@@ -1280,7 +1280,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   } else {
     if (use_archive_base_addr && base_address != nullptr) {
       total_space_rs = ReservedSpace(total_range_size, archive_space_alignment,
-                                     false /* bool large */, (char*) base_address);
+                                     os::vm_page_size(), (char*) base_address);
     } else {
       // Reserve at any address, but leave it up to the platform to choose a good one.
       total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size);
