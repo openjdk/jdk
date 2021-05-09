@@ -37,6 +37,7 @@
  * @compile Host.java
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xlog:class+nestmates=trace,protectiondomain=trace
+ *                   -Djava.security.manager=allow
  *                   TestDifferentProtectionDomains
  */
 
@@ -59,27 +60,9 @@ public class TestDifferentProtectionDomains {
 
     static class CustomLoader extends ClassLoader {
 
-        static final String CLASSES = System.getProperty("test.classes");
-        static final Path CLASSES_DIR = Paths.get(CLASSES);
-
         CustomLoader(ClassLoader parent) {
             super(parent);
         }
-
-        static byte[] getBytesForClass(String name) throws IOException {
-            Path classFile;
-            if (name.indexOf('.') > 0) {
-                // it's in a package
-                String[] paths = name.split("\\.");
-                classFile = CLASSES_DIR.resolve(paths[0]);
-                classFile = classFile.resolve(paths[1] + ".class");
-            }
-            else {
-                classFile = CLASSES_DIR.resolve(name + ".class");
-            }
-            return Files.readAllBytes(classFile);
-        }
-
 
         @Override
         public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
@@ -93,7 +76,8 @@ public class TestDifferentProtectionDomains {
                 // Check for target class
                 if (name.startsWith(TARGET)) {
                     try {
-                        byte[] buff = getBytesForClass(name);
+                        String clzFile = name.replaceAll("\\.", "/") + ".class";
+                        byte[] buff = getResourceAsStream(clzFile).readAllBytes();
                         ProtectionDomain differentPD = new ProtectionDomain(null, null);
                         return defineClass(name, buff, 0, buff.length, differentPD);
                     } catch (Throwable t) {
