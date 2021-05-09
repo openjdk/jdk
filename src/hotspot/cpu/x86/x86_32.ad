@@ -1398,11 +1398,6 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 
 //=============================================================================
 
-// This is UltraSparc specific, true just means we have fast l2f conversion
-const bool Matcher::convL2FSupported(void) {
-  return true;
-}
-
 // Is this branch offset short enough that a short branch can be used?
 //
 // NOTE: If the platform does not provide any short branch variants, then

@@ -1536,10 +1536,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::has_predicated_vectors(void) {
-  return false;
-}
-
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
@@ -1548,20 +1544,8 @@ const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return NULL;
 }
 
-bool Matcher::supports_vector_variable_shifts(void) {
-  return false; // not supported
-}
-
-bool Matcher::supports_vector_variable_rotates(void) {
-  return false; // not supported
-}
-
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
-}
-
-const bool Matcher::convL2FSupported(void) {
-  return true; // False means that conversion is done by runtime call.
 }
 
 //----------SUPERWORD HELPERS----------------------------------------
@@ -1586,10 +1570,6 @@ const int Matcher::max_vector_size(const BasicType bt) {
 
 const int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
-}
-
-const bool Matcher::scalable_vector_enabled() {
-  return false;
 }
 
 const int Matcher::scalable_vector_reg_size(const BasicType bt) {

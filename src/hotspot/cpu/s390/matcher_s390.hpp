@@ -34,6 +34,10 @@
   // Whether this platform implements the scalable vector feature
   static const bool implements_scalable_vector = false;
 
+  static constexpr const bool supports_scalable_vector() {
+    return false;
+  }
+
   // Whether code generation need accurate ConvI2L types.
   static const bool convi2l_type_required = true;
 
@@ -67,5 +71,26 @@
   // the whole long is written but de-opt'ing will have to extract
   // the relevant 32 bits.
   static const bool int_in_long = true;
+
+  // Does the CPU supports vector variable shift instructions?
+  static constexpr bool supports_vector_variable_shifts(void) {
+    return false;
+  }
+
+  // Does the CPU supports vector variable rotate instructions?
+  static constexpr bool supports_vector_variable_rotates(void) {
+    return false;
+  }
+
+  // Some microarchitectures have mask registers used on vectors
+  static constexpr bool has_predicated_vectors(void) {
+    return false;
+  }
+
+  // true means we have fast l2f convers
+  // false means that conversion is done by runtime call
+  static constexpr bool convL2FSupported(void) {
+      return true;
+  }
 
 #endif // CPU_S390_MATCHER_S390_HPP

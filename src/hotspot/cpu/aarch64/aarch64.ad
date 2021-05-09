@@ -2421,24 +2421,12 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::has_predicated_vectors(void) {
-  return UseSVE > 0;
-}
-
 const RegMask* Matcher::predicate_reg_mask(void) {
   return &_PR_REG_mask;
 }
 
 const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return new TypeVectMask(elemTy, length);
-}
-
-bool Matcher::supports_vector_variable_shifts(void) {
-  return true;
-}
-
-bool Matcher::supports_vector_variable_rotates(void) {
-  return false; // not supported
 }
 
 const int Matcher::float_pressure(int default_pressure_threshold) {
@@ -2458,11 +2446,6 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
 const bool Matcher::isSimpleConstant64(jlong value) {
   // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
   // Probably always true, even if a temp register is required.
-  return true;
-}
-
-// true just means we have fast l2f conversion
-const bool Matcher::convL2FSupported(void) {
   return true;
 }
 
@@ -2499,10 +2482,6 @@ const int Matcher::min_vector_size(const BasicType bt) {
     if (size < 2) size = 2;
     return MIN2(size,max_size);
   }
-}
-
-const bool Matcher::scalable_vector_enabled() {
-  return UseSVE > 0;
 }
 
 // Actual max scalable vector register length.

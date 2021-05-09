@@ -33,6 +33,10 @@
   // Whether this platform implements the scalable vector feature
   static const bool implements_scalable_vector = false;
 
+  static constexpr bool supports_scalable_vector() {
+    return false;
+  }
+
   // Whether code generation need accurate ConvI2L types.
   static const bool convi2l_type_required = true;
 
@@ -72,5 +76,30 @@
 #else
   static const bool int_in_long = false;
 #endif
+
+  // Does the CPU supports vector variable shift instructions?
+  static bool supports_vector_variable_shifts(void) {
+    return (UseAVX >= 2);
+  }
+
+  // Does the CPU supports vector variable rotate instructions?
+  static constexpr bool supports_vector_variable_rotates(void) {
+    return true;
+  }
+
+  // Some microarchitectures have mask registers used on vectors
+  static const bool has_predicated_vectors(void) {
+    bool ret_value = false;
+    if (UseAVX > 2) {
+      ret_value = VM_Version::supports_avx512vl();
+    }
+    return ret_value;
+  }
+
+  // true means we have fast l2f convers
+  // false means that conversion is done by runtime call
+  static constexpr bool convL2FSupported(void) {
+      return true;
+  }
 
 #endif // CPU_X86_MATCHER_X86_HPP

@@ -1872,23 +1872,6 @@ bool Matcher::is_generic_vector(MachOper* opnd) {
 
 //------------------------------------------------------------------------
 
-bool Matcher::supports_vector_variable_shifts(void) {
-  return (UseAVX >= 2);
-}
-
-bool Matcher::supports_vector_variable_rotates(void) {
-  return true;
-}
-
-const bool Matcher::has_predicated_vectors(void) {
-  bool ret_value = false;
-  if (UseAVX > 2) {
-    ret_value = VM_Version::supports_avx512vl();
-  }
-
-  return ret_value;
-}
-
 const RegMask* Matcher::predicate_reg_mask(void) {
   return &_VECTMASK_REG_mask;
 }
@@ -1961,10 +1944,6 @@ const int Matcher::min_vector_size(const BasicType bt) {
   // Min size which can be loaded into vector is 4 bytes.
   int size = (type2aelembytes(bt) == 1) ? 4 : 2;
   return MIN2(size,max_size);
-}
-
-const bool Matcher::scalable_vector_enabled() {
-  return false;
 }
 
 const int Matcher::scalable_vector_reg_size(const BasicType bt) {
