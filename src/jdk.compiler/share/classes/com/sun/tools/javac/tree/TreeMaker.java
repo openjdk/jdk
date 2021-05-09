@@ -996,7 +996,7 @@ public class TreeMaker implements JCTree.Factory {
             new JCMethodDecl(
                 Modifiers(m.flags(), Annotations(m.getRawAttributes())),
                 m.name,
-                Type(mtype.getReturnType()),
+                m.name != names.init ? Type(mtype.getReturnType()) : null,
                 TypeParams(mtype.getTypeArguments()),
                 null, // receiver type
                 Params(mtype.getParameterTypes(), m),

@@ -750,18 +750,9 @@ public final class AccessControlContext {
         if (obj == this)
             return true;
 
-        if (! (obj instanceof AccessControlContext))
-            return false;
-
-        AccessControlContext that = (AccessControlContext) obj;
-
-        if (!equalContext(that))
-            return false;
-
-        if (!equalLimitedContext(that))
-            return false;
-
-        return true;
+        return obj instanceof AccessControlContext that
+                && equalContext(that)
+                && equalLimitedContext(that);
     }
 
     /*

@@ -259,7 +259,6 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   log_info(cds)("    instance classes   = %5d", _num_instance_klasses);
   log_info(cds)("    obj array classes  = %5d", _num_obj_array_klasses);
   log_info(cds)("    type array classes = %5d", _num_type_array_klasses);
-  log_info(cds)("               symbols = %5d", _symbols->length());
 
   if (DumpSharedSpaces) {
     // To ensure deterministic contents in the static archive, we need to ensure that
