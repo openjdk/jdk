@@ -503,6 +503,9 @@ public class AnnotationParser {
                                      ConstantPool constPool,
                                      Class<?> container) {
         int length = buf.getShort() & 0xFFFF;  // Number of array components
+        if (!arrayType.isArray()) {
+            return parseUnknownArray(length, buf);
+        }
         Class<?> componentType = arrayType.getComponentType();
 
         if (componentType == byte.class) {
