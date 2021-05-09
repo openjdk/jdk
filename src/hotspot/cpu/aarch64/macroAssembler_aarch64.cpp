@@ -4438,7 +4438,8 @@ void MacroAssembler::load_byte_map_base(Register reg) {
 }
 
 void MacroAssembler::build_frame(int framesize) {
-  assert(framesize > 0, "framesize must be > 0");
+  assert(framesize >= 2 * wordSize, "framesize must include space for FP/LR");
+  assert(framesize % (2*wordSize) == 0, "must preserve 2*wordSize alignment");
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     sub(sp, sp, framesize);
     stp(rfp, lr, Address(sp, framesize - 2 * wordSize));
@@ -4457,7 +4458,8 @@ void MacroAssembler::build_frame(int framesize) {
 }
 
 void MacroAssembler::remove_frame(int framesize) {
-  assert(framesize > 0, "framesize must be > 0");
+  assert(framesize >= 2 * wordSize, "framesize must include space for FP/LR");
+  assert(framesize % (2*wordSize) == 0, "must preserve 2*wordSize alignment");
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     ldp(rfp, lr, Address(sp, framesize - 2 * wordSize));
     add(sp, sp, framesize);

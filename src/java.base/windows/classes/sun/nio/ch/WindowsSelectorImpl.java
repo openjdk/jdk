@@ -365,7 +365,9 @@ class WindowsSelectorImpl extends SelectorImpl {
         private native int poll0(long pollAddress, int numfds,
              int[] readFds, int[] writeFds, int[] exceptFds, long timeout, long fdsBuffer);
 
-        private int processSelectedKeys(long updateCount, Consumer<SelectionKey> action) {
+        private int processSelectedKeys(long updateCount, Consumer<SelectionKey> action)
+            throws IOException
+        {
             int numKeysUpdated = 0;
             numKeysUpdated += processFDSet(updateCount, action, readFds,
                                            Net.POLLIN,
@@ -392,6 +394,7 @@ class WindowsSelectorImpl extends SelectorImpl {
                                  Consumer<SelectionKey> action,
                                  int[] fds, int rOps,
                                  boolean isExceptFds)
+            throws IOException
         {
             int numKeysUpdated = 0;
             for (int i = 1; i <= fds[0]; i++) {
@@ -415,7 +418,7 @@ class WindowsSelectorImpl extends SelectorImpl {
                 SelectableChannel sc = ski.channel();
                 if (isExceptFds && (sc instanceof SocketChannelImpl)
                         && ((SocketChannelImpl) sc).isNetSocket()
-                        && discardUrgentData(desc)) {
+                        && Net.discardOOB(ski.getFD())) {
                     continue;
                 }
 
@@ -511,8 +514,6 @@ class WindowsSelectorImpl extends SelectorImpl {
 
     private native void resetWakeupSocket0(int wakeupSourceFd);
 
-    private native boolean discardUrgentData(int fd);
-
     // We increment this counter on each call to updateSelectedKeys()
     // each entry in  SubSelector.fdsMap has a memorized value of
     // updateCount. When we increment numKeysUpdated we set updateCount
@@ -523,7 +524,7 @@ class WindowsSelectorImpl extends SelectorImpl {
 
     // Update ops of the corresponding Channels. Add the ready keys to the
     // ready queue.
-    private int updateSelectedKeys(Consumer<SelectionKey> action) {
+    private int updateSelectedKeys(Consumer<SelectionKey> action) throws IOException {
         updateCount++;
         int numKeysUpdated = 0;
         numKeysUpdated += subSelector.processSelectedKeys(updateCount, action);

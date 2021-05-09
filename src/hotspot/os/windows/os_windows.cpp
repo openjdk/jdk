@@ -3274,11 +3274,12 @@ bool os::can_execute_large_page_memory() {
   return true;
 }
 
-char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, char* addr,
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* addr,
                                     bool exec) {
   assert(UseLargePages, "only for large pages");
+  assert(page_size == os::large_page_size(), "Currently only support one large page size on Windows");
 
-  if (!is_aligned(bytes, os::large_page_size()) || alignment > os::large_page_size()) {
+  if (!is_aligned(bytes, page_size) || alignment > page_size) {
     return NULL; // Fallback to small pages.
   }
 

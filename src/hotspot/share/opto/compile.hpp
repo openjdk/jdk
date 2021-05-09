@@ -244,7 +244,6 @@ class Compile : public Phase {
  private:
   // Fixed parameters to this compilation.
   const int             _compile_id;
-  const bool            _save_argument_registers; // save/restore arg regs for trampolines
   const bool            _subsume_loads;         // Load can be matched as part of a larger op.
   const bool            _do_escape_analysis;    // Do escape analysis.
   const bool            _install_code;          // Install the code that was compiled
@@ -510,7 +509,6 @@ class Compile : public Phase {
   bool              eliminate_boxing() const    { return _eliminate_boxing; }
   /** Do aggressive boxing elimination. */
   bool              aggressive_unboxing() const { return _eliminate_boxing && AggressiveUnboxing; }
-  bool              save_argument_registers() const { return _save_argument_registers; }
   bool              should_install_code() const { return _install_code; }
 
   // Other fixed compilation parameters.
@@ -1030,7 +1028,7 @@ class Compile : public Phase {
   Compile(ciEnv* ci_env, const TypeFunc *(*gen)(),
           address stub_function, const char *stub_name,
           int is_fancy_jump, bool pass_tls,
-          bool save_arg_registers, bool return_pc, DirectiveSet* directive);
+          bool return_pc, DirectiveSet* directive);
 
   // Are we compiling a method?
   bool has_method() { return method() != NULL; }

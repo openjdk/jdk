@@ -427,6 +427,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
 
   ConfigurationLock cl;
   size_t idx;
+  bool added = false;
   if (outputstr[0] == '#') { // Output specified using index
     int ret = sscanf(outputstr + 1, SIZE_FORMAT, &idx);
     if (ret != 1 || idx >= _n_outputs) {
@@ -447,15 +448,17 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
       LogOutput* output = new_output(normalized, output_options, errstream);
       if (output != NULL) {
         idx = add_output(output);
+        added = true;
       }
-    } else if (output_options != NULL && strlen(output_options) > 0) {
-      errstream->print_cr("Output options for existing outputs are ignored.");
     }
 
     FREE_C_HEAP_ARRAY(char, normalized);
     if (idx == SIZE_MAX) {
       return false;
     }
+  }
+  if (!added && output_options != NULL && strlen(output_options) > 0) {
+    errstream->print_cr("Output options for existing outputs are ignored.");
   }
   configure_output(idx, selections, decorators);
   notify_update_listeners();

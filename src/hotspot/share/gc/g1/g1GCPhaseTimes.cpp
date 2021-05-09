@@ -108,6 +108,17 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[GCWorkerTotal] = new WorkerDataArray<double>("GCWorkerTotal", "GC Worker Total (ms):", max_gc_threads);
   _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>("GCWorkerEnd", "GC Worker End (ms):", max_gc_threads);
   _gc_par_phases[Other] = new WorkerDataArray<double>("Other", "GC Worker Other (ms):", max_gc_threads);
+  _gc_par_phases[MergePSS] = new WorkerDataArray<double>("MergePSS", "Merge Per-Thread State (ms):", max_gc_threads);
+  _gc_par_phases[RemoveSelfForwardingPtr] = new WorkerDataArray<double>("RemoveSelfForwardingPtr", "Remove Self Forwards (ms):", max_gc_threads);
+  _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearLoggedCards", "Clear Logged Cards (ms):", max_gc_threads);
+  _gc_par_phases[RecalculateUsed] = new WorkerDataArray<double>("RecalculateUsed", "Recalculate Used Memory (ms):", max_gc_threads);
+  _gc_par_phases[ResetHotCardCache] = new WorkerDataArray<double>("ResetHotCardCache", "Reset Hot Card Cache (ms):", max_gc_threads);
+  _gc_par_phases[PurgeCodeRoots] = new WorkerDataArray<double>("PurgeCodeRoots", "Purge Code Roots (ms):", max_gc_threads);
+#if COMPILER2_OR_JVMCI
+  _gc_par_phases[UpdateDerivedPointers] = new WorkerDataArray<double>("UpdateDerivedPointers", "Update Derived Pointers (ms):", max_gc_threads);
+#endif
+  _gc_par_phases[EagerlyReclaimHumongousObjects] = new WorkerDataArray<double>("EagerlyReclaimHumongousObjects", "Eagerly Reclaim Humongous Objects (ms):", max_gc_threads);
+  _gc_par_phases[RestorePreservedMarks] = new WorkerDataArray<double>("RestorePreservedMarks", "Restore Preserved Marks (ms):", max_gc_threads);
 
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
@@ -122,11 +133,13 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergeLB]->create_thread_work_items("Dirty Cards:", MergeLBDirtyCards);
   _gc_par_phases[MergeLB]->create_thread_work_items("Skipped Cards:", MergeLBSkippedCards);
 
-  _gc_par_phases[MergePSS] = new WorkerDataArray<double>("MergePSS", "Merge Per-Thread State", 1 /* length */, true /* is_serial */);
+  _gc_par_phases[MergePSS]->create_thread_work_items("Copied Bytes", MergePSSCopiedBytes);
+  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Waste", MergePSSLABWasteBytes);
+  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste", MergePSSLABUndoWasteBytes);
 
-  _gc_par_phases[MergePSS]->create_thread_work_items("Copied Bytes", MergePSSCopiedBytes, max_gc_threads);
-  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Waste", MergePSSLABWasteBytes, max_gc_threads);
-  _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste", MergePSSLABUndoWasteBytes, max_gc_threads);
+  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Total", EagerlyReclaimNumTotal);
+  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Candidates", EagerlyReclaimNumCandidates);
+  _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Reclaimed", EagerlyReclaimNumReclaimed);
 
   _gc_par_phases[Termination]->create_thread_work_items("Termination Attempts:");
 
@@ -140,10 +153,10 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
     _gc_par_phases[StringDedupTableFixup] = NULL;
   }
 
-  _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>("RedirtyCards", "Parallel Redirty (ms):", max_gc_threads);
+  _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>("RedirtyCards", "Redirty Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RedirtyCards]->create_thread_work_items("Redirtied Cards:");
 
-  _gc_par_phases[ParFreeCSet] = new WorkerDataArray<double>("ParFreeCSet", "Parallel Free Collection Set (ms):", max_gc_threads);
+  _gc_par_phases[FreeCollectionSet] = new WorkerDataArray<double>("FreeCSet", "Free Collection Set (ms):", max_gc_threads);
   _gc_par_phases[YoungFreeCSet] = new WorkerDataArray<double>("YoungFreeCSet", "Young Free Collection Set (ms):", max_gc_threads);
   _gc_par_phases[NonYoungFreeCSet] = new WorkerDataArray<double>("NonYoungFreeCSet", "Non-Young Free Collection Set (ms):", max_gc_threads);
   _gc_par_phases[RebuildFreeList] = new WorkerDataArray<double>("RebuildFreeList", "Parallel Rebuild Free List (ms):", max_gc_threads);
@@ -155,19 +168,15 @@ void G1GCPhaseTimes::reset() {
   _cur_collection_initial_evac_time_ms = 0.0;
   _cur_optional_evac_time_ms = 0.0;
   _cur_collection_code_root_fixup_time_ms = 0.0;
-  _cur_strong_code_root_purge_time_ms = 0.0;
   _cur_merge_heap_roots_time_ms = 0.0;
   _cur_optional_merge_heap_roots_time_ms = 0.0;
   _cur_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_optional_prepare_merge_heap_roots_time_ms = 0.0;
-  _cur_evac_fail_recalc_used = 0.0;
-  _cur_evac_fail_remove_self_forwards = 0.0;
   _cur_string_deduplication_time_ms = 0.0;
   _cur_prepare_tlab_time_ms = 0.0;
   _cur_resize_tlab_time_ms = 0.0;
-  _cur_concatenate_dirty_card_logs_time_ms = 0.0;
-  _cur_derived_pointer_table_update_time_ms = 0.0;
-  _cur_clear_ct_time_ms = 0.0;
+  _cur_post_evacuate_cleanup_1_time_ms = 0.0;
+  _cur_post_evacuate_cleanup_2_time_ms = 0.0;
   _cur_expand_heap_time_ms = 0.0;
   _cur_ref_proc_time_ms = 0.0;
   _cur_collection_start_sec = 0.0;
@@ -177,18 +186,12 @@ void G1GCPhaseTimes::reset() {
   _recorded_clear_claimed_marks_time_ms = 0.0;
   _recorded_young_cset_choice_time_ms = 0.0;
   _recorded_non_young_cset_choice_time_ms = 0.0;
-  _recorded_redirty_logged_cards_time_ms = 0.0;
   _recorded_preserve_cm_referents_time_ms = 0.0;
   _recorded_start_new_cset_time_ms = 0.0;
-  _recorded_total_free_cset_time_ms = 0.0;
   _recorded_serial_free_cset_time_ms = 0.0;
   _recorded_total_rebuild_freelist_time_ms = 0.0;
   _recorded_serial_rebuild_freelist_time_ms = 0.0;
-  _cur_fast_reclaim_humongous_time_ms = 0.0;
   _cur_region_register_time = 0.0;
-  _cur_fast_reclaim_humongous_total = 0;
-  _cur_fast_reclaim_humongous_candidates = 0;
-  _cur_fast_reclaim_humongous_reclaimed = 0;
   _cur_verify_before_time_ms = 0.0;
   _cur_verify_after_time_ms = 0.0;
 
@@ -403,10 +406,6 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   debug_time("Concatenate Dirty Card Logs", _cur_concatenate_dirty_card_logs_time_ms);
   debug_time("Choose Collection Set", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
   debug_time("Region Register", _cur_region_register_time);
-  if (G1EagerReclaimHumongousObjects) {
-    trace_count("Humongous Total", _cur_fast_reclaim_humongous_total);
-    trace_count("Humongous Candidate", _cur_fast_reclaim_humongous_candidates);
-  }
 
   debug_time("Prepare Heap Roots", _recorded_prepare_heap_roots_time_ms);
   if (_recorded_clear_claimed_marks_time_ms > 0.0) {
@@ -462,30 +461,20 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
 }
 
 double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
-  const double evac_fail_handling = _cur_evac_fail_recalc_used +
-                                    _cur_evac_fail_remove_self_forwards;
-  assert(_gc_par_phases[MergePSS]->get(0) != WorkerDataArray<double>::uninitialized(), "must be set");
-  const double merge_pss = _gc_par_phases[MergePSS]->get(0) * MILLIUNITS;
-  const double sum_ms = evac_fail_handling +
-                        _cur_collection_code_root_fixup_time_ms +
+  const double sum_ms = _cur_collection_code_root_fixup_time_ms +
                         _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
                         (_weak_phase_times.total_time_sec() * MILLIUNITS) +
-                        _cur_clear_ct_time_ms +
-                        merge_pss +
-                        _cur_strong_code_root_purge_time_ms +
-                        _recorded_redirty_logged_cards_time_ms +
-                        _recorded_total_free_cset_time_ms +
+                        _cur_string_deduplication_time_ms +
+                        _cur_post_evacuate_cleanup_1_time_ms +
+                        _cur_post_evacuate_cleanup_2_time_ms +
                         _recorded_total_rebuild_freelist_time_ms +
-                        _cur_fast_reclaim_humongous_time_ms +
-                        _cur_expand_heap_time_ms +
-                        _cur_string_deduplication_time_ms;
+                        _recorded_start_new_cset_time_ms +
+                        _cur_expand_heap_time_ms;
 
   info_time("Post Evacuate Collection Set", sum_ms);
 
   debug_time("Code Roots Fixup", _cur_collection_code_root_fixup_time_ms);
-
-  debug_time("Clear Card Table", _cur_clear_ct_time_ms);
 
   debug_time_for_reference("Reference Processing", _cur_ref_proc_time_ms);
   _ref_phase_times.print_all_references(2, false);
@@ -498,41 +487,43 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
     debug_phase(_gc_par_phases[StringDedupTableFixup], 1);
   }
 
+  debug_time("Post Evacuate Cleanup 1", _cur_post_evacuate_cleanup_1_time_ms);
+  debug_phase(_gc_par_phases[MergePSS], 1);
+  debug_phase(_gc_par_phases[ClearCardTable], 1);
+  debug_phase(_gc_par_phases[RecalculateUsed], 1);
   if (G1CollectedHeap::heap()->evacuation_failed()) {
-    debug_time("Evacuation Failure", evac_fail_handling);
-    trace_time("Recalculate Used", _cur_evac_fail_recalc_used);
-    trace_time("Remove Self Forwards",_cur_evac_fail_remove_self_forwards);
+    debug_phase(_gc_par_phases[RemoveSelfForwardingPtr], 1);
   }
 
-  debug_phase(_gc_par_phases[MergePSS], 0);
-  debug_time("Code Roots Purge", _cur_strong_code_root_purge_time_ms);
-
-  debug_time("Redirty Cards", _recorded_redirty_logged_cards_time_ms);
-  trace_phase(_gc_par_phases[RedirtyCards]);
+  debug_time("Post Evacuate Cleanup 2", _cur_post_evacuate_cleanup_2_time_ms);
+  if (G1CollectedHeap::heap()->evacuation_failed()) {
+    debug_phase(_gc_par_phases[RecalculateUsed], 1);
+    debug_phase(_gc_par_phases[RestorePreservedMarks], 1);
+  }
+  debug_phase(_gc_par_phases[ResetHotCardCache], 1);
+  debug_phase(_gc_par_phases[PurgeCodeRoots], 1);
 #if COMPILER2_OR_JVMCI
-  debug_time("DerivedPointerTable Update", _cur_derived_pointer_table_update_time_ms);
+  debug_phase(_gc_par_phases[UpdateDerivedPointers], 1);
 #endif
+  if (G1CollectedHeap::heap()->should_do_eager_reclaim()) {
+    debug_phase(_gc_par_phases[EagerlyReclaimHumongousObjects], 1);
+  }
+  debug_phase(_gc_par_phases[RedirtyCards], 1);
+  debug_phase(_gc_par_phases[FreeCollectionSet], 1);
+  trace_phase(_gc_par_phases[YoungFreeCSet], true, 2);
+  trace_phase(_gc_par_phases[NonYoungFreeCSet], true, 2);
 
-  debug_time("Free Collection Set", _recorded_total_free_cset_time_ms);
   trace_time("Serial Free Collection Set", _recorded_serial_free_cset_time_ms);
-  trace_phase(_gc_par_phases[ParFreeCSet]);
-  trace_phase(_gc_par_phases[YoungFreeCSet], true, 1);
-  trace_phase(_gc_par_phases[NonYoungFreeCSet], true, 1);
 
   debug_time("Rebuild Free List", _recorded_total_rebuild_freelist_time_ms);
   trace_time("Serial Rebuild Free List ", _recorded_serial_rebuild_freelist_time_ms);
   trace_phase(_gc_par_phases[RebuildFreeList]);
 
-  if (G1EagerReclaimHumongousObjects) {
-    debug_time("Humongous Reclaim", _cur_fast_reclaim_humongous_time_ms);
-    trace_count("Humongous Reclaimed", _cur_fast_reclaim_humongous_reclaimed);
-  }
   debug_time("Start New Collection Set", _recorded_start_new_cset_time_ms);
   if (UseTLAB && ResizeTLAB) {
     debug_time("Resize TLABs", _cur_resize_tlab_time_ms);
   }
   debug_time("Expand Heap After Collection", _cur_expand_heap_time_ms);
-
 
   return sum_ms;
 }
