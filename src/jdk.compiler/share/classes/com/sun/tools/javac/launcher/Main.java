@@ -342,6 +342,9 @@ public class Main {
                     }
                     break;
                 default:
+                    if (opt.startsWith("-agentlib:jdwp")) {
+                        javacOpts.add("-g");
+                    }
                     // ignore all other runtime args
             }
         }
