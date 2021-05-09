@@ -481,7 +481,7 @@ class InstanceKlass: public Klass {
 private:
   // Called to verify that k is a member of this nest - does not look at k's nest-host,
   // nor does it resolve any CP entries or load any classes.
-  bool has_nest_member(InstanceKlass* k, JavaThread* current) const;
+  bool has_nest_member(JavaThread* current, InstanceKlass* k) const;
 
 public:
   // Used to construct informative IllegalAccessError messages at a higher level,

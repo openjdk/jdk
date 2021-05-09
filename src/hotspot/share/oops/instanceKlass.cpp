@@ -163,7 +163,7 @@ static inline bool is_class_loader(const Symbol* class_name,
 // private: called to verify that k is a static member of this nest.
 // We know that k is an instance class in the same package and hence the
 // same classloader.
-bool InstanceKlass::has_nest_member(InstanceKlass* k, JavaThread* current) const {
+bool InstanceKlass::has_nest_member(JavaThread* current, InstanceKlass* k) const {
   assert(!is_hidden(), "unexpected hidden class");
   if (_nest_members == NULL || _nest_members == Universe::the_empty_short_array()) {
     if (log_is_enabled(Trace, class, nestmates)) {
@@ -248,18 +248,17 @@ bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
 // value of it and, if applicable, the nest host resolution/validation error,
 // are idempotent.
 InstanceKlass* InstanceKlass::nest_host(TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
   InstanceKlass* nest_host_k = _nest_host;
   if (nest_host_k != NULL) {
     return nest_host_k;
   }
 
-  ResourceMark rm(current);
+  ResourceMark rm(THREAD);
 
   // need to resolve and save our nest-host class.
   if (_nest_host_index != 0) { // we have a real nest_host
     // Before trying to resolve check if we're in a suitable context
-    bool can_resolve = current->can_call_java();
+    bool can_resolve = THREAD->can_call_java();
     if (!can_resolve && !_constants->tag_at(_nest_host_index).is_klass()) {
       log_trace(class, nestmates)("Rejected resolution of nest-host of %s in unsuitable thread",
                                   this->external_name());
@@ -281,7 +280,7 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
                this->external_name(), target_host_class);
       java_lang_Throwable::print(PENDING_EXCEPTION, &ss);
       const char* msg = ss.as_string(true /* on C-heap */);
-      constantPoolHandle cph(current, constants());
+      constantPoolHandle cph(THREAD, constants());
       SystemDictionary::add_nest_host_error(cph, _nest_host_index, msg);
       CLEAR_PENDING_EXCEPTION;
 
@@ -298,7 +297,7 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
         // not an instance class.
         if (k->is_instance_klass()) {
           nest_host_k = InstanceKlass::cast(k);
-          bool is_member = nest_host_k->has_nest_member(this, current);
+          bool is_member = nest_host_k->has_nest_member(THREAD->as_Java_thread(), this);
           if (is_member) {
             _nest_host = nest_host_k; // save resolved nest-host value
 
@@ -325,7 +324,7 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
                  k->class_loader_data()->loader_name_and_id(),
                  error);
         const char* msg = ss.as_string(true /* on C-heap */);
-        constantPoolHandle cph(current, constants());
+        constantPoolHandle cph(THREAD, constants());
         SystemDictionary::add_nest_host_error(cph, _nest_host_index, msg);
         log_trace(class, nestmates)("%s", msg);
       }
