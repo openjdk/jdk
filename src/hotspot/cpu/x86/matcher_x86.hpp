@@ -37,6 +37,11 @@
     return false;
   }
 
+  // x86 supports misaligned vectors store/load.
+  static constexpr bool misaligned_vectors_ok() {
+    return true;
+  }
+
   // Whether code generation need accurate ConvI2L types.
   static const bool convi2l_type_required = true;
 
@@ -47,6 +52,62 @@
 
   // Does the CPU require late expand (see block.cpp for description of late expand)?
   static const bool require_postalloc_expand = false;
+
+  // x86 supports generic vector operands: vec and legVec.
+  static const bool supports_generic_vector_operands = true;
+
+  static constexpr bool isSimpleConstant64(jlong value) {
+    // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
+    //return value == (int) value;  // Cf. storeImmL and immL32.
+
+    // Probably always true, even if a temp register is required.
+#ifdef _LP64
+    return true;
+#else
+    return false;
+#endif
+  }
+
+#ifdef _LP64
+  // No additional cost for CMOVL.
+  static constexpr int long_cmove_cost() { return 0; }
+#else
+  // Needs 2 CMOV's for longs.
+  static constexpr int long_cmove_cost() { return 1; }
+#endif
+
+#ifdef _LP64
+  // No CMOVF/CMOVD with SSE2
+  static int float_cmove_cost() { return ConditionalMoveLimit; }
+#else
+  // No CMOVF/CMOVD with SSE/SSE2
+  static int float_cmove_cost() { return (UseSSE>=1) ? ConditionalMoveLimit : 0; }
+#endif
+
+  static bool narrow_oop_use_complex_address() {
+    NOT_LP64(ShouldNotCallThis();)
+    assert(UseCompressedOops, "only for compressed oops code");
+    return (LogMinObjAlignmentInBytes <= 3);
+  }
+
+  static bool narrow_klass_use_complex_address() {
+    NOT_LP64(ShouldNotCallThis();)
+    assert(UseCompressedClassPointers, "only for compressed klass code");
+    return (LogKlassAlignmentInBytes <= 3);
+  }
+
+  // Prefer ConN+DecodeN over ConP.
+  static const bool const_oop_prefer_decode() {
+    NOT_LP64(ShouldNotCallThis();)
+    // Prefer ConN+DecodeN over ConP.
+    return true;
+  }
+
+  // Prefer ConP over ConNKlass+DecodeNKlass.
+  static const bool const_klass_prefer_decode() {
+    NOT_LP64(ShouldNotCallThis();)
+    return false;
+  }
 
   // Is it better to copy float constants, or load them directly from memory?
   // Intel can load a float constant from a direct address, requiring no
@@ -60,14 +121,24 @@
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
-  // x86 supports generic vector operands: vec and legVec.
-  static const bool supports_generic_vector_operands = true;
-
   // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
 #ifdef _LP64
   static const bool strict_fp_requires_explicit_rounding = false;
 #else
   static const bool strict_fp_requires_explicit_rounding = true;
+#endif
+
+  // Are floats converted to double when stored to stack during deoptimization?
+  // On x64 it is stored without convertion so we can use normal access.
+  // On x32 it is stored with convertion only when FPU is used for floats.
+#ifdef _LP64
+  static constexpr bool float_in_double() {
+    return false;
+  }
+#else
+  static bool float_in_double() {
+    return (UseSSE == 0);
+  }
 #endif
 
   // Do ints take an entire long register or just half?

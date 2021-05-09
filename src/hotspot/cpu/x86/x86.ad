@@ -1964,12 +1964,6 @@ const uint Matcher::vector_ideal_reg(int size) {
   return 0;
 }
 
-// x86 supports misaligned vectors store/load.
-const bool Matcher::misaligned_vectors_ok() {
-  return true;
-}
-
-
 // Check for shift by small constant as well
 static bool clone_shift(Node* shift, Matcher* matcher, Matcher::MStack& mstack, VectorSet& address_visited) {
   if (shift->Opcode() == Op_LShiftX && shift->in(2)->is_Con() &&

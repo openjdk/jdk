@@ -37,6 +37,11 @@
     return UseSVE > 0;
   }
 
+  // aarch64 supports misaligned vectors store/load.
+  static constexpr bool misaligned_vectors_ok() {
+    return true;
+  }
+
   // Whether code generation need accurate ConvI2L types.
   static const bool convi2l_type_required = false;
 
@@ -49,6 +54,53 @@
 
   // No support for generic vector operands.
   static const bool supports_generic_vector_operands = false;
+
+  static constexpr bool isSimpleConstant64(jlong value) {
+    // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
+    // Probably always true, even if a temp register is required.
+    return true;
+  }
+
+  // Use conditional move (CMOVL)
+  static constexpr int long_cmove_cost() {
+    // long cmoves are no more expensive than int cmoves
+    return 0;
+  }
+
+  static constexpr int float_cmove_cost() {
+    // float cmoves are no more expensive than int cmoves
+    return 0;
+  }
+
+  // This affects two different things:
+  //  - how Decode nodes are matched
+  //  - how ImplicitNullCheck opportunities are recognized
+  // If true, the matcher will try to remove all Decodes and match them
+  // (as operands) into nodes. NullChecks are not prepared to deal with
+  // Decodes by final_graph_reshaping().
+  // If false, final_graph_reshaping() forces the decode behind the Cmp
+  // for a NullCheck. The matcher matches the Decode node into a register.
+  // Implicit_null_check optimization moves the Decode along with the
+  // memory operation back up before the NullCheck.
+  static bool narrow_oop_use_complex_address() {
+    return CompressedOops::shift() == 0;
+  }
+
+  static bool narrow_klass_use_complex_address() {
+    // TODO
+    // decide whether we need to set this to true
+    return false;
+  }
+
+  static bool const_oop_prefer_decode() {
+    // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
+    return CompressedOops::base() == NULL;
+  }
+
+  static bool const_klass_prefer_decode() {
+    // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
+    return CompressedKlassPointers::base() == NULL;
+  }
 
   // Is it better to copy float constants, or load them directly from
   // memory?  Intel can load a float constant from a direct address,
@@ -65,6 +117,10 @@
 
   // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
   static const bool strict_fp_requires_explicit_rounding = false;
+
+  // Are floats converted to double when stored to stack during
+  // deoptimization?
+  static constexpr bool float_in_double() { return false; }
 
   // Do ints take an entire long register or just half?
   // The relevant question is how the int is callee-saved:

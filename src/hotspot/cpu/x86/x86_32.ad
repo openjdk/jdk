@@ -1415,41 +1415,6 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
   return (-128 <= offset && offset <= 127);
 }
 
-const bool Matcher::isSimpleConstant64(jlong value) {
-  // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
-  return false;
-}
-
-// Needs 2 CMOV's for longs.
-const int Matcher::long_cmove_cost() { return 1; }
-
-// No CMOVF/CMOVD with SSE/SSE2
-const int Matcher::float_cmove_cost() { return (UseSSE>=1) ? ConditionalMoveLimit : 0; }
-
-bool Matcher::narrow_oop_use_complex_address() {
-  ShouldNotCallThis();
-  return true;
-}
-
-bool Matcher::narrow_klass_use_complex_address() {
-  ShouldNotCallThis();
-  return true;
-}
-
-bool Matcher::const_oop_prefer_decode() {
-  ShouldNotCallThis();
-  return true;
-}
-
-bool Matcher::const_klass_prefer_decode() {
-  ShouldNotCallThis();
-  return true;
-}
-
-// Are floats conerted to double when stored to stack during deoptimization?
-// On x32 it is stored with convertion only when FPU is used for floats.
-bool Matcher::float_in_double() { return (UseSSE == 0); }
-
 // Return whether or not this register is ever used as an argument.  This
 // function is used on startup to build the trampoline stubs in generateOptoStub.
 // Registers not mentioned will be killed by the VM call in the trampoline, and

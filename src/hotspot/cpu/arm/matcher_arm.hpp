@@ -37,19 +37,57 @@
     return false;
   }
 
+  // ARM doesn't support misaligned vectors store/load.
+  static constexpr bool misaligned_vectors_ok() {
+    return false;
+  }
+
   // Whether code generation need accurate ConvI2L types.
   static const bool convi2l_type_required = true;
-
-  // Does the CPU require late expand (see block.cpp for description of late expand)?
-  static const bool require_postalloc_expand = false;
 
   // Do we need to mask the count passed to shift instructions or does
   // the cpu only look at the lower 5/6 bits anyway?
   // FIXME: does this handle vector shifts as well?
   static const bool need_masked_shift_count = true;
 
+  // Does the CPU require late expand (see block.cpp for description of late expand)?
+  static const bool require_postalloc_expand = false;
+
   // No support for generic vector operands.
   static const bool supports_generic_vector_operands = false;
+
+  static constexpr bool isSimpleConstant64(jlong value) {
+    // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
+    return false;
+  }
+
+  // Needs 2 CMOV's for longs.
+  static constexpr int long_cmove_cost() { return 2; }
+
+  // CMOVF/CMOVD are expensive on ARM.
+  static int float_cmove_cost() { return ConditionalMoveLimit; }
+
+  static bool narrow_oop_use_complex_address() {
+    NOT_LP64(ShouldNotCallThis());
+    assert(UseCompressedOops, "only for compressed oops code");
+    return false;
+  }
+
+  static bool narrow_klass_use_complex_address() {
+    NOT_LP64(ShouldNotCallThis());
+    assert(UseCompressedClassPointers, "only for compressed klass code");
+    return false;
+  }
+
+  static bool const_oop_prefer_decode() {
+    NOT_LP64(ShouldNotCallThis());
+    return true;
+  }
+
+  static bool const_klass_prefer_decode() {
+    NOT_LP64(ShouldNotCallThis());
+    return true;
+  }
 
   // Is it better to copy float constants, or load them directly from memory?
   // Intel can load a float constant from a direct address, requiring no
@@ -65,6 +103,12 @@
 
   // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
   static const bool strict_fp_requires_explicit_rounding = false;
+
+  // Are floats converted to double when stored to stack during deoptimization?
+  // ARM does not handle callee-save floats.
+  static constexpr bool float_in_double() {
+    return false;
+  }
 
   // Do ints take an entire long register or just half?
   // Note that we if-def off of _LP64.

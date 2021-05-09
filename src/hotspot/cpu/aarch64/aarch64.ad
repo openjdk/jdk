@@ -2443,12 +2443,6 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
   return (-32768 <= offset && offset < 32768);
 }
 
-const bool Matcher::isSimpleConstant64(jlong value) {
-  // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
-  // Probably always true, even if a temp register is required.
-  return true;
-}
-
 // Vector width in bytes.
 const int Matcher::vector_width_in_bytes(BasicType bt) {
   // The MaxVectorSize should have been set by detecting SVE max vector register size.
@@ -2505,22 +2499,6 @@ const uint Matcher::vector_ideal_reg(int len) {
   return 0;
 }
 
-// aarch64 supports misaligned vectors store/load.
-const bool Matcher::misaligned_vectors_ok() {
-  return true;
-}
-
-// Use conditional move (CMOVL)
-const int Matcher::long_cmove_cost() {
-  // long cmoves are no more expensive than int cmoves
-  return 0;
-}
-
-const int Matcher::float_cmove_cost() {
-  // float cmoves are no more expensive than int cmoves
-  return 0;
-}
-
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg, bool is_temp) {
   ShouldNotReachHere(); // generic vector operands not supported
   return NULL;
@@ -2535,41 +2513,6 @@ bool Matcher::is_generic_vector(MachOper* opnd)  {
   ShouldNotReachHere();  // generic vector operands not supported
   return false;
 }
-
-// This affects two different things:
-//  - how Decode nodes are matched
-//  - how ImplicitNullCheck opportunities are recognized
-// If true, the matcher will try to remove all Decodes and match them
-// (as operands) into nodes. NullChecks are not prepared to deal with
-// Decodes by final_graph_reshaping().
-// If false, final_graph_reshaping() forces the decode behind the Cmp
-// for a NullCheck. The matcher matches the Decode node into a register.
-// Implicit_null_check optimization moves the Decode along with the
-// memory operation back up before the NullCheck.
-bool Matcher::narrow_oop_use_complex_address() {
-  return CompressedOops::shift() == 0;
-}
-
-bool Matcher::narrow_klass_use_complex_address() {
-// TODO
-// decide whether we need to set this to true
-  return false;
-}
-
-bool Matcher::const_oop_prefer_decode() {
-  // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
-  return CompressedOops::base() == NULL;
-}
-
-bool Matcher::const_klass_prefer_decode() {
-  // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
-  return CompressedKlassPointers::base() == NULL;
-}
-
-// Are floats converted to double when stored to stack during
-// deoptimization?
-bool Matcher::float_in_double() { return false; }
-
 
 // Return whether or not this register is ever used as an argument.
 // This function is used on startup to build the trampoline stubs in

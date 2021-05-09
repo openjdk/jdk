@@ -38,6 +38,11 @@
     return false;
   }
 
+  // z/Architecture does support misaligned store/load at minimal extra cost.
+  static constexpr bool misaligned_vectors_ok() {
+    return true;
+  }
+
   // Whether code generation need accurate ConvI2L types.
   static const bool convi2l_type_required = true;
 
@@ -52,6 +57,40 @@
   // No support for generic vector operands.
   static const bool supports_generic_vector_operands = false;
 
+  static constexpr bool isSimpleConstant64(jlong value) {
+    // Probably always true, even if a temp register is required.
+    return true;
+  }
+
+  // Suppress CMOVL. Conditional move available on z/Architecture only from z196 onwards. Not exploited yet.
+  static const int long_cmove_cost() { return ConditionalMoveLimit; }
+
+  // Suppress CMOVF. Conditional move available on z/Architecture only from z196 onwards. Not exploited yet.
+  static const int float_cmove_cost() { return ConditionalMoveLimit; }
+
+  // Set this as clone_shift_expressions.
+  static bool narrow_oop_use_complex_address() {
+    if (CompressedOops::base() == NULL && CompressedOops::shift() == 0) return true;
+    return false;
+  }
+
+  static bool narrow_klass_use_complex_address() {
+    NOT_LP64(ShouldNotCallThis());
+    assert(UseCompressedClassPointers, "only for compressed klass code");
+    // TODO HS25: z port if (MatchDecodeNodes) return true;
+    return false;
+  }
+
+  static bool const_oop_prefer_decode() {
+    // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
+    return CompressedOops::base() == NULL;
+  }
+
+  static bool const_klass_prefer_decode() {
+    // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
+    return CompressedKlassPointers::base() == NULL;
+  }
+
   // Is it better to copy float constants, or load them directly from memory?
   // Most RISCs will have to materialize an address into a
   // register first, so they would do better to copy the constant from stack.
@@ -65,6 +104,13 @@
 
   // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
   static const bool strict_fp_requires_explicit_rounding = false;
+
+  // Do floats take an entire double register or just half?
+  //
+  // A float in resides in a zarch double register. When storing it by
+  // z_std, it cannot be restored in C-code by reloading it as a double
+  // and casting it into a float afterwards.
+  static constexpr bool float_in_double() { return false; }
 
   // Do ints take an entire long register or just half?
   // The relevant question is how the int is callee-saved:

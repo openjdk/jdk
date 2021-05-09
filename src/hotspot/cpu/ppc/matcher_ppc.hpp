@@ -37,6 +37,12 @@
     return false;
   }
 
+  // PPC implementation uses VSX load/store instructions (if
+  // SuperwordUseVSX) which support 4 byte but not arbitrary alignment
+  static const bool misaligned_vectors_ok() {
+    return false;
+  }
+
   // Whether code generation need accurate ConvI2L types.
   static const bool convi2l_type_required = true;
 
@@ -50,6 +56,50 @@
 
   // No support for generic vector operands.
   static const bool supports_generic_vector_operands = false;
+
+  static constexpr bool isSimpleConstant64(jlong value) {
+    // Probably always true, even if a temp register is required.
+    return true;
+  }
+
+  // Use conditional move (CMOVL) on Power7.
+  static constexpr int long_cmove_cost() { return 0; } // this only makes long cmoves more expensive than int cmoves
+
+  // Suppress CMOVF. Conditional move available (sort of) on PPC64 only from P7 onwards. Not exploited yet.
+  // fsel doesn't accept a condition register as input, so this would be slightly different.
+  static int float_cmove_cost() { return ConditionalMoveLimit; }
+
+  // This affects two different things:
+  //  - how Decode nodes are matched
+  //  - how ImplicitNullCheck opportunities are recognized
+  // If true, the matcher will try to remove all Decodes and match them
+  // (as operands) into nodes. NullChecks are not prepared to deal with
+  // Decodes by final_graph_reshaping().
+  // If false, final_graph_reshaping() forces the decode behind the Cmp
+  // for a NullCheck. The matcher matches the Decode node into a register.
+  // Implicit_null_check optimization moves the Decode along with the
+  // memory operation back up before the NullCheck.
+  static constexpr bool narrow_oop_use_complex_address() {
+    // TODO: PPC port if (MatchDecodeNodes) return true;
+    return false;
+  }
+
+  static bool narrow_klass_use_complex_address() {
+    NOT_LP64(ShouldNotCallThis());
+    assert(UseCompressedClassPointers, "only for compressed klass code");
+    // TODO: PPC port if (MatchDecodeNodes) return true;
+    return false;
+  }
+
+  static bool const_oop_prefer_decode() {
+    // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
+    return CompressedOops::base() == NULL;
+  }
+
+  static bool const_klass_prefer_decode() {
+    // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
+    return CompressedKlassPointers::base() == NULL;
+  }
 
   // Is it better to copy float constants, or load them directly from memory?
   // Intel can load a float constant from a direct address, requiring no
@@ -65,6 +115,12 @@
 
   // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
   static const bool strict_fp_requires_explicit_rounding = false;
+
+  // Do floats take an entire double register or just half?
+  //
+  // A float occupies a ppc64 double register. For the allocator, a
+  // ppc64 double register appears as a pair of float registers.
+  static constexpr bool float_in_double() { return true; }
 
   // Do ints take an entire long register or just half?
   // The relevant question is how the int is callee-saved:
