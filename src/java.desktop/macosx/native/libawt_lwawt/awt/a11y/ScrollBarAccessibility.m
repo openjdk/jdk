@@ -34,7 +34,7 @@
 
 - (NSString * _Nonnull)accessibilityRole
 {
-    return NSAccessibilityScrollBarRole;
+    return [self accessibilityRoleAttribute];
 }
 
 - (NSAccessibilityOrientation) accessibilityOrientation
