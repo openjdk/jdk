@@ -1261,4 +1261,3 @@ const Type *MaxDNode::add_ring( const Type *t0, const Type *t1 ) const {
   // handle max of 0.0, -0.0 case.
   return (jlong_cast(d0) > jlong_cast(d1)) ? r0 : r1;
 }
-
