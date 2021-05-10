@@ -1043,11 +1043,10 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   if (!rc_bool->is_Con()) {
     record_for_igvn(rc);
   }
-  Node* true_path = _gvn.transform( new IfTrueNode(rc));
-  Node* false_path = _gvn.transform( new IfFalseNode(rc) );
+  set_control(_gvn.transform(new IfTrueNode(rc)));
   {
     PreserveJVMState pjvms(this);
-    set_control(false_path);
+    set_control(_gvn.transform(new IfFalseNode(rc)));
     uncommon_trap(Deoptimization::Reason_range_check,
                   Deoptimization::Action_make_not_entrant);
   }
@@ -1055,8 +1054,6 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   if (stopped()) {
     return false;
   }
-
-  set_control(true_path);
 
   // index is now known to be >= 0 and < length, cast it
   Node* result = ConstraintCastNode::make(control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
