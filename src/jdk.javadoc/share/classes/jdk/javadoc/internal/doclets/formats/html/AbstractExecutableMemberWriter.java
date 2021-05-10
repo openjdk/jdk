@@ -210,7 +210,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected void addParameters(ExecutableElement member, Content htmltree) {
         Content paramTree = getParameters(member, false);
         if (paramTree.charCount() > 2) {
-            // only add zero-width-space for non-empty parameters
+            // only add <wbr> for non-empty parameters
             htmltree.add(new HtmlTree(TagName.WBR));
         }
         htmltree.add(paramTree);
