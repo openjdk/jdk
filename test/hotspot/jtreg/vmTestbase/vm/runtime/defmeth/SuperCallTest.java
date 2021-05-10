@@ -83,8 +83,8 @@ public class SuperCallTest extends DefMethTest {
     protected void configure() {
         // Since invoke-super-default relies on new semantics of invokespecial,
         // the tests are applicable only to class files of 52 version.
-        if (factory.getVer() != 52) {
-            getLog().warn("WARN: SuperCallTest is applicable only for class files w/ version 52.");
+        if (factory.getVer() < 52) {
+            getLog().warn("WARN: SuperCallTest is applicable only for class files w/ version >=52.");
             getLog().warn("WARN: Overriding \"-ver " + factory.getVer() + "\" w/ \"-ver 52\".");
 
             factory.setVer(52);

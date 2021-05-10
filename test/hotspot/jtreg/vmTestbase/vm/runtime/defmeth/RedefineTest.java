@@ -79,8 +79,7 @@ public class RedefineTest extends DefMethTest {
         // so scenarios on class redefinition don't work
         String mode = factory.getExecutionMode();
         if ("REFLECTION".equals(mode) || "INVOKE_WITH_ARGS".equals(mode)) {
-            throw new TestFailure("RedefineTest isn't applicable to reflection-based execution scenario " +
-                    "(REDEFINE & INVOKE_WITH_ARGS).");
+            getLog().warn("RedefineTest isn't applicable to reflection-based execution scenario (REDEFINE & INVOKE_WITH_ARGS).");
         }
     }
 
