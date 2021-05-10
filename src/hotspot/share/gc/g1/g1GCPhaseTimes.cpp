@@ -331,7 +331,7 @@ void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent_level
 
   for (uint i = 0; i < phase->MaxThreadWorkItems; i++) {
     WorkerDataArray<size_t>* work_items = phase->thread_work_items(i);
-    if (work_items != NULL) {
+    if (work_items != NULL && indent(indent_level + 1) != NULL) {
       out->print("%s", indent(indent_level + 1));
       work_items->print_summary_on(out, true);
       details(work_items, indent(indent_level + 1));
