@@ -81,8 +81,6 @@ public interface LibraryLookup {
      * @return the memory segment associated with the library symbol (if any).
      * @throws IllegalArgumentException if the address associated with the lookup symbol do not match the
      * {@linkplain MemoryLayout#byteAlignment() alignment constraints} in {@code layout}.
-     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     Optional<MemorySegment> lookup(String name, MemoryLayout layout);
 

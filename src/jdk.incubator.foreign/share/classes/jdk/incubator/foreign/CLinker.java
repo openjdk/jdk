@@ -144,8 +144,6 @@ public interface CLinker {
      * @param function the function descriptor.
      * @return the downcall method handle.
      * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch.
-     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     MethodHandle downcallHandle(Addressable symbol, MethodType type, FunctionDescriptor function);
 
@@ -164,8 +162,6 @@ public interface CLinker {
      * @param function  the function descriptor.
      * @return the downcall method handle.
      * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch.
-     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     MethodHandle downcallHandle(Addressable symbol, SegmentAllocator allocator, MethodType type, FunctionDescriptor function);
 
@@ -186,8 +182,6 @@ public interface CLinker {
      * @param function the function descriptor.
      * @return the downcall method handle.
      * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch.
-     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     MethodHandle downcallHandle(MethodType type, FunctionDescriptor function);
 
@@ -205,8 +199,6 @@ public interface CLinker {
      * @throws IllegalArgumentException if the target's method type and the function descriptor mismatch.
      * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
      * than the thread owning {@code scope}.
-     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     MemoryAddress upcallStub(MethodHandle target, FunctionDescriptor function, ResourceScope scope);
 
