@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,4 +194,48 @@ TEST(SortedLinkedList, simple) {
   sl.remove_after(node);
   int remains[] = {1, 2, 4, 6};
   check_list_values(remains, &sl);
+}
+
+// class Point doesn't define member function equals() deliberately.
+// SortedLinkedList<Point> should be able to compile without it because
+// remove/find should use point_comparator.
+class Point: public StackObj {
+  int _x, _y;
+
+public:
+  Point(int x, int y): _x(x), _y(y) {}
+
+  int x() const { return _x; }
+  int y() const { return _y; }
+};
+
+int point_comparator(const Point& p1, const Point& p2) {
+  int res = p1.x() - p2.x();
+  return res == 0 ? (p1.y() - p2.y()) : res;
+}
+
+TEST(SortedLinkedList, point) {
+  Point p1 {0, 0};
+  Point p2 {1, 1};
+  Point p3 {2, 2};
+
+  SortedLinkedList<Point, point_comparator, ResourceObj::C_HEAP, mtTest> sl;
+  sl.add(p1);
+  sl.add(p2);
+
+  EXPECT_TRUE(sl.remove(p1))           << "remove(p1) failed without Point::equals()";
+  EXPECT_NE(sl.find(p2), nullptr)      << "find(p2) failed without Point::equals()";
+  LinkedListNode<Point>* result = sl.find_node(p2);
+  EXPECT_NE(result, nullptr);
+  EXPECT_EQ(0, point_comparator(*result->peek(), p2)) <<  "find_node(p2) doesn't work without Point::equals()";
+
+  EXPECT_EQ(sl.find(p1), nullptr)      << "find a deleted element failed!";
+  EXPECT_EQ(sl.find(p3), nullptr)      << "find a non-existing element failed!";
+  EXPECT_FALSE(sl.remove(p3))          << "remove a non-existing element failed!";
+
+  // the following code is able to compile even Point::equals() is absent.
+  // because LinkedListImpl<Point> invokes neither find() nor remove(). Those member functions
+  // are not supposed to be instantiated.
+  LinkedListImpl<Point, ResourceObj::C_HEAP, mtTest> ll;
+  ll.add(p1);
 }

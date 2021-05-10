@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,16 +110,11 @@ template <class E> class LinkedList : public ResourceObj {
   // Add a linked list to this linked list
   virtual bool  add(const LinkedList<E>* list) = 0;
 
-  // Search entry in the linked list
-  virtual LinkedListNode<E>* find_node(const E& e) = 0;
-  virtual E* find(const E& e) = 0;
-
   // Insert entry to the linked list
   virtual LinkedListNode<E>* insert_before(const E& e, LinkedListNode<E>* ref) = 0;
   virtual LinkedListNode<E>* insert_after (const E& e, LinkedListNode<E>* ref) = 0;
 
   // Remove entry from the linked list
-  virtual bool               remove(const E& e) = 0;
   virtual bool               remove(LinkedListNode<E>* node) = 0;
   virtual bool               remove_before(LinkedListNode<E>* ref) = 0;
   virtual bool               remove_after(LinkedListNode<E>*  ref) = 0;
@@ -204,8 +199,7 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
     return true;
   }
 
-
-  virtual LinkedListNode<E>* find_node(const E& e) {
+  LinkedListNode<E>* find_node(const E& e) {
     LinkedListNode<E>* p = this->head();
     while (p != NULL && !p->equals(e)) {
       p = p->next();
@@ -217,7 +211,6 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
     LinkedListNode<E>* node = find_node(e);
     return (node == NULL) ? NULL : node->data();
   }
-
 
   // Add an entry in front of the reference entry
   LinkedListNode<E>* insert_before(const E& e, LinkedListNode<E>* ref_node) {
@@ -247,9 +240,9 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
      return node;
    }
 
-   // Remove an entry from the linked list.
-   // Return true if the entry is successfully removed
-   virtual bool remove(const E& e) {
+  // Remove an entry from the linked list.
+  // Return true if the entry is successfully removed
+  bool remove(const E& e) {
      LinkedListNode<E>* tmp = this->head();
      LinkedListNode<E>* prev = NULL;
 
@@ -282,7 +275,7 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
     return false;
   }
 
-  virtual bool remove(LinkedListNode<E>* node) {
+  bool remove(LinkedListNode<E>* node) {
     LinkedListNode<E>* p = this->head();
     if (p == node) {
       this->set_head(p->next());
@@ -407,7 +400,26 @@ template <class E, int (*FUNC)(const E&, const E&),
     return LinkedListImpl<E, T, F, alloc_failmode>::add(list);
   }
 
-  virtual LinkedListNode<E>* find_node(const E& e) {
+  // unhide base class's the overloaded member function
+  // remove(LinkedListNode<E>* node), which has no reference.
+  // remove the using statement we delete boo remove(LinkedListNode<E>* node).
+  using LinkedListImpl<E, T, F, alloc_failmode>::remove;
+
+  bool remove(const E& e) {
+     LinkedListNode<E>* tmp = this->head();
+     LinkedListNode<E>* prev = NULL;
+
+     while (tmp != NULL) {
+       if (0 == FUNC(*tmp->peek(), e)) {
+         return this->remove_after(prev);
+       }
+       prev = tmp;
+       tmp = tmp->next();
+     }
+     return false;
+  }
+
+  LinkedListNode<E>* find_node(const E& e) {
     LinkedListNode<E>* p = this->head();
 
     while (p != NULL) {
@@ -420,6 +432,11 @@ template <class E, int (*FUNC)(const E&, const E&),
       p = p->next();
     }
     return NULL;
+  }
+
+  E* find(const E& e) {
+    LinkedListNode<E>* node = find_node(e);
+    return (node == NULL) ? NULL : node->data();
   }
 };
 
