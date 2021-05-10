@@ -130,7 +130,7 @@ class markWord {
   static const int lock_bits                      = 2;
   static const int biased_lock_bits               = 1;
   static const int max_hash_bits                  = BitsPerWord - age_bits - lock_bits - biased_lock_bits;
-  static const int hash_bits                      = max_hash_bits > 22 ? 22 : max_hash_bits;
+  static const int hash_bits                      = max_hash_bits > 31 ? 31 : max_hash_bits;
   static const int unused_gap_bits                = LP64_ONLY(1) NOT_LP64(0);
   static const int epoch_bits                     = 2;
 
