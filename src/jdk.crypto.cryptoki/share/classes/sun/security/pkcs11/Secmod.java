@@ -58,20 +58,20 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  */
 public final class Secmod {
 
-    private final static boolean DEBUG = false;
+    private static final boolean DEBUG = false;
 
-    private final static Secmod INSTANCE;
+    private static final Secmod INSTANCE;
 
     static {
         sun.security.pkcs11.wrapper.PKCS11.loadNative();
         INSTANCE = new Secmod();
     }
 
-    private final static String NSS_LIB_NAME = "nss3";
+    private static final String NSS_LIB_NAME = "nss3";
 
-    private final static String SOFTTOKEN_LIB_NAME = "softokn3";
+    private static final String SOFTTOKEN_LIB_NAME = "softokn3";
 
-    private final static String TRUST_LIB_NAME = "nssckbi";
+    private static final String TRUST_LIB_NAME = "nssckbi";
 
     // handle to be passed to the native code, 0 means not initialized
     private long nssHandle;

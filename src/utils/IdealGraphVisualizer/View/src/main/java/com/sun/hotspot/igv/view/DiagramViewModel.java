@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,6 +206,11 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         @Override
         public void changed(Group source) {
             assert source == group;
+            if (group.getGraphs().isEmpty()) {
+                // If the group has been emptied, all corresponding graph views
+                // will be closed, so do nothing.
+                return;
+            }
             filterGraphs();
             setSelectedNodes(selectedNodes);
         }
@@ -401,7 +406,9 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public Diagram getDiagramToView() {
 
         if (diagram == null) {
-            diagram = Diagram.createDiagram(getGraphToView(), Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT));
+            diagram = Diagram.createDiagram(getGraphToView(),
+                                            Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
+                                            Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT));
             getFilterChain().apply(diagram, getSequenceFilterChain());
             if (getFirstPosition() != getSecondPosition()) {
                 CustomFilter f = new CustomFilter(

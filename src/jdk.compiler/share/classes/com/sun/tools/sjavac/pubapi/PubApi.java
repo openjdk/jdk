@@ -272,11 +272,11 @@ public class PubApi implements Serializable {
     private static List<TypeDesc> parseTypeDescs(List<String> strs) {
         return strs.stream()
                    .map(TypeDesc::decodeString)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private static List<PubApiTypeParam> parseTypeParams(List<String> strs) {
-        return strs.stream().map(PubApi::parseTypeParam).collect(Collectors.toList());
+        return strs.stream().map(PubApi::parseTypeParam).toList();
     }
 
     // Parse a type parameter string. Example input:

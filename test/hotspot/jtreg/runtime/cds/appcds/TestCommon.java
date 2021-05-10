@@ -417,7 +417,7 @@ public class TestCommon extends CDSTestUtils {
         if (RUN_WITH_JFR) {
             boolean usesJFR = false;
             for (String s : cmd) {
-                if (s.startsWith("-XX:StartFlightRecording=") || s.startsWith("-XX:FlightRecorderOptions")) {
+                if (s.startsWith("-XX:StartFlightRecording") || s.startsWith("-XX:FlightRecorderOptions")) {
                     System.out.println("JFR option might have been specified. Don't interfere: " + s);
                     usesJFR = true;
                     break;
@@ -425,7 +425,7 @@ public class TestCommon extends CDSTestUtils {
             }
             if (!usesJFR) {
                 System.out.println("JFR option not specified. Enabling JFR ...");
-                cmd.add(0, "-XX:StartFlightRecording=dumponexit=true");
+                cmd.add(0, "-XX:StartFlightRecording:dumponexit=true");
                 System.out.println(cmd);
             }
         }

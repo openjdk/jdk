@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,10 @@ Jvm* AppLauncher::createJvmLauncher() const {
 
     (*jvm)
         .setPath(findJvmLib(cfgFile, defaultRuntimePath, jvmLibNames))
-        .addArgument(launcherPath);
+        .addArgument(launcherPath)
+        .addArgument(_T("-Djava.library.path=")
+            + appDirPath + FileUtils::pathSeparator
+            + FileUtils::dirname(launcherPath));
 
     if (initJvmFromCmdlineOnly) {
         tstring_array::const_iterator argIt = args.begin();

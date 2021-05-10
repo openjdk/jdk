@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.jfr.startupargs;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import sun.hotspot.WhiteBox;
 
 /**
  * @test
@@ -37,12 +38,14 @@ import jdk.test.lib.process.ProcessTools;
  *          java.management
  *          jdk.jfr
  *
- * @run main jdk.jfr.startupargs.TestBadOptionValues
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI jdk.jfr.startupargs.TestBadOptionValues
  */
 public class TestBadOptionValues {
 
-    private static final String START_FLIGHT_RECORDING = "-XX:StartFlightRecording=";
-    private static final String FLIGHT_RECORDER_OPTIONS = "-XX:FlightRecorderOptions=";
+    private static final String START_FLIGHT_RECORDING = "-XX:StartFlightRecording:";
+    private static final String FLIGHT_RECORDER_OPTIONS = "-XX:FlightRecorderOptions:";
 
     private static void test(String prepend, String expectedOutput, String... options) throws Exception {
         ProcessBuilder pb;
@@ -118,6 +121,31 @@ public class TestBadOptionValues {
 
         test(START_FLIGHT_RECORDING, "Parsing error memory size value: invalid value",
             "maxsize=");
+
+        // globalbuffersize exceeds limit
+        test(FLIGHT_RECORDER_OPTIONS, "This value is higher than the maximum size limit",
+            "globalbuffersize=4G");
+
+        // threadbuffersize exceeds limit
+        test(FLIGHT_RECORDER_OPTIONS, "This value is higher than the maximum size limit",
+            "threadbuffersize=4G");
+
+        // computed numglobalbuffers smaller than MIN_BUFFER_COUNT
+        test(FLIGHT_RECORDER_OPTIONS, "Decrease globalbuffersize/threadbuffersize or increase memorysize",
+            "memorysize=1m,globalbuffersize=1m");
+
+        // memorysize smaller than threadbuffersize
+        test(FLIGHT_RECORDER_OPTIONS, "The value for option \"threadbuffersize\" should not be larger than the value specified for option \"memorysize\"",
+            "memorysize=1m,threadbuffersize=2m");
+
+        // computed globalbuffersize smaller than threadbuffersize
+        // test is on when vm page isn't larger than 4K, avoiding both buffer sizes align to vm page size
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        long smallPageSize = wb.getVMPageSize();
+        if (smallPageSize <= 4096) {
+            test(FLIGHT_RECORDER_OPTIONS, "Decrease globalbuffersize or increase memorysize or adjust global/threadbuffersize",
+                "memorysize=1m,numglobalbuffers=256");
+        }
 
         test(FLIGHT_RECORDER_OPTIONS, "Parsing error memory size value: invalid value",
             "threadbuffersize=a",
