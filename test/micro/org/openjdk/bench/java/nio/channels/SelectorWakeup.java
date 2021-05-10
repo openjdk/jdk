@@ -20,7 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.java.nio;
+
+package org.openjdk.bench.java.nio.channels;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Level;

@@ -826,13 +826,17 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
 
-  bool use_large_pages = UseLargePages && is_aligned(alignment, os::large_page_size());
-  assert(!UseLargePages
-      || UseParallelGC
-      || use_large_pages, "Wrong alignment to use large pages");
+  size_t page_size = os::vm_page_size();
+  if (UseLargePages && is_aligned(alignment, os::large_page_size())) {
+    page_size = os::large_page_size();
+  } else {
+    // Parallel is the only collector that might opt out of using large pages
+    // for the heap.
+    assert(!UseLargePages || UseParallelGC , "Wrong alignment to use large pages");
+  }
 
   // Now create the space.
-  ReservedHeapSpace total_rs(total_reserved, alignment, use_large_pages, AllocateHeapAt);
+  ReservedHeapSpace total_rs(total_reserved, alignment, page_size, AllocateHeapAt);
 
   if (total_rs.is_reserved()) {
     assert((total_reserved == total_rs.size()) && ((uintptr_t)total_rs.base() % alignment == 0),
@@ -858,7 +862,7 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
 
   // satisfy compiler
   ShouldNotReachHere();
-  return ReservedHeapSpace(0, 0, false);
+  return ReservedHeapSpace(0, 0, os::vm_page_size());
 }
 
 OopStorage* Universe::vm_weak() {

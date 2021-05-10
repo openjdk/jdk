@@ -312,10 +312,6 @@ inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
   return _humongous_reclaim_candidates.is_candidate(region);
 }
 
-inline void G1CollectedHeap::set_has_humongous_reclaim_candidate(bool value) {
-  _has_humongous_reclaim_candidates = value;
-}
-
 inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
   uint region = addr_to_region(cast_from_oop<HeapWord*>(obj));
   // Clear the flag in the humongous_reclaim_candidates table.  Also
