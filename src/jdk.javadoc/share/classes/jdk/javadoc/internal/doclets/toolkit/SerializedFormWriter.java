@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit;
 
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
@@ -77,10 +78,10 @@ public interface SerializedFormWriter {
     /**
      * Get the given package header.
      *
-     * @param packageName the package header to write
+     * @param packageElement the package element to write
      * @return a content tree for the package header
      */
-    Content getPackageHeader(String packageName);
+    Content getPackageHeader(PackageElement packageElement);
 
     /**
      * Get the serialized class header.
