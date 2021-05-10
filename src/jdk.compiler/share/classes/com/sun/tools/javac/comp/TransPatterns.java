@@ -30,6 +30,7 @@ import com.sun.tools.javac.code.BoundKind;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Kinds.Kind;
+import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.BindingSymbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
@@ -57,7 +58,6 @@ import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
@@ -111,10 +111,9 @@ public class TransPatterns extends TreeTranslator {
     private final Resolve rs;
     private final Types types;
     private final Operators operators;
-    private final Log log;
-    private final ConstFold constFold;
     private final Names names;
     private final Target target;
+    private final Preview preview;
     private TreeMaker make;
     private Env<AttrContext> env;
 
@@ -172,19 +171,19 @@ public class TransPatterns extends TreeTranslator {
         make = TreeMaker.instance(context);
         types = Types.instance(context);
         operators = Operators.instance(context);
-        log = Log.instance(context);
-        constFold = ConstFold.instance(context);
         names = Names.instance(context);
         target = Target.instance(context);
+        preview = Preview.instance(context);
         debugTransPatterns = Options.instance(context).isSet("debug.patterns");
     }
 
     @Override
     public void visitTypeTest(JCInstanceOf tree) {
         if (tree.pattern instanceof JCPattern) {
-            //E instanceof T N
+            //E instanceof $pattern
             //=>
-            //(let T' N$temp = E; N$temp instanceof T && (N = (T) N$temp == (T) N$temp))
+            //(let T' N$temp = E; N$temp instanceof typeof($pattern) && <desugared $pattern>)
+            //note the pattern desugaring performs binding variable assignments
             Symbol exprSym = TreeInfo.symbol(tree.expr);
             Type tempType = tree.expr.type.hasTag(BOT) ?
                     syms.objectType
@@ -203,9 +202,13 @@ public class TransPatterns extends TreeTranslator {
                 }
 
                 JCExpression translatedExpr = translate(tree.expr);
-                result = translate(tree.pattern);
+                Type principalType = principalType((JCPattern) tree.pattern);
+                result = makeBinary(Tag.AND,
+                                    makeTypeTest(make.Ident(currentValue), make.Type(principalType)),
+                                    (JCExpression) this.<JCTree>translate(tree.pattern));
                 if (currentValue != exprSym) {
-                    result = make.at(tree.pos).LetExpr(make.VarDef(currentValue, translatedExpr), (JCExpression)result).setType(syms.booleanType);
+                    result = make.at(tree.pos).LetExpr(make.VarDef(currentValue, translatedExpr),
+                                                        (JCExpression)result).setType(syms.booleanType);
                     ((LetExpr) result).needsCond = true;
                 }
             } finally {
@@ -218,24 +221,21 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitBindingPattern(JCBindingPattern tree) {
+        //it is assumed the primary type has already been checked:
         BindingSymbol binding = (BindingSymbol) tree.var.sym;
-        Type castTargetType = types.boxedTypeOrType(binding.erasure(types));
-
-        result = makeTypeTest(make.Ident(currentValue), make.Type(castTargetType));
-
-        if (tree.nullable) {
-            result = makeBinary(Tag.OR, (JCExpression) result, makeBinary(Tag.EQ, make.Ident(currentValue), makeLit(syms.botType, null)));
-        }
-
+        Type castTargetType = principalType(tree);
         VarSymbol bindingVar = bindingContext.bindingDeclared(binding);
-        if (bindingVar != null) { //TODO: cannot be null here?
+
+        if (bindingVar != null) {
             JCAssign fakeInit = (JCAssign)make.at(TreeInfo.getStartPos(tree)).Assign(
                     make.Ident(bindingVar), convert(make.Ident(currentValue), castTargetType)).setType(bindingVar.erasure(types));
             LetExpr nestedLE = make.LetExpr(List.of(make.Exec(fakeInit)),
                                             make.Literal(true));
             nestedLE.needsCond = true;
             nestedLE.setType(syms.booleanType);
-            result = makeBinary(Tag.AND, (JCExpression)result, nestedLE);
+            result = nestedLE;
+        } else {
+            result = make.Literal(true);
         }
     }
 
@@ -273,6 +273,56 @@ public class TransPatterns extends TreeTranslator {
                                         .flatMap(c -> c.labels.stream())
                                         .anyMatch(l -> l.isPattern());
         if (hasPatternLabels || enhancedType) {
+            Assert.check(preview.isEnabled());
+            Assert.check(preview.usesPreview(env.toplevel.sourcefile));
+
+            //rewrite pattern matching switches:
+            //switch ($obj) {
+            //     case $constant: $stats$
+            //     case $pattern1: $stats$
+            //     case $pattern2, null: $stats$
+            //     case $pattern3: $stats$
+            //}
+            //=>
+            //int $idx = 0;
+            //$RESTART: switch (invokeDynamic typeSwitch($constant, typeof($pattern1), typeof($pattern2), typeof($pattern3))($obj, $idx)) {
+            //     case 0:
+            //         if (!(<desugared $pattern1)) { $idx = 1; continue $RESTART; }
+            //         $stats$
+            //     case 1:
+            //         if (!(<desugared $pattern1)) { $idx = 2; continue $RESTART; }
+            //         $stats$
+            //     case 2, -1:
+            //         if (!(<desugared $pattern1)) { $idx = 3; continue $RESTART; }
+            //         $stats$
+            //     case 3:
+            //         if (!(<desugared $pattern1)) { $idx = 4; continue $RESTART; }
+            //         $stats$
+            //}
+            //notes:
+            //-pattern desugaring performs assignment to the binding variables
+            //-the selector is evaluated only once and stored in a temporary variable
+            //-typeSwitch bootstrap method can restart matching at specified index. The bootstrap will
+            // categorize the input, and return the case index whose type or constant matches the input.
+            // The bootstrap does not evaluate guards, which are injected at the begining of the case's
+            // statement list, and if the guard fails, the switch is "continued" and matching is
+            // restarted from the next index.
+            //
+            //a special case for switches over enums with pattern case
+            //only a single (type) pattern case is valid, which is equivalent
+            //to a default with additional binding variable assignment:
+            //switch ($enum) {
+            //    case $constant1: $stats$
+            //    case $constant2: $stats$
+            //    case typeof($enum) e: $stats$
+            //}
+            //=>
+            //switch ($enum) {
+            //    case $constant1: $stats$
+            //    case $constant2: $stats$
+            //    default: typeof($enum) e = $enum; $stats$
+            //}
+            //note the selector is evaluated only once and stored in a temporary variable
             ListBuffer<JCCase> newCases = new ListBuffer<>();
             for (List<JCCase> c = cases; c.nonEmpty(); c = c.tail) {
                 if (c.head.stats.isEmpty() && c.tail.nonEmpty()) {
@@ -351,9 +401,6 @@ public class TransPatterns extends TreeTranslator {
                     clearedPatterns = c.labels.stream()
                                               .filter(l -> !l.isNullPattern())
                                               .collect(List.collector());
-                    if (clearedPatterns.head.hasTag(Tag.BINDINGPATTERN)) {
-                        ((JCBindingPattern) clearedPatterns.head).nullable = true;
-                    }
                 }
                 if (clearedPatterns.size() == 1 && clearedPatterns.head.isPattern() && !previousCompletesNormally) {
                     JCCaseLabel p = clearedPatterns.head;
@@ -435,19 +482,14 @@ public class TransPatterns extends TreeTranslator {
             super.visitSwitchExpression((JCSwitchExpression) tree);
         }
     }
-    
-    private JCBindingPattern principalBinding(JCCaseLabel p) {
-        return switch (p.getTag()) {
-            case BINDINGPATTERN -> (JCBindingPattern) p;
-            case PARENTHESIZEDPATTERN -> principalBinding(((JCParenthesizedPattern) p).pattern);
-            case GUARDPATTERN -> principalBinding(((JCGuardPattern) p).patt);
-            default -> null;
-        };
+
+    private Type principalType(JCPattern p) {
+        return types.boxedTypeOrType(types.erasure(TreeInfo.primaryPatternType(p).type()));
     }
 
     private LoadableConstant toLoadableConstant(JCCaseLabel l) {
         if (l.isPattern()) {
-            return (LoadableConstant) principalBinding(l).var.sym.type;
+            return (LoadableConstant) principalType((JCPattern) l);
         } else if (l.isExpression() && !TreeInfo.isNull((JCExpression) l)) {
             Assert.checkNonNull(l.type.constValue());
 
@@ -618,7 +660,7 @@ public class TransPatterns extends TreeTranslator {
             currentClass = prevCurrentClass;
         }
     }
-    
+
     public void visitVarDef(JCVariableDecl tree) {
         MethodSymbol prevMethodSym = currentMethodSym;
         try {

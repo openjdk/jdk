@@ -92,7 +92,7 @@ public class Exhaustiveness extends TestRunner {
                }
                """);
     }
-    
+
     @Test
     public void testNonExhaustiveSealedClasses(Path base) throws Exception {
         doTest(base,
@@ -124,7 +124,7 @@ public class Exhaustiveness extends TestRunner {
                "- compiler.note.preview.recompile",
                "1 error");
     }
-    
+
     @Test
     public void testAbstractSealedClasses(Path base) throws Exception {
         doTest(base,
@@ -153,7 +153,7 @@ public class Exhaustiveness extends TestRunner {
                }
                """);
     }
-    
+
     @Test
     public void testConcreteSealedClasses(Path base) throws Exception {
         doTest(base,
@@ -186,7 +186,7 @@ public class Exhaustiveness extends TestRunner {
                "- compiler.note.preview.recompile",
                "1 error");
     }
-    
+
     @Test
     public void testGuards1(Path base) throws Exception {
         doTest(base,
@@ -219,7 +219,7 @@ public class Exhaustiveness extends TestRunner {
                "- compiler.note.preview.recompile",
                "1 error");
     }
-    
+
     @Test
     public void testGuards2(Path base) throws Exception {
         doTest(base,
@@ -249,7 +249,7 @@ public class Exhaustiveness extends TestRunner {
                }
                """);
     }
-    
+
     @Test
     public void testGuards3(Path base) throws Exception {
         doTest(base,
@@ -282,7 +282,7 @@ public class Exhaustiveness extends TestRunner {
                "- compiler.note.preview.recompile",
                "1 error");
     }
-    
+
     @Test
     public void testCoversType1(Path base) throws Exception {
         doTest(base,
@@ -311,7 +311,7 @@ public class Exhaustiveness extends TestRunner {
                }
                """);
     }
-    
+
     @Test
     public void testCoversType2(Path base) throws Exception {
         doTest(base,
@@ -340,7 +340,7 @@ public class Exhaustiveness extends TestRunner {
                }
                """);
     }
-    
+
     @Test
     public void testCoversType3(Path base) throws Exception {
         doTest(base,
@@ -369,7 +369,7 @@ public class Exhaustiveness extends TestRunner {
                }
                """);
     }
-    
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         Path current = base.resolve(".");
         Path libSrc = current.resolve("lib-src");
@@ -392,10 +392,10 @@ public class Exhaustiveness extends TestRunner {
         tb.writeJavaFiles(src, testCode);
 
         Path classes = current.resolve("libClasses");
-        
+
         Files.createDirectories(libClasses);
 
-        var log = 
+        var log =
                 new JavacTask(tb)
                     .options("--enable-preview",
                              "-source", JAVA_VERSION,
@@ -458,10 +458,10 @@ public class Exhaustiveness extends TestRunner {
                            """);
 
         Path classes = current.resolve("libClasses");
-        
+
         Files.createDirectories(libClasses);
 
-        var log = 
+        var log =
                 new JavacTask(tb)
                     .options("--enable-preview",
                              "-source", JAVA_VERSION,
@@ -489,7 +489,7 @@ public class Exhaustiveness extends TestRunner {
 
         Files.delete(bClass);
 
-        var log2 = 
+        var log2 =
                 new JavacTask(tb)
                     .options("--enable-preview",
                              "-source", JAVA_VERSION,

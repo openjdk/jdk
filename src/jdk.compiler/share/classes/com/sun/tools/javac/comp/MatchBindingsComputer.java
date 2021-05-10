@@ -97,13 +97,7 @@ public class MatchBindingsComputer extends TreeScanner {
     public MatchBindings binary(JCTree tree, MatchBindings lhsBindings, MatchBindings rhsBindings) {
         switch (tree.getTag()) {
             case AND: {
-                // e.T = union(x.T, y.T)
-                // e.F = intersection(x.F, y.F) (error recovery)
-                List<BindingSymbol> bindingsWhenTrue =
-                        union(tree.pos(), lhsBindings.bindingsWhenTrue, rhsBindings.bindingsWhenTrue);
-                List<BindingSymbol> bindingsWhenFalse = //error recovery
-                        intersection(tree.pos(), lhsBindings.bindingsWhenFalse, rhsBindings.bindingsWhenFalse);
-                return new MatchBindings(bindingsWhenTrue, bindingsWhenFalse);
+                return andOperation(tree.pos(), lhsBindings, rhsBindings);
             }
             case OR: {
                 // e.T = intersection(x.T, y.T) (error recovery)
@@ -119,12 +113,16 @@ public class MatchBindingsComputer extends TreeScanner {
     }
 
     public MatchBindings guardedPattern(JCGuardPattern tree, MatchBindings patternBindings, MatchBindings guardBindings) {
+        return andOperation(tree.pos(), patternBindings, guardBindings);
+    }
+
+    public MatchBindings andOperation(DiagnosticPosition pos, MatchBindings lhsBindings, MatchBindings rhsBindings) {
         // e.T = union(x.T, y.T)
         // e.F = intersection(x.F, y.F) (error recovery)
         List<BindingSymbol> bindingsWhenTrue =
-                union(tree.pos(), patternBindings.bindingsWhenTrue, guardBindings.bindingsWhenTrue);
+                union(pos, lhsBindings.bindingsWhenTrue, rhsBindings.bindingsWhenTrue);
         List<BindingSymbol> bindingsWhenFalse = //error recovery
-                intersection(tree.pos(), patternBindings.bindingsWhenFalse, guardBindings.bindingsWhenFalse);
+                intersection(pos, lhsBindings.bindingsWhenFalse, rhsBindings.bindingsWhenFalse);
         return new MatchBindings(bindingsWhenTrue, bindingsWhenFalse);
     }
 
@@ -132,7 +130,7 @@ public class MatchBindingsComputer extends TreeScanner {
         if (prevBindings == null)
             return currentBindings;
         if (!prevBindings.bindingsWhenTrue.isEmpty() && !currentBindings.bindingsWhenTrue.isEmpty()) {
-            log.error(tree.pos(), Errors.MultiplePatterns);
+            log.error(tree.pos(), Errors.FlowsThroughToPattern);
         }
         if (prevBindings.nullPattern) {
             return currentBindings;

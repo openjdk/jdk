@@ -2238,7 +2238,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCBindingPattern extends JCPattern
             implements BindingPatternTree {
         public JCVariableDecl var;
-        public boolean nullable;
+//        public boolean nullable;
 
         protected JCBindingPattern(JCVariableDecl var) {
             this.var = var;

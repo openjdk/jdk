@@ -98,11 +98,14 @@ public class SwitchBootstraps {
      *                       the {@code NameAndType} of the {@code InvokeDynamic}
      *                       structure and is stacked automatically by the VM.
      * @param labels non-null case labels - {@code String} and {@code Integer} constants
-     *                        and {@code Class} instances
-     * @return the index into {@code labels} of the target value, if the target
-     *         is an instance of any of the types, {@literal -1} if the target
+     *                        and {@code Class} instances, in any combination
+     * @return a {@code CallSite}, which accepts two parameters: one is an instance
+     *         of the target type, and second is a restart index. It returns the
+     *         index into {@code labels} of the target value, if the target
+     *         is an instance of any of the types or equal to any of the constants, {@literal -1} if the target
      *         value is {@code null}, or {@code types.length} if the target value
-     *         is not an instance of any of the types
+     *         is not an instance of any of the types or equal to any of the constants. Will return
+     *         an index that is greater or equal to the restart index provided.
      * @throws NullPointerException if any required argument is null
      * @throws IllegalArgumentException if any labels are null, or if the
      * invocation type is not {@code (T)int for some reference type {@code T}}

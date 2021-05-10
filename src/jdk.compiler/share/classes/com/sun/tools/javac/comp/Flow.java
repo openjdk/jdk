@@ -39,6 +39,7 @@ import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
+import com.sun.tools.javac.tree.TreeInfo.PatternPrimaryType;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
@@ -53,8 +54,10 @@ import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 import static com.sun.tools.javac.code.TypeTag.VOID;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.JCTree.JCParenthesizedPattern;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 
 /** This pass implements dataflow analysis for Java programs though
  *  different AST visitor steps. Liveness analysis (see AliveAnalyzer) checks that
@@ -706,7 +709,6 @@ public class Flow {
                 constants = new HashSet<>();
                 constants.addAll(((ClassSymbol) selectorSym).permitted);
             }
-            boolean hasDefault = false;
             boolean coversInput = false;
             Liveness prevAlive = alive;
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
@@ -720,18 +722,20 @@ public class Flow {
                             if (expr.hasTag(IDENT))
                                 constants.remove(((JCIdent) expr).name);
                         } else if (pat.isPattern()) {
-                            constants.remove(patternType((JCTree.JCPattern) pat));
+                            PatternPrimaryType patternType = TreeInfo.primaryPatternType((JCPattern) pat);
+
+                            if (patternType.unconditional()) {
+                                constants.remove(patternType.type().tsym);
+                            }
                         }
                     }
-                    if (!pat.isExpression() && !pat.hasTag(DEFAULTCASELABEL)) {
-                        TypeSymbol patternType = patternType((JCTree.JCPattern) pat);
-                        if (patternType != null && types.isSubtype(types.erasure(tree.selector.type),
-                                                                    types.erasure(patternType.type))) {
+                    if (pat.isPattern()) {
+                        PatternPrimaryType patternType = TreeInfo.primaryPatternType((JCPattern) pat);
+                        if (patternType.unconditional() &&
+                            types.isSubtype(types.erasure(tree.selector.type),
+                                            types.erasure(patternType.type()))) {
                             coversInput = true;
                         }
-                    }
-                    if (pat.hasTag(Tag.DEFAULTCASELABEL)) {
-                        hasDefault = true;
                     }
                 }
                 scanStats(c.stats);
@@ -746,31 +750,14 @@ public class Flow {
                 }
                 c.completesNormally = alive != Liveness.DEAD;
             }
-            if ((constants == null || !constants.isEmpty()) && !hasDefault && !coversInput &&
-                !TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
+            if ((constants == null || !constants.isEmpty()) && !tree.hasTotalPattern &&
+                !coversInput && !TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
                 log.error(tree, Errors.NotExhaustive);
             }
             alive = prevAlive;
             alive = alive.or(resolveYields(tree, prevPendingExits));
         }
 
-        private TypeSymbol patternType(JCPattern p) {
-            return switch (p.getTag()) {
-                case BINDINGPATTERN -> ((JCBindingPattern) p).var.vartype.type.tsym;
-                case PARENTHESIZEDPATTERN -> patternType(((JCParenthesizedPattern) p).pattern);
-                case GUARDPATTERN -> {
-                    JCGuardPattern g = (JCGuardPattern) p;
-                    if (g.expr.type.hasTag(BOOLEAN)) {
-                        var constValue = g.expr.type.constValue();
-                        if (constValue != null && ((int) (Integer) constValue) == 1) {
-                            yield patternType(g.patt);
-                        }
-                    }
-                    yield null;
-                }
-                default -> throw new AssertionError("Unexpected pattern type: " + p.getTag());
-            };
-        }
         public void visitTry(JCTry tree) {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
@@ -2913,10 +2900,10 @@ public class Flow {
         }
 
         void reportEffectivelyFinalError(DiagnosticPosition pos, Symbol sym) {
-            String subKey = switch (currentTree.getTag()) {
-                case LAMBDA -> "lambda";
-                case GUARDPATTERN -> "guard";
-                case CLASSDEF -> "inner.cls";
+            Fragment subKey = switch (currentTree.getTag()) {
+                case LAMBDA -> Fragments.Lambda;
+                case GUARDPATTERN -> Fragments.Guard;
+                case CLASSDEF -> Fragments.InnerCls;
                 default -> throw new AssertionError("Unexpected tree kind: " + currentTree.getTag());
             };
             log.error(pos, Errors.CantRefNonEffectivelyFinalVar(sym, diags.fragment(subKey)));

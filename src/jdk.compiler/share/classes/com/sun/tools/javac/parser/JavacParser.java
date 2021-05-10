@@ -773,7 +773,7 @@ public class JavacParser implements Parser {
             return toP(F.at(startPos).ParenthesizedPattern(p));
         } else {
             JCPattern pattern;
-            JCExpression e = parsedType == null ? term(EXPR | TYPE | NOLAMBDA/* | NOINVOCATION*/) : parsedType;
+            JCExpression e = parsedType == null ? term(EXPR | TYPE | NOLAMBDA) : parsedType;
             mods = mods != null ? mods : F.at(token.pos).Modifiers(0);
             JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
             pattern = toP(F.at(pos).BindingPattern(var));
@@ -2999,10 +2999,7 @@ public class JavacParser implements Parser {
             nextToken();
             ListBuffer<JCCaseLabel> pats = new ListBuffer<>();
             while (true) {
-                JCCaseLabel label = parseCaseLabel();
-
-                //TODO: final
-                pats.append(label);
+                pats.append(parseCaseLabel());
                 if (token.kind != COMMA) break;
                 nextToken();
                 checkSourceLevel(Feature.SWITCH_MULTIPLE_CASE_LABELS);
@@ -3064,7 +3061,7 @@ public class JavacParser implements Parser {
         JCCaseLabel label;
 
         if (token.kind == DEFAULT) {
-            //TODO: check source level
+            checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
             nextToken();
             label = toP(F.at(patternPos).DefaultCaseLabel());
         } else {
@@ -3075,20 +3072,24 @@ public class JavacParser implements Parser {
                     lookahead++;
                 }
                 Token twoBack;
-                boolean pattern = S.token(lookahead - 1).kind == IDENTIFIER && ((twoBack = S.token(lookahead - 2)).kind == IDENTIFIER || twoBack.kind == GT || twoBack.kind == GTGT || twoBack.kind == GTGTGT);
+                boolean pattern = S.token(lookahead - 1).kind == IDENTIFIER &&
+                                  ((twoBack = S.token(lookahead - 2)).kind == IDENTIFIER ||
+                                   twoBack.kind == GT || twoBack.kind == GTGT || twoBack.kind == GTGTGT);
                 if (pattern) {
                     return parsePattern(token.pos, null, null, false);
                 } else {
                     return term(EXPR | TYPE | NOLAMBDA);
                 }
-            }
-            //XXX: modifiers!
-            JCExpression e = term(EXPR | TYPE | NOLAMBDA);
-            if (token.kind == IDENTIFIER) {
-                checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
-                return parsePattern(patternPos, null, e, false);
             } else {
-                return e;
+                JCModifiers mods = optFinal(0);
+                JCExpression e = term(EXPR | TYPE | NOLAMBDA);
+
+                if (token.kind == IDENTIFIER || mods.flags != 0 || mods.annotations.nonEmpty()) {
+                    checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
+                    return parsePattern(patternPos, null, e, false);
+                } else {
+                    return e;
+                }
             }
         }
 

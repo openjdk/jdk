@@ -35,7 +35,7 @@ public class GuardsErrors {
             case Integer i && i == check -> System.err.println(); //error: check is not effectivelly final
         }
         check = 0;
-        
+
     }
 
 }

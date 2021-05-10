@@ -376,6 +376,7 @@ public class TreeTranslator extends JCTree.Visitor {
 
     @Override
     public void visitGuardPattern(JCGuardPattern tree) {
+        tree.patt = translate(tree.patt);
         tree.expr = translate(tree.expr);
         result = tree;
     }

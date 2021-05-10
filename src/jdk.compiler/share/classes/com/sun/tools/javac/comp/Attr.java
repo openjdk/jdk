@@ -169,15 +169,8 @@ public class Attr extends JCTree.Visitor {
         allowDefaultMethods = Feature.DEFAULT_METHODS.allowedInSource(source);
         allowStaticInterfaceMethods = Feature.STATIC_INTERFACE_METHODS.allowedInSource(source);
         allowReifiableTypesInInstanceof =
-                Feature.REIFIABLE_TYPES_INSTANCEOF.allowedInSource(source) &&
-                (!preview.isPreview(Feature.REIFIABLE_TYPES_INSTANCEOF) || preview.isEnabled());
+                Feature.REIFIABLE_TYPES_INSTANCEOF.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
-        allowCaseNull =
-                Feature.CASE_NULL.allowedInSource(source) &&
-                (!preview.isPreview(Feature.CASE_NULL) || preview.isEnabled());
-        allowPatternSwitch =
-                Feature.PATTERN_SWITCH.allowedInSource(source) &&
-                (!preview.isPreview(Feature.PATTERN_SWITCH) || preview.isEnabled());
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
 
@@ -217,14 +210,6 @@ public class Attr extends JCTree.Visitor {
     /** Are records allowed
      */
     private final boolean allowRecords;
-
-    /** Switch: case null allowed?
-     */
-    boolean allowCaseNull;
-
-    /** Switch: pattern switch allowed?
-     */
-    boolean allowPatternSwitch;
 
     /**
      * Switch: warn about use of variable before declaration?
@@ -1675,19 +1660,7 @@ public class Attr extends JCTree.Visitor {
             boolean stringSwitch = types.isSameType(seltype, syms.stringType);
             boolean errorEnumSwitch = TreeInfo.isErrorEnumSwitch(selector, cases);
             if (!enumSwitch && !stringSwitch && !types.isAssignable(seltype, syms.intType)) {
-                if (preview.isPreview(Feature.PATTERN_SWITCH) && !preview.isEnabled()) {
-                    //preview feature without --preview flag, error
-                    log.error(DiagnosticFlag.SOURCE_LEVEL, selector.pos(), preview.disabledError(Feature.PATTERN_SWITCH));
-                } else {
-                    if (!allowPatternSwitch) {
-                        log.error(DiagnosticFlag.SOURCE_LEVEL, selector.pos(),
-                                  Feature.PATTERN_SWITCH.error(this.sourceName));
-                        allowPatternSwitch = true;
-                    }
-                    if (preview.isEnabled() && preview.isPreview(Feature.PATTERN_SWITCH)) {
-                        preview.warnPreview(selector.pos(), Feature.PATTERN_SWITCH);
-                    }
-                }
+                preview.checkSourceLevel(selector.pos(), Feature.PATTERN_SWITCH);
             }
 
             // Attribute all cases and
@@ -1715,19 +1688,7 @@ public class Attr extends JCTree.Visitor {
                     if (pat.isExpression()) {
                         JCExpression expr = (JCExpression) pat;
                         if (TreeInfo.isNull(expr)) {
-                            if (preview.isPreview(Feature.CASE_NULL) && !preview.isEnabled()) {
-                                //preview feature without --preview flag, error
-                                log.error(DiagnosticFlag.SOURCE_LEVEL, expr.pos(), preview.disabledError(Feature.CASE_NULL));
-                            } else {
-                                if (!allowCaseNull) {
-                                    log.error(DiagnosticFlag.SOURCE_LEVEL, expr.pos(),
-                                              Feature.CASE_NULL.error(this.sourceName));
-                                    allowCaseNull = true;
-                                }
-                                if (preview.isEnabled() && preview.isPreview(Feature.CASE_NULL)) {
-                                    preview.warnPreview(expr.pos(), Feature.CASE_NULL);
-                                }
-                            }
+                            preview.checkSourceLevel(expr.pos(), Feature.CASE_NULL);
                             if (hasNullPattern) {
                                 log.error(c.pos(), Errors.DuplicateCaseLabel);
                             }
@@ -1781,9 +1742,9 @@ public class Attr extends JCTree.Visitor {
                         }
                         //binding pattern
                         attribExpr(pat, switchEnv, seltype);
-                        var primary = primaryType((JCPattern) pat);
-                        Type patternType = types.erasure(primary.fst);
-                        boolean isTotal = primary.snd &&
+                        var primary = TreeInfo.primaryPatternType((JCPattern) pat);
+                        Type patternType = types.erasure(primary.type());
+                        boolean isTotal = primary.unconditional() &&
                                           types.isSubtype(types.erasure(seltype), patternType);
                         if (isTotal) {
                             if (hasTotalPattern) {
@@ -1798,7 +1759,7 @@ public class Attr extends JCTree.Visitor {
                                 log.error(pat.pos(), Errors.PatternDominated);
                             }
                         }
-                        if (primary.snd) {
+                        if (primary.unconditional()) {
                             coveredTypes = coveredTypes.prepend(patternType);
                         }
                     }
@@ -1857,26 +1818,6 @@ public class Attr extends JCTree.Visitor {
             }
         }
         return null;
-    }
-    private Pair<Type, Boolean> primaryType(JCPattern pat) {
-        return switch (pat.getTag()) {
-            case BINDINGPATTERN -> Pair.of(((JCBindingPattern) pat).type, true);
-            case GUARDPATTERN -> {
-                JCGuardPattern guarded = (JCGuardPattern) pat;
-                Pair<Type, Boolean> nested = primaryType(guarded.patt);
-                boolean full = false;
-                //TODO: duplicated in Flow:
-                if (guarded.expr.type.hasTag(BOOLEAN)) {
-                    var constValue = guarded.expr.type.constValue();
-                    if (constValue != null && ((int) constValue) == 1) {
-                        full = true;
-                    }
-                }
-                yield Pair.of(nested.fst, full);
-            }
-            case PARENTHESIZEDPATTERN -> primaryType(((JCParenthesizedPattern) pat).pattern);
-            default -> throw new AssertionError();
-        };
     }
 
     public void visitSynchronized(JCSynchronized tree) {
@@ -4121,9 +4062,6 @@ public class Attr extends JCTree.Visitor {
         if (!clazztype.isErroneous() && !types.isReifiable(clazztype)) {
             boolean valid = false;
             if (allowReifiableTypesInInstanceof) {
-                if (preview.isPreview(Feature.REIFIABLE_TYPES_INSTANCEOF)) {
-                    preview.warnPreview(tree.expr.pos(), Feature.REIFIABLE_TYPES_INSTANCEOF);
-                }
                 Warner warner = new Warner();
                 if (!types.isCastable(exprtype, clazztype, warner)) {
                     chk.basicHandler.report(tree.expr.pos(),

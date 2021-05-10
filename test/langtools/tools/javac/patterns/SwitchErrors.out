@@ -14,7 +14,7 @@ SwitchErrors.java:89:20: compiler.err.duplicate.default.label
 SwitchErrors.java:94:27: compiler.err.duplicate.default.label
 SwitchErrors.java:100:13: compiler.err.duplicate.case.label
 SwitchErrors.java:105:13: compiler.err.duplicate.case.label
-SwitchErrors.java:110:28: compiler.err.multiple.patterns
+SwitchErrors.java:110:28: compiler.err.flows.through.to.pattern
 SwitchErrors.java:116:18: compiler.err.flows.through.to.pattern
 SwitchErrors.java:123:18: compiler.err.flows.through.to.pattern
 SwitchErrors.java:130:18: compiler.err.flows.through.to.pattern

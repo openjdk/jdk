@@ -277,7 +277,7 @@ public interface TreeVisitor<R,P> {
      */
     @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     R visitDefaultCaseLabel(DefaultCaseLabelTree node, P p);
-    
+
     /**
      * Visits a MethodTree node.
      * @param node the node being visited
@@ -303,7 +303,7 @@ public interface TreeVisitor<R,P> {
     R visitNewArray(NewArrayTree node, P p);
 
     /**
-     * Visits an GuardPatternTree node.
+     * Visits a GuardPatternTree node.
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
@@ -313,7 +313,7 @@ public interface TreeVisitor<R,P> {
     R visitGuardedPattern(GuardedPatternTree node, P p);
 
     /**
-     * Visits an AndPatternTree node.
+     * Visits a ParenthesizedPatternTree node.
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value

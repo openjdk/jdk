@@ -100,8 +100,8 @@ public class Switches {
     int typeTestPatternSwitchExpressionTest(Object o) {
         return switch (o) {
             case String s -> Integer.parseInt(s.toString());
-            case CharSequence s -> { yield 2 * Integer.parseInt(s.toString()); }
-            case Integer i -> i;
+            case @Deprecated CharSequence s -> { yield 2 * Integer.parseInt(s.toString()); }
+            case final Integer i -> i;
             case Object x -> -1;
         };
     }

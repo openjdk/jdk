@@ -40,6 +40,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
@@ -1344,4 +1345,28 @@ public class TreeInfo {
                cases.stream().flatMap(c -> c.labels.stream())
                              .allMatch(p -> p.hasTag(IDENT));
     }
+
+    public static PatternPrimaryType primaryPatternType(JCPattern pat) {
+        return switch (pat.getTag()) {
+            case BINDINGPATTERN -> new PatternPrimaryType(((JCBindingPattern) pat).type, true);
+            case GUARDPATTERN -> {
+                JCGuardPattern guarded = (JCGuardPattern) pat;
+                PatternPrimaryType nested = primaryPatternType(guarded.patt);
+                boolean unconditional = nested.unconditional();
+                if (guarded.expr.type.hasTag(BOOLEAN) && unconditional) {
+                    unconditional = false;
+                    var constValue = guarded.expr.type.constValue();
+                    if (constValue != null && ((int) constValue) == 1) {
+                        unconditional = true;
+                    }
+                }
+                yield new PatternPrimaryType(nested.type(), unconditional);
+            }
+            case PARENTHESIZEDPATTERN -> primaryPatternType(((JCParenthesizedPattern) pat).pattern);
+            default -> throw new AssertionError();
+        };
+    }
+
+    public record PatternPrimaryType(Type type, boolean unconditional) {}
+
 }

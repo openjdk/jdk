@@ -3642,59 +3642,8 @@ public class Lower extends TreeTranslator {
             (selector.type.tsym.flags() & ENUM) != 0;
         boolean stringSwitch = selsuper != null &&
             types.isSameType(selector.type, syms.stringType);
-        Type target = enumSwitch ? selector.type :
-            (stringSwitch? syms.stringType : syms.intType);
-        if (!enumSwitch && !stringSwitch && !selector.type.isPrimitive() &&
-            cases.stream().anyMatch(c -> TreeInfo.isNull(c.labels.head))) {
-            //a switch over a boxed primitive, with a null case. Pick two constants that are
-            //not used by any branch in the case (c1 and c2), close to other constants that are
-            //used in the switch. Then do:
-            //switch ($selector != null ? $selector != c1 ? $selector : c2 : c1) {...}
-            //replacing case null with case c1
-            Set<Integer> constants = new LinkedHashSet<>();
-            JCCase nullCase = null;
-
-            for (JCCase c : cases) {
-                if (TreeInfo.isNull(c.labels.head)) {
-                    nullCase = c;
-                } else if (!c.labels.head.hasTag(DEFAULTCASELABEL)) {
-                    constants.add((int) c.labels.head.type.constValue());
-                }
-            }
-
-            Assert.checkNonNull(nullCase);
-
-            int nullValue = constants.isEmpty() ? 0 : constants.iterator().next();
-
-            while (constants.contains(nullValue)) nullValue++;
-
-            constants.add(nullValue);
-            nullCase.labels.head = makeLit(syms.intType, nullValue);
-
-            int replacementValue = nullValue;
-
-            while (constants.contains(replacementValue)) replacementValue++;
-
-            VarSymbol dollar_s = new VarSymbol(FINAL|SYNTHETIC,
-                                               names.fromString("s" + tree.pos + this.target.syntheticNameChar()),
-                                               selector.type,
-                                               currentMethodSym);
-            JCStatement var = make.at(tree.pos()).VarDef(dollar_s, selector).setType(dollar_s.type);
-            JCExpression nullValueReplacement =
-                    make.Conditional(makeBinary(NE,
-                                                 make.Ident(dollar_s),
-                                                 makeLit(syms.intType, nullValue)),
-                                     make.Ident(dollar_s),
-                                     makeLit(syms.intType, replacementValue))
-                        .setType(syms.intType);
-            JCExpression nullCheck =
-                    make.Conditional(makeBinary(NE, make.Ident(dollar_s), makeNull()),
-                                     nullValueReplacement,
-                                     makeLit(syms.intType, nullValue))
-                        .setType(syms.intType);
-            selector = make.LetExpr(List.of(var), nullCheck).setType(syms.intType);
-        }
-        selector = translate(selector, target);
+        boolean boxedSwitch = !enumSwitch && !stringSwitch && !selector.type.isPrimitive();
+        selector = translate(selector, selector.type);
         cases = translateCases(cases);
         if (tree.hasTag(SWITCH)) {
             ((JCSwitch) tree).selector = selector;
@@ -3709,6 +3658,10 @@ public class Lower extends TreeTranslator {
             result = visitEnumSwitch(tree, selector, cases);
         } else if (stringSwitch) {
             result = visitStringSwitch(tree, selector, cases);
+        } else if (boxedSwitch) {
+            //An switch over boxed primitive. Pattern matching switches are already translated
+            //by TransPatterns, so all non-primitive types are only boxed primitives:
+            result = visitBoxedPrimitiveSwitch(tree, selector, cases);
         } else {
             result = tree;
         }
@@ -3723,7 +3676,7 @@ public class Lower extends TreeTranslator {
                                             selector.type,
                                             List.nil());
         JCExpression newSelector;
-        
+
         if (cases.stream().anyMatch(c -> TreeInfo.isNull(c.labels.head))) {
             //for enum switches with case null, do:
             //switch ($selector != null ? $mapVar[$selector.ordinal()] : -1) {...}
@@ -3990,6 +3943,70 @@ public class Lower extends TreeTranslator {
                 return res;
             }
         }
+    }
+
+    private JCTree visitBoxedPrimitiveSwitch(JCTree tree, JCExpression selector, List<JCCase> cases) {
+        JCExpression newSelector;
+
+        if (cases.stream().anyMatch(c -> TreeInfo.isNull(c.labels.head))) {
+            //a switch over a boxed primitive, with a null case. Pick two constants that are
+            //not used by any branch in the case (c1 and c2), close to other constants that are
+            //used in the switch. Then do:
+            //switch ($selector != null ? $selector != c1 ? $selector : c2 : c1) {...}
+            //replacing case null with case c1
+            Set<Integer> constants = new LinkedHashSet<>();
+            JCCase nullCase = null;
+
+            for (JCCase c : cases) {
+                if (TreeInfo.isNull(c.labels.head)) {
+                    nullCase = c;
+                } else if (!c.labels.head.hasTag(DEFAULTCASELABEL)) {
+                    constants.add((int) c.labels.head.type.constValue());
+                }
+            }
+
+            Assert.checkNonNull(nullCase);
+
+            int nullValue = constants.isEmpty() ? 0 : constants.iterator().next();
+
+            while (constants.contains(nullValue)) nullValue++;
+
+            constants.add(nullValue);
+            nullCase.labels.head = makeLit(syms.intType, nullValue);
+
+            int replacementValue = nullValue;
+
+            while (constants.contains(replacementValue)) replacementValue++;
+
+            VarSymbol dollar_s = new VarSymbol(FINAL|SYNTHETIC,
+                                               names.fromString("s" + tree.pos + this.target.syntheticNameChar()),
+                                               selector.type,
+                                               currentMethodSym);
+            JCStatement var = make.at(tree.pos()).VarDef(dollar_s, selector).setType(dollar_s.type);
+            JCExpression nullValueReplacement =
+                    make.Conditional(makeBinary(NE,
+                                                 unbox(make.Ident(dollar_s), syms.intType),
+                                                 makeLit(syms.intType, nullValue)),
+                                     unbox(make.Ident(dollar_s), syms.intType),
+                                     makeLit(syms.intType, replacementValue))
+                        .setType(syms.intType);
+            JCExpression nullCheck =
+                    make.Conditional(makeBinary(NE, make.Ident(dollar_s), makeNull()),
+                                     nullValueReplacement,
+                                     makeLit(syms.intType, nullValue))
+                        .setType(syms.intType);
+            newSelector = make.LetExpr(List.of(var), nullCheck).setType(syms.intType);
+        } else {
+            newSelector = unbox(selector, syms.intType);
+        }
+
+        if (tree.hasTag(SWITCH)) {
+            ((JCSwitch) tree).selector = newSelector;
+        } else {
+            ((JCSwitchExpression) tree).selector = newSelector;
+        }
+
+        return tree;
     }
 
     @Override
