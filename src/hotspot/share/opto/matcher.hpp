@@ -357,7 +357,7 @@ public:
   static bool supports_vector_variable_rotates(void);
 
   // Does the CPU supports vector unsigned comparison instructions for given vector length and type?
-  static bool supports_unsigned_vector_comparison(int vlen, BasicType bt);
+  static bool supports_vector_comparison_unsigned(int vlen, BasicType bt);
 
   // CPU supports misaligned vectors store/load.
   static const bool misaligned_vectors_ok();

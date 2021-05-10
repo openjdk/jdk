@@ -2437,7 +2437,7 @@ bool Matcher::supports_vector_variable_shifts(void) {
   return true;
 }
 
-bool Matcher::supports_unsigned_vector_comparison(int vlen, BasicType bt) {
+bool Matcher::supports_vector_comparison_unsigned(int vlen, BasicType bt) {
   return false;
 }
 

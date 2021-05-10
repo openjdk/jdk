@@ -1154,7 +1154,7 @@ bool LibraryCallKit::inline_vector_compare() {
   BasicType mask_bt = elem_bt;
 
   if ((cond->get_con() & BoolTest::unsigned_compare) != 0) {
-    if (!Matcher::supports_unsigned_vector_comparison(num_elem, elem_bt)) {
+    if (!Matcher::supports_vector_comparison_unsigned(num_elem, elem_bt)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: unsigned comparison op=comp/%d vlen=%d etype=%s ismask=usestore",
                       cond->get_con() & (BoolTest::unsigned_compare - 1), num_elem, type2name(elem_bt));
