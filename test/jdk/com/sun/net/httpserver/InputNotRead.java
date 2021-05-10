@@ -25,7 +25,9 @@
  * @test
  * @bug 8266761
  * @summary HttpServer can fail with an assertion error when a handler doesn't fully
- *          read the request body and sends back a reply with no content
+ *          read the request body and sends back a reply with no content, or when
+ *          the client closes its outputstream while the server tries to drains
+ *          its content.
  * @run testng/othervm InputNotRead
  * @run testng/othervm -Djava.net.preferIPv6Addresses=true InputNotRead
  */
@@ -73,7 +75,9 @@ public class InputNotRead {
         Logger.getLogger("").getHandlers()[0].setLevel(Level.ALL);
     }
 
-    public static void main(String[] args) throws Exception {
+    @Test
+    public void testSendResponse() throws Exception {
+        System.out.println("testSendResponse()");
         InetAddress loopback = InetAddress.getLoopbackAddress();
         HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         ExecutorService executor = Executors.newCachedThreadPool(new ServerThreadFactory());
@@ -103,7 +107,7 @@ public class InputNotRead {
             System.out.println("Server started at port "
                                + server.getAddress().getPort());
 
-            runRawSocketHttpClient(loopback, server.getAddress().getPort());
+            runRawSocketHttpClient(loopback, server.getAddress().getPort(), -1);
         } finally {
             System.out.println("shutting server down");
             executor.shutdown();
@@ -112,7 +116,54 @@ public class InputNotRead {
         System.out.println("Server finished.");
     }
 
-    static void runRawSocketHttpClient(InetAddress address, int port)
+    @Test
+    public void testCloseOutputStream() throws Exception {
+        System.out.println("testCloseOutputStream()");
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
+        ExecutorService executor = Executors.newCachedThreadPool(new ServerThreadFactory());
+        server.setExecutor(executor);
+        try {
+            server.createContext(someContext, new HttpHandler() {
+                @Override
+                public void handle(HttpExchange msg) throws IOException {
+                    System.err.println("Handling request: " + msg.getRequestURI());
+                    byte[] reply = "Here is my reply!".getBytes(UTF_8);
+                    try {
+                        BufferedReader r = new BufferedReader(new InputStreamReader(msg.getRequestBody()));
+                        r.read();
+                        try {
+                            msg.sendResponseHeaders(msgCode, reply.length == 0 ? -1 : reply.length);
+                            msg.getResponseBody().write(reply);
+                            //r.close();
+                            // msg.close();
+                            msg.getResponseBody().close();
+                            // give time to the WriteFinished event to get executed
+                            // before the input stream gets drained...
+                            // this should trigger the assertion too
+                            Thread.sleep(50);
+                        } catch(IOException | InterruptedException ie) {
+                            ie.printStackTrace();
+                        }
+                    } finally {
+                        System.err.println("Request handled: " + msg.getRequestURI());
+                    }
+                }
+            });
+            server.start();
+            System.out.println("Server started at port "
+                    + server.getAddress().getPort());
+
+            runRawSocketHttpClient(loopback, server.getAddress().getPort(), 64 * 1024 + 16);
+        } finally {
+            System.out.println("shutting server down");
+            executor.shutdown();
+            server.stop(0);
+        }
+        System.out.println("Server finished.");
+    }
+
+    static void runRawSocketHttpClient(InetAddress address, int port, int contentLength)
         throws Exception
     {
         Socket socket = null;
@@ -125,6 +176,8 @@ public class InputNotRead {
                 socket.getOutputStream()));
             System.out.println("Client connected by socket: " + socket);
             String body = "I will send all the data.";
+            if (contentLength <= 0)
+                contentLength = body.getBytes(UTF_8).length;
 
             writer.print("GET " + someContext + "/ HTTP/1.1" + CRLF);
             writer.print("User-Agent: Java/"
@@ -132,7 +185,7 @@ public class InputNotRead {
                 + CRLF);
             writer.print("Host: " + address.getHostName() + CRLF);
             writer.print("Accept: */*" + CRLF);
-            writer.print("Content-Length: " + body.getBytes(UTF_8).length + CRLF);
+            writer.print("Content-Length: " + contentLength + CRLF);
             writer.print("Connection: keep-alive" + CRLF);
             writer.print(CRLF); // Important, else the server will expect that
             // there's more into the request.
@@ -153,18 +206,22 @@ public class InputNotRead {
             }
             System.out.println("Client finished reading from server"  );
         } finally {
-            // give time to the server to fail before closing the
-            // connection.
-            Thread.sleep(1000);
+            // give time to the server to try & drain its input stream
+            Thread.sleep(500);
+            // closes the client outputstream while the server is draining
+            // it
+            if (writer != null) {
+                writer.close();
+            }
+            // give time to the server to trigger its assertion
+            // error before closing the connection
+            Thread.sleep(500);
             if (reader != null)
                 try {
                     reader.close();
                 } catch (IOException logOrIgnore) {
                     logOrIgnore.printStackTrace();
                 }
-            if (writer != null) {
-                writer.close();
-            }
             if (socket != null) {
                 try {
                     socket.close();
@@ -176,8 +233,4 @@ public class InputNotRead {
         System.out.println("Client finished." );
     }
 
-    @Test
-    public void test() throws Exception {
-        main(new String[0]);
-    }
 }
