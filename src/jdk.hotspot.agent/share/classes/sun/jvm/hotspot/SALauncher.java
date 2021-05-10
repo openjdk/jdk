@@ -104,7 +104,7 @@ public class SALauncher {
                 " be a hostname or an IPv4/IPv6 address. This option overrides the system property" +
                 " 'java.rmi.server.hostname'. If not specified, the system property is used. If the system" +
                 " property is not set, a system hostname is used.");
-        System.out.println("    --prefix   <url prefix> Sets the prefix of RMI URL for SA");
+        System.out.println("    --prefix   <url prefix> Sets the prefix to distinguish SA debugee.");
         return commonHelp("debugd");
     }
 
