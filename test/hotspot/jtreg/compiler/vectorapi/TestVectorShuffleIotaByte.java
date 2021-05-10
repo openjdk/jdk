@@ -65,38 +65,54 @@ public class TestVectorShuffleIotaByte {
                                         -63, -61, -59, -57, -55, -53, -51, -49, -47, -45, -43, -41, -39, -37, -35, -33,
                                         -31, -29, -27, -25, -23, -21, -19, -17, -15, -13, -11, -9, -7, -5, -3, -1};
 
-    @Test
     static void testShuffleIota_64() {
+        ByteVector bv1 = (ByteVector) VectorShuffle.iota(SPECIESb_64, 1, 2, false).toVector();
+        bv1.intoArray(ab_64, 0);
+    }
+
+    static void testShuffleIota_128() {
+        ByteVector bv2 = (ByteVector) VectorShuffle.iota(SPECIESb_128, 1, 2, false).toVector();
+        bv2.intoArray(ab_128, 0);
+    }
+
+    static void testShuffleIota_256() {
+        ByteVector bv3 = (ByteVector) VectorShuffle.iota(SPECIESb_256, 1, 2, false).toVector();
+        bv3.intoArray(ab_256, 0);
+    }
+
+    static void testShuffleIota_512() {
+        ByteVector bv4 = (ByteVector) VectorShuffle.iota(SPECIESb_512, 1, 2, false).toVector();
+        bv4.intoArray(ab_512, 0);
+    }
+
+    @Test
+    static void testIota_64() {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ByteVector bv1 = (ByteVector) VectorShuffle.iota(SPECIESb_64, 1, 2, false).toVector();
-            bv1.intoArray(ab_64, 0);
+            testShuffleIota_64();
         }
         Assert.assertEquals(ab_64, expected_64);
     }
 
     @Test
-    static void testShuffleIota_128() {
+    static void testIota_128() {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ByteVector bv2 = (ByteVector) VectorShuffle.iota(SPECIESb_128, 1, 2, false).toVector();
-            bv2.intoArray(ab_128, 0);
+            testShuffleIota_128();
         }
         Assert.assertEquals(ab_128, expected_128);
     }
 
     @Test
-    static void testShuffleIota_256() {
+    static void testIota_256() {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ByteVector bv3 = (ByteVector) VectorShuffle.iota(SPECIESb_256, 1, 2, false).toVector();
-            bv3.intoArray(ab_256, 0);
+            testShuffleIota_256();
         }
         Assert.assertEquals(ab_256, expected_256);
     }
 
     @Test
-    static void testShuffleIota_512() {
+    static void testIota_512() {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            ByteVector bv4 = (ByteVector) VectorShuffle.iota(SPECIESb_512, 1, 2, false).toVector();
-            bv4.intoArray(ab_512, 0);
+            testShuffleIota_512();
         }
         Assert.assertEquals(ab_512, expected_512);
     }
