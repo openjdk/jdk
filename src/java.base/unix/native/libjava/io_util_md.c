@@ -32,6 +32,9 @@
 
 #if defined(__linux__) || defined(_ALLBSD_SOURCE) || defined(_AIX)
 #include <sys/ioctl.h>
+#endif
+
+#if defined(__linux__)
 #include <linux/fs.h>
 #include <sys/stat.h>
 #endif
