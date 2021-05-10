@@ -126,9 +126,7 @@ public final class LibrariesHelper {
         }
 
         @Override
-        @CallerSensitive
         public final Optional<MemorySegment> lookup(String name, MemoryLayout layout) {
-            Reflection.ensureNativeAccess(Reflection.getCallerClass());
             try {
                 Objects.requireNonNull(name);
                 Objects.requireNonNull(layout);

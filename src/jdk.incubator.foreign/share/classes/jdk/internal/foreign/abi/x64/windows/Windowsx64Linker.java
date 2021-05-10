@@ -86,9 +86,7 @@ public final class Windowsx64Linker extends AbstractCLinker {
     }
 
     @Override
-    @CallerSensitive
     public final MethodHandle downcallHandle(MethodType type, FunctionDescriptor function) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass());
         Objects.requireNonNull(type);
         Objects.requireNonNull(function);
         MethodType llMt = SharedUtils.convertVaListCarriers(type, WinVaList.CARRIER);
@@ -102,9 +100,7 @@ public final class Windowsx64Linker extends AbstractCLinker {
     }
 
     @Override
-    @CallerSensitive
     public final MemoryAddress upcallStub(MethodHandle target, FunctionDescriptor function, ResourceScope scope) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass());
         Objects.requireNonNull(scope);
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
