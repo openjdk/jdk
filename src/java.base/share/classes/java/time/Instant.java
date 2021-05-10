@@ -272,7 +272,7 @@ public final class Instant
      * @return the current instant using the system clock, not null
      */
     public static Instant now() {
-        return Clock.systemUTC().instant();
+        return Clock.currentInstant();
     }
 
     /**

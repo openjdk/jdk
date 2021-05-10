@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,8 @@ package java.time;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectStreamException;
+
 import static java.time.LocalTime.NANOS_PER_MINUTE;
 import static java.time.LocalTime.NANOS_PER_SECOND;
 import static java.time.LocalTime.NANOS_PER_MILLI;
@@ -86,8 +88,8 @@ import jdk.internal.misc.VM;
  * current time rather than a static method. This can simplify testing.
  * <p>
  * Best practice for applications is to pass a {@code Clock} into any method
- * that requires the current instant. A dependency injection framework is one
- * way to achieve this:
+ * that requires the current instant and time-zone. A dependency injection framework
+ * is one way to achieve this:
  * <pre>
  *  public class MyBean {
  *    private Clock clock;  // dependency inject
@@ -105,39 +107,16 @@ import jdk.internal.misc.VM;
  * The {@code system} factory methods provide clocks based on the best available
  * system clock This may use {@link System#currentTimeMillis()}, or a higher
  * resolution clock if one is available.
- *
- * @implSpec
- * This abstract class must be implemented with care to ensure other classes operate correctly.
- * All implementations that can be instantiated must be final, immutable and thread-safe.
  * <p>
- * The principal methods are defined to allow the throwing of an exception.
- * In normal use, no exceptions will be thrown, however one possible implementation would be to
- * obtain the time from a central time server across the network. Obviously, in this case the
- * lookup could fail, and so the method is permitted to throw an exception.
- * <p>
- * The returned instants from {@code Clock} work on a time-scale that ignores leap seconds,
- * as described in {@link Instant}. If the implementation wraps a source that provides leap
- * second information, then a mechanism should be used to "smooth" the leap second.
- * The Java Time-Scale mandates the use of UTC-SLS, however clock implementations may choose
- * how accurate they are with the time-scale so long as they document how they work.
- * Implementations are therefore not required to actually perform the UTC-SLS slew or to
- * otherwise be aware of leap seconds.
- * <p>
- * Implementations should implement {@code Serializable} wherever possible and must
- * document whether or not they do support serialization.
- *
- * @implNote
- * The clock implementation provided here is based on the same underlying clock
- * as {@link System#currentTimeMillis()}, but may have a precision finer than
- * milliseconds if available.
- * However, little to no guarantee is provided about the accuracy of the
- * underlying clock. Applications requiring a more accurate clock must implement
- * this abstract class themselves using a different external clock, such as an
- * NTP server.
+ * Related to this class is {@link InstantSource} which is an interface that only
+ * provides access to the current instant, and does not provide access to the time-zone.
+ * Where an application only requires the current instant {@code InstantSource} should
+ * be preferred to this class. For example, his might be the case where the time-zone
+ * is provided by a separate user localization subsystem.
  *
  * @since 1.8
  */
-public abstract class Clock {
+public abstract class Clock implements InstantSource {
 
     /**
      * Obtains a clock that returns the current instant using the best available
@@ -408,6 +387,7 @@ public abstract class Clock {
      * @param zone  the time-zone to change to, not null
      * @return a clock based on this clock with the specified time-zone, not null
      */
+    @Override
     public abstract Clock withZone(ZoneId zone);
 
     //-------------------------------------------------------------------------
@@ -428,6 +408,7 @@ public abstract class Clock {
      *  the Java epoch of 1970-01-01T00:00Z (UTC), not null
      * @throws DateTimeException if the instant cannot be obtained, not thrown by most implementations
      */
+    @Override
     public long millis() {
         return instant().toEpochMilli();
     }
@@ -441,6 +422,7 @@ public abstract class Clock {
      * @return the current instant from this clock, not null
      * @throws DateTimeException if the instant cannot be obtained, not thrown by most implementations
      */
+    @Override
     public abstract Instant instant();
 
     //-----------------------------------------------------------------------
@@ -474,31 +456,119 @@ public abstract class Clock {
     }
 
     //-----------------------------------------------------------------------
+    // initial offset
+    private static final long OFFSET_SEED = System.currentTimeMillis() / 1000 - 1024;
+    // We don't actually need a volatile here.
+    // We don't care if offset is set or read concurrently by multiple
+    // threads - we just need a value which is 'recent enough' - in other
+    // words something that has been updated at least once in the last
+    // 2^32 secs (~136 years). And even if we by chance see an invalid
+    // offset, the worst that can happen is that we will get a -1 value
+    // from getNanoTimeAdjustment, forcing us to update the offset
+    // once again.
+    private static long offset = OFFSET_SEED;
+
+    static Instant currentInstant() {
+        // Take a local copy of offset. offset can be updated concurrently
+        // by other threads (even if we haven't made it volatile) so we will
+        // work with a local copy.
+        long localOffset = offset;
+        long adjustment = VM.getNanoTimeAdjustment(localOffset);
+
+        if (adjustment == -1) {
+            // -1 is a sentinel value returned by VM.getNanoTimeAdjustment
+            // when the offset it is given is too far off the current UTC
+            // time. In principle, this should not happen unless the
+            // JVM has run for more than ~136 years (not likely) or
+            // someone is fiddling with the system time, or the offset is
+            // by chance at 1ns in the future (very unlikely).
+            // We can easily recover from all these conditions by bringing
+            // back the offset in range and retry.
+
+            // bring back the offset in range. We use -1024 to make
+            // it more unlikely to hit the 1ns in the future condition.
+            localOffset = System.currentTimeMillis()/1000 - 1024;
+
+            // retry
+            adjustment = VM.getNanoTimeAdjustment(localOffset);
+
+            if (adjustment == -1) {
+                // Should not happen: we just recomputed a new offset.
+                // It should have fixed the issue.
+                throw new InternalError("Offset " + localOffset + " is not in range");
+            } else {
+                // OK - recovery succeeded. Update the offset for the
+                // next call...
+                offset = localOffset;
+            }
+        }
+        return Instant.ofEpochSecond(localOffset, adjustment);
+    }
+    
+    //-----------------------------------------------------------------------
+    /**
+     * An instant source that always returns the latest time from
+     * {@link System#currentTimeMillis()} or equivalent.
+     */
+    static final class SystemInstantSource implements InstantSource, Serializable {
+        @java.io.Serial
+        private static final long serialVersionUID = 3232399674412L;
+        // this is a singleton, but the class is coded such that it is not a
+        // problem if someone hacks around and creates another instance
+        static final SystemInstantSource INSTANCE = new SystemInstantSource();
+
+        SystemInstantSource() {
+        }
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return Clock.system(zone);
+        }
+        @Override
+        public long millis() {
+            // System.currentTimeMillis() and VM.getNanoTimeAdjustment(offset)
+            // use the same time source - System.currentTimeMillis() simply
+            // limits the resolution to milliseconds.
+            // So we take the faster path and call System.currentTimeMillis()
+            // directly - in order to avoid the performance penalty of
+            // VM.getNanoTimeAdjustment(offset) which is less efficient.
+            return System.currentTimeMillis();
+        }
+        @Override
+        public Instant instant() {
+            return currentInstant();
+        }
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof SystemInstantSource;
+        }
+        @Override
+        public int hashCode() {
+            return SystemInstantSource.class.hashCode();
+        }
+        @Override
+        public String toString() {
+            return "SystemInstantSource";
+        }
+        @java.io.Serial
+        private Object readResolve() throws ObjectStreamException {
+            return SystemInstantSource.INSTANCE;
+        }
+    }
+
+    //-----------------------------------------------------------------------
     /**
      * Implementation of a clock that always returns the latest time from
-     * {@link System#currentTimeMillis()}.
+     * {@code SystemInstantSource.INSTANCE}.
      */
     static final class SystemClock extends Clock implements Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 6740630888130243051L;
-        private static final long OFFSET_SEED =
-                System.currentTimeMillis()/1000 - 1024; // initial offest
         static final SystemClock UTC = new SystemClock(ZoneOffset.UTC);
 
         private final ZoneId zone;
-        // We don't actually need a volatile here.
-        // We don't care if offset is set or read concurrently by multiple
-        // threads - we just need a value which is 'recent enough' - in other
-        // words something that has been updated at least once in the last
-        // 2^32 secs (~136 years). And even if we by chance see an invalid
-        // offset, the worst that can happen is that we will get a -1 value
-        // from getNanoTimeAdjustment, forcing us to update the offset
-        // once again.
-        private transient long offset;
 
         SystemClock(ZoneId zone) {
             this.zone = zone;
-            this.offset = OFFSET_SEED;
         }
         @Override
         public ZoneId getZone() {
@@ -513,50 +583,13 @@ public abstract class Clock {
         }
         @Override
         public long millis() {
-            // System.currentTimeMillis() and VM.getNanoTimeAdjustment(offset)
-            // use the same time source - System.currentTimeMillis() simply
-            // limits the resolution to milliseconds.
-            // So we take the faster path and call System.currentTimeMillis()
-            // directly - in order to avoid the performance penalty of
-            // VM.getNanoTimeAdjustment(offset) which is less efficient.
+            // inline of SystemInstantSource.INSTANCE.millis()
             return System.currentTimeMillis();
         }
         @Override
         public Instant instant() {
-            // Take a local copy of offset. offset can be updated concurrently
-            // by other threads (even if we haven't made it volatile) so we will
-            // work with a local copy.
-            long localOffset = offset;
-            long adjustment = VM.getNanoTimeAdjustment(localOffset);
-
-            if (adjustment == -1) {
-                // -1 is a sentinel value returned by VM.getNanoTimeAdjustment
-                // when the offset it is given is too far off the current UTC
-                // time. In principle, this should not happen unless the
-                // JVM has run for more than ~136 years (not likely) or
-                // someone is fiddling with the system time, or the offset is
-                // by chance at 1ns in the future (very unlikely).
-                // We can easily recover from all these conditions by bringing
-                // back the offset in range and retry.
-
-                // bring back the offset in range. We use -1024 to make
-                // it more unlikely to hit the 1ns in the future condition.
-                localOffset = System.currentTimeMillis()/1000 - 1024;
-
-                // retry
-                adjustment = VM.getNanoTimeAdjustment(localOffset);
-
-                if (adjustment == -1) {
-                    // Should not happen: we just recomputed a new offset.
-                    // It should have fixed the issue.
-                    throw new InternalError("Offset " + localOffset + " is not in range");
-                } else {
-                    // OK - recovery succeeded. Update the offset for the
-                    // next call...
-                    offset = localOffset;
-                }
-            }
-            return Instant.ofEpochSecond(localOffset, adjustment);
+            // inline of SystemInstantSource.INSTANCE.instant()
+            return currentInstant();
         }
         @Override
         public boolean equals(Object obj) {
@@ -572,13 +605,6 @@ public abstract class Clock {
         @Override
         public String toString() {
             return "SystemClock[" + zone + "]";
-        }
-        @java.io.Serial
-        private void readObject(ObjectInputStream is)
-                throws IOException, ClassNotFoundException {
-            // ensure that offset is initialized
-            is.defaultReadObject();
-            offset = OFFSET_SEED;
         }
     }
 
@@ -737,6 +763,56 @@ public abstract class Clock {
         @Override
         public String toString() {
             return "TickClock[" + baseClock + "," + Duration.ofNanos(tickNanos) + "]";
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Implementation of a clock based on an {@code InstantSource}.
+     */
+    static final class SourceClock extends Clock implements Serializable {
+        @java.io.Serial
+        private static final long serialVersionUID = 235386528762398L;
+        @SuppressWarnings("serial") // Not statically typed as Serializable
+        private final InstantSource baseSource;
+        private final ZoneId zone;
+
+        SourceClock(InstantSource baseSource, ZoneId zone) {
+            this.baseSource = baseSource;
+            this.zone = zone;
+        }
+        @Override
+        public ZoneId getZone() {
+            return zone;
+        }
+        @Override
+        public Clock withZone(ZoneId zone) {
+            if (zone.equals(this.zone)) {  // intentional NPE
+                return this;
+            }
+            return new SourceClock(baseSource, zone);
+        }
+        @Override
+        public long millis() {
+            return baseSource.millis();
+        }
+        @Override
+        public Instant instant() {
+            return baseSource.instant();
+        }
+        @Override
+        public boolean equals(Object obj) {
+            return (obj instanceof SourceClock other)
+                    && zone.equals(other.zone)
+                    && baseSource.equals(other.baseSource);
+        }
+        @Override
+        public int hashCode() {
+            return baseSource.hashCode() ^ zone.hashCode();
+        }
+        @Override
+        public String toString() {
+            return "SourceClock[" + baseSource + "," + zone + "]";
         }
     }
 
