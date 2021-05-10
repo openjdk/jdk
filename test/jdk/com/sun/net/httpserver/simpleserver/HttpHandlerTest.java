@@ -51,15 +51,15 @@ public class HttpHandlerTest {
     static final Class<NullPointerException> NPE = NullPointerException.class;
     static final InetSocketAddress WILDCARD_ADDR = new InetSocketAddress(0);
     static final boolean ENABLE_LOGGING = true;
+    static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
     @BeforeTest
     public void setup() {
         if (ENABLE_LOGGING) {
-            Logger logger = Logger.getLogger("com.sun.net.httpserver");
             ConsoleHandler ch = new ConsoleHandler();
-            logger.setLevel(Level.ALL);
+            LOGGER.setLevel(Level.ALL);
             ch.setLevel(Level.ALL);
-            logger.addHandler(ch);
+            LOGGER.addHandler(ch);
         }
     }
 

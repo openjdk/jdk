@@ -91,7 +91,7 @@ public class RequestTest {
     static final Class<UnsupportedOperationException> UOP = UnsupportedOperationException.class;
 
     static void assertReadOnly(Headers headers) {
-        //assertThrows(UOP, () -> headers.put("a", List.of("b")));   /// << TODO ARGH!!
+        assertThrows(UOP, () -> headers.put("a", List.of("b")));
         assertThrows(UOP, () -> headers.set("c", "d"));
         assertThrows(UOP, () -> headers.add("e", "f"));
         assertThrows(UOP, () -> headers.remove("g"));

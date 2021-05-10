@@ -58,14 +58,15 @@ public class ServerMimeTypesResolutionTest {
 
     static final Path CWD = Path.of(".").toAbsolutePath();
     static final InetSocketAddress WILDCARD_ADDR = new InetSocketAddress(0);
-    static final boolean ENABLE_LOGGING = true;
     static final String FILE_NAME = "empty-file-of-type";
     static final String UNKNOWN_FILE_EXTENSION = ".unknown-file-extension";
-    static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
     static final Properties SUPPORTED_MIME_TYPES = new Properties();
     static final Set<String> UNSUPPORTED_FILE_EXTENSIONS = new HashSet<>();
     static List<String> supportedFileExtensions;
     static Path root;
+
+    static final boolean ENABLE_LOGGING = true;
+    static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
     @BeforeTest
     public void setup() throws Exception {
