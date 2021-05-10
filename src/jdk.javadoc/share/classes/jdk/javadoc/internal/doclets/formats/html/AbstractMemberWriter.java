@@ -192,7 +192,13 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         HtmlTree code = new HtmlTree(TagName.CODE);
         addModifier(member, code);
         if (type == null) {
-            code.add(utils.isClass(member) ? "class" : "interface");
+            code.add(switch (member.getKind()) {
+                case ENUM -> "enum";
+                case INTERFACE -> "interface";
+                case ANNOTATION_TYPE -> "@interface";
+                case RECORD -> "record";
+                default -> "class";
+            });
             code.add(Entity.NO_BREAK_SPACE);
         } else {
             List<? extends TypeParameterElement> list = utils.isExecutableElement(member)

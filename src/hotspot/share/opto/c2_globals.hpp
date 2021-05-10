@@ -158,9 +158,6 @@
   develop_pd(bool, OptoPeephole,                                            \
           "Apply peephole optimizations after register allocation")         \
                                                                             \
-  develop(bool, OptoRemoveUseless, true,                                    \
-          "Remove useless nodes after parsing")                             \
-                                                                            \
   notproduct(bool, PrintFrameConverterAssembly, false,                      \
           "Print New compiler assembly output for frame converters")        \
                                                                             \

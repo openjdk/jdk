@@ -165,7 +165,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
             writer.addInlineComment(field, contentTree);
         }
         List<? extends SerialTree> tags = utils.getSerialTrees(field);
-        if (!tags.isEmpty()) {
+        if (!tags.isEmpty() && !tags.get(0).getDescription().isEmpty()) {
             writer.addInlineComment(field, tags.get(0), contentTree);
         }
     }

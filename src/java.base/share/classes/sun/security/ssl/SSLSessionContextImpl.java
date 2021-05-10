@@ -175,6 +175,15 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         return (SSLSessionImpl)getSession(id);
     }
 
+    // package-private method, find and remove session from cache
+    // return found session
+    SSLSessionImpl pull(byte[] id) {
+        if (id != null) {
+            return sessionCache.pull(new SessionId(id));
+        }
+        return null;
+    }
+
     // package-private method, used ONLY by ClientHandshaker
     SSLSessionImpl get(String hostname, int port) {
         /*
