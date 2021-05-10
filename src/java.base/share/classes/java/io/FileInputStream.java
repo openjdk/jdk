@@ -319,6 +319,8 @@ public class FileInputStream extends InputStream
     public byte[] readNBytes(int len) throws IOException {
         if (len < 0)
             throw new IllegalArgumentException("len < 0");
+        if (len == 0)
+            return new byte[0];
 
         long length = length();
         long position = position();

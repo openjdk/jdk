@@ -86,7 +86,10 @@ public class ReadXBytes {
             int pos = RND.nextInt(size);
             int len = RND.nextInt(size - pos);
             fis.getChannel().position(pos);
-            byte[] nbytes = fis.readNBytes(len);
+            byte[] nbytes = fis.readNBytes(0);
+            if (nbytes.length != 0)
+                throw new RuntimeException("readNBytes() zero length");
+            nbytes = fis.readNBytes(len);
             if (nbytes.length != len)
                 throw new RuntimeException("readNBytes() length");
             if (!Arrays.equals(nbytes, 0, len, bytes, pos, pos + len))
