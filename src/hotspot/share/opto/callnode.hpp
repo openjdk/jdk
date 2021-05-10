@@ -352,6 +352,18 @@ public:
   }
 
   JVMState* jvms() const { return _jvms; }
+  virtual bool needs_clone_jvms(Compile* C) { return false; }
+  void clone_jvms(Compile* C) {
+    if (jvms() != NULL) {
+      if (needs_clone_jvms(C)) {
+        set_jvms(jvms()->clone_deep(C));
+        jvms()->set_map_deep(this);
+      } else {
+        jvms()->clone_shallow(C)->bind_map(this);
+      }
+    }
+  }
+
  private:
   void verify_input(JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
@@ -617,12 +629,6 @@ public:
   // use MachConstantBase, it gets modified during matching. So when cloning
   // the node the JVMState must be cloned. Default is not to clone.
   virtual bool needs_clone_jvms(Compile* C) { return C->needs_clone_jvms(); }
-  void clone_jvms(Compile* C) {
-    if ((jvms() != NULL) && needs_clone_jvms(C)) {
-      set_jvms(jvms()->clone_deep(C));
-      jvms()->set_map_deep(this);
-    }
-  }
 
   // Returns true if the call may modify n
   virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseTransform* phase);
