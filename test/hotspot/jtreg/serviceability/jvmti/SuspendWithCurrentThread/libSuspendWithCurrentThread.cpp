@@ -22,6 +22,7 @@
  */
 
 #include <string.h>
+#include <atomic>
 #include "jvmti.h"
 
 extern "C" {
@@ -29,6 +30,7 @@ extern "C" {
 static jvmtiEnv* jvmti = NULL;
 static jthread* threads = NULL;
 static jsize threads_count = 0;
+static std::atomic<bool> is_exited_from_suspend;
 
 #define LOG(...) \
   do { \
@@ -74,6 +76,7 @@ Java_ThreadToSuspend_suspendTestedThreads(JNIEnv *jni, jclass cls) {
 
   LOG("suspendTestedThreads: before JVMTI SuspendThreadList");
   err = jvmti->SuspendThreadList(threads_count, threads, results);
+  is_exited_from_suspend.store(true);
   check_jvmti_status(jni, err, "suspendTestedThreads: error in JVMTI SuspendThreadList");
 
   LOG("suspendTestedThreads: check and print SuspendThreadList results:");
@@ -101,6 +104,10 @@ Java_SuspendWithCurrentThread_checkTestedThreadsSuspended(JNIEnv *jni, jclass cl
              "#   state: (%#x)", i, (int)state);
       return JNI_FALSE;
     }
+  }
+  if (is_exited_from_suspend.load()) {
+    LOG("Thread didn't stop in self suspend.");
+    return JNI_FALSE;
   }
   LOG("checkTestedThreadsSuspended: finished\n");
   return JNI_TRUE;
@@ -155,7 +162,7 @@ Java_SuspendWithCurrentThread_releaseTestedThreadsInfo(JNIEnv *jni, jclass cls) 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   LOG("\nAgent_OnLoad started");
-
+  is_exited_from_suspend.store(false);
   // create JVMTI environment
   if (jvm->GetEnv((void **) (&jvmti), JVMTI_VERSION) != JNI_OK) {
     return JNI_ERR;

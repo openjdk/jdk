@@ -25,7 +25,6 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "aot/aotLoader.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
@@ -261,18 +260,10 @@ Thread::Thread() {
 
   // plain initialization
   debug_only(_owned_locks = NULL;)
-  NOT_PRODUCT(_no_safepoint_count = 0;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
-  _current_pending_monitor = NULL;
-  _current_pending_monitor_is_from_java = true;
-  _current_waiting_monitor = NULL;
   _current_pending_raw_monitor = NULL;
-
-#ifdef ASSERT
-  _visited_for_critical_count = false;
-#endif
 
   _suspend_flags = 0;
 
@@ -281,10 +272,6 @@ Thread::Thread() {
   _hashStateY = 842502087;
   _hashStateZ = 0x8767;    // (int)(3579807591LL & 0xffff) ;
   _hashStateW = 273326509;
-
-  _OnTrap   = 0;
-  _Stalled  = 0;
-  _TypeTag  = 0x2BAD;
 
   // Many of the following fields are effectively final - immutable
   // Note that nascent threads can't use the Native Monitor-Mutex
@@ -720,38 +707,6 @@ void Thread::print_owned_locks_on(outputStream* st) const {
     }
   }
 }
-
-// Checks safepoint allowed and clears unhandled oops at potential safepoints.
-void Thread::check_possible_safepoint() {
-  if (!is_Java_thread()) return;
-
-  if (_no_safepoint_count > 0) {
-    print_owned_locks();
-    assert(false, "Possible safepoint reached by thread that does not allow it");
-  }
-#ifdef CHECK_UNHANDLED_OOPS
-  // Clear unhandled oops in JavaThreads so we get a crash right away.
-  clear_unhandled_oops();
-#endif // CHECK_UNHANDLED_OOPS
-}
-
-void Thread::check_for_valid_safepoint_state() {
-  if (!is_Java_thread()) return;
-
-  // Check NoSafepointVerifier, which is implied by locks taken that can be
-  // shared with the VM thread.  This makes sure that no locks with allow_vm_block
-  // are held.
-  check_possible_safepoint();
-
-  if (this->as_Java_thread()->thread_state() != _thread_in_vm) {
-    fatal("LEAF method calling lock?");
-  }
-
-  if (GCALotAtAllSafepoints) {
-    // We could enter a safepoint here and thus have a gc
-    InterfaceSupport::check_gc_alot();
-  }
-}
 #endif // ASSERT
 
 // We had to move these methods here, because vm threads get into ObjectSynchronizer::enter
@@ -826,17 +781,12 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
                                       JavaThreadStatus::RUNNABLE);
 }
 
-static char java_version[64] = "";
-static char java_runtime_name[128] = "";
-static char java_runtime_version[128] = "";
-static char java_runtime_vendor_version[128] = "";
-static char java_runtime_vendor_vm_bug_url[128] = "";
-
-// Extract version and vendor specific information.
+// Extract version and vendor specific information from
+// java.lang.VersionProps fields.
+// Returned char* is allocated in the thread's resource area
+// so must be copied for permanency.
 static const char* get_java_version_info(InstanceKlass* ik,
-                                         Symbol* field_name,
-                                         char* buffer,
-                                         int buffer_size) {
+                                         Symbol* field_name) {
   fieldDescriptor fd;
   bool found = ik != NULL &&
                ik->find_local_field(field_name,
@@ -846,9 +796,7 @@ static const char* get_java_version_info(InstanceKlass* ik,
     if (name_oop == NULL) {
       return NULL;
     }
-    const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        buffer,
-                                                        buffer_size);
+    const char* name = java_lang_String::as_utf8_string(name_oop);
     return name;
   } else {
     return NULL;
@@ -1044,6 +992,36 @@ bool JavaThread::resize_all_jvmci_counters(int new_size) {
 
 #endif // INCLUDE_JVMCI
 
+#ifdef ASSERT
+// Checks safepoint allowed and clears unhandled oops at potential safepoints.
+void JavaThread::check_possible_safepoint() {
+  if (_no_safepoint_count > 0) {
+    print_owned_locks();
+    assert(false, "Possible safepoint reached by thread that does not allow it");
+  }
+#ifdef CHECK_UNHANDLED_OOPS
+  // Clear unhandled oops in JavaThreads so we get a crash right away.
+  clear_unhandled_oops();
+#endif // CHECK_UNHANDLED_OOPS
+}
+
+void JavaThread::check_for_valid_safepoint_state() {
+  // Check NoSafepointVerifier, which is implied by locks taken that can be
+  // shared with the VM thread.  This makes sure that no locks with allow_vm_block
+  // are held.
+  check_possible_safepoint();
+
+  if (thread_state() != _thread_in_vm) {
+    fatal("LEAF method calling lock?");
+  }
+
+  if (GCALotAtAllSafepoints) {
+    // We could enter a safepoint here and thus have a gc
+    InterfaceSupport::check_gc_alot();
+  }
+}
+#endif // ASSERT
+
 // A JavaThread is a normal Java thread
 
 JavaThread::JavaThread() :
@@ -1061,12 +1039,21 @@ JavaThread::JavaThread() :
   _vm_result(nullptr),
   _vm_result_2(nullptr),
 
+  _current_pending_monitor(NULL),
+  _current_pending_monitor_is_from_java(true),
+  _current_waiting_monitor(NULL),
+  _Stalled(0),
+
   _monitor_chunks(nullptr),
   _special_runtime_exit_condition(_no_async_condition),
   _pending_async_exception(nullptr),
 
   _thread_state(_thread_new),
   _saved_exception_pc(nullptr),
+#ifdef ASSERT
+  _no_safepoint_count(0),
+  _visited_for_critical_count(false),
+#endif
 
   _terminated(_not_terminated),
   _in_deopt_handler(0),
@@ -2670,26 +2657,23 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   // Phase 1 of the system initialization in the library, java.lang.System class initialization
   call_initPhase1(CHECK);
 
-  // get the Java runtime name, version, and vendor info after java.lang.System is initialized
+  // Get the Java runtime name, version, and vendor info after java.lang.System is initialized.
+  // Some values are actually configure-time constants but some can be set via the jlink tool and
+  // so must be read dynamically. We treat them all the same.
   InstanceKlass* ik = SystemDictionary::find_instance_klass(vmSymbols::java_lang_VersionProps(),
                                                             Handle(), Handle());
+  {
+    ResourceMark rm(main_thread);
+    JDK_Version::set_java_version(get_java_version_info(ik, vmSymbols::java_version_name()));
 
-  JDK_Version::set_java_version(get_java_version_info(ik, vmSymbols::java_version_name(),
-                                                      java_version, sizeof(java_version)));
+    JDK_Version::set_runtime_name(get_java_version_info(ik, vmSymbols::java_runtime_name_name()));
 
-  JDK_Version::set_runtime_name(get_java_version_info(ik, vmSymbols::java_runtime_name_name(),
-                                                      java_runtime_name, sizeof(java_runtime_name)));
+    JDK_Version::set_runtime_version(get_java_version_info(ik, vmSymbols::java_runtime_version_name()));
 
-  JDK_Version::set_runtime_version(get_java_version_info(ik, vmSymbols::java_runtime_version_name(),
-                                                         java_runtime_version, sizeof(java_runtime_version)));
+    JDK_Version::set_runtime_vendor_version(get_java_version_info(ik, vmSymbols::java_runtime_vendor_version_name()));
 
-  JDK_Version::set_runtime_vendor_version(get_java_version_info(ik, vmSymbols::java_runtime_vendor_version_name(),
-                                                                java_runtime_vendor_version,
-                                                                sizeof(java_runtime_vendor_version)));
-
-  JDK_Version::set_runtime_vendor_vm_bug_url(get_java_version_info(ik, vmSymbols::java_runtime_vendor_vm_bug_url_name(),
-                                                                   java_runtime_vendor_vm_bug_url,
-                                                                   sizeof(java_runtime_vendor_vm_bug_url)));
+    JDK_Version::set_runtime_vendor_vm_bug_url(get_java_version_info(ik, vmSymbols::java_runtime_vendor_vm_bug_url_name()));
+  }
 
   // an instance of OutOfMemory exception has been allocated earlier
   initialize_class(vmSymbols::java_lang_OutOfMemoryError(), CHECK);
@@ -2700,9 +2684,6 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
-
-  // Eager box cache initialization only if AOT is on and any library is loaded.
-  AOTLoader::initialize_box_caches(CHECK);
 }
 
 void Threads::initialize_jsr292_core_classes(TRAPS) {
@@ -2909,8 +2890,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   // We need this to update the java.vm.info property in case any flags used
-  // to initially define it have been changed. This is needed for both CDS and
-  // AOT, since UseSharedSpaces and UseAOT may be changed after java.vm.info
+  // to initially define it have been changed. This is needed for both CDS
+  // since UseSharedSpaces may be changed after java.vm.info
   // is initially computed. See Abstract_VM_Version::vm_info_string().
   // This update must happen before we initialize the java classes, but
   // after any initialization logic that might modify the flags.

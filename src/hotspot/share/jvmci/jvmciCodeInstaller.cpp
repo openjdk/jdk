@@ -172,70 +172,6 @@ OopMap* CodeInstaller::create_oop_map(JVMCIObject debug_info, JVMCI_TRAPS) {
   return map;
 }
 
-#if INCLUDE_AOT
-AOTOopRecorder::AOTOopRecorder(CodeInstaller* code_inst, Arena* arena, bool deduplicate) : OopRecorder(arena, deduplicate) {
-  _code_inst = code_inst;
-  _meta_refs = new GrowableArray<jobject>();
-}
-
-int AOTOopRecorder::nr_meta_refs() const {
-  return _meta_refs->length();
-}
-
-jobject AOTOopRecorder::meta_element(int pos) const {
-  return _meta_refs->at(pos);
-}
-
-int AOTOopRecorder::find_index(Metadata* h) {
-  JavaThread* THREAD = JavaThread::current();
-  JVMCIEnv* JVMCIENV = _code_inst->jvmci_env();
-  int oldCount = metadata_count();
-  int index =  this->OopRecorder::find_index(h);
-  int newCount = metadata_count();
-
-  if (oldCount == newCount) {
-    // found a match
-    return index;
-  }
-
-  vmassert(index + 1 == newCount, "must be last");
-
-  JVMCIKlassHandle klass(THREAD);
-  JVMCIObject result;
-  guarantee(h != NULL,
-            "If DebugInformationRecorder::describe_scope passes NULL oldCount == newCount must hold.");
-  if (h->is_klass()) {
-    klass = (Klass*) h;
-    result = JVMCIENV->get_jvmci_type(klass, JVMCI_CATCH);
-  } else if (h->is_method()) {
-    Method* method = (Method*) h;
-    methodHandle mh(THREAD, method);
-    result = JVMCIENV->get_jvmci_method(mh, JVMCI_CATCH);
-  }
-  jobject ref = JVMCIENV->get_jobject(result);
-  record_meta_ref(ref, index);
-
-  return index;
-}
-
-int AOTOopRecorder::find_index(jobject h) {
-  if (h == NULL) {
-    return 0;
-  }
-  oop javaMirror = JNIHandles::resolve(h);
-  Klass* klass = java_lang_Class::as_Klass(javaMirror);
-  return find_index(klass);
-}
-
-void AOTOopRecorder::record_meta_ref(jobject o, int index) {
-  assert(index > 0, "must be 1..n");
-  index -= 1; // reduce by one to convert to array index
-
-  assert(index == _meta_refs->length(), "must be last");
-  _meta_refs->append(o);
-}
-#endif // INCLUDE_AOT
-
 void* CodeInstaller::record_metadata_reference(CodeSection* section, address dest, JVMCIObject constant, JVMCI_TRAPS) {
   /*
    * This method needs to return a raw (untyped) pointer, since the value of a pointer to the base
@@ -538,69 +474,6 @@ void CodeInstaller::initialize_dependencies(JVMCIObject compiled_code, OopRecord
   }
 }
 
-#if INCLUDE_AOT
-RelocBuffer::~RelocBuffer() {
-  FREE_C_HEAP_ARRAY(char, _buffer);
-}
-
-address RelocBuffer::begin() const {
-  if (_buffer != NULL) {
-    return (address) _buffer;
-  }
-  return (address) _static_buffer;
-}
-
-void RelocBuffer::set_size(size_t bytes) {
-  assert(bytes <= _size, "can't grow in size!");
-  _size = bytes;
-}
-
-void RelocBuffer::ensure_size(size_t bytes) {
-  assert(_buffer == NULL, "can only be used once");
-  assert(_size == 0, "can only be used once");
-  if (bytes >= RelocBuffer::stack_size) {
-    _buffer = NEW_C_HEAP_ARRAY(char, bytes, mtJVMCI);
-  }
-  _size = bytes;
-}
-
-JVMCI::CodeInstallResult CodeInstaller::gather_metadata(JVMCIObject target, JVMCIObject compiled_code, CodeMetadata& metadata, JVMCI_TRAPS) {
-  assert(JVMCIENV->is_hotspot(), "AOT code is executed only in HotSpot mode");
-  CodeBuffer buffer("JVMCI Compiler CodeBuffer for Metadata");
-  AOTOopRecorder* recorder = new AOTOopRecorder(this, &_arena, true);
-  initialize_dependencies(compiled_code, recorder, JVMCI_CHECK_OK);
-
-  metadata.set_oop_recorder(recorder);
-
-  // Get instructions and constants CodeSections early because we need it.
-  _instructions = buffer.insts();
-  _constants = buffer.consts();
-  buffer.set_immutable_PIC(_immutable_pic_compilation);
-
-  initialize_fields(target, compiled_code, JVMCI_CHECK_OK);
-  JVMCI::CodeInstallResult result = initialize_buffer(buffer, false, JVMCI_CHECK_OK);
-  if (result != JVMCI::ok) {
-    return result;
-  }
-
-  _debug_recorder->pcs_size(); // create the sentinel record
-
-  assert(_debug_recorder->pcs_length() >= 2, "must be at least 2");
-
-  metadata.set_pc_desc(_debug_recorder->pcs(), _debug_recorder->pcs_length());
-  metadata.set_scopes(_debug_recorder->stream()->buffer(), _debug_recorder->data_size());
-  metadata.set_exception_table(&_exception_handler_table);
-  metadata.set_implicit_exception_table(&_implicit_exception_table);
-
-  RelocBuffer* reloc_buffer = metadata.get_reloc_buffer();
-
-  reloc_buffer->ensure_size(buffer.total_relocation_size());
-  size_t size = (size_t) buffer.copy_relocations_to(reloc_buffer->begin(), (CodeBuffer::csize_t) reloc_buffer->size(), true);
-  reloc_buffer->set_size(size);
-  return JVMCI::ok;
-}
-#endif // INCLUDE_AOT
-
 // constructor used to create a method
 JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     JVMCIObject target,
@@ -619,9 +492,6 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   // Get instructions and constants CodeSections early because we need it.
   _instructions = buffer.insts();
   _constants = buffer.consts();
-#if INCLUDE_AOT
-  buffer.set_immutable_PIC(_immutable_pic_compilation);
-#endif
 
   initialize_fields(target, compiled_code, JVMCI_CHECK_OK);
   JVMCI::CodeInstallResult result = initialize_buffer(buffer, true, JVMCI_CHECK_OK);
@@ -741,9 +611,8 @@ void CodeInstaller::initialize_fields(JVMCIObject target, JVMCIObject compiled_c
 }
 
 int CodeInstaller::estimate_stubs_size(JVMCI_TRAPS) {
-  // Estimate the number of static and aot call stubs that might be emitted.
+  // Estimate the number of static call stubs that might be emitted.
   int static_call_stubs = 0;
-  int aot_call_stubs = 0;
   int trampoline_stubs = 0;
   JVMCIObjectArray sites = this->sites();
   for (int i = 0; i < JVMCIENV->get_length(sites); i++) {
@@ -771,22 +640,10 @@ int CodeInstaller::estimate_stubs_size(JVMCI_TRAPS) {
           }
         }
       }
-#if INCLUDE_AOT
-      if (UseAOT && jvmci_env()->isa_site_Call(site)) {
-        JVMCIObject target = jvmci_env()-> get_site_Call_target(site);
-        if (!jvmci_env()->isa_HotSpotForeignCallTarget(target)) {
-          // Add far aot trampolines.
-          aot_call_stubs++;
-        }
-      }
-#endif
     }
   }
   int size = static_call_stubs * CompiledStaticCall::to_interp_stub_size();
   size += trampoline_stubs * CompiledStaticCall::to_trampoline_stub_size();
-#if INCLUDE_AOT
-  size += aot_call_stubs * CompiledStaticCall::to_aot_stub_size();
-#endif
   return size;
 }
 
@@ -1276,10 +1133,6 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, jint pc_offset, JVMCIObject si
 
   if (foreign_call.is_non_null()) {
     jlong foreign_call_destination = jvmci_env()->get_HotSpotForeignCallTarget_address(foreign_call);
-    if (_immutable_pic_compilation) {
-      // Use fake short distance during PIC compilation.
-      foreign_call_destination = (jlong)(_instructions->start() + pc_offset);
-    }
     CodeInstaller::pd_relocate_ForeignCall(inst, foreign_call_destination, JVMCI_CHECK);
   } else { // method != NULL
     if (debug_info.is_null()) {
@@ -1292,10 +1145,6 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, jint pc_offset, JVMCIObject si
       // Need a static call stub for transitions from compiled to interpreted.
       CompiledStaticCall::emit_to_interp_stub(buffer, _instructions->start() + pc_offset);
     }
-#if INCLUDE_AOT
-    // Trampoline to far aot code.
-    CompiledStaticCall::emit_to_aot_stub(buffer, _instructions->start() + pc_offset);
-#endif
   }
 
   _next_call_type = INVOKE_INVALID;
@@ -1319,25 +1168,11 @@ void CodeInstaller::site_DataPatch(CodeBuffer& buffer, jint pc_offset, JVMCIObje
         const char* to_string = JVMCIENV->as_utf8_string(string);
         JVMCI_THROW_MSG(IllegalArgumentException, err_msg("Direct object constant reached the backend: %s", to_string));
       }
-      if (!_immutable_pic_compilation) {
-        // Do not patch during PIC compilation.
-        pd_patch_OopConstant(pc_offset, constant, JVMCI_CHECK);
-      }
+      pd_patch_OopConstant(pc_offset, constant, JVMCI_CHECK);
     } else if (jvmci_env()->isa_IndirectHotSpotObjectConstantImpl(constant)) {
-      if (!_immutable_pic_compilation) {
-        // Do not patch during PIC compilation.
-        pd_patch_OopConstant(pc_offset, constant, JVMCI_CHECK);
-      }
+      pd_patch_OopConstant(pc_offset, constant, JVMCI_CHECK);
     } else if (jvmci_env()->isa_HotSpotMetaspaceConstantImpl(constant)) {
-      if (!_immutable_pic_compilation) {
-        pd_patch_MetaspaceConstant(pc_offset, constant, JVMCI_CHECK);
-      }
-#if INCLUDE_AOT
-    } else if (jvmci_env()->isa_HotSpotSentinelConstant(constant)) {
-      if (!_immutable_pic_compilation) {
-        JVMCI_ERROR("sentinel constant not supported for normal compiles: %s", jvmci_env()->klass_name(constant));
-      }
-#endif
+      pd_patch_MetaspaceConstant(pc_offset, constant, JVMCI_CHECK);
     } else {
       JVMCI_ERROR("unknown constant type in data patch: %s", jvmci_env()->klass_name(constant));
     }

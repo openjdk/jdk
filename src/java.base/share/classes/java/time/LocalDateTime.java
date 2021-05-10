@@ -574,9 +574,8 @@ public final class LocalDateTime
      */
     @Override
     public boolean isSupported(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            return f.isDateBased() || f.isTimeBased();
+        if (field instanceof ChronoField chronoField) {
+            return chronoField.isDateBased() || chronoField.isTimeBased();
         }
         return field != null && field.isSupportedBy(this);
     }
@@ -648,9 +647,8 @@ public final class LocalDateTime
      */
     @Override
     public ValueRange range(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            return (f.isTimeBased() ? time.range(field) : date.range(field));
+        if (field instanceof ChronoField chronoField) {
+            return (chronoField.isTimeBased() ? time.range(field) : date.range(field));
         }
         return field.rangeRefinedBy(this);
     }
@@ -685,9 +683,8 @@ public final class LocalDateTime
      */
     @Override
     public int get(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            return (f.isTimeBased() ? time.get(field) : date.get(field));
+        if (field instanceof ChronoField chronoField) {
+            return (chronoField.isTimeBased() ? time.get(field) : date.get(field));
         }
         return ChronoLocalDateTime.super.get(field);
     }
@@ -717,9 +714,8 @@ public final class LocalDateTime
      */
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            return (f.isTimeBased() ? time.getLong(field) : date.getLong(field));
+        if (field instanceof ChronoField chronoField) {
+            return (chronoField.isTimeBased() ? time.getLong(field) : date.getLong(field));
         }
         return field.getFrom(this);
     }
@@ -964,9 +960,8 @@ public final class LocalDateTime
      */
     @Override
     public LocalDateTime with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            if (f.isTimeBased()) {
+        if (field instanceof ChronoField chronoField) {
+            if (chronoField.isTimeBased()) {
                 return with(date, time.with(field, newValue));
             } else {
                 return with(date.with(field, newValue), time);
@@ -1146,8 +1141,7 @@ public final class LocalDateTime
      */
     @Override
     public LocalDateTime plus(TemporalAmount amountToAdd) {
-        if (amountToAdd instanceof Period) {
-            Period periodToAdd = (Period) amountToAdd;
+        if (amountToAdd instanceof Period periodToAdd) {
             return with(date.plus(periodToAdd), time);
         }
         Objects.requireNonNull(amountToAdd, "amountToAdd");
@@ -1182,9 +1176,8 @@ public final class LocalDateTime
      */
     @Override
     public LocalDateTime plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            ChronoUnit f = (ChronoUnit) unit;
-            switch (f) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            switch (chronoUnit) {
                 case NANOS: return plusNanos(amountToAdd);
                 case MICROS: return plusDays(amountToAdd / MICROS_PER_DAY).plusNanos((amountToAdd % MICROS_PER_DAY) * 1000);
                 case MILLIS: return plusDays(amountToAdd / MILLIS_PER_DAY).plusNanos((amountToAdd % MILLIS_PER_DAY) * 1000_000);
@@ -1365,8 +1358,7 @@ public final class LocalDateTime
      */
     @Override
     public LocalDateTime minus(TemporalAmount amountToSubtract) {
-        if (amountToSubtract instanceof Period) {
-            Period periodToSubtract = (Period) amountToSubtract;
+        if (amountToSubtract instanceof Period periodToSubtract) {
             return with(date.minus(periodToSubtract), time);
         }
         Objects.requireNonNull(amountToSubtract, "amountToSubtract");

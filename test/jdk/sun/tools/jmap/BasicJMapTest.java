@@ -109,6 +109,9 @@ public class BasicJMapTest {
         testHisto();
         testHistoLive();
         testHistoAll();
+        testHistoParallelZero();
+        testHistoParallel();
+        testHistoNonParallel();
         testHistoToFile();
         testHistoLiveToFile();
         testHistoAllToFile();

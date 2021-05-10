@@ -503,15 +503,14 @@ protected:
   }
 
   // array class with specific rank
-  Klass* array_klass(int rank, TRAPS)         {  return array_klass_impl(false, rank, THREAD); }
+  virtual Klass* array_klass(int rank, TRAPS) = 0;
 
   // array class with this klass as element type
-  Klass* array_klass(TRAPS)                   {  return array_klass_impl(false, THREAD); }
+  virtual Klass* array_klass(TRAPS) = 0;
 
   // These will return NULL instead of allocating on the heap:
-  // NB: these can block for a mutex, like other functions with TRAPS arg.
-  Klass* array_klass_or_null(int rank);
-  Klass* array_klass_or_null();
+  virtual Klass* array_klass_or_null(int rank) = 0;
+  virtual Klass* array_klass_or_null() = 0;
 
   virtual oop protection_domain() const = 0;
 
@@ -520,8 +519,6 @@ protected:
   inline oop klass_holder() const;
 
  protected:
-  virtual Klass* array_klass_impl(bool or_null, int rank, TRAPS);
-  virtual Klass* array_klass_impl(bool or_null, TRAPS);
 
   // Error handling when length > max_length or length < 0
   static void check_array_allocation_length(int length, int max_length, TRAPS);

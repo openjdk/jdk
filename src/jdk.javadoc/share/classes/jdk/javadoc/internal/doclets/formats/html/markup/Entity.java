@@ -38,12 +38,6 @@ public class Entity extends Content {
     public static final Entity GREATER_THAN = new Entity("&gt;");
     public static final Entity AMPERSAND = new Entity("&amp;");
     public static final Entity NO_BREAK_SPACE = new Entity("&nbsp;");
-    public static final Entity ZERO_WIDTH_SPACE = new Entity("&#8203;") {
-        @Override
-        public int charCount() {
-            return 0;
-        }
-    };
 
     public final String text;
 

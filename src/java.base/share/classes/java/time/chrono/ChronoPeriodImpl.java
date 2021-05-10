@@ -199,10 +199,9 @@ final class ChronoPeriodImpl
      */
     private ChronoPeriodImpl validateAmount(TemporalAmount amount) {
         Objects.requireNonNull(amount, "amount");
-        if (!(amount instanceof ChronoPeriodImpl)) {
+        if (!(amount instanceof ChronoPeriodImpl period)) {
             throw new DateTimeException("Unable to obtain ChronoPeriod from TemporalAmount: " + amount.getClass());
         }
-        ChronoPeriodImpl period = (ChronoPeriodImpl) amount;
         if (!(chrono.equals(period.getChronology()))) {
             throw new ClassCastException("Chronology mismatch, expected: " + chrono.getId() + ", actual: " + period.getChronology().getId());
         }
