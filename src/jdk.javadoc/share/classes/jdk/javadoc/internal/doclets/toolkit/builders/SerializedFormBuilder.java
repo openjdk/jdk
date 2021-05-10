@@ -193,8 +193,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * @param packageSerializedTree content tree to which the documentation will be added
      */
     protected void buildPackageHeader(Content packageSerializedTree) {
-        packageSerializedTree.add(writer.getPackageHeader(
-                utils.getPackageName(currentPackage)));
+        packageSerializedTree.add(writer.getPackageHeader(currentPackage));
     }
 
     /**
@@ -489,7 +488,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
             // TODO: Print the signature directly, if it is an array, the
             // current DocTree APIs makes it very hard to distinguish
             // an as these are returned back as "Array" a DeclaredType.
-            if (refSignature.endsWith("[]")) {
+            if (refSignature != null && refSignature.endsWith("[]")) {
                 te = null;
                 fieldType = refSignature;
             }

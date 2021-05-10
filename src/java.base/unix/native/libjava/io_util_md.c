@@ -32,6 +32,8 @@
 
 #if defined(__linux__) || defined(_ALLBSD_SOURCE) || defined(_AIX)
 #include <sys/ioctl.h>
+#include <linux/fs.h>
+#include <sys/stat.h>
 #endif
 
 #ifdef MACOSX
@@ -245,9 +247,17 @@ handleGetLength(FD fd)
     struct stat64 sb;
     int result;
     RESTARTABLE(fstat64(fd, &sb), result);
-    if (result == 0) {
-        return sb.st_size;
-    } else {
+    if (result < 0) {
         return -1;
     }
+    #ifdef BLKGETSIZE64
+    if (S_ISBLK(sb.st_mode)) {
+        uint64_t size;
+        if(ioctl(fd, BLKGETSIZE64, &size) < 0) {
+            return -1;
+        }
+        return (jlong)size;
+    }
+    #endif
+    return sb.st_size;
 }
