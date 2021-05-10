@@ -361,6 +361,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
 
+  LambdaFormInvokers::serialize(soc);
   soc->do_tag(666);
 }
 
@@ -460,6 +461,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 
   SystemDictionaryShared::write_to_archive();
 
+  // Write lambform lines into archive
+  LambdaFormInvokers::dump_static_archive_invokers();
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
@@ -616,9 +619,24 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
   return res;
 }
 
+void MetaspaceShared::regenerate_lambdaforminvokers_holders(TRAPS) {
+  log_info(cds)("Regenerate lambdaform holder classes ...");
+  LambdaFormInvokers::regenerate_holder_classes(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    log_info(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+                 java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+    log_info(cds)("Regenerate lambdaform holder classes ...failed");
+    CLEAR_PENDING_EXCEPTION; // Exceptions are ignored.
+  } else {
+    log_info(cds)("Regenerate lambdaform holder classes ...done");
+  }
+}
+
 void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
   // Collect all loaded ClassLoaderData.
   ResourceMark rm;
+  regenerate_lambdaforminvokers_holders(THREAD);
+
   CollectCLDClosure collect_cld;
   {
     // ClassLoaderDataGraph::loaded_cld_do requires ClassLoaderDataGraph_lock.
@@ -737,12 +755,6 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
     log_info(cds)("Reading extra data from %s ...", SharedArchiveConfigFile);
     read_extra_data(THREAD, SharedArchiveConfigFile);
     log_info(cds)("Reading extra data: done.");
-  }
-
-  if (LambdaFormInvokers::lambdaform_lines() != NULL) {
-    log_info(cds)("Regenerate MethodHandle Holder classes...");
-    LambdaFormInvokers::regenerate_holder_classes(CHECK);
-    log_info(cds)("Regenerate MethodHandle Holder classes done.");
   }
 
   HeapShared::init_for_dumping(CHECK);
@@ -925,12 +937,12 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     char* cds_end =  dynamic_mapped ? dynamic_mapinfo->mapped_end() : static_mapinfo->mapped_end();
     set_shared_metaspace_range(cds_base, static_mapinfo->mapped_end(), cds_end);
     _relocation_delta = static_mapinfo->relocation_delta();
+    _requested_base_address = static_mapinfo->requested_base_address();
     if (dynamic_mapped) {
       FileMapInfo::set_shared_path_table(dynamic_mapinfo);
     } else {
       FileMapInfo::set_shared_path_table(static_mapinfo);
     }
-    _requested_base_address = static_mapinfo->requested_base_address();
   } else {
     set_shared_metaspace_range(NULL, NULL, NULL);
     UseSharedSpaces = false;
@@ -1442,6 +1454,12 @@ void MetaspaceShared::initialize_shared_spaces() {
     SystemDictionaryShared::serialize_dictionary_headers(&rc, false);
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
+  }
+
+  // Set up LambdaFormInvokers::_lambdaform_lines for dynamic dump
+  if (DynamicDumpSharedSpaces) {
+    // Read stored LF format lines stored in static archive
+    LambdaFormInvokers::read_static_archive_invokers();
   }
 
   if (PrintSharedArchiveAndExit) {

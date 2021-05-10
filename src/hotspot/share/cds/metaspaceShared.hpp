@@ -146,6 +146,7 @@ public:
   static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik);
   // print loaded classes names to file.
   static void dump_loaded_classes(const char* file_name, TRAPS);
+  static void regenerate_lambdaforminvokers_holders(TRAPS);
 #endif
 
   // Allocate a block of memory from the temporary "symbol" region.
