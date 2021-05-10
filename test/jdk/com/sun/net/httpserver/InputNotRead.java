@@ -92,7 +92,6 @@ public class InputNotRead {
                         msg.getRequestBody().read();
                         try {
                             msg.sendResponseHeaders(msgCode, reply.length == 0 ? -1 : reply.length);
-                            //msg.getResponseBody().write(reply);
                         } catch(IOException ioe) {
                             ioe.printStackTrace();
                         }
@@ -135,12 +134,7 @@ public class InputNotRead {
                         try {
                             msg.sendResponseHeaders(msgCode, reply.length == 0 ? -1 : reply.length);
                             msg.getResponseBody().write(reply);
-                            //r.close();
-                            // msg.close();
                             msg.getResponseBody().close();
-                            // give time to the WriteFinished event to get executed
-                            // before the input stream gets drained...
-                            // this should trigger the assertion too
                             Thread.sleep(50);
                         } catch(IOException | InterruptedException ie) {
                             ie.printStackTrace();
