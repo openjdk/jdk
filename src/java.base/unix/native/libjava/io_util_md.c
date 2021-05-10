@@ -253,7 +253,7 @@ handleGetLength(FD fd)
     if (result < 0) {
         return -1;
     }
-    #ifdef BLKGETSIZE64
+    #if defined(__linux__) && defined(BLKGETSIZE64)
     if (S_ISBLK(sb.st_mode)) {
         uint64_t size;
         if(ioctl(fd, BLKGETSIZE64, &size) < 0) {
