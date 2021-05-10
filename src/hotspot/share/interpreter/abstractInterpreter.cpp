@@ -113,7 +113,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
   vmIntrinsics::ID iid = m->intrinsic_id();
   if (iid != vmIntrinsics::_none) {
     if (m->is_method_handle_intrinsic()) {
-      assert(MethodHandles::is_signature_polymorphic(id), "must match an intrinsic");
+      assert(MethodHandles::is_signature_polymorphic(iid), "must match an intrinsic");
       MethodKind kind = (MethodKind)(method_handle_invoke_FIRST +
                                     vmIntrinsics::as_int(iid) -
                                     static_cast<int>(vmIntrinsics::FIRST_MH_SIG_POLY));
