@@ -12,7 +12,7 @@ public class CaseDefault {
     public static void main(String[] args) {
         new CaseDefault().run();
     }
-    
+
     void run() {
         String str = "other";
         switch (str) {

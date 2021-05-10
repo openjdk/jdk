@@ -11,7 +11,7 @@ public class NullSwitch {
     public static void main(String[] args) {
         new NullSwitch().switchTest();
     }
-    
+
     void switchTest() {
         assertEquals(0, matchingSwitch1(""));
         assertEquals(1, matchingSwitch1("a"));
@@ -106,7 +106,7 @@ public class NullSwitch {
     private int matchingSwitch8(Object obj) {
         return switch (obj) {
             case String s: yield 0;
-            default: 
+            default:
             case null: yield 1;
         };
     }
