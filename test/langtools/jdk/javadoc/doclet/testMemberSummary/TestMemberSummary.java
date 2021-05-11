@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4951228 6290760 8025633 8026567 8081854 8162363 8175200 8177417 8186332 8182765
- *           8258602
+ *           8258602 8266044
  * @summary  Test the case where the overridden method returns a different
  *           type than the method in the child class.  Make sure the
  *           documentation is inherited but the return type isn't.
@@ -72,7 +72,7 @@ public class TestMemberSummary extends JavadocTester {
                 """
                     <div class="col-first even-row-color"><code>private </code></div>
                     <div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(int)\
-                    " class="member-name-link">PrivateParent</a>&#8203;(int&nbsp;i)</code></div>""");
+                    " class="member-name-link">PrivateParent</a><wbr>(int&nbsp;i)</code></div>""");
 
         // Legacy anchor dimensions (6290760)
         checkOutput("pkg2/A.html", true,
@@ -96,19 +96,19 @@ public class TestMemberSummary extends JavadocTester {
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Class</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-first even-row-color"><code>private static interface&nbsp;</code></div>
+                    <div class="col-first even-row-color"><code>private static @interface&nbsp;</code></div>
                     <div class="col-second even-row-color"><code><a href="Members.A.html" class="type-name-link" title="annotation interface in pkg3">Members.A</a></code></div>
                     <div class="col-last even-row-color">&nbsp;</div>
                     <div class="col-first odd-row-color"><code>private static final class&nbsp;</code></div>
                     <div class="col-second odd-row-color"><code><a href="Members.C.html" class="type-name-link" title="class in pkg3">Members.C</a></code></div>
                     <div class="col-last odd-row-color">&nbsp;</div>
-                    <div class="col-first even-row-color"><code>private static class&nbsp;</code></div>
+                    <div class="col-first even-row-color"><code>private static enum&nbsp;</code></div>
                     <div class="col-second even-row-color"><code><a href="Members.E.html" class="type-name-link" title="enum class in pkg3">Members.E</a></code></div>
                     <div class="col-last even-row-color">&nbsp;</div>
                     <div class="col-first odd-row-color"><code>private static interface&nbsp;</code></div>
                     <div class="col-second odd-row-color"><code><a href="Members.I.html" class="type-name-link" title="interface in pkg3">Members.I</a></code></div>
                     <div class="col-last odd-row-color">&nbsp;</div>
-                    <div class="col-first even-row-color"><code>private static final class&nbsp;</code></div>
+                    <div class="col-first even-row-color"><code>private static final record&nbsp;</code></div>
                     <div class="col-second even-row-color"><code><a href="Members.R.html" class="type-name-link" title="class in pkg3">Members.R</a></code></div>
                     <div class="col-last even-row-color">&nbsp;</div>
                     </div>""",

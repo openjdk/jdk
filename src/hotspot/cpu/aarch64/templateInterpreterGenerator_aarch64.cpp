@@ -775,7 +775,6 @@ void TemplateInterpreterGenerator::lock_method() {
 #endif // ASSERT
 
     __ bind(done);
-    __ resolve(IS_NOT_NULL, r0);
   }
 
   // add space for monitor & lock
@@ -1001,7 +1000,6 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
       __ ldrw(crc,   Address(esp, 4*wordSize)); // Initial CRC
     } else {
       __ ldr(buf, Address(esp, 2*wordSize)); // byte[] array
-      __ resolve(IS_NOT_NULL | ACCESS_READ, buf);
       __ add(buf, buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
       __ ldrw(off, Address(esp, wordSize)); // offset
       __ add(buf, buf, off); // + offset
@@ -1046,9 +1044,6 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
     __ ldrw(off, Address(esp, wordSize)); // int offset
     __ sub(len, end, off);
     __ ldr(buf, Address(esp, 2*wordSize)); // byte[] buf | long buf
-    if (kind == Interpreter::java_util_zip_CRC32C_updateBytes) {
-      __ resolve(IS_NOT_NULL | ACCESS_READ, buf);
-    }
     __ add(buf, buf, off); // + offset
     if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
       __ ldrw(crc, Address(esp, 4*wordSize)); // long crc

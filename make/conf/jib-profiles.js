@@ -205,7 +205,7 @@ var getJibProfiles = function (input) {
 
     // Exclude list to use when Jib creates a source bundle
     data.src_bundle_excludes = [
-        "build", "{,**/}webrev*", "{,**/}.hg", "{,**/}JTwork", "{,**/}JTreport",
+        "build", "{,**/}webrev*", "{,**/}.hg", "{,**/}JTwork*", "{,**/}JTreport*",
         "{,**/}.git"
     ];
     // Include list to use when creating a minimal jib source bundle which

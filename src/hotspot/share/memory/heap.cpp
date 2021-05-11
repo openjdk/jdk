@@ -207,7 +207,7 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
   _log2_segment_size = exact_log2(segment_size);
 
   // Reserve and initialize space for _memory.
-  const size_t page_size = ReservedSpace::actual_reserved_page_size(rs);
+  const size_t page_size = rs.page_size();
   const size_t granularity = os::vm_allocation_granularity();
   const size_t c_size = align_up(committed_size, page_size);
   assert(c_size <= rs.size(), "alignment made committed size to large");

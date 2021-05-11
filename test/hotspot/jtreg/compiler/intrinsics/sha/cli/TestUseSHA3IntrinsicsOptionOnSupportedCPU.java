@@ -26,10 +26,8 @@
  * @test
  * @bug 8252204
  * @summary Verify UseSHA3Intrinsics option processing on supported CPU.
- * @library /test/lib testcases /
+ * @library /test/lib /
  * @requires vm.flagless
- * @modules java.base/jdk.internal.misc
- *          java.management
  *
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox

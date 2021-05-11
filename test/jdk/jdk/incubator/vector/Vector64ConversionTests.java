@@ -62,6 +62,7 @@ import java.util.function.IntFunction;
 public class Vector64ConversionTests extends AbstractVectorConversionTest {
 
     static final VectorShape SHAPE = VectorShape.S_64_BIT;
+    static final int BUFFER_SIZE = Integer.getInteger("jdk.incubator.vector.test.buffer-size", 1024);
 
     @DataProvider
     public Object[][] fixedShapeXfixedShape() {
@@ -75,25 +76,25 @@ public class Vector64ConversionTests extends AbstractVectorConversionTest {
 
     @Test(dataProvider = "fixedShapeXfixedShape")
     static <I, O> void convert(VectorSpecies<I> src, VectorSpecies<O> dst, IntFunction<?> fa) {
-        Object a = fa.apply(1024);
+        Object a = fa.apply(BUFFER_SIZE);
         conversion_kernel(src, dst, a, ConvAPI.CONVERT);
     }
 
     @Test(dataProvider = "fixedShapeXShape")
     static <I, O> void convertShape(VectorSpecies<I> src, VectorSpecies<O> dst, IntFunction<?> fa) {
-        Object a = fa.apply(1024);
+        Object a = fa.apply(BUFFER_SIZE);
         conversion_kernel(src, dst, a, ConvAPI.CONVERTSHAPE);
     }
 
     @Test(dataProvider = "fixedShapeXShape")
     static <I, O> void castShape(VectorSpecies<I> src, VectorSpecies<O> dst, IntFunction<?> fa) {
-        Object a = fa.apply(1024);
+        Object a = fa.apply(BUFFER_SIZE);
         conversion_kernel(src, dst, a, ConvAPI.CASTSHAPE);
     }
 
     @Test(dataProvider = "fixedShapeXShape")
     static <I, O> void reinterpret(VectorSpecies<I> src, VectorSpecies<O> dst, IntFunction<?> fa) {
-        Object a = fa.apply(1024);
+        Object a = fa.apply(BUFFER_SIZE);
         reinterpret_kernel(src, dst, a);
     }
 }

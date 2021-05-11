@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,23 @@
  * questions.
  */
 
-package vm.runtime.defmeth.shared.annotation;
-
-import vm.runtime.defmeth.shared.ExecutionMode;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-/**
- * Mark a test that it may fail (due to a test or product bug).
- * Allows to exclude all failing tests when failures are undesirable.
+/*
+ * This class was used to produce a jcod file in which the
+ * NestMembers attribute was modified to make it empty. Class
+ * HostNoNestMember$Member has class HostNoNestMember as its
+ * NestHost, which will trigger an error when resolving.
+ *
+ * When compiled, this generates a HostNoNestMember class and
+ * a HostNoNestMember$Menber class.  The former class, HostNoNestMember,
+ * gets overwritten when HostNoNestMember.jcod gets compiled.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface KnownFailure {
-    ExecutionMode[] modes() default {};
+class HostNoNestMember {
+  class Member {
+    private int value;
+  }
+
+  public int test() {
+    Member m = new Member();
+    return m.value;
+  }
 }
