@@ -2429,7 +2429,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void InstanceKlass::remove_unshareable_info() {
 
-  if (MetaspaceShared::is_old_class(this)) {
+  if (MetaspaceShared::has_old_class_version(this)) {
     // Set the old class bit.
     set_is_shared_old_klass();
   }
