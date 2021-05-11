@@ -58,24 +58,16 @@ public class SwitchBootstraps {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    //typeSwitch implementation:
-    private static final MethodHandle TYPE_INIT_HOOK;
-    private static final MethodHandle TYPE_SWITCH_METHOD;
+    private static final MethodHandle DO_SWITCH;
 
     static {
         try {
-            TYPE_INIT_HOOK = LOOKUP.findStatic(SwitchBootstraps.class, "typeInitHook",
-                                                  MethodType.methodType(MethodHandle.class, CallSite.class));
-            TYPE_SWITCH_METHOD = LOOKUP.findVirtual(TypeSwitchCallSite.class, "doSwitch",
-                                                    MethodType.methodType(int.class, Object.class, int.class));
+            DO_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "doSwitch",
+                                           MethodType.methodType(int.class, Object.class, int.class, Object[].class));
         }
         catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
-    }
-
-    private static<T extends CallSite> MethodHandle typeInitHook(T receiver) {
-        return TYPE_SWITCH_METHOD.bindTo(receiver);
     }
 
     /**
@@ -124,56 +116,48 @@ public class SwitchBootstraps {
         labels = labels.clone();
         Stream.of(labels).forEach(SwitchBootstraps::verifyLabel);
 
-        return new TypeSwitchCallSite(invocationType, labels);
+        MethodHandle target = MethodHandles.insertArguments(DO_SWITCH, 2, (Object) labels);
+        return new ConstantCallSite(target);
     }
 
     private static void verifyLabel(Object label) {
-        if (Objects.isNull(label)) {
+        if (label == null) {
             throw new IllegalArgumentException("null label found");
         }
-        if (label.getClass() != Class.class &&
-            label.getClass() != String.class &&
-            label.getClass() != Integer.class) {
+        Class<?> labelClass = label.getClass();
+        if (labelClass != Class.class &&
+            labelClass != String.class &&
+            labelClass != Integer.class) {
             throw new IllegalArgumentException("label with illegal type found: " + label.getClass());
         }
     }
 
-    static class TypeSwitchCallSite extends ConstantCallSite {
-        private final Object[] labels;
+    private static int doSwitch(Object target, int startIndex, Object[] labels) {
+        if (target == null)
+            return -1;
 
-        TypeSwitchCallSite(MethodType targetType,
-                           Object[] labels) throws Throwable {
-            super(targetType, TYPE_INIT_HOOK);
-            this.labels = labels;
-        }
-
-        int doSwitch(Object target, int startIndex) {
-            if (target == null)
-                return -1;
-
-            // Dumbest possible strategy
-            Class<?> targetClass = target.getClass();
-            for (int i = startIndex; i < labels.length; i++) {
-                if (labels[i] instanceof Class<?>) {
-                    Class<?> c = (Class<?>) labels[i];
-                    if (c.isAssignableFrom(targetClass))
-                        return i;
-                } else {
-                    if (labels[i] instanceof Integer constant) {
-                        if (target instanceof Number input && constant.intValue() == input.intValue()) {
-                            return i;
-                        }
-                        if (target instanceof Character input && constant.intValue() == input.charValue()) {
-                            return i;
-                        }
-                    } else if (labels[i].equals(target)) {
+        // Dumbest possible strategy
+        Class<?> targetClass = target.getClass();
+        for (int i = startIndex; i < labels.length; i++) {
+            Object label = labels[i];
+            if (label instanceof Class<?> c) {
+                if (c.isAssignableFrom(targetClass))
+                    return i;
+            } else {
+                if (label instanceof Integer constant) {
+                    if (target instanceof Number input && constant.intValue() == input.intValue()) {
                         return i;
                     }
+                    if (target instanceof Character input && constant.intValue() == input.charValue()) {
+                        return i;
+                    }
+                } else if (label.equals(target)) {
+                    return i;
                 }
             }
-
-            return labels.length;
         }
+
+        return labels.length;
     }
 
 }
