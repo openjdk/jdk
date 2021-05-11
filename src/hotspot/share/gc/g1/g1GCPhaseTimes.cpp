@@ -353,11 +353,11 @@ void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum,
 #define TIME_FORMAT "%.1lfms"
 
 void G1GCPhaseTimes::info_time(const char* name, double value) const {
-  log_info(gc, phases)("%s%s: " TIME_FORMAT, "  ", name, value);
+  log_info(gc, phases)("  %s: " TIME_FORMAT, name, value);
 }
 
 void G1GCPhaseTimes::debug_time(const char* name, double value) const {
-  log_debug(gc, phases)("%s%s: " TIME_FORMAT, "    ", name, value);
+  log_debug(gc, phases)("    %s: " TIME_FORMAT, name, value);
 }
 
 void G1GCPhaseTimes::debug_time_for_reference(const char* name, double value) const {
@@ -366,19 +366,19 @@ void G1GCPhaseTimes::debug_time_for_reference(const char* name, double value) co
 
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    ls.print_cr("%s%s: " TIME_FORMAT, "    ", name, value);
+    ls.print_cr("    %s: " TIME_FORMAT, name, value);
   } else if (lt2.is_enabled()) {
     LogStream ls(lt2);
-    ls.print_cr("%s%s: " TIME_FORMAT, "    ", name, value);
+    ls.print_cr("    %s: " TIME_FORMAT, name, value);
   }
 }
 
 void G1GCPhaseTimes::trace_time(const char* name, double value) const {
-  log_trace(gc, phases)("%s%s: " TIME_FORMAT, "      ", name, value);
+  log_trace(gc, phases)("      %s: " TIME_FORMAT, name, value);
 }
 
 void G1GCPhaseTimes::trace_count(const char* name, size_t value) const {
-  log_trace(gc, phases)("%s%s: " SIZE_FORMAT, "      ", name, value);
+  log_trace(gc, phases)("      %s: " SIZE_FORMAT, name, value);
 }
 
 double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
