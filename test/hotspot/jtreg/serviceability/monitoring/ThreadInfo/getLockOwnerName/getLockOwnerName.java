@@ -69,7 +69,6 @@ import java.lang.management.ThreadMXBean;
 
 public class getLockOwnerName {
     private static final String AGENT_LIB = "getLockOwnerName";
-    private static final int exit_delta   = 95;
 
     private static final int DEF_TIME_MAX = 60;    // default max # secs to test
     private static final int JOIN_MAX     = 30;    // max # secs to wait for join
@@ -132,7 +131,10 @@ public class getLockOwnerName {
             }
         }
 
-        System.exit(run(timeMax, System.out) + exit_delta);
+        int retCode = run(timeMax, System.out);
+        if (retCode != 0) {
+            throw new RuntimeException("Test failed with retCode=" + retCode);
+        }
     }
 
     public static void logDebug(String mesg) {
