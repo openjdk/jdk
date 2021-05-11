@@ -5875,20 +5875,20 @@ address generate_avx_ghash_processBlocks() {
     __ evpbroadcastd(xlate_op, rcx, Assembler::AVX_512bit);
 
     // Load lookup tables based on isURL
-    __ evmovdqaq(lookup_lo, StubRoutines::x86::base64_vbmi_lookup_lo_addr());
-    __ evmovdqaq(lookup_hi, StubRoutines::x86::base64_vbmi_lookup_hi_addr());
+    __ evmovdqaq(lookup_lo, StubRoutines::x86::base64_vbmi_lookup_lo_addr(), Assembler::AVX_512bit);
+    __ evmovdqaq(lookup_hi, StubRoutines::x86::base64_vbmi_lookup_hi_addr(), Assembler::AVX_512bit);
 
     // check if base64 tables(isURL=0) or base64 url tables(isURL=1) need to be loaded
     __ cmpl(isURL, 0);
     __ jcc(Assembler::equal, L_processdata);
-    __ evmovdqaq(lookup_lo, StubRoutines::x86::base64_vbmi_lookup_lo_url_addr());
-    __ evmovdqaq(lookup_hi, StubRoutines::x86::base64_vbmi_lookup_hi_url_addr());
+    __ evmovdqaq(lookup_lo, StubRoutines::x86::base64_vbmi_lookup_lo_url_addr(), Assembler::AVX_512bit);
+    __ evmovdqaq(lookup_hi, StubRoutines::x86::base64_vbmi_lookup_hi_url_addr(), Assembler::AVX_512bit);
 
     // load masks required for decoding data
     __ BIND(L_processdata);
-    __ evmovdqaq(join01, StubRoutines::x86::base64_vbmi_join_0_1_addr());
-    __ evmovdqaq(join12, StubRoutines::x86::base64_vbmi_join_1_2_addr());
-    __ evmovdqaq(join23, StubRoutines::x86::base64_vbmi_join_2_3_addr());
+    __ evmovdqaq(join01, StubRoutines::x86::base64_vbmi_join_0_1_addr(), Assembler::AVX_512bit);
+    __ evmovdqaq(join12, StubRoutines::x86::base64_vbmi_join_1_2_addr(), Assembler::AVX_512bit);
+    __ evmovdqaq(join23, StubRoutines::x86::base64_vbmi_join_2_3_addr(), Assembler::AVX_512bit);
 
     __ align(32);
     __ BIND(L_process256);
