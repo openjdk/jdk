@@ -21,9 +21,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<approvalRequirement votes="20" locales="*" paths="//ldml/numbers/symbols[^/]++/timeSeparator"/>
 			<approvalRequirement votes="20" locales="*" paths="//ldml/numbers/currencies/currency\[@type=.([A-Z]{3}).\]/symbol(\[@alt=.(narrow|variant).\])?"/>
             <approvalRequirement votes="20" locales="*" paths="//ldml/dates/timeZoneNames/metazone[^/]++/short/[^/]++"/>
-			<approvalRequirement votes="20" locales="ar ca cs da de el es fi fr he hi hr hu it ja ko nb nl pl pt pt_PT ro ru sk sl sr sv th tr uk vi zh zh_Hant"
+			<approvalRequirement votes="20" locales="ar ca cs da de el es fi fr he hi hr hu it ja ko nl no pl pt pt_PT ro ru sk sl sr sv th tr uk vi zh zh_Hant"
 			   paths="//ldml/dates/calendars/calendar\[@type=.gregorian.\]/(days|months).*"/>
-			<approvalRequirement votes="20" locales="ar ca cs da de el es fi fr he hi hr hu it ja ko nb nl pl pt pt_PT ro ru sk sl sr sv th tr uk vi zh zh_Hant"
+			<approvalRequirement votes="20" locales="ar ca cs da de el es fi fr he hi hr hu it ja ko nl no  pl pt pt_PT ro ru sk sl sr sv th tr uk vi zh zh_Hant"
 			   paths="//ldml/dates/calendars/calendar\[@type=.gregorian.\]/(date|time)Formats/.*"/>
 			<!--  "high bar" items for specific locales -->
 			<approvalRequirement votes="20" locales="de" paths="//ldml/dates/calendars/calendar[^/]++/dayPeriods/dayPeriodContext\[@type=.format.\]/dayPeriodWidth[^/]++/dayPeriod\[@type=.(am|pm).\]"/>
@@ -31,7 +31,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<approvalRequirement votes="20" locales="tr" paths="//ldml/localeDisplayNames/territories/territory\[@type=.CY.\]"/>
 			<approvalRequirement votes="20" locales="kea pt_CV" paths="//ldml/numbers/currencies/currency\[@type=.CVE.\]/(symbol|decimal)"/>
 			<!--  established locales - http://cldr.unicode.org/index/process#TOC-Draft-Status-of-Optimal-Field-Value -->
-			<approvalRequirement votes="8" locales="am ar bn ca cs da de el en es et fa fi fil fr ga gu he hi hr hu id it ja kk kn ko ky lt lv mk ml mr ms nb nl pa pl pt pt_PT ro ru sk sl sr sv ta te th tr ur uk vi zh zh_Hant" paths=""/>
+			<approvalRequirement votes="8" locales="am ar bn ca cs da de el en es et fa fi fil fr ga gu he hi hr hu id it ja kk kn ko ky lt lv mk ml mr ms nl no pa pl pt pt_PT ro ru sk sl sr sv ta te th tr ur uk vi zh zh_Hant" paths=""/>
 			<!--  all other items -->
 			<approvalRequirement votes="4" locales="*" paths=""/>
 		</approvalRequirements>
@@ -62,8 +62,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%currency40" value="(BRL|CNY|EUR|GBP|INR|JPY|RUB|USD)"/>
 		<coverageVariable key="%currency60" value="(AUD|CAD|CHF|DKK|HKD|IDR|KRW|MXN|NOK|PLN|SAR|SEK|THB|TRY|TWD|ZAR)"/>
 		<coverageVariable key="%currency60_EU" value="(CZK|HUF)"/>
-		<coverageVariable key="%currency80" value="(AED|AFN|ALL|AMD|ANG|AOA|ARS|AWG|AZN|BAM|BBD|BDT|BGN|BHD|BIF|BMD|BND|BOB|BSD|BTN|BWP|BYN|BZD|CDF|CLP|CNH|COP|CRC|CUC|CUP|CVE|CZK|DJF|DOP|DZD|EGP|ERN|ETB|FJD|FKP|GEL|GHS|GIP|GMD|GNF|GTQ|GYD|HNL|HRK|HTG|HUF|ILS|IQD|IRR|ISK|JMD|JOD|KES|KGS|KHR|KMF|KPW|KWD|KYD|KZT|LAK|LBP|LKR|LRD|LYD|MAD|MDL|MGA|MKD|MMK|MNT|MOP|MRU|MUR|MVR|MWK|MYR|MZN|NAD|NGN|NIO|NPR|NZD|OMR|PAB|PEN|PGK|PHP|PKR|PYG|QAR|RON|RSD|RWF|SBD|SCR|SDG|SGD|SHP|SLL|SOS|SRD|SSP|STN|SYP|SZL|TJS|TMT|TND|TOP|TTD|TZS|UAH|UGX|UYU|UZS|VES|VND|VUV|WST|XCD|XAF|XOF|XPF|YER|ZMW)"/>
-		<coverageVariable key="%currency100" value="(AFA|ADP|ALK|AO[KNR]|AR[ALMP]|ATS|AZM|BA[DN]|BE[CFL]|BG[LM]|BGO|BO[LPV]|BR[BCENRZ]|BUK|BY[BR]|CH[EW]|CL[EF]|CNX|COU|CS[DK]|CYP|DDM|DEM|EC[SV]|EEK|ES[ABP]|FIM|FRF|GEK|GHC|GNS|GQE|GRD|GW[EP]|HRD|IEP|IL[PR]|ISJ|ITL|KR[HO]|LSL|LT[LT]|LU[CFL]|LV[LR]|MAF|MCF|MDC|MGF|MKN|MLF|MRO|MT[LP]|MVP|MX[PV]|MZ[EM]|NIC|NLG|PE[IS]|PLZ|PTE|RHD|ROL|RUR|SD[DP]|SIT|SKK|SRG|STD|SUR|SVC|TJR|TMM|TPE|TRL|UAK|UGS|US[NS]|UY[IPW]|VE[BF]|VNN|XA[GU]|XB[ABCD]|XDR|XEU|XF[OU]|XP[DT]|XRE|XSU|XTS|XUA|YDD|YU[DMNR]|ZAL|ZMK|ZR[NZ]|ZW[DLR])"/>
+		<coverageVariable key="%currency80" value="(AED|AFN|ALL|AMD|ANG|AOA|ARS|AWG|AZN|BAM|BBD|BDT|BGN|BHD|BIF|BMD|BND|BOB|BSD|BTN|BWP|BYN|BZD|CDF|CLP|CNH|COP|CRC|CUC|CUP|CVE|CZK|DJF|DOP|DZD|EGP|ERN|ETB|FJD|FKP|GEL|GHS|GIP|GMD|GNF|GTQ|GYD|HNL|HRK|HTG|HUF|ILS|IQD|IRR|ISK|JMD|JOD|KES|KGS|KHR|KMF|KPW|KWD|KYD|KZT|LAK|LBP|LKR|LRD|LSL|LYD|MAD|MDL|MGA|MKD|MMK|MNT|MOP|MRU|MUR|MVR|MWK|MYR|MZN|NAD|NGN|NIO|NPR|NZD|OMR|PAB|PEN|PGK|PHP|PKR|PYG|QAR|RON|RSD|RWF|SBD|SCR|SDG|SGD|SHP|SLL|SOS|SRD|SSP|STN|SYP|SZL|TJS|TMT|TND|TOP|TTD|TZS|UAH|UGX|UYU|UZS|VES|VND|VUV|WST|XCD|XAF|XOF|XPF|YER|ZMW)"/>
+		<coverageVariable key="%currency100" value="(AFA|ADP|ALK|AO[KNR]|AR[ALMP]|ATS|AZM|BA[DN]|BE[CFL]|BG[LM]|BGO|BO[LPV]|BR[BCENRZ]|BUK|BY[BR]|CH[EW]|CL[EF]|CNX|COU|CS[DK]|CYP|DDM|DEM|EC[SV]|EEK|ES[ABP]|FIM|FRF|GEK|GHC|GNS|GQE|GRD|GW[EP]|HRD|IEP|IL[PR]|ISJ|ITL|KR[HO]|LT[LT]|LU[CFL]|LV[LR]|MAF|MCF|MDC|MGF|MKN|MLF|MRO|MT[LP]|MVP|MX[PV]|MZ[EM]|NIC|NLG|PE[IS]|PLZ|PTE|RHD|ROL|RUR|SD[DP]|SIT|SKK|SRG|STD|SUR|SVC|TJR|TMM|TPE|TRL|UAK|UGS|US[NS]|UY[IPW]|VE[BF]|VNN|XA[GU]|XB[ABCD]|XDR|XEU|XF[OU]|XP[DT]|XRE|XSU|XTS|XUA|YDD|YU[DMNR]|ZAL|ZMK|ZR[NZ]|ZW[DLR])"/>
 		<coverageVariable key="%cyclicNameTypes" value="([1-9]?[0-9])"/>
         <coverageVariable key="%d0Types80" value="(ascii|fwidth|hwidth|lower|title|upper)"/>
 		<coverageVariable key="%dateFormatItems" value="((E|d|Ed|EEEEd)|((Gy|y|yyyy|U)?(M|Md|MEd|MEEEEd|MMM|MMMd|MMMEd|MMMEEEEd|MMMM|MMMMd|MMMMEd|MMMMEEEEd))|((Gy|y|yyyy)(QQQ|QQQQ)?))"/>
@@ -99,7 +99,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%language60_GA" value="(fan|mye)"/>
 		<coverageVariable key="%language60_NG" value="(ff|ha|ibb|ig|kr|yo)"/>
 		<coverageVariable key="%language60_TD" value="(shu|dzg|kbl|mde|mua|sba)"/>
-		<coverageVariable key="%language80" value="(doi|a([fkmrz]|gq|s[at]?)|b([gm-os]|as|e[mz]?|rx?)|c([aosy]|cp|eb?|gg|hr|kb)|d([ez]|av?|je|sb|ua|yo)|e([elnos-u]|bu|wo)|f([afory]|il?|ur)|fa_AF|g([adlv]|sw|uz?)|h([eirtuy]|aw?|mn|sb)|i[adgist]|j([av]|go|mc)|k([imnuwy]|a[bm]?|de|ea|hq|kj?|ln?|ok?|s[bfh]?)|l([bgnotv]|ag?|kt|rc|u[oy]?)|m([iklr-ty]|a[is]|er|fe|g[ho]?|ni?|u[al]|zn)|n([bel]|aq|ds?|mg|nh?|us|yn?)|o[mrs]|p([alst]|cm)|qu|r([mnu]|of?|wk?)|s([dgiklnoqrt-w]|a[hqt]?|bp|e[hs]?|hi|mn?)|t([ag-ikort]|eo?|wq|zm)|u([gkrz]|nd)|v([i]|ai|un)|w(ae|o)|x(h|og)|y([io]|av|ue)|z([hu]|gh|xx))"/>
+		<coverageVariable key="%language80" value="(doi|a([fkmrz]|gq|s[at]?)|b([gm-os]|as|e[mz]?|rx?)|c([aosy]|cp|eb?|gg|hr|kb)|d([ez]|av?|je|sb|ua|yo)|e([elnos-u]|bu|wo)|f([afory]|il?|ur)|fa_AF|g([adlv]|sw|uz?)|h([eirtuy]|aw?|mn|sb)|i[adgist]|j([av]|go|mc)|k([imnuwy]|a[bm]?|de|ea|hq|kj?|ln?|ok?|s[bfh]?)|l([bgnotv]|ag?|kt|rc|u[oy]?)|m([iklr-ty]|a[is]|er|fe|g[ho]?|ni?|u[al]|zn)|n([belo]|aq|ds?|mg|nh?|us|yn?)|o[mrs]|p([alst]|cm)|qu|r([mnu]|of?|wk?)|s([dgiklnoqrt-w]|a[hqt]?|bp|e[hs]?|hi|mn?)|t([ag-ikort]|eo?|wq|zm)|u([gkrz]|nd)|v([i]|ai|un)|w(ae|o)|x(h|og)|y([io]|av|ue)|z([hu]|gh|xx))"/>
 		<coverageVariable key="%languagecomp" value="(gan|hak|hsn|nan|wuu)"/> <!-- not currently used, just for reference: the only valid language codes that are not in modern coverage -->
 		<coverageVariable key="%lbTypes80" value="(strict|normal|loose)"/>
         <coverageVariable key="%lwTypes" value="(normal|breakall|keepall)"/>
@@ -816,15 +816,15 @@ For terms of use, see http://www.unicode.org/copyright.html
         <coverageLevel inLanguage="en" value="modern" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitsEnglish']/gender"/>
 		<coverageLevel inLanguage="en" value="modern" match="units/unitLength[@type='%unitLengths']/unit[@type='%unitsEnglish']/perUnitPattern"/>
 		
-        <coverageLevel value="modern" match="units/unitLength[@type='%unitNonNarrowLengths']/compoundUnit[@type='%anyAttribute']/compoundUnitPattern1[@count='%anyAttribute'][@gender='%anyAttribute'][@case='%anyAttribute']"/>
-        <coverageLevel value="modern" match="units/unitLength[@type='%unitNonNarrowLengths']/compoundUnit[@type='%anyAttribute']/compoundUnitPattern1[@count='%anyAttribute'][@gender='%anyAttribute']"/>
-        <coverageLevel value="modern" match="units/unitLength[@type='%unitNonNarrowLengths']/compoundUnit[@type='%anyAttribute']/compoundUnitPattern1[@count='%anyAttribute'][@case='%anyAttribute']"/>
-        <coverageLevel value="modern" match="units/unitLength[@type='%unitNonNarrowLengths']/compoundUnit[@type='%anyAttribute']/compoundUnitPattern1[@count='%anyAttribute']"/>
-        <coverageLevel value="modern" match="units/unitLength[@type='%unitNonNarrowLengths']/unit[@type='%anyAttribute']/unitPattern[@count='%anyAttribute'][@case='%anyAttribute']"/>
-        <coverageLevel value="modern" match="units/unitLength[@type='%unitNonNarrowLengths']/unit[@type='%anyAttribute']/unitPattern[@count='%anyAttribute']"/>
-        <coverageLevel value="modern" match="units/unitLength[@type='%unitNonNarrowLengths']/unit[@type='%anyAttribute']/displayName"/>
-        <coverageLevel value="modern" match="units/unitLength[@type='%unitNonNarrowLengths']/unit[@type='%anyAttribute']/gender"/>
-        <coverageLevel value="modern" match="units/unitLength[@type='%unitNonNarrowLengths']/unit[@type='%anyAttribute']/perUnitPattern"/>
+        <coverageLevel value="modern" match="units/unitLength[@type='%unitLengths']/compoundUnit[@type='%anyAttribute']/compoundUnitPattern1[@count='%anyAttribute'][@gender='%anyAttribute'][@case='%anyAttribute']"/>
+        <coverageLevel value="modern" match="units/unitLength[@type='%unitLengths']/compoundUnit[@type='%anyAttribute']/compoundUnitPattern1[@count='%anyAttribute'][@gender='%anyAttribute']"/>
+        <coverageLevel value="modern" match="units/unitLength[@type='%unitLengths']/compoundUnit[@type='%anyAttribute']/compoundUnitPattern1[@count='%anyAttribute'][@case='%anyAttribute']"/>
+        <coverageLevel value="modern" match="units/unitLength[@type='%unitLengths']/compoundUnit[@type='%anyAttribute']/compoundUnitPattern1[@count='%anyAttribute']"/>
+        <coverageLevel value="modern" match="units/unitLength[@type='%unitLengths']/unit[@type='%anyAttribute']/unitPattern[@count='%anyAttribute'][@case='%anyAttribute']"/>
+        <coverageLevel value="modern" match="units/unitLength[@type='%unitLengths']/unit[@type='%anyAttribute']/unitPattern[@count='%anyAttribute']"/>
+        <coverageLevel value="modern" match="units/unitLength[@type='%unitLengths']/unit[@type='%anyAttribute']/displayName"/>
+        <coverageLevel value="modern" match="units/unitLength[@type='%unitLengths']/unit[@type='%anyAttribute']/gender"/>
+        <coverageLevel value="modern" match="units/unitLength[@type='%unitLengths']/unit[@type='%anyAttribute']/perUnitPattern"/>
 
 		<coverageLevel value="modern" match="localeDisplayNames/types/type[@key='calendar'][@type='%calendarType80']"/>
 		

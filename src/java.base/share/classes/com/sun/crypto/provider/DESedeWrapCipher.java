@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.security.*;
 import java.security.spec.*;
+import java.util.Arrays;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
@@ -241,8 +242,14 @@ public final class DESedeWrapCipher extends CipherSpi {
             throw new UnsupportedOperationException("This cipher can " +
                 "only be used for key wrapping and unwrapping");
         }
-        cipher.init(decrypting, key.getAlgorithm(), key.getEncoded(),
-                    currIv);
+        byte[] encoded = key.getEncoded();
+        try {
+            cipher.init(decrypting, key.getAlgorithm(), encoded, currIv);
+        } finally {
+            if (encoded != null) {
+                Arrays.fill(encoded, (byte) 0);
+            }
+        }
         cipherKey = key;
     }
 
@@ -416,6 +423,7 @@ public final class DESedeWrapCipher extends CipherSpi {
      */
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encoded = key.getEncoded();
+        Arrays.fill(encoded, (byte)0);
         if (encoded.length != 24) {
             throw new InvalidKeyException("Invalid key length: " +
                 encoded.length + " bytes");
@@ -448,47 +456,57 @@ public final class DESedeWrapCipher extends CipherSpi {
                                           "the key to be wrapped");
         }
 
-        byte[] cks = getChecksum(keyVal);
         byte[] in = new byte[Math.addExact(keyVal.length, CHECKSUM_LEN)];
-        System.arraycopy(keyVal, 0, in, 0, keyVal.length);
-        System.arraycopy(cks, 0, in, keyVal.length, CHECKSUM_LEN);
-
+        byte[] cipherKeyEncoded = cipherKey.getEncoded();
         byte[] out = new byte[Math.addExact(iv.length, in.length)];
-        System.arraycopy(iv, 0, out, 0, iv.length);
-
-        cipher.encrypt(in, 0, in.length, out, iv.length);
-
-        // reverse the array content
-        for (int i = 0; i < out.length/2; i++) {
-            byte temp = out[i];
-            out[i] = out[out.length-1-i];
-            out[out.length-1-i] = temp;
-        }
         try {
-            cipher.init(false, cipherKey.getAlgorithm(),
-                        cipherKey.getEncoded(), IV2);
-        } catch (InvalidKeyException ike) {
-            // should never happen
-            throw new RuntimeException("Internal cipher key is corrupted");
-        } catch (InvalidAlgorithmParameterException iape) {
-            // should never happen
-            throw new RuntimeException("Internal cipher IV is invalid");
-        }
-        byte[] out2 = new byte[out.length];
-        cipher.encrypt(out, 0, out.length, out2, 0);
+            byte[] cks = getChecksum(keyVal);
+            System.arraycopy(keyVal, 0, in, 0, keyVal.length);
+            System.arraycopy(cks, 0, in, keyVal.length, CHECKSUM_LEN);
 
-        // restore cipher state to prior to this call
-        try {
-            cipher.init(decrypting, cipherKey.getAlgorithm(),
-                        cipherKey.getEncoded(), iv);
-        } catch (InvalidKeyException ike) {
-            // should never happen
-            throw new RuntimeException("Internal cipher key is corrupted");
-        } catch (InvalidAlgorithmParameterException iape) {
-            // should never happen
-            throw new RuntimeException("Internal cipher IV is invalid");
+            System.arraycopy(iv, 0, out, 0, iv.length);
+
+            cipher.encrypt(in, 0, in.length, out, iv.length);
+
+            // reverse the array content
+            for (int i = 0; i < out.length / 2; i++) {
+                byte temp = out[i];
+                out[i] = out[out.length - 1 - i];
+                out[out.length - 1 - i] = temp;
+            }
+            try {
+                cipher.init(false, cipherKey.getAlgorithm(),
+                        cipherKeyEncoded, IV2);
+            } catch (InvalidKeyException ike) {
+                // should never happen
+                throw new RuntimeException("Internal cipher key is corrupted");
+            } catch (InvalidAlgorithmParameterException iape) {
+                // should never happen
+                throw new RuntimeException("Internal cipher IV is invalid");
+            }
+            byte[] out2 = new byte[out.length];
+            cipher.encrypt(out, 0, out.length, out2, 0);
+
+            // restore cipher state to prior to this call
+            try {
+                cipher.init(decrypting, cipherKey.getAlgorithm(),
+                        cipherKeyEncoded, iv);
+            } catch (InvalidKeyException ike) {
+                // should never happen
+                throw new RuntimeException("Internal cipher key is corrupted");
+            } catch (InvalidAlgorithmParameterException iape) {
+                // should never happen
+                throw new RuntimeException("Internal cipher IV is invalid");
+            }
+            return out2;
+        } finally {
+            Arrays.fill(keyVal, (byte)0);
+            Arrays.fill(in, (byte)0);
+            Arrays.fill(out, (byte)0);
+            if (cipherKeyEncoded != null) {
+                Arrays.fill(cipherKeyEncoded, (byte) 0);
+            }
         }
-        return out2;
     }
 
     /**
@@ -530,34 +548,46 @@ public final class DESedeWrapCipher extends CipherSpi {
         }
         iv = new byte[IV_LEN];
         System.arraycopy(buffer, 0, iv, 0, iv.length);
-        try {
-            cipher.init(true, cipherKey.getAlgorithm(), cipherKey.getEncoded(),
-                    iv);
-        } catch (InvalidAlgorithmParameterException iape) {
-            throw new InvalidKeyException("IV in wrapped key is invalid");
-        }
+        byte[] cipherKeyEncoded = cipherKey.getEncoded();
+        byte[] out = null;
         byte[] buffer2 = new byte[buffer.length - iv.length];
-        cipher.decrypt(buffer, iv.length, buffer2.length,
-                       buffer2, 0);
-        int keyValLen = buffer2.length - CHECKSUM_LEN;
-        byte[] cks = getChecksum(buffer2, 0, keyValLen);
-        int offset = keyValLen;
-        for (int i = 0; i < CHECKSUM_LEN; i++) {
-            if (buffer2[offset + i] != cks[i]) {
-                throw new InvalidKeyException("Checksum comparison failed");
-            }
-        }
-        // restore cipher state to prior to this call
         try {
-          cipher.init(decrypting, cipherKey.getAlgorithm(),
-                    cipherKey.getEncoded(), IV2);
-        } catch (InvalidAlgorithmParameterException iape) {
-            throw new InvalidKeyException("IV in wrapped key is invalid");
+            try {
+                cipher.init(true, cipherKey.getAlgorithm(), cipherKeyEncoded,
+                        iv);
+            } catch (InvalidAlgorithmParameterException iape) {
+                throw new InvalidKeyException("IV in wrapped key is invalid");
+            }
+            cipher.decrypt(buffer, iv.length, buffer2.length,
+                    buffer2, 0);
+            int keyValLen = buffer2.length - CHECKSUM_LEN;
+            byte[] cks = getChecksum(buffer2, 0, keyValLen);
+            int offset = keyValLen;
+            for (int i = 0; i < CHECKSUM_LEN; i++) {
+                if (buffer2[offset + i] != cks[i]) {
+                    throw new InvalidKeyException("Checksum comparison failed");
+                }
+            }
+            // restore cipher state to prior to this call
+            try {
+                cipher.init(decrypting, cipherKey.getAlgorithm(),
+                        cipherKeyEncoded, IV2);
+            } catch (InvalidAlgorithmParameterException iape) {
+                throw new InvalidKeyException("IV in wrapped key is invalid");
+            }
+            out = new byte[keyValLen];
+            System.arraycopy(buffer2, 0, out, 0, keyValLen);
+            return ConstructKeys.constructKey(out, wrappedKeyAlgorithm,
+                    wrappedKeyType);
+        } finally {
+            if (out != null) {
+                Arrays.fill(out, (byte)0);
+            }
+            if (cipherKeyEncoded != null) {
+                Arrays.fill(cipherKeyEncoded, (byte) 0);
+            }
+            Arrays.fill(buffer2, (byte)0);
         }
-        byte[] out = new byte[keyValLen];
-        System.arraycopy(buffer2, 0, out, 0, keyValLen);
-        return ConstructKeys.constructKey(out, wrappedKeyAlgorithm,
-                                          wrappedKeyType);
     }
 
     private static final byte[] getChecksum(byte[] in) {
@@ -573,6 +603,7 @@ public final class DESedeWrapCipher extends CipherSpi {
         md.update(in, offset, len);
         byte[] cks = new byte[CHECKSUM_LEN];
         System.arraycopy(md.digest(), 0, cks, 0, cks.length);
+        md.reset();
         return cks;
     }
 }

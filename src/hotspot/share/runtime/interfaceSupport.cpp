@@ -33,7 +33,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/stackFrameStream.inline.hpp"

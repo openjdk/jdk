@@ -366,7 +366,8 @@ public class SealedCompilationTests extends CompilationTestCase {
                 "class SealedTest {\n" +
                 "    sealed class Super {}\n" +
                 "    sealed non-sealed class Sub extends Super {}\n" +
-                "}"))
+                "}",
+                "sealed public @interface SealedTest { }"))
             assertFail("compiler.err.illegal.combination.of.modifiers", s);
     }
 
@@ -1252,5 +1253,17 @@ public class SealedCompilationTests extends CompilationTestCase {
         )) {
             assertOK(s);
         }
+    }
+
+    public void testIntersectionWithSealedClasses() {
+        assertOK(
+                """
+                class A { }
+                sealed interface I permits B { }
+                final class B extends A implements I { }
+
+                class Foo<X extends A & I> {}
+                """
+        );
     }
 }
