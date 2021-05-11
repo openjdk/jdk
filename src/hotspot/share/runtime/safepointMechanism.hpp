@@ -68,8 +68,12 @@ public:
   static bool    is_poll_address(address addr)  { return addr >= _polling_page && addr < (_polling_page + os::vm_page_size()); }
 
   struct ThreadData {
+    bool _is_processing;
     volatile uintptr_t _polling_word;
     volatile uintptr_t _polling_page;
+
+    inline void set_is_processing(bool is_processing) { _is_processing = is_processing; }
+    inline bool is_processing() const { return _is_processing; }
 
     inline void set_polling_word(uintptr_t poll_value);
     inline uintptr_t get_polling_word();

@@ -133,7 +133,31 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
   }
 }
 
+class ProcessReentranceGuard {
+  JavaThread* const _jt;
+ public:
+  ProcessReentranceGuard(JavaThread* jt) :
+    _jt(jt) {
+    assert(_jt->poll_data()->is_processing() == false, "Must be");
+    _jt->poll_data()->set_is_processing(true);
+  }
+  ~ProcessReentranceGuard() {
+    assert(_jt->poll_data()->is_processing() == true, "Must be");
+    _jt->poll_data()->set_is_processing(false);
+  }
+};
+
 void SafepointMechanism::process_if_requested_slow(JavaThread *thread) {
+  // Thread-local test if we are in the middle of processing a safepoint.
+  if (thread->poll_data()->is_processing()) {
+    // This is caused by a handshake operation reentering safepoint. We
+    // should just return because otherwise the thread will probably block on the
+    // reentrance of the handshake mutex. We also don't need to do anything
+    // because the process() routine will be retried after the handshake returns.
+    return;
+  }
+  ProcessReentranceGuard prg(thread);
+
   // Read global poll and has_handshake after local poll
   OrderAccess::loadload();
 
@@ -144,6 +168,7 @@ void SafepointMechanism::process_if_requested_slow(JavaThread *thread) {
 }
 
 void SafepointMechanism::initialize_header(JavaThread* thread) {
+  thread->poll_data()->set_is_processing(false);
   disarm_local_poll(thread);
 }
 
