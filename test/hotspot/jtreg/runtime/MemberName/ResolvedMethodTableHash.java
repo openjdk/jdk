@@ -36,7 +36,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import jdk.internal.misc.Unsafe;
 
 // The test generates thousands MethodHandles to the methods of the same name
 // and the same signature. This should not take too long, unless Method hash
@@ -54,7 +53,7 @@ public class ResolvedMethodTableHash extends ClassLoader {
     private MethodHandle generateWithSameName() throws ReflectiveOperationException {
         byte[] buf = new byte[100];
         int size = writeClass(buf, "MH$$");
-        Class<?> cls = Unsafe.getUnsafe().defineAnonymousClass(ResolvedMethodTableHash.class, Arrays.copyOf(buf, size), null);
+        Class<?> cls = new ResolvedMethodTableHash().defineClass(null, buf, 0, size);
         return MethodHandles.publicLookup().findStatic(cls, "m", MethodType.methodType(void.class));
     }
 
@@ -93,7 +92,7 @@ public class ResolvedMethodTableHash extends ClassLoader {
 
         for (int i = 0; i < count; i++) {
             // prevents metaspace oom
-            if (i % 5 != 0) {
+            if (i % 20 != 0) {
                 handles.add(generator.generate("MH$" + i));
             } else {
                 handles.add(generator.generateWithSameName());
