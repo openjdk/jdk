@@ -1,4 +1,4 @@
-File-Date: 2021-03-05
+File-Date: 2021-05-11
 %%
 Type: language
 Subtag: aa
@@ -47368,6 +47368,16 @@ Subtag: grclass
 Description: Classical Occitan orthography
 Added: 2018-04-22
 Prefix: oc
+Prefix: oc-aranes
+Prefix: oc-auvern
+Prefix: oc-cisaup
+Prefix: oc-creiss
+Prefix: oc-gascon
+Prefix: oc-lemosin
+Prefix: oc-lengadoc
+Prefix: oc-nicard
+Prefix: oc-provenc
+Prefix: oc-vivaraup
 Comments: Classical written standard for Occitan developed in 1935 by
   Alibèrt
 %%
@@ -47376,12 +47386,25 @@ Subtag: grital
 Description: Italian-inspired Occitan orthography
 Added: 2018-04-22
 Prefix: oc
+Prefix: oc-cisaup
+Prefix: oc-nicard
+Prefix: oc-provenc
 %%
 Type: variant
 Subtag: grmistr
 Description: Mistralian or Mistralian-inspired Occitan orthography
 Added: 2018-04-22
 Prefix: oc
+Prefix: oc-aranes
+Prefix: oc-auvern
+Prefix: oc-cisaup
+Prefix: oc-creiss
+Prefix: oc-gascon
+Prefix: oc-lemosin
+Prefix: oc-lengadoc
+Prefix: oc-nicard
+Prefix: oc-provenc
+Prefix: oc-vivaraup
 Comments: Written standard developed by Romanilha in 1853 and used by
   Mistral and the Félibres, including derived standards such as Escolo
   dóu Po, Escolo Gaston Febus, and others
