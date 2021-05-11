@@ -34,7 +34,7 @@ class outputStream;
 // constructor of LogDecorations); the printing happens when the log message is
 // printed. That may happen delayed, and the object may be stored for some time,
 // in the context of asynchronous logging. Therefore size of this object matters.
-class LogDecorations : public CHeapObj<mtLogging> {
+class LogDecorations {
 
   const jlong _millis;            // for "time", "utctime", "timemillis"
   const jlong _nanos;             // for "timenanos"

@@ -82,25 +82,12 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
 
 class AsyncLogMessage {
   LogFileOutput&   _output;
-  LogDecorations*  _decorations;
+  const LogDecorations _decorations;
   char*            _message;
 
 public:
-  AsyncLogMessage(LogFileOutput& output, const LogDecorations& decorations, const char* msg)
-    : _output(output) {
-    _decorations = new LogDecorations(decorations);
-      // allow to fail here, then _message is NULL
-    _message = os::strdup(msg, mtLogging);
-  }
-
-  void destroy() {
-    delete _decorations;
-    _decorations = NULL;
-
-    if (_message != NULL) {
-      os::free(_message);
-    }
-  }
+  AsyncLogMessage(LogFileOutput& output, const LogDecorations& decorations, char* msg)
+    : _output(output), _decorations(decorations), _message(msg) {}
 
   void writeback();
 
@@ -120,9 +107,9 @@ public:
 };
 
 typedef LinkedListDeque<AsyncLogMessage, mtLogging> AsyncLogBuffer;
-typedef KVHashtable<LogFileOutput*, uintx, mtLogging> AsyncLogMap;
+typedef KVHashtable<LogFileOutput*, uint32_t, mtLogging> AsyncLogMap;
 struct AsyncLogMapIterator {
-  bool do_entry(LogFileOutput* output, uintx* counter);
+  bool do_entry(LogFileOutput* output, uint32_t* counter);
 };
 
 class LogAsyncFlusher : public NonJavaThread {
@@ -147,6 +134,7 @@ class LogAsyncFlusher : public NonJavaThread {
   // and a variable-length c-string message.
   // A normal logging  message is smaller than vwrite_buffer_size, which is defined in logtagset.cpp
   const size_t _buffer_max_size = {AsyncLogBufferSize / (sizeof(AsyncLogMessage) + sizeof(LogDecorations) + vwrite_buffer_size)};
+  const static int64_t WAIT_TIMEOUT = {500}; // timeout in millisecond.
 
   LogAsyncFlusher();
   void enqueue_impl(const AsyncLogMessage& msg);

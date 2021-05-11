@@ -42,7 +42,7 @@ class AsyncLogDisabler : public VM_GTestExecuteAtSafepoint {
 };
 
 class AsyncLogTest : public LogTestFixture {
-  bool _saved_async_mode;
+  const bool _saved_async_mode;
 
  public:
   AsyncLogTest() : _saved_async_mode(LogConfiguration::is_async_mode()) {
@@ -244,5 +244,5 @@ TEST_VM_F(AsyncLogTest, droppingMessage) {
   }
   lm.flush();
   flusher->flush();
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped..."));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
 }

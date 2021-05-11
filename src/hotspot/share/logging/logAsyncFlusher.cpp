@@ -31,8 +31,8 @@
 
 void AsyncLogMessage::writeback() {
   if (_message != NULL) {
-    assert(_decorations != NULL, "sanity check");
-    _output.write_blocking(*_decorations, _message);
+    _output.write_blocking(_decorations, _message);
+    os::free(_message);
   }
 }
 
@@ -45,7 +45,7 @@ void LogAsyncFlusher::enqueue_impl(const AsyncLogMessage& msg) {
 
     if (h->message() != nullptr) {
       bool p_created;
-      uintx* counter = _stats.add_if_absent(h->output(), 0, &p_created);
+      uint32_t* counter = _stats.add_if_absent(h->output(), 0, &p_created);
       *counter = *counter + 1;
 
       if (Verbose) {
@@ -71,7 +71,7 @@ void LogAsyncFlusher::enqueue_impl(const AsyncLogMessage& msg) {
 }
 
 void LogAsyncFlusher::enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg) {
-  AsyncLogMessage m(output, decorations, msg);
+  AsyncLogMessage m(output, decorations, os::strdup(msg));
 
   { // critical area
     // The rank of _lock is same as _tty_lock on purpuse.
@@ -89,7 +89,7 @@ void LogAsyncFlusher::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator 
   MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
 
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
-    AsyncLogMessage m(output, msg_iterator.decorations(), msg_iterator.message());
+    AsyncLogMessage m(output, msg_iterator.decorations(), os::strdup(msg_iterator.message()));
     enqueue_impl(m);
   }
 }
@@ -106,14 +106,14 @@ LogAsyncFlusher::LogAsyncFlusher()
                     _buffer_max_size, AsyncLogBufferSize);
 }
 
-bool AsyncLogMapIterator::do_entry(LogFileOutput* output, uintx* counter) {
+bool AsyncLogMapIterator::do_entry(LogFileOutput* output, uint32_t* counter) {
   using dummy = LogTagSetMapping<LogTag::__NO_TAG>;
   LogDecorations decorations(LogLevel::Warning, dummy::tagset(), output->decorators());
   const int sz = 128;
   char out_of_band[sz];
 
   if (*counter > 0) {
-    jio_snprintf(out_of_band, sz, UINTX_FORMAT_W(6) " messages dropped...", *counter);
+    jio_snprintf(out_of_band, sz, UINT32_FORMAT_W(6) " messages dropped due to async logging", *counter);
     output->write_blocking(decorations, out_of_band);
     *counter = 0;
   }
@@ -126,7 +126,6 @@ void LogAsyncFlusher::writeback(const LinkedList<AsyncLogMessage>& logs) {
   while (!it.is_empty()) {
     AsyncLogMessage* e = it.next();
     e->writeback();
-    e->destroy();
   }
 }
 
@@ -155,7 +154,7 @@ void LogAsyncFlusher::run() {
   while (_state == ThreadState::Running) {
     {
       MonitorLocker m(&_lock, Mutex::_no_safepoint_check_flag);
-      m.wait(500 /* ms, timeout*/);
+      m.wait(WAIT_TIMEOUT);
     }
     flush();
   }
@@ -203,10 +202,11 @@ void LogAsyncFlusher::terminate() {
 }
 
 LogAsyncFlusher* LogAsyncFlusher::instance() {
+  // thread may has been detached, then Thread::current() used by Mutex is inavailable.
+  // eg. ThreadsSMRSupport::smr_delete() uses log_debug() after delete thread.
   if (Thread::current_or_null() != nullptr) {
     return _instance;
   } else {
-    // current thread may has been detached.
     return nullptr;
   }
 }

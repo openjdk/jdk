@@ -281,11 +281,11 @@ void LogConfiguration::disable_outputs() {
 
   // Handle jcmd VM.log disable
   // ts->disable_outputs() above deletes output_list with RCU synchronization.
-  // Therefore, no new logging entry will enter asynchronous queue after then.
-  // flush pending entries before the LogOutput instances die.
+  // Therefore, no new logging entry will enter AsyncLog buffer since then.
+  // flush pending entries before LogOutput instances die.
   LogAsyncFlusher* async = LogAsyncFlusher::instance();
   if (async != nullptr) {
-    async->flush(false /* with_lock */);
+    async->flush();
   }
 
   while (idx > 0) {

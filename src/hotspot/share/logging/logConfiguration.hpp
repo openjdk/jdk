@@ -58,7 +58,8 @@ class LogConfiguration : public AllStatic {
 
   static UpdateListenerFunction*    _listener_callbacks;
   static size_t                     _n_listener_callbacks;
-  static bool _async_mode;
+  static bool                       _async_mode;
+
   // Create a new output. Returns NULL if failed.
   static LogOutput* new_output(const char* name, const char* options, outputStream* errstream);
 

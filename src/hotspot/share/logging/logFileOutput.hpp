@@ -38,7 +38,6 @@ class LogFileOutput : public LogFileStreamOutput {
   static const char* const FileOpenMode;
   static const char* const FileCountOptionKey;
   static const char* const FileSizeOptionKey;
-  static const char* const AsyncOptionKey;
   static const char* const PidFilenamePlaceholder;
   static const char* const TimestampFilenamePlaceholder;
   static const char* const TimestampFormat;

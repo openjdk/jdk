@@ -309,7 +309,7 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
   LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
   if (flusher != NULL) {
     flusher->enqueue(*this, decorations, msg);
-    return 0;
+    return -1;
   }
 
   return write_blocking(decorations, msg);
