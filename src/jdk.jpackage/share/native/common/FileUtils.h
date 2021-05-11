@@ -122,6 +122,10 @@ namespace FileUtils {
     // it contains at least one file other than "." or "..".
     bool isDirectoryNotEmpty(const tstring &dirPath);
 
+    tstring_array listContents(const tstring& basedir, const tstring& filename);
+
+    bool writeTextFile(const tstring& path, const tstring_array lines);
+
 } // FileUtils
 
 #endif // FILEUTILS_H

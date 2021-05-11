@@ -535,7 +535,9 @@ DirectoryIterator& DirectoryIterator::findItems(tstring_array& v) {
 
 bool DirectoryIterator::onFile(const tstring& path) {
     if (theWithFiles) {
-        items.push_back(path);
+        if (!theWithMatch || tstrings::endsWith(path, theMatch)) {
+            items.push_back(path);
+        }
     }
     return true;
 }
@@ -548,6 +550,7 @@ bool DirectoryIterator::onDirectory(const tstring& path) {
         DirectoryIterator(path).recurse(theRecurse)
                 .withFiles(theWithFiles)
                 .withFolders(theWithFolders)
+                .withMatch(theWithMatch, theMatch)
                 .findItems(items);
     }
     return true;
@@ -649,6 +652,12 @@ FileWriter& FileWriter::write(const void* buf, size_t bytes) {
     return *this;
 }
 
+FileWriter& FileWriter::writeln(const tstring& line) {
+    tstring l = (tstrings::any() << line << _T("\n")).tstr();
+    tmp << (tstrings::any() << line << _T("\n")).tstr();
+    return *this;
+}
+
 void FileWriter::finalize() {
     tmp.close();
 
@@ -658,6 +667,21 @@ void FileWriter::finalize() {
     cleaner.cancel();
 }
 
+tstring_array listContents(const tstring& basedir, const tstring& name) {
+LOG_TRACE(tstrings::any() << "listing content in: "
+                          << basedir << " matching: " << name );
+    return listNamedContents(basedir, name);
+}
+
+bool writeTextFile(const tstring& path, tstring_array lines) {
+    FileUtils::FileWriter writer(path);
+    for (tstring_array::const_iterator it = lines.begin();
+            it != lines.end(); it++) {
+       writer.writeln(*it);
+    }
+    writer.finalize();
+    return true;
+}
 tstring stripExeSuffix(const tstring& path) {
     // for windows - there is a ".exe" suffix to remove
     const tstring::size_type pos = path.rfind(_T(".exe"));

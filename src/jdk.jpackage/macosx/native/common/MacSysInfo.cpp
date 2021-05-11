@@ -90,4 +90,14 @@ tstring_array getCommandArgs(CommandArgProgramNameMode progNameMode) {
     return result;
 }
 
+tstring getAppDataPath() {
+    return "~/Library/Application Support";
+}
+
+tstring_array getJavaSearchPaths() {
+    tstring_array result;
+    result.push_back("/System/Library/Frameworks/JavaVM.framework/Versions");
+    return result;
+}
+
 } // end of namespace SysInfo

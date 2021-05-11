@@ -30,7 +30,6 @@
 #include <fstream>
 #include "SysInfo.h"
 
-
 namespace FileUtils {
 
     // Creates a file with unique name in the specified base directory,
@@ -145,6 +144,13 @@ namespace FileUtils {
             return *this;
         }
 
+        DirectoryIterator& withMatch(bool v=false,
+                const tstring& match=tstring()) {
+            theWithMatch = v;
+            theMatch = match;
+            return *this;
+        }
+
         tstring_array findItems() {
             tstring_array reply;
             findItems(reply);
@@ -161,6 +167,8 @@ namespace FileUtils {
         bool theRecurse;
         bool theWithFiles;
         bool theWithFolders;
+        bool theWithMatch;
+        tstring theMatch;
         tstring root;
         tstring_array items;
     };
@@ -173,6 +181,14 @@ namespace FileUtils {
     // but usually they are sorted by names.
     inline tstring_array listAllContents(const tstring& basedir) {
         return DirectoryIterator(basedir).findItems();
+    }
+
+    inline tstring_array listNamedContents(const tstring& basedir,
+            const tstring& name) {
+        return DirectoryIterator(basedir)
+                .withMatch(true, name)
+                .withFolders(false)
+                .findItems();
     }
 
     struct Directory {
@@ -304,6 +320,8 @@ namespace FileUtils {
         }
 
         void finalize();
+
+        FileWriter& writeln(const tstring& line);
 
     private:
         // Not accessible by design!

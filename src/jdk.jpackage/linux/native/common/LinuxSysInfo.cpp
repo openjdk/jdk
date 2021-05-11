@@ -51,4 +51,14 @@ tstring_array getCommandArgs(CommandArgProgramNameMode progNameMode) {
     return result;
 }
 
+tstring getAppDataPath() {
+    return "~/.config";
+}
+tstring_array getJavaSearchPaths() {
+    tstring_array result;
+    result.push_back("/usr/lib/jvm");
+    result.push_back("/usr/lib/jdk");
+    return result;
+}
+
 } // end of namespace SysInfo

@@ -205,4 +205,16 @@ bool isEnvVariableSet(const tstring& name) {
     return GetLastError() != ERROR_ENVVAR_NOT_FOUND;
 }
 
+tstring getAppDataPath() {
+    return getEnvVariable(std::nothrow, _T("APPDATA"));
+}
+
+tstring_array getJavaSearchPaths() {
+    tstring_array result;
+    const tstring pf = SysInfo::getEnvVariable(std::nothrow, _T("PROGRAMFILES"));
+    result.push_back(FileUtils::mkpath() << pf << _T("/Java"));
+    return result;
+}
+
+    
 } // end of namespace SysInfo

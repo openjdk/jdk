@@ -87,6 +87,11 @@ namespace SysInfo {
      * Returns 'true' if environment variable with the given name is set.
      */
     bool isEnvVariableSet(const tstring& name);
+
+    tstring getAppDataPath();
+
+    tstring_array getJavaSearchPaths();
+
 }
 
 #endif // SYSINFO_H
