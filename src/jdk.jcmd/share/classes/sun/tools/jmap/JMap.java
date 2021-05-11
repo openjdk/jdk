@@ -209,7 +209,7 @@ public class JMap {
         String subopts[] = options.split(",");
         String filename = null;
         String liveopt = "-all";
-        String compress_level = "";
+        String compress_level = null;
 
         for (int i = 0; i < subopts.length; i++) {
             String subopt = subopts[i];
@@ -228,8 +228,8 @@ public class JMap {
             } else if (subopt.startsWith("gz=")) {
                 compress_level = subopt.substring("gz=".length());
                 if (compress_level.length() == 0) {
-                     System.err.println("Fail: no number provided in option: '" + subopt + "'");
-                     usage(1);
+                    System.err.println("Fail: no number provided in option: '" + subopt + "'");
+                    usage(1);
                 }
             } else {
                 System.err.println("Fail: invalid option: '" + subopt + "'");
@@ -243,6 +243,7 @@ public class JMap {
         }
 
         System.out.flush();
+
         // dumpHeap is not the same as jcmd GC.heap_dump
         executeCommandForPid(pid, "dumpheap", filename, liveopt, compress_level);
     }
@@ -305,12 +306,13 @@ public class JMap {
         System.err.println("        to print this help message");
         System.err.println("");
         System.err.println("    dump-options:");
-        System.err.println("      live                dump only live objects (takes precedence if both \"live\" and \"all\" are specified)");
-        System.err.println("      all                 dump all objects in the heap (default if one of \"live\" or \"all\" is not specified)");
-        System.err.println("      format=b            binary format");
-        System.err.println("      file=<file>         dump heap to <file>");
-        System.err.println("      gz=<number>         If specified, the heap dump is written in gzipped format using the given compression level.");
-        System.err.println("                          1 (recommended) is the fastest, 9 the strongest compression.");
+        System.err.println("      live         dump only live objects (takes precedence if both \"live\" and \"all\" are specified)");
+        System.err.println("      all          dump all objects in the heap (default if one of \"live\" or \"all\" is not specified)");
+        System.err.println("      format=b     binary format");
+        System.err.println("      file=<file>  dump heap to <file>");
+        System.err.println("      gz=<number>  If specified, the heap dump is written in gzipped format using the given compression level.");
+        System.err.println("                   1 (recommended) is the fastest, 9 the strongest compression.");
+        System.err.println("");
         System.err.println("    Example: jmap -dump:live,format=b,file=heap.bin <pid>");
         System.err.println("");
         System.err.println("    histo-options:");
