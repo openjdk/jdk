@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,15 +55,20 @@ public class ClassLoaders {
     private static final PlatformClassLoader PLATFORM_LOADER;
     private static final AppClassLoader APP_LOADER;
 
+    private static void setArchivedServicesCatalog(ArchivedClassLoaders archivedClassLoaders, ClassLoader loader) {
+        ServicesCatalog catalog = archivedClassLoaders.servicesCatalog(loader);
+        ServicesCatalog.putServicesCatalog(loader, catalog);
+    }
+
     // Creates the built-in class loaders.
     static {
         ArchivedClassLoaders archivedClassLoaders = ArchivedClassLoaders.get();
         if (archivedClassLoaders != null) {
             // assert VM.getSavedProperty("jdk.boot.class.path.append") == null
             BOOT_LOADER = (BootClassLoader) archivedClassLoaders.bootLoader();
+            setArchivedServicesCatalog(archivedClassLoaders, BOOT_LOADER);
             PLATFORM_LOADER = (PlatformClassLoader) archivedClassLoaders.platformLoader();
-            ServicesCatalog catalog = archivedClassLoaders.servicesCatalog(PLATFORM_LOADER);
-            ServicesCatalog.putServicesCatalog(PLATFORM_LOADER, catalog);
+            setArchivedServicesCatalog(archivedClassLoaders, PLATFORM_LOADER);
         } else {
             // -Xbootclasspath/a or -javaagent with Boot-Class-Path attribute
             String append = VM.getSavedProperty("jdk.boot.class.path.append");
@@ -86,8 +91,7 @@ public class ClassLoaders {
         URLClassPath ucp = new URLClassPath(cp, false);
         if (archivedClassLoaders != null) {
             APP_LOADER = (AppClassLoader) archivedClassLoaders.appLoader();
-            ServicesCatalog catalog = archivedClassLoaders.servicesCatalog(APP_LOADER);
-            ServicesCatalog.putServicesCatalog(APP_LOADER, catalog);
+            setArchivedServicesCatalog(archivedClassLoaders, APP_LOADER);
             APP_LOADER.setClassPath(ucp);
         } else {
             APP_LOADER = new AppClassLoader(PLATFORM_LOADER, ucp);
@@ -132,7 +136,7 @@ public class ClassLoaders {
 
         @Override
         protected Class<?> loadClassOrNull(String cn, boolean resolve) {
-            return JLA.findBootstrapClassOrNull(this, cn);
+            return JLA.findBootstrapClassOrNull(cn);
         }
     };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,17 +64,6 @@ public class BootLoader {
         setBootLoaderUnnamedModule0(UNNAMED_MODULE);
     }
 
-    // ServiceCatalog for the boot class loader
-    private static final ServicesCatalog SERVICES_CATALOG;
-    static {
-        ArchivedClassLoaders archivedClassLoaders = ArchivedClassLoaders.get();
-        if (archivedClassLoaders != null) {
-            SERVICES_CATALOG = archivedClassLoaders.servicesCatalog(null);
-        } else {
-            SERVICES_CATALOG = ServicesCatalog.create();
-        }
-    }
-
     // ClassLoaderValue map for the boot class loader
     private static final ConcurrentHashMap<?, ?> CLASS_LOADER_VALUE_MAP
         = new ConcurrentHashMap<>();
@@ -82,6 +71,8 @@ public class BootLoader {
     // native libraries loaded by the boot class loader
     private static final NativeLibraries NATIVE_LIBS
         = NativeLibraries.jniNativeLibraries(null);
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
      * Returns the unnamed module for the boot loader.
@@ -94,7 +85,7 @@ public class BootLoader {
      * Returns the ServiceCatalog for modules defined to the boot class loader.
      */
     public static ServicesCatalog getServicesCatalog() {
-        return SERVICES_CATALOG;
+        return ServicesCatalog.getServicesCatalog(ClassLoaders.bootLoader());
     }
 
     /**
@@ -131,7 +122,7 @@ public class BootLoader {
      * Loads the Class object with the given name defined to the boot loader.
      */
     public static Class<?> loadClassOrNull(String name) {
-        return ClassLoaders.bootLoader().loadClassOrNull(name);
+        return JLA.findBootstrapClassOrNull(name);
     }
 
     /**
