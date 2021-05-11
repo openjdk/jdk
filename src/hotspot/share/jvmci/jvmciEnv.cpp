@@ -28,6 +28,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/compileTask.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -801,69 +802,23 @@ JVMCIObject JVMCIEnv::call_HotSpotJVMCIRuntime_callToString(JVMCIObject object, 
 }
 
 
-JVMCIObject JVMCIEnv::call_PrimitiveConstant_forTypeChar(jchar kind, jlong value, JVMCI_TRAPS) {
+JVMCIObject JVMCIEnv::call_JavaConstant_forPrimitive(JVMCIObject kind, jlong value, JVMCI_TRAPS) {
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
   if (is_hotspot()) {
     JavaCallArguments jargs;
-    jargs.push_int(kind);
+    jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(kind)));
     jargs.push_long(value);
     JavaValue result(T_OBJECT);
     JavaCalls::call_static(&result,
-                           HotSpotJVMCI::PrimitiveConstant::klass(),
-                           vmSymbols::forTypeChar_name(),
-                           vmSymbols::forTypeChar_signature(), &jargs, CHECK_(JVMCIObject()));
-    return wrap(result.get_oop());
-  } else {
-    JNIAccessMark jni(this, THREAD);
-    jobject result = (jstring) jni()->CallStaticObjectMethod(JNIJVMCI::PrimitiveConstant::clazz(),
-                                                     JNIJVMCI::PrimitiveConstant::forTypeChar_method(),
-                                                     kind, value);
-    if (jni()->ExceptionCheck()) {
-      return JVMCIObject();
-    }
-    return wrap(result);
-  }
-}
-
-JVMCIObject JVMCIEnv::call_JavaConstant_forFloat(float value, JVMCI_TRAPS) {
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
-  if (is_hotspot()) {
-    JavaCallArguments jargs;
-    jargs.push_float(value);
-    JavaValue result(T_OBJECT);
-    JavaCalls::call_static(&result,
                            HotSpotJVMCI::JavaConstant::klass(),
-                           vmSymbols::forFloat_name(),
-                           vmSymbols::forFloat_signature(), &jargs, CHECK_(JVMCIObject()));
+                           vmSymbols::forPrimitive_name(),
+                           vmSymbols::forPrimitive_signature(), &jargs, CHECK_(JVMCIObject()));
     return wrap(result.get_oop());
   } else {
     JNIAccessMark jni(this, THREAD);
     jobject result = (jstring) jni()->CallStaticObjectMethod(JNIJVMCI::JavaConstant::clazz(),
-                                                     JNIJVMCI::JavaConstant::forFloat_method(),
-                                                     value);
-    if (jni()->ExceptionCheck()) {
-      return JVMCIObject();
-    }
-    return wrap(result);
-  }
-}
-
-JVMCIObject JVMCIEnv::call_JavaConstant_forDouble(double value, JVMCI_TRAPS) {
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
-  if (is_hotspot()) {
-    JavaCallArguments jargs;
-    jargs.push_double(value);
-    JavaValue result(T_OBJECT);
-    JavaCalls::call_static(&result,
-                           HotSpotJVMCI::JavaConstant::klass(),
-                           vmSymbols::forDouble_name(),
-                           vmSymbols::forDouble_signature(), &jargs, CHECK_(JVMCIObject()));
-    return wrap(result.get_oop());
-  } else {
-    JNIAccessMark jni(this, THREAD);
-    jobject result = (jstring) jni()->CallStaticObjectMethod(JNIJVMCI::JavaConstant::clazz(),
-                                                     JNIJVMCI::JavaConstant::forDouble_method(),
-                                                     value);
+                                                             JNIJVMCI::JavaConstant::forPrimitive_method(),
+                                                             kind.as_jobject(), value);
     if (jni()->ExceptionCheck()) {
       return JVMCIObject();
     }
@@ -1032,6 +987,8 @@ JVMCIObject JVMCIEnv::get_jvmci_method(const methodHandle& method, JVMCI_TRAPS) 
   if (method() == NULL) {
     return method_object;
   }
+
+  CompilerOracle::tag_blackhole_if_possible(method);
 
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
   jmetadata handle = _runtime->allocate_handle(method);

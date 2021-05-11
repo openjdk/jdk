@@ -26,6 +26,7 @@
 #include "logging/log.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/thread.inline.hpp"
@@ -54,7 +55,7 @@ void Mutex::check_safepoint_state(Thread* thread) {
            name());
 
     // Also check NoSafepointVerifier, and thread state is _thread_in_vm
-    thread->check_for_valid_safepoint_state();
+    thread->as_Java_thread()->check_for_valid_safepoint_state();
   } else {
     // If initialized with safepoint_check_never, a NonJavaThread should never ask to safepoint check either.
     assert(_safepoint_check_required != _safepoint_check_never,
@@ -215,7 +216,7 @@ bool Monitor::wait_without_safepoint_check(int64_t timeout) {
   return wait_status != 0;          // return true IFF timeout
 }
 
-bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
+bool Monitor::wait(int64_t timeout) {
   JavaThread* const self = JavaThread::current();
   // Safepoint checking logically implies an active JavaThread.
   assert(self->is_active_Java_thread(), "invariant");
@@ -238,25 +239,9 @@ bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
   {
     ThreadBlockInVM tbivmdc(self, &in_flight_mutex);
     OSThreadWaitState osts(self->osthread(), false /* not Object.wait() */);
-    if (as_suspend_equivalent) {
-      self->set_suspend_equivalent();
-      // cleared by handle_special_suspend_equivalent_condition() or
-      // java_suspend_self()
-    }
 
     wait_status = _lock.wait(timeout);
     in_flight_mutex = this;  // save for ~ThreadBlockInVM
-
-    // were we externally suspended while we were waiting?
-    if (as_suspend_equivalent && self->handle_special_suspend_equivalent_condition()) {
-      // Our event wait has finished and we own the lock, but
-      // while we were waiting another thread suspended us. We don't
-      // want to hold the lock while suspended because that
-      // would surprise the thread that suspended us.
-      _lock.unlock();
-      self->java_suspend_self();
-      _lock.lock();
-    }
   }
 
   if (in_flight_mutex != NULL) {
@@ -273,17 +258,19 @@ bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
 
 Mutex::~Mutex() {
   assert_owner(NULL);
+  os::free(const_cast<char*>(_name));
 }
 
-// Only Threads_lock, Heap_lock and SR_lock may be safepoint_check_sometimes.
+// Only Threads_lock and Heap_lock may be safepoint_check_sometimes.
 bool is_sometimes_ok(const char* name) {
-  return (strcmp(name, "Threads_lock") == 0 || strcmp(name, "Heap_lock") == 0 || strcmp(name, "SR_lock") == 0);
+  return (strcmp(name, "Threads_lock") == 0 || strcmp(name, "Heap_lock") == 0);
 }
 
 Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
-             SafepointCheckRequired safepoint_check_required) : _owner(NULL), _name(name) {
+             SafepointCheckRequired safepoint_check_required) : _owner(NULL) {
   assert(os::mutex_init_done(), "Too early!");
   assert(name != NULL, "Mutex requires a name");
+  _name = os::strdup(name, mtInternal);
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
   _rank            = Rank;
@@ -387,10 +374,9 @@ void Mutex::check_rank(Thread* thread) {
     }
   }
 
-  // Locks with rank native or suspend_resume are an exception and are not
+  // Locks with rank native are an exception and are not
   // subject to the verification rules.
-  bool check_can_be_skipped = this->rank() == Mutex::native || this->rank() == Mutex::suspend_resume
-                              || SafepointSynchronize::is_at_safepoint();
+  bool check_can_be_skipped = this->rank() == Mutex::native || SafepointSynchronize::is_at_safepoint();
   if (owned_by_self()) {
     // wait() case
     Mutex* least = get_least_ranked_lock_besides_this(locks_owned);
@@ -412,7 +398,12 @@ void Mutex::check_rank(Thread* thread) {
     // to acquire, then deadlock prevention rules require that the rank
     // of m2 be less than the rank of m1. This prevents circular waits.
     if (least != NULL && least->rank() <= this->rank()) {
-      thread->print_owned_locks();
+      if (least->rank() > Mutex::tty) {
+        // Printing owned locks acquires tty lock. If the least rank was below or equal
+        // tty, then deadlock detection code would circle back here, until we run
+        // out of stack and crash hard. Print locks only when it is safe.
+        thread->print_owned_locks();
+      }
       assert(false, "Attempting to acquire lock %s/%d out of order with lock %s/%d -- "
              "possible deadlock", this->name(), this->rank(), least->name(), least->rank());
     }
@@ -426,23 +417,6 @@ bool Mutex::contains(Mutex* locks, Mutex* lock) {
     }
   }
   return false;
-}
-
-// NSV implied with locking allow_vm_block or !safepoint_check locks.
-void Mutex::no_safepoint_verifier(Thread* thread, bool enable) {
-  // The tty_lock is special because it is released for the safepoint by
-  // the safepoint mechanism.
-  if (this == tty_lock) {
-    return;
-  }
-
-  if (_allow_vm_block) {
-    if (enable) {
-      thread->_no_safepoint_count++;
-    } else {
-      thread->_no_safepoint_count--;
-    }
-  }
 }
 
 // Called immediately after lock acquisition or release as a diagnostic
@@ -472,7 +446,11 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
     new_owner->_owned_locks = this;
 
     // NSV implied with locking allow_vm_block flag.
-    no_safepoint_verifier(new_owner, true);
+    // The tty_lock is special because it is released for the safepoint by
+    // the safepoint mechanism.
+    if (new_owner->is_Java_thread() && _allow_vm_block && this != tty_lock) {
+      new_owner->as_Java_thread()->inc_no_safepoint_count();
+    }
 
   } else {
     // the thread is releasing this lock
@@ -507,7 +485,9 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
     _next = NULL;
 
     // ~NSV implied with locking allow_vm_block flag.
-    no_safepoint_verifier(old_owner, false);
+    if (old_owner->is_Java_thread() && _allow_vm_block && this != tty_lock) {
+      old_owner->as_Java_thread()->dec_no_safepoint_count();
+    }
   }
 }
 #endif // ASSERT

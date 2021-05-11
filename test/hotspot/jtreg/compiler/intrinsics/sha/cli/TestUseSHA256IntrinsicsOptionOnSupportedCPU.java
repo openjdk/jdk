@@ -25,9 +25,8 @@
  * @test
  * @bug 8035968
  * @summary Verify UseSHA256Intrinsics option processing on supported CPU.
- * @library /test/lib testcases /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @library /test/lib /
+ * @requires vm.flagless
  *
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox

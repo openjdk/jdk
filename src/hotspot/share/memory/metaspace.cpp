@@ -23,12 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/filemap.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
@@ -41,7 +40,6 @@
 #include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceTracer.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
@@ -565,7 +563,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
     assert(CompressedKlassPointers::is_valid_base(a), "Sanity");
     while (a < search_ranges[i].to) {
       ReservedSpace rs(size, Metaspace::reserve_alignment(),
-                       false /*large_pages*/, (char*)a);
+                       os::vm_page_size(), (char*)a);
       if (rs.is_reserved()) {
         assert(a == (address)rs.base(), "Sanity");
         return rs;
@@ -581,7 +579,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   return ReservedSpace();
 #else
   // Default implementation: Just reserve anywhere.
-  return ReservedSpace(size, Metaspace::reserve_alignment(), false, (char*)NULL);
+  return ReservedSpace(size, Metaspace::reserve_alignment(), os::vm_page_size(), (char*)NULL);
 #endif // AARCH64
 }
 
@@ -719,7 +717,7 @@ void Metaspace::global_initialize() {
     if (base != NULL) {
       if (CompressedKlassPointers::is_valid_base(base)) {
         rs = ReservedSpace(size, Metaspace::reserve_alignment(),
-                           false /* large */, (char*)base);
+                           os::vm_page_size(), (char*)base);
       }
     }
 

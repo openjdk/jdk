@@ -27,7 +27,6 @@ package jdk.javadoc.internal.doclets.toolkit.builders;
 
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -167,15 +166,6 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * Returns true if there are members of the given kind, false otherwise.
-     * @param kind
-     * @return true if there are members of the given kind, false otherwise
-     */
-    public boolean hasMembers(VisibleMemberTable.Kind kind) {
-        return !getVisibleMembers(kind).isEmpty();
-    }
-
-    /**
      * Builds the summary for any optional members of an annotation type.
      *
      * @param summariesList the list of summaries to which the summary will be added
@@ -231,8 +221,8 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
      * @param summariesList the list of summaries to which the summary will be added
      */
     protected void buildNestedClassesSummary(Content summariesList) {
-        MemberSummaryWriter writer = memberSummaryWriters.get(INNER_CLASSES);
-        addSummary(writer, INNER_CLASSES, true, summariesList);
+        MemberSummaryWriter writer = memberSummaryWriters.get(NESTED_CLASSES);
+        addSummary(writer, NESTED_CLASSES, true, summariesList);
     }
 
     /**
@@ -413,9 +403,10 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 continue;
             }
 
-            List<Element> members = inheritedMembersFromMap.stream()
+            List<? extends Element> members = inheritedMembersFromMap.stream()
                     .filter(e -> utils.getEnclosingTypeElement(e) == inheritedClass)
-                    .collect(Collectors.toList());
+                    .toList();
+
             if (!members.isEmpty()) {
                 SortedSet<Element> inheritedMembers = new TreeSet<>(comparator);
                 inheritedMembers.addAll(members);
