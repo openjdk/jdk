@@ -42,6 +42,17 @@ import java.util.concurrent.TimeUnit;
 
 public class CloseSocket extends SSLSocketTemplate {
 
+/*
+ * SSLSocketImpl::startHandshake internally checks that the socket is not closed or
+ * broken and still connected, so this test needs the server to close the socket
+ * after those verifications are performed to reproduce the scenario. Using a
+ * CountDownLatch in the test before calling startHandshake does not guarantee that.
+ * Using a CountDownLatch after startHandshake does not work either since the client
+ * keeps waiting for a server response, which is blocked waiting for the latch.
+ *
+ * Therefore, we can only guarantee the socket is not yet closed when the handshake
+ * is requested by looking at the client thread stack
+ */
     private volatile Thread clientThread = null;
 
     @Override
