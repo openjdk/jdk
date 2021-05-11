@@ -1256,8 +1256,8 @@ void ClassLoader::record_result(Thread* current, InstanceKlass* ik, const ClassF
   Arguments::assert_is_dumping_archive();
   assert(stream != NULL, "sanity");
 
-  if (ik->is_hidden() || ik->is_unsafe_anonymous()) {
-    // We do not archive hidden or unsafe anonymous classes.
+  if (ik->is_hidden()) {
+    // We do not archive hidden classes.
     return;
   }
 

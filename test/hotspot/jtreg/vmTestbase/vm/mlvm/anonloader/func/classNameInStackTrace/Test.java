@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@
  * VM Testbase keywords: [feature_mlvm]
  * VM Testbase readme:
  * DESCRIPTION
- *     An exception is thrown by class loaded by Unsafe.defineAnonymousClass. Verify that
- *     the exception's stack trace contains name of the current test class (i.e.,
- *     verify that the stack trace is not broken)
+ *     An exception is thrown by a hidden class.  Verify that the exception's
+ *     stack trace contains name of the current test class (i.e., verify
+ *     that the stack trace is not broken)
  *
  * @library /vmTestbase
  *          /test/lib
@@ -49,21 +49,29 @@ package vm.mlvm.anonloader.func.classNameInStackTrace;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 
-import vm.mlvm.anonloader.share.AnonkTestee01;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
+
 import vm.mlvm.share.MlvmTest;
-import vm.share.FileUtils;
-import vm.share.UnsafeAccess;
 
 public class Test extends MlvmTest {
-    private static final Class<?> PARENT = AnonkTestee01.class;
 
     public boolean run() throws Exception {
-        byte[] classBytes = FileUtils.readClass(PARENT.getName());
-        Class<?> cls = UnsafeAccess.unsafe.defineAnonymousClass(PARENT,
-                classBytes, null);
+        String newClass =
+            "package vm.mlvm.anonloader.func.classNameInStackTrace; " +
+            "public class HashThrow { " +
+            "    @Override " +
+            "    public int hashCode() { " +
+            "        throw new RuntimeException(\"Making fun of errors\"); " +
+            "    } }";
+        byte[] classBytes = InMemoryJavaCompiler.compile(
+            "vm.mlvm.anonloader.func.classNameInStackTrace.HashThrow", newClass);
+        Lookup lookup = MethodHandles.lookup();
+        Class<?> cls = lookup.defineHiddenClass(classBytes, true).lookupClass();
         try {
-            // hashCode() in AnonkTestee01 always throws an exception
+            // hashCode() throws an exception
             cls.newInstance().hashCode();
             return false;
 

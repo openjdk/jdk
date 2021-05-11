@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * VM Testbase keywords: [feature_mlvm]
  * VM Testbase readme:
  * DESCRIPTION
- *     Cast an object loaded with Unsafe.defineAnonymousClass to superclass of its parent class. This cast should succeed.
+ *     Cast an object loaded with a hidden class to superclass of its parent class. This cast should succeed.
  *
  * @library /vmTestbase
  *          /test/lib
@@ -45,12 +45,14 @@
 
 package vm.mlvm.anonloader.func.castToGrandparent;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
+
 import vm.mlvm.anonloader.share.AnonkTestee01;
 import vm.mlvm.anonloader.share.AnonkTestee02;
 import vm.mlvm.share.Env;
 import vm.mlvm.share.MlvmTest;
 import vm.share.FileUtils;
-import vm.share.UnsafeAccess;
 
 public class Test extends MlvmTest {
     private static final Class<?> PARENT = AnonkTestee02.class;
@@ -58,18 +60,19 @@ public class Test extends MlvmTest {
     @Override
     public boolean run() throws Exception {
         byte[] classBytes = FileUtils.readClass(PARENT.getName());
-        Class<?> cls = UnsafeAccess.unsafe.defineAnonymousClass(
-                PARENT, classBytes, null);
+        Lookup lookup = MethodHandles.lookup();
+        Lookup ank_lookup = MethodHandles.privateLookupIn(PARENT, lookup);
+        Class<?> cls = ank_lookup.defineHiddenClass(classBytes, true).lookupClass();
         Object anonObject = cls.newInstance();
-        // Try to cast anonymous class to its grandparent
+        // Try to cast hidden class to its grandparent
         AnonkTestee01 anonCastToParent = (AnonkTestee01) anonObject;
         if ( anonCastToParent.equals(anonObject) )
-            Env.traceNormal("Anonymous object can be cast to original one");
+            Env.traceNormal("Hidden object can be cast to original one");
 
         // Try to cast using another method
         new AnonkTestee01().getClass().cast(anonObject);
 
-        Env.traceNormal("Anonymous class can be cast to original one");
+        Env.traceNormal("Hidden class can be cast to original one");
 
         return true;
     }
