@@ -100,8 +100,8 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
 
 template <DecoratorSet decorators, class T>
 inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
-  if (obj == nullptr) {
-    return nullptr;
+  if (obj == NULL) {
+    return NULL;
   }
 
   // Prevent resurrection of unreachable phantom (i.e. weak-native) references.
@@ -128,7 +128,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
 
   oop fwd = load_reference_barrier(obj);
   assert(fwd != nullptr, "Sanity");
-  if (ShenandoahSelfFixing && load_addr != NULL) {
+  if (ShenandoahSelfFixing && load_addr != NULL && fwd != obj) {
     // Since we are here and we know the load address, update the reference.
     ShenandoahHeap::cas_oop(fwd, load_addr, obj);
   }
