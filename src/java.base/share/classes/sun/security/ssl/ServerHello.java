@@ -560,9 +560,6 @@ final class ServerHello {
 
                 setUpPskKD(shc,
                         shc.resumingSession.consumePreSharedKey());
-
-                // The session can't be resumed again---remove it from cache
-                sessionCache.remove(shc.resumingSession.getSessionId());
             }
 
             // update the responders

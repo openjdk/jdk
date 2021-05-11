@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -533,6 +533,9 @@ class methodHandle;
   do_intrinsic(_getObjectSize,   sun_instrument_InstrumentationImpl, getObjectSize_name, getObjectSize_signature, F_RN) \
    do_name(     getObjectSize_name,                               "getObjectSize0")                                     \
    do_alias(    getObjectSize_signature,                          long_object_long_signature)                           \
+                                                                                                                        \
+  /* special marker for blackholed methods: */                                                                          \
+  do_intrinsic(_blackhole,                java_lang_Object,       blackhole_name, star_name, F_S)                       \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getReference_signature,    "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
@@ -1140,6 +1143,8 @@ public:
   static vmSymbolID signature_for(ID id);
   static Flags              flags_for(ID id);
 #endif
+
+  static bool class_has_intrinsics(vmSymbolID holder);
 
   static const char* short_name_as_C_string(ID id, char* buf, int size);
 

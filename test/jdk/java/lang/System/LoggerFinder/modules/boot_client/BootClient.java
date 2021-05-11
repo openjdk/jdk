@@ -23,6 +23,7 @@
 
 import java.lang.reflect.Method;
 import java.lang.System.Logger;
+import java.time.Instant;
 import java.util.ResourceBundle;
 import java.util.ListResourceBundle;
 
@@ -36,9 +37,13 @@ public final class BootClient {
         String loggerMode = args[0];
         String loggerClassName = args[1];
         String underlyingLoggerClassName = args.length >= 3 ? args[2] : null;
-
-        testLogger(loggerMode, loggerClassName, underlyingLoggerClassName);
-        testLog(underlyingLoggerClassName);
+        System.err.println("BootClient starting at " + Instant.now());
+        try {
+            testLogger(loggerMode, loggerClassName, underlyingLoggerClassName);
+            testLog(underlyingLoggerClassName);
+        } finally {
+            System.err.println("BootClient finished at " + Instant.now());
+        }
     }
 
     /*

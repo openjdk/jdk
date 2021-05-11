@@ -42,6 +42,7 @@ import javax.lang.model.util.SimpleTypeVisitor9;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * Centralized constants and factory methods for HTML ids.
@@ -72,6 +73,7 @@ public class HtmlIds {
     static final HtmlId ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY = HtmlId.of("annotation-interface-optional-element-summary");
     static final HtmlId ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY = HtmlId.of("annotation-interface-required-element-summary");
     static final HtmlId CLASS_DESCRIPTION = HtmlId.of("class-description");
+    static final HtmlId CLASS_SUMMARY = HtmlId.of("class-summary");
     static final HtmlId CONSTRUCTOR_DETAIL = HtmlId.of("constructor-detail");
     static final HtmlId CONSTRUCTOR_SUMMARY = HtmlId.of("constructor-summary");
     static final HtmlId ENUM_CONSTANT_DETAIL = HtmlId.of("enum-constant-detail");
@@ -95,6 +97,7 @@ public class HtmlIds {
     static final HtmlId PACKAGE_SUMMARY_TABLE = HtmlId.of("package-summary-table");
     static final HtmlId PROPERTY_DETAIL = HtmlId.of("property-detail");
     static final HtmlId PROPERTY_SUMMARY = HtmlId.of("property-summary");
+    static final HtmlId RELATED_PACKAGE_SUMMARY = HtmlId.of("related-package-summary");
     static final HtmlId RESET_BUTTON = HtmlId.of("reset-button");
     static final HtmlId SEARCH_INPUT = HtmlId.of("search-input");
     static final HtmlId SERVICES = HtmlId.of("services-summary");
@@ -422,6 +425,26 @@ public class HtmlIds {
             case ANNOTATION_TYPE_MEMBER -> "annotation-interface-member";
             case RECORD_CLASS -> "record-class";
         });
+    }
+
+    /**
+     * Returns an id for the member summary table of the given {@code kind} in a class page.
+     *
+     * @param kind the kind of member
+     *
+     * @return the id
+     */
+    static HtmlId forMemberSummary(VisibleMemberTable.Kind kind) {
+        return switch (kind) {
+            case NESTED_CLASSES -> NESTED_CLASS_SUMMARY;
+            case ENUM_CONSTANTS -> ENUM_CONSTANT_SUMMARY;
+            case FIELDS -> FIELD_SUMMARY;
+            case CONSTRUCTORS -> CONSTRUCTOR_SUMMARY;
+            case METHODS -> METHOD_SUMMARY;
+            case ANNOTATION_TYPE_MEMBER_OPTIONAL -> ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY;
+            case ANNOTATION_TYPE_MEMBER_REQUIRED -> ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY;
+            case PROPERTIES -> PROPERTY_SUMMARY;
+        };
     }
 
     /**

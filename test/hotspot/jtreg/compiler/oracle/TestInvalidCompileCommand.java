@@ -26,6 +26,7 @@
  * @bug 8263206 8263353
  * @summary Regression tests of -XX:CompileCommand
  * @library /test/lib
+ * @requires vm.flagless
  * @run driver compiler.oracle.TestInvalidCompileCommand
  */
 

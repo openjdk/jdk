@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8177280
+ * @bug     8177280 8262992
  * @summary see and link tag syntax should allow generic types
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -51,66 +51,72 @@ public class TestGenericTypeLink extends JavadocTester {
                 "-package", "pkg1");
         checkExit(Exit.OK);
         checkOutput("pkg1/A.html", true,
-                "<div class=\"block\"><code><a href=\"http://example.com/docs/api/java.base"
-                + "/java/util/List.html\" title=\"class or interface in java.util\" "
-                + "class=\"external-link\">List</a>&lt;<a href=\"http://example.com/docs/api/"
-                + "java.base/java/lang/String.html\" title=\"class or interface in java.lang\" "
-                + "class=\"external-link\">String</a>&gt;</code>\n"
-                + " <a href=\"http://example.com/docs/api/java.base/java/util/"
-                + "List.html\" title=\"class or interface in java.util\" class=\"external-link\">"
-                + "List</a>&lt;? extends <a href=\"http://example.com/docs/api/java.base/"
-                + "java/lang/CharSequence.html\" title=\"class or interface in java.lang\" "
-                + "class=\"external-link\">CharSequence</a>&gt;\n"
-                + " <a href=\"#someMethod(java.util.List,int)\"><code>someMethod("
-                + "ArrayList&lt;Integer&gt;, int)</code></a>\n"
-                + " <a href=\"#otherMethod(java.util.Map,double)\"><code>otherMethod("
-                + "Map&lt;String, StringBuilder&gt;, double)</code></a></div>\n",
+                """
+                    <div class="block"><code><a href="http://example.com/docs/api/java.base/java/util/L\
+                    ist.html" title="class or interface in java.util" class="external-link">List</a>&lt\
+                    ;<a href="http://example.com/docs/api/java.base/java/lang/String.html" title="class\
+                     or interface in java.lang" class="external-link">String</a>&gt;</code>
+                     <a href="http://example.com/docs/api/java.base/java/util/List.html" title="class o\
+                    r interface in java.util" class="external-link">List</a>&lt;? extends <a href="http\
+                    ://example.com/docs/api/java.base/java/lang/CharSequence.html" title="class or inte\
+                    rface in java.lang" class="external-link">CharSequence</a>&gt;
+                     <a href="#someMethod(java.util.List,int)"><code>someMethod(ArrayList&lt;Integer&gt\
+                    ;, int)</code></a>
+                     <a href="#otherMethod(java.util.Map,double)"><code>otherMethod(Map&lt;String, Stri\
+                    ngBuilder&gt;, double)</code></a></div>
+                    """,
 
-                "<dl class=\"notes\">\n"
-                + "<dt>See Also:</dt>\n"
-                + "<dd><code><a href=\"http://example.com/docs/api/java.base/"
-                + "java/util/Map.html\" title=\"class or interface in java.util\" "
-                + "class=\"external-link\">Map</a>&lt;<a href=\"http://example.com/"
-                + "docs/api/java.base/java/lang/String.html\" title=\"class or interface "
-                + "in java.lang\" class=\"external-link\">String</a>,&#8203;? extends "
-                + "<a href=\"http://example.com/docs/api/java.base/"
-                + "java/lang/CharSequence.html\" title=\"class or interface in "
-                + "java.lang\" class=\"external-link\">CharSequence</a>&gt;</code>, \n"
-                + "<code><a href=\"http://example.com/docs/api/java.base/"
-                + "java/util/Map.html\" title=\"class or interface in java.util\" "
-                + "class=\"external-link\">Map</a>&lt;<a href=\"http://example.com/docs/api/"
-                + "java.base/java/lang/String.html\" title=\"class or interface in java.lang\" "
-                + "class=\"external-link\">String</a>,&#8203;? super <a href=\"A.html\" title=\"class in pkg1\">"
-                + "A</a>&lt;<a href=\"http://example.com/docs/api/java.base/"
-                + "java/lang/String.html\" title=\"class or interface in java.lang\" "
-                + "class=\"external-link\">String</a>,&#8203;? extends <a href=\"http://example.com/docs/api"
-                + "/java.base/java/lang/RuntimeException.html\" "
-                + "title=\"class or interface in java.lang\" class=\"external-link\">RuntimeException</a>"
-                + "&gt;&gt;</code>, \n"
-                + "<a href=\"#someMethod(java.util.List,int)\"><code>someMethod"
-                + "(List&lt;Number&gt;, int)</code></a>, \n"
-                + "<a href=\"#otherMethod(java.util.Map,double)\"><code>otherMethod"
-                + "(Map&lt;String, ? extends CharSequence&gt;, double)</code></a></dd>\n"
-                + "</dl>");
+                """
+                    <dl class="notes">
+                    <dt>See Also:</dt>
+                    <dd>
+                    <ul class="see-list-long">
+                    <li><code><a href="http://example.com/docs/api/java.base/java/util/Map.html" title="\
+                    class or interface in java.util" class="external-link">Map</a>&lt;<a href="http://ex\
+                    ample.com/docs/api/java.base/java/lang/String.html" title="class or interface in jav\
+                    a.lang" class="external-link">String</a>,<wbr>? extends <a href="http://example.com/\
+                    docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.la\
+                    ng" class="external-link">CharSequence</a>&gt;</code></li>
+                    <li><code><a href="http://example.com/docs/api/java.base/java/util/Map.html" title="\
+                    class or interface in java.util" class="external-link">Map</a>&lt;<a href="http://ex\
+                    ample.com/docs/api/java.base/java/lang/String.html" title="class or interface in jav\
+                    a.lang" class="external-link">String</a>,<wbr>? super <a href="A.html" title="class \
+                    in pkg1">A</a>&lt;<a href="http://example.com/docs/api/java.base/java/lang/String.ht\
+                    ml" title="class or interface in java.lang" class="external-link">String</a>,<wbr>? \
+                    extends <a href="http://example.com/docs/api/java.base/java/lang/RuntimeException.ht\
+                    ml" title="class or interface in java.lang" class="external-link">RuntimeException</\
+                    a>&gt;&gt;</code></li>
+                    <li><a href="#someMethod(java.util.List,int)"><code>someMethod(List&lt;Number&gt;, i\
+                    nt)</code></a></li>
+                    <li><a href="#otherMethod(java.util.Map,double)"><code>otherMethod(Map&lt;String, ? \
+                    extends CharSequence&gt;, double)</code></a></li>
+                    </ul>
+                    </dd>
+                    </dl>""");
         checkOutput("pkg1/A.SomeException.html", true,
-                "<div class=\"block\"><code><a href=\"A.html\" title=\"class in pkg1\">A</a>&lt;"
-                + "<a href=\"http://example.com/docs/api/java.base/java/lang/String.html"
-                + "\" title=\"class or interface in java.lang\" class=\"external-link\">String</a>"
-                + ",&#8203;<a href=\"A.SomeException.html\" title=\"class in pkg1\">A.SomeException</a>&gt;</code>\n"
-                + " <a href=\"http://example.com/docs/api/java.base/java/util/Map.html"
-                + "\" title=\"class or interface in java.util\" class=\"external-link\">"
-                + "link to generic type with label</a></div>",
-
-                "<dl class=\"notes\">\n"
-                + "<dt>See Also:</dt>\n"
-                + "<dd><code><a href=\"A.html\" title=\"class in pkg1\">A</a>&lt;<a href=\"http://example.com/docs/api"
-                + "/java.base/java/lang/String.html\" "
-                + "title=\"class or interface in java.lang\" class=\"external-link\">String</a>"
-                + ",&#8203;<a href=\"A.SomeException.html\" title=\"class in pkg1\">A.SomeException</a>&gt;</code>, \n"
-                + "<a href=\"http://example.com/docs/api/java.base/"
-                + "java/util/List.html\" title=\"class or interface in java.util\" "
-                + "class=\"external-link\"><code>Link to generic type with label</code></a></dd>\n"
-                + "</dl>"
+                """
+                    <div class="block"><code><a href="A.html" title="class in pkg1">A</a>&lt;<a href="h\
+                    ttp://example.com/docs/api/java.base/java/lang/String.html" title="class or interfa\
+                    ce in java.lang" class="external-link">String</a>,<wbr><a href="A.SomeException.htm\
+                    l" title="class in pkg1">A.SomeException</a>&gt;</code>
+                     <a href="http://example.com/docs/api/java.base/java/util/Map.html" title="class or\
+                     interface in java.util" class="external-link">link to generic type with label</a>\
+                    </div>""",
+                """
+                    <dl class="notes">
+                    <dt>See Also:</dt>
+                    <dd>
+                    <ul class="see-list-long">
+                    <li><code><a href="A.html" title="class in pkg1">A</a>&lt;<a href="http://example.c\
+                    om/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang\
+                    " class="external-link">String</a>,<wbr><a href="A.SomeException.html" title="class\
+                     in pkg1">A.SomeException</a>&gt;</code></li>
+                    <li><a href="http://example.com/docs/api/java.base/java/util/List.html" title="clas\
+                    s or interface in java.util" class="external-link"><code>Link to generic type with \
+                    label</code></a></li>
+                    </ul>
+                    </dd>
+                    </dl>"""
                 );
     }
 
@@ -125,15 +131,22 @@ public class TestGenericTypeLink extends JavadocTester {
                 "-package", "pkg2");
         checkExit(Exit.ERROR);
         checkOutput("pkg2/B.html", true,
-                "<div class=\"block\"><code>java.util.Foo&lt;String&gt;</code>\n"
-                + " Baz&lt;Object&gt;\n"
-                + " <code>#b(List&lt;Integer&gt;)</code></div>",
+                """
+                    <div class="block"><code>java.util.Foo&lt;String&gt;</code>
+                     Baz&lt;Object&gt;
+                     <code>#b(List&lt;Integer&gt;)</code></div>""",
 
-                "<dl class=\"notes\">\n"
-                + "<dt>See Also:</dt>\n"
-                + "<dd><code>java.util.List&lt;Bar&gt;</code>, \n"
-                + "<code>Baz&lt;Object, String&gt;</code>, \n"
-                + "<code>B#b(List&lt;Baz&gt;)</code></dd>\n</dl>");
+                """
+                    <dl class="notes">
+                    <dt>See Also:</dt>
+                    <dd>
+                    <ul class="see-list-long">
+                    <li><code>java.util.List&lt;Bar&gt;</code></li>
+                    <li><code>Baz&lt;Object, String&gt;</code></li>
+                    <li><code>B#b(List&lt;Baz&gt;)</code></li>
+                    </ul>
+                    </dd>
+                    </dl>""");
     }
 }
 

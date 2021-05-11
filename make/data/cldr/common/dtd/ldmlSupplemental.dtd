@@ -17,7 +17,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:any-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "38" >
+<!ATTLIST version cldrVersion CDATA #FIXED "39" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 <!ATTLIST version unicodeVersion CDATA #FIXED "13.0.0" >
@@ -384,6 +384,9 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST unitConstant status NMTOKEN #IMPLIED >
     <!--@MATCH:literal/approximate, exact-->
     <!--@VALUE-->
+<!ATTLIST unitConstant description CDATA #IMPLIED >
+    <!--@MATCH:any-->
+    <!--@METADATA-->
 
 <!ELEMENT unitQuantities ( unitQuantity* ) >
 
@@ -396,6 +399,8 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST unitQuantity status NMTOKEN #IMPLIED >
     <!--@MATCH:regex/simple-->
     <!--@VALUE-->
+<!ATTLIST unitQuantity description CDATA #IMPLIED >
+    <!--@METADATA-->
 
 <!ELEMENT convertUnits ( convertUnit* ) >
 
@@ -412,8 +417,10 @@ Except as contained in this notice, the name of a copyright holder shall not be 
     <!--@MATCH:regex/[-+*/\._ 0-9a-zA-Z]+-->
     <!--@VALUE-->
 <!ATTLIST convertUnit systems NMTOKENS #IMPLIED >
-    <!--@MATCH:set/literal/ussystem, uksystem-->
+    <!--@MATCH:set/literal/ussystem, uksystem, metric, si, other -->
     <!--@VALUE-->
+<!ATTLIST convertUnit description CDATA #IMPLIED >
+    <!--@METADATA-->
 
 <!ELEMENT unitPreferenceData ( unitPreferences* ) >
 <!ATTLIST unitPreferenceData draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
@@ -1242,7 +1249,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST grammaticalCase scope NMTOKENS #IMPLIED >
     <!--@MATCH:set/literal/units-->
 <!ATTLIST grammaticalCase values NMTOKENS #IMPLIED >
-    <!--@MATCH:set/literal/ablative, accusative, comitative, dative, ergative, genitive, instrumental, locative, locativecopulative, nominative, oblique, partitive, prepositional, sociative, vocative-->
+    <!--@MATCH:set/literal/abessive, ablative, accusative, adessive, allative, causal, comitative, dative, delative, elative, ergative, essive, genitive, illative, inessive, instrumental, locative, locativecopulative, nominative, oblique, partitive, prepositional, sociative, sublative, superessive, terminative, translative, vocative-->
     <!--@VALUE-->
 
 <!ELEMENT grammaticalGender EMPTY >

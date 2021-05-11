@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -858,7 +858,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   Label no_safepoint, dispatch;
   if (table != safepoint_table && generate_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
-    testb(Address(r15_thread, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
+    testb(Address(r15_thread, JavaThread::polling_word_offset()), SafepointMechanism::poll_bit());
 
     jccb(Assembler::zero, no_safepoint);
     lea(rscratch1, ExternalAddress((address)safepoint_table));
@@ -877,7 +877,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     Label no_safepoint;
     const Register thread = rcx;
     get_thread(thread);
-    testb(Address(thread, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
+    testb(Address(thread, JavaThread::polling_word_offset()), SafepointMechanism::poll_bit());
 
     jccb(Assembler::zero, no_safepoint);
     ArrayAddress dispatch_addr(ExternalAddress((address)safepoint_table), index);

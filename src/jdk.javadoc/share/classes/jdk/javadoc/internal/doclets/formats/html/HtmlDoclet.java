@@ -139,8 +139,6 @@ public class HtmlDoclet extends AbstractDoclet {
                 { "doclet.help.annotation_type.description", "doclet.help.annotation_interface.description" },
 
                 // in doclets.properties
-                { "doclet.Annotation_Types_Summary", "doclet.Annotation_Interfaces_Summary" },
-                { "doclet.Enum_Summary", "doclet.Enum_Class_Summary" },
                 { "doclet.Enums", "doclet.EnumClasses" },
                 { "doclet.AnnotationType", "doclet.AnnotationInterface" },
                 { "doclet.AnnotationTypes", "doclet.AnnotationInterfaces" },

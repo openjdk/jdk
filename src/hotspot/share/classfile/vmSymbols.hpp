@@ -283,6 +283,7 @@
   template(signature_name,                            "signature")                                \
   template(slot_name,                                 "slot")                                     \
   template(trusted_final_name,                        "trustedFinal")                             \
+  template(blackhole_name,                            "<blackhole>")  /*fake name*/               \
                                                                                                   \
   /* Support for annotations (JDK 1.5 and above) */                                               \
                                                                                                   \
@@ -297,9 +298,11 @@
   /* Type Annotations (JDK 8 and above) */                                                        \
   template(type_annotations_name,                     "typeAnnotations")                          \
   /* used by CDS */                                                                               \
-  template(jdk_internal_misc_CDS, "jdk/internal/misc/CDS")                                        \
-  template(generateLambdaFormHolderClasses, "generateLambdaFormHolderClasses")                    \
+  template(jdk_internal_misc_CDS,                     "jdk/internal/misc/CDS")                    \
+  template(generateLambdaFormHolderClasses,           "generateLambdaFormHolderClasses")          \
   template(generateLambdaFormHolderClasses_signature, "([Ljava/lang/String;)[Ljava/lang/Object;") \
+  template(dumpSharedArchive,                         "dumpSharedArchive")                        \
+  template(dumpSharedArchive_signature,               "(ZLjava/lang/String;)V")                   \
                                                                                                   \
   /* Intrinsic Annotation (JDK 9 and above) */                                                    \
   template(jdk_internal_vm_annotation_DontInline_signature,  "Ljdk/internal/vm/annotation/DontInline;")  \

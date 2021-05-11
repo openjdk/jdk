@@ -121,7 +121,7 @@ private:
   bool find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_op, int& mem_addr_idx);
   void find_shared_post_visit(Node* n, uint opcode);
 
-  bool is_vshift_con_pattern(Node *n, Node *m);
+  bool is_vshift_con_pattern(Node* n, Node* m);
 
   // Debug and profile information for nodes in old space:
   GrowableArray<Node_Notes*>* _old_node_note_array;
@@ -135,8 +135,11 @@ private:
 
   Node_Array _shared_nodes;
 
-  debug_only(Node_Array _old2new_map;)   // Map roots of ideal-trees to machine-roots
-  debug_only(Node_Array _new2old_map;)   // Maps machine nodes back to ideal
+#ifndef PRODUCT
+  Node_Array _old2new_map;    // Map roots of ideal-trees to machine-roots
+  Node_Array _new2old_map;    // Maps machine nodes back to ideal
+  VectorSet _reused;          // Ideal IGV identifiers reused by machine nodes
+#endif // !PRODUCT
 
   // Accessors for the inherited field PhaseTransform::_nodes:
   void   grow_new_node_array(uint idx_limit) {
@@ -556,13 +559,16 @@ public:
   // Does n lead to an uncommon trap that can cause deoptimization?
   static bool branches_to_uncommon_trap(const Node *n);
 
-#ifdef ASSERT
+#ifndef PRODUCT
+  // Record mach-to-Ideal mapping, reusing the Ideal IGV identifier if possible.
+  void record_new2old(Node* newn, Node* old);
+
   void dump_old2new_map();      // machine-independent to machine-dependent
 
   Node* find_old_node(Node* new_node) {
     return _new2old_map[new_node->_idx];
   }
-#endif
+#endif // !PRODUCT
 };
 
 #endif // SHARE_OPTO_MATCHER_HPP
