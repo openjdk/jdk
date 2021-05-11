@@ -1529,7 +1529,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         }
 
         /**
-         * Writes the write segment header with dummy length of 0.
+         * Writes the segment header with dummy length of 0.
          */
         private void writeSegmentHeader() throws IOException {
             writeSegmentHeader(0);
@@ -1574,7 +1574,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         // Segment support.
         private boolean segmentMode;
         private boolean allowSegmented;
-        // Write data directly to underlying stream, don't use internal buffer.
+        // Writes data directly to underlying stream, don't use internal buffer.
         private boolean unbufferedMode;
         private byte segmentBuffer[];
         private int segmentWritten;
