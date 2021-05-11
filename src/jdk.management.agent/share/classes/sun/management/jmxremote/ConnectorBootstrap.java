@@ -305,7 +305,7 @@ public final class ConnectorBootstrap {
       **/
       public static synchronized JMXConnectorServer initialize() {
 
-         // Load new management properties
+         // Load a new management properties
          final Properties props = Agent.loadManagementProperties();
          if (props == null) {
               return null;
