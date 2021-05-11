@@ -1886,7 +1886,6 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // n.b. frame size includes space for return pc and rfp
   const int framesize = C->output()->frame_size_in_bytes();
-  assert(framesize%(2*wordSize) == 0, "must preserve 2*wordSize alignment");
 
   // insert a nop at the start of the prolog so we can patch in a
   // branch if we need to invalidate the method later
@@ -3111,32 +3110,6 @@ encode %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::strd, src_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
-  %}
-
-  // This encoding class is generated automatically from ad_encode.m4.
-  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strw_immn(immN src, memory1 mem) %{
-    C2_MacroAssembler _masm(&cbuf);
-    address con = (address)$src$$constant;
-    // need to do this the hard way until we can manage relocs
-    // for 32 bit constants
-    __ movoop(rscratch2, (jobject)con);
-    if (con) __ encode_heap_oop_not_null(rscratch2);
-    loadStore(_masm, &MacroAssembler::strw, rscratch2, $mem->opcode(),
-               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
-  %}
-
-  // This encoding class is generated automatically from ad_encode.m4.
-  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strw_immnk(immN src, memory4 mem) %{
-    C2_MacroAssembler _masm(&cbuf);
-    address con = (address)$src$$constant;
-    // need to do this the hard way until we can manage relocs
-    // for 32 bit constants
-    __ movoop(rscratch2, (jobject)con);
-    __ encode_klass_not_null(rscratch2);
-    loadStore(_masm, &MacroAssembler::strw, rscratch2, $mem->opcode(),
-               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
   // This encoding class is generated automatically from ad_encode.m4.

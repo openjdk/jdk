@@ -27,7 +27,6 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
@@ -345,33 +344,28 @@ void DynamicArchive::dump(const char* archive_name, TRAPS) {
   } else {
     // prevent multiple dumps.
     set_has_been_dumped_once();
-    ArchiveClassesAtExit = archive_name;
-    if (Arguments::init_shared_archive_paths()) {
-      dump(CHECK);
-    } else {
-      ArchiveClassesAtExit = nullptr;
-      THROW_MSG(vmSymbols::java_lang_RuntimeException(),
-              "Could not setup SharedDynamicArchivePath");
-    }
-    // prevent do dynamic dump at exit.
+  }
+  ArchiveClassesAtExit = archive_name;
+  if (Arguments::init_shared_archive_paths()) {
+    dump();
+  } else {
     ArchiveClassesAtExit = nullptr;
-    if (!Arguments::init_shared_archive_paths()) {
-      THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+              "Could not setup SharedDynamicArchivePath");
+  }
+  // prevent do dynamic dump at exit.
+  ArchiveClassesAtExit = nullptr;
+  if (!Arguments::init_shared_archive_paths()) {
+    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
              "Could not restore SharedDynamicArchivePath");
-    }
   }
 }
 
-void DynamicArchive::dump(TRAPS) {
+void DynamicArchive::dump() {
   if (Arguments::GetSharedDynamicArchivePath() == NULL) {
     log_warning(cds, dynamic)("SharedDynamicArchivePath is not specified");
     return;
   }
-
-  // regenerate lambdaform holder classes
-  log_info(cds, dynamic)("Regenerate lambdaform holder classes ...");
-  LambdaFormInvokers::regenerate_holder_classes(CHECK);
-  log_info(cds, dynamic)("Regenerate lambdaform holder classes ...done");
 
   VM_PopulateDynamicDumpSharedSpace op;
   VMThread::execute(&op);
