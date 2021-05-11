@@ -430,7 +430,7 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new SubLNode(in1->in(1), in2->in(2));
     }
     // Convert "(a-b)+(c-a)" into "(c-b)"
-    if( op2 == Op_SubL && in1->in(1) == in1->in(2) ) {
+    if( op2 == Op_SubL && in1->in(1) == in2->in(2) ) {
       assert(in1->in(2) != this && in2->in(1) != this,"dead loop in AddLNode::Ideal");
       return new SubLNode(in2->in(1), in1->in(2));
     }
@@ -441,18 +441,8 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new SubLNode( in1, in2->in(2) );
 
   // Convert "(0-y)+x" into "(x-y)"
-  if( op1 == Op_SubL && phase->type(in1->in(1)) == TypeInt::ZERO )
+  if( op1 == Op_SubL && phase->type(in1->in(1)) == TypeLong::ZERO )
     return new SubLNode( in2, in1->in(2) );
-
-  // Convert "X+X+X+X+X...+X+Y" into "k*X+Y" or really convert "X+(X+Y)"
-  // into "(X<<1)+Y" and let shift-folding happen.
-  if( op2 == Op_AddL &&
-      in2->in(1) == in1 &&
-      op1 != Op_ConL &&
-      0 ) {
-    Node *shift = phase->transform(new LShiftLNode(in1,phase->intcon(1)));
-    return new AddLNode(shift,in2->in(2));
-  }
 
   // Convert (x >>> rshift) + (x << lshift) into RotateRight(x, rshift)
   if (Matcher::match_rule_supported(Op_RotateRight) &&
