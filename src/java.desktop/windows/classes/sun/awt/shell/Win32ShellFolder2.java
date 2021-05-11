@@ -1192,6 +1192,9 @@ final class Win32ShellFolder2 extends ShellFolder {
         long hIcon = getIconResource("shell32.dll", iconID, size, size);
         if (hIcon != 0) {
             Image icon = makeIcon(hIcon);
+            if (size != icon.getWidth(null)) {
+                icon = new MultiResolutionIconImage(size, icon);
+            }
             disposeIcon(hIcon);
             return icon;
         }
