@@ -4627,16 +4627,6 @@ void Assembler::vpmaddubsw(XMMRegister dst, XMMRegister src1, XMMRegister src2, 
   emit_int16(0x04, (0xC0 | encode));
 }
 
-void Assembler::vpmaddubsw(XMMRegister dst, XMMRegister src1, Address src2, int vector_len) {
-  assert(vector_len == AVX_128bit ? VM_Version::supports_avx() :
-    (vector_len == AVX_256bit ? VM_Version::supports_avx2() :
-    (vector_len == AVX_512bit ? VM_Version::supports_evex() : 0)), "");
-  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ true, /* uses_vl */ true);
-  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
-  emit_int16(0x04, (0xC0 | encode));
-  emit_operand(dst, src2);
-}
-
 void Assembler::evpdpwssd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(VM_Version::supports_evex(), "");
   assert(VM_Version::supports_avx512_vnni(), "must support vnni");
