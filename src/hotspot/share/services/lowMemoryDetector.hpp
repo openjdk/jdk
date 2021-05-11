@@ -216,13 +216,8 @@ class LowMemoryDetector : public AllStatic {
 private:
   // true if any collected heap has low memory detection enabled
   static volatile bool _enabled_for_collected_pools;
-  // > 0 if temporary disabed
-  static volatile jint _disabled_count;
 
   static bool has_pending_requests();
-  static bool temporary_disabled() { return _disabled_count > 0; }
-  static void disable() { Atomic::inc(&_disabled_count); }
-  static void enable() { Atomic::dec(&_disabled_count); }
   static void process_sensor_changes(TRAPS);
 
 public:
@@ -243,19 +238,13 @@ public:
     }
   }
 
-  // indicates if low memory detection is enabled for any collected
-  // memory pools
-  static inline bool is_enabled_for_collected_pools() {
-    return !temporary_disabled() && _enabled_for_collected_pools;
-  }
-
   // recompute enabled flag
   static void recompute_enabled_for_collected_pools();
 
   // low memory detection for collected memory pools.
   static inline void detect_low_memory_for_collected_pools() {
     // no-op if low memory detection not enabled
-    if (!is_enabled_for_collected_pools()) {
+    if (!_enabled_for_collected_pools) {
       return;
     }
     int num_memory_pools = MemoryService::num_memory_pools();
