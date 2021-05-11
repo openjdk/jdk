@@ -878,11 +878,6 @@ public:
   void access_load_at(BasicType type, DecoratorSet decorators, Address src, Register dst, Register tmp1, Register tmp2, Register tmp3);
   void access_store_at(BasicType type, DecoratorSet decorators, Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null);
 
-  // Resolves obj for access. Result is placed in the same register.
-  // All other registers are preserved.
-  void resolve(DecoratorSet decorators, Register obj);
-
-
   void ldr_global_ptr(Register reg, address address_of_global);
   void ldr_global_s32(Register reg, address address_of_global);
   void ldrb_global(Register reg, address address_of_global);

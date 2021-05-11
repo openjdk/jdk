@@ -734,15 +734,15 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(Thread,                      _active_handles,                               JNIHandleBlock*)                       \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                      _allocated_bytes,                              jlong)                                 \
-  nonstatic_field(Thread,                      _current_pending_monitor,                      ObjectMonitor*)                        \
-  nonstatic_field(Thread,                      _current_pending_monitor_is_from_java,         bool)                                  \
-  nonstatic_field(Thread,                      _current_waiting_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(NamedThread,                 _name,                                         char*)                                 \
   nonstatic_field(NamedThread,                 _processed_thread,                             Thread*)                               \
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _vm_result_2,                                  Metadata*)                             \
+  nonstatic_field(JavaThread,                  _current_pending_monitor,                      ObjectMonitor*)                        \
+  nonstatic_field(JavaThread,                  _current_pending_monitor_is_from_java,         bool)                                  \
+  nonstatic_field(JavaThread,                  _current_waiting_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(JavaThread,                  _pending_async_exception,                      oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
@@ -912,7 +912,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   c2_nonstatic_field(Compile,                  _regalloc,                                     PhaseRegAlloc*)                        \
   c2_nonstatic_field(Compile,                  _method,                                       ciMethod*)                             \
   c2_nonstatic_field(Compile,                  _compile_id,                                   const int)                             \
-  c2_nonstatic_field(Compile,                  _save_argument_registers,                      const bool)                            \
   c2_nonstatic_field(Compile,                  _subsume_loads,                                const bool)                            \
   c2_nonstatic_field(Compile,                  _do_escape_analysis,                           const bool)                            \
   c2_nonstatic_field(Compile,                  _eliminate_boxing,                             const bool)                            \
@@ -1596,6 +1595,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(MemBarVolatileNode, MemBarNode)                         \
   declare_c2_type(MemBarCPUOrderNode, MemBarNode)                         \
   declare_c2_type(OnSpinWaitNode, MemBarNode)                             \
+  declare_c2_type(BlackholeNode, MemBarNode)                              \
   declare_c2_type(InitializeNode, MemBarNode)                             \
   declare_c2_type(ThreadLocalNode, Node)                                  \
   declare_c2_type(Opaque1Node, Node)                                      \

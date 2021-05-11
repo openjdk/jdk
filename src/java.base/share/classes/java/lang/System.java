@@ -699,6 +699,9 @@ public final class System {
      *     <td>User's home directory</td></tr>
      * <tr><th scope="row">{@systemProperty user.dir}</th>
      *     <td>User's current working directory</td></tr>
+     * <tr><th scope="row">{@systemProperty native.encoding}</th>
+     *     <td>Character encoding name derived from the host environment and/or
+     *     the user's settings. Setting this system property has no effect.</td></tr>
      * </tbody>
      * </table>
      * <p>

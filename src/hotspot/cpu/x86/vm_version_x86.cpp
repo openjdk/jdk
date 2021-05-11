@@ -1702,6 +1702,9 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif // !PRODUCT
+  if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
+      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
+  }
 }
 
 void VM_Version::print_platform_virtualization_info(outputStream* st) {
