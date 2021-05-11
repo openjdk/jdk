@@ -2573,7 +2573,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
 // without changing the old verifier, the verification constraint cannot be
 // retrieved during dump time.
 // Verification of archived old classes will be performed during run time.
-bool InstanceKlass::has_old_class_version() {
+bool InstanceKlass::has_old_class_version() const {
   if (major_version() < 50 /*JAVA_6_VERSION*/) {
     return true;
   }
