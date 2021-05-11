@@ -200,7 +200,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   void reset();
 
   template <class T>
-  void details(T* phase, const char* indent_str) const;
+  void details(T* phase, uint indent_level) const;
 
   void log_work_items(WorkerDataArray<double>* phase, uint indent, outputStream* out) const;
   void log_phase(WorkerDataArray<double>* phase, uint indent_level, outputStream* out, bool print_sum) const;
