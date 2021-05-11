@@ -574,7 +574,7 @@ public:
   ClassLoaderData* cld_at(int index) { return _loaded_cld.at(index); }
 };
 
-// Check if a class or its super class/interface has a version older than 50.
+// Check if a class or any of its super type has a version older than 50.
 // CDS will not perform verification of old classes during dump time because
 // without changing the old verifier, the verification constraint cannot be
 // retrieved during dump time.
