@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -307,7 +307,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ro">Tarumanit</language>
 			<language type="ro_MD" draft="unconfirmed">Tamuldavt</language>
 			<language type="rof" draft="unconfirmed">Tarumbut</language>
-			<language type="root" draft="unconfirmed">Aẓar</language>
 			<language type="ru">Tarusit</language>
 			<language type="rup" draft="unconfirmed">Tavalakt</language>
 			<language type="rw">Taruwandit</language>
@@ -2275,9 +2274,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat type="daylight" draft="unconfirmed">{0} (Akud n unebdu)</regionFormat>
 			<regionFormat type="standard" draft="unconfirmed">{0} Akud amezday</regionFormat>
 			<fallbackFormat draft="unconfirmed">{1} ({0})</fallbackFormat>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity draft="unconfirmed">Honolulu</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard draft="unconfirmed">Akud agraɣlan imyuddsen</standard>
@@ -2397,11 +2393,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity draft="unconfirmed">Broken Hill</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity draft="unconfirmed">Currie</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity draft="unconfirmed">Malburn</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity draft="unconfirmed">Currie</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity draft="unconfirmed">Hobart</exemplarCity>
@@ -3434,6 +3430,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity draft="unconfirmed">Nome</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity draft="unconfirmed">Honolulu</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity draft="unconfirmed">Ankuraj</exemplarCity>
@@ -6269,7 +6268,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Afrank BCEAO CFA</displayName>
 				<displayName count="one" draft="unconfirmed">Afrank CFA (BCEAO)</displayName>
 				<displayName count="other" draft="unconfirmed">Ifranken CFA (BCEAO)</displayName>
-				<symbol draft="unconfirmed">CFA</symbol>
+				<symbol draft="unconfirmed">F CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName draft="unconfirmed">Palladium</displayName>
@@ -7072,7 +7071,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="unconfirmed">{0} n udunam</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} n udunam</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName draft="unconfirmed">mg/dL</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} mg/dL</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} mg/dL</unitPattern>
@@ -7306,9 +7305,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} mm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName draft="unconfirmed">µmitr</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} µm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} µm</unitPattern>
+				<displayName draft="unconfirmed">μmitr</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} μm</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName draft="unconfirmed">nm</displayName>
@@ -7404,9 +7403,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} mg</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName draft="unconfirmed">µg</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} µg</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} µg</unitPattern>
+				<displayName draft="unconfirmed">μg</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} μg</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName draft="unconfirmed">iṭunen</displayName>

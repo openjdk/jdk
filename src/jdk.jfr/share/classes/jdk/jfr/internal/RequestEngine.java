@@ -68,15 +68,15 @@ public final class RequestEngine {
                     } else {
                         jvm.emitEvent(type.getId(), JVM.counterTime(), 0);
                     }
-                    if (Logger.shouldLog(LogTag.JFR_SYSTEM_EVENT, LogLevel.DEBUG)) {
-                        Logger.log(LogTag.JFR_SYSTEM_EVENT, LogLevel.DEBUG, "Executed periodic hook for " + type.getLogName());
+                    if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
+                        Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Executed periodic hook for " + type.getLogName());
                     }
                 } else {
                     executeSecure();
                 }
             } catch (Throwable e) {
                 // Prevent malicious user to propagate exception callback in the wrong context
-                Logger.log(LogTag.JFR_SYSTEM_EVENT, LogLevel.WARN, "Exception occurred during execution of period hook for " + type.getLogName());
+                Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Exception occurred during execution of period hook for " + type.getLogName());
             }
         }
 
@@ -137,10 +137,10 @@ public final class RequestEngine {
     }
 
     private static void logHook(String action, PlatformEventType type) {
-        if (type.isJDK() || type.isJVM()) {
-            Logger.log(LogTag.JFR_SYSTEM_EVENT, LogLevel.INFO, action + " periodic hook for " + type.getLogName());
+        if (type.isSystem()) {
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, action + " periodic hook for " + type.getLogName());
         } else {
-            Logger.log(LogTag.JFR_EVENT, LogLevel.INFO, action + " periodic hook for " + type.getLogName());
+            Logger.log(LogTag.JFR, LogLevel.INFO, action + " periodic hook for " + type.getLogName());
         }
     }
 

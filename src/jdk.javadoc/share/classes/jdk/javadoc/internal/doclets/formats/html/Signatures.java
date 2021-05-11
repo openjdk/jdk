@@ -177,7 +177,7 @@ public class Signatures {
             List<? extends TypeMirror> permits = typeElement.getPermittedSubclasses();
             List<? extends TypeMirror> linkablePermits = permits.stream()
                     .filter(t -> utils.isLinkable(utils.asTypeElement(t)))
-                    .collect(Collectors.toList());
+                    .toList();
             if (!linkablePermits.isEmpty()) {
                 Content permitsSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.permits);
                 boolean isFirst = true;
@@ -457,7 +457,7 @@ public class Signatures {
                 // empty parameters are added without packing
                 htmlTree.add(parameters);
             } else {
-                htmlTree.add(Entity.ZERO_WIDTH_SPACE)
+                htmlTree.add(new HtmlTree(TagName.WBR))
                         .add(HtmlTree.SPAN(HtmlStyle.parameters, parameters));
             }
 

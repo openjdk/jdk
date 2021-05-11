@@ -145,10 +145,6 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
         MTLRenderQueue rq = MTLRenderQueue.getInstance();
         rq.lock();
         try {
-            // getMTLConfigInfo() creates and destroys temporary
-            // surfaces/contexts, so we should first invalidate the current
-            // Java-level context and flush the queue...
-            MTLContext.invalidateCurrentContext();
             cfginfo = getMTLConfigInfo(displayID, mtlShadersLib);
             if (cfginfo != 0L) {
                 textureSize = nativeGetMaxTextureSize();

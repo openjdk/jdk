@@ -172,6 +172,12 @@ public:
     DatabaseView(const Database& db, const tstring& sqlQuery,
                         const DatabaseRecord& queryParam=DatabaseRecord());
 
+    ~DatabaseView() {
+      if (handle != 0) {
+        closeMSIHANDLE(handle);
+      }
+    }
+
     DatabaseRecord fetch();
 
     DatabaseRecord tryFetch();

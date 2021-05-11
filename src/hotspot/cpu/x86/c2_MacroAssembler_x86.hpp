@@ -89,6 +89,10 @@ public:
                    KRegister ktmp, XMMRegister atmp, XMMRegister btmp,
                    int vlen_enc);
 
+  void signum_fp(int opcode, XMMRegister dst,
+                 XMMRegister zero, XMMRegister one,
+                 Register scratch);
+
   void vextendbw(bool sign, XMMRegister dst, XMMRegister src, int vector_len);
   void vextendbw(bool sign, XMMRegister dst, XMMRegister src);
   void vextendbd(bool sign, XMMRegister dst, XMMRegister src, int vector_len);
