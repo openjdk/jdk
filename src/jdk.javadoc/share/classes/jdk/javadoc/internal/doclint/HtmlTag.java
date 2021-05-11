@@ -448,10 +448,10 @@ public enum HtmlTag {
         ARIA_MULTISELECTABLE,
         ARIA_OWNS,
         ARIA_POSINSET,
-        ARIA_SETSIZE,
         ARIA_READONLY,
         ARIA_REQUIRED,
         ARIA_SELECTED,
+        ARIA_SETSIZE,
         ARIA_SORT,
         AXIS,
         BACKGROUND,
@@ -504,6 +504,7 @@ public enum HtmlTag {
         SUMMARY,
         TARGET,
         TEXT,
+        TITLE,
         TYPE,
         VALIGN,
         VALUE,
@@ -577,6 +578,7 @@ public enum HtmlTag {
         attrs.put(Attr.ID, AttrKind.OK);
         attrs.put(Attr.STYLE, AttrKind.OK);
         attrs.put(Attr.ROLE, AttrKind.OK);
+        attrs.put(Attr.TITLE, AttrKind.OK);
         // for now, assume that all ARIA attributes are allowed on all tags.
         attrs.put(Attr.ARIA_ACTIVEDESCENDANT, AttrKind.OK);
         attrs.put(Attr.ARIA_CONTROLS, AttrKind.OK);
