@@ -25,7 +25,6 @@
  * @test
  * @bug 8249719
  * @summary ResolvedMethodTable hash function should take method class into account
- * @modules java.base/jdk.internal.misc
  * @run main/othervm/manual -Xmx256m -XX:MaxMetaspaceSize=256m ResolvedMethodTableHash 200000
  */
 
@@ -34,7 +33,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 // The test generates thousands MethodHandles to the methods of the same name
