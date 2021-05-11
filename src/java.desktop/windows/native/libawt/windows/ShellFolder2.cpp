@@ -936,14 +936,17 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_shell_Win32ShellFolder2_hiResIconAvailab
         UINT uFlags = GIL_FORSHELL | GIL_ASYNC;
         hres = pIcon->GetIconLocation(uFlags, szBuf, MAX_PATH, &index, &flags);
         if (SUCCEEDED(hres)) {
+            pIcon->Release();
             return wcscmp(szBuf, L"*") != 0;
         } else if (hres == E_PENDING) {
             uFlags = GIL_DEFAULTICON;
             hres = pIcon->GetIconLocation(uFlags, szBuf, MAX_PATH, &index, &flags);
             if (SUCCEEDED(hres)) {
+                pIcon->Release();
                 return wcscmp(szBuf, L"*") != 0;
             }
         }
+        pIcon->Release();
     }
     return FALSE;
 }

@@ -1095,7 +1095,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                                     } else {
                                         imageCache = getLargeIcon ? smallSystemImages : largeSystemImages;
                                     }
-                                    newIcon2 = imageCache.get(Integer.valueOf(index));
+                                    newIcon2 = imageCache.get(index);
                                     if (newIcon2 == null) {
                                         long hIcon = getIcon(getAbsolutePath(), !getLargeIcon);
                                         newIcon2 = makeIcon(hIcon);
