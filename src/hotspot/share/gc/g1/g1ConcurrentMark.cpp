@@ -502,7 +502,7 @@ static void clear_mark_if_set(G1CMBitMap* bitmap, HeapWord* addr) {
 }
 
 void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
-  assert_at_safepoint_on_vm_thread();
+  assert_at_safepoint();
 
   // Need to clear all mark bits of the humongous object.
   clear_mark_if_set(_prev_mark_bitmap, r->bottom());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,10 @@ class PipeImpl
     private static final Random RANDOM_NUMBER_GENERATOR = new SecureRandom();
 
     // Source and sink channels
-    private final SourceChannel source;
-    private final SinkChannel sink;
+    private final SourceChannelImpl source;
+    private final SinkChannelImpl sink;
 
-    private class Initializer
+    private static class Initializer
         implements PrivilegedExceptionAction<Void>
     {
 
@@ -203,11 +203,11 @@ class PipeImpl
         this.sink = initializer.sink;
     }
 
-    public SourceChannel source() {
+    public SourceChannelImpl source() {
         return source;
     }
 
-    public SinkChannel sink() {
+    public SinkChannelImpl sink() {
         return sink;
     }
 

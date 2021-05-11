@@ -126,10 +126,9 @@ public final class CodeSigner implements Serializable {
      * @return true if the objects are considered equal, false otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj == null || (!(obj instanceof CodeSigner))) {
+        if (obj == null || (!(obj instanceof CodeSigner that))) {
             return false;
         }
-        CodeSigner that = (CodeSigner)obj;
 
         if (this == that) {
             return true;
