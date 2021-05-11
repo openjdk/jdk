@@ -170,7 +170,6 @@ void DynamicArchiveBuilder::init_header() {
   assert(FileMapInfo::dynamic_info() == mapinfo, "must be");
   _header = mapinfo->dynamic_header();
 
-  Thread* THREAD = Thread::current();
   FileMapInfo* base_info = FileMapInfo::current_info();
   _header->set_base_header_crc(base_info->crc());
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
@@ -251,7 +250,6 @@ void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
   }
 #endif
 
-  Thread* THREAD = Thread::current();
   Method::sort_methods(ik->methods(), /*set_idnums=*/true, dynamic_dump_method_comparator);
   if (ik->default_methods() != NULL) {
     Method::sort_methods(ik->default_methods(), /*set_idnums=*/false, dynamic_dump_method_comparator);
