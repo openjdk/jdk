@@ -41,6 +41,7 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     implements com.sun.management.UnixOperatingSystemMXBean {
 
     private static final int MAX_ATTEMPTS_NUMBER = 10;
+    private static final int PER_CPU_SHARES = 1024;
     private final Metrics containerMetrics;
 
     OperatingSystemImpl(VMManagement vm) {
@@ -135,9 +136,11 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     public double getCpuLoad() {
         if (containerMetrics != null) {
             long quota = containerMetrics.getCpuQuota();
+            long share = containerMetrics.getCpuShares();
+            long periodLength = containerMetrics.getCpuPeriod();
+            long numPeriods = containerMetrics.getCpuNumPeriods();
+            long usageNanos = containerMetrics.getCpuUsage();
             if (quota > 0) {
-                long numPeriods = containerMetrics.getCpuNumPeriods();
-                long usageNanos = containerMetrics.getCpuUsage();
                 if (numPeriods > 0 && usageNanos > 0) {
                     long quotaNanos = TimeUnit.MICROSECONDS.toNanos(quota * numPeriods);
                     double systemLoad = (double) usageNanos / quotaNanos;
@@ -147,8 +150,18 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
                     return systemLoad;
                 }
                 return -1;
+            } else if (share > 0) {
+                if (periodLength > 0 && numPeriods > 0 && usageNanos > 0) {
+                    long shareNanos = TimeUnit.MICROSECONDS.toNanos(periodLength * numPeriods * share / PER_CPU_SHARES);
+                    double systemLoad = (double) usageNanos / shareNanos;
+                    // Ensure the return value is in the range 0.0 -> 1.0
+                    systemLoad = Math.max(0.0, systemLoad);
+                    systemLoad = Math.min(1.0, systemLoad);
+                    return systemLoad;
+                }
+                return -1;
             } else {
-                // If CPU quotas are not active then find the average system load for
+                // If CPU quotas and shares are not active then find the average system load for
                 // all online CPUs that are allowed to run this container.
 
                 // If the cpuset is the same as the host's one there is no need to iterate over each CPU
