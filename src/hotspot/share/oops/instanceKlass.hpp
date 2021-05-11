@@ -1250,7 +1250,7 @@ public:
   virtual void remove_java_mirror();
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
-  static bool has_old_class_version(InstanceKlass* ik);
+  bool has_old_class_version();
 
   jint compute_modifier_flags() const;
 

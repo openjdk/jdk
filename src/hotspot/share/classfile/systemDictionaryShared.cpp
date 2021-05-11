@@ -1382,7 +1382,7 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
       warn_excluded(k, "Failed verification");
       return true;
     } else {
-      if (!InstanceKlass::has_old_class_version(k)) {
+      if (!k->has_old_class_version()) {
         warn_excluded(k, "Not linked");
         return true;
       }
@@ -1397,7 +1397,7 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
     return true;
   }
 
-  if (InstanceKlass::has_old_class_version(k) && k->is_linked()) {
+  if (k->has_old_class_version() && k->is_linked()) {
     warn_excluded(k, "Old class has been linked");
     return true;
   }
