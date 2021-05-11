@@ -1,4 +1,5 @@
 grant {
   permission java.lang.RuntimePermission "getStackWalkerWithClassReference";
+  permission java.util.PropertyPermission "jdk.reflect.*","read";
 };
 

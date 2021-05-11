@@ -26,6 +26,7 @@
 package java.lang.reflect;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.MethodAccessor;
 import jdk.internal.reflect.Reflection;
@@ -552,11 +553,44 @@ public final class Method extends Executable {
     @ForceInline // to ensure Reflection.getCallerClass optimization
     @IntrinsicCandidate
     public Object invoke(Object obj, Object... args)
-        throws IllegalAccessException, IllegalArgumentException,
-           InvocationTargetException
+        throws IllegalAccessException, InvocationTargetException
     {
+        boolean callerSensitive = isCallerSensitive();
+        Class<?> caller = null;
+        if (!override || callerSensitive) {
+            caller = Reflection.getCallerClass();
+        }
+
+        // Reflection::getCallerClass filters all subclasses of
+        // jdk.internal.reflect.MethodAccessorImpl and Method::invoke(Object, Object[])
+        // Should not call Method::invoke(Object, Object[], Class) here
         if (!override) {
-            Class<?> caller = Reflection.getCallerClass();
+            checkAccess(caller, clazz,
+                    Modifier.isStatic(modifiers) ? null : obj.getClass(),
+                    modifiers);
+        }
+        MethodAccessor ma = methodAccessor;             // read volatile
+        if (ma == null) {
+            ma = acquireMethodAccessor();
+        }
+
+        return callerSensitive ? ma.invoke(obj, args, caller) : ma.invoke(obj, args);
+    }
+
+    /**
+     * This is to support MethodHandle calling caller-sensitive Method::invoke
+     * that may invoke a caller-sensitive method in order to get the original caller
+     * class (not the injected invoker).
+     *
+     * If this adapter is not presented, MethodHandle invoking Method::invoke
+     * will get an invoker class, a hidden nestmate of the original caller class,
+     * that becomes the caller class invoking Method::invoke.
+     */
+    private Object invoke(Object obj, Object[] args, Class<?> caller)
+            throws IllegalAccessException, InvocationTargetException
+    {
+        boolean callerSensitive = isCallerSensitive();
+        if (!override) {
             checkAccess(caller, clazz,
                         Modifier.isStatic(modifiers) ? null : obj.getClass(),
                         modifiers);
@@ -565,7 +599,17 @@ public final class Method extends Executable {
         if (ma == null) {
             ma = acquireMethodAccessor();
         }
-        return ma.invoke(obj, args);
+
+        return callerSensitive ? ma.invoke(obj, args, caller) : ma.invoke(obj, args);
+    }
+
+    private Boolean callerSensitive;       // lazily initialize
+    private boolean isCallerSensitive() {
+        Boolean cs = callerSensitive;
+        if (cs == null) {
+            callerSensitive = cs = Reflection.isCallerSensitive(this);
+        }
+        return cs;
     }
 
     /**
@@ -671,8 +715,10 @@ public final class Method extends Executable {
             methodAccessor = tmp;
         } else {
             // Otherwise fabricate one and propagate it up to the root
-            tmp = reflectionFactory.newMethodAccessor(this);
-            setMethodAccessor(tmp);
+            tmp = reflectionFactory.newMethodAccessor(this, isCallerSensitive());
+            // set the method accessor only if it's not using native implementation
+            if (VM.isJavaLangInvokeInited())
+                setMethodAccessor(tmp);
         }
 
         return tmp;

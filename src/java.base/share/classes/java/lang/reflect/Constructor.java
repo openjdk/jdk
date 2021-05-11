@@ -26,6 +26,7 @@
 package java.lang.reflect;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.ConstructorAccessor;
 import jdk.internal.reflect.Reflection;
@@ -539,7 +540,9 @@ public final class Constructor<T> extends Executable {
         } else {
             // Otherwise fabricate one and propagate it up to the root
             tmp = reflectionFactory.newConstructorAccessor(this);
-            setConstructorAccessor(tmp);
+            // set the constructor accessor only if it's not using native implementation
+            if (VM.isJavaLangInvokeInited())
+                setConstructorAccessor(tmp);
         }
 
         return tmp;

@@ -33,10 +33,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -62,13 +65,22 @@ public class CheckCSMs {
     // The goal is to remove this list of Non-final instance @CS methods
     // over time.  Do not add any new one to this list.
     private static Set<String> KNOWN_NON_FINAL_CSMS =
-      Set.of("java/io/ObjectStreamField#getType ()Ljava/lang/Class;",
-             "java/io/ObjectStreamClass#forClass ()Ljava/lang/Class;",
-             "java/lang/Runtime#load (Ljava/lang/String;)V",
-             "java/lang/Runtime#loadLibrary (Ljava/lang/String;)V",
-             "java/lang/Thread#getContextClassLoader ()Ljava/lang/ClassLoader;",
-             "javax/sql/rowset/serial/SerialJavaObject#getFields ()[Ljava/lang/reflect/Field;"
-      );
+        Set.of("java/io/ObjectStreamField#getType ()Ljava/lang/Class;",
+               "java/io/ObjectStreamClass#forClass ()Ljava/lang/Class;",
+               "java/lang/Runtime#load (Ljava/lang/String;)V",
+               "java/lang/Runtime#loadLibrary (Ljava/lang/String;)V",
+               "java/lang/Thread#getContextClassLoader ()Ljava/lang/ClassLoader;",
+               "javax/sql/rowset/serial/SerialJavaObject#getFields ()[Ljava/lang/reflect/Field;"
+        );
+
+    // These non-static non-final methods must not have alternate implementation
+    // that takes an additional caller class parameter.  It's currently invoked
+    // by method handle if present.
+    private static Set<String> UNSUPPORTED_VIRTUAL_METHODS =
+        Set.of("java/io/ObjectStreamField#getType (Ljava/lang/Class;)Ljava/lang/Class;",
+               "java/lang/Thread#getContextClassLoader (Ljava/lang/Class;)Ljava/lang/ClassLoader;",
+               "javax/sql/rowset/serial/SerialJavaObject#getFields (Ljava/lang/Class;)[Ljava/lang/reflect/Field;"
+        );
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0 && args[0].equals("--list")) {
@@ -84,9 +96,19 @@ public class CheckCSMs {
                 result.stream().sorted()
                       .collect(Collectors.joining("\n", "\n", "")));
         }
+
+        // check if all csm methods with a trailing Class parameter are supported
+        checkCSMs.csmWithCallerParameter.values().stream()
+                 .flatMap(Set::stream)
+                 .forEach(m -> {
+                     if (UNSUPPORTED_VIRTUAL_METHODS.contains(m))
+                         throw new RuntimeException("Unsupported alternate csm adapter: " + m);
+                 });
     }
 
     private final Set<String> nonFinalCSMs = new ConcurrentSkipListSet<>();
+    private final Map<String, Set<String>> csmWithCallerParameter = new ConcurrentHashMap<>();
+
     private final ReferenceFinder finder;
     public CheckCSMs() {
         this.finder = new ReferenceFinder(getFilter(), getVisitor());
@@ -129,9 +151,7 @@ public class CheckCSMs {
                         m.getName(cf.constant_pool).equals("getCallerClass"))
                         return;
 
-                    String name = String.format("%s#%s %s", cf.getName(),
-                                                m.getName(cf.constant_pool),
-                                                m.descriptor.getValue(cf.constant_pool));
+                    String name = methodSignature(cf, m);
                     if (!CheckCSMs.isStaticOrFinal(cf, m, cf.constant_pool)) {
                         System.err.println("Unsupported @CallerSensitive: " + name);
                         nonFinalCSMs.add(name);
@@ -140,11 +160,44 @@ public class CheckCSMs {
                             System.out.format("@CS  %s%n", name);
                         }
                     }
+
+                    // find the alternate implementation for CSM with the caller parameter
+                    if (!csmWithCallerParameter.containsKey(cf.getName())) {
+                        Set<String> methods = Arrays.stream(cf.methods)
+                                                    .filter(m0 -> csmWithCallerParameter(cf, m0))
+                                                    .map(m0 -> methodSignature(cf, m0))
+                                                    .collect(Collectors.toSet());
+                        csmWithCallerParameter.put(cf.getName(), methods);
+                    }
                 } catch (ConstantPoolException ex) {
                     throw new RuntimeException(ex);
                 }
             }
         };
+    }
+
+    private static String methodSignature(ClassFile cf, Method m) {
+        try {
+            return String.format("%s#%s %s", cf.getName(),
+                                 m.getName(cf.constant_pool),
+                                 m.descriptor.getValue(cf.constant_pool));
+        } catch (ConstantPoolException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static boolean csmWithCallerParameter(ClassFile cf, Method m) {
+        ConstantPool cp = cf.constant_pool;
+        try {
+            int paramCount = m.descriptor.getParameterCount(cp);
+            String desc = m.descriptor.getParameterTypes(cp);
+            if (paramCount > 0 && desc.startsWith("(java.lang.Class")) {
+                return true;
+            }
+        } catch (ConstantPoolException|Descriptor.InvalidDescriptor e) {
+            throw new RuntimeException(e);
+        }
+        return false;
     }
 
     private static final String CALLER_SENSITIVE_ANNOTATION

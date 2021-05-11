@@ -78,7 +78,11 @@ public final class TestHiddenMethod {
             System.out.println("visibleEvent:" + visibleEvent);
 
             assertTrue(hasHiddenStackFrame(hiddenEvent), "No hidden frame in hidden event: " + hiddenEvent);
-            assertFalse(hasHiddenStackFrame(visibleEvent), "Hidden frame in visible event: " + visibleEvent);
+
+            // Method::invoke is reimplemented using MethodHandle.  Hidden frames can be found
+            // the stack frame.
+            // TODO: need a different way to validate
+            // assertFalse(hasHiddenStackFrame(visibleEvent), "Hidden frame in visible event: " + visibleEvent);
         }
     }
 

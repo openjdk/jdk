@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package jdk.internal.reflect;
 
-import sun.reflect.misc.ReflectUtil;
-
 import java.lang.reflect.*;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.misc.VM;
+import sun.reflect.misc.ReflectUtil;
 
 /** Used only for the first few invocations of a Constructor;
     afterward, switches to bytecode-based implementation */

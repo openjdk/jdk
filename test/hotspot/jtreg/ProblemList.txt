@@ -38,6 +38,18 @@
 #
 #############################################################################
 
+
+compiler/ciReplay/TestVMNoCompLevel.java 6824466 generic-all
+compiler/ciReplay/TestServerVM.java 6824466 generic-all
+
+applications/jcstress/atomicity.java 8265872 generic-all
+
+vmTestbase/nsk/jvmti/AttachOnDemand/attach002a/TestDescription.java 8265795 generic-all
+vmTestbase/nsk/jvmti/AttachOnDemand/attach022/TestDescription.java 8265795 generic-all
+vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects002/referringObjects002.java 8265796  generic-all
+
+#############################################################################
+
 # :hotspot_compiler
 
 compiler/ciReplay/TestSAServer.java 8029528 generic-all

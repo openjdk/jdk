@@ -37,10 +37,18 @@ class DelegatingMethodAccessorImpl extends MethodAccessorImpl {
         setDelegate(delegate);
     }
 
+    @Override
     public Object invoke(Object obj, Object[] args)
         throws IllegalArgumentException, InvocationTargetException
     {
         return delegate.invoke(obj, args);
+    }
+
+    @Override
+    public Object invoke(Object obj, Object[] args, Class<?> caller)
+            throws IllegalArgumentException, InvocationTargetException
+    {
+        return delegate.invoke(obj, args, caller);
     }
 
     void setDelegate(MethodAccessorImpl delegate) {

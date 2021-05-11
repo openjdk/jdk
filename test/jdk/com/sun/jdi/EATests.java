@@ -2403,7 +2403,9 @@ class EADeoptFrameAfterReadLocalObject_02CTarget extends EATestCaseBaseTarget {
     @Override
     public void setUp() {
         super.setUp();
-        testMethodDepth = 8;
+        // the method depth in debuggee is 11 as it includes all hidden frames
+        // the expected method depth is 6 excluding 5 hidden frames
+        testMethodDepth = 11-5;
     }
 
     @Override
