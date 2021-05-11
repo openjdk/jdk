@@ -480,8 +480,6 @@ class Compile : public Phase {
 
   PhaseOutput*          _output;
 
-  void reshape_address(AddPNode* n);
-
  public:
   // Accessors
 

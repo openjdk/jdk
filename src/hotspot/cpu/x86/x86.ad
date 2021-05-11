@@ -2177,9 +2177,6 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
   return false;
 }
 
-void Compile::reshape_address(AddPNode* addp) {
-}
-
 static inline Assembler::ComparisonPredicate booltest_pred_to_comparison_pred(int bt) {
   switch (bt) {
     case BoolTest::eq: return Assembler::eq;

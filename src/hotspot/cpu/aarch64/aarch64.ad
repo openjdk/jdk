@@ -2753,10 +2753,6 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
   return false;
 }
 
-void Compile::reshape_address(AddPNode* addp) {
-}
-
-
 #define MOV_VOLATILE(REG, BASE, INDEX, SCALE, DISP, SCRATCH, INSN)      \
   C2_MacroAssembler _masm(&cbuf);                                       \
   {                                                                     \
