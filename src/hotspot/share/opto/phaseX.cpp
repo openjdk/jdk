@@ -407,10 +407,8 @@ void NodeHash::operator=(const NodeHash& nh) {
 //------------------------------PhaseRemoveUseless-----------------------------
 // 1) Use a breadthfirst walk to collect useful nodes reachable from root.
 PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List* worklist, PhaseNumber phase_num) : Phase(phase_num) {
-
-  // Implementation requires 'UseLoopSafepoints == true' and an edge from root
-  // to each SafePointNode at a backward branch.  Inserted in add_safepoint().
-  if( !UseLoopSafepoints || !OptoRemoveUseless ) return;
+  // Implementation requires an edge from root to each SafePointNode
+  // at a backward branch. Inserted in add_safepoint().
 
   // Identify nodes that are reachable from below, useful.
   C->identify_useful_nodes(_useful);
@@ -993,8 +991,7 @@ PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : PhaseGVN(gvn),
     if(n != NULL && n != _table.sentinel() && n->outcnt() == 0) {
       if( n->is_top() ) continue;
       // If remove_useless_nodes() has run, we expect no such nodes left.
-      assert(!UseLoopSafepoints || !OptoRemoveUseless,
-             "remove_useless_nodes missed this node");
+      assert(false, "remove_useless_nodes missed this node");
       hash_delete(n);
     }
   }
@@ -1481,6 +1478,9 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   temp->init_req(0,nn);     // Add a use to nn to prevent him from dying
   remove_dead_node( old );
   temp->del_req(0);         // Yank bogus edge
+  if (nn != NULL && nn->outcnt() == 0) {
+    _worklist.push(nn);
+  }
 #ifndef PRODUCT
   if( VerifyIterativeGVN ) {
     for ( int i = 0; i < _verify_window_size; i++ ) {

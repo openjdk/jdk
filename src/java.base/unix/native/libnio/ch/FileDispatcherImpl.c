@@ -28,6 +28,10 @@
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#ifdef MACOSX
+#include <sys/mount.h>
+#include <sys/param.h>
+#endif
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 
@@ -167,9 +171,18 @@ Java_sun_nio_ch_FileDispatcherImpl_force0(JNIEnv *env, jobject this,
 
 #ifdef MACOSX
     result = fcntl(fd, F_FULLFSYNC);
-    if (result == -1 && errno == ENOTSUP) {
-        /* Try fsync() in case F_FULLSYUNC is not implemented on the file system. */
-        result = fsync(fd);
+    if (result == -1) {
+        struct statfs fbuf;
+        int errno_fcntl = errno;
+        if (fstatfs(fd, &fbuf) == 0) {
+            if ((fbuf.f_flags & MNT_LOCAL) == 0) {
+                /* Try fsync() in case file is not local. */
+                result = fsync(fd);
+            }
+        } else {
+            /* fstatfs() failed so restore errno from fcntl(). */
+            errno = errno_fcntl;
+        }
     }
 #else /* end MACOSX, begin not-MACOSX */
     if (md == JNI_FALSE) {

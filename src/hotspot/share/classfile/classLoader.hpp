@@ -117,17 +117,16 @@ class ClassPathZipEntry: public ClassPathEntry {
 // For java image files
 class ClassPathImageEntry: public ClassPathEntry {
 private:
-  JImageFile* _jimage;
   const char* _name;
   DEBUG_ONLY(static ClassPathImageEntry* _singleton;)
 public:
   bool is_modules_image() const;
-  bool is_open() const { return _jimage != NULL; }
   const char* name() const { return _name == NULL ? "" : _name; }
-  JImageFile* jimage() const { return _jimage; }
+  JImageFile* jimage() const;
+  JImageFile* jimage_non_null() const;
   void close_jimage();
   ClassPathImageEntry(JImageFile* jimage, const char* name);
-  virtual ~ClassPathImageEntry();
+  virtual ~ClassPathImageEntry() { ShouldNotReachHere(); }
   ClassFileStream* open_stream(Thread* current, const char* name);
   ClassFileStream* open_stream_for_loader(Thread* current, const char* name, ClassLoaderData* loader_data);
 };
@@ -384,9 +383,6 @@ class ClassLoader: AllStatic {
   static jlong class_verify_time_ms();
   static jlong class_link_count();
   static jlong class_link_time_ms();
-
-  // indicates if class path already contains a entry (exact match by name)
-  static bool contains_append_entry(const char* name);
 
   // adds a class path to the boot append entries
   static void add_to_boot_append_entries(ClassPathEntry* new_entry);

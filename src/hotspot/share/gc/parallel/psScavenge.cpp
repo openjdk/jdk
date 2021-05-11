@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psClosure.inline.hpp"
@@ -103,7 +103,6 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
       {
         MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations);
         ScavengableNMethods::nmethods_do(&code_closure);
-        AOTLoader::oops_do(&roots_closure);
       }
       break;
 
@@ -303,14 +302,12 @@ public:
                     bool is_empty) :
       AbstractGangTask("ScavengeRootsTask"),
       _strong_roots_scope(active_workers),
-      _subtasks(),
+      _subtasks(ParallelRootType::sentinel),
       _old_gen(old_gen),
       _gen_top(gen_top),
       _active_workers(active_workers),
       _is_empty(is_empty),
       _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth()) {
-    _subtasks.set_n_threads(active_workers);
-    _subtasks.set_n_tasks(ParallelRootType::sentinel);
   }
 
   virtual void work(uint worker_id) {
@@ -345,7 +342,6 @@ public:
     for (uint root_type = 0; _subtasks.try_claim_task(root_type); /* empty */ ) {
       scavenge_roots_work(static_cast<ParallelRootType::Value>(root_type), worker_id);
     }
-    _subtasks.all_tasks_completed();
 
     PSThreadRootsTaskClosure closure(worker_id);
     Threads::possibly_parallel_threads_do(true /*parallel */, &closure);

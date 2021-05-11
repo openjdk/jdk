@@ -29,7 +29,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 
 import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
@@ -73,29 +72,6 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
     }
 
     @Override
-    JavaConstant readFieldValue(HotSpotResolvedObjectTypeImpl holder, HotSpotResolvedJavaField field, boolean isVolatile) {
-        JavaConstant javaConstant = runtime().compilerToVm.readFieldValue(holder, field, isVolatile);
-        if (javaConstant == null) {
-            return JavaConstant.NULL_POINTER;
-        }
-        return javaConstant;
-    }
-
-    @Override
-    JavaConstant readFieldValue(HotSpotObjectConstantImpl object, HotSpotResolvedJavaField field, boolean isVolatile) {
-        if (object instanceof DirectHotSpotObjectConstantImpl) {
-            // cannot read fields from objects due to lack of
-            // general reflection support in native image
-            return null;
-        }
-        JavaConstant javaConstant = runtime().compilerToVm.readFieldValue(object, field, isVolatile);
-        if (javaConstant == null) {
-            return JavaConstant.NULL_POINTER;
-        }
-        return javaConstant;
-    }
-
-    @Override
     boolean equals(HotSpotObjectConstantImpl x, HotSpotObjectConstantImpl y) {
         if (x == y) {
             return true;
@@ -115,11 +91,6 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
         IndirectHotSpotObjectConstantImpl indirectX = (IndirectHotSpotObjectConstantImpl) x;
         IndirectHotSpotObjectConstantImpl indirectY = (IndirectHotSpotObjectConstantImpl) y;
         return runtime().compilerToVm.equals(x, indirectX.getHandle(), y, indirectY.getHandle());
-    }
-
-    @Override
-    JavaConstant getJavaMirror(HotSpotResolvedPrimitiveType hotSpotResolvedPrimitiveType) {
-        return runtime().compilerToVm.getJavaMirror(hotSpotResolvedPrimitiveType);
     }
 
     @Override
@@ -341,30 +312,5 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
     @Override
     JavaConstant boxPrimitive(JavaConstant source) {
         return runtime().compilerToVm.boxPrimitive(source.asBoxedPrimitive());
-    }
-
-    @Override
-    int getInt(HotSpotObjectConstantImpl object, long displacement) {
-        return runtime().compilerToVm.getInt(object, displacement);
-    }
-
-    @Override
-    byte getByte(HotSpotObjectConstantImpl object, long displacement) {
-        return runtime().compilerToVm.getByte(object, displacement);
-    }
-
-    @Override
-    short getShort(HotSpotObjectConstantImpl object, long displacement) {
-        return runtime().compilerToVm.getShort(object, displacement);
-    }
-
-    @Override
-    long getLong(HotSpotObjectConstantImpl object, long displacement) {
-        return runtime().compilerToVm.getLong(object, displacement);
-    }
-
-    @Override
-    void checkRead(HotSpotObjectConstantImpl constant, JavaKind kind, long displacement, HotSpotResolvedObjectType type) {
-
     }
 }
