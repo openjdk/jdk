@@ -24,9 +24,7 @@
 /*
  * @test
  * @summary Exercise Class#getModule
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
- *          java.desktop
+ * @modules java.desktop
  * @run testng GetModuleTest
  */
 
