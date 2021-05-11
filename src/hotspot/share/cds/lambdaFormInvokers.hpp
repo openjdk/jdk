@@ -26,26 +26,21 @@
 #define SHARE_CDS_LAMBDAFORMINVOKERS_HPP
 #include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
-#include "utilities/growableArray.hpp"
 
+template <class T>
+class GrowableArray;
 class ClassFileStream;
-template <class T> class Array;
 
 class LambdaFormInvokers : public AllStatic {
  private:
-  static GrowableArrayCHeap<char*, mtClassShared>* _lambdaform_lines;
-  // for storing LF form lines (LF_RESOLVE only) in read only table.
-  static Array<Array<char>*>* _static_archive_invokers;
+  static GrowableArray<char*>* _lambdaform_lines;
   static void reload_class(char* name, ClassFileStream& st, TRAPS);
  public:
+
   static void append(char* line);
-  static void append_filtered(char* line);
   static void regenerate_holder_classes(TRAPS);
-  static GrowableArrayCHeap<char*, mtClassShared>* lambdaform_lines() {
+  static GrowableArray<char*>* lambdaform_lines() {
     return _lambdaform_lines;
   }
-  static void dump_static_archive_invokers();
-  static void read_static_archive_invokers();
-  static void serialize(SerializeClosure* soc);
 };
 #endif // SHARE_CDS_LAMBDAFORMINVOKERS_HPP

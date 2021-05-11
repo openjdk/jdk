@@ -988,11 +988,12 @@ JVMCIObject JVMCIEnv::get_jvmci_method(const methodHandle& method, JVMCI_TRAPS) 
     return method_object;
   }
 
+  CompilerOracle::tag_blackhole_if_possible(method);
+
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current());
   jmetadata handle = _runtime->allocate_handle(method);
   jboolean exception = false;
   if (is_hotspot()) {
-    CompilerOracle::tag_blackhole_if_possible(method);
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
     args.push_long((jlong) handle);
