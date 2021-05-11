@@ -1462,6 +1462,10 @@ const intx ObjectAlignmentInBytes = 8;
           "class pointers are used")                                        \
           range(1*M, 3*G)                                                   \
                                                                             \
+  develop(size_t, CompressedClassSpaceBaseAddress, 0,                       \
+          "Force the class space to be allocated at this address or "       \
+          "fails VM initialization (requires -Xshare=off.")                 \
+                                                                            \
   product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
           "options: balanced, aggressive, none")                            \
                                                                             \
