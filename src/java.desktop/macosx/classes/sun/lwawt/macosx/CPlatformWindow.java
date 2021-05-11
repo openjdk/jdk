@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeRevalidateNSWindowShadow(long nsWindowPtr);
     private static native void nativeSetNSWindowMinimizedIcon(long nsWindowPtr, long nsImage);
     private static native void nativeSetNSWindowRepresentedFilename(long nsWindowPtr, String representedFilename);
+    private static native void nativeSetAllowAutomaticTabbingProperty(boolean allowAutomaticWindowTabbing);
     private static native void nativeSetEnabled(long nsWindowPtr, boolean isEnabled);
     private static native void nativeSynthesizeMouseEnteredExitedEvents();
     private static native void nativeSynthesizeMouseEnteredExitedEvents(long nsWindowPtr, int eventType);
@@ -92,6 +93,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeEnterFullScreenMode(long nsWindowPtr);
     private static native void nativeExitFullScreenMode(long nsWindowPtr);
     static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
+
 
     // Loger to report issues happened during execution but that do not affect functionality
     private static final PlatformLogger logger = PlatformLogger.getLogger("sun.lwawt.macosx.CPlatformWindow");
@@ -249,6 +251,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 c.setStyleBits(TRANSPARENT_TITLE_BAR, isTransparentTitleBar);
             }
         }
+
     }) {
         @SuppressWarnings("deprecation")
         public CPlatformWindow convertJComponentToTarget(final JRootPane p) {
@@ -314,6 +317,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         responder = createPlatformResponder();
         contentView.initialize(peer, responder);
+        setAllowAutomaticWindowTabbing();
 
         Rectangle bounds;
         if (!IS(DECORATED, styleBits)) {
@@ -584,6 +588,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     public void setMaximizedBounds(int x, int y, int w, int h) {
         execute(ptr -> nativeSetNSWindowStandardFrame(ptr, x, y, w, h));
+    }
+
+    public void setAllowAutomaticWindowTabbing() {
+        boolean allowAutomaticWindowTabbing = Boolean.parseBoolean(System.getProperty("jdk.allowTabbedWindows"));
+        nativeSetAllowAutomaticTabbingProperty(allowAutomaticWindowTabbing);
     }
 
     private boolean isMaximized() {

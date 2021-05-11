@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,9 +288,6 @@ AWT_NS_WINDOW_IMPLEMENTATION
 {
 AWT_ASSERT_APPKIT_THREAD;
 
-    if (@available(macOS 10.12, *)) {
-        [NSWindow setAllowsAutomaticWindowTabbing:NO];
-    }
     NSUInteger newBits = bits;
     if (IS(bits, SHEET) && owner == nil) {
         newBits = bits & ~NSWindowStyleMaskDocModalWindow;
@@ -1092,6 +1089,24 @@ AWT_ASSERT_APPKIT_THREAD;
 
 @end // AWTWindow
 
+/*
+ * Class:     sun_lwawt_macosx_CPlatformWindow
+ * Method:    nativeSetAllAllowAutomaticTabbingProperty
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetAllowAutomaticTabbingProperty
+        (JNIEnv *env, jclass clazz, jboolean allowAutomaticTabbing)
+{
+    JNI_COCOA_ENTER(env);
+    if (@available(macOS 10.12, *)) {
+        if (allowAutomaticTabbing) {
+            [NSWindow setAllowsAutomaticWindowTabbing:YES];
+        } else {
+            [NSWindow setAllowsAutomaticWindowTabbing:NO];
+        }
+    }
+    JNI_COCOA_EXIT(env);
+}
 
 /*
  * Class:     sun_lwawt_macosx_CPlatformWindow
