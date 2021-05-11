@@ -100,7 +100,7 @@ public class ClhsdbLongConstant {
 
         checkLongValue("markWord::hash_mask_in_place",
                        longConstantOutput,
-                       Platform.is64bit() ? 549755813632L: 4294967168L);
+                       4294967168L);
 
         String arch = System.getProperty("os.arch");
         if (arch.equals("amd64") || arch.equals("i386") || arch.equals("x86")) {

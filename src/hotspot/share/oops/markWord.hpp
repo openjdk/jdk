@@ -41,8 +41,8 @@
 //
 //  64 bits:
 //  --------
-//  unused:25 hash:31 -->| unused_gap:1   age:4    biased_lock:1 lock:2 (normal object)
-//  JavaThread*:54 epoch:2 unused_gap:1   age:4    biased_lock:1 lock:2 (biased object)
+//  unused:32 hash:25 -->|  age:4    biased_lock:1 lock:2 (normal object)
+//  JavaThread*:55 epoch:2  age:4    biased_lock:1 lock:2 (biased object)
 //
 //  - hash contains the identity hash value: largest value is
 //    31 bits, see os::random().  Also, 64-bit vm's require
@@ -130,8 +130,7 @@ class markWord {
   static const int lock_bits                      = 2;
   static const int biased_lock_bits               = 1;
   static const int max_hash_bits                  = BitsPerWord - age_bits - lock_bits - biased_lock_bits;
-  static const int hash_bits                      = max_hash_bits > 31 ? 31 : max_hash_bits;
-  static const int unused_gap_bits                = LP64_ONLY(1) NOT_LP64(0);
+  static const int hash_bits                      = max_hash_bits > 25 ? 25 : max_hash_bits;
   static const int epoch_bits                     = 2;
 
   // The biased locking code currently requires that the age bits be
@@ -139,8 +138,7 @@ class markWord {
   static const int lock_shift                     = 0;
   static const int biased_lock_shift              = lock_bits;
   static const int age_shift                      = lock_bits + biased_lock_bits;
-  static const int unused_gap_shift               = age_shift + age_bits;
-  static const int hash_shift                     = unused_gap_shift + unused_gap_bits;
+  static const int hash_shift                     = age_shift + age_bits;
   static const int epoch_shift                    = hash_shift;
 
   static const uintptr_t lock_mask                = right_n_bits(lock_bits);

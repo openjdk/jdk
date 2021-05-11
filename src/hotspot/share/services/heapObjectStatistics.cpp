@@ -137,15 +137,21 @@ void HeapObjectStatistics::begin_sample() {
 
 void HeapObjectStatistics::visit_object(oop obj) {
   increase_counter(_num_objects);
-  if (!obj->mark().has_no_hash()) {
+  markWord mark = obj->mark();
+  if (!mark.has_no_hash()) {
     increase_counter(_num_ihashed);
-    if (obj->mark().age() > 0) {
+    if (mark.age() > 0) {
       increase_counter(_num_ihashed_moved);
     }
   }
-  if (obj->mark().is_locked()) {
+  if (mark.is_locked()) {
     increase_counter(_num_locked);
   }
+#ifdef ASSERT
+  if (!mark.has_displaced_mark_helper()) {
+    assert((mark.value() & 0xffffffff00000000) == 0, "upper 32 mark bits must be free");
+  }
+#endif
   increase_counter(_lds, obj->size());
 }
 
