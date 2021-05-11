@@ -164,57 +164,51 @@ public class ToolBox {
     }
 
     /**
-     * Filters a list of strings according to the given regular expression.
+     * Filters a list of strings according to the given regular expression,
+     * returning the strings that match the regular expression.
      * @param regex the regular expression
      * @param lines the strings to be filtered
      * @return the strings matching the regular expression
      */
     public List<String> grep(String regex, List<String> lines) {
-        return grep(Pattern.compile(regex), lines, false);
+        return grep(Pattern.compile(regex), lines, true);
     }
 
     /**
-     * Filters a list of strings according to the given regular expression.
+     * Filters a list of strings according to the given regular expression,
+     * returning the strings that match the regular expression.
      * @param pattern the regular expression
      * @param lines the strings to be filtered
      * @return the strings matching the regular expression
      */
     public List<String> grep(Pattern pattern, List<String> lines) {
-        return grep(pattern, lines, false);
+        return grep(pattern, lines, true);
     }
 
     /**
-     * Filters a list of strings according to the given regular expression.
+     * Filters a list of strings according to the given regular expression,
+     * returning either the strings that match or the strings that do not match.
      * @param regex the regular expression
      * @param lines the strings to be filtered
-     * @param invert identify positive or negative filtering
-     *               true: negative filtering, return the unmatched strings
-     *               false: positive filtering, return the matched strings
+     * @param match if true, return the lines that match; otherwise if false, return the lines that do not match.
      * @return the strings matching(or not matching) the regular expression
      */
-    public List<String> grep(String regex, List<String> lines, boolean invert) {
-        return grep(Pattern.compile(regex), lines, invert);
+    public List<String> grep(String regex, List<String> lines, boolean match) {
+        return grep(Pattern.compile(regex), lines, match);
     }
 
     /**
-     * Filters a list of strings according to the given regular expression.
+     * Filters a list of strings according to the given regular expression,
+     * returning either the strings that match or the strings that do not match.
      * @param pattern the regular expression
      * @param lines the strings to be filtered
-     * @param invert identify positive or negative filtering
-     *               true: negative filtering, return the unmatched strings
-     *               false: positive filtering, return the matched strings
+     * @param match if true, return the lines that match; otherwise if false, return the lines that do not match.
      * @return the strings matching(or not matching) the regular expression
      */
-    public List<String> grep(Pattern pattern, List<String> lines, boolean invert) {
-        if (invert) {
-            return lines.stream()
-                    .filter(s -> !pattern.matcher(s).find())
-                    .collect(Collectors.toList());
-        } else {
-            return lines.stream()
-                    .filter(s -> pattern.matcher(s).find())
-                    .collect(Collectors.toList());
-        }
+    public List<String> grep(Pattern pattern, List<String> lines, boolean match) {
+        return lines.stream()
+                .filter(s -> match ? pattern.matcher(s).find() : !pattern.matcher(s).find())
+                .collect(Collectors.toList());
     }
 
     /**
