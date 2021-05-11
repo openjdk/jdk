@@ -150,16 +150,12 @@ public class Functional {
 
     @SuppressWarnings("unchecked")
     public static void rethrowUnchecked(Throwable throwable) throws ExceptionBox {
-        if (throwable instanceof ExceptionBox) {
-            throw (ExceptionBox)throwable;
+        if (throwable instanceof RuntimeException) {
+            throw (RuntimeException)throwable;
         }
 
         if (throwable instanceof InvocationTargetException) {
-            new ExceptionBox(throwable.getCause());
-        }
-
-        if (throwable.getClass().getName().equals("jtreg.SkippedException")) {
-            throw (RuntimeException)throwable;
+            throw new ExceptionBox(throwable.getCause());
         }
 
         throw new ExceptionBox(throwable);
