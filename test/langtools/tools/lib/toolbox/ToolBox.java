@@ -207,7 +207,7 @@ public class ToolBox {
      */
     public List<String> grep(Pattern pattern, List<String> lines, boolean match) {
         return lines.stream()
-                .filter(s -> match ? pattern.matcher(s).find() : !pattern.matcher(s).find())
+                .filter(s -> pattern.matcher(s).find() == match)
                 .collect(Collectors.toList());
     }
 
