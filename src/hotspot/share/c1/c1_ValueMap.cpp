@@ -589,7 +589,7 @@ void GlobalValueNumbering::substitute(Instruction* instr) {
   if (subst != instr) {
     assert(!subst->has_subst(), "can't have a substitution");
 
-    TRACE_VALUE_NUMBERING(tty->print_cr("substitution for %c%d set to %c%d", instr->type()->tchar(), instr->id(), subst->id(), subst->type()->tchar()));
+    TRACE_VALUE_NUMBERING(tty->print_cr("substitution for %c%d set to %c%d", instr->type()->tchar(), instr->id(), subst->type()->tchar(), subst->id()));
     instr->set_subst(subst);
     _has_substitutions = true;
   }
