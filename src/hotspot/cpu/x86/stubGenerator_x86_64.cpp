@@ -5683,10 +5683,10 @@ address generate_avx_ghash_processBlocks() {
   }
 
   // base64 AVX512vbmi tables
-  address base64_vbmi_lookup_lo_addr() {
+  Address base64_vbmi_lookup_lo_addr() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "lookup_lo");
-    address start = __ pc();
+    Address start = __ pc();
     __ emit_data64(0x8080808080808080, relocInfo::none);
     __ emit_data64(0x8080808080808080, relocInfo::none);
     __ emit_data64(0x8080808080808080, relocInfo::none);
@@ -5698,10 +5698,10 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
 
-  address base64_vbmi_lookup_hi_addr() {
+  Address base64_vbmi_lookup_hi_addr() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "lookup_hi");
-    address start = __ pc();
+    Address start = __ pc();
     __ emit_data64(0x0605040302010080, relocInfo::none);
     __ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
     __ emit_data64(0x161514131211100f, relocInfo::none);
@@ -5712,10 +5712,10 @@ address generate_avx_ghash_processBlocks() {
     __ emit_data64(0x8080808080333231, relocInfo::none);
     return start;
   }
-  address base64_vbmi_lookup_lo_url_addr() {
+  Address base64_vbmi_lookup_lo_url_addr() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "lookup_lo_url");
-    address start = __ pc();
+    Address start = __ pc();
     __ emit_data64(0x8080808080808080, relocInfo::none);
     __ emit_data64(0x8080808080808080, relocInfo::none);
     __ emit_data64(0x8080808080808080, relocInfo::none);
@@ -5727,10 +5727,10 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
 
-  address base64_vbmi_lookup_hi_url_addr() {
+  Address base64_vbmi_lookup_hi_url_addr() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "lookup_hi_url");
-    address start = __ pc();
+    Address start = __ pc();
     __ emit_data64(0x0605040302010080, relocInfo::none);
     __ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
     __ emit_data64(0x161514131211100f, relocInfo::none);
@@ -5742,10 +5742,10 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
 
-  address base64_vbmi_pack_vec_addr() {
+  Address base64_vbmi_pack_vec_addr() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "pack_vec");
-    address start = __ pc();
+    Address start = __ pc();
     __ emit_data64(0x090a040506000102, relocInfo::none);
     __ emit_data64(0x161011120c0d0e08, relocInfo::none);
     __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
@@ -5757,10 +5757,10 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
 
-  address base64_vbmi_join_0_1_addr() {
+  Address base64_vbmi_join_0_1_addr() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "join_0_1");
-    address start = __ pc();
+    Address start = __ pc();
     __ emit_data64(0x090a040506000102, relocInfo::none);
     __ emit_data64(0x161011120c0d0e08, relocInfo::none);
     __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
@@ -5772,10 +5772,10 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
 
-  address base64_vbmi_join_1_2_addr() {
+  Address base64_vbmi_join_1_2_addr() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "join_1_2");
-    address start = __ pc();
+    Address start = __ pc();
     __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
     __ emit_data64(0x292a242526202122, relocInfo::none);
     __ emit_data64(0x363031322c2d2e28, relocInfo::none);
@@ -5787,10 +5787,10 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
 
-  address base64_vbmi_join_2_3_addr() {
+  Address base64_vbmi_join_2_3_addr() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "join_2_3");
-    address start = __ pc();
+    Address start = __ pc();
     __ emit_data64(0x363031322c2d2e28, relocInfo::none);
     __ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
     __ emit_data64(0x494a444546404142, relocInfo::none);
@@ -5875,20 +5875,20 @@ address generate_avx_ghash_processBlocks() {
     __ evpbroadcastd(xlate_op, rcx, Assembler::AVX_512bit);
 
     // Load lookup tables based on isURL
-    __ evmovdqaq(lookup_lo, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_addr()), Assembler::AVX_512bit);
-    __ evmovdqaq(lookup_hi, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_addr()), Assembler::AVX_512bit);
+    __ evmovdqaq(lookup_lo, StubRoutines::x86::base64_vbmi_lookup_lo_addr(), Assembler::AVX_512bit);
+    __ evmovdqaq(lookup_hi, StubRoutines::x86::base64_vbmi_lookup_hi_addr(), Assembler::AVX_512bit);
 
     // check if base64 tables(isURL=0) or base64 url tables(isURL=1) need to be loaded
     __ cmpl(isURL, 0);
     __ jcc(Assembler::equal, L_processdata);
-    __ evmovdqaq(lookup_lo, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_url_addr()), Assembler::AVX_512bit);
-    __ evmovdqaq(lookup_hi, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_url_addr()), Assembler::AVX_512bit);
+    __ evmovdqaq(lookup_lo, StubRoutines::x86::base64_vbmi_lookup_lo_url_addr(), Assembler::AVX_512bit);
+    __ evmovdqaq(lookup_hi, StubRoutines::x86::base64_vbmi_lookup_hi_url_addr(), Assembler::AVX_512bit);
 
     // load masks required for decoding data
     __ BIND(L_processdata);
-    __ evmovdqaq(join01, ExternalAddress(StubRoutines::x86::base64_vbmi_join_0_1_addr()), Assembler::AVX_512bit);
-    __ evmovdqaq(join12, ExternalAddress(StubRoutines::x86::base64_vbmi_join_1_2_addr()), Assembler::AVX_512bit);
-    __ evmovdqaq(join23, ExternalAddress(StubRoutines::x86::base64_vbmi_join_2_3_addr()), Assembler::AVX_512bit);
+    __ evmovdqaq(join01, StubRoutines::x86::base64_vbmi_join_0_1_addr(), Assembler::AVX_512bit);
+    __ evmovdqaq(join12, StubRoutines::x86::base64_vbmi_join_1_2_addr(), Assembler::AVX_512bit);
+    __ evmovdqaq(join23, StubRoutines::x86::base64_vbmi_join_2_3_addr(), Assembler::AVX_512bit);
 
     __ align(32);
     __ BIND(L_process256);
