@@ -47,9 +47,16 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @build WinInstallerIconTest
  * @requires (os.family == "windows")
+ * @requires !vm.debug
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m  jdk.jpackage.test.Main
  *  --jpt-run=WinInstallerIconTest
+ */
+
+/*
+ * note: AWT can throw assertion from GetDiBits() extracting icon
+ * bits in fastdebug mode on windows headless systems. That is why
+ * we have @requires !vm.debug" above.
  */
 public class WinInstallerIconTest {
 

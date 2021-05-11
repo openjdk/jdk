@@ -479,11 +479,10 @@ public class Arguments {
 
         // The following checks are to help avoid accidental confusion between
         // directories of modules and exploded module directories.
-        if (fm instanceof StandardJavaFileManager) {
-            StandardJavaFileManager sfm = (StandardJavaFileManager) fileManager;
-            if (sfm.hasLocation(StandardLocation.CLASS_OUTPUT)) {
-                Path outDir = sfm.getLocationAsPaths(StandardLocation.CLASS_OUTPUT).iterator().next();
-                if (sfm.hasLocation(StandardLocation.MODULE_SOURCE_PATH)) {
+        if (fm instanceof StandardJavaFileManager standardJavaFileManager) {
+            if (standardJavaFileManager.hasLocation(StandardLocation.CLASS_OUTPUT)) {
+                Path outDir = standardJavaFileManager.getLocationAsPaths(StandardLocation.CLASS_OUTPUT).iterator().next();
+                if (standardJavaFileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH)) {
                     // multi-module mode
                     if (Files.exists(outDir.resolve("module-info.class"))) {
                         log.error(Errors.MultiModuleOutdirCannotBeExplodedModule(outDir));
@@ -566,12 +565,12 @@ public class Arguments {
 
         boolean lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
         if (lintOptions && source.compareTo(Source.DEFAULT) < 0 && !options.isSet(Option.RELEASE)) {
-            if (fm instanceof BaseFileManager) {
+            if (fm instanceof BaseFileManager baseFileManager) {
                 if (source.compareTo(Source.JDK8) <= 0) {
-                    if (((BaseFileManager) fm).isDefaultBootClassPath())
+                    if (baseFileManager.isDefaultBootClassPath())
                         log.warning(LintCategory.OPTIONS, Warnings.SourceNoBootclasspath(source.name));
                 } else {
-                    if (((BaseFileManager) fm).isDefaultSystemModulesPath())
+                    if (baseFileManager.isDefaultSystemModulesPath())
                         log.warning(LintCategory.OPTIONS, Warnings.SourceNoSystemModulesPath(source.name));
                 }
             }
@@ -915,10 +914,10 @@ public class Arguments {
 
     private void report(DiagnosticInfo diag) {
         // Would be good to have support for -XDrawDiagnostics here
-        if (diag instanceof JCDiagnostic.Error) {
-            log.error((JCDiagnostic.Error)diag);
-        } else if (diag instanceof JCDiagnostic.Warning){
-            log.warning((JCDiagnostic.Warning)diag);
+        if (diag instanceof JCDiagnostic.Error errorDiag) {
+            log.error(errorDiag);
+        } else if (diag instanceof JCDiagnostic.Warning warningDiag){
+            log.warning(warningDiag);
         }
     }
 

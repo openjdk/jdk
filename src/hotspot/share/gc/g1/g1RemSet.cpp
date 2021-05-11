@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1BatchedGangTask.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
@@ -218,7 +219,7 @@ private:
   // entries from free or archive regions.
   HeapWord** _scan_top;
 
-  class G1ClearCardTableTask : public AbstractGangTask {
+  class G1ClearCardTableTask : public G1AbstractSubTask {
     G1CollectedHeap* _g1h;
     G1DirtyRegions* _regions;
     uint _chunk_length;
@@ -232,7 +233,7 @@ private:
                          G1DirtyRegions* regions,
                          uint chunk_length,
                          G1RemSetScanState* scan_state) :
-      AbstractGangTask("G1 Clear Card Table Task"),
+      G1AbstractSubTask(G1GCPhaseTimes::ClearCardTable),
       _g1h(g1h),
       _regions(regions),
       _chunk_length(chunk_length),
@@ -242,9 +243,27 @@ private:
       assert(chunk_length > 0, "must be");
     }
 
+    double worker_cost() const override {
+      uint num_regions = _regions->size();
+
+      if (num_regions == 0) {
+        // There is no card table clean work, only some cleanup of memory.
+        return AlmostNoWork;
+      }
+      return ((double)align_up((size_t)num_regions << HeapRegion::LogCardsPerRegion, chunk_size()) / chunk_size());
+    }
+
+
+    virtual ~G1ClearCardTableTask() {
+      _scan_state->cleanup();
+#ifndef PRODUCT
+      G1CollectedHeap::heap()->verifier()->verify_card_table_cleanup();
+#endif
+    }
+
     static uint chunk_size() { return M; }
 
-    void work(uint worker_id) {
+    void do_work(uint worker_id) override {
       while (_cur_dirty_regions < _regions->size()) {
         uint next = Atomic::fetch_and_add(&_cur_dirty_regions, _chunk_length);
         uint max = MIN2(next + _chunk_length, _regions->size());
@@ -258,31 +277,6 @@ private:
       }
     }
   };
-
-  // Clear the card table of "dirty" regions.
-  void clear_card_table(WorkGang* workers) {
-    uint num_regions = _all_dirty_regions->size();
-
-    if (num_regions == 0) {
-      return;
-    }
-
-    uint const num_chunks = (uint)(align_up((size_t)num_regions << HeapRegion::LogCardsPerRegion, G1ClearCardTableTask::chunk_size()) / G1ClearCardTableTask::chunk_size());
-    uint const num_workers = MIN2(num_chunks, workers->active_workers());
-    uint const chunk_length = G1ClearCardTableTask::chunk_size() / (uint)HeapRegion::CardsPerRegion;
-
-    // Iterate over the dirty cards region list.
-    G1ClearCardTableTask cl(G1CollectedHeap::heap(), _all_dirty_regions, chunk_length, this);
-
-    log_debug(gc, ergo)("Running %s using %u workers for %u "
-                        "units of work for %u regions.",
-                        cl.name(), num_workers, num_chunks, num_regions);
-    workers->run_task(&cl, num_workers);
-
-#ifndef PRODUCT
-    G1CollectedHeap::heap()->verifier()->verify_card_table_cleanup();
-#endif
-  }
 
 public:
   G1RemSetScanState() :
@@ -391,9 +385,13 @@ public:
     }
   }
 
-  void cleanup(WorkGang* workers) {
-    clear_card_table(workers);
+  G1AbstractSubTask* create_cleanup_after_scan_heap_roots_task() {
+    uint const chunk_length = G1ClearCardTableTask::chunk_size() / (uint)HeapRegion::CardsPerRegion;
 
+    return new G1ClearCardTableTask(G1CollectedHeap::heap(), _all_dirty_regions, chunk_length, this);
+  }
+
+  void cleanup() {
     delete _all_dirty_regions;
     _all_dirty_regions = NULL;
 
@@ -1309,7 +1307,7 @@ public:
     // We schedule flushing the remembered sets of humongous fast reclaim candidates
     // onto the card table first to allow the remaining parallelized tasks hide it.
     if (_initial_evacuation &&
-        p->fast_reclaim_humongous_candidates() > 0 &&
+        g1h->has_humongous_reclaim_candidates() &&
         !_fast_reclaim_handled &&
         !Atomic::cmpxchg(&_fast_reclaim_handled, false, true)) {
 
@@ -1420,13 +1418,8 @@ void G1RemSet::exclude_region_from_scan(uint region_idx) {
   _scan_state->clear_scan_top(region_idx);
 }
 
-void G1RemSet::cleanup_after_scan_heap_roots() {
-  G1GCPhaseTimes* phase_times = _g1h->phase_times();
-
-  // Set all cards back to clean.
-  double start = os::elapsedTime();
-  _scan_state->cleanup(_g1h->workers());
-  phase_times->record_clear_ct_time((os::elapsedTime() - start) * 1000.0);
+G1AbstractSubTask* G1RemSet::create_cleanup_after_scan_heap_roots_task() {
+  return _scan_state->create_cleanup_after_scan_heap_roots_task();
 }
 
 inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {

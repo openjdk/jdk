@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ endif
 
 $(eval $(call ParseKeywordVariable, TEST_OPTS, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR JCOV JCOV_DIFF_CHANGESET, \
-    STRING_KEYWORDS := VM_OPTIONS JAVA_OPTIONS AOT_MODULES, \
+    STRING_KEYWORDS := VM_OPTIONS JAVA_OPTIONS, \
 ))
 
 # Helper function to propagate TEST_OPTS values.
@@ -135,96 +135,6 @@ ifeq ($(GCOV_ENABLED), true)
 endif
 
 ################################################################################
-# Optionally create AOT libraries for specified modules before running tests.
-# Note, this could not be done during JDK build time.
-################################################################################
-# Parameter 1 is the name of the rule.
-#
-# Remaining parameters are named arguments.
-#   MODULE      The module to generate a library for
-#   BIN         Output directory in which to put the library
-#   VM_OPTIONS  List of JVM arguments to use when creating library
-#   OPTIONS_VAR Name of variable to put AOT java options in
-#   PREREQS_VAR Name of variable to put all AOT prerequisite rule targets in
-#               for test rules to depend on
-#
-SetupAotModule = $(NamedParamsMacroTemplate)
-define SetupAotModuleBody
-  $1_AOT_LIB := $$($1_BIN)/$$(call SHARED_LIBRARY,$$($1_MODULE))
-  $1_AOT_CCLIST := $$(wildcard $$(TOPDIR)/test/hotspot/jtreg/compiler/aot/scripts/$$($1_MODULE)-list.txt)
-
-  # Create jaotc flags.
-  # VM flags which don't affect AOT code generation are filtered out:
-  # -Xcomp, -XX:+-TieredCompilation
-  $1_JAOTC_OPTS := \
-      -J-Xmx4g --info \
-      $$(addprefix -J, $$(filter-out -Xcomp %TieredCompilation, $$($1_VM_OPTIONS))) \
-      $$(addprefix --compile-commands$(SPACE), $$($1_AOT_CCLIST)) \
-      --linker-path $$(LD_JAOTC) \
-      #
-
-  ifneq ($$(filter -ea, $$($1_VM_OPTIONS)), )
-    $1_JAOTC_OPTS += --compile-with-assertions
-  endif
-
-  ifneq ($$(filter -XX:+VerifyOops, $$($1_VM_OPTIONS)), )
-    $1_JAOTC_OPTS += -J-Dgraal.AOTVerifyOops=true
-  endif
-
-  $$($1_AOT_LIB): $$(JDK_UNDER_TEST)/release \
-      $$(call DependOnVariable, $1_JAOTC_OPTS) \
-      $$(call DependOnVariable, JDK_UNDER_TEST)
-	$$(call LogWarn, Generating $$(patsubst $$(OUTPUTDIR)/%, %, $$@))
-	$$(call MakeTargetDir)
-	$$(call ExecuteWithLog, $$@, \
-	    $((COV_ENVIRONMENT) \
-	    $$(FIXPATH) $$(JDK_UNDER_TEST)/bin/jaotc \
-	        $$($1_JAOTC_OPTS) --output $$@ --module $$($1_MODULE) \
-	)
-	$$(call ExecuteWithLog, $$@.check, ( \
-	    $$(FIXPATH) $$(JDK_UNDER_TEST)/bin/java \
-	        $$($1_VM_OPTIONS) -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions \
-	        -XX:+PrintAOT -XX:+UseAOTStrictLoading \
-	        -XX:AOTLibrary=$$@ -version \
-	         > $$@.verify-aot \
-	))
-
-  $1_AOT_OPTIONS += -XX:+UnlockExperimentalVMOptions
-  $1_AOT_OPTIONS += -XX:AOTLibrary=$$($1_AOT_LIB)
-  $1_AOT_TARGETS += $$($1_AOT_LIB)
-endef
-
-################################################################################
-# Optionally create AOT libraries before running tests.
-# Note, this could not be done during JDK build time.
-################################################################################
-# Parameter 1 is the name of the rule.
-#
-# Remaining parameters are named arguments.
-#   MODULES     The modules to generate a library for
-#   VM_OPTIONS  List of JVM arguments to use when creating libraries
-#
-# After calling this, the following variables are defined
-#   $1_AOT_OPTIONS List of all java options needed to use the AOT libraries
-#   $1_AOT_TARGETS List of all targets that the test rule will need to depend on
-#
-SetupAot = $(NamedParamsMacroTemplate)
-define SetupAotBody
-  $$(info Running with AOTd libraries for $$($1_MODULES))
-  # Put aot libraries in a separate directory so they are not deleted between
-  # test runs and may be reused between make invocations.
-  $$(foreach m, $$($1_MODULES), \
-    $$(eval $$(call SetupAotModule, $1_$$m, \
-        MODULE := $$m, \
-        BIN := $$(TEST_SUPPORT_DIR)/aot/$1, \
-        VM_OPTIONS := $$($1_VM_OPTIONS), \
-    )) \
-    $$(eval $1_AOT_OPTIONS += $$($1_$$m_AOT_OPTIONS)) \
-    $$(eval $1_AOT_TARGETS += $$($1_$$m_AOT_TARGETS)) \
-  )
-endef
-
-################################################################################
 # Setup global test running parameters
 ################################################################################
 
@@ -282,7 +192,6 @@ endif
 
 $(eval $(call SetTestOpt,VM_OPTIONS,JTREG))
 $(eval $(call SetTestOpt,JAVA_OPTIONS,JTREG))
-$(eval $(call SetTestOpt,AOT_MODULES,JTREG))
 
 $(eval $(call SetTestOpt,JOBS,JTREG))
 $(eval $(call SetTestOpt,TIMEOUT_FACTOR,JTREG))
@@ -293,7 +202,7 @@ $(eval $(call ParseKeywordVariable, JTREG, \
         TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM RUN_PROBLEM_LISTS \
         RETRY_COUNT MAX_OUTPUT, \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
-        EXTRA_PROBLEM_LISTS AOT_MODULES LAUNCHER_OPTIONS, \
+        EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS, \
 ))
 
 ifneq ($(JTREG), )
@@ -305,11 +214,10 @@ endif
 
 $(eval $(call SetTestOpt,VM_OPTIONS,GTEST))
 $(eval $(call SetTestOpt,JAVA_OPTIONS,GTEST))
-$(eval $(call SetTestOpt,AOT_MODULES,GTEST))
 
 $(eval $(call ParseKeywordVariable, GTEST, \
     SINGLE_KEYWORDS := REPEAT, \
-    STRING_KEYWORDS := OPTIONS VM_OPTIONS JAVA_OPTIONS AOT_MODULES, \
+    STRING_KEYWORDS := OPTIONS VM_OPTIONS JAVA_OPTIONS, \
 ))
 
 ifneq ($(GTEST), )
@@ -592,14 +500,7 @@ define SetupRunGtestTestBody
     $1_GTEST_REPEAT :=--gtest_repeat=$$(GTEST_REPEAT)
   endif
 
-  ifneq ($$(GTEST_AOT_MODULES), )
-    $$(eval $$(call SetupAot, $1, \
-        MODULES := $$(GTEST_AOT_MODULES), \
-        VM_OPTIONS := $$(GTEST_VM_OPTIONS) $$(GTEST_JAVA_OPTIONS), \
-    ))
-  endif
-
-  run-test-$1: pre-run-test $$($1_AOT_TARGETS)
+  run-test-$1: pre-run-test
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
@@ -610,7 +511,7 @@ define SetupRunGtestTestBody
 	        --gtest_output=xml:$$($1_TEST_RESULTS_DIR)/gtest.xml \
 	        --gtest_catch_exceptions=0 \
 	        $$($1_GTEST_REPEAT) $$(GTEST_OPTIONS) $$(GTEST_VM_OPTIONS) \
-	        $$(GTEST_JAVA_OPTIONS) $$($1_AOT_OPTIONS) \
+	        $$(GTEST_JAVA_OPTIONS) \
 	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/gtest.txt) \
 	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
@@ -917,7 +818,6 @@ define SetupRunJtregTestBody
   endif
 
   $1_JTREG_BASIC_OPTIONS += -e:TEST_IMAGE_DIR=$(TEST_IMAGE_DIR)
-  $1_JTREG_BASIC_OPTIONS += -e:TEST_IMAGE_GRAAL_DIR=$(TEST_IMAGE_DIR)/hotspot/jtreg/graal
 
   ifneq ($$(JTREG_FAILURE_HANDLER_OPTIONS), )
     $1_JTREG_LAUNCHER_OPTIONS += -Djava.library.path="$(JTREG_FAILURE_HANDLER_DIR)"
@@ -932,17 +832,6 @@ define SetupRunJtregTestBody
     ifneq ($$($1_JTREG_KEYWORDS), )
       $1_JTREG_BASIC_OPTIONS += -k:'$$($1_JTREG_KEYWORDS)'
     endif
-  endif
-
-  ifneq ($$(JTREG_AOT_MODULES), )
-    $$(eval $$(call SetupAot, $1, \
-        MODULES := $$(JTREG_AOT_MODULES), \
-        VM_OPTIONS := $$(JTREG_VM_OPTIONS) $$(JTREG_JAVA_OPTIONS), \
-    ))
-  endif
-
-  ifneq ($$($1_AOT_OPTIONS), )
-    $1_JTREG_BASIC_OPTIONS += -vmoptions:"$$($1_AOT_OPTIONS)"
   endif
 
   clean-workdir-$1:
@@ -979,7 +868,7 @@ define SetupRunJtregTestBody
         done
   endif
 
-  run-test-$1: pre-run-test clean-workdir-$1 $$($1_AOT_TARGETS)
+  run-test-$1: pre-run-test clean-workdir-$1
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR) \

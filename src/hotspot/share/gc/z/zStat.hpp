@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -541,7 +541,7 @@ public:
   static void set_at_mark_end(const ZPageAllocatorStats& stats);
   static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
   static void set_at_relocate_start(const ZPageAllocatorStats& stats);
-  static void set_at_relocate_end(const ZPageAllocatorStats& stats);
+  static void set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated);
 
   static size_t max_capacity();
   static size_t used_at_mark_start();

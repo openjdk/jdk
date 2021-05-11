@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ public class Settings {
 
     public final static String NODE_TEXT = "nodeText";
     public final static String NODE_TEXT_DEFAULT = "[idx] [name]";
+    public final static String NODE_SHORT_TEXT = "nodeShortText";
+    public final static String NODE_SHORT_TEXT_DEFAULT = "[idx] [name]";
     public final static String NODE_WIDTH = "nodeWidth";
     public final static String NODE_WIDTH_DEFAULT = "100";
     public final static String PORT = "port";

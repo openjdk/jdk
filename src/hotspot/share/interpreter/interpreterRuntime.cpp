@@ -1380,7 +1380,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
         method->set_signature_handler(_handlers->at(handler_index));
       }
     } else {
-      DEBUG_ONLY(Thread::current()->check_possible_safepoint());
+      DEBUG_ONLY(JavaThread::current()->check_possible_safepoint());
       // use generic signature handler
       method->set_signature_handler(Interpreter::slow_signature_handler());
     }

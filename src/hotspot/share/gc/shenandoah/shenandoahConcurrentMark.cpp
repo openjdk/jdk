@@ -144,7 +144,7 @@ public:
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
       assert(!heap->has_forwarded_objects(), "Not expected");
 
-      ShenandoahMarkRefsClosure mark_cl(q, rp);
+      ShenandoahMarkRefsClosure<NO_DEDUP> mark_cl(q, rp);
       ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set,
                                                ShenandoahIUBarrier ? &mark_cl : NULL);
       Threads::threads_do(&tc);
@@ -191,7 +191,9 @@ ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahO
 void ShenandoahMarkConcurrentRootsTask::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahMarkRefsClosure cl(q, _rp);
+  // Cannot enable string deduplication during root scanning. Otherwise,
+  // may result lock inversion between stack watermark and string dedup queue lock.
+  ShenandoahMarkRefsClosure<NO_DEDUP> cl(q, _rp);
   _root_scanner.roots_do(&cl, worker_id);
 }
 

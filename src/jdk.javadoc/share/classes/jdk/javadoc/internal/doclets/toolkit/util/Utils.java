@@ -34,7 +34,6 @@ import java.text.ParseException;
 import java.text.RuleBasedCollator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -55,7 +54,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
@@ -233,14 +231,15 @@ public class Utils {
     /**
      * Search for the given method in the given class.
      *
-     * @param  te        Class to search into.
-     * @param  method    Method to be searched.
-     * @return ExecutableElement Method found, null otherwise.
+     * @param te     Class to search into.
+     * @param method Method to be searched.
+     *
+     * @return Method found, null otherwise.
      */
     public ExecutableElement findMethod(TypeElement te, ExecutableElement method) {
-        for (Element m : getMethods(te)) {
-            if (executableMembersEqual(method, (ExecutableElement) m)) {
-                return (ExecutableElement) m;
+        for (ExecutableElement m : getMethods(te)) {
+            if (executableMembersEqual(method, m)) {
+                return m;
             }
         }
         return null;
@@ -332,7 +331,6 @@ public class Utils {
         return !e.getAnnotationMirrors().isEmpty();
     }
 
-    @SuppressWarnings("preview")
     public boolean isAnnotationType(Element e) {
         return new SimpleElementVisitor14<Boolean, Void>() {
             @Override
@@ -402,6 +400,10 @@ public class Utils {
         return e.getModifiers().contains(Modifier.DEFAULT);
     }
 
+    public boolean isFinal(Element e) {
+        return e.getModifiers().contains(Modifier.FINAL);
+    }
+
     public boolean isPackagePrivate(Element e) {
         return !(isPublic(e) || isPrivate(e) || isProtected(e));
     }
@@ -448,12 +450,10 @@ public class Utils {
         return typeUtils.isSubtype(e.asType(), getExternalizableType());
     }
 
-    @SuppressWarnings("preview")
     public boolean isRecord(TypeElement e) {
         return e.getKind() == ElementKind.RECORD;
     }
 
-    @SuppressWarnings("preview")
     public boolean isCanonicalRecordConstructor(ExecutableElement ee) {
         TypeElement te = (TypeElement) ee.getEnclosingElement();
         List<? extends RecordComponentElement> stateComps = te.getRecordComponents();
@@ -572,7 +572,6 @@ public class Utils {
             }
 
             @Override
-            @SuppressWarnings("preview")
             public String visitTypeAsClass(TypeElement e, SortedSet<Modifier> mods) {
                 addModifiers(mods);
                 String keyword = e.getKind() == ElementKind.RECORD ? "record" : "class";
@@ -599,7 +598,7 @@ public class Utils {
     }
 
     public boolean isOrdinaryClass(TypeElement te) {
-        if (isEnum(te) || isInterface(te) || isAnnotationType(te)) {
+        if (isEnum(te) || isInterface(te) || isAnnotationType(te) || isRecord(te)) {
             return false;
         }
         if (isError(te) || isException(te)) {
@@ -703,7 +702,7 @@ public class Utils {
      *
      * @param e the executable element
      * @param site the contextual site
-     * @return String signature with simple (unqualified) parameter types
+     * @return signature with simple (unqualified) parameter types
      */
     public String flatSignature(ExecutableElement e, TypeElement site) {
         return makeSignature(e, site, false);
@@ -1598,18 +1597,18 @@ public class Utils {
         SortedSet<TypeElement> filteredOutClasses =
                 new TreeSet<>(comparators.makeGeneralPurposeComparator());
         if (!javafx) {
-            for (Element te : classlist) {
+            for (TypeElement te : classlist) {
                 if (!hasHiddenTag(te)) {
-                    filteredOutClasses.add((TypeElement)te);
+                    filteredOutClasses.add(te);
                 }
             }
             return filteredOutClasses;
         }
-        for (Element e : classlist) {
+        for (TypeElement e : classlist) {
             if (isPrivate(e) || isPackagePrivate(e) || hasHiddenTag(e)) {
                 continue;
             }
-            filteredOutClasses.add((TypeElement)e);
+            filteredOutClasses.add(e);
         }
         return filteredOutClasses;
     }
@@ -1789,7 +1788,7 @@ public class Utils {
 
     /**
      * A generic utility which returns the fully qualified names of an entity,
-     * if the entity is not qualifiable then its enclosing entity, it is upto
+     * if the entity is not qualifiable then its enclosing entity, it is up to
      * the caller to add the elements name as required.
      * @param e the element to get FQN for.
      * @return the name
@@ -1798,7 +1797,6 @@ public class Utils {
         return getFullyQualifiedName(e, true);
     }
 
-    @SuppressWarnings("preview")
     public String getFullyQualifiedName(Element e, final boolean outer) {
         return new SimpleElementVisitor14<String, Void>() {
             @Override
@@ -1824,78 +1822,104 @@ public class Utils {
     }
 
 
+    /**
+     * Returns the recursively enclosed documented type elements in a package
+     *
+     * @param pkg the package
+     * @return the elements
+     */
     public Iterable<TypeElement> getEnclosedTypeElements(PackageElement pkg) {
-        List<TypeElement> out = getInterfaces(pkg);
-        out.addAll(getClasses(pkg));
-        out.addAll(getEnums(pkg));
-        out.addAll(getAnnotationTypes(pkg));
-        out.addAll(getRecords(pkg));
-        return out;
+        return getItems(pkg, false, this::isTypeElement, TypeElement.class);
     }
 
     // Element related methods
-    public List<Element> getAnnotationMembers(TypeElement aClass) {
-        List<Element> members = getAnnotationFields(aClass);
-        members.addAll(getAnnotationMethods(aClass));
-        return members;
+
+    /**
+     * Returns the fields and methods declared in an annotation interface.
+     *
+     * @param te the annotation interface
+     * @return the fields and methods
+     */
+    public List<Element> getAnnotationMembers(TypeElement te) {
+        return getItems(te, false, e_ ->
+                        switch (e_.getKind()) {
+                            case FIELD, METHOD -> shouldDocument(e_);
+                            default -> false;
+                        },
+                Element.class);
+
     }
 
-    public List<Element> getAnnotationFields(TypeElement aClass) {
-        return getItems0(aClass, true, FIELD);
+    /**
+     * Returns the documented annotation interfaces in a package.
+     *
+     * @param pkg the package
+     * @return the annotation interfaces
+     */
+    public List<TypeElement> getAnnotationTypes(PackageElement pkg) {
+        return getDocumentedItems(pkg, ANNOTATION_TYPE, TypeElement.class);
     }
 
-    List<Element> getAnnotationFieldsUnfiltered(TypeElement aClass) {
-        return getItems0(aClass, true, FIELD);
+    /**
+     * Returns the documented record classes in a package.
+     *
+     * @param pkg the package
+     * @return the record classes
+     */
+    public List<TypeElement> getRecords(PackageElement pkg) {
+        return getDocumentedItems(pkg, RECORD, TypeElement.class);
     }
 
-    public List<Element> getAnnotationMethods(TypeElement aClass) {
-        return getItems0(aClass, true, METHOD);
+    /**
+     * Returns the documented fields in a type element.
+     *
+     * @param te the element
+     * @return the fields
+     */
+    public List<VariableElement> getFields(TypeElement te) {
+        return getDocumentedItems(te, FIELD, VariableElement.class);
     }
 
-    public List<TypeElement> getAnnotationTypes(Element e) {
-        return convertToTypeElement(getItems(e, true, ANNOTATION_TYPE));
+    /**
+     * Returns the fields in a type element.
+     *
+     * @param te the element
+     * @return the fields
+     */
+    public List<VariableElement> getFieldsUnfiltered(TypeElement te) {
+        return getAllItems(te, FIELD, VariableElement.class);
     }
 
-    public List<TypeElement> getAnnotationTypesUnfiltered(Element e) {
-        return convertToTypeElement(getItems(e, false, ANNOTATION_TYPE));
-    }
-
-    @SuppressWarnings("preview")
-    public List<TypeElement> getRecords(Element e) {
-        return convertToTypeElement(getItems(e, true, RECORD));
-    }
-
-    @SuppressWarnings("preview")
-    public List<TypeElement> getRecordsUnfiltered(Element e) {
-        return convertToTypeElement(getItems(e, false, RECORD));
-    }
-
-    public List<VariableElement> getFields(Element e) {
-        return convertToVariableElement(getItems(e, true, FIELD));
-    }
-
-    public List<VariableElement> getFieldsUnfiltered(Element e) {
-        return convertToVariableElement(getItems(e, false, FIELD));
-    }
-
+    /**
+     * Returns the documented classes in an element,
+     * such as a package element or type element.
+     *
+     * @param e the element
+     * @return the classes
+     */
     public List<TypeElement> getClasses(Element e) {
-       return convertToTypeElement(getItems(e, true, CLASS));
+        return getDocumentedItems(e, CLASS, TypeElement.class);
     }
 
-    public List<TypeElement> getClassesUnfiltered(Element e) {
-       return convertToTypeElement(getItems(e, false, CLASS));
+    /**
+     * Returns the documented constructors in a type element.
+     *
+     * @param te the type element
+     * @return the constructors
+     */
+    public List<ExecutableElement> getConstructors(TypeElement te) {
+        return getDocumentedItems(te, CONSTRUCTOR, ExecutableElement.class);
     }
 
-    public List<ExecutableElement> getConstructors(Element e) {
-        return convertToExecutableElement(getItems(e, true, CONSTRUCTOR));
-    }
 
-    public List<ExecutableElement> getMethods(Element e) {
-        return convertToExecutableElement(getItems(e, true, METHOD));
-    }
-
-    List<ExecutableElement> getMethodsUnfiltered(Element e) {
-        return convertToExecutableElement(getItems(e, false, METHOD));
+    /**
+     * Returns the documented methods in a type element.
+     *
+     * @param te the type element
+     * @return the methods
+     */
+    public List<ExecutableElement> getMethods(TypeElement te) {
+        return getDocumentedItems(te, METHOD, ExecutableElement.class);
     }
 
     public int getOrdinalValue(VariableElement member) {
@@ -1976,117 +2000,63 @@ public class Utils {
         return lineMap.getLineNumber(pos);
     }
 
-    public List<ExecutableElement> convertToExecutableElement(List<Element> list) {
-        List<ExecutableElement> out = new ArrayList<>(list.size());
-        for (Element e : list) {
-            out.add((ExecutableElement)e);
-        }
-        return out;
+    /**
+     * Returns the documented interfaces in a package.
+     *
+     * @param pkg the package
+     * @return the interfaces
+     */
+    public List<TypeElement> getInterfaces(PackageElement pkg)  {
+        return getDocumentedItems(pkg, INTERFACE, TypeElement.class);
     }
 
-    public List<TypeElement> convertToTypeElement(List<Element> list) {
-        List<TypeElement> out = new ArrayList<>(list.size());
-        for (Element e : list) {
-            out.add((TypeElement)e);
-        }
-        return out;
+    /**
+     * Returns the documented enum constants in a type element.
+     *
+     * @param te the element
+     * @return the interfaces
+     */
+    public List<VariableElement> getEnumConstants(TypeElement te) {
+        return getDocumentedItems(te, ENUM_CONSTANT, VariableElement.class);
     }
 
-    public List<VariableElement> convertToVariableElement(List<Element> list) {
-        List<VariableElement> out = new ArrayList<>(list.size());
-        for (Element e : list) {
-            out.add((VariableElement) e);
-        }
-        return out;
+    /**
+     * Returns the documented enum classes in a package.
+     *
+     * @param pkg the package
+     * @return the interfaces
+     */
+    public List<TypeElement> getEnums(PackageElement pkg) {
+        return getDocumentedItems(pkg, ENUM, TypeElement.class);
     }
 
-    public List<TypeElement> getInterfaces(Element e)  {
-        return convertToTypeElement(getItems(e, true, INTERFACE));
-    }
-
-    public List<TypeElement> getInterfacesUnfiltered(Element e)  {
-        return convertToTypeElement(getItems(e, false, INTERFACE));
-    }
-
-    public List<Element> getEnumConstants(Element e) {
-        return getItems(e, true, ENUM_CONSTANT);
-    }
-
-    public List<TypeElement> getEnums(Element e) {
-        return convertToTypeElement(getItems(e, true, ENUM));
-    }
-
-    public List<TypeElement> getEnumsUnfiltered(Element e) {
-        return convertToTypeElement(getItems(e, false, ENUM));
-    }
-
-    public SortedSet<TypeElement> getAllClassesUnfiltered(Element e) {
-        List<TypeElement> clist = getClassesUnfiltered(e);
-        clist.addAll(getInterfacesUnfiltered(e));
-        clist.addAll(getAnnotationTypesUnfiltered(e));
-        clist.addAll(getRecordsUnfiltered(e));
-        SortedSet<TypeElement> oset = new TreeSet<>(comparators.makeGeneralPurposeComparator());
-        oset.addAll(clist);
-        return oset;
+    /**
+     * Returns all the classes in a package.
+     *
+     * @param pkg the package
+     * @return the interfaces
+     */
+    public SortedSet<TypeElement> getAllClassesUnfiltered(PackageElement pkg) {
+        SortedSet<TypeElement> set = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+        set.addAll(getItems(pkg, true, this::isTypeElement, TypeElement.class));
+        return set;
     }
 
     private final HashMap<Element, SortedSet<TypeElement>> cachedClasses = new HashMap<>();
+
     /**
-     * Returns a list containing classes and interfaces,
-     * including annotation types.
-     * @param e Element
-     * @return List
+     * Returns a sorted set containing the documented classes and interfaces in a package.
+     *
+     * @param pkg the element
+     * @return the classes and interfaces
      */
-    public SortedSet<TypeElement> getAllClasses(Element e) {
-        SortedSet<TypeElement> oset = cachedClasses.get(e);
-        if (oset != null)
+    public SortedSet<TypeElement> getAllClasses(PackageElement pkg) {
+        return cachedClasses.computeIfAbsent(pkg, p_ -> {
+            List<TypeElement> clist = getItems(pkg, false, this::isTypeElement, TypeElement.class);
+            SortedSet<TypeElement>oset = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+            oset.addAll(clist);
             return oset;
-        List<TypeElement> clist = getClasses(e);
-        clist.addAll(getInterfaces(e));
-        clist.addAll(getAnnotationTypes(e));
-        clist.addAll(getEnums(e));
-        clist.addAll(getRecords(e));
-        oset = new TreeSet<>(comparators.makeGeneralPurposeComparator());
-        oset.addAll(clist);
-        cachedClasses.put(e, oset);
-        return oset;
-    }
-
-    /*
-     * Get all the elements unfiltered and filter them finally based
-     * on its visibility, this works differently from the other getters.
-     */
-    private List<TypeElement> getInnerClasses(Element e, boolean filter) {
-        List<TypeElement> olist = new ArrayList<>();
-        for (TypeElement te : getClassesUnfiltered(e)) {
-            if (!filter || configuration.docEnv.isSelected(te)) {
-                olist.add(te);
-            }
-        }
-        for (TypeElement te : getInterfacesUnfiltered(e)) {
-            if (!filter || configuration.docEnv.isSelected(te)) {
-                olist.add(te);
-            }
-        }
-        for (TypeElement te : getAnnotationTypesUnfiltered(e)) {
-            if (!filter || configuration.docEnv.isSelected(te)) {
-                olist.add(te);
-            }
-        }
-        for (TypeElement te : getEnumsUnfiltered(e)) {
-            if (!filter || configuration.docEnv.isSelected(te)) {
-                olist.add(te);
-            }
-        }
-        return olist;
-    }
-
-    public List<TypeElement> getInnerClasses(Element e) {
-        return getInnerClasses(e, true);
-    }
-
-    public List<TypeElement> getInnerClassesUnfiltered(Element e) {
-        return getInnerClasses(e, false);
+        });
     }
 
     /**
@@ -2097,75 +2067,114 @@ public class Utils {
     public List<TypeElement> getOrdinaryClasses(Element e) {
         return getClasses(e).stream()
                 .filter(te -> (!isException(te) && !isError(te)))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<TypeElement> getErrors(Element e) {
         return getClasses(e)
                 .stream()
                 .filter(this::isError)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<TypeElement> getExceptions(Element e) {
         return getClasses(e)
                 .stream()
                 .filter(this::isException)
-                .collect(Collectors.toList());
+                .toList();
     }
 
-    @SuppressWarnings("preview")
-    List<Element> getItems(Element e, boolean filter, ElementKind select) {
-        List<Element> elements = new ArrayList<>();
-        return new SimpleElementVisitor14<List<Element>, Void>() {
-
-            @Override
-            public List<Element> visitPackage(PackageElement e, Void p) {
-                recursiveGetItems(elements, e, filter, select);
-                return elements;
-            }
-
-            @Override
-            protected List<Element> defaultAction(Element e0, Void p) {
-                return getItems0(e0, filter, select);
-            }
-
-        }.visit(e);
+    /**
+     * Returns a list of documented elements of a given type with a given kind.
+     * If the root of the search is a package, the search is recursive.
+     *
+     * @param e      the element, such as a package element or type element
+     * @param kind   the element kind
+     * @param clazz  the class of the filtered members
+     * @param <T>    the class of the filtered members
+     *
+     * @return the list of enclosed elements
+     */
+    private <T extends Element> List<T> getDocumentedItems(Element e, ElementKind kind, Class<T> clazz) {
+        return getItems(e, false, e_ -> e_.getKind() == kind && shouldDocument(e_), clazz);
     }
 
-    Set<ElementKind> nestedKinds = EnumSet.of(ANNOTATION_TYPE, CLASS, ENUM, INTERFACE);
-    void recursiveGetItems(Collection<Element> list, Element e, boolean filter, ElementKind... select) {
-        list.addAll(getItems0(e, filter, select));
-        List<Element> classes = getItems0(e, filter, nestedKinds);
-        for (Element c : classes) {
-            list.addAll(getItems0(c, filter, select));
-            if (isTypeElement(c)) {
-                recursiveGetItems(list, c, filter, select);
-            }
+    /**
+     * Returns a list of elements of a given type with a given kind.
+     * If the root of the search is a package, the search is recursive.
+     *
+     * @param e      the element, such as a package element or type element
+     * @param kind   the element kind
+     * @param clazz  the class of the filtered members
+     * @param <T>    the class of the filtered members
+     *
+     * @return the list of enclosed elements
+     */
+    private <T extends Element> List<T> getAllItems(Element e, ElementKind kind, Class<T> clazz) {
+        return getItems(e, true, e_ -> e_.getKind() == kind, clazz);
+    }
+
+    /**
+     * Returns a list of elements of a given type that match a predicate.
+     * If the root of the search is a package, the search is recursive through packages
+     * and classes.
+     *
+     * @param e      the element, such as a package element or type element
+     * @param all    whether to search through all packages and classes, or just documented ones
+     * @param select the predicate to select members
+     * @param clazz  the class of the filtered members
+     * @param <T>    the class of the filtered members
+     *
+     * @return the list of enclosed elements
+     */
+    private <T extends Element> List<T> getItems(Element e, boolean all, Predicate<Element> select, Class<T> clazz) {
+        if (e.getKind() == ElementKind.PACKAGE) {
+            List<T> elements = new ArrayList<>();
+            recursiveGetItems(elements, e, all, select, clazz);
+            return elements;
+        } else {
+            return getItems0(e, all, select, clazz);
         }
     }
 
-    private List<Element> getItems0(Element te, boolean filter, ElementKind... select) {
-        Set<ElementKind> kinds = EnumSet.copyOf(Arrays.asList(select));
-        return getItems0(te, filter, kinds);
-    }
-
-    private List<Element> getItems0(Element te, boolean filter, Set<ElementKind> kinds) {
-        List<Element> elements = new ArrayList<>();
-        for (Element e : te.getEnclosedElements()) {
-            if (kinds.contains(e.getKind())) {
-                if (!filter || shouldDocument(e)) {
-                    elements.add(e);
-                }
-            }
+    /**
+     * Searches for a list of recursively enclosed elements of a given class that match a predicate.
+     * The recursion is through nested types.
+     *
+     * @param e      the element, such as a package element or type element
+     * @param all    whether to search all packages and classes, or just documented ones
+     * @param filter the filter
+     * @param clazz  the class of the filtered members
+     * @param <T>    the class of the filtered members
+     */
+    private <T extends Element> void recursiveGetItems(Collection<T> list, Element e, boolean all, Predicate<Element> filter, Class<T> clazz) {
+        list.addAll(getItems0(e, all, filter, clazz));
+        List<TypeElement> classes = getItems0(e, all, this::isTypeElement, TypeElement.class);
+        for (TypeElement c : classes) {
+            recursiveGetItems(list, c, all, filter, clazz);
         }
-        return elements;
     }
 
-    @SuppressWarnings("preview")
+    /**
+     * Returns a list of immediately enclosed elements of a given class that match a predicate.
+     *
+     * @param e      the element, such as a package element or type element
+     * @param all    whether to search all packages and classes, or just documented ones
+     * @param select the predicate for the selected members
+     * @param clazz  the class of the filtered members
+     * @param <T>    the class of the filtered members
+     *
+     * @return the list of enclosed elements
+     */
+    private <T extends Element> List<T> getItems0(Element e, boolean all, Predicate<Element> select, Class<T> clazz) {
+        return e.getEnclosedElements().stream()
+                .filter(e_ -> select.test(e_) && (all || shouldDocument(e_)))
+                .map(clazz::cast)
+                .toList();
+    }
+
     private SimpleElementVisitor14<Boolean, Void> shouldDocumentVisitor = null;
 
-    @SuppressWarnings("preview")
     public boolean shouldDocument(Element e) {
         if (shouldDocumentVisitor == null) {
             shouldDocumentVisitor = new SimpleElementVisitor14<Boolean, Void>() {
@@ -2218,13 +2227,11 @@ public class Utils {
         return nameCache.computeIfAbsent(e, this::getSimpleName0);
     }
 
-    @SuppressWarnings("preview")
     private SimpleElementVisitor14<String, Void> snvisitor = null;
 
-    @SuppressWarnings("preview")
     private String getSimpleName0(Element e) {
         if (snvisitor == null) {
-            snvisitor = new SimpleElementVisitor14<String, Void>() {
+            snvisitor = new SimpleElementVisitor14<>() {
                 @Override
                 public String visitModule(ModuleElement e, Void p) {
                     return e.getQualifiedName().toString();  // temp fix for 8182736
@@ -2393,12 +2400,10 @@ public class Utils {
         return configuration.docEnv.isIncluded(e);
     }
 
-    @SuppressWarnings("preview")
     private SimpleElementVisitor14<Boolean, Void> specifiedVisitor = null;
-    @SuppressWarnings("preview")
     public boolean isSpecified(Element e) {
         if (specifiedVisitor == null) {
-            specifiedVisitor = new SimpleElementVisitor14<Boolean, Void>() {
+            specifiedVisitor = new SimpleElementVisitor14<>() {
                 @Override
                 public Boolean visitModule(ModuleElement e, Void p) {
                     return configuration.getSpecifiedModuleElements().contains(e);
@@ -2601,15 +2606,15 @@ public class Utils {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
                 .filter(filter)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public <T extends DocTree> List<? extends T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
                 .filter(filter)
-                .map(t -> tClass.cast(t))
-                .collect(Collectors.toList());
+                .map(tClass::cast)
+                .toList();
     }
 
     public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind) {
@@ -3008,10 +3013,9 @@ public class Utils {
         SEALED_PERMITS(List.of("sealed", "permits"));
         public final List<String> features;
 
-        private DeclarationPreviewLanguageFeatures(List<String> features) {
+        DeclarationPreviewLanguageFeatures(List<String> features) {
             this.features = features;
         }
-
     }
 
     @SuppressWarnings("preview")
@@ -3027,7 +3031,7 @@ public class Utils {
                 usedInDeclaration.addAll(types2Classes(List.of(te.getSuperclass())));
                 usedInDeclaration.addAll(types2Classes(te.getInterfaces()));
                 usedInDeclaration.addAll(types2Classes(te.getPermittedSubclasses()));
-                usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(c -> c.asType()).collect(Collectors.toList()))); //TODO: annotations on record components???
+                usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(Element::asType).toList())); //TODO: annotations on record components???
             }
             case CONSTRUCTOR, METHOD -> {
                 ExecutableElement ee = (ExecutableElement) el;
@@ -3037,7 +3041,7 @@ public class Utils {
                 usedInDeclaration.addAll(types2Classes(List.of(ee.getReturnType())));
                 usedInDeclaration.addAll(types2Classes(List.of(ee.getReceiverType())));
                 usedInDeclaration.addAll(types2Classes(ee.getThrownTypes()));
-                usedInDeclaration.addAll(types2Classes(ee.getParameters().stream().map(p -> p.asType()).collect(Collectors.toList())));
+                usedInDeclaration.addAll(types2Classes(ee.getParameters().stream().map(VariableElement::asType).toList()));
                 usedInDeclaration.addAll(annotationValue2Classes(ee.getDefaultValue()));
             }
             case FIELD, ENUM_CONSTANT, RECORD_COMPONENT -> {
@@ -3225,7 +3229,7 @@ public class Utils {
      */
     public enum ElementFlag {
         DEPRECATED,
-        PREVIEW;
+        PREVIEW
     }
 
 }
