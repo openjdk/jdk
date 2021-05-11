@@ -650,9 +650,6 @@ void DefNewGeneration::collect(bool   full,
   }
   // We should have processed and cleared all the preserved marks.
   _preserved_marks_set.reclaim();
-  // set new iteration safe limit for the survivor spaces
-  from()->set_concurrent_iteration_safe_limit(from()->top());
-  to()->set_concurrent_iteration_safe_limit(to()->top());
 
   heap->trace_heap_after_gc(&gc_tracer);
 

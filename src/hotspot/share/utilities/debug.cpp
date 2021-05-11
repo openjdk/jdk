@@ -399,22 +399,20 @@ class Command : public StackObj {
 
 int Command::level = 0;
 
-#ifndef PRODUCT
-
-extern "C" void blob(CodeBlob* cb) {
+extern "C" JNIEXPORT void blob(CodeBlob* cb) {
   Command c("blob");
   cb->print();
 }
 
 
-extern "C" void dump_vtable(address p) {
+extern "C" JNIEXPORT void dump_vtable(address p) {
   Command c("dump_vtable");
   Klass* k = (Klass*)p;
   k->vtable().print();
 }
 
 
-extern "C" void nm(intptr_t p) {
+extern "C" JNIEXPORT void nm(intptr_t p) {
   // Actually we look through all CodeBlobs (the nm name has been kept for backwards compatability)
   Command c("nm");
   CodeBlob* cb = CodeCache::find_blob((address)p);
@@ -426,7 +424,7 @@ extern "C" void nm(intptr_t p) {
 }
 
 
-extern "C" void disnm(intptr_t p) {
+extern "C" JNIEXPORT void disnm(intptr_t p) {
   Command c("disnm");
   CodeBlob* cb = CodeCache::find_blob((address) p);
   if (cb != NULL) {
@@ -441,7 +439,7 @@ extern "C" void disnm(intptr_t p) {
 }
 
 
-extern "C" void printnm(intptr_t p) {
+extern "C" JNIEXPORT void printnm(intptr_t p) {
   char buffer[256];
   sprintf(buffer, "printnm: " INTPTR_FORMAT, p);
   Command c(buffer);
@@ -453,13 +451,13 @@ extern "C" void printnm(intptr_t p) {
 }
 
 
-extern "C" void universe() {
+extern "C" JNIEXPORT void universe() {
   Command c("universe");
   Universe::print_on(tty);
 }
 
 
-extern "C" void verify() {
+extern "C" JNIEXPORT void verify() {
   // try to run a verify on the entire system
   // note: this may not be safe if we're not at a safepoint; for debugging,
   // this manipulates the safepoint settings to avoid assertion failures
@@ -476,7 +474,7 @@ extern "C" void verify() {
 }
 
 
-extern "C" void pp(void* p) {
+extern "C" JNIEXPORT void pp(void* p) {
   Command c("pp");
   FlagSetting fl(DisplayVMOutput, true);
   if (Universe::heap()->is_in(p)) {
@@ -488,16 +486,11 @@ extern "C" void pp(void* p) {
 }
 
 
-// pv: print vm-printable object
-extern "C" void pa(intptr_t p)   { ((AllocatedObj*) p)->print(); }
-extern "C" void findpc(intptr_t x);
+extern "C" JNIEXPORT void findpc(intptr_t x);
 
-#endif // !PRODUCT
-
-extern "C" void ps() { // print stack
+extern "C" JNIEXPORT void ps() { // print stack
   if (Thread::current_or_null() == NULL) return;
   Command c("ps");
-
 
   // Prints the stack of the current Java thread
   JavaThread* p = JavaThread::active();
@@ -508,12 +501,9 @@ extern "C" void ps() { // print stack
   if (p->has_last_Java_frame()) {
     // If the last_Java_fp is set we are in C land and
     // can call the standard stack_trace function.
-#ifdef PRODUCT
     p->print_stack();
-  } else {
-    tty->print_cr("Cannot find the last Java frame, printing stack disabled.");
-#else // !PRODUCT
-    p->trace_stack();
+#ifndef PRODUCT
+    if (Verbose) p->trace_stack();
   } else {
     frame f = os::current_frame();
     RegisterMap reg_map(p);
@@ -521,12 +511,11 @@ extern "C" void ps() { // print stack
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
     f.pd_ps();
-#endif // PRODUCT
+#endif
   }
-
 }
 
-extern "C" void pfl() {
+extern "C" JNIEXPORT void pfl() {
   // print frame layout
   Command c("pfl");
   JavaThread* p = JavaThread::active();
@@ -538,9 +527,7 @@ extern "C" void pfl() {
   }
 }
 
-#ifndef PRODUCT
-
-extern "C" void psf() { // print stack frames
+extern "C" JNIEXPORT void psf() { // print stack frames
   {
     Command c("psf");
     JavaThread* p = JavaThread::active();
@@ -554,37 +541,36 @@ extern "C" void psf() { // print stack frames
 }
 
 
-extern "C" void threads() {
+extern "C" JNIEXPORT void threads() {
   Command c("threads");
   Threads::print(false, true);
 }
 
 
-extern "C" void psd() {
+extern "C" JNIEXPORT void psd() {
   Command c("psd");
   SystemDictionary::print();
 }
 
-#endif // !PRODUCT
 
-extern "C" void pss() { // print all stacks
+extern "C" JNIEXPORT void pss() { // print all stacks
   if (Thread::current_or_null() == NULL) return;
   Command c("pss");
   Threads::print(true, PRODUCT_ONLY(false) NOT_PRODUCT(true));
 }
 
-#ifndef PRODUCT
+// #ifndef PRODUCT
 
-extern "C" void debug() {               // to set things up for compiler debugging
+extern "C" JNIEXPORT void debug() {               // to set things up for compiler debugging
   Command c("debug");
-  WizardMode = true;
+  NOT_PRODUCT(WizardMode = true;)
   PrintCompilation = true;
   PrintInlining = PrintAssembly = true;
   tty->flush();
 }
 
 
-extern "C" void ndebug() {              // undo debug()
+extern "C" JNIEXPORT void ndebug() {              // undo debug()
   Command c("ndebug");
   PrintCompilation = false;
   PrintInlining = PrintAssembly = false;
@@ -592,50 +578,42 @@ extern "C" void ndebug() {              // undo debug()
 }
 
 
-extern "C" void flush()  {
+extern "C" JNIEXPORT void flush()  {
   Command c("flush");
   tty->flush();
 }
 
-extern "C" void events() {
+extern "C" JNIEXPORT void events() {
   Command c("events");
   Events::print();
 }
 
-extern "C" Method* findm(intptr_t pc) {
+extern "C" JNIEXPORT Method* findm(intptr_t pc) {
   Command c("findm");
   nmethod* nm = CodeCache::find_nmethod((address)pc);
   return (nm == NULL) ? (Method*)NULL : nm->method();
 }
 
 
-extern "C" nmethod* findnm(intptr_t addr) {
+extern "C" JNIEXPORT nmethod* findnm(intptr_t addr) {
   Command c("findnm");
   return  CodeCache::find_nmethod((address)addr);
 }
 
-// Another interface that isn't ambiguous in dbx.
-// Can we someday rename the other find to hsfind?
-extern "C" void hsfind(intptr_t x) {
-  Command c("hsfind");
-  os::print_location(tty, x, false);
-}
-
-
-extern "C" void find(intptr_t x) {
+extern "C" JNIEXPORT void find(intptr_t x) {
   Command c("find");
   os::print_location(tty, x, false);
 }
 
 
-extern "C" void findpc(intptr_t x) {
+extern "C" JNIEXPORT void findpc(intptr_t x) {
   Command c("findpc");
   os::print_location(tty, x, true);
 }
 
 
 // Need method pointer to find bcp, when not in permgen.
-extern "C" void findbcp(intptr_t method, intptr_t bcp) {
+extern "C" JNIEXPORT void findbcp(intptr_t method, intptr_t bcp) {
   Command c("findbcp");
   Method* mh = (Method*)method;
   if (!mh->is_native()) {
@@ -654,7 +632,6 @@ void help() {
   Command c("help");
   tty->print_cr("basic");
   tty->print_cr("  pp(void* p)   - try to make sense of p");
-  tty->print_cr("  pv(intptr_t p)- ((PrintableResourceObj*) p)->print()");
   tty->print_cr("  ps()          - print current thread stack");
   tty->print_cr("  pss()         - print all thread stacks");
   tty->print_cr("  pm(int pc)    - print Method* given compiled PC");
@@ -679,7 +656,8 @@ void help() {
   tty->print_cr("  ndebug()      - undo debug");
 }
 
-extern "C" void pns(void* sp, void* fp, void* pc) { // print native stack
+#ifndef PRODUCT
+extern "C" JNIEXPORT void pns(void* sp, void* fp, void* pc) { // print native stack
   Command c("pns");
   static char buf[O_BUFLEN];
   Thread* t = Thread::current_or_null();
@@ -696,7 +674,7 @@ extern "C" void pns(void* sp, void* fp, void* pc) { // print native stack
 // WARNING: Only intended for use when debugging. Do not leave calls to
 // pns2() in committed source (product or debug).
 //
-extern "C" void pns2() { // print native stack
+extern "C" JNIEXPORT void pns2() { // print native stack
   Command c("pns2");
   static char buf[O_BUFLEN];
   if (os::platform_print_native_stack(tty, NULL, buf, sizeof(buf))) {
@@ -708,8 +686,8 @@ extern "C" void pns2() { // print native stack
     VMError::print_native_stack(tty, fr, t, buf, sizeof(buf));
   }
 }
+#endif
 
-#endif // !PRODUCT
 
 //////////////////////////////////////////////////////////////////////////////
 // Test multiple STATIC_ASSERT forms in various scopes.
