@@ -59,10 +59,10 @@ public class ParameterModifiersAcrossCompilationBoundaries extends TestRunner {
                 import com.sun.source.util.TaskEvent;
                 import com.sun.source.util.TaskListener;
 
-                import javax.lang.model.element.Element;
                 import javax.lang.model.element.ExecutableElement;
                 import javax.lang.model.element.TypeElement;
                 import javax.lang.model.element.VariableElement;
+                import javax.lang.model.util.ElementFilter;
                 import javax.lang.model.util.Elements;
 
                 public class P implements Plugin {
@@ -83,11 +83,9 @@ public class ParameterModifiersAcrossCompilationBoundaries extends TestRunner {
                                         }
                                         Elements elements = javacTask.getElements();
                                         TypeElement typeElement = elements.getTypeElement("B");
-                                        for (Element m : typeElement.getEnclosedElements()) {
-                                            if (m instanceof ExecutableElement) {
-                                                for (VariableElement p : ((ExecutableElement) m).getParameters()) {
-                                                    System.err.println(p.getSimpleName() + " " + p.getModifiers());
-                                                }
+                                        for (ExecutableElement m : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
+                                            for (VariableElement p : m.getParameters()) {
+                                                System.err.println(p.getSimpleName() + " " + p.getModifiers());
                                             }
                                         }
                                     }
@@ -145,7 +143,7 @@ public class ParameterModifiersAcrossCompilationBoundaries extends TestRunner {
         List<String> secondOutput = new JavacTask(tb)
                 .options("--processor-module-path", "plugin", "-Xplugin:P",
                          "-parameters", "-classpath", "test")
-                .files("test/B.java")
+                .files("test/A.java")
                 .run()
                 .writeAll()
                 .getOutputLines(Task.OutputKind.STDERR);
