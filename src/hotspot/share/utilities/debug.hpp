@@ -150,7 +150,8 @@ enum VMErrorType {
   INTERNAL_ERROR   = 0xe0000000,
   OOM_MALLOC_ERROR = 0xe0000001,
   OOM_MMAP_ERROR   = 0xe0000002,
-  OOM_MPROTECT_ERROR = 0xe0000003
+  OOM_MPROTECT_ERROR = 0xe0000003,
+  OOM_JAVA_HEAP_FATAL = 0xe000004
 };
 
 // Set to suppress secondary error reporting.
@@ -164,6 +165,7 @@ void report_vm_error(const char* file, int line, const char* error_msg,
 void report_vm_status_error(const char* file, int line, const char* error_msg,
                             int status, const char* detail);
 void report_fatal(const char* file, int line, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(3, 4);
+void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(4, 5);
 void report_vm_out_of_memory(const char* file, int line, size_t size, VMErrorType vm_err_type,
                              const char* detail_fmt, ...) ATTRIBUTE_PRINTF(5, 6);
 void report_should_not_call(const char* file, int line);
