@@ -56,10 +56,8 @@ public class ClassLoaders {
     private static final AppClassLoader APP_LOADER;
 
     // Sets the ServicesCatalog for the specified loader using archived objects.
-    private static void setArchivedServicesCatalog(
-            ArchivedClassLoaders archivedClassLoaders, ClassLoader loader)
-    {
-        ServicesCatalog catalog = archivedClassLoaders.servicesCatalog(loader);
+    private static void setArchivedServicesCatalog(ClassLoader loader) {
+        ServicesCatalog catalog = ArchivedClassLoaders.get().servicesCatalog(loader);
         ServicesCatalog.putServicesCatalog(loader, catalog);
     }
 
@@ -69,9 +67,9 @@ public class ClassLoaders {
         if (archivedClassLoaders != null) {
             // assert VM.getSavedProperty("jdk.boot.class.path.append") == null
             BOOT_LOADER = (BootClassLoader) archivedClassLoaders.bootLoader();
-            setArchivedServicesCatalog(archivedClassLoaders, BOOT_LOADER);
+            setArchivedServicesCatalog(BOOT_LOADER);
             PLATFORM_LOADER = (PlatformClassLoader) archivedClassLoaders.platformLoader();
-            setArchivedServicesCatalog(archivedClassLoaders, PLATFORM_LOADER);
+            setArchivedServicesCatalog(PLATFORM_LOADER);
         } else {
             // -Xbootclasspath/a or -javaagent with Boot-Class-Path attribute
             String append = VM.getSavedProperty("jdk.boot.class.path.append");
@@ -94,7 +92,7 @@ public class ClassLoaders {
         URLClassPath ucp = new URLClassPath(cp, false);
         if (archivedClassLoaders != null) {
             APP_LOADER = (AppClassLoader) archivedClassLoaders.appLoader();
-            setArchivedServicesCatalog(archivedClassLoaders, APP_LOADER);
+            setArchivedServicesCatalog(APP_LOADER);
             APP_LOADER.setClassPath(ucp);
         } else {
             APP_LOADER = new AppClassLoader(PLATFORM_LOADER, ucp);
