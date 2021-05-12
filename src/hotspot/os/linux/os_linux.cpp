@@ -3780,7 +3780,13 @@ void os::large_page_init() {
   }
 
   // Now determine the type of large pages to use:
-  UseLargePages = os::Linux::setup_large_page_type(_large_page_size);
+  for (size_t page_size = _large_page_size; page_size != 0;
+         page_size = all_large_pages.next_smaller(page_size)) {
+    UseLargePages = os::Linux::setup_large_page_type(page_size);
+    if (UseLargePages){
+      break;
+    }
+  }
 
   set_coredump_filter(LARGEPAGES_BIT);
 }
