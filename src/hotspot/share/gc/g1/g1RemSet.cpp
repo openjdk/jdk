@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1068,7 +1068,7 @@ class G1MergeHeapRootsPrefetchCache {
 public:
   static const uint CacheSize = G1MergeHeapRootsPrefetchCacheSize;
 
-  STATIC_ASSERT(is_power_of_2(CacheSize));
+  static_assert(is_power_of_2(CacheSize), "Cache size must be power of 2");
 
 private:
   T* _cache[CacheSize];
@@ -1078,9 +1078,11 @@ private:
   NONCOPYABLE(G1MergeHeapRootsPrefetchCache);
 
 protected:
-  // Initial content of all elements in the cache. It's value be "neutral", i.e.
-  // no work done on it.
+  // Initial content of all elements in the cache. It's value should be
+  // "neutral", i.e. no work done on it when processing it.
   G1CardTable::CardValue _dummy_card;
+
+  ~G1MergeHeapRootsPrefetchCache() { }
 
 public:
 
@@ -1134,7 +1136,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
 
     public:
       G1MergeCardSetCache(G1MergeCardSetClosure* const merge_card_cl) :
-        // Initially set dummy card value to dirty to avoid any actual mark work if we
+        // Initially set dummy card value to Dirty to avoid any actual mark work if we
         // try to process it.
         G1MergeHeapRootsPrefetchCache<G1CardTable::CardValue, true>(G1CardTable::dirty_card_val()),
         _merge_card_cl(merge_card_cl) { }
@@ -1327,7 +1329,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
 
     public:
       G1MergeLogBufferCardsCache(G1MergeLogBufferCardsClosure* const merge_log_buffer_cl) :
-        // Initially set dummy card value to clean to avoid any actual work if we
+        // Initially set dummy card value to Clean to avoid any actual work if we
         // try to process it.
         G1MergeHeapRootsPrefetchCache<G1CardTable::CardValue, false>(G1CardTable::clean_card_val()),
         _merge_log_buffer_cl(merge_log_buffer_cl) { }

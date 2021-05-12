@@ -21,9 +21,9 @@
  * questions.
  */
 
-#ifndef CPU_AARCH64_GC_G1_G1GLOBALS_X86_HPP
-#define CPU_AARCH64_GC_G1_G1GLOBALS_X86_HPP
+#ifndef CPU_X86_GC_G1_G1GLOBALS_X86_HPP
+#define CPU_X86_GC_G1_G1GLOBALS_X86_HPP
 
 const size_t G1MergeHeapRootsPrefetchCacheSize = 8;
 
-#endif // CPU_AARCH64_GC_G1_G1GLOBALS_X86_HPP
+#endif // CPU_X86_GC_G1_G1GLOBALS_X86_HPP

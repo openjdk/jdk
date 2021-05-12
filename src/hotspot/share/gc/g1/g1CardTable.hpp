@@ -93,8 +93,8 @@ public:
     return pointer_delta(p, _byte_map, sizeof(CardValue));
   }
 
-  // Mark the given card as Dirty if it is Clean. Returns whether the card has
-  // been Clean before this operation. This result may be inaccurate as it does not
+  // Mark the given card as Dirty if it is Clean. Returns whether the card was
+  // Clean before this operation. This result may be inaccurate as it does not
   // perform the dirtying atomically.
   inline bool mark_clean_as_dirty(CardValue* card);
 
