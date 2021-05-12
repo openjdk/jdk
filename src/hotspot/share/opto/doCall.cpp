@@ -152,12 +152,6 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     return cg;
   }
 
-  // If explicit rounding is required, do not inline strict into non-strict code (or the reverse).
-  if (Matcher::strict_fp_requires_explicit_rounding &&
-      caller->is_strict() != callee->is_strict()) {
-    allow_inline = false;
-  }
-
   // Attempt to inline...
   if (allow_inline) {
     // The profile data is only partly attributable to this caller,
@@ -682,9 +676,6 @@ void Parse::do_call() {
       Node* cast = cast_not_null(receiver);
       // %%% assert(receiver == cast, "should already have cast the receiver");
     }
-
-    // Round double result after a call from strict to non-strict code
-    round_double_result(cg->method());
 
     ciType* rtype = cg->method()->return_type();
     ciType* ctype = declared_signature->return_type();

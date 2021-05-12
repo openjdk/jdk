@@ -9845,9 +9845,9 @@ instruct mulDPR_reg(regDPR dst, regDPR src) %{
 // rescale product by 2^(15360)
 //
 instruct strictfp_mulDPR_reg(regDPR1 dst, regnotDPR1 src) %{
-  predicate( UseSSE<=1 && Compile::current()->has_method() && Compile::current()->method()->is_strict() );
+  predicate( UseSSE<=1 && Compile::current()->has_method() );
   match(Set dst (MulD dst src));
-  ins_cost(1);   // Select this instruction for all strict FP double multiplies
+  ins_cost(1);   // Select this instruction for all FP double multiplies
 
   format %{ "FLD    StubRoutines::_fpu_subnormal_bias1\n\t"
             "DMULp  $dst,ST\n\t"
@@ -9964,7 +9964,7 @@ instruct divDPR_reg(regDPR dst, regDPR src) %{
 instruct strictfp_divDPR_reg(regDPR1 dst, regnotDPR1 src) %{
   predicate (UseSSE<=1);
   match(Set dst (DivD dst src));
-  predicate( UseSSE<=1 && Compile::current()->has_method() && Compile::current()->method()->is_strict() );
+  predicate( UseSSE<=1 && Compile::current()->has_method() );
   ins_cost(01);
 
   format %{ "FLD    StubRoutines::_fpu_subnormal_bias1\n\t"
@@ -9982,7 +9982,7 @@ instruct strictfp_divDPR_reg(regDPR1 dst, regnotDPR1 src) %{
 %}
 
 instruct divDPR_reg_round(stackSlotD dst, regDPR src1, regDPR src2) %{
-  predicate( UseSSE<=1 && !(Compile::current()->has_method() && Compile::current()->method()->is_strict()) );
+  predicate( UseSSE<=1 && false );
   match(Set dst (RoundDouble (DivD src1 src2)));
 
   format %{ "FLD    $src1\n\t"

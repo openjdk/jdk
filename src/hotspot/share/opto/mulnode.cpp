@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ const Type* MulNode::Value(PhaseGVN* phase) const {
 #if defined(IA32)
   // Can't trust native compilers to properly fold strict double
   // multiplication with round-to-zero on this platform.
-  if (op == Op_MulD && phase->C->method()->is_strict()) {
+  if (op == Op_MulD) {
     return TypeD::DOUBLE;
   }
 #endif
