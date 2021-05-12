@@ -237,13 +237,8 @@ public class AnnotationParser {
         Class<? extends Annotation> annotationClass = null;
         String sig = "[unknown]";
         try {
-            try {
-                sig = constPool.getUTF8At(typeIndex);
-                annotationClass = (Class<? extends Annotation>)parseSig(sig, container);
-            } catch (IllegalArgumentException ex) {
-                // support obsolete early jsr175 format class files
-                annotationClass = (Class<? extends Annotation>)constPool.getClassAt(typeIndex);
-            }
+            sig = constPool.getUTF8At(typeIndex);
+            annotationClass = (Class<? extends Annotation>)parseSig(sig, container);
         } catch (NoClassDefFoundError e) {
             if (exceptionOnMissingAnnotationClass)
                 // note: at this point sig is "[unknown]" or VM-style
@@ -420,17 +415,11 @@ public class AnnotationParser {
                                           Class<?> container) {
         int classIndex = buf.getShort() & 0xFFFF;
         try {
-            try {
-                String sig = constPool.getUTF8At(classIndex);
-                return parseSig(sig, container);
-            } catch (IllegalArgumentException ex) {
-                // support obsolete early jsr175 format class files
-                return constPool.getClassAt(classIndex);
-            }
+            String sig = constPool.getUTF8At(classIndex);
+            return parseSig(sig, container);
         } catch (NoClassDefFoundError e) {
             return new TypeNotPresentExceptionProxy("[unknown]", e);
-        }
-        catch (TypeNotPresentException e) {
+        } catch (TypeNotPresentException e) {
             return new TypeNotPresentExceptionProxy(e.typeName(), e.getCause());
         }
     }
@@ -474,11 +463,6 @@ public class AnnotationParser {
         int constNameIndex = buf.getShort() & 0xFFFF;
         String constName = constPool.getUTF8At(constNameIndex);
         if (!enumType.isEnum()) {
-            return new AnnotationTypeMismatchExceptionProxy(
-                typeName + "." + constName);
-        } else if (!typeName.endsWith(";")) {
-            // support now-obsolete early jsr175-format class files.
-            if (!enumType.getName().equals(typeName))
             return new AnnotationTypeMismatchExceptionProxy(
                 typeName + "." + constName);
         } else if (enumType != parseSig(typeName, container)) {

@@ -26,6 +26,7 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zBreakpoint.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDriver.hpp"
@@ -397,6 +398,19 @@ public:
   }
 };
 
+// Macro to execute a termination check after a concurrent phase. Note
+// that it's important that the termination check comes after the call
+// to the function f, since we can't abort between pause_relocate_start()
+// and concurrent_relocate(). We need to let concurrent_relocate() call
+// abort_page() on the remaining entries in the relocation set.
+#define concurrent(f)                 \
+  do {                                \
+    concurrent_##f();                 \
+    if (should_terminate()) {         \
+      return;                         \
+    }                                 \
+  } while (false)
+
 void ZDriver::gc(GCCause::Cause cause) {
   ZDriverGCScope scope(cause);
 
@@ -404,31 +418,31 @@ void ZDriver::gc(GCCause::Cause cause) {
   pause_mark_start();
 
   // Phase 2: Concurrent Mark
-  concurrent_mark();
+  concurrent(mark);
 
   // Phase 3: Pause Mark End
   while (!pause_mark_end()) {
     // Phase 3.5: Concurrent Mark Continue
-    concurrent_mark_continue();
+    concurrent(mark_continue);
   }
 
   // Phase 4: Concurrent Process Non-Strong References
-  concurrent_process_non_strong_references();
+  concurrent(process_non_strong_references);
 
   // Phase 5: Concurrent Reset Relocation Set
-  concurrent_reset_relocation_set();
+  concurrent(reset_relocation_set);
 
   // Phase 6: Pause Verify
   pause_verify();
 
   // Phase 7: Concurrent Select Relocation Set
-  concurrent_select_relocation_set();
+  concurrent(select_relocation_set);
 
   // Phase 8: Pause Relocate Start
   pause_relocate_start();
 
   // Phase 9: Concurrent Relocate
-  concurrent_relocate();
+  concurrent(relocate);
 }
 
 void ZDriver::run_service() {
@@ -456,5 +470,6 @@ void ZDriver::run_service() {
 }
 
 void ZDriver::stop_service() {
+  ZAbort::abort();
   _gc_cycle_port.send_async(GCCause::_no_gc);
 }

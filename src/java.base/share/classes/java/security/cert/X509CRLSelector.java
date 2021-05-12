@@ -597,10 +597,9 @@ public class X509CRLSelector implements CRLSelector {
      *         {@code false} otherwise
      */
     public boolean match(CRL crl) {
-        if (!(crl instanceof X509CRL)) {
+        if (!(crl instanceof X509CRL xcrl)) {
             return false;
         }
-        X509CRL xcrl = (X509CRL)crl;
 
         /* match on issuer name */
         if (issuerNames != null) {

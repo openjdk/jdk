@@ -423,4 +423,9 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
       throw new DebuggerException(e);
     }
   }
+
+  @Override
+  public String findSymbol(String symbol) {
+    return execCommandOnServer("findsym", Map.of("symbol", symbol));
+  }
 }

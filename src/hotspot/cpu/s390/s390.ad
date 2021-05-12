@@ -957,7 +957,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // Touch the polling page.
   if (need_polling) {
-    __ z_lg(Z_R1_scratch, Address(Z_thread, Thread::polling_page_offset()));
+    __ z_lg(Z_R1_scratch, Address(Z_thread, JavaThread::polling_page_offset()));
     // We need to mark the code position where the load from the safepoint
     // polling page was emitted as relocInfo::poll_return_type here.
     __ relocate(relocInfo::poll_return_type);
@@ -1797,9 +1797,6 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
 // into registers?
 bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
   return clone_base_plus_offset_address(m, mstack, address_visited);
-}
-
-void Compile::reshape_address(AddPNode* addp) {
 }
 
 %} // source

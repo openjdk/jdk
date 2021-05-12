@@ -3824,7 +3824,7 @@ public final class String
         }
         char lastChar = charAt(length - 1);
         boolean optOut = lastChar == '\n' || lastChar == '\r';
-        List<String> lines = lines().collect(Collectors.toList());
+        List<String> lines = lines().toList();
         final int outdent = optOut ? 0 : outdent(lines);
         return lines.stream()
             .map(line -> {
