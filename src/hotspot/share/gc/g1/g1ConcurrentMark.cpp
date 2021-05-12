@@ -1580,7 +1580,7 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
 
     // Parallel processing task executor.
     G1CMRefProcTaskExecutor par_task_executor(_g1h, this,
-                                             _g1h->workers(), active_workers);
+                                              _g1h->workers(), active_workers);
     AbstractRefProcTaskExecutor* executor = (rp->processing_is_mt() ? &par_task_executor : NULL);
 
     ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->max_num_queues());
