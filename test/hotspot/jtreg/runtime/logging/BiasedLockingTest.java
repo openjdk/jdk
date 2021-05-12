@@ -37,7 +37,7 @@ import jdk.test.lib.process.ProcessTools;
 public class BiasedLockingTest {
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Biased locking enabled");
+        output.shouldContain("Biased Locking is not supported");
         output.shouldHaveExitValue(0);
     }
 

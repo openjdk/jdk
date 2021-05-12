@@ -4099,6 +4099,12 @@ jint Arguments::apply_ergo() {
       LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(valuebasedclasses));
     }
   }
+
+  if (!FLAG_IS_DEFAULT(UseBiasedLocking) && UseBiasedLocking) {
+    warning("Biased Locking is not supported with Lilliput build; ignoring UseBiasedLocking flag." );
+  }
+  UseBiasedLocking = false;
+
   return JNI_OK;
 }
 
