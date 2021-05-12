@@ -837,23 +837,6 @@ void Canonicalizer::do_TableSwitch(TableSwitch* x) {
       sux = x->sux_at(v - x->lo_key());
     }
     set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
-  } else if (x->number_of_sux() == 1) {
-    // NOTE: Code permanently disabled for now since the switch statement's
-    //       tag expression may produce side-effects in which case it must
-    //       be executed.
-    return;
-    // simplify to Goto
-    set_canonical(new Goto(x->default_sux(), x->state_before(), x->is_safepoint()));
-  } else if (x->number_of_sux() == 2) {
-    // NOTE: Code permanently disabled for now since it produces two new nodes
-    //       (Constant & If) and the Canonicalizer cannot return them correctly
-    //       yet. For now we copied the corresponding code directly into the
-    //       GraphBuilder (i.e., we should never reach here).
-    return;
-    // simplify to If
-    assert(x->lo_key() == x->hi_key(), "keys must be the same");
-    Constant* key = new Constant(new IntConstant(x->lo_key()));
-    set_canonical(new If(x->tag(), If::eql, true, key, x->sux_at(0), x->default_sux(), x->state_before(), x->is_safepoint()));
   }
 }
 
@@ -868,23 +851,6 @@ void Canonicalizer::do_LookupSwitch(LookupSwitch* x) {
       }
     }
     set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
-  } else if (x->number_of_sux() == 1) {
-    // NOTE: Code permanently disabled for now since the switch statement's
-    //       tag expression may produce side-effects in which case it must
-    //       be executed.
-    return;
-    // simplify to Goto
-    set_canonical(new Goto(x->default_sux(), x->state_before(), x->is_safepoint()));
-  } else if (x->number_of_sux() == 2) {
-    // NOTE: Code permanently disabled for now since it produces two new nodes
-    //       (Constant & If) and the Canonicalizer cannot return them correctly
-    //       yet. For now we copied the corresponding code directly into the
-    //       GraphBuilder (i.e., we should never reach here).
-    return;
-    // simplify to If
-    assert(x->length() == 1, "length must be the same");
-    Constant* key = new Constant(new IntConstant(x->key_at(0)));
-    set_canonical(new If(x->tag(), If::eql, true, key, x->sux_at(0), x->default_sux(), x->state_before(), x->is_safepoint()));
   }
 }
 
