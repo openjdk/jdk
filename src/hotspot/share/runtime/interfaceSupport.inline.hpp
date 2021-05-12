@@ -202,6 +202,7 @@ class ThreadInVMfromNative : public ThreadStateTransition {
     trans_from_native(_thread_in_vm);
   }
   ~ThreadInVMfromNative() {
+    assert(_thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
     assert(!_thread->has_last_Java_frame() || _thread->frame_anchor()->walkable(), "Unwalkable stack in vm->native transition");
     _thread->set_thread_state(_thread_in_native);
   }

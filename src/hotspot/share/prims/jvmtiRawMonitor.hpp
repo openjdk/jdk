@@ -39,18 +39,18 @@
 
 // Important note:
 // Raw monitors can be used in callbacks which happen during safepoint by the VM
-// thread (e.g. heapRootCallback). This means we may not tranisition/safepoint
-// poll in many cases, else the agent JavaThread can deadlock with VM thread,
+// thread (e.g., heapRootCallback). This means we may not transition/safepoint
+// poll in many cases, else the agent JavaThread can deadlock with the VM thread,
 // as this old comment says:
 // "We can't safepoint block in here because we could deadlock the vmthread. Blech."
 // The rules are:
 // - We must never safepoint poll if raw monitor is owned.
-// - We may safepoint poll before it is owned and after it have been released.
+// - We may safepoint poll before it is owned and after it has been released.
 // If this were the only thing we needed to think about we could just stay in
-// native for all operations. However we need to honor suspend request, not
-// entering a monitor if suspended, and check for interrupts. Honoring suspened
-// and reading interrupt flag must be done from VM state (a safepoint unsafe
-// state).
+// native for all operations. However we need to honor a suspend request, not
+// entering a monitor if suspended, and check for interrupts. Honoring a suspend
+// request// and reading the interrupt flag must be done from VM state
+// (a safepoint unsafe state).
 
 class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
 
