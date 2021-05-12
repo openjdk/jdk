@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,11 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-
-package vm.runtime.defmeth.shared.annotation;
-
-import vm.runtime.defmeth.shared.ExecutionMode;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-/**
- * Mark a test that it may fail (due to a test or product bug).
- * Allows to exclude all failing tests when failures are undesirable.
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface KnownFailure {
-    ExecutionMode[] modes() default {};
+public class IndirectImpInfApp {
+    public static void main(String args[]) {
+        IndirectImpInf i = new IndirectImpInf();
+        System.out.println(i.doit());
+    }
 }

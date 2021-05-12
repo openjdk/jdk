@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,34 @@
  * questions.
  */
 
-package vm.runtime.defmeth.shared.annotation;
+package org.openjdk.bench.java.nio.channels;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+
+import java.io.*;
+import java.net.*;
+import java.nio.*;
+import java.nio.channels.*;
 
 /**
- * Mark a test that it may crash VM.
- * Allows to exclude all such tests when crashes are undesirable
- * (e.g. same VM execution mode).
+ * Benchmark for the Selector wakeup mechanism. Intended primarily for the
+ * epoll(7)-based implementation on Linux.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface Crash {}
+@State(Scope.Thread)
+public class SelectorWakeup {
+    private Selector sel;
+
+    @Setup(Level.Iteration)
+    public void setup() throws IOException {
+        sel = Selector.open();
+    }
+
+    @Benchmark
+    public int test() throws IOException {
+        return sel.wakeup().select();
+    }
+}

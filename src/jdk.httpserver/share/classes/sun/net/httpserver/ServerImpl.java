@@ -290,15 +290,19 @@ class ServerImpl implements TimeSource {
             try {
                 if (r instanceof WriteFinishedEvent) {
 
+                    logger.log(Level.TRACE, "Write Finished");
                     int exchanges = endExchange();
                     if (terminating && exchanges == 0) {
                         finished = true;
                     }
-                    responseCompleted (c);
                     LeftOverInputStream is = t.getOriginalInputStream();
                     if (!is.isEOF()) {
                         t.close = true;
+                        if (c.getState() == State.REQUEST) {
+                            requestCompleted(c);
+                        }
                     }
+                    responseCompleted (c);
                     if (t.close || idleConnections.size() >= MAX_IDLE_CONNECTIONS) {
                         c.close();
                         allConnections.remove (c);
@@ -512,6 +516,7 @@ class ServerImpl implements TimeSource {
 
         public void run () {
             /* context will be null for new connections */
+            logger.log(Level.TRACE, "exchange started");
             context = connection.getHttpContext();
             boolean newconnection;
             SSLEngine engine = null;
@@ -678,6 +683,9 @@ class ServerImpl implements TimeSource {
             } catch (Exception e4) {
                 logger.log (Level.TRACE, "ServerImpl.Exchange (4)", e4);
                 closeConnection(connection);
+            } catch (Throwable t) {
+                logger.log(Level.TRACE, "ServerImpl.Exchange (5)", t);
+                throw t;
             }
         }
 

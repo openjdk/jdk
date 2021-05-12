@@ -42,12 +42,6 @@
 #include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
 
-static const char* indent(uint level) {
-  static const char* Indents[] = {"", "  ", "    ", "      ", "        ", "          "};
-  assert(level < ARRAY_SIZE(Indents), "Too high indent level %u", level);
-  return Indents[level];
-}
-
 G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _max_gc_threads(max_gc_threads),
   _gc_start_counter(0),
@@ -315,26 +309,26 @@ size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase, uint index) {
 }
 
 template <class T>
-void G1GCPhaseTimes::details(T* phase, const char* indent_str) const {
+void G1GCPhaseTimes::details(T* phase, uint indent_level) const {
   LogTarget(Trace, gc, phases, task) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    ls.print("%s", indent_str);
+    ls.sp(indent_level * 2);
     phase->print_details_on(&ls);
   }
 }
 
 void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent_level, outputStream* out, bool print_sum) const {
-  out->print("%s", indent(indent_level));
+  out->sp(indent_level * 2);
   phase->print_summary_on(out, print_sum);
-  details(phase, indent(indent_level));
+  details(phase, indent_level);
 
   for (uint i = 0; i < phase->MaxThreadWorkItems; i++) {
     WorkerDataArray<size_t>* work_items = phase->thread_work_items(i);
     if (work_items != NULL) {
-      out->print("%s", indent(indent_level + 1));
+      out->sp((indent_level + 1) * 2);
       work_items->print_summary_on(out, true);
-      details(work_items, indent(indent_level + 1));
+      details(work_items, indent_level + 1);
     }
   }
 }
@@ -359,11 +353,11 @@ void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum,
 #define TIME_FORMAT "%.1lfms"
 
 void G1GCPhaseTimes::info_time(const char* name, double value) const {
-  log_info(gc, phases)("%s%s: " TIME_FORMAT, indent(1), name, value);
+  log_info(gc, phases)("  %s: " TIME_FORMAT, name, value);
 }
 
 void G1GCPhaseTimes::debug_time(const char* name, double value) const {
-  log_debug(gc, phases)("%s%s: " TIME_FORMAT, indent(2), name, value);
+  log_debug(gc, phases)("    %s: " TIME_FORMAT, name, value);
 }
 
 void G1GCPhaseTimes::debug_time_for_reference(const char* name, double value) const {
@@ -372,19 +366,19 @@ void G1GCPhaseTimes::debug_time_for_reference(const char* name, double value) co
 
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    ls.print_cr("%s%s: " TIME_FORMAT, indent(2), name, value);
+    ls.print_cr("    %s: " TIME_FORMAT, name, value);
   } else if (lt2.is_enabled()) {
     LogStream ls(lt2);
-    ls.print_cr("%s%s: " TIME_FORMAT, indent(2), name, value);
+    ls.print_cr("    %s: " TIME_FORMAT, name, value);
   }
 }
 
 void G1GCPhaseTimes::trace_time(const char* name, double value) const {
-  log_trace(gc, phases)("%s%s: " TIME_FORMAT, indent(3), name, value);
+  log_trace(gc, phases)("      %s: " TIME_FORMAT, name, value);
 }
 
 void G1GCPhaseTimes::trace_count(const char* name, size_t value) const {
-  log_trace(gc, phases)("%s%s: " SIZE_FORMAT, indent(3), name, value);
+  log_trace(gc, phases)("      %s: " SIZE_FORMAT, name, value);
 }
 
 double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
