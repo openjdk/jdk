@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,13 +305,12 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      * @param pos the position in the SQL <code>BLOB</code> value at which
      *     to start writing. The first position is <code>1</code>;
      *     must not be less than <code>1</code> nor greater than
-     *     the length of this <code>SerialBlob</code> object.
+     *     the length+1 of this {@code SerialBlob} object.
      * @param bytes the array of bytes to be written to the <code>BLOB</code>
      *        value that this <code>Blob</code> object represents
      * @return the number of bytes written
      * @throws SerialException if there is an error accessing the
-     *     <code>BLOB</code> value; or if an invalid position is set; if an
-     *     invalid offset value is set;
+     *     {@code BLOB} value; or if an invalid position is set;
      * if {@code free} had previously been called on this object
      * @throws SQLException if there is an error accessing the <code>BLOB</code>
      *         value from the database
@@ -327,27 +326,27 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      * <code>BLOB</code> value that this <code>Blob</code> object represents
      * and returns the number of bytes written.
      * Writing starts at position <code>pos</code> in the <code>BLOB</code>
-     * value; <i>len</i> bytes from the given byte array are written.
+     * value; {@code length} bytes from the given byte array are written.
      *
      * @param pos the position in the <code>BLOB</code> object at which
      *     to start writing. The first position is <code>1</code>;
      *     must not be less than <code>1</code> nor greater than
-     *     the length of this <code>SerialBlob</code> object.
+     *     the length+1 of this {@code SerialBlob} object.
      * @param bytes the array of bytes to be written to the <code>BLOB</code>
      *     value
-     * @param offset the offset in the <code>byte</code> array at which
-     *     to start reading the bytes. The first offset position is
+     * @param offset the offset into the array {@code bytes} at which
+     *     to start reading the bytes to be set. The first offset position is
      *     <code>0</code>; must not be less than <code>0</code> nor greater
-     *     than the length of the <code>byte</code> array
+     *     than the length of the array {@code bytes}
      * @param length the number of bytes to be written to the
-     *     <code>BLOB</code> value from the array of bytes <i>bytes</i>.
+     *     <code>BLOB</code> value from the array of bytes {@code bytes}
      *
      * @return the number of bytes written
      * @throws SerialException if there is an error accessing the
      *     <code>BLOB</code> value; if an invalid position is set; if an
-     *     invalid offset value is set; if number of bytes to be written
-     *     is greater than the <code>SerialBlob</code> length; or the combined
-     *     values of the length and offset is greater than the Blob buffer;
+     *     invalid offset value is set; or the combined values of the
+     *     {@code length} and {@code offset} is greater than the length of
+     *     {@code bytes};
      * if {@code free} had previously been called on this object
      * @throws SQLException if there is an error accessing the <code>BLOB</code>
      *         value from the database.
@@ -361,26 +360,29 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
             throw new SerialException("Invalid offset in byte array set");
         }
 
-        if (pos < 1 || pos > this.length()) {
+        if (pos < 1 || pos > len + 1) {
             throw new SerialException("Invalid position in BLOB object set");
-        }
-
-        if ((long)(length) > origLen) {
-            throw new SerialException("Buffer is not sufficient to hold the value");
         }
 
         if ((length + offset) > bytes.length) {
             throw new SerialException("Invalid OffSet. Cannot have combined offset " +
-                    "and length that is greater that the Blob buffer");
+                    "and length that is greater than the length of bytes");
         }
 
-        int i = 0;
-        pos--; // correct to array indexing
-        while ( i < length || (offset + i +1) < (bytes.length-offset) ) {
-            this.buf[(int)pos + i] = bytes[offset + i ];
-            i++;
+        if (pos - 1 + length > Integer.MAX_VALUE) {
+            throw new SerialException("Invalid length. Cannot have combined pos " +
+                    "and length that is greater than Integer.MAX_VALUE");
         }
-        return i;
+
+        pos--; // correct to array indexing
+        if (pos + length > len) {
+            len = pos + length;
+            byte[] newbuf = new byte[(int)len];
+            System.arraycopy(buf, 0, newbuf, 0, (int)pos);
+            buf = newbuf;
+        }
+        System.arraycopy(bytes, offset, buf, (int)pos, length);
+        return length;
     }
 
     /**
