@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package vm.runtime.defmeth;
 
 import nsk.share.test.TestBase;
 import vm.runtime.defmeth.shared.DefMethTest;
-import vm.runtime.defmeth.shared.annotation.KnownFailure;
 import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.data.method.param.NewInstanceParam;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
@@ -87,8 +86,6 @@ public class DefaultVsAbstractTest extends DefMethTest {
      * TEST: C c = new D(); c.m() ==> AME
      * TEST: D d = new D(); d.m() ==> AME
      */
-    @KnownFailure(modes = {INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY }) // Test1_I_D_m: NPE instead of AME
-                                                                                   // Test3_D_D_m: AME => IAE => ICCE instead of AME
     public void test1() {
         TestBuilder b = factory.getBuilder();
 
@@ -130,8 +127,6 @@ public class DefaultVsAbstractTest extends DefMethTest {
      * TEST: C o = new D(); o.m()I throws AME
      * TEST: D o = new D(); o.m()I throws AME
      */
-    @KnownFailure(modes = { INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY }) // Test1_I_D_m: NPE instead of AME
-                                                                                    // Test3_D_D_m: AME => IAE => ICCE instead of AME
     public void test2() {
         TestBuilder b = factory.getBuilder();
 
@@ -218,11 +213,6 @@ public class DefaultVsAbstractTest extends DefMethTest {
      * TEST: D o = new C(); o.m()I throws AME
      * TEST: C o = new C(); o.m()I throws AME
      */
-    @KnownFailure(modes = {
-        INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY // Test1_I_C_m: NPE instead of AME
-                                                             // Test3_D_C_m: AME => IAE => ICCE instead of AME
-                                                             // Test4_C_C_m: AME => IAE => ICCE instead of AME
-    })
     public void test4() {
         TestBuilder b = factory.getBuilder();
 
@@ -445,10 +435,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
      *
      * class B extends A implements J;
      *
-     * TEST: A o = new B(); o.m()I
-     *                ICCE for DIRECT mode
-     *                AME for REFLECTION and INVOKE_WITH_ARGS modes
-     *                IAE for other modes
+     * TEST: A o = new B(); o.m()I throws ICCE
      */
     public void testInvokeInterfaceClassAbstractMethod() {
         TestBuilder b = factory.getBuilder();
@@ -465,16 +452,11 @@ public class DefaultVsAbstractTest extends DefMethTest {
 
         ConcreteClass B = b.clazz("B").extend(A).implement(J).build();
 
-        String exeMode = factory.getExecutionMode();
-
-        // ICCE in direct mode due to
         // JVMS-5.4.3.4. Interface Method Resolution
         //   When resolving an interface method reference:
         //     If C is not an interface, interface method resolution throws an IncompatibleClassChangeError.
-        Class expectedError = IncompatibleClassChangeError.class;;
-
         b.test().interfaceCallSite(A, B, "m", "()I")
-         .throws_(expectedError).done()
+         .throws_(IncompatibleClassChangeError.class).done()
          .run();
 
     }
@@ -492,8 +474,7 @@ public class DefaultVsAbstractTest extends DefMethTest {
      *
      * class B extends A implements J;
      *
-     * TEST: A o = new B(); o.m()I
-     *                ICCE for all modes
+     * TEST: A o = new B(); o.m()I throws ICCE
      */
     public void testInvokeInterfaceMultipleDefinedClassDefaultMethod() {
         TestBuilder b = factory.getBuilder();
@@ -510,16 +491,11 @@ public class DefaultVsAbstractTest extends DefMethTest {
 
         ConcreteClass B = b.clazz("B").extend(A).implement(J).build();
 
-        String exeMode = factory.getExecutionMode();
-
-        // ICCE in direct mode due to
         // JVMS-5.4.3.4. Interface Method Resolution
         //   When resolving an interface method reference:
         //     If C is not an interface, interface method resolution throws an IncompatibleClassChangeError.
-        Class expectedError = IncompatibleClassChangeError.class;
-
         b.test().interfaceCallSite(A, B, "m", "()I")
-         .throws_(expectedError).done()
+         .throws_(IncompatibleClassChangeError.class).done()
          .run();
     }
 
