@@ -356,12 +356,9 @@ public class HtmlDoclet extends AbstractDoclet {
                     }
                     DocPath filePath = DocPaths.LEGAL.resolve(entry.getFileName().toString());
                     DocFile df = DocFile.createFileForOutput(configuration, filePath);
-                    try (OutputStream out = df.openOutputStream()) {
-                        Files.copy(entry, out);
-                    }
+                    df.copyFile(DocFile.createFileForInput(configuration, entry));
                 }
             } catch (IOException e) {
-                e.printStackTrace();
                 messages.error("doclet.Error_copying_legal_notices", e);
             }
         }
