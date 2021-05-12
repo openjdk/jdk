@@ -450,7 +450,7 @@
  * <tbody>
  *
  * <tr>
- * <td style="text-align:center" id="EELimit">{@systemProperty jdk.xml.entityExpansionLimit}</td>
+ * <td id="EELimit">{@systemProperty jdk.xml.entityExpansionLimit}</td>
  * <td>Limits the number of entity expansions.
  * </td>
  * <td style="text-align:center" rowspan="9">yes</td>
@@ -473,14 +473,14 @@
  * <td style="text-align:center" rowspan="9">8</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="EALimit">{@systemProperty jdk.xml.elementAttributeLimit}</td>
+ * <td id="EALimit">{@systemProperty jdk.xml.elementAttributeLimit}</td>
  * <td>Limits the number of attributes an element can have.
  * </td>
  * <td style="text-align:center">10000</td>
  * <td style="text-align:center">10000</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="OccurLimit">jdk.xml.maxOccurLimit</td>
+ * <td id="OccurLimit">{@systemProperty jdk.xml.maxOccurLimit}</td>
  * <td>Limits the number of content model nodes that may be created when building
  * a grammar for a W3C XML Schema that contains maxOccurs attributes with values
  * other than "unbounded".
@@ -489,7 +489,7 @@
  * <td style="text-align:center">5000</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="SizeLimit">{@systemProperty jdk.xml.totalEntitySizeLimit}</td>
+ * <td id="SizeLimit">{@systemProperty jdk.xml.totalEntitySizeLimit}</td>
  * <td>Limits the total size of all entities that include general and parameter
  * entities. The size is calculated as an aggregation of all entities.
  * </td>
@@ -497,14 +497,14 @@
  * <td style="text-align:center">5x10^7</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="GELimit">jdk.xml.maxGeneralEntitySizeLimit</td>
+ * <td id="GELimit">{@systemProperty jdk.xml.maxGeneralEntitySizeLimit}</td>
  * <td>Limits the maximum size of any general entities.
  * </td>
  * <td style="text-align:center">0</td>
  * <td style="text-align:center">0</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="PELimit">{@systemProperty jdk.xml.maxParameterEntitySizeLimit}</td>
+ * <td id="PELimit">{@systemProperty jdk.xml.maxParameterEntitySizeLimit}</td>
  * <td>Limits the maximum size of any parameter entities, including the result
  * of nesting multiple parameter entities.
  * </td>
@@ -512,21 +512,21 @@
  * <td style="text-align:center">10^6</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="ERLimit">{@systemProperty jdk.xml.entityReplacementLimit}</td>
+ * <td id="ERLimit">{@systemProperty jdk.xml.entityReplacementLimit}</td>
  * <td>Limits the total number of nodes in all entity references.
  * </td>
  * <td style="text-align:center">3x10^6</td>
  * <td style="text-align:center">3x10^6</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="ElementDepth">{@systemProperty jdk.xml.maxElementDepth}</td>
+ * <td id="ElementDepth">{@systemProperty jdk.xml.maxElementDepth}</td>
  * <td>Limits the maximum element depth.
  * </td>
  * <td style="text-align:center">0</td>
  * <td style="text-align:center">0</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="NameLimit">{@systemProperty jdk.xml.maxXMLNameLimit}</td>
+ * <td id="NameLimit">{@systemProperty jdk.xml.maxXMLNameLimit}</td>
  * <td>Limits the maximum size of XML names, including element name, attribute
  * name and namespace prefix and URI.
  * </td>
@@ -535,7 +535,7 @@
  * </tr>
  *
  * <tr>
- * <td style="text-align:center" id="ISSTANDALONE">{@systemProperty jdk.xml.isStandalone}</td>
+ * <td id="ISSTANDALONE">{@systemProperty jdk.xml.isStandalone}</td>
  * <td>Indicates that the serializer should treat the output as a
  * standalone document. The property can be used to ensure a newline is written
  * after the XML declaration. Unlike the property
@@ -553,7 +553,7 @@
  * <td style="text-align:center">17</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="XSLTCISSTANDALONE">{@systemProperty jdk.xml.xsltcIsStandalone}</td>
+ * <td id="XSLTCISSTANDALONE">{@systemProperty jdk.xml.xsltcIsStandalone}</td>
  * <td>Indicates that the <a href="#XSLTCSerializer">XSLTC serializer</a> should
  * treat the output as a standalone document. The property can be used to ensure
  * a newline is written after the XML declaration. Unlike the property
@@ -576,7 +576,7 @@
  * <td style="text-align:center">17</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="cdataChunkSize">{@systemProperty jdk.xml.cdataChunkSize}</td>
+ * <td id="cdataChunkSize">{@systemProperty jdk.xml.cdataChunkSize}</td>
  * <td>Instructs the parser to return the data in a CData section in a single chunk
  * when the property is zero or unspecified, or in multiple chunks when it is greater
  * than zero. The parser shall split the data by linebreaks, and any chunks that are
@@ -595,7 +595,7 @@
  * <td style="text-align:center">9</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="extensionClassLoader">jdk.xml.extensionClassLoader</td>
+ * <td id="extensionClassLoader">jdk.xml.extensionClassLoader</td>
  * <td>Sets a non-null ClassLoader instance to be used for loading XSLTC java
  * extension functions.
  * </td>
@@ -638,7 +638,7 @@
  * </thead>
  * <tbody>
  * <tr>
- * <td style="text-align:center" id="ExtFunc">{@systemProperty jdk.xml.enableExtensionFunctions}</td>
+ * <td id="ExtFunc">{@systemProperty jdk.xml.enableExtensionFunctions}</td>
  * <td>Determines if XSLT and XPath extension functions are to be allowed.
  * </td>
  * <td style="text-align:center" rowspan="3">yes</td>
@@ -657,7 +657,7 @@
  * <td style="text-align:center">8</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="ORParser">{@systemProperty jdk.xml.overrideDefaultParser}</td>
+ * <td id="ORParser">{@systemProperty jdk.xml.overrideDefaultParser}</td>
  * <td>Enables the use of a 3rd party's parser implementation to override the
  * system-default parser for the JDK's Transform, Validation and XPath implementations.
  * </td>
@@ -678,7 +678,7 @@
  * <td style="text-align:center">9</td>
  * </tr>
  * <tr>
- * <td style="text-align:center" id="symbolTable">{@systemProperty jdk.xml.resetSymbolTable}</td>
+ * <td id="symbolTable">{@systemProperty jdk.xml.resetSymbolTable}</td>
  * <td>Instructs the parser to reset its internal symbol table during each parse operation.
  * </td>
  * <td>
@@ -738,56 +738,56 @@
  * </thead>
  * <tbody>
  * <tr>
- * <td style="text-align:center">{@code entityExpansionLimit}</td>
+ * <td>{@systemProperty jdk.xml.entityExpansionLimit}</td>
  * <td>{@code http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit}</td>
  * </tr>
  * <tr>
- * <td style="text-align:center">{@code elementAttributeLimit}</td>
+ * <td>{@systemProperty jdk.xml.elementAttributeLimit}</td>
  * <td>{@code http://www.oracle.com/xml/jaxp/properties/elementAttributeLimit}</td>
  * </tr>
  * <tr>
- * <td style="text-align:center">{@code maxOccurLimit}</td>
+ * <td>{@systemProperty jdk.xml.maxOccurLimit}</td>
  * <td>{@code http://www.oracle.com/xml/jaxp/properties/maxOccurLimit}</td>
  * </tr>
  * <tr>
- * <td style="text-align:center">{@code totalEntitySizeLimit}</td>
+ * <td>{@systemProperty jdk.xml.totalEntitySizeLimit}</td>
  * <td>{@code http://www.oracle.com/xml/jaxp/properties/totalEntitySizeLimit}</td>
  * </tr>
  * <tr>
- * <td style="text-align:center">{@code maxGeneralEntitySizeLimit}</td>
+ * <td>{@systemProperty jdk.xml.maxGeneralEntitySizeLimit}</td>
  * <td>{@code http://www.oracle.com/xml/jaxp/properties/maxGeneralEntitySizeLimit}</td>
  * </tr>
  * <tr>
- * <td style="text-align:center">{@code maxParameterEntitySizeLimit}</td>
+ * <td>{@systemProperty jdk.xml.maxParameterEntitySizeLimit}</td>
  * <td>{@code http://www.oracle.com/xml/jaxp/properties/maxParameterEntitySizeLimit}</td>
  * </tr>
  * <tr>
- * <td style="text-align:center">{@code entityReplacementLimit}</td>
+ * <td>{@systemProperty jdk.xml.entityReplacementLimit}</td>
  * <td>{@code http://www.oracle.com/xml/jaxp/properties/entityReplacementLimit}</td>
  * </tr>
  * <tr>
- * <td style="text-align:center">{@code maxElementDepth}</td>
+ * <td>{@systemProperty jdk.xml.maxElementDepth}</td>
  * <td>{@code http://www.oracle.com/xml/jaxp/properties/maxElementDepth}</td>
  * </tr>
  * <tr>
- * <td style="text-align:center">{@code maxXMLNameLimit}</td>
+ * <td>{@systemProperty jdk.xml.maxXMLNameLimit}</td>
  * <td>{@code http://www.oracle.com/xml/jaxp/properties/maxXMLNameLimit}</td>
  * </tr>
  * <tr>
- * <td style="text-align:center">{@code isStandalone}</td>
+ * <td>{@systemProperty jdk.xml.isStandalone}</td>
  * <td>{@code http://www.oracle.com/xml/jaxp/properties/isStandalone}</td>
  * </tr>
  * <tr>
- * <td style="text-align:center">{@code xsltcIsStandalone}</td>
+ * <td>{@systemProperty jdk.xml.xsltcIsStandalone}</td>
  * <td>{@code http://www.oracle.com/xml/is-standalone}<br>
  * {@code http://www.oracle.com/xml/jaxp/properties/xsltcIsStandalone}</td>
  * </tr>
  * <tr>
- * <td style="text-align:center">{@code extensionClassLoader}</td>
+ * <td>{@code jdk.xml.extensionClassLoader}</td>
  * <td>{@code jdk.xml.transform.extensionClassLoader}</td>
  * </tr>
  * <tr>
- * <td style="text-align:center">{@code enableExtensionFunctions}</td>
+ * <td>{@systemProperty jdk.xml.enableExtensionFunctions}</td>
  * <td>{@code http://www.oracle.com/xml/jaxp/properties/enableExtensionFunctions}</td>
  * </tr>
  * </tbody>
