@@ -121,6 +121,7 @@ public class ArraysSupport {
 
         int log2ValuesPerWidth = LOG2_ARRAY_LONG_INDEX_SCALE - log2ArrayIndexScale;
         int wi = 0;
+        // Main loop performs unsafe comparison at granularity of 8 bytes (long).
         for (; wi < length >> log2ValuesPerWidth; wi++) {
             long bi = ((long) wi) << LOG2_ARRAY_LONG_INDEX_SCALE;
             long av = U.getLongUnaligned(a, aOffset + bi);
@@ -137,27 +138,19 @@ public class ArraysSupport {
         // Calculate the tail of remaining elements to check
         int tail = length - (wi << log2ValuesPerWidth);
 
-        if (log2ArrayIndexScale < LOG2_ARRAY_INT_INDEX_SCALE) {
-            int wordTail = 1 << (LOG2_ARRAY_INT_INDEX_SCALE - log2ArrayIndexScale);
-            // Handle 4 bytes or 2 chars in the tail using int width
-            if (tail >= wordTail) {
-                long bi = ((long) wi) << LOG2_ARRAY_LONG_INDEX_SCALE;
-                int av = U.getIntUnaligned(a, aOffset + bi);
-                int bv = U.getIntUnaligned(b, bOffset + bi);
-                if (av != bv) {
-                    int x = av ^ bv;
-                    int o = BIG_ENDIAN
-                            ? Integer.numberOfLeadingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale)
-                            : Integer.numberOfTrailingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale);
-                    return (wi << log2ValuesPerWidth) + o;
-                }
-                tail -= wordTail;
+        // Remaining chunk between 0-7 bytes.
+        long tailByteOffset = (((long) wi) << LOG2_ARRAY_LONG_INDEX_SCALE);
+        int tailBytes = tail << log2ArrayIndexScale;
+        for (int i = 0 ; i < tailBytes; i++) {
+            long aTailByteOffset = aOffset + tailByteOffset + i;
+            long bTailByteOffset = bOffset + tailByteOffset + i;
+            byte av = U.getByte(a, aTailByteOffset);
+            byte bv = U.getByte(b, bTailByteOffset);
+            if(av != bv) {
+                return (int)((aTailByteOffset - aOffset) >> log2ArrayIndexScale);
             }
-            return ~tail;
         }
-        else {
-            return ~tail;
-        }
+        return -1;
     }
 
     // Booleans
@@ -166,47 +159,33 @@ public class ArraysSupport {
     public static int mismatch(boolean[] a,
                                boolean[] b,
                                int length) {
-        int i = 0;
-        if (length > 7) {
-            if (a[0] != b[0])
-                return 0;
-            i = vectorizedMismatch(
+        if (length == 0) {
+            return -1;
+        }
+        if (a[0] != b[0]) {
+            return 0;
+        }
+        return vectorizedMismatch(
                     a, Unsafe.ARRAY_BOOLEAN_BASE_OFFSET,
                     b, Unsafe.ARRAY_BOOLEAN_BASE_OFFSET,
                     length, LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
-            if (i >= 0)
-                return i;
-            i = length - ~i;
-        }
-        for (; i < length; i++) {
-            if (a[i] != b[i])
-                return i;
-        }
-        return -1;
     }
 
     public static int mismatch(boolean[] a, int aFromIndex,
                                boolean[] b, int bFromIndex,
                                int length) {
-        int i = 0;
-        if (length > 7) {
-            if (a[aFromIndex] != b[bFromIndex])
-                return 0;
-            int aOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + aFromIndex;
-            int bOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + bFromIndex;
-            i = vectorizedMismatch(
+        if (length == 0) {
+            return -1;
+        }
+        if (a[aFromIndex] != b[bFromIndex]) {
+            return 0;
+        }
+        int aOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + aFromIndex;
+        int bOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + bFromIndex;
+        return vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
                     length, LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
-            if (i >= 0)
-                return i;
-            i = length - ~i;
-        }
-        for (; i < length; i++) {
-            if (a[aFromIndex + i] != b[bFromIndex + i])
-                return i;
-        }
-        return -1;
     }
 
 
@@ -231,27 +210,16 @@ public class ArraysSupport {
         // ISSUE: defer to index receiving methods if performance is good
         // assert length <= a.length
         // assert length <= b.length
-
-        int i = 0;
-        if (length > 7) {
-            if (a[0] != b[0])
-                return 0;
-            i = vectorizedMismatch(
-                    a, Unsafe.ARRAY_BYTE_BASE_OFFSET,
-                    b, Unsafe.ARRAY_BYTE_BASE_OFFSET,
-                    length, LOG2_ARRAY_BYTE_INDEX_SCALE);
-            if (i >= 0)
-                return i;
-            // Align to tail
-            i = length - ~i;
-//            assert i >= 0 && i <= 7;
+        if (length == 0) {
+            return -1;
         }
-        // Tail < 8 bytes
-        for (; i < length; i++) {
-            if (a[i] != b[i])
-                return i;
+        if (a[0] != b[0]) {
+            return 0;
         }
-        return -1;
+        return vectorizedMismatch(
+                   a, Unsafe.ARRAY_BYTE_BASE_OFFSET,
+                   b, Unsafe.ARRAY_BYTE_BASE_OFFSET,
+                   length, LOG2_ARRAY_BYTE_INDEX_SCALE);
     }
 
     /**
@@ -280,26 +248,18 @@ public class ArraysSupport {
         // assert 0 <= bFromIndex < b.length
         // assert 0 <= bFromIndex + length <= b.length
         // assert length >= 0
-
-        int i = 0;
-        if (length > 7) {
-            if (a[aFromIndex] != b[bFromIndex])
-                return 0;
-            int aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + aFromIndex;
-            int bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + bFromIndex;
-            i = vectorizedMismatch(
+        if (length == 0) {
+            return -1;
+        }
+        if (a[aFromIndex] != b[bFromIndex]) {
+            return 0;
+        }
+        int aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + aFromIndex;
+        int bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + bFromIndex;
+        return vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
                     length, LOG2_ARRAY_BYTE_INDEX_SCALE);
-            if (i >= 0)
-                return i;
-            i = length - ~i;
-        }
-        for (; i < length; i++) {
-            if (a[aFromIndex + i] != b[bFromIndex + i])
-                return i;
-        }
-        return -1;
     }
 
 
@@ -308,47 +268,33 @@ public class ArraysSupport {
     public static int mismatch(char[] a,
                                char[] b,
                                int length) {
-        int i = 0;
-        if (length > 3) {
-            if (a[0] != b[0])
-                return 0;
-            i = vectorizedMismatch(
+        if (length == 0) {
+            return -1;
+        }
+        if (a[0] != b[0]) {
+            return 0;
+        }
+        return vectorizedMismatch(
                     a, Unsafe.ARRAY_CHAR_BASE_OFFSET,
                     b, Unsafe.ARRAY_CHAR_BASE_OFFSET,
                     length, LOG2_ARRAY_CHAR_INDEX_SCALE);
-            if (i >= 0)
-                return i;
-            i = length - ~i;
-        }
-        for (; i < length; i++) {
-            if (a[i] != b[i])
-                return i;
-        }
-        return -1;
     }
 
     public static int mismatch(char[] a, int aFromIndex,
                                char[] b, int bFromIndex,
                                int length) {
-        int i = 0;
-        if (length > 3) {
-            if (a[aFromIndex] != b[bFromIndex])
-                return 0;
-            int aOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
-            int bOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
-            i = vectorizedMismatch(
+        if (length == 0) {
+            return -1;
+        }
+        if (a[aFromIndex] != b[bFromIndex]) {
+            return 0;
+        }
+        int aOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
+        int bOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
+        return vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
                     length, LOG2_ARRAY_CHAR_INDEX_SCALE);
-            if (i >= 0)
-                return i;
-            i = length - ~i;
-        }
-        for (; i < length; i++) {
-            if (a[aFromIndex + i] != b[bFromIndex + i])
-                return i;
-        }
-        return -1;
     }
 
 
@@ -357,96 +303,66 @@ public class ArraysSupport {
     public static int mismatch(short[] a,
                                short[] b,
                                int length) {
-        int i = 0;
-        if (length > 3) {
-            if (a[0] != b[0])
-                return 0;
-            i = vectorizedMismatch(
+        if (length == 0) {
+            return -1;
+        }
+        if (a[0] != b[0]) {
+            return 0;
+        }
+        return vectorizedMismatch(
                     a, Unsafe.ARRAY_SHORT_BASE_OFFSET,
                     b, Unsafe.ARRAY_SHORT_BASE_OFFSET,
                     length, LOG2_ARRAY_SHORT_INDEX_SCALE);
-            if (i >= 0)
-                return i;
-            i = length - ~i;
-        }
-        for (; i < length; i++) {
-            if (a[i] != b[i])
-                return i;
-        }
-        return -1;
     }
 
     public static int mismatch(short[] a, int aFromIndex,
                                short[] b, int bFromIndex,
                                int length) {
-        int i = 0;
-        if (length > 3) {
-            if (a[aFromIndex] != b[bFromIndex])
-                return 0;
-            int aOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
-            int bOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
-            i = vectorizedMismatch(
+        if (length == 0) {
+            return -1;
+        }
+        if (a[aFromIndex] != b[bFromIndex]) {
+            return 0;
+        }
+        int aOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
+        int bOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
+        return vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
                     length, LOG2_ARRAY_SHORT_INDEX_SCALE);
-            if (i >= 0)
-                return i;
-            i = length - ~i;
-        }
-        for (; i < length; i++) {
-            if (a[aFromIndex + i] != b[bFromIndex + i])
-                return i;
-        }
-        return -1;
     }
 
-
-    // Ints
 
     public static int mismatch(int[] a,
                                int[] b,
                                int length) {
-        int i = 0;
-        if (length > 1) {
-            if (a[0] != b[0])
-                return 0;
-            i = vectorizedMismatch(
+        if (length == 0) {
+            return -1;
+        }
+        if (a[0] != b[0]) {
+            return 0;
+        }
+        return vectorizedMismatch(
                     a, Unsafe.ARRAY_INT_BASE_OFFSET,
                     b, Unsafe.ARRAY_INT_BASE_OFFSET,
                     length, LOG2_ARRAY_INT_INDEX_SCALE);
-            if (i >= 0)
-                return i;
-            i = length - ~i;
-        }
-        for (; i < length; i++) {
-            if (a[i] != b[i])
-                return i;
-        }
-        return -1;
     }
 
     public static int mismatch(int[] a, int aFromIndex,
                                int[] b, int bFromIndex,
                                int length) {
-        int i = 0;
-        if (length > 1) {
-            if (a[aFromIndex] != b[bFromIndex])
-                return 0;
-            int aOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
-            int bOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
-            i = vectorizedMismatch(
+        if (length == 0) {
+            return -1;
+        }
+        if (a[aFromIndex] != b[bFromIndex]) {
+            return 0;
+        }
+        int aOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
+        int bOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
+        return vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
                     length, LOG2_ARRAY_INT_INDEX_SCALE);
-            if (i >= 0)
-                return i;
-            i = length - ~i;
-        }
-        for (; i < length; i++) {
-            if (a[aFromIndex + i] != b[bFromIndex + i])
-                return i;
-        }
-        return -1;
     }
 
 
@@ -505,13 +421,13 @@ public class ArraysSupport {
         if (length == 0) {
             return -1;
         }
-        if (a[0] != b[0])
+        if (a[0] != b[0]) {
             return 0;
-        int i = vectorizedMismatch(
-                a, Unsafe.ARRAY_LONG_BASE_OFFSET,
-                b, Unsafe.ARRAY_LONG_BASE_OFFSET,
-                length, LOG2_ARRAY_LONG_INDEX_SCALE);
-        return i >= 0 ? i : -1;
+        }
+        return vectorizedMismatch(
+                   a, Unsafe.ARRAY_LONG_BASE_OFFSET,
+                   b, Unsafe.ARRAY_LONG_BASE_OFFSET,
+                   length, LOG2_ARRAY_LONG_INDEX_SCALE);
     }
 
     public static int mismatch(long[] a, int aFromIndex,
@@ -520,15 +436,15 @@ public class ArraysSupport {
         if (length == 0) {
             return -1;
         }
-        if (a[aFromIndex] != b[bFromIndex])
+        if (a[aFromIndex] != b[bFromIndex]) {
             return 0;
+        }
         int aOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
         int bOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
-        int i = vectorizedMismatch(
-                a, aOffset,
-                b, bOffset,
-                length, LOG2_ARRAY_LONG_INDEX_SCALE);
-        return i >= 0 ? i : -1;
+        return vectorizedMismatch(
+                   a, aOffset,
+                   b, bOffset,
+                   length, LOG2_ARRAY_LONG_INDEX_SCALE);
     }
 
 

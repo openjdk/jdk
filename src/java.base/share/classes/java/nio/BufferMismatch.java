@@ -35,41 +35,36 @@ final class BufferMismatch {
     static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
     static int mismatch(ByteBuffer a, int aOff, ByteBuffer b, int bOff, int length) {
-        int i = 0;
-        if (length > 7) {
-            if (a.get(aOff) != b.get(bOff))
-                return 0;
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
+        if (length == 0) {
+            return -1;
+        }
+        if (a.get(aOff) != b.get(bOff)) {
+            return 0;
+        }
+        return SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
                     a.base(), a.address + aOff,
                     b.base(), b.address + bOff,
                     length,
                     ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
-            if (i >= 0) return i;
-            i = length - ~i;
-        }
-        for (; i < length; i++) {
-            if (a.get(aOff + i) != b.get(bOff + i))
-                return i;
-        }
-        return -1;
     }
 
     static int mismatch(CharBuffer a, int aOff, CharBuffer b, int bOff, int length) {
         int i = 0;
+        if (length == 0) {
+            return -1;
+        }
         // Ensure only heap or off-heap buffer instances use the
         // vectorized mismatch. If either buffer is a StringCharBuffer
         // (order is null) then the slow path is taken
-        if (length > 3 && a.charRegionOrder() == b.charRegionOrder()
+        if (a.charRegionOrder() == b.charRegionOrder()
             && a.charRegionOrder() != null && b.charRegionOrder() != null) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
+            return SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
                     a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE),
                     b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE),
                     length,
                     ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE);
-            if (i >= 0) return i;
-            i = length - ~i;
         }
         for (; i < length; i++) {
             if (a.get(aOff + i) != b.get(bOff + i))
@@ -80,16 +75,17 @@ final class BufferMismatch {
 
     static int mismatch(ShortBuffer a, int aOff, ShortBuffer b, int bOff, int length) {
         int i = 0;
-        if (length > 3 && a.order() == b.order()) {
+        if (length == 0) {
+            return -1;
+        }
+        if (a.order() == b.order()) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
-                    a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE),
-                    b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE),
-                    length,
-                    ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE);
-            if (i >= 0) return i;
-            i = length - ~i;
+            return SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
+                       a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE),
+                       b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE),
+                       length,
+                       ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE);
         }
         for (; i < length; i++) {
             if (a.get(aOff + i) != b.get(bOff + i))
@@ -103,13 +99,11 @@ final class BufferMismatch {
         if (length > 1 && a.order() == b.order()) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
-                    a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE),
-                    b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE),
-                    length,
-                    ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE);
-            if (i >= 0) return i;
-            i = length - ~i;
+            return SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
+                       a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE),
+                       b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE),
+                       length,
+                       ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE);
         }
         for (; i < length; i++) {
             if (a.get(aOff + i) != b.get(bOff + i))
@@ -161,12 +155,11 @@ final class BufferMismatch {
         if (length > 0 && a.order() == b.order()) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
-                    a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
-                    b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
-                    length,
-                    ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE);
-            return i >= 0 ? i : -1;
+            return SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.scope(), b.scope(),
+                       a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
+                       b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
+                       length,
+                       ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE);
         }
         for (; i < length; i++) {
             if (a.get(aOff + i) != b.get(bOff + i))

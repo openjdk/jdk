@@ -836,6 +836,18 @@ class LoadVectorMaskedNode : public LoadVectorNode {
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
+class VectorCmpMaskedNode : public TypeNode {
+  public:
+   VectorCmpMaskedNode(Node* src1, Node* src2, Node* mask, const Type* ty): TypeNode(ty, 4)  {
+     init_req(1, src1);
+     init_req(2, src2);
+     init_req(3, mask);
+   }
+
+  virtual int Opcode() const;
+};
+
+
 class VectorMaskGenNode : public TypeNode {
  public:
   VectorMaskGenNode(Node* length, const Type* ty, const Type* ety): TypeNode(ty, 2), _elemType(ety) {

@@ -2572,6 +2572,13 @@ void Assembler::knotwl(KRegister dst, KRegister src) {
   emit_int16(0x44, (0xC0 | encode));
 }
 
+void Assembler::knotql(KRegister dst, KRegister src) {
+  assert(VM_Version::supports_avx512bw(), "");
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
+  emit_int16(0x44, (0xC0 | encode));
+}
+
 // This instruction produces ZF or CF flags
 void Assembler::kortestbl(KRegister src1, KRegister src2) {
   assert(VM_Version::supports_avx512dq(), "");

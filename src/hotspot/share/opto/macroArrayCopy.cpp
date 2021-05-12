@@ -174,8 +174,8 @@ void PhaseMacroExpand::generate_limit_guard(Node** ctrl, Node* offset, Node* sub
 
 //
 // Partial in-lining handling for smaller conjoint/disjoint array copies having
-// length(in bytes) less than ArrayCopyPartialInlineSize.
-//  if (length <= ArrayCopyPartialInlineSize) {
+// length(in bytes) less than UsePartialInlineSize.
+//  if (length <= UsePartialInlineSize) {
 //    partial_inlining_block:
 //      mask = Mask_Gen
 //      vload = LoadVectorMasked src , mask
@@ -216,7 +216,7 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   // Return if copy length is greater than partial inline size limit or
   // target does not supports masked load/stores.
   int lane_count = ArrayCopyNode::get_partial_inline_vector_lane_count(type, const_len);
-  if ( const_len > ArrayCopyPartialInlineSize ||
+  if ( const_len > UsePartialInlineSize ||
       !Matcher::match_rule_supported_vector(Op_LoadVectorMasked, lane_count, type)  ||
       !Matcher::match_rule_supported_vector(Op_StoreVectorMasked, lane_count, type) ||
       !Matcher::match_rule_supported_vector(Op_VectorMaskGen, lane_count, type)) {
@@ -226,7 +226,7 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   Node* copy_bytes = new LShiftXNode(length, intcon(shift));
   transform_later(copy_bytes);
 
-  Node* cmp_le = new CmpULNode(copy_bytes, longcon(ArrayCopyPartialInlineSize));
+  Node* cmp_le = new CmpULNode(copy_bytes, longcon(UsePartialInlineSize));
   transform_later(cmp_le);
   Node* bol_le = new BoolNode(cmp_le, BoolTest::le);
   transform_later(bol_le);
@@ -1187,7 +1187,7 @@ bool PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** 
 
   Node* result_memory = NULL;
   RegionNode* exit_block = NULL;
-  if (ArrayCopyPartialInlineSize > 0 && is_subword_type(basic_elem_type) &&
+  if (UsePartialInlineSize > 0 && is_subword_type(basic_elem_type) &&
     Matcher::vector_width_in_bytes(basic_elem_type) >= 16) {
     generate_partial_inlining_block(ctrl, mem, adr_type, &exit_block, &result_memory,
                                     copy_length, src_start, dest_start, basic_elem_type);

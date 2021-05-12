@@ -1574,6 +1574,7 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
 
+    case Op_VectorCmpMasked:
     case Op_VectorMaskGen:
     case Op_LoadVectorMasked:
     case Op_StoreVectorMasked:
@@ -8045,7 +8046,32 @@ instruct vprorate(vec dst, vec src, vec shift) %{
 %}
 
 #ifdef _LP64
-// ---------------------------------- Masked Block Copy ------------------------------------
+// ---------------------------------- Masked Operations ------------------------------------
+
+instruct vmask_cmp_node(rRegI dst, vec src1, vec src2, kReg mask, kReg ktmp1, kReg ktmp2, rFlagsReg cr) %{
+  match(Set dst (VectorCmpMasked src1 (Binary src2 mask)));
+  effect(TEMP_DEF dst, TEMP ktmp1, TEMP ktmp2, KILL cr);
+  format %{ "vector_mask_cmp $src1, $src2, $mask \t! vector mask comparison" %}
+  ins_encode %{
+    Label DONE;
+    const MachNode* src1_node = static_cast<const MachNode*>(this->in(this->operand_index($src1)));
+    const MachNode* src2_node = static_cast<const MachNode*>(this->in(this->operand_index($src2)));
+    assert(0 == Type::cmp(src1_node->bottom_type(), src2_node->bottom_type()), "");
+    int vector_len = vector_length_encoding(src1_node);
+    BasicType elmType =  src1_node->bottom_type()->is_vect()->element_basic_type();
+    __ knotql($ktmp2$$KRegister, $mask$$KRegister);
+    __ mov64($dst$$Register, -1L);
+    __ evpcmp(elmType, $ktmp1$$KRegister, $mask$$KRegister, $src1$$XMMRegister, $src2$$XMMRegister, Assembler::eq, vector_len);
+    __ kortestql($ktmp2$$KRegister, $ktmp1$$KRegister);
+    __ jccb(Assembler::carrySet, DONE);
+    __ kmovql($dst$$Register, $ktmp1$$KRegister);
+    __ notq($dst$$Register);
+    __ tzcntq($dst$$Register, $dst$$Register);
+    __ bind(DONE);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vmasked_load64(vec dst, memory mem, kReg mask) %{
   match(Set dst (LoadVectorMasked mem mask));
   format %{ "vector_masked_load $dst, $mem, $mask \t! vector masked copy" %}

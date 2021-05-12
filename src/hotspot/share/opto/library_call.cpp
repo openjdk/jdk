@@ -5206,24 +5206,106 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   const TypeAryPtr* top_a = a_type->isa_aryptr();
   const TypeAryPtr* top_b = b_type->isa_aryptr();
   if (top_a == NULL || top_a->klass() == NULL ||
-    top_b == NULL || top_b->klass() == NULL) {
+      top_b == NULL || top_b->klass() == NULL) {
     // failed array check
     return false;
   }
-
-  Node* call;
   jvms()->set_should_reexecute(true);
 
   Node* obja_adr = make_unsafe_address(obja, aoffset);
   Node* objb_adr = make_unsafe_address(objb, boffset);
 
-  call = make_runtime_call(RC_LEAF,
-    OptoRuntime::vectorizedMismatch_Type(),
-    stubAddr, stubName, TypePtr::BOTTOM,
-    obja_adr, objb_adr, length, scale);
+  assert(scale->bottom_type()->isa_int() &&
+         scale->bottom_type()->is_int()->is_con(),
+         "non-constant scale value");
 
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
+  int scale_val = scale->bottom_type()->is_int()->get_con();
+  BasicType prim_types[] = {T_BYTE, T_SHORT, T_INT, T_LONG};
+  BasicType vec_basictype = prim_types[scale_val];
+  int vec_len = UsePartialInlineSize / type2aelembytes(vec_basictype);
+
+  Node* length_in_bytes = _gvn.transform(new LShiftINode(length, scale));
+  Node* length_cmp = _gvn.transform(new CmpINode(length_in_bytes, intcon(UsePartialInlineSize)));
+  Node* cmp_res = _gvn.transform(new BoolNode(length_cmp, BoolTest::le));
+
+  // Enable partial in-lining if compare size is less than UsePartialInlineSize(default 32 bytes).
+  if (is_subword_type(vec_basictype) && Type::cmp(TypeInt::ZERO, cmp_res->bottom_type()) &&
+      (Matcher::match_rule_supported_vector(Op_VectorMaskGen , vec_len, vec_basictype) &&
+       Matcher::match_rule_supported_vector(Op_LoadVectorMasked , vec_len, vec_basictype) &&
+       Matcher::match_rule_supported_vector(Op_VectorCmpMasked, vec_len, vec_basictype))) {
+
+    Node* fast_path = NULL;
+    Node* slow_path = NULL;
+    bool gen_slow_path = Type::cmp(TypeInt::ONE, cmp_res->bottom_type());
+    if (gen_slow_path) {
+      fast_path = generate_guard(cmp_res, NULL, PROB_MAX);
+      slow_path = control();
+    } else {
+      fast_path = slow_path = control();
+    }
+    assert(fast_path && slow_path, "");
+
+    const TypeVect* vt = TypeVect::make(vec_basictype, vec_len);
+    const Type* vec_type = Type::get_const_basic_type(vec_basictype);
+    Node* mask_gen = _gvn.transform(new VectorMaskGenNode(ConvI2L(length), TypeVect::VECTMASK, vec_type));
+
+    const TypePtr* ptr_type_a = obja_adr->Value(&_gvn)->isa_ptr();
+    const TypePtr* ptr_type_b = objb_adr->Value(&_gvn)->isa_ptr();
+
+    int alias_idx = C->get_alias_index(top_a);
+    Node* mm = memory(alias_idx);
+    Node* masked_load1 = _gvn.transform(new LoadVectorMaskedNode(fast_path, mm, obja_adr,
+                                                                 ptr_type_a, vt, mask_gen));
+    alias_idx = C->get_alias_index(top_b);
+    mm = memory(alias_idx);
+    Node* masked_load2 = _gvn.transform(new LoadVectorMaskedNode(fast_path, mm, objb_adr,
+                                                                 ptr_type_b, vt, mask_gen));
+
+    Node* fastcomp_result = _gvn.transform(new VectorCmpMaskedNode(masked_load1, masked_load2,
+                                                                   mask_gen, TypeInt::INT));
+    if (!gen_slow_path) {
+      set_result(fastcomp_result);
+      C->set_max_vector_size(UsePartialInlineSize);
+      clear_upper_avx();
+      return true;
+    }
+
+    Node* init_mem = map()->memory();
+    Node* call = make_runtime_call(RC_LEAF,
+                             OptoRuntime::vectorizedMismatch_Type(),
+                             stubAddr, stubName, TypePtr::BOTTOM,
+                             obja_adr, objb_adr, length, scale);
+
+    Node* call_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+    Node* call_mem = map()->memory();
+
+    Node* exit_block = new RegionNode(3);
+    exit_block->init_req(1, fast_path);
+    exit_block->init_req(2, control());
+    exit_block = _gvn.transform(exit_block);
+
+    Node* result = new PhiNode(exit_block, TypeInt::INT);
+    result->init_req(1, fastcomp_result);
+    result->init_req(2, call_result);
+    result = _gvn.transform(result);
+
+    Node* mem_phi = new PhiNode(exit_block, Type::MEMORY, TypePtr::BOTTOM);
+    mem_phi->init_req(1, init_mem);
+    mem_phi->init_req(2, call_mem);
+
+    C->set_max_vector_size(UsePartialInlineSize);
+    set_all_memory(_gvn.transform(mem_phi));
+    set_result(((RegionNode*)exit_block), ((PhiNode*)result));
+    clear_upper_avx();
+  } else {
+    Node* call = make_runtime_call(RC_LEAF,
+                             OptoRuntime::vectorizedMismatch_Type(),
+                             stubAddr, stubName, TypePtr::BOTTOM,
+                             obja_adr, objb_adr, length, scale);
+
+    Node* call_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+    set_result(call_result);
+  }
   return true;
 }
 

@@ -1406,12 +1406,12 @@ void VM_Version::get_processor_features() {
     }
 #ifdef COMPILER2
     if (UseAVX > 2) {
-      if (FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) ||
-          (!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) &&
-           ArrayCopyPartialInlineSize != 0 &&
-           ArrayCopyPartialInlineSize != 32 &&
-           ArrayCopyPartialInlineSize != 16 &&
-           ArrayCopyPartialInlineSize != 64)) {
+      if (FLAG_IS_DEFAULT(UsePartialInlineSize) ||
+          (!FLAG_IS_DEFAULT(UsePartialInlineSize) &&
+           UsePartialInlineSize != 0 &&
+           UsePartialInlineSize != 32 &&
+           UsePartialInlineSize != 16 &&
+           UsePartialInlineSize != 64)) {
         int inline_size = 0;
         if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
           inline_size = 64;
@@ -1420,18 +1420,18 @@ void VM_Version::get_processor_features() {
         } else if (MaxVectorSize >= 16) {
           inline_size = 16;
         }
-        if(!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize)) {
-          warning("Setting ArrayCopyPartialInlineSize as %d", inline_size);
+        if(!FLAG_IS_DEFAULT(UsePartialInlineSize)) {
+          warning("Setting UsePartialInlineSize as %d", inline_size);
         }
-        ArrayCopyPartialInlineSize = inline_size;
+        UsePartialInlineSize = inline_size;
       }
 
-      if (ArrayCopyPartialInlineSize > MaxVectorSize) {
-        ArrayCopyPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
-        if (ArrayCopyPartialInlineSize) {
-          warning("Setting ArrayCopyPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
+      if (UsePartialInlineSize > MaxVectorSize) {
+        UsePartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
+        if (UsePartialInlineSize) {
+          warning("Setting UsePartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
         } else {
-          warning("Setting ArrayCopyPartialInlineSize as " INTX_FORMAT, ArrayCopyPartialInlineSize);
+          warning("Setting UsePartialInlineSize as " INTX_FORMAT, UsePartialInlineSize);
         }
       }
     }
