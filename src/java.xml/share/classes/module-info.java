@@ -698,7 +698,7 @@
  * </tbody>
  * </table>
  * <p id="Note1">
- * <b>[1]</b> The full name of a property should be used when setting the property.
+ * <b>[1]</b> The full name of a property should be used to set the property.
  * <p id="Note2">
  * <b>[2]</b> A value "yes" indicates there is a corresponding System Property
  * for the property, "no" otherwise.
@@ -723,7 +723,75 @@
  * <p id="Note6">
  * <b>[6]</b> Indicates the initial release the property is introduced.
  *
+ * <h3>Legacy Property Names</h3>
+ * JDK releases prior to JDK 17 support the use of URI style prefix for properties
+ * which will continue to be supported. The following table lists the legacy names
+ * for the properties.
  *
+ * <table class="striped" id="LegacyProperties">
+ * <caption>Legacy Property Names</caption>
+ * <thead>
+ * <tr>
+ * <th>Property</th>
+ * <th>Legacy Property Name(s)</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr>
+ * <td style="text-align:center">{@code entityExpansionLimit}</td>
+ * <td>{@code http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit}</td>
+ * </tr>
+ * <tr>
+ * <td style="text-align:center">{@code elementAttributeLimit}</td>
+ * <td>{@code http://www.oracle.com/xml/jaxp/properties/elementAttributeLimit}</td>
+ * </tr>
+ * <tr>
+ * <td style="text-align:center">{@code maxOccurLimit}</td>
+ * <td>{@code http://www.oracle.com/xml/jaxp/properties/maxOccurLimit}</td>
+ * </tr>
+ * <tr>
+ * <td style="text-align:center">{@code totalEntitySizeLimit}</td>
+ * <td>{@code http://www.oracle.com/xml/jaxp/properties/totalEntitySizeLimit}</td>
+ * </tr>
+ * <tr>
+ * <td style="text-align:center">{@code maxGeneralEntitySizeLimit}</td>
+ * <td>{@code http://www.oracle.com/xml/jaxp/properties/maxGeneralEntitySizeLimit}</td>
+ * </tr>
+ * <tr>
+ * <td style="text-align:center">{@code maxParameterEntitySizeLimit}</td>
+ * <td>{@code http://www.oracle.com/xml/jaxp/properties/maxParameterEntitySizeLimit}</td>
+ * </tr>
+ * <tr>
+ * <td style="text-align:center">{@code entityReplacementLimit}</td>
+ * <td>{@code http://www.oracle.com/xml/jaxp/properties/entityReplacementLimit}</td>
+ * </tr>
+ * <tr>
+ * <td style="text-align:center">{@code maxElementDepth}</td>
+ * <td>{@code http://www.oracle.com/xml/jaxp/properties/maxElementDepth}</td>
+ * </tr>
+ * <tr>
+ * <td style="text-align:center">{@code maxXMLNameLimit}</td>
+ * <td>{@code http://www.oracle.com/xml/jaxp/properties/maxXMLNameLimit}</td>
+ * </tr>
+ * <tr>
+ * <td style="text-align:center">{@code isStandalone}</td>
+ * <td>{@code http://www.oracle.com/xml/jaxp/properties/isStandalone}</td>
+ * </tr>
+ * <tr>
+ * <td style="text-align:center">{@code xsltcIsStandalone}</td>
+ * <td>{@code http://www.oracle.com/xml/is-standalone}<br>
+ * {@code http://www.oracle.com/xml/jaxp/properties/xsltcIsStandalone}</td>
+ * </tr>
+ * <tr>
+ * <td style="text-align:center">{@code extensionClassLoader}</td>
+ * <td>{@code jdk.xml.transform.extensionClassLoader}</td>
+ * </tr>
+ * <tr>
+ * <td style="text-align:center">{@code enableExtensionFunctions}</td>
+ * <td>{@code http://www.oracle.com/xml/jaxp/properties/enableExtensionFunctions}</td>
+ * </tr>
+ * </tbody>
+ * </table>
  *
  * @uses javax.xml.datatype.DatatypeFactory
  * @uses javax.xml.parsers.DocumentBuilderFactory
