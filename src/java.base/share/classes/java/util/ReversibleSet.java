@@ -32,4 +32,5 @@ package java.util;
  * @since XXX
  */
 public interface ReversibleSet<E> extends ReversibleCollection<E>, Set<E> {
+    ReversibleSet<E> reversed();
 }
