@@ -1486,6 +1486,11 @@ public class Resolve {
         Symbol bestSoFar = varNotFound;
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
+        /** the static level value in the current environment should count the number of nested static modifiers
+         *  but this calculation doesn't consider static type declarations. Now that implicitly static
+         *  local type declarations like records, interfaces and enums, are allowed we need to adjust the static level
+         */
+        int adjustedStaticLevel = env.info.staticLevel;
         while (env1.outer != null) {
             Symbol sym = null;
             if (isStatic(env1)) staticOnly = true;
@@ -1504,14 +1509,13 @@ public class Resolve {
                     sym.kind == VAR &&
                         // if it is a field
                         (sym.owner.kind == TYP ||
-                        // or it is a local variable but it is not declared inside of the static local type
-                        // then error
+                        /* or it is a local variable but it is not declared in the same static context it is being
+                         * referred from
+                         */
                         allowRecords &&
                         (sym.owner.kind == MTH) &&
                         env1 != env &&
-                        !isInnerClassOfMethod(sym.owner, env.tree.hasTag(CLASSDEF) ?
-                                ((JCClassDecl)env.tree).sym :
-                                env.enclClass.sym)))
+                        adjustedStaticLevel > env1.info.staticLevel))
                     return new StaticError(sym);
                 else
                     return sym;
@@ -1519,7 +1523,10 @@ public class Resolve {
                 bestSoFar = bestOf(bestSoFar, sym);
             }
 
-            if ((env1.enclClass.sym.flags() & STATIC) != 0) staticOnly = true;
+            if ((env1.enclClass.sym.flags() & STATIC) != 0) {
+                staticOnly = true;
+                adjustedStaticLevel++;
+            }
             env1 = env1.outer;
         }
 
@@ -2313,7 +2320,8 @@ public class Resolve {
         return bestSoFar;
     }
 
-    Symbol findTypeVar(Env<AttrContext> currentEnv, Env<AttrContext> originalEnv, Name name, boolean staticOnly) {
+    Symbol findTypeVar(Env<AttrContext> currentEnv, Env<AttrContext> originalEnv, Name name, boolean staticOnly, int adjustedStaticLevel) {
+        // the adjusted static level is the
         for (Symbol sym : currentEnv.info.scope.getSymbolsByName(name)) {
             if (sym.kind == TYP) {
                 if (staticOnly &&
@@ -2323,23 +2331,13 @@ public class Resolve {
                     allowRecords &&
                     (sym.owner.kind == MTH &&
                     currentEnv != originalEnv &&
-                    !isInnerClassOfMethod(sym.owner, originalEnv.tree.hasTag(CLASSDEF) ?
-                            ((JCClassDecl)originalEnv.tree).sym :
-                            originalEnv.enclClass.sym)))) {
+                    adjustedStaticLevel > currentEnv.info.staticLevel))) {
                     return new StaticError(sym);
                 }
                 return sym;
             }
         }
         return typeNotFound;
-    }
-
-    boolean isInnerClassOfMethod(Symbol msym, Symbol csym) {
-        while (csym.owner != msym) {
-            if (csym.isStatic()) return false;
-            csym = csym.owner.enclClass();
-        }
-        return (csym.owner == msym && !csym.isStatic());
     }
 
     /** Find an unqualified type symbol.
@@ -2352,10 +2350,11 @@ public class Resolve {
         Symbol bestSoFar = typeNotFound;
         Symbol sym;
         boolean staticOnly = false;
+        int adjustedStaticLevel = env.info.staticLevel;
         for (Env<AttrContext> env1 = env; env1.outer != null; env1 = env1.outer) {
             if (isStatic(env1)) staticOnly = true;
             // First, look for a type variable and the first member type
-            final Symbol tyvar = findTypeVar(env1, env, name, staticOnly);
+            final Symbol tyvar = findTypeVar(env1, env, name, staticOnly, adjustedStaticLevel);
             sym = findImmediateMemberType(env1, env1.enclClass.sym.type,
                                           name, env1.enclClass.sym);
 
@@ -2385,8 +2384,12 @@ public class Resolve {
             else bestSoFar = bestOf(bestSoFar, sym);
 
             JCClassDecl encl = env1.baseClause ? (JCClassDecl)env1.tree : env1.enclClass;
-            if ((encl.sym.flags() & STATIC) != 0)
+            if ((encl.sym.flags() & STATIC) != 0) {
                 staticOnly = true;
+            }
+            if ((env1.enclClass.sym.flags() & STATIC) != 0) {
+                adjustedStaticLevel++;
+            }
         }
 
         if (!env.tree.hasTag(IMPORT)) {
