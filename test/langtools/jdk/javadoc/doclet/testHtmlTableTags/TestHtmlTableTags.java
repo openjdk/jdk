@@ -611,7 +611,7 @@ public class TestHtmlTableTags extends JavadocTester {
                     ab2 method-summary-table-tab4"><code>void</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#method1(int,int)" class="member-\
-                    name-link">method1</a>&#8203;(int&nbsp;a,
+                    name-link">method1</a><wbr>(int&nbsp;a,
                      int&nbsp;b)</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
                     b2 method-summary-table-tab4">
@@ -631,8 +631,8 @@ public class TestHtmlTableTags extends JavadocTester {
                     kg1">C1</a></code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#method(pkg1.C1)" class="member-n\
-                    ame-link">method</a>&#8203;(<a href="../pkg1/C1.html" title="class \
-                    in pkg1">C1</a>&nbsp;param)</code></div>
+                    ame-link">method</a><wbr>(<a href="../pkg1/C1.html" title="class in pkg1">C1</a>\
+                    &nbsp;param)</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
                     b2 method-summary-table-tab4">
                     <div class="block">A sample method.</div>
@@ -680,8 +680,8 @@ public class TestHtmlTableTags extends JavadocTester {
                     <div class="col-first even-row-color"><code><a href="../C2.html" title="class in pkg2">C2</a></code></div>
                     <div class="col-second even-row-color"><span class="type-name-label">C1.</span><\
                     code><a href="../../pkg1/C1.html#method(pkg2.C2)" class="member-name-link">metho\
-                    d</a>&#8203;(<a href="../C2.html" title="class in pkg2">C2</a>&nbsp\
-                    ;param)</code></div>
+                    d</a><wbr>(<a href="../C2.html" title="class in pkg2">C2</a>&nbsp;param)</code><\
+                    /div>
                     <div class="col-last even-row-color">
                     <div class="block">Method thats does some processing.</div>
                     </div>""");
@@ -769,7 +769,7 @@ public class TestHtmlTableTags extends JavadocTester {
                     ab2 method-summary-table-tab4"><code>void</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#method1(int,int)" class="member-\
-                    name-link">method1</a>&#8203;(int&nbsp;a,
+                    name-link">method1</a><wbr>(int&nbsp;a,
                      int&nbsp;b)</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
                     b2 method-summary-table-tab4"></div>""");
@@ -785,8 +785,8 @@ public class TestHtmlTableTags extends JavadocTester {
                     kg1">C1</a></code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#method(pkg1.C1)" class="member-n\
-                    ame-link">method</a>&#8203;(<a href="../pkg1/C1.html" title="class in pkg1">C1</\
-                    a>&nbsp;param)</code></div>
+                    ame-link">method</a><wbr>(<a href="../pkg1/C1.html" title="class in pkg1">C1</a>\
+                    &nbsp;param)</code></div>
                     <div class="col-last even-row-color method-summary-table method-summary-table-ta\
                     b2 method-summary-table-tab4"></div>""");
 
@@ -827,7 +827,7 @@ public class TestHtmlTableTags extends JavadocTester {
                     <div class="col-first even-row-color"><code><a href="../C2.html" title="class in pkg2">C2</a></code></div>
                     <div class="col-second even-row-color"><span class="type-name-label">C1.</span><\
                     code><a href="../../pkg1/C1.html#method(pkg2.C2)" class="member-name-link">metho\
-                    d</a>&#8203;(<a href="../C2.html" title="class in pkg2">C2</a>&nbsp;param)</code></div>
+                    d</a><wbr>(<a href="../C2.html" title="class in pkg2">C2</a>&nbsp;param)</code></div>
                     <div class="col-last even-row-color"></div>""");
 
         // Package use documentation

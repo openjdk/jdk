@@ -926,6 +926,8 @@ public class HtmlTree extends Content {
                         (hasAttr(HtmlAttr.TYPE) && hasContent()));
             case SPAN:
                 return (hasAttr(HtmlAttr.ID) || hasContent());
+            case WBR:
+                return (!hasContent());
             default :
                 return hasContent();
         }
@@ -942,6 +944,7 @@ public class HtmlTree extends Content {
         switch (tagName) {
             case A: case BUTTON: case BR: case CODE: case EM: case I: case IMG:
             case LABEL: case SMALL: case SPAN: case STRONG: case SUB: case SUP:
+            case WBR:
                 return true;
             default:
                 return false;
@@ -957,7 +960,7 @@ public class HtmlTree extends Content {
      */
     public boolean isVoid() {
         switch (tagName) {
-            case BR: case HR: case IMG: case INPUT: case LINK: case META:
+            case BR: case HR: case IMG: case INPUT: case LINK: case META: case WBR:
                 return true;
             default:
                 return false;

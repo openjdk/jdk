@@ -457,7 +457,7 @@ public class Signatures {
                 // empty parameters are added without packing
                 htmlTree.add(parameters);
             } else {
-                htmlTree.add(Entity.ZERO_WIDTH_SPACE)
+                htmlTree.add(new HtmlTree(TagName.WBR))
                         .add(HtmlTree.SPAN(HtmlStyle.parameters, parameters));
             }
 

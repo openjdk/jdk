@@ -85,9 +85,9 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "Overloaded values method  has correct documentation.",
                 """
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
-                    <span class="return-type"><a href="Coin.html" title="enum class in pkg">Coin</a></span\
-                    >&nbsp;<span class="element-name">valueOf</span>&#8203;<span class="parameters">(java.la\
-                    ng.String&nbsp;name)</span></div>
+                    <span class="return-type"><a href="Coin.html" title="enum class in pkg">Coin</a>\
+                    </span>&nbsp;<span class="element-name">valueOf</span><wbr><span class="paramete\
+                    rs">(java.lang.String&nbsp;name)</span></div>
                     <div class="block">Returns the enum constant of this class with the specified name.
                     The string must match <i>exactly</i> an identifier used to declare an
                     enum constant in this class.  (Extraneous whitespace characters are\s
@@ -139,10 +139,10 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // Signature of method with type parameters
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="type-parameters">&lt;T extends java.util.List,&#8203;
+                    lass="type-parameters">&lt;T extends java.util.List,<wbr>
                     V&gt;</span>
                     <span class="return-type">java.lang.String[]</span>&nbsp;<span class="element-name">meth\
-                    odThatHasTypeParameters</span>&#8203;<span class="parameters">(T&nbsp;param1,
+                    odThatHasTypeParameters</span><wbr><span class="parameters">(T&nbsp;param1,
                      V&nbsp;param2)</span></div>""",
                 // Method that returns TypeParameters
                 """
@@ -151,14 +151,15 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     arameter in TypeParameters">E</a>[]</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#methodThatReturnsTypeParameterA(\
-                    E%5B%5D)" class="member-name-link">methodThatReturnsTypeParameterA</a>&#8203;(<a\
-                     href="TypeParameters.html" title="type parameter in TypeParameters">E</a>[]&nbsp;e)</code>""",
+                    E%5B%5D)" class="member-name-link">methodThatReturnsTypeParameterA</a><wbr>(<a h\
+                    ref="TypeParameters.html" title="type parameter in TypeParameters">E</a>[]&nbsp;\
+                    e)</code>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type"><a href="TypeParameters.html" title="type parameter in TypePa\
-                    rameters">E</a>[]</span>&nbsp;<span class="element-name">methodThatReturnsTypeParameterA\
-                    </span>&#8203;<span class="parameters">(<a href="TypeParameters.html" tit\
-                    le="type parameter in TypeParameters">E</a>[]&nbsp;e)</span></div>
+                    rameters">E</a>[]</span>&nbsp;<span class="element-name">methodThatReturnsTypePa\
+                    rameterA</span><wbr><span class="parameters">(<a href="TypeParameters.html" titl\
+                    e="type parameter in TypeParameters">E</a>[]&nbsp;e)</span></div>
                     """,
                 """
                     <div class="col-first even-row-color method-summary-table method-summary-table-t\
@@ -167,19 +168,20 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <div class="col-second even-row-color method-summary-table method-summary-table-\
                     tab2 method-summary-table-tab4"><code><a href="#methodtThatReturnsTypeParameters\
                     B(java.util.Collection)" class="member-name-link">methodtThatReturnsTypeParamete\
-                    rsB</a>&#8203;(java.util.Collection&lt;? extends T&gt;&nbsp;coll)</code>""",
+                    rsB</a><wbr>(java.util.Collection&lt;? extends T&gt;&nbsp;coll)</code>""",
                 """
                     <div class="block">Returns TypeParameters</div>
                     """,
                 // Method takes a TypeVariable
                 """
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4"><code>&lt;X extends java.lang.Throwable&gt;<br><a href\
-                    ="TypeParameters.html" title="type parameter in TypeParameters">E</a></code></div>
-                    <div class="col-second odd-row-color method-summary-table method-summary-table-t\
-                    ab2 method-summary-table-tab4"><code><a href="#orElseThrow(java.util.function.Su\
-                    pplier)" class="member-name-link">orElseThrow</a>&#8203;(java.util.function.Supp\
-                    lier&lt;? extends X&gt;&nbsp;exceptionSupplier)</code>"""
+                    b2 method-summary-table-tab4"><code>&lt;X extends java.lang.Throwable&gt;<br><a \
+                    href="TypeParameters.html" title="type parameter in TypeParameters">E</a></code>\
+                    </div>
+                    <div class="col-second odd-row-color method-summary-table method-summary-t\
+                    able-tab2 method-summary-table-tab4"><code><a href="#orElseThrow(java.util.funct\
+                    ion.Supplier)" class="member-name-link">orElseThrow</a><wbr>(java.util.function.\
+                    Supplier&lt;? extends X&gt;&nbsp;exceptionSupplier)</code>"""
                 );
 
         checkOutput("pkg/Wildcards.html", true,
@@ -239,8 +241,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="type-parameters">&lt;T extends java.lang.Number &amp; java.lang.Runnable&g\
                     t;</span>
-                    <span class="return-type">T</span>&nbsp;<span class="element-name">foo</span>&#8203;<spa\
-                    n class="parameters">(T&nbsp;t)</span></div>""");
+                    <span class="return-type">T</span>&nbsp;<span class="element-name">foo</span><wb\
+                    r><span class="parameters">(T&nbsp;t)</span></div>""");
 
         //==============================================================
         // Test Class-Use Documentation for Type Parameters.
@@ -263,7 +265,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 """
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
                     t1.</span><code><a href="../ClassUseTest1.html#method(T)" class="member-name-lin\
-                    k">method</a>&#8203;(T&nbsp;t)</code></div>""",
+                    k">method</a><wbr>(T&nbsp;t)</code></div>""",
                 """
                     <div class="caption"><span>Fields in <a href="../package-summary.html">pkg2</a>\
                      with type parameters of type <a href="../Foo.html" title="class in pkg2">Foo</a\
@@ -302,7 +304,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 """
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
                     t1.</span><code><a href="../ClassUseTest1.html#method(T)" class="member-name-lin\
-                    k">method</a>&#8203;(T&nbsp;t)</code></div>"""
+                    k">method</a><wbr>(T&nbsp;t)</code></div>"""
         );
 
         // ClassUseTest2: <T extends ParamTest<Foo3>>
@@ -323,7 +325,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 """
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
                     t2.</span><code><a href="../ClassUseTest2.html#method(T)" class="member-name-lin\
-                    k">method</a>&#8203;(T&nbsp;t)</code></div>""",
+                    k">method</a><wbr>(T&nbsp;t)</code></div>""",
                 """
                     <div class="caption"><span>Fields in <a href="../package-summary.html">pkg2</a>\
                      declared as <a href="../ParamTest.html" title="class in pkg2">ParamTest</a></s\
@@ -361,7 +363,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 """
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
                     t2.</span><code><a href="../ClassUseTest2.html#method(T)" class="member-name-lin\
-                    k">method</a>&#8203;(T&nbsp;t)</code></div>""",
+                    k">method</a><wbr>(T&nbsp;t)</code></div>""",
                 """
                     <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\
                     > that return types with arguments of type <a href="../Foo3.html" title="class\
@@ -393,7 +395,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 """
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
                     t3.</span><code><a href="../ClassUseTest3.html#method(T)" class="member-name-lin\
-                    k">method</a>&#8203;(T&nbsp;t)</code></div>""",
+                    k">method</a><wbr>(T&nbsp;t)</code></div>""",
                 """
                     <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest2.htm\
                     l" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href=\
@@ -420,7 +422,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 """
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
                     t3.</span><code><a href="../ClassUseTest3.html#method(T)" class="member-name-lin\
-                    k">method</a>&#8203;(T&nbsp;t)</code></div>""",
+                    k">method</a><wbr>(T&nbsp;t)</code></div>""",
                 """
                     <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\
                     > that return types with arguments of type <a href="../Foo4.html" title="class\
@@ -446,8 +448,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <div class="col-first even-row-color"><code>void</code></div>
                     <div class="col-second even-row-color"><span class="type-name-label">ClassUseTes\
                     t3.</span><code><a href="../ClassUseTest3.html#method(java.util.Set)" class="mem\
-                    ber-name-link">method</a>&#8203;(java.util.Set&lt;<a href="../Foo4.html" title="\
-                    class in pkg2">Foo4</a>&gt;&nbsp;p)</code></div>
+                    ber-name-link">method</a><wbr>(java.util.Set&lt;<a href="../Foo4.html" title="cl\
+                    ass in pkg2">Foo4</a>&gt;&nbsp;p)</code></div>
                     <div class="col-last even-row-color">&nbsp;</div>""",
                 """
                     <div class="caption"><span>Constructor parameters in <a href="../package-summary.html">pkg2<\
@@ -567,20 +569,20 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // METHOD PARAMS
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">void</span>&nbsp;<span class="element-name">methodWithParams</span>&#\
-                    8203;<span class="parameters">(<a href="AnnotationType.html" title="annotation i\
-                    nterface in pkg">@AnnotationType</a>(<a href="AnnotationType.html#optional()">op\
-                    tional</a>="Parameter Annotation",<a href="AnnotationType.html#required()">requi\
-                    red</a>=1994)
+                    lass="return-type">void</span>&nbsp;<span class="element-name">methodWithParams<\
+                    /span><wbr><span class="parameters">(<a href="AnnotationType.html" title="annota\
+                    tion interface in pkg">@AnnotationType</a>(<a href="AnnotationType.html#optional\
+                    ()">optional</a>="Parameter Annotation",<a href="AnnotationType.html#required()"\
+                    >required</a>=1994)
                      int&nbsp;documented,
                      int&nbsp;undocmented)</span></div>""",
                 // CONSTRUCTOR PARAMS
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="element-name">AnnotationTypeUsage</span>&#8203;<span class="parameters">(<\
-                    a href="AnnotationType.html" title="annotation interface in pkg">@AnnotationType\
-                    </a>(<a href="AnnotationType.html#optional()">optional</a>="Constructor Param An\
-                    notation",<a href="AnnotationType.html#required()">required</a>=1994)
+                    lass="element-name">AnnotationTypeUsage</span><wbr><span class="parameters">(<a \
+                    href="AnnotationType.html" title="annotation interface in pkg">@AnnotationType</\
+                    a>(<a href="AnnotationType.html#optional()">optional</a>="Constructor Param Anno\
+                    tation",<a href="AnnotationType.html#required()">required</a>=1994)
                      int&nbsp;documented,
                      int&nbsp;undocmented)</span></div>""");
 
