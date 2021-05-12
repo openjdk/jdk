@@ -7205,6 +7205,14 @@ address generate_avx_ghash_processBlocks() {
       StubRoutines::x86::_left_shift_mask = base64_left_shift_mask_addr();
       StubRoutines::x86::_right_shift_mask = base64_right_shift_mask_addr();
       StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
+      StubRoutines::x86::_lookup_lo = base64_vbmi_lookup_lo_addr();
+      StubRoutines::x86::_lookup_hi = base64_vbmi_lookup_hi_addr();
+      StubRoutines::x86::_lookup_lo_url = base64_vbmi_lookup_lo_url_addr();
+      StubRoutines::x86::_lookup_hi_url = base64_vbmi_lookup_hi_url_addr();
+      StubRoutines::x86::_pack_vec = base64_vbmi_pack_vec_addr();
+      StubRoutines::x86::_join_0_1 = base64_vbmi_join_0_1_addr();
+      StubRoutines::x86::_join_1_2 = base64_vbmi_join_1_2_addr();
+      StubRoutines::x86::_join_2_3 = base64_vbmi_join_2_3_addr();
       StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
     }
 
