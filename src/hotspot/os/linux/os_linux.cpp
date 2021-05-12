@@ -3604,7 +3604,7 @@ static size_t scan_default_large_page_size() {
       if (fscanf(fp, "Hugepagesize: %d", &x) == 1) {
         if (x && fgets(buf, sizeof(buf), fp) && strcmp(buf, " kB\n") == 0) {
           default_large_page_size = x * K;
-          return default_large_page_size;
+          break;
         }
       } else {
         // skip to next line
@@ -3624,7 +3624,7 @@ static os::PageSizes scan_multiple_page_support() {
   // Scan /sys/kernel/mm/hugepages
   // to discover the available page sizes
   const char* sys_hugepages = "/sys/kernel/mm/hugepages";
-  static os::PageSizes page_sizes;
+  os::PageSizes page_sizes;
 
   DIR *dir = opendir(sys_hugepages);
 
@@ -3736,19 +3736,31 @@ void os::large_page_init() {
   // using LargePageSizeInBytes as the maximum allowed large page size. If LargePageSizeInBytes
   // doesn't match an available page size set _large_page_size to default_large_page_size
   // and use it as the maximum.
-  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != default_large_page_size) {
+ if (FLAG_IS_DEFAULT(LargePageSizeInBytes) ||
+      LargePageSizeInBytes == 0 ||
+      LargePageSizeInBytes == default_large_page_size) {
+    _large_page_size = default_large_page_size;
+    log_info(pagesize)("Using the default large page size: " SIZE_FORMAT "%s",
+                       byte_size_in_exact_unit(_large_page_size),
+                       exact_unit_for_byte_size(_large_page_size));
+  } else {
     if (all_large_pages.contains(LargePageSizeInBytes)) {
       _large_page_size = LargePageSizeInBytes;
-      log_info(pagesize)("Overriding default large page size ( "
-                         SIZE_FORMAT " ) using LargePageSizeInBytes: "
-                         SIZE_FORMAT,
-                         default_large_page_size,
-                         LargePageSizeInBytes);
+      log_info(pagesize)("Overriding default large page size (" SIZE_FORMAT "%s) "
+                         "using LargePageSizeInBytes: " SIZE_FORMAT "%s",
+                         byte_size_in_exact_unit(default_large_page_size),
+                         exact_unit_for_byte_size(default_large_page_size),
+                         byte_size_in_exact_unit(_large_page_size),
+                         exact_unit_for_byte_size(_large_page_size));
     } else {
       _large_page_size = default_large_page_size;
+      log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (" SIZE_FORMAT "%s) "
+                         "using the default large page size: " SIZE_FORMAT "%s",
+                         byte_size_in_exact_unit(LargePageSizeInBytes),
+                         exact_unit_for_byte_size(LargePageSizeInBytes),
+                         byte_size_in_exact_unit(_large_page_size),
+                         exact_unit_for_byte_size(_large_page_size));
     }
-  } else {
-    _large_page_size = default_large_page_size;
   }
 
   // Populate _page_sizes with large page sizes less than or equal to
@@ -3761,8 +3773,10 @@ void os::large_page_init() {
   LogTarget(Info, pagesize) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    ls.print("Available page sizes: ");
+    ls.print("Usable page sizes: ");
     _page_sizes.print_on(&ls);
+    ls.print("All large Page sizes: ");
+    all_large_pages.print_on(&ls);
   }
 
   // Now determine the type of large pages to use:
@@ -3972,16 +3986,12 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
                                                    size_t page_size,
                                                    char* req_addr,
                                                    bool exec) {
-  assert(page_size > (size_t)os::vm_page_size(), "large page size: "
-                                                        SIZE_FORMAT " not larger than small page size: "
-                                                        SIZE_FORMAT,
-                                                        page_size,
-                                                        (size_t)os::vm_page_size());
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
   assert(is_aligned(req_addr, page_size), "Must be");
   assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
   assert(_page_sizes.contains(page_size), "Must be a valid page size");
+  assert(page_size > (size_t)os::vm_page_size(), "Must be a large page size");
   assert(bytes >= page_size, "Shouldn't allocate large pages for small sizes");
 
   // We only end up here when at least 1 large page can be used.
