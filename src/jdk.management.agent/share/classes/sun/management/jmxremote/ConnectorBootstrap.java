@@ -275,9 +275,9 @@ public final class ConnectorBootstrap {
         private final String accessFile;
     }
 
-    // The variable below is here to support stop functionality
+    // The variable below is here to support stop functionality.
     // It would be overwritten if you call startRemoteConnectorServer second
-    // time. It's OK for now as logic in Agent.java forbids multiple agents
+    // time. It's OK for now as logic in Agent.java forbids multiple agents.
     private static Registry registry = null;
 
     public static void unexportRegistry() {
