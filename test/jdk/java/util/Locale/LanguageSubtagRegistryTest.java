@@ -28,7 +28,7 @@
  * @summary Checks the IANA language subtag registry data update
  *          (LSR Revision: 2021-05-11) with Locale and Locale.LanguageRange
  *          class methods.
- * @run main Bug8040211
+ * @run main LanguageSubtagRegistryTest
  */
 
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ import java.util.Locale.LanguageRange;
 import java.util.Locale.FilteringMode;
 import static java.util.Locale.FilteringMode.EXTENDED_FILTERING;
 
-public class Bug8040211 {
+public class LanguageSubtagRegistryTest {
 
     static boolean err = false;
 
