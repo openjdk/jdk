@@ -56,7 +56,8 @@ unsigned int method_hash(const Method* method) {
   unsigned int hash = method->klass_name()->identity_hash();
   hash = (hash * 31) ^ method->name()->identity_hash();
   hash = (hash * 31) ^ method->signature()->identity_hash();
-  return hash ^ (unsigned)((uintptr_t)method >> (LogMinObjAlignmentInBytes + 3));
+  return hash ^ (unsigned)((uintptr_t)(method->method_holder()->class_loader_data())
+                                       >> (LogMinObjAlignmentInBytes + 3));
 }
 
 typedef ConcurrentHashTable<ResolvedMethodTableConfig,
