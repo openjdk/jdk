@@ -134,7 +134,7 @@ class LogAsyncFlusher : public NonJavaThread {
   // and a variable-length c-string message.
   // A normal logging  message is smaller than vwrite_buffer_size, which is defined in logtagset.cpp
   const size_t _buffer_max_size = {AsyncLogBufferSize / (sizeof(AsyncLogMessage) + sizeof(LogDecorations) + vwrite_buffer_size)};
-  const static int64_t WAIT_TIMEOUT = {500}; // timeout in millisecond.
+  static const int64_t ASYNCLOG_WAIT_TIMEOUT = 500; // timeout in millisecond.
 
   LogAsyncFlusher();
   void enqueue_impl(const AsyncLogMessage& msg);

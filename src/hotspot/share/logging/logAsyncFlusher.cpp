@@ -154,7 +154,7 @@ void LogAsyncFlusher::run() {
   while (_state == ThreadState::Running) {
     {
       MonitorLocker m(&_lock, Mutex::_no_safepoint_check_flag);
-      m.wait(WAIT_TIMEOUT);
+      m.wait(ASYNCLOG_WAIT_TIMEOUT);
     }
     flush();
   }
