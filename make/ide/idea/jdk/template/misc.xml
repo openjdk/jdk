@@ -13,6 +13,6 @@
     </ant>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_9" assert-keyword="true" jdk-15="true">
-    <output url="file://###BUILD_DIR###" />
+    <output url="file://###BUILD_DIR###/idea" />
   </component>
 </project>
