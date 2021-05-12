@@ -5938,6 +5938,7 @@ address generate_avx_ghash_processBlocks() {
     __ cmpl(length, 64 * 4);
     __ jcc(Assembler::belowEqual, L_process256);
 
+    __ BIND(L_process64);
     __ BIND(L_exit);
     __ pop(r15);
     __ pop(r14);
