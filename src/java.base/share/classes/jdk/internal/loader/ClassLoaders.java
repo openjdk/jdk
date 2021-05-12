@@ -55,7 +55,10 @@ public class ClassLoaders {
     private static final PlatformClassLoader PLATFORM_LOADER;
     private static final AppClassLoader APP_LOADER;
 
-    private static void setArchivedServicesCatalog(ArchivedClassLoaders archivedClassLoaders, ClassLoader loader) {
+    // Sets the ServicesCatalog for the specified loader using archived objects.
+    private static void setArchivedServicesCatalog(
+            ArchivedClassLoaders archivedClassLoaders, ClassLoader loader)
+    {
         ServicesCatalog catalog = archivedClassLoaders.servicesCatalog(loader);
         ServicesCatalog.putServicesCatalog(loader, catalog);
     }

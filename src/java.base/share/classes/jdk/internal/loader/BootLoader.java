@@ -55,6 +55,8 @@ import jdk.internal.util.StaticProperty;
 public class BootLoader {
     private BootLoader() { }
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     // The unnamed module for the boot loader
     private static final Module UNNAMED_MODULE;
     private static final String JAVA_HOME = StaticProperty.javaHome();
@@ -71,8 +73,6 @@ public class BootLoader {
     // native libraries loaded by the boot class loader
     private static final NativeLibraries NATIVE_LIBS
         = NativeLibraries.jniNativeLibraries(null);
-
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
      * Returns the unnamed module for the boot loader.
