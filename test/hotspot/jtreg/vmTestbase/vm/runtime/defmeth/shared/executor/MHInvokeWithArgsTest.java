@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,15 +108,14 @@ public class MHInvokeWithArgsTest extends AbstractReflectionTest {
 
             Object[] values = values(params);
 
-            if (call.invokeInsn() != CallMethod.Invoke.STATIC) {
+            if (!call.isConstructorCall() && call.invokeInsn() != CallMethod.Invoke.STATIC) {
                 // Prepare receiver for non-static call
                 args = new Object[params.length+1];
                 Class recClass = resolve(receiverClass);
                 args[0] = recClass.newInstance();
                 System.arraycopy(values, 0, args, 1, values.length);
             } else {
-                // No need for a receiver for static call
-                args = values;
+                args = values; // no receiver
             }
         }
 

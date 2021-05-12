@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,12 @@
  * questions.
  */
 
-package vm.runtime.defmeth.shared.annotation;
+package java.lang.invoke;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.invoke.MethodHandles.Lookup;
 
-/*
- * Explicitly marks a method as not a test, thus ensuring that it won't be
- * executed as part of a test run.
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface NotTest {
-
+public class LookupHelper {
+     public static Lookup newLookup(Class<?> c) {
+         return new Lookup(c);
+     }
 }

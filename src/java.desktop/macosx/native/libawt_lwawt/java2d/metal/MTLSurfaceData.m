@@ -68,11 +68,11 @@ static jboolean MTLSurfaceData_initTexture(BMTLSDOps *bmtlsdo, jboolean isOpaque
 
         MTLContext* ctx = mtlsdo->configInfo->context;
 
-        width = (width <= MaxTextureSize) ? width : 0;
-        height = (height <= MaxTextureSize) ? height : 0;
+        width = (width <= MTL_GPU_FAMILY_MAC_TXT_SIZE) ? width : 0;
+        height = (height <= MTL_GPU_FAMILY_MAC_TXT_SIZE) ? height : 0;
 
         J2dTraceLn3(J2D_TRACE_VERBOSE, "  desired texture dimensions: w=%d h=%d max=%d",
-                width, height, MaxTextureSize);
+                width, height, MTL_GPU_FAMILY_MAC_TXT_SIZE);
 
         // if either dimension is 0, we cannot allocate a texture with the
         // requested dimensions
