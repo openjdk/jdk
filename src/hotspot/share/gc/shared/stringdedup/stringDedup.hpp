@@ -79,7 +79,7 @@
 // String has been added to the StringTable, its byte array must not change.
 // Doing so would counteract C2 optimizations on string literals.  But an
 // interned string might later become a deduplication candidate through the
-// normal GC discovery mechanism.  To prevent such modificatoins, the
+// normal GC discovery mechanism.  To prevent such modifications, the
 // deduplication_forbidden flag of a String is set before interning it.  A
 // String with that flag set may have its byte array added to the
 // deduplication table, but will not have its byte array replaced by a
