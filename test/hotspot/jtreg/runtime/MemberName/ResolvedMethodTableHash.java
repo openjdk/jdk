@@ -51,6 +51,7 @@ public class ResolvedMethodTableHash extends ClassLoader {
     private MethodHandle generateWithSameName() throws ReflectiveOperationException {
         byte[] buf = new byte[100];
         int size = writeClass(buf, "MH$$");
+        // use different classloader instances to load the classes with the same name
         Class<?> cls = new ResolvedMethodTableHash().defineClass(null, buf, 0, size);
         return MethodHandles.publicLookup().findStatic(cls, "m", MethodType.methodType(void.class));
     }
