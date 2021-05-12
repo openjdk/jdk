@@ -479,8 +479,9 @@ class InstanceKlass: public Klass {
   void set_permitted_subclasses(Array<u2>* s) { _permitted_subclasses = s; }
 
 private:
-  // Called to verify that k is a member of this nest - does not look at k's nest-host
-  bool has_nest_member(InstanceKlass* k, TRAPS) const;
+  // Called to verify that k is a member of this nest - does not look at k's nest-host,
+  // nor does it resolve any CP entries or load any classes.
+  bool has_nest_member(JavaThread* current, InstanceKlass* k) const;
 
 public:
   // Used to construct informative IllegalAccessError messages at a higher level,
