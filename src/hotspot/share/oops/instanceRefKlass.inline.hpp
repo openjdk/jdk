@@ -25,12 +25,13 @@
 #ifndef SHARE_OOPS_INSTANCEREFKLASS_INLINE_HPP
 #define SHARE_OOPS_INSTANCEREFKLASS_INLINE_HPP
 
+#include "oops/instanceRefKlass.hpp"
+
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
-#include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

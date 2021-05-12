@@ -26,6 +26,7 @@
 #define SHARE_OOPS_METHOD_INLINE_HPP
 
 #include "oops/method.hpp"
+
 #include "runtime/atomic.hpp"
 
 inline address Method::from_compiled_entry() const {

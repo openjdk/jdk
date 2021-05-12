@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZCPU_INLINE_HPP
 
 #include "gc/z/zCPU.hpp"
+
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
