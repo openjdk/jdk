@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,24 @@
  * questions.
  */
 
-package vm.runtime.defmeth.shared.annotation;
+// Host and Host$Member will be loaded by a custom loader with different
+// protection domains.
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+public class Host {
 
-/**
- * Mark a test that it may crash VM.
- * Allows to exclude all such tests when crashes are undesirable
- * (e.g. same VM execution mode).
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface Crash {}
+    private static int forNestmatesOnly = 1;
+
+    public static class Member {
+        // We need our static initializer to ensure our CP reference
+        // to Host is resolved by the main thread.
+        static final Class<?> hostClass = Host.class;
+
+        int id;
+
+        // Executing, or JIT compiling, this method will result in
+        // a nestmate access check.
+        public Member() {
+            id = forNestmatesOnly++;
+        }
+    }
+}
