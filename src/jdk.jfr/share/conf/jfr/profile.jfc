@@ -472,6 +472,10 @@
       <setting name="enabled" control="gc-enabled-high">false</setting>
     </event>
 
+    <event name="jdk.Finalizer">
+      <setting name="enabled">true</setting>
+    </event>
+
     <event name="jdk.ShenandoahHeapRegionInformation">
       <setting name="enabled" control="gc-enabled-high">false</setting>
       <setting name="period">everyChunk</setting>

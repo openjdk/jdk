@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.AccessController;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
+import jdk.internal.event.FinalizerEvent;
 
 final class Finalizer extends FinalReference<Object> { /* Package-private; must be in
                                                           same package as the Reference
@@ -85,11 +86,19 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
             Object finalizee = this.get();
             assert finalizee != null;
             if (!(finalizee instanceof java.lang.Enum)) {
+                Class<?> finalizedClass = finalizee.getClass();
                 jla.invokeFinalize(finalizee);
 
                 // Clear stack slot containing this variable, to decrease
                 // the chances of false retention with a conservative GC
                 finalizee = null;
+
+                FinalizerEvent event = new FinalizerEvent();
+                if (event.shouldCommit()) {
+                    event.finalizedClass = finalizedClass;
+                    event.commit();
+                }
+                finalizedClass = null;
             }
         } catch (Throwable x) { }
         super.clear();
