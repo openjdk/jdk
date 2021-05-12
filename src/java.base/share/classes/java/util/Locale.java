@@ -450,19 +450,18 @@ import static sun.util.locale.BaseLocale.OLD_ISO_CODES;
  * <p>Locale's constructor has always converted three language codes to
  * their earlier, obsoleted forms: {@code he} maps to {@code iw},
  * {@code yi} maps to {@code ji}, and {@code id} maps to
- * {@code in}.  Since 17, this is no longer the case, and each language
- * maps to its new form: {@code iw} maps to {@code he}, {@code ji}
+ * {@code in}. Since Java SE 17, this is no longer the case. Each
+ * language maps to its new form; {@code iw} maps to {@code he}, {@code ji}
  * maps to {@code yi}, and {@code in} maps to {@code id}.
  *
- * <p>For the backward compatible behavior, a system property
- * {@systemProperty java.locale.useOldISOCodes} has been provided to
- * revert to the behavior prior to 17. If the property is set
- * to {@code true}, those three language codes are mapped to their
+ * <p>For the backward compatible behavior, the system property
+ * {@systemProperty java.locale.useOldISOCodes} reverts the behavior
+ * back to prior to Java SE 17 one. If the system property is set
+ * to {@code true}, those three current language codes are mapped to their
  * backward compatible forms.
  *
  * <p>The APIs added in 1.7 map between the old and new language codes,
- * maintaining the old codes internal to Locale, if the above system
- * property is set to {@code true} (so that
+ * maintaining the old codes internal to Locale (so that
  * {@code getLanguage} and {@code toString} reflect the old
  * code), but using the new codes in the BCP 47 language tag APIs (so
  * that {@code toLanguageTag} reflects the new one). This
@@ -731,8 +730,8 @@ public final class Locale implements Cloneable, Serializable {
      * the country value to uppercase.
      * @implNote
      * <ul>
-     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are now mapped to
-     * their new forms. See <a href="#legacy_language_codes">Legacy language
+     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
+     * their current forms. See <a href="#legacy_language_codes">Legacy language
      * codes</a> for more information.
      * <li>For backward compatibility reasons, this constructor does not make
      * any syntactic checks on the input.
@@ -763,8 +762,8 @@ public final class Locale implements Cloneable, Serializable {
      * the country value to uppercase.
      * @implNote
      * <ul>
-     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are now mapped to
-     * their new forms. See <a href="#legacy_language_codes">Legacy language
+     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
+     * their current forms. See <a href="#legacy_language_codes">Legacy language
      * codes</a> for more information.
      * <li>For backward compatibility reasons, this constructor does not make
      * any syntactic checks on the input.
@@ -786,8 +785,8 @@ public final class Locale implements Cloneable, Serializable {
      * This constructor normalizes the language value to lowercase.
      * @implNote
      * <ul>
-     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are now mapped to
-     * their new forms. See <a href="#legacy_language_codes">Legacy language
+     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
+     * their current forms. See <a href="#legacy_language_codes">Legacy language
      * codes</a> for more information.
      * <li>For backward compatibility reasons, this constructor does not make
      * any syntactic checks on the input.
@@ -1602,9 +1601,11 @@ public final class Locale implements Cloneable, Serializable {
      *
      * <li>The language code "und" is mapped to language "".
      *
-     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are now mapped to
-     * their new forms. See <a href="#legacy_language_codes">Legacy language
-     * codes</a> for more information.
+     * <li>The language codes "iw", "ji", and "in" are mapped to "he",
+     * "yi", and "id" respectively. (This is the same canonicalization
+     * that's done in Locale's constructors.) See
+     * <a href="#legacy_language_codes">Legacy language codes</a>
+     * for more information.
      *
      * <li>The portion of a private use subtag prefixed by "lvariant",
      * if any, is removed and appended to the variant field in the

@@ -3098,6 +3098,12 @@ public abstract class ResourceBundle {
          * nor {@code "java.properties"}, an
          * {@code IllegalArgumentException} is thrown.</li>
          *
+         * <li>If the {@code locale}'s language is one of the
+         * <a href="./Locale.html#legacy_language_codes">Legacy language
+         * codes</a>, either old or new, then repeat the loading process
+         * if needed, with the bundle name with the other language.
+         * For example, "iw" for "he" and vice versa.
+         *
          * </ul>
          *
          * @param baseName
