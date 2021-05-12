@@ -5684,7 +5684,7 @@ address generate_avx_ghash_processBlocks() {
 
   // base64 AVX512vbmi tables
   address base64_vbmi_lookup_lo_addr() {
-    __ align(CodeEntryAlignment);
+    __ align(64);
     StubCodeMark mark(this, "StubRoutines", "lookup_lo");
     address start = __ pc();
     __ emit_data64(0x8080808080808080, relocInfo::none);
@@ -5699,7 +5699,7 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_lookup_hi_addr() {
-    __ align(CodeEntryAlignment);
+    __ align(64);
     StubCodeMark mark(this, "StubRoutines", "lookup_hi");
     address start = __ pc();
     __ emit_data64(0x0605040302010080, relocInfo::none);
@@ -5713,7 +5713,7 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
   address base64_vbmi_lookup_lo_url_addr() {
-    __ align(CodeEntryAlignment);
+    __ align(64);
     StubCodeMark mark(this, "StubRoutines", "lookup_lo_url");
     address start = __ pc();
     __ emit_data64(0x8080808080808080, relocInfo::none);
@@ -5728,7 +5728,7 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_lookup_hi_url_addr() {
-    __ align(CodeEntryAlignment);
+    __ align(64);
     StubCodeMark mark(this, "StubRoutines", "lookup_hi_url");
     address start = __ pc();
     __ emit_data64(0x0605040302010080, relocInfo::none);
@@ -5743,7 +5743,7 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_pack_vec_addr() {
-    __ align(CodeEntryAlignment);
+    __ align(64);
     StubCodeMark mark(this, "StubRoutines", "pack_vec");
     address start = __ pc();
     __ emit_data64(0x090a040506000102, relocInfo::none);
@@ -5758,7 +5758,7 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_join_0_1_addr() {
-    __ align(CodeEntryAlignment);
+    __ align(64);
     StubCodeMark mark(this, "StubRoutines", "join_0_1");
     address start = __ pc();
     __ emit_data64(0x090a040506000102, relocInfo::none);
@@ -5773,7 +5773,7 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_join_1_2_addr() {
-    __ align(CodeEntryAlignment);
+    __ align(64);
     StubCodeMark mark(this, "StubRoutines", "join_1_2");
     address start = __ pc();
     __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
@@ -5788,7 +5788,7 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_join_2_3_addr() {
-    __ align(CodeEntryAlignment);
+    __ align(64);
     StubCodeMark mark(this, "StubRoutines", "join_2_3");
     address start = __ pc();
     __ emit_data64(0x363031322c2d2e28, relocInfo::none);
@@ -7205,6 +7205,7 @@ address generate_avx_ghash_processBlocks() {
       StubRoutines::x86::_left_shift_mask = base64_left_shift_mask_addr();
       StubRoutines::x86::_right_shift_mask = base64_right_shift_mask_addr();
       StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
+      StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
     }
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
