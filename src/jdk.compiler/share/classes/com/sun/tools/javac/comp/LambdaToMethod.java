@@ -1353,7 +1353,7 @@ public class LambdaToMethod extends TreeTranslator {
         public void visitIdent(JCIdent tree) {
             if (context() != null && lambdaIdentSymbolFilter(tree.sym)) {
                 if (tree.sym.kind == VAR &&
-                        tree.sym.owner.kind == MTH &&
+                        (tree.sym.owner.kind == MTH || tree.sym.owner.kind == VAR) &&
                         tree.type.constValue() == null) {
                     TranslationContext<?> localContext = context();
                     while (localContext != null) {
@@ -1566,7 +1566,7 @@ public class LambdaToMethod extends TreeTranslator {
 
             List<Frame> prevStack = frameStack;
             try {
-                if (tree.sym.owner.kind == MTH) {
+                if (tree.sym.owner.kind == MTH || tree.sym.owner.kind == VAR) {
                     frameStack.head.addLocal(tree.sym);
                 }
                 frameStack = frameStack.prepend(new Frame(tree));
