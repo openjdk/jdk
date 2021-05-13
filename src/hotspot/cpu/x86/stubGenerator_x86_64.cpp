@@ -5866,7 +5866,7 @@ address generate_avx_ghash_processBlocks() {
     const XMMRegister join12 = xmm17;
     const XMMRegister join01 = xmm18;
 
-    Label L_process256, L_process64, L_exit, L_processdata, L_loadURL, L_continue, L_errorExit;
+    Label L_process256, L_process64, L_exit, L_processdata, L_loadURL, L_continue, L_errorExit, L_finalBit;
 
     // calculate length from offsets
     __ movl(length, end_offset);
@@ -5966,6 +5966,70 @@ address generate_avx_ghash_processBlocks() {
     __ align(32);
     __ BIND(L_process64);
 
+    __ cmpl(length, 63);
+    __ jcc(Assembler::belowEqual, L_finalBit);
+
+    __ evmovdquq(xmm3, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
+    __ movl(rax, 0x01400140);
+    __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit, r13);
+    __ evpermt2b(xmm0, xmm3, xmm6, Assembler::AVX_512bit);
+    __ evpbroadcastd(xmm2, rax, Assembler::AVX_512bit);
+    __ addq(source, 64);
+
+    __ movl(r15, 0x00011000);
+    __ vpternlogd(xmm7, 0xfe, xmm0, xmm3, Assembler::AVX_512bit);
+    __ evmovdqaq(xmm4, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
+    __ evpbroadcastd(xmm1, rax, Assembler::AVX_512bit);
+    __ vpmaddubsw(xmm0, xmm0, xmm2, Assembler::AVX_512bit);
+    __ subq(length, 64);
+    __ vpmaddwd(xmm0, xmm0, xmm1, Assembler::AVX_512bit);
+    __ vpermb(xmm0, xmm4, xmm0, Assembler::AVX_512bit);
+
+    __ evmovdqaq(xmm3, xmm7, Assembler::AVX_512bit);
+    __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm2, Assembler::AVX_512bit);
+    __ addq(dest, 48);
+
+    __ cmpl(length, 63);
+    __ jcc(Assembler::belowEqual, L_finalBit);
+
+    __ evmovdquq(xmm7, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
+    __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit, r13);
+    __ evpermt2b(xmm0, xmm7, xmm6, Assembler::AVX_512bit);
+    __ addq(source, 64);
+    __ vpternlogd(xmm3, 0xfe, xmm0, xmm7, Assembler::AVX_512bit);
+    __ vpmaddubsw(xmm0, xmm0, xmm2, Assembler::AVX_512bit);
+    __ subq(length, 64);
+    __ vpmaddwd(xmm0, xmm0, xmm1, Assembler::AVX_512bit);
+    __ vpermb(xmm0, xmm4, xmm0, Assembler::AVX_512bit);
+    __ evmovdqaq(xmm7, xmm3, Assembler::AVX_512bit, r13);
+    __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm0, Assembler::AVX_512bit);
+    __ addq(dest, 48);
+
+    __ cmpl(length, 63);
+    __ jcc(Assembler::belowEqual, L_finalBit);
+
+    __ evmovdquq(xmm7, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
+    __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit, r13);
+    __ evpermt2b(xmm0, xmm7, xmm6, Assembler::AVX_512bit);
+    __ addq(source, 64);
+    __ vpmaddubsw(xmm2, xmm0, xmm2, Assembler::AVX_512bit);
+    __ vpmaddwd(xmm1, xmm2, xmm1, Assembler::AVX_512bit);
+    __ vpternlogd(xmm3, 0xfe, xmm0, xmm7, Assembler::AVX_512bit);
+    __ subq(length, 64);
+    __ vpermb(xmm1, xmm4, xmm1, Assembler::AVX_512bit);
+    __ evmovdqaq(xmm7, xmm3, Assembler::AVX_512bit, r13);
+    __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm1, Assembler::AVX_512bit);
+    __ addq(dest, 48);
+
+    __ BIND(L_finalBit);
+
+    __ evpmovb2m(k3, xmm7, Assembler::AVX_512bit);
+    __ kmovql(rax, k3);
+    __ testl(rax, rax);
+    __ jcc(Assembler::notZero, L_errorExit);
+
+    //  Let Java take care of the final fragment
+    
     __ BIND(L_exit);
     __ pop(rax);          // Get full length back
     __ subq(rax, length);      // Number of bytes converted
