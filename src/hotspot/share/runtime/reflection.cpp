@@ -395,33 +395,12 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
 }
 
 
-static bool under_unsafe_anonymous_host(const InstanceKlass* ik, const InstanceKlass* unsafe_anonymous_host) {
-  DEBUG_ONLY(int inf_loop_check = 1000 * 1000 * 1000);
-  for (;;) {
-    const InstanceKlass* hc = ik->unsafe_anonymous_host();
-    if (hc == NULL)        return false;
-    if (hc == unsafe_anonymous_host)  return true;
-    ik = hc;
-
-    // There's no way to make a host class loop short of patching memory.
-    // Therefore there cannot be a loop here unless there's another bug.
-    // Still, let's check for it.
-    assert(--inf_loop_check > 0, "no unsafe_anonymous_host loop");
-  }
-}
-
 static bool can_relax_access_check_for(const Klass* accessor,
                                        const Klass* accessee,
                                        bool classloader_only) {
 
   const InstanceKlass* accessor_ik = InstanceKlass::cast(accessor);
   const InstanceKlass* accessee_ik = InstanceKlass::cast(accessee);
-
-  // If either is on the other's unsafe_anonymous_host chain, access is OK,
-  // because one is inside the other.
-  if (under_unsafe_anonymous_host(accessor_ik, accessee_ik) ||
-    under_unsafe_anonymous_host(accessee_ik, accessor_ik))
-    return true;
 
   if (RelaxAccessControlCheck &&
     accessor_ik->major_version() < Verifier::NO_RELAX_ACCESS_CTRL_CHECK_VERSION &&
@@ -645,16 +624,7 @@ bool Reflection::verify_member_access(const Klass* current_class,
     return true;
   }
 
-  const Klass* host_class = current_class;
-  if (current_class->is_instance_klass() &&
-      InstanceKlass::cast(current_class)->is_unsafe_anonymous()) {
-    host_class = InstanceKlass::cast(current_class)->unsafe_anonymous_host();
-    assert(host_class != NULL, "Unsafe anonymous class has null host class");
-    assert(!(host_class->is_instance_klass() &&
-           InstanceKlass::cast(host_class)->is_unsafe_anonymous()),
-           "unsafe_anonymous_host should not be unsafe anonymous itself");
-  }
-  if (host_class == member_class) {
+  if (current_class == member_class) {
     return true;
   }
 
@@ -662,12 +632,12 @@ bool Reflection::verify_member_access(const Klass* current_class,
     if (!protected_restriction) {
       // See if current_class (or outermost host class) is a subclass of member_class
       // An interface may not access protected members of j.l.Object
-      if (!host_class->is_interface() && host_class->is_subclass_of(member_class)) {
+      if (!current_class->is_interface() && current_class->is_subclass_of(member_class)) {
         if (access.is_static() || // static fields are ok, see 6622385
             current_class == resolved_class ||
             member_class == resolved_class ||
-            host_class->is_subclass_of(resolved_class) ||
-            resolved_class->is_subclass_of(host_class)) {
+            current_class->is_subclass_of(resolved_class) ||
+            resolved_class->is_subclass_of(current_class)) {
           return true;
         }
       }
@@ -679,9 +649,8 @@ bool Reflection::verify_member_access(const Klass* current_class,
     return true;
   }
 
-  // private access between different classes needs a nestmate check, but
-  // not for unsafe anonymous classes - so check host_class
-  if (access.is_private() && host_class == current_class) {
+  // private access between different classes needs a nestmate check.
+  if (access.is_private()) {
     if (current_class->is_instance_klass() && member_class->is_instance_klass() ) {
       InstanceKlass* cur_ik = const_cast<InstanceKlass*>(InstanceKlass::cast(current_class));
       InstanceKlass* field_ik = const_cast<InstanceKlass*>(InstanceKlass::cast(member_class));
@@ -712,7 +681,7 @@ bool Reflection::is_same_class_package(const Klass* class1, const Klass* class2)
 // Checks that the 'outer' klass has declared 'inner' as being an inner klass. If not,
 // throw an incompatible class change exception
 // If inner_is_member, require the inner to be a member of the outer.
-// If !inner_is_member, require the inner to be hidden or unsafe anonymous (non-members).
+// If !inner_is_member, require the inner to be hidden (non-member).
 // Caller is responsible for figuring out in advance which case must be true.
 void Reflection::check_for_inner_class(const InstanceKlass* outer, const InstanceKlass* inner,
                                        bool inner_is_member, TRAPS) {

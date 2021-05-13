@@ -27,7 +27,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.SortedSet;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -35,7 +34,6 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
@@ -43,8 +41,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.builders.MemberSummaryBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -75,14 +73,10 @@ public class Navigation {
     private Content navLinkModule;
     private Content navLinkPackage;
     private Content navLinkClass;
-    private MemberSummaryBuilder memberSummaryBuilder;
-    private boolean displaySummaryModuleDescLink;
-    private boolean displaySummaryModulesLink;
-    private boolean displaySummaryPackagesLink;
-    private boolean displaySummaryServicesLink;
     private Content userHeader;
     private final String rowListTitle;
     private final Content searchLabel;
+    private SubNavLinks subNavLinks;
 
     public enum PageMode {
         ALL_CLASSES,
@@ -101,6 +95,18 @@ public class Navigation {
         SYSTEM_PROPERTIES,
         TREE,
         USE;
+    }
+
+    /**
+     * An interface to provide links for the sub-navigation area.
+     */
+    public interface SubNavLinks {
+        /**
+         * {@return a list of links to display in the sub-navigation area}
+         * Links should be wrapped in {@code HtmlTree.LI} elements as they are
+         * displayed within an unordered list.
+         */
+        List<Content> getSubNavLinks();
     }
 
     /**
@@ -141,33 +147,13 @@ public class Navigation {
         return this;
     }
 
-    public Navigation setMemberSummaryBuilder(MemberSummaryBuilder memberSummaryBuilder) {
-        this.memberSummaryBuilder = memberSummaryBuilder;
-        return this;
-    }
-
-    public Navigation setDisplaySummaryModuleDescLink(boolean displaySummaryModuleDescLink) {
-        this.displaySummaryModuleDescLink = displaySummaryModuleDescLink;
-        return this;
-    }
-
-    public Navigation setDisplaySummaryModulesLink(boolean displaySummaryModulesLink) {
-        this.displaySummaryModulesLink = displaySummaryModulesLink;
-        return this;
-    }
-
-    public Navigation setDisplaySummaryPackagesLink(boolean displaySummaryPackagesLink) {
-        this.displaySummaryPackagesLink = displaySummaryPackagesLink;
-        return this;
-    }
-
-    public Navigation setDisplaySummaryServicesLink(boolean displaySummaryServicesLink) {
-        this.displaySummaryServicesLink = displaySummaryServicesLink;
-        return this;
-    }
-
     public Navigation setUserHeader(Content userHeader) {
         this.userHeader = userHeader;
+        return this;
+    }
+
+    public Navigation setSubNavLinks(SubNavLinks subNavLinks) {
+        this.subNavLinks = subNavLinks;
         return this;
     }
 
@@ -350,250 +336,20 @@ public class Navigation {
      * @param tree the content tree to which the sub-navigation will added
      */
     private void addSummaryLinks(Content tree) {
-        List<Content> listContents = new ArrayList<>();
         switch (documentedPage) {
-            case CLASS:
-                if (element.getKind() == ElementKind.ANNOTATION_TYPE) {
-                    addAnnotationTypeSummaryLink("doclet.navField",
-                            FIELDS, listContents);
-                    addAnnotationTypeSummaryLink("doclet.navAnnotationTypeRequiredMember",
-                            ANNOTATION_TYPE_MEMBER_REQUIRED, listContents);
-                    addAnnotationTypeSummaryLink("doclet.navAnnotationTypeOptionalMember",
-                            ANNOTATION_TYPE_MEMBER_OPTIONAL, listContents);
-                } else {
-                    TypeElement typeElement = (TypeElement) element;
-                    for (VisibleMemberTable.Kind kind : summarySet) {
-                        if (kind == ENUM_CONSTANTS && !configuration.utils.isEnum(typeElement)) {
-                            continue;
-                        }
-                        if (kind == CONSTRUCTORS && configuration.utils.isEnum(typeElement)) {
-                            continue;
-                        }
-                        AbstractMemberWriter writer
-                                = ((AbstractMemberWriter) memberSummaryBuilder.getMemberSummaryWriter(kind));
-                        if (writer == null) {
-                            addContentToList(listContents, contents.getNavLinkLabelContent(kind));
-                        } else {
-                            addTypeSummaryLink(memberSummaryBuilder.members(kind),
-                                    memberSummaryBuilder.getVisibleMemberTable(),
-                                    kind, listContents);
-                        }
-                    }
-                }
+            case MODULE, PACKAGE, CLASS, HELP -> {
+                List<? extends Content> listContents = subNavLinks.getSubNavLinks()
+                        .stream().map(HtmlTree::LI).toList();
                 if (!listContents.isEmpty()) {
-                    Content li = HtmlTree.LI(contents.summaryLabel);
-                    li.add(Entity.NO_BREAK_SPACE);
-                    tree.add(li);
+                    tree.add(HtmlTree.LI(switch (documentedPage) {
+                        case MODULE -> contents.moduleSubNavLabel;
+                        case PACKAGE -> contents.packageSubNavLabel;
+                        case CLASS -> contents.summaryLabel;
+                        case HELP -> contents.helpSubNavLabel;
+                        default -> Text.EMPTY;
+                    }).add(Entity.NO_BREAK_SPACE));
                     addListToNav(listContents, tree);
                 }
-                break;
-
-            case MODULE:
-                if (displaySummaryModuleDescLink) {
-                    addContentToList(listContents,
-                            links.createLink(HtmlIds.MODULE_DESCRIPTION, contents.navModuleDescription));
-                } else {
-                    addContentToList(listContents, contents.navModuleDescription);
-                }
-                if (displaySummaryModulesLink) {
-                    addContentToList(listContents,
-                            links.createLink(HtmlIds.MODULES, contents.navModules));
-                } else {
-                    addContentToList(listContents, contents.navModules);
-                }
-                if (displaySummaryPackagesLink) {
-                    addContentToList(listContents,
-                            links.createLink(HtmlIds.PACKAGES, contents.navPackages));
-                } else {
-                    addContentToList(listContents, contents.navPackages);
-                }
-                if (displaySummaryServicesLink) {
-                    addContentToList(listContents,
-                            links.createLink(HtmlIds.SERVICES, contents.navServices));
-                } else {
-                    addContentToList(listContents, contents.navServices);
-                }
-                if (!listContents.isEmpty()) {
-                    Content li = HtmlTree.LI(contents.moduleSubNavLabel);
-                    li.add(Entity.NO_BREAK_SPACE);
-                    tree.add(li);
-                    addListToNav(listContents, tree);
-                }
-                break;
-
-            case HELP:
-                addContentToList(listContents,
-                        links.createLink(HtmlIds.HELP_NAVIGATION, contents.navHelpNavigation));
-                addContentToList(listContents,
-                        links.createLink(HtmlIds.HELP_PAGES, contents.navHelpPages));
-                Content li = HtmlTree.LI(contents.helpSubNavLabel);
-                li.add(Entity.NO_BREAK_SPACE);
-                tree.add(li);
-                addListToNav(listContents, tree);
-                break;
-
-            default:
-                break;
-        }
-    }
-
-    /**
-     * Adds the navigation summary link.
-     *
-     * @param members members to be linked
-     * @param vmt the visible member table
-     * @param kind the visible member kind
-     * @param listContents the list of contents
-     */
-    private void addTypeSummaryLink(SortedSet<? extends Element> members,
-            VisibleMemberTable vmt,
-            VisibleMemberTable.Kind kind, List<Content> listContents) {
-        if (!members.isEmpty()) {
-            addTypeSummaryLink(null, kind, true, listContents);
-            return;
-        }
-        Set<TypeElement> visibleClasses = vmt.getVisibleTypeElements();
-        for (TypeElement t : visibleClasses) {
-            if (configuration.getVisibleMemberTable(t).hasVisibleMembers(kind)) {
-                addTypeSummaryLink(null, kind, true, listContents);
-                return;
-            }
-        }
-        addTypeSummaryLink(null, kind, false, listContents);
-    }
-
-    /**
-     * Adds the navigation Type summary link.
-     *
-     * @param typeElement the Type being documented
-     * @param kind the kind of member being documented
-     * @param link true if the members are listed and need to be linked
-     * @param listContents the list of contents to which the summary will be added
-     */
-    private void addTypeSummaryLink(TypeElement typeElement, VisibleMemberTable.Kind kind, boolean link,
-            List<Content> listContents) {
-        switch (kind) {
-            case CONSTRUCTORS:
-                if (link) {
-                    addContentToList(listContents,
-                            links.createLink(HtmlIds.CONSTRUCTOR_SUMMARY, contents.navConstructor));
-                } else {
-                    addContentToList(listContents, contents.navConstructor);
-                }
-                break;
-            case ENUM_CONSTANTS:
-                if (link) {
-                    if (typeElement == null) {
-                        addContentToList(listContents,
-                                links.createLink(HtmlIds.ENUM_CONSTANT_SUMMARY, contents.navEnum));
-                    } else {
-                        addContentToList(listContents,
-                                links.createLink( htmlIds.forInheritedEnumConstants(typeElement), contents.navEnum));
-                    }
-                } else {
-                    addContentToList(listContents, contents.navEnum);
-                }
-                break;
-            case FIELDS:
-                if (link) {
-                    if (typeElement == null) {
-                        addContentToList(listContents,
-                                links.createLink(HtmlIds.FIELD_SUMMARY, contents.navField));
-                    } else {
-                        addContentToList(listContents,
-                                links.createLink(htmlIds.forInheritedFields(typeElement), contents.navField));
-                    }
-                } else {
-                    addContentToList(listContents, contents.navField);
-                }
-                break;
-            case METHODS:
-                if (link) {
-                    if (typeElement == null) {
-                        addContentToList(listContents,
-                                links.createLink(HtmlIds.METHOD_SUMMARY, contents.navMethod));
-                    } else {
-                        addContentToList(listContents,
-                                links.createLink(htmlIds.forInheritedMethods(typeElement), contents.navMethod));
-                    }
-                } else {
-                    addContentToList(listContents, contents.navMethod);
-                }
-                break;
-            case INNER_CLASSES:
-                if (link) {
-                    if (typeElement == null) {
-                        addContentToList(listContents,
-                                links.createLink(HtmlIds.NESTED_CLASS_SUMMARY, contents.navNested));
-                    } else {
-                        addContentToList(listContents,
-                                links.createLink(htmlIds.forInheritedClasses(typeElement), contents.navNested));
-                    }
-                } else {
-                    addContentToList(listContents, contents.navNested);
-                }
-                break;
-            case PROPERTIES:
-                if (link) {
-                    if (typeElement == null) {
-                        addContentToList(listContents,
-                                links.createLink(HtmlIds.PROPERTY_SUMMARY, contents.navProperty));
-                    } else {
-                        addContentToList(listContents,
-                                links.createLink(htmlIds.forInheritedProperties(typeElement), contents.navProperty));
-                    }
-                } else {
-                    addContentToList(listContents, contents.navProperty);
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
-    /**
-     * Adds the navigation Type summary link.
-     *
-     * @param label the label to be added
-     * @param kind the kind of member being documented
-     * @param listContents the list of contents to which the summary will be added
-     */
-    private void addAnnotationTypeSummaryLink(String label, VisibleMemberTable.Kind kind, List<Content> listContents) {
-        AbstractMemberWriter writer = ((AbstractMemberWriter) memberSummaryBuilder.
-                getMemberSummaryWriter(kind));
-        if (writer == null) {
-            addContentToList(listContents, contents.getContent(label));
-        } else {
-            boolean link = memberSummaryBuilder.getVisibleMemberTable().hasVisibleMembers(kind);
-            switch (kind) {
-                case FIELDS:
-                    if (link) {
-                        addContentToList(listContents, links.createLink(HtmlIds.FIELD_SUMMARY,
-                                contents.navField));
-                    } else {
-                        addContentToList(listContents, contents.navField);
-                    }
-                    break;
-                case ANNOTATION_TYPE_MEMBER_REQUIRED:
-                    if (link) {
-                        addContentToList(listContents, links.createLink(
-                                HtmlIds.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY,
-                                contents.navAnnotationTypeRequiredMember));
-                    } else {
-                        addContentToList(listContents, contents.navAnnotationTypeRequiredMember);
-                    }
-                    break;
-                case ANNOTATION_TYPE_MEMBER_OPTIONAL:
-                    if (link) {
-                        addContentToList(listContents, links.createLink(
-                                HtmlIds.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY,
-                                contents.navAnnotationTypeOptionalMember));
-                    } else {
-                        addContentToList(listContents, contents.navAnnotationTypeOptionalMember);
-                    }
-                    break;
-                default:
-                    break;
             }
         }
     }
@@ -604,39 +360,29 @@ public class Navigation {
      * @param tree the content tree to which the links will be added
      */
     private void addDetailLinks(Content tree) {
-        switch (documentedPage) {
-            case CLASS:
-                List<Content> listContents = new ArrayList<>();
-                if (element.getKind() == ElementKind.ANNOTATION_TYPE) {
-                    addAnnotationTypeDetailLink(listContents);
-                } else {
-                    TypeElement typeElement = (TypeElement) element;
-                    for (VisibleMemberTable.Kind kind : detailSet) {
-                        AbstractMemberWriter writer
-                                = ((AbstractMemberWriter) memberSummaryBuilder.
-                                getMemberSummaryWriter(kind));
-                        if (kind == ENUM_CONSTANTS && !configuration.utils.isEnum(typeElement)) {
-                            continue;
-                        }
-                        if (kind == CONSTRUCTORS && configuration.utils.isEnum(typeElement)) {
-                            continue;
-                        }
-                        if (writer == null) {
-                            addContentToList(listContents, contents.getNavLinkLabelContent(kind));
-                        } else {
-                            addTypeDetailLink(kind, memberSummaryBuilder.hasMembers(kind), listContents);
-                        }
-                    }
+        if (documentedPage == PageMode.CLASS) {
+            List<Content> listContents = new ArrayList<>();
+            VisibleMemberTable vmt = configuration.getVisibleMemberTable((TypeElement) element);
+            if (element.getKind() == ElementKind.ANNOTATION_TYPE) {
+                // Handle annotation interfaces separately as required and optional elements
+                // share a combined details section.
+                addTypeDetailLink(FIELDS, !vmt.getVisibleMembers(FIELDS).isEmpty(), listContents);
+                boolean hasAnnotationElements =
+                        !vmt.getVisibleMembers(ANNOTATION_TYPE_MEMBER_OPTIONAL).isEmpty()
+                                || !vmt.getVisibleMembers(ANNOTATION_TYPE_MEMBER_REQUIRED).isEmpty();
+                addTypeDetailLink(ANNOTATION_TYPE_MEMBER_REQUIRED, hasAnnotationElements, listContents);
+            } else {
+                Set<VisibleMemberTable.Kind> detailSet = VisibleMemberTable.Kind.forDetailsOf(element.getKind());
+                for (VisibleMemberTable.Kind kind : detailSet) {
+                    addTypeDetailLink(kind, !vmt.getVisibleMembers(kind).isEmpty(), listContents);
                 }
-                if (!listContents.isEmpty()) {
-                    Content li = HtmlTree.LI(contents.detailLabel);
-                    li.add(Entity.NO_BREAK_SPACE);
-                    tree.add(li);
-                    addListToNav(listContents, tree);
-                }
-                break;
-            default:
-                break;
+            }
+            if (!listContents.isEmpty()) {
+                Content li = HtmlTree.LI(contents.detailLabel);
+                li.add(Entity.NO_BREAK_SPACE);
+                tree.add(li);
+                addListToNav(listContents, tree);
+            }
         }
     }
 
@@ -648,110 +394,18 @@ public class Navigation {
      * @param listContents the list of contents to which the detail will be added.
      */
     protected void addTypeDetailLink(VisibleMemberTable.Kind kind, boolean link, List<Content> listContents) {
-        switch (kind) {
-            case CONSTRUCTORS:
-                if (link) {
-                    addContentToList(listContents, links.createLink(HtmlIds.CONSTRUCTOR_DETAIL, contents.navConstructor));
-                } else {
-                    addContentToList(listContents, contents.navConstructor);
-                }
-                break;
-            case ENUM_CONSTANTS:
-                if (link) {
-                    addContentToList(listContents, links.createLink(HtmlIds.ENUM_CONSTANT_DETAIL, contents.navEnum));
-                } else {
-                    addContentToList(listContents, contents.navEnum);
-                }
-                break;
-            case FIELDS:
-                if (link) {
-                    addContentToList(listContents, links.createLink(HtmlIds.FIELD_DETAIL, contents.navField));
-                } else {
-                    addContentToList(listContents, contents.navField);
-                }
-                break;
-            case METHODS:
-                if (link) {
-                    addContentToList(listContents, links.createLink(HtmlIds.METHOD_DETAIL, contents.navMethod));
-                } else {
-                    addContentToList(listContents, contents.navMethod);
-                }
-                break;
-            case PROPERTIES:
-                if (link) {
-                    addContentToList(listContents, links.createLink(HtmlIds.PROPERTY_DETAIL, contents.navProperty));
-                } else {
-                    addContentToList(listContents, contents.navProperty);
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
-    /**
-     * Adds the navigation Annotation Type detail link.
-     *
-     * @param listContents the list of contents to which the annotation detail will be added.
-     */
-    protected void addAnnotationTypeDetailLink(List<Content> listContents) {
-        TypeElement annotationType = (TypeElement) element;
-        AbstractMemberWriter writerField
-                = ((AbstractMemberWriter) memberSummaryBuilder.
-                        getMemberSummaryWriter(FIELDS));
-        AbstractMemberWriter writerOptional
-                = ((AbstractMemberWriter) memberSummaryBuilder.
-                        getMemberSummaryWriter(ANNOTATION_TYPE_MEMBER_OPTIONAL));
-        AbstractMemberWriter writerRequired
-                = ((AbstractMemberWriter) memberSummaryBuilder.
-                        getMemberSummaryWriter(ANNOTATION_TYPE_MEMBER_REQUIRED));
-        if (writerField != null) {
-            addAnnotationTypeDetailLink(FIELDS,
-                    !configuration.utils.getFields(annotationType).isEmpty(),
-                    listContents);
-        } else {
-            addContentToList(listContents, contents.navField);
-        }
-        if (writerOptional != null) {
-            addAnnotationTypeDetailLink(ANNOTATION_TYPE_MEMBER_OPTIONAL,
-                    !annotationType.getAnnotationMirrors().isEmpty(), listContents);
-        } else if (writerRequired != null) {
-            addAnnotationTypeDetailLink(ANNOTATION_TYPE_MEMBER_REQUIRED,
-                    !annotationType.getAnnotationMirrors().isEmpty(), listContents);
-        } else {
-            addContentToList(listContents, contents.navAnnotationTypeMember);
-        }
-    }
-
-    /**
-     * Adds the navigation Annotation Type detail link.
-     *
-     * @param type the kind of member being documented
-     * @param link true if the member details need to be linked
-     * @param listContents the list of contents to which the annotation detail will be added.
-     */
-    protected void addAnnotationTypeDetailLink(VisibleMemberTable.Kind type, boolean link, List<Content> listContents) {
-        switch (type) {
-            case FIELDS:
-                if (link) {
-                    addContentToList(listContents,
-                            links.createLink(HtmlIds.FIELD_DETAIL, contents.navField));
-                } else {
-                    addContentToList(listContents, contents.navField);
-                }
-                break;
-            case ANNOTATION_TYPE_MEMBER_REQUIRED:
-            case ANNOTATION_TYPE_MEMBER_OPTIONAL:
-                if (link) {
-                    addContentToList(listContents, links.createLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL,
-                            contents.navAnnotationTypeMember));
-                } else {
-                    addContentToList(listContents, contents.navAnnotationTypeMember);
-                }
-                break;
-            default:
-                break;
-        }
+        addContentToList(listContents, switch (kind) {
+            case CONSTRUCTORS -> links.createLink(HtmlIds.CONSTRUCTOR_DETAIL, contents.navConstructor, link);
+            case ENUM_CONSTANTS -> links.createLink(HtmlIds.ENUM_CONSTANT_DETAIL, contents.navEnum, link);
+            case FIELDS -> links.createLink(HtmlIds.FIELD_DETAIL, contents.navField, link);
+            case METHODS -> links.createLink(HtmlIds.METHOD_DETAIL, contents.navMethod, link);
+            case PROPERTIES -> links.createLink(HtmlIds.PROPERTY_DETAIL, contents.navProperty, link);
+            case ANNOTATION_TYPE_MEMBER_REQUIRED,
+                 ANNOTATION_TYPE_MEMBER_OPTIONAL ->
+                    links.createLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL,
+                            contents.navAnnotationTypeMember, link);
+            default -> Text.EMPTY;
+        });
     }
 
     private void addContentToList(List<Content> listContents, Content tree) {
@@ -762,7 +416,7 @@ public class Navigation {
         tree.add(HtmlTree.LI(content));
     }
 
-    private void addListToNav(List<Content> listContents, Content tree) {
+    private void addListToNav(List<? extends Content> listContents, Content tree) {
         int count = 0;
         for (Content liContent : listContents) {
             if (count < listContents.size() - 1) {
@@ -904,11 +558,12 @@ public class Navigation {
     }
 
     private void addSearch(Content tree) {
-        String searchValueId = "search";
+        String search = "search";
         String reset = "reset";
-        HtmlTree inputText = HtmlTree.INPUT("text", HtmlIds.SEARCH_INPUT, searchValueId);
+        HtmlTree inputText = HtmlTree.INPUT("text", HtmlIds.SEARCH_INPUT, search);
         HtmlTree inputReset = HtmlTree.INPUT(reset, HtmlIds.RESET_BUTTON, reset);
-        HtmlTree searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch, HtmlTree.LABEL(searchValueId, searchLabel));
+        HtmlTree searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch,
+                HtmlTree.LABEL(HtmlIds.SEARCH_INPUT.name(), searchLabel));
         searchDiv.add(inputText);
         searchDiv.add(inputReset);
         tree.add(searchDiv);

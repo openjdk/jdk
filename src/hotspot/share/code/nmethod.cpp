@@ -1757,10 +1757,10 @@ public:
 bool nmethod::is_unloading() {
   uint8_t state = RawAccess<MO_RELAXED>::load(&_is_unloading_state);
   bool state_is_unloading = IsUnloadingState::is_unloading(state);
-  uint8_t state_unloading_cycle = IsUnloadingState::unloading_cycle(state);
   if (state_is_unloading) {
     return true;
   }
+  uint8_t state_unloading_cycle = IsUnloadingState::unloading_cycle(state);
   uint8_t current_cycle = CodeCache::unloading_cycle();
   if (state_unloading_cycle == current_cycle) {
     return false;

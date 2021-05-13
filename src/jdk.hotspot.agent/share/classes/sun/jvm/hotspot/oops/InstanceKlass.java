@@ -70,7 +70,6 @@ public class InstanceKlass extends Klass {
   private static int MISC_REWRITTEN;
   private static int MISC_HAS_NONSTATIC_FIELDS;
   private static int MISC_SHOULD_VERIFY_CLASS;
-  private static int MISC_IS_UNSAFE_ANONYMOUS;
   private static int MISC_IS_CONTENDED;
   private static int MISC_HAS_NONSTATIC_CONCRETE_METHODS;
   private static int MISC_DECLARES_NONSTATIC_CONCRETE_METHODS;
@@ -128,7 +127,6 @@ public class InstanceKlass extends Klass {
     MISC_REWRITTEN                    = db.lookupIntConstant("InstanceKlass::_misc_rewritten").intValue();
     MISC_HAS_NONSTATIC_FIELDS         = db.lookupIntConstant("InstanceKlass::_misc_has_nonstatic_fields").intValue();
     MISC_SHOULD_VERIFY_CLASS          = db.lookupIntConstant("InstanceKlass::_misc_should_verify_class").intValue();
-    MISC_IS_UNSAFE_ANONYMOUS          = db.lookupIntConstant("InstanceKlass::_misc_is_unsafe_anonymous").intValue();
     MISC_IS_CONTENDED                 = db.lookupIntConstant("InstanceKlass::_misc_is_contended").intValue();
     MISC_HAS_NONSTATIC_CONCRETE_METHODS      = db.lookupIntConstant("InstanceKlass::_misc_has_nonstatic_concrete_methods").intValue();
     MISC_DECLARES_NONSTATIC_CONCRETE_METHODS = db.lookupIntConstant("InstanceKlass::_misc_declares_nonstatic_concrete_methods").intValue();
@@ -283,18 +281,11 @@ public class InstanceKlass extends Klass {
     if (isInterface()) {
       size += wordLength;
     }
-    if (isUnsafeAnonymous()) {
-      size += wordLength;
-    }
     return alignSize(size);
   }
 
   private int getMiscFlags() {
     return (int) miscFlags.getValue(this);
-  }
-
-  public boolean isUnsafeAnonymous() {
-    return (getMiscFlags() & MISC_IS_UNSAFE_ANONYMOUS) != 0;
   }
 
   public static long getHeaderSize() { return headerSize; }

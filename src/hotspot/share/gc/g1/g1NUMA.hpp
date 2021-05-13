@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,6 @@ class G1NUMA: public CHeapObj<mtGC> {
   // Returns node index of the given node id.
   // Precondition: node_id is an active node id.
   inline uint index_of_node_id(int node_id) const;
-
-  // Creates node id and node index mapping table of _node_id_to_index_map.
-  void init_node_id_to_index_map(const int* node_ids, uint num_node_ids);
 
   static G1NUMA* _inst;
 

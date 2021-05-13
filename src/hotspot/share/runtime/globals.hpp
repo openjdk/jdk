@@ -994,6 +994,9 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, UseCHA, true,                                               \
           "Enable CHA")                                                     \
                                                                             \
+  product(bool, UseVtableBasedCHA, true,  DIAGNOSTIC,                       \
+          "Use vtable information during CHA")                              \
+                                                                            \
   product(bool, UseTypeProfile, true,                                       \
           "Check interpreter profile for historically monomorphic calls")   \
                                                                             \
@@ -1145,9 +1148,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   notproduct(bool, CollectIndexSetStatistics, false,                        \
           "Collect information about IndexSets")                            \
-                                                                            \
-  develop(bool, UseLoopSafepoints, true,                                    \
-          "Generate Safepoint nodes in every loop")                         \
                                                                             \
   develop(intx, FastAllocateSizeLimit, 128*K,                               \
           /* Note:  This value is zero mod 1<<13 for a cheap sparc set. */  \

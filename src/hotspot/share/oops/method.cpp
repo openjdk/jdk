@@ -620,11 +620,6 @@ void Method::compute_from_signature(Symbol* sig) {
   constMethod()->set_fingerprint(fp.fingerprint());
 }
 
-bool Method::is_empty_method() const {
-  return  code_size() == 1
-      && *code_base() == Bytecodes::_return;
-}
-
 bool Method::is_vanilla_constructor() const {
   // Returns true if this method is a vanilla constructor, i.e. an "<init>" "()V" method
   // which only calls the superclass vanilla constructor and possibly does stores of
@@ -2230,8 +2225,6 @@ void Method::set_on_stack(const bool value) {
   if (value && !already_set) {
     MetadataOnStackMark::record(this);
   }
-  assert(!value || !is_old() || is_obsolete() || is_running_emcp(),
-         "emcp methods cannot run after emcp bit is cleared");
 }
 
 // Called when the class loader is unloaded to make all methods weak.

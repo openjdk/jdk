@@ -1005,9 +1005,6 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
   return clone_base_plus_offset_address(m, mstack, address_visited);
 }
 
-void Compile::reshape_address(AddPNode* addp) {
-}
-
 // Optimize load-acquire.
 //
 // Check if acquire is unnecessary due to following operation that does
