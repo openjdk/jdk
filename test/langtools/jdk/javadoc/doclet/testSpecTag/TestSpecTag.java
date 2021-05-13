@@ -120,7 +120,7 @@ public class TestSpecTag extends JavadocTester {
                     </ul>
                     </div>
                     <div class="sub-nav">
-                    <div class="nav-list-search"><label for="search">SEARCH:</label>
+                    <div class="nav-list-search"><label for="search-input">SEARCH:</label>
                     <input type="text" id="search-input" value="search" disabled="disabled">
                     <input type="reset" id="reset-button" value="reset" disabled="disabled">
                     </div>
