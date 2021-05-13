@@ -364,7 +364,7 @@ JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
   return nullptr;
 }
 
-frame frame::sender_for_panama_entry_frame(RegisterMap* map) const {
+frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
   ShouldNotCallThis();
   return {};
 }

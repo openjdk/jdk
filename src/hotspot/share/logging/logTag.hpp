@@ -73,6 +73,7 @@
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
   LOG_TAG(fingerprint) \
+  DEBUG_ONLY(LOG_TAG(foreign)) \
   LOG_TAG(free) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
@@ -131,7 +132,6 @@
   LOG_TAG(os) \
   LOG_TAG(owner) \
   LOG_TAG(pagesize) \
-  DEBUG_ONLY(LOG_TAG(panama)) \
   LOG_TAG(parser) \
   LOG_TAG(patch) \
   LOG_TAG(path) \

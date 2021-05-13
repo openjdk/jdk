@@ -289,7 +289,7 @@ static const char* null_safe_string(const char* str) {
 
 #ifdef ASSERT
 static void print_arg_moves(const GrowableArray<ArgMove>& arg_moves, Method* entry) {
-  LogTarget(Trace, panama) lt;
+  LogTarget(Trace, foreign) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
@@ -804,15 +804,15 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
 
 #ifndef PRODUCT
   stringStream ss;
-  ss.print("panama_upcall_stub_%s", entry->signature()->as_C_string());
+  ss.print("optimized_upcall_stub_%s", entry->signature()->as_C_string());
   const char* name = _masm->code_string(ss.as_string());
 #else // PRODUCT
-  const char* name = "panama_upcall_stub";
+  const char* name = "optimized_upcall_stub";
 #endif // PRODUCT
 
   OptimizedEntryBlob* blob = OptimizedEntryBlob::create(name, &buffer, exception_handler_offset, receiver, jfa_offset);
 
-  if (TracePanamaUpcallStubs) {
+  if (TraceOptimizedUpcallStubs) {
     blob->print_on(tty);
     Disassembler::decode(blob, tty);
   }

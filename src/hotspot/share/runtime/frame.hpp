@@ -173,7 +173,7 @@ class frame {
   frame sender_for_entry_frame(RegisterMap* map) const;
   frame sender_for_interpreter_frame(RegisterMap* map) const;
   frame sender_for_native_frame(RegisterMap* map) const;
-  frame sender_for_panama_entry_frame(RegisterMap* map) const;
+  frame sender_for_optimized_entry_frame(RegisterMap* map) const;
 
   bool is_entry_frame_valid(JavaThread* thread) const;
 

@@ -2049,8 +2049,8 @@ const intx ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  develop(bool, TracePanamaUpcallStubs, false,                              \
-                "Trace Panama upcall stub generation")                      \
+  develop(bool, TraceOptimizedUpcallStubs, false,                              \
+                "Trace optimized upcall stub generation")                      \
 
 // end of RUNTIME_FLAGS
 
