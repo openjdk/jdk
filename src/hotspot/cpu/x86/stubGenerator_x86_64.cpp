@@ -5971,7 +5971,7 @@ address generate_avx_ghash_processBlocks() {
 
     __ evmovdquq(xmm3, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
     __ movl(rax, 0x01400140);
-    __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit, r13);
+    __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit);
     __ evpermt2b(xmm0, xmm3, xmm6, Assembler::AVX_512bit);
     __ evpbroadcastd(xmm2, rax, Assembler::AVX_512bit);
     __ addq(source, 64);
@@ -5993,7 +5993,7 @@ address generate_avx_ghash_processBlocks() {
     __ jcc(Assembler::belowEqual, L_finalBit);
 
     __ evmovdquq(xmm7, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
-    __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit, r13);
+    __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit);
     __ evpermt2b(xmm0, xmm7, xmm6, Assembler::AVX_512bit);
     __ addq(source, 64);
     __ vpternlogd(xmm3, 0xfe, xmm0, xmm7, Assembler::AVX_512bit);
@@ -6001,7 +6001,7 @@ address generate_avx_ghash_processBlocks() {
     __ subq(length, 64);
     __ vpmaddwd(xmm0, xmm0, xmm1, Assembler::AVX_512bit);
     __ vpermb(xmm0, xmm4, xmm0, Assembler::AVX_512bit);
-    __ evmovdqaq(xmm7, xmm3, Assembler::AVX_512bit, r13);
+    __ evmovdqaq(xmm7, xmm3, Assembler::AVX_512bit);
     __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm0, Assembler::AVX_512bit);
     __ addq(dest, 48);
 
@@ -6009,7 +6009,7 @@ address generate_avx_ghash_processBlocks() {
     __ jcc(Assembler::belowEqual, L_finalBit);
 
     __ evmovdquq(xmm7, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
-    __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit, r13);
+    __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit);
     __ evpermt2b(xmm0, xmm7, xmm6, Assembler::AVX_512bit);
     __ addq(source, 64);
     __ vpmaddubsw(xmm2, xmm0, xmm2, Assembler::AVX_512bit);
@@ -6017,7 +6017,7 @@ address generate_avx_ghash_processBlocks() {
     __ vpternlogd(xmm3, 0xfe, xmm0, xmm7, Assembler::AVX_512bit);
     __ subq(length, 64);
     __ vpermb(xmm1, xmm4, xmm1, Assembler::AVX_512bit);
-    __ evmovdqaq(xmm7, xmm3, Assembler::AVX_512bit, r13);
+    __ evmovdqaq(xmm7, xmm3, Assembler::AVX_512bit);
     __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm1, Assembler::AVX_512bit);
     __ addq(dest, 48);
 
@@ -6029,7 +6029,7 @@ address generate_avx_ghash_processBlocks() {
     __ jcc(Assembler::notZero, L_errorExit);
 
     //  Let Java take care of the final fragment
-    
+
     __ BIND(L_exit);
     __ pop(rax);          // Get full length back
     __ subq(rax, length);      // Number of bytes converted
