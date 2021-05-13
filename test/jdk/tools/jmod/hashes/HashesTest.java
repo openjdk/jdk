@@ -92,7 +92,6 @@ public class HashesTest {
         lib= null;
         builder=null;
     }
-    
     HashesTest(Path dest) throws IOException {
         if (Files.exists(dest)) {
             deleteDirectory(dest);
