@@ -5955,9 +5955,10 @@ address generate_avx_ghash_processBlocks() {
     __ addq(source, 0x100);
     __ addq(dest, 0xc0);
     __ subq(length, 0x100);
-    __ cmpl(length, 64 * 4);
+    __ cmpq(length, 64 * 4);
     __ jcc(Assembler::belowEqual, L_process256);
 
+    __ xorq(rax, rax);
     __ evpmovb2m(k3, xmm7, Assembler::AVX_512bit);
     __ kmovql(rax, k3);
     __ testl(rax, rax);
@@ -5966,7 +5967,7 @@ address generate_avx_ghash_processBlocks() {
     __ align(32);
     __ BIND(L_process64);
 
-    __ cmpl(length, 63);
+    __ cmpq(length, 63);
     __ jcc(Assembler::belowEqual, L_finalBit);
 
     __ evmovdquq(xmm3, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
@@ -5989,7 +5990,7 @@ address generate_avx_ghash_processBlocks() {
     __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm0, Assembler::AVX_512bit);
     __ addq(dest, 48);
 
-    __ cmpl(length, 63);
+    __ cmpq(length, 63);
     __ jcc(Assembler::belowEqual, L_finalBit);
 
     __ evmovdquq(xmm7, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
@@ -6005,7 +6006,7 @@ address generate_avx_ghash_processBlocks() {
     __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm0, Assembler::AVX_512bit);
     __ addq(dest, 48);
 
-    __ cmpl(length, 63);
+    __ cmpq(length, 63);
     __ jcc(Assembler::belowEqual, L_finalBit);
 
     __ evmovdquq(xmm7, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
