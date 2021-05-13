@@ -752,8 +752,7 @@ public class GCMBufferTest implements Cloneable {
                 "b6e6f197168f5049aeda32dafbdaeb"),
             // zero'd test data
             new Data("AES", 3, "272f16edb81a7abbea887357a58c1917",
-                "794ec588176c703d3d2a7a07",
-                new byte[256], null,
+                "794ec588176c703d3d2a7a07", new byte[256], null,
                 "15b461672153270e8ba1e6789f7641c5411f3e642abda731b6086f535c216457" +
                 "e87305bc59a1ff1f7e1e0bbdf302b75549b136606c67d7e5f71277aeca4bc670" +
                 "07a98f78e0cfa002ed183e62f07893ad31fe67aad1bb37e15b957a14d145f14f" +

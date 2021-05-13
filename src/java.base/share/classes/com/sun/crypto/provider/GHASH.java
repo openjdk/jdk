@@ -183,7 +183,7 @@ final class GHASH implements Cloneable {
         if (ct.isDirect()) {
             int processed = inLen - (inLen % AES_BLOCK_SIZE);
             processBlocksDirect(ct, inLen);
-            ct.position(ct.position() + processed);
+            ct.position(ct.position());
             return processed;
         } else if (!ct.isReadOnly()) {
             // If a non-read only heap bytebuffer, use the array update method
@@ -279,8 +279,8 @@ final class GHASH implements Cloneable {
         }
     }
 
+    // ProcessBlock for Direct ByteBuffers
     private void processBlocksDirect(ByteBuffer ct, int inLen) {
-
         byte[] data = new byte[Math.min(MAX_LEN, inLen)];
         while (inLen > MAX_LEN) {
             ct.get(data, 0, MAX_LEN);

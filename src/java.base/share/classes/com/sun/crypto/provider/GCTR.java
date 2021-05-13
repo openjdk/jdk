@@ -33,8 +33,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import static com.sun.crypto.provider.AESConstants.AES_BLOCK_SIZE;
-
 /**
  * This class represents the GCTR function defined in NIST 800-38D
  * under section 6.5.  With a given cipher object and initial counter
@@ -61,10 +59,10 @@ final class GCTR extends CounterMode {
 
     GCTR(SymmetricCipher cipher, byte[] initialCounterBlk) {
         super(cipher);
-        if (initialCounterBlk.length != AES_BLOCK_SIZE) {
+        if (initialCounterBlk.length != blockSize) {
             throw new RuntimeException("length of initial counter block (" +
-                initialCounterBlk.length + ") not equal to AES_BLOCK_SIZE (" +
-                AES_BLOCK_SIZE + ")");
+                initialCounterBlk.length + ") not equal to blockSize (" +
+                blockSize + ")");
         }
 
         iv = initialCounterBlk;
@@ -93,7 +91,11 @@ final class GCTR extends CounterMode {
         }
     }
 
-    // input must be multiples of 128-bit blocks when calling update
+    /**
+     * Using the given inLen, this operations only on blockSize data, leaving
+     * the remainder in 'in'.
+     * The return value will be (inLen - (inLen - blockSize))
+     */
     int update(byte[] in, int inOfs, int inLen, byte[] out, int outOfs) {
         if (inLen == 0) {
             return 0;
@@ -102,23 +104,24 @@ final class GCTR extends CounterMode {
         if (inLen - inOfs > in.length) {
             throw new RuntimeException("input length out of bound");
         }
-        if (inLen < 0 || inLen % AES_BLOCK_SIZE != 0) {
+        if (inLen < 0) {
             throw new RuntimeException("input length unsupported");
         }
-        if (out.length - outOfs < inLen) {
+        if (out.length - outOfs < (inLen - (inLen % blockSize))) {
             throw new RuntimeException("output buffer too small");
         }
 
+        inLen -= inLen % blockSize;
         long blocksLeft = blocksUntilRollover();
-        int numOfCompleteBlocks = inLen / AES_BLOCK_SIZE;
+        int numOfCompleteBlocks = inLen / blockSize;
         if (numOfCompleteBlocks >= blocksLeft) {
             // Counter Mode encryption cannot be used because counter will
             // roll over incorrectly. Use GCM-specific code instead.
             checkBlock();
             for (int i = 0; i < numOfCompleteBlocks; i++) {
                 embeddedCipher.encryptBlock(counter, 0, block, 0);
-                for (int n = 0; n < AES_BLOCK_SIZE; n++) {
-                    int index = (i * AES_BLOCK_SIZE + n);
+                for (int n = 0; n < blockSize; n++) {
+                    int index = (i * blockSize + n);
                     out[outOfs + index] =
                         (byte) ((in[inOfs + index] ^ block[n]));
                 }
@@ -130,7 +133,27 @@ final class GCTR extends CounterMode {
         }
     }
 
-    // input must be multiples of AES blocks, 128-bit, when calling update
+     int finalBlock(byte[] in, int inOfs, int inLen, ByteBuffer dst) {
+         int blocks = inLen / blockSize;
+         int remainder = inLen % blockSize;
+         int len = 0;
+         if (blocks > 0)  {
+             len = update(in, inOfs, blocks * blockSize, dst.array(),
+                 dst.arrayOffset() + dst.position());
+             inOfs += len;
+             dst.position(dst.position() + len);
+         }
+         if (remainder > 0) {
+             byte[] out = new byte[blockSize];
+             update(in, inOfs, blockSize, out, 0);
+             dst.put(out, 0, dst.remaining());
+         }
+         return 0;
+    }
+
+    /**
+     * Operate on only blocksize data leaving the remainder in 'in' .
+     */
     int update(byte[] in, int inOfs, int inLen, ByteBuffer dst) {
         // If the bytebuffer is backed by arrays, use that instead of
         // allocating and copying for direct bytebuffers
@@ -145,29 +168,29 @@ final class GCTR extends CounterMode {
         if (inLen - inOfs > in.length) {
             throw new RuntimeException("input length out of bound");
         }
-        if (inLen < 0 || inLen % AES_BLOCK_SIZE != 0) {
+        if (inLen < 0 || inLen % blockSize != 0) {
             throw new RuntimeException("input length unsupported");
         }
         // See GaloisCounterMode. decryptFinal(bytebuffer, bytebuffer) for
         // details on the check for 'dst' having enough space for the result.
 
         long blocksLeft = blocksUntilRollover();
-        int numOfCompleteBlocks = inLen / AES_BLOCK_SIZE;
+        int numOfCompleteBlocks = inLen / blockSize;
         if (numOfCompleteBlocks >= blocksLeft) {
             // Counter Mode encryption cannot be used because counter will
             // roll over incorrectly. Use GCM-specific code instead.
             checkBlock();
             for (int i = 0; i < numOfCompleteBlocks; i++) {
                 embeddedCipher.encryptBlock(counter, 0, block, 0);
-                for (int n = 0; n < AES_BLOCK_SIZE; n++) {
-                    int index = (i * AES_BLOCK_SIZE + n);
+                for (int n = 0; n < blockSize; n++) {
+                    int index = (i * blockSize + n);
                     dst.put((byte) ((in[inOfs + index] ^ block[n])));
                 }
                 GaloisCounterMode.increment32(counter);
             }
             return inLen;
         } else {
-            int len = inLen - inLen % AES_BLOCK_SIZE;
+            int len = inLen - inLen % blockSize;
             int processed = len;
             byte[] out = new byte[Math.min(MAX_LEN, len)];
             int offset = inOfs;
@@ -186,8 +209,9 @@ final class GCTR extends CounterMode {
         }
     }
 
-    // input operates on multiples of AES blocks, 128-bit, when calling update.
-    // The remainder is left in the src buffer.
+    /**
+     * Operate on only blocksize data leaving the remainder in the src buffer.
+     */
     int update(ByteBuffer src, ByteBuffer dst) {
         int len;
 
@@ -205,22 +229,22 @@ final class GCTR extends CounterMode {
 
         // Direct bytebuffer operation
         long blocksLeft = blocksUntilRollover();
-        int numOfCompleteBlocks = src.remaining() / AES_BLOCK_SIZE;
+        int numOfCompleteBlocks = src.remaining() / blockSize;
         if (numOfCompleteBlocks >= blocksLeft) {
             // Counter Mode encryption cannot be used because counter will
             // roll over incorrectly. Use GCM-specific code instead.
             for (int i = 0; i < numOfCompleteBlocks; i++) {
                 checkBlock();
                 embeddedCipher.encryptBlock(counter, 0, block, 0);
-                for (int n = 0; n < AES_BLOCK_SIZE; n++) {
+                for (int n = 0; n < blockSize; n++) {
                     dst.put((byte) (src.get() ^ block[n]));
                 }
                 GaloisCounterMode.increment32(counter);
             }
-            return numOfCompleteBlocks * AES_BLOCK_SIZE;
+            return numOfCompleteBlocks * blockSize;
         }
 
-        len = src.remaining() - (src.remaining() % AES_BLOCK_SIZE);
+        len = src.remaining() - (src.remaining() % blockSize);
         int processed = len;
         byte[] in = new byte[Math.min(MAX_LEN, len)];
         while (processed > MAX_LEN) {
@@ -235,13 +259,18 @@ final class GCTR extends CounterMode {
         return len;
     }
 
-    // input can be arbitrary size when calling doFinal
+    /**
+     * doFinal operation by using update() for any full block operations needed,
+     * then operating on the final bytes in the input buffer.
+     *
+     * This method will not write any block padding to the output buffer
+     */
     int doFinal(byte[] in, int inOfs, int inLen, byte[] out,
         int outOfs) {
         if (inLen == 0) {
             return 0;
         }
-        int lastBlockSize = inLen % AES_BLOCK_SIZE;
+        int lastBlockSize = inLen % blockSize;
         int completeBlkLen = inLen - lastBlockSize;
         // process the complete blocks first
         update(in, inOfs, completeBlkLen, out, outOfs);
@@ -254,10 +283,17 @@ final class GCTR extends CounterMode {
                     (byte) ((in[inOfs + completeBlkLen + n] ^ block[n]));
             }
         }
+        reset();
         return inLen;
     }
 
-    // src can be arbitrary size when calling doFinal
+    /**
+     * doFinal operation by using update() for any full block operations needed,
+     * then operating on the final bytes in the input buffer.
+     *
+     * If src and dst are array-backed bytebuffers, call doFinal(byte[]...) for
+     * less memory usage.
+     */
     int doFinal(ByteBuffer src, ByteBuffer dst) {
         // If the bytebuffer is backed by arrays, use that instead of
         // allocating and copying for direct bytebuffers
@@ -272,7 +308,7 @@ final class GCTR extends CounterMode {
         }
 
         int len = src.remaining();
-        int lastBlockSize = len % AES_BLOCK_SIZE;
+        int lastBlockSize = len % blockSize;
         try {
             update(src, dst);
             if (lastBlockSize != 0) {
