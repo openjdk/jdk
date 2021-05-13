@@ -40,6 +40,7 @@
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "code/dependencyContext.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
@@ -955,7 +956,17 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // In case itable verification is ever added.
       // itable().verify(tty, true);
 #endif
-      set_init_state(linked);
+      if (UseVtableBasedCHA) {
+        MutexLocker ml(THREAD, Compile_lock);
+        set_init_state(linked);
+
+        // Now flush all code that assume the class is not linked.
+        if (Universe::is_fully_initialized()) {
+          CodeCache::flush_dependents_on(this);
+        }
+      } else {
+        set_init_state(linked);
+      }
       if (JvmtiExport::should_post_class_prepare()) {
         JvmtiExport::post_class_prepare(THREAD->as_Java_thread(), this);
       }
