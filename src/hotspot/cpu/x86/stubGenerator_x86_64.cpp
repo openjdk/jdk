@@ -5986,7 +5986,7 @@ address generate_avx_ghash_processBlocks() {
     __ vpermb(xmm0, xmm4, xmm0, Assembler::AVX_512bit);
 
     __ evmovdqaq(xmm3, xmm7, Assembler::AVX_512bit);
-    __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm2, Assembler::AVX_512bit);
+    __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm0, Assembler::AVX_512bit);
     __ addq(dest, 48);
 
     __ cmpl(length, 63);
