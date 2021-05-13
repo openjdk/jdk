@@ -128,44 +128,49 @@ void StringDedup::notify_intern(oop java_string) {
 }
 
 StringDedup::Requests::Requests() :
-  _storage_for_requests(nullptr), _buffer(nullptr), _index(0), _active(true)
+  _storage_for_requests(nullptr), _buffer(nullptr), _index(0), _refill_failed(false)
 {}
 
 StringDedup::Requests::~Requests() {
   flush();
 }
 
+bool StringDedup::Requests::refill_buffer() {
+  assert(_index == 0, "precondition");
+  // Treat out of memory failure as sticky; don't keep retrying.
+  if (_refill_failed) return false;
+  // Lazy initialization of the requests object.  It can be common for
+  // many of the marking threads to not encounter any candidates.
+  const size_t buffer_size = OopStorage::bulk_allocate_limit;
+  if (_buffer == nullptr) {
+    // Lazily allocate a buffer to hold pre-allocated storage entries.
+    _buffer = NEW_C_HEAP_ARRAY_RETURN_NULL(oop*, buffer_size, mtStringDedup);
+    if (_buffer == nullptr) {
+      log_debug(stringdedup)("request failed to allocate buffer");
+      _refill_failed = true;
+      return false;
+    }
+    // Lazily obtain the storage object to use for requests.
+    assert(_storage_for_requests == nullptr, "invariant");
+    _storage_for_requests = Processor::storage_for_requests();
+  }
+  assert(_storage_for_requests != nullptr, "invariant");
+  // Bulk pre-allocate some storage entries to satisfy this and future
+  // requests.  This amortizes the cost of allocating entries over
+  // multiple requests, and reduces contention on the storage object.
+  _index = _storage_for_requests->storage()->allocate(_buffer, buffer_size);
+  if (_index == 0) {
+    log_debug(stringdedup)("request failed to allocate oopstorage entries");
+    flush();
+    _refill_failed = true;
+    return false;
+  }
+  return true;
+}
+
 void StringDedup::Requests::add(oop java_string) {
   assert(is_enabled(), "StringDedup not enabled");
-  const size_t buffer_size = OopStorage::bulk_allocate_limit;
-  if (_index == 0) {
-    if (!_active) return;
-    // Lazy initialization of the requests object.  It can be common for
-    // many of the marking threads to not encounter any candidates.
-    if (_buffer == nullptr) {
-      // Lazily allocate a buffer to hold pre-allocated storage entries.
-      _buffer = NEW_C_HEAP_ARRAY_RETURN_NULL(oop*, buffer_size, mtStringDedup);
-      if (_buffer == nullptr) {
-        log_debug(stringdedup)("request failed to allocate buffer");
-        _active = false;
-        return;
-      }
-      // Lazily obtain the storage object to use for requests.
-      assert(_storage_for_requests == nullptr, "invariant");
-      _storage_for_requests = Processor::storage_for_requests();
-    }
-    assert(_storage_for_requests != nullptr, "invariant");
-    // Bulk pre-allocate some storage entries to satisfy this and future
-    // requests.  This amortizes the cost of allocating entries over
-    // multiple requests, and reduces contention on the storage object.
-    _index = _storage_for_requests->storage()->allocate(_buffer, buffer_size);
-    if (_index == 0) {
-      log_debug(stringdedup)("request failed to allocate oopstorage entries");
-      flush();
-      _active = false;
-      return;
-    }
-  }
+  if ((_index == 0) && !refill_buffer()) return;
   // Store the string in the next pre-allocated storage entry.
   oop* ref = _buffer[--_index];
   _buffer[_index] = nullptr;
@@ -187,7 +192,7 @@ void StringDedup::Requests::flush() {
     _storage_for_requests = nullptr;
   }
   _index = 0;
-  _active = true;
+  _refill_failed = false;
 }
 
 void StringDedup::verify() {

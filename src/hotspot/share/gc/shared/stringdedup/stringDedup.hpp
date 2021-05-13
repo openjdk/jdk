@@ -190,7 +190,9 @@ class StringDedup::Requests {
   StorageUse* _storage_for_requests;
   oop** _buffer;
   size_t _index;
-  bool _active;
+  bool _refill_failed;
+
+  bool refill_buffer();
 
 public:
   Requests();
