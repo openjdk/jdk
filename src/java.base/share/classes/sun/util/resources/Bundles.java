@@ -209,19 +209,9 @@ public abstract class Bundles {
                         bundle = bundleAccess.newResourceBundle(bundleClass);
                     }
                     if (bundle == null) {
-                        var simpleName= baseName.substring(baseName.lastIndexOf('.') + 1);
-                        var ext = bundleName.substring(bundleName.lastIndexOf(simpleName) + simpleName.length());
-                        var otherExt = switch(targetLocale.getLanguage()) {
-                            case "he" -> ext.replaceFirst("^_he(_.*)?$", "_iw$1");
-                            case "id" -> ext.replaceFirst("^_id(_.*)?$", "_in$1");
-                            case "yi" -> ext.replaceFirst("^_yi(_.*)?$", "_ji$1");
-                            case "iw" -> ext.replaceFirst("^_iw(_.*)?$", "_he$1");
-                            case "in" -> ext.replaceFirst("^_in(_.*)?$", "_id$1");
-                            case "ji" -> ext.replaceFirst("^_ji(_.*)?$", "_yi$1");
-                            default -> ext;
-                        };
-                        if (!ext.equals(otherExt)) {
-                            c = Class.forName(Bundles.class.getModule(), bundleName.substring(0, bundleName.lastIndexOf(ext)) + otherExt);
+                        var otherBundleName = toOtherBundleName(baseName, bundleName, targetLocale);
+                        if (!bundleName.equals(otherBundleName)) {
+                            c = Class.forName(Bundles.class.getModule(), otherBundleName);
                             if (c != null && ResourceBundle.class.isAssignableFrom(c)) {
                                 @SuppressWarnings("unchecked")
                                 Class<ResourceBundle> bundleClass = (Class<ResourceBundle>) c;
@@ -366,27 +356,55 @@ public abstract class Bundles {
         return bundle;
     }
 
+    /**
+     * Generates the other bundle name for languages that have changed,
+     * i.e. "he", "id", and "yi"
+     *
+     * @param baseName ResourceBundle base name
+     * @param bundleName ResourceBundle bundle name
+     * @param locale locale
+     * @return the other bundle name, or the same name for non-legacy ISO languages
+     */
+    public static String toOtherBundleName(String baseName, String bundleName, Locale locale) {
+        var simpleName= baseName.substring(baseName.lastIndexOf('.') + 1);
+        var ext = bundleName.substring(bundleName.lastIndexOf(simpleName) + simpleName.length());
+        var otherExt = switch(locale.getLanguage()) {
+            case "he" -> ext.replaceFirst("^_he(_.*)?$", "_iw$1");
+            case "id" -> ext.replaceFirst("^_id(_.*)?$", "_in$1");
+            case "yi" -> ext.replaceFirst("^_yi(_.*)?$", "_ji$1");
+            case "iw" -> ext.replaceFirst("^_iw(_.*)?$", "_he$1");
+            case "in" -> ext.replaceFirst("^_in(_.*)?$", "_id$1");
+            case "ji" -> ext.replaceFirst("^_ji(_.*)?$", "_yi$1");
+            default -> ext;
+        };
+
+        if (ext.equals(otherExt)) {
+            return bundleName;
+        } else {
+            return bundleName.substring(0, bundleName.lastIndexOf(ext)) + otherExt;
+        }
+    }
 
     /**
      * The Strategy interface defines methods that are called by Bundles.of during
      * the resource bundle loading process.
      */
-    public static interface Strategy {
+    public interface Strategy {
         /**
          * Returns a list of locales to be looked up for bundle loading.
          */
-        public List<Locale> getCandidateLocales(String baseName, Locale locale);
+        List<Locale> getCandidateLocales(String baseName, Locale locale);
 
         /**
          * Returns the bundle name for the given baseName and locale.
          */
-        public String toBundleName(String baseName, Locale locale);
+        String toBundleName(String baseName, Locale locale);
 
         /**
          * Returns the service provider type for the given baseName
          * and locale, or null if no service providers should be used.
          */
-        public Class<? extends ResourceBundleProvider> getResourceBundleProviderType(String baseName,
+        Class<? extends ResourceBundleProvider> getResourceBundleProviderType(String baseName,
                                                                                      Locale locale);
     }
 
@@ -395,7 +413,7 @@ public abstract class Bundles {
      * BundleReference.
      */
     private static interface CacheKeyReference {
-        public CacheKey getCacheKey();
+        CacheKey getCacheKey();
     }
 
     /**

@@ -72,6 +72,8 @@ import jdk.internal.reflect.Reflection;
 import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.LocaleObjectCache;
+import sun.util.resources.Bundles;
+
 import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
 
 
@@ -3153,22 +3155,17 @@ public abstract class ResourceBundle {
         public ResourceBundle newBundle(String baseName, Locale locale, String format,
                                         ClassLoader loader, boolean reload)
                     throws IllegalAccessException, InstantiationException, IOException {
+            /*
+             * Legacy mechanism to locate resource bundle in unnamed module only
+             * that is visible to the given loader and accessible to the given caller.
+             */
             var bundleName = toBundleName(baseName, locale);
             var bundle = newBundle0(baseName, bundleName, format, loader, reload);
             if (bundle == null) {
-                var simpleName= baseName.substring(baseName.lastIndexOf('.') + 1);
-                var ext = bundleName.substring(bundleName.lastIndexOf(simpleName) + simpleName.length());
-                var otherExt = switch(locale.getLanguage()) {
-                    case "he" -> ext.replaceFirst("^_he(_.*)?$", "_iw$1");
-                    case "id" -> ext.replaceFirst("^_id(_.*)?$", "_in$1");
-                    case "yi" -> ext.replaceFirst("^_yi(_.*)?$", "_ji$1");
-                    case "iw" -> ext.replaceFirst("^_iw(_.*)?$", "_he$1");
-                    case "in" -> ext.replaceFirst("^_in(_.*)?$", "_id$1");
-                    case "ji" -> ext.replaceFirst("^_ji(_.*)?$", "_yi$1");
-                    default -> ext;
-                };
-                if (!ext.equals(otherExt)) {
-                    bundle = newBundle0(baseName, bundleName.substring(0, bundleName.lastIndexOf(ext)) + otherExt, format, loader, reload);
+                // Try loading legacy ISO language's other bundles
+                var otherBundleName = Bundles.toOtherBundleName(baseName, bundleName, locale);
+                if (!bundleName.equals(otherBundleName)) {
+                    bundle = newBundle0(baseName, otherBundleName, format, loader, reload);
                 }
             }
 
@@ -3178,10 +3175,6 @@ public abstract class ResourceBundle {
         private ResourceBundle newBundle0(String baseName, String bundleName, String format,
                     ClassLoader loader, boolean reload)
                     throws IllegalAccessException, InstantiationException, IOException {
-                /*
-                 * Legacy mechanism to locate resource bundle in unnamed module only
-             * that is visible to the given loader and accessible to the given caller.
-             */
             ResourceBundle bundle = null;
             if (format.equals("java.class")) {
                 try {
