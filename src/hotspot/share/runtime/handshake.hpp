@@ -48,14 +48,24 @@ class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   virtual ~HandshakeClosure()                      {}
   const char* name() const                         { return _name; }
   virtual bool is_async()                          { return false; }
+  virtual bool remote_executable()                 { return true; }
   virtual void do_thread(Thread* thread) = 0;
 };
 
 class AsyncHandshakeClosure : public HandshakeClosure {
  public:
-   AsyncHandshakeClosure(const char* name) : HandshakeClosure(name) {}
-   virtual ~AsyncHandshakeClosure() {}
-   virtual bool is_async()          { return true; }
+  AsyncHandshakeClosure(const char* name) : HandshakeClosure(name) {}
+  virtual ~AsyncHandshakeClosure() {}
+  virtual bool is_async()          { return true; }
+};
+
+// A handshake closure that must be executed by the target JavaThread
+// itself. It cannot be executed by the initiating thread or the VMThread.
+class SelfExecutedHandshakeClosure : public AsyncHandshakeClosure {
+ public:
+  SelfExecutedHandshakeClosure(const char* name) : AsyncHandshakeClosure(name) {}
+  virtual ~SelfExecutedHandshakeClosure() {}
+  virtual bool remote_executable() { return false; }
 };
 
 class Handshake : public AllStatic {
@@ -63,7 +73,7 @@ class Handshake : public AllStatic {
   // Execution of handshake operation
   static void execute(HandshakeClosure*       hs_cl);
   static void execute(HandshakeClosure*       hs_cl, JavaThread* target);
-  static void execute(AsyncHandshakeClosure*  hs_cl, JavaThread* target);
+  static void enqueue(AsyncHandshakeClosure*  hs_cl, JavaThread* target);
 };
 
 class JvmtiRawMonitor;
@@ -99,7 +109,7 @@ class HandshakeState {
   // state so a safepoint may be in-progress.)
   bool process_self_inner();
 
-  bool have_non_self_executable_operation();
+  bool has_remote_executable_operation();
   HandshakeOperation* pop_for_self();
   HandshakeOperation* pop();
 

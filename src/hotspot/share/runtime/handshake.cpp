@@ -77,6 +77,7 @@ class HandshakeOperation : public CHeapObj<mtThread> {
   int32_t pending_threads()        { return Atomic::load(&_pending_threads); }
   const char* name()               { return _handshake_cl->name(); }
   bool is_async()                  { return _handshake_cl->is_async(); }
+  bool remote_executable()         { return _handshake_cl->remote_executable(); }
 };
 
 class AsyncHandshakeOperation : public HandshakeOperation {
@@ -333,12 +334,14 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl) {
+  assert(!hs_cl->is_async(), "invariant");
   HandshakeOperation cto(hs_cl, NULL, Thread::current());
   VM_HandshakeAllThreads handshake(&cto);
   VMThread::execute(&handshake);
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
+  assert(!hs_cl->is_async(), "invariant");
   JavaThread* self = JavaThread::current();
   HandshakeOperation op(hs_cl, target, Thread::current());
 
@@ -388,7 +391,7 @@ void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
   log_handshake_info(start_time_ns, op.name(), 1, emitted_handshakes_executed);
 }
 
-void Handshake::execute(AsyncHandshakeClosure* hs_cl, JavaThread* target) {
+void Handshake::enqueue(AsyncHandshakeClosure* hs_cl, JavaThread* target) {
   jlong start_time_ns = os::javaTimeNanos();
   AsyncHandshakeOperation* op = new AsyncHandshakeOperation(hs_cl, target, start_time_ns);
 
@@ -437,20 +440,20 @@ HandshakeOperation* HandshakeState::pop_for_self() {
   return _queue.pop();
 };
 
-static bool non_self_queue_filter(HandshakeOperation* op) {
-  return !op->is_async();
+static bool remote_executable_queue_filter(HandshakeOperation* op) {
+  return op->remote_executable();
 }
 
-bool HandshakeState::have_non_self_executable_operation() {
+bool HandshakeState::has_remote_executable_operation() {
   assert(_handshakee != Thread::current(), "Must not be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
-  return _queue.contains(non_self_queue_filter);
+  return _queue.contains(remote_executable_queue_filter);
 }
 
 HandshakeOperation* HandshakeState::pop() {
   assert(_handshakee != Thread::current(), "Must not be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
-  return _queue.pop(non_self_queue_filter);
+  return _queue.pop(remote_executable_queue_filter);
 };
 
 bool HandshakeState::process_by_self() {
@@ -530,7 +533,7 @@ bool HandshakeState::claim_handshake() {
   // If all handshake operations for the handshakee are finished and someone
   // just adds an operation we may see it here. But if the handshakee is not
   // armed yet it is not safe to proceed.
-  if (have_non_self_executable_operation()) {
+  if (has_remote_executable_operation()) {
     if (SafepointMechanism::local_poll_armed(_handshakee)) {
       return true;
     }
@@ -589,7 +592,7 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
 
       executed++;
     }
-  } while (have_non_self_executable_operation());
+  } while (has_remote_executable_operation());
 
   _lock.unlock();
 
@@ -625,9 +628,9 @@ void HandshakeState::do_self_suspend() {
 
 // This is the closure that prevents a suspended JavaThread from
 // escaping the suspend request.
-class ThreadSelfSuspensionHandshake : public AsyncHandshakeClosure {
+class ThreadSelfSuspensionHandshake : public SelfExecutedHandshakeClosure {
  public:
-  ThreadSelfSuspensionHandshake() : AsyncHandshakeClosure("ThreadSelfSuspensionHandshake") {}
+  ThreadSelfSuspensionHandshake() : SelfExecutedHandshakeClosure("ThreadSelfSuspensionHandshake") {}
   void do_thread(Thread* thr) {
     JavaThread* current = thr->as_Java_thread();
     assert(current == Thread::current(), "Must be self executed.");
@@ -662,7 +665,7 @@ bool HandshakeState::suspend_with_handshake() {
   set_async_suspend_handshake(true);
   log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended, arming ThreadSuspension", p2i(_handshakee));
   ThreadSelfSuspensionHandshake* ts = new ThreadSelfSuspensionHandshake();
-  Handshake::execute(ts, _handshakee);
+  Handshake::enqueue(ts, _handshakee);
   return true;
 }
 
