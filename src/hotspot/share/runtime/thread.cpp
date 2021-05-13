@@ -3294,16 +3294,18 @@ void Threads::create_vm_init_libraries() {
 void JavaThread::invoke_shutdown_hooks() {
   HandleMark hm(this);
 
+  // We could get here with a pending exception, if so clear it now or
+  // it will cause MetaspaceShared::link_and_cleanup_shared_classes to
+  // fail for dynamic dump.
+  if (this->has_pending_exception()) {
+    this->clear_pending_exception();
+  }
+
   // Link all classes for dynamic CDS dumping before vm exit.
   // Same operation is being done in JVM_BeforeHalt for handling the
   // case where the application calls System.exit().
   if (DynamicDumpSharedSpaces) {
     MetaspaceShared::link_and_cleanup_shared_classes(this);
-  }
-
-  // We could get here with a pending exception, if so clear it now.
-  if (this->has_pending_exception()) {
-    this->clear_pending_exception();
   }
 
   EXCEPTION_MARK;

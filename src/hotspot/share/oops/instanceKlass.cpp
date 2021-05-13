@@ -163,11 +163,11 @@ static inline bool is_class_loader(const Symbol* class_name,
 // private: called to verify that k is a static member of this nest.
 // We know that k is an instance class in the same package and hence the
 // same classloader.
-bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
+bool InstanceKlass::has_nest_member(JavaThread* current, InstanceKlass* k) const {
   assert(!is_hidden(), "unexpected hidden class");
   if (_nest_members == NULL || _nest_members == Universe::the_empty_short_array()) {
     if (log_is_enabled(Trace, class, nestmates)) {
-      ResourceMark rm(THREAD);
+      ResourceMark rm(current);
       log_trace(class, nestmates)("Checked nest membership of %s in non-nest-host class %s",
                                   k->external_name(), this->external_name());
     }
@@ -175,48 +175,19 @@ bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
   }
 
   if (log_is_enabled(Trace, class, nestmates)) {
-    ResourceMark rm(THREAD);
+    ResourceMark rm(current);
     log_trace(class, nestmates)("Checking nest membership of %s in %s",
                                 k->external_name(), this->external_name());
   }
 
-  // Check for a resolved cp entry , else fall back to a name check.
-  // We don't want to resolve any class other than the one being checked.
+  // Check for the named class in _nest_members.
+  // We don't resolve, or load, any classes.
   for (int i = 0; i < _nest_members->length(); i++) {
     int cp_index = _nest_members->at(i);
-    if (_constants->tag_at(cp_index).is_klass()) {
-      Klass* k2 = _constants->klass_at(cp_index, THREAD);
-      assert(!HAS_PENDING_EXCEPTION || PENDING_EXCEPTION->is_a(vmClasses::VirtualMachineError_klass()),
-             "Exceptions should not be possible here");
-      if (k2 == k) {
-        log_trace(class, nestmates)("- class is listed at nest_members[%d] => cp[%d]", i, cp_index);
-        return true;
-      }
-    }
-    else {
-      Symbol* name = _constants->klass_name_at(cp_index);
-      if (name == k->name()) {
-        log_trace(class, nestmates)("- Found it at nest_members[%d] => cp[%d]", i, cp_index);
-
-        // Names match so check actual klass. This may trigger class loading if
-        // it doesn't match though that should be impossible as it means one classloader
-        // has defined two different classes with the same name! A compiler thread won't be
-        // able to perform that loading but we can't exclude the compiler threads from
-        // executing this logic. But it should actually be impossible to trigger loading here.
-        Klass* k2 = _constants->klass_at(cp_index, THREAD);
-        assert(!HAS_PENDING_EXCEPTION || PENDING_EXCEPTION->is_a(vmClasses::VirtualMachineError_klass()),
-               "Exceptions should not be possible here");
-        if (k2 == k) {
-          log_trace(class, nestmates)("- class is listed as a nest member");
-          return true;
-        }
-        else {
-          // same name but different klass!
-          log_trace(class, nestmates)(" - klass comparison failed!");
-          // can't have two names the same, so we're done
-          return false;
-        }
-      }
+    Symbol* name = _constants->klass_name_at(cp_index);
+    if (name == k->name()) {
+      log_trace(class, nestmates)("- named class found at nest_members[%d] => cp[%d]", i, cp_index);
+      return true;
     }
   }
   log_trace(class, nestmates)("- class is NOT a nest member!");
@@ -287,7 +258,8 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
   // need to resolve and save our nest-host class.
   if (_nest_host_index != 0) { // we have a real nest_host
     // Before trying to resolve check if we're in a suitable context
-    if (!THREAD->can_call_java() && !_constants->tag_at(_nest_host_index).is_klass()) {
+    bool can_resolve = THREAD->can_call_java();
+    if (!can_resolve && !_constants->tag_at(_nest_host_index).is_klass()) {
       log_trace(class, nestmates)("Rejected resolution of nest-host of %s in unsuitable thread",
                                   this->external_name());
       return NULL; // sentinel to say "try again from a different context"
@@ -325,26 +297,15 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
         // not an instance class.
         if (k->is_instance_klass()) {
           nest_host_k = InstanceKlass::cast(k);
-          bool is_member = nest_host_k->has_nest_member(this, THREAD);
-          // exception is rare, perhaps impossible
-          if (!HAS_PENDING_EXCEPTION) {
-            if (is_member) {
-              _nest_host = nest_host_k; // save resolved nest-host value
+          bool is_member = nest_host_k->has_nest_member(THREAD->as_Java_thread(), this);
+          if (is_member) {
+            _nest_host = nest_host_k; // save resolved nest-host value
 
-              log_trace(class, nestmates)("Resolved nest-host of %s to %s",
-                                          this->external_name(), k->external_name());
-              return nest_host_k;
-            } else {
-              error = "current type is not listed as a nest member";
-            }
+            log_trace(class, nestmates)("Resolved nest-host of %s to %s",
+                                        this->external_name(), k->external_name());
+            return nest_host_k;
           } else {
-            if (PENDING_EXCEPTION->is_a(vmClasses::VirtualMachineError_klass())) {
-              return NULL; // propagate VMEs
-            }
-            stringStream ss;
-            ss.print("exception on member check: ");
-            java_lang_Throwable::print(PENDING_EXCEPTION, &ss);
-            error = ss.as_string();
+            error = "current type is not listed as a nest member";
           }
         } else {
           error = "host is not an instance class";
@@ -2429,7 +2390,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void InstanceKlass::remove_unshareable_info() {
 
-  if (MetaspaceShared::is_old_class(this)) {
+  if (has_old_class_version()) {
     // Set the old class bit.
     set_is_shared_old_klass();
   }
@@ -2566,6 +2527,28 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     set_is_value_based();
     set_prototype_header(markWord::prototype());
   }
+}
+
+// Check if a class or any of its supertypes has a version older than 50.
+// CDS will not perform verification of old classes during dump time because
+// without changing the old verifier, the verification constraint cannot be
+// retrieved during dump time.
+// Verification of archived old classes will be performed during run time.
+bool InstanceKlass::has_old_class_version() const {
+  if (major_version() < 50 /*JAVA_6_VERSION*/) {
+    return true;
+  }
+  if (java_super() != NULL && java_super()->has_old_class_version()) {
+    return true;
+  }
+  Array<InstanceKlass*>* interfaces = local_interfaces();
+  int len = interfaces->length();
+  for (int i = 0; i < len; i++) {
+    if (interfaces->at(i)->has_old_class_version()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void InstanceKlass::set_shared_class_loader_type(s2 loader_type) {

@@ -69,7 +69,7 @@ public class TestConstructors extends JavadocTester {
                 """
                     <section class="detail" id="&lt;init&gt;()">""",
                 """
-                    <a href="#%3Cinit%3E(int)" class="member-name-link">Outer</a>&#8203;(int&nbsp;i)""",
+                    <a href="#%3Cinit%3E(int)" class="member-name-link">Outer</a><wbr>(int&nbsp;i)""",
                 """
                     <section class="detail" id="&lt;init&gt;(int)">""");
 
@@ -79,7 +79,7 @@ public class TestConstructors extends JavadocTester {
                 """
                     <section class="detail" id="&lt;init&gt;()">""",
                 """
-                    <a href="#%3Cinit%3E(int)" class="member-name-link">Inner</a>&#8203;(int&nbsp;i)""",
+                    <a href="#%3Cinit%3E(int)" class="member-name-link">Inner</a><wbr>(int&nbsp;i)""",
                 """
                     <section class="detail" id="&lt;init&gt;(int)">""");
 
@@ -89,7 +89,7 @@ public class TestConstructors extends JavadocTester {
                 """
                     <section class="detail" id="&lt;init&gt;()">""",
                 """
-                    <a href="#%3Cinit%3E(int)" class="member-name-link">NestedInner</a>&#8203;(int&nbsp;i)""",
+                    <a href="#%3Cinit%3E(int)" class="member-name-link">NestedInner</a><wbr>(int&nbsp;i)""",
                 """
                     <section class="detail" id="&lt;init&gt;(int)">""");
 
