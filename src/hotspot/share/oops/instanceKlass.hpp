@@ -1268,9 +1268,9 @@ public:
 
   void oop_print_on      (oop obj, outputStream* st);
 
+#ifndef PRODUCT
   void print_dependent_nmethods(bool verbose = false);
   bool is_dependent_nmethod(nmethod* nm);
-#ifndef PRODUCT
   bool verify_itable_index(int index);
 #endif
 
