@@ -28,20 +28,11 @@
 #import "sun_java2d_metal_MTLSurfaceData.h"
 
 #import "jni_util.h"
-#import "MTLRenderQueue.h"
 #import "MTLGraphicsConfig.h"
 #import "MTLSurfaceData.h"
-#import "ThreadUtilities.h"
 #include "jlong.h"
 
-/**
- * The following methods are implemented in the windowing system (i.e. GLX
- * and WGL) source files.
- */
-extern jlong MTLSD_GetNativeConfigInfo(BMTLSDOps *bmtlsdo);
-extern jboolean MTLSD_InitMTLWindow(JNIEnv *env, BMTLSDOps *bmtlsdo);
-extern void MTLSD_DestroyMTLSurface(JNIEnv *env, BMTLSDOps *bmtlsdo);
-
+jboolean MTLSD_InitMTLWindow(JNIEnv *env, BMTLSDOps *bmtlsdo);
 void MTLSD_SetNativeDimensions(JNIEnv *env, BMTLSDOps *bmtlsdo, jint w, jint h);
 
 static jboolean MTLSurfaceData_initTexture(BMTLSDOps *bmtlsdo, jboolean isOpaque, jboolean rtt, jint width, jint height) {
@@ -102,8 +93,6 @@ static jboolean MTLSurfaceData_initTexture(BMTLSDOps *bmtlsdo, jboolean isOpaque
         bmtlsdo->yOffset = 0;
         bmtlsdo->width = width;
         bmtlsdo->height = height;
-        bmtlsdo->textureWidth = width;
-        bmtlsdo->textureHeight = height;
         bmtlsdo->drawableType = rtt ? MTLSD_RT_TEXTURE : MTLSD_TEXTURE;
 
         J2dTraceLn6(J2D_TRACE_VERBOSE, "MTLSurfaceData_initTexture: w=%d h=%d bp=%p [tex=%p] opaque=%d rtt=%d", width, height, bmtlsdo, bmtlsdo->pTexture, isOpaque, rtt);
@@ -182,7 +171,7 @@ MTLSD_Delete(JNIEnv *env, BMTLSDOps *bmtlsdo)
 {
     J2dTraceLn3(J2D_TRACE_VERBOSE, "MTLSD_Delete: type=%d %p [tex=%p]", bmtlsdo->drawableType, bmtlsdo, bmtlsdo->pTexture);
     if (bmtlsdo->drawableType == MTLSD_WINDOW) {
-        MTLSD_DestroyMTLSurface(env, bmtlsdo);
+        bmtlsdo->drawableType = MTLSD_UNDEFINED;
     } else if (
             bmtlsdo->drawableType == MTLSD_RT_TEXTURE
             || bmtlsdo->drawableType == MTLSD_TEXTURE
@@ -254,18 +243,6 @@ MTLSD_Unlock(JNIEnv *env,
     JNU_ThrowInternalError(env, "MTLSD_Unlock not implemented!");
 }
 
-/**
- * This function disposes of any native windowing system resources associated
- * with this surface.
- */
-void
-MTLSD_DestroyMTLSurface(JNIEnv *env, BMTLSDOps * bmtlsdo)
-{
-    J2dTraceLn(J2D_TRACE_ERROR, "MTLSD_DestroyMTLSurface not implemented!");
-    JNI_COCOA_ENTER(env);
-    bmtlsdo->drawableType = MTLSD_UNDEFINED;
-    JNI_COCOA_EXIT(env);
-}
 
 /**
  * This function initializes a native window surface and caches the window
