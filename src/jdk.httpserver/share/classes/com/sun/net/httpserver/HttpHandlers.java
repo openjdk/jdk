@@ -26,32 +26,25 @@
 package com.sun.net.httpserver;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
-import sun.net.httpserver.DelegatingHttpExchange;
 
 /**
  * This class allows customization of {@link HttpHandler HttpHandler} instances
  * via static methods.
  *
  * <p> The functionality of a handler can be extended or enhanced through the
- * use of {@link #handleOrElse(Predicate, HttpHandler, HttpHandler) handleOrElse}
- * and {@link #adaptRequest(HttpHandler, UnaryOperator) adaptRequest}, which
- * allows to complement and adapt a given handler, respectively.
+ * use of {@link #handleOrElse(Predicate, HttpHandler, HttpHandler) handleOrElse},
+ * which allows to complement a given handler.
  *
- * <p> Example of a complemented and adapted handler:
+ * <p> Example of a complemented handler:
  * <pre>{@code var h = HttpHandler.handleOrElse(r -> r.getRequestMethod().equals("PUT"), new SomePutHandler(), new SomeHandler())
- *   var handler = HttpHandler.adaptRequest(h, r -> r.with("X-Foo", List.of("Bar")));
  * }</pre>
  *
- * The above {@code handler} adds the "X-Foo" request header to all incoming
- * requests before handling of the exchange is delegated to the next handler,
- * the <i>handleOrElse</i> handler. The <i>handleOrElse</i> handler offers an
- * if-else like construct; if the request method is "PUT" then handling of the
- * exchange is delegated to the {@code SomePutHandler}, otherwise handling of
- * the exchange is delegated to {@code SomeHandler}.
+ * The above <i>handleOrElse</i> {@code handler} offers an if-else like construct;
+ * if the request method is "PUT" then handling of the exchange is delegated to
+ * the {@code SomePutHandler}, otherwise handling of the exchange is delegated
+ * to {@code SomeHandler}.
  *
  * @since 17
  */
@@ -106,48 +99,6 @@ public class HttpHandlers {
                 handler.handle(exchange);
             else
                 fallbackHandler.handle(exchange);
-        };
-    }
-
-    /**
-     * Returns a handler that inspects, and possibly adapts, the request state
-     * before the exchange is handled by the given handler. The {@code Request}
-     * returned by the operator will be the effective request state of the
-     * exchange when handled.
-     *
-     * <p> When the returned handler is invoked, it first invokes the
-     * {@code requestOperator} with the given exchange, {@code ex}, in order
-     * to retrieve the <i>adapted request state</i>. It then invokes the
-     * {@code handle} method of the given {@code handler}, passing an exchange
-     * equivalent to {@code ex} with the <i>adapted request state</i> set as
-     * the effective request state.
-     *
-     * @param handler a handler
-     * @param requestOperator the request operator
-     * @return a handler
-     * @throws IOException          if an I/O error occurs
-     * @throws NullPointerException if the argument is null
-     * @since 17
-     */
-    public static HttpHandler adaptRequest(HttpHandler handler,
-                                    UnaryOperator<Request> requestOperator)
-            throws IOException
-    {
-        Objects.requireNonNull(handler);
-        Objects.requireNonNull(requestOperator);
-        return exchange -> {
-            var request = requestOperator.apply(exchange);
-            var newExchange = new DelegatingHttpExchange(exchange) {
-                @Override
-                public URI getRequestURI() { return request.getRequestURI(); }
-
-                @Override
-                public String getRequestMethod() { return request.getRequestMethod(); }
-
-                @Override
-                public Headers getRequestHeaders() { return request.getRequestHeaders(); }
-            };
-            handler.handle(newExchange);
         };
     }
 }

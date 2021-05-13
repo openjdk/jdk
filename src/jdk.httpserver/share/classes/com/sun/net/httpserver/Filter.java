@@ -28,10 +28,13 @@ package com.sun.net.httpserver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
+import sun.net.httpserver.DelegatingHttpExchange;
 
 /**
  * A filter used to pre- and post-process incoming requests. Pre-processing occurs
@@ -241,6 +244,57 @@ public abstract class Filter {
             public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
                 chain.doFilter(exchange);
                 operation.accept(exchange);
+            }
+            @Override
+            public String description() {
+                return description;
+            }
+        };
+    }
+
+    /**
+     * Returns a pre-processing {@code Filter} that inspects and possibly
+     * adapts the request state.
+     *
+     * The {@code Request} returned by the {@link UnaryOperator operator} will
+     * be the effective request state of the exchange. It is executed for each
+     * {@code HttpExchange} before invoking either the next filter in the chain
+     * or the exchange handler (if this is the final filter in the chain).
+     *
+     * <p> When the returned filter is invoked, it first invokes the
+     * {@code requestOperator} with the given exchange, {@code ex}, in order
+     * to retrieve the <i>adapted request state</i>. It then invokes the next
+     * filter in the chain or the exchange handler, passing an exchange
+     * equivalent to {@code ex} with the <i>adapted request state</i> set as
+     * the effective request state.
+     *
+     * @param description the string to be returned from {@link #description()}
+     * @param requestOperator the request operator
+     * @return a filter that adapts request state before the exchange is handled
+     * @throws IOException          if an I/O error occurs
+     * @throws NullPointerException if the argument is null
+     * @since 17
+     */
+    public static Filter adaptRequest(String description,
+                                      UnaryOperator<Request> requestOperator) {
+        Objects.requireNonNull(description);
+        Objects.requireNonNull(requestOperator);
+
+        return new Filter() {
+            @Override
+            public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
+                var request = requestOperator.apply(exchange);
+                var newExchange =  new DelegatingHttpExchange(exchange) {
+                    @Override
+                    public URI getRequestURI() { return request.getRequestURI(); }
+
+                    @Override
+                    public String getRequestMethod() { return request.getRequestMethod(); }
+
+                    @Override
+                    public Headers getRequestHeaders() { return request.getRequestHeaders(); }
+                };
+                chain.doFilter(newExchange);
             }
             @Override
             public String description() {
