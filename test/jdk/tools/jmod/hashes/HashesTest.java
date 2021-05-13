@@ -36,13 +36,6 @@
  * @run testng HashesTest
  */
 
-import jdk.internal.module.ModuleHashes;
-import jdk.internal.module.ModuleInfo;
-import jdk.internal.module.ModulePath;
-import jdk.test.lib.compiler.ModuleInfoMaker;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,18 +44,34 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.lang.module.ModuleDescriptor.Requires.Modifier.STATIC;
-import static java.lang.module.ModuleDescriptor.Requires.Modifier.TRANSITIVE;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
+import jdk.internal.module.ModuleInfo;
+import jdk.internal.module.ModuleHashes;
+import jdk.internal.module.ModulePath;
+
+import jdk.test.lib.compiler.ModuleInfoMaker;
+
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import static org.testng.Assert.*;
+import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 
 public class HashesTest {
     static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")
@@ -87,9 +96,8 @@ public class HashesTest {
             deleteDirectory(dest);
         }
         this.mods = dest.resolve("mods");
-        Path srcDir = dest.resolve("src");
         this.lib = dest.resolve("lib");
-        this.builder = new ModuleInfoMaker(srcDir);
+        this.builder = new ModuleInfoMaker(dest.resolve("src"));
 
         Files.createDirectories(lib);
         Files.createDirectories(mods);
@@ -381,10 +389,10 @@ public class HashesTest {
             try (ModuleReader reader = mref.open(); InputStream in = reader.open("module-info.class").get()) {
                 ModuleHashes hashes = ModuleInfo.read(in, null).recordedHashes();
                 System.out.format("hashes in module %s %s%n", name,
-                        (hashes != null) ? "present" : "absent");
+                    (hashes != null) ? "present" : "absent");
                 if (hashes != null) {
                     hashes.names().stream().sorted().forEach(n ->
-                            System.out.format("  %s %s%n", n, toHex(hashes.hashFor(n)))
+                        System.out.format("  %s %s%n", n, toHex(hashes.hashFor(n)))
                     );
                 }
                 return hashes;
