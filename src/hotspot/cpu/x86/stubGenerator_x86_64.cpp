@@ -5687,7 +5687,7 @@ address generate_avx_ghash_processBlocks() {
     __ align(64);
     StubCodeMark mark(this, "StubRoutines", "lookup_lo");
     address start = __ pc();
-    assert(start & 0x3f == 0, "Alignment problem");
+    assert((start & 0x3f) == 0, "Alignment problem");
     __ emit_data64(0x8080808080808080, relocInfo::none);
     __ emit_data64(0x8080808080808080, relocInfo::none);
     __ emit_data64(0x8080808080808080, relocInfo::none);
