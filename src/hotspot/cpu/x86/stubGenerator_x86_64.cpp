@@ -5960,7 +5960,7 @@ address generate_avx_ghash_processBlocks() {
 
     __ evpmovb2m(k3, xmm7, Assembler::AVX_512bit);
     __ kmovql(rax, k3);
-    __ test(rax, rax);
+    __ testl(rax, rax);
     __ jcc(Assembler::notZero, L_errorExit);
 
     __ align(32);
