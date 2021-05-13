@@ -46,7 +46,7 @@ class SuspendibleThreadSetJoiner;
 // perform safepoint checks between steps in those operations.
 class StringDedup::Processor : public ConcurrentGCThread {
   Processor();
-  ~Processor();
+  ~Processor() = default;
 
   NONCOPYABLE(Processor);
 

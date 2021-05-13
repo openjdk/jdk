@@ -173,7 +173,6 @@ void StringDedup::Requests::add(oop java_string) {
   if ((_index == 0) && !refill_buffer()) return;
   // Store the string in the next pre-allocated storage entry.
   oop* ref = _buffer[--_index];
-  _buffer[_index] = nullptr;
   NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(ref, java_string);
   log_trace(stringdedup)("request");
 }

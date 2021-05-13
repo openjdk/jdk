@@ -89,7 +89,7 @@ class StringDedup::Table::Bucket {
   GrowableArrayCHeap<uint, mtStringDedup> _hashes;
   GrowableArrayCHeap<TableValue, mtStringDedup> _values;
 
-  void adjust_capacity(int new_length);
+  void adjust_capacity(int new_capacity);
   void expand_if_full();
 
 public:
@@ -292,7 +292,7 @@ class StringDedup::Table::CleanupState : public CHeapObj<mtStringDedup> {
   NONCOPYABLE(CleanupState);
 
 protected:
-  CleanupState() {}
+  CleanupState() = default;
 
 public:
   virtual ~CleanupState() = default;
@@ -311,7 +311,6 @@ class StringDedup::Table::Resizer final : public CleanupState {
   size_t _number_of_buckets;
   size_t _bucket_index;
   size_t _shrink_index;
-  bool _grow_only;
 
 public:
   Resizer(bool grow_only, Bucket* buckets, size_t number_of_buckets) :

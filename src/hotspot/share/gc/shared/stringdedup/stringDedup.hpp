@@ -147,13 +147,12 @@ public:
   // precondition: is_enabled()
   static void threads_do(ThreadClosure* tc);
 
-  // StringTable requests for String deduplication.
+  // Notify that a String is being added to the StringTable.
   // precondition: is_enabled()
   // precondition: java_string is a Java String object.
   static void notify_intern(oop java_string);
 
   // precondition: at safepoint
-  // precondition: is_enabled()
   static void verify();
 
   // Some predicates for use in testing whether an object is a candidate for

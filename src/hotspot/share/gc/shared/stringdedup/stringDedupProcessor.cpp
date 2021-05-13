@@ -48,8 +48,6 @@ StringDedup::Processor::Processor() : ConcurrentGCThread() {
   set_name("StringDedupProcessor");
 }
 
-StringDedup::Processor::~Processor() {}
-
 OopStorage* StringDedup::Processor::_storages[2] = {};
 
 StringDedup::StorageUse* volatile StringDedup::Processor::_storage_for_requests = nullptr;
