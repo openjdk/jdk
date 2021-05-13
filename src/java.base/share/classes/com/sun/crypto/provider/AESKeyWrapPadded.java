@@ -64,18 +64,18 @@ class AESKeyWrapPadded extends FeedbackCipher {
     private static int validateIV(byte[] ivAndLen, byte[] iv)
             throws IllegalBlockSizeException {
         // check against iv and fail if not match
-        boolean match = true;
+        int match = 0;
         for (int i = 0; i < ICV2.length; i++) {
-            match &= (ivAndLen[i] == iv[i]);
+            match |= (ivAndLen[i] ^ iv[i]);
         }
-        if (!match) {
+        if (match != 0) {
             throw new IllegalBlockSizeException("Integrity check failed");
         }
         int outLen = ivAndLen[4];
 
         for (int k = 5; k < SEMI_BLKSIZE; k++) {
             if (outLen != 0) {
-                outLen <<= SEMI_BLKSIZE;
+                outLen <<= 8;
             }
             outLen |= ivAndLen[k] & 0xFF;
         }

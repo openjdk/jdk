@@ -244,26 +244,51 @@ public class NISTWrapKAT {
             System.out.println("=> skip, exceeds max allowed size " + allowed);
             return;
         }
-        Cipher c = Cipher.getInstance(algo, "SunJCE");
+        Cipher c1 = Cipher.getInstance(algo, "SunJCE");
+        Cipher c2 = Cipher.getInstance(algo, "SunJCE");
+        Cipher c3 = Cipher.getInstance(algo, "SunJCE");
+
         byte[] keyVal = toBytes(key, keyLen << 1);
         byte[] dataVal = toBytes(data, dataLen << 1);
 
         SecretKey cipherKey = new SecretKeySpec(keyVal, "AES");
-        c.init(Cipher.WRAP_MODE, cipherKey);
         SecretKey toBeWrappedKey = new SecretKeySpec(dataVal, "AES");
 
+        c1.init(Cipher.WRAP_MODE, cipherKey);
+        IvParameterSpec ivSpec = new IvParameterSpec(c1.getIV());
+        c2.init(Cipher.WRAP_MODE, cipherKey, ivSpec);
+        AlgorithmParameters params = AlgorithmParameters.getInstance("AES");
+        params.init(ivSpec);
+        c3.init(Cipher.WRAP_MODE, cipherKey, params);
+
         // first test WRAP with known values
-        byte[] wrapped = c.wrap(toBeWrappedKey);
+        byte[] wrapped = c1.wrap(toBeWrappedKey);
+        byte[] wrapped2 = c2.wrap(toBeWrappedKey);
+        byte[] wrapped3 = c3.wrap(toBeWrappedKey);
+
         byte[] expectedVal = toBytes(expected, expected.length());
 
-        if (!Arrays.equals(wrapped, expectedVal)) {
-            throw new Exception("Wrap failed; got different result");
+        if (!Arrays.equals(wrapped, expectedVal) ||
+                !Arrays.equals(wrapped2, expectedVal) ||
+                !Arrays.equals(wrapped3, expectedVal)) {
+            throw new Exception("Wrap test failed; got different result");
         }
 
         // then test UNWRAP and compare with the initial values
-        c.init(Cipher.UNWRAP_MODE, cipherKey);
-        Key unwrapped = c.unwrap(wrapped, "AES", Cipher.SECRET_KEY);
-        if (!Arrays.equals(unwrapped.getEncoded(), dataVal)) {
+        c1.init(Cipher.UNWRAP_MODE, cipherKey);
+        ivSpec = new IvParameterSpec(c1.getIV());
+        c2.init(Cipher.UNWRAP_MODE, cipherKey, ivSpec);
+        params = AlgorithmParameters.getInstance("AES");
+        params.init(ivSpec);
+        c3.init(Cipher.UNWRAP_MODE, cipherKey, params);
+
+        Key unwrapped = c1.unwrap(wrapped, "AES", Cipher.SECRET_KEY);
+        Key unwrapped2 = c2.unwrap(wrapped, "AES", Cipher.SECRET_KEY);
+        Key unwrapped3 = c3.unwrap(wrapped, "AES", Cipher.SECRET_KEY);
+
+        if (!Arrays.equals(unwrapped.getEncoded(), dataVal) ||
+                !Arrays.equals(unwrapped2.getEncoded(), dataVal) ||
+                !Arrays.equals(unwrapped3.getEncoded(), dataVal)) {
             throw new Exception("Unwrap failed; got different result");
         }
     }
@@ -278,32 +303,54 @@ public class NISTWrapKAT {
             System.out.println("=> skip, exceeds max allowed size " + allowed);
             return;
         }
-        Cipher c = Cipher.getInstance(algo, "SunJCE");
+        Cipher c1 = Cipher.getInstance(algo, "SunJCE");
+        Cipher c2 = Cipher.getInstance(algo, "SunJCE");
+        Cipher c3 = Cipher.getInstance(algo, "SunJCE");
 
         byte[] keyVal = toBytes(key, keyLen << 1);
         byte[] dataVal = toBytes(data, dataLen << 1);
 
         SecretKey cipherKey = new SecretKeySpec(keyVal, "AES");
-        c.init(Cipher.ENCRYPT_MODE, cipherKey);
+        c1.init(Cipher.ENCRYPT_MODE, cipherKey);
+        IvParameterSpec ivSpec = new IvParameterSpec(c1.getIV());
+        c2.init(Cipher.ENCRYPT_MODE, cipherKey, ivSpec);
+        AlgorithmParameters params = AlgorithmParameters.getInstance("AES");
+        params.init(ivSpec);
+        c3.init(Cipher.ENCRYPT_MODE, cipherKey, params);
 
         // first test encryption with known values
-        byte[] ct11 = c.update(dataVal);
-        byte[] ct12 = c.doFinal();
-        byte[] ct2 = c.doFinal(dataVal);
+        byte[] ct11 = c1.update(dataVal);
+        byte[] ct12 = c1.doFinal();
+        byte[] ct2 = c1.doFinal(dataVal);
+        byte[] ct22 = c2.doFinal(dataVal);
+        byte[] ct32 = c3.doFinal(dataVal);
+
         byte[] expectedVal = toBytes(expected, expected.length());
 
         if (ct11 != null || !Arrays.equals(ct12, ct2) ||
-            !Arrays.equals(ct2, expectedVal)) {
+                !Arrays.equals(ct2, expectedVal) ||
+                !Arrays.equals(ct22, expectedVal) ||
+                !Arrays.equals(ct32, expectedVal)) {
             throw new Exception("Encryption failed; got different result");
         }
 
         // then test decryption and compare with the initial values
-        c.init(Cipher.DECRYPT_MODE, cipherKey);
-        byte[] pt11 = c.update(ct12);
-        byte[] pt12 = c.doFinal();
-        byte[] pt2 = c.doFinal(ct2);
+        c1.init(Cipher.DECRYPT_MODE, cipherKey);
+        ivSpec = new IvParameterSpec(c1.getIV());
+        c2.init(Cipher.DECRYPT_MODE, cipherKey, ivSpec);
+        params = AlgorithmParameters.getInstance("AES");
+        params.init(ivSpec);
+        c3.init(Cipher.DECRYPT_MODE, cipherKey, params);
+
+        byte[] pt11 = c1.update(ct12);
+        byte[] pt12 = c1.doFinal();
+        byte[] pt2 = c1.doFinal(ct2);
+        byte[] pt22 = c2.doFinal(ct2);
+        byte[] pt32 = c3.doFinal(ct2);
+
         if (pt11 != null || !Arrays.equals(pt12, pt2) ||
-            !Arrays.equals(pt2, dataVal)) {
+                !Arrays.equals(pt2, dataVal) || !Arrays.equals(pt22, dataVal) ||
+                !Arrays.equals(pt32, dataVal)) {
             throw new Exception("Decryption failed; got different result");
         }
     }
