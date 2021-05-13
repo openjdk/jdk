@@ -541,8 +541,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             return args;
         }
 
-        public void setArgs(Object[] args) {
-            this.args = args;
+        public DiagnosticInfo toType(DiagnosticType type) {
+            return of(type, prefix, code, args);
         }
     }
 
