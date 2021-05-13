@@ -5686,6 +5686,7 @@ address generate_avx_ghash_processBlocks() {
   address base64_vbmi_lookup_lo_addr() {
     __ align(64);
     __ nop();
+    __ align(64);
     StubCodeMark mark(this, "StubRoutines", "lookup_lo");
     address start = __ pc();
     assert(((unsigned long)start & 0x3f) == 0, "Alignment problem");
