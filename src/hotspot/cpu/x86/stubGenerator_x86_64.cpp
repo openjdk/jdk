@@ -5950,8 +5950,9 @@ address generate_avx_ghash_processBlocks() {
 
     __ align(32);
     __ BIND(L_process64);
-    
+
     __ BIND(L_exit);
+    __ movl(rax, 0x0);
     __ pop(r15);
     __ pop(r14);
     __ pop(r13);
