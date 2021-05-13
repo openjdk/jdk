@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "jvm_io.h"
-#include "aot/aotLoader.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
@@ -36,6 +35,7 @@
 #include "code/pcDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
@@ -336,7 +336,7 @@ ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
   const size_t rs_ps = page_size();
   const size_t rs_align = MAX2(rs_ps, (size_t) os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
-  ReservedCodeSpace rs(rs_size, rs_align, rs_ps > (size_t) os::vm_page_size());
+  ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
   if (!rs.is_reserved()) {
     vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
                                           rs_size/K));
@@ -682,7 +682,6 @@ void CodeCache::metadata_do(MetadataClosure* f) {
   while(iter.next()) {
     iter.method()->metadata_do(f);
   }
-  AOTLoader::metadata_do(f);
 }
 
 int CodeCache::alignment_unit() {
@@ -969,8 +968,6 @@ void CodeCache::initialize() {
 
 void codeCache_init() {
   CodeCache::initialize();
-  // Load AOT libraries and add AOT code heaps.
-  AOTLoader::initialize();
 }
 
 //------------------------------------------------------------------------------------------------
@@ -1034,15 +1031,6 @@ CompiledMethod* CodeCache::find_compiled(void* start) {
   return (CompiledMethod*)cb;
 }
 
-bool CodeCache::is_far_target(address target) {
-#if INCLUDE_AOT
-  return NativeCall::is_far_call(_low_bound,  target) ||
-         NativeCall::is_far_call(_high_bound, target);
-#else
-  return false;
-#endif
-}
-
 #if INCLUDE_JVMTI
 // RedefineClasses support for unloading nmethods that are dependent on "old" methods.
 // We don't really expect this table to grow very large.  If it does, it can become a hashtable.
@@ -1092,11 +1080,6 @@ void CodeCache::old_nmethods_do(MetadataClosure* f) {
 // Just marks the methods in this class as needing deoptimization
 void CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
-
-  // Mark dependent AOT nmethods, which are only found via the class redefined.
-  // TODO: add dependencies to aotCompiledMethod's metadata section so this isn't
-  // needed.
-  AOTLoader::mark_evol_dependent_methods(dependee);
 }
 
 

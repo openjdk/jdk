@@ -196,6 +196,20 @@ Node *SubTypeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return NULL;
   }
 
+  Node *p1 = phase->transform(new AddPNode(superklass, superklass, phase->MakeConX(in_bytes(Klass::super_check_offset_offset()))));
+  Node* m = phase->C->immutable_memory();
+  LoadINode* chk_off_ld = new LoadINode(NULL, m, p1, phase->type(p1)->is_ptr(), TypeInt::INT, MemNode::unordered);
+  Node *chk_off = phase->transform(chk_off_ld);
+  int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
+  bool might_be_cache = (phase->find_int_con(chk_off, cacheoff_con) == cacheoff_con);
+
+  if (might_be_cache) {
+    if (phase->is_IterGVN()) {
+      phase->is_IterGVN()->_worklist.push(chk_off_ld);
+    }
+    return NULL;
+  }
+
   if (super_t->singleton() && subk != NULL && phase->C->static_subtype_check(superk, subk) == Compile::SSC_full_test) {
     Node* subklass = NULL;
     if (sub_t->isa_oopptr()) {
@@ -203,16 +217,6 @@ Node *SubTypeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       subklass = phase->transform(LoadKlassNode::make(*phase, NULL, phase->C->immutable_memory(), adr, TypeInstPtr::KLASS));
     } else {
       subklass = obj_or_subklass;
-    }
-
-    Node *p1 = phase->transform(new AddPNode(superklass, superklass, phase->MakeConX(in_bytes(Klass::super_check_offset_offset()))));
-    Node* m = phase->C->immutable_memory();
-    Node *chk_off = phase->transform(new LoadINode(NULL, m, p1, phase->type(p1)->is_ptr(), TypeInt::INT, MemNode::unordered));
-    int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
-    bool might_be_cache = (phase->find_int_con(chk_off, cacheoff_con) == cacheoff_con);
-
-    if (might_be_cache) {
-      return NULL;
     }
 
     Node *chk_off_X = chk_off;

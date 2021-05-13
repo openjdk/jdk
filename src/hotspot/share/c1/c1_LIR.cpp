@@ -705,7 +705,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_static_call:
     case lir_optvirtual_call:
     case lir_icvirtual_call:
-    case lir_virtual_call:
     case lir_dynamic_call: {
       LIR_OpJavaCall* opJavaCall = op->as_OpJavaCall();
       assert(opJavaCall != NULL, "must be");
@@ -1701,7 +1700,6 @@ const char * LIR_Op::name() const {
      case lir_static_call:           s = "static";        break;
      case lir_optvirtual_call:       s = "optvirtual";    break;
      case lir_icvirtual_call:        s = "icvirtual";     break;
-     case lir_virtual_call:          s = "virtual";       break;
      case lir_dynamic_call:          s = "dynamic";       break;
      // LIR_OpArrayCopy
      case lir_arraycopy:             s = "arraycopy";     break;

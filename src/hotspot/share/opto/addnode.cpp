@@ -145,14 +145,8 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // The Add of the flattened expression
       Node *x1 = add1->in(1);
       Node *x2 = phase->makecon(add1->as_Add()->add_ring(t2, t12));
-      PhaseIterGVN *igvn = phase->is_IterGVN();
-      if (igvn) {
-        set_req_X(2,x2,igvn);
-        set_req_X(1,x1,igvn);
-      } else {
-        set_req(2,x2);
-        set_req(1,x1);
-      }
+      set_req_X(2, x2, phase);
+      set_req_X(1, x1, phase);
       progress = this;            // Made progress
       add1 = in(1);
       add1_op = add1->Opcode();
@@ -169,8 +163,8 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       add2 = add1->clone();
       add2->set_req(2, in(2));
       add2 = phase->transform(add2);
-      set_req(1, add2);
-      set_req(2, a12);
+      set_req_X(1, add2, phase);
+      set_req_X(2, a12, phase);
       progress = this;
       add2 = a12;
     }
@@ -188,14 +182,9 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       addx->set_req(1, in(1));
       addx->set_req(2, add2->in(1));
       addx = phase->transform(addx);
-      set_req(1, addx);
-      set_req(2, a22);
+      set_req_X(1, addx, phase);
+      set_req_X(2, a22, phase);
       progress = this;
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (add2->outcnt() == 0 && igvn) {
-        // add disconnected.
-        igvn->_worklist.push(add2);
-      }
     }
   }
 
@@ -441,7 +430,7 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new SubLNode(in1->in(1), in2->in(2));
     }
     // Convert "(a-b)+(c-a)" into "(c-b)"
-    if( op2 == Op_SubL && in1->in(1) == in1->in(2) ) {
+    if( op2 == Op_SubL && in1->in(1) == in2->in(2) ) {
       assert(in1->in(2) != this && in2->in(1) != this,"dead loop in AddLNode::Ideal");
       return new SubLNode(in2->in(1), in1->in(2));
     }
@@ -452,18 +441,8 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new SubLNode( in1, in2->in(2) );
 
   // Convert "(0-y)+x" into "(x-y)"
-  if( op1 == Op_SubL && phase->type(in1->in(1)) == TypeInt::ZERO )
+  if( op1 == Op_SubL && phase->type(in1->in(1)) == TypeLong::ZERO )
     return new SubLNode( in2, in1->in(2) );
-
-  // Convert "X+X+X+X+X...+X+Y" into "k*X+Y" or really convert "X+(X+Y)"
-  // into "(X<<1)+Y" and let shift-folding happen.
-  if( op2 == Op_AddL &&
-      in2->in(1) == in1 &&
-      op1 != Op_ConL &&
-      0 ) {
-    Node *shift = phase->transform(new LShiftLNode(in1,phase->intcon(1)));
-    return new AddLNode(shift,in2->in(2));
-  }
 
   // Convert (x >>> rshift) + (x << lshift) into RotateRight(x, rshift)
   if (Matcher::match_rule_supported(Op_RotateRight) &&
@@ -642,14 +621,8 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         address = phase->transform(new AddPNode(in(Base),addp->in(Address),in(Offset)));
         offset  = addp->in(Offset);
       }
-      PhaseIterGVN *igvn = phase->is_IterGVN();
-      if( igvn ) {
-        set_req_X(Address,address,igvn);
-        set_req_X(Offset,offset,igvn);
-      } else {
-        set_req(Address,address);
-        set_req(Offset,offset);
-      }
+      set_req_X(Address, address, phase);
+      set_req_X(Offset, offset, phase);
       return this;
     }
   }
@@ -1123,8 +1096,8 @@ Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     assert( l != l->in(1), "dead loop in MinINode::Ideal" );
     r = phase->transform(new MinINode(l->in(2),r));
     l = l->in(1);
-    set_req(1, l);
-    set_req(2, r);
+    set_req_X(1, l, phase);
+    set_req_X(2, r, phase);
     return this;
   }
 

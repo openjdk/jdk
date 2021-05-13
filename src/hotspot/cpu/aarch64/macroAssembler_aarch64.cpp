@@ -35,6 +35,7 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
@@ -178,7 +179,7 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   // instruction.
   if (Instruction_aarch64::extract(insn, 31, 21) == 0b11010010101) {
     // Move narrow OOP
-    uint32_t n = CompressedOops::narrow_oop_value((oop)o);
+    uint32_t n = CompressedOops::narrow_oop_value(cast_to_oop(o));
     Instruction_aarch64::patch(insn_addr, 20, 5, n >> 16);
     Instruction_aarch64::patch(insn_addr+4, 20, 5, n & 0xffff);
     instructions = 2;
@@ -293,10 +294,10 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
 
 void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod) {
   if (acquire) {
-    lea(rscratch1, Address(rthread, Thread::polling_word_offset()));
+    lea(rscratch1, Address(rthread, JavaThread::polling_word_offset()));
     ldar(rscratch1, rscratch1);
   } else {
-    ldr(rscratch1, Address(rthread, Thread::polling_word_offset()));
+    ldr(rscratch1, Address(rthread, JavaThread::polling_word_offset()));
   }
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
@@ -3756,8 +3757,7 @@ void MacroAssembler::cmpptr(Register src1, Address src2) {
 }
 
 void MacroAssembler::cmpoop(Register obj1, Register obj2) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, obj1, obj2);
+  cmp(obj1, obj2);
 }
 
 void MacroAssembler::load_method_holder_cld(Register rresult, Register rmethod) {
@@ -4159,15 +4159,6 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
   }
 }
 
-void MacroAssembler::resolve(DecoratorSet decorators, Register obj) {
-  // Use stronger ACCESS_WRITE|ACCESS_READ by default.
-  if ((decorators & (ACCESS_READ | ACCESS_WRITE)) == 0) {
-    decorators |= ACCESS_READ | ACCESS_WRITE;
-  }
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  return bs->resolve(this, decorators, obj);
-}
-
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
                                    Register thread_tmp, DecoratorSet decorators) {
   access_load_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
@@ -4392,7 +4383,7 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
 
 // Move the address of the polling page into dest.
 void MacroAssembler::get_polling_page(Register dest, relocInfo::relocType rtype) {
-  ldr(dest, Address(rthread, Thread::polling_page_offset()));
+  ldr(dest, Address(rthread, JavaThread::polling_page_offset()));
 }
 
 // Read the polling page.  The address of the polling page must
@@ -4447,7 +4438,8 @@ void MacroAssembler::load_byte_map_base(Register reg) {
 }
 
 void MacroAssembler::build_frame(int framesize) {
-  assert(framesize > 0, "framesize must be > 0");
+  assert(framesize >= 2 * wordSize, "framesize must include space for FP/LR");
+  assert(framesize % (2*wordSize) == 0, "must preserve 2*wordSize alignment");
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     sub(sp, sp, framesize);
     stp(rfp, lr, Address(sp, framesize - 2 * wordSize));
@@ -4466,7 +4458,8 @@ void MacroAssembler::build_frame(int framesize) {
 }
 
 void MacroAssembler::remove_frame(int framesize) {
-  assert(framesize > 0, "framesize must be > 0");
+  assert(framesize >= 2 * wordSize, "framesize must include space for FP/LR");
+  assert(framesize % (2*wordSize) == 0, "must preserve 2*wordSize alignment");
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     ldp(rfp, lr, Address(sp, framesize - 2 * wordSize));
     add(sp, sp, framesize);
@@ -5153,7 +5146,7 @@ address MacroAssembler::byte_array_inflate(Register src, Register dst, Register 
 
   assert_different_registers(src, dst, len, tmp4, rscratch1);
 
-  fmovd(vtmp1, zr);
+  fmovd(vtmp1, 0.0);
   lsrw(tmp4, len, 3);
   bind(after_init);
   cbnzw(tmp4, big);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,11 +298,9 @@ public final class URLPermission extends Permission {
      * </table>
      */
     public boolean implies(Permission p) {
-        if (! (p instanceof URLPermission)) {
+        if (! (p instanceof URLPermission that)) {
             return false;
         }
-
-        URLPermission that = (URLPermission)p;
 
         if (this.methods.isEmpty() && !that.methods.isEmpty()) {
             return false;
@@ -374,10 +372,9 @@ public final class URLPermission extends Permission {
      * and p's url equals this's url.  Returns false otherwise.
      */
     public boolean equals(Object p) {
-        if (!(p instanceof URLPermission)) {
+        if (!(p instanceof URLPermission that)) {
             return false;
         }
-        URLPermission that = (URLPermission)p;
         if (!this.scheme.equals(that.scheme)) {
             return false;
         }

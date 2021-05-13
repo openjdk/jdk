@@ -30,7 +30,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +53,6 @@ import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.WriteableUserPath;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
 import jdk.jfr.internal.consumer.FileAccess;
-import jdk.jfr.internal.consumer.JdkJfrConsumer;
 import jdk.jfr.internal.instrument.JDKEvents;
 
 /**
@@ -84,7 +82,7 @@ public final class ManagementSupport {
         // would normally be checked when a Flight Recorder instance is created
         Utils.checkAccessFlightRecorder();
         if (JVMSupport.isNotAvailable()) {
-            return new ArrayList<>();
+            return List.of();
         }
         JDKEvents.initialize(); // make sure JDK events are available
         return Collections.unmodifiableList(MetadataRepository.getInstance().getRegisteredEventTypes());
@@ -176,6 +174,13 @@ public final class ManagementSupport {
             AccessControlContext acc,
             Path directory,
             List<Configuration> confs) throws IOException {
-        return new EventDirectoryStream(acc, directory, FileAccess.UNPRIVILEGED, null, confs);
+        return new EventDirectoryStream(
+            acc,
+            directory,
+            FileAccess.UNPRIVILEGED,
+            null,
+            confs,
+            false
+        );
     }
 }

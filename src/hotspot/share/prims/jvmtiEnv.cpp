@@ -178,6 +178,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     // other than the current thread is required we need to transition
     // from native so as to resolve the jthread.
 
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
     debug_only(VMNativeEntryWrapper __vew;)
@@ -222,12 +223,8 @@ JvmtiEnv::GetNamedModule(jobject class_loader, const char* package_name, jobject
   if (h_loader.not_null() && !java_lang_ClassLoader::is_subclass(h_loader->klass())) {
     return JVMTI_ERROR_ILLEGAL_ARGUMENT;
   }
-  jobject module = Modules::get_named_module(h_loader, package_name, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    CLEAR_PENDING_EXCEPTION;
-    return JVMTI_ERROR_INTERNAL; // unexpected exception
-  }
-  *module_ptr = module;
+  oop module = Modules::get_named_module(h_loader, package_name);
+  *module_ptr = module != NULL ? JNIHandles::make_local(THREAD, module) : NULL;
   return JVMTI_ERROR_NONE;
 } /* end GetNamedModule */
 
@@ -693,7 +690,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     // The phase is checked by the wrapper that called this function,
     // but this thread could be racing with the thread that is
     // terminating the VM so we check one more time.
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current();
     HandleMark hm(THREAD);
 
     // create the zip entry (which will open the zip file and hence
@@ -879,7 +876,7 @@ JvmtiEnv::GetThreadState(jthread thread, jint* thread_state_ptr) {
     // We have a JavaThread* so add more state bits.
     JavaThreadState jts = java_thread->thread_state();
 
-    if (java_thread->is_being_ext_suspended()) {
+    if (java_thread->is_suspended()) {
       state |= JVMTI_THREAD_STATE_SUSPENDED;
     }
     if (jts == _thread_in_native) {
@@ -945,24 +942,18 @@ jvmtiError
 JvmtiEnv::SuspendThread(JavaThread* java_thread) {
   // don't allow hidden thread suspend request.
   if (java_thread->is_hidden_from_external_view()) {
-    return (JVMTI_ERROR_NONE);
+    return JVMTI_ERROR_NONE;
   }
-
-  {
-    MutexLocker ml(java_thread->SR_lock(), Mutex::_no_safepoint_check_flag);
-    if (java_thread->is_external_suspend()) {
-      // don't allow nested external suspend requests.
-      return (JVMTI_ERROR_THREAD_SUSPENDED);
-    }
-    if (java_thread->is_exiting()) { // thread is in the process of exiting
-      return (JVMTI_ERROR_THREAD_NOT_ALIVE);
-    }
-    java_thread->set_external_suspend();
+  if (java_thread->is_suspended()) {
+    return JVMTI_ERROR_THREAD_SUSPENDED;
   }
-
   if (!JvmtiSuspendControl::suspend(java_thread)) {
-    // the thread was in the process of exiting
-    return (JVMTI_ERROR_THREAD_NOT_ALIVE);
+    // Either the thread is already suspended or
+    // it was in the process of exiting.
+    if (java_thread->is_exiting()) {
+      return JVMTI_ERROR_THREAD_NOT_ALIVE;
+    }
+    return JVMTI_ERROR_THREAD_SUSPENDED;
   }
   return JVMTI_ERROR_NONE;
 } /* end SuspendThread */
@@ -973,8 +964,10 @@ JvmtiEnv::SuspendThread(JavaThread* java_thread) {
 // results - pre-checked for NULL
 jvmtiError
 JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvmtiError* results) {
+  int self_index = -1;
   int needSafepoint = 0;  // > 0 if we need a safepoint
-  ThreadsListHandle tlh;
+  JavaThread* current = JavaThread::current();
+  ThreadsListHandle tlh(current);
   for (int i = 0; i < request_count; i++) {
     JavaThread *java_thread = NULL;
     jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), request_list[i], &java_thread, NULL);
@@ -987,38 +980,38 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
       results[i] = JVMTI_ERROR_NONE;  // indicate successful suspend
       continue;
     }
-
-    {
-      MutexLocker ml(java_thread->SR_lock(), Mutex::_no_safepoint_check_flag);
-      if (java_thread->is_external_suspend()) {
-        // don't allow nested external suspend requests.
-        results[i] = JVMTI_ERROR_THREAD_SUSPENDED;
-        continue;
-      }
-      if (java_thread->is_exiting()) { // thread is in the process of exiting
-        results[i] = JVMTI_ERROR_THREAD_NOT_ALIVE;
-        continue;
-      }
-      java_thread->set_external_suspend();
+    if (java_thread->is_suspended()) {
+      results[i] = JVMTI_ERROR_THREAD_SUSPENDED;
+      continue;
     }
-    if (java_thread->thread_state() == _thread_in_native) {
-      // We need to try and suspend native threads here. Threads in
-      // other states will self-suspend on their next transition.
-      if (!JvmtiSuspendControl::suspend(java_thread)) {
-        // The thread was in the process of exiting. Force another
-        // safepoint to make sure that this thread transitions.
-        needSafepoint++;
+    if (java_thread == current) {
+      self_index = i;
+      continue;
+    }
+    if (!JvmtiSuspendControl::suspend(java_thread)) {
+      // Either the thread is already suspended or
+      // it was in the process of exiting.
+      if (java_thread->is_exiting()) {
         results[i] = JVMTI_ERROR_THREAD_NOT_ALIVE;
         continue;
       }
-    } else {
-      needSafepoint++;
+      results[i] = JVMTI_ERROR_THREAD_SUSPENDED;
+      continue;
     }
     results[i] = JVMTI_ERROR_NONE;  // indicate successful suspend
   }
-  if (needSafepoint > 0) {
-    VM_ThreadsSuspendJVMTI tsj;
-    VMThread::execute(&tsj);
+  if (self_index >= 0) {
+    if (!JvmtiSuspendControl::suspend(current)) {
+      // Either the thread is already suspended or
+      // it was in the process of exiting.
+      if (current->is_exiting()) {
+        results[self_index] = JVMTI_ERROR_THREAD_NOT_ALIVE;
+      } else {
+        results[self_index] = JVMTI_ERROR_THREAD_SUSPENDED;
+      }
+    } else {
+      results[self_index] = JVMTI_ERROR_NONE;  // indicate successful suspend
+    }
   }
   // per-thread suspend results returned via results parameter
   return JVMTI_ERROR_NONE;
@@ -1033,11 +1026,9 @@ JvmtiEnv::ResumeThread(JavaThread* java_thread) {
   if (java_thread->is_hidden_from_external_view()) {
     return JVMTI_ERROR_NONE;
   }
-
-  if (!java_thread->is_being_ext_suspended()) {
+  if (!java_thread->is_suspended()) {
     return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
   }
-
   if (!JvmtiSuspendControl::resume(java_thread)) {
     return JVMTI_ERROR_INTERNAL;
   }
@@ -1063,7 +1054,7 @@ JvmtiEnv::ResumeThreadList(jint request_count, const jthread* request_list, jvmt
       results[i] = JVMTI_ERROR_NONE;  // indicate successful resume
       continue;
     }
-    if (!java_thread->is_being_ext_suspended()) {
+    if (!java_thread->is_suspended()) {
       results[i] = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
       continue;
     }
@@ -1446,7 +1437,7 @@ JvmtiEnv::GetThreadGroupInfo(jthreadGroup group, jvmtiThreadGroupInfo* info_ptr)
 jvmtiError
 JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jthread** threads_ptr, jint* group_count_ptr, jthreadGroup** groups_ptr) {
   JavaThread* current_thread = JavaThread::current();
-  oop group_obj = (oop) JNIHandles::resolve_external_guard(group);
+  oop group_obj = JNIHandles::resolve_external_guard(group);
   NULL_CHECK(group_obj, JVMTI_ERROR_INVALID_THREAD_GROUP);
 
   Handle *thread_objs = NULL;
@@ -2366,15 +2357,10 @@ JvmtiEnv::GetClassModifiers(oop k_mirror, jint* modifiers_ptr) {
   if (!java_lang_Class::is_primitive(k_mirror)) {
     Klass* k = java_lang_Class::as_Klass(k_mirror);
     NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
-    result = k->compute_modifier_flags(current_thread);
-    JavaThread* THREAD = current_thread; // pass to macros
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
-      return JVMTI_ERROR_INTERNAL;
-    };
+    result = k->compute_modifier_flags();
 
-    // Reset the deleted  ACC_SUPER bit ( deleted in compute_modifier_flags()).
-    if(k->is_super()) {
+    // Reset the deleted  ACC_SUPER bit (deleted in compute_modifier_flags()).
+    if (k->is_super()) {
       result |= JVM_ACC_SUPER;
     }
   } else {

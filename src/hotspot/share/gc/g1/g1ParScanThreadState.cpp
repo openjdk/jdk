@@ -203,7 +203,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
 
   markWord m = obj->mark();
   if (m.is_marked()) {
-    obj = (oop) m.decode_pointer();
+    obj = cast_to_oop(m.decode_pointer());
   } else {
     obj = do_copy_to_survivor_space(region_attr, obj, m);
   }
@@ -473,7 +473,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   // We're going to allocate linearly, so might as well prefetch ahead.
   Prefetch::write(obj_ptr, PrefetchCopyIntervalInBytes);
 
-  const oop obj = oop(obj_ptr);
+  const oop obj = cast_to_oop(obj_ptr);
   const oop forward_ptr = old->forward_to_atomic(obj, old_mark, memory_order_relaxed);
   if (forward_ptr == NULL) {
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), obj_ptr, word_sz);
@@ -617,9 +617,9 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m) {
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
 
-    if (!r->evacuation_failed()) {
-      r->set_evacuation_failed(true);
-     _g1h->hr_printer()->evac_failure(r);
+    if (r->set_evacuation_failed()) {
+      _g1h->notify_region_failed_evacuation();
+      _g1h->hr_printer()->evac_failure(r);
     }
 
     _g1h->preserve_mark_during_evac_failure(_worker_id, old, m);

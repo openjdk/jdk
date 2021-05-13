@@ -54,13 +54,13 @@ h3 {
     font-size:16px;
 }
 h4 {
-    font-size:13px;
+    font-size:15px;
 }
 h5 {
-    font-size:12px;
+    font-size:14px;
 }
 h6 {
-    font-size:11px;
+    font-size:13px;
 }
 ul {
     list-style-type:disc;
@@ -332,6 +332,18 @@ ul.summary-list > li {
     margin-top:0;
     margin-bottom:1px;
 }
+ul.see-list, ul.see-list-long {
+    padding-left: 0;
+    list-style: none;
+}
+ul.see-list li {
+    display: inline;
+}
+ul.see-list li:not(:last-child):after,
+ul.see-list-long li:not(:last-child):after {
+    content: ", ";
+    white-space: pre-wrap;
+}
 /*
  * Styles for tables.
  */
@@ -353,10 +365,10 @@ ul.summary-list > li {
     font-weight:bold;
     clear:none;
     overflow:hidden;
-    padding:0px;
+    padding:0;
     padding-top:10px;
     padding-left:1px;
-    margin:0px;
+    margin:0;
     white-space:pre;
 }
 .caption a:link, .caption a:visited {
@@ -378,7 +390,10 @@ ul.summary-list > li {
     border: none;
     height:16px;
 }
-
+div.table-tabs {
+    padding:10px 0 0 1px;
+    margin:0;
+}
 div.table-tabs > button {
    border: none;
    cursor: pointer;
@@ -605,7 +620,7 @@ ul.ui-autocomplete  li {
 .result-highlight {
     font-weight:bold;
 }
-#search {
+#search-input {
     background-image:url('resources/glass.png');
     background-size:13px;
     background-repeat:no-repeat;
@@ -615,7 +630,7 @@ ul.ui-autocomplete  li {
     right:-18px;
     width:400px;
 }
-#reset {
+#reset-button {
     background-color: rgb(255,255,255);
     background-image:url('resources/x.png');
     background-position:center;
@@ -655,7 +670,7 @@ ul.ui-autocomplete  li {
 .inherited-list {
     margin: 10px 0 10px 0;
 }
-section.description {
+section.class-description {
     line-height: 1.4;
 }
 .summary section[class$="-summary"], .details section[class$="-details"],
@@ -674,6 +689,18 @@ section.description {
 }
 ul.help-section-list {
     margin: 0;
+}
+ul.help-subtoc > li {
+  display: inline-block;
+  padding-right: 5px;
+  font-size: smaller;
+}
+ul.help-subtoc > li::before {
+  content: "\2022" ;
+  padding-right:2px;
+}
+span.help-note {
+    font-style: italic;
 }
 /*
  * Indicator icon for external links.
@@ -783,12 +810,12 @@ table.striped > tbody > tr > th {
  * Tweak font sizes and paddings for small screens.
  */
 @media screen and (max-width: 1050px) {
-    #search {
+    #search-input {
         width: 300px;
     }
 }
 @media screen and (max-width: 800px) {
-    #search {
+    #search-input {
         width: 200px;
     }
     .top-nav,
@@ -821,7 +848,7 @@ table.striped > tbody > tr > th {
     }
 }
 @media screen and (max-width: 500px) {
-    #search {
+    #search-input {
         width: 150px;
     }
     .top-nav,

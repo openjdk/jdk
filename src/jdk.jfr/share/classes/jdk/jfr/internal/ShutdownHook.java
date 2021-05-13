@@ -100,6 +100,7 @@ final class ShutdownHook implements Runnable {
     }
 
     static final class ExceptionHandler implements Thread.UncaughtExceptionHandler {
+        @Override
         public void uncaughtException(Thread t, Throwable e) {
             JVM.getJVM().uncaughtException(t, e);
         }

@@ -231,7 +231,7 @@ public class ClassWriter extends ClassFile {
         return sbuf.toString();
     }
     //where
-        private final static String[] flagName = {
+        private static final String[] flagName = {
             "PUBLIC", "PRIVATE", "PROTECTED", "STATIC", "FINAL",
             "SUPER", "VOLATILE", "TRANSIENT", "NATIVE", "INTERFACE",
             "ABSTRACT", "STRICTFP"};

@@ -50,13 +50,13 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/whitebox.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/escapeBarrier.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
@@ -653,7 +653,9 @@ void CompileBroker::compilation_init_phase1(Thread* THREAD) {
       }
       if (FLAG_IS_DEFAULT(JVMCIHostThreads)) {
       } else {
+#ifdef COMPILER1
         _c1_count = JVMCIHostThreads;
+#endif // COMPILER1
       }
     }
   }
@@ -1432,8 +1434,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // Note: A native method implies non-osr compilation which is
   //       checked with an assertion at the entry of this method.
   if (method->is_native() && !method->is_method_handle_intrinsic()) {
-    bool in_base_library;
-    address adr = NativeLookup::lookup(method, in_base_library, THREAD);
+    address adr = NativeLookup::lookup(method, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // In case of an exception looking up the method, we just forget
       // about it. The interpreter will kick-in and throw the exception.

@@ -611,10 +611,9 @@ public class Socket implements java.io.Closeable {
         if (isConnected())
             throw new SocketException("already connected");
 
-        if (!(endpoint instanceof InetSocketAddress))
+        if (!(endpoint instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type");
 
-        InetSocketAddress epoint = (InetSocketAddress) endpoint;
         InetAddress addr = epoint.getAddress ();
         int port = epoint.getPort();
         checkAddress(addr, "connect");

@@ -167,14 +167,14 @@ void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   // Get object starting at or reaching into this block.
   HeapWord* start = start_array()->object_start(begin);
   if (start < begin) {
-    start += oop(start)->size();
+    start += cast_to_oop(start)->size();
   }
   assert(start >= begin,
          "Object address" PTR_FORMAT " must be larger or equal to block address at " PTR_FORMAT,
          p2i(start), p2i(begin));
   // Iterate all objects until the end.
-  for (HeapWord* p = start; p < end; p += oop(p)->size()) {
-    cl->do_object(oop(p));
+  for (HeapWord* p = start; p < end; p += cast_to_oop(p)->size()) {
+    cl->do_object(cast_to_oop(p));
   }
 }
 

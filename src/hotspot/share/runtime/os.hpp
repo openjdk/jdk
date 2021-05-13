@@ -77,6 +77,11 @@ enum ThreadPriority {        // JLS 20.20.1-3
   CriticalPriority = 11      // Critical thread priority
 };
 
+enum WXMode {
+  WXWrite,
+  WXExec
+};
+
 // Executable parameter flag for os::commit_memory() and
 // os::commit_memory_or_exit().
 const bool ExecMem = true;
@@ -154,7 +159,8 @@ class os: AllStatic {
   static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
-  static char*  pd_reserve_memory_special(size_t size, size_t alignment,
+  static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
+
                                           char* addr, bool executable);
   static bool   pd_release_memory_special(char* addr, size_t bytes);
 
@@ -219,6 +225,16 @@ class os: AllStatic {
   static char*      local_time_string(char *buf, size_t buflen);
   static struct tm* localtime_pd     (const time_t* clock, struct tm*  res);
   static struct tm* gmtime_pd        (const time_t* clock, struct tm*  res);
+
+  // "YYYY-MM-DDThh:mm:ss.mmm+zzzz" incl. terminating zero
+  static const size_t iso8601_timestamp_size = 29;
+
+  // Fill in buffer with an ISO-8601 string corresponding to the given javaTimeMillis value
+  // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
+  // Returns buffer, or NULL if it failed.
+  static char* iso8601_time(jlong milliseconds_since_19700101, char* buffer,
+                            size_t buffer_length, bool utc = false);
+
   // Fill in buffer with current local time as an ISO-8601 string.
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
   // Returns buffer, or NULL if it failed.
@@ -413,7 +429,7 @@ class os: AllStatic {
 
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
-  static char*  reserve_memory_special(size_t size, size_t alignment,
+  static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
                                        char* addr, bool executable);
   static bool   release_memory_special(char* addr, size_t bytes);
   static void   large_page_init();
@@ -931,6 +947,11 @@ class os: AllStatic {
     Thread* _thread;
     bool _done;
   };
+
+#if defined(__APPLE__) && defined(AARCH64)
+  // Enables write or execute access to writeable and executable pages.
+  static void current_thread_enable_wx(WXMode mode);
+#endif // __APPLE__ && AARCH64
 
 #ifndef _WINDOWS
   // Suspend/resume support

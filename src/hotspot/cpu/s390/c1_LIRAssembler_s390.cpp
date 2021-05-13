@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -496,7 +496,6 @@ void LIR_Assembler::align_call(LIR_Code code) {
     case lir_dynamic_call:
       offset += NativeCall::call_far_pcrelative_displacement_offset;
       break;
-    case lir_virtual_call:   // currently, sparc-specific for niagara
     default: ShouldNotReachHere();
   }
   if ((offset & (NativeCall::call_far_pcrelative_displacement_alignment-1)) != 0) {
@@ -531,11 +530,6 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   // to determine who we intended to call.
   __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr));
   call(op, relocInfo::none);
-}
-
-// not supported
-void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
-  ShouldNotReachHere();
 }
 
 void LIR_Assembler::move_regs(Register from_reg, Register to_reg) {
@@ -1215,7 +1209,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
          (result->is_single_fpu() && result->as_float_reg() == Z_F0) ||
          (result->is_double_fpu() && result->as_double_reg() == Z_F0), "convention");
 
-  __ z_lg(Z_R1_scratch, Address(Z_thread, Thread::polling_page_offset()));
+  __ z_lg(Z_R1_scratch, Address(Z_thread, JavaThread::polling_page_offset()));
 
   // Pop the frame before the safepoint code.
   __ pop_frame_restore_retPC(initial_frame_size_in_bytes());
@@ -1234,7 +1228,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   const Register poll_addr = tmp->as_register_lo();
-  __ z_lg(poll_addr, Address(Z_thread, Thread::polling_page_offset()));
+  __ z_lg(poll_addr, Address(Z_thread, JavaThread::polling_page_offset()));
   guarantee(info != NULL, "Shouldn't be NULL");
   add_debug_info_for_branch(info);
   int offset = __ offset();

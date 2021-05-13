@@ -37,7 +37,6 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
@@ -462,7 +461,7 @@ void LIRGenerator::klass2reg_with_patching(LIR_Opr r, ciMetadata* obj, CodeEmitI
   /* C2 relies on constant pool entries being resolved (ciTypeFlow), so if tiered compilation
    * is active and the class hasn't yet been resolved we need to emit a patch that resolves
    * the class. */
-  if ((!CompilerConfig::is_c1_only_no_aot_or_jvmci() && need_resolve) || !obj->is_loaded() || PatchALot) {
+  if ((!CompilerConfig::is_c1_only_no_jvmci() && need_resolve) || !obj->is_loaded() || PatchALot) {
     assert(info != NULL, "info must be set if class is not loaded");
     __ klass2reg_patch(NULL, r, info);
   } else {
@@ -662,7 +661,7 @@ void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, L
 void LIRGenerator::print_if_not_loaded(const NewInstance* new_instance) {
   if (PrintNotLoaded && !new_instance->klass()->is_loaded()) {
     tty->print_cr("   ###class not loaded at new bci %d", new_instance->printable_bci());
-  } else if (PrintNotLoaded && (!CompilerConfig::is_c1_only_no_aot_or_jvmci() && new_instance->is_unresolved())) {
+  } else if (PrintNotLoaded && (!CompilerConfig::is_c1_only_no_jvmci() && new_instance->is_unresolved())) {
     tty->print_cr("   ###class not resolved at new bci %d", new_instance->printable_bci());
   }
 }
@@ -1184,11 +1183,6 @@ void LIRGenerator::do_Local(Local* x) {
   // operand_for_instruction has the side effect of setting the result
   // so there's no need to do it here.
   operand_for_instruction(x);
-}
-
-
-void LIRGenerator::do_IfInstanceOf(IfInstanceOf* x) {
-  Unimplemented();
 }
 
 
@@ -1794,15 +1788,6 @@ LIR_Opr LIRGenerator::access_atomic_add_at(DecoratorSet decorators, BasicType ty
   }
 }
 
-LIR_Opr LIRGenerator::access_resolve(DecoratorSet decorators, LIR_Opr obj) {
-  // Use stronger ACCESS_WRITE|ACCESS_READ by default.
-  if ((decorators & (ACCESS_READ | ACCESS_WRITE)) == 0) {
-    decorators |= ACCESS_READ | ACCESS_WRITE;
-  }
-
-  return _barrier_set->resolve(this, decorators, obj);
-}
-
 void LIRGenerator::do_LoadField(LoadField* x) {
   bool needs_patching = x->needs_patching();
   bool is_volatile = x->field()->is_volatile();
@@ -1880,12 +1865,11 @@ void LIRGenerator::do_NIOCheckIndex(Intrinsic* x) {
   if (GenerateRangeChecks) {
     CodeEmitInfo* info = state_for(x);
     CodeStub* stub = new RangeCheckStub(info, index.result());
-    LIR_Opr buf_obj = access_resolve(IS_NOT_NULL | ACCESS_READ, buf.result());
     if (index.result()->is_constant()) {
-      cmp_mem_int(lir_cond_belowEqual, buf_obj, java_nio_Buffer::limit_offset(), index.result()->as_jint(), info);
+      cmp_mem_int(lir_cond_belowEqual, buf.result(), java_nio_Buffer::limit_offset(), index.result()->as_jint(), info);
       __ branch(lir_cond_belowEqual, stub);
     } else {
-      cmp_reg_mem(lir_cond_aboveEqual, index.result(), buf_obj,
+      cmp_reg_mem(lir_cond_aboveEqual, index.result(), buf.result(),
                   java_nio_Buffer::limit_offset(), T_INT, info);
       __ branch(lir_cond_aboveEqual, stub);
     }
@@ -2958,14 +2942,10 @@ void LIRGenerator::do_Invoke(Invoke* x) {
         __ call_opt_virtual(target, receiver, result_register,
                             SharedRuntime::get_resolve_opt_virtual_call_stub(),
                             arg_list, info);
-      } else if (x->vtable_index() < 0) {
+      } else {
         __ call_icvirtual(target, receiver, result_register,
                           SharedRuntime::get_resolve_virtual_call_stub(),
                           arg_list, info);
-      } else {
-        int entry_offset = in_bytes(Klass::vtable_start_offset()) + x->vtable_index() * vtableEntry::size_in_bytes();
-        int vtable_offset = entry_offset + vtableEntry::method_offset_in_bytes();
-        __ call_virtual(target, receiver, result_register, vtable_offset, arg_list, info);
       }
       break;
     case Bytecodes::_invokedynamic: {
@@ -3205,6 +3185,10 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 
   case vmIntrinsics::_vectorizedMismatch:
     do_vectorizedMismatch(x);
+    break;
+
+  case vmIntrinsics::_blackhole:
+    do_blackhole(x);
     break;
 
   default: ShouldNotReachHere(); break;
@@ -3626,6 +3610,15 @@ void LIRGenerator::do_RangeCheckPredicate(RangeCheckPredicate *x) {
   }
 }
 
+void LIRGenerator::do_blackhole(Intrinsic *x) {
+  assert(!x->has_receiver(), "Should have been checked before: only static methods here");
+  for (int c = 0; c < x->number_of_arguments(); c++) {
+    // Load the argument
+    LIRItem vitem(x->argument_at(c), this);
+    vitem.load_item();
+    // ...and leave it unused.
+  }
+}
 
 LIR_Opr LIRGenerator::call_runtime(Value arg1, address entry, ValueType* result_type, CodeEmitInfo* info) {
   LIRItemList args(1);

@@ -26,6 +26,7 @@
 package com.sun.tools.javac.comp;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import javax.lang.model.element.ElementKind;
@@ -316,12 +317,12 @@ public class Check {
     Type typeTagError(DiagnosticPosition pos, JCDiagnostic required, Object found) {
         // this error used to be raised by the parser,
         // but has been delayed to this point:
-        if (found instanceof Type && ((Type)found).hasTag(VOID)) {
+        if (found instanceof Type type && type.hasTag(VOID)) {
             log.error(pos, Errors.IllegalStartOfType);
             return syms.errType;
         }
         log.error(pos, Errors.TypeFoundReq(found, required));
-        return types.createErrorType(found instanceof Type ? (Type)found : syms.errType);
+        return types.createErrorType(found instanceof Type type ? type : syms.errType);
     }
 
     /** Report an error that symbol cannot be referenced before super
@@ -1336,8 +1337,7 @@ public class Check {
             @Override
             public void visitVarDef(JCVariableDecl tree) {
                 if ((tree.mods.flags & ENUM) != 0) {
-                    if (tree.init instanceof JCNewClass &&
-                        ((JCNewClass) tree.init).def != null) {
+                    if (tree.init instanceof JCNewClass newClass && newClass.def != null) {
                         specialized = true;
                     }
                 }
@@ -2137,7 +2137,7 @@ public class Check {
         }
     }
 
-    private Filter<Symbol> equalsHasCodeFilter = s -> MethodSymbol.implementation_filter.accepts(s) &&
+    private Predicate<Symbol> equalsHasCodeFilter = s -> MethodSymbol.implementation_filter.test(s) &&
             (s.flags() & BAD_OVERRIDE) == 0;
 
     public void checkClassOverrideEqualsAndHashIfNeeded(DiagnosticPosition pos,
@@ -2216,8 +2216,8 @@ public class Check {
 
     private boolean checkNameClash(ClassSymbol origin, Symbol s1, Symbol s2) {
         ClashFilter cf = new ClashFilter(origin.type);
-        return (cf.accepts(s1) &&
-                cf.accepts(s2) &&
+        return (cf.test(s1) &&
+                cf.test(s2) &&
                 types.hasSameArgs(s1.erasure(types), s2.erasure(types)));
     }
 
@@ -2247,7 +2247,7 @@ public class Check {
 
     class CycleChecker extends TreeScanner {
 
-        List<Symbol> seenClasses = List.nil();
+        Set<Symbol> seenClasses = new HashSet<>();
         boolean errorFound = false;
         boolean partialCheck = false;
 
@@ -2266,7 +2266,7 @@ public class Check {
                 } else if (sym.kind == TYP) {
                     checkClass(pos, sym, List.nil());
                 }
-            } else {
+            } else if (sym == null || sym.kind != PCK) {
                 //not completed yet
                 partialCheck = true;
             }
@@ -2315,7 +2315,7 @@ public class Check {
                 noteCyclic(pos, (ClassSymbol)c);
             } else if (!c.type.isErroneous()) {
                 try {
-                    seenClasses = seenClasses.prepend(c);
+                    seenClasses.add(c);
                     if (c.type.hasTag(CLASS)) {
                         if (supertypes.nonEmpty()) {
                             scan(supertypes);
@@ -2338,7 +2338,7 @@ public class Check {
                         }
                     }
                 } finally {
-                    seenClasses = seenClasses.tail;
+                    seenClasses.remove(c);
                 }
             }
         }
@@ -2583,7 +2583,7 @@ public class Check {
      }
 
      //where
-     private class ClashFilter implements Filter<Symbol> {
+     private class ClashFilter implements Predicate<Symbol> {
 
          Type site;
 
@@ -2596,7 +2596,8 @@ public class Check {
                 s.owner == site.tsym;
          }
 
-         public boolean accepts(Symbol s) {
+         @Override
+         public boolean test(Symbol s) {
              return s.kind == MTH &&
                      (s.flags() & SYNTHETIC) == 0 &&
                      !shouldSkip(s) &&
@@ -2647,7 +2648,7 @@ public class Check {
     }
 
     //where
-     private class DefaultMethodClashFilter implements Filter<Symbol> {
+     private class DefaultMethodClashFilter implements Predicate<Symbol> {
 
          Type site;
 
@@ -2655,7 +2656,8 @@ public class Check {
              this.site = site;
          }
 
-         public boolean accepts(Symbol s) {
+         @Override
+         public boolean test(Symbol s) {
              return s.kind == MTH &&
                      (s.flags() & DEFAULT) != 0 &&
                      s.isInheritedIn(site.tsym, types) &&
@@ -3165,11 +3167,10 @@ public class Check {
         } else {
             containerTargets = new HashSet<>();
             for (Attribute app : containerTarget.values) {
-                if (!(app instanceof Attribute.Enum)) {
+                if (!(app instanceof Attribute.Enum attributeEnum)) {
                     continue; // recovery
                 }
-                Attribute.Enum e = (Attribute.Enum)app;
-                containerTargets.add(e.value.name);
+                containerTargets.add(attributeEnum.value.name);
             }
         }
 
@@ -3180,11 +3181,10 @@ public class Check {
         } else {
             containedTargets = new HashSet<>();
             for (Attribute app : containedTarget.values) {
-                if (!(app instanceof Attribute.Enum)) {
+                if (!(app instanceof Attribute.Enum attributeEnum)) {
                     continue; // recovery
                 }
-                Attribute.Enum e = (Attribute.Enum)app;
-                containedTargets.add(e.value.name);
+                containedTargets.add(attributeEnum.value.name);
             }
         }
 
@@ -3308,11 +3308,10 @@ public class Check {
             targets = new Name[arr.values.length];
             for (int i=0; i<arr.values.length; ++i) {
                 Attribute app = arr.values[i];
-                if (!(app instanceof Attribute.Enum)) {
+                if (!(app instanceof Attribute.Enum attributeEnum)) {
                     return new Name[0];
                 }
-                Attribute.Enum e = (Attribute.Enum) app;
-                targets[i] = e.value.name;
+                targets[i] = attributeEnum.value.name;
             }
         }
         return targets;
@@ -3340,12 +3339,11 @@ public class Check {
             targets = new Name[arr.values.length];
             for (int i=0; i<arr.values.length; ++i) {
                 Attribute app = arr.values[i];
-                if (!(app instanceof Attribute.Enum)) {
+                if (!(app instanceof Attribute.Enum attributeEnum)) {
                     // recovery
                     return Optional.empty();
                 }
-                Attribute.Enum e = (Attribute.Enum) app;
-                targets[i] = e.value.name;
+                targets[i] = attributeEnum.value.name;
             }
         }
         for (Name target : targets) {
@@ -3409,8 +3407,7 @@ public class Check {
         Attribute.Compound atTarget = s.getAnnotationTypeMetadata().getTarget();
         if (atTarget == null) return null; // ok, is applicable
         Attribute atValue = atTarget.member(names.value);
-        if (!(atValue instanceof Attribute.Array)) return null; // error recovery
-        return (Attribute.Array) atValue;
+        return (atValue instanceof Attribute.Array attributeArray) ? attributeArray : null;
     }
 
     public final Name[] dfltTargetMeta;
@@ -3802,7 +3799,7 @@ public class Check {
     private boolean checkUniqueImport(DiagnosticPosition pos, Scope ordinallyImportedSoFar,
                                       Scope staticallyImportedSoFar, Scope topLevelScope,
                                       Symbol sym, boolean staticImport) {
-        Filter<Symbol> duplicates = candidate -> candidate != sym && !candidate.type.isErroneous();
+        Predicate<Symbol> duplicates = candidate -> candidate != sym && !candidate.type.isErroneous();
         Symbol ordinaryClashing = ordinallyImportedSoFar.findFirst(sym.name, duplicates);
         Symbol staticClashing = null;
         if (ordinaryClashing == null && !staticImport) {

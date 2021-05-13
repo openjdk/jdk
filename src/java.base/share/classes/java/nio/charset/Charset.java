@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,14 +174,14 @@ import java.util.TreeMap;
  * href="http://www.ietf.org/rfc/rfc2279.txt"><i>RFC&nbsp;2279</i></a>; the
  * transformation format upon which it is based is specified in
  * Amendment&nbsp;2 of ISO&nbsp;10646-1 and is also described in the <a
- * href="http://www.unicode.org/unicode/standard/standard.html"><i>Unicode
+ * href="http://www.unicode.org/standard/standard.html"><i>Unicode
  * Standard</i></a>.
  *
  * <p> The {@code UTF-16} charsets are specified by <a
  * href="http://www.ietf.org/rfc/rfc2781.txt"><i>RFC&nbsp;2781</i></a>; the
  * transformation formats upon which they are based are specified in
  * Amendment&nbsp;1 of ISO&nbsp;10646-1 and are also described in the <a
- * href="http://www.unicode.org/unicode/standard/standard.html"><i>Unicode
+ * href="http://www.unicode.org/standard/standard.html"><i>Unicode
  * Standard</i></a>.
  *
  * <p> The {@code UTF-16} charsets use sixteen-bit quantities and are

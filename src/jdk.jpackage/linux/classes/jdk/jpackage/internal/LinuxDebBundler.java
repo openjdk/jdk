@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.RELEASE;
@@ -91,11 +90,11 @@ public class LinuxDebBundler extends LinuxPackageBundler {
                 return s;
             });
 
-    private final static String TOOL_DPKG_DEB = "dpkg-deb";
-    private final static String TOOL_DPKG = "dpkg";
-    private final static String TOOL_FAKEROOT = "fakeroot";
+    private static final String TOOL_DPKG_DEB = "dpkg-deb";
+    private static final String TOOL_DPKG = "dpkg";
+    private static final String TOOL_FAKEROOT = "fakeroot";
 
-    private final static String DEB_ARCH;
+    private static final String DEB_ARCH;
     static {
         String debArch;
         try {
@@ -173,7 +172,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
     protected List<ToolValidator> getToolValidators(
             Map<String, ? super Object> params) {
         return Stream.of(TOOL_DPKG_DEB, TOOL_DPKG, TOOL_FAKEROOT).map(
-                ToolValidator::new).collect(Collectors.toList());
+                ToolValidator::new).toList();
     }
 
     @Override
@@ -412,7 +411,10 @@ public class LinuxDebBundler extends LinuxPackageBundler {
                 configDir.resolve("postrm"),
                 "resource.deb-postrm-script").setExecutable());
 
-        if (!StandardBundlerParam.isRuntimeInstaller(params)) {
+        final String installDir = LINUX_INSTALL_DIR.fetchFrom(params);
+
+        if (!StandardBundlerParam.isRuntimeInstaller(params)
+                || (isInstallDirInUsrTree(installDir) || installDir.startsWith("/usr/"))) {
             debianFiles.add(new DebianFile(
                     getConfig_CopyrightFile(params),
                     "resource.copyright-file"));

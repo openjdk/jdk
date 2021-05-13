@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,86 +300,73 @@ protected:
   static address   _cpuinfo_cont_addr; // address of instruction after the one which causes SEGV
 
   enum Feature_Flag : uint64_t {
-    CPU_CX8               = (1ULL << 0), // next bits are from cpuid 1 (EDX)
-    CPU_CMOV              = (1ULL << 1),
-    CPU_FXSR              = (1ULL << 2),
-    CPU_HT                = (1ULL << 3),
+#define CPU_FEATURE_FLAGS(decl) \
+    decl(CX8,               "cx8",               0)  /*  next bits are from cpuid 1 (EDX) */ \
+    decl(CMOV,              "cmov",              1)  \
+    decl(FXSR,              "fxsr",              2)  \
+    decl(HT,                "ht",                3)  \
+                                                     \
+    decl(MMX,               "mmx",               4)  \
+    decl(3DNOW_PREFETCH,    "3dnowpref",         5)  /* Processor supports 3dnow prefetch and prefetchw instructions */ \
+                                                     /* may not necessarily support other 3dnow instructions */ \
+    decl(SSE,               "sse",               6)  \
+    decl(SSE2,              "sse2",              7)  \
+                                                     \
+    decl(SSE3,              "sse3",              8 ) /* SSE3 comes from cpuid 1 (ECX) */ \
+    decl(SSSE3,             "ssse3",             9 ) \
+    decl(SSE4A,             "sse4a",             10) \
+    decl(SSE4_1,            "sse4.1",            11) \
+                                                     \
+    decl(SSE4_2,            "sse4.2",            12) \
+    decl(POPCNT,            "popcnt",            13) \
+    decl(LZCNT,             "lzcnt",             14) \
+    decl(TSC,               "tsc",               15) \
+                                                     \
+    decl(TSCINV_BIT,        "tscinvbit",         16) \
+    decl(TSCINV,            "tscinv",            17) \
+    decl(AVX,               "avx",               18) \
+    decl(AVX2,              "avx2",              19) \
+                                                     \
+    decl(AES,               "aes",               20) \
+    decl(ERMS,              "erms",              21) /* enhanced 'rep movsb/stosb' instructions */ \
+    decl(CLMUL,             "clmul",             22) /* carryless multiply for CRC */ \
+    decl(BMI1,              "bmi1",              23) \
+                                                     \
+    decl(BMI2,              "bmi2",              24) \
+    decl(RTM,               "rtm",               25) /* Restricted Transactional Memory instructions */ \
+    decl(ADX,               "adx",               26) \
+    decl(AVX512F,           "avx512f",           27) /* AVX 512bit foundation instructions */ \
+                                                     \
+    decl(AVX512DQ,          "avx512dq",          28) \
+    decl(AVX512PF,          "avx512pf",          29) \
+    decl(AVX512ER,          "avx512er",          30) \
+    decl(AVX512CD,          "avx512cd",          31) \
+                                                     \
+    decl(AVX512BW,          "avx512bw",          32) /* Byte and word vector instructions */ \
+    decl(AVX512VL,          "avx512vl",          33) /* EVEX instructions with smaller vector length */ \
+    decl(SHA,               "sha",               34) /* SHA instructions */ \
+    decl(FMA,               "fma",               35) /* FMA instructions */ \
+                                                     \
+    decl(VZEROUPPER,        "vzeroupper",        36) /* Vzeroupper instruction */ \
+    decl(AVX512_VPOPCNTDQ,  "avx512_vpopcntdq",  37) /* Vector popcount */ \
+    decl(AVX512_VPCLMULQDQ, "avx512_vpclmulqdq", 38) /* Vector carryless multiplication */ \
+    decl(AVX512_VAES,       "avx512_vaes",       39) /* Vector AES instruction */ \
+                                                     \
+    decl(AVX512_VNNI,       "avx512_vnni",       40) /* Vector Neural Network Instructions */ \
+    decl(FLUSH,             "clflush",           41) /* flush instruction */ \
+    decl(FLUSHOPT,          "clflushopt",        42) /* flusopth instruction */ \
+    decl(CLWB,              "clwb",              43) /* clwb instruction */ \
+                                                     \
+    decl(AVX512_VBMI2,      "avx512_vbmi2",      44) /* VBMI2 shift left double instructions */ \
+    decl(AVX512_VBMI,       "avx512_vbmi",       45) /* Vector BMI instructions */ \
+    decl(HV,                "hv",                46) /* Hypervisor instructions */
 
-    CPU_MMX               = (1ULL << 4),
-    CPU_3DNOW_PREFETCH    = (1ULL << 5), // Processor supports 3dnow prefetch and prefetchw instructions
-                                         // may not necessarily support other 3dnow instructions
-    CPU_SSE               = (1ULL << 6),
-    CPU_SSE2              = (1ULL << 7),
-
-    CPU_SSE3              = (1ULL << 8),  // SSE3 comes from cpuid 1 (ECX)
-    CPU_SSSE3             = (1ULL << 9),
-    CPU_SSE4A             = (1ULL << 10),
-    CPU_SSE4_1            = (1ULL << 11),
-
-    CPU_SSE4_2            = (1ULL << 12),
-    CPU_POPCNT            = (1ULL << 13),
-    CPU_LZCNT             = (1ULL << 14),
-    CPU_TSC               = (1ULL << 15),
-
-    CPU_TSCINV_BIT        = (1ULL << 16),
-    CPU_TSCINV            = (1ULL << 17),
-    CPU_AVX               = (1ULL << 18),
-    CPU_AVX2              = (1ULL << 19),
-
-    CPU_AES               = (1ULL << 20),
-    CPU_ERMS              = (1ULL << 21), // enhanced 'rep movsb/stosb' instructions
-    CPU_CLMUL             = (1ULL << 22), // carryless multiply for CRC
-    CPU_BMI1              = (1ULL << 23),
-
-    CPU_BMI2              = (1ULL << 24),
-    CPU_RTM               = (1ULL << 25), // Restricted Transactional Memory instructions
-    CPU_ADX               = (1ULL << 26),
-    CPU_AVX512F           = (1ULL << 27), // AVX 512bit foundation instructions
-
-    CPU_AVX512DQ          = (1ULL << 28),
-    CPU_AVX512PF          = (1ULL << 29),
-    CPU_AVX512ER          = (1ULL << 30),
-    CPU_AVX512CD          = (1ULL << 31),
-
-    CPU_AVX512BW          = (1ULL << 32), // Byte and word vector instructions
-    CPU_AVX512VL          = (1ULL << 33), // EVEX instructions with smaller vector length
-    CPU_SHA               = (1ULL << 34), // SHA instructions
-    CPU_FMA               = (1ULL << 35), // FMA instructions
-
-    CPU_VZEROUPPER        = (1ULL << 36), // Vzeroupper instruction
-    CPU_AVX512_VPOPCNTDQ  = (1ULL << 37), // Vector popcount
-    CPU_AVX512_VPCLMULQDQ = (1ULL << 38), // Vector carryless multiplication
-    CPU_AVX512_VAES       = (1ULL << 39), // Vector AES instruction
-
-    CPU_AVX512_VNNI       = (1ULL << 40), // Vector Neural Network Instructions
-    CPU_FLUSH             = (1ULL << 41), // flush instruction
-    CPU_FLUSHOPT          = (1ULL << 42), // flusopth instruction
-    CPU_CLWB              = (1ULL << 43), // clwb instruction
-
-    CPU_AVX512_VBMI2      = (1ULL << 44), // VBMI2 shift left double instructions
-    CPU_AVX512_VBMI       = (1ULL << 45), // Vector BMI instructions
-    CPU_HV                = (1ULL << 46), // Hypervisor instructions
-
-    CPU_MAX_FEATURE       = CPU_HV
+#define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1ULL << bit),
+    CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
+#undef DECLARE_CPU_FEATURE_FLAG
   };
 
-#define FEATURES_NAMES \
-    "cx8",          "cmov",             "fxsr",              "ht",          \
-    "mmx",          "3dnowpref",        "sse",               "sse2",        \
-    "sse3",         "ssse3",            "sse4a",             "sse4.1",      \
-    "sse4.2",       "popcnt",           "lzcnt",             "tsc",         \
-    "tscinvbit",    "tscinv",           "avx",               "avx2",        \
-    "aes",          "erms",             "clmul",             "bmi1",        \
-    "bmi2",         "rtm",              "adx",               "avx512f",     \
-    "avx512dq",     "avx512pf",         "avx512er",          "avx512cd",    \
-    "avx512bw",     "avx512vl",         "sha",               "fma",         \
-    "vzeroupper",   "avx512_vpopcntdq", "avx512_vpclmulqdq", "avx512_vaes", \
-    "avx512_vnni",  "clflush",          "clflushopt",        "clwb",        \
-    "avx512_vmbi2", "avx512_vmbi",      "hv"
-
   static const char* _features_names[];
-
-  // NB! When adding new CPU feature detection consider updating vmStructs_x86.hpp, vmStructs_jvmci.hpp, and VM_Version::get_processor_features().
 
 enum Extended_Family {
     // AMD

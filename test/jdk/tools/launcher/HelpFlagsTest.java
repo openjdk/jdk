@@ -120,7 +120,6 @@ public class HelpFlagsTest extends TestHelper {
         //                                            of help          docu   of wrong
         //                                                             mented flag
         new ToolHelpSpec("jabswitch",   0,   0,   0,   0,         0,    0,     0),     // /?, prints help message anyways, win only
-        new ToolHelpSpec("jaotc",       1,   1,   1,   0,         0,    0,     2),     // -?, -h, --help
         new ToolHelpSpec("jar",         1,   1,   1,   0,         0,    0,     1),     // -?, -h, --help
         new ToolHelpSpec("jarsigner",   1,   1,   1,   0,         1,    0,     1),     // -?, -h, --help, -help accepted but not documented.
         new ToolHelpSpec("java",        1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help

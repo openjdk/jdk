@@ -498,7 +498,7 @@ public final class HijrahChronology extends AbstractChronology implements Serial
 
     @Override
     public int prolepticYear(Era era, int yearOfEra) {
-        if (era instanceof HijrahEra == false) {
+        if (!(era instanceof HijrahEra)) {
             throw new ClassCastException("Era must be HijrahEra");
         }
         return yearOfEra;

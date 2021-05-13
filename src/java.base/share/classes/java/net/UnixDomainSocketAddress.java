@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 
 /**
- * A <a href="package-summary.html#unixdomain">Unix domain</a> socket address.
+ * A Unix domain socket address.
  * A Unix domain socket address encapsulates a file-system path that Unix domain sockets
  * bind or connect to.
  *
@@ -194,9 +194,8 @@ public final class UnixDomainSocketAddress extends SocketAddress {
      */
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof UnixDomainSocketAddress))
+        if (!(o instanceof UnixDomainSocketAddress that))
             return false;
-        UnixDomainSocketAddress that = (UnixDomainSocketAddress)o;
         return this.path.equals(that.path);
     }
 

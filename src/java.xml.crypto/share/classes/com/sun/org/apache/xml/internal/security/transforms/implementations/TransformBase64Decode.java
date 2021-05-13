@@ -25,20 +25,15 @@ package com.sun.org.apache.xml.internal.security.transforms.implementations;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
-import com.sun.org.apache.xml.internal.security.transforms.Transform;
 import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
 import com.sun.org.apache.xml.internal.security.transforms.TransformationException;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
-import org.xml.sax.SAXException;
 
 import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 
@@ -68,37 +63,21 @@ import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
  */
 public class TransformBase64Decode extends TransformSpi {
 
-    /** Field implementedTransformURI */
-    public static final String implementedTransformURI =
-        Transforms.TRANSFORM_BASE64_DECODE;
-
     /**
-     * Method engineGetURI
-     *
      * {@inheritDoc}
      */
+    @Override
     protected String engineGetURI() {
-        return TransformBase64Decode.implementedTransformURI;
+        return Transforms.TRANSFORM_BASE64_DECODE;
     }
 
     /**
-     * Method enginePerformTransform
-     *
-     * @param input
-     * @return {@link XMLSignatureInput} as the result of transformation
      * {@inheritDoc}
-     * @throws CanonicalizationException
-     * @throws IOException
-     * @throws TransformationException
      */
+    @Override
     protected XMLSignatureInput enginePerformTransform(
-        XMLSignatureInput input, Transform transformObject
-    ) throws IOException, CanonicalizationException, TransformationException {
-        return enginePerformTransform(input, null, transformObject);
-    }
-
-    protected XMLSignatureInput enginePerformTransform(
-        XMLSignatureInput input, OutputStream os, Transform transformObject
+        XMLSignatureInput input, OutputStream os, Element transformElement,
+        String baseURI, boolean secureValidation
     ) throws IOException, CanonicalizationException, TransformationException {
         if (input.isElement()) {
             Node el = input.getSubNode();
@@ -119,9 +98,7 @@ public class TransformBase64Decode extends TransformSpi {
             output.setSecureValidation(secureValidation);
             output.setOutputStream(os);
             return output;
-        }
-
-        if (input.isOctetStream() || input.isNodeSet()) {
+        } else if (input.isOctetStream() || input.isNodeSet()) {
             if (os == null) {
                 byte[] base64Bytes = input.getBytes();
                 byte[] decodedBytes = XMLUtils.decode(base64Bytes);
@@ -143,34 +120,15 @@ public class TransformBase64Decode extends TransformSpi {
             return output;
         }
 
-        try {
-            //Exceptional case there is current not text case testing this(Before it was a
-            //a common case).
-            Document doc =
-                XMLUtils.read(input.getOctetStream(), secureValidation);
-
-            Element rootNode = doc.getDocumentElement();
-            StringBuilder sb = new StringBuilder();
-            traverseElement(rootNode, sb);
-            byte[] decodedBytes = XMLUtils.decode(sb.toString());
-            XMLSignatureInput output = new XMLSignatureInput(decodedBytes);
-            output.setSecureValidation(secureValidation);
-            return output;
-        } catch (ParserConfigurationException e) {
-            throw new TransformationException(e, "c14n.Canonicalizer.Exception");
-        } catch (SAXException e) {
-            throw new TransformationException(e, "SAX exception");
-        }
+        throw new TransformationException("empty", new Object[] {"Unrecognized XMLSignatureInput state"});
     }
 
-    void traverseElement(Element node, StringBuilder sb) {
+    private void traverseElement(Element node, StringBuilder sb) {
         Node sibling = node.getFirstChild();
         while (sibling != null) {
-            switch (sibling.getNodeType()) {
-            case Node.ELEMENT_NODE:
+            if (Node.ELEMENT_NODE == sibling.getNodeType()) {
                 traverseElement((Element)sibling, sb);
-                break;
-            case Node.TEXT_NODE:
+            } else if (Node.TEXT_NODE == sibling.getNodeType()) {
                 sb.append(((Text)sibling).getData());
             }
             sibling = sibling.getNextSibling();

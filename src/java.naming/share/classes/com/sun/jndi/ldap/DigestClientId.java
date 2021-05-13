@@ -58,8 +58,8 @@ class DigestClientId extends SimpleClientId {
         "javax.security.sasl.policy.credentials",
     };
 
-    final private String[] propvals;
-    final private int myHash;
+    private final String[] propvals;
+    private final int myHash;
 
     DigestClientId(int version, String hostname, int port,
         String protocol, Control[] bindCtls, OutputStream trace,

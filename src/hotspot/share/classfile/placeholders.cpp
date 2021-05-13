@@ -193,7 +193,7 @@ void PlaceholderTable::free_entry(PlaceholderEntry* entry) {
   // decrement Symbol refcount here because Hashtable doesn't.
   entry->literal()->decrement_refcount();
   if (entry->supername() != NULL) entry->supername()->decrement_refcount();
-  Hashtable<Symbol*, mtClass>::free_entry(entry);
+  BasicHashtable<mtClass>::free_entry(entry);
 }
 
 

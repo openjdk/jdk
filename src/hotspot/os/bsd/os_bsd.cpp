@@ -34,7 +34,6 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_bsd.inline.hpp"
 #include "os_posix.inline.hpp"
@@ -128,7 +127,7 @@ static jlong initial_time_count=0;
 
 static int clock_tics_per_sec = 100;
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__x86_64__)
 static const int processor_id_unassigned = -1;
 static const int processor_id_assigning = -2;
 static const int processor_id_map_size = 256;
@@ -205,6 +204,8 @@ static char cpu_arch[] = "i386";
 static char cpu_arch[] = "amd64";
 #elif defined(ARM)
 static char cpu_arch[] = "arm";
+#elif defined(AARCH64)
+static char cpu_arch[] = "aarch64";
 #elif defined(PPC32)
 static char cpu_arch[] = "ppc";
 #else
@@ -236,7 +237,7 @@ void os::Bsd::initialize_system_info() {
     set_processor_count(1);   // fallback
   }
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__x86_64__)
   // initialize processor id map
   for (int i = 0; i < processor_id_map_size; i++) {
     processor_id_map[i] = processor_id_unassigned;
@@ -544,16 +545,6 @@ objc_registerThreadWithCollector_t objc_registerThreadWithCollectorFunction = NU
 static void *thread_native_entry(Thread *thread) {
 
   thread->record_stack_base_and_size();
-
-  // Try to randomize the cache line index of hot stack frames.
-  // This helps when threads of the same stack traces evict each other's
-  // cache lines. The threads can be either from the same JVM instance, or
-  // from different JVM instances. The benefit is especially true for
-  // processors with hyperthreading technology.
-  static int counter = 0;
-  int pid = os::current_process_id();
-  alloca(((pid ^ counter++) & 7) * 128);
-
   thread->initialize_thread_current();
 
   OSThread* osthread = thread->osthread();
@@ -763,9 +754,7 @@ void os::free_thread(OSThread* osthread) {
 // time support
 
 // Time since start-up in seconds to a fine granularity.
-// Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
-
   return ((double)os::elapsed_counter()) / os::elapsed_frequency();
 }
 
@@ -865,56 +854,6 @@ char * os::local_time_string(char *buf, size_t buflen) {
 
 struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
   return localtime_r(clock, res);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// runtime exit support
-
-// Note: os::shutdown() might be called very early during initialization, or
-// called from signal handler. Before adding something to os::shutdown(), make
-// sure it is async-safe and can handle partially initialized VM.
-void os::shutdown() {
-
-  // allow PerfMemory to attempt cleanup of any persistent resources
-  perfMemory_exit();
-
-  // needs to remove object in file system
-  AttachListener::abort();
-
-  // flush buffered output, finish log files
-  ostream_abort();
-
-  // Check for abort hook
-  abort_hook_t abort_hook = Arguments::abort_hook();
-  if (abort_hook != NULL) {
-    abort_hook();
-  }
-
-}
-
-// Note: os::abort() might be called very early during initialization, or
-// called from signal handler. Before adding something to os::abort(), make
-// sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, const void* context) {
-  os::shutdown();
-  if (dump_core) {
-    ::abort(); // dump core
-  }
-
-  ::exit(1);
-}
-
-// Die immediately, no exit hook, no abort hook, no cleanup.
-// Dump a core file, if possible, for debugging.
-void os::die() {
-  if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
-    // For TimeoutInErrorHandlingTest.java, we just kill the VM
-    // and don't take the time to generate a core file.
-    os::signal_raise(SIGKILL);
-  } else {
-    // _exit() on BsdThreads only kills current thread
-    ::abort();
-  }
 }
 
 // Information of current thread in variety of formats
@@ -1451,7 +1390,13 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
       strncpy(machine, "", sizeof(machine));
   }
 
-  snprintf(buf, buflen, "%s %s %d MHz", model, machine, mhz);
+  const char* emulated = "";
+#if defined(__APPLE__) && !defined(ZERO)
+  if (VM_Version::is_cpu_emulated()) {
+    emulated = " (EMULATED)";
+  }
+#endif
+  snprintf(buf, buflen, "\"%s\" %s%s %d MHz", model, machine, emulated, mhz);
 }
 
 void os::print_memory_info(outputStream* st) {
@@ -1831,7 +1776,7 @@ void os::large_page_init() {
 }
 
 
-char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, char* req_addr, bool exec) {
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
   fatal("os::reserve_memory_special should not be called on BSD.");
   return NULL;
 }
@@ -2168,8 +2113,8 @@ int os::active_processor_count() {
   return _processor_count;
 }
 
-#ifdef __APPLE__
 uint os::processor_id() {
+#if defined(__APPLE__) && defined(__x86_64__)
   // Get the initial APIC id and return the associated processor id. The initial APIC
   // id is limited to 8-bits, which means we can have at most 256 unique APIC ids. If
   // the system has more processors (or the initial APIC ids are discontiguous) the
@@ -2200,8 +2145,13 @@ uint os::processor_id() {
   assert(processor_id >= 0 && processor_id < os::processor_count(), "invalid processor id");
 
   return (uint)processor_id;
-}
+#else // defined(__APPLE__) && defined(__x86_64__)
+  // Return 0 until we find a good way to get the current processor id on
+  // the platform. Returning 0 is safe, since there is always at least one
+  // processor, but might not be optimal for performance in some cases.
+  return 0;
 #endif
+}
 
 void os::set_native_thread_name(const char *name) {
 #if defined(__APPLE__) && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5

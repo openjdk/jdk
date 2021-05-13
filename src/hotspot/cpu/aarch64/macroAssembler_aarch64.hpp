@@ -28,6 +28,7 @@
 
 #include "asm/assembler.inline.hpp"
 #include "oops/compressedOops.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
@@ -527,32 +528,6 @@ public:
     orr(Vd, T, Vn, Vn);
   }
 
-  // AdvSIMD shift by immediate.
-  // These are "user friendly" variants which allow a shift count of 0.
-#define WRAP(INSN)                                                                \
-  void INSN(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift) {  \
-    if (shift == 0) {                                                             \
-      SIMD_Arrangement arrange = (T & 1) == 0 ? T8B : T16B;                       \
-      Assembler::orr(Vd, arrange, Vn, Vn);                                        \
-    } else {                                                                      \
-      Assembler::INSN(Vd, T, Vn, shift);                                          \
-    }                                                                             \
-  }                                                                               \
-
-  WRAP(shl) WRAP(sshr) WRAP(ushr)
-#undef WRAP
-
-#define WRAP(INSN)                                                                \
-  void INSN(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift) {  \
-    if (shift == 0) {                                                             \
-      Assembler::addv(Vd, T, Vd, Vn);                                             \
-    } else {                                                                      \
-      Assembler::INSN(Vd, T, Vn, shift);                                          \
-    }                                                                             \
-  }                                                                               \
-
-  WRAP(usra) WRAP(ssra)
-#undef WRAP
 
 public:
 
@@ -859,10 +834,6 @@ public:
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
                        Register tmp1, Register tmp_thread);
 
-  // Resolves obj for access. Result is placed in the same register.
-  // All other registers are preserved.
-  void resolve(DecoratorSet decorators, Register obj);
-
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
                      Register thread_tmp = noreg, DecoratorSet decorators = 0);
 
@@ -1109,7 +1080,7 @@ public:
   address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
 
   static bool far_branches() {
-    return ReservedCodeCacheSize > branch_range || UseAOT;
+    return ReservedCodeCacheSize > branch_range;
   }
 
   // Jumps that can reach anywhere in the code cache.

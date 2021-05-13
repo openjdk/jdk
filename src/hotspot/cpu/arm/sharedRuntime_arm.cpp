@@ -28,6 +28,7 @@
 #include "code/debugInfoRec.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -249,16 +250,6 @@ static void pop_param_registers(MacroAssembler* masm, int fp_regs_in_arguments) 
 // All vector registers are saved by default on ARM.
 bool SharedRuntime::is_wide_vector(int size) {
   return false;
-}
-
-size_t SharedRuntime::trampoline_size() {
-  return 16;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  InlinedAddress dest(destination);
-  __ indirect_jump(dest, Rtemp);
-  __ bind_literal(dest);
 }
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
@@ -1161,8 +1152,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Remember the handle for the unlocking code
     __ mov(sync_handle, R1);
 
-    __ resolve(IS_NOT_NULL, sync_obj);
-
     if(UseBiasedLocking) {
       __ biased_locking_enter(sync_obj, tmp, disp_hdr/*scratched*/, false, Rtemp, lock_done, slow_lock_biased);
     }
@@ -1246,8 +1235,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
     __ ldr(sync_obj, Address(sync_handle));
-
-    __ resolve(IS_NOT_NULL, sync_obj);
 
     if(UseBiasedLocking) {
       __ biased_locking_exit(sync_obj, Rtemp, unlock_done);

@@ -37,8 +37,6 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "prims/nativeLookup.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
@@ -230,6 +228,8 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 #endif
     break;
   case vmIntrinsics::_getObjectSize:
+    break;
+  case vmIntrinsics::_blackhole:
     break;
   default:
     return false; // Intrinsics not on the previous list are not available.

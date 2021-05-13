@@ -108,7 +108,7 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
                            &args,
                            CHECK_NULL);
 
-    instanceOop m = (instanceOop) result.get_jobject();
+    instanceOop m = (instanceOop) result.get_oop();
     instanceHandle mgr(THREAD, m);
 
     {

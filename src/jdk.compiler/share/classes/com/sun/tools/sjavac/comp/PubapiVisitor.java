@@ -94,7 +94,7 @@ public class PubapiVisitor extends ElementScanner14<Void, Void> {
             Object constVal = e.getConstantValue();
             String constValStr = null;
             // TODO: This doesn't seem to be entirely accurate. What if I change
-            // from, say, 0 to 0L? (And the field is public final static so that
+            // from, say, 0 to 0L? (And the field is public static final so that
             // it could get inlined.)
             if (constVal != null) {
                 if (e.asType().toString().equals("char")) {
@@ -152,20 +152,20 @@ public class PubapiVisitor extends ElementScanner14<Void, Void> {
     private List<PubApiTypeParam> getTypeParameters(List<? extends TypeParameterElement> elements) {
         return elements.stream()
                        .map(e -> new PubApiTypeParam(e.getSimpleName().toString(), getTypeDescs(e.getBounds())))
-                       .collect(Collectors.toList());
+                       .toList();
     }
 
     private List<TypeMirror> getParamTypes(ExecutableElement e) {
         return e.getParameters()
                 .stream()
                 .map(VariableElement::asType)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<TypeDesc> getTypeDescs(List<? extends TypeMirror> list) {
         return list.stream()
                    .map(TypeDesc::fromType)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     public PubApi getCollectedPubApi() {

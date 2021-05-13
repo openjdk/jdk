@@ -30,7 +30,7 @@
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @compile test-classes/Hello.java
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SharedArchiveConsistency
  */
 import jdk.test.lib.process.OutputAnalyzer;
@@ -67,10 +67,10 @@ public class SharedArchiveConsistency {
     public static int sp_used_offset;  // offset of CDSFileMapRegion::_used
     public static int size_t_size;     // size of size_t
     public static int int_size;        // size of int
+    public static long alignment;      // MetaspaceShared::core_region_alignment
 
     // The following should be consistent with the enum in the C++ MetaspaceShared class
     public static String[] shared_region_name = {
-        "mc",          // MiscCode
         "rw",          // ReadWrite
         "ro",          // ReadOnly
         "bm",          // relocation bitmaps
@@ -105,6 +105,7 @@ public class SharedArchiveConsistency {
         sp_used_offset = wb.getOffsetForName("CDSFileMapRegion::_used") - sp_offset_crc;
         size_t_size = wb.getOffsetForName("size_t_size");
         CDSFileMapRegion_size  = wb.getOffsetForName("CDSFileMapRegion_size");
+        alignment = wb.metaspaceSharedRegionAlignment();
     }
 
     public static int getFileHeaderSize(FileChannel fc) throws Exception {
@@ -196,7 +197,6 @@ public class SharedArchiveConsistency {
 
     static long get_region_used_size_aligned(FileChannel fc, int region) throws Exception {
         long n = sp_offset + CDSFileMapRegion_size * region + sp_used_offset;
-        long alignment = WhiteBox.getWhiteBox().metaspaceReserveAlignment();
         long used = readInt(fc, n, size_t_size);
         used = (used + alignment - 1) & ~(alignment - 1);
         return used;
