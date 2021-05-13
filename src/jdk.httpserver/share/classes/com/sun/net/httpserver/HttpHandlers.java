@@ -30,21 +30,25 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
- * This class allows customization of {@link HttpHandler HttpHandler} instances
- * via static methods.
+ * This class allows customization and retrieval of {@link HttpHandler HttpHandler}
+ * instances via static methods.
  *
  * <p> The functionality of a handler can be extended or enhanced through the
  * use of {@link #handleOrElse(Predicate, HttpHandler, HttpHandler) handleOrElse},
- * which allows to complement a given handler.
+ * which allows to complement a given handler. {@link #fallbackHandler() fallbackHandler}
+ * provides a convenience handler that always responds with the {@code 404}
+ * status code.
  *
- * <p> Example of a complemented handler:
- * <pre>{@code var h = HttpHandler.handleOrElse(r -> r.getRequestMethod().equals("PUT"), new SomePutHandler(), new SomeHandler())
+ * <p> Example of complementing a handler with a <i>fallbackHandler</i>:
+ * <pre>{@code
+ *   Predicate<Request> IS_GET = r -> r.getRequestMethod().equals("GET");
+ *   var h = HttpHandlers.handleOrElse(IS_GET, new GetHandler(), HttpHandlers.fallbackHandler());
  * }</pre>
  *
  * The above <i>handleOrElse</i> {@code handler} offers an if-else like construct;
- * if the request method is "PUT" then handling of the exchange is delegated to
- * the {@code SomePutHandler}, otherwise handling of the exchange is delegated
- * to {@code SomeHandler}.
+ * if the request method is "GET" then handling of the exchange is delegated to
+ * the {@code GetHandler}, otherwise handling of the exchange is delegated to
+ * the {@code fallbackHandler}.
  *
  * @since 17
  */
@@ -53,7 +57,7 @@ public class HttpHandlers {
     private HttpHandlers() { }
 
     /**
-     * Complements a conditional handler with another handler.
+     * Complements a conditional {@code HttpHandler} with another handler.
      *
      * <p> This method creates a <i>handleOrElse</i> handler; an if-else like
      * construct. Exchanges who's request matches the {@code handlerTest}
@@ -65,8 +69,8 @@ public class HttpHandlers {
      *   Predicate<Request> WANTS_DIGEST =  r -> r.getRequestHeaders().containsKey("Want-Digest");
      *
      *   var h1 = new SomeHandler();
-     *   var h2 = HttpHandler.handleOrElse(IS_GET, new SomeGetHandler(), h1);
-     *   var h3 = HttpHandler.handleOrElse(WANTS_DIGEST.and(IS_GET), new SomeDigestHandler(), h2);
+     *   var h2 = HttpHandlers.handleOrElse(IS_GET, new SomeGetHandler(), h1);
+     *   var h3 = HttpHandlers.handleOrElse(WANTS_DIGEST.and(IS_GET), new SomeDigestHandler(), h2);
      * }</pre>
      * The {@code h3} handleOrElse handler delegates handling of the exchange to
      * {@code SomeDigestHandler} if the "Want-Digest" request header is present
@@ -99,6 +103,25 @@ public class HttpHandlers {
                 handler.handle(exchange);
             else
                 fallbackHandler.handle(exchange);
+        };
+    }
+
+    /**
+     * Returns an {@code HttpHandler} that sends the status code {@code 404}.
+     *
+     * <p> This method creates a handler that reads and discards the request
+     * body before it sends the {@code 404 (Not Found)} status code
+     * unconditionally.
+     *
+     * @return a handler
+     * @since 17
+     */
+    public static HttpHandler fallbackHandler() {
+        return exchange -> {
+            try (exchange) {
+                exchange.getRequestBody().readAllBytes();
+                exchange.sendResponseHeaders(404, -1);
+            }
         };
     }
 }

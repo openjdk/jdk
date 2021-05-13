@@ -30,6 +30,7 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -60,7 +61,7 @@ public class SimpleFileServerTest {
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
 
     static final Path CWD = Path.of(".").toAbsolutePath();
-    static final InetSocketAddress WILDCARD_ADDR = new InetSocketAddress(0);
+    static final InetSocketAddress LOOPBACK_ADDR = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
@@ -82,7 +83,7 @@ public class SimpleFileServerTest {
         var lastModified = getlastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -117,7 +118,7 @@ public class SimpleFileServerTest {
         var file = Files.writeString(root.resolve("yFile.txt"), "some text", CREATE);
         var lastModified = getlastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -140,7 +141,7 @@ public class SimpleFileServerTest {
         var lastModified = getlastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -175,7 +176,7 @@ public class SimpleFileServerTest {
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
         var lastModified = getlastModified(root);
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -196,7 +197,7 @@ public class SimpleFileServerTest {
     public void testNotFound() throws Exception {
         var root = Files.createDirectory(CWD.resolve("testNotFound"));
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -232,14 +233,14 @@ public class SimpleFileServerTest {
 
     @Test
     public void testInitialSlashContext() {
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, CWD, OutputLevel.INFO);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, CWD, OutputLevel.INFO);
         ss.removeContext("/"); // throws if no context.
         ss.stop(0);
     }
 
     @Test
     public void testBound() {
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, CWD, OutputLevel.INFO);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, CWD, OutputLevel.INFO);
         var boundAddr = ss.getAddress();
         ss.stop(0);
         assertTrue(boundAddr.getAddress() != null);
@@ -248,7 +249,7 @@ public class SimpleFileServerTest {
 
     @Test
     public void testIllegalPath() throws IOException {
-        var addr = WILDCARD_ADDR;
+        var addr = LOOPBACK_ADDR;
         {   // not absolute
             Path p = Path.of(".");
             assert Files.isDirectory(p);
@@ -291,7 +292,7 @@ public class SimpleFileServerTest {
     public void testXss() throws Exception {
         var root = Files.createDirectory(CWD.resolve("testXss"));
 
-        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
         ss.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();

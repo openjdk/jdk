@@ -23,6 +23,7 @@
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -38,14 +39,11 @@ import java.util.stream.Collectors;
 
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
-import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
 import sun.net.www.MimeTable;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertEquals;
 
 /*
@@ -57,7 +55,7 @@ import static org.testng.Assert.assertEquals;
 public class ServerMimeTypesResolutionTest {
 
     static final Path CWD = Path.of(".").toAbsolutePath();
-    static final InetSocketAddress WILDCARD_ADDR = new InetSocketAddress(0);
+    static final InetSocketAddress LOOPBACK_ADDR = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
     static final String FILE_NAME = "empty-file-of-type";
     static final String UNKNOWN_FILE_EXTENSION = ".unknown-file-extension";
     static final Properties SUPPORTED_MIME_TYPES = new Properties();
@@ -138,7 +136,7 @@ public class ServerMimeTypesResolutionTest {
 
     @Test
     public static void testMimeTypeHeaders() throws Exception {
-        final var server = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, SimpleFileServer.OutputLevel.NONE);
+        final var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, SimpleFileServer.OutputLevel.NONE);
         server.start();
         try {
             final var client = HttpClient.newBuilder().proxy(NO_PROXY).build();

@@ -256,22 +256,28 @@ public abstract class Filter {
      * Returns a pre-processing {@code Filter} that inspects and possibly
      * adapts the request state.
      *
-     * The {@code Request} returned by the {@link UnaryOperator operator} will
-     * be the effective request state of the exchange. It is executed for each
-     * {@code HttpExchange} before invoking either the next filter in the chain
-     * or the exchange handler (if this is the final filter in the chain).
+     * The {@code Request} returned by the {@link UnaryOperator requestOperator}
+     * will be the effective request state of the exchange. It is executed for
+     * each {@code HttpExchange} before invoking either the next filter in the
+     * chain or the exchange handler (if this is the final filter in the chain).
      *
-     * <p> When the returned filter is invoked, it first invokes the
-     * {@code requestOperator} with the given exchange, {@code ex}, in order
-     * to retrieve the <i>adapted request state</i>. It then invokes the next
+     * @apiNote
+     * When the returned filter is invoked, it first invokes the
+     * {@code requestOperator} with the given exchange, {@code ex}, in order to
+     * retrieve the <i>adapted request state</i>. It then invokes the next
      * filter in the chain or the exchange handler, passing an exchange
-     * equivalent to {@code ex} with the <i>adapted request state</i> set as
-     * the effective request state.
+     * equivalent to {@code ex} with the <i>adapted request state</i> set as the
+     * effective request state.
+     *
+     * <p> Example of adding the {@code "Foo"} request header to all requests:
+     * <pre>{@code
+     *     var filter = Filter.adaptRequest("Add request header Foo", r -> r.with("Foo", List.of("Bar")));
+     *     httpContext.getFilters().add(filter);
+     * }</pre>
      *
      * @param description the string to be returned from {@link #description()}
      * @param requestOperator the request operator
-     * @return a filter that adapts request state before the exchange is handled
-     * @throws IOException          if an I/O error occurs
+     * @return a filter that adapts the request state before the exchange is handled
      * @throws NullPointerException if the argument is null
      * @since 17
      */
