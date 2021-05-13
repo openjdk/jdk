@@ -959,8 +959,6 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
   } else { // hidden
     Handle classData_h(THREAD, JNIHandles::resolve(classData));
     ClassLoadInfo cl_info(protection_domain,
-                          NULL, // unsafe_anonymous_host
-                          NULL, // cp_patches
                           host_class,
                           classData_h,
                           is_hidden,
@@ -1439,7 +1437,7 @@ JVM_ENTRY(jclass, JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass))
   Klass* outer_klass
     = InstanceKlass::cast(klass)->compute_enclosing_class(&inner_is_member, CHECK_NULL);
   if (outer_klass == NULL)  return NULL;  // already a top-level class
-  if (!inner_is_member)  return NULL;     // a hidden or unsafe anonymous class (inside a method)
+  if (!inner_is_member)  return NULL;     // a hidden class (inside a method)
   return (jclass) JNIHandles::make_local(THREAD, outer_klass->java_mirror());
 }
 JVM_END
@@ -3532,8 +3530,8 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
 
   Klass* caller_k = java_lang_Class::as_Klass(JNIHandles::resolve(caller));
   InstanceKlass* caller_ik = InstanceKlass::cast(caller_k);
-  if (caller_ik->is_hidden() || caller_ik->is_unsafe_anonymous()) {
-    // VM anonymous classes and hidden classes not of type lambda proxy classes are currently not being archived.
+  if (caller_ik->is_hidden()) {
+    // Hidden classes not of type lambda proxy classes are currently not being archived.
     // If the caller_ik is of one of the above types, the corresponding lambda proxy class won't be
     // registered for archiving.
     return;
