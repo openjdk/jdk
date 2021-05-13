@@ -43,6 +43,14 @@ public class FinalizeOverride {
     private static volatile boolean privateFinalizeInvoked = false;
 
     public static void main(String[] argvs) throws IOException {
+        // Wait
+        try {
+            System.out.println("Initial wait...");
+            Thread.sleep(20000);
+        } catch (InterruptedException e) {
+            System.out.println("Interrupted my forever sleep, you have!");
+        }
+        
         patchPrivateFinalize();
 
         test(new Base(10), 10);
@@ -51,6 +59,15 @@ public class FinalizeOverride {
         test(new PublicFinalize(40), 40*100+40);
         test(new PrivateFinalize(50), 50);
         test(new NoOverride(60), 60);
+        
+        System.out.println("And, wait some more...");
+        while(true) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                System.out.println("Interrupted my forever sleep, you have!");
+            }
+        }
     }
 
     static void test(Object o, int expected) {
