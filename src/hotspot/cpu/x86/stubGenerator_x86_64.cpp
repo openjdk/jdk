@@ -5867,7 +5867,7 @@ address generate_avx_ghash_processBlocks() {
 
     // Load lookup tables based on isURL
     __ cmpl(isURL, 0);
-    __ jcc(Assembler::zero, L_loadURL);
+    __ jcc(Assembler::notZero, L_loadURL);
 
     __ evmovdqaq(xmm5, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_addr()), Assembler::AVX_512bit, r13);
     __ evmovdqaq(xmm6, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_addr()), Assembler::AVX_512bit, r13);
