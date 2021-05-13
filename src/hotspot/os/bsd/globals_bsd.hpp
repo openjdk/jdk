@@ -36,8 +36,9 @@
                          range,                                         \
                          constraint)                                    \
                                                                         \
-  AARCH64_ONLY(develop(bool, WXCheckAtSafepoint, false,                 \
-          "Conservatively check W^X thread state at possible safepoint"))
+  AARCH64_ONLY(develop(bool, AssertWXAtThreadSync, false,                \
+          "Conservatively check W^X thread state at possible safepoint" \
+          "or handshake"))
 
 // end of RUNTIME_OS_FLAGS
 

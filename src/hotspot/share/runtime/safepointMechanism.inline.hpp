@@ -70,8 +70,8 @@ void SafepointMechanism::process_if_requested(JavaThread* thread) {
   // deoptimization needs WXWrite).  Crashes caused by the wrong state rarely
   // happens in practice, making such issues hard to find and reproduce.
 #if defined(ASSERT) && defined(__APPLE__) && defined(AARCH64)
-  if (WXCheckAtSafepoint) {
-    thread->check_wx(WXWrite);
+  if (AssertWXAtThreadSync) {
+    thread->assert_wx_state(WXWrite);
   }
 #endif
 

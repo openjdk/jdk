@@ -685,7 +685,7 @@ protected:
   void init_wx();
   WXMode enable_wx(WXMode new_state);
 
-  void check_wx(WXMode expected) {
+  void assert_wx_state(WXMode expected) {
     assert(_wx_state == expected, "wrong state");
   }
 #endif // __APPLE__ && AARCH64
