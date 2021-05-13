@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,12 @@
  * questions.
  */
 
-/*
- * @test
- * @summary Test of diagnostic command GC.class_histogram -all=true
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng ClassHistogramAllTest
- */
-public class ClassHistogramAllTest extends ClassHistogramTest {
-    public ClassHistogramAllTest() {
-        super();
-        classHistogramArgs = "-all=true";
-    }
+package java.lang.invoke;
 
-    /* See ClassHistogramTest for test cases */
+import java.lang.invoke.MethodHandles.Lookup;
+
+public class LookupHelper {
+     public static Lookup newLookup(Class<?> c) {
+         return new Lookup(c);
+     }
 }

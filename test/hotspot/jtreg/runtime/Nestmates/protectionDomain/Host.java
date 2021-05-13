@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,24 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/z/vmStructs_z.hpp"
+// Host and Host$Member will be loaded by a custom loader with different
+// protection domains.
 
-ZGlobalsForVMStructs::ZGlobalsForVMStructs() :
-    _ZGlobalPhase(&ZGlobalPhase),
-    _ZGlobalSeqNum(&ZGlobalSeqNum),
-    _ZAddressOffsetMask(&ZAddressOffsetMask),
-    _ZAddressGoodMask(&ZAddressGoodMask),
-    _ZAddressBadMask(&ZAddressBadMask),
-    _ZAddressWeakBadMask(&ZAddressWeakBadMask),
-    _ZObjectAlignmentSmallShift(&ZObjectAlignmentSmallShift),
-    _ZObjectAlignmentSmall(&ZObjectAlignmentSmall) {
+public class Host {
+
+    private static int forNestmatesOnly = 1;
+
+    public static class Member {
+        // We need our static initializer to ensure our CP reference
+        // to Host is resolved by the main thread.
+        static final Class<?> hostClass = Host.class;
+
+        int id;
+
+        // Executing, or JIT compiling, this method will result in
+        // a nestmate access check.
+        public Member() {
+            id = forNestmatesOnly++;
+        }
+    }
 }
-
-ZGlobalsForVMStructs ZGlobalsForVMStructs::_instance;
-ZGlobalsForVMStructs* ZGlobalsForVMStructs::_instance_p = &ZGlobalsForVMStructs::_instance;
