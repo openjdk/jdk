@@ -2026,7 +2026,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       // by dynamic class loading.  Be sure to test the "static" receiver
       // dest_method here, as opposed to the actual receiver, which may
       // falsely lead us to believe that the receiver is final or private.
-      dependency_recorder()->assert_unique_concrete_method(actual_recv, cha_monomorphic_target);
+      dependency_recorder()->assert_unique_concrete_method(actual_recv, cha_monomorphic_target, callee_holder, target);
     }
     code = Bytecodes::_invokespecial;
   }
