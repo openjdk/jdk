@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,16 +198,17 @@ public class ByteArrayOutputStream extends OutputStream {
 
     /**
      * Converts the buffer's contents into a string decoding bytes using the
-     * platform's default character set. The length of the new {@code String}
-     * is a function of the character set, and hence may not be equal to the
+     * default charset. The length of the new {@code String}
+     * is a function of the charset, and hence may not be equal to the
      * size of the buffer.
      *
      * <p> This method always replaces malformed-input and unmappable-character
-     * sequences with the default replacement string for the platform's
-     * default character set. The {@linkplain java.nio.charset.CharsetDecoder}
+     * sequences with the default replacement string for the
+     * default charset. The {@linkplain java.nio.charset.CharsetDecoder}
      * class should be used when more control over the decoding process is
      * required.
      *
+     * @see java.nio.charset.Charset#defaultCharset()
      * @return String decoded from the buffer's contents.
      * @since  1.1
      */
@@ -286,14 +287,15 @@ public class ByteArrayOutputStream extends OutputStream {
      * As of JDK&nbsp;1.1, the preferred way to do this is via the
      * {@link #toString(String charsetName)} or {@link #toString(Charset charset)}
      * method, which takes an encoding-name or charset argument,
-     * or the {@code toString()} method, which uses the platform's default
-     * character encoding.
+     * or the {@code toString()} method, which uses the default
+     * charset.
      *
      * @param      hibyte    the high byte of each resulting Unicode character.
      * @return     the current contents of the output stream, as a string.
      * @see        java.io.ByteArrayOutputStream#size()
      * @see        java.io.ByteArrayOutputStream#toString(String)
      * @see        java.io.ByteArrayOutputStream#toString()
+     * @see        java.nio.charset.Charset#defaultCharset()
      */
     @Deprecated
     public synchronized String toString(int hibyte) {

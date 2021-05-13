@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5030265
+ * @bug 5030265 8260265
  * @modules jdk.compiler
  *          jdk.zipfs
  * @compile  -XDignore.symbol.file UnicodeTest.java
@@ -163,7 +163,7 @@ public class UnicodeTest extends TestHelper {
         return commandLineClassName;
     }
 
-    private static final String defaultEncoding = Charset.defaultCharset().name();
+    private static final String defaultEncoding = System.getProperty("sun.jnu.encoding");
 
     // language names taken from java.util.Locale.getDisplayLanguage for the respective language
     private static final String arabic = "\u0627\u0644\u0639\u0631\u0628\u064a\u0629";
