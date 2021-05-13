@@ -6032,7 +6032,7 @@ address generate_avx_ghash_processBlocks() {
 
     __ BIND(L_exit);
     __ pop(rax);             // Get original dest value
-    __ subq(rax, dest);      // Number of bytes converted
+    __ subq(dest, rax);      // Number of bytes converted
     __ pop(r15);
     __ pop(r14);
     __ pop(r13);
