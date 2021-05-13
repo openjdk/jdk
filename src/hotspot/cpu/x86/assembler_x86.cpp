@@ -4158,6 +4158,15 @@ void Assembler::evpcmpeqq(KRegister kdst, XMMRegister nds, Address src, int vect
   emit_operand(as_Register(dst_enc), src);
 }
 
+void Assembler::evpmovb2m(KRegister kdst, XMMRegister src, int vector_len) {
+  assert(UseAVX > 2  && VM_Version::supports_avx512dq(), "");
+  assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(kdst->encoding(), 0, src->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_38, &attributes);
+  emit_int16(0x29, (0xC0 | encode));
+}
+
 void Assembler::evpmovd2m(KRegister kdst, XMMRegister src, int vector_len) {
   assert(UseAVX > 2  && VM_Version::supports_avx512dq(), "");
   assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");

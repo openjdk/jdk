@@ -5684,6 +5684,7 @@ address generate_avx_ghash_processBlocks() {
 
   // base64 AVX512vbmi tables
   address base64_vbmi_lookup_lo_addr() {
+    __ align(64);
     __ align(64, (unsigned long) __ pc());
     StubCodeMark mark(this, "StubRoutines", "lookup_lo");
     address start = __ pc();
@@ -5865,11 +5866,12 @@ address generate_avx_ghash_processBlocks() {
     const XMMRegister join12 = xmm17;
     const XMMRegister join01 = xmm18;
 
-    Label L_process256, L_process64, L_exit, L_processdata, L_loadURL, L_continue;
+    Label L_process256, L_process64, L_exit, L_processdata, L_loadURL, L_continue, L_errorExit;
 
     // calculate length from offsets
     __ movl(length, end_offset);
     __ subl(length, start_offset);
+    __ push(length);          // Save for return value calc
     __ cmpl(length, 0);
     __ jcc(Assembler::lessEqual, L_exit);
 
@@ -5956,11 +5958,17 @@ address generate_avx_ghash_processBlocks() {
     __ cmpl(length, 64 * 4);
     __ jcc(Assembler::belowEqual, L_process256);
 
+    __ evpmovb2m(k3, xmm7, Assembler::AVX_512bit);
+    __ kmovql(rax, k3);
+    __ test(rax, rax);
+    __ jcc(Assembler::notZero, L_errorExit);
+
     __ align(32);
     __ BIND(L_process64);
 
     __ BIND(L_exit);
-    __ movl(rax, 0x0);
+    __ pop(rax);          // Get full length back
+    __ subq(rax, length);      // Number of bytes converted
     __ pop(r15);
     __ pop(r14);
     __ pop(r13);
@@ -5972,6 +5980,11 @@ address generate_avx_ghash_processBlocks() {
     __ evmovdqaq(xmm5, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_url_addr()), Assembler::AVX_512bit, r13);
     __ evmovdqaq(xmm6, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_url_addr()), Assembler::AVX_512bit, r13);
     __ jmp(L_continue);
+
+    __ BIND(L_errorExit);
+    __ pop(length);
+    __ push(length);
+    __ jmp(L_exit);
 
     return start;
   }
