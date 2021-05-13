@@ -54,7 +54,7 @@
 volatile Thread* ClassListParser::_parsing_thread = NULL;
 ClassListParser* ClassListParser::_instance = NULL;
 
-ClassListParser::ClassListParser(const char* file) {
+ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TABLE_SIZE) {
   _classlist_file = file;
   _file = NULL;
   // Use os::open() because neither fopen() nor os::fopen()
