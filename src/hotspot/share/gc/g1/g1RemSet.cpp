@@ -1082,7 +1082,7 @@ protected:
   // "neutral", i.e. no work done on it when processing it.
   G1CardTable::CardValue _dummy_card;
 
-  ~G1MergeHeapRootsPrefetchCache() { }
+  ~G1MergeHeapRootsPrefetchCache() = default;
 
 public:
 
