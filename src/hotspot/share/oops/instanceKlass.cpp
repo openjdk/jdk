@@ -297,7 +297,7 @@ InstanceKlass* InstanceKlass::nest_host(TRAPS) {
         // not an instance class.
         if (k->is_instance_klass()) {
           nest_host_k = InstanceKlass::cast(k);
-          bool is_member = nest_host_k->has_nest_member(THREAD->as_Java_thread(), this);
+          bool is_member = nest_host_k->has_nest_member(THREAD, this);
           if (is_member) {
             _nest_host = nest_host_k; // save resolved nest-host value
 
