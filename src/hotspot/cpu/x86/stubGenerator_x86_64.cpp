@@ -5684,9 +5684,7 @@ address generate_avx_ghash_processBlocks() {
 
   // base64 AVX512vbmi tables
   address base64_vbmi_lookup_lo_addr() {
-    __ align(64);
-    __ nop();
-    __ align(64);
+    __ align(64, (unsigned long) __ pc());
     StubCodeMark mark(this, "StubRoutines", "lookup_lo");
     address start = __ pc();
     assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
@@ -5702,9 +5700,10 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_lookup_hi_addr() {
-    __ align(64);
+    __ align(64, (unsigned long) __ pc());
     StubCodeMark mark(this, "StubRoutines", "lookup_hi");
     address start = __ pc();
+    assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x0605040302010080, relocInfo::none);
     __ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
     __ emit_data64(0x161514131211100f, relocInfo::none);
@@ -5716,9 +5715,10 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
   address base64_vbmi_lookup_lo_url_addr() {
-    __ align(64);
+    __ align(64, (unsigned long) __ pc());
     StubCodeMark mark(this, "StubRoutines", "lookup_lo_url");
     address start = __ pc();
+    assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x8080808080808080, relocInfo::none);
     __ emit_data64(0x8080808080808080, relocInfo::none);
     __ emit_data64(0x8080808080808080, relocInfo::none);
@@ -5731,9 +5731,10 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_lookup_hi_url_addr() {
-    __ align(64);
+    __ align(64, (unsigned long) __ pc());
     StubCodeMark mark(this, "StubRoutines", "lookup_hi_url");
     address start = __ pc();
+    assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x0605040302010080, relocInfo::none);
     __ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
     __ emit_data64(0x161514131211100f, relocInfo::none);
@@ -5746,9 +5747,10 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_pack_vec_addr() {
-    __ align(64);
+    __ align(64, (unsigned long) __ pc());
     StubCodeMark mark(this, "StubRoutines", "pack_vec");
     address start = __ pc();
+    assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x090a040506000102, relocInfo::none);
     __ emit_data64(0x161011120c0d0e08, relocInfo::none);
     __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
@@ -5761,9 +5763,10 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_join_0_1_addr() {
-    __ align(64);
+    __ align(64, (unsigned long) __ pc());
     StubCodeMark mark(this, "StubRoutines", "join_0_1");
     address start = __ pc();
+    assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x090a040506000102, relocInfo::none);
     __ emit_data64(0x161011120c0d0e08, relocInfo::none);
     __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
@@ -5776,9 +5779,10 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_join_1_2_addr() {
-    __ align(64);
+    __ align(64, (unsigned long) __ pc());
     StubCodeMark mark(this, "StubRoutines", "join_1_2");
     address start = __ pc();
+    assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x1c1d1e18191a1415, relocInfo::none);
     __ emit_data64(0x292a242526202122, relocInfo::none);
     __ emit_data64(0x363031322c2d2e28, relocInfo::none);
@@ -5791,9 +5795,10 @@ address generate_avx_ghash_processBlocks() {
   }
 
   address base64_vbmi_join_2_3_addr() {
-    __ align(64);
+    __ align(64, (unsigned long) __ pc());
     StubCodeMark mark(this, "StubRoutines", "join_2_3");
     address start = __ pc();
+    assert(((unsigned long)start & 0x3f) == 0, "Alignment problem (0x%08lx)", (unsigned long)start);
     __ emit_data64(0x363031322c2d2e28, relocInfo::none);
     __ emit_data64(0x3c3d3e38393a3435, relocInfo::none);
     __ emit_data64(0x494a444546404142, relocInfo::none);
