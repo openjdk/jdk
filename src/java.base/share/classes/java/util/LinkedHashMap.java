@@ -616,6 +616,10 @@ public class LinkedHashMap<K,V>
             return node;
     }
 
+    final <T> T[] keysToArray(T[] a) {
+        return keysToArray(a, false);
+    }
+
     final <T> T[] keysToArray(T[] a, boolean reversed) {
         Object[] r = a;
         int idx = 0;
