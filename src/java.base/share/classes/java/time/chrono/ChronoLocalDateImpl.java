@@ -197,9 +197,8 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
     @Override
     @SuppressWarnings("unchecked")
     public D plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            ChronoUnit f = (ChronoUnit) unit;
-            switch (f) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            switch (chronoUnit) {
                 case DAYS: return plusDays(amountToAdd);
                 case WEEKS: return plusDays(Math.multiplyExact(amountToAdd, 7));
                 case MONTHS: return plusMonths(amountToAdd);

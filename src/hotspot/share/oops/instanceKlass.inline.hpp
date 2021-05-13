@@ -37,27 +37,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-inline InstanceKlass* InstanceKlass::unsafe_anonymous_host() const {
-  InstanceKlass** hk = adr_unsafe_anonymous_host();
-  if (hk == NULL) {
-    assert(!is_unsafe_anonymous(), "Unsafe anonymous classes have host klasses");
-    return NULL;
-  } else {
-    assert(*hk != NULL, "host klass should always be set if the address is not null");
-    assert(is_unsafe_anonymous(), "Only unsafe anonymous classes have host klasses");
-    return *hk;
-  }
-}
-
-inline void InstanceKlass::set_unsafe_anonymous_host(const InstanceKlass* host) {
-  assert(is_unsafe_anonymous(), "not unsafe anonymous");
-  const InstanceKlass** addr = (const InstanceKlass **)adr_unsafe_anonymous_host();
-  assert(addr != NULL, "no reversed space");
-  if (addr != NULL) {
-    *addr = host;
-  }
-}
-
 inline intptr_t* InstanceKlass::start_of_itable()   const { return (intptr_t*)start_of_vtable() + vtable_length(); }
 inline intptr_t* InstanceKlass::end_of_itable()     const { return start_of_itable() + itable_length(); }
 
@@ -77,37 +56,6 @@ inline Klass** InstanceKlass::end_of_nonstatic_oop_maps() const {
 inline InstanceKlass* volatile* InstanceKlass::adr_implementor() const {
   if (is_interface()) {
     return (InstanceKlass* volatile*)end_of_nonstatic_oop_maps();
-  } else {
-    return NULL;
-  }
-}
-
-inline InstanceKlass** InstanceKlass::adr_unsafe_anonymous_host() const {
-  if (is_unsafe_anonymous()) {
-    InstanceKlass** adr_impl = (InstanceKlass**)adr_implementor();
-    if (adr_impl != NULL) {
-      return adr_impl + 1;
-    } else {
-      return (InstanceKlass **)end_of_nonstatic_oop_maps();
-    }
-  } else {
-    return NULL;
-  }
-}
-
-inline address InstanceKlass::adr_fingerprint() const {
-  if (has_stored_fingerprint()) {
-    InstanceKlass** adr_host = adr_unsafe_anonymous_host();
-    if (adr_host != NULL) {
-      return (address)(adr_host + 1);
-    }
-
-    InstanceKlass* volatile* adr_impl = adr_implementor();
-    if (adr_impl != NULL) {
-      return (address)(adr_impl + 1);
-    }
-
-    return (address)end_of_nonstatic_oop_maps();
   } else {
     return NULL;
   }

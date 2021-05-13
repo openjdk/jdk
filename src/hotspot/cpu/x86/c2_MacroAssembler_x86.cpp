@@ -1045,6 +1045,35 @@ void C2_MacroAssembler::evminmax_fp(int opcode, BasicType elem_bt,
   }
 }
 
+// Float/Double signum
+void C2_MacroAssembler::signum_fp(int opcode, XMMRegister dst,
+                                  XMMRegister zero, XMMRegister one,
+                                  Register scratch) {
+  assert(opcode == Op_SignumF || opcode == Op_SignumD, "sanity");
+
+  Label DONE_LABEL;
+
+  if (opcode == Op_SignumF) {
+    assert(UseSSE > 0, "required");
+    ucomiss(dst, zero);
+    jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
+    jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
+    movflt(dst, one);
+    jcc(Assembler::above, DONE_LABEL);
+    xorps(dst, ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), scratch);
+  } else if (opcode == Op_SignumD) {
+    assert(UseSSE > 1, "required");
+    ucomisd(dst, zero);
+    jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
+    jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
+    movdbl(dst, one);
+    jcc(Assembler::above, DONE_LABEL);
+    xorpd(dst, ExternalAddress(StubRoutines::x86::vector_double_sign_flip()), scratch);
+  }
+
+  bind(DONE_LABEL);
+}
+
 void C2_MacroAssembler::vextendbw(bool sign, XMMRegister dst, XMMRegister src) {
   if (sign) {
     pmovsxbw(dst, src);

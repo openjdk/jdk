@@ -57,7 +57,7 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
   if (obj->mark_must_be_preserved(mark) &&
       // It is not necessary to preserve marks for objects in regions we do not
       // compact because we do not change their headers (i.e. forward them).
-      _collector->is_compacted(obj)) {
+      _collector->is_compacting(obj)) {
     preserved_stack()->push(obj, mark);
   }
 

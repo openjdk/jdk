@@ -425,7 +425,7 @@ bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
   // transitions are mt_safe
 
   Thread *thread = Thread::current();
-  if (info.to_interpreter() || info.to_aot()) {
+  if (info.to_interpreter()) {
     // Call to interpreter
     if (info.is_optimized() && is_optimized()) {
       assert(is_clean(), "unsafe IC path");
@@ -439,9 +439,8 @@ bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
 
       if (TraceICs) {
          ResourceMark rm(thread);
-         tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to %s: %s",
+         tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to interpreter: %s",
            p2i(instruction_address()),
-           (info.to_aot() ? "aot" : "interpreter"),
            method->print_value_string());
       }
     } else {
@@ -541,19 +540,13 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
       entry      = method_code->entry_point();
     }
   }
-  bool far_c2a = entry != NULL && caller_is_nmethod && method_code->is_far_code();
-  if (entry != NULL && !far_c2a) {
-    // Call to near compiled code (nmethod or aot).
+  if (entry != NULL) {
+    // Call to near compiled code.
     info.set_compiled_entry(entry, is_optimized ? NULL : receiver_klass, is_optimized);
   } else {
     if (is_optimized) {
-      if (far_c2a) {
-        // Call to aot code from nmethod.
-        info.set_aot_entry(entry, method());
-      } else {
-        // Use stub entry
-        info.set_interpreter_entry(method()->get_c2i_entry(), method());
-      }
+      // Use stub entry
+      info.set_interpreter_entry(method()->get_c2i_entry(), method());
     } else {
       // Use icholder entry
       assert(method_code == NULL || method_code->is_compiled(), "must be compiled");
@@ -614,13 +607,6 @@ bool CompiledDirectStaticCall::is_call_to_interpreted() const {
   return cm->stub_contains(destination());
 }
 
-bool CompiledDirectStaticCall::is_call_to_far() const {
-  // It is a call to aot method, if it calls to a stub. Hence, the destination
-  // must be in the stub part of the nmethod that contains the call
-  CodeBlob* desc = CodeCache::find_blob(instruction_address());
-  return desc->as_compiled_method()->stub_contains(destination());
-}
-
 void CompiledStaticCall::set_to_compiled(address entry) {
   if (TraceICs) {
     ResourceMark rm;
@@ -645,11 +631,6 @@ void CompiledStaticCall::set(const StaticCallInfo& info) {
   if (info._to_interpreter) {
     // Call to interpreted code
     set_to_interpreted(info.callee(), info.entry());
-#if INCLUDE_AOT
-  } else if (info._to_aot) {
-    // Call to far code
-    set_to_far(info.callee(), info.entry());
-#endif
   } else {
     set_to_compiled(info.entry());
   }
@@ -661,12 +642,6 @@ void CompiledStaticCall::compute_entry(const methodHandle& m, bool caller_is_nme
   CompiledMethod* m_code = m->code();
   info._callee = m;
   if (m_code != NULL && m_code->is_in_use()) {
-    if (caller_is_nmethod && m_code->is_far_code()) {
-      // Call to far aot code from nmethod.
-      info._to_aot = true;
-    } else {
-      info._to_aot = false;
-    }
     info._to_interpreter = false;
     info._entry  = m_code->verified_entry_point();
   } else {
@@ -678,18 +653,18 @@ void CompiledStaticCall::compute_entry(const methodHandle& m, bool caller_is_nme
   }
 }
 
-address CompiledDirectStaticCall::find_stub_for(address instruction, bool is_aot) {
+address CompiledDirectStaticCall::find_stub_for(address instruction) {
   // Find reloc. information containing this call-site
   RelocIterator iter((nmethod*)NULL, instruction);
   while (iter.next()) {
     if (iter.addr() == instruction) {
       switch(iter.type()) {
         case relocInfo::static_call_type:
-          return iter.static_call_reloc()->static_stub(is_aot);
+          return iter.static_call_reloc()->static_stub();
         // We check here for opt_virtual_call_type, since we reuse the code
         // from the CompiledIC implementation
         case relocInfo::opt_virtual_call_type:
-          return iter.opt_virtual_call_reloc()->static_stub(is_aot);
+          return iter.opt_virtual_call_reloc()->static_stub();
         case relocInfo::poll_type:
         case relocInfo::poll_return_type: // A safepoint can't overlap a call.
         default:
@@ -700,8 +675,8 @@ address CompiledDirectStaticCall::find_stub_for(address instruction, bool is_aot
   return NULL;
 }
 
-address CompiledDirectStaticCall::find_stub(bool is_aot) {
-  return CompiledDirectStaticCall::find_stub_for(instruction_address(), is_aot);
+address CompiledDirectStaticCall::find_stub() {
+  return CompiledDirectStaticCall::find_stub_for(instruction_address());
 }
 
 address CompiledDirectStaticCall::resolve_call_stub() const {
@@ -734,8 +709,6 @@ void CompiledDirectStaticCall::print() {
     tty->print("clean");
   } else if (is_call_to_compiled()) {
     tty->print("compiled");
-  } else if (is_call_to_far()) {
-    tty->print("far");
   } else if (is_call_to_interpreted()) {
     tty->print("interpreted");
   }

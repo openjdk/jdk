@@ -301,6 +301,29 @@ public interface JavaConstant extends Constant, JavaValue {
         }
     }
 
+    static PrimitiveConstant forPrimitive(JavaKind kind, long rawValue) {
+        switch (kind) {
+            case Boolean:
+                return JavaConstant.forBoolean(rawValue != 0);
+            case Byte:
+                return JavaConstant.forByte((byte) rawValue);
+            case Char:
+                return JavaConstant.forChar((char) rawValue);
+            case Short:
+                return JavaConstant.forShort((short) rawValue);
+            case Int:
+                return JavaConstant.forInt((int) rawValue);
+            case Long:
+                return JavaConstant.forLong(rawValue);
+            case Float:
+                return JavaConstant.forFloat(Float.intBitsToFloat((int) rawValue));
+            case Double:
+                return JavaConstant.forDouble(Double.longBitsToDouble(rawValue));
+            default:
+                throw new IllegalArgumentException("Unsupported kind: " + kind);
+        }
+    }
+
     /**
      * Creates a boxed constant for the given boxed primitive value.
      *

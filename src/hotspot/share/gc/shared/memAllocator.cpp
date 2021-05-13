@@ -55,7 +55,6 @@ class MemAllocator::Allocation: StackObj {
   void verify_before();
   void verify_after();
   void notify_allocation();
-  void notify_allocation_jvmti_allocation_event();
   void notify_allocation_jvmti_sampler();
   void notify_allocation_low_memory_detector();
   void notify_allocation_jfr_sampler();
@@ -174,7 +173,7 @@ void MemAllocator::Allocation::check_for_valid_allocation_state() const {
          "shouldn't be allocating with pending exception");
   // Allocation of an oop can always invoke a safepoint.
   assert(_thread->is_Java_thread(), "non Java threads shouldn't allocate on the Heap");
-  _thread->check_for_valid_safepoint_state();
+  _thread->as_Java_thread()->check_for_valid_safepoint_state();
 }
 #endif
 

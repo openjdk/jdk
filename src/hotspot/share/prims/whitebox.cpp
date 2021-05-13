@@ -113,9 +113,6 @@
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #endif
-#if INCLUDE_AOT
-#include "aot/aotLoader.hpp"
-#endif // INCLUDE_AOT
 
 #ifdef LINUX
 #include "osContainer_linux.hpp"
@@ -183,6 +180,25 @@ public:
       Symbol* ksym = k->name();
       if (ksym->fast_compare(_name) == 0) {
         _count++;
+      } else if (k->is_instance_klass()) {
+        // Need special handling for hidden classes because the JVM
+        // appends "+<hex-address>" to hidden class names.
+        InstanceKlass *ik = InstanceKlass::cast(k);
+        if (ik->is_hidden()) {
+          ResourceMark rm;
+          char* k_name = ksym->as_C_string();
+          // Find the first '+' char and truncate the string at that point.
+          // NOTE: This will not work correctly if the original hidden class
+          // name contains a '+'.
+          char* plus_char = strchr(k_name, '+');
+          if (plus_char != NULL) {
+            *plus_char = 0;
+            char* c_name = _name->as_C_string();
+            if (strcmp(c_name, k_name) == 0) {
+              _count++;
+            }
+          }
+        }
       }
     }
 
@@ -254,7 +270,7 @@ WB_END
 
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(100 * granularity, granularity, false);
+  ReservedHeapSpace rhs(100 * granularity, granularity, os::vm_page_size());
   VirtualSpace vs;
   vs.initialize(rhs, 50 * granularity);
 
@@ -281,7 +297,7 @@ WB_END
 static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
                                            size_t magnitude, size_t iterations) {
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, false);
+  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, os::vm_page_size());
   VirtualSpace vs;
   if (!vs.initialize(rhs, 0)) {
     tty->print_cr("Failed to initialize VirtualSpace. Can't proceed.");
@@ -1042,7 +1058,7 @@ WB_END
 WB_ENTRY(jboolean, WB_EnqueueInitializerForCompilation(JNIEnv* env, jobject o, jclass klass, jint comp_level))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   Method* clinit = ik->class_initializer();
-  if (clinit == NULL) {
+  if (clinit == NULL || clinit->method_holder()->is_not_initialized()) {
     return false;
   }
   return WhiteBox::compile_method(clinit, comp_level, InvocationEntryBci, THREAD);
@@ -1426,9 +1442,6 @@ WB_END
 
 int WhiteBox::get_blob_type(const CodeBlob* code) {
   guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
-  if (code->is_aot()) {
-    return -1;
-  }
   return CodeCache::get_code_heap(code)->code_blob_type();
 }
 
@@ -1486,7 +1499,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
     return result;
   }
   int comp_level = code->comp_level();
-  int insts_size = comp_level == CompLevel_aot ? code->code_end() - code->code_begin() : code->insts_size();
+  int insts_size = code->insts_size();
 
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
@@ -1956,7 +1969,7 @@ WB_ENTRY(jboolean, WB_AreOpenArchiveHeapObjectsMapped(JNIEnv* env))
   return HeapShared::open_archive_heap_region_mapped();
 WB_END
 
-WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
+WB_ENTRY(jboolean, WB_IsCDSIncluded(JNIEnv* env))
 #if INCLUDE_CDS
   return true;
 #else
@@ -1964,7 +1977,7 @@ WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
 #endif // INCLUDE_CDS
 WB_END
 
-WB_ENTRY(jboolean, WB_isC2OrJVMCIIncludedInVmBuild(JNIEnv* env))
+WB_ENTRY(jboolean, WB_isC2OrJVMCIIncluded(JNIEnv* env))
 #if COMPILER2_OR_JVMCI
   return true;
 #else
@@ -1985,7 +1998,7 @@ WB_ENTRY(jboolean, WB_IsJavaHeapArchiveSupported(JNIEnv* env))
 WB_END
 
 
-WB_ENTRY(jboolean, WB_IsJFRIncludedInVmBuild(JNIEnv* env))
+WB_ENTRY(jboolean, WB_IsJFRIncluded(JNIEnv* env))
 #if INCLUDE_JFR
   return true;
 #else
@@ -2228,14 +2241,6 @@ WB_ENTRY(jint, WB_ProtectionDomainRemovedCount(JNIEnv* env, jobject o))
   return (jint) SystemDictionary::pd_cache_table()->removed_entries_count();
 WB_END
 
-WB_ENTRY(jint, WB_AotLibrariesCount(JNIEnv* env, jobject o))
-  jint result = 0;
-#if INCLUDE_AOT
-  result = (jint) AOTLoader::heaps_count();
-#endif
-  return result;
-WB_END
-
 WB_ENTRY(jint, WB_GetKlassMetadataSize(JNIEnv* env, jobject wb, jclass mirror))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(mirror));
   // Return size in bytes.
@@ -2316,7 +2321,11 @@ WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log))
 WB_END
 
 WB_ENTRY(jboolean, WB_IsJVMTIIncluded(JNIEnv* env, jobject wb))
-  return INCLUDE_JVMTI ? JNI_TRUE : JNI_FALSE;
+#if INCLUDE_JVMTI
+  return JNI_TRUE;
+#else
+  return JNI_FALSE;
+#endif
 WB_END
 
 WB_ENTRY(void, WB_WaitUnsafe(JNIEnv* env, jobject wb, jint time))
@@ -2547,9 +2556,9 @@ static JNINativeMethod methods[] = {
   {CC"getResolvedReferences", CC"(Ljava/lang/Class;)Ljava/lang/Object;", (void*)&WB_GetResolvedReferences},
   {CC"linkClass",          CC"(Ljava/lang/Class;)V",  (void*)&WB_LinkClass},
   {CC"areOpenArchiveHeapObjectsMapped",   CC"()Z",    (void*)&WB_AreOpenArchiveHeapObjectsMapped},
-  {CC"isCDSIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsCDSIncludedInVmBuild },
-  {CC"isJFRIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsJFRIncludedInVmBuild },
-  {CC"isC2OrJVMCIIncludedInVmBuild",      CC"()Z",    (void*)&WB_isC2OrJVMCIIncludedInVmBuild },
+  {CC"isCDSIncluded",                     CC"()Z",    (void*)&WB_IsCDSIncluded },
+  {CC"isJFRIncluded",                     CC"()Z",    (void*)&WB_IsJFRIncluded },
+  {CC"isC2OrJVMCIIncluded",               CC"()Z",    (void*)&WB_isC2OrJVMCIIncluded },
   {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
   {CC"isJavaHeapArchiveSupported",        CC"()Z",    (void*)&WB_IsJavaHeapArchiveSupported },
   {CC"cdsMemoryMappingFailed",            CC"()Z",    (void*)&WB_CDSMemoryMappingFailed },
@@ -2582,7 +2591,6 @@ static JNINativeMethod methods[] = {
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
   {CC"resolvedMethodItemsCount",  CC"()J",            (void*)&WB_ResolvedMethodItemsCount },
   {CC"protectionDomainRemovedCount",   CC"()I",       (void*)&WB_ProtectionDomainRemovedCount },
-  {CC"aotLibrariesCount", CC"()I",                    (void*)&WB_AotLibrariesCount },
   {CC"getKlassMetadataSize", CC"(Ljava/lang/Class;)I",(void*)&WB_GetKlassMetadataSize},
 
   {CC"createMetaspaceTestContext", CC"(JJ)J",         (void*)&WB_CreateMetaspaceTestContext},

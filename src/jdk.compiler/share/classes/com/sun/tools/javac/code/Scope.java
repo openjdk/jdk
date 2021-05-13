@@ -753,8 +753,9 @@ public abstract class Scope {
         }
 
         protected Scope finalizeSingleScope(Scope impScope) {
-            if (impScope instanceof FilterImportScope && impScope.owner.kind == Kind.TYP &&
-                ((FilterImportScope) impScope).isStaticallyImported()) {
+            if (impScope instanceof FilterImportScope filterImportScope
+                    && impScope.owner.kind == Kind.TYP
+                    && filterImportScope.isStaticallyImported()) {
                 WriteableScope finalized = WriteableScope.create(impScope.owner);
 
                 for (Symbol sym : impScope.getSymbols()) {

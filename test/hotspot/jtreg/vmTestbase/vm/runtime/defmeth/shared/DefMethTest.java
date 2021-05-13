@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,6 @@ import vm.runtime.defmeth.ObjectMethodOverridesTest;
 import vm.runtime.defmeth.PrivateMethodsTest;
 import vm.runtime.defmeth.StaticMethodsTest;
 import vm.runtime.defmeth.SuperCallTest;
-import vm.runtime.defmeth.shared.annotation.Crash;
-import vm.runtime.defmeth.shared.annotation.KnownFailure;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
 import vm.runtime.defmeth.shared.builder.TestBuilderFactory;
 import vm.share.options.Option;
@@ -52,7 +50,6 @@ import vm.share.options.Options;
 import static java.lang.String.format;
 import java.util.Collections;
 import vm.runtime.defmeth.RedefineTest;
-import vm.runtime.defmeth.shared.annotation.NotTest;
 
 /**
  * Parent class for all default method tests.
@@ -98,15 +95,6 @@ public abstract class DefMethTest extends TestBase {
     @Option(name="filter", default_value="", description="filter executed tests")
     String filterString;
 
-    @Option(name="ignoreKnownFailures", default_value="false", description="ignore tests with known failures")
-    boolean ignoreKnownFailures;
-
-    @Option(name="runOnlyFailingTests", default_value="false", description="run only failing tests")
-    boolean runOnlyFailingTests;
-
-    @Option(name="ignoreCrashes", default_value="false", description="don't run tests with crash VM")
-    boolean ignoreCrashes;
-
     @Option(name="silent", default_value="false", description="silent mode - don't print anything")
     boolean isSilent;
 
@@ -117,7 +105,7 @@ public abstract class DefMethTest extends TestBase {
     boolean testAllModes;
 
     @Option(name="mode", description="invocation mode (direct, reflect, invoke)", default_value="direct")
-    private String mode;
+    String mode;
 
     private Pattern filter; // Precompiled pattern for filterString
 
@@ -204,12 +192,7 @@ public abstract class DefMethTest extends TestBase {
         Class<? extends DefMethTest> test = this.getClass();
 
         int acc = m.getModifiers();
-        if (m.isAnnotationPresent(NotTest.class)
-                || (ignoreCrashes && m.isAnnotationPresent(Crash.class))
-                || !Modifier.isPublic(acc) || Modifier.isStatic(acc)
-                //|| m.getReturnType() != Void.class
-                || m.getParameterTypes().length != 0)
-        {
+        if (!Modifier.isPublic(acc) || Modifier.isStatic(acc) || m.getParameterTypes().length != 0) {
             return false; // not a test
         }
 
@@ -227,19 +210,6 @@ public abstract class DefMethTest extends TestBase {
                     return false; // Can't redefine some tests.
                 }
 
-            }
-        }
-
-          if (ignoreKnownFailures &&
-            m.isAnnotationPresent(KnownFailure.class)) {
-            ExecutionMode[] modes = m.getAnnotation(KnownFailure.class).modes();
-
-            if (modes.length == 0)  return false; // by default, matches all modes
-
-            for (ExecutionMode knownFailingMode : modes) {
-                if (mode == knownFailingMode) {
-                    return false; // known failure in current mode
-                }
             }
         }
 
@@ -274,22 +244,14 @@ public abstract class DefMethTest extends TestBase {
      *
      * The following execution customization is supported:
      *   - filter tests by name using regex
-     *   - ignore tests marked as @KnownFailure
-     *   - ignore tests marked as @Crash
-     *   - only run tests marked as @KnownFailure
      *
      * @return any failures occurred?
      */
     public final boolean runTest() {
-        if (ignoreKnownFailures && runOnlyFailingTests) {
-            throw new IllegalArgumentException("conflicting parameters");
-        }
-
         ExecutionMode[] invocationModes = getInvocationModes();
 
         try {
             int totalTests = 0;
-            int passedTests = 0;
 
             Class<? extends DefMethTest> test = this.getClass();
 
@@ -340,7 +302,7 @@ public abstract class DefMethTest extends TestBase {
                 }
             }
 
-            passedTests = totalTests - numFailures;
+            int passedTests = totalTests - numFailures;
             getLog().info(format("%d test run: %d passed, %d failed", totalTests, passedTests, numFailures));
             if (numFailures == 0) {
                 return true;

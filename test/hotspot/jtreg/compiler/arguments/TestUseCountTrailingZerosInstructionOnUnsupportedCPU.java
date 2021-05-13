@@ -27,6 +27,7 @@
  * @summary Verify processing of UseCountTrailingZerosInstruction option
  *          on CPU without TZCNT instruction (BMI1 feature) support.
  * @library /test/lib /
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  *

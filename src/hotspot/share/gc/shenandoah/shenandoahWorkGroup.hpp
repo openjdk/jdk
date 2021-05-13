@@ -64,17 +64,7 @@ public:
 
   // Create a GC worker and install it into the work gang.
   // We need to initialize gclab for dynamic allocated workers
-  AbstractGangWorker* install_worker(uint which);
-
-  // We allow _active_workers < _total_workers when UseDynamicNumberOfGCThreads is off.
-  // We use the same WorkGang for concurrent and parallel processing, and honor
-  // ConcGCThreads and ParallelGCThreads settings
-  virtual uint active_workers() const {
-    assert(_active_workers > 0, "no active worker");
-    assert(_active_workers <= _total_workers,
-           "_active_workers: %u > _total_workers: %u", _active_workers, _total_workers);
-    return _active_workers;
-  }
+  GangWorker* install_worker(uint which);
 
   void set_initialize_gclab() { assert(!_initialize_gclab, "Can only enable once"); _initialize_gclab = true; }
 };

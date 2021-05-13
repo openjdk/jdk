@@ -855,10 +855,9 @@ public final class LocalTime
      */
     @Override
     public LocalTime with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            f.checkValidValue(newValue);
-            switch (f) {
+        if (field instanceof ChronoField chronoField) {
+            chronoField.checkValidValue(newValue);
+            switch (chronoField) {
                 case NANO_OF_SECOND: return withNano((int) newValue);
                 case NANO_OF_DAY: return LocalTime.ofNanoOfDay(newValue);
                 case MICRO_OF_SECOND: return withNano((int) newValue * 1000);
