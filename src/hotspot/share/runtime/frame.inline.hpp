@@ -53,7 +53,7 @@ inline bool frame::is_first_frame() const {
 }
 
 inline bool frame::is_optimized_entry_frame() const {
-  return _cb != NULL && _cb->is_entry_blob();
+  return _cb != NULL && _cb->is_optimized_entry_blob();
 }
 
 inline address frame::oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) const {

@@ -201,7 +201,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       address jcw = (address)sender.entry_frame_call_wrapper();
 
       return thread->is_in_stack_range_excl(jcw, (address)sender.fp());
-    } else if (sender_blob->is_entry_blob()) {
+    } else if (sender_blob->is_optimized_entry_blob()) {
       return false;
     }
 
@@ -360,7 +360,7 @@ JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
 
 frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
-  OptimizedEntryBlob* blob = _cb->as_entry_blob();
+  OptimizedEntryBlob* blob = _cb->as_optimized_entry_blob();
   // Java frame called from C; skip all C frames and return top C
   // frame of that chunk as the sender
   JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);

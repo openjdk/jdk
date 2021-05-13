@@ -1066,7 +1066,7 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         phase->C->prepend_late_inline(cg);
         set_generator(NULL);
       }
-    } else if(iid == vmIntrinsics::_linkToNative) {
+    } else if (iid == vmIntrinsics::_linkToNative) {
       if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP /* NEP */
           && in(TypeFunc::Parms + 1)->Opcode() == Op_ConL /* address */) {
         phase->C->prepend_late_inline(cg);

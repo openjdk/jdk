@@ -512,7 +512,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     // JavaCallWrapper::~JavaCallWrapper
     return StubRoutines::catch_exception_entry();
   }
-  if (blob != NULL && blob->is_entry_blob()) {
+  if (blob != NULL && blob->is_optimized_entry_blob()) {
     return ((OptimizedEntryBlob*)blob)->exception_handler();
   }
   // Interpreted code

@@ -158,7 +158,7 @@ void frame::set_pc(address   newpc ) {
   }
 #endif // ASSERT
 
-  // Unsafe to use the is_deOptimized tester after changing pc
+  // Unsafe to use the is_deoptimized tester after changing pc
   _deopt_state = unknown;
   _pc = newpc;
   _cb = CodeCache::find_blob_unsafe(_pc);
