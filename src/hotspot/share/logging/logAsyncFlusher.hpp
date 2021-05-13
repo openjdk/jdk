@@ -117,7 +117,7 @@ class LogAsyncFlusher : public NonJavaThread {
   static LogAsyncFlusher* _instance;
 
   enum class ThreadState {
-    Running = 0,
+    Running,
     Terminating,
     Terminated
   };
@@ -152,8 +152,14 @@ class LogAsyncFlusher : public NonJavaThread {
   // Use with_lock = false at your own risk. It is only safe without any active reader.
   void flush(bool with_lock = true);
 
-  static LogAsyncFlusher* instance();
   // None of following functions are thread-safe.
+  static LogAsyncFlusher* instance();
+  // |JVM start | initialize() | ...java application... | terminate() |JVM exit|
+  //                           p1                       p2
+  // Logging sites spread across the entire JVM lifecycle. There're 2 synchronizaton points(p1 and p2).
+  // Async logging EXCLUSIVELY takes over from synchronous logging from p1 to p2.
+  // It's because current implementation is using some HotSpot runtime supports such mutex, threading etc.
+  // They are not available in the very begining or threads are destroyed.
   static void initialize();
   static void terminate();
   static void abort();

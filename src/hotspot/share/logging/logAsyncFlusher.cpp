@@ -107,8 +107,8 @@ LogAsyncFlusher::LogAsyncFlusher()
 }
 
 bool AsyncLogMapIterator::do_entry(LogFileOutput* output, uint32_t* counter) {
-  using dummy = LogTagSetMapping<LogTag::__NO_TAG>;
-  LogDecorations decorations(LogLevel::Warning, dummy::tagset(), output->decorators());
+  using none = LogTagSetMapping<LogTag::__NO_TAG>;
+  LogDecorations decorations(LogLevel::Warning, none::tagset(), output->decorators());
   const int sz = 128;
   char out_of_band[sz];
 
@@ -159,6 +159,9 @@ void LogAsyncFlusher::run() {
     flush();
   }
 
+  assert(_state == ThreadState::Terminating, "sanity check");
+  flush(false /* with_lock*/);
+
   // Signal thread has terminated
   MonitorLocker ml(Terminator_lock);
   _state = ThreadState::Terminated;
@@ -171,24 +174,25 @@ void LogAsyncFlusher::initialize() {
   if (!LogConfiguration::is_async_mode()) return;
 
   if (_instance == NULL) {
-    Atomic::release_store(&LogAsyncFlusher::_instance, new LogAsyncFlusher());
+    Atomic::release_store_fence(&LogAsyncFlusher::_instance, new LogAsyncFlusher());
+    // any read of _instance after FENCE is non-NULL, asynclogging is taking over now
   }
 }
 
-// Termination
-// 1. issue an atomic release_store to close the logging window.
-// 2. flush itself in-place.
-// 3. signal asynclog thread to exit.
-// 4. wait until asynclog thread exits.
-// 5. (optional) delete this in post_run().
+// Termination semantics:
+// shut down async logging window and no message left in _buffer;
+//
+// 1. signal asynclog thread to quit.
+// 2. flush and shut async log window in atomicity.
+// 3. wait until asynclog thread exits.
+// 4. (optional) delete this in post_run().
 void LogAsyncFlusher::terminate() {
   if (_instance != NULL) {
     LogAsyncFlusher* self = _instance;
 
-    Atomic::release_store<LogAsyncFlusher*, LogAsyncFlusher*>(&_instance, nullptr);
-    self->flush();
     {
       MonitorLocker ml(&self->_lock, Mutex::_no_safepoint_check_flag);
+      Atomic::release_store_fence<LogAsyncFlusher*, LogAsyncFlusher*>(&_instance, nullptr);
       self->_state = ThreadState::Terminating;
       ml.notify();
     }
@@ -198,6 +202,9 @@ void LogAsyncFlusher::terminate() {
         ml.wait();
       }
     }
+
+    assert(_instance == NULL, "Async logging window must be close");
+    assert(self->_buffer.size() == 0, "there are lost messages in buffer!");
   }
 }
 
