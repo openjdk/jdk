@@ -31,6 +31,7 @@ import java.net.URLConnection;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import sun.net.httpserver.FileServerHandler;
@@ -99,9 +100,10 @@ import sun.net.httpserver.OutputFilter;
  * <h2>Output filter</h2>
  *
  * <p> The {@link #createOutputFilter(OutputStream, OutputLevel) createOutputFilter}
- * static factory method returns a {@code Filter} that prints log messages
- * relating to the exchanges handled by the server. The output format is
- * specified by the {@link OutputLevel outputLevel}.
+ * static factory method returns a
+ * {@link Filter#afterHandler(String, Consumer) post-processing filter} that
+ * prints log messages relating to the exchanges handled by the server. The
+ * output format is specified by the {@link OutputLevel outputLevel}.
  *
  * <p> Example of an output filter:
  * <pre>    {@code var filter = SimpleFileServer.createOutputFilter(System.out, OutputLevel.VERBOSE);
@@ -241,16 +243,17 @@ public final class SimpleFileServer {
     }
 
     /**
-     * Creates a {@code Filter} that prints log messages about {@linkplain
-     * HttpExchange exchanges}. The log messages are printed to the given
-     * {@code OutputStream}.
+     * Creates a {@linkplain Filter#afterHandler(String, Consumer)
+     * post-processing Filter} that prints log messages about
+     * {@linkplain HttpExchange exchanges}. The log messages are printed to
+     * the given {@code OutputStream}.
      *
-     * @apiNote To not output any log messages it is recommended to not use a
-     * filter.
+     * @apiNote
+     * To not output any log messages it is recommended to not use a filter.
      *
      * @param out         the stream to print to
      * @param outputLevel the output level
-     * @return a Filter
+     * @return a post-processing filter
      * @throws IllegalArgumentException if {@link OutputLevel#NONE OutputLevel.NONE}
      *                                  is given
      * @throws NullPointerException     if any argument is null

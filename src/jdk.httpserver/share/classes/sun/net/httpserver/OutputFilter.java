@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.function.Consumer;
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
@@ -35,7 +36,8 @@ import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * A Filter that outputs log messages about an HttpExchange.
+ * A Filter that outputs log messages about an HttpExchange. The implementation
+ * uses a {@link Filter#afterHandler(String, Consumer) post-processing filter}.
  *
  * <p> If the outputLevel is INFO, the format is based on the
  * <a href='https://www.w3.org/Daemon/User/Config/Logging.html#common-logfile-format'>Common Logfile Format</a>.
@@ -61,10 +63,13 @@ public final class OutputFilter extends Filter {
 
     private final PrintStream printStream;
     private final OutputLevel outputLevel;
+    private final Filter filter;
 
     private OutputFilter(OutputStream os, OutputLevel outputLevel) {
         printStream = new PrintStream(os, false, UTF_8);
         this.outputLevel = outputLevel;
+        var description = "HttpExchange OutputFilter (outputLevel: " + outputLevel + ")";
+        this.filter = Filter.afterHandler(description, operation());
     }
 
     public static OutputFilter create(OutputStream os, OutputLevel outputLevel) {
@@ -74,25 +79,23 @@ public final class OutputFilter extends Filter {
         return new OutputFilter(os, outputLevel);
     }
 
-    /**
-     * The filter's implementation, which is invoked by the server
-     */
-    public void doFilter(HttpExchange e, Chain chain) throws IOException {
-        chain.doFilter(e);
-        String s = e.getRemoteAddress().getHostString() + " "
-				+ "- - "    // rfc931 and authuser
-                + "[" + OffsetDateTime.now().format(FORMATTER) + "]\" "
-				+ e.getRequestMethod() + " " + e.getRequestURI() + " " + e.getProtocol() + "\" "
-				+ e.getResponseCode() + " -";    // bytes
-        printStream.println(s);
+    private Consumer<HttpExchange> operation() {
+        return e -> {
+            String s = e.getRemoteAddress().getHostString() + " "
+                    + "- - "    // rfc931 and authuser
+                    + "[" + OffsetDateTime.now().format(FORMATTER) + "]\" "
+                    + e.getRequestMethod() + " " + e.getRequestURI() + " " + e.getProtocol() + "\" "
+                    + e.getResponseCode() + " -";    // bytes
+            printStream.println(s);
 
-        if (outputLevel.equals(OutputLevel.VERBOSE)) {
-            var requestPath = e.getAttribute("request-path");
-            if (requestPath != null)
-                printStream.println("Resource requested: " + requestPath);
-            logHeaders(">", e.getRequestHeaders());
-            logHeaders("<", e.getResponseHeaders());
-        }
+            if (outputLevel.equals(OutputLevel.VERBOSE)) {
+                var requestPath = e.getAttribute("request-path");
+                if (requestPath != null)
+                    printStream.println("Resource requested: " + requestPath);
+                logHeaders(">", e.getRequestHeaders());
+                logHeaders("<", e.getResponseHeaders());
+            }
+        };
     }
 
     private void logHeaders(String sign, Headers headers) {
@@ -104,7 +107,11 @@ public final class OutputFilter extends Filter {
         printStream.println(sign);
     }
 
-    public String description() {
-        return "HttpExchange OutputFilter (outputLevel: " + outputLevel + ")";
+    @Override
+    public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
+        filter.doFilter(exchange, chain);
     }
+
+    @Override
+    public String description() { return filter.description(); }
 }
