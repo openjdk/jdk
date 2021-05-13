@@ -5684,9 +5684,10 @@ address generate_avx_ghash_processBlocks() {
 
   // base64 AVX512vbmi tables
   address base64_vbmi_lookup_lo_addr() {
-    __ align(512);
+    __ align(64);
     StubCodeMark mark(this, "StubRoutines", "lookup_lo");
     address start = __ pc();
+    assert(start % 64 == 0, "Alignment problem");
     __ emit_data64(0x8080808080808080, relocInfo::none);
     __ emit_data64(0x8080808080808080, relocInfo::none);
     __ emit_data64(0x8080808080808080, relocInfo::none);
