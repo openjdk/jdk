@@ -104,56 +104,56 @@ public class MaskQueryOperationsBenchmark {
     }
 
     @Benchmark
-    public void testTrueCountByte(Blackhole bh) {
-        bh.consume(bmask.trueCount());
+    public int testTrueCountByte(Blackhole bh) {
+        return bmask.trueCount();
     }
 
     @Benchmark
-    public void testTrueCountShort(Blackhole bh) {
-        bh.consume(smask.trueCount());
+    public int testTrueCountShort(Blackhole bh) {
+        return smask.trueCount();
     }
     @Benchmark
-    public void testTrueCountInt(Blackhole bh) {
-        bh.consume(imask.trueCount());
+    public int testTrueCountInt(Blackhole bh) {
+        return imask.trueCount();
     }
     @Benchmark
-    public void testTrueCountLong(Blackhole bh) {
-        bh.consume(lmask.trueCount());
-    }
-
-    @Benchmark
-    public void testFirstTrueByte(Blackhole bh) {
-        bh.consume(bmask.firstTrue());
+    public int testTrueCountLong(Blackhole bh) {
+        return lmask.trueCount();
     }
 
     @Benchmark
-    public void testFirstTrueShort(Blackhole bh) {
-        bh.consume(smask.firstTrue());
-    }
-    @Benchmark
-    public void testFirstTrueInt(Blackhole bh) {
-        bh.consume(imask.firstTrue());
-    }
-    @Benchmark
-    public void testFirstTrueLong(Blackhole bh) {
-        bh.consume(lmask.firstTrue());
+    public int testFirstTrueByte(Blackhole bh) {
+        return bmask.firstTrue();
     }
 
     @Benchmark
-    public void testLastTrueByte(Blackhole bh) {
-        bh.consume(bmask.lastTrue());
+    public int testFirstTrueShort(Blackhole bh) {
+        return smask.firstTrue();
+    }
+    @Benchmark
+    public int testFirstTrueInt(Blackhole bh) {
+        return imask.firstTrue();
+    }
+    @Benchmark
+    public int testFirstTrueLong(Blackhole bh) {
+        return lmask.firstTrue();
     }
 
     @Benchmark
-    public void testLastTrueShort(Blackhole bh) {
-        bh.consume(smask.lastTrue());
+    public int testLastTrueByte(Blackhole bh) {
+        return bmask.lastTrue();
+    }
+
+    @Benchmark
+    public int testLastTrueShort(Blackhole bh) {
+        return smask.lastTrue();
     }
     @Benchmark
-    public void testLastTrueInt(Blackhole bh) {
-        bh.consume(imask.lastTrue());
+    public int testLastTrueInt(Blackhole bh) {
+        return imask.lastTrue();
     }
     @Benchmark
-    public void testLastTrueLong(Blackhole bh) {
-        bh.consume(lmask.lastTrue());
+    public int testLastTrueLong(Blackhole bh) {
+        return lmask.lastTrue();
     }
 }
