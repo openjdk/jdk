@@ -4374,7 +4374,7 @@ public final class Class<T> implements java.io.Serializable,
                     .append('L')
                     .append(name.substring(0, index).replace('.', '/'))
                     .append('.')
-                    .append(name.substring(index + 1))
+                    .append(name, index + 1, name.length())
                     .append(';')
                     .toString();
         } else {
