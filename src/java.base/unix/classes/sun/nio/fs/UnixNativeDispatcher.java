@@ -614,8 +614,9 @@ class UnixNativeDispatcher {
      */
     private static final int SUPPORTS_OPENAT        = 1 << 1;  // syscalls
     private static final int SUPPORTS_FUTIMES       = 1 << 2;
-    private static final int SUPPORTS_FUTIMENS      = 1 << 4;
-    private static final int SUPPORTS_LUTIMES       = 1 << 8;
+    private static final int SUPPORTS_FUTIMENS      = 1 << 3;
+    private static final int SUPPORTS_LUTIMES       = 1 << 4;
+    private static final int SUPPORTS_XATTR         = 1 << 5;
     private static final int SUPPORTS_BIRTHTIME     = 1 << 16; // other features
     private static final int capabilities;
 
@@ -652,6 +653,13 @@ class UnixNativeDispatcher {
      */
     static boolean birthtimeSupported() {
         return (capabilities & SUPPORTS_BIRTHTIME) != 0;
+    }
+
+    /**
+     * Supports extended attributes
+     */
+    static boolean xattrSupported() {
+        return (capabilities & SUPPORTS_XATTR) != 0;
     }
 
     private static native int init();

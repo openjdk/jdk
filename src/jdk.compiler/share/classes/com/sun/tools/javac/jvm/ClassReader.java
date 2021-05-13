@@ -195,6 +195,11 @@ public class ClassReader {
     int[] parameterNameIndices;
 
     /**
+     * A table to hold the access flags of the method parameters.
+     */
+    int[] parameterAccessFlags;
+
+    /**
      * A table to hold annotations for method parameters.
      */
     ParameterAnnotations[] parameterAnnotations;
@@ -829,7 +834,7 @@ public class ClassReader {
                            // ignore ConstantValue attribute if type is not primitive or String
                            return;
                     }
-                    if (v instanceof Integer && !var.type.getTag().checkRange((Integer) v)) {
+                    if (v instanceof Integer intVal && !var.type.getTag().checkRange(intVal)) {
                         throw badClassFile("bad.constant.range", v, var, var.type);
                     }
                     var.setData(v);
@@ -1056,6 +1061,7 @@ public class ClassReader {
                         sawMethodParameters = true;
                         int numEntries = nextByte();
                         parameterNameIndices = new int[numEntries];
+                        parameterAccessFlags = new int[numEntries];
                         haveParameterNameIndices = true;
                         int index = 0;
                         for (int i = 0; i < numEntries; i++) {
@@ -1064,7 +1070,9 @@ public class ClassReader {
                             if ((flags & (Flags.MANDATED | Flags.SYNTHETIC)) != 0) {
                                 continue;
                             }
-                            parameterNameIndices[index++] = nameIndex;
+                            parameterNameIndices[index] = nameIndex;
+                            parameterAccessFlags[index] = flags;
+                            index++;
                         }
                     }
                     bp = newbp;
@@ -1429,9 +1437,8 @@ public class ClassReader {
             else if (proxy.type.tsym.flatName() == syms.profileType.tsym.flatName()) {
                 if (profile != Profile.DEFAULT) {
                     for (Pair<Name, Attribute> v : proxy.values) {
-                        if (v.fst == names.value && v.snd instanceof Attribute.Constant) {
-                            Attribute.Constant c = (Attribute.Constant)v.snd;
-                            if (c.type == syms.intType && ((Integer)c.value) > profile.value) {
+                        if (v.fst == names.value && v.snd instanceof Attribute.Constant constant) {
+                            if (constant.type == syms.intType && ((Integer) constant.value) > profile.value) {
                                 sym.flags_field |= NOT_IN_PROFILE;
                             }
                         }
@@ -1460,9 +1467,8 @@ public class ClassReader {
     //where:
         private void setFlagIfAttributeTrue(CompoundAnnotationProxy proxy, Symbol sym, Name attribute, long flag) {
             for (Pair<Name, Attribute> v : proxy.values) {
-                if (v.fst == attribute && v.snd instanceof Attribute.Constant) {
-                    Attribute.Constant c = (Attribute.Constant)v.snd;
-                    if (c.type == syms.booleanType && ((Integer)c.value) != 0) {
+                if (v.fst == attribute && v.snd instanceof Attribute.Constant constant) {
+                    if (constant.type == syms.booleanType && ((Integer) constant.value) != 0) {
                         sym.flags_field |= flag;
                     }
                 }
@@ -1515,9 +1521,6 @@ public class ClassReader {
     }
 
     Type readTypeOrClassSymbol(int i) {
-        // support preliminary jsr175-format class files
-        if (poolReader.hasTag(i, CONSTANT_Class))
-            return poolReader.getClass(i).type;
         return readTypeToProxy(i);
     }
     Type readTypeToProxy(int i) {
@@ -2054,12 +2057,12 @@ public class ClassReader {
         }
 
         Type resolvePossibleProxyType(Type t) {
-            if (t instanceof ProxyType) {
+            if (t instanceof ProxyType proxyType) {
                 Assert.check(requestingOwner.owner.kind == MDL);
                 ModuleSymbol prevCurrentModule = currentModule;
                 currentModule = (ModuleSymbol) requestingOwner.owner;
                 try {
-                    return ((ProxyType) t).resolve();
+                    return proxyType.resolve();
                 } finally {
                     currentModule = prevCurrentModule;
                 }
@@ -2128,9 +2131,8 @@ public class ClassReader {
                     if (attr.type.tsym == syms.deprecatedType.tsym) {
                         sym.flags_field |= (DEPRECATED | DEPRECATED_ANNOTATION);
                         Attribute forRemoval = attr.member(names.forRemoval);
-                        if (forRemoval instanceof Attribute.Constant) {
-                            Attribute.Constant c = (Attribute.Constant) forRemoval;
-                            if (c.type == syms.booleanType && ((Integer) c.value) != 0) {
+                        if (forRemoval instanceof Attribute.Constant constant) {
+                            if (constant.type == syms.booleanType && ((Integer) constant.value) != 0) {
                                 sym.flags_field |= DEPRECATED_REMOVAL;
                             }
                         }
@@ -2383,6 +2385,7 @@ public class ClassReader {
         sym.params = params.toList();
         parameterAnnotations = null;
         parameterNameIndices = null;
+        parameterAccessFlags = null;
     }
 
 
@@ -2392,6 +2395,10 @@ public class ClassReader {
     private VarSymbol parameter(int index, Type t, MethodSymbol owner, Set<Name> exclude) {
         long flags = PARAMETER;
         Name argName;
+        if (parameterAccessFlags != null && index < parameterAccessFlags.length
+                && parameterAccessFlags[index] != 0) {
+            flags |= parameterAccessFlags[index];
+        }
         if (parameterNameIndices != null && index < parameterNameIndices.length
                 && parameterNameIndices[index] != 0) {
             argName = optPoolEntry(parameterNameIndices[index], poolReader::getName, names.empty);
@@ -2814,12 +2821,8 @@ public class ClassReader {
         public boolean equals(Object other) {
             if (this == other)
                 return true;
-
-            if (!(other instanceof SourceFileObject))
-                return false;
-
-            SourceFileObject o = (SourceFileObject) other;
-            return name.equals(o.name);
+            return (other instanceof SourceFileObject sourceFileObject)
+                    && name.equals(sourceFileObject.name);
         }
 
         @Override

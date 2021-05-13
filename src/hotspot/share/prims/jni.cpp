@@ -3731,17 +3731,10 @@ static jint JNICALL jni_DestroyJavaVM_inner(JavaVM *vm) {
   MACOS_AARCH64_ONLY(WXMode oldmode = thread->enable_wx(WXWrite));
 
   ThreadStateTransition::transition_from_native(thread, _thread_in_vm);
-  if (Threads::destroy_vm()) {
-    // Should not change thread state, VM is gone
-    vm_created = 0;
-    res = JNI_OK;
-    return res;
-  } else {
-    ThreadStateTransition::transition(thread, _thread_in_vm, _thread_in_native);
-    MACOS_AARCH64_ONLY(thread->enable_wx(oldmode));
-    res = JNI_ERR;
-    return res;
-  }
+  Threads::destroy_vm();
+  // Don't bother restoring thread state, VM is gone.
+  vm_created = 0;
+  return JNI_OK;
 }
 
 jint JNICALL jni_DestroyJavaVM(JavaVM *vm) {

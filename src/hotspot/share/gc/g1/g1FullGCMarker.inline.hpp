@@ -42,7 +42,7 @@
 #include "utilities/debug.hpp"
 
 inline bool G1FullGCMarker::mark_object(oop obj) {
-  if (_collector->is_in_closed(obj)) {
+  if (_collector->is_skip_marking(obj)) {
     return false;
   }
 
@@ -55,9 +55,9 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
   // Marked by us, preserve if needed.
   markWord mark = obj->mark();
   if (obj->mark_must_be_preserved(mark) &&
-      // It is not necessary to preserve marks for objects in pinned regions because
-      // we do not change their headers (i.e. forward them).
-      !_collector->is_in_pinned(obj)) {
+      // It is not necessary to preserve marks for objects in regions we do not
+      // compact because we do not change their headers (i.e. forward them).
+      _collector->is_compacting(obj)) {
     preserved_stack()->push(obj, mark);
   }
 
@@ -81,8 +81,8 @@ template <class T> inline void G1FullGCMarker::mark_and_push(T* p) {
       _oop_stack.push(obj);
       assert(_bitmap->is_marked(obj), "Must be marked now - map self");
     } else {
-      assert(_bitmap->is_marked(obj) || _collector->is_in_closed(obj),
-             "Must be marked by other or closed archive object");
+      assert(_bitmap->is_marked(obj) || _collector->is_skip_marking(obj),
+             "Must be marked by other or object in skip marking region");
     }
   }
 }

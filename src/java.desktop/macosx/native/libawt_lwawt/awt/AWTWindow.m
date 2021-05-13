@@ -278,6 +278,11 @@ AWT_NS_WINDOW_IMPLEMENTATION
     if (IS(mask, TRANSPARENT_TITLE_BAR) && [self.nsWindow respondsToSelector:@selector(setTitlebarAppearsTransparent:)]) {
         [self.nsWindow setTitlebarAppearsTransparent:IS(bits, TRANSPARENT_TITLE_BAR)];
     }
+
+    if (IS(mask, TITLE_VISIBLE) && [self.nsWindow respondsToSelector:@selector(setTitleVisibility:)]) {
+        [self.nsWindow setTitleVisibility:(IS(bits, TITLE_VISIBLE)) ? NSWindowTitleVisible :NSWindowTitleHidden];
+    }
+
 }
 
 - (id) initWithPlatformWindow:(jobject)platformWindow

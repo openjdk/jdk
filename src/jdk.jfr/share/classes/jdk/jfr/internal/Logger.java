@@ -25,6 +25,8 @@
 
 package jdk.jfr.internal;
 
+import java.util.Arrays;
+
 /**
  * JFR logger
  *
@@ -32,7 +34,8 @@ package jdk.jfr.internal;
 
 public final class Logger {
 
-    private static final int MAX_SIZE = 10000;
+    private static final int MAX_SIZE = 10_000;
+    private static final int MAX_EVENT_SIZE = 100_000;
     static {
         // This will try to initialize the JVM logging system
         JVMSupport.tryToInitializeJVM();
@@ -42,6 +45,25 @@ public final class Logger {
     public static void log(LogTag logTag, LogLevel logLevel, String message) {
         if (shouldLog(logTag, logLevel)) {
             logInternal(logTag, logLevel, message);
+        }
+    }
+
+    public static void logEvent(LogLevel logLevel, String[] lines, boolean system) {
+        if (lines == null || lines.length == 0) {
+            return;
+        }
+        if (shouldLog(LogTag.JFR_EVENT, logLevel) || shouldLog(LogTag.JFR_SYSTEM_EVENT, logLevel)) {
+            int size = 0;
+            for (int i = 0; i < lines.length; i++) {
+                String line = lines[i];
+                if (size + line.length() > MAX_EVENT_SIZE) {
+                    lines = Arrays.copyOf(lines, i + 1);
+                    lines[i] = "...";
+                    break;
+                }
+                size+=line.length();
+            }
+            JVM.logEvent(logLevel.level, lines, system);
         }
     }
 

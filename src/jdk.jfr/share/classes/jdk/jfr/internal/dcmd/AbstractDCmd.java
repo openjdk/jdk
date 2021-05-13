@@ -25,8 +25,6 @@
 package jdk.jfr.internal.dcmd;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -50,20 +48,15 @@ import jdk.jfr.internal.Utils;
  */
 abstract class AbstractDCmd {
 
-    private final StringWriter result;
-    private final PrintWriter log;
-
-    protected AbstractDCmd() {
-        result = new StringWriter();
-        log = new PrintWriter(result);
-    }
+    private final StringBuilder currentLine = new StringBuilder(80);
+    private final List<String> lines = new ArrayList<>();
 
     protected final FlightRecorder getFlightRecorder() {
         return FlightRecorder.getFlightRecorder();
     }
 
-    public final String getResult() {
-        return result.toString();
+    public final String[] getResult() {
+        return lines.toArray(new String[lines.size()]);
     }
 
     public String getPid() {
@@ -136,15 +129,16 @@ abstract class AbstractDCmd {
     }
 
     protected final void println() {
-        log.println();
+        lines.add(currentLine.toString());
+        currentLine.setLength(0);
     }
 
     protected final void print(String s) {
-        log.print(s);
+        currentLine.append(s);
     }
 
     protected final void print(String s, Object... args) {
-        log.printf(s, args);
+        currentLine.append(String.format(s, args));
     }
 
     protected final void println(String s, Object... args) {
