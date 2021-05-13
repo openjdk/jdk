@@ -36,6 +36,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.time.Duration;
+import java.util.concurrent.Executors;
 
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
@@ -51,12 +53,16 @@ import static org.testng.Assert.assertTrue;
 /*
  * @test
  * @summary Test idempotence and commutativity property of send requests with an exhaustive set of binary sequences
- *          and a non exhaustive, order randomized ternary sequences
- * @run testng/othervm IdempotencyAndCommutativityTest
+ * @run testng/othervm  IdempotencyAndCommutativityTest
  */
 public class IdempotencyAndCommutativityTest {
-
-    static final InetSocketAddress WILDCARD_ADDR = new InetSocketAddress(0);
+/*
+ *
+ * -Djdk.httpclient.HttpClient.log=errors,requests,headers
+ *                       -Dsun.net.httpserver.idleInterval=10 -Dsun.net.httpserver.maxIdleConnections=1
+ *                      -Djdk.httpclient.keepalive.timeout=1 -Djdk.httpclient.connectionPoolSize=1
+ */
+    static final InetSocketAddress WILDCARD_ADDR = new InetSocketAddress(127.0.1.1);
     static final Path CWD = Path.of(".").toAbsolutePath();
     static final String FILE_NAME = "testFile.txt";
     static final String DIR_NAME = "";
@@ -66,7 +72,7 @@ public class IdempotencyAndCommutativityTest {
     static Path root;
     static Path file;
 
-    static final boolean ENABLE_LOGGING = false;
+    static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
     @BeforeTest
@@ -88,105 +94,28 @@ public class IdempotencyAndCommutativityTest {
 
     @DataProvider(name= "allBinarySequences")
     public Object[][]  allBinarySequencesDataProvider() {
-        List<ExchangeValues> sampleSpace = Stream.of("GET", "HEAD", "UNKNOWN")
-                .flatMap(request ->
-                        Stream.of(FILE_NAME, DIR_NAME, MISSING_NAME)
-                                .map(resource ->
-                                        createExchangeValuesFor(request, resource)
-                                )
-                ).collect(Collectors.toList());
-        List<List<ExchangeValues>> allBinarySequences = sampleSpace.stream().map(firstEvent -> sampleSpace.stream()
-                                                .map(secondEvent ->
-                                                        Arrays.asList(firstEvent, secondEvent)
-                                                ).collect(Collectors.toList())
-        ).flatMap(List::stream).collect(Collectors.toList());
+        List<ExchangeValues> sampleSpace = Arrays.asList(
+                new ExchangeValues("GET", FILE_NAME, 200, "text/plain"),
+                new ExchangeValues("GET", DIR_NAME, 200, "text/html; charset=UTF-8"),
+                new ExchangeValues("GET", MISSING_NAME, 404, "text/html; charset=UTF-8"),
+                new ExchangeValues("HEAD", FILE_NAME, 200, "text/plain"),
+                new ExchangeValues("HEAD", DIR_NAME, 200, "text/html; charset=UTF-8"),
+                new ExchangeValues("HEAD", MISSING_NAME, 404, "text/html; charset=UTF-8"),
+                new ExchangeValues("UNKNOWN", FILE_NAME, 501, null),
+                new ExchangeValues("UNKNOWN", DIR_NAME, 501, null),
+                new ExchangeValues("UNKNOWN", MISSING_NAME, 501, null)
+        );
+        List<List<ExchangeValues>> allBinarySequences = sampleSpace.stream()
+                                                            .map(firstEvent -> sampleSpace.stream()
+                                                                .map(secondEvent ->
+                                                                        Arrays.asList(firstEvent, secondEvent)
+                                                                ).collect(Collectors.toList())
+                                                            ).flatMap(List::stream).collect(Collectors.toList());
         Object[][] data = new Object[allBinarySequences.size()][];
         for (int i = 0; i < allBinarySequences.size(); i++) {
-            data[i] = new Object[]{ new ArrayList<>(allBinarySequences.get(i)) };
+            data[i] = new Object[]{ allBinarySequences.get(i) };
         }
         return data;
-    }
-
-    public ExchangeValues createExchangeValuesFor(String method, String resource) {
-        String contentType;
-        int statusCode;
-        switch (method) {
-            case "GET":
-            case "HEAD":
-                statusCode = resource == MISSING_NAME ? 404 : 200;
-                break;
-            case "UNKNOWN":
-                statusCode = 501;
-                break;
-            default: throw new IllegalArgumentException();
-        }
-        switch (method) {
-            case "GET":
-            case "HEAD":
-                switch (resource) {
-                    case MISSING_NAME:
-                    case DIR_NAME:
-                        contentType = "text/html; charset=UTF-8";
-                        break;
-                    case FILE_NAME:
-                        contentType = "text/plain";
-                        break;
-                    default:
-                        throw new IllegalArgumentException();
-                }
-                break;
-            case "UNKNOWN":
-                contentType = null;
-                break;
-            default: throw new IllegalArgumentException();
-        }
-        return new ExchangeValues(method, resource, statusCode, contentType);
-    }
-
-    @DataProvider(name = "someTernarySequences")
-    public Object[][] someTernarySequencesDataProvider() {
-        return new Object[][] {
-            new Object[] { new ArrayList<>(List.of(
-                    new ExchangeValues("GET", FILE_NAME, 200, "text/plain"),
-                    new ExchangeValues("HEAD", MISSING_NAME, 404, "text/html; charset=UTF-8"),
-                    new ExchangeValues("UNKNOWN", FILE_NAME, 501, null)
-            )) },
-            new Object[] { new ArrayList<>(List.of(
-                    new ExchangeValues("GET", FILE_NAME, 200, "text/plain"),
-                    new ExchangeValues("HEAD", MISSING_NAME, 404, "text/html; charset=UTF-8"),
-                    new ExchangeValues("UNKNOWN", DIR_NAME, 501, null)
-            )) },
-            new Object[] { new ArrayList<>(List.of(
-                    new ExchangeValues("GET", FILE_NAME, 200, "text/plain"),
-                    new ExchangeValues("HEAD", DIR_NAME, 200, "text/html; charset=UTF-8"),
-                    new ExchangeValues("UNKNOWN", FILE_NAME, 501, null)
-            )) },
-            new Object[] { new ArrayList<>(List.of(
-                    new ExchangeValues("GET", FILE_NAME, 200, "text/plain"),
-                    new ExchangeValues("HEAD", DIR_NAME, 200, "text/html; charset=UTF-8"),
-                    new ExchangeValues("UNKNOWN", DIR_NAME, 501, null)
-            )) },
-            new Object[] { new ArrayList<>(List.of(
-                    new ExchangeValues("GET", DIR_NAME, 200, "text/html; charset=UTF-8"),
-                    new ExchangeValues("HEAD", FILE_NAME, 200, "text/plain"),
-                    new ExchangeValues("UNKNOWN", FILE_NAME, 501, null)
-            )) },
-            new Object[] { new ArrayList<>(List.of(
-                    new ExchangeValues("GET", DIR_NAME, 200, "text/html; charset=UTF-8"),
-                    new ExchangeValues("HEAD", FILE_NAME, 200, "text/plain"),
-                    new ExchangeValues("UNKNOWN", DIR_NAME, 501, null)
-            )) },
-            new Object[] { new ArrayList<>(List.of(
-                    new ExchangeValues("GET", DIR_NAME, 200, "text/html; charset=UTF-8"),
-                    new ExchangeValues("HEAD", DIR_NAME, 200, "text/html; charset=UTF-8"),
-                    new ExchangeValues("UNKNOWN", FILE_NAME, 501, null)
-            )) },
-            new Object[] { new ArrayList<>(List.of(
-                new ExchangeValues("GET", DIR_NAME, 200, "text/html; charset=UTF-8"),
-                new ExchangeValues("HEAD", DIR_NAME, 200, "text/html; charset=UTF-8"),
-                new ExchangeValues("UNKNOWN", DIR_NAME, 501, null)
-            )) }
-        };
     }
 
     @Test(dataProvider = "allBinarySequences")
@@ -196,24 +125,6 @@ public class IdempotencyAndCommutativityTest {
          }
          for (var value : sequence) {
              executeExchange(value);
-         }
-     }
-
-    @Test(dataProvider = "someTernarySequences")
-     public void shuffleAndTest(List<ExchangeValues> sequence) throws Exception {
-         if (sequence.size() != 3) {
-             throw new IllegalArgumentException();
-         }
-         System.out.println(sequence);
-         for (var value : sequence) {
-             executeExchange(value);
-         }
-         for (int i = 0; i < 3; i++) {
-             Collections.shuffle(sequence);
-             System.out.println(sequence);
-             for (var value : sequence) {
-                 executeExchange(value);
-             }
          }
      }
 

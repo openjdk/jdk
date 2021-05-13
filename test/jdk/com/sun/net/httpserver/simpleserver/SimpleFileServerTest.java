@@ -305,6 +305,45 @@ public class SimpleFileServerTest {
         }
     }
 
+
+    @Test
+    public void testUnsupportedMethod() throws Exception {
+        var root = Files.createDirectory(CWD.resolve("testUnsupportedMethod"));
+
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        ss.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(ss, "")).method("POST", HttpRequest.BodyPublishers.noBody()).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 405);
+            assertEquals(response.body(), "");
+        } finally {
+            ss.stop(0);
+        }
+    }
+
+    @Test
+    public void testMovedPermanently() throws Exception {
+        var root = Files.createDirectory(CWD.resolve("testMovedPermanently"));
+        Files.createDirectory(root.resolve("aDirectory"));
+
+        var ss = SimpleFileServer.createFileServer(WILDCARD_ADDR, root, OutputLevel.NONE);
+        ss.start();
+        ss.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var uri = uri(ss, "aDirectory");
+            var request = HttpRequest.newBuilder(uri).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 301);
+            assertEquals(response.body(), "");
+            assertEquals(response.headers().firstValue("Location").get(), "%s/".formatted(uri));
+        } finally {
+            ss.stop(0);
+        }
+    }
+
     static URI uri(HttpServer server, String path) {
         return URI.create("http://localhost:%s/%s".formatted(server.getAddress().getPort(), path));
     }
