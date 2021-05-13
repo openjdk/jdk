@@ -296,7 +296,7 @@ bool ClassLoaderData::try_claim(int claim) {
   }
 }
 
-// Weak hidden classes have their own ClassLoaderData that is marked to keep alive
+// Non-strong hidden classes have their own ClassLoaderData that is marked to keep alive
 // while the class is being parsed, and if the class appears on the module fixup list.
 // Due to the uniqueness that no other class shares the hidden class' name or
 // ClassLoaderData, no other non-GC thread has knowledge of the hidden class while
