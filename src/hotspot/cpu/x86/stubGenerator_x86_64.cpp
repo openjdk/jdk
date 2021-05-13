@@ -5871,7 +5871,7 @@ address generate_avx_ghash_processBlocks() {
     // calculate length from offsets
     __ movl(length, end_offset);
     __ subl(length, start_offset);
-    __ push(dest);          // Save for return value calc
+    __ pushq(dest);          // Save for return value calc
     __ cmpl(length, 0);
     __ jcc(Assembler::lessEqual, L_exit);
 
@@ -6031,7 +6031,7 @@ address generate_avx_ghash_processBlocks() {
     //  Let Java take care of the final fragment
 
     __ BIND(L_exit);
-    __ pop(rax);             // Get original dest value
+    __ popq(rax);             // Get original dest value
     __ subq(dest, rax);      // Number of bytes converted
     __ pop(r15);
     __ pop(r14);
@@ -6046,8 +6046,8 @@ address generate_avx_ghash_processBlocks() {
     __ jmp(L_continue);
 
     __ BIND(L_errorExit);
-    __ pop(length);
-    __ push(dest);
+    __ popq(length);
+    __ pushq(dest);
     __ jmp(L_exit);
 
     return start;
