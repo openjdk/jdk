@@ -289,13 +289,13 @@ void report_vm_status_error(const char* file, int line, const char* error_msg,
 }
 
 // Declaration for ATTRIBUTE_PRINTF application.
-void report_fatal_impl(VMErrorType error_type, const char* file, int line,
+static void report_fatal_impl(VMErrorType error_type, const char* file, int line,
                        const char* detail_fmt, va_list detail_args)
   ATTRIBUTE_PRINTF(4,0);
 
 // Definition
-void report_fatal_impl(VMErrorType error_type, const char* file, int line,
-                       const char* detail_fmt, va_list detail_args) {
+static void report_fatal_impl(VMErrorType error_type, const char* file, int line,
+                              const char* detail_fmt, va_list detail_args) {
   if (Debugging || error_is_suppressed(file, line)) return;
   void* context = NULL;
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
