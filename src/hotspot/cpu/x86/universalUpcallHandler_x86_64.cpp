@@ -810,7 +810,7 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   const char* name = "panama_upcall_stub";
 #endif // PRODUCT
 
-  EntryBlob* blob = EntryBlob::create(name, &buffer, exception_handler_offset, receiver, jfa_offset);
+  OptimizedEntryBlob* blob = OptimizedEntryBlob::create(name, &buffer, exception_handler_offset, receiver, jfa_offset);
 
   if (TracePanamaUpcallStubs) {
     blob->print_on(tty);

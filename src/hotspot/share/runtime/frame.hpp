@@ -138,7 +138,7 @@ class frame {
   bool is_compiled_frame()       const;
   bool is_safepoint_blob_frame() const;
   bool is_deoptimized_frame()    const;
-  bool is_panama_entry_frame()         const;
+  bool is_optimized_entry_frame()         const;
 
   // testers
   bool is_first_frame() const; // oldest frame? (has no sender)

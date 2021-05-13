@@ -710,9 +710,9 @@ void DeoptimizationBlob::print_value_on(outputStream* st) const {
   st->print_cr("Deoptimization (frame not available)");
 }
 
-// Implementation of EntryBlob
+// Implementation of OptimizedEntryBlob
 
-EntryBlob::EntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t exception_handler_offset,
+OptimizedEntryBlob::OptimizedEntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t exception_handler_offset,
                      jobject receiver, ByteSize jfa_sp_offset) :
   BufferBlob(name, size, cb),
   _exception_handler_offset(exception_handler_offset),
@@ -721,15 +721,15 @@ EntryBlob::EntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t except
   CodeCache::commit(this);
 }
 
-EntryBlob* EntryBlob::create(const char* name, CodeBuffer* cb, intptr_t exception_handler_offset,
+OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb, intptr_t exception_handler_offset,
                              jobject receiver, ByteSize jfa_sp_offset) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
-  EntryBlob* blob = nullptr;
-  unsigned int size = CodeBlob::allocation_size(cb, sizeof(EntryBlob));
+  OptimizedEntryBlob* blob = nullptr;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(OptimizedEntryBlob));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) EntryBlob(name, size, cb, exception_handler_offset, receiver, jfa_sp_offset);
+    blob = new (size) OptimizedEntryBlob(name, size, cb, exception_handler_offset, receiver, jfa_sp_offset);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();

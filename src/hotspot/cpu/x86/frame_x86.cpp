@@ -102,7 +102,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     if (is_entry_frame()) {
       // an entry frame must have a valid fp.
       return fp_safe && is_entry_frame_valid(thread);
-    } else if (is_panama_entry_frame()) {
+    } else if (is_optimized_entry_frame()) {
       return fp_safe;
     }
 
@@ -353,14 +353,14 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   return fr;
 }
 
-JavaFrameAnchor* EntryBlob::jfa_for_frame(const frame& frame) const {
+JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
   // need unextended_sp here, since normal sp is wrong for interpreter callees
   return reinterpret_cast<JavaFrameAnchor*>(reinterpret_cast<char*>(frame.unextended_sp()) + in_bytes(jfa_sp_offset()));
 }
 
 frame frame::sender_for_panama_entry_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
-  EntryBlob* blob = _cb->as_entry_blob();
+  OptimizedEntryBlob* blob = _cb->as_entry_blob();
   // Java frame called from C; skip all C frames and return top C
   // frame of that chunk as the sender
   JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
@@ -509,7 +509,7 @@ frame frame::sender_raw(RegisterMap* map) const {
   map->set_include_argument_oops(false);
 
   if (is_entry_frame())        return sender_for_entry_frame(map);
-  if (is_panama_entry_frame()) return sender_for_panama_entry_frame(map);
+  if (is_optimized_entry_frame()) return sender_for_panama_entry_frame(map);
   if (is_interpreted_frame())  return sender_for_interpreter_frame(map);
   assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
 

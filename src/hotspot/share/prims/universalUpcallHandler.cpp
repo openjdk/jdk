@@ -119,7 +119,7 @@ JVM_ENTRY(jlong, PUH_AllocateUpcallStub(JNIEnv *env, jclass unused, jobject rec,
   return (jlong) ProgrammableUpcallHandler::generate_upcall_stub(global_rec, abi, buffer_layout);
 JNI_END
 
-JVM_ENTRY(jlong, PUH_AllocateOptimzedUpcallStub(JNIEnv *env, jclass unused, jobject mh, jobject abi, jobject conv))
+JVM_ENTRY(jlong, PUH_AllocateOptimizedUpcallStub(JNIEnv *env, jclass unused, jobject mh, jobject abi, jobject conv))
   Handle mh_h(THREAD, JNIHandles::resolve(mh));
   jobject mh_j = JNIHandles::make_global(mh_h);
 
@@ -134,7 +134,7 @@ JVM_ENTRY(jlong, PUH_AllocateOptimzedUpcallStub(JNIEnv *env, jclass unused, jobj
   return (jlong) ProgrammableUpcallHandler::generate_optimized_upcall_stub(mh_j, entry, abi, conv);
 JVM_END
 
-JVM_ENTRY(jboolean, PUH_SupportsOptimzedUpcalls(JNIEnv *env, jclass unused))
+JVM_ENTRY(jboolean, PUH_SupportsOptimizedUpcalls(JNIEnv *env, jclass unused))
   return (jboolean) ProgrammableUpcallHandler::supports_optimized_upcalls();
 JVM_END
 
@@ -143,8 +143,8 @@ JVM_END
 
 static JNINativeMethod PUH_methods[] = {
   {CC "allocateUpcallStub", CC "(" "Ljava/lang/invoke/MethodHandle;" "L" FOREIGN_ABI "ABIDescriptor;" "L" FOREIGN_ABI "BufferLayout;" ")J", FN_PTR(PUH_AllocateUpcallStub)},
-  {CC "allocateOptimizedUpcallStub", CC "(" "Ljava/lang/invoke/MethodHandle;" "L" FOREIGN_ABI "ABIDescriptor;" "L" FOREIGN_ABI "ProgrammableUpcallHandler$CallRegs;" ")J", FN_PTR(PUH_AllocateOptimzedUpcallStub)},
-  {CC "supportsOptimizedUpcalls", CC "()Z", FN_PTR(PUH_SupportsOptimzedUpcalls)},
+  {CC "allocateOptimizedUpcallStub", CC "(" "Ljava/lang/invoke/MethodHandle;" "L" FOREIGN_ABI "ABIDescriptor;" "L" FOREIGN_ABI "ProgrammableUpcallHandler$CallRegs;" ")J", FN_PTR(PUH_AllocateOptimizedUpcallStub)},
+  {CC "supportsOptimizedUpcalls", CC "()Z", FN_PTR(PUH_SupportsOptimizedUpcalls)},
 };
 
 /**
