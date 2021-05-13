@@ -409,6 +409,11 @@ public class SerialClob implements Clob, Serializable, Cloneable {
             throw new SerialException("Invalid offset in String object set");
         }
 
+        if (length < 0) {
+            throw new SerialException("Invalid arguments: length cannot be "
+                    + "negative");
+        }
+
         if (pos < 1 || pos > len + 1) {
             throw new SerialException("Invalid position in Clob object set");
         }

@@ -547,4 +547,14 @@ public class SerialClobTests extends BaseTest {
         assertEquals(written, expectedWritten);
         assertEquals(sc.getSubString(1, (int) sc.length()), expected);
     }
+
+    /*
+     * Validate a SerialException is thrown if length < 0 for setString
+     */
+    @Test(expectedExceptions = SerialException.class)
+    public void test42() throws Exception {
+        int length = -1;
+        SerialClob sc = new SerialClob(chars);
+        int written = sc.setString(1, "hello", 1, length);
+    }
 }

@@ -360,6 +360,11 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
             throw new SerialException("Invalid offset in byte array set");
         }
 
+        if (length < 0) {
+            throw new SerialException("Invalid arguments: length cannot be "
+                    + "negative");
+        }
+
         if (pos < 1 || pos > len + 1) {
             throw new SerialException("Invalid position in BLOB object set");
         }

@@ -448,4 +448,14 @@ public class SerialBlobTests extends BaseTest {
         assertEquals(written, bytesToWrite);
         assertEquals(sb.getBytes(1, (int) sb.length()), expected);
     }
+
+    /*
+     * Validate a SerialException is thrown if length < 0 for setBytes
+     */
+    @Test(expectedExceptions = SerialException.class)
+    public void test34() throws Exception {
+        int length = -1;
+        SerialBlob sb = new SerialBlob(bytes);
+        int written = sb.setBytes(1, new byte[]{1}, 1, length);
+    }
 }
