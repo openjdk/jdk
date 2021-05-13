@@ -23,27 +23,14 @@
  * questions.
  */
 
-#ifndef JAVA_COMPONENT_ACCESSIBILITY
-#define JAVA_COMPONENT_ACCESSIBILITY
-
 #import "JavaComponentAccessibility.h"
-#import "JavaAccessibilityUtilities.h"
+#import "CommonComponentAccessibility.h"
 
-// these constants are duplicated in CAccessibility.java
-#define JAVA_AX_ALL_CHILDREN (-1)
-#define JAVA_AX_SELECTED_CHILDREN (-2)
-#define JAVA_AX_VISIBLE_CHILDREN (-3)
-// If the value is >=0, it's an index
+#import <AppKit/AppKit.h>
 
-@interface CommonComponentAccessibility : JavaComponentAccessibility <NSAccessibilityElement> {
+@interface ScrollBarAccessibility : CommonComponentAccessibility {
 
-}
-+ (void) initializeRolesMap;
-+ (JavaComponentAccessibility * _Nullable) getComponentAccessibility:(NSString * _Nonnull)role;
-- (NSRect)accessibilityFrame;
-- (nullable id)accessibilityParent;
-- (BOOL)performAccessibleAction:(int)index;
-- (BOOL)isAccessibilityElement;
+};
+- (NSString * _Nonnull)accessibilityRole;
+- (NSAccessibilityOrientation) accessibilityOrientation;
 @end
-
-#endif
