@@ -782,6 +782,20 @@ inline bool ConcurrentHashTable<CONFIG, F>::
 }
 
 template <typename CONFIG, MEMFLAGS F>
+inline void ConcurrentHashTable<CONFIG, F>::
+  internal_reset(size_t log2_size)
+{
+  assert(_table != NULL, "table failed");
+  assert(_log2_size_limit >= log2_size, "bad ergo");
+
+  delete _table;
+  // Create and publish a new table
+  InternalTable* table = new InternalTable(log2_size);
+  _size_limit_reached = (log2_size == _log2_size_limit);
+  Atomic::release_store(&_table, table);
+}
+
+template <typename CONFIG, MEMFLAGS F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   internal_grow_prolog(Thread* thread, size_t log2_size)
 {
@@ -1030,6 +1044,14 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   size_t tmp = size_limit_log2 == 0 ? _log2_start_size : size_limit_log2;
   bool ret = internal_shrink(thread, tmp);
   return ret;
+}
+
+template <typename CONFIG, MEMFLAGS F>
+inline void ConcurrentHashTable<CONFIG, F>::
+  unsafe_reset(size_t size_log2)
+{
+  size_t tmp = size_log2 == 0 ? _log2_start_size : size_log2;
+  internal_reset(tmp);
 }
 
 template <typename CONFIG, MEMFLAGS F>

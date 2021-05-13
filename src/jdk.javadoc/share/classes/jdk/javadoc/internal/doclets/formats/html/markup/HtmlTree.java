@@ -990,6 +990,8 @@ public class HtmlTree extends Content {
                             || (hasAttr(HtmlAttr.TYPE) && hasContent());
             case SPAN ->
                     hasAttr(HtmlAttr.ID) || hasContent();
+            case WBR ->
+                    !hasContent();
             default ->
                     hasContent();
         };
@@ -1004,7 +1006,7 @@ public class HtmlTree extends Content {
      */
     public boolean isInline() {
         return switch (tagName) {
-            case A, BUTTON, BR, CODE, EM, I, IMG, LABEL, SMALL, SPAN, STRONG, SUB, SUP -> true;
+            case A, BUTTON, BR, CODE, EM, I, IMG, LABEL, SMALL, SPAN, STRONG, SUB, SUP, WBR -> true;
             default -> false;
         };
     }
@@ -1018,7 +1020,7 @@ public class HtmlTree extends Content {
      */
     public boolean isVoid() {
         return switch (tagName) {
-            case BR, HR, IMG, INPUT, LINK, META -> true;
+            case BR, HR, IMG, INPUT, LINK, META, WBR -> true;
             default -> false;
         };
     }

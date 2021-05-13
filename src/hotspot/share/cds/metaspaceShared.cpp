@@ -361,7 +361,6 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
 
-  LambdaFormInvokers::serialize(soc);
   soc->do_tag(666);
 }
 
@@ -390,7 +389,7 @@ static void rewrite_nofast_bytecode(const methodHandle& method) {
 void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik) {
   for (int i = 0; i < ik->methods()->length(); i++) {
     methodHandle m(thread, ik->methods()->at(i));
-    if (!is_old_class(ik)) {
+    if (!ik->has_old_class_version()) {
       rewrite_nofast_bytecode(m);
     }
     Fingerprinter fp(m);
@@ -461,8 +460,6 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 
   SystemDictionaryShared::write_to_archive();
 
-  // Write lambform lines into archive
-  LambdaFormInvokers::dump_static_archive_invokers();
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
@@ -577,31 +574,10 @@ public:
   ClassLoaderData* cld_at(int index) { return _loaded_cld.at(index); }
 };
 
-// Check if a class or its super class/interface is old.
-bool MetaspaceShared::is_old_class(InstanceKlass* ik) {
-  if (ik == NULL) {
-    return false;
-  }
-  if (ik->major_version() < 50 /*JAVA_6_VERSION*/) {
-    return true;
-  }
-  if (is_old_class(ik->java_super())) {
-    return true;
-  }
-  Array<InstanceKlass*>* interfaces = ik->local_interfaces();
-  int len = interfaces->length();
-  for (int i = 0; i < len; i++) {
-    if (is_old_class(interfaces->at(i))) {
-      return true;
-    }
-  }
-  return false;
-}
-
 bool MetaspaceShared::linking_required(InstanceKlass* ik) {
   // For static CDS dump, do not link old classes.
   // For dynamic CDS dump, only link classes loaded by the builtin class loaders.
-  return DumpSharedSpaces ? !MetaspaceShared::is_old_class(ik) : !ik->is_shared_unregistered_class();
+  return DumpSharedSpaces ? !ik->has_old_class_version() : !ik->is_shared_unregistered_class();
 }
 
 bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
@@ -781,7 +757,7 @@ bool MetaspaceShared::try_link_class(Thread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
   Thread* THREAD = current; // For exception macros.
   Arguments::assert_is_dumping_archive();
-  if (ik->is_loaded() && !ik->is_linked() && !MetaspaceShared::is_old_class(ik) &&
+  if (ik->is_loaded() && !ik->is_linked() && !ik->has_old_class_version() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == NULL) {
@@ -928,12 +904,12 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     char* cds_end =  dynamic_mapped ? dynamic_mapinfo->mapped_end() : static_mapinfo->mapped_end();
     set_shared_metaspace_range(cds_base, static_mapinfo->mapped_end(), cds_end);
     _relocation_delta = static_mapinfo->relocation_delta();
-    _requested_base_address = static_mapinfo->requested_base_address();
     if (dynamic_mapped) {
       FileMapInfo::set_shared_path_table(dynamic_mapinfo);
     } else {
       FileMapInfo::set_shared_path_table(static_mapinfo);
     }
+    _requested_base_address = static_mapinfo->requested_base_address();
   } else {
     set_shared_metaspace_range(NULL, NULL, NULL);
     UseSharedSpaces = false;
@@ -1445,12 +1421,6 @@ void MetaspaceShared::initialize_shared_spaces() {
     SystemDictionaryShared::serialize_dictionary_headers(&rc, false);
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
-  }
-
-  // Set up LambdaFormInvokers::_lambdaform_lines for dynamic dump
-  if (DynamicDumpSharedSpaces) {
-    // Read stored LF format lines stored in static archive
-    LambdaFormInvokers::read_static_archive_invokers();
   }
 
   if (PrintSharedArchiveAndExit) {

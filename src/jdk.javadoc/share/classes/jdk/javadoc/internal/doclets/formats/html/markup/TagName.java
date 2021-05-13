@@ -93,7 +93,8 @@ public enum TagName {
     TH,
     TITLE,
     TR,
-    UL;
+    UL,
+    WBR;
 
     public final String value;
 

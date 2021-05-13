@@ -1382,7 +1382,7 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
       warn_excluded(k, "Failed verification");
       return true;
     } else {
-      if (!MetaspaceShared::is_old_class(k)) {
+      if (!k->has_old_class_version()) {
         warn_excluded(k, "Not linked");
         return true;
       }
@@ -1397,7 +1397,7 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
     return true;
   }
 
-  if (MetaspaceShared::is_old_class(k) && k->is_linked()) {
+  if (k->has_old_class_version() && k->is_linked()) {
     warn_excluded(k, "Old class has been linked");
     return true;
   }
@@ -2205,19 +2205,6 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
 
   unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(name);
   const RunTimeSharedClassInfo* record = NULL;
-  if (DynamicArchive::is_mapped()) {
-    // Those regenerated holder classes are in dynamic archive
-    if (name == vmSymbols::java_lang_invoke_Invokers_Holder() ||
-        name == vmSymbols::java_lang_invoke_DirectMethodHandle_Holder() ||
-        name == vmSymbols::java_lang_invoke_LambdaForm_Holder() ||
-        name == vmSymbols::java_lang_invoke_DelegatingMethodHandle_Holder()) {
-      record = dynamic_dict->lookup(name, hash, 0);
-      if (record != nullptr) {
-        return record;
-      }
-    }
-  }
-
   if (!MetaspaceShared::is_shared_dynamic(name)) {
     // The names of all shared classes in the static dict must also be in the
     // static archive
@@ -2274,7 +2261,7 @@ public:
 
   void do_value(const RunTimeSharedClassInfo* record) {
     ResourceMark rm;
-    _st->print_cr("%4d: %s %s", _index++, record->_klass->external_name(),
+    _st->print_cr("%4d: %s %s", (_index++), record->_klass->external_name(),
         class_loader_name_for_shared(record->_klass));
   }
   int index() const { return _index; }
@@ -2291,7 +2278,7 @@ public:
       ResourceMark rm;
       Klass* k = record->proxy_klass_head();
       while (k != nullptr) {
-        _st->print_cr("%4d: %s %s", _index++, k->external_name(),
+        _st->print_cr("%4d: %s %s", (++_index), k->external_name(),
                       class_loader_name_for_shared(k));
         k = k->next_link();
       }

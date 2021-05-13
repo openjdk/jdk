@@ -72,7 +72,7 @@ public class TestMemberSummary extends JavadocTester {
                 """
                     <div class="col-first even-row-color"><code>private </code></div>
                     <div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(int)\
-                    " class="member-name-link">PrivateParent</a>&#8203;(int&nbsp;i)</code></div>""");
+                    " class="member-name-link">PrivateParent</a><wbr>(int&nbsp;i)</code></div>""");
 
         // Legacy anchor dimensions (6290760)
         checkOutput("pkg2/A.html", true,

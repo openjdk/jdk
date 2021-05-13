@@ -150,5 +150,5 @@ Java_sun_java2d_metal_MTLGraphicsConfig_nativeGetMaxTextureSize
 {
     J2dTraceLn(J2D_TRACE_INFO, "MTLGraphicsConfig_nativeGetMaxTextureSize");
 
-    return (jint)MaxTextureSize;
+    return (jint)MTL_GPU_FAMILY_MAC_TXT_SIZE;
 }
