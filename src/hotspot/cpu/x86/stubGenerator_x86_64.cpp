@@ -5876,11 +5876,11 @@ address generate_avx_ghash_processBlocks() {
     __ cmpl(length, 0xff);
     __ jcc(Assembler::lessEqual, L_process64);
 
-    __ movl(rcx, 0x01400140);
-    __ evpbroadcastd(xmm9, rcx, Assembler::AVX_512bit);
+    __ movl(r15, 0x01400140);
+    __ evpbroadcastd(xmm9, r15, Assembler::AVX_512bit);
 
-    __ movl(rcx, 0x0011000);
-    __ evpbroadcastd(xmm8, rcx, Assembler::AVX_512bit);
+    __ movl(r15, 0x00011000);
+    __ evpbroadcastd(xmm8, r15, Assembler::AVX_512bit);
 
     // load masks required for decoding data
     __ BIND(L_processdata);

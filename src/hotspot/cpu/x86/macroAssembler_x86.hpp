@@ -1168,7 +1168,7 @@ public:
     Assembler::evmovdqaq(dst, mask, src, merge, vector_len);
   }
   void evmovdqaq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register scratch_reg);
-  void evmovdqaq(AddressLiteral dst, XMMRegister src, int vector_len, Register rscratch) { Assembler::evmovdqaq(dst, src, vector_len, rscratch); }
+  void evmovdqaq(AddressLiteral dst, XMMRegister src, int vector_len, Register rscratch);// { Assembler::evmovdqaq(dst, src, vector_len, rscratch); }
 
   // Move Aligned Double Quadword
   void movdqa(XMMRegister dst, Address src)       { Assembler::movdqa(dst, src); }
