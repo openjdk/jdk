@@ -6032,8 +6032,9 @@ address generate_avx_ghash_processBlocks() {
 
     __ BIND(L_exit);
     __ pop(rax);             // Get original dest value
-    __ andl(dest, 0xffffffff);
+//    __ andl(dest, 0xffffffff);
     __ subl(dest, rax);      // Number of bytes converted
+    __ movl(rax, dest);
     __ pop(r15);
     __ pop(r14);
     __ pop(r13);
