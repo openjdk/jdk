@@ -23,27 +23,33 @@
  * questions.
  */
 
-#ifndef JAVA_COMPONENT_ACCESSIBILITY
-#define JAVA_COMPONENT_ACCESSIBILITY
+#import "ScrollBarAccessibility.h"
+#import "ThreadUtilities.h"
+#import "JNIUtilities.h"
 
-#import "JavaComponentAccessibility.h"
-#import "JavaAccessibilityUtilities.h"
+/*
+ * Implementation of the accessibility peer for the ScrollBar role
+ */
+@implementation ScrollBarAccessibility
 
-// these constants are duplicated in CAccessibility.java
-#define JAVA_AX_ALL_CHILDREN (-1)
-#define JAVA_AX_SELECTED_CHILDREN (-2)
-#define JAVA_AX_VISIBLE_CHILDREN (-3)
-// If the value is >=0, it's an index
-
-@interface CommonComponentAccessibility : JavaComponentAccessibility <NSAccessibilityElement> {
-
+- (NSString * _Nonnull)accessibilityRole
+{
+    return [self accessibilityRoleAttribute];
 }
-+ (void) initializeRolesMap;
-+ (JavaComponentAccessibility * _Nullable) getComponentAccessibility:(NSString * _Nonnull)role;
-- (NSRect)accessibilityFrame;
-- (nullable id)accessibilityParent;
-- (BOOL)performAccessibleAction:(int)index;
-- (BOOL)isAccessibilityElement;
-@end
 
-#endif
+- (NSAccessibilityOrientation) accessibilityOrientation
+{
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    jobject elementAxContext = [self axContextWithEnv:env];
+    if (isHorizontal(env, elementAxContext, fComponent)) {
+        (*env)->DeleteLocalRef(env, elementAxContext);
+        return NSAccessibilityOrientationHorizontal;
+    } else if (isVertical(env, elementAxContext, fComponent)) {
+        (*env)->DeleteLocalRef(env, elementAxContext);
+        return NSAccessibilityOrientationVertical;
+    } else {
+        (*env)->DeleteLocalRef(env, elementAxContext);
+        return NSAccessibilityOrientationUnknown;
+    }
+}
+@end
