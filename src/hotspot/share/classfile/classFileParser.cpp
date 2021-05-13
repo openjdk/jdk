@@ -4774,6 +4774,7 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
   const bool is_native       = (flags & JVM_ACC_NATIVE)       != 0;
   const bool is_abstract     = (flags & JVM_ACC_ABSTRACT)     != 0;
   const bool is_bridge       = (flags & JVM_ACC_BRIDGE)       != 0;
+  const bool is_strict       = (flags & JVM_ACC_STRICT)       != 0;
   const bool is_synchronized = (flags & JVM_ACC_SYNCHRONIZED) != 0;
   const bool is_protected    = (flags & JVM_ACC_PROTECTED)    != 0;
   const bool major_gte_1_5   = _major_version >= JAVA_1_5_VERSION;
@@ -4793,16 +4794,16 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
           // If a specific method of a class or interface has its
           // ACC_ABSTRACT flag set, it must not have any of its
           // ACC_FINAL, ACC_NATIVE, ACC_PRIVATE, ACC_STATIC,
-          // or ACC_SYNCHRONIZED flags set.  No need to
+          // ACC_STRICT, or ACC_SYNCHRONIZED flags set.  No need to
           // check for ACC_FINAL, ACC_NATIVE or ACC_SYNCHRONIZED as
           // those flags are illegal irrespective of ACC_ABSTRACT being set or not.
-          (is_abstract && (is_private || is_static))) {
+          (is_abstract && (is_private || is_static || is_strict))) {
         is_illegal = true;
       }
     } else if (major_gte_1_5) {
       // Class file version in the interval [JAVA_1_5_VERSION, JAVA_8_VERSION)
       if (!is_public || is_private || is_protected || is_static || is_final ||
-          is_synchronized || is_native || !is_abstract) {
+          is_synchronized || is_native || !is_abstract || is_strict) {
         is_illegal = true;
       }
     } else {
@@ -4823,7 +4824,7 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
       } else { // not initializer
         if (is_abstract) {
           if ((is_final || is_native || is_private || is_static ||
-              (major_gte_1_5 && is_synchronized))) {
+              (major_gte_1_5 && (is_synchronized || is_strict)))) {
             is_illegal = true;
           }
         }
