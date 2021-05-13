@@ -5956,7 +5956,7 @@ address generate_avx_ghash_processBlocks() {
     __ addq(dest, 0xc0);
     __ subq(length, 0x100);
     __ cmpq(length, 64 * 4);
-    __ jcc(Assembler::lessEqual, L_process256);
+    __ jcc(Assembler::greaterEqual, L_process256);
 
     __ xorq(rax, rax);
     __ evpmovb2m(k3, xmm7, Assembler::AVX_512bit);
