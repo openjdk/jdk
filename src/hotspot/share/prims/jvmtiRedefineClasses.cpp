@@ -190,7 +190,7 @@ bool VM_RedefineClasses::doit_prologue() {
     }
 
     oop mirror = JNIHandles::resolve_non_null(_class_defs[i].klass);
-    // classes for primitives, arrays, hidden and vm unsafe anonymous classes
+    // classes for primitives, arrays, and hidden classes
     // cannot be redefined.
     if (!is_modifiable_class(mirror)) {
       _res = JVMTI_ERROR_UNMODIFIABLE_CLASS;
@@ -333,9 +333,8 @@ bool VM_RedefineClasses::is_modifiable_class(oop klass_mirror) {
     return false;
   }
 
-  // Cannot redefine or retransform a hidden or an unsafe anonymous class.
-  if (InstanceKlass::cast(k)->is_hidden() ||
-      InstanceKlass::cast(k)->is_unsafe_anonymous()) {
+  // Cannot redefine or retransform a hidden class.
+  if (InstanceKlass::cast(k)->is_hidden()) {
     return false;
   }
   return true;
@@ -2939,7 +2938,6 @@ bool VM_RedefineClasses::skip_type_annotation_target(
 
     case 0x10:
     // kind: type in extends clause of class or interface declaration
-    //       (including the direct superclass of an unsafe anonymous class declaration),
     //       or in implements clause of interface declaration
     // location: ClassFile
 

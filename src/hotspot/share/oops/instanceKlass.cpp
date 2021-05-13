@@ -423,12 +423,10 @@ const char* InstanceKlass::nest_host_error() {
 }
 
 InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& parser, TRAPS) {
-  bool is_hidden_or_anonymous = parser.is_hidden() || parser.is_unsafe_anonymous();
   const int size = InstanceKlass::size(parser.vtable_size(),
                                        parser.itable_size(),
                                        nonstatic_oop_map_size(parser.total_oop_map_count()),
-                                       parser.is_interface(),
-                                       parser.is_unsafe_anonymous());
+                                       parser.is_interface());
 
   const Symbol* const class_name = parser.class_name();
   assert(class_name != NULL, "invariant");
@@ -504,7 +502,6 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
   set_kind(kind);
   set_access_flags(parser.access_flags());
   if (parser.is_hidden()) set_is_hidden();
-  set_is_unsafe_anonymous(parser.is_unsafe_anonymous());
   set_layout_helper(Klass::instance_layout_helper(parser.layout_size(),
                                                     false));
 
@@ -2709,13 +2706,6 @@ const char* InstanceKlass::signature_name() const {
   int hash_len = 0;
   char hash_buf[40];
 
-  // If this is an unsafe anonymous class, append a hash to make the name unique
-  if (is_unsafe_anonymous()) {
-    intptr_t hash = (java_mirror() != NULL) ? java_mirror()->identity_hash() : 0;
-    jio_snprintf(hash_buf, sizeof(hash_buf), "/" UINTX_FORMAT, (uintx)hash);
-    hash_len = (int)strlen(hash_buf);
-  }
-
   // Get the internal name as a c string
   const char* src = (const char*) (name()->as_C_string());
   const int src_length = (int)strlen(src);
@@ -2752,12 +2742,6 @@ const char* InstanceKlass::signature_name() const {
 }
 
 ModuleEntry* InstanceKlass::module() const {
-  // For an unsafe anonymous class return the host class' module
-  if (is_unsafe_anonymous()) {
-    assert(unsafe_anonymous_host() != NULL, "unsafe anonymous class must have a host class");
-    return unsafe_anonymous_host()->module();
-  }
-
   if (is_hidden() &&
       in_unnamed_package() &&
       class_loader_data()->has_class_mirror_holder()) {
@@ -3026,7 +3010,7 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
       *inner_is_member = true;
     }
     if (NULL == outer_klass) {
-      // It may be a local or anonymous class; try for that.
+      // It may be a local class; try for that.
       int encl_method_class_idx = enclosing_method_class_index();
       if (encl_method_class_idx != 0) {
         Klass* ok = i_cp->klass_at(encl_method_class_idx, CHECK_NULL);
@@ -3401,7 +3385,6 @@ void InstanceKlass::print_on(outputStream* st) const {
     class_loader_data()->print_value_on(st);
     st->cr();
   }
-  st->print(BULLET"unsafe anonymous host class:        "); Metadata::print_value_on_maybe_null(st, unsafe_anonymous_host()); st->cr();
   if (source_file_name() != NULL) {
     st->print(BULLET"source file:       ");
     source_file_name()->print_value_on(st);
@@ -3827,10 +3810,6 @@ void InstanceKlass::verify_on(outputStream* st) {
   if (constants() != NULL) {
     guarantee(constants()->is_constantPool(), "should be constant pool");
   }
-  const Klass* anonymous_host = unsafe_anonymous_host();
-  if (anonymous_host != NULL) {
-    guarantee(anonymous_host->is_klass(), "should be klass");
-  }
 }
 
 void InstanceKlass::oop_verify_on(oop obj, outputStream* st) {
@@ -4162,7 +4141,7 @@ bool InstanceKlass::is_shareable() const {
     return false;
   }
 
-  if (is_hidden() || unsafe_anonymous_host() != NULL) {
+  if (is_hidden()) {
     return false;
   }
 
