@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package jdk.jfr.event.gc.finalization;
+
+import java.io.IOException;
+import java.util.*;
+import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordedClass;
+import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.jfr.EventNames;
+import jdk.test.lib.jfr.Events;
+
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
+
+/*
+ * @test
+ * @bug 8266936
+ * @summary Test the finalization JFR event
+ * @key jfr
+ * @requires vm.hasJFR
+ * @library /test/lib
+ * @run testng/othervm jdk.jfr.event.gc.finalization.TestFinalizerEvent
+ */
+
+public class TestFinalizerEvent {
+    static boolean finalizerRun = false;
+    
+    @Test
+//    public static void main(String[] args) throws InterruptedException, IOException {
+    public void test() throws InterruptedException, IOException {
+        
+        try (Recording recording = new Recording()) {
+            recording.enable(EventNames.Finalizer);
+            recording.start();
+            
+            FinalizableClass finalizeMe = new FinalizableClass();
+            System.out.println("Created: " + finalizeMe);
+            finalizeMe = null;
+            while (!finalizerRun) {
+                System.gc();
+                Thread.sleep(1000);
+            }
+            recording.stop();
+
+// TODO: other test updates, as done in Deserialization test ?
+            
+            List<RecordedEvent> events = Events.fromRecording(recording);
+            assertEquals(events.size(), 1);
+            for (RecordedEvent event : events) {
+                System.out.println("Event: " + event);
+                assertTrue(event.hasField("finalizedClass"));
+                RecordedClass clazz = event.getValue("finalizedClass");
+                assertEquals(clazz.getName(), FinalizableClass.class.getName());
+            }
+        }        
+    }
+    
+}
+
+class FinalizableClass {
+    @Override
+    protected void finalize() {
+        System.out.println("FinalizeClass.finalize() called");
+        TestFinalizerEvent.finalizerRun = true;
+    } 
+}
