@@ -5872,7 +5872,7 @@ address generate_avx_ghash_processBlocks() {
     __ movl(length, end_offset);
     __ subl(length, start_offset);
     __ push(dest);          // Save for return value calc
-    __ cmpl(length, 63);
+    __ cmpl(length, 0);
     __ jcc(Assembler::lessEqual, L_exit);
 
     // Load lookup tables based on isURL
@@ -5967,9 +5967,13 @@ address generate_avx_ghash_processBlocks() {
 
     __ align(32);
     __ BIND(L_process64);
+    // At this point, we've decoded 64 * 4 * n bytes.
+    // The remaining length will be <= 64 * 4 - 1
 
     __ cmpq(length, 63);
     __ jcc(Assembler::lessEqual, L_finalBit);
+
+    // Handle first 64-byte block
 
     __ evmovdquq(xmm3, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
     __ movl(rax, 0x01400140);
@@ -5994,6 +5998,8 @@ address generate_avx_ghash_processBlocks() {
     __ cmpq(length, 63);
     __ jcc(Assembler::lessEqual, L_finalBit);
 
+    // Handle next 64 bytes
+
     __ evmovdquq(xmm7, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
     __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit);
     __ evpermt2b(xmm0, xmm7, xmm6, Assembler::AVX_512bit);
@@ -6010,6 +6016,8 @@ address generate_avx_ghash_processBlocks() {
     __ cmpq(length, 63);
     __ jcc(Assembler::lessEqual, L_finalBit);
 
+    // Handle next 64 bytes.  Remainder after this will be < 64 bytes
+
     __ evmovdquq(xmm7, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
     __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit);
     __ evpermt2b(xmm0, xmm7, xmm6, Assembler::AVX_512bit);
@@ -6024,13 +6032,23 @@ address generate_avx_ghash_processBlocks() {
     __ addq(dest, 48);
 
     __ BIND(L_finalBit);
+    // Now have < 64 bytes left to decode
 
     __ evpmovb2m(k3, xmm7, Assembler::AVX_512bit);
     __ kmovql(rax, k3);
     __ testl(rax, rax);
     __ jcc(Assembler::notZero, L_errorExit);
 
-    //  Let Java take care of the final fragment
+    // I was going to let Java take care of the final fragment
+    // however it will repeatedly call this routine for every 4 bytes
+    // of input data, so handle the rest here.
+    __ movl(r13, 0x40);
+    __ subl(r13, length);
+    __ movl(rax, 0xffffffffffffffff);
+    __ shrxl(rax, rax, r13);    // Input mask
+
+    __ shr(r13, 2);   // Find (len / 4) * 3 (output length)
+    __ lea(r13, Address(r13, r13, Address::times_2, -1));
 
     __ BIND(L_exit);
     __ pop(rax);             // Get original dest value
