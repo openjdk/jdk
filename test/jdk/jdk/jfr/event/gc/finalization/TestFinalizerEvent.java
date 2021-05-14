@@ -48,7 +48,6 @@ public class TestFinalizerEvent {
     static boolean finalizerRun = false;
     
     @Test
-//    public static void main(String[] args) throws InterruptedException, IOException {
     public void test() throws InterruptedException, IOException {
         
         try (Recording recording = new Recording()) {
@@ -64,8 +63,6 @@ public class TestFinalizerEvent {
             }
             recording.stop();
 
-// TODO: other test updates, as done in Deserialization test ?
-            
             List<RecordedEvent> events = Events.fromRecording(recording);
             assertEquals(events.size(), 1);
             for (RecordedEvent event : events) {
