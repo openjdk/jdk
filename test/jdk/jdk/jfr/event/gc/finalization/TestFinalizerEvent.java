@@ -46,14 +46,13 @@ import static org.testng.Assert.*;
 
 public class TestFinalizerEvent {
     static boolean finalizerRun = false;
-    
+
     @Test
     public void test() throws InterruptedException, IOException {
-        
         try (Recording recording = new Recording()) {
             recording.enable(EventNames.Finalizer);
             recording.start();
-            
+
             FinalizableClass finalizeMe = new FinalizableClass();
             System.out.println("Created: " + finalizeMe);
             finalizeMe = null;
@@ -71,9 +70,8 @@ public class TestFinalizerEvent {
                 RecordedClass clazz = event.getValue("finalizedClass");
                 assertEquals(clazz.getName(), FinalizableClass.class.getName());
             }
-        }        
+        }
     }
-    
 }
 
 class FinalizableClass {
@@ -81,5 +79,5 @@ class FinalizableClass {
     protected void finalize() {
         System.out.println("FinalizeClass.finalize() called");
         TestFinalizerEvent.finalizerRun = true;
-    } 
+    }
 }
