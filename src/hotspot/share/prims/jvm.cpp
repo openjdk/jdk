@@ -421,10 +421,12 @@ JVM_END
 extern volatile jint vm_created;
 
 JVM_ENTRY_NO_ENV(void, JVM_BeforeHalt())
+#if INCLUDE_CDS
   // Link all classes for dynamic CDS dumping before vm exit.
   if (DynamicDumpSharedSpaces) {
     DynamicArchive::prepare_for_dynamic_dumping_at_exit();
   }
+#endif
   EventShutdown event;
   if (event.should_commit()) {
     event.set_reason("Shutdown requested from Java");

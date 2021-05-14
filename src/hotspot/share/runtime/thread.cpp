@@ -3295,12 +3295,14 @@ void Threads::create_vm_init_libraries() {
 void JavaThread::invoke_shutdown_hooks() {
   HandleMark hm(this);
 
+#if INCLUDE_CDS
   // Link all classes for dynamic CDS dumping before vm exit.
   // Same operation is being done in JVM_BeforeHalt for handling the
   // case where the application calls System.exit().
   if (DynamicDumpSharedSpaces) {
     DynamicArchive::prepare_for_dynamic_dumping_at_exit();
   }
+#endif
 
   // We could get here with a pending exception, if so clear it now.
   if (this->has_pending_exception()) {
