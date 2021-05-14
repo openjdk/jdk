@@ -55,7 +55,6 @@ class MemAllocator::Allocation: StackObj {
   void verify_before();
   void verify_after();
   void notify_allocation();
-  void notify_allocation_jvmti_allocation_event();
   void notify_allocation_jvmti_sampler();
   void notify_allocation_low_memory_detector();
   void notify_allocation_jfr_sampler();

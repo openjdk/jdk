@@ -1362,6 +1362,7 @@ SafePointNode* SafePointNode::next_exception() const {
 //------------------------------Ideal------------------------------------------
 // Skip over any collapsed Regions
 Node *SafePointNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  assert(_jvms == NULL || ((uintptr_t)_jvms->map() & 1) || _jvms->map() == this, "inconsistent JVMState");
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
