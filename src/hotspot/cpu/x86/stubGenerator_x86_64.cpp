@@ -6796,7 +6796,7 @@ address generate_avx_ghash_processBlocks() {
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
     }
 
-    if (VM_Version::supports_avx2() && UseAdler32Intrinsics) {
+    if (UseAdler32Intrinsics) {
        StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
 
