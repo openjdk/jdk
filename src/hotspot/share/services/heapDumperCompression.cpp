@@ -265,21 +265,15 @@ void CompressionBackend::thread_loop() {
     _nr_of_threads++;
   }
 
-  while (true) {
-    WriteWork* work = get_work();
-
-    if (work == NULL) {
-      MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-      _nr_of_threads--;
-      assert(_nr_of_threads >= 0, "Too many threads finished");
-      ml.notify_all();
-
-      return;
-    } else {
-      do_compress(work);
-      finish_work(work);
-    }
+  WriteWork* work;
+  while ((work = get_work()) != NULL) {
+    do_compress(work);
+    finish_work(work);
   }
+
+  MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+  _nr_of_threads--;
+  assert(_nr_of_threads >= 0, "Too many threads finished");
 }
 
 void CompressionBackend::set_error(char const* new_error) {
