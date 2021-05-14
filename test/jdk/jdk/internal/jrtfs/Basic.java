@@ -267,7 +267,7 @@ public class Basic {
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
         Path dir = fs.getPath(path);
 
-        // these directories should not be there at top level
+        // These directories should not be there at top level
         assertTrue(Files.notExists(dir));
     }
 
