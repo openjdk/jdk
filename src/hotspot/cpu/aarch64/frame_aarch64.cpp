@@ -31,6 +31,7 @@
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "pauth_aarch64.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -272,6 +273,9 @@ void frame::patch_pc(Thread* thread, address pc) {
     tty->print_cr("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
                   p2i(pc_addr), p2i(*pc_addr), p2i(pc));
   }
+
+  // Only generated code frames should be patched, therefore the return address will not be signed.
+  assert(pauth_ptr_is_raw(*pc_addr), "cannot be signed");
   // Either the return address is the original one or we are going to
   // patch in the same address that's already there.
   assert(_pc == *pc_addr || pc == *pc_addr, "must be");
@@ -436,7 +440,11 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   }
 #endif // COMPILER2_OR_JVMCI
 
-  return frame(sender_sp, unextended_sp, link(), sender_pc());
+  address sender_pc = this->sender_pc();
+  // Interpreter should never sign the return address.
+  assert(pauth_ptr_is_raw(sender_pc), "cannot be signed");
+
+  return frame(sender_sp, unextended_sp, link(), sender_pc);
 }
 
 
@@ -453,6 +461,8 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
 
   // the return_address is always the word on the stack
   address sender_pc = (address) *(l_sender_sp-1);
+  // C1/C2 compiled code should never sign the return address.
+  assert(pauth_ptr_is_raw(sender_pc), "cannot be signed");
 
   intptr_t** saved_fp_addr = (intptr_t**) (l_sender_sp - frame::sender_sp_offset);
 
@@ -499,7 +509,13 @@ frame frame::sender_raw(RegisterMap* map) const {
 
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
-  return frame(sender_sp(), link(), sender_pc());
+
+  // Native code may or may not have signed the return address when saving it
+  // to the stack. In addition, we do not know which key was used to sign it.
+  // Therefore, all we can do is strip it.
+  address sender_pc = pauth_strip_pointer(this->sender_pc());
+
+  return frame(sender_sp(), link(), sender_pc);
 }
 
 frame frame::sender(RegisterMap* map) const {
