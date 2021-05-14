@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,27 @@
  * questions.
  */
 
-/* @test
- * @bug 8046903
- * @summary VM anonymous class members can't be statically invocable
+/*
+ * @test
+ * @bug 8266925
+ * @summary hidden class members can't be statically invocable
  * @modules java.base/jdk.internal.misc java.base/jdk.internal.org.objectweb.asm
- * @run junit test.java.lang.invoke.VMAnonymousClass
+ * @build java.base/*
+ * @run testng StaticInvocableTest
  */
-package test.java.lang.invoke;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import org.junit.Test;
-import jdk.internal.misc.Unsafe;
+import java.lang.invoke.LookupHelper;
 import jdk.internal.org.objectweb.asm.*;
+import org.testng.annotations.Test;
+
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
-public class VMAnonymousClass {
+public class StaticInvocableTest {
     public static void main(String[] args) throws Throwable {
-        VMAnonymousClass test = new VMAnonymousClass();
+        StaticInvocableTest test = new StaticInvocableTest();
         test.testJavaLang();
         test.testJavaUtil();
         test.testJdkInternalMisc();
@@ -48,7 +50,7 @@ public class VMAnonymousClass {
         System.out.println("TEST PASSED");
     }
 
-    // Test VM anonymous classes from different packages
+    // Test hidden classes from different packages
     // (see j.l.i.InvokerBytecodeGenerator::isStaticallyInvocable).
     @Test public void testJavaLang()        throws Throwable { test("java/lang");         }
     @Test public void testJavaUtil()        throws Throwable { test("java/util");         }
@@ -63,30 +65,29 @@ public class VMAnonymousClass {
        throw new RuntimeException("Expected SecurityException");
      }
 
-    private static Unsafe unsafe = Unsafe.getUnsafe();
-
     private static void test(String pkg) throws Throwable {
         byte[] bytes = dumpClass(pkg);
-        Class host_class;
+        Lookup lookup;
         if (pkg.equals("java/prohibited")) {
-            VMAnonymousClass sampleclass = new VMAnonymousClass();
-            host_class = (Class)sampleclass.getClass();
+            StaticInvocableTest sampleclass = new StaticInvocableTest();
+            lookup = LookupHelper.newLookup(sampleclass.getClass());
         } else if (pkg.equals("java/lang")) {
-          host_class = Object.class;
+            lookup = LookupHelper.newLookup(Object.class);
         } else if (pkg.equals("java/util")) {
-            host_class = java.util.ArrayList.class;
+            lookup = LookupHelper.newLookup(java.util.ArrayList.class);
         } else if (pkg.equals("jdk/internal/misc")) {
-            host_class = jdk.internal.misc.Signal.class;
+            lookup = LookupHelper.newLookup(jdk.internal.misc.Signal.class);
         } else if (pkg.equals("java/lang/invoke")) {
-            host_class = java.lang.invoke.CallSite.class;
+            lookup = LookupHelper.newLookup(java.lang.invoke.CallSite.class);
         } else {
             throw new RuntimeException("Unexpected pkg: " + pkg);
         }
-        // Define VM anonymous class
-        Class anonClass = unsafe.defineAnonymousClass(host_class, bytes, null);
+
+        // Define hidden class
+        Lookup l = lookup.defineHiddenClass(bytes, true);
 
         MethodType t = MethodType.methodType(Object.class, int.class);
-        MethodHandle target = MethodHandles.lookup().findStatic(anonClass, "get", t);
+        MethodHandle target = l.findStatic(l.lookupClass(), "get", t);
 
         // Wrap target into LF (convert) to get "target" referenced from LF
         MethodHandle wrappedMH = target.asType(MethodType.methodType(Object.class, Integer.class));

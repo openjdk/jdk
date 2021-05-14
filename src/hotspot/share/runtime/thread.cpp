@@ -265,8 +265,6 @@ Thread::Thread() {
   set_allocated_bytes(0);
   _current_pending_raw_monitor = NULL;
 
-  _suspend_flags = 0;
-
   // thread-specific hashCode stream generator state - Marsaglia shift-xor form
   _hashStateX = os::random();
   _hashStateY = 842502087;
@@ -539,27 +537,6 @@ void Thread::start(Thread* thread) {
                                         JavaThreadStatus::RUNNABLE);
   }
   os::start_thread(thread);
-}
-
-class InstallAsyncExceptionClosure : public HandshakeClosure {
-  Handle _throwable; // The Throwable thrown at the target Thread
-public:
-  InstallAsyncExceptionClosure(Handle throwable) : HandshakeClosure("InstallAsyncException"), _throwable(throwable) {}
-
-  void do_thread(Thread* thr) {
-    JavaThread* target = thr->as_Java_thread();
-    // Note that this now allows multiple ThreadDeath exceptions to be
-    // thrown at a thread.
-    // The target thread has run and has not exited yet.
-    target->send_thread_stop(_throwable());
-  }
-};
-
-void Thread::send_async_exception(oop java_thread, oop java_throwable) {
-  Handle throwable(Thread::current(), java_throwable);
-  JavaThread* target = java_lang_Thread::thread(java_thread);
-  InstallAsyncExceptionClosure vm_stop(throwable);
-  Handshake::execute(&vm_stop, target);
 }
 
 // GC Support
@@ -1045,7 +1022,9 @@ JavaThread::JavaThread() :
   _Stalled(0),
 
   _monitor_chunks(nullptr),
-  _special_runtime_exit_condition(_no_async_condition),
+
+  _suspend_flags(0),
+  _async_exception_condition(_no_async_condition),
   _pending_async_exception(nullptr),
 
   _thread_state(_thread_new),
@@ -1606,13 +1585,14 @@ void JavaThread::remove_monitor_chunk(MonitorChunk* chunk) {
   }
 }
 
-// JVM support.
 
+// Asynchronous exceptions support
+//
 // Note: this function shouldn't block if it's called in
 // _thread_in_native_trans state (such as from
 // check_special_condition_for_native_trans()).
-void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
-  if (has_last_Java_frame() && has_async_condition()) {
+void JavaThread::check_and_handle_async_exceptions() {
+  if (has_last_Java_frame() && has_async_exception_condition()) {
     // If we are at a polling page safepoint (not a poll return)
     // then we must defer async exception because live registers
     // will be clobbered by the exception path. Poll return is
@@ -1636,7 +1616,7 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
     }
   }
 
-  JavaThread::AsyncRequests condition = clear_special_runtime_exit_condition();
+  AsyncExceptionCondition condition = clear_async_exception_condition();
   if (condition == _no_async_condition) {
     // Conditions have changed since has_special_runtime_exit_condition()
     // was called:
@@ -1668,15 +1648,14 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
         ls.print_cr(" of type: %s", _pending_async_exception->klass()->external_name());
       }
       _pending_async_exception = NULL;
-      clear_has_async_exception();
+      // Clear condition from _suspend_flags since we have finished processing it.
+      clear_suspend_flag(_has_async_exception);
     }
   }
 
-  if (check_unsafe_error &&
-      condition == _async_unsafe_access_error && !has_pending_exception()) {
+  if (condition == _async_unsafe_access_error && !has_pending_exception()) {
     // We may be at method entry which requires we save the do-not-unlock flag.
     UnlockFlagSaver fs(this);
-    condition = _no_async_condition;  // done
     switch (thread_state()) {
     case _thread_in_vm: {
       JavaThread* THREAD = this;
@@ -1700,9 +1679,7 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
     }
   }
 
-  assert(condition == _no_async_condition || has_pending_exception() ||
-         (!check_unsafe_error && condition == _async_unsafe_access_error),
-         "must have handled the async condition, if no exception");
+  assert(has_pending_exception(), "must have handled the async condition if no exception");
 }
 
 void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
@@ -1719,6 +1696,27 @@ void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
   }
 
   JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(this);)
+}
+
+class InstallAsyncExceptionClosure : public HandshakeClosure {
+  Handle _throwable; // The Throwable thrown at the target Thread
+public:
+  InstallAsyncExceptionClosure(Handle throwable) : HandshakeClosure("InstallAsyncException"), _throwable(throwable) {}
+
+  void do_thread(Thread* thr) {
+    JavaThread* target = thr->as_Java_thread();
+    // Note that this now allows multiple ThreadDeath exceptions to be
+    // thrown at a thread.
+    // The target thread has run and has not exited yet.
+    target->send_thread_stop(_throwable());
+  }
+};
+
+void JavaThread::send_async_exception(oop java_thread, oop java_throwable) {
+  Handle throwable(Thread::current(), java_throwable);
+  JavaThread* target = java_lang_Thread::thread(java_thread);
+  InstallAsyncExceptionClosure vm_stop(throwable);
+  Handshake::execute(&vm_stop, target);
 }
 
 void JavaThread::send_thread_stop(oop java_throwable)  {
@@ -1875,10 +1873,10 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   // barrier, which will trap unsafe stack frames.
   StackWatermarkSet::before_unwind(thread);
 
-  if (thread->has_async_exception()) {
+  if (thread->has_async_exception_condition(false /* check unsafe access error */)) {
     // We are in _thread_in_native_trans state, don't handle unsafe
     // access error since that may block.
-    thread->check_and_handle_async_exceptions(false);
+    thread->check_and_handle_async_exceptions();
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,11 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-import jdk.test.lib.compiler.InMemoryJavaCompiler;
-import jdk.internal.misc.Unsafe;
 
-public class UnsafeAnonymousApp {
+#ifndef CPU_ZERO_GC_G1_G1GLOBALS_ZERO_HPP
+#define CPU_ZERO_GC_G1_G1GLOBALS_ZERO_HPP
 
-    static byte klassbuf[] = InMemoryJavaCompiler.compile("TestClass",
-        "public class TestClass { " +
-        "} ");
+const size_t G1MergeHeapRootsPrefetchCacheSize = 8;
 
-    public static void main(String args[]) throws Exception {
-        Unsafe unsafe = Unsafe.getUnsafe();
-
-        Class klass = unsafe.defineAnonymousClass(UnsafeAnonymousApp.class, klassbuf, new Object[0]);
-        Object obj = klass.newInstance();
-    }
-}
+#endif // CPU_ZERO_GC_G1_G1GLOBALS_ZERO_HPP
