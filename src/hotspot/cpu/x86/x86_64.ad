@@ -1692,11 +1692,6 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 
 //=============================================================================
 
-// This is UltraSparc specific, true just means we have fast l2f conversion
-const bool Matcher::convL2FSupported(void) {
-  return true;
-}
-
 // Is this branch offset short enough that a short branch can be used?
 //
 // NOTE: If the platform does not provide any short branch variants, then
@@ -1713,73 +1708,6 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
     return (-126 <= offset && offset <= 125);
   return (-128 <= offset && offset <= 127);
 }
-
-const bool Matcher::isSimpleConstant64(jlong value) {
-  // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
-  //return value == (int) value;  // Cf. storeImmL and immL32.
-
-  // Probably always true, even if a temp register is required.
-  return true;
-}
-
-// The ecx parameter to rep stosq for the ClearArray node is in words.
-const bool Matcher::init_array_count_is_in_bytes = false;
-
-// No additional cost for CMOVL.
-const int Matcher::long_cmove_cost() { return 0; }
-
-// No CMOVF/CMOVD with SSE2
-const int Matcher::float_cmove_cost() { return ConditionalMoveLimit; }
-
-// Does the CPU require late expand (see block.cpp for description of late expand)?
-const bool Matcher::require_postalloc_expand = false;
-
-// Do we need to mask the count passed to shift instructions or does
-// the cpu only look at the lower 5/6 bits anyway?
-const bool Matcher::need_masked_shift_count = false;
-
-bool Matcher::narrow_oop_use_complex_address() {
-  assert(UseCompressedOops, "only for compressed oops code");
-  return (LogMinObjAlignmentInBytes <= 3);
-}
-
-bool Matcher::narrow_klass_use_complex_address() {
-  assert(UseCompressedClassPointers, "only for compressed klass code");
-  return (LogKlassAlignmentInBytes <= 3);
-}
-
-bool Matcher::const_oop_prefer_decode() {
-  // Prefer ConN+DecodeN over ConP.
-  return true;
-}
-
-bool Matcher::const_klass_prefer_decode() {
-  // Prefer ConP over ConNKlass+DecodeNKlass.
-  return false;
-}
-
-// Is it better to copy float constants, or load them directly from
-// memory?  Intel can load a float constant from a direct address,
-// requiring no extra registers.  Most RISCs will have to materialize
-// an address into a register first, so they would do better to copy
-// the constant from stack.
-const bool Matcher::rematerialize_float_constants = true; // XXX
-
-// If CPU can load and store mis-aligned doubles directly then no
-// fixup is needed.  Else we split the double into 2 integer pieces
-// and move it piece-by-piece.  Only happens when passing doubles into
-// C code as the Java calling convention forces doubles to be aligned.
-const bool Matcher::misaligned_doubles_ok = true;
-
-// Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-const bool Matcher::strict_fp_requires_explicit_rounding = false;
-
-// Are floats conerted to double when stored to stack during deoptimization?
-// On x64 it is stored without convertion so we can use normal access.
-bool Matcher::float_in_double() { return false; }
-
-// Do ints take an entire long register or just half?
-const bool Matcher::int_in_long = true;
 
 // Return whether or not this register is ever used as an argument.
 // This function is used on startup to build the trampoline stubs in

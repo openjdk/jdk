@@ -1821,9 +1821,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return true;  // Per default match rules are supported.
 }
 
-// x86 supports generic vector operands: vec and legVec.
-const bool Matcher::supports_generic_vector_operands = true;
-
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp) {
   assert(Matcher::is_generic_vector(generic_opnd), "not generic");
   bool legacy = (generic_opnd->opcode() == LEGVEC);
@@ -1874,23 +1871,6 @@ bool Matcher::is_generic_vector(MachOper* opnd) {
 }
 
 //------------------------------------------------------------------------
-
-bool Matcher::supports_vector_variable_shifts(void) {
-  return (UseAVX >= 2);
-}
-
-bool Matcher::supports_vector_variable_rotates(void) {
-  return true;
-}
-
-const bool Matcher::has_predicated_vectors(void) {
-  bool ret_value = false;
-  if (UseAVX > 2) {
-    ret_value = VM_Version::supports_avx512vl();
-  }
-
-  return ret_value;
-}
 
 const RegMask* Matcher::predicate_reg_mask(void) {
   return &_VECTMASK_REG_mask;
@@ -1966,10 +1946,6 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size,max_size);
 }
 
-const bool Matcher::supports_scalable_vector() {
-  return false;
-}
-
 const int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
 }
@@ -1987,14 +1963,6 @@ const uint Matcher::vector_ideal_reg(int size) {
   ShouldNotReachHere();
   return 0;
 }
-
-// x86 supports misaligned vectors store/load.
-const bool Matcher::misaligned_vectors_ok() {
-  return true;
-}
-
-
-const bool Matcher::convi2l_type_required = true;
 
 // Check for shift by small constant as well
 static bool clone_shift(Node* shift, Matcher* matcher, Matcher::MStack& mstack, VectorSet& address_visited) {
