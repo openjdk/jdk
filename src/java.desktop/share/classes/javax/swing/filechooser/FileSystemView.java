@@ -262,8 +262,8 @@ public abstract class FileSystemView {
     * <p>
     * The default implementation gets information from the
     * {@code ShellFolder} class. Whenever possible, the icon
-    * returned will be a multi-resolution icon image,
-    * which will allow better support for High DPI environments
+    * returned is a multi-resolution icon image,
+    * which allows better support for High DPI environments
     * with different scaling factors.
     * <p>
     * Example: <pre>

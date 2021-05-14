@@ -1181,6 +1181,9 @@ final class Win32ShellFolder2 extends ShellFolder {
     static Image getSystemIcon(SystemIcon iconType) {
         long hIcon = getSystemIcon(iconType.getIconID());
         Image icon = makeIcon(hIcon);
+        if (LARGE_ICON_SIZE != icon.getWidth(null)) {
+            icon = new MultiResolutionIconImage(LARGE_ICON_SIZE, icon);
+        }
         disposeIcon(hIcon);
         return icon;
     }
