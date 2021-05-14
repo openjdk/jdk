@@ -618,6 +618,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(StubRoutines,                _checkcast_arraycopy_uninit,                   address)                               \
      static_field(StubRoutines,                _unsafe_arraycopy,                             address)                               \
      static_field(StubRoutines,                _generic_arraycopy,                            address)                               \
+     static_field(StubRoutines,                _galoisCounterMode_AESCrypt,                   address)                               \
                                                                                                                                      \
   /*****************/                                                                                                                \
   /* SharedRuntime */                                                                                                                \

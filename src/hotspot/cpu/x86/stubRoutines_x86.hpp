@@ -32,8 +32,8 @@
 static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
 enum platform_dependent_constants {
-  code_size1 = 20000 LP64_ONLY(+10000),         // simply increase if too small (assembler will crash if too small)
-  code_size2 = 35300 LP64_ONLY(+25000)          // simply increase if too small (assembler will crash if too small)
+  code_size1 = 20000 LP64_ONLY(+12000),         // simply increase if too small (assembler will crash if too small)
+  code_size2 = 35300 LP64_ONLY(+37000)          // simply increase if too small (assembler will crash if too small)
 };
 
 class x86 {
@@ -169,6 +169,7 @@ class x86 {
   static address _left_shift_mask;
   static address _and_mask;
   static address _url_charset;
+  static address _ghash_poly512_addr;
 #endif
   // byte flip mask for sha256
   static address _pshuffle_byte_flip_mask_addr;
@@ -224,6 +225,7 @@ class x86 {
   static address crc_by128_masks_avx512_addr()  { return (address)_crc_by128_masks_avx512; }
   static address shuf_table_crc32_avx512_addr()  { return (address)_shuf_table_crc32_avx512; }
   static address crc_table_avx512_addr()  { return (address)_crc_table_avx512; }
+  static address ghash_polynomial512_addr() { return _ghash_poly512_addr; }
 #endif // _LP64
   static address ghash_long_swap_mask_addr() { return _ghash_long_swap_mask_addr; }
   static address ghash_byte_swap_mask_addr() { return _ghash_byte_swap_mask_addr; }

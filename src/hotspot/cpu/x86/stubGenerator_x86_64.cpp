@@ -4367,6 +4367,111 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address ghash_polynomial512_addr() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "_ghash_poly512_addr");
+    address start = __ pc();
+    __ emit_data64(0x00000001C2000000, relocInfo::none); // POLY for reduction
+    __ emit_data64(0xC200000000000000, relocInfo::none);
+    __ emit_data64(0x00000001C2000000, relocInfo::none);
+    __ emit_data64(0xC200000000000000, relocInfo::none);
+    __ emit_data64(0x00000001C2000000, relocInfo::none);
+    __ emit_data64(0xC200000000000000, relocInfo::none);
+    __ emit_data64(0x00000001C2000000, relocInfo::none);
+    __ emit_data64(0xC200000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000001, relocInfo::none); // POLY
+    __ emit_data64(0xC200000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000001, relocInfo::none); // TWOONE
+    __ emit_data64(0x0000000100000000, relocInfo::none);
+    return start;
+}
+
+  // Vector AES Galois Counter Mode implementation. Parameters:
+  // Windows regs            |  Linux regs
+  // in = c_rarg0 (rcx)      |  c_rarg0 (rsi)
+  // len = c_rarg1 (rdx)     |  c_rarg1 (rdi)
+  // ct = c_rarg2 (r8)       |  c_rarg2 (rdx)
+  // out = c_rarg3 (r9)      |  c_rarg3 (rcx)
+  // key = r10               |  c_rarg4 (r8)
+  // processInChunks = r11   |  c_rarg5 (r9)
+  // isEncrypt = r12         |  r10
+  // state = r13             |  r13
+  // subkeyHtbl = r14        |  r11
+  // counter = rsi           |  r12
+  // return - number of processed bytes
+  address generate_galoisCounterMode_AESCrypt() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "galoisCounterMode_AESCrypt");
+    address start = __ pc();
+    const Register in = c_rarg0;
+    const Register len = c_rarg1;
+    const Register ct = c_rarg2;
+    const Register out = c_rarg3;
+    // and updated with the incremented counter in the end
+#ifndef _WIN64
+    const Register key = c_rarg4;
+    const Register processInChunks = c_rarg5;
+    const Register isEncrypt = r10;
+    const Address isEncrypt_mem(rbp, 2 * wordSize);
+    const Address state_mem(rbp, 3 * wordSize);
+    const Register state = r13;
+    const Address subkeyH_mem(rbp, 4 * wordSize);
+    const Register subkeyHtbl = r11;
+    const Address counter_mem(rbp, 5 * wordSize);
+    const Register counter = r12;
+#else
+    const Address key_mem(rbp, 6 * wordSize);
+    const Register key = r10;
+    const Register processInChunks = r11;
+    const Address partial_mem(rbp, 7 * wordSize);
+    const Address isEncrypt_mem(rbp, 8 * wordSize);
+    const Register isEncrypt = r12;
+    const Address state_mem(rbp, 9 * wordSize);
+    const Register state = r13;
+    const Address subkeyH_mem(rbp, 10 * wordSize);
+    const Register subkeyHtbl = r14;
+    const Address counter_mem(rbp, 11 * wordSize);
+    const Register counter = rsi;
+#endif
+    __ enter();
+   // Save state before entering routine
+    __ push(r12);
+    __ push(r13);
+    __ push(r14);
+    __ push(r15);
+    __ push(rbx);
+#ifdef _WIN64
+    // on win64, fill len_reg from stack position
+    __ push(rsi);
+    __ movptr(key, key_mem);
+    __ movl(processInChunks, partial_mem);
+    __ movl(isEncrypt, isEncrypt_mem);
+    __ movptr(state, state_mem);
+    __ movptr(subkeyHtbl, subkeyH_mem);
+    __ movptr(counter, counter_mem);
+#else
+    __ movptr(isEncrypt, isEncrypt_mem);
+    __ movptr(state, state_mem);
+    __ movptr(subkeyHtbl, subkeyH_mem);
+    __ movptr(counter, counter_mem);
+#endif
+    __ aesgcm_encrypt(in, len, ct, out, key, processInChunks, isEncrypt, state, subkeyHtbl, counter);
+
+    // Restore state before leaving routine
+#ifdef _WIN64
+    __ pop(rsi);
+#endif
+    __ pop(rbx);
+    __ pop(r15);
+    __ pop(r14);
+    __ pop(r13);
+    __ pop(r12);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+     return start;
+  }
+
   // This mask is used for incrementing counter value(linc0, linc4, etc.)
   address counter_mask_addr() {
     __ align(64);
@@ -6874,6 +6979,14 @@ address generate_avx_ghash_processBlocks() {
         StubRoutines::_electronicCodeBook_decryptAESCrypt = generate_electronicCodeBook_decryptAESCrypt();
       } else {
         StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
+      }
+    }
+    if (UseAESIntrinsics) {
+      if (VM_Version::supports_avx512_vaes() &&  VM_Version::supports_avx512vl() && VM_Version::supports_avx512dq()) {
+        StubRoutines::x86::_counter_mask_addr = counter_mask_addr();
+        StubRoutines::x86::_ghash_poly512_addr = ghash_polynomial512_addr();
+        StubRoutines::x86::_ghash_long_swap_mask_addr = generate_ghash_long_swap_mask();
+        StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
       }
     }
     if (UseAESCTRIntrinsics) {

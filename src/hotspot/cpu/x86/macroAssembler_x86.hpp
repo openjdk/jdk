@@ -950,12 +950,20 @@ private:
   void roundDec(XMMRegister key, int rnum);
   void lastroundDec(XMMRegister key, int rnum);
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
-
+  void gfmul_avx512(XMMRegister ghash, XMMRegister hkey);
+  void generateHtbl_48_block_zmm(Register htbl);
+  void ghash16_encrypt16_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx,
+                                  XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
+                                  XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
+                                  bool final_reduction, int index, Register isEncrypt, XMMRegister counter_inc_mask);
 public:
   void aesecb_encrypt(Register source_addr, Register dest_addr, Register key, Register len);
   void aesecb_decrypt(Register source_addr, Register dest_addr, Register key, Register len);
   void aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
                       Register len_reg, Register used, Register used_addr, Register saved_encCounter_start);
+  void aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
+                      Register processInChunks, Register isEncrypt, Register state,
+                      Register subkeyHtbl, Register counter);
 
 #endif
 

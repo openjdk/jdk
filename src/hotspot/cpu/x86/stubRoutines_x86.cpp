@@ -73,6 +73,7 @@ address StubRoutines::x86::_left_shift_mask = NULL;
 address StubRoutines::x86::_and_mask = NULL;
 address StubRoutines::x86::_url_charset = NULL;
 address StubRoutines::x86::_counter_mask_addr = NULL;
+address StubRoutines::x86::_ghash_poly512_addr = NULL;
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = NULL;
 
