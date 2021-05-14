@@ -62,9 +62,34 @@ Node* AddNode::Identity(PhaseGVN* phase) {
 
 //------------------------------commute----------------------------------------
 // Commute operands to move loads and constants to the right.
-static bool commute(Node *add, bool con_left, bool con_right) {
+static bool commute(PhaseGVN* phase, Node* add) {
   Node *in1 = add->in(1);
   Node *in2 = add->in(2);
+
+  // convert "max(a,b) + min(a,b)" into "a+b".
+  if ((in1->Opcode() == add->as_Add()->max_opcode() && in2->Opcode() == add->as_Add()->min_opcode())
+      || (in1->Opcode() == add->as_Add()->min_opcode() && in2->Opcode() == add->as_Add()->max_opcode())) {
+    Node *in11 = in1->in(1);
+    Node *in12 = in1->in(2);
+
+    Node *in21 = in2->in(1);
+    Node *in22 = in2->in(2);
+
+    if ((in11 == in21 && in12 == in22) ||
+        (in11 == in22 && in12 == in21)) {
+      add->set_req(1, in11);
+      add->set_req(2, in12);
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      if (igvn) {
+        igvn->_worklist.push(in1);
+        igvn->_worklist.push(in2);
+      }
+      return true;
+    }
+  }
+
+  bool con_left = phase->type(in1)->singleton();
+  bool con_right = phase->type(in2)->singleton();
 
   // Convert "1+x" into "x+1".
   // Right is a constant; leave it
@@ -115,7 +140,7 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   bool con_right = t2->singleton();
 
   // Check for commutative operation desired
-  if (commute(this, con_left, con_right)) return this;
+  if (commute(phase, this)) return this;
 
   AddNode *progress = NULL;             // Progress flag
 
@@ -539,9 +564,7 @@ Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Floating point additions are not associative because of boundary conditions (infinity)
-  return commute(this,
-                 phase->type( in(1) )->singleton(),
-                 phase->type( in(2) )->singleton() ) ? this : NULL;
+  return commute(phase, this) ? this : NULL;
 }
 
 
@@ -576,9 +599,7 @@ Node *AddDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Floating point additions are not associative because of boundary conditions (infinity)
-  return commute(this,
-                 phase->type( in(1) )->singleton(),
-                 phase->type( in(2) )->singleton() ) ? this : NULL;
+  return commute(phase, this) ? this : NULL;
 }
 
 
