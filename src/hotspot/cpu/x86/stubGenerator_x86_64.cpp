@@ -5871,7 +5871,7 @@ address generate_avx_ghash_processBlocks() {
     // calculate length from offsets
     __ movl(length, end_offset);
     __ subl(length, start_offset);
-    __ push(source);          // Save for return value calc
+    __ push(dest);          // Save for return value calc
     __ cmpl(length, 0);
     __ jcc(Assembler::lessEqual, L_exit);
 
@@ -6102,10 +6102,12 @@ address generate_avx_ghash_processBlocks() {
     __ vpermb(xmm3, xmm4, xmm3, Assembler::AVX_512bit);
     __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm3, Assembler::AVX_512bit);
 
+    __ addq(dest, r13);
+
     __ BIND(L_exit);
     __ pop(rax);             // Get original dest value
-    __ subq(source, rax);      // Number of bytes converted
-    __ movq(rax, source);
+    __ subq(dest, rax);      // Number of bytes converted
+    __ movq(rax, dest);
     __ pop(r15);
     __ pop(r14);
     __ pop(r13);
@@ -6125,15 +6127,13 @@ address generate_avx_ghash_processBlocks() {
 
     __ BIND(L_padding);
     __ decrementq(r13, 1);
-    __ decrementq(length, 1);
     __ shrq(rax, 1);
 
-    __ cmpb(Address(source, length, Address::times_1, -1), '=');
+    __ cmpb(Address(source, length, Address::times_1, -2), '=');
     __ jcc(Assembler::notEqual, L_donePadding);
 
     __ decrementq(r13, 1);
     __ shrq(rax, 1);
-    __ decrementq(length, 1);
     __ jmp(L_donePadding);
 
     return start;
