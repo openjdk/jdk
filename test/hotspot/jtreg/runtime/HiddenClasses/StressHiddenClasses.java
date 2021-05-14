@@ -36,7 +36,6 @@ import java.lang.invoke.MethodHandles.Lookup;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
-// This test is based on vmTestbase/vm/mlvm/anonloader/share/StressClassLoadingTest.java
 public class StressHiddenClasses {
 
     private static final int PARSE_TIMEOUT = 0;

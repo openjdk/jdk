@@ -1107,7 +1107,7 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
   if (!UseSharedSpaces) {
     return NULL;
   }
-  if (class_name == NULL) {  // don't do this for hidden and unsafe anonymous classes
+  if (class_name == NULL) {  // don't do this for hidden classes
     return NULL;
   }
   if (class_loader.is_null() ||
@@ -1332,11 +1332,6 @@ void SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason)
 }
 
 bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
-
-  if (k->is_unsafe_anonymous()) {
-    warn_excluded(k, "Unsafe anonymous class");
-    return true; // unsafe anonymous classes are not archived, skip
-  }
 
   if (k->is_in_error_state()) {
     warn_excluded(k, "In error state");

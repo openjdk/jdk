@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,9 @@
  * questions.
  */
 
+#ifndef CPU_ARM_GC_G1_G1GLOBALS_ARM_HPP
+#define CPU_ARM_GC_G1_G1GLOBALS_ARM_HPP
 
-/*
- * @test
- * @modules java.base/jdk.internal.misc java.base/jdk.internal.org.objectweb.asm
- *
- * @summary converted from VM Testbase vm/mlvm/anonloader/func/finalSuperclass.
- * VM Testbase keywords: [feature_mlvm]
- * VM Testbase readme:
- * DESCRIPTION
- *     Try to load anonymous class derived from java.lang.System. The class file
- *     loader should reject such attempt and throw IncompatibleClassChangeError
- *     because java.lang.System is a final class.
- *
- * @library /vmTestbase
- *          /test/lib
- *
- * @comment build test class and indify classes
- * @build vm.mlvm.anonloader.share.ReplaceClassParentTest
- * @run driver vm.mlvm.share.IndifiedClassesBuilder
- *
- * @run main/othervm
- *      vm.mlvm.anonloader.share.ReplaceClassParentTest
- *      -newParent java/lang/System
- *      -requireExceptions java.lang.IncompatibleClassChangeError
- */
+const size_t G1MergeHeapRootsPrefetchCacheSize = 16;
 
+#endif // CPU_ARM_GC_G1_G1GLOBALS_ARM_HPP

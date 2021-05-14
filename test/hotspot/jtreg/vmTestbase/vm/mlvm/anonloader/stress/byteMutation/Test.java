@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@ import vm.share.options.Option;
  * <li>Tries to load such class using:
  *     <ul>
  *       <li>a custom class loader,
- *       <li>{@link sun.misc.Unsafe#defineAnonymousClass}
- *           when {@code -unsafeLoad true} option is passed to the test.
+ *       <li>{@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass}
+ *           when {@code -hiddenLoad true} option is passed to the test.
  *     </ul>
  * </ol>
  *
