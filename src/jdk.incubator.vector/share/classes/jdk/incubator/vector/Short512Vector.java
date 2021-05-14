@@ -631,10 +631,15 @@ final class Short512Vector extends ShortVector {
             return (Short512Vector) super.toVectorTemplate();  // specialize
         }
 
-        @Override
+        /**
+         * Helper function for all sorts of lane-wise conversions.
+         * This function kicks in after intrinsic failure.
+         */
+        /*package-private*/
         @ForceInline
-        public <E> VectorMask<E> cast(VectorSpecies<E> s) {
-            AbstractSpecies<E> species = (AbstractSpecies<E>) s;
+        final <E>
+        VectorMask<E> defaultMaskReinterpret(VectorSpecies<E> dsp) {
+            AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
@@ -656,6 +661,24 @@ final class Short512Vector extends ShortVector {
 
             // Should not reach here.
             throw new AssertionError(species);
+        }
+
+        @Override
+        @ForceInline
+        public <E> VectorMask<E> cast(VectorSpecies<E> dsp) {
+            AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
+            if (length() != species.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
+            if (VSIZE == species.vectorBitSize()) {
+                Class<?> dtype = species.elementType();
+                Class<?> dmtype = species.maskType();
+                return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
+                    this.getClass(), ETYPE, VLENGTH,
+                    dmtype, dtype, VLENGTH,
+                    this, species,
+                    Short512Mask::defaultMaskReinterpret);
+            }
+            return this.defaultMaskReinterpret(species);
         }
 
         // Unary operations
