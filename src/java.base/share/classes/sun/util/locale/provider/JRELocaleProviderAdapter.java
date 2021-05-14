@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.util.locale.provider;
 
 import java.security.AccessController;
+import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.ServiceLoader;
+import java.util.ServiceConfigurationError;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -535,17 +537,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
         }
 
         locale = locale.stripExtensions();
-        var langtag = locale.toLanguageTag();
-        if (langtags.contains(langtag) ||
-            langtags.contains(switch(locale.getLanguage()) {
-                    case "he" -> langtag.replaceFirst("^he(-.*)?$", "iw$1");
-                    case "id" -> langtag.replaceFirst("^id(-.*)?$", "in$1");
-                    case "yi" -> langtag.replaceFirst("^yi(-.*)?$", "ji$1");
-                    case "iw" -> langtag.replaceFirst("^iw(-.*)?$", "he$1");
-                    case "in" -> langtag.replaceFirst("^in(-.*)?$", "id$1");
-                    case "ji" -> langtag.replaceFirst("^ji(-.*)?$", "yi$1");
-                    default -> langtag;
-                })) {
+        if (langtags.contains(locale.toLanguageTag())) {
             return true;
         }
 

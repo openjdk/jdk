@@ -2391,7 +2391,8 @@ public final class Locale implements Cloneable, Serializable {
     private static volatile String[] isoCountries;
 
     // we accept both the old and the new ISO codes for the languages whose ISO
-    // codes have changed, but we always store the NEW code by default.
+    // codes have changed, but we always store the NEW code, unless the property
+    // java.locale.useOldISOCodes is set to "true"
     private static String convertOldISOCodes(String language) {
         var lang = LocaleUtils.toLowerString(language).intern();
         return switch (lang) {

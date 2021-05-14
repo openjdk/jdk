@@ -3159,7 +3159,7 @@ public abstract class ResourceBundle {
              * Legacy mechanism to locate resource bundle in unnamed module only
              * that is visible to the given loader and accessible to the given caller.
              */
-            var bundleName = toBundleName(baseName, locale);
+            String bundleName = toBundleName(baseName, locale);
             var bundle = newBundle0(baseName, bundleName, format, loader, reload);
             if (bundle == null) {
                 // Try loading legacy ISO language's other bundles

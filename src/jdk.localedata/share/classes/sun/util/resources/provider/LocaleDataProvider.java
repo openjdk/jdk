@@ -39,19 +39,9 @@ public class LocaleDataProvider extends LocaleData.CommonResourceBundleProvider 
         var bundleName = toBundleName(baseName, locale);
         var rb = loadResourceBundle(bundleName);
         if (rb == null) {
-            var simpleName= baseName.substring(baseName.lastIndexOf('.') + 1);
-            var ext = bundleName.substring(bundleName.lastIndexOf(simpleName) + simpleName.length());
-            var otherExt = switch(locale.getLanguage()) {
-                case "he" -> ext.replaceFirst("^_he(_.*)?$", "_iw$1");
-                case "id" -> ext.replaceFirst("^_id(_.*)?$", "_in$1");
-                case "yi" -> ext.replaceFirst("^_yi(_.*)?$", "_ji$1");
-                case "iw" -> ext.replaceFirst("^_iw(_.*)?$", "_he$1");
-                case "in" -> ext.replaceFirst("^_in(_.*)?$", "_id$1");
-                case "ji" -> ext.replaceFirst("^_ji(_.*)?$", "_yi$1");
-                default -> ext;
-            };
-            if (!ext.equals(otherExt)) {
-                rb = loadResourceBundle(bundleName.substring(0, bundleName.lastIndexOf(ext)) + otherExt);
+            var otherBundleName = toOtherBundleName(baseName, bundleName, locale);
+            if (!bundleName.equals(otherBundleName)) {
+                rb = loadResourceBundle(otherBundleName);
             }
         }
         return rb;
