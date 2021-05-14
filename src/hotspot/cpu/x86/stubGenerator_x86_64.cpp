@@ -5866,7 +5866,7 @@ address generate_avx_ghash_processBlocks() {
     const XMMRegister join12 = xmm17;
     const XMMRegister join01 = xmm18;
 
-    Label L_process256, L_process64, L_exit, L_processdata, L_loadURL, L_continue, L_errorExit, L_finalBit;
+    Label L_process256, L_process64, L_exit, L_processdata, L_loadURL, L_continue, L_errorExit, L_finalBit, L_padding, L_donePadding;
 
     // calculate length from offsets
     __ movl(length, end_offset);
@@ -6045,10 +6045,38 @@ address generate_avx_ghash_processBlocks() {
     __ movl(r13, 0x40);
     __ subl(r13, length);
     __ movq(rax, -1);
-    __ shrxq(rax, rax, r13);    // Input mask
+    __ shrxq(rax, rax, r13);    // Input mask in rax
 
     __ shrl(r13, 2);   // Find (len / 4) * 3 (output length)
     __ lea(r13, Address(r13, r13, Address::times_2, 0));
+    // output_size in r13
+
+    __ cmp(Address(src, length, Address::times_1, -1), '=');
+    __ jcc(Assembler::equal, L_padding);
+
+    __ BIND(L_donePadding);
+
+    __ movq(r15, -1);
+    __ push(rax);         // Free rax for now
+    __ movq(rax, 64);
+    __ subq(rax, r13);
+    __ shrxq(r15, r15, rax);
+    __ pop(rax);
+
+    // input_mask is rax
+    // output_size is in r13
+    // output_mask is in r15
+
+    __BIND(L_padding);
+    __ decrementq(r13, 1);
+    __ shrq(rax, 1);
+
+    __ cmp(Address(src, length, Address::times_1, -2), '=');
+    __ jcc(Assembler::notEqual, L_donePadding);
+    
+    __ decrementq(r13, 1);
+    __ shrq(rax, 1);
+    __ jmp(L_donePadding);
 
     __ BIND(L_exit);
     __ pop(rax);             // Get original dest value
