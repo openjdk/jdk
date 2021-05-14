@@ -6100,6 +6100,8 @@ address generate_avx_ghash_processBlocks() {
     __ vpermb(xmm3, xmm4, xmm3, Assembler::AVX_512bit);
     __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm3, Assembler::AVX_512bit);
 
+    __ addq(dest, r13);
+
     __ BIND(L_exit);
     __ pop(rax);             // Get original dest value
 //    __ andl(dest, 0xffffffff);
