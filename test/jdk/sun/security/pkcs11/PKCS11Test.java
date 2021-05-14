@@ -863,8 +863,19 @@ public abstract class PKCS11Test {
         return path;
     }
 
+    protected void setCommonSystemProps() {
+        System.setProperty("java.security.debug", "true");
+        System.setProperty("NO_DEIMOS", "true");
+        System.setProperty("NO_DEFAULT", "true");
+        System.setProperty("CUSTOM_DB_DIR", TEST_CLASSES);
+    }
+
     protected void copyNssCertKeyToClassesDir() throws IOException {
         Path dbPath = Path.of(BASE).getParent().resolve("nss").resolve("db");
+        copyNssCertKeyToClassesDir(dbPath);
+    }
+
+    protected void copyNssCertKeyToClassesDir(Path dbPath) throws IOException {
         Path destinationPath = Path.of(TEST_CLASSES);
         String keyDbFile = "key3.db";
         String certDbFile = "cert8.db";

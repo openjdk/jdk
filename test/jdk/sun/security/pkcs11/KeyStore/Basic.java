@@ -24,14 +24,20 @@
 /* @test
  * @bug 4938185
  * @summary KeyStore support for NSS cert/key databases
- *  Note:
- *        . 'list' lists the token aliases
- *        . 'basic' does not run with activcard,
+ * To run manually:
+ *    set environment variable:
+ *		  <token>     [activcard|ibutton|nss|sca1000]
+ *        <command>   [list|basic]
+ *
+ * Note:
+ *    . 'list' lists the token aliases
+ *    . 'basic' does not run with activcard,
  * @library /test/lib ..
  * @run testng/othervm Basic
  */
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 
 import java.security.KeyStore;
@@ -58,7 +64,9 @@ import org.testng.annotations.Test;
 
 public class Basic extends PKCS11Test {
 
-    private static final String DIR = BASE + SEP + "BasicData";
+    private static final Path TEST_DATA_PATH = Path.of(BASE)
+            .resolve("BasicData");
+    private static final String DIR = TEST_DATA_PATH.toString();
     private static char[] tokenPwd;
     private static final char[] ibuttonPwd =
                         new char[0];
@@ -71,8 +79,6 @@ public class Basic extends PKCS11Test {
     private static final char[] sca1000Pwd =
                         new char[] { 'p', 'a', 's', 's', 'w', 'o', 'r', 'd' };
     private static final char[] sPwd = { 'f', 'o', 'o' };
-
-    private static final String[] ARGS = new String[]{"sm", "Basic.policy"};
 
     private static SecretKey sk1;
     private static SecretKey sk2;
@@ -97,26 +103,17 @@ public class Basic extends PKCS11Test {
     @BeforeClass
     public void setUp() throws Exception {
         copyNssCertKeyToClassesDir();
-
-        System.setProperty("NO_DEIMOS", "true");
-        System.setProperty("NO_DEFAULT", "true");
-        System.setProperty("TOKEN", "nss");
-        System.setProperty("java.security.debug", "true");
-        System.setProperty("CUSTOM_DB_DIR", TEST_CLASSES);
+        setCommonSystemProps();
         System.setProperty("CUSTOM_P11_CONFIG",
-                BASE + SEP + "BasicData" + SEP + "p11-nss.txt");
+                TEST_DATA_PATH.resolve("p11-nss.txt").toString());
+        System.setProperty("TOKEN", "nss");
+        System.setProperty("TEST", "basic");
     }
 
     @Test
     public void testBasic() throws Exception {
-        System.setProperty("TEST", "basic");
-        main(new Basic(), ARGS);
-    }
-
-    @Test
-    public void testList() throws Exception {
-        System.setProperty("TEST", "list");
-        main(new Basic(), ARGS);
+        String[] args = {"sm", "Basic.policy"};
+        main(new Basic(), args);
     }
 
     private static class FooEntry implements KeyStore.Entry { }
@@ -163,17 +160,17 @@ public class Basic extends PKCS11Test {
 
         // get cert chains for private keys
         CertificateFactory cf = CertificateFactory.getInstance("X.509", "SUN");
-        Certificate caCert = (X509Certificate)cf.generateCertificate
+        Certificate caCert = cf.generateCertificate
                         (new FileInputStream(new File(DIR, "ca.cert")));
-        Certificate ca2Cert = (X509Certificate)cf.generateCertificate
+        Certificate ca2Cert = cf.generateCertificate
                         (new FileInputStream(new File(DIR, "ca2.cert")));
-        Certificate pk1cert = (X509Certificate)cf.generateCertificate
+        Certificate pk1cert = cf.generateCertificate
                         (new FileInputStream(new File(DIR, "pk1.cert")));
-        Certificate pk1cert2 = (X509Certificate)cf.generateCertificate
+        Certificate pk1cert2 = cf.generateCertificate
                         (new FileInputStream(new File(DIR, "pk1.cert2")));
-        Certificate pk2cert = (X509Certificate)cf.generateCertificate
+        Certificate pk2cert = cf.generateCertificate
                         (new FileInputStream(new File(DIR, "pk2.cert")));
-        Certificate pk3cert = (X509Certificate)cf.generateCertificate
+        Certificate pk3cert = cf.generateCertificate
                         (new FileInputStream(new File(DIR, "pk3.cert")));
         chain1 = new Certificate[] { pk1cert, caCert };
         chain2 = new Certificate[] { pk2cert, caCert };

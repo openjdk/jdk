@@ -31,14 +31,15 @@
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.nio.file.Path;
 import java.security.*;
 
 public class ConfigQuotedString extends PKCS11Test {
 
     @BeforeClass
     public void setUp() throws Exception {
-        System.setProperty("CUSTOM_P11_CONFIG",
-                BASE + SEP + "ConfigQuotedString-nss.txt");
+        Path configPath = Path.of(BASE).resolve("ConfigQuotedString-nss.txt");
+        System.setProperty("CUSTOM_P11_CONFIG", configPath.toString());
     }
 
     @Test

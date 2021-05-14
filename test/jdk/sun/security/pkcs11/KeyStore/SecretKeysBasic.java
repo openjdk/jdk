@@ -30,6 +30,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 import java.security.*;
 import javax.crypto.*;
@@ -53,14 +54,10 @@ public class SecretKeysBasic extends PKCS11Test {
     @BeforeClass
     public void setUp() throws Exception {
         copyNssCertKeyToClassesDir();
-
-        System.setProperty("NO_DEIMOS", "true");
-        System.setProperty("NO_DEFAULT", "true");
+        setCommonSystemProps();
         System.setProperty("TOKEN", "nss");
-        System.setProperty("java.security.debug", "true");
-        System.setProperty("CUSTOM_DB_DIR", TEST_CLASSES);
-        System.setProperty("CUSTOM_P11_CONFIG",
-                BASE + SEP + "BasicData" + SEP + "p11-nss.txt");
+        System.setProperty("CUSTOM_P11_CONFIG", Path.of(BASE)
+                .resolve("BasicData").resolve("p11-nss.txt").toString());
     }
 
     @Test

@@ -32,6 +32,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.security.*;
 import javax.security.auth.callback.*;
 
@@ -46,13 +47,9 @@ public class Login extends PKCS11Test {
     @BeforeClass
     public void setUp() throws Exception {
         copyNssCertKeyToClassesDir();
-
-        System.setProperty("NO_DEIMOS", "true");
-        System.setProperty("NO_DEFAULT", "true");
-        System.setProperty("java.security.debug", "true");
-        System.setProperty("DIR", BASE + SEP + "BasicData");
-        System.setProperty("CUSTOM_DB_DIR", TEST_CLASSES);
-        System.setProperty("CUSTOM_P11_CONFIG", BASE + SEP + "Login-nss.txt");
+        setCommonSystemProps();
+        System.setProperty("CUSTOM_P11_CONFIG",
+                Path.of(BASE).resolve("Login-nss.txt").toString());
     }
 
     @Test
