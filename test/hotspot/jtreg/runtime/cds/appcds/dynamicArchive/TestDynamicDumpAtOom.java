@@ -34,7 +34,7 @@
  * @build LambHello sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar ministore.jar MiniStoreOom
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestDynamicDumpAtOom 
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestDynamicDumpAtOom
  */
 
 import jdk.test.lib.helpers.ClassFileInstaller;
