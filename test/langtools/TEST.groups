@@ -20,46 +20,6 @@
 #  questions.
 #
 
-# Tiered testing definitions
-
-# (Nearly) all langtools tests are tier 1.
-tier1 = \
-    jdk \
-    lib \
-    tools \
-    -jdk/jshell/ExternalEditorTest.java \
-    -jdk/jshell/FailOverDirectExecutionControlTest.java \
-    -jdk/jshell/FailOverExecutionControlDyingLaunchTest.java \
-    -jdk/jshell/FailOverExecutionControlHangingListenTest.java \
-    -jdk/jshell/JdiHangingListenExecutionControlTest.java \
-    -jdk/jshell/JdiLaunchingExecutionControlTest.java \
-    -jdk/jshell/JdiListeningExecutionControlTest.java \
-    -jdk/jshell/JdiListeningLocalhostExecutionControlTest.java  \
-    -jdk/jshell/ToolBasicTest.java \
-    -jdk/jshell/ToolLocaleMessageTest.java \
-    -jdk/jshell/ToolReloadTest.java \
-    -jdk/jshell/UserInputTest.java \
-    -jdk/jshell/UserJdiUserRemoteTest.java
-
-# (Almost) no langtools tests are tier 2.
-tier2 = \
-    jdk/jshell/ExternalEditorTest.java \
-    jdk/jshell/FailOverDirectExecutionControlTest.java \
-    jdk/jshell/FailOverExecutionControlDyingLaunchTest.java \
-    jdk/jshell/FailOverExecutionControlHangingListenTest.java \
-    jdk/jshell/JdiHangingListenExecutionControlTest.java \
-    jdk/jshell/JdiLaunchingExecutionControlTest.java \
-    jdk/jshell/JdiListeningExecutionControlTest.java \
-    jdk/jshell/JdiListeningLocalhostExecutionControlTest.java \
-    jdk/jshell/ToolBasicTest.java \
-    jdk/jshell/ToolLocaleMessageTest.java \
-    jdk/jshell/ToolReloadTest.java \
-    jdk/jshell/UserInputTest.java \
-    jdk/jshell/UserJdiUserRemoteTest.java
-
-# No langtools tests are tier 3 either.
-tier3 =
-
 # Langtools-specific test groups
 
 langtools_javac = \
@@ -80,6 +40,21 @@ langtools_jshell = \
     tools/all \
     jdk/jshell
 
+langtools_jshell_unstable = \
+    jdk/jshell/ExternalEditorTest.java \
+    jdk/jshell/FailOverDirectExecutionControlTest.java \
+    jdk/jshell/FailOverExecutionControlDyingLaunchTest.java \
+    jdk/jshell/FailOverExecutionControlHangingListenTest.java \
+    jdk/jshell/JdiHangingListenExecutionControlTest.java \
+    jdk/jshell/JdiLaunchingExecutionControlTest.java \
+    jdk/jshell/JdiListeningExecutionControlTest.java \
+    jdk/jshell/JdiListeningLocalhostExecutionControlTest.java \
+    jdk/jshell/ToolBasicTest.java \
+    jdk/jshell/ToolLocaleMessageTest.java \
+    jdk/jshell/ToolReloadTest.java \
+    jdk/jshell/UserInputTest.java \
+    jdk/jshell/UserJdiUserRemoteTest.java
+
 langtools_jdeprscan = \
     tools/all \
     tools/jdeprscan
@@ -96,3 +71,19 @@ langtools_all = \
     jdk \
     lib \
     tools
+
+# Tiered testing definitions
+
+# (Nearly) all langtools tests are tier 1.
+tier1 = \
+    :langtools_all \
+    lib \
+    tools \
+    -:langtools_jshell_unstable
+
+# (Almost) no langtools tests are tier 2.
+tier2 = \
+    :langtools_jshell_unstable
+
+# No langtools tests are tier 3 either.
+tier3 =
