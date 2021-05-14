@@ -24,6 +24,9 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/archiveBuilder.hpp"
+#include "cds/heapShared.inline.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -41,9 +44,6 @@
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/archiveBuilder.hpp"
-#include "memory/heapShared.inline.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -4062,7 +4062,7 @@ oop java_lang_invoke_ResolvedMethodName::find_resolved_method(const methodHandle
   InstanceKlass* holder = method->method_holder();
 
   set_vmtarget(new_resolved_method, const_cast<Method*>(method));
-  // Add a reference to the loader (actually mirror because unsafe anonymous classes will not have
+  // Add a reference to the loader (actually mirror because hidden classes may not have
   // distinct loaders) to ensure the metadata is kept alive.
   // This mirror may be different than the one in clazz field.
   set_vmholder(new_resolved_method, holder->java_mirror());
@@ -5008,7 +5008,7 @@ bool JavaClasses::is_supported_for_archiving(oop obj) {
 
   if (klass == vmClasses::ClassLoader_klass() ||  // ClassLoader::loader_data is malloc'ed.
       // The next 3 classes are used to implement java.lang.invoke, and are not used directly in
-      // regular Java code. The implementation of java.lang.invoke uses generated anonymous classes
+      // regular Java code. The implementation of java.lang.invoke uses generated hidden classes
       // (e.g., as referenced by ResolvedMethodName::vmholder) that are not yet supported by CDS.
       // So for now we cannot not support these classes for archiving.
       //

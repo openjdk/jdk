@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ getEncodingInternal(LCID lcid)
 
     switch (codepage) {
     case 0:
+    case 65001:
         strcpy(ret, "UTF-8");
         break;
     case 874:     /*  9:Thai     */
@@ -146,6 +147,8 @@ static char* getConsoleEncoding()
     cp = GetConsoleCP();
     if (cp >= 874 && cp <= 950)
         sprintf(buf, "ms%d", cp);
+    else if (cp == 65001)
+        sprintf(buf, "UTF-8");
     else
         sprintf(buf, "cp%d", cp);
     return buf;

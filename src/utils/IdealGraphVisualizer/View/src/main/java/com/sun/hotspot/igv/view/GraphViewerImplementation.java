@@ -58,7 +58,9 @@ public class GraphViewerImplementation implements GraphViewer {
             }
         }
 
-        Diagram diagram = Diagram.createDiagram(graph, Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT));
+        Diagram diagram = Diagram.createDiagram(graph,
+                                                Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
+                                                Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT));
         EditorTopComponent tc = new EditorTopComponent(diagram);
         tc.open();
         tc.requestActive();

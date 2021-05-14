@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Properties.RegexpPropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
+import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import java.util.Collections;
 import java.util.HashSet;
@@ -157,7 +158,7 @@ public class NodeQuickSearch implements SearchProvider {
                             }
                         }
                     },
-                            n.getProperties().get(name) + " (" + n.getId() + " " + n.getProperties().get("name") + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
+                            n.getProperties().get(name) + " (" + n.getProperties().resolveString(Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT)) + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
                     )) {
                         return;
                     }

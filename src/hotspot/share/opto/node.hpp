@@ -44,6 +44,7 @@ class AllocateNode;
 class ArrayCopyNode;
 class BaseCountedLoopNode;
 class BaseCountedLoopEndNode;
+class BlackholeNode;
 class Block;
 class BoolNode;
 class BoxLockNode;
@@ -133,7 +134,6 @@ class Node;
 class Node_Array;
 class Node_List;
 class Node_Stack;
-class NullCheckNode;
 class OopMap;
 class ParmNode;
 class PCTableNode;
@@ -323,6 +323,12 @@ protected:
   // preserved in _parse_idx.
   const node_idx_t _idx;
   DEBUG_ONLY(const node_idx_t _parse_idx;)
+  // IGV node identifier. Two nodes, possibly in different compilation phases,
+  // have the same IGV identifier if (and only if) they are the very same node
+  // (same memory address) or one is "derived" from the other (by e.g.
+  // renumbering or matching). This identifier makes it possible to follow the
+  // entire lifetime of a node in IGV even if its C2 identifier (_idx) changes.
+  NOT_PRODUCT(node_idx_t _igv_idx;)
 
   // Get the (read-only) number of input edges
   uint req() const { return _cnt; }
@@ -1247,19 +1253,12 @@ public:
   }
 };
 
-
-#ifndef PRODUCT
-
-// Used in debugging code to avoid walking across dead or uninitialized edges.
-inline bool NotANode(const Node* n) {
+inline bool not_a_node(const Node* n) {
   if (n == NULL)                   return true;
   if (((intptr_t)n & 1) != 0)      return true;  // uninitialized, etc.
   if (*(address*)n == badAddress)  return true;  // kill by Node::destruct
   return false;
 }
-
-#endif
-
 
 //-----------------------------------------------------------------------------
 // Iterators over DU info, and associated Node functions.

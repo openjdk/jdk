@@ -23,6 +23,7 @@
 */
 
 #include "precompiled.hpp"
+#include "cds/filemap.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -30,7 +31,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/klassFactory.hpp"
-#include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
@@ -183,11 +183,8 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   // increment counter
   THREAD->statistical_info().incr_define_class_count();
 
-  assert(!(cl_info.is_hidden() && (cl_info.unsafe_anonymous_host() != NULL)),
-         "hidden class has an anonymous host");
-
-  // Skip this processing for VM hidden or anonymous classes
-  if (!cl_info.is_hidden() && (cl_info.unsafe_anonymous_host() == NULL)) {
+  // Skip this processing for VM hidden classes
+  if (!cl_info.is_hidden()) {
     stream = check_class_file_load_hook(stream,
                                         name,
                                         loader_data,

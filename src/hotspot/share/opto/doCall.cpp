@@ -169,17 +169,10 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // Try inlining a bytecoded method:
     if (!call_does_dispatch) {
       InlineTree* ilt = InlineTree::find_subtree_from_root(this->ilt(), jvms->caller(), jvms->method());
-      WarmCallInfo scratch_ci;
       bool should_delay = false;
-      WarmCallInfo* ci = ilt->ok_to_inline(callee, jvms, profile, &scratch_ci, should_delay);
-      assert(ci != &scratch_ci, "do not let this pointer escape");
-      bool allow_inline   = (ci != NULL && !ci->is_cold());
-      bool require_inline = (allow_inline && ci->is_hot());
-
-      if (allow_inline) {
+      if (ilt->ok_to_inline(callee, jvms, profile, should_delay)) {
         CallGenerator* cg = CallGenerator::for_inline(callee, expected_uses);
-
-        if (require_inline && cg != NULL) {
+        if (cg != NULL) {
           // Delay the inlining of this method to give us the
           // opportunity to perform some high level optimizations
           // first.
@@ -191,15 +184,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             return CallGenerator::for_vector_reboxing_late_inline(callee, cg);
           } else if ((should_delay || AlwaysIncrementalInline)) {
             return CallGenerator::for_late_inline(callee, cg);
+          } else {
+            return cg;
           }
-        }
-        if (cg == NULL || should_delay) {
-          // Fall through.
-        } else if (require_inline || !InlineWarmCalls) {
-          return cg;
-        } else {
-          CallGenerator* cold_cg = call_generator(callee, vtable_index, call_does_dispatch, jvms, false, prof_factor);
-          return CallGenerator::for_warm_call(ci, cold_cg, cg);
         }
       }
     }
@@ -337,7 +324,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
 
           CallGenerator* cg = CallGenerator::for_guarded_call(holder, miss_cg, hit_cg);
           if (hit_cg != NULL && cg != NULL) {
-            dependencies()->assert_unique_concrete_method(declared_interface, cha_monomorphic_target);
+            dependencies()->assert_unique_concrete_method(declared_interface, cha_monomorphic_target, declared_interface, callee);
             return cg;
           }
         }
@@ -575,9 +562,7 @@ void Parse::do_call() {
   ciKlass* receiver_constraint = NULL;
   if (iter().cur_bc_raw() == Bytecodes::_invokespecial && !orig_callee->is_object_initializer()) {
     ciInstanceKlass* calling_klass = method()->holder();
-    ciInstanceKlass* sender_klass =
-        calling_klass->is_unsafe_anonymous() ? calling_klass->unsafe_anonymous_host() :
-                                               calling_klass;
+    ciInstanceKlass* sender_klass = calling_klass;
     if (sender_klass->is_interface()) {
       receiver_constraint = sender_klass;
     }
@@ -1084,7 +1069,7 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klas
   vtable_index       = Method::invalid_vtable_index;
 
   // Choose call strategy.
-  ciMethod* optimized_virtual_method = optimize_inlining(caller, klass, callee,
+  ciMethod* optimized_virtual_method = optimize_inlining(caller, klass, holder, callee,
                                                          receiver_type, check_access);
 
   // Have the call been sufficiently improved such that it is no longer a virtual?
@@ -1099,7 +1084,7 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klas
 }
 
 // Identify possible target method and inlining style
-ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass,
+ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass, ciKlass* holder,
                                      ciMethod* callee, const TypeOopPtr* receiver_type,
                                      bool check_access) {
   // only use for virtual or interface calls
@@ -1178,7 +1163,7 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass,
       // by dynamic class loading.  Be sure to test the "static" receiver
       // dest_method here, as opposed to the actual receiver, which may
       // falsely lead us to believe that the receiver is final or private.
-      dependencies()->assert_unique_concrete_method(actual_receiver, cha_monomorphic_target);
+      dependencies()->assert_unique_concrete_method(actual_receiver, cha_monomorphic_target, holder, callee);
     }
     return cha_monomorphic_target;
   }

@@ -866,11 +866,10 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
            info.call_kind() == CallInfo::vtable_call, "");
   }
 #endif
-  // Get sender or sender's unsafe_anonymous_host, and only set cpCache entry to resolved if
-  // it is not an interface.  The receiver for invokespecial calls within interface
+  // Get sender and only set cpCache entry to resolved if it is not an
+  // interface.  The receiver for invokespecial calls within interface
   // methods must be checked for every call.
   InstanceKlass* sender = pool->pool_holder();
-  sender = sender->is_unsafe_anonymous() ? sender->unsafe_anonymous_host() : sender;
 
   switch (info.call_kind()) {
   case CallInfo::direct_call:
@@ -1380,7 +1379,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
         method->set_signature_handler(_handlers->at(handler_index));
       }
     } else {
-      DEBUG_ONLY(Thread::current()->check_possible_safepoint());
+      DEBUG_ONLY(JavaThread::current()->check_possible_safepoint());
       // use generic signature handler
       method->set_signature_handler(Interpreter::slow_signature_handler());
     }

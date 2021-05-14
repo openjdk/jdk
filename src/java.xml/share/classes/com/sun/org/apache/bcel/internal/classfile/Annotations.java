@@ -32,7 +32,7 @@ import java.io.IOException;
  */
 public abstract class Annotations extends Attribute {
 
-    private AnnotationEntry[] annotation_table;
+    private AnnotationEntry[] annotationTable;
     private final boolean isRuntimeVisible;
 
     /**
@@ -46,23 +46,23 @@ public abstract class Annotations extends Attribute {
             final ConstantPool constant_pool, final boolean isRuntimeVisible) throws IOException {
         this(annotation_type, name_index, length, (AnnotationEntry[]) null, constant_pool, isRuntimeVisible);
         final int annotation_table_length = input.readUnsignedShort();
-        annotation_table = new AnnotationEntry[annotation_table_length];
+        annotationTable = new AnnotationEntry[annotation_table_length];
         for (int i = 0; i < annotation_table_length; i++) {
-            annotation_table[i] = AnnotationEntry.read(input, constant_pool, isRuntimeVisible);
+            annotationTable[i] = AnnotationEntry.read(input, constant_pool, isRuntimeVisible);
         }
     }
 
     /**
-     * @param annotation_type the subclass type of the annotation
-     * @param name_index Index pointing to the name <em>Code</em>
+     * @param annotationType the subclass type of the annotation
+     * @param nameIndex Index pointing to the name <em>Code</em>
      * @param length Content length in bytes
-     * @param annotation_table the actual annotations
-     * @param constant_pool Array of constants
+     * @param annotationTable the actual annotations
+     * @param constantPool Array of constants
      */
-    public Annotations(final byte annotation_type, final int name_index, final int length, final AnnotationEntry[] annotation_table,
-            final ConstantPool constant_pool, final boolean isRuntimeVisible) {
-        super(annotation_type, name_index, length, constant_pool);
-        this.annotation_table = annotation_table;
+    public Annotations(final byte annotationType, final int nameIndex, final int length, final AnnotationEntry[] annotationTable,
+            final ConstantPool constantPool, final boolean isRuntimeVisible) {
+        super(annotationType, nameIndex, length, constantPool);
+        this.annotationTable = annotationTable;
         this.isRuntimeVisible = isRuntimeVisible;
     }
 
@@ -78,27 +78,27 @@ public abstract class Annotations extends Attribute {
     }
 
     /**
-     * @param annotation_table the entries to set in this annotation
+     * @param annotationTable the entries to set in this annotation
      */
-    public final void setAnnotationTable(final AnnotationEntry[] annotation_table) {
-        this.annotation_table = annotation_table;
+    public final void setAnnotationTable(final AnnotationEntry[] annotationTable) {
+        this.annotationTable = annotationTable;
     }
 
     /**
      * returns the array of annotation entries in this annotation
      */
     public AnnotationEntry[] getAnnotationEntries() {
-        return annotation_table;
+        return annotationTable;
     }
 
     /**
      * @return the number of annotation entries in this annotation
      */
     public final int getNumAnnotations() {
-        if (annotation_table == null) {
+        if (annotationTable == null) {
             return 0;
         }
-        return annotation_table.length;
+        return annotationTable.length;
     }
 
     public boolean isRuntimeVisible() {
@@ -106,11 +106,11 @@ public abstract class Annotations extends Attribute {
     }
 
     protected void writeAnnotations(final DataOutputStream dos) throws IOException {
-        if (annotation_table == null) {
+        if (annotationTable == null) {
             return;
         }
-        dos.writeShort(annotation_table.length);
-        for (final AnnotationEntry element : annotation_table) {
+        dos.writeShort(annotationTable.length);
+        for (final AnnotationEntry element : annotationTable) {
             element.dump(dos);
         }
     }

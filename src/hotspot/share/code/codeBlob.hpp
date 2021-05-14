@@ -44,8 +44,7 @@ struct CodeBlobType {
     MethodProfiled      = 1,    // Execution level 2 and 3 (profiled) nmethods
     NonNMethod          = 2,    // Non-nmethods like Buffers, Adapters and Runtime Stubs
     All                 = 3,    // All types (No code cache segmentation)
-    AOT                 = 4,    // AOT methods
-    NumTypes            = 5     // Number of CodeBlobTypes
+    NumTypes            = 4     // Number of CodeBlobTypes
   };
 };
 
@@ -54,10 +53,6 @@ struct CodeBlobType {
 // Subtypes are:
 //  CompiledMethod       : Compiled Java methods (include method that calls to native code)
 //   nmethod             : JIT Compiled Java methods
-//   AOTCompiledMethod   : AOT Compiled Java methods - Not in the CodeCache!
-//                         AOTCompiledMethod objects are allocated in the C-Heap, the code they
-//                         point to is allocated in the AOTCodeHeap which is in the C-Heap as
-//                         well (i.e. it's the memory where the shared library was loaded to)
 //  RuntimeBlob          : Non-compiled method code; generated glue code
 //   BufferBlob          : Used for non-relocatable code such as interpreter, stubroutines, etc.
 //    AdapterBlob        : Used to hold C2I/I2C adapters
@@ -71,17 +66,12 @@ struct CodeBlobType {
 //    UncommonTrapBlob   : Used to handle uncommon traps
 //
 //
-// Layout (all except AOTCompiledMethod) : continuous in the CodeCache
+// Layout : continuous in the CodeCache
 //   - header
 //   - relocation
 //   - content space
 //     - instruction space
 //   - data space
-//
-// Layout (AOTCompiledMethod) : in the C-Heap
-//   - header -\
-//     ...     |
-//   - code  <-/
 
 
 class CodeBlobLayout;
@@ -145,7 +135,6 @@ public:
   virtual bool is_adapter_blob() const                { return false; }
   virtual bool is_vtable_blob() const                 { return false; }
   virtual bool is_method_handles_adapter_blob() const { return false; }
-  virtual bool is_aot() const                         { return false; }
   virtual bool is_compiled() const                    { return false; }
 
   inline bool is_compiled_by_c1() const    { return _type == compiler_c1; };
@@ -246,7 +235,6 @@ public:
 
 #ifndef PRODUCT
   void set_strings(CodeStrings& strings) {
-    assert(!is_aot(), "invalid on aot");
     _strings.copy(strings);
   }
 #endif

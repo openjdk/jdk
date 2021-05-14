@@ -703,10 +703,9 @@ public final class Instant
      */
     @Override
     public Instant with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            f.checkValidValue(newValue);
-            switch (f) {
+        if (field instanceof ChronoField chronoField) {
+            chronoField.checkValidValue(newValue);
+            switch (chronoField) {
                 case MILLI_OF_SECOND: {
                     int nval = (int) newValue * 1000_000;
                     return (nval != nanos ? create(seconds, nval) : this);
@@ -1143,9 +1142,8 @@ public final class Instant
     @Override
     public long until(Temporal endExclusive, TemporalUnit unit) {
         Instant end = Instant.from(endExclusive);
-        if (unit instanceof ChronoUnit) {
-            ChronoUnit f = (ChronoUnit) unit;
-            switch (f) {
+        if (unit instanceof ChronoUnit chronoUnit) {
+            switch (chronoUnit) {
                 case NANOS: return nanosUntil(end);
                 case MICROS: return nanosUntil(end) / 1000;
                 case MILLIS: return Math.subtractExact(end.toEpochMilli(), toEpochMilli());
@@ -1292,20 +1290,17 @@ public final class Instant
      * <p>
      * The comparison is based on the time-line position of the instants.
      *
-     * @param otherInstant  the other instant, null returns false
+     * @param other  the other instant, null returns false
      * @return true if the other instant is equal to this one
      */
     @Override
-    public boolean equals(Object otherInstant) {
-        if (this == otherInstant) {
+    public boolean equals(Object other) {
+        if (this == other) {
             return true;
         }
-        if (otherInstant instanceof Instant) {
-            Instant other = (Instant) otherInstant;
-            return this.seconds == other.seconds &&
-                   this.nanos == other.nanos;
-        }
-        return false;
+        return (other instanceof Instant otherInstant)
+                && this.seconds == otherInstant.seconds
+                && this.nanos == otherInstant.nanos;
     }
 
     /**
