@@ -6047,6 +6047,7 @@ address generate_avx_ghash_processBlocks() {
     __ movq(rax, -1);
     __ shrxq(rax, rax, r13);    // Input mask in rax
 
+    __ movq(r13, length);
     __ shrl(r13, 2);   // Find (len / 4) * 3 (output length)
     __ lea(r13, Address(r13, r13, Address::times_2, 0));
     // output_size in r13
