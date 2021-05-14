@@ -58,7 +58,6 @@ class CPSlot {
   CPSlot(Symbol* ptr, int tag_bits = 0): _ptr((intptr_t)ptr | tag_bits) {}
 
   intptr_t value()   { return _ptr; }
-  bool is_pseudo_string() { return (_ptr & _pseudo_bit) != 0; }
 
   Symbol* get_symbol() {
     return (Symbol*)(_ptr & ~_pseudo_bit);
@@ -310,8 +309,7 @@ class ConstantPool : public Metadata {
     *int_at_addr(which) = name_index;
   }
 
-  // Unsafe anonymous class support:
-  void klass_at_put(int class_index, int name_index, int resolved_klass_index, Klass* k, Symbol* name);
+  // Hidden class support:
   void klass_at_put(int class_index, Klass* k);
 
   void unresolved_klass_at_put(int which, int name_index, int resolved_klass_index) {
@@ -484,26 +482,6 @@ class ConstantPool : public Metadata {
 
   // Version that can be used before string oop array is created.
   oop uncached_string_at(int which, TRAPS);
-
-  // A "pseudo-string" is an non-string oop that has found its way into
-  // a String entry.
-  // This can happen if the user patches a live
-  // object into a CONSTANT_String entry of an unsafe anonymous class.
-  // Methods internally created for method handles may also
-  // use pseudo-strings to link themselves to related metaobjects.
-
-  bool is_pseudo_string_at(int which);
-
-  oop pseudo_string_at(int which, int obj_index);
-
-  oop pseudo_string_at(int which);
-
-  void pseudo_string_at_put(int which, int obj_index, oop x) {
-    assert(tag_at(which).is_string(), "Corrupted constant pool");
-    Symbol* sym = unresolved_string_at(which);
-    slot_at_put(which, CPSlot(sym, CPSlot::_pseudo_bit));
-    string_at_put(which, obj_index, x);    // this works just fine
-  }
 
   // only called when we are sure a string entry is already resolved (via an
   // earlier string_at call.
@@ -853,9 +831,6 @@ class ConstantPool : public Metadata {
   void set_resolved_references(OopHandle s) { _cache->set_resolved_references(s); }
   Array<u2>* reference_map() const        {  return (_cache == NULL) ? NULL :  _cache->reference_map(); }
   void set_reference_map(Array<u2>* o)    { _cache->set_reference_map(o); }
-
-  // patch JSR 292 resolved references after the class is linked.
-  void patch_resolved_references(GrowableArray<Handle>* cp_patches);
 
   Symbol* impl_name_ref_at(int which, bool uncached);
   Symbol* impl_signature_ref_at(int which, bool uncached);
