@@ -28,6 +28,27 @@
 #include "logging/logFileOutput.hpp"
 #include "logging/logHandle.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutexLocker.hpp"
+
+Semaphore LogAsyncFlusher::_lock(1);
+Semaphore LogAsyncFlusher::_sem(0);
+
+class AsyncLogLocker : public StackObj {
+ private:
+  debug_only(static intx _locking_thread_id;)
+ public:
+  AsyncLogLocker() {
+    LogAsyncFlusher::lock().wait();
+    debug_only(_locking_thread_id = os::current_thread_id());
+  }
+
+  ~AsyncLogLocker() {
+    debug_only(_locking_thread_id = -1);
+    LogAsyncFlusher::lock().signal();
+  }
+};
+
+debug_only(intx AsyncLogLocker::_locking_thread_id = -1;)
 
 void AsyncLogMessage::writeback() {
   if (_message != NULL) {
@@ -36,9 +57,7 @@ void AsyncLogMessage::writeback() {
   }
 }
 
-void LogAsyncFlusher::enqueue_impl(const AsyncLogMessage& msg) {
-  assert_lock_strong(&_lock);
-
+void LogAsyncFlusher::enqueue_locked(const AsyncLogMessage& msg) {
   if (_buffer.size() >= _buffer_max_size)  {
     const AsyncLogMessage* h = _buffer.front();
     assert(h != NULL, "sanity check");
@@ -62,41 +81,31 @@ void LogAsyncFlusher::enqueue_impl(const AsyncLogMessage& msg) {
   }
   assert(_buffer.size() < _buffer_max_size, "_buffer is over-sized.");
   _buffer.push_back(msg);
-
-  // notify asynclog thread if occupancy is over 3/4
-  size_t sz = _buffer.size();
-  if (sz > (_buffer_max_size >> 2) * 3 ) {
-    _lock.notify();
-  }
+  _sem.signal();
 }
 
 void LogAsyncFlusher::enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg) {
   AsyncLogMessage m(output, decorations, os::strdup(msg));
 
   { // critical area
-    // The rank of _lock is same as _tty_lock on purpuse.
-    // if logging thread is holding _tty_lock now, temporarily yield to _lock.
-    ttyUnlocker ttyul;
-    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-    enqueue_impl(m);
+    AsyncLogLocker lock;
+    enqueue_locked(m);
   }
 }
 
 // LogMessageBuffer consists of a multiple-part/multiple-line messsages.
 // the mutex here gurantees its integrity.
 void LogAsyncFlusher::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator) {
-  ttyUnlocker ttyul;
-  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  AsyncLogLocker lock;
 
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
     AsyncLogMessage m(output, msg_iterator.decorations(), os::strdup(msg_iterator.message()));
-    enqueue_impl(m);
+    enqueue_locked(m);
   }
 }
 
 LogAsyncFlusher::LogAsyncFlusher()
   : _state(ThreadState::Running),
-    _lock(Mutex::tty, "async-log-monitor", true /* allow_vm_block */, Mutex::_safepoint_check_never),
     _stats(17 /*table_size*/) {
   if (os::create_thread(this, os::asynclog_thread)) {
     os::start_thread(this);
@@ -131,31 +140,19 @@ void LogAsyncFlusher::writeback(const LinkedList<AsyncLogMessage>& logs) {
 
 void LogAsyncFlusher::flush(bool with_lock) {
   LinkedListImpl<AsyncLogMessage, ResourceObj::C_HEAP, mtLogging> logs;
+  {
+    AsyncLogLocker ml;
 
-  if (with_lock) { // critical area
-    // Caveat: current thread must not hold _tty_lock or other lower rank lockers.
-    // Cannot install ttyUnlocker here because flush() may be invoked before defaultStream
-    // initialization.
-    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-    _buffer.pop_all(&logs);
-    AsyncLogMapIterator iter;
-    _stats.iterate(&iter);
-  } else {
-    // C++ lambda can simplify the code snippet.
     _buffer.pop_all(&logs);
     AsyncLogMapIterator iter;
     _stats.iterate(&iter);
   }
-
   writeback(logs);
 }
 
 void LogAsyncFlusher::run() {
   while (_state == ThreadState::Running) {
-    {
-      MonitorLocker m(&_lock, Mutex::_no_safepoint_check_flag);
-      m.wait(ASYNCLOG_WAIT_TIMEOUT);
-    }
+    _sem.wait();
     flush();
   }
 
@@ -190,12 +187,10 @@ void LogAsyncFlusher::terminate() {
   if (_instance != NULL) {
     LogAsyncFlusher* self = _instance;
 
-    {
-      MonitorLocker ml(&self->_lock, Mutex::_no_safepoint_check_flag);
-      Atomic::release_store_fence<LogAsyncFlusher*, LogAsyncFlusher*>(&_instance, nullptr);
-      self->_state = ThreadState::Terminating;
-      ml.notify();
-    }
+    Atomic::release_store_fence<LogAsyncFlusher*, LogAsyncFlusher*>(&_instance, nullptr);
+    self->_state = ThreadState::Terminating;
+    _sem.signal();
+
     {
       MonitorLocker ml(Terminator_lock, Mutex::_no_safepoint_check_flag);
       while (self->_state != ThreadState::Terminated) {
@@ -209,13 +204,7 @@ void LogAsyncFlusher::terminate() {
 }
 
 LogAsyncFlusher* LogAsyncFlusher::instance() {
-  // thread may has been detached, then Thread::current() used by Mutex is inavailable.
-  // eg. ThreadsSMRSupport::smr_delete() uses log_debug() after delete thread.
-  if (Thread::current_or_null() != nullptr) {
-    return _instance;
-  } else {
-    return nullptr;
-  }
+  return _instance;
 }
 
 // Different from terminate(), abort is invoked by os::abort().

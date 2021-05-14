@@ -28,7 +28,6 @@
 #include "logging/logFileOutput.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/linkedlist.hpp"
@@ -115,6 +114,8 @@ struct AsyncLogMapIterator {
 class LogAsyncFlusher : public NonJavaThread {
  private:
   static LogAsyncFlusher* _instance;
+  static Semaphore _lock;
+  static Semaphore _sem;
 
   enum class ThreadState {
     Running,
@@ -123,10 +124,6 @@ class LogAsyncFlusher : public NonJavaThread {
   };
 
   volatile ThreadState _state;
-  // The semantics of _lock is more like a Java monitor.
-  // AssyncLog thread sleeps on _lock until the occupancy of the buffer is over 3/4, or timeout
-  // It also acts as a mutex to consolidate buffer's MT-safety.
-  Monitor _lock;
   AsyncLogMap _stats; // statistics of dropping messages.
   AsyncLogBuffer _buffer;
 
@@ -137,7 +134,7 @@ class LogAsyncFlusher : public NonJavaThread {
   static const int64_t ASYNCLOG_WAIT_TIMEOUT = 500; // timeout in millisecond.
 
   LogAsyncFlusher();
-  void enqueue_impl(const AsyncLogMessage& msg);
+  void enqueue_locked(const AsyncLogMessage& msg);
   static void writeback(const LinkedList<AsyncLogMessage>& logs);
   void run() override;
   void pre_run() override {
@@ -163,6 +160,7 @@ class LogAsyncFlusher : public NonJavaThread {
   static void initialize();
   static void terminate();
   static void abort();
+  static Semaphore& lock() { return _lock; }
 };
 
 #endif // SHARE_LOGGING_ASYNC_FLUSHER_HPP
