@@ -626,13 +626,25 @@ inline ShenandoahMarkingContext* ShenandoahHeap::marking_context() const {
 
 inline void ShenandoahHeap::clear_cards_for(ShenandoahHeapRegion* region) {
   if (mode()->is_generational()) {
-    _card_scan->mark_range_as_empty(region->bottom(), (uint32_t) (region->end() - region->bottom()));
+    _card_scan->mark_range_as_empty(region->bottom(), pointer_delta(region->end(), region->bottom()));
   }
 }
 
-inline void ShenandoahHeap::mark_card_as_dirty(HeapWord* location) {
+inline void ShenandoahHeap::dirty_cards(HeapWord* start, HeapWord* end) {
+  assert(mode()->is_generational(), "Should only be used for generational mode");
+  size_t words = pointer_delta(end, start);
+  _card_scan->mark_range_as_dirty(start, words);
+}
+
+inline void ShenandoahHeap::clear_cards(HeapWord* start, HeapWord* end) {
+  assert(mode()->is_generational(), "Should only be used for generational mode");
+  size_t words = pointer_delta(end, start);
+  _card_scan->mark_range_as_clean(start, words);
+}
+
+inline void ShenandoahHeap::mark_card_as_dirty(void* location) {
   if (mode()->is_generational()) {
-    _card_scan->mark_card_as_dirty(location);
+    _card_scan->mark_card_as_dirty((HeapWord*)location);
   }
 }
 

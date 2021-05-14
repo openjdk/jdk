@@ -275,7 +275,7 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
     } else if (GENERATION == OLD) {
       // Old mark, found a young pointer.
       assert(ShenandoahHeap::heap()->is_in_young(obj), "Expected young object.");
-      ShenandoahHeap::heap()->mark_card_as_dirty((HeapWord*)p);
+      ShenandoahHeap::heap()->mark_card_as_dirty(p);
     }
   }
 }

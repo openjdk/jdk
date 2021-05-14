@@ -483,6 +483,7 @@ void ShenandoahHeapRegion::oop_iterate_objects(OopIterateClosure* blk, bool fill
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahMarkingContext* marking_context = heap->marking_context();
     assert(heap->active_generation()->is_mark_complete(), "sanity");
+    HeapWord* tams = marking_context->top_at_mark_start(this);
 
     while (obj_addr < t) {
       oop obj = oop(obj_addr);
@@ -494,8 +495,8 @@ void ShenandoahHeapRegion::oop_iterate_objects(OopIterateClosure* blk, bool fill
         obj_addr += obj->oop_iterate_size(blk);
       } else {
         // Object is not marked.  Coalesce and fill dead object with dead neighbors.
-        HeapWord* next_marked_obj = marking_context->get_next_marked_addr(obj_addr, t);
-        assert(next_marked_obj <= t, "next marked object cannot exceed top");
+        HeapWord* next_marked_obj = marking_context->get_next_marked_addr(obj_addr, tams);
+        assert(next_marked_obj <= tams, "next marked object cannot exceed top at mark start");
         size_t fill_size = next_marked_obj - obj_addr;
         ShenandoahHeap::fill_with_object(obj_addr, fill_size);
         if (reregister_coalesced_objects) {
@@ -830,8 +831,7 @@ class UpdateCardValuesClosure : public BasicOopIterateClosure {
 private:
   void update_card_value(void* address, oop obj) {
     if (ShenandoahHeap::heap()->is_in_young(obj)) {
-      volatile CardTable::CardValue* card_value = ShenandoahBarrierSet::barrier_set()->card_table()->byte_for(address);
-      *card_value = CardTable::dirty_card_val();
+      ShenandoahHeap::heap()->mark_card_as_dirty(address);
     }
   }
 
@@ -874,12 +874,12 @@ size_t ShenandoahHeapRegion::promote() {
       ShenandoahHeapRegion* r = heap->get_region(i);
       log_debug(gc)("promoting region " SIZE_FORMAT ", from " SIZE_FORMAT " to " SIZE_FORMAT,
         r->index(), (size_t) r->bottom(), (size_t) r->top());
-      if (top() < end()) {
-        ShenandoahHeap::fill_with_object(top(), (end() - top()) / HeapWordSize);
-        heap->card_scan()->register_object(top());
-        ShenandoahBarrierSet::barrier_set()->card_table()->clear_MemRegion(MemRegion(top(), end()));
+      if (r->top() < r->end()) {
+        ShenandoahHeap::fill_with_object(r->top(), (r->end() - r->top()) / HeapWordSize);
+        heap->card_scan()->register_object(r->top());
+        heap->clear_cards(r->top(), r->end());
       }
-      ShenandoahBarrierSet::barrier_set()->card_table()->dirty_MemRegion(MemRegion(bottom(), top()));
+      heap->dirty_cards(r->bottom(), r->top());
       r->set_affiliation(OLD_GENERATION);
       old_generation->increase_used(r->used());
       young_generation->decrease_used(r->used());
@@ -894,11 +894,11 @@ size_t ShenandoahHeapRegion::promote() {
     old_generation->increase_used(used());
     young_generation->decrease_used(used());
 
-    ShenandoahBarrierSet::barrier_set()->card_table()->clear_MemRegion(MemRegion(top(), end()));
     // In terms of card marking, We could just set the whole occupied range in this region to dirty instead of iterating here.
     // Card scanning could correct false positives later and that would be more efficient.
     // But oop_iterate_objects() has other, indispensable effects: filling dead objects and registering object starts.
     // So while we are already doing this here, we may as well also set more precise card values.
+    heap->dirty_cards(bottom(), top());
     oop_iterate_objects(&update_card_values, /*fill_dead_objects*/ true, /* reregister_coalesced_objects */ false);
     return 1;
   }
