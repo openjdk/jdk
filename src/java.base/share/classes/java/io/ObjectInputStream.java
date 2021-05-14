@@ -368,16 +368,19 @@ public class ObjectInputStream
     private ObjectInputFilter serialFilter;
 
     /**
+     * True if the stream-specific filter has been set; initially false.
+     */
+    private boolean streamFilterSet;
+
+    /**
      * Creates an ObjectInputStream that reads from the specified InputStream.
      * A serialization stream header is read from the stream and verified.
      * This constructor will block until the corresponding ObjectOutputStream
      * has written and flushed the header.
      *
      * <p>The serialization filter is initialized to the filter returned
-     * by invoking the {@link Config#getSerialFilterFactory()}
-     * with {@code null} for the current filter and {@code null} for the requested filter.
-     * The builtin filter factory is returned if a deserialization filter factory
-     * {@linkplain Config#setSerialFilterFactory(BiFunction) has not been set}.
+     * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
+     * and {@linkplain  Config#getSerialFilter() static JVM-wide filter} for the requested filter.
      *
      * <p>If a security manager is installed, this constructor will check for
      * the "enableSubclassImplementation" SerializablePermission when invoked
@@ -400,7 +403,8 @@ public class ObjectInputStream
         bin = new BlockDataInputStream(in);
         handles = new HandleTable(10);
         vlist = new ValidationList();
-        serialFilter = Config.getSerialFilterFactory().apply(null, null);
+        streamFilterSet = false;
+        serialFilter = Config.getSerialFilterFactory().apply(null, Config.getSerialFilter());
         enableOverride = false;
         readStreamHeader();
         bin.setBlockDataMode(true);
@@ -412,10 +416,8 @@ public class ObjectInputStream
      * implementation of ObjectInputStream.
      *
      * <p>The serialization filter is initialized to the filter returned
-     * by invoking the {@link Config#getSerialFilterFactory()}
-     * with {@code null} for the current filter and {@code null} for the requested filter.
-     * The builtin filter factory is returned if a deserialization filter factory
-     * {@linkplain Config#setSerialFilterFactory(BiFunction) has not been set}.
+     * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
+     * and {@linkplain  Config#getSerialFilter() static JVM-wide filter} for the requested filter.
      *
      * <p>If there is a security manager installed, this method first calls the
      * security manager's {@code checkPermission} method with the
@@ -437,7 +439,8 @@ public class ObjectInputStream
         bin = null;
         handles = null;
         vlist = null;
-        serialFilter = Config.getSerialFilterFactory().apply(null, null);
+        streamFilterSet = false;
+        serialFilter = Config.getSerialFilterFactory().apply(null, Config.getSerialFilter());
         enableOverride = true;
     }
 
@@ -1268,6 +1271,8 @@ public class ObjectInputStream
      * <p>The serialization filter is set to the filter returned
      * by invoking the {@link Config#getSerialFilterFactory()}
      * with the current filter and the {@code filter} parameter.
+     * If there is a non-null filter for the stream, one was set in the constructor, then the filter factory
+     * must return a replacement filter, it is not permitted to remove filtering once established.
      * See the {@linkplain ObjectInputFilter filter models} for examples of composition and delegation.
      *
      * <p>The filter's {@link ObjectInputFilter#checkInput checkInput} method is called
@@ -1328,9 +1333,10 @@ public class ObjectInputStream
      * @param filter the filter, may be null
      * @throws SecurityException if there is security manager and the
      *       {@code SerializablePermission("serialFilter")} is not granted
-     * @throws IllegalStateException if an object has been read or
-     *       if the {@link Config#getSerialFilterFactory()}
-     *       does not allow replacement of the serial filter.
+     * @throws IllegalStateException if an object has been read,
+     *       if the filter factory returns {@code null} when the
+     *       {@linkplain #getObjectInputFilter() current filter} is non-null, or
+     *       if the filter can not be replaced.
      * @since 9
      */
     public final void setObjectInputFilter(ObjectInputFilter filter) {
@@ -1343,9 +1349,16 @@ public class ObjectInputStream
             throw new IllegalStateException(
                     "filter can not be set after an object has been read");
         }
-        // Delegate to serialFilterFactory to determine replacement policy
-        serialFilter = Config.getSerialFilterFactory()
+        if (streamFilterSet) {
+            throw new IllegalStateException("filter can not be replaced");
+        }
+        // Delegate to serialFilterFactory to compute stream filter
+        ObjectInputFilter next =  Config.getSerialFilterFactory()
                 .apply(serialFilter, filter);
+        if (serialFilter != null && next == null) {
+            throw new IllegalStateException("filter can not be replaced with null filter");
+        }
+        serialFilter = next;
     }
 
     /**

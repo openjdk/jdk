@@ -31,15 +31,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InvalidClassException;
 import java.io.ObjectInputFilter;
+import java.io.ObjectInputFilter.Status;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
+import java.util.ArrayDeque;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
-import static java.io.ObjectInputFilter.Status.*;
+import static java.io.ObjectInputFilter.Status.ALLOWED;
+import static java.io.ObjectInputFilter.Status.REJECTED;
+import static java.io.ObjectInputFilter.Status.UNDECIDED;
 
 /* @test
  * @run testng  SerialFactoryExample
@@ -51,32 +55,26 @@ import static java.io.ObjectInputFilter.Status.*;
 /*
  * Context-specific Deserialization Filter Example
  *
- * To protect deserialization of a thread or a call to an untrusted library function
+ * To protect deserialization of a thread or a call to an untrusted library function,
  * a filter is set that applies to every deserialization within the thread.
  *
  * The `doWithSerialFilter` method arguments are a serial filter and
- * a lambda to invoke with the filter in force.  Its implementation saves the filter
- * in an InheritableThreadLocal, saving the previous value.  `InheritableThreadLocal`
- * is used instead of `ThreadLocal` so the filter applies to any threads created
- * from the initial thread.
+ * a lambda to invoke with the filter in force.  Its implementation creates a stack of filters
+ * using a `ThreadLocal`. The stack of filters is composed with the static JVM-wide filter,
+ * and an optional stream-specific filter.
  *
- * The FilterInThread filter factory is set as the JVM-wide dynamic file factory.
+ * The FilterInThread filter factory is set as the JVM-wide filter factory.
  * When the filter factory is invoked during the construction of each `ObjectInputStream`,
- * it retrieves the filter from the thread local and uses it to filter the stream.
- * When checking classes, if the accumulated filter results are undecided, the result
- * is biased toward reject to prevent gaps in the filters from allowing unknown classes to be deserialized.
+ * it retrieves the filter(s) from the thread local and combines it with the static JVM-wide filter,
+ * and the stream-specific filter.
  *
  * If more than one filter is to be applied to the stream, two filters can be composed
- * using `ObjectInputFilter.andThen`.  When invoked, each of the filters is invoked and the results are
- * combined such that if either filter rejects a class, the result is rejected.
- * If either filter allows the class, then it is allowed otherwise it is undecided.
- * Hierarchies and chains of filters can be built using the `ObjectInputFilter.andThen` filter.
+ * using `ObjectInputFilter.merge`.  When invoked, each of the filters is invoked and the results
+ * are combined such that if either filter rejects a class, the result is rejected.
+ * If either filter allows the class, then it is allowed, otherwise it is undecided.
+ * Hierarchies and chains of filters can be built using `ObjectInputFilter.merge`.
  *
- * The example shows a filter that only allows classes loaded from the platform class loader.
- *
- * The `doWithSerialFilter` calls can be nested and as shown replace the filter.
- * An alternative is to append or concatenate the filters when calls are nested,
- * narrowing the list of acceptable classes.
+ * The `doWithSerialFilter` calls can be nested. When nested, the filters are concatenated.
  */
 @Test
 public class SerialFactoryExample {
@@ -90,20 +88,19 @@ public class SerialFactoryExample {
                         NO_EXCEPTION},
                 {new Point(1, 2), ObjectInputFilter.Config.createFilter("SerialFactoryExample$Point"),
                         NO_EXCEPTION},
-                {10, Filters.allowPlatformClasses(),
+                {10, Filters.allowPlatformClasses().merge(ObjectInputFilter.Config.allowMaxLimits()),
                         NO_EXCEPTION},
                 {new Point(1, 2), ObjectInputFilter.Config.createFilter("!SerialFactoryExample$Point"),
                         InvalidClassException.class},
-                {new Point(1, 3), Filters.rejectUndecided(
-                        Filters.allowPlatformClasses()
-                            .andThen(Filters.allowFilter(cl -> cl == null))),   // class is null in all of the metrics checks
+                {new Point(1, 3), Filters.allowPlatformClasses()
+                            .merge(ObjectInputFilter.Config.allowMaxLimits()),   // class is null in all of the metrics checks
                         InvalidClassException.class},
-                {new Point(1, 4), Filters.rejectUndecided(
-                        Filters.allowFilter(cl -> cl.getClassLoader() == ClassLoader.getPlatformClassLoader())
-                            .andThen(Filters.allowFilter(cl -> cl == null))),    // allow all of the metrics checks
+                {new Point(1, 4), ObjectInputFilter.Config.allowFilter(cl -> cl.getClassLoader() == ClassLoader.getPlatformClassLoader(), UNDECIDED)
+                            .merge(ObjectInputFilter.Config.allowMaxLimits()),    // allow all of the metrics checks
                         InvalidClassException.class},
         };
     }
+
 
     @Test(dataProvider = "Examples")
     static void examples(Serializable obj, ObjectInputFilter filter, Class<?> exception) {
@@ -132,13 +129,126 @@ public class SerialFactoryExample {
     }
 
     /**
+     * A Context-specific Deserialization Filter Factory to create filters that apply
+     * a serial filter to all of the deserializations performed in a thread.
+     * The purpose is to establish a deserialization filter that will reject all classes
+     * that are not explicitly included.
+     * <p>
+     * The filter factory creates a composite filter of the stream-specific filter,
+     * the thread-specific filter, the static JVM-wide filter, and a filter to reject all UNDECIDED cases.
+     * The static JVM-wide filter is always included, if it is configured;
+     * see ObjectInputFilter.Config.getSerialFilter().
+     * <p>
+     * To enable these protections the FilterInThread instance should be set as the
+     * JVM-wide filter factory in ObjectInputFilter.Config.setSerialFilterFactory.
+     *
+     * The {@code doWithSerialFilter} is invoked with a serial filter and a lambda
+     * to be invoked after the filter is applied.
+     */
+    public static final class FilterInThread
+            implements BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter> {
+
+        // ThreadLocal holding the Deque of serial filters to be applied, not null
+        private final ThreadLocal<ArrayDeque<ObjectInputFilter>> filterThreadLocal =
+                ThreadLocal.withInitial(() -> new ArrayDeque<>());
+
+        /**
+         * Construct a FilterInThread deserialization filter factory.
+         * The constructor is public so FilterInThread can be set on the command line
+         * with {@code -Djdk.serialFilterFactory=SerialFactoryExample$FilterInThread}.
+         */
+        public FilterInThread() {
+        }
+
+        /**
+         * Applies the filter to the thread and invokes the runnable.
+         * The filter is pushed to a ThreadLocal, saving the old value.
+         * If there was a previous thread filter, the new filter is appended
+         * and made the active filter.
+         * The runnable is invoked.
+         * The previous filter is restored to the ThreadLocal.
+         *
+         * @param filter the serial filter to apply
+         * @param runnable a runnable to invoke
+         */
+        public void doWithSerialFilter(ObjectInputFilter filter, Runnable runnable) {
+            var prevFilters = filterThreadLocal.get();
+            try {
+                if (filter != null)
+                    prevFilters.addLast(filter);
+                runnable.run();
+            } finally {
+                if (filter != null) {
+                    var lastFilter = prevFilters.removeLast();
+                    assert lastFilter == filter : "Filter removed out of order";
+                }
+            }
+        }
+
+        /**
+         * Returns a composite filter of the stream-specific filter, the thread-specific filter,
+         * the static JVM-wide filter, and a filter to reject all UNDECIDED cases.
+         * The purpose is to establish a deserialization filter that will reject all classes
+         * that are not explicitly included.
+         * The static JVM-wide filter is always checked, if it is configured;
+         * see ObjectInputFilter.Config.getSerialFilter().
+         * Any or all of the filters are optional and if not supplied or configured are null.
+         * <p>
+         * This method is first called from the constructor with current == null and
+         * next == static JVM-wide filter.
+         * The filter returned is the static JVM-wide filter merged with the thread-specific filter
+         * and followed by a filter to map all UNDECIDED status values to REJECTED.
+         * This last step ensures that the collective group of filters covers every possible case,
+         * any classes that are not ALLOWED will be REJECTED.
+         * <p>
+         * The method mayy be called a second time from {@code ObjectInputStream.setObjectInputFilter(next)}
+         * to add a stream-specific filter.  The stream-specific filter is prepended to the
+         * composite filter created above when called from the constructor.
+         * <p>
+         *
+         * @param curr the current filter, may be null
+         * @param next the next filter, may be null
+         * @return a deserialization filter to use for the stream, may be null
+         */
+        public ObjectInputFilter apply(ObjectInputFilter curr, ObjectInputFilter next) {
+            if (curr == null) {
+                // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no previous filter
+                // no current filter, prepend next to threadFilter, both may be null or non-null
+
+                // Assemble the filters in sequence, most recently added first
+                var filters = filterThreadLocal.get();
+                ObjectInputFilter filter = null;
+                for (ObjectInputFilter f : filters) {
+                    filter = f.merge(filter);
+                }
+                if (next != null) {
+                    // Prepend the next filter to the thread filter, if any
+                    // Initially this would be the static JVM-wide filter passed from the OIS constructor
+                    filter = next.merge(filter);
+                }
+                if (filter != null) {
+                    // Append the filter to reject all UNDECIDED results
+                    filter = filter.rejectUndecided();
+                }
+                return filter;
+            } else {
+                // Called from OIS.setObjectInputFilter with a previously set filter.
+                // The curr filter already incorporates the thread filter and rejection of undecided status
+                // Prepend the stream-specific filter or the current filter if not stream-specific filter
+                return (next == null) ? curr : next.merge(curr);
+            }
+        }
+    }
+
+
+    /**
      * Write an object and return a byte array with the bytes.
      *
      * @param object object to serialize
      * @return the byte array of the serialized object
      * @throws UncheckedIOException if an exception occurs
      */
-    static byte[] writeObject(Object object) {
+    private static byte[] writeObject(Object object) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ObjectOutputStream oos = new ObjectOutputStream(baos)) {
             oos.writeObject(object);
@@ -154,7 +264,7 @@ public class SerialFactoryExample {
      * @param bytes an object.
      * @throws UncheckedIOException for I/O exceptions and ClassNotFoundException
      */
-    static Object deserializeObject(byte[] bytes) {
+    private static Object deserializeObject(byte[] bytes) {
         try {
             InputStream is = new ByteArrayInputStream(bytes);
             ObjectInputStream ois = new ObjectInputStream(is);
@@ -167,75 +277,6 @@ public class SerialFactoryExample {
         }
     }
 
-    /**
-     * A Context-specific Deserialization Filter Factory to create filters that applies
-     * a serial filter to all of the deserialization performed in a thread.
-     *
-     * The FilterInThread instance should be set as the JVM-wide filter factory
-     * in ObjectInputFilter.Config.setSerialFilterFactory.
-     *
-     * The {@code doWithSerialFilter} is invoked with a serial filter and a lambda
-     * to be invoked after the filter is applied.
-     */
-    public static final class FilterInThread
-            implements BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter> {
-
-        // ThreadLocal holding the serial filter to be applied, may be null
-        private final ThreadLocal<ObjectInputFilter> filterThreadLocal = new InheritableThreadLocal<>();
-
-        /**
-         * Construct a FilterInThread deserialization filter factory.
-         * The constructor is public so FilterInThread can be set on the command line
-         * with {@code -Djdk.serialFilterFactory=SerialFactoryExample$FilterInThread}.
-         */
-        public FilterInThread() {
-        }
-
-        /**
-         * Applies the filter to the thread and invokes the runnable.
-         * The filter is pushed on a InheritedThreadLocal, saving the old value.
-         * The runnable is invoked.
-         * The previous filter is restored to the ThreadLocal.
-         *
-         * @param filter the serial filter to apply
-         * @param runnable a runnable to invoke
-         */
-        public void doWithSerialFilter(ObjectInputFilter filter, Runnable runnable) {
-            var prevFilter = filterThreadLocal.get();
-            try {
-                filterThreadLocal.set(filter);
-                runnable.run();
-            } finally {
-                filterThreadLocal.set(prevFilter);
-            }
-        }
-
-        /**
-         * Returns a composite filter to be used for an ObjectInputStream.
-         * First called from the constructor with current == null & next == null.
-         * Maybe called later from {@code setObjectInputFilter(next)} to add a stream-specific filter.
-         * <p>
-         * If there is no thread filter, the stream-specific filter is returned.
-         * If there is a thread filter, use it and then the stream-specific filter, if any.
-         * <p>
-         * In this algorithm, the current filter is either null, or the filter set in the
-         * previous call which will be the threadFilter; the current filter is redundant and unused.
-         *
-         * @param curr the current filter, if any
-         * @param next the next filter, if any
-         * @return a deserialization filter to use for the stream
-         */
-        public ObjectInputFilter apply(ObjectInputFilter curr, ObjectInputFilter next) {
-            var threadFilter = filterThreadLocal.get();
-            if (threadFilter == null) {
-                // There no thread filter so just use the stream-specific filter if any
-                return next;
-            }
-            // Assert curr == null or is the threadFilter from the previous call
-            return threadFilter         // establish the thread filter
-                    .andThen(next);     // followed by the stream-specific filter if any
-        }
-    }
 
     /**
      * ObjectInputFilter utilities to create filters that combine the results of other filters.
@@ -247,8 +288,8 @@ public class SerialFactoryExample {
          * When used as an ObjectInputFilter by invoking the {@link ObjectInputFilter#checkInput} method,
          * the result is:
          * <ul>
-         *     <li>{@link ObjectInputFilter.Status#ALLOWED}, if the predicate on the class returns {@code true}, </li>
-         *     <li>Otherwise, return {@link ObjectInputFilter.Status#UNDECIDED}</li>
+         *     <li>{@link Status#ALLOWED}, if the predicate on the class returns {@code true}, </li>
+         *     <li>Otherwise, return {@code otherStatus}</li>
          * </ul>
          * <p>
          * Example, to create a filter that will allow any class loaded from the platform classloader.
@@ -257,10 +298,13 @@ public class SerialFactoryExample {
          * </code></pre>
          *
          * @param predicate a predicate to map a class to a boolean
-         * @return {@link ObjectInputFilter.Status#ALLOWED} if the predicate on the class returns true
+         * @param otherStatus a Status to use if the predicate is {@code false}
+         * @return {@link Status#ALLOWED} if the predicate on the class returns true
          */
-        public static ObjectInputFilter allowFilter(Predicate<Class<?>> predicate) {
-            return new PredicateFilter(predicate, ALLOWED);
+        public static ObjectInputFilter allowFilter(Predicate<Class<?>> predicate, Status otherStatus) {
+            Objects.requireNonNull(predicate, "predicate");
+            Objects.requireNonNull(otherStatus, "otherStatus");
+            return new PredicateFilter(predicate, ALLOWED, otherStatus);
         }
 
         /**
@@ -269,8 +313,8 @@ public class SerialFactoryExample {
          * When used as an ObjectInputFilter by invoking the {@link ObjectInputFilter#checkInput} method,
          * the result is:
          * <ul>
-         *     <li>{@link ObjectInputFilter.Status#REJECTED}, if the predicate on the class returns {@code true}, </li>
-         *     <li>Otherwise, return {@link ObjectInputFilter.Status#UNDECIDED}</li>
+         *     <li>{@link Status#REJECTED}, if the predicate on the class returns {@code true}, </li>
+         *     <li>Otherwise, return {@code otherStatus}</li>
          * </ul>
          * <p>
          * Example, to create a filter that will reject any class loaded from the application classloader.
@@ -279,10 +323,13 @@ public class SerialFactoryExample {
          * </code></pre>
          *
          * @param predicate a predicate to map a class to a boolean
-         * @return {@link ObjectInputFilter.Status#REJECTED} if the predicate on the class returns true
+         * @param otherStatus a Status to use if the predicate is {@code false}
+         * @return {@link Status#REJECTED} if the predicate on the class returns true
          */
-        public static ObjectInputFilter rejectFilter(Predicate<Class<?>> predicate) {
-            return new PredicateFilter(predicate, REJECTED);
+        public static ObjectInputFilter rejectFilter(Predicate<Class<?>> predicate, Status otherStatus) {
+            Objects.requireNonNull(predicate, "predicate");
+            Objects.requireNonNull(otherStatus, "otherStatus");
+            return new PredicateFilter(predicate, REJECTED, otherStatus);
         }
 
         /**
@@ -293,21 +340,20 @@ public class SerialFactoryExample {
          * When used as an ObjectInputFilter by invoking the {@link ObjectInputFilter#checkInput} method,
          * the result is:
          * <ul>
-         *     <li>{@link ObjectInputFilter.Status#REJECTED}, if either filter returns {@link ObjectInputFilter.Status#REJECTED}, </li>
-         *     <li>Otherwise, {@link ObjectInputFilter.Status#ALLOWED}, if either filter returned {@link ObjectInputFilter.Status#ALLOWED}, </li>
-         *     <li>Otherwise, return {@link ObjectInputFilter.Status#UNDECIDED}</li>
+         *     <li>{@link Status#REJECTED}, if either filter returns {@link Status#REJECTED}, </li>
+         *     <li>Otherwise, {@link Status#ALLOWED}, if either filter returned {@link Status#ALLOWED}, </li>
+         *     <li>Otherwise, return {@link Status#UNDECIDED}</li>
          * </ul>
          *
          * @param filter      a filter to invoke first, may be null
          * @param otherFilter another filter to be checked after this filter, may be null
          * @return an {@link ObjectInputFilter} that returns the result of combining this filter and another filter
          */
-        public static ObjectInputFilter andThen(ObjectInputFilter filter, ObjectInputFilter otherFilter) {
+        public static ObjectInputFilter merge(ObjectInputFilter filter, ObjectInputFilter otherFilter) {
             if (filter == null)
                 return otherFilter;
             return (otherFilter == null) ? filter :
-                    new PairFilter(Objects.requireNonNull(filter, "filter"),
-                            Objects.requireNonNull(otherFilter, "otherFilter"));
+                    new MergeFilter(filter, otherFilter);
         }
 
         /**
@@ -316,9 +362,9 @@ public class SerialFactoryExample {
          * When used as an ObjectInputFilter by invoking the {@link ObjectInputFilter#checkInput} method,
          * the result is:
          * <ul>
-         *     <li>{@link ObjectInputFilter.Status#REJECTED}, if this filter returns {@link ObjectInputFilter.Status#ALLOWED}, </li>
-         *     <li>{@link ObjectInputFilter.Status#ALLOWED}, if this filter  {@link ObjectInputFilter.Status#REJECTED}, </li>
-         *     <li>Otherwise, return {@link ObjectInputFilter.Status#UNDECIDED}</li>
+         *     <li>{@link Status#REJECTED}, if this filter returns {@link Status#ALLOWED}, </li>
+         *     <li>{@link Status#ALLOWED}, if this filter  {@link Status#REJECTED}, </li>
+         *     <li>Otherwise, return {@link Status#UNDECIDED}</li>
          * </ul>
          *
          * @param filter a filter to wrap and complement its status
@@ -329,7 +375,7 @@ public class SerialFactoryExample {
         }
 
         /**
-         * Returns a filter that returns rejected if the a filter returns UNDECIDED.
+         * Returns a filter that returns REJECTED if the a filter returns UNDECIDED.
          * Object serialization accepts a class if the filter returns UNDECIDED or ALLOWED.
          * Appending a filter to reject undefined results for classes that have not been
          * either allowed or rejected can prevent classes from slipping through the filter.
@@ -338,13 +384,13 @@ public class SerialFactoryExample {
          * When used as an ObjectInputFilter by invoking the {@link ObjectInputFilter#checkInput} method,
          * the result is:
          * <ul>
-         *     <li>{@link ObjectInputFilter.Status#ALLOWED}, if this filter  {@link ObjectInputFilter.Status#ALLOWED}, </li>
-         *     <li>Otherwise, return {@link ObjectInputFilter.Status#REJECTED}</li>
+         *     <li>{@link Status#ALLOWED}, if this filter  {@link Status#ALLOWED}, </li>
+         *     <li>Otherwise, return {@link Status#REJECTED}</li>
          * </ul>
          *
          * @param filter a filter to map the UNDECIDED status to REJECTED
-         * @return an {@link ObjectInputFilter} that maps an {@link ObjectInputFilter.Status#UNDECIDED}
-         * status to {@link ObjectInputFilter.Status#REJECTED}
+         * @return an {@link ObjectInputFilter} that maps an {@link Status#UNDECIDED}
+         * status to {@link Status#REJECTED}
          */
         public static ObjectInputFilter rejectUndecided(ObjectInputFilter filter) {
             return new RejectUndecided(Objects.requireNonNull(filter, "filter"));
@@ -360,40 +406,46 @@ public class SerialFactoryExample {
         }
 
         /**
-         * An ObjectInputFilter to evaluate a predicate mapping a class to a boolean
-         * and using the result to return ALLOWED, REJECTED, or UNDECIDED.
+         * An ObjectInputFilter to evaluate a predicate mapping a class to a boolean.
          */
         private static class PredicateFilter implements ObjectInputFilter {
             private final Predicate<Class<?>> predicate;
             private final Status ifTrueStatus;
+            private final Status ifFalseStatus;
 
-            private PredicateFilter(Predicate<Class<?>> predicate, Status ifTrueStatus) {
+            PredicateFilter(Predicate<Class<?>> predicate, Status ifTrueStatus, Status ifFalseStatus) {
                 this.predicate = predicate;
                 this.ifTrueStatus = ifTrueStatus;
+                this.ifFalseStatus = ifFalseStatus;
             }
 
             /**
-             * Apply the predicate to the Class and if it returns true, return the requested status.
+             * Apply the predicate to the class being deserialized, if the class is non-null
+             * and if it returns {@code true}, return the requested status. Otherwise, return UNDECIDED.
              *
              * @param info the FilterInfo
-             * @return the status of applying the predicate, otherwise UNDECIDED
+             * @return the status of applying the predicate, otherwise {@code UNDECIDED}
              */
             public ObjectInputFilter.Status checkInput(FilterInfo info) {
-                Class<?> cl = info.serialClass();
-                return (cl != null && predicate.test(cl)) ? ifTrueStatus : UNDECIDED;
+                return (info.serialClass() != null &&
+                        predicate.test(info.serialClass())) ? ifTrueStatus : ifFalseStatus;
+            }
+
+            public String toString() {
+                return "predicate(" + predicate + ")";
             }
         }
 
         /**
-         * An ObjectInputFilter that combines the results of two filters.
+         * An ObjectInputFilter that merges the results of two filters.
          */
-        private static class PairFilter implements ObjectInputFilter {
+        private static class MergeFilter implements ObjectInputFilter {
             private final ObjectInputFilter first;
             private final ObjectInputFilter second;
 
-            PairFilter(ObjectInputFilter first, ObjectInputFilter second) {
-                this.first = first;
-                this.second = second;
+            MergeFilter(ObjectInputFilter first, ObjectInputFilter second) {
+                this.first = Objects.requireNonNull(first, "first");
+                this.second = Objects.requireNonNull(second, "second");
             }
 
             /**
@@ -409,15 +461,22 @@ public class SerialFactoryExample {
             public ObjectInputFilter.Status checkInput(FilterInfo info) {
                 if (info.serialClass() == null) return UNDECIDED;
                 Status firstStatus = Objects.requireNonNull(first.checkInput(info), "status");
-                if (REJECTED.equals(firstStatus))
+                if (REJECTED.equals(firstStatus)) {
                     return REJECTED;
+                }
                 Status secondStatus = Objects.requireNonNull(second.checkInput(info), "other status");
-                if (REJECTED.equals(secondStatus))
+                if (REJECTED.equals(secondStatus)) {
                     return REJECTED;
+                }
                 if (ALLOWED.equals(firstStatus) || ALLOWED.equals(secondStatus)) {
                     return ALLOWED;
                 }
                 return UNDECIDED;
+            }
+
+            @Override
+            public String toString() {
+                return "merge(" + first + ", " + second + ")";
             }
         }
 
@@ -436,9 +495,9 @@ public class SerialFactoryExample {
              * When used as an ObjectInputFilter by invoking the {@link ObjectInputFilter#checkInput} method,
              * the result is:
              * <ul>
-             *     <li>REJECTED, if the other filter returns {@link ObjectInputFilter.Status#ALLOWED}, </li>
-             *     <li>ALLOWED, if the other filter returns {@link ObjectInputFilter.Status#REJECTED}, </li>
-             *     <li>Otherwise, return {@link ObjectInputFilter.Status#UNDECIDED}</li>
+             *     <li>REJECTED, if the other filter returns {@link Status#ALLOWED}, </li>
+             *     <li>ALLOWED, if the other filter returns {@link Status#REJECTED}, </li>
+             *     <li>Otherwise, return {@link Status#UNDECIDED}</li>
              * </ul>
              *
              * @param info the FilterInfo
@@ -475,7 +534,7 @@ public class SerialFactoryExample {
             }
 
             public String toString() {
-                return "reject undecided of (" + filter.toString() + ")";
+                return "rejectUndecided(" + filter.toString() + ")";
             }
         }
 
@@ -495,13 +554,14 @@ public class SerialFactoryExample {
             public ObjectInputFilter.Status checkInput(FilterInfo filter) {
                 final Class<?> serialClass = filter.serialClass();
                 return (serialClass != null &&
-                        ClassLoader.getPlatformClassLoader().equals(serialClass.getClassLoader()))
+                        (serialClass.getClassLoader() == null ||
+                        ClassLoader.getPlatformClassLoader().equals(serialClass.getClassLoader())))
                         ? ObjectInputFilter.Status.ALLOWED
                         : ObjectInputFilter.Status.UNDECIDED;
             }
 
             public String toString() {
-                return "platform classes allowed";
+                return "allowPlatformClasses";
             }
         }
     }
@@ -511,5 +571,4 @@ public class SerialFactoryExample {
      */
     static record Point(int x, int y) implements Serializable {
     }
-
 }

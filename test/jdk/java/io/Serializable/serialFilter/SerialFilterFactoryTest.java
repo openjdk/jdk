@@ -186,7 +186,7 @@ public class SerialFilterFactoryTest {
         ObjectInputStream ois = new ObjectInputStream(is);
 
         Assert.assertNull(factory.current(), "initially current should be null");
-        Assert.assertNull(factory.next(), "initially next should be null");
+        Assert.assertEquals(factory.next(), configFilter, "initially next should be the configured filter");
         var currFilter = ois.getObjectInputFilter();
         if (currFilter != null && currFilter.getClass().getClassLoader() == null) {
             // Builtin loader;  defaults to configured filter
@@ -219,7 +219,7 @@ public class SerialFilterFactoryTest {
         FilterInfo info = new SerialInfo(Object.class);
         for (Status st1 : cases) {
             for (Status st2 : cases) {
-                ObjectInputFilter f = getFilter(st1).andThen(getFilter(st2));
+                ObjectInputFilter f = getFilter(st1).merge(getFilter(st2));
                 Status r = f.checkInput(info);
                 Assert.assertEquals(evalAndThen(st1, st2), r, "eval andThen");
             }
@@ -262,7 +262,7 @@ public class SerialFilterFactoryTest {
     void testAllowPredicates(Class<?> clazz,
                         Predicate<Class<?>> predicate, Status expected) {
         ObjectInputFilter.FilterInfo info = new SerialInfo(clazz);
-        Assert.assertEquals(Config.allowFilter(predicate).checkInput(info), expected, "Predicate result");
+        Assert.assertEquals(Config.allowFilter(predicate, Status.UNDECIDED).checkInput(info), expected, "Predicate result");
     }
 
     @DataProvider(name = "RejectPredicateCases")
@@ -277,7 +277,29 @@ public class SerialFilterFactoryTest {
     void testRejectPredicates(Class<?> clazz,
                               Predicate<Class<?>> predicate, Status expected) {
         ObjectInputFilter.FilterInfo info = new SerialInfo(clazz);
-        Assert.assertEquals(Config.rejectFilter(predicate).checkInput(info), expected, "Predicate result");
+        Assert.assertEquals(Config.rejectFilter(predicate, Status.UNDECIDED).checkInput(info), expected, "Predicate result");
+    }
+
+
+    @Test
+    static void testRejectUndecided() {
+        FilterInfo info = new SerialInfo(Object.class); // an info structure, unused
+
+        ObjectInputFilter undecided = getFilter(UNDECIDED);
+        Assert.assertEquals(undecided.rejectUndecided().checkInput(info), REJECTED, "undecided -> rejected");
+        ObjectInputFilter allowed = getFilter(ALLOWED);
+        Assert.assertEquals(allowed.rejectUndecided().checkInput(info), ALLOWED, "allowed -> rejected");
+        ObjectInputFilter rejected = getFilter(REJECTED);
+        Assert.assertEquals(rejected.rejectUndecided().checkInput(info), REJECTED, "rejected -> rejected");
+    }
+
+    @Test
+    static void testMaxLimits() {
+        FilterInfo info = new SerialInfo(null); // an info structure, serialClass == null
+        Assert.assertEquals(Config.allowMaxLimits().checkInput(info), ALLOWED, "allowMaxLimit");
+
+        info = new SerialInfo(Object.class); // an info structure, serialClass != null
+        Assert.assertEquals(Config.allowMaxLimits().checkInput(info), UNDECIDED, "allowMaxLimit");
     }
 
     // Test that if the property jdk-serialFilterFactory is set, then initial factory has the same classname
@@ -428,7 +450,7 @@ public class SerialFilterFactoryTest {
         private final Class<?> clazz;
 
         SerialInfo(Class<?> clazz) {
-            this.clazz = Objects.requireNonNull(clazz);
+            this.clazz = clazz;
         }
 
         @Override
@@ -455,5 +477,26 @@ public class SerialFilterFactoryTest {
         public long streamBytes() {
             return 0;
         }
+
+        @Override
+        public String toString() {
+            return showFilterInfo(this);
+        }
+    }
+
+
+    /**
+     * Return a string describing a FilterInfo instance.
+     * @param info a FilterInfo instance
+     * @return a String describing the FilterInfo instance
+     */
+    static String showFilterInfo(ObjectInputFilter.FilterInfo info) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("serialClass: " + info.serialClass());
+        sb.append(", arrayLength: " + info.arrayLength());
+        sb.append(", depth: " + info.depth());
+        sb.append(", references: " + info.references());
+        sb.append(", streamBytes: " + info.streamBytes());
+        return sb.toString();
     }
 }
