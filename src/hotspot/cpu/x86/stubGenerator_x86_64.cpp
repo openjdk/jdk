@@ -6044,11 +6044,11 @@ address generate_avx_ghash_processBlocks() {
     // of input data, so handle the rest here.
     __ movl(r13, 0x40);
     __ subl(r13, length);
-    __ movq(rax, 0xffffffffffffffff);
-    __ shrxl(rax, rax, r13);    // Input mask
+    __ movq(rax, -1);
+    __ shrxq(rax, rax, r13);    // Input mask
 
     __ shrl(r13, 2);   // Find (len / 4) * 3 (output length)
-    __ lea(r13, Address(r13, r13, Address::times_2, -1));
+    __ lea(r13, Address(r13, r13, Address::times_2, 0));
 
     __ BIND(L_exit);
     __ pop(rax);             // Get original dest value
