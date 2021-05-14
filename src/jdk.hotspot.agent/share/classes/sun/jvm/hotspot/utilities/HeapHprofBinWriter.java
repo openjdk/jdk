@@ -1507,7 +1507,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
          * If it is too large, lots of memory is used in RAM.
          */
         private boolean shouldFlush() {
-            // unbuffered mode always flush data.
+            // unbuffered mode always flushes data.
             if (unbufferedMode) return true;
             // return true if data in segmentBuffer has been extended.
             return segmentWritten > SEGMENT_BUFFER_SIZE;
@@ -1525,6 +1525,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                 segmentBuffer[segmentWritten++] = flag;
             }
             writeInteger(0);
+            // write the segment data size.
             writeInteger(size);
         }
 
@@ -1574,7 +1575,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         // Segment support.
         private boolean segmentMode;
         private boolean allowSegmented;
-        // Writes data directly to underlying stream, don't use internal buffer.
+        // Write data directly to underlying stream. Don't use internal buffer.
         private boolean unbufferedMode;
         private byte segmentBuffer[];
         private int segmentWritten;
