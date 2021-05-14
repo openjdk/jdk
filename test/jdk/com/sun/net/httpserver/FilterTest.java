@@ -49,6 +49,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeTest;
 import static org.testng.Assert.*;
@@ -56,6 +57,8 @@ import static org.testng.Assert.*;
 public class FilterTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
+    static final Class<IOException> IOE = IOException.class;
+
     static final InetAddress LOOPBACK_ADDR = InetAddress.getLoopbackAddress();
     static final boolean ENABLE_LOGGING = true;
     static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
@@ -93,6 +96,36 @@ public class FilterTest {
 
         var adaptFilter = Filter.adaptRequest(desc, r -> r.with("Foo", List.of("Bar")));
         assertEquals(desc, adaptFilter.description());
+    }
+
+    @DataProvider
+    public static Object[][] throwingFilters() {
+        return new Object[][] {
+            {Filter.beforeHandler("before RE", e -> { throw new RuntimeException(); })},
+            {Filter.beforeHandler("before AE", e -> { throw new AssertionError();   })},
+
+//            {Filter.afterHandler( "after RE",  e -> { throw new RuntimeException(); })},
+//            {Filter.afterHandler( "after AE",  e -> { throw new AssertionError();   })},
+
+            {Filter.adaptRequest( "adapt RE",  r -> { throw new RuntimeException(); })},
+            {Filter.adaptRequest( "adapt AE",  r -> { throw new AssertionError();   })}
+        };
+    }
+
+    @Test(dataProvider = "throwingFilters")
+    public void testException(Filter filter) throws IOException {
+        System.out.println("Filter::" + filter.description());
+        var handler = new EchoHandler();
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10);
+        server.createContext("/", handler).getFilters().add(filter);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            expectThrows(IOE, () -> client.send(request, HttpResponse.BodyHandlers.ofString()));
+        } finally {
+            server.stop(0);
+        }
     }
 
     @Test
