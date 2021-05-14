@@ -2150,6 +2150,7 @@ private:
 
   void shlxl(Register dst, Register src1, Register src2);
   void shlxq(Register dst, Register src1, Register src2);
+  void shrxl(Register dst, Register src1, Register src2);
   void shrxq(Register dst, Register src1, Register src2);
 
   void bzhiq(Register dst, Register src1, Register src2);
