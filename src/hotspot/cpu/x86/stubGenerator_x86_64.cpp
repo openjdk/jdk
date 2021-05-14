@@ -6051,7 +6051,7 @@ address generate_avx_ghash_processBlocks() {
     __ lea(r13, Address(r13, r13, Address::times_2, 0));
     // output_size in r13
 
-    __ cmp(Address(src, length, Address::times_1, -1), '=');
+    __ cmp(Address(source, length, Address::times_1, -1), '=');
     __ jcc(Assembler::equal, L_padding);
 
     __ BIND(L_donePadding);
@@ -6073,7 +6073,7 @@ address generate_avx_ghash_processBlocks() {
 
     __ cmp(Address(src, length, Address::times_1, -2), '=');
     __ jcc(Assembler::notEqual, L_donePadding);
-    
+
     __ decrementq(r13, 1);
     __ shrq(rax, 1);
     __ jmp(L_donePadding);
