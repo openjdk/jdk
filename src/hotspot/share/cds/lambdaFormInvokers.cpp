@@ -81,7 +81,19 @@ void LambdaFormInvokers::append(char* line) {
   _lambdaform_lines->append(line);
 }
 
+// convenient output
+class PrintLambdaFormMessage {
+ public:
+  PrintLambdaFormMessage() {
+    log_info(cds)("Regenerate MethodHandle Holder classes...");
+  }
+  ~PrintLambdaFormMessage() {
+    log_info(cds)("Regenerate MethodHandle Holder classes...done");
+  }
+};
+
 void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
+  PrintLambdaFormMessage plm;
   if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
     log_info(cds)("Nothing to regenerate for holder classes");
     return;

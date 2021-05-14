@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/dynamicArchive.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
@@ -3298,7 +3299,7 @@ void JavaThread::invoke_shutdown_hooks() {
   // Same operation is being done in JVM_BeforeHalt for handling the
   // case where the application calls System.exit().
   if (DynamicDumpSharedSpaces) {
-    MetaspaceShared::link_and_cleanup_shared_classes(this);
+    DynamicArchive::prepare_for_dynamic_dumping_at_exit();
   }
 
   // We could get here with a pending exception, if so clear it now.

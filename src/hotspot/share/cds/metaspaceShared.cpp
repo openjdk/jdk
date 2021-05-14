@@ -619,24 +619,11 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
   return res;
 }
 
-void MetaspaceShared::regenerate_lambdaforminvokers_holders(TRAPS) {
-  log_info(cds)("Regenerate lambdaform holder classes ...");
-  LambdaFormInvokers::regenerate_holder_classes(THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    log_info(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
-                 java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
-    log_info(cds)("Regenerate lambdaform holder classes ...failed");
-    CLEAR_PENDING_EXCEPTION; // Exceptions are ignored.
-  } else {
-    log_info(cds)("Regenerate lambdaform holder classes ...done");
-  }
-}
-
 void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
   // Collect all loaded ClassLoaderData.
   ResourceMark rm;
-  regenerate_lambdaforminvokers_holders(THREAD);
 
+  LambdaFormInvokers::regenerate_holder_classes(CHECK);
   CollectCLDClosure collect_cld;
   {
     // ClassLoaderDataGraph::loaded_cld_do requires ClassLoaderDataGraph_lock.

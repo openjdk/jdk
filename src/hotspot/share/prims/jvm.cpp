@@ -423,7 +423,7 @@ extern volatile jint vm_created;
 JVM_ENTRY_NO_ENV(void, JVM_BeforeHalt())
   // Link all classes for dynamic CDS dumping before vm exit.
   if (DynamicDumpSharedSpaces) {
-    MetaspaceShared::link_and_cleanup_shared_classes(THREAD);
+    DynamicArchive::prepare_for_dynamic_dumping_at_exit();
   }
   EventShutdown event;
   if (event.should_commit()) {
@@ -3686,8 +3686,7 @@ JVM_ENTRY(void, JVM_DumpDynamicArchive(JNIEnv *env, jstring archiveName))
   ResourceMark rm(THREAD);
   Handle file_handle(THREAD, JNIHandles::resolve_non_null(archiveName));
   char* archive_name  = java_lang_String::as_utf8_string(file_handle());
-  MetaspaceShared::regenerate_lambdaforminvokers_holders(THREAD);
-  DynamicArchive::dump(archive_name, THREAD);
+  DynamicArchive::dump(archive_name, CHECK);
 #endif // INCLUDE_CDS
 JVM_END
 

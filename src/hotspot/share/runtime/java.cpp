@@ -504,7 +504,7 @@ void before_exit(JavaThread* thread) {
 #if INCLUDE_CDS
   if (DynamicDumpSharedSpaces) {
     ExceptionMark em(thread);
-    DynamicArchive::dump(thread);
+    DynamicArchive::dump();
     if (thread->has_pending_exception()) {
       ResourceMark rm(thread);
       oop pending_exception = thread->pending_exception();
