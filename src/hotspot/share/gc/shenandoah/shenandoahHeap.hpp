@@ -687,6 +687,7 @@ public:
   void clear_cards(HeapWord* start, HeapWord* end);
   void mark_card_as_dirty(void* location);
   void retire_plab(PLAB* plab);
+  void cancel_mixed_collections();
 
 // ---------- Helper functions
 //

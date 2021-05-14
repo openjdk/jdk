@@ -894,6 +894,11 @@ void ShenandoahHeap::retire_plab(PLAB* plab) {
   }
 }
 
+void ShenandoahHeap::cancel_mixed_collections() {
+  assert(_old_generation != NULL, "Should only have mixed collections in generation mode.");
+  _old_heuristics->abandon_collection_candidates();
+}
+
 HeapWord* ShenandoahHeap::allocate_new_tlab(size_t min_size,
                                             size_t requested_size,
                                             size_t* actual_size) {

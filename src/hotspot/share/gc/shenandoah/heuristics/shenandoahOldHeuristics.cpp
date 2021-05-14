@@ -315,3 +315,12 @@ bool ShenandoahOldHeuristics::should_defer_gc() {
   return false;
 }
 
+void ShenandoahOldHeuristics::abandon_collection_candidates() {
+  _old_collection_candidates = 0;
+  _next_old_collection_candidate = 0;
+  _hidden_old_collection_candidates = 0;
+  _hidden_next_old_collection_candidate = 0;
+  _old_coalesce_and_fill_candidates = 0;
+  _first_coalesce_and_fill_candidate = 0;
+}
+

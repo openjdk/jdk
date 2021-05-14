@@ -87,3 +87,12 @@ bool ShenandoahGlobalGeneration::is_concurrent_mark_in_progress() {
   return heap->is_concurrent_mark_in_progress();
 }
 
+void ShenandoahGlobalGeneration::prepare_gc() {
+  ShenandoahGeneration::prepare_gc();
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (heap->mode()->is_generational()) {
+    heap->cancel_mixed_collections();
+  }
+}
+

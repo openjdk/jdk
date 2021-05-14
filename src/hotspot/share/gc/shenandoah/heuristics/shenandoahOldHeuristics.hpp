@@ -100,6 +100,10 @@ public:
 
   bool should_defer_gc();
 
+  // If a GLOBAL gc occurs, it will collect the entire heap which invalidates any collection candidates being
+  // held by this heuristic for supplying mixed collections.
+  void abandon_collection_candidates();
+
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHOLDHEURISTICS_HPP
