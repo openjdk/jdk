@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.io.Reader;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
@@ -35,13 +37,12 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 
-import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -314,7 +315,7 @@ public class SourceToHTMLConverter {
         if (line != null) {
             Content anchor = HtmlTree.SPAN_ID(
                     HtmlIds.forLine(currentLineNo),
-                    new StringContent(utils.replaceTabs(line)));
+                    Text.of(utils.replaceTabs(line)));
             pre.add(anchor);
             pre.add(NEW_LINE);
         }
@@ -338,7 +339,7 @@ public class SourceToHTMLConverter {
      * @param e the element to check.
      * @return the name of the anchor.
      */
-    public static String getAnchorName(Utils utils, Element e) {
-        return "line." + utils.getLineNumber(e);
+    public static HtmlId getAnchorName(Utils utils, Element e) {
+        return HtmlIds.forLine((int) utils.getLineNumber(e));
     }
 }

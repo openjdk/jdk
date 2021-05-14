@@ -671,12 +671,6 @@ int CallLeafNoFPDirectNode::compute_padding(int current_offset) const {
   return (12 - current_offset) & 2;
 }
 
-// Indicate if the safepoint node needs the polling page as an input.
-// Since z/Architecture does not have absolute addressing, it does.
-bool SafePointNode::needs_polling_address_input() {
-  return true;
-}
-
 void emit_nop(CodeBuffer &cbuf) {
   C2_MacroAssembler _masm(&cbuf);
   __ z_nop();
@@ -963,7 +957,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // Touch the polling page.
   if (need_polling) {
-    __ z_lg(Z_R1_scratch, Address(Z_thread, Thread::polling_page_offset()));
+    __ z_lg(Z_R1_scratch, Address(Z_thread, JavaThread::polling_page_offset()));
     // We need to mark the code position where the load from the safepoint
     // polling page was emitted as relocInfo::poll_return_type here.
     __ relocate(relocInfo::poll_return_type);
@@ -1546,6 +1540,14 @@ const bool Matcher::has_predicated_vectors(void) {
   return false;
 }
 
+const RegMask* Matcher::predicate_reg_mask(void) {
+  return NULL;
+}
+
+const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+  return NULL;
+}
+
 bool Matcher::supports_vector_variable_shifts(void) {
   return false; // not supported
 }
@@ -1795,9 +1797,6 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
 // into registers?
 bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
   return clone_base_plus_offset_address(m, mstack, address_visited);
-}
-
-void Compile::reshape_address(AddPNode* addp) {
 }
 
 %} // source

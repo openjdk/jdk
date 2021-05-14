@@ -124,7 +124,10 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase) {
     jlong limit_con = (stride_con > 0) ? limit_type->_hi : limit_type->_lo;
     int stride_m = stride_con - (stride_con > 0 ? 1 : -1);
     jlong trip_count = (limit_con - init_con + stride_m)/stride_con;
-    if (trip_count > 0 && (julong)trip_count < (julong)max_juint) {
+    // The loop body is always executed at least once even if init >= limit (for stride_con > 0) or
+    // init <= limit (for stride_con < 0).
+    trip_count = MAX2(trip_count, (jlong)1);
+    if (trip_count < (jlong)max_juint) {
       if (init_n->is_Con() && limit_n->is_Con()) {
         // Set exact trip count.
         cl->set_exact_trip_count((uint)trip_count);
@@ -1196,7 +1199,7 @@ Node* PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop) 
   for (DUIterator_Fast imax, i = incr->fast_outs(imax); i < imax; i++) {
     Node* n = incr->fast_out(i);
     if (n->is_Phi() && n->in(0) == loop) {
-      int nrep = n->replace_edge(incr, castii);
+      int nrep = n->replace_edge(incr, castii, &_igvn);
       return castii;
     }
   }
@@ -3698,21 +3701,9 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
     for (SimpleDUIterator iter(n); iter.has_next(); iter.next()) {
       Node* use = iter.get();
       if (!lpt->_body.contains(use)) {
-        if (n->is_CountedLoop() && n->as_CountedLoop()->is_strip_mined()) {
-          // In strip-mined counted loops, the CountedLoopNode may be
-          // used by the address polling node of the outer safepoint.
-          // Skip this use because it's safe.
-#ifdef ASSERT
-          Node* sfpt = n->as_CountedLoop()->outer_safepoint();
-          Node* polladr = sfpt->in(TypeFunc::Parms+0);
-          assert(use == polladr, "the use should be a safepoint polling");
-#endif
-          continue;
-        } else {
-          msg = "node is used outside loop";
-          msg_node = n;
-          break;
-        }
+        msg = "node is used outside loop";
+        msg_node = n;
+        break;
       }
     }
   }

@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -51,13 +51,15 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/mallocTracker.hpp"
@@ -100,6 +102,14 @@ int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
 }
 
 // Fill in buffer with current local time as an ISO-8601 string.
+// E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
+// Returns buffer, or NULL if it failed.
+char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
+  const jlong now = javaTimeMillis();
+  return os::iso8601_time(now, buffer, buffer_length, utc);
+}
+
+// Fill in buffer with an ISO-8601 string corresponding to the given javaTimeMillis value
 // E.g., yyyy-mm-ddThh:mm:ss-zzzz.
 // Returns buffer, or NULL if it failed.
 // This would mostly be a call to
@@ -107,24 +117,18 @@ int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
 // except that on Windows the %z behaves badly, so we do it ourselves.
 // Also, people wanted milliseconds on there,
 // and strftime doesn't do milliseconds.
-char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
+char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t buffer_length, bool utc) {
   // Output will be of the form "YYYY-MM-DDThh:mm:ss.mmm+zzzz\0"
-  //                                      1         2
-  //                             12345678901234567890123456789
-  // format string: "%04d-%02d-%02dT%02d:%02d:%02d.%03d%c%02d%02d"
-  static const size_t needed_buffer = 29;
 
   // Sanity check the arguments
   if (buffer == NULL) {
     assert(false, "NULL buffer");
     return NULL;
   }
-  if (buffer_length < needed_buffer) {
+  if (buffer_length < os::iso8601_timestamp_size) {
     assert(false, "buffer_length too small");
     return NULL;
   }
-  // Get the current time
-  jlong milliseconds_since_19700101 = javaTimeMillis();
   const int milliseconds_per_microsecond = 1000;
   const time_t seconds_since_19700101 =
     milliseconds_since_19700101 / milliseconds_per_microsecond;
@@ -472,13 +476,13 @@ void os::initialize_jdk_signal_support(TRAPS) {
 
     // Initialize thread_oop to put it into the system threadGroup
     Handle thread_group (THREAD, Universe::system_thread_group());
-    Handle thread_oop = JavaCalls::construct_new_instance(SystemDictionary::Thread_klass(),
+    Handle thread_oop = JavaCalls::construct_new_instance(vmClasses::Thread_klass(),
                            vmSymbols::threadgroup_string_void_signature(),
                            thread_group,
                            string,
                            CHECK);
 
-    Klass* group = SystemDictionary::ThreadGroup_klass();
+    Klass* group = vmClasses::ThreadGroup_klass();
     JavaValue result(T_VOID);
     JavaCalls::call_special(&result,
                             thread_group,
@@ -851,7 +855,7 @@ int os::random() {
   while (true) {
     unsigned int seed = _rand_seed;
     unsigned int rand = next_random(seed);
-    if (Atomic::cmpxchg(&_rand_seed, seed, rand) == seed) {
+    if (Atomic::cmpxchg(&_rand_seed, seed, rand, memory_order_relaxed) == seed) {
       return static_cast<int>(rand);
     }
   }
@@ -869,8 +873,6 @@ int os::random() {
 // locking.
 
 void os::start_thread(Thread* thread) {
-  // guard suspend/resume
-  MutexLocker ml(thread->SR_lock(), Mutex::_no_safepoint_check_flag);
   OSThread* osthread = thread->osthread();
   osthread->set_state(RUNNABLE);
   pd_start_thread(thread);
@@ -1031,6 +1033,11 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
 void os::print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // cpu
   st->print("CPU:");
+#if defined(__APPLE__) && !defined(ZERO)
+   if (VM_Version::is_cpu_emulated()) {
+     st->print(" (EMULATED)");
+   }
+#endif
   st->print(" total %d", os::processor_count());
   // It's not safe to query number of active processors after crash
   // st->print("(active %d)", os::active_processor_count()); but we can
@@ -1359,6 +1366,10 @@ FILE* os::fopen(const char* path, const char* mode) {
 #endif
 
   return file;
+}
+
+ssize_t os::read(int fd, void *buf, unsigned int nBytes) {
+  return ::read(fd, buf, nBytes);
 }
 
 bool os::set_boot_path(char fileSep, char pathSep) {
@@ -1813,6 +1824,10 @@ void os::print_memory_mappings(outputStream* st) {
 
 void os::pretouch_memory(void* start, void* end, size_t page_size) {
   for (volatile char *p = (char*)start; p < (char*)end; p += page_size) {
+    // Note: this must be a store, not a load. On many OSes loads from fresh
+    // memory would be satisfied from a single mapped page containing all zeros.
+    // We need to store something to each page to get them backed by their own
+    // memory, which is the effect we want here.
     *p = 0;
   }
 }
@@ -1875,12 +1890,12 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   pd_realign_memory(addr, bytes, alignment_hint);
 }
 
-char* os::reserve_memory_special(size_t size, size_t alignment,
+char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size,
                                  char* addr, bool executable) {
 
   assert(is_aligned(addr, alignment), "Unaligned request address");
 
-  char* result = pd_reserve_memory_special(size, alignment, addr, executable);
+  char* result = pd_reserve_memory_special(size, alignment, page_size, addr, executable);
   if (result != NULL) {
     // The memory is committed
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC);

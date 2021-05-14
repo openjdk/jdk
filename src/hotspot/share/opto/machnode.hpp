@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,12 @@ public:
   }
 
 #if defined(IA32) || defined(AMD64)
+  KRegister  as_KRegister(PhaseRegAlloc *ra_, const Node *node)   const {
+    return ::as_KRegister(reg(ra_, node));
+  }
+  KRegister  as_KRegister(PhaseRegAlloc *ra_, const Node *node, int idx)   const {
+    return ::as_KRegister(reg(ra_, node, idx));
+  }
   XMMRegister  as_XMMRegister(PhaseRegAlloc *ra_, const Node *node)   const {
     return ::as_XMMRegister(reg(ra_, node));
   }
@@ -699,6 +705,7 @@ public:
     add_req(ctrl);
     add_req(memop);
   }
+  virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
 
   virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;

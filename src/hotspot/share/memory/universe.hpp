@@ -42,6 +42,7 @@
 class CollectedHeap;
 class DeferredObjAllocEvent;
 class OopStorage;
+class ReservedHeapSpace;
 
 // A helper class for caching a Method* when the user of the cache
 // only cares about the latest version of the Method*.  This cache safely
@@ -171,9 +172,6 @@ class Universe: AllStatic {
   static void initialize_basic_type_mirrors(TRAPS);
   static void fixup_mirrors(TRAPS);
 
-  static void reinitialize_vtable_of(Klass* k, TRAPS);
-  static void reinitialize_vtables(TRAPS);
-  static void reinitialize_itables(TRAPS);
   static void compute_base_vtable_size();             // compute vtable size of class Object
 
   static void genesis(TRAPS);                         // Create the initial world
@@ -302,6 +300,10 @@ class Universe: AllStatic {
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
 
+  DEBUG_ONLY(static bool is_gc_active();)
+  DEBUG_ONLY(static bool is_in_heap(const void* p);)
+  DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == NULL || is_in_heap(p); })
+
   // Reserve Java heap and determine CompressedOops mode
   static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);
 
@@ -362,7 +364,8 @@ class Universe: AllStatic {
   // array; this should trigger relocation in a sliding compaction collector.
   debug_only(static bool release_fullgc_alot_dummy();)
   // The non-oop pattern (see compiledIC.hpp, etc)
-  static void*   non_oop_word();
+  static void*         non_oop_word();
+  static bool contains_non_oop_word(void* p);
 
   // Oop verification (see MacroAssembler::verify_oop)
   static uintptr_t verify_oop_mask()          PRODUCT_RETURN0;

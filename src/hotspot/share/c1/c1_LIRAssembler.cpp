@@ -31,6 +31,7 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciInstance.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
@@ -468,9 +469,6 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   case lir_icvirtual_call:
     ic_call(op);
     break;
-  case lir_virtual_call:
-    vtable_call(op);
-    break;
   default:
     fatal("unexpected op code: %s", op->name());
     break;
@@ -484,7 +482,7 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
 
 #if defined(IA32) && defined(COMPILER2)
   // C2 leave fpu stack dirty clean it
-  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_aot_or_jvmci()) {
+  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_jvmci()) {
     int i;
     for ( i = 1; i <= 7 ; i++ ) {
       ffree(i);

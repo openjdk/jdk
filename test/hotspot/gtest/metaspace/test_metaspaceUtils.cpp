@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "unittest.hpp"
 
 TEST_VM(MetaspaceUtils, reserved) {
@@ -70,5 +71,20 @@ TEST_VM(MetaspaceUtils, committed_compressed_class_pointers) {
   size_t committed_class = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
   EXPECT_GT(committed_class, 0UL);
   EXPECT_LE(committed_class, committed);
+}
+
+TEST_VM(MetaspaceUtils, non_compressed_class_pointers) {
+  if (UseCompressedClassPointers) {
+    return;
+  }
+
+  size_t committed_class = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
+  EXPECT_EQ(committed_class, 0UL);
+
+  size_t used_class = MetaspaceUtils::used_bytes(Metaspace::ClassType);
+  EXPECT_EQ(used_class, 0UL);
+
+  size_t reserved_class = MetaspaceUtils::reserved_bytes(Metaspace::ClassType);
+  EXPECT_EQ(reserved_class, 0UL);
 }
 

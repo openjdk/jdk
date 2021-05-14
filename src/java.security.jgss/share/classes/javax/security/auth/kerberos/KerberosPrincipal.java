@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,6 +265,9 @@ public final class KerberosPrincipal
     /**
      * Save the {@code KerberosPrincipal} object to a stream
      *
+     * @param  oos the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
+     *
      * @serialData this {@code KerberosPrincipal} is serialized
      *          by writing out the PrincipalName and the
      *          Realm in their DER-encoded form as specified in Section 5.2.2 of
@@ -285,6 +288,10 @@ public final class KerberosPrincipal
 
     /**
      * Reads this object from a stream (i.e., deserializes it)
+     *
+     * @param  ois the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     private void readObject(ObjectInputStream ois)
             throws IOException, ClassNotFoundException {

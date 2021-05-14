@@ -33,7 +33,7 @@ import javax.lang.model.element.VariableElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.EnumConstantWriter;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -88,7 +88,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
             Content enumConstantsDetailsTree) {
         Content enumConstantsTree = new ContentBuilder();
         HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
-                new StringContent(name(enumConstant)));
+                Text.of(name(enumConstant)));
         enumConstantsTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, enumConstantsTree)
                 .setId(htmlIds.forMember(enumConstant));
@@ -157,10 +157,10 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected void addSummaryLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element member,
-            Content tdSummary) {
-        Content memberLink = HtmlTree.SPAN(HtmlStyle.memberNameLink,
-                writer.getDocLink(context, member, name(member), false));
+    protected void addSummaryLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Element member,
+                                  Content tdSummary) {
+        Content memberLink = writer.getDocLink(context, utils.getEnclosingTypeElement(member), member,
+                name(member), HtmlStyle.memberNameLink);
         Content code = HtmlTree.CODE(memberLink);
         tdSummary.add(code);
     }
@@ -177,7 +177,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     @Override
     protected Content getSummaryLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
-        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW, member, name);
+        return writer.getDocLink(HtmlLinkInfo.Kind.MEMBER_DEPRECATED_PREVIEW, member, name);
     }
 
     @Override

@@ -1,0 +1,2 @@
+RawTypeBindingWarning.java:9:29: compiler.warn.raw.class.use: RawTypeBindingWarning, RawTypeBindingWarning<T>
+1 warning

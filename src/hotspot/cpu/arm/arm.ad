@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -145,12 +145,6 @@ int MachNode::compute_padding(int current_offset) const {
 // ****************************************************************************
 
 // REQUIRED FUNCTIONALITY
-
-// Indicate if the safepoint node needs the polling page as an input.
-// Since ARM does not have absolute addressing, it does.
-bool SafePointNode::needs_polling_address_input() {
-  return true;
-}
 
 // emit an interrupt that is caught by the debugger (for debugging compiler)
 void emit_break(CodeBuffer &cbuf) {
@@ -993,6 +987,14 @@ const bool Matcher::has_predicated_vectors(void) {
   return false;
 }
 
+const RegMask* Matcher::predicate_reg_mask(void) {
+  return NULL;
+}
+
+const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+  return NULL;
+}
+
 bool Matcher::supports_vector_variable_shifts(void) {
   return VM_Version::has_simd();
 }
@@ -1119,9 +1121,6 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
 // into registers?
 bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
   return clone_base_plus_offset_address(m, mstack, address_visited);
-}
-
-void Compile::reshape_address(AddPNode* addp) {
 }
 
 bool Matcher::narrow_oop_use_complex_address() {

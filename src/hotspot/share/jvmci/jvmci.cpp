@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compileTask.hpp"
+#include "compiler/compilerThread.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
@@ -215,7 +216,9 @@ void JVMCI::vlog(int level, const char* format, va_list ap) {
     StringEventLog* events = level == 1 ? _events : _verbose_events;
     guarantee(events != NULL, "JVMCI event log not yet initialized");
     Thread* thread = Thread::current_or_null_safe();
-    events->logv(thread, format, ap);
+    if (thread != NULL) {
+      events->logv(thread, format, ap);
+    }
   }
 }
 

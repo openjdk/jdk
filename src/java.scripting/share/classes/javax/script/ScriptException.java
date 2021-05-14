@@ -38,9 +38,9 @@ public class ScriptException extends Exception {
 
     private static final long serialVersionUID = 8265071037049225001L;
 
-    private String fileName;
-    private int lineNumber;
-    private int columnNumber;
+    private final String fileName;
+    private final int lineNumber;
+    private final int columnNumber;
 
     /**
      * Creates a <code>ScriptException</code> with a String to be used in its message.

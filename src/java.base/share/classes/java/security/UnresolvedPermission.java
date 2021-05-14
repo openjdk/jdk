@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,9 +334,8 @@ implements java.io.Serializable
         if (obj == this)
             return true;
 
-        if (! (obj instanceof UnresolvedPermission))
+        if (!(obj instanceof UnresolvedPermission that))
             return false;
-        UnresolvedPermission that = (UnresolvedPermission) obj;
 
         // check type
         if (!this.type.equals(that.type)) {
@@ -521,6 +520,9 @@ implements java.io.Serializable
      * {@code int} specifying the length of the certificate encoding,
      * followed by the certificate encoding itself which is written out as an
      * array of bytes.
+     *
+     * @param  oos the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream oos)
@@ -550,6 +552,10 @@ implements java.io.Serializable
 
     /**
      * Restores this object from a stream (i.e., deserializes it).
+     *
+     * @param  ois the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream ois)

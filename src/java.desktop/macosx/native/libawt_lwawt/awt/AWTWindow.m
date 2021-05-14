@@ -24,7 +24,6 @@
  */
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "sun_lwawt_macosx_CPlatformWindow.h"
 #import "com_apple_eawt_event_GestureHandler.h"
@@ -279,6 +278,11 @@ AWT_NS_WINDOW_IMPLEMENTATION
     if (IS(mask, TRANSPARENT_TITLE_BAR) && [self.nsWindow respondsToSelector:@selector(setTitlebarAppearsTransparent:)]) {
         [self.nsWindow setTitlebarAppearsTransparent:IS(bits, TRANSPARENT_TITLE_BAR)];
     }
+
+    if (IS(mask, TITLE_VISIBLE) && [self.nsWindow respondsToSelector:@selector(setTitleVisibility:)]) {
+        [self.nsWindow setTitleVisibility:(IS(bits, TITLE_VISIBLE)) ? NSWindowTitleVisible :NSWindowTitleHidden];
+    }
+
 }
 
 - (id) initWithPlatformWindow:(jobject)platformWindow
@@ -1444,7 +1448,7 @@ JNI_COCOA_ENTER(env);
 
     NSWindow *nsWindow = OBJC(windowPtr);
     [nsWindow performSelectorOnMainThread:@selector(setTitle:)
-                              withObject:JNFJavaToNSString(env, jtitle)
+                              withObject:JavaStringToNSString(env, jtitle)
                            waitUntilDone:NO];
 
 JNI_COCOA_EXIT(env);
@@ -1520,7 +1524,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetNSWindowRe
 JNI_COCOA_ENTER(env);
 
     NSWindow *nsWindow = OBJC(windowPtr);
-    NSURL *url = (filename == NULL) ? nil : [NSURL fileURLWithPath:JNFNormalizedNSStringForPath(env, filename)];
+    NSURL *url = (filename == NULL) ? nil : [NSURL fileURLWithPath:NormalizedPathNSStringFromJavaString(env, filename)];
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [nsWindow setRepresentedURL:url];
     }];

@@ -28,19 +28,18 @@ package jdk.internal.platform.cgroupv2;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import jdk.internal.platform.CgroupInfo;
 import jdk.internal.platform.CgroupSubsystem;
 import jdk.internal.platform.CgroupSubsystemController;
 import jdk.internal.platform.CgroupUtil;
 
 public class CgroupV2Subsystem implements CgroupSubsystem {
 
-    private static final CgroupV2Subsystem INSTANCE = initSubsystem();
+    private static volatile CgroupV2Subsystem INSTANCE;
     private static final long[] LONG_ARRAY_NOT_SUPPORTED = null;
     private static final int[] INT_ARRAY_UNAVAILABLE = null;
     private final CgroupSubsystemController unified;
@@ -65,48 +64,29 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
         return getLongVal(file, CgroupSubsystem.LONG_RETVAL_UNLIMITED);
     }
 
-    private static CgroupV2Subsystem initSubsystem() {
-        // read mountinfo so as to determine root mount path
-        String mountPath = null;
-        try (Stream<String> lines =
-                CgroupUtil.readFilePrivileged(Paths.get("/proc/self/mountinfo"))) {
-
-            String l = lines.filter(line -> line.contains(" - cgroup2 "))
-                            .collect(Collectors.joining());
-            String[] tokens = l.split(" ");
-            mountPath = tokens[4];
-        } catch (UncheckedIOException e) {
-            return null;
-        } catch (IOException e) {
-            return null;
-        }
-        String cgroupPath = null;
-        try {
-            List<String> lines = CgroupUtil.readAllLinesPrivileged(Paths.get("/proc/self/cgroup"));
-            for (String line: lines) {
-                String[] tokens = line.split(":");
-                if (tokens.length != 3) {
-                    return null; // something is not right.
+    /**
+     * Get the singleton instance of a cgroups v2 subsystem. On initialization,
+     * a new object from the given cgroup information 'anyController' is being
+     * created. Note that the cgroup information has been parsed from cgroup
+     * interface files ahead of time.
+     *
+     * See CgroupSubsystemFactory.determineType() for the cgroup interface
+     * files parsing logic.
+     *
+     * @return A singleton CgroupSubsystem instance, never null.
+     */
+    public static CgroupSubsystem getInstance(CgroupInfo anyController) {
+        if (INSTANCE == null) {
+            CgroupSubsystemController unified = new CgroupV2SubsystemController(
+                    anyController.getMountPoint(),
+                    anyController.getCgroupPath());
+            CgroupV2Subsystem tmpCgroupSystem = new CgroupV2Subsystem(unified);
+            synchronized (CgroupV2Subsystem.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = tmpCgroupSystem;
                 }
-                if (!"0".equals(tokens[0])) {
-                    // hierarchy must be zero for cgroups v2
-                    return null;
-                }
-                cgroupPath = tokens[2];
-                break;
             }
-        } catch (UncheckedIOException e) {
-            return null;
-        } catch (IOException e) {
-            return null;
         }
-        CgroupSubsystemController unified = new CgroupV2SubsystemController(
-                mountPath,
-                cgroupPath);
-        return new CgroupV2Subsystem(unified);
-    }
-
-    public static CgroupSubsystem getInstance() {
         return INSTANCE;
     }
 

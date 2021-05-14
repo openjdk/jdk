@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,9 +235,10 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     return new SubINode(phase->intcon(0), in2->in(1));
   }
 
-  // Convert "0 - (x-y)" into "y-x"
-  if( t1 == TypeInt::ZERO && op2 == Op_SubI )
-    return new SubINode( in2->in(2), in2->in(1) );
+  // Convert "0 - (x-y)" into "y-x", leave the double negation "-(-y)" to SubNode::Identity().
+  if (t1 == TypeInt::ZERO && op2 == Op_SubI && phase->type(in2->in(1)) != TypeInt::ZERO) {
+    return new SubINode(in2->in(2), in2->in(1));
+  }
 
   // Convert "0 - (x+con)" into "-con-x"
   jint con;
@@ -373,9 +374,10 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new SubLNode(phase->makecon(TypeLong::ZERO), in2->in(1));
   }
 
-  // Convert "0 - (x-y)" into "y-x"
-  if( phase->type( in1 ) == TypeLong::ZERO && op2 == Op_SubL )
-    return new SubLNode( in2->in(2), in2->in(1) );
+  // Convert "0 - (x-y)" into "y-x", leave the double negation "-(-y)" to SubNode::Identity.
+  if (t1 == TypeLong::ZERO && op2 == Op_SubL && phase->type(in2->in(1)) != TypeLong::ZERO) {
+    return new SubLNode(in2->in(2), in2->in(1));
+  }
 
   // Convert "(X+A) - (X+B)" into "A - B"
   if( op1 == Op_AddL && op2 == Op_AddL && in1->in(1) == in2->in(1) )
@@ -1057,14 +1059,8 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
     if (k1 && (k2 || conk2)) {
       Node* lhs = k1;
       Node* rhs = (k2 != NULL) ? k2 : conk2;
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn != NULL) {
-        set_req_X(1, lhs, igvn);
-        set_req_X(2, rhs, igvn);
-      } else {
-        set_req(1, lhs);
-        set_req(2, rhs);
-      }
+      set_req_X(1, lhs, phase);
+      set_req_X(2, rhs, phase);
       return this;
     }
   }

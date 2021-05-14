@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaThreadStatus.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
@@ -44,6 +44,7 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
@@ -61,6 +62,14 @@ vframe::vframe(const frame* fr, JavaThread* thread)
 : _reg_map(thread), _thread(thread) {
   assert(fr != NULL, "must have frame");
   _fr = *fr;
+}
+
+vframe* vframe::new_vframe(StackFrameStream& fst, JavaThread* thread) {
+  if (fst.current()->is_runtime_frame()) {
+    fst.next();
+  }
+  guarantee(!fst.is_done(), "missing caller");
+  return new_vframe(fst.current(), fst.register_map(), thread);
 }
 
 vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThread* thread) {
@@ -138,8 +147,8 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
   if (waiting_monitor == NULL) {
     pending_monitor = thread()->current_pending_monitor();
   }
-  oop pending_obj = (pending_monitor != NULL ? (oop) pending_monitor->object() : (oop) NULL);
-  oop waiting_obj = (waiting_monitor != NULL ? (oop) waiting_monitor->object() : (oop) NULL);
+  oop pending_obj = (pending_monitor != NULL ? pending_monitor->object() : (oop) NULL);
+  oop waiting_obj = (waiting_monitor != NULL ? waiting_monitor->object() : (oop) NULL);
 
   for (int index = (mons->length()-1); index >= 0; index--) {
     MonitorInfo* monitor = mons->at(index);
@@ -161,7 +170,7 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
 void javaVFrame::print_locked_object_class_name(outputStream* st, Handle obj, const char* lock_state) {
   if (obj.not_null()) {
     st->print("\t- %s <" INTPTR_FORMAT "> ", lock_state, p2i(obj()));
-    if (obj->klass() == SystemDictionary::Class_klass()) {
+    if (obj->klass() == vmClasses::Class_klass()) {
       st->print_cr("(a java.lang.Class for %s)", java_lang_Class::as_external_name(obj()));
     } else {
       Klass* k = obj->klass();
@@ -559,15 +568,6 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
     }
     prefixed_name = name;
     prefixed_name_len = name_len;
-  }
-}
-
-
-void vframeStreamCommon::skip_reflection_related_frames() {
-  while (!at_end() &&
-          (method()->method_holder()->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass()) ||
-           method()->method_holder()->is_subclass_of(SystemDictionary::reflect_ConstructorAccessorImpl_klass()))) {
-    next();
   }
 }
 

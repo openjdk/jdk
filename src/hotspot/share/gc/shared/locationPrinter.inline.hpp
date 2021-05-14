@@ -33,7 +33,7 @@ template <typename CollectedHeapT>
 oop BlockLocationPrinter<CollectedHeapT>::base_oop_or_null(void* addr) {
   if (is_valid_obj(addr)) {
     // We were just given an oop directly.
-    return oop(addr);
+    return cast_to_oop(addr);
   }
 
   // Try to find addr using block_start.
@@ -42,7 +42,7 @@ oop BlockLocationPrinter<CollectedHeapT>::base_oop_or_null(void* addr) {
     if (!is_valid_obj(p)) {
       return NULL;
     }
-    return oop(p);
+    return cast_to_oop(p);
   }
 
   return NULL;

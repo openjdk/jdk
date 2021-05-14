@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,12 +119,8 @@ final class LdapSearchEnumeration
                 // Entry contains Java-object attributes (ser/ref object)
                 // serialized object or object reference
                 try {
-                    obj = AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
-                        @Override
-                        public Object run() throws NamingException {
-                            return Obj.decodeObject(attrs);
-                        }
-                    }, acc);
+                    PrivilegedExceptionAction<Object> pea = () -> Obj.decodeObject(attrs);
+                    obj = AccessController.doPrivileged(pea, acc);
                 } catch (PrivilegedActionException e) {
                     throw (NamingException)e.getException();
                 }

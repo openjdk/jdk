@@ -494,7 +494,7 @@ abstract public class ToStream extends SerializerBase {
                     setIndentAmount(Integer.parseInt(val));
                 } else if (OutputKeys.INDENT.equals(name)) {
                     m_doIndent = val.endsWith("yes");
-                } else if ((DOMConstants.S_JDK_PROPERTIES_NS + DOMConstants.S_IS_STANDALONE)
+                } else if ((DOMConstants.NS_IS_STANDALONE)
                         .equals(name)) {
                     m_isStandalone = val.endsWith("yes");
                 }

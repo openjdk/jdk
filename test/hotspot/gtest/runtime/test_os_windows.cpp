@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "runtime/os.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
+#include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
 
 namespace {
@@ -51,7 +52,7 @@ namespace {
 // that is reported is when the test tries to allocate at a particular location but gets a
 // different valid one. A NULL return value at this point is not considered an error but may
 // be legitimate.
-TEST_VM(os_windows, reserve_memory_special) {
+void TestReserveMemorySpecial_test() {
   if (!UseLargePages) {
     return;
   }
@@ -63,7 +64,7 @@ TEST_VM(os_windows, reserve_memory_special) {
   FLAG_SET_CMDLINE(UseNUMAInterleaving, false);
 
   const size_t large_allocation_size = os::large_page_size() * 4;
-  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), NULL, false);
+  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), NULL, false);
   if (result != NULL) {
       // failed to allocate memory, skipping the test
       return;
@@ -74,7 +75,7 @@ TEST_VM(os_windows, reserve_memory_special) {
   // we managed to get it once.
   const size_t expected_allocation_size = os::large_page_size();
   char* expected_location = result + os::large_page_size();
-  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), expected_location, false);
+  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
   if (actual_location != NULL) {
       // failed to allocate memory, skipping the test
       return;
@@ -686,6 +687,23 @@ TEST_VM(os_windows, handle_long_paths) {
   delete_empty_rel_directory_w(empty_dir_rel_path);
   delete_empty_rel_directory_w(long_rel_path);
   delete_empty_rel_directory_w(nearly_long_rel_path);
+}
+
+TEST_VM(os_windows, reserve_memory_special) {
+  TestReserveMemorySpecial_test();
+}
+
+class ReserveMemorySpecialRunnable : public TestRunnable {
+public:
+  void runUnitTest() const {
+    TestReserveMemorySpecial_test();
+  }
+};
+
+TEST_VM(os_windows, reserve_memory_special_concurrent) {
+  ReserveMemorySpecialRunnable runnable;
+  ConcurrentTestRunner testRunner(&runnable, 30, 15000);
+  testRunner.run();
 }
 
 #endif

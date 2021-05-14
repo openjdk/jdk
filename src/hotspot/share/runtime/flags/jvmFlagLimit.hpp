@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,8 @@ typedef JVMFlag::Error (*JVMFlagConstraintFunc_size_t)(size_t value, bool verbos
 typedef JVMFlag::Error (*JVMFlagConstraintFunc_double)(double value, bool verbose);
 typedef JVMFlag::Error (*JVMFlagConstraintFunc_ccstr)(ccstr value, bool verbose);
 
+template <typename T> class JVMTypedFlagLimit;
+
 // A JVMFlagLimit is created for each JVMFlag that has a range() and/or constraint() in its declaration in
 // the globals_xxx.hpp file.
 //
@@ -67,6 +69,10 @@ class JVMFlagLimit {
   short _constraint_func;
   char  _phase;
   char  _kind;
+
+#ifdef ASSERT
+  int   _type_enum;
+#endif
 
   static const JVMFlagLimit* const* flagLimits;
   static JVMFlagsEnum _last_checked;
@@ -97,7 +103,8 @@ public:
   char phase() const { return _phase; }
   char kind()  const { return _kind; }
 
-  constexpr JVMFlagLimit(short func, short phase, short kind) : _constraint_func(func), _phase(phase), _kind(kind) {}
+  constexpr JVMFlagLimit(int type_enum, short func, short phase, short kind)
+    : _constraint_func(func), _phase(phase), _kind(kind) DEBUG_ONLY(COMMA _type_enum(type_enum)) {}
 
   static const JVMFlagLimit* get_range(const JVMFlag* flag) {
     return get_range_at(flag->flag_enum());
@@ -130,6 +137,9 @@ public:
   }
 
   static JVMFlagConstraintPhase validating_phase() { return _validating_phase; }
+
+  template <typename T>
+  const JVMTypedFlagLimit<T>* cast() const;
 };
 
 enum ConstraintMarker {
@@ -144,27 +154,33 @@ class JVMTypedFlagLimit : public JVMFlagLimit {
 public:
   // dummy - no range or constraint. This object will not be emitted into the .o file
   // because we declare it as "const" but has no reference to it.
-  constexpr JVMTypedFlagLimit(int dummy) :
-    JVMFlagLimit(0, 0, 0), _min(0), _max(0) {}
+  constexpr JVMTypedFlagLimit(int type_enum) :
+  JVMFlagLimit(0, 0, 0, 0), _min(0), _max(0) {}
 
   // range only
-  constexpr JVMTypedFlagLimit(int dummy, T min, T max) :
-    JVMFlagLimit(0, 0, HAS_RANGE), _min(min), _max(max) {}
+  constexpr JVMTypedFlagLimit(int type_enum, T min, T max) :
+    JVMFlagLimit(type_enum, 0, 0, HAS_RANGE), _min(min), _max(max) {}
 
   // constraint only
-  constexpr JVMTypedFlagLimit(int dummy, ConstraintMarker dummy2, short func, int phase) :
-    JVMFlagLimit(func, phase, HAS_CONSTRAINT), _min(0), _max(0) {}
+  constexpr JVMTypedFlagLimit(int type_enum, ConstraintMarker dummy2, short func, int phase) :
+    JVMFlagLimit(type_enum, func, phase, HAS_CONSTRAINT), _min(0), _max(0) {}
 
   // range and constraint
-  constexpr JVMTypedFlagLimit(int dummy, T min, T max, ConstraintMarker dummy2, short func, int phase)  :
-    JVMFlagLimit(func, phase, HAS_RANGE | HAS_CONSTRAINT), _min(min), _max(max) {}
+  constexpr JVMTypedFlagLimit(int type_enum, T min, T max, ConstraintMarker dummy2, short func, int phase)  :
+    JVMFlagLimit(type_enum, func, phase, HAS_RANGE | HAS_CONSTRAINT), _min(min), _max(max) {}
 
   // constraint and range
-  constexpr JVMTypedFlagLimit(int dummy, ConstraintMarker dummy2, short func, int phase, T min, T max)  :
-    JVMFlagLimit(func, phase, HAS_RANGE | HAS_CONSTRAINT), _min(min), _max(max) {}
+  constexpr JVMTypedFlagLimit(int type_enum, ConstraintMarker dummy2, short func, int phase, T min, T max)  :
+    JVMFlagLimit(type_enum, func, phase, HAS_RANGE | HAS_CONSTRAINT), _min(min), _max(max) {}
 
   T min() const { return _min; }
   T max() const { return _max; }
 };
+
+template <typename T>
+const JVMTypedFlagLimit<T>* JVMFlagLimit::cast() const {
+  DEBUG_ONLY(JVMFlag::assert_compatible_type<T>(_type_enum));
+  return static_cast<const JVMTypedFlagLimit<T>*>(this);
+}
 
 #endif // SHARE_RUNTIME_FLAGS_JVMFLAGLIMIT_HPP

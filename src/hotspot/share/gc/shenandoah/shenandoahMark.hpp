@@ -27,25 +27,9 @@
 
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 class ShenandoahCMDrainMarkingStackClosure;
-
-class ShenandoahInitMarkRootsClosure : public OopClosure {
-private:
-  ShenandoahObjToScanQueue* const _queue;
-  ShenandoahMarkingContext* const _mark_context;
-
-  template <class T>
-  inline void do_oop_work(T* p);
-
-public:
-  ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q);
-
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-  void do_oop(oop* p)       { do_oop_work(p); }
-};
 
 // Base class for mark
 // Mark class does not maintain states. Instead, mark states are

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug 8020433
  * @summary Crash when using -XX:+RestoreMXCSROnJNICalls
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @requires vm.flagless
  *
  * @run driver compiler.cpuflags.RestoreMXCSR
  */

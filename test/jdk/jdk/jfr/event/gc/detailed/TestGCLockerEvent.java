@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Alibaba Group Holding Limited. All rights reserved.
+ * Copyright (c) 2021, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @requires vm.hasJFR
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx32m -Xms32m -Xmn12m -XX:+UseG1GC jdk.jfr.event.gc.detailed.TestGCLockerEvent
  */
 
