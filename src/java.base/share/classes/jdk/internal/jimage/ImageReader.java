@@ -472,7 +472,6 @@ public final class ImageReader implements AutoCloseable {
                 return null;
             }
             // Make sure that the thing that follows "/modules/" is a module name.
-            // This will rule out paths that start as "/modules/modules/".
             int moduleEndIndex = name.indexOf('/', "/modules/".length());
             if (moduleEndIndex == -1) {
                 return null;
