@@ -72,34 +72,34 @@ public class PKCS11Exception extends Exception {
 
     protected String errorMsg;
 
-    public static final long CKR_GENERAL_ERROR = RV.CKR_GENERAL_ERROR.value();
+    public static final long CKR_GENERAL_ERROR = RV.CKR_GENERAL_ERROR.value;
     public static final long CKR_ATTRIBUTE_TYPE_INVALID =
-            RV.CKR_ATTRIBUTE_TYPE_INVALID.value();
-    public static final long CKR_DATA_LEN_RANGE = RV.CKR_DATA_LEN_RANGE.value();
+            RV.CKR_ATTRIBUTE_TYPE_INVALID.value;
+    public static final long CKR_DATA_LEN_RANGE = RV.CKR_DATA_LEN_RANGE.value;
     public static final long CKR_ENCRYPTED_DATA_INVALID =
-            RV.CKR_ENCRYPTED_DATA_INVALID.value();
+            RV.CKR_ENCRYPTED_DATA_INVALID.value;
     public static final long CKR_ENCRYPTED_DATA_LEN_RANGE =
-            RV.CKR_ENCRYPTED_DATA_LEN_RANGE.value();
+            RV.CKR_ENCRYPTED_DATA_LEN_RANGE.value;
     public static final long CKR_MECHANISM_INVALID =
-            RV.CKR_MECHANISM_INVALID.value();
+            RV.CKR_MECHANISM_INVALID.value;
     public static final long CKR_MECHANISM_PARAM_INVALID =
-            RV.CKR_MECHANISM_PARAM_INVALID.value();
+            RV.CKR_MECHANISM_PARAM_INVALID.value;
     public static final long CKR_OPERATION_NOT_INITIALIZED =
-            RV.CKR_OPERATION_NOT_INITIALIZED.value();
+            RV.CKR_OPERATION_NOT_INITIALIZED.value;
     public static final long CKR_PIN_INCORRECT =
-            RV.CKR_PIN_INCORRECT.value();
+            RV.CKR_PIN_INCORRECT.value;
     public static final long CKR_SIGNATURE_INVALID =
-            RV.CKR_SIGNATURE_INVALID.value();
+            RV.CKR_SIGNATURE_INVALID.value;
     public static final long CKR_SIGNATURE_LEN_RANGE =
-            RV.CKR_SIGNATURE_LEN_RANGE.value();
+            RV.CKR_SIGNATURE_LEN_RANGE.value;
     public static final long CKR_USER_ALREADY_LOGGED_IN =
-            RV.CKR_USER_ALREADY_LOGGED_IN.value();
+            RV.CKR_USER_ALREADY_LOGGED_IN.value;
     public static final long CKR_USER_NOT_LOGGED_IN =
-            RV.CKR_USER_NOT_LOGGED_IN.value();
+            RV.CKR_USER_NOT_LOGGED_IN.value;
     public static final long CKR_BUFFER_TOO_SMALL =
-            RV.CKR_BUFFER_TOO_SMALL.value();
+            RV.CKR_BUFFER_TOO_SMALL.value;
     public static final long CKR_CRYPTOKI_ALREADY_INITIALIZED =
-            RV.CKR_CRYPTOKI_ALREADY_INITIALIZED.value();
+            RV.CKR_CRYPTOKI_ALREADY_INITIALIZED.value;
 
     // enum for all PKCS#11 return value
     static enum RV {
@@ -207,14 +207,11 @@ public class PKCS11Exception extends Exception {
         RV(long value) {
             this.value = value;
         }
-        long value() {
-            return value;
-        }
     };
 
     private static String lookup(long errorCode) {
         for (RV r : RV.values()) {
-            if (r.value() == errorCode) {
+            if (r.value == errorCode) {
                 return r.name();
             }
         }
