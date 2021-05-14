@@ -1524,6 +1524,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             } else {
                 segmentBuffer[segmentWritten++] = flag;
             }
+            // write the timestamp (dummy value 0).
             writeInteger(0);
             // write the segment data size.
             writeInteger(size);
