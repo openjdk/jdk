@@ -165,9 +165,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 class StubFrame: public StackObj {
  private:
   StubAssembler* _sasm;
+  bool _does_not_return;
 
  public:
-  StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments);
+  StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, bool does_not_return=false);
   void load_argument(int offset_in_words, Register reg);
 
   ~StubFrame();
@@ -185,8 +186,9 @@ void StubAssembler::epilogue() {
 
 #define __ _sasm->
 
-StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments) {
+StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, bool does_not_return) {
   _sasm = sasm;
+  _does_not_return = does_not_return;
   __ prologue(name, must_gc_arguments);
 }
 
@@ -196,9 +198,12 @@ void StubFrame::load_argument(int offset_in_words, Register reg) {
   __ load_parameter(offset_in_words, reg);
 }
 
-
 StubFrame::~StubFrame() {
-  __ epilogue();
+  if (_does_not_return) {
+    __ should_not_reach_here();
+  } else {
+    __ epilogue();
+  }
 }
 
 #undef __
@@ -345,8 +350,6 @@ OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address targe
   }
   OopMapSet* oop_maps = new OopMapSet();
   oop_maps->add_gc_map(call_offset, oop_map);
-
-  __ should_not_reach_here();
   return oop_maps;
 }
 
@@ -395,9 +398,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
     sasm->set_frame_size(frame_size);
     break;
   }
-  default:
-    __ should_not_reach_here();
-    break;
+  default: ShouldNotReachHere();
   }
 
   // verify that only r0 and r3 are valid at this time
@@ -437,12 +438,11 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   // r0: handler address
   //      will be the deopt blob if nmethod was deoptimized while we looked up
   //      handler regardless of whether handler existed in the nmethod.
+  //      Move it out of the way to the return register.
+  __ mov(lr, r0);
 
-  // only r0 is valid at this time, all other registers have been destroyed by the runtime call
-  __ invalidate_registers(false, true, true, true, true, true);
-
-  // patch the return address, this stub will directly return to the exception handler
-  __ str(r0, Address(rfp, 1*BytesPerWord));
+  // All registers have been destroyed by the runtime call
+  __ invalidate_registers(true, true, true, true, true, true);
 
   switch (id) {
   case forward_exception_id:
@@ -452,13 +452,15 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
     restore_live_registers(sasm, id != handle_exception_nofpu_id);
     break;
   case handle_exception_from_callee_id:
-    // Pop the return address.
-    __ leave();
-    __ ret(lr);  // jump to exception handler
     break;
   default:  ShouldNotReachHere();
   }
 
+  // leave() the current frame, without changing the lr
+  __ mov(sp, rfp);
+  __ ldr(rfp, Address(__ post(sp, 2 * wordSize)));
+
+  __ ret(lr);
   return oop_maps;
 }
 
@@ -602,6 +604,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
   // for better readability
   const bool must_gc_arguments = true;
   const bool dont_gc_arguments = false;
+  const bool does_not_return = true;
 
   // default value; overwritten for some optimized stubs that are called from methods that do not use the fpu
   bool save_fpu_registers = true;
@@ -612,21 +615,17 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
   switch (id) {
     {
     case forward_exception_id:
-      {
         oop_maps = generate_handle_exception(id, sasm);
-        __ leave();
-        __ ret(lr);
-      }
       break;
 
     case throw_div0_exception_id:
-      { StubFrame f(sasm, "throw_div0_exception", dont_gc_arguments);
+      { StubFrame f(sasm, "throw_div0_exception", dont_gc_arguments, does_not_return);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_div0_exception), false);
       }
       break;
 
     case throw_null_pointer_exception_id:
-      { StubFrame f(sasm, "throw_null_pointer_exception", dont_gc_arguments);
+      { StubFrame f(sasm, "throw_null_pointer_exception", dont_gc_arguments, does_not_return);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_null_pointer_exception), false);
       }
       break;
@@ -881,13 +880,13 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       break;
 
     case throw_class_cast_exception_id:
-      { StubFrame f(sasm, "throw_class_cast_exception", dont_gc_arguments);
+      { StubFrame f(sasm, "throw_class_cast_exception", dont_gc_arguments, does_not_return);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_class_cast_exception), true);
       }
       break;
 
     case throw_incompatible_class_change_error_id:
-      { StubFrame f(sasm, "throw_incompatible_class_cast_exception", dont_gc_arguments);
+      { StubFrame f(sasm, "throw_incompatible_class_cast_exception", dont_gc_arguments, does_not_return);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_incompatible_class_change_error), false);
       }
       break;
@@ -981,7 +980,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
     case deoptimize_id:
       {
-        StubFrame f(sasm, "deoptimize", dont_gc_arguments);
+        StubFrame f(sasm, "deoptimize", dont_gc_arguments, does_not_return);
         OopMap* oop_map = save_live_registers(sasm);
         f.load_argument(0, c_rarg1);
         int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, deoptimize), c_rarg1);
@@ -997,7 +996,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       break;
 
     case throw_range_check_failed_id:
-      { StubFrame f(sasm, "range_check_failed", dont_gc_arguments);
+      { StubFrame f(sasm, "range_check_failed", dont_gc_arguments, does_not_return);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_range_check_exception), true);
       }
       break;
@@ -1011,28 +1010,28 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       break;
 
     case access_field_patching_id:
-      { StubFrame f(sasm, "access_field_patching", dont_gc_arguments);
+      { StubFrame f(sasm, "access_field_patching", dont_gc_arguments, does_not_return);
         // we should set up register map
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, access_field_patching));
       }
       break;
 
     case load_klass_patching_id:
-      { StubFrame f(sasm, "load_klass_patching", dont_gc_arguments);
+      { StubFrame f(sasm, "load_klass_patching", dont_gc_arguments, does_not_return);
         // we should set up register map
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_klass_patching));
       }
       break;
 
     case load_mirror_patching_id:
-      { StubFrame f(sasm, "load_mirror_patching", dont_gc_arguments);
+      { StubFrame f(sasm, "load_mirror_patching", dont_gc_arguments, does_not_return);
         // we should set up register map
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_mirror_patching));
       }
       break;
 
     case load_appendix_patching_id:
-      { StubFrame f(sasm, "load_appendix_patching", dont_gc_arguments);
+      { StubFrame f(sasm, "load_appendix_patching", dont_gc_arguments, does_not_return);
         // we should set up register map
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_appendix_patching));
       }
@@ -1040,25 +1039,25 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
     case handle_exception_nofpu_id:
     case handle_exception_id:
-      { StubFrame f(sasm, "handle_exception", dont_gc_arguments);
+      { StubFrame f(sasm, "handle_exception", dont_gc_arguments, does_not_return);
         oop_maps = generate_handle_exception(id, sasm);
       }
       break;
 
     case handle_exception_from_callee_id:
-      { StubFrame f(sasm, "handle_exception_from_callee", dont_gc_arguments);
+      { StubFrame f(sasm, "handle_exception_from_callee", dont_gc_arguments, does_not_return);
         oop_maps = generate_handle_exception(id, sasm);
       }
       break;
 
     case throw_index_exception_id:
-      { StubFrame f(sasm, "index_range_check_failed", dont_gc_arguments);
+      { StubFrame f(sasm, "index_range_check_failed", dont_gc_arguments, does_not_return);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_index_exception), true);
       }
       break;
 
     case throw_array_store_exception_id:
-      { StubFrame f(sasm, "throw_array_store_exception", dont_gc_arguments);
+      { StubFrame f(sasm, "throw_array_store_exception", dont_gc_arguments, does_not_return);
         // tos + 0: link
         //     + 1: return address
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_array_store_exception), true);
@@ -1067,7 +1066,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
     case predicate_failed_trap_id:
       {
-        StubFrame f(sasm, "predicate_failed_trap", dont_gc_arguments);
+        StubFrame f(sasm, "predicate_failed_trap", dont_gc_arguments, does_not_return);
 
         OopMap* map = save_live_registers(sasm);
 
@@ -1095,10 +1094,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       break;
 
     default:
-      { StubFrame f(sasm, "unimplemented entry", dont_gc_arguments);
+      { StubFrame f(sasm, "unimplemented entry", dont_gc_arguments, does_not_return);
         __ mov(r0, (int)id);
         __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), r0);
-        __ should_not_reach_here();
       }
       break;
     }
