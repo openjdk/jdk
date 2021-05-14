@@ -156,9 +156,8 @@ public class Messager extends Log implements Reporter {
      * @param outWriter    Stream for notices etc.
      * @param errWriter    Stream for errors and warnings
      */
-    @SuppressWarnings("deprecation")
     public Messager(Context context, String programName, PrintWriter outWriter, PrintWriter errWriter) {
-        super(context, errWriter, errWriter, outWriter);
+        super(context, outWriter, errWriter);
         messages = JavacMessages.instance(context);
         messages.add(locale -> ResourceBundle.getBundle("jdk.javadoc.internal.tool.resources.javadoc",
                                                          locale));
