@@ -720,6 +720,9 @@ public class GCMBufferTest implements Cloneable {
             List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
             incrementalSegments().dataSet(0).test();
 
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
+            dataSegments(new int[] { 49, 0, 2 }).dataSet(0).test();
     }
 
     // Test data

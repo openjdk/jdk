@@ -51,7 +51,7 @@ import java.util.Arrays;
  *
  * @since 1.8
  */
-final class GCTR extends CounterMode {
+final class GCTR extends CounterMode implements GCM {
 
     // Maximum buffer size rotating ByteBuffer->byte[] intrinsic copy
     private static final int MAX_LEN = 1024;
@@ -96,7 +96,7 @@ final class GCTR extends CounterMode {
      * the remainder in 'in'.
      * The return value will be (inLen - (inLen - blockSize))
      */
-    int update(byte[] in, int inOfs, int inLen, byte[] out, int outOfs) {
+    public int update(byte[] in, int inOfs, int inLen, byte[] out, int outOfs) {
         if (inLen == 0) {
             return 0;
         }
@@ -133,28 +133,10 @@ final class GCTR extends CounterMode {
         }
     }
 
-     int finalBlock(byte[] in, int inOfs, int inLen, ByteBuffer dst) {
-         int blocks = inLen / blockSize;
-         int remainder = inLen % blockSize;
-         int len = 0;
-         if (blocks > 0)  {
-             len = update(in, inOfs, blocks * blockSize, dst.array(),
-                 dst.arrayOffset() + dst.position());
-             inOfs += len;
-             dst.position(dst.position() + len);
-         }
-         if (remainder > 0) {
-             byte[] out = new byte[blockSize];
-             update(in, inOfs, blockSize, out, 0);
-             dst.put(out, 0, dst.remaining());
-         }
-         return 0;
-    }
-
     /**
      * Operate on only blocksize data leaving the remainder in 'in' .
      */
-    int update(byte[] in, int inOfs, int inLen, ByteBuffer dst) {
+    public int update(byte[] in, int inOfs, int inLen, ByteBuffer dst) {
         // If the bytebuffer is backed by arrays, use that instead of
         // allocating and copying for direct bytebuffers
         if (!dst.isDirect()) {
@@ -212,7 +194,7 @@ final class GCTR extends CounterMode {
     /**
      * Operate on only blocksize data leaving the remainder in the src buffer.
      */
-    int update(ByteBuffer src, ByteBuffer dst) {
+    public int update(ByteBuffer src, ByteBuffer dst) {
         int len;
 
         // If the bytebuffer is backed by arrays, use that instead of
@@ -265,7 +247,7 @@ final class GCTR extends CounterMode {
      *
      * This method will not write any block padding to the output buffer
      */
-    int doFinal(byte[] in, int inOfs, int inLen, byte[] out,
+    public int doFinal(byte[] in, int inOfs, int inLen, byte[] out,
         int outOfs) {
         if (inLen == 0) {
             return 0;
@@ -294,7 +276,7 @@ final class GCTR extends CounterMode {
      * If src and dst are array-backed bytebuffers, call doFinal(byte[]...) for
      * less memory usage.
      */
-    int doFinal(ByteBuffer src, ByteBuffer dst) {
+    public int doFinal(ByteBuffer src, ByteBuffer dst) {
         // If the bytebuffer is backed by arrays, use that instead of
         // allocating and copying for direct bytebuffers
         if (!src.isDirect() && !dst.isDirect() &&

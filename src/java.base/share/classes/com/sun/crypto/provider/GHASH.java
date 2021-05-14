@@ -47,7 +47,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * @since 1.8
  */
-final class GHASH implements Cloneable {
+final class GHASH implements Cloneable, GCM {
     private static final int AES_BLOCK_SIZE = 16;
     // Handle for converting byte[] <-> long
     private static final VarHandle asLongView =
@@ -211,7 +211,7 @@ final class GHASH implements Cloneable {
         return inLen;
     }
 
-    void doLastBlock(ByteBuffer src, int inLen) {
+    int doFinal(ByteBuffer src, int inLen) {
         int processed = 0;
 
         if (inLen >= AES_BLOCK_SIZE) {
@@ -219,14 +219,15 @@ final class GHASH implements Cloneable {
         }
 
         if (inLen == processed) {
-            return;
+            return processed;
         }
         byte[] block = new byte[AES_BLOCK_SIZE];
         src.get(block, 0, inLen - processed);
         update(block, 0, AES_BLOCK_SIZE);
+        return inLen;
     }
 
-    int doLastBlock(byte[] in, int inOfs, int inLen) {
+    int doFinal(byte[] in, int inOfs, int inLen) {
         int remainder = inLen % AES_BLOCK_SIZE;
         inOfs += update(in, inOfs, inLen - remainder);
         if (remainder > 0) {
@@ -302,5 +303,32 @@ final class GHASH implements Cloneable {
         state[0] = 0;
         state[1] = 0;
         return result;
+    }
+
+
+    @Override
+    public int update(byte[] in, int inOfs, int inLen, byte[] out, int outOfs) {
+        return update(in, inOfs, inLen);
+    }
+
+    @Override
+    public int update(byte[] in, int inOfs, int inLen, ByteBuffer dst) {
+        return update(in, inOfs, inLen);
+    }
+
+    @Override
+    public int update(ByteBuffer src, ByteBuffer dst) {
+        return update(src, src.remaining());
+    }
+
+    @Override
+    public int doFinal(byte[] in, int inOfs, int inLen, byte[] out,
+        int outOfs) {
+        return doFinal(in, inOfs, inLen);
+    }
+
+    @Override
+    public int doFinal(ByteBuffer src, ByteBuffer dst) {
+        return doFinal(src, src.remaining());
     }
 }
