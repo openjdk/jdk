@@ -6071,7 +6071,7 @@ address generate_avx_ghash_processBlocks() {
     __ decrementq(r13, 1);
     __ shrq(rax, 1);
 
-    __ cmpb(Address(src, length, Address::times_1, -2), '=');
+    __ cmpb(Address(source, length, Address::times_1, -2), '=');
     __ jcc(Assembler::notEqual, L_donePadding);
 
     __ decrementq(r13, 1);
