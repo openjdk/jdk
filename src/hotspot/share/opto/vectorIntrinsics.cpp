@@ -445,7 +445,8 @@ bool LibraryCallKit::inline_vector_mask_operation() {
   ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* mask_box_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
   Node* mask_vec = unbox_vector(mask, mask_box_type, elem_bt, num_elem, true);
-  Node* maskoper = gvn().transform(VectorMaskOpNode::make(mask_vec, TypeInt::INT, elem_ty, mopc));
+  Node* store_mask = gvn().transform(VectorStoreMaskNode::make(gvn(), mask_vec, elem_bt, num_elem));
+  Node* maskoper = gvn().transform(VectorMaskOpNode::make(store_mask, TypeInt::INT, mopc));
   set_result(maskoper);
 
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));

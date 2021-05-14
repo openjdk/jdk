@@ -3723,11 +3723,12 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
 }
 
 #ifdef _LP64
-void C2_MacroAssembler::vector_mask_oper(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
-                                         Register tmp, KRegister ktmp, int masklen, int vlen) {
-  vpxor(xtmp, xtmp, xtmp, vlen);
-  vpsubb(xtmp, xtmp, mask, vlen);
-  evpmovb2m(ktmp, xtmp, vlen);
+void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
+                                              Register tmp, KRegister ktmp, int masklen, int vec_enc) {
+  assert(VM_Version::supports_avx512vlbw(), "");
+  vpxor(xtmp, xtmp, xtmp, vec_enc);
+  vpsubb(xtmp, xtmp, mask, vec_enc);
+  evpmovb2m(ktmp, xtmp, vec_enc);
   kmovql(tmp, ktmp);
   switch(opc) {
     case Op_VectorMaskTrueCount:
@@ -3745,9 +3746,9 @@ void C2_MacroAssembler::vector_mask_oper(int opc, Register dst, XMMRegister mask
   }
 }
 
-void C2_MacroAssembler::vector_mask_oper(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
-                                         XMMRegister xtmp1, Register tmp, int masklen, int vlen) {
-  if (vlen == AVX_512bit) {
+void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
+                                              XMMRegister xtmp1, Register tmp, int masklen, int vec_enc) {
+  if (vec_enc == AVX_512bit) {
     Label DONE;
     assert(!VM_Version::supports_avx512bw(), "");
     switch(opc) {
@@ -3797,8 +3798,8 @@ void C2_MacroAssembler::vector_mask_oper(int opc, Register dst, XMMRegister mask
       default: assert(false, "Unhandled mask operation");
     }
   } else {
-    vpxor(xtmp, xtmp, xtmp, vlen);
-    vpsubb(xtmp, xtmp, mask, vlen);
+    vpxor(xtmp, xtmp, xtmp, vec_enc);
+    vpsubb(xtmp, xtmp, mask, vec_enc);
     vpmovmskb(tmp, xtmp);
     switch(opc) {
       case Op_VectorMaskTrueCount:

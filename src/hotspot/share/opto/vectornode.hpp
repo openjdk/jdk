@@ -855,42 +855,40 @@ class VectorMaskGenNode : public TypeNode {
 
 class VectorMaskOpNode : public TypeNode {
  public:
-  VectorMaskOpNode(Node* mask, const Type* ty, const Type* ety, int mopc):
-    TypeNode(ty, 2), _elemType(ety), _mopc(mopc) {
+  VectorMaskOpNode(Node* mask, const Type* ty, int mopc):
+    TypeNode(ty, 2), _mopc(mopc) {
+    assert(mask->Opcode() == Op_VectorStoreMask, "");
     init_req(1, mask);
   }
 
   virtual int Opcode() const;
-  const Type* get_elem_type()  { return _elemType;}
   virtual  uint  size_of() const { return sizeof(VectorMaskOpNode); }
   virtual uint  ideal_reg() const { return Op_RegI; }
-  Node* Ideal(PhaseGVN* phase, bool can_reshape);
   int get_mask_Opcode() const { return _mopc;}
-  static Node* make(Node* mask, const Type* ty, const Type* ety, int mopc);
+  static Node* make(Node* mask, const Type* ty, int mopc);
 
   private:
-    const Type* _elemType;
     int _mopc;
 };
 
 class VectorMaskTrueCountNode : public VectorMaskOpNode {
  public:
-  VectorMaskTrueCountNode(Node* mask, const Type* ty, const Type* ety):
-    VectorMaskOpNode(mask, ty, ety, Op_VectorMaskTrueCount) {}
+  VectorMaskTrueCountNode(Node* mask, const Type* ty):
+    VectorMaskOpNode(mask, ty, Op_VectorMaskTrueCount) {}
   virtual int Opcode() const;
 };
 
 class VectorMaskFirstTrueNode : public VectorMaskOpNode {
  public:
-  VectorMaskFirstTrueNode(Node* mask, const Type* ty, const Type* ety):
-    VectorMaskOpNode(mask, ty, ety, Op_VectorMaskFirstTrue) {}
+  VectorMaskFirstTrueNode(Node* mask, const Type* ty):
+    VectorMaskOpNode(mask, ty, Op_VectorMaskFirstTrue) {}
   virtual int Opcode() const;
 };
 
 class VectorMaskLastTrueNode : public VectorMaskOpNode {
  public:
-  VectorMaskLastTrueNode(Node* mask, const Type* ty, const Type* ety):
-    VectorMaskOpNode(mask, ty, ety, Op_VectorMaskLastTrue) {}
+  VectorMaskLastTrueNode(Node* mask, const Type* ty):
+    VectorMaskOpNode(mask, ty, Op_VectorMaskLastTrue) {}
   virtual int Opcode() const;
 };
 

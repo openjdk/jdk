@@ -1657,6 +1657,9 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     case Op_RotateRightV:
     case Op_RotateLeftV:
     case Op_MacroLogicV:
+    case Op_VectorMaskLastTrue:
+    case Op_VectorMaskFirstTrue:
+    case Op_VectorMaskTrueCount:
       if (!VM_Version::supports_evex() ||
           ((size_in_bits != 512) && !VM_Version::supports_avx512vl())) {
         return false;
@@ -8062,40 +8065,40 @@ instruct vmasked_store64(memory mem, vec src, kReg mask) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vmask_true_count_evex(rRegI dst, vec mask, rRegL tmp, kReg ktmp, vec xtmp) %{
+instruct vmask_oper_evex(rRegI dst, vec mask, rRegL tmp, kReg ktmp, vec xtmp, rFlagsReg cr) %{
   predicate(VM_Version::supports_avx512bw());
   match(Set dst (VectorMaskTrueCount mask));
   match(Set dst (VectorMaskFirstTrue mask));
   match(Set dst (VectorMaskLastTrue mask));
-  effect(TEMP_DEF dst, TEMP tmp, TEMP ktmp, TEMP xtmp);
-  format %{ "vector_mask_true_count_evex $mask \t! vector mask true count" %}
+  effect(TEMP_DEF dst, TEMP tmp, TEMP ktmp, TEMP xtmp, KILL cr);
+  format %{ "vector_mask_oper_evex $mask \t! vector mask true count" %}
   ins_encode %{
     const MachNode* mask_node = static_cast<const MachNode*>(this->in(this->operand_index($mask)));
     assert(mask_node->bottom_type()->isa_vect(), "");
     int vector_len = vector_length_encoding(mask_node);
     int opcode = this->ideal_Opcode();
     int mask_len = mask_node->bottom_type()->is_vect()->length();
-    __ vector_mask_oper(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
-                        $tmp$$Register, $ktmp$$KRegister, mask_len, vector_len);
+    __ vector_mask_operation(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
+                             $tmp$$Register, $ktmp$$KRegister, mask_len, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vmask_true_count_avx(rRegI dst, vec mask, rRegL tmp, vec xtmp, vec xtmp1) %{
+instruct vmask_oper_avx(rRegI dst, vec mask, rRegL tmp, vec xtmp, vec xtmp1, rFlagsReg cr) %{
   predicate(!VM_Version::supports_avx512bw());
   match(Set dst (VectorMaskTrueCount mask));
   match(Set dst (VectorMaskFirstTrue mask));
   match(Set dst (VectorMaskLastTrue mask));
-  effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, TEMP xtmp1);
-  format %{ "vector_mask_true_count_evex $mask \t! vector mask true count" %}
+  effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, TEMP xtmp1, KILL cr);
+  format %{ "vector_mask_oper_evex $mask \t! vector mask true count" %}
   ins_encode %{
     const MachNode* mask_node = static_cast<const MachNode*>(this->in(this->operand_index($mask)));
     assert(mask_node->bottom_type()->isa_vect(), "");
     int vector_len = vector_length_encoding(mask_node);
     int opcode = this->ideal_Opcode();
     int mask_len = mask_node->bottom_type()->is_vect()->length();
-    __ vector_mask_oper(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
-                        $xtmp1$$XMMRegister, $tmp$$Register, mask_len, vector_len);
+    __ vector_mask_operation(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
+                             $xtmp1$$XMMRegister, $tmp$$Register, mask_len, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
