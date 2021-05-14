@@ -6082,7 +6082,7 @@ address generate_avx_ghash_processBlocks() {
     // zmm9 - 0x80808080
 
     __ kmovql(k1, rax);
-    __ evmovdquq(xmm3, Address(source, start_offset, Address::times_1, 0x0), k1, Assembler::AVX_512bit);
+    __ evmovdquq(xmm3, k1, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
 
     __ evmovdqaq(xmm10, xmm5, Assembler::AVX_512bit);
     __ evpermt2b(xmm10, xmm3, xmm6, Assembler::AVX_512bit);
