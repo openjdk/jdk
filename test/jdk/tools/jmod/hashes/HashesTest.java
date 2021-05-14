@@ -386,7 +386,8 @@ public class HashesTest {
     private ModuleHashes hashes(ModuleFinder finder, String name) {
         ModuleReference mref = finder.find(name).orElseThrow(RuntimeException::new);
         try {
-            try (ModuleReader reader = mref.open(); InputStream in = reader.open("module-info.class").get()) {
+            try (ModuleReader reader = mref.open();
+                 InputStream in = reader.open("module-info.class").get()) {
                 ModuleHashes hashes = ModuleInfo.read(in, null).recordedHashes();
                 System.out.format("hashes in module %s %s%n", name,
                     (hashes != null) ? "present" : "absent");
@@ -414,14 +415,16 @@ public class HashesTest {
         Files.walkFileTree(dir, new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
+                throws IOException
+            {
                 Files.delete(file);
                 return FileVisitResult.CONTINUE;
             }
 
             @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-                    throws IOException {
+                throws IOException
+            {
                 Files.delete(dir);
                 return FileVisitResult.CONTINUE;
             }
