@@ -51,8 +51,8 @@ extern Mutex*   AdapterHandlerLibrary_lock;      // a lock on the AdapterHandler
 extern Mutex*   SignatureHandlerLibrary_lock;    // a lock on the SignatureHandlerLibrary
 extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
 extern Mutex*   SymbolArena_lock;                // a lock on the symbol table arena
-extern Monitor* StringDedupQueue_lock;           // a lock on the string deduplication queue
-extern Mutex*   StringDedupTable_lock;           // a lock on the string deduplication table
+extern Monitor* StringDedup_lock;                // a lock on the string deduplication facility
+extern Mutex*   StringDedupIntern_lock;          // a lock on StringTable notification of StringDedup
 extern Monitor* CodeCache_lock;                  // a lock on the CodeCache, rank is special
 extern Monitor* CodeSweeper_lock;                // a lock used by the sweeper only for wait notify
 extern Mutex*   MethodData_lock;                 // a lock on installation of method data

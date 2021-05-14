@@ -143,6 +143,7 @@ class AllocatedObj {
   f(mtSynchronizer,   "Synchronization")                                             \
   f(mtServiceability, "Serviceability")                                              \
   f(mtMetaspace,      "Metaspace")                                                   \
+  f(mtStringDedup,    "String Deduplication")                                        \
   f(mtNone,           "Unknown")                                                     \
   //end
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,34 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package gc.g1;
+#include "precompiled.hpp"
+#include "gc/shared/stringdedup/stringDedupStorageUse.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalCounter.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-/*
- * @test TestStringDeduplicationTableRehash
- * @summary Test string deduplication table rehash
- * @bug 8029075
- * @requires vm.gc.G1
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc:open
- * @modules java.base/java.lang:open
- *          java.management
- * @run driver gc.g1.TestStringDeduplicationTableRehash
- */
+StringDedup::StorageUse::StorageUse(OopStorage* storage) :
+  _storage(storage), _use_count(0)
+{}
 
-public class TestStringDeduplicationTableRehash {
-    public static void main(String[] args) throws Exception {
-        TestStringDeduplicationTools.testTableRehash();
-    }
+bool StringDedup::StorageUse::is_used_acquire() const {
+  return Atomic::load_acquire(&_use_count) > 0;
+}
+
+StringDedup::StorageUse*
+StringDedup::StorageUse::obtain(StorageUse* volatile* ptr) {
+  GlobalCounter::CriticalSection cs(Thread::current());
+  StorageUse* storage = Atomic::load(ptr);
+  Atomic::inc(&storage->_use_count);
+  return storage;
+}
+
+void StringDedup::StorageUse::relinquish() {
+  size_t result = Atomic::sub(&_use_count, size_t(1));
+  assert(result != SIZE_MAX, "use count underflow");
 }
