@@ -29,7 +29,7 @@
  *   to getThreadInfo() and ThreadInfo.getLockOwnerName() until the thread
  *   has exited.
  * @requires vm.jvmti
- * @run main/othervm/native -agentlib:getLockOwnerName getLockOwnerName
+ * @run main/othervm/native -agentlib:GetLockOwnerName GetLockOwnerName
  */
 
 import java.io.PrintStream;
@@ -67,8 +67,8 @@ import java.lang.management.ThreadMXBean;
 // <join returns>
 //
 
-public class getLockOwnerName {
-    private static final String AGENT_LIB = "getLockOwnerName";
+public class GetLockOwnerName {
+    private static final String AGENT_LIB = "GetLockOwnerName";
 
     private static final int DEF_TIME_MAX = 60;    // default max # secs to test
     private static final int JOIN_MAX     = 30;    // max # secs to wait for join
@@ -93,7 +93,7 @@ public class getLockOwnerName {
 
     private static void log(String msg) { System.out.println(msg); }
 
-    native static int wait4ContendedEnter(getLockOwnerNameWorker thr);
+    native static int wait4ContendedEnter(GetLockOwnerNameWorker thr);
 
     public static void main(String[] args) throws Exception {
         try {
@@ -154,7 +154,7 @@ public class getLockOwnerName {
     }
 
     public static int run(int timeMax, PrintStream out) {
-        return (new getLockOwnerName()).doWork(timeMax, out);
+        return (new GetLockOwnerName()).doWork(timeMax, out);
     }
 
     public static void checkTestState(int exp) {
@@ -168,9 +168,9 @@ public class getLockOwnerName {
     public int doWork(int timeMax, PrintStream out) {
         ThreadMXBean mbean = ManagementFactory.getThreadMXBean();
 
-        getLockOwnerNameWorker blocker;    // blocker thread
-        getLockOwnerNameWorker contender;  // contender thread
-        getLockOwnerNameWorker releaser;   // releaser thread
+        GetLockOwnerNameWorker blocker;    // blocker thread
+        GetLockOwnerNameWorker contender;  // contender thread
+        GetLockOwnerNameWorker releaser;   // releaser thread
 
         System.out.println("About to execute for " + timeMax + " seconds.");
 
@@ -181,7 +181,7 @@ public class getLockOwnerName {
 
             // launch the blocker thread
             synchronized (barrierLaunch) {
-                blocker = new getLockOwnerNameWorker("blocker");
+                blocker = new GetLockOwnerNameWorker("blocker");
                 blocker.start();
 
                 while (testState != TS_BLOCKER_RUNNING) {
@@ -194,7 +194,7 @@ public class getLockOwnerName {
 
             // launch the contender thread
             synchronized (barrierLaunch) {
-                contender = new getLockOwnerNameWorker("contender");
+                contender = new GetLockOwnerNameWorker("contender");
                 contender.start();
 
                 while (testState != TS_CONTENDER_RUNNING) {
@@ -207,7 +207,7 @@ public class getLockOwnerName {
 
             // launch the releaser thread
             synchronized (barrierLaunch) {
-                releaser = new getLockOwnerNameWorker("releaser");
+                releaser = new GetLockOwnerNameWorker("releaser");
                 releaser.start();
 
                 while (testState != TS_RELEASER_RUNNING) {
@@ -250,7 +250,7 @@ public class getLockOwnerName {
 
             if (name == null) {
                 out.println("Failure at " + count + " loops.");
-                throw new RuntimeException("ThreadInfo.getLockOwnerName() "
+                throw new RuntimeException("ThreadInfo.GetLockOwnerName() "
                                            + "returned null name for "
                                            + "contender.");
             } else if (!name.equals("blocker")) {
@@ -258,7 +258,7 @@ public class getLockOwnerName {
                 throw new RuntimeException("name='" + name + "': name "
                                            + "should be blocker.");
             } else {
-                logDebug("ThreadInfo.getLockOwnerName() returned blocker.");
+                logDebug("ThreadInfo.GetLockOwnerName() returned blocker.");
             }
 
             synchronized (barrierReleaser) {
@@ -312,103 +312,103 @@ public class getLockOwnerName {
     }
 }
 
-class getLockOwnerNameWorker extends Thread {
-    public getLockOwnerNameWorker(String name) {
+class GetLockOwnerNameWorker extends Thread {
+    public GetLockOwnerNameWorker(String name) {
         super(name);
     }
 
     public void run() {
-        getLockOwnerName.logDebug("thread running");
+        GetLockOwnerName.logDebug("thread running");
 
         //
-        // Launch the blocker thread:
+        // The blocker thread:
         // - grabs threadLock
         // - holds threadLock until we tell it let go
         // - releases threadLock
         //
         if (getName().equals("blocker")) {
             // grab threadLock before we tell main we are running
-            getLockOwnerName.logDebug("before enter threadLock");
-            synchronized(getLockOwnerName.threadLock) {
-                getLockOwnerName.logDebug("enter threadLock");
+            GetLockOwnerName.logDebug("before enter threadLock");
+            synchronized(GetLockOwnerName.threadLock) {
+                GetLockOwnerName.logDebug("enter threadLock");
 
-                getLockOwnerName.checkTestState(getLockOwnerName.TS_INIT);
+                GetLockOwnerName.checkTestState(GetLockOwnerName.TS_INIT);
 
-                synchronized(getLockOwnerName.barrierBlocker) {
-                    synchronized(getLockOwnerName.barrierLaunch) {
+                synchronized(GetLockOwnerName.barrierBlocker) {
+                    synchronized(GetLockOwnerName.barrierLaunch) {
                         // tell main we are running
-                        getLockOwnerName.testState = getLockOwnerName.TS_BLOCKER_RUNNING;
-                        getLockOwnerName.barrierLaunch.notify();
+                        GetLockOwnerName.testState = GetLockOwnerName.TS_BLOCKER_RUNNING;
+                        GetLockOwnerName.barrierLaunch.notify();
                     }
-                    getLockOwnerName.logDebug("thread waiting");
-                    while (getLockOwnerName.testState != getLockOwnerName.TS_DONE_BLOCKING) {
+                    GetLockOwnerName.logDebug("thread waiting");
+                    while (GetLockOwnerName.testState != GetLockOwnerName.TS_DONE_BLOCKING) {
                         try {
                             // wait for main to tell us when to exit threadLock
-                            getLockOwnerName.barrierBlocker.wait();
+                            GetLockOwnerName.barrierBlocker.wait();
                         } catch (InterruptedException ex) {
                         }
                     }
                 }
-                getLockOwnerName.logDebug("exit threadLock");
+                GetLockOwnerName.logDebug("exit threadLock");
             }
         }
         //
-        // Launch the contender thread:
+        // The contender thread:
         // - tries to grab the threadLock
         // - grabs threadLock
         // - releases threadLock
         //
         else if (getName().equals("contender")) {
-            synchronized(getLockOwnerName.barrierLaunch) {
+            synchronized(GetLockOwnerName.barrierLaunch) {
                 // tell main we are running
-                getLockOwnerName.testState = getLockOwnerName.TS_CONTENDER_RUNNING;
-                getLockOwnerName.barrierLaunch.notify();
+                GetLockOwnerName.testState = GetLockOwnerName.TS_CONTENDER_RUNNING;
+                GetLockOwnerName.barrierLaunch.notify();
             }
 
-            getLockOwnerName.logDebug("before enter threadLock");
-            synchronized(getLockOwnerName.threadLock) {
-                getLockOwnerName.logDebug("enter threadLock");
+            GetLockOwnerName.logDebug("before enter threadLock");
+            synchronized(GetLockOwnerName.threadLock) {
+                GetLockOwnerName.logDebug("enter threadLock");
 
-                getLockOwnerName.checkTestState(getLockOwnerName.TS_DONE_BLOCKING);
-                getLockOwnerName.testState = getLockOwnerName.TS_CONTENDER_DONE;
+                GetLockOwnerName.checkTestState(GetLockOwnerName.TS_DONE_BLOCKING);
+                GetLockOwnerName.testState = GetLockOwnerName.TS_CONTENDER_DONE;
 
-                getLockOwnerName.logDebug("exit threadLock");
+                GetLockOwnerName.logDebug("exit threadLock");
             }
         }
         //
-        // Launch the releaser thread:
+        // The releaser thread:
         // - tries to grab the barrierBlocker (should not block!)
         // - grabs barrierBlocker
         // - releases the blocker thread
         // - releases barrierBlocker
         //
         else if (getName().equals("releaser")) {
-            synchronized(getLockOwnerName.barrierReleaser) {
-                synchronized(getLockOwnerName.barrierLaunch) {
+            synchronized(GetLockOwnerName.barrierReleaser) {
+                synchronized(GetLockOwnerName.barrierLaunch) {
                     // tell main we are running
-                    getLockOwnerName.testState = getLockOwnerName.TS_RELEASER_RUNNING;
-                    getLockOwnerName.barrierLaunch.notify();
+                    GetLockOwnerName.testState = GetLockOwnerName.TS_RELEASER_RUNNING;
+                    GetLockOwnerName.barrierLaunch.notify();
                 }
-                getLockOwnerName.logDebug("thread waiting");
-                while (getLockOwnerName.testState != getLockOwnerName.TS_READY_TO_RELEASE) {
+                GetLockOwnerName.logDebug("thread waiting");
+                while (GetLockOwnerName.testState != GetLockOwnerName.TS_READY_TO_RELEASE) {
                     try {
                         // wait for main to tell us when to continue
-                        getLockOwnerName.barrierReleaser.wait();
+                        GetLockOwnerName.barrierReleaser.wait();
                     } catch (InterruptedException ex) {
                     }
                 }
             }
 
-            getLockOwnerName.logDebug("before enter barrierBlocker");
-            synchronized (getLockOwnerName.barrierBlocker) {
-                getLockOwnerName.logDebug("enter barrierBlocker");
+            GetLockOwnerName.logDebug("before enter barrierBlocker");
+            synchronized (GetLockOwnerName.barrierBlocker) {
+                GetLockOwnerName.logDebug("enter barrierBlocker");
 
                 // tell blocker thread to exit threadLock
-                getLockOwnerName.testState = getLockOwnerName.TS_DONE_BLOCKING;
-                getLockOwnerName.barrierBlocker.notify();
+                GetLockOwnerName.testState = GetLockOwnerName.TS_DONE_BLOCKING;
+                GetLockOwnerName.barrierBlocker.notify();
 
-                getLockOwnerName.logDebug("released blocker thread");
-                getLockOwnerName.logDebug("exit barrierBlocker");
+                GetLockOwnerName.logDebug("released blocker thread");
+                GetLockOwnerName.logDebug("exit barrierBlocker");
             }
         }
     }

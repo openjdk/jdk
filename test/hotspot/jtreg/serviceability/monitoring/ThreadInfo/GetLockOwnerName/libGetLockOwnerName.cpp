@@ -36,7 +36,7 @@ static jvmtiEnv* jvmti = NULL;
   } while (0)
 
 JNIEXPORT jint JNICALL
-Java_getLockOwnerName_wait4ContendedEnter(JNIEnv *jni, jclass cls, jthread thr) {
+Java_GetLockOwnerName_wait4ContendedEnter(JNIEnv *jni, jclass cls, jthread thr) {
   jvmtiError err;
   jint thread_state;
   do {
