@@ -33,6 +33,7 @@ import java.awt.print.*;
 import java.net.URI;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.print.*;
 import javax.print.attribute.PrintRequestAttributeSet;
@@ -60,6 +61,7 @@ public final class CPrinterJob extends RasterPrinterJob {
     private static String sShouldNotReachHere = "Should not reach here.";
 
     private volatile SecondaryLoop printingLoop;
+    private AtomicReference<Exception> lastPrintExRef = new AtomicReference<>();
 
     private boolean noDefaultPrinter = false;
 
@@ -256,6 +258,14 @@ public final class CPrinterJob extends RasterPrinterJob {
         }
     }
 
+    private Exception setLastPrintEx(Exception newEx, boolean printOldEx) {
+        Exception oldEx = lastPrintExRef.getAndSet(newEx);
+        if (printOldEx && (oldEx != null)) {
+            oldEx.printStackTrace();
+        }
+        return oldEx;
+    }
+
     boolean isPrintToFile = false;
     private void setPrintToFile(boolean printToFile) {
         isPrintToFile = printToFile;
@@ -322,6 +332,7 @@ public final class CPrinterJob extends RasterPrinterJob {
                 performingPrinting = true;
                 userCancelled = false;
             }
+            setLastPrintEx(null, false);
 
             //Add support for PageRange
             PageRanges pr = (attributes == null) ?  null
@@ -379,6 +390,19 @@ public final class CPrinterJob extends RasterPrinterJob {
             }
             if (printingLoop != null) {
                 printingLoop.exit();
+            }
+
+            Exception lastPrintEx = setLastPrintEx(null, false);
+            if (lastPrintEx != null) {
+                if (lastPrintEx instanceof PrinterException) {
+                    throw (PrinterException) lastPrintEx;
+                } else if (lastPrintEx instanceof RuntimeException) {
+                    throw (RuntimeException) lastPrintEx;
+                } else {
+                    PrinterException pe = new PrinterException();
+                    pe.initCause(lastPrintEx);
+                    throw pe;
+                }
             }
         }
 
@@ -785,22 +809,37 @@ public final class CPrinterJob extends RasterPrinterJob {
     private Rectangle2D printAndGetPageFormatArea(final Printable printable, final Graphics graphics, final PageFormat pageFormat, final int pageIndex) {
         final Rectangle2D[] ret = new Rectangle2D[1];
 
-        Runnable r = new Runnable() { public void run() { synchronized(ret) {
-            try {
-                int pageResult = printable.print(graphics, pageFormat, pageIndex);
-                if (pageResult != Printable.NO_SUCH_PAGE) {
-                    ret[0] = getPageFormatArea(pageFormat);
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                synchronized (ret) {
+                    try {
+                        int pageResult = printable.print(
+                            graphics, pageFormat, pageIndex);
+                        if (pageResult != Printable.NO_SUCH_PAGE) {
+                            ret[0] = getPageFormatArea(pageFormat);
+                        }
+                    } catch (Exception e) {
+                        // Original code bailed on any exception
+                        setLastPrintEx(e, true);
+                    }
                 }
-            } catch (Exception e) {} // Original code bailed on any exception
-        }}};
+            }
+        };
 
         if (onEventThread) {
-            try { EventQueue.invokeAndWait(r); } catch (Exception e) { e.printStackTrace(); }
+            try {
+                EventQueue.invokeAndWait(r);
+            } catch (Exception e) {
+                setLastPrintEx(e, true);
+            }
         } else {
             r.run();
         }
 
-        synchronized(ret) { return ret[0]; }
+        synchronized (ret) {
+            return ret[0];
+        }
     }
 
     // upcall from native
