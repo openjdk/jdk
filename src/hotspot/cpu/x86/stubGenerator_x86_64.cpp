@@ -6067,7 +6067,7 @@ address generate_avx_ghash_processBlocks() {
     // output_size is in r13
     // output_mask is in r15
 
-    __BIND(L_padding);
+    __ BIND(L_padding);
     __ decrementq(r13, 1);
     __ shrq(rax, 1);
 
