@@ -709,7 +709,7 @@ public class Flow {
                 constants = new HashSet<>();
                 constants.addAll(((ClassSymbol) selectorSym).permitted);
             }
-            boolean coversInput = false;
+            boolean coversInput = tree.hasTotalPattern;
             Liveness prevAlive = alive;
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
                 alive = Liveness.ALIVE;
@@ -750,8 +750,8 @@ public class Flow {
                 }
                 c.completesNormally = alive != Liveness.DEAD;
             }
-            if ((constants == null || !constants.isEmpty()) && !tree.hasTotalPattern &&
-                !coversInput && !TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
+            if ((constants == null || !constants.isEmpty()) && !coversInput &&
+                !TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
                 log.error(tree, Errors.NotExhaustive);
             }
             alive = prevAlive;

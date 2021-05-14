@@ -287,16 +287,16 @@ public class TransPatterns extends TreeTranslator {
             //int $idx = 0;
             //$RESTART: switch (invokeDynamic typeSwitch($constant, typeof($pattern1), typeof($pattern2), typeof($pattern3))($obj, $idx)) {
             //     case 0:
-            //         if (!(<desugared $pattern1)) { $idx = 1; continue $RESTART; }
+            //         if (!(<desugared $pattern1>)) { $idx = 1; continue $RESTART; }
             //         $stats$
             //     case 1:
-            //         if (!(<desugared $pattern1)) { $idx = 2; continue $RESTART; }
+            //         if (!(<desugared $pattern1>)) { $idx = 2; continue $RESTART; }
             //         $stats$
             //     case 2, -1:
-            //         if (!(<desugared $pattern1)) { $idx = 3; continue $RESTART; }
+            //         if (!(<desugared $pattern1>)) { $idx = 3; continue $RESTART; }
             //         $stats$
             //     case 3:
-            //         if (!(<desugared $pattern1)) { $idx = 4; continue $RESTART; }
+            //         if (!(<desugared $pattern1>)) { $idx = 4; continue $RESTART; }
             //         $stats$
             //}
             //notes:
@@ -304,9 +304,11 @@ public class TransPatterns extends TreeTranslator {
             //-the selector is evaluated only once and stored in a temporary variable
             //-typeSwitch bootstrap method can restart matching at specified index. The bootstrap will
             // categorize the input, and return the case index whose type or constant matches the input.
-            // The bootstrap does not evaluate guards, which are injected at the begining of the case's
+            // The bootstrap does not evaluate guards, which are injected at the beginning of the case's
             // statement list, and if the guard fails, the switch is "continued" and matching is
             // restarted from the next index.
+            //-case null is always desugared to case -1, as the typeSwitch bootstrap method will
+            // return -1 when the input is null
             //
             //a special case for switches over enums with pattern case
             //only a single (type) pattern case is valid, which is equivalent
