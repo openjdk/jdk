@@ -292,6 +292,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   void internal_shrink_epilog(Thread* thread);
   void internal_shrink_range(Thread* thread, size_t start, size_t stop);
   bool internal_shrink(Thread* thread, size_t size_limit_log2);
+  void internal_reset(size_t log2_size);
 
   // Methods for growing.
   bool unzip_bucket(Thread* thread, InternalTable* old_table,
@@ -388,6 +389,10 @@ class ConcurrentHashTable : public CHeapObj<F> {
   // Re-size operations.
   bool shrink(Thread* thread, size_t size_limit_log2 = 0);
   bool grow(Thread* thread, size_t size_limit_log2 = 0);
+  // Unsafe reset and resize the table. This method assumes that we
+  // want to clear and maybe resize the internal table without the
+  // overhead of clearing individual items in the table.
+  void unsafe_reset(size_t size_log2 = 0);
 
   // All callbacks for get are under critical sections. Other callbacks may be
   // under critical section or may have locked parts of table. Calling any

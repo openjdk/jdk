@@ -194,20 +194,13 @@ static u4 get_primitive_flags() {
   return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
 }
 
-static bool is_unsafe_anonymous(const Klass* klass) {
-  assert(klass != NULL, "invariant");
-  assert(!klass->is_objArray_klass(), "invariant");
-  return klass->is_instance_klass() && InstanceKlass::cast(klass)->is_unsafe_anonymous();
-}
-
 static ClassLoaderData* get_cld(const Klass* klass) {
   assert(klass != NULL, "invariant");
   if (klass->is_objArray_klass()) {
     klass = ObjArrayKlass::cast(klass)->bottom_klass();
   }
   if (klass->is_non_strong_hidden()) return NULL;
-  return is_unsafe_anonymous(klass) ?
-    InstanceKlass::cast(klass)->unsafe_anonymous_host()->class_loader_data() : klass->class_loader_data();
+  return klass->class_loader_data();
 }
 
 template <typename T>

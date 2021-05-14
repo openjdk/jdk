@@ -28,7 +28,6 @@
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/lambdaFormInvokers.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -960,8 +959,6 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
   } else { // hidden
     Handle classData_h(THREAD, JNIHandles::resolve(classData));
     ClassLoadInfo cl_info(protection_domain,
-                          NULL, // unsafe_anonymous_host
-                          NULL, // cp_patches
                           host_class,
                           classData_h,
                           is_hidden,
@@ -1440,7 +1437,7 @@ JVM_ENTRY(jclass, JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass))
   Klass* outer_klass
     = InstanceKlass::cast(klass)->compute_enclosing_class(&inner_is_member, CHECK_NULL);
   if (outer_klass == NULL)  return NULL;  // already a top-level class
-  if (!inner_is_member)  return NULL;     // a hidden or unsafe anonymous class (inside a method)
+  if (!inner_is_member)  return NULL;     // a hidden class (inside a method)
   return (jclass) JNIHandles::make_local(THREAD, outer_klass->java_mirror());
 }
 JVM_END
@@ -2955,7 +2952,7 @@ JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
       THROW_OOP(java_throwable);
     } else {
       // Use a VM_Operation to throw the exception.
-      Thread::send_async_exception(java_thread, java_throwable);
+      JavaThread::send_async_exception(java_thread, java_throwable);
     }
   } else {
     // Either:
@@ -3533,8 +3530,8 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
 
   Klass* caller_k = java_lang_Class::as_Klass(JNIHandles::resolve(caller));
   InstanceKlass* caller_ik = InstanceKlass::cast(caller_k);
-  if (caller_ik->is_hidden() || caller_ik->is_unsafe_anonymous()) {
-    // VM anonymous classes and hidden classes not of type lambda proxy classes are currently not being archived.
+  if (caller_ik->is_hidden()) {
+    // Hidden classes not of type lambda proxy classes are currently not being archived.
     // If the caller_ik is of one of the above types, the corresponding lambda proxy class won't be
     // registered for archiving.
     return;
@@ -3646,7 +3643,7 @@ JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
 #if INCLUDE_CDS
-  return ClassListWriter::is_enabled() || DynamicDumpSharedSpaces;
+  return ClassListWriter::is_enabled();
 #else
   return false;
 #endif // INCLUDE_CDS
@@ -3654,20 +3651,13 @@ JVM_END
 
 JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
 #if INCLUDE_CDS
-  assert(ClassListWriter::is_enabled() || DynamicDumpSharedSpaces,  "Should be set and open or do dynamic dump");
+  assert(ClassListWriter::is_enabled(), "Should be set and open");
   if (line != NULL) {
     ResourceMark rm(THREAD);
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
-    if (DynamicDumpSharedSpaces) {
-      // Note: LambdaFormInvokers::append_filtered and LambdaFormInvokers::append take same format which is not
-      // same as below the print format. The line does not include LAMBDA_FORM_TAG.
-      LambdaFormInvokers::append_filtered(os::strdup((const char*)c_line, mtInternal));
-    }
-    if (ClassListWriter::is_enabled()) {
-      ClassListWriter w;
-      w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
-    }
+    ClassListWriter w;
+    w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
   }
 #endif // INCLUDE_CDS
 JVM_END

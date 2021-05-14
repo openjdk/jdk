@@ -69,6 +69,7 @@ import static com.sun.source.doctree.DocTree.Kind.EXCEPTION;
 import static com.sun.source.doctree.DocTree.Kind.HIDDEN;
 import static com.sun.source.doctree.DocTree.Kind.LINK;
 import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
+import static com.sun.source.doctree.DocTree.Kind.PARAM;
 import static com.sun.source.doctree.DocTree.Kind.PROVIDES;
 import static com.sun.source.doctree.DocTree.Kind.SEE;
 import static com.sun.source.doctree.DocTree.Kind.SERIAL;
@@ -594,6 +595,7 @@ public class TagletManager {
         // init the serialized form tags for the serialized form page
         serializedFormTags = new ArrayList<>();
         serializedFormTags.add(allTaglets.get(SERIAL_DATA.tagName));
+        serializedFormTags.add(allTaglets.get(PARAM.tagName));
         serializedFormTags.add(allTaglets.get(THROWS.tagName));
         if (!nosince)
             serializedFormTags.add(allTaglets.get(SINCE.tagName));

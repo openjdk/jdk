@@ -1569,14 +1569,6 @@ C2V_VMENTRY_0(jlong, getFingerprint, (JNIEnv* env, jobject, jlong metaspace_klas
   JVMCI_THROW_MSG_0(InternalError, "unimplemented");
 C2V_END
 
-C2V_VMENTRY_NULL(jobject, getHostClass, (JNIEnv* env, jobject, jobject jvmci_type))
-  InstanceKlass* k = InstanceKlass::cast(JVMCIENV->asKlass(jvmci_type));
-  InstanceKlass* host = k->unsafe_anonymous_host();
-  JVMCIKlassHandle handle(THREAD, host);
-  JVMCIObject result = JVMCIENV->get_jvmci_type(handle, JVMCI_CHECK_NULL);
-  return JVMCIENV->get_jobject(result);
-C2V_END
-
 C2V_VMENTRY_NULL(jobject, getInterfaces, (JNIEnv* env, jobject, jobject jvmci_type))
   if (jvmci_type == NULL) {
     JVMCI_THROW_0(NullPointerException);
@@ -2673,7 +2665,6 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "flushDebugOutput",                             CC "()V",                                                                             FN_PTR(flushDebugOutput)},
   {CC "methodDataProfileDataSize",                    CC "(JI)I",                                                                           FN_PTR(methodDataProfileDataSize)},
   {CC "getFingerprint",                               CC "(J)J",                                                                            FN_PTR(getFingerprint)},
-  {CC "getHostClass",                                 CC "(" HS_RESOLVED_KLASS ")" HS_RESOLVED_KLASS,                                       FN_PTR(getHostClass)},
   {CC "interpreterFrameSize",                         CC "(" BYTECODE_FRAME ")I",                                                           FN_PTR(interpreterFrameSize)},
   {CC "compileToBytecode",                            CC "(" OBJECTCONSTANT ")V",                                                           FN_PTR(compileToBytecode)},
   {CC "getFlagValue",                                 CC "(" STRING ")" OBJECT,                                                             FN_PTR(getFlagValue)},
