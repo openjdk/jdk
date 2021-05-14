@@ -6061,22 +6061,44 @@ address generate_avx_ghash_processBlocks() {
     __ movq(rax, 64);
     __ subq(rax, r13);
     __ shrxq(r15, r15, rax);
+    __ movl(rax, 0x61616161);
+    __ evpbroadcastd(xmm8, rax, Assembler::AVX_512bit);
+    __ movl(rax, 0x80808080);
+    __ evpbroadcastd(xmm9, rax, Assembler::AVX_512bit);
     __ pop(rax);
 
     // input_mask is rax
     // output_size is in r13
     // output_mask is in r15
+    // zmm0 - free
+    // zmm1 - 0x00011000
+    // zmm2 - 0x01400140
+    // zmm3 - errorvec
+    // zmm4 - pack vector
+    // zmm5 - lookup_lo
+    // zmm6 - lookup_hi
+    // zmm7 - errorvec
+    // zmm8 - 0x61616161
+    // zmm9 - 0x80808080
 
-    __ BIND(L_padding);
-    __ decrementq(r13, 1);
-    __ shrq(rax, 1);
+    __ kmovql(k1, rax);
+    __ evmovdquq(xmm3, Address(source, start_offset, Address::times_1, 0x0), k1, Assembler::AVX_512bit);
 
-    __ cmpb(Address(source, length, Address::times_1, -2), '=');
-    __ jcc(Assembler::notEqual, L_donePadding);
+    __ evmovdqaq(xmm10, xmm5, Assembler::AVX_512bit);
+    __ evpermt2b(xmm10, xmm3, xmm6, Assembler::AVX_512bit);
+    __ vporq(xmm3, xmm10, xmm3, Assembler::AVX_512bit);
 
-    __ decrementq(r13, 1);
-    __ shrq(rax, 1);
-    __ jmp(L_donePadding);
+    // Check for error
+    // TODO: Add this instruction
+    // __ evptestmb(k0, xmm3, xmm9, Assembler::AVX_512bit);
+    // __ kortestql(k0, k0);
+    // __ jcc(notZero, L_errorExit);
+
+    __ vpmaddubsw(xmm3, xmm3, xmm2, Assembler::AVX_512bit);
+    __ vpmaddwd(xmm3, xmm3, xmm1, Assembler::AVX_512bit);
+
+    __ vpermb(xmm3, xmm4, xmm3, Assembler::AVX_512bit);
+    __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm3, Assembler::AVX_512bit);
 
     __ BIND(L_exit);
     __ pop(rax);             // Get original dest value
@@ -6099,6 +6121,17 @@ address generate_avx_ghash_processBlocks() {
     __ pop(length);
     __ push(dest);
     __ jmp(L_exit);
+
+    __ BIND(L_padding);
+    __ decrementq(r13, 1);
+    __ shrq(rax, 1);
+
+    __ cmpb(Address(source, length, Address::times_1, -2), '=');
+    __ jcc(Assembler::notEqual, L_donePadding);
+
+    __ decrementq(r13, 1);
+    __ shrq(rax, 1);
+    __ jmp(L_donePadding);
 
     return start;
   }
