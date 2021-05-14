@@ -97,8 +97,14 @@ class x86 {
  private:
   static address _verify_fpu_cntrl_wrd_entry;
 
+  static jint    _fpu_subnormal_bias1[3];
+  static jint    _fpu_subnormal_bias2[3];
+
  public:
   static address verify_fpu_cntrl_wrd_entry() { return _verify_fpu_cntrl_wrd_entry; }
+
+  static address addr_fpu_subnormal_bias1()   { return (address)&_fpu_subnormal_bias1; }
+  static address addr_fpu_subnormal_bias2()   { return (address)&_fpu_subnormal_bias2; }
 
 #endif // !LP64
 

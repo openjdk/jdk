@@ -114,8 +114,6 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // Special case the handling of certain common, profitable library
   // methods.  If these methods are replaced with specialized code,
   // then we return it as the inlined version of the call.
-  // We do this before the strict f.p. check below because the
-  // intrinsics handle strict f.p. correctly.
   CallGenerator* cg_intrinsic = NULL;
   if (allow_inline && allow_intrinsics) {
     CallGenerator* cg = find_intrinsic(callee, call_does_dispatch);

@@ -520,11 +520,7 @@ void LIRGenerator::arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr l
     case Bytecodes::_fmul:
     case Bytecodes::_lmul:  __ mul(left_op, right_op, result_op); break;
 
-    case Bytecodes::_dmul:
-      {
-        __ mul_strictfp(left_op, right_op, result_op, tmp_op); break;
-      }
-      break;
+    case Bytecodes::_dmul:  __ mul(left_op, right_op, result_op, tmp_op); break;
 
     case Bytecodes::_imul:
       {
@@ -555,11 +551,7 @@ void LIRGenerator::arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr l
     case Bytecodes::_fdiv: __ div (left_op, right_op, result_op); break;
     // ldiv and lrem are implemented with a direct runtime call
 
-    case Bytecodes::_ddiv:
-      {
-        __ div_strictfp (left_op, right_op, result_op, tmp_op); break;
-      }
-      break;
+    case Bytecodes::_ddiv: __ div(left_op, right_op, result_op, tmp_op); break;
 
     case Bytecodes::_drem:
     case Bytecodes::_frem: __ rem (left_op, right_op, result_op); break;
