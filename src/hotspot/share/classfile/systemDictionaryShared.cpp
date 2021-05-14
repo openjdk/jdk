@@ -1107,7 +1107,7 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
   if (!UseSharedSpaces) {
     return NULL;
   }
-  if (class_name == NULL) {  // don't do this for hidden and unsafe anonymous classes
+  if (class_name == NULL) {  // don't do this for hidden classes
     return NULL;
   }
   if (class_loader.is_null() ||
@@ -1333,11 +1333,6 @@ void SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason)
 
 bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
 
-  if (k->is_unsafe_anonymous()) {
-    warn_excluded(k, "Unsafe anonymous class");
-    return true; // unsafe anonymous classes are not archived, skip
-  }
-
   if (k->is_in_error_state()) {
     warn_excluded(k, "In error state");
     return true;
@@ -1382,7 +1377,7 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
       warn_excluded(k, "Failed verification");
       return true;
     } else {
-      if (!MetaspaceShared::is_old_class(k)) {
+      if (!k->has_old_class_version()) {
         warn_excluded(k, "Not linked");
         return true;
       }
@@ -1397,7 +1392,7 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
     return true;
   }
 
-  if (MetaspaceShared::is_old_class(k) && k->is_linked()) {
+  if (k->has_old_class_version() && k->is_linked()) {
     warn_excluded(k, "Old class has been linked");
     return true;
   }

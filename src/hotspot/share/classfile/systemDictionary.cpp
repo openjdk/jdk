@@ -818,7 +818,7 @@ Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
 
 // Note: this method is much like resolve_class_from_stream, but
 // does not publish the classes in the SystemDictionary.
-// Handles Lookup.defineClass hidden and unsafe_DefineAnonymousClass.
+// Handles Lookup.defineClass hidden.
 InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
                                                      ClassFileStream* st,
                                                      Symbol* class_name,
@@ -828,17 +828,12 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
 
   EventClassLoad class_load_start_event;
   ClassLoaderData* loader_data;
-  bool is_unsafe_anon_class = cl_info.unsafe_anonymous_host() != NULL;
 
-  // - for unsafe anonymous class: create a new CLD whith a class holder that uses
-  //                               the same class loader as the unsafe_anonymous_host.
   // - for hidden classes that are not strong: create a new CLD that has a class holder and
   //                                           whose loader is the Lookup class's loader.
   // - for hidden class: add the class to the Lookup class's loader's CLD.
-  assert (is_unsafe_anon_class || cl_info.is_hidden(), "only used for hidden classes");
-  guarantee(!is_unsafe_anon_class || cl_info.unsafe_anonymous_host()->class_loader() == class_loader(),
-              "should be NULL or the same");
-  bool create_mirror_cld = is_unsafe_anon_class || !cl_info.is_strong_hidden();
+  assert (cl_info.is_hidden(), "only used for hidden classes");
+  bool create_mirror_cld = !cl_info.is_strong_hidden();
   loader_data = register_loader(class_loader, create_mirror_cld);
 
   assert(st != NULL, "invariant");
@@ -852,10 +847,9 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
                                                       CHECK_NULL);
   assert(k != NULL, "no klass created");
 
-  // Hidden classes that are not strong and unsafe anonymous classes must update
-  // ClassLoaderData holder so that they can be unloaded when the mirror is no
-  // longer referenced.
-  if (!cl_info.is_strong_hidden() || is_unsafe_anon_class) {
+  // Hidden classes that are not strong must update ClassLoaderData holder
+  // so that they can be unloaded when the mirror is no longer referenced.
+  if (!cl_info.is_strong_hidden()) {
     k->class_loader_data()->initialize_holder(Handle(THREAD, k->java_mirror()));
   }
 
@@ -866,16 +860,7 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
     // But, do not add to dictionary.
   }
 
-  // Rewrite and patch constant pool here.
   k->link_class(CHECK_NULL);
-  if (cl_info.cp_patches() != NULL) {
-    k->constants()->patch_resolved_references(cl_info.cp_patches());
-  }
-
-  // If it's anonymous, initialize it now, since nobody else will.
-  if (is_unsafe_anon_class) {
-    k->eager_initialize(CHECK_NULL);
-  }
 
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
@@ -884,9 +869,6 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
   if (class_load_start_event.should_commit()) {
     post_class_load_event(&class_load_start_event, k, loader_data);
   }
-
-  assert(is_unsafe_anon_class || NULL == cl_info.cp_patches(),
-         "cp_patches only found with unsafe_anonymous_host");
 
   return k;
 }
@@ -965,8 +947,7 @@ InstanceKlass* SystemDictionary::resolve_from_stream(ClassFileStream* st,
                                                      Handle class_loader,
                                                      const ClassLoadInfo& cl_info,
                                                      TRAPS) {
-  bool is_unsafe_anon_class = cl_info.unsafe_anonymous_host() != NULL;
-  if (cl_info.is_hidden() || is_unsafe_anon_class) {
+  if (cl_info.is_hidden()) {
     return resolve_hidden_class_from_stream(st, class_name, class_loader, cl_info, CHECK_NULL);
   } else {
     return resolve_class_from_stream(st, class_name, class_loader, cl_info, CHECK_NULL);
@@ -1183,7 +1164,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   }
 
   InstanceKlass* new_ik = NULL;
-  // CFLH check is skipped for VM hidden or anonymous classes (see KlassFactory::create_from_stream).
+  // CFLH check is skipped for VM hidden classes (see KlassFactory::create_from_stream).
   // It will be skipped for shared VM hidden lambda proxy classes.
   if (!SystemDictionaryShared::is_hidden_lambda_proxy(ik)) {
     new_ik = KlassFactory::check_shared_class_file_load_hook(
@@ -1618,7 +1599,6 @@ void SystemDictionary::add_to_hierarchy(InstanceKlass* k) {
 // GC support
 
 // Assumes classes in the SystemDictionary are only unloaded at a safepoint
-// Note: anonymous classes are not in the SD.
 bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
 
   bool unloading_occurred;
