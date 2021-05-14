@@ -5978,7 +5978,7 @@ address generate_avx_ghash_processBlocks() {
     __ evpbroadcastd(xmm2, rax, Assembler::AVX_512bit);
     __ addq(source, 64);
 
-    __ movl(r15, 0x00011000);
+    __ movl(rax, 0x00011000);
     __ vpternlogd(xmm7, 0xfe, xmm0, xmm3, Assembler::AVX_512bit);
     __ evmovdqaq(xmm4, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
     __ evpbroadcastd(xmm1, rax, Assembler::AVX_512bit);
