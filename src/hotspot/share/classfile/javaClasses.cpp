@@ -201,11 +201,24 @@ int java_lang_String::_value_offset;
 int java_lang_String::_hash_offset;
 int java_lang_String::_hashIsZero_offset;
 int java_lang_String::_coder_offset;
+int java_lang_String::_flags_offset;
 
 bool java_lang_String::_initialized;
 
 bool java_lang_String::is_instance(oop obj) {
   return is_instance_inlined(obj);
+}
+
+bool java_lang_String::test_and_set_flag(oop java_string, uint8_t flag_mask) {
+  uint8_t* addr = flags_addr(java_string);
+  uint8_t value = Atomic::load(addr);
+  while ((value & flag_mask) == 0) {
+    uint8_t old_value = value;
+    value |= flag_mask;
+    value = Atomic::cmpxchg(addr, old_value, value);
+    if (value == old_value) return false; // Flag bit changed from 0 to 1.
+  }
+  return true;                  // Flag bit is already 1.
 }
 
 #define STRING_FIELDS_DO(macro) \
@@ -221,6 +234,7 @@ void java_lang_String::compute_offsets() {
 
   InstanceKlass* k = vmClasses::String_klass();
   STRING_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  STRING_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 
   _initialized = true;
 }
@@ -228,6 +242,7 @@ void java_lang_String::compute_offsets() {
 #if INCLUDE_CDS
 void java_lang_String::serialize_offsets(SerializeClosure* f) {
   STRING_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+  STRING_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
   f->do_bool(&_initialized);
 }
 #endif

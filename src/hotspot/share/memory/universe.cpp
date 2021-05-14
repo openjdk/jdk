@@ -42,6 +42,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -1066,6 +1067,8 @@ void Universe::initialize_verify_flags() {
       verify_flags |= Verify_CodeCacheOops;
     } else if (strcmp(token, "resolved_method_table") == 0) {
       verify_flags |= Verify_ResolvedMethodTable;
+    } else if (strcmp(token, "stringdedup") == 0) {
+      verify_flags |= Verify_StringDedup;
     } else {
       vm_exit_during_initialization(err_msg("VerifySubSet: \'%s\' memory sub-system is unknown, please correct it", token));
     }
@@ -1118,11 +1121,9 @@ void Universe::verify(VerifyOption option, const char* prefix) {
     StringTable::verify();
   }
   if (should_verify_subset(Verify_CodeCache)) {
-  {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     log_debug(gc, verify)("CodeCache");
     CodeCache::verify();
-  }
   }
   if (should_verify_subset(Verify_SystemDictionary)) {
     log_debug(gc, verify)("SystemDictionary");
@@ -1147,6 +1148,10 @@ void Universe::verify(VerifyOption option, const char* prefix) {
   if (should_verify_subset(Verify_ResolvedMethodTable)) {
     log_debug(gc, verify)("ResolvedMethodTable Oops");
     ResolvedMethodTable::verify();
+  }
+  if (should_verify_subset(Verify_StringDedup)) {
+    log_debug(gc, verify)("String Deduplication");
+    StringDedup::verify();
   }
 
   _verify_in_progress = false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,36 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPQUEUE_INLINE_HPP
-#define SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPQUEUE_INLINE_HPP
+package gc.stringdedup;
 
-#include "gc/shared/stringdedup/stringDedup.hpp"
-#include "gc/shared/stringdedup/stringDedupQueue.hpp"
+/*
+ * @test TestStringDeduplicationYoungGC
+ * @summary Test string deduplication during young GC
+ * @bug 8029075
+ * @requires vm.gc == "null" | vm.gc == "G1" | vm.gc == "Shenandoah"
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationYoungGC
+ */
 
-template <typename Q>
-void StringDedupQueue::create() {
-  assert(StringDedup::is_enabled(), "Must be enabled");
-  assert(_queue == NULL, "Can have only one queue");
-  _queue = new Q;
+public class TestStringDeduplicationYoungGC {
+    public static void main(String[] args) throws Exception {
+        TestStringDeduplicationTools.testYoungGC();
+    }
 }
-
-void StringDedupQueue::wait() {
-  queue()->wait_impl();
-}
-
-void StringDedupQueue::cancel_wait() {
-  queue()->cancel_wait_impl();
-}
-
-void StringDedupQueue::push(uint worker_id, oop java_string) {
-  queue()->push_impl(worker_id, java_string);
-}
-
-oop StringDedupQueue::pop() {
-  return queue()->pop_impl();
-}
-
-#endif // SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPQUEUE_INLINE_HPP
