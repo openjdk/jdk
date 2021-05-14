@@ -5872,7 +5872,7 @@ address generate_avx_ghash_processBlocks() {
     __ movl(length, end_offset);
     __ subl(length, start_offset);
     __ push(dest);          // Save for return value calc
-    __ cmpl(length, 0);
+    __ cmpl(length, 63);
     __ jcc(Assembler::lessEqual, L_exit);
 
     // Load lookup tables based on isURL
@@ -5883,6 +5883,9 @@ address generate_avx_ghash_processBlocks() {
     __ evmovdqaq(xmm6, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_addr()), Assembler::AVX_512bit, r13);
 
     __ BIND(L_continue);
+
+    __ vpxor(xmm7, xmm7, xmm7, Assembler::AVX_128bit);
+
     __ cmpl(length, 0xff);
     __ jcc(Assembler::lessEqual, L_process64);
 
@@ -5904,8 +5907,6 @@ address generate_avx_ghash_processBlocks() {
     __ evmovdqaq(xmm15, xmm8, Assembler::AVX_512bit);
     __ evmovdqaq(xmm14, xmm8, Assembler::AVX_512bit);
     __ evmovdqaq(xmm13, xmm8, Assembler::AVX_512bit);
-
-    __ vpxor(xmm7, xmm7, xmm7, Assembler::AVX_128bit);
 
     __ align(32);
     __ BIND(L_process256);
