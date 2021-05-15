@@ -68,7 +68,7 @@ public class SALauncher {
         System.out.println("    --core <corefile>       To operate on the given core file.");
         System.out.println("    --exe <executable for corefile>");
         if (canConnectToRemote) {
-            System.out.println("    --connect [<id>@]<host>[:registryport][/prefix] To connect to a remote debug server (debugd).");
+            System.out.println("    --connect [<serverid>@]<host>[:registryport][/servername] To connect to a remote debug server (debugd).");
         }
         System.out.println();
         System.out.println("    The --core and --exe options must be set together to give the core");
@@ -85,14 +85,12 @@ public class SALauncher {
         System.out.println("    Examples: jhsdb " + mode + " --pid 1234");
         System.out.println("          or  jhsdb " + mode + " --core ./core.1234 --exe ./myexe");
         if (canConnectToRemote) {
-            System.out.println("          or  jhsdb " + mode + " --connect id@debugserver:1234/prefix");
+            System.out.println("          or  jhsdb " + mode + " --connect serverid@debugserver:1234/servername");
         }
         return false;
     }
 
     private static boolean debugdHelp() {
-        // [options] <pid> [server-id]
-        // [options] <executable> <core> [server-id]
         System.out.println("    --serverid <id>         A unique identifier for this debug server.");
         System.out.println("    --rmiport <port>        Sets the port number to which the RMI connector is bound." +
                 " If not specified a random available port is used.");
@@ -104,7 +102,7 @@ public class SALauncher {
                 " be a hostname or an IPv4/IPv6 address. This option overrides the system property" +
                 " 'java.rmi.server.hostname'. If not specified, the system property is used. If the system" +
                 " property is not set, a system hostname is used.");
-        System.out.println("    --prefix   <url prefix> Sets the prefix to distinguish SA debugee.");
+        System.out.println("    --servername <name>     Instance name of debugd server.");
         return commonHelp("debugd");
     }
 
@@ -378,7 +376,7 @@ public class SALauncher {
                 "registryport=", "registryport",
                 "disable-registry", "disable-registry",
                 "hostname=", "hostname",
-                "prefix=", "prefix");
+                "servername=", "servername");
 
         Map<String, String> argMap = parseOptions(args, longOptsMap);
 
@@ -393,7 +391,7 @@ public class SALauncher {
         String javaExecutableName = argMap.get("exe");
         String coreFileName = argMap.get("core");
         String pidString = argMap.get("pid");
-        String prefix = argMap.get("prefix");
+        String serverName = argMap.get("servername");
 
         // Set RMI registry port, if specified
         if (registryPort != null) {
@@ -425,11 +423,6 @@ public class SALauncher {
             }
         }
 
-        // Set RMI URL prefix if specified
-        if (prefix != null) {
-            System.setProperty("sun.jvm.hotspot.rmi.serverNamePrefix", prefix);
-        }
-
         final HotSpotAgent agent = new HotSpotAgent();
 
         if (pidString != null) {
@@ -442,7 +435,7 @@ public class SALauncher {
             System.err.println("Attaching to process ID " + pid + " and starting RMI services," +
                     " please wait...");
             try {
-                agent.startServer(pid, serverID, rmiPort);
+                agent.startServer(pid, serverID, serverName, rmiPort);
             } catch (DebuggerException e) {
                 System.err.print("Error attaching to process or starting server: ");
                 e.printStackTrace();
@@ -454,7 +447,7 @@ public class SALauncher {
             System.err.println("Attaching to core " + coreFileName +
                     " from executable " + javaExecutableName + " and starting RMI services, please wait...");
             try {
-                agent.startServer(javaExecutableName, coreFileName, serverID, rmiPort);
+                agent.startServer(javaExecutableName, coreFileName, serverID, serverName, rmiPort);
             } catch (DebuggerException e) {
                 System.err.print("Error attaching to core file or starting server: ");
                 e.printStackTrace();

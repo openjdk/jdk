@@ -33,9 +33,9 @@ import sun.jvm.hotspot.debugger.DebuggerException;
 
 public class RMIHelper {
     private static final boolean startRegistry;
-    private static final Pattern CONNECT_PATTERN = Pattern.compile("^((?<id>.+?)@)?(?<host>.+?)(/(?<prefix>.+))?$");
+    private static final Pattern CONNECT_PATTERN = Pattern.compile("^((?<serverid>.+?)@)?(?<host>.+?)(/(?<servername>.+))?$");
+    private static final String DEFAULT_RMI_OBJECT_NAME = "SARemoteDebugger";
     private static int port;
-    private static String serverNamePrefix;
 
     static {
         String tmp = System.getProperty("sun.jvm.hotspot.rmi.startRegistry");
@@ -55,12 +55,10 @@ public class RMIHelper {
                 System.err.println("invalid port supplied, assuming default");
             }
         }
-
-        serverNamePrefix = System.getProperty("sun.jvm.hotspot.rmi.serverNamePrefix", "SARemoteDebugger");
     }
 
-    public static void rebind(String uniqueID, Remote object) throws DebuggerException {
-        String name = getName(uniqueID);
+    public static void rebind(String serverID, String serverName, Remote object) throws DebuggerException {
+        String name = getName(serverID, serverName);
         try {
             Naming.rebind(name, object);
         } catch (RemoteException re) {
@@ -80,8 +78,8 @@ public class RMIHelper {
         }
     }
 
-    public static void unbind(String uniqueID) throws DebuggerException {
-        String name = getName(uniqueID);
+    public static void unbind(String serverID, String serverName) throws DebuggerException {
+        String name = getName(serverID, serverName);
         try {
             Naming.unbind(name);
         } catch (Exception exp) {
@@ -89,19 +87,27 @@ public class RMIHelper {
         }
     }
 
-    public static Remote lookup(String debugServerID) throws DebuggerException {
-        // debugServerID follows the pattern [unique_id@]host[:port][/prefix]
-        // we have to transform this as //host[:port]/<serverNamePrefix>['_'<unique_id>]
-        Matcher matcher = CONNECT_PATTERN.matcher(debugServerID);
+    public static Remote lookup(String connectionString) throws DebuggerException {
+        // connectionString follows the pattern [serverid@]host[:port][/servername]
+        // we have to transform this as //host[:port]/<servername>['_'<serverid>]
+        Matcher matcher = CONNECT_PATTERN.matcher(connectionString);
         matcher.find();
+
+        String rmiObjectName = matcher.group("servername") == null ? DEFAULT_RMI_OBJECT_NAME
+                                                                   : matcher.group("servername");
+        String serverNamePrefix = System.getProperty("sun.jvm.hotspot.rmi.serverNamePrefix");
+        if (serverNamePrefix != null) {
+            System.err.println("WARNING: sun.jvm.hotspot.rmi.serverNamePrefix is deprecated. Please specify it in --connect.");
+            rmiObjectName = serverNamePrefix;
+        }
 
         StringBuilder nameBuf = new StringBuilder("//");
         nameBuf.append(matcher.group("host"));
         nameBuf.append('/');
-        nameBuf.append(matcher.group("prefix") == null ? serverNamePrefix : matcher.group("prefix"));
-        if (matcher.group("id") != null) {
+        nameBuf.append(rmiObjectName);
+        if (matcher.group("serverid") != null) {
             nameBuf.append('_');
-            nameBuf.append(matcher.group("id"));
+            nameBuf.append(matcher.group("serverid"));
         }
 
         try {
@@ -111,12 +117,15 @@ public class RMIHelper {
         }
     }
 
-    private static String getName(String uniqueID) {
-        String name = null;
-        if (uniqueID != null) {
-           name = serverNamePrefix + "_" + uniqueID;
-        } else {
-           name = serverNamePrefix;
+    private static String getName(String serverID, String serverName) {
+        String name = serverName == null ? DEFAULT_RMI_OBJECT_NAME : serverName;
+        String serverNamePrefix = System.getProperty("sun.jvm.hotspot.rmi.serverNamePrefix");
+        if (serverNamePrefix != null) {
+            System.err.println("WARNING: sun.jvm.hotspot.rmi.serverNamePrefix is deprecated. Please specify it in --servername.");
+            name = serverNamePrefix;
+        }
+        if (serverID != null) {
+           name += "_" + serverID;
         }
         if (port != Registry.REGISTRY_PORT) {
            name = "//localhost:" + port + "/" + name;

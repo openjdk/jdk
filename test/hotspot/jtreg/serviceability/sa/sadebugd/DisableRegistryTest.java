@@ -46,22 +46,22 @@ public class DisableRegistryTest {
     private static final String PREFIX_1 = "app1";
     private static final String PREFIX_2 = "app2";
 
-    private static DebugdUtils attachWithDebugd(int pid, boolean disableRegistry, String prefix) throws IOException {
-        var debugd = new DebugdUtils(null);
+    private static DebugdUtils attachWithDebugd(int pid, boolean disableRegistry, String serverName) throws IOException {
+        var debugd = new DebugdUtils();
         debugd.setRegistryPort(REGISTRY_PORT);
         debugd.setDisableRegistry(disableRegistry);
-        debugd.setPrefix(prefix);
+        debugd.setServerName(serverName);
         debugd.attach(pid);
         return debugd;
     }
 
-    private static void test(String prefix) throws IOException, InterruptedException {
-        assert prefix != null;
+    private static void test(String serverName) throws IOException, InterruptedException {
+        assert serverName != null;
 
         JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
         jhsdbLauncher.addToolArg("jinfo");
         jhsdbLauncher.addToolArg("--connect");
-        jhsdbLauncher.addToolArg("localhost:" + REGISTRY_PORT + "/" + prefix);
+        jhsdbLauncher.addToolArg("localhost:" + REGISTRY_PORT + "/" + serverName);
 
         Process jhsdb = (SATestUtils.createProcessBuilder(jhsdbLauncher)).start();
         OutputAnalyzer out = new OutputAnalyzer(jhsdb);
