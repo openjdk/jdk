@@ -782,28 +782,29 @@ TEST_VM(os, iso8601_time) {
   buffer[os::iso8601_timestamp_size] = 'X'; // canary
   const char* result = NULL;
   // YYYY-MM-DDThh:mm:ss.mmm+zzzz
-  const char* const pattern = "dddd-dd-dd.dd:dd:dd.ddd+dddd";
+  const char* const pattern_utc = "dddd-dd-dd.dd:dd:dd.ddd.0000";
+  const char* const pattern_local = "dddd-dd-dd.dd:dd:dd.ddd.dddd";
 
   result = os::iso8601_time(buffer, sizeof(buffer), true);
   tty->print_cr("%s", result);
   EXPECT_EQ(result, buffer);
-  EXPECT_TRUE(very_simple_string_matcher(pattern, result));
+  EXPECT_TRUE(very_simple_string_matcher(pattern_utc, result));
 
   result = os::iso8601_time(buffer, sizeof(buffer), false);
   tty->print_cr("%s", result);
   EXPECT_EQ(result, buffer);
-  EXPECT_TRUE(very_simple_string_matcher(pattern, result));
+  EXPECT_TRUE(very_simple_string_matcher(pattern_local, result));
 
   // Test with explicit timestamps
   result = os::iso8601_time(0, buffer, sizeof(buffer), true);
   tty->print_cr("%s", result);
   EXPECT_EQ(result, buffer);
-  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.000+dddd", result));
+  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.000+0000", result));
 
   result = os::iso8601_time(17, buffer, sizeof(buffer), true);
   tty->print_cr("%s", result);
   EXPECT_EQ(result, buffer);
-  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.017+dddd", result));
+  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.017+0000", result));
 
   // Canary should still be intact
   EXPECT_EQ(buffer[os::iso8601_timestamp_size], 'X');
