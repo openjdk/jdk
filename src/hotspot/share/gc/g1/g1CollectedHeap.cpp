@@ -61,7 +61,6 @@
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
-#include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
@@ -1706,8 +1705,6 @@ jint G1CollectedHeap::initialize() {
   // values in the heap have been properly initialized.
   _g1mm = new G1MonitoringSupport(this);
 
-  G1StringDedup::initialize();
-
   _preserved_marks_set.init(ParallelGCThreads);
 
   _collection_set.initialize(max_reserved_regions());
@@ -1724,9 +1721,6 @@ void G1CollectedHeap::stop() {
   _cr->stop();
   _service_thread->stop();
   _cm_thread->stop();
-  if (G1StringDedup::is_enabled()) {
-    G1StringDedup::stop();
-  }
 }
 
 void G1CollectedHeap::safepoint_synchronize_begin() {
@@ -2309,14 +2303,6 @@ size_t G1CollectedHeap::max_capacity() const {
   return max_regions() * HeapRegion::GrainBytes;
 }
 
-void G1CollectedHeap::deduplicate_string(oop str) {
-  assert(java_lang_String::is_instance(str), "invariant");
-
-  if (G1StringDedup::is_enabled()) {
-    G1StringDedup::deduplicate(str);
-  }
-}
-
 void G1CollectedHeap::prepare_for_verify() {
   _verifier->prepare_for_verify();
 }
@@ -2437,9 +2423,6 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   _cm->threads_do(tc);
   _cr->threads_do(tc);
   tc->do_thread(_service_thread);
-  if (G1StringDedup::is_enabled()) {
-    G1StringDedup::threads_do(tc);
-  }
 }
 
 void G1CollectedHeap::print_tracing_info() const {
@@ -3089,53 +3072,8 @@ void G1ParEvacuateFollowersClosure::do_void() {
 void G1CollectedHeap::complete_cleaning(BoolObjectClosure* is_alive,
                                         bool class_unloading_occurred) {
   uint num_workers = workers()->active_workers();
-  G1ParallelCleaningTask unlink_task(is_alive, num_workers, class_unloading_occurred, false);
+  G1ParallelCleaningTask unlink_task(is_alive, num_workers, class_unloading_occurred);
   workers()->run_task(&unlink_task);
-}
-
-// Clean string dedup data structures.
-// Ideally we would prefer to use a StringDedupCleaningTask here, but we want to
-// record the durations of the phases. Hence the almost-copy.
-class G1StringDedupCleaningTask : public AbstractGangTask {
-  BoolObjectClosure* _is_alive;
-  OopClosure* _keep_alive;
-  G1GCPhaseTimes* _phase_times;
-
-public:
-  G1StringDedupCleaningTask(BoolObjectClosure* is_alive,
-                            OopClosure* keep_alive,
-                            G1GCPhaseTimes* phase_times) :
-    AbstractGangTask("Partial Cleaning Task"),
-    _is_alive(is_alive),
-    _keep_alive(keep_alive),
-    _phase_times(phase_times)
-  {
-    assert(G1StringDedup::is_enabled(), "String deduplication disabled.");
-    StringDedup::gc_prologue(true);
-  }
-
-  ~G1StringDedupCleaningTask() {
-    StringDedup::gc_epilogue();
-  }
-
-  void work(uint worker_id) {
-    StringDedupUnlinkOrOopsDoClosure cl(_is_alive, _keep_alive);
-    {
-      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::StringDedupQueueFixup, worker_id);
-      StringDedupQueue::unlink_or_oops_do(&cl);
-    }
-    {
-      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::StringDedupTableFixup, worker_id);
-      StringDedupTable::unlink_or_oops_do(&cl, worker_id);
-    }
-  }
-};
-
-void G1CollectedHeap::string_dedup_cleaning(BoolObjectClosure* is_alive,
-                                            OopClosure* keep_alive,
-                                            G1GCPhaseTimes* phase_times) {
-  G1StringDedupCleaningTask cl(is_alive, keep_alive, phase_times);
-  workers()->run_task(&cl);
 }
 
 // Weak Reference Processing support
@@ -3844,15 +3782,6 @@ void G1CollectedHeap::post_evacuate_collection_set(G1EvacuationInfo& evacuation_
   G1KeepAliveClosure keep_alive(this);
 
   WeakProcessor::weak_oops_do(workers(), &is_alive, &keep_alive, p->weak_phase_times());
-
-  if (G1StringDedup::is_enabled()) {
-    double string_dedup_time_ms = os::elapsedTime();
-
-    string_dedup_cleaning(&is_alive, &keep_alive, p);
-
-    double string_cleanup_time_ms = (os::elapsedTime() - string_dedup_time_ms) * 1000.0;
-    p->record_string_deduplication_time(string_cleanup_time_ms);
-  }
 
   _allocator->release_gc_alloc_regions(evacuation_info);
 

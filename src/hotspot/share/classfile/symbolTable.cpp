@@ -452,7 +452,7 @@ Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
 void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHandle& cp,
                               int names_count, const char** names, int* lengths,
                               int* cp_indices, unsigned int* hashValues) {
-  // Note that c_heap will be true for non-strong hidden classes and unsafe anonymous classes
+  // Note that c_heap will be true for non-strong hidden classes.
   // even if their loader is the boot loader because they will have a different cld.
   bool c_heap = !loader_data->is_the_null_class_loader_data();
   for (int i = 0; i < names_count; i++) {

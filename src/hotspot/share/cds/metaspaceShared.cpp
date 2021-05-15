@@ -1375,21 +1375,6 @@ class CountSharedSymbols : public SymbolClosure {
 
 };
 
-// For -XX:PrintSharedArchiveAndExit
-class CountSharedStrings : public OopClosure {
- private:
-  int _count;
- public:
-  CountSharedStrings() : _count(0) {}
-  void do_oop(oop* p) {
-    _count++;
-  }
-  void do_oop(narrowOop* p) {
-    _count++;
-  }
-  int total() { return _count; }
-};
-
 // Read the miscellaneous data from the shared file, and
 // serialize it out to its various destinations.
 
@@ -1444,9 +1429,7 @@ void MetaspaceShared::initialize_shared_spaces() {
     CountSharedSymbols cl;
     SymbolTable::shared_symbols_do(&cl);
     tty->print_cr("Number of shared symbols: %d", cl.total());
-    CountSharedStrings cs;
-    StringTable::shared_oops_do(&cs);
-    tty->print_cr("Number of shared strings: %d", cs.total());
+    tty->print_cr("Number of shared strings: %zu", StringTable::shared_entry_count());
     tty->print_cr("VM version: %s\r\n", static_mapinfo->vm_version());
     if (FileMapInfo::current_info() == NULL || _archive_loading_failed) {
       tty->print_cr("archive is invalid");
