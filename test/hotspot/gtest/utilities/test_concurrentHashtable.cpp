@@ -49,8 +49,46 @@ struct Pointer : public AllStatic {
   }
 };
 
+struct Config : public AllStatic {
+  typedef uintptr_t Value;
+  struct TableElement{
+    TableElement * volatile _next;
+    Value _value;
+  };
+
+  static const uint nelements = 5;
+  static TableElement* elements;
+  static uint cur_index;
+
+  static uintx get_hash(const Value& value, bool* dead_hash) {
+    return (uintx)value;
+  }
+  static void initialize() {
+    elements = (TableElement*)::malloc(nelements * sizeof(TableElement));
+  }
+  static void* allocate_node(size_t size, const Value& value) {
+    return (void*)&elements[cur_index++];
+  }
+
+  static void free_node(void* memory, const Value& value) {
+    return;
+  }
+
+  static void reset() {
+    cur_index = 0;
+  }
+
+  static void bulk_free() {
+    ::free(elements);
+  }
+};
+
+Config::TableElement* Config::elements = nullptr;
+uint Config::cur_index = 0;
+
 typedef ConcurrentHashTable<Pointer, mtInternal> SimpleTestTable;
 typedef ConcurrentHashTable<Pointer, mtInternal>::MultiGetHandle SimpleTestGetHandle;
+typedef ConcurrentHashTable<Config, mtInternal> CustomTestTable;
 
 struct SimpleTestLookup {
   uintptr_t _val;
@@ -75,20 +113,23 @@ struct ValueGet {
   }
 };
 
-static uintptr_t cht_get_copy(SimpleTestTable* cht, Thread* thr, SimpleTestLookup stl) {
+template <typename T=SimpleTestTable>
+static uintptr_t cht_get_copy(T* cht, Thread* thr, SimpleTestLookup stl) {
   ValueGet vg;
   cht->get(thr, stl, vg);
   return vg.get_value();
 }
 
-static void cht_find(Thread* thr, SimpleTestTable* cht, uintptr_t val) {
+template <typename T=SimpleTestTable>
+static void cht_find(Thread* thr, T* cht, uintptr_t val) {
   SimpleTestLookup stl(val);
   ValueGet vg;
   EXPECT_EQ(cht->get(thr, stl, vg), true) << "Getting an old value failed.";
   EXPECT_EQ(val, vg.get_value()) << "Getting an old value failed.";
 }
 
-static void cht_insert_and_find(Thread* thr, SimpleTestTable* cht, uintptr_t val) {
+template <typename T=SimpleTestTable>
+static void cht_insert_and_find(Thread* thr, T* cht, uintptr_t val) {
   SimpleTestLookup stl(val);
   EXPECT_EQ(cht->insert(thr, stl, val), true) << "Inserting an unique value failed.";
   cht_find(thr, cht, val);
@@ -218,6 +259,32 @@ static void cht_getinsert_bulkdelete_task(Thread* thr) {
   EXPECT_FALSE(cht->remove(thr, stl3)) << "Odd value should not exists.";
 
   delete cht;
+}
+
+static void cht_reset_shrink(Thread* thr) {
+  uintptr_t val1 = 1;
+  uintptr_t val2 = 2;
+  uintptr_t val3 = 3;
+  SimpleTestLookup stl1(val1), stl2(val2), stl3(val3);
+
+  Config::initialize();
+  CustomTestTable* cht = new CustomTestTable();
+
+  cht_insert_and_find(thr, cht, val1);
+  cht_insert_and_find(thr, cht, val2);
+  cht_insert_and_find(thr, cht, val3);
+
+  cht->unsafe_reset();
+  Config::reset();
+
+  EXPECT_EQ(cht_get_copy(cht, thr, stl1), (uintptr_t)0) << "Table should have been reset";
+  // Re-inserted values should not be considered duplicates; table was reset.
+  cht_insert_and_find(thr, cht, val1);
+  cht_insert_and_find(thr, cht, val2);
+  cht_insert_and_find(thr, cht, val3);
+
+  delete cht;
+  Config::bulk_free();
 }
 
 static void cht_scope(Thread* thr) {
@@ -392,6 +459,10 @@ TEST_VM(ConcurrentHashTable, basic_get_insert_bulk_delete) {
 
 TEST_VM(ConcurrentHashTable, basic_get_insert_bulk_delete_task) {
   nomt_test_doer(cht_getinsert_bulkdelete_task);
+}
+
+TEST_VM(ConcurrentHashTable, basic_reset_shrink) {
+  nomt_test_doer(cht_reset_shrink);
 }
 
 TEST_VM(ConcurrentHashTable, basic_scan) {

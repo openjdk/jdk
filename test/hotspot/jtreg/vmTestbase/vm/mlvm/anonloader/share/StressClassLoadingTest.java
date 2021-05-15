@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  */
 
 package vm.mlvm.anonloader.share;
+
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 
 import java.io.File;
 import java.util.Objects;
@@ -50,7 +53,7 @@ import vm.share.UnsafeAccess;
  * and loads it into JVM using either:
  * <ul>
  *    <li>a custom {@link java.lang.ClassLoader} implementation or
- *    <li>{@link sun.misc.Unsafe#defineAnonymousClass} call.
+ *    <li>{@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass} call.
  * </ul>
  *
  * <p>Loading is done in a separate thread. If this thread is stuck,
@@ -92,12 +95,9 @@ public abstract class StressClassLoadingTest extends MlvmTest {
                     + " thread. The parser thread is killed after the timeout")
     private static int parseTimeout;
 
-    @Option(name = "unsafeLoad", default_value = "false",
-            description = "An option for adhoc experiments: load class via "
-                    + "Unsafe.defineAnonymousClass(). Since in this way the "
-                    + "loading process skips several security checks, if the "
-                    + "class is not valid, crashes and assertions are normal.")
-    private static boolean unsafeLoad;
+    @Option(name = "hiddenLoad", default_value = "false",
+            description = "An option for adhoc experiments: load class as a hidden class.")
+    private static boolean hiddenLoad;
 
     private String fileNamePrefix = "";
 
@@ -125,7 +125,7 @@ public abstract class StressClassLoadingTest extends MlvmTest {
                     optionsSetup = true;
 
                     Env.traceNormal("StressClassLoadingTest options: iterations: " + iterations);
-                    Env.traceNormal("StressClassLoadingTest options: unsafeLoad: " + unsafeLoad);
+                    Env.traceNormal("StressClassLoadingTest options: hiddenLoad: " + hiddenLoad);
                     Env.traceNormal("StressClassLoadingTest options: parseTimeout: " + parseTimeout);
                     Env.traceNormal("StressClassLoadingTest options: saveClassFile: " + saveClassFile);
                 }
@@ -162,8 +162,10 @@ public abstract class StressClassLoadingTest extends MlvmTest {
                 public void run() {
                     try {
                         Class<?> c;
-                        if (unsafeLoad) {
-                            c = UnsafeAccess.unsafe.defineAnonymousClass(hostClass, classBytes, null);
+                        if (hiddenLoad) {
+                            Lookup lookup = MethodHandles.lookup();
+                            c = lookup.defineHiddenClass(classBytes, true).lookupClass();
+
                         } else {
                             c = CustomClassLoaders.makeClassBytesLoader(classBytes, className)
                                     .loadClass(className);

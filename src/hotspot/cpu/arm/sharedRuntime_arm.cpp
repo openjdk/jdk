@@ -1159,8 +1159,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Remember the handle for the unlocking code
     __ mov(sync_handle, R1);
 
-    __ resolve(IS_NOT_NULL, sync_obj);
-
     if(UseBiasedLocking) {
       __ biased_locking_enter(sync_obj, tmp, disp_hdr/*scratched*/, false, Rtemp, lock_done, slow_lock_biased);
     }
@@ -1244,8 +1242,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
     __ ldr(sync_obj, Address(sync_handle));
-
-    __ resolve(IS_NOT_NULL, sync_obj);
 
     if(UseBiasedLocking) {
       __ biased_locking_exit(sync_obj, Rtemp, unlock_done);

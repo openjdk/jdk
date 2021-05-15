@@ -374,7 +374,21 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     // Check if we need to hoist decodeHeapOop_not_null first.
     Block *valb = get_block_for_node(val);
     if( block != valb && block->_dom_depth < valb->_dom_depth ) {
-      // Hoist it up to the end of the test block.
+      // Hoist it up to the end of the test block together with its inputs if they exist.
+      for (uint i = 2; i < val->req(); i++) {
+        // DecodeN has 2 regular inputs + optional MachTemp or load Base inputs.
+        Node *temp = val->in(i);
+        Block *tempb = get_block_for_node(temp);
+        if (!tempb->dominates(block)) {
+          assert(block->dominates(tempb), "sanity check: temp node placement");
+          // We only expect nodes without further inputs, like MachTemp or load Base.
+          assert(temp->req() == 0 || (temp->req() == 1 && temp->in(0) == (Node*)C->root()),
+                 "need for recursive hoisting not expected");
+          tempb->find_remove(temp);
+          block->add_inst(temp);
+          map_node_to_block(temp, block);
+        }
+      }
       valb->find_remove(val);
       block->add_inst(val);
       map_node_to_block(val, block);

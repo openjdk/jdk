@@ -1906,14 +1906,11 @@ public abstract class FloatVector extends AbstractVector<Float> {
     FloatVector sliceTemplate(int origin, Vector<Float> v1) {
         FloatVector that = (FloatVector) v1;
         that.check(this);
-        float[] a0 = this.vec();
-        float[] a1 = that.vec();
-        float[] res = new float[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Float> iota = iotaShuffle();
+        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((float)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -1935,6 +1932,17 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public abstract
     FloatVector slice(int origin);
 
+    /*package-private*/
+    final
+    @ForceInline
+    FloatVector sliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Float> iota = iotaShuffle();
+        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((float)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -1949,21 +1957,12 @@ public abstract class FloatVector extends AbstractVector<Float> {
     unsliceTemplate(int origin, Vector<Float> w, int part) {
         FloatVector that = (FloatVector) w;
         that.check(this);
-        float[] slice = this.vec();
-        float[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Float> iota = iotaShuffle();
+        VectorMask<Float> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+                                                                  (broadcast((float)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return that.blend(this.rearrange(iota), blendMask);
     }
 
     /*package-private*/
@@ -1992,6 +1991,19 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @Override
     public abstract
     FloatVector unslice(int origin);
+
+    /*package-private*/
+    final
+    @ForceInline
+    FloatVector
+    unsliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Float> iota = iotaShuffle();
+        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.GE,
+                                                                  (broadcast((float)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
 
     private ArrayIndexOutOfBoundsException
     wrongPartForSlice(int part) {

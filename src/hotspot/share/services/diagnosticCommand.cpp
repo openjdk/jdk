@@ -496,13 +496,30 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
   _all("-all", "Inspect all objects, including unreachable objects",
-       "BOOLEAN", false, "false") {
+       "BOOLEAN", false, "false"),
+  _parallel_thread_num("-parallel",
+       "Number of parallel threads to use for heap inspection. "
+       "0 (the default) means let the VM determine the number of threads to use. "
+       "1 means use one thread (disable parallelism). "
+       "For any other value the VM will try to use the specified number of "
+       "threads, but might use fewer.",
+       "INT", false, "0") {
   _dcmdparser.add_dcmd_option(&_all);
+  _dcmdparser.add_dcmd_option(&_parallel_thread_num);
 }
 
 void ClassHistogramDCmd::execute(DCmdSource source, TRAPS) {
+  jlong num = _parallel_thread_num.value();
+  if (num < 0) {
+    output()->print_cr("Parallel thread number out of range (>=0): " JLONG_FORMAT, num);
+    return;
+  }
+  uint parallel_thread_num = num == 0
+      ? MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8)
+      : num;
   VM_GC_HeapInspection heapop(output(),
-                              !_all.value() /* request full gc if false */);
+                              !_all.value(), /* request full gc if false */
+                              parallel_thread_num);
   VMThread::execute(&heapop);
 }
 

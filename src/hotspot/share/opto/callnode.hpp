@@ -353,6 +353,18 @@ public:
   }
 
   JVMState* jvms() const { return _jvms; }
+  virtual bool needs_deep_clone_jvms(Compile* C) { return false; }
+  void clone_jvms(Compile* C) {
+    if (jvms() != NULL) {
+      if (needs_deep_clone_jvms(C)) {
+        set_jvms(jvms()->clone_deep(C));
+        jvms()->set_map_deep(this);
+      } else {
+        jvms()->clone_shallow(C)->bind_map(this);
+      }
+    }
+  }
+
  private:
   void verify_input(JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
@@ -616,14 +628,8 @@ public:
   virtual bool        guaranteed_safepoint()  { return true; }
   // For macro nodes, the JVMState gets modified during expansion. If calls
   // use MachConstantBase, it gets modified during matching. So when cloning
-  // the node the JVMState must be cloned. Default is not to clone.
-  virtual bool needs_clone_jvms(Compile* C) { return C->needs_clone_jvms(); }
-  void clone_jvms(Compile* C) {
-    if ((jvms() != NULL) && needs_clone_jvms(C)) {
-      set_jvms(jvms()->clone_deep(C));
-      jvms()->set_map_deep(this);
-    }
-  }
+  // the node the JVMState must be deep cloned. Default is to shallow clone.
+  virtual bool needs_deep_clone_jvms(Compile* C) { return C->needs_deep_clone_jvms(); }
 
   // Returns true if the call may modify n
   virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseTransform* phase);
@@ -737,10 +743,10 @@ public:
   bool is_boxing_method() const {
     return is_macro() && (method() != NULL) && method()->is_boxing_method();
   }
-  // Late inlining modifies the JVMState, so we need to clone it
+  // Late inlining modifies the JVMState, so we need to deep clone it
   // when the call node is cloned (because it is macro node).
-  virtual bool needs_clone_jvms(Compile* C) {
-    return is_boxing_method() || CallNode::needs_clone_jvms(C);
+  virtual bool needs_deep_clone_jvms(Compile* C) {
+    return is_boxing_method() || CallNode::needs_deep_clone_jvms(C);
   }
 
   virtual int         Opcode() const;
@@ -763,10 +769,10 @@ public:
     init_class_id(Class_CallDynamicJava);
   }
 
-  // Late inlining modifies the JVMState, so we need to clone it
+  // Late inlining modifies the JVMState, so we need to deep clone it
   // when the call node is cloned.
-  virtual bool needs_clone_jvms(Compile* C) {
-    return IncrementalInlineVirtual || CallNode::needs_clone_jvms(C);
+  virtual bool needs_deep_clone_jvms(Compile* C) {
+    return IncrementalInlineVirtual || CallNode::needs_deep_clone_jvms(C);
   }
 
   int _vtable_index;
@@ -937,8 +943,8 @@ public:
   virtual uint size_of() const; // Size is bigger
   AllocateNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
                Node *size, Node *klass_node, Node *initial_test);
-  // Expansion modifies the JVMState, so we need to clone it
-  virtual bool needs_clone_jvms(Compile* C) { return true; }
+  // Expansion modifies the JVMState, so we need to deep clone it
+  virtual bool needs_deep_clone_jvms(Compile* C) { return true; }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual bool        guaranteed_safepoint()  { return false; }
@@ -1151,8 +1157,8 @@ public:
   virtual bool        guaranteed_safepoint()  { return false; }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  // Expansion modifies the JVMState, so we need to clone it
-  virtual bool needs_clone_jvms(Compile* C) { return true; }
+  // Expansion modifies the JVMState, so we need to deep clone it
+  virtual bool needs_deep_clone_jvms(Compile* C) { return true; }
 
   bool is_nested_lock_region(); // Is this Lock nested?
   bool is_nested_lock_region(Compile * c); // Why isn't this Lock nested?

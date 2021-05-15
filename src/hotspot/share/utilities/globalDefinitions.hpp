@@ -417,6 +417,7 @@ inline address_word  castable_address(void* x)                { return address_w
 inline size_t pointer_delta(const volatile void* left,
                             const volatile void* right,
                             size_t element_size) {
+  assert(left >= right, "avoid underflow");
   return (((uintptr_t) left) - ((uintptr_t) right)) / element_size;
 }
 

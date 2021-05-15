@@ -2290,7 +2290,7 @@ void Parse::add_safepoint() {
 
   // Provide an edge from root to safepoint.  This makes the safepoint
   // appear useful until the parse has completed.
-  if( OptoRemoveUseless && transformed_sfpnt->is_SafePoint() ) {
+  if (transformed_sfpnt->is_SafePoint()) {
     assert(C->root() != NULL, "Expect parse is still valid");
     C->root()->add_prec(transformed_sfpnt);
   }
