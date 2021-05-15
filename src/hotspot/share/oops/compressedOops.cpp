@@ -219,7 +219,6 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     //  cannot be larger than that).
 
     base = addr;
-    shift = LogKlassAlignmentInBytes;
 
     // JDK-8265705
     // This is a temporary fix for aarch64: there, if the range-to-be-encoded is located
@@ -229,7 +228,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     // Note however that this is not a perfect solution. Ideally this whole function
     //  should be CDS agnostic, that would simplify it - and testing - alot. See JDK-8267141
     //  for details.
-    AARCH64_ONLY(shift = 0);
+    shift = 0;
 
     // This must be true since at dumptime cds+ccs is 4G, at runtime it can
     //  only be smaller, see comment above.
