@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,18 +101,14 @@ import jdk.internal.misc.VM;
  *    }
  *  }
  * </pre>
- * This approach allows an alternate clock, such as {@link #fixed(Instant, ZoneId) fixed}
+ * This approach allows an alternative clock, such as {@link #fixed(Instant, ZoneId) fixed}
  * or {@link #offset(Clock, Duration) offset} to be used during testing.
  * <p>
  * The {@code system} factory methods provide clocks based on the best available
- * system clock This may use {@link System#currentTimeMillis()}, or a higher
+ * system clock. This may use {@link System#currentTimeMillis()}, or a higher
  * resolution clock if one is available.
- * <p>
- * Related to this class is {@link InstantSource} which is an interface that only
- * provides access to the current instant, and does not provide access to the time-zone.
- * Where an application only requires the current instant {@code InstantSource} should
- * be preferred to this class. For example, his might be the case where the time-zone
- * is provided by a separate user localization subsystem.
+ *
+ * @see InstantSource
  *
  * @since 1.8
  */
@@ -333,7 +329,7 @@ public abstract class Clock implements InstantSource {
     //-------------------------------------------------------------------------
     /**
      * Obtains a clock that returns instants from the specified clock with the
-     * specified duration added
+     * specified duration added.
      * <p>
      * This clock wraps another clock, returning instants that are later by the
      * specified duration. If the duration is negative, the instants will be
@@ -504,7 +500,7 @@ public abstract class Clock implements InstantSource {
         }
         return Instant.ofEpochSecond(localOffset, adjustment);
     }
-    
+
     //-----------------------------------------------------------------------
     /**
      * An instant source that always returns the latest time from

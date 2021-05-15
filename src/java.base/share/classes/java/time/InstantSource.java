@@ -24,12 +24,8 @@
  */
 package java.time;
 
-import java.time.Clock.FixedClock;
-import java.time.Clock.OffsetClock;
 import java.time.Clock.SourceClock;
-import java.time.Clock.SystemClock;
 import java.time.Clock.SystemInstantSource;
-import java.time.Clock.TickClock;
 import java.util.Objects;
 
 /**
@@ -56,16 +52,16 @@ import java.util.Objects;
  *    }
  *  }
  * </pre>
- * This approach allows an alternate source, such as {@link #fixed(Instant) fixed}
+ * This approach allows an alternative source, such as {@link #fixed(Instant) fixed}
  * or {@link #offset(InstantSource, Duration) offset} to be used during testing.
  * <p>
- * The {@code system} factory method provide a source based on the best available
- * system clock This may use {@link System#currentTimeMillis()}, or a higher
+ * The {@code system} factory method provides a source based on the best available
+ * system clock. This may use {@link System#currentTimeMillis()}, or a higher
  * resolution clock if one is available.
  *
  * @implSpec
  * This interface must be implemented with care to ensure other classes operate correctly.
- * All implementations that can be instantiated must be final, immutable and thread-safe.
+ * All implementations must be thread-safe.
  * <p>
  * The principal methods are defined to allow the throwing of an exception.
  * In normal use, no exceptions will be thrown, however one possible implementation would be to
@@ -109,7 +105,7 @@ public interface InstantSource {
      *
      * @return a source that uses the best available system clock, not null
      */
-    public static InstantSource system() {
+    static InstantSource system() {
         return SystemInstantSource.INSTANCE;
     }
 
@@ -146,7 +142,7 @@ public interface InstantSource {
      *  divisible into one second
      * @throws ArithmeticException if the duration is too large to be represented as nanos
      */
-    public static InstantSource tick(InstantSource baseSource, Duration tickDuration) {
+    static InstantSource tick(InstantSource baseSource, Duration tickDuration) {
         Objects.requireNonNull(baseSource, "baseSource");
         return Clock.tick(baseSource.withZone(ZoneOffset.UTC), tickDuration);
     }
@@ -165,14 +161,14 @@ public interface InstantSource {
      * @param fixedInstant  the instant to use, not null
      * @return a source that always returns the same instant, not null
      */
-    public static InstantSource fixed(Instant fixedInstant) {
+    static InstantSource fixed(Instant fixedInstant) {
         return Clock.fixed(fixedInstant, ZoneOffset.UTC);
     }
 
     //-------------------------------------------------------------------------
     /**
      * Obtains a source that returns instants from the specified source with the
-     * specified duration added
+     * specified duration added.
      * <p>
      * This source wraps another source, returning instants that are later by the
      * specified duration. If the duration is negative, the instants will be
@@ -189,7 +185,7 @@ public interface InstantSource {
      * @param offsetDuration  the duration to add, not null
      * @return a source based on the base source with the duration added, not null
      */
-    public static InstantSource offset(InstantSource baseSource, Duration offsetDuration) {
+    static InstantSource offset(InstantSource baseSource, Duration offsetDuration) {
         Objects.requireNonNull(baseSource, "baseSource");
         return Clock.offset(baseSource.withZone(ZoneOffset.UTC), offsetDuration);
     }
