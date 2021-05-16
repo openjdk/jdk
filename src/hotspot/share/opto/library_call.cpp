@@ -5222,6 +5222,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   int scale_val = scale->bottom_type()->is_int()->get_con();
   BasicType prim_types[] = {T_BYTE, T_SHORT, T_INT, T_LONG};
   BasicType vec_basictype = prim_types[scale_val];
+  const Type* vec_type = Type::get_const_basic_type(vec_basictype);
   int vec_len = UsePartialInlineSize / type2aelembytes(vec_basictype);
 
   Node* length_in_bytes = _gvn.transform(new LShiftINode(length, scale));
@@ -5229,7 +5230,9 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   Node* cmp_res = _gvn.transform(new BoolNode(length_cmp, BoolTest::le));
 
   // Enable partial in-lining if compare size is less than UsePartialInlineSize(default 32 bytes).
-  if (is_subword_type(vec_basictype) && Type::cmp(TypeInt::ZERO, cmp_res->bottom_type()) &&
+  bool enable_pi = (UsePartialInlineSize > 32) ? (NULL != vec_type->isa_int())
+                                               : is_subword_type(vec_basictype);
+  if (enable_pi && Type::cmp(TypeInt::ZERO, cmp_res->bottom_type()) &&
       (Matcher::match_rule_supported_vector(Op_VectorMaskGen , vec_len, vec_basictype) &&
        Matcher::match_rule_supported_vector(Op_LoadVectorMasked , vec_len, vec_basictype) &&
        Matcher::match_rule_supported_vector(Op_VectorCmpMasked, vec_len, vec_basictype))) {
@@ -5246,7 +5249,6 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
     assert(fast_path && slow_path, "");
 
     const TypeVect* vt = TypeVect::make(vec_basictype, vec_len);
-    const Type* vec_type = Type::get_const_basic_type(vec_basictype);
     Node* mask_gen = _gvn.transform(new VectorMaskGenNode(ConvI2L(length), TypeVect::VECTMASK, vec_type));
 
     const TypePtr* ptr_type_a = obja_adr->Value(&_gvn)->isa_ptr();
