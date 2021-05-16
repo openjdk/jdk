@@ -25,6 +25,7 @@
 package java.lang;
 
 import java.lang.annotation.Native;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.time.Instant;
@@ -39,8 +40,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import static java.security.AccessController.doPrivileged;
 
 /**
  * ProcessHandleImpl is the implementation of ProcessHandle.
@@ -84,7 +83,7 @@ final class ProcessHandleImpl implements ProcessHandle {
      * The thread pool of "process reaper" daemon threads.
      */
     private static final Executor processReaperExecutor =
-            doPrivileged((PrivilegedAction<Executor>) () -> {
+            AccessController.doPrivileged((PrivilegedAction<Executor>) () -> {
                 // Initialize ThreadLocalRandom now to avoid using the smaller stack
                 // of the processReaper threads.
                 ThreadLocalRandom.current();

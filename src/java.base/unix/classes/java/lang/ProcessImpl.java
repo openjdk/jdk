@@ -42,7 +42,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.security.AccessController;
-import static java.security.AccessController.doPrivileged;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -321,7 +320,7 @@ final class ProcessImpl extends Process {
         processHandle = ProcessHandleImpl.getInternal(pid);
 
         try {
-            doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+            AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
                 initStreams(fds, forceNullOutputStream);
                 return null;
             });

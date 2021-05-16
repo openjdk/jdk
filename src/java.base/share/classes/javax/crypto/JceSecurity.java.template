@@ -73,6 +73,7 @@ import sun.security.util.Debug;
  * @since 1.4
  */
 
+@SuppressWarnings("removal")
 final class JceSecurity {
 
     private static final Debug debug = Debug.getInstance("jca");

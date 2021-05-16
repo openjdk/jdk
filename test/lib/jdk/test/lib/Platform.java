@@ -48,6 +48,7 @@ public class Platform {
     private static final String compiler    = privilegedGetProperty("sun.management.compiler");
     private static final String testJdk     = privilegedGetProperty("test.jdk");
 
+    @SuppressWarnings("removal")
     private static String privilegedGetProperty(String key) {
         return AccessController.doPrivileged((
                 PrivilegedAction<String>) () -> System.getProperty(key));

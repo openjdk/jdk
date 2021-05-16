@@ -55,6 +55,7 @@ public class WhiteBox {
    * untrusted code.
    */
   public synchronized static WhiteBox getWhiteBox() {
+    @SuppressWarnings("removal")
     SecurityManager sm = System.getSecurityManager();
     if (sm != null) {
       sm.checkPermission(new WhiteBoxPermission("getInstance"));
