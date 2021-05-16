@@ -651,22 +651,22 @@ final class Double64Vector extends DoubleVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_TRUECOUNT, Double64Mask.class, long.class, VLENGTH, this,
-                                        (m) -> trueCountHelper(((Double64Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Double64Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((Double64Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_FIRSTTRUE, Double64Mask.class, long.class, VLENGTH, this,
-                                        (m) -> firstTrueHelper(((Double64Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Double64Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((Double64Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_LASTTRUE, Double64Mask.class, long.class, VLENGTH, this,
-                                        (m) -> lastTrueHelper(((Double64Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Double64Mask.class, long.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((Double64Mask)m).getBits()));
         }
 
         // Reductions

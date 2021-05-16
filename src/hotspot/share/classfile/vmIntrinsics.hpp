@@ -925,7 +925,7 @@ class methodHandle;
   do_intrinsic(_VectorMaskOp, jdk_internal_vm_vector_VectorSupport, vector_mask_oper_name, vector_mask_oper_sig, F_S)                          \
     do_signature(vector_mask_oper_sig, "(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;"                                               \
                                         "Ljdk/internal/vm/vector/VectorSupport$VectorMaskOp;)I")                                               \
-    do_name(vector_mask_oper_name, "maskOp")                                                                                                   \
+    do_name(vector_mask_oper_name, "maskReductionCoerced")                                                                                     \
                                                                                                                                                \
    /* (2) Bytecode intrinsics                                                                        */                        \
                                                                                                                                \

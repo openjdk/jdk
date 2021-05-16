@@ -657,22 +657,22 @@ final class Float128Vector extends FloatVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_TRUECOUNT, Float128Mask.class, int.class, VLENGTH, this,
-                                        (m) -> trueCountHelper(((Float128Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Float128Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((Float128Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_FIRSTTRUE, Float128Mask.class, int.class, VLENGTH, this,
-                                        (m) -> firstTrueHelper(((Float128Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Float128Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((Float128Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_LASTTRUE, Float128Mask.class, int.class, VLENGTH, this,
-                                        (m) -> lastTrueHelper(((Float128Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Float128Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((Float128Mask)m).getBits()));
         }
 
         // Reductions

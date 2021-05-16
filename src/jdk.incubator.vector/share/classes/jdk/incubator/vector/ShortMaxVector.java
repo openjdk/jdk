@@ -655,22 +655,22 @@ final class ShortMaxVector extends ShortVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_TRUECOUNT, ShortMaxMask.class, short.class, VLENGTH, this,
-                                        (m) -> trueCountHelper(((ShortMaxMask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, ShortMaxMask.class, short.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((ShortMaxMask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_FIRSTTRUE, ShortMaxMask.class, short.class, VLENGTH, this,
-                                        (m) -> firstTrueHelper(((ShortMaxMask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, ShortMaxMask.class, short.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((ShortMaxMask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_LASTTRUE, ShortMaxMask.class, short.class, VLENGTH, this,
-                                        (m) -> lastTrueHelper(((ShortMaxMask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, ShortMaxMask.class, short.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((ShortMaxMask)m).getBits()));
         }
 
         // Reductions

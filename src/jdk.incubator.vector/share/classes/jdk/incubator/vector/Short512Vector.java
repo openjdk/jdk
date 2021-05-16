@@ -717,22 +717,22 @@ final class Short512Vector extends ShortVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_TRUECOUNT, Short512Mask.class, short.class, VLENGTH, this,
-                                        (m) -> trueCountHelper(((Short512Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Short512Mask.class, short.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((Short512Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_FIRSTTRUE, Short512Mask.class, short.class, VLENGTH, this,
-                                        (m) -> firstTrueHelper(((Short512Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Short512Mask.class, short.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((Short512Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_LASTTRUE, Short512Mask.class, short.class, VLENGTH, this,
-                                        (m) -> lastTrueHelper(((Short512Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Short512Mask.class, short.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((Short512Mask)m).getBits()));
         }
 
         // Reductions

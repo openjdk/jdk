@@ -465,8 +465,8 @@ public class VectorSupport {
 
     @IntrinsicCandidate
     public static
-    <M>
-    int maskOp(int oper, Class<?> maskClass, Class<?> elemClass, int length, M m,
+    <E, M>
+    int maskReductionCoerced(int oper, Class<? extends M> maskClass, Class<?> elemClass, int length, M m,
                VectorMaskOp<M> defaultImpl) {
        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
        return defaultImpl.apply(m);

@@ -685,22 +685,22 @@ final class Int512Vector extends IntVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_TRUECOUNT, Int512Mask.class, int.class, VLENGTH, this,
-                                        (m) -> trueCountHelper(((Int512Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Int512Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((Int512Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_FIRSTTRUE, Int512Mask.class, int.class, VLENGTH, this,
-                                        (m) -> firstTrueHelper(((Int512Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Int512Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((Int512Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_LASTTRUE, Int512Mask.class, int.class, VLENGTH, this,
-                                        (m) -> lastTrueHelper(((Int512Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Int512Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((Int512Mask)m).getBits()));
         }
 
         // Reductions

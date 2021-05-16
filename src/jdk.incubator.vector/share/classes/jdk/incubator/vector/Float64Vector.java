@@ -653,22 +653,22 @@ final class Float64Vector extends FloatVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_TRUECOUNT, Float64Mask.class, int.class, VLENGTH, this,
-                                        (m) -> trueCountHelper(((Float64Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Float64Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((Float64Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_FIRSTTRUE, Float64Mask.class, int.class, VLENGTH, this,
-                                        (m) -> firstTrueHelper(((Float64Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Float64Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((Float64Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return VectorSupport.maskOp(VECTOR_OP_MASK_LASTTRUE, Float64Mask.class, int.class, VLENGTH, this,
-                                        (m) -> lastTrueHelper(((Float64Mask)m).getBits()));
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Float64Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((Float64Mask)m).getBits()));
         }
 
         // Reductions

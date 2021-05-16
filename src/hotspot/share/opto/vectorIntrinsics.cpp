@@ -404,8 +404,9 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   return true;
 }
 
-// <E, M extends VectorMask<E>>
-// int maskOp(int oper, Class<?> MaskClass, Class<?> E, int length, M m, VectorMaskOp<E, M> defaultImpl)
+// <E, M>
+// int maskReductionCoerced(int oper, Class<? extends M> maskClass, Class<?> elemClass,
+//                          int length, M m, VectorMaskOp<M> defaultImpl)
 bool LibraryCallKit::inline_vector_mask_operation() {
   const TypeInt*     oper       = gvn().type(argument(0))->isa_int();
   const TypeInstPtr* mask_klass = gvn().type(argument(1))->isa_instptr();
