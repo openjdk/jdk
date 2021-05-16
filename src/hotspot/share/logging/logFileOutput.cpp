@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
-#include "logging/logAsyncFlusher.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
 #include "memory/allocation.inline.hpp"
@@ -306,9 +306,9 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
     return 0;
   }
 
-  LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
-  if (flusher != NULL) {
-    flusher->enqueue(*this, decorations, msg);
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, decorations, msg);
     return -1;
   }
 
@@ -321,9 +321,9 @@ int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
     return 0;
   }
 
-  LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
-  if (flusher != NULL) {
-    flusher->enqueue(*this, msg_iterator);
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, msg_iterator);
     return -1;
   }
 

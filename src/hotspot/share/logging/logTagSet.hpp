@@ -67,6 +67,10 @@ class LogTagSet {
   static void describe_tagsets(outputStream* out);
   static void list_all_tagsets(outputStream* out);
 
+  void wait_until_no_readers() const {
+    _output_list.wait_until_no_readers();
+  }
+
   static LogTagSet* first() {
     return _list;
   }

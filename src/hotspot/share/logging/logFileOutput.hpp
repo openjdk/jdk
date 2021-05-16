@@ -32,8 +32,6 @@ class LogDecorations;
 
 // The log file output, with support for file rotation based on a target size.
 class LogFileOutput : public LogFileStreamOutput {
-  friend class AsyncLogMessage;
-  friend struct AsyncLogMapIterator;
  private:
   static const char* const FileOpenMode;
   static const char* const FileCountOptionKey;
@@ -81,13 +79,13 @@ class LogFileOutput : public LogFileStreamOutput {
     }
   }
 
-  int write_blocking(const LogDecorations& decorations, const char* msg);
  public:
   LogFileOutput(const char *name);
   virtual ~LogFileOutput();
   virtual bool initialize(const char* options, outputStream* errstream);
   virtual int write(const LogDecorations& decorations, const char* msg);
   virtual int write(LogMessageBuffer::Iterator msg_iterator);
+  int write_blocking(const LogDecorations& decorations, const char* msg);
   virtual void force_rotate();
   virtual void describe(outputStream* out);
 

@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
-#include "logging/logAsyncFlusher.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logDecorators.hpp"
@@ -280,13 +280,10 @@ void LogConfiguration::disable_outputs() {
   }
 
   // Handle jcmd VM.log disable
-  // ts->disable_outputs() above deletes output_list with RCU synchronization.
-  // Therefore, no new logging entry will enter AsyncLog buffer since then.
+  // ts->disable_outputs() above has deleted output_list with RCU synchronization.
+  // Therefore, no new logging entry can enter AsyncLog buffer for the time being.
   // flush pending entries before LogOutput instances die.
-  LogAsyncFlusher* async = LogAsyncFlusher::instance();
-  if (async != nullptr) {
-    async->flush();
-  }
+  AsyncLogWriter::flush();
 
   while (idx > 0) {
     LogOutput* out = _outputs[--idx];

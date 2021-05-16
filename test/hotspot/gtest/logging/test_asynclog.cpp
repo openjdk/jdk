@@ -25,115 +25,22 @@
 #include "logging/log.hpp"
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
-#include "logging/logAsyncFlusher.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logMessage.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "unittest.hpp"
 
-// So far, shutdown asynclogging on-the-fly can only be done in vmthread.
-// Use it only in gtest.
-class AsyncLogDisabler : public VM_GTestExecuteAtSafepoint {
-  void doit() override {
-    LogConfiguration::set_async_mode(false);
-    LogAsyncFlusher::terminate();
-  }
-};
-
 class AsyncLogTest : public LogTestFixture {
-  const bool _saved_async_mode;
-
  public:
-  AsyncLogTest() : _saved_async_mode(LogConfiguration::is_async_mode()) {
-    LogConfiguration::set_async_mode(true);
-    LogAsyncFlusher::initialize();
-  }
-
-  ~AsyncLogTest() {
-    if (!_saved_async_mode) {
-      AsyncLogDisabler op;
-      ThreadInVMfromNative invm(JavaThread::current());
-      VMThread::execute(&op);
+  AsyncLogTest() {
+    if(!LogConfiguration::is_async_mode()) {
+      fprintf(stderr, "Warning: asynclog is OFF.\n");
     }
   }
-};
 
-TEST_VM_F(AsyncLogTest, fifo) {
-  LinkedListDeque<int, mtLogging> fifo;
-  LinkedListImpl<int, ResourceObj::C_HEAP, mtLogging> result;
-
-  fifo.push_back(1);
-  EXPECT_EQ(fifo.size(), (size_t)1);
-  EXPECT_EQ(*(fifo.back()), 1);
-
-  fifo.pop_all(&result);
-  EXPECT_EQ(fifo.size(), (size_t)0);
-  EXPECT_EQ(NULL, fifo.back());
-  EXPECT_EQ(result.size(), (size_t)1);
-  EXPECT_EQ(*(result.head()->data()), 1);
-  result.clear();
-
-  fifo.push_back(2);
-  fifo.push_back(1);
-  fifo.pop_all(&result);
-  EXPECT_EQ(result.size(), (size_t)2);
-  EXPECT_EQ(*(result.head()->data()), 2);
-  EXPECT_EQ(*(result.head()->next()->data()), 1);
-  result.clear();
-  const int N = 1000;
-  for (int i=0; i<N; ++i) {
-    fifo.push_back(i);
-  }
-  fifo.pop_all(&result);
-
-  EXPECT_EQ(result.size(), (size_t)N);
-  LinkedListIterator<int> it(result.head());
-  for (int i=0; i<N; ++i) {
-    int* e = it.next();
-    EXPECT_EQ(*e, i);
-  }
-}
-
-TEST_VM_F(AsyncLogTest, deque) {
-  LinkedListDeque<int, mtLogging> deque;
-  const int N = 10;
-
-  EXPECT_EQ(NULL, deque.front());
-  EXPECT_EQ(NULL, deque.back());
-  for (int i = 0; i < N; ++i) {
-    deque.push_back(i);
-  }
-
-  EXPECT_EQ(*(deque.front()), 0);
-  EXPECT_EQ(*(deque.back()), N-1);
-  EXPECT_EQ(deque.size(), (size_t)N);
-
-  deque.pop_front();
-  EXPECT_EQ(deque.size(), (size_t)(N - 1));
-  EXPECT_EQ(*(deque.front()), 1);
-  EXPECT_EQ(*(deque.back()), N - 1);
-
-  deque.pop_front();
-  EXPECT_EQ(deque.size(), (size_t)(N - 2));
-  EXPECT_EQ(*(deque.front()), 2);
-  EXPECT_EQ(*(deque.back()), N - 1);
-
-
-  for (int i=2; i < N-1; ++i) {
-    deque.pop_front();
-  }
-  EXPECT_EQ(deque.size(), (size_t)1);
-  EXPECT_EQ(*(deque.back()), N - 1);
-  EXPECT_EQ(deque.front(), deque.back());
-
-  deque.pop_front();
-  EXPECT_EQ(deque.size(), (size_t)0);
-}
-
-class VM_TestFlusher: public VM_GTestExecuteAtSafepoint {
-public:
-  void doit() {
+  void test_asynclog_ls() {
     LogStream ls(Log(logging)::info());
     outputStream* os = &ls;
     os->print_cr("LogStreamWithAsyncLogImpl");
@@ -144,8 +51,6 @@ public:
     os->print("msg2-");
     os->print("msg3\n");
     os->print_cr("logStream newline");
-
-    test_asynclog_raw();
   }
 
   void test_asynclog_raw() {
@@ -165,17 +70,84 @@ LOG_LEVEL_LIST
   }
 };
 
+TEST_VM(AsyncLogBufferTest, fifo) {
+  LinkedListDeque<int, mtLogging> fifo;
+  LinkedListImpl<int, ResourceObj::C_HEAP, mtLogging> result;
+
+  fifo.push_back(1);
+  EXPECT_EQ((size_t)1, fifo.size());
+  EXPECT_EQ(1, *(fifo.back()));
+
+  fifo.pop_all(&result);
+  EXPECT_EQ((size_t)0, fifo.size());
+  EXPECT_EQ(NULL, fifo.back());
+  EXPECT_EQ((size_t)1, result.size());
+  EXPECT_EQ(1, *(result.head()->data()));
+  result.clear();
+
+  fifo.push_back(2);
+  fifo.push_back(1);
+  fifo.pop_all(&result);
+  EXPECT_EQ((size_t)2, result.size());
+  EXPECT_EQ(2, *(result.head()->data()));
+  EXPECT_EQ(1, *(result.head()->next()->data()));
+  result.clear();
+  const int N = 1000;
+  for (int i=0; i<N; ++i) {
+    fifo.push_back(i);
+  }
+  fifo.pop_all(&result);
+
+  EXPECT_EQ((size_t)N, result.size());
+  LinkedListIterator<int> it(result.head());
+  for (int i=0; i<N; ++i) {
+    int* e = it.next();
+    EXPECT_EQ(i, *e);
+  }
+}
+
+TEST_VM(AsyncLogBufferTest, deque) {
+  LinkedListDeque<int, mtLogging> deque;
+  const int N = 10;
+
+  EXPECT_EQ(NULL, deque.front());
+  EXPECT_EQ(NULL, deque.back());
+  for (int i = 0; i < N; ++i) {
+    deque.push_back(i);
+  }
+
+  EXPECT_EQ(0, *(deque.front()));
+  EXPECT_EQ(N-1, *(deque.back()));
+  EXPECT_EQ((size_t)N, deque.size());
+
+  deque.pop_front();
+  EXPECT_EQ((size_t)(N - 1), deque.size());
+  EXPECT_EQ(1, *(deque.front()));
+  EXPECT_EQ(N - 1, *(deque.back()));
+
+  deque.pop_front();
+  EXPECT_EQ((size_t)(N - 2), deque.size());
+  EXPECT_EQ(2, *(deque.front()));
+  EXPECT_EQ(N - 1, *(deque.back()));
+
+
+  for (int i=2; i < N-1; ++i) {
+    deque.pop_front();
+  }
+  EXPECT_EQ((size_t)1, deque.size());
+  EXPECT_EQ(N - 1, *(deque.back()));
+  EXPECT_EQ(deque.back(), deque.front());
+
+  deque.pop_front();
+  EXPECT_EQ((size_t)0, deque.size());
+}
+
 TEST_VM_F(AsyncLogTest, asynclog) {
   set_log_config(TestLogFileName, "logging=debug");
 
-  LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
-  ASSERT_NE(flusher, nullptr) <<  "async flusher must not be null";
-  {
-    VM_TestFlusher op;
-    ThreadInVMfromNative invm(JavaThread::current());
-    VMThread::execute(&op);
-  }
-  flusher->flush();
+  test_asynclog_ls();
+  test_asynclog_raw();
+  AsyncLogWriter::flush();
 
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
@@ -195,9 +167,6 @@ TEST_VM_F(AsyncLogTest, asynclog) {
 TEST_VM_F(AsyncLogTest, logMessage) {
   set_log_config(TestLogFileName, "logging=debug");
 
-  LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
-  ASSERT_NE(flusher, nullptr) <<  "async flusher must not be null";
-
   const int MULTI_LINES = 20;
   {
 
@@ -213,7 +182,7 @@ TEST_VM_F(AsyncLogTest, logMessage) {
     }
     logger.debug("a noisy message from other logger");
   }
-  flusher->flush();
+  AsyncLogWriter::flush();
 
   ResourceMark rm;
   LogMessageBuffer buffer;
@@ -232,17 +201,18 @@ TEST_VM_F(AsyncLogTest, logMessage) {
 TEST_VM_F(AsyncLogTest, droppingMessage) {
   set_log_config(TestLogFileName, "logging=debug");
   const size_t sz = 100;
-  LogAsyncFlusher* flusher = LogAsyncFlusher::instance();
-  ASSERT_NE(flusher, nullptr) <<  "async flusher must not be null";
-  // shrink async buffer.
-  AutoModifyRestore<size_t> saver(AsyncLogBufferSize, sz * 1024 /*in byte*/);
-  LogMessage(logging) lm;
 
-  // write 100x more messages than its capacity in burst
-  for (size_t i = 0; i < sz * 100; ++i) {
-    lm.debug("a lot of log...");
+  if (AsyncLogWriter::instance() != nullptr) {
+    // shrink async buffer.
+    AutoModifyRestore<size_t> saver(AsyncLogBufferSize, sz * 1024 /*in byte*/);
+    LogMessage(logging) lm;
+
+    // write 100x more messages than its capacity in burst
+    for (size_t i = 0; i < sz * 100; ++i) {
+      lm.debug("a lot of log...");
+    }
+    lm.flush();
+    AsyncLogWriter::flush();
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
   }
-  lm.flush();
-  flusher->flush();
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
 }

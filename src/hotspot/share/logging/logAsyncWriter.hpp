@@ -21,8 +21,8 @@
  * questions.
  *
  */
-#ifndef SHARE_LOGGING_ASYNC_FLUSHER_HPP
-#define SHARE_LOGGING_ASYNC_FLUSHER_HPP
+#ifndef SHARE_LOG_ASYNC_WTRITER_HPP
+#define SHARE_LOG_ASYNC_WTRITER_HPP
 #include "logging/log.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logFileOutput.hpp"
@@ -80,29 +80,20 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
 };
 
 class AsyncLogMessage {
-  LogFileOutput&   _output;
+  LogFileOutput& _output;
   const LogDecorations _decorations;
-  char*            _message;
+  char* _message;
 
 public:
   AsyncLogMessage(LogFileOutput& output, const LogDecorations& decorations, char* msg)
     : _output(output), _decorations(decorations), _message(msg) {}
 
-  void writeback();
+  // placeholder for LinkedListImpl.
+  bool equals(const AsyncLogMessage& o) const { return false; }
 
-  // two AsyncLogMessage are equal if both _output and _message are same.
-  bool equals(const AsyncLogMessage& o) const {
-    if (_message == o._message) {
-      return &_output == &o._output;
-    } else if (_message == NULL || o._message == NULL) {
-      return false;
-    } else {
-      return &_output == &o._output && !strcmp(_message, o._message);
-    }
-  }
-
-  const char* message() const { return _message; }
   LogFileOutput* output() const { return &_output; }
+  const LogDecorations& decorations() const { return _decorations; }
+  char* message() const { return _message; }
 };
 
 typedef LinkedListDeque<AsyncLogMessage, mtLogging> AsyncLogBuffer;
@@ -111,16 +102,16 @@ struct AsyncLogMapIterator {
   bool do_entry(LogFileOutput* output, uint32_t* counter);
 };
 
-class LogAsyncFlusher : public NonJavaThread {
+class AsyncLogWriter: public NonJavaThread {
  private:
-  static LogAsyncFlusher* _instance;
-  static Semaphore _lock;
+  static AsyncLogWriter* _instance;
   static Semaphore _sem;
 
   enum class ThreadState {
+    NotReady,
+    Initialized,
     Running,
-    Terminating,
-    Terminated
+    Terminated,
   };
 
   volatile ThreadState _state;
@@ -131,11 +122,10 @@ class LogAsyncFlusher : public NonJavaThread {
   // and a variable-length c-string message.
   // A normal logging  message is smaller than vwrite_buffer_size, which is defined in logtagset.cpp
   const size_t _buffer_max_size = {AsyncLogBufferSize / (sizeof(AsyncLogMessage) + sizeof(LogDecorations) + vwrite_buffer_size)};
-  static const int64_t ASYNCLOG_WAIT_TIMEOUT = 500; // timeout in millisecond.
 
-  LogAsyncFlusher();
+  AsyncLogWriter();
   void enqueue_locked(const AsyncLogMessage& msg);
-  static void writeback(const LinkedList<AsyncLogMessage>& logs);
+  void perform_IO();
   void run() override;
   void pre_run() override {
     NonJavaThread::pre_run();
@@ -146,21 +136,11 @@ class LogAsyncFlusher : public NonJavaThread {
  public:
   void enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg);
   void enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator);
-  // Use with_lock = false at your own risk. It is only safe without any active reader.
-  void flush(bool with_lock = true);
 
   // None of following functions are thread-safe.
-  static LogAsyncFlusher* instance();
-  // |JVM start | initialize() | ...java application... | terminate() |JVM exit|
-  //                           p1                       p2
-  // Logging sites spread across the entire JVM lifecycle. There're 2 synchronizaton points(p1 and p2).
-  // Async logging EXCLUSIVELY takes over from synchronous logging from p1 to p2.
-  // It's because current implementation is using some HotSpot runtime supports such mutex, threading etc.
-  // They are not available in the very begining or threads are destroyed.
+  static AsyncLogWriter* instance();
   static void initialize();
-  static void terminate();
-  static void abort();
-  static Semaphore& lock() { return _lock; }
+  static void flush();
 };
 
-#endif // SHARE_LOGGING_ASYNC_FLUSHER_HPP
+#endif // SHARE_LOG_ASYNC_WTRITER_HPP
