@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/dynamicArchive.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
@@ -3300,12 +3301,14 @@ void JavaThread::invoke_shutdown_hooks() {
     this->clear_pending_exception();
   }
 
+#if INCLUDE_CDS
   // Link all classes for dynamic CDS dumping before vm exit.
   // Same operation is being done in JVM_BeforeHalt for handling the
   // case where the application calls System.exit().
   if (DynamicDumpSharedSpaces) {
-    MetaspaceShared::link_and_cleanup_shared_classes(this);
+    DynamicArchive::prepare_for_dynamic_dumping_at_exit();
   }
+#endif
 
   EXCEPTION_MARK;
   Klass* shutdown_klass =
