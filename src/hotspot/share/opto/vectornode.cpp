@@ -1173,7 +1173,7 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
       assert(cnt->Opcode() == Op_ConvI2L, "ConvI2L expected");
       cnt = cnt->in(1);
     }
-    shiftRCnt = phase->transform(new AndINode(cnt, phase->intcon(shift_mask)));
+    shiftRCnt = cnt;
     shiftLCnt = phase->transform(new SubINode(phase->intcon(shift_mask + 1), shiftRCnt));
   } else {
     // Vector variable shift.
