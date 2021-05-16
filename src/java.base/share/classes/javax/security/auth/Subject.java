@@ -284,7 +284,15 @@ public final class Subject implements java.io.Serializable {
      *
      * @throws NullPointerException if the provided
      *          {@code AccessControlContext} is {@code null}.
+     *
+     * @deprecated This method depends on {@link AccessControlContext}
+     *       which, in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, is deprecated
+     *       and subject to removal in a future release. However, obtaining a
+     *       Subject is useful independent of the Security Manager, so a
+     *       replacement for this method may be added in a future release.
      */
+    @Deprecated(since="17", forRemoval=true)
     public static Subject getSubject(final AccessControlContext acc) {
 
         java.lang.SecurityManager sm = System.getSecurityManager();
@@ -463,7 +471,15 @@ public final class Subject implements java.io.Serializable {
      *                  {@link AuthPermission#AuthPermission(String)
      *                  AuthPermission("doAsPrivileged")} permission to invoke
      *                  this method.
+     *
+     * @deprecated This method is only useful in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, which is
+     *       deprecated and subject to removal in a future release.
+     *       Consequently, this method is also deprecated and subject to
+     *       removal. There is no replacement for the Security Manager or this
+     *       method.
      */
+    @Deprecated(since="17", forRemoval=true)
     public static <T> T doAsPrivileged(final Subject subject,
                         final java.security.PrivilegedAction<T> action,
                         final java.security.AccessControlContext acc) {
@@ -529,7 +545,15 @@ public final class Subject implements java.io.Serializable {
      *                  {@link AuthPermission#AuthPermission(String)
      *                  AuthPermission("doAsPrivileged")} permission to invoke
      *                  this method.
+     *
+     * @deprecated This method is only useful in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, which is
+     *       deprecated and subject to removal in a future release.
+     *       Consequently, this method is also deprecated and subject to
+     *       removal. There is no replacement for the Security Manager or this
+     *       method.
      */
+    @Deprecated(since="17", forRemoval=true)
     public static <T> T doAsPrivileged(final Subject subject,
                         final java.security.PrivilegedExceptionAction<T> action,
                         final java.security.AccessControlContext acc)

@@ -144,6 +144,7 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-Djdk.internal.lambda.dumpProxyClasses=notExist",
                                "com.example.TestLambda");
         assertEquals(tr.testOutput.stream()
+                                  .filter(s -> !s.contains("Security Manager is deprecated"))
                                   .filter(s -> s.startsWith("WARNING"))
                                   .peek(s -> assertTrue(s.contains("does not exist")))
                                   .count(),
@@ -159,6 +160,7 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-Djdk.internal.lambda.dumpProxyClasses=file",
                                "com.example.TestLambda");
         assertEquals(tr.testOutput.stream()
+                                  .filter(s -> !s.contains("Security Manager is deprecated"))
                                   .filter(s -> s.startsWith("WARNING"))
                                   .peek(s -> assertTrue(s.contains("not a directory")))
                                   .count(),
@@ -217,6 +219,7 @@ public class LogGeneratedClassesTest extends LUtils {
                                    "-Djdk.internal.lambda.dumpProxyClasses=readOnly",
                                    "com.example.TestLambda");
             assertEquals(tr.testOutput.stream()
+                                      .filter(s -> !s.contains("Security Manager is deprecated"))
                                       .filter(s -> s.startsWith("WARNING"))
                                       .peek(s -> assertTrue(s.contains("not writable")))
                                       .count(),

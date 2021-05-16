@@ -53,9 +53,13 @@ import java.security.*;
  * @author  Roger Riggs
  * @author  Peter Jones
  * @since 1.1
- * @deprecated Use {@link SecurityManager} instead.
+ * @deprecated This class is only useful in conjunction with
+ *       {@linkplain SecurityManager the Security Manager}, which is deprecated
+ *       and subject to removal in a future release. Consequently, this class
+ *       is also deprecated and subject to removal. There is no replacement for
+ *       the Security Manager or this class.
  */
-@Deprecated
+@Deprecated(since="1.8", forRemoval = true)
 public class RMISecurityManager extends SecurityManager {
 
     /**

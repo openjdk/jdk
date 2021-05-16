@@ -35,7 +35,7 @@ public class AllowSecurityManager {
 
     public static void main(String args[]) throws Exception {
         String prop = System.getProperty("java.security.manager");
-        boolean disallow = "disallow".equals(prop);
+        boolean disallow = !"allow".equals(prop);
         try {
             System.setSecurityManager(new SecurityManager());
             if (disallow) {

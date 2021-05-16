@@ -338,10 +338,16 @@ public final class System {
      * security manager has been established, then no action is taken and
      * the method simply returns.
      *
-     * @implNote In the JDK implementation, if the Java virtual machine is
-     * started with the system property {@code java.security.manager} set to
-     * the special token "{@code disallow}" then the {@code setSecurityManager}
-     * method cannot be used to set a security manager.
+     * @implNote In the JDK implementation, the default value of the
+     * {@systemProperty java.security.manager} system property, if not set, is
+     * the special token "{@code disallow}". If the Java virtual machine is
+     * started with the {@systemProperty java.security.manager} system property
+     * set to the special token "{@code allow}", then a security manager can
+     * be set dynamically. If the Java virtual machine is started with the
+     * system property {@systemProperty java.security.manager} not set or set
+     * to "{@code disallow}" then a security manager cannot be set
+     * dynamically (the {@code setSecurityManager} method will throw an
+     * {@code UnsupportedOperationException}).
      *
      * @param  sm the security manager or {@code null}
      * @throws SecurityException
@@ -353,7 +359,14 @@ public final class System {
      * @see #getSecurityManager
      * @see SecurityManager#checkPermission
      * @see java.lang.RuntimePermission
+     * @deprecated This method is only useful in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, which is
+     *       deprecated and subject to removal in a future release.
+     *       Consequently, this method is also deprecated and subject to
+     *       removal. There is no replacement for the Security Manager or this
+     *       method.
      */
+    @Deprecated(since="17", forRemoval=true)
     public static void setSecurityManager(SecurityManager sm) {
         if (allowSecurityManager()) {
             if (security == null) {
@@ -419,7 +432,14 @@ public final class System {
      *          current application, then that security manager is returned;
      *          otherwise, {@code null} is returned.
      * @see     #setSecurityManager
+     * @deprecated This method is only useful in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, which is
+     *       deprecated and subject to removal in a future release.
+     *       Consequently, this method is also deprecated and subject to
+     *       removal. There is no replacement for the Security Manager or this
+     *       method.
      */
+    @Deprecated(since="17", forRemoval=true)
     public static SecurityManager getSecurityManager() {
         if (allowSecurityManager()) {
             return security;
@@ -2148,7 +2168,12 @@ public final class System {
                     allowSecurityManager = MAYBE;
             }
         } else {
-            allowSecurityManager = MAYBE;
+            allowSecurityManager = NEVER;
+        }
+
+        if (allowSecurityManager != NEVER) {
+            System.err.println("WARNING: The Security Manager is deprecated" +
+                    " and will be removed in a future release.");
         }
 
         // initializing the system class loader
