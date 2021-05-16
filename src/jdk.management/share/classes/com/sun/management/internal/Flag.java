@@ -36,6 +36,7 @@ import java.security.AccessController;
  * corresponds to one VMOption.
  *
  */
+@SuppressWarnings("removal")
 class Flag {
     private String name;
     private Object value;

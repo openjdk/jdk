@@ -352,6 +352,7 @@ public class IPAddressUtil {
         }
     }
 
+    @SuppressWarnings("removal")
     private static InetAddress findScopedAddress(InetAddress address) {
         PrivilegedExceptionAction<List<InetAddress>> pa = () -> NetworkInterface.networkInterfaces()
                 .flatMap(NetworkInterface::inetAddresses)

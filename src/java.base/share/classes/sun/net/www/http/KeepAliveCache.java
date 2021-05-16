@@ -62,6 +62,7 @@ public class KeepAliveCache
      */
     static final int MAX_CONNECTIONS = 5;
     static int result = -1;
+    @SuppressWarnings("removal")
     static int getMaxConnections() {
         if (result == -1) {
             result = AccessController.doPrivileged(
@@ -90,6 +91,7 @@ public class KeepAliveCache
      * @param url  The URL contains info about the host and port
      * @param http The HttpClient to be cached
      */
+    @SuppressWarnings("removal")
     public void put(final URL url, Object obj, HttpClient http) {
         cacheLock.lock();
         try {

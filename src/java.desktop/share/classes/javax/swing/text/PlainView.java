@@ -839,6 +839,7 @@ public class PlainView extends View implements TabExpander {
         return isFPMethodOverridden;
     }
 
+    @SuppressWarnings("removal")
     private static boolean checkFPMethodOverridden(final Class<?> className,
                                                    final String methodName,
                                                    final FPMethodArgs methodArgs) {

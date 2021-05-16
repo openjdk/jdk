@@ -60,6 +60,7 @@ class ServerHandshakeContext extends HandshakeContext {
     ServerHandshakeContext(SSLContextImpl sslContext,
             TransportContext conContext) throws IOException {
         super(sslContext, conContext);
+        @SuppressWarnings("removal")
         long respTimeOut = AccessController.doPrivileged(
                     new GetLongAction("jdk.tls.stapling.responseTimeout",
                         DEFAULT_STATUS_RESP_DELAY));

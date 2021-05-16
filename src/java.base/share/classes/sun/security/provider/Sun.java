@@ -47,6 +47,7 @@ public final class Sun extends Provider {
     "PKIX CertPathBuilder; LDAP, Collection CertStores, JavaPolicy Policy; " +
     "JavaLoginConfig Configuration)";
 
+    @SuppressWarnings("removal")
     public Sun() {
         /* We are the SUN provider */
         super("SUN", PROVIDER_VER, INFO);

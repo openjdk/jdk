@@ -83,7 +83,7 @@ import sun.rmi.transport.TransportConstants;
  * @author Ann Wollrath
  * @author Peter Jones
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"removal","deprecation"})
 public class TCPTransport extends Transport {
 
     /* tcp package log */

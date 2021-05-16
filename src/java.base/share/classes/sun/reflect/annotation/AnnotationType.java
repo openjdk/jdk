@@ -105,6 +105,7 @@ public class AnnotationType {
         if (!annotationClass.isAnnotation())
             throw new IllegalArgumentException("Not an annotation type");
 
+        @SuppressWarnings("removal")
         Method[] methods =
             AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Method[] run() {

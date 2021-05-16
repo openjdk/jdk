@@ -187,6 +187,7 @@ public class OpeningHandshake {
         }
     }
 
+    @SuppressWarnings("removal")
     public CompletableFuture<Result> send() {
         PrivilegedAction<CompletableFuture<Result>> pa = () ->
                 client.sendAsync(this.request, BodyHandlers.ofString())
@@ -384,6 +385,7 @@ public class OpeningHandshake {
      * @throws SecurityException if the security manager denies access
      */
     static void checkPermissions(BuilderImpl b, Proxy proxy) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             return;

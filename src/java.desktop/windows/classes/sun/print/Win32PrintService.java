@@ -858,6 +858,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     }
 
     public DocPrintJob createPrintJob() {
+      @SuppressWarnings("removal")
       SecurityManager security = System.getSecurityManager();
       if (security != null) {
         security.checkPrintJobAccess();

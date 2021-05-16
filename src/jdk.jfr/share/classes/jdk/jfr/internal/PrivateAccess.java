@@ -99,6 +99,7 @@ public abstract class PrivateAccess {
 
     public abstract PlatformRecorder getPlatformRecorder();
 
+    @SuppressWarnings("removal")
     public abstract AccessControlContext getContext(SettingControl sc);
 
     public abstract EventSettings newEventSettings(EventSettingsModifier esm);

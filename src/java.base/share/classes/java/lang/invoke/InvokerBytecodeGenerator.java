@@ -202,6 +202,7 @@ class InvokerBytecodeGenerator {
     }
 
     // Also used from BoundMethodHandle
+    @SuppressWarnings("removal")
     static void maybeDump(final String className, final byte[] classFile) {
         if (DUMP_CLASS_FILES) {
             java.security.AccessController.doPrivileged(

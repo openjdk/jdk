@@ -111,6 +111,7 @@ class NativeGSSContext implements GSSContextSpi {
     }
 
     // Perform the Service permission check
+    @SuppressWarnings("removal")
     private void doServicePermCheck() throws GSSException {
         if (System.getSecurityManager() != null) {
             String action = (isInitiator? "initiate" : "accept");
@@ -138,6 +139,7 @@ class NativeGSSContext implements GSSContextSpi {
 
     // Perform the Delegation permission check
     private void doDelegPermCheck() throws GSSException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             String targetStr = targetName.getKrbName();

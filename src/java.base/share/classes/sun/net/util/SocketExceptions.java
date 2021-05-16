@@ -93,6 +93,7 @@ public final class SocketExceptions {
     // msg, or if the type doesn't support detail msgs, return given
     // instance.
 
+    @SuppressWarnings("removal")
     private static IOException create(IOException e, String msg) {
         return AccessController.doPrivileged(new PrivilegedAction<IOException>() {
             public IOException run() {

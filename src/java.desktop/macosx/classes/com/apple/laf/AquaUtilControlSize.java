@@ -72,6 +72,7 @@ public class AquaUtilControlSize {
     }
 
     private static Size getDefaultSize() {
+        @SuppressWarnings("removal")
         final String sizeProperty = AccessController.doPrivileged(new GetPropertyAction(SYSTEM_PROPERTY_KEY));
         final JRSUIConstants.Size size = getSizeFromString(sizeProperty);
         if (size != null) return size;

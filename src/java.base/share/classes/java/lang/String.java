@@ -517,6 +517,7 @@ public final class String
      *
      * @since  1.6
      */
+    @SuppressWarnings("removal")
     public String(byte[] bytes, int offset, int length, Charset charset) {
         Objects.requireNonNull(charset);
         checkBoundsOffCount(offset, length, bytes.length);
@@ -745,6 +746,7 @@ public final class String
         }
     }
 
+    @SuppressWarnings("removal")
     private static String newStringNoRepl1(byte[] src, Charset cs) {
         int len = src.length;
         if (len == 0) {
@@ -794,6 +796,7 @@ public final class String
     private static final char REPL = '\ufffd';
 
     // Trim the given byte array to the given length
+    @SuppressWarnings("removal")
     private static byte[] safeTrim(byte[] ba, int len, boolean isTrusted) {
         if (len == ba.length && (isTrusted || System.getSecurityManager() == null)) {
             return ba;

@@ -229,6 +229,7 @@ final class PredefinedDHParameterSpecs {
     static final Map<Integer, DHParameterSpec> ffdheParams;
 
     static {
+        @SuppressWarnings("removal")
         String property = AccessController.doPrivileged(
             new PrivilegedAction<String>() {
                 public String run() {

@@ -80,6 +80,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
      * @param certs the signers associated with this
      *                  <code>SubjectCodeSource</code> <p>
      */
+    @SuppressWarnings("removal")
     SubjectCodeSource(Subject subject,
         LinkedList<PrincipalEntry> principals,
         URL url, Certificate[] certs) {
@@ -365,6 +366,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
      *
      * @return a String representation of this <code>SubjectCodeSource</code>.
      */
+    @SuppressWarnings("removal")
     public String toString() {
         String returnMe = super.toString();
         if (getSubject() != null) {

@@ -67,6 +67,7 @@ import sun.awt.AppContext;
  */
 class AnimationController implements ActionListener, PropertyChangeListener {
 
+    @SuppressWarnings("removal")
     private static final boolean VISTA_ANIMATION_DISABLED =
         AccessController.doPrivileged(new GetBooleanAction("swing.disablevistaanimation"));
 

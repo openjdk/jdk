@@ -63,6 +63,7 @@ public class RegistryContext implements Context, Referenceable {
         // arbitrary URL codebase
         PrivilegedAction<String> act = () -> System.getProperty(
             "com.sun.jndi.rmi.object.trustURLCodebase", "false");
+        @SuppressWarnings("removal")
         String trust = AccessController.doPrivileged(act);
         trustURLCodebase = "true".equalsIgnoreCase(trust);
     }
@@ -427,6 +428,7 @@ public class RegistryContext implements Context, Referenceable {
      * Attempts to install a security manager if none is currently in
      * place.
      */
+    @SuppressWarnings("removal")
     private static void installSecurityMgr() {
 
         try {

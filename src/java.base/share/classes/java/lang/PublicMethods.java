@@ -88,6 +88,7 @@ final class PublicMethods {
      * Method (name, parameter types) tuple.
      */
     private static final class Key {
+        @SuppressWarnings("removal")
         private static final ReflectionFactory reflectionFactory =
             AccessController.doPrivileged(
                 new ReflectionFactory.GetReflectionFactoryAction());

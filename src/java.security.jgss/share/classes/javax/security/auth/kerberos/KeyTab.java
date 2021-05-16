@@ -220,11 +220,12 @@ public final class KeyTab {
     sun.security.krb5.internal.ktab.KeyTab takeSnapshot() {
         try {
             return sun.security.krb5.internal.ktab.KeyTab.getInstance(file);
-        } catch (AccessControlException ace) {
+        } catch (@SuppressWarnings("removal") AccessControlException ace) {
             if (file != null) {
                 // It's OK to show the name if caller specified it
                 throw ace;
             } else {
+                @SuppressWarnings("removal")
                 AccessControlException ace2 = new AccessControlException(
                         "Access to default keytab denied (modified exception)");
                 ace2.setStackTrace(ace.getStackTrace());

@@ -82,6 +82,7 @@ import java.security.ProtectionDomain;
  * @author  Ann Wollrath
  * @author  Peter Jones
  */
+@SuppressWarnings("removal")
 final class DGCClient {
 
     /** next sequence number for DGC calls (access synchronized on class) */

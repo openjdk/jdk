@@ -70,6 +70,7 @@ class WFramePeer extends WWindowPeer implements FramePeer {
     private native void setMaximizedBounds(int x, int y, int w, int h);
     private native void clearMaximizedBounds();
 
+    @SuppressWarnings("removal")
     private static final boolean keepOnMinimize = "true".equals(
         AccessController.doPrivileged(
             new GetPropertyAction(

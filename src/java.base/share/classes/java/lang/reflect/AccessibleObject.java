@@ -83,6 +83,7 @@ public class AccessibleObject implements AnnotatedElement {
     }
 
     static void checkPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             // SecurityConstants.ACCESS_PERMISSION is used to check
@@ -510,6 +511,7 @@ public class AccessibleObject implements AnnotatedElement {
     // Reflection factory used by subclasses for creating field,
     // method, and constructor accessors. Note that this is called
     // very early in the bootstrapping process.
+    @SuppressWarnings("removal")
     static final ReflectionFactory reflectionFactory =
         AccessController.doPrivileged(
             new ReflectionFactory.GetReflectionFactoryAction());

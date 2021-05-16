@@ -816,6 +816,7 @@ public final class JLayer<V extends Component>
             return currentEventMask;
         }
 
+        @SuppressWarnings("removal")
         private void addAWTEventListener(final long eventMask) {
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
@@ -827,6 +828,7 @@ public final class JLayer<V extends Component>
 
         }
 
+        @SuppressWarnings("removal")
         private void removeAWTEventListener() {
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {

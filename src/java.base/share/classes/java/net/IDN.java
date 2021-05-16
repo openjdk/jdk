@@ -72,6 +72,7 @@ import jdk.internal.icu.text.UCharacterIterator;
  * @since 1.6
  *
  */
+@SuppressWarnings("removal")
 public final class IDN {
     /**
      * Flag to allow processing of unassigned code points

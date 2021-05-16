@@ -44,6 +44,7 @@ final class XTaskbarPeer implements TaskbarPeer {
     private static boolean isUnity;
 
     static {
+        @SuppressWarnings("removal")
         String de = AccessController.doPrivileged(
                         (PrivilegedAction<String>) ()
                                 -> System.getenv("XDG_CURRENT_DESKTOP"));
@@ -54,6 +55,7 @@ final class XTaskbarPeer implements TaskbarPeer {
         XToolkit.awtLock();
         try {
             if (!initExecuted) {
+                @SuppressWarnings("removal")
                 String dname = AccessController.doPrivileged(
                                 new GetPropertyAction("java.desktop.appName", ""));
                 nativeLibraryLoaded = init(dname,

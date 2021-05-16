@@ -50,6 +50,7 @@ import java.io.IOException;
 public abstract class FileTypeDetector {
 
     private static Void checkPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(new RuntimePermission("fileTypeDetector"));

@@ -127,6 +127,7 @@ import java.util.Collections;
  *
  * @since 1.8
  */
+@SuppressWarnings("removal")
 public abstract class ZoneRulesProvider {
 
     /**

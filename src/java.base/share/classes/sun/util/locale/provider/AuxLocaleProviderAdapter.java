@@ -186,6 +186,7 @@ public abstract class AuxLocaleProviderAdapter extends LocaleProviderAdapter {
      * A dummy locale service provider that indicates there is no
      * provider available
      */
+    @SuppressWarnings("removal")
     private static final NullProvider NULL_PROVIDER = AccessController.doPrivileged(
         (PrivilegedAction<NullProvider>) () -> new NullProvider());
 

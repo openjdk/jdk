@@ -82,6 +82,7 @@ class PollingWatchService
     /**
      * Register the given file with this watch service
      */
+    @SuppressWarnings("removal")
     @Override
     WatchKey register(final Path path,
                       WatchEvent.Kind<?>[] events,
@@ -194,6 +195,7 @@ class PollingWatchService
 
     }
 
+    @SuppressWarnings("removal")
     @Override
     void implClose() throws IOException {
         synchronized (map) {

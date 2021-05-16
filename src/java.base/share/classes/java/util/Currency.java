@@ -111,6 +111,7 @@ import sun.util.logging.PlatformLogger;
  * @see java.math.BigDecimal
  * @since 1.4
  */
+@SuppressWarnings("removal")
 public final class Currency implements Serializable {
 
     @java.io.Serial

@@ -65,6 +65,7 @@ public final class SunPCSC extends Provider {
         }
     }
 
+    @SuppressWarnings("removal")
     public SunPCSC() {
         super("SunPCSC", PROVIDER_VER, "Sun PC/SC provider");
 

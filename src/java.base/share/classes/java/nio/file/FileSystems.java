@@ -96,6 +96,7 @@ public final class FileSystems {
         // returns default file system
         private static FileSystem defaultFileSystem() {
             // load default provider
+            @SuppressWarnings("removal")
             FileSystemProvider provider = AccessController
                 .doPrivileged(new PrivilegedAction<>() {
                     public FileSystemProvider run() {

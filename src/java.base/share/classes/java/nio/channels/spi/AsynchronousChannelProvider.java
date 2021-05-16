@@ -52,6 +52,7 @@ import java.security.PrivilegedAction;
 
 public abstract class AsynchronousChannelProvider {
     private static Void checkPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(new RuntimePermission("asynchronousChannelProvider"));
@@ -74,6 +75,7 @@ public abstract class AsynchronousChannelProvider {
     private static class ProviderHolder {
         static final AsynchronousChannelProvider provider = load();
 
+        @SuppressWarnings("removal")
         private static AsynchronousChannelProvider load() {
             return AccessController
                 .doPrivileged(new PrivilegedAction<>() {

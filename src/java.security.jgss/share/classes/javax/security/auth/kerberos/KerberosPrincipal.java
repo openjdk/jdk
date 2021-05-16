@@ -200,6 +200,7 @@ public final class KerberosPrincipal
         }
 
         if (krb5Principal.isRealmDeduced() && !Realm.AUTODEDUCEREALM) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 try {

@@ -98,6 +98,7 @@ public abstract class PolicySpi {
      *          If this operation is not supported,
      *          Policy.UNSUPPORTED_EMPTY_COLLECTION is returned.
      */
+    @SuppressWarnings("removal")
     protected PermissionCollection engineGetPermissions
                                         (CodeSource codesource) {
         return Policy.UNSUPPORTED_EMPTY_COLLECTION;
@@ -122,6 +123,7 @@ public abstract class PolicySpi {
      *          If this operation is not supported,
      *          Policy.UNSUPPORTED_EMPTY_COLLECTION is returned.
      */
+    @SuppressWarnings("removal")
     protected PermissionCollection engineGetPermissions
                                         (ProtectionDomain domain) {
         return Policy.UNSUPPORTED_EMPTY_COLLECTION;

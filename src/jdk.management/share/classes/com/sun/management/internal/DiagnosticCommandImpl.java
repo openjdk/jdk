@@ -150,6 +150,7 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
 
         public String execute(String[] args) {
             if (permission != null) {
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     sm.checkPermission(permission);

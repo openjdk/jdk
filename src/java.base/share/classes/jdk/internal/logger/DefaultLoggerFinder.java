@@ -98,6 +98,7 @@ public class DefaultLoggerFinder extends LoggerFinder {
     }
 
     private static Void checkPermission() {
+        @SuppressWarnings("removal")
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(LOGGERFINDER_PERMISSION);
@@ -138,6 +139,7 @@ public class DefaultLoggerFinder extends LoggerFinder {
         static final SharedLoggers application = new SharedLoggers();
     }
 
+    @SuppressWarnings("removal")
     public static boolean isSystem(Module m) {
         return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override

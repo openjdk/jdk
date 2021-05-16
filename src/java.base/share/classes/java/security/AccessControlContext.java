@@ -95,6 +95,7 @@ public final class AccessControlContext {
     // native codes. Don't touch it.
     private AccessControlContext privilegedContext;
 
+    @SuppressWarnings("removal")
     private DomainCombiner combiner = null;
 
     // limited privilege scope
@@ -109,6 +110,7 @@ public final class AccessControlContext {
     private static boolean debugInit = false;
     private static Debug debug = null;
 
+    @SuppressWarnings("removal")
     static Debug getDebug()
     {
         if (debugInit)
@@ -177,7 +179,7 @@ public final class AccessControlContext {
      * @since 1.3
      */
     public AccessControlContext(AccessControlContext acc,
-                                DomainCombiner combiner) {
+                                @SuppressWarnings("removal") DomainCombiner combiner) {
 
         this(acc, combiner, false);
     }
@@ -188,9 +190,10 @@ public final class AccessControlContext {
      * permission
      */
     AccessControlContext(AccessControlContext acc,
-                        DomainCombiner combiner,
+                        @SuppressWarnings("removal") DomainCombiner combiner,
                         boolean preauthorized) {
         if (!preauthorized) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(SecurityConstants.CREATE_ACC_PERMISSION);
@@ -217,7 +220,7 @@ public final class AccessControlContext {
      * This "argument wrapper" context will be passed as the actual context
      * parameter on an internal doPrivileged() call used in the implementation.
      */
-    AccessControlContext(ProtectionDomain caller, DomainCombiner combiner,
+    AccessControlContext(ProtectionDomain caller, @SuppressWarnings("removal") DomainCombiner combiner,
         AccessControlContext parent, AccessControlContext context,
         Permission[] perms)
     {
@@ -329,6 +332,7 @@ public final class AccessControlContext {
     /**
      * get the assigned combiner from the privileged or inherited context
      */
+    @SuppressWarnings("removal")
     DomainCombiner getAssignedCombiner() {
         AccessControlContext acc;
         if (isPrivileged) {
@@ -355,6 +359,7 @@ public final class AccessControlContext {
      *          {@link SecurityPermission}
      * @since 1.3
      */
+    @SuppressWarnings("removal")
     public DomainCombiner getDomainCombiner() {
 
         SecurityManager sm = System.getSecurityManager();
@@ -367,6 +372,7 @@ public final class AccessControlContext {
     /**
      * package private for AccessController
      */
+    @SuppressWarnings("removal")
     DomainCombiner getCombiner() {
         return combiner;
     }
@@ -394,6 +400,7 @@ public final class AccessControlContext {
      * context encapsulated by this object.
      * @throws    NullPointerException if the permission to check for is null.
      */
+    @SuppressWarnings("removal")
     public void checkPermission(Permission perm)
         throws AccessControlException
     {
@@ -554,6 +561,7 @@ public final class AccessControlContext {
      * The limited privilege scope can indirectly flow from the inherited
      * parent thread or an assigned context previously captured by getContext().
      */
+    @SuppressWarnings("removal")
     AccessControlContext optimize() {
         // the assigned (privileged or inherited) context
         AccessControlContext acc;

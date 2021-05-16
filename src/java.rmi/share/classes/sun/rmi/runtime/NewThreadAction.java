@@ -51,6 +51,7 @@ import sun.security.util.SecurityConstants;
 public final class NewThreadAction implements PrivilegedAction<Thread> {
 
     /** cached reference to the system (root) thread group */
+    @SuppressWarnings("removal")
     static final ThreadGroup systemThreadGroup =
         AccessController.doPrivileged(new PrivilegedAction<ThreadGroup>() {
             public ThreadGroup run() {
@@ -68,6 +69,7 @@ public final class NewThreadAction implements PrivilegedAction<Thread> {
      * may execute user code, so that the security policy for threads in
      * the system thread group will not apply
      */
+    @SuppressWarnings("removal")
     static final ThreadGroup userThreadGroup =
         AccessController.doPrivileged(new PrivilegedAction<ThreadGroup>() {
             public ThreadGroup run() {
@@ -126,6 +128,7 @@ public final class NewThreadAction implements PrivilegedAction<Thread> {
     }
 
     public Thread run() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);

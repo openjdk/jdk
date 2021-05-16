@@ -265,6 +265,7 @@ public final class SerializedLambda implements Serializable {
     @java.io.Serial
     private Object readResolve() throws ObjectStreamException {
         try {
+            @SuppressWarnings("removal")
             Method deserialize = AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
                 @Override
                 public Method run() throws Exception {

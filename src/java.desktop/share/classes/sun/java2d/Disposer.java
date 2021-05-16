@@ -50,6 +50,7 @@ import java.util.Hashtable;
  *
  * @see DisposerRecord
  */
+@SuppressWarnings("removal")
 public class Disposer implements Runnable {
     private static final ReferenceQueue<Object> queue = new ReferenceQueue<>();
     private static final Hashtable<java.lang.ref.Reference<Object>, DisposerRecord> records =

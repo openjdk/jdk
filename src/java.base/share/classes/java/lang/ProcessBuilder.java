@@ -348,6 +348,7 @@ public final class ProcessBuilder
      * @see    System#getenv()
      */
     public Map<String,String> environment() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null)
             security.checkPermission(new RuntimePermission("getenv.*"));
@@ -1092,6 +1093,7 @@ public final class ProcessBuilder
         // Throws IndexOutOfBoundsException if command is empty
         String prog = cmdarray[0];
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null)
             security.checkExec(prog);

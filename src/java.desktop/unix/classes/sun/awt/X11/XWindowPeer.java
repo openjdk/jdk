@@ -1338,6 +1338,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             return;
         }
 
+        @SuppressWarnings("removal")
         final String desktopStartupId = AccessController.doPrivileged(new PrivilegedAction<String>() {
             public String run() {
                 return XToolkit.getEnv("DESKTOP_STARTUP_ID");

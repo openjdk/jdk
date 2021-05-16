@@ -227,6 +227,7 @@ public abstract class InfoWindow extends Window {
                             textLabel.setText(tooltipString);
                         }
 
+                        @SuppressWarnings("removal")
                         Point pointer = AccessController.doPrivileged(
                             new PrivilegedAction<Point>() {
                                 public Point run() {

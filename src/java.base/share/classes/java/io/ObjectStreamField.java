@@ -214,6 +214,7 @@ public class ObjectStreamField
      * @return  a {@code Class} object representing the type of the
      *          serializable field
      */
+    @SuppressWarnings("removal")
     @CallerSensitive
     public Class<?> getType() {
         if (System.getSecurityManager() != null) {

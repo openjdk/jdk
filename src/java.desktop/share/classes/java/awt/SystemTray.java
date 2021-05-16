@@ -510,6 +510,7 @@ public class SystemTray {
     }
 
     static void checkSystemTrayAllowed() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.ACCESS_SYSTEM_TRAY_PERMISSION);

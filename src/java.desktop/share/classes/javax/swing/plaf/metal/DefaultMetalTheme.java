@@ -182,6 +182,7 @@ public class DefaultMetalTheme extends MetalTheme {
     }
 
     static {
+        @SuppressWarnings("removal")
         Object boldProperty = java.security.AccessController.doPrivileged(
             new GetPropertyAction("swing.boldMetal"));
         if (boldProperty == null || !"false".equals(boldProperty)) {
@@ -387,6 +388,7 @@ public class DefaultMetalTheme extends MetalTheme {
          * <code>Font.getFont(key)</code>, with the exception
          * that it is wrapped inside a <code>doPrivileged</code> call.
          */
+        @SuppressWarnings("removal")
         protected Font getPrivilegedFont(final int key) {
             return java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Font>() {

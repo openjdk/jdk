@@ -111,6 +111,7 @@ final class ClassLoaderObjectOutputStream extends ObjectOutputStream {
     }
 
     protected void annotateClass(final Class<?> cl) throws IOException {
+        @SuppressWarnings("removal")
         ClassLoader classLoader = AccessController.doPrivileged(
             new PrivilegedAction<ClassLoader>() {
                 public ClassLoader run() {
@@ -124,6 +125,7 @@ final class ClassLoaderObjectOutputStream extends ObjectOutputStream {
         map.put(s, classLoader);
     }
     protected void annotateProxyClass(final Class<?> cl) throws IOException {
+        @SuppressWarnings("removal")
         ClassLoader classLoader = AccessController.doPrivileged(
             new PrivilegedAction<ClassLoader>() {
                 public ClassLoader run() {

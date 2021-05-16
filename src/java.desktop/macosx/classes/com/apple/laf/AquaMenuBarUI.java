@@ -41,6 +41,7 @@ import sun.lwawt.macosx.LWCToolkit;
 import sun.security.action.GetBooleanAction;
 
 // MenuBar implementation for Mac L&F
+@SuppressWarnings("removal")
 public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvider {
 
     static {

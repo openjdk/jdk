@@ -81,6 +81,7 @@ public class AquaImageFactory {
         return getAppIconCompositedOn(lockIcon);
     }
 
+    @SuppressWarnings("removal")
     static Image getGenericJavaIcon() {
         return java.security.AccessController.doPrivileged(new PrivilegedAction<Image>() {
             public Image run() {
@@ -89,6 +90,7 @@ public class AquaImageFactory {
         });
     }
 
+    @SuppressWarnings("removal")
     static String getPathToThisApplication() {
         return java.security.AccessController.doPrivileged(new PrivilegedAction<String>() {
             public String run() {

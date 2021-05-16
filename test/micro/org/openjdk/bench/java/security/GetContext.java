@@ -47,11 +47,13 @@ public abstract class GetContext {
 
     public static class Top extends GetContext {
 
+        @SuppressWarnings("removal")
         @Benchmark
         public AccessControlContext testNonPriv() {
             return AccessController.getContext();
         }
 
+        @SuppressWarnings("removal")
         @Benchmark
         public AccessControlContext testPriv() {
             PrivilegedAction<AccessControlContext> pa = () -> AccessController.getContext();
@@ -64,6 +66,7 @@ public abstract class GetContext {
         @Param({"2", "50"})
         int depth;
 
+        @SuppressWarnings("removal")
         private AccessControlContext recurse(int depth) {
             if (depth > 0) {
                 return recurse(depth - 1);
@@ -72,11 +75,13 @@ public abstract class GetContext {
             }
         }
 
+        @SuppressWarnings("removal")
         @Benchmark
         public AccessControlContext testNonPrivRecurse() {
             return recurse(depth);
         }
 
+        @SuppressWarnings("removal")
         @Benchmark
         public AccessControlContext testPrivInline() {
             PrivilegedAction<AccessControlContext> pa = () -> recurse(depth);

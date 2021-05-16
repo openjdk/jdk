@@ -139,6 +139,7 @@ public abstract class Policy {
     }
 
     private static void checkPermission(String type) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new SecurityPermission("createPolicy." + type));
@@ -165,6 +166,7 @@ public abstract class Policy {
      */
     public static Policy getPolicy()
     {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(SecurityConstants.GET_POLICY_PERMISSION);
@@ -200,6 +202,7 @@ public abstract class Policy {
      * an intrinsic lock on the Policy.class.
      */
     private static Policy loadPolicyProvider() {
+        @SuppressWarnings("removal")
         String policyProvider =
             AccessController.doPrivileged(new PrivilegedAction<>() {
                 @Override
@@ -228,6 +231,7 @@ public abstract class Policy {
         Policy polFile = new sun.security.provider.PolicyFile();
         policyInfo = new PolicyInfo(polFile, false);
 
+        @SuppressWarnings("removal")
         Policy pol = AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Policy run() {
@@ -277,6 +281,7 @@ public abstract class Policy {
      */
     public static void setPolicy(Policy p)
     {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(
                                  new SecurityPermission("setPolicy"));
@@ -316,6 +321,7 @@ public abstract class Policy {
          * implementations will continue to function.
          */
 
+        @SuppressWarnings("removal")
         ProtectionDomain policyDomain =
         AccessController.doPrivileged(new PrivilegedAction<>() {
             public ProtectionDomain run() {
@@ -400,6 +406,7 @@ public abstract class Policy {
      * @see Provider
      * @since 1.6
      */
+    @SuppressWarnings("removal")
     public static Policy getInstance(String type, Policy.Parameters params)
                 throws NoSuchAlgorithmException {
         Objects.requireNonNull(type, "null type name");
@@ -461,6 +468,7 @@ public abstract class Policy {
      * @see Provider
      * @since 1.6
      */
+    @SuppressWarnings("removal")
     public static Policy getInstance(String type,
                                 Policy.Parameters params,
                                 String provider)
@@ -524,6 +532,7 @@ public abstract class Policy {
      * @see Provider
      * @since 1.6
      */
+    @SuppressWarnings("removal")
     public static Policy getInstance(String type,
                                 Policy.Parameters params,
                                 Provider provider)
@@ -775,12 +784,13 @@ public abstract class Policy {
      */
     private static class PolicyDelegate extends Policy {
 
+        @SuppressWarnings("removal")
         private PolicySpi spi;
         private Provider p;
         private String type;
         private Policy.Parameters params;
 
-        private PolicyDelegate(PolicySpi spi, Provider p,
+        private PolicyDelegate(@SuppressWarnings("removal") PolicySpi spi, Provider p,
                         String type, Policy.Parameters params) {
             this.spi = spi;
             this.p = p;

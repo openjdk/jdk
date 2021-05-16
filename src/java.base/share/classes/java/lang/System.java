@@ -182,6 +182,7 @@ public final class System {
     private static @Stable int allowSecurityManager;
 
     // current security manager
+    @SuppressWarnings("removal")
     private static volatile SecurityManager security;   // read by VM
 
     // return true if a security manager is allowed
@@ -313,6 +314,7 @@ public final class System {
     }
 
     private static void checkIO() {
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("setIO"));
@@ -367,7 +369,7 @@ public final class System {
      *       method.
      */
     @Deprecated(since="17", forRemoval=true)
-    public static void setSecurityManager(SecurityManager sm) {
+    public static void setSecurityManager(@SuppressWarnings("removal") SecurityManager sm) {
         if (allowSecurityManager()) {
             if (security == null) {
                 // ensure image reader is initialized
@@ -395,6 +397,7 @@ public final class System {
         }
     }
 
+    @SuppressWarnings("removal")
     private static synchronized
     void setSecurityManager0(final SecurityManager s) {
         SecurityManager sm = getSecurityManager();
@@ -439,6 +442,7 @@ public final class System {
      *       removal. There is no replacement for the Security Manager or this
      *       method.
      */
+    @SuppressWarnings("removal")
     @Deprecated(since="17", forRemoval=true)
     public static SecurityManager getSecurityManager() {
         if (allowSecurityManager()) {
@@ -771,6 +775,7 @@ public final class System {
      * @see        java.util.Properties
      */
     public static Properties getProperties() {
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPropertiesAccess();
@@ -823,6 +828,7 @@ public final class System {
      * @see        java.lang.SecurityManager#checkPropertiesAccess()
      */
     public static void setProperties(Properties props) {
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPropertiesAccess();
@@ -868,6 +874,7 @@ public final class System {
      */
     public static String getProperty(String key) {
         checkKey(key);
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPropertyAccess(key);
@@ -903,6 +910,7 @@ public final class System {
      */
     public static String getProperty(String key, String def) {
         checkKey(key);
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPropertyAccess(key);
@@ -946,6 +954,7 @@ public final class System {
      */
     public static String setProperty(String key, String value) {
         checkKey(key);
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new PropertyPermission(key,
@@ -987,6 +996,7 @@ public final class System {
      */
     public static String clearProperty(String key) {
         checkKey(key);
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new PropertyPermission(key, "write"));
@@ -1051,6 +1061,7 @@ public final class System {
      * @see    ProcessBuilder#environment()
      */
     public static String getenv(String name) {
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("getenv."+name));
@@ -1100,6 +1111,7 @@ public final class System {
      * @since  1.5
      */
     public static java.util.Map<String,String> getenv() {
+        @SuppressWarnings("removal")
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("getenv.*"));
@@ -1567,6 +1579,7 @@ public final class System {
         }
 
         private static Void checkPermission() {
+            @SuppressWarnings("removal")
             final SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(LOGGERFINDER_PERMISSION);
@@ -1650,6 +1663,7 @@ public final class System {
          *         {@code RuntimePermission("loggerFinder")}.
          */
         public static LoggerFinder getLoggerFinder() {
+            @SuppressWarnings("removal")
             final SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(LOGGERFINDER_PERMISSION);
@@ -1659,6 +1673,7 @@ public final class System {
 
 
         private static volatile LoggerFinder service;
+        @SuppressWarnings("removal")
         static LoggerFinder accessProvider() {
             // We do not need to synchronize: LoggerFinderLoader will
             // always return the same instance, so if we don't have it,
@@ -1762,6 +1777,7 @@ public final class System {
      *
      * @since 9
      */
+    @SuppressWarnings("removal")
     @CallerSensitive
     public static Logger getLogger(String name, ResourceBundle bundle) {
         final ResourceBundle rb = Objects.requireNonNull(bundle);
@@ -2124,6 +2140,7 @@ public final class System {
      * The security manager and system class loader may be a custom class from
      * the application classpath or modulepath.
      */
+    @SuppressWarnings("removal")
     private static void initPhase3() {
 
         // Initialize the StringConcatFactory eagerly to avoid potential
@@ -2226,7 +2243,7 @@ public final class System {
             public void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook) {
                 Shutdown.add(slot, registerShutdownInProgress, hook);
             }
-            public Thread newThreadWithAcc(Runnable target, AccessControlContext acc) {
+            public Thread newThreadWithAcc(Runnable target, @SuppressWarnings("removal") AccessControlContext acc) {
                 return new Thread(target, acc);
             }
             @SuppressWarnings("deprecation")
@@ -2252,9 +2269,11 @@ public final class System {
             public String fastUUID(long lsb, long msb) {
                 return Long.fastUUID(lsb, msb);
             }
+            @SuppressWarnings("removal")
             public void addNonExportedPackages(ModuleLayer layer) {
                 SecurityManager.addNonExportedPackages(layer);
             }
+            @SuppressWarnings("removal")
             public void invalidatePackageAccessCache() {
                 SecurityManager.invalidatePackageAccessCache();
             }

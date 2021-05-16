@@ -28,6 +28,7 @@ package sun.net;
 import java.security.PrivilegedAction;
 import java.security.Security;
 
+@SuppressWarnings("removal")
 public final class InetAddressCachePolicy {
 
     // Controls the cache policy for successful lookups only

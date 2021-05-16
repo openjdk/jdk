@@ -1012,6 +1012,7 @@ public abstract class SurfaceData
      * of this surface.
      */
     protected void checkCustomComposite() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (compPermission == null) {

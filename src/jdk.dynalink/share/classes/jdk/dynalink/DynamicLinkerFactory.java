@@ -107,6 +107,7 @@ import jdk.dynalink.linker.support.TypeUtilities;
  * category usually includes {@link BeansLinker}.
  */
 public final class DynamicLinkerFactory {
+    @SuppressWarnings("removal")
     private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
             AccessControlContextFactory.createAccessControlContext("getClassLoader");
 
@@ -434,6 +435,7 @@ public final class DynamicLinkerFactory {
         final ClassLoader effectiveClassLoader = classLoaderExplicitlySet ? classLoader : getThreadContextClassLoader();
         final List<GuardingDynamicLinker> discovered = new LinkedList<>();
         try {
+            @SuppressWarnings("removal")
             final ServiceLoader<GuardingDynamicLinkerExporter> linkerLoader =
                     AccessController.doPrivileged((PrivilegedAction<ServiceLoader<GuardingDynamicLinkerExporter>>)()-> {
                         if (effectiveClassLoader == null) {
@@ -470,6 +472,7 @@ public final class DynamicLinkerFactory {
         return discovered;
     }
 
+    @SuppressWarnings("removal")
     private static ClassLoader getThreadContextClassLoader() {
         return AccessController.doPrivileged(
             (PrivilegedAction<ClassLoader>) () -> Thread.currentThread().getContextClassLoader(),

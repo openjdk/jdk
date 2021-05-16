@@ -171,9 +171,11 @@ public abstract class Monitor
     /**
      * AccessControlContext of the Monitor.start() caller.
      */
+    @SuppressWarnings("removal")
     private static final AccessControlContext noPermissionsACC =
             new AccessControlContext(
             new ProtectionDomain[] {new ProtectionDomain(null, null)});
+    @SuppressWarnings("removal")
     private volatile AccessControlContext acc = noPermissionsACC;
 
     /**
@@ -200,6 +202,7 @@ public abstract class Monitor
     private static final int maximumPoolSize;
     static {
         final String maximumPoolSizeSysProp = "jmx.x.monitor.maximum.pool.size";
+        @SuppressWarnings("removal")
         final String maximumPoolSizeStr = AccessController.doPrivileged(
             new GetPropertyAction(maximumPoolSizeSysProp));
         if (maximumPoolSizeStr == null ||
@@ -693,6 +696,7 @@ public abstract class Monitor
     /**
      * Starts the monitor.
      */
+    @SuppressWarnings("removal")
     void doStart() {
             MONITOR_LOGGER.log(Level.TRACE, "start the monitor");
 
@@ -1496,6 +1500,7 @@ public abstract class Monitor
             // System.getSecurityManager() is used, else the group of the thread
             // instantiating this MonitorTask, i.e. the group of the thread that
             // calls "Monitor.start()".
+            @SuppressWarnings("removal")
             SecurityManager s = System.getSecurityManager();
             ThreadGroup group = (s != null) ? s.getThreadGroup() :
                 Thread.currentThread().getThreadGroup();
@@ -1534,6 +1539,7 @@ public abstract class Monitor
             return executor.submit(this);
         }
 
+        @SuppressWarnings("removal")
         public void run() {
             final ScheduledFuture<?> sf;
             final AccessControlContext ac;
@@ -1592,6 +1598,7 @@ public abstract class Monitor
         static final String nameSuffix = "]";
 
         public DaemonThreadFactory(String poolName) {
+            @SuppressWarnings("removal")
             SecurityManager s = System.getSecurityManager();
             group = (s != null) ? s.getThreadGroup() :
                                   Thread.currentThread().getThreadGroup();

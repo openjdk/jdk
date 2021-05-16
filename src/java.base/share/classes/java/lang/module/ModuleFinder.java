@@ -148,6 +148,7 @@ public interface ModuleFinder {
      * @throws SecurityException
      *         If denied by the security manager
      */
+    @SuppressWarnings("removal")
     static ModuleFinder ofSystem() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {

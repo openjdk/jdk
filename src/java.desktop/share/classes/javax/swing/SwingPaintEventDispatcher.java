@@ -41,6 +41,7 @@ import sun.security.action.GetPropertyAction;
  * will forward the request to the RepaintManager for eventual painting.
  *
  */
+@SuppressWarnings("removal")
 class SwingPaintEventDispatcher extends sun.awt.PaintEventDispatcher {
     private static final boolean SHOW_FROM_DOUBLE_BUFFER;
     private static final boolean ERASE_BACKGROUND;

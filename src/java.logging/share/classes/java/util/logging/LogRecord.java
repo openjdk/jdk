@@ -767,6 +767,7 @@ public class LogRecord implements java.io.Serializable {
     /*
      * CallerFinder is a stateful predicate.
      */
+    @SuppressWarnings("removal")
     static final class CallerFinder implements Predicate<StackWalker.StackFrame> {
         private static final StackWalker WALKER;
         static {

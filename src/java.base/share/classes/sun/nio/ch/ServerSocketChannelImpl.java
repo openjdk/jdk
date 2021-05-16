@@ -329,6 +329,7 @@ class ServerSocketChannelImpl
         } else {
             isa = Net.checkAddress(local, family);
         }
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkListen(isa.getPort());
@@ -488,6 +489,7 @@ class ServerSocketChannelImpl
 
             // check permitted to accept connections from the remote address
             if (isNetSocket()) {
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     InetSocketAddress isa = (InetSocketAddress) sa;

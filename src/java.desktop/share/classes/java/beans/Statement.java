@@ -69,6 +69,7 @@ public class Statement {
         }
     };
 
+    @SuppressWarnings("removal")
     private final AccessControlContext acc = AccessController.getContext();
     private final Object target;
     private final String methodName;
@@ -175,6 +176,7 @@ public class Statement {
         invoke();
     }
 
+    @SuppressWarnings("removal")
     Object invoke() throws Exception {
         AccessControlContext acc = this.acc;
         if ((acc == null) && (System.getSecurityManager() != null)) {

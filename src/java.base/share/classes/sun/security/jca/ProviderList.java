@@ -87,6 +87,7 @@ public final class ProviderList {
 
     // construct a ProviderList from the security properties
     // (static provider configuration in the java.security file)
+    @SuppressWarnings("removal")
     static ProviderList fromSecurityProperties() {
         // doPrivileged() because of Security.getProperty()
         return AccessController.doPrivileged(

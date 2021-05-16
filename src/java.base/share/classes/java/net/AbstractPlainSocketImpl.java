@@ -585,6 +585,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
     /**
      * Gets an InputStream for this socket.
      */
+    @SuppressWarnings("removal")
     protected synchronized InputStream getInputStream() throws IOException {
         synchronized (fdLock) {
             if (isClosedOrPending())
@@ -610,6 +611,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl implements PlatformSoc
     /**
      * Gets an OutputStream for this socket.
      */
+    @SuppressWarnings("removal")
     protected synchronized OutputStream getOutputStream() throws IOException {
         synchronized (fdLock) {
             if (isClosedOrPending())

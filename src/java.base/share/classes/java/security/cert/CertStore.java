@@ -426,6 +426,7 @@ public class CertStore {
      * {@code certstore.type} security property, or the string
      * {@literal "LDAP"} if no such property exists.
      */
+    @SuppressWarnings("removal")
     public static final String getDefaultType() {
         String cstype;
         cstype = AccessController.doPrivileged(new PrivilegedAction<>() {

@@ -112,6 +112,7 @@ public class CreatedFontTracker {
         private static HashMap<File, OutputStream> files = new HashMap<>();
 
         private static Thread t = null;
+        @SuppressWarnings("removal")
         static void init() {
             if (t == null) {
                 // Add a shutdown hook to remove the temp file.

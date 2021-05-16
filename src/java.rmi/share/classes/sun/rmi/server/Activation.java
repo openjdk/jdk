@@ -2415,6 +2415,7 @@ public class Activation implements Serializable {
  * @author Laird Dornin, much code borrowed from Peter Jones, Ken
  *         Arnold and Ann Wollrath.
  */
+@SuppressWarnings("removal")
 class PipeWriter implements Runnable {
 
     /** stream used for buffering lines */

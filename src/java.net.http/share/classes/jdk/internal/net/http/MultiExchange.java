@@ -79,6 +79,7 @@ class MultiExchange<T> implements Cancelable {
     private final HttpRequest userRequest; // the user request
     private final HttpRequestImpl request; // a copy of the user request
     private final ConnectTimeoutTracker connectTimeout; // null if no timeout
+    @SuppressWarnings("removal")
     final AccessControlContext acc;
     final HttpClientImpl client;
     final HttpResponse.BodyHandler<T> responseHandler;
@@ -155,7 +156,7 @@ class MultiExchange<T> implements Cancelable {
                   HttpClientImpl client,
                   HttpResponse.BodyHandler<T> responseHandler,
                   PushPromiseHandler<T> pushPromiseHandler,
-                  AccessControlContext acc) {
+                  @SuppressWarnings("removal") AccessControlContext acc) {
         this.previous = null;
         this.userRequest = userRequest;
         this.request = requestImpl;

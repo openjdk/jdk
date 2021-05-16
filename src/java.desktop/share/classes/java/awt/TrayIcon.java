@@ -113,11 +113,13 @@ public class TrayIcon {
      * Unlike the acc in Component, this field is made final
      * because TrayIcon is not serializable.
      */
+    @SuppressWarnings("removal")
     private final AccessControlContext acc = AccessController.getContext();
 
     /*
      * Returns the acc this tray icon was constructed with.
      */
+    @SuppressWarnings("removal")
     final AccessControlContext getAccessControlContext() {
         if (acc == null) {
             throw new SecurityException("TrayIcon is missing AccessControlContext");

@@ -69,6 +69,7 @@ public final class JdkLDAP extends Provider {
         }
     }
 
+    @SuppressWarnings("removal")
     public JdkLDAP() {
         super("JdkLDAP", PROVIDER_VER, "JdkLDAP Provider (implements LDAP CertStore)");
 

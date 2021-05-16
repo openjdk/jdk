@@ -66,6 +66,7 @@ import sun.rmi.transport.tcp.TCPEndpoint;
 public final class Util {
 
     /** "server" package log level */
+    @SuppressWarnings("removal")
     static final int logLevel = LogStream.parseLevel(
         AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.server.logLevel")));
@@ -75,6 +76,7 @@ public final class Util {
         Log.getLog("sun.rmi.server.ref", "transport", Util.logLevel);
 
     /** cached value of property java.rmi.server.ignoreStubClasses */
+    @SuppressWarnings("removal")
     private static final boolean ignoreStubClasses =
         AccessController.doPrivileged(
             (PrivilegedAction<Boolean>) () -> Boolean.getBoolean("java.rmi.server.ignoreStubClasses"));
@@ -118,6 +120,7 @@ public final class Util {
      * @throws StubNotFoundException if problem locating/creating stub or
      * creating the dynamic proxy instance
      **/
+    @SuppressWarnings("removal")
     public static Remote createProxy(Class<?> implClass,
                                      RemoteRef clientRef,
                                      boolean forceStubUse)

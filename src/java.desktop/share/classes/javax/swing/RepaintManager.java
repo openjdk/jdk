@@ -66,6 +66,7 @@ import sun.swing.SwingUtilities2.RepaintListener;
  * @author Arnaud Weber
  * @since 1.2
  */
+@SuppressWarnings("removal")
 public class RepaintManager
 {
     /**

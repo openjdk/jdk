@@ -117,6 +117,7 @@ public class ResolverConfigurationImpl
 
     // Load DNS configuration from OS
 
+    @SuppressWarnings("removal")
     private void loadConfig() {
         assert Thread.holdsLock(lock);
 
@@ -149,6 +150,7 @@ public class ResolverConfigurationImpl
 
     // obtain search list or local domain
 
+    @SuppressWarnings("removal")
     private LinkedList<String> getSearchList() {
 
         LinkedList<String> sl;

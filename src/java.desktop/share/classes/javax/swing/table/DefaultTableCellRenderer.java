@@ -117,6 +117,7 @@ public class DefaultTableCellRenderer extends JLabel
         setName("Table.cellRenderer");
     }
 
+    @SuppressWarnings("removal")
     private Border getNoFocusBorder() {
         Border border = DefaultLookup.getBorder(this, ui, "Table.cellNoFocusBorder");
         if (System.getSecurityManager() != null) {

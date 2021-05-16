@@ -40,6 +40,7 @@ import sun.security.util.Debug;
  * @since   1.6
  * @author  Andreas Sterbenz
  */
+@SuppressWarnings("removal")
 class PlatformPCSC {
 
     static final Debug debug = Debug.getInstance("pcsc");

@@ -31,6 +31,7 @@ import java.io.IOException;
 /*
  * Windows implementation of sun.management.FileSystem
  */
+@SuppressWarnings("removal")
 public class FileSystemImpl extends FileSystem {
 
     public boolean supportsFileSecurity(File f) throws IOException {

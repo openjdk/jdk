@@ -41,6 +41,7 @@ import java.net.MalformedURLException;
  * via the Policy.getInstance calls.
  *
  */
+@SuppressWarnings("removal")
 public final class PolicySpiFile extends PolicySpi {
 
     private PolicyFile pf;

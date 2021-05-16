@@ -43,6 +43,7 @@ public class Main {
      * @param args command line arguments
      * @return an exit code. 0 means success, non-zero means an error occurred.
      */
+    @SuppressWarnings("removal")
     public static int run(PrintWriter out, PrintWriter err, String... args) {
         if (System.getSecurityManager() != null) {
             System.getSecurityManager().

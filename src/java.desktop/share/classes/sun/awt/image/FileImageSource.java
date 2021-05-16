@@ -34,6 +34,7 @@ public class FileImageSource extends InputStreamImageSource {
     String imagefile;
 
     public FileImageSource(String filename) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(filename);

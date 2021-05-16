@@ -128,6 +128,7 @@ public class Krb5NameElement
         }
 
         if (principalName.isRealmDeduced() && !Realm.AUTODEDUCEREALM) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 try {

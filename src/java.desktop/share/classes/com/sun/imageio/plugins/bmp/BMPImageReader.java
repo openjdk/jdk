@@ -2035,6 +2035,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
     private static Boolean isLinkedProfileDisabled = null;
 
+    @SuppressWarnings("removal")
     private static boolean isLinkedProfileAllowed() {
         if (isLinkedProfileDisabled == null) {
             PrivilegedAction<Boolean> a = new PrivilegedAction<Boolean>() {
@@ -2061,6 +2062,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
      *  \\?\UNC\server\share - a UNC path in long notation
      *  \\.\some\device - a path to device.
      */
+    @SuppressWarnings("removal")
     private static boolean isUncOrDevicePath(byte[] p) {
         if (isWindowsPlatform == null) {
             PrivilegedAction<Boolean> a = new PrivilegedAction<Boolean>() {

@@ -230,6 +230,7 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
                 "no default HostnameVerifier specified");
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new SSLPermission("setHostnameVerifier"));
@@ -311,6 +312,7 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
                 "no default SSLSocketFactory specified");
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkSetFactory();
@@ -360,6 +362,7 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
                 "no SSLSocketFactory specified");
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkSetFactory();

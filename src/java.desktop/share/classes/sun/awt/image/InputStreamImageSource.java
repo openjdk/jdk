@@ -102,6 +102,7 @@ public abstract class InputStreamImageSource implements ImageProducer,
         } else {
             if (!cq.secure) {
                 Object context = null;
+                @SuppressWarnings("removal")
                 SecurityManager security = System.getSecurityManager();
                 if (security != null) {
                     context = security.getSecurityContext();

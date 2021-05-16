@@ -66,9 +66,11 @@ abstract class TranslucentWindowPainter {
     protected WWindowPeer peer;
 
     // REMIND: we probably would want to remove this later
+    @SuppressWarnings("removal")
     private static final boolean forceOpt  =
         Boolean.valueOf(AccessController.doPrivileged(
             new GetPropertyAction("sun.java2d.twp.forceopt", "false")));
+    @SuppressWarnings("removal")
     private static final boolean forceSW  =
         Boolean.valueOf(AccessController.doPrivileged(
             new GetPropertyAction("sun.java2d.twp.forcesw", "false")));

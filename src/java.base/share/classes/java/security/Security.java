@@ -51,6 +51,7 @@ import sun.security.jca.*;
  * @since 1.1
  */
 
+@SuppressWarnings("removal")
 public final class Security {
 
     /* Are we debugging? -- for developers */

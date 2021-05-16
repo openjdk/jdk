@@ -149,6 +149,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                     InetSocketAddress isa = (local == null) ?
                         new InetSocketAddress(0) : Net.checkAddress(local);
 
+                    @SuppressWarnings("removal")
                     SecurityManager sm = System.getSecurityManager();
                     if (sm != null)
                         sm.checkListen(isa.getPort());
@@ -510,6 +511,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                                     resultContainer.getMessageInfo();
                             info.setAssociation(lookupAssociation(info.
                                     associationID()));
+                            @SuppressWarnings("removal")
                             SecurityManager sm = System.getSecurityManager();
                             if (sm != null) {
                                 InetSocketAddress isa  = (InetSocketAddress)info.address();
@@ -817,6 +819,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                             assocId = association.associationID();
 
                         } else { /* must be new association */
+                            @SuppressWarnings("removal")
                             SecurityManager sm = System.getSecurityManager();
                             if (sm != null)
                                 sm.checkConnect(addr.getAddress().getHostAddress(),

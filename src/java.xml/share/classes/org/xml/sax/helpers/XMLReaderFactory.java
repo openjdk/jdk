@@ -236,6 +236,7 @@ final public class XMLReaderFactory
      *
      * @return instance of provider class if found or null
      */
+    @SuppressWarnings("removal")
     private static <T> T findServiceProvider(final Class<T> type, final ClassLoader loader)
             throws SAXException {
         ClassLoader cl = Objects.requireNonNull(loader);

@@ -252,6 +252,7 @@ public abstract class FileFont extends PhysicalFont {
             this.tracker = tracker;
         }
 
+        @SuppressWarnings("removal")
         public void dispose() {
             java.security.AccessController.doPrivileged(
                  new java.security.PrivilegedAction<Object>() {
@@ -286,6 +287,7 @@ public abstract class FileFont extends PhysicalFont {
         }
     }
 
+    @SuppressWarnings("removal")
     protected String getPublicFileName() {
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {

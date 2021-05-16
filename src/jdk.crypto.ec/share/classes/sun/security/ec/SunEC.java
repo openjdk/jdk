@@ -186,6 +186,7 @@ public final class SunEC extends Provider {
         }
     }
 
+    @SuppressWarnings("removal")
     public SunEC() {
         super("SunEC", PROVIDER_VER, "Sun Elliptic Curve provider");
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

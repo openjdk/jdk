@@ -48,7 +48,7 @@ class CharacterName {
     private final int[] hsIndices;   // chain heads, hash indices into "cps"
 
     private CharacterName()  {
-        try (DataInputStream dis = new DataInputStream(new InflaterInputStream(
+        try (@SuppressWarnings("removal") DataInputStream dis = new DataInputStream(new InflaterInputStream(
             AccessController.doPrivileged(new PrivilegedAction<>() {
                 public InputStream run() {
                     return getClass().getResourceAsStream("uniName.dat");

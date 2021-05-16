@@ -247,6 +247,7 @@ public class TrueTypeFont extends FileFont {
                 FontUtilities.logInfo("open TTF: " + platName);
             }
             try {
+                @SuppressWarnings("removal")
                 RandomAccessFile raf = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<RandomAccessFile>() {
                         public RandomAccessFile run() throws FileNotFoundException {
@@ -660,6 +661,7 @@ public class TrueTypeFont extends FileFont {
     };
 
     private static String defaultCodePage = null;
+    @SuppressWarnings("removal")
     static String getCodePage() {
 
         if (defaultCodePage != null) {

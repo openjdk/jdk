@@ -94,6 +94,7 @@ import jdk.internal.access.JavaSecurityAccess;
  *
  * @since       1.1
  */
+@SuppressWarnings("removal")
 public class EventQueue {
     private static final AtomicInteger threadInitNumber = new AtomicInteger();
 

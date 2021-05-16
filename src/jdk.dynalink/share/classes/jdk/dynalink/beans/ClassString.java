@@ -78,6 +78,7 @@ import jdk.dynalink.linker.support.TypeUtilities;
  * JLS.
  */
 final class ClassString {
+    @SuppressWarnings("removal")
     private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
             AccessControlContextFactory.createAccessControlContext("getClassLoader");
 
@@ -127,6 +128,7 @@ final class ClassString {
         return "ClassString[" + Arrays.toString(classes) + "]";
     }
 
+    @SuppressWarnings("removal")
     boolean isVisibleFrom(final ClassLoader classLoader) {
         return AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> {
             for(final Class<?> clazz: classes) {

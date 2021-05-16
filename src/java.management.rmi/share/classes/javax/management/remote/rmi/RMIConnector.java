@@ -119,6 +119,7 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  *
  * @since 1.5
  */
+@SuppressWarnings("removal")
 public class RMIConnector implements JMXConnector, Serializable, JMXAddressable {
 
     private static final ClassLogger logger =

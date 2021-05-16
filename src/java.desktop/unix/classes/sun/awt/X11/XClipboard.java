@@ -129,6 +129,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
         }
     }
 
+    @SuppressWarnings("removal")
     private static int getPollInterval() {
         synchronized (XClipboard.classLock) {
             if (pollInterval <= 0) {

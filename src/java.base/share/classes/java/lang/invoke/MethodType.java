@@ -1134,6 +1134,7 @@ class MethodType
         throws IllegalArgumentException, TypeNotPresentException
     {
         if (loader == null) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);

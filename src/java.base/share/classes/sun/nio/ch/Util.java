@@ -407,6 +407,7 @@ public class Util {
 
     private static volatile Constructor<?> directByteBufferConstructor;
 
+    @SuppressWarnings("removal")
     private static void initDBBConstructor() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
@@ -455,6 +456,7 @@ public class Util {
 
     private static volatile Constructor<?> directByteBufferRConstructor;
 
+    @SuppressWarnings("removal")
     private static void initDBBRConstructor() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {

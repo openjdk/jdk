@@ -178,6 +178,7 @@ public class LocaleData {
         return getBundle(type.getTextResourcesPackage() + ".FormatData", locale);
     }
 
+    @SuppressWarnings("removal")
     public static ResourceBundle getBundle(final String baseName, final Locale locale) {
         return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
@@ -187,6 +188,7 @@ public class LocaleData {
         });
     }
 
+    @SuppressWarnings("removal")
     private static OpenListResourceBundle getSupplementary(final String baseName, final Locale locale) {
         return AccessController.doPrivileged(new PrivilegedAction<>() {
            @Override

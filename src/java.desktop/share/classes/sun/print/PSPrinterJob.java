@@ -104,6 +104,7 @@ import javax.print.attribute.standard.Media;
  *
  * @author Richard Blanchard
  */
+@SuppressWarnings("removal")
 public class PSPrinterJob extends RasterPrinterJob {
 
  /* Class Constants */

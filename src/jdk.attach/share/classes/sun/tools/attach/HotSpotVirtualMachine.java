@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
  * The HotSpot implementation of com.sun.tools.attach.VirtualMachine.
  */
 
+@SuppressWarnings("removal")
 public abstract class HotSpotVirtualMachine extends VirtualMachine {
 
     private static final long CURRENT_PID;

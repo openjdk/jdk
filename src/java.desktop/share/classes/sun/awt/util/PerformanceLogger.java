@@ -72,6 +72,7 @@ import java.io.Writer;
  * exist once those APIs are in place.
  * @author Chet Haase
  */
+@SuppressWarnings("removal")
 public class PerformanceLogger {
 
     // Timing values of global interest

@@ -636,6 +636,7 @@ class MotifColorUtilities {
     }
 
 
+    @SuppressWarnings("removal")
     static void loadSystemColors(int[] systemColors) {
         if ("Linux".equals(AccessController.doPrivileged(new GetPropertyAction("os.name")))) { // Load motif default colors on Linux.
             loadMotifDefaultColors(systemColors);

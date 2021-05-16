@@ -124,6 +124,7 @@ final class ChannelImpl extends CardChannel {
         getBooleanProperty("sun.security.smartcardio.t1StripLe", false);
 
     private static boolean getBooleanProperty(String name, boolean def) {
+        @SuppressWarnings("removal")
         String val = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty(name));
         if (val == null) {

@@ -43,6 +43,7 @@ import static sun.security.util.SecurityProviderConstants.getAliases;
  * @since 1.6
  */
 
+@SuppressWarnings("removal")
 public final class SunMSCAPI extends Provider {
 
     private static final long serialVersionUID = 8622598936488630849L; //TODO

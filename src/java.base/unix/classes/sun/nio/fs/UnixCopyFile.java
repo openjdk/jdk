@@ -392,6 +392,7 @@ class UnixCopyFile {
         throws IOException
     {
         // permission check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             source.checkWrite();
@@ -527,6 +528,7 @@ class UnixCopyFile {
                      CopyOption... options) throws IOException
     {
         // permission checks
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             source.checkRead();

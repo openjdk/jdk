@@ -53,6 +53,7 @@ import sun.net.www.HeaderParser;
 //      policy in HttpURLConnection.  A failure on baz.foo.com shouldn't
 //      uncache foo.com!
 
+@SuppressWarnings("removal")
 public abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
 
     @java.io.Serial

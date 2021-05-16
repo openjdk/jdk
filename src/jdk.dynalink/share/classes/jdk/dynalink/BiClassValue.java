@@ -201,9 +201,11 @@ final class BiClassValue<T> {
         }
     }
 
+    @SuppressWarnings("removal")
     private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
         AccessControlContextFactory.createAccessControlContext("getClassLoader");
 
+    @SuppressWarnings("removal")
     private static RetentionDirection getRetentionDirection(Class<?> from, Class<?> to) {
         return AccessController.doPrivileged((PrivilegedAction<RetentionDirection>) () -> {
             final ClassLoader cl1 = from.getClassLoader();

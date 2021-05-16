@@ -98,6 +98,7 @@ public final class Provider extends java.security.Provider {
         }
     }
 
+    @SuppressWarnings("removal")
     public Provider() {
         super("SunSASL", PROVIDER_VER, info);
 

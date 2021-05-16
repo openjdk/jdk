@@ -41,6 +41,7 @@ class Invoker {
     // maximum number of completion handlers that may be invoked on the current
     // thread before it re-directs invocations to the thread pool. This helps
     // avoid stack overflow and lessens the risk of starvation.
+    @SuppressWarnings("removal")
     private static final int maxHandlerInvokeCount = AccessController.doPrivileged(
         new GetIntegerAction("sun.nio.ch.maxCompletionHandlersOnStack", 16));
 
@@ -118,6 +119,7 @@ class Invoker {
      * Invoke handler without checking the thread identity or number of handlers
      * on the thread stack.
      */
+    @SuppressWarnings("removal")
     static <V,A> void invokeUnchecked(CompletionHandler<V,? super A> handler,
                                       A attachment,
                                       V value,

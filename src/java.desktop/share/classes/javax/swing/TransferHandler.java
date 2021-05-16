@@ -1714,8 +1714,11 @@ public class TransferHandler implements Serializable {
                 }
             };
 
+            @SuppressWarnings("removal")
             final AccessControlContext stack = AccessController.getContext();
+            @SuppressWarnings("removal")
             final AccessControlContext srcAcc = AWTAccessor.getComponentAccessor().getAccessControlContext((Component)src);
+            @SuppressWarnings("removal")
             final AccessControlContext eventAcc = AWTAccessor.getAWTEventAccessor().getAccessControlContext(e);
 
                 if (srcAcc == null) {

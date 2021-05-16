@@ -202,6 +202,7 @@ import sun.util.logging.PlatformLogger;
  *
  * @since 1.8
  */
+@SuppressWarnings("removal")
 public final class HijrahChronology extends AbstractChronology implements Serializable {
 
     /**

@@ -68,6 +68,7 @@ public class MailToURLConnection extends URLConnection {
         String str = System.getProperty("user.fromaddr");
         if (str == null) {
             // Perform the property security check for user.name
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPropertyAccess("user.name");

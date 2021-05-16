@@ -62,6 +62,7 @@ import sun.util.logging.PlatformLogger;
  * implementations. The platform specific parts are declared as abstract
  * methods that have to be implemented by specific implementations.
  */
+@SuppressWarnings("removal")
 public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
 
     private static class TTFilter implements FilenameFilter {

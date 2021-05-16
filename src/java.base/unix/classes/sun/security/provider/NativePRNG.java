@@ -125,6 +125,7 @@ public final class NativePRNG extends SecureRandomSpi {
     /**
      * Create a RandomIO object for all I/O of this Variant type.
      */
+    @SuppressWarnings("removal")
     private static RandomIO initIO(final Variant v) {
         return AccessController.doPrivileged(
             new PrivilegedAction<>() {
@@ -449,6 +450,7 @@ public final class NativePRNG extends SecureRandomSpi {
         // supply random bytes to the OS
         // write to "seed" if possible
         // always add the seed to our mixing random
+        @SuppressWarnings("removal")
         private void implSetSeed(byte[] seed) {
             synchronized (LOCK_SET_SEED) {
                 if (seedOutInitialized == false) {

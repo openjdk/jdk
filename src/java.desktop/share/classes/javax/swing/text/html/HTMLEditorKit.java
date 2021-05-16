@@ -424,6 +424,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *             HTMLEditorKit class
      * @return a stream representing the resource
      */
+    @SuppressWarnings("removal")
     static InputStream getResourceAsStream(final String name) {
         return AccessController.doPrivileged(
                 new PrivilegedAction<InputStream>() {

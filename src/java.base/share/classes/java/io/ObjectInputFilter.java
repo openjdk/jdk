@@ -219,6 +219,7 @@ public interface ObjectInputFilter {
      *
      * @since 9
      */
+    @SuppressWarnings("removal")
     final class Config {
         /* No instances. */
         private Config() {}

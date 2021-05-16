@@ -76,6 +76,7 @@ public class ObjectMethods {
             MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
             MethodHandles.Lookup lookup = MethodHandles.lookup();
 
+            @SuppressWarnings("removal")
             ClassLoader loader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
                 @Override public ClassLoader run() { return ClassLoader.getPlatformClassLoader(); }
             });

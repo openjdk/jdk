@@ -107,6 +107,7 @@ public class SAXParserFactoryImpl extends SAXParserFactory {
      * Sets the particular feature in the underlying implementation of
      * org.xml.sax.XMLReader.
      */
+    @SuppressWarnings("removal")
     public void setFeature(String name, boolean value)
         throws ParserConfigurationException, SAXNotRecognizedException,
                 SAXNotSupportedException {

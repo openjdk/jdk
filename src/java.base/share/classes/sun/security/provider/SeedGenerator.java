@@ -149,6 +149,7 @@ abstract class SeedGenerator {
     /**
      * Retrieve some system information, hashed.
      */
+    @SuppressWarnings("removal")
     static byte[] getSystemEntropy() {
         final MessageDigest md;
 
@@ -293,6 +294,7 @@ abstract class SeedGenerator {
             }
 
             final ThreadGroup[] finalsg = new ThreadGroup[1];
+            @SuppressWarnings("removal")
             Thread t = java.security.AccessController.doPrivileged
                 (new java.security.PrivilegedAction<>() {
                         @Override
@@ -500,6 +502,7 @@ abstract class SeedGenerator {
             init();
         }
 
+        @SuppressWarnings("removal")
         private void init() throws IOException {
             final URL device = new URL(deviceName);
             try {

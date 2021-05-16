@@ -73,6 +73,7 @@ public final class DOMReference extends DOMStructure
     *
     * If true, overrides the same property if set in the XMLSignContext.
     */
+    @SuppressWarnings("removal")
     private static boolean useC14N11 =
         AccessController.doPrivileged((PrivilegedAction<Boolean>)
             () -> Boolean.getBoolean("com.sun.org.apache.xml.internal.security.useC14N11"));

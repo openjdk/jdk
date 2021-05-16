@@ -1063,6 +1063,7 @@ public abstract class AbstractPreferences extends Preferences {
      *         preference tree, {@code false} if it's in the system
      *         preference tree.
      */
+    @SuppressWarnings("removal")
     public boolean isUserNode() {
         return AccessController.doPrivileged(
             new PrivilegedAction<Boolean>() {

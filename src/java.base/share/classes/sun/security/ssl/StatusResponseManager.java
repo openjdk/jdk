@@ -75,11 +75,13 @@ final class StatusResponseManager {
      * Create a StatusResponseManager with default parameters.
      */
     StatusResponseManager() {
+        @SuppressWarnings("removal")
         int cap = AccessController.doPrivileged(
                 new GetIntegerAction("jdk.tls.stapling.cacheSize",
                     DEFAULT_CACHE_SIZE));
         cacheCapacity = cap > 0 ? cap : 0;
 
+        @SuppressWarnings("removal")
         int life = AccessController.doPrivileged(
                 new GetIntegerAction("jdk.tls.stapling.cacheLifetime",
                     DEFAULT_CACHE_LIFETIME));

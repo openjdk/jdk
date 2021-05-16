@@ -41,6 +41,7 @@ class PlatformPCSC {
         initException = loadLibrary();
     }
 
+    @SuppressWarnings("removal")
     private static Throwable loadLibrary() {
         try {
             AccessController.doPrivileged(new PrivilegedAction<Void>() {

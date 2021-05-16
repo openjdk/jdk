@@ -241,6 +241,7 @@ public final class ObjID implements Serializable {
     }
 
     private static boolean useRandomIDs() {
+        @SuppressWarnings("removal")
         String value = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty("java.rmi.server.randomIDs"));
         return value == null ? true : Boolean.parseBoolean(value);

@@ -95,6 +95,7 @@ class XPStyle {
      * @return the singleton instance of this class or null if XP styles
      * are not active or if this is not Windows XP
      */
+    @SuppressWarnings("removal")
     static synchronized XPStyle getXP() {
         if (themeActive == null) {
             Toolkit toolkit = Toolkit.getDefaultToolkit();

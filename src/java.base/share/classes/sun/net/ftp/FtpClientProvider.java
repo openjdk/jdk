@@ -55,6 +55,7 @@ public abstract class FtpClientProvider {
      *         {@link RuntimePermission}{@code ("ftpClientProvider")}
      */
     protected FtpClientProvider() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("ftpClientProvider"));
@@ -134,6 +135,7 @@ public abstract class FtpClientProvider {
      *
      * @return  The system-wide default FtpClientProvider
      */
+    @SuppressWarnings("removal")
     public static FtpClientProvider provider() {
         synchronized (lock) {
             if (provider != null) {

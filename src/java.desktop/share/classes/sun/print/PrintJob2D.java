@@ -315,6 +315,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
                                 JobAttributes jobAttributes,
                                 PageAttributes pageAttributes) {
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPrintJobAccess();
@@ -1268,6 +1269,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
     }
 
     private void throwPrintToFile() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         FilePermission printToFilePermission = null;
         if (security != null) {

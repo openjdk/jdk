@@ -736,6 +736,7 @@ class SubRegistry {
     // No way to express heterogeneous map, we want
     // Map<Class<T>, T>, where T is ?
     final Map<Class<?>, Object> map = new HashMap<>();
+    @SuppressWarnings("removal")
     final Map<Class<?>, AccessControlContext> accMap = new HashMap<>();
 
     public SubRegistry(ServiceRegistry registry, Class<?> category) {
@@ -743,6 +744,7 @@ class SubRegistry {
         this.category = category;
     }
 
+    @SuppressWarnings("removal")
     public synchronized boolean registerServiceProvider(Object provider) {
         Object oprovider = map.get(provider.getClass());
         boolean present =  oprovider != null;
@@ -818,6 +820,7 @@ class SubRegistry {
         return (T)map.get(providerClass);
     }
 
+    @SuppressWarnings("removal")
     public synchronized void clear() {
         Iterator<Object> iter = map.values().iterator();
         while (iter.hasNext()) {

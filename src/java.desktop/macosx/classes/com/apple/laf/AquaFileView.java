@@ -34,7 +34,7 @@ import javax.swing.filechooser.FileView;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
-@SuppressWarnings("serial") // JDK implementation class
+@SuppressWarnings({"removal","serial"}) // JDK implementation class
 class AquaFileView extends FileView {
     private static final boolean DEBUG = false;
 

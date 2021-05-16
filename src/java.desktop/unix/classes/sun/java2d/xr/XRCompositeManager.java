@@ -89,6 +89,7 @@ public class XRCompositeManager {
     private XRCompositeManager(XRSurfaceData surface) {
         con = new XRBackendNative();
 
+        @SuppressWarnings("removal")
         String gradProp =
             AccessController.doPrivileged(new PrivilegedAction<String>() {
                 public String run() {

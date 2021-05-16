@@ -88,6 +88,7 @@ class BeanIntrospector extends FacetIntrospector {
         if (clazz.isRecord()) {
             try {
                 // Need to use doPrivileged as getRecordComponents is rather strict.
+                @SuppressWarnings("removal")
                 final RecordComponent[] rcs = AccessController.doPrivileged(
                     (PrivilegedAction<RecordComponent[]>) clazz::getRecordComponents);
                 return Arrays.stream(rcs)

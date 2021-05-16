@@ -43,6 +43,7 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  *
  * @author      Andreas Sterbenz
  */
+@SuppressWarnings("removal")
 public final class MD4 extends DigestBase {
 
     // state of this object

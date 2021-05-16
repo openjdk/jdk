@@ -86,6 +86,7 @@ public abstract class SSLSocketFactory extends SocketFactory {
         }
     }
 
+    @SuppressWarnings("removal")
     static String getSecurityProperty(final String name) {
         return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override

@@ -68,6 +68,7 @@ public abstract class PrinterJob {
      *          method disallows this thread from creating a print job request
      */
     public static PrinterJob getPrinterJob() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPrintJobAccess();

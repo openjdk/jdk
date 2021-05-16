@@ -55,6 +55,7 @@ final class MBeanUtils {
     }
 
     static void checkControl() {
+        @SuppressWarnings("removal")
         SecurityManager secManager = System.getSecurityManager();
         if (secManager != null) {
             secManager.checkPermission(control);
@@ -62,6 +63,7 @@ final class MBeanUtils {
     }
 
     static void checkMonitor() {
+        @SuppressWarnings("removal")
         SecurityManager secManager = System.getSecurityManager();
         if (secManager != null) {
             secManager.checkPermission(monitor);

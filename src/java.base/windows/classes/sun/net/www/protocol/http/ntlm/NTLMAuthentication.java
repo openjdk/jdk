@@ -71,6 +71,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
         defaultDomain = props.getProperty("http.auth.ntlm.domain", "domain");
         String ntlmCacheProp = props.getProperty("jdk.ntlm.cache", "true");
         ntlmCache = Boolean.parseBoolean(ntlmCacheProp);
+        @SuppressWarnings("removal")
         String modeProp = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<String>() {
                 public String run() {
@@ -86,6 +87,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
             authMode = TransparentAuth.DISABLED;
     }
 
+    @SuppressWarnings("removal")
     private void init0() {
 
         hostname = java.security.AccessController.doPrivileged(

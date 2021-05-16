@@ -159,6 +159,7 @@ public final class ConfigFile extends Configuration {
             }
         }
 
+        @SuppressWarnings("removal")
         public Spi(final Configuration.Parameters params) throws IOException {
 
             // call in a doPrivileged
@@ -380,6 +381,7 @@ public final class ConfigFile extends Configuration {
          * @throws SecurityException if the caller does not have permission
          *                           to refresh the Configuration.
          */
+        @SuppressWarnings("removal")
         @Override
         public synchronized void engineRefresh() {
 

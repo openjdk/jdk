@@ -63,9 +63,10 @@ public class Krb5Util {
      */
     static KerberosTicket getServiceTicket(GSSCaller caller,
         String clientPrincipal, String serverPrincipal,
-        AccessControlContext acc) throws LoginException {
+        @SuppressWarnings("removal") AccessControlContext acc) throws LoginException {
 
         // Try to get ticket from acc's Subject
+        @SuppressWarnings("removal")
         Subject accSubj = Subject.getSubject(acc);
         KerberosTicket ticket =
             SubjectComber.find(accSubj, serverPrincipal, clientPrincipal,
@@ -83,9 +84,10 @@ public class Krb5Util {
      */
     static KerberosTicket getInitialTicket(GSSCaller caller,
             String clientPrincipal,
-            AccessControlContext acc) throws LoginException {
+            @SuppressWarnings("removal") AccessControlContext acc) throws LoginException {
 
         // Try to get ticket from acc's Subject
+        @SuppressWarnings("removal")
         Subject accSubj = Subject.getSubject(acc);
         KerberosTicket ticket =
                 SubjectComber.find(accSubj, null, clientPrincipal,
@@ -108,9 +110,10 @@ public class Krb5Util {
      * NOTE: This method is also used by JSSE Kerberos Cipher Suites
      */
     public static ServiceCreds getServiceCreds(GSSCaller caller,
-        String serverPrincipal, AccessControlContext acc)
+        String serverPrincipal, @SuppressWarnings("removal") AccessControlContext acc)
                 throws LoginException {
 
+        @SuppressWarnings("removal")
         Subject accSubj = Subject.getSubject(acc);
         ServiceCreds sc = null;
         if (accSubj != null) {

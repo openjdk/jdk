@@ -128,6 +128,7 @@ class Authenticator {
      * @see java.net.NetPermission
      */
     public static synchronized void setDefault(Authenticator a) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             NetPermission setDefaultPermission
@@ -158,6 +159,7 @@ class Authenticator {
      * @see java.net.NetPermission
      */
     public static Authenticator getDefault() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             NetPermission requestPermission
@@ -201,6 +203,7 @@ class Authenticator {
                                             String prompt,
                                             String scheme) {
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             NetPermission requestPermission
@@ -263,6 +266,7 @@ class Authenticator {
                                             String prompt,
                                             String scheme) {
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             NetPermission requestPermission
@@ -330,6 +334,7 @@ class Authenticator {
                                     URL url,
                                     RequestorType reqType) {
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             NetPermission requestPermission
@@ -403,6 +408,7 @@ class Authenticator {
                                     URL url,
                                     RequestorType reqType) {
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             NetPermission requestPermission

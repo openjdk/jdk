@@ -35,6 +35,7 @@ public abstract class VSyncedBSManager {
 
     private static VSyncedBSManager theInstance;
 
+    @SuppressWarnings("removal")
     private static final boolean vSyncLimit =
         Boolean.valueOf(java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction(

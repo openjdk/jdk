@@ -93,6 +93,7 @@ public class JISAutoDetect
     }
 
     private static class Decoder extends CharsetDecoder {
+        @SuppressWarnings("removal")
         private static final String osName = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty("os.name"));
 

@@ -317,6 +317,7 @@ public class CertPathBuilder {
      * {@literal "PKIX"} if no such property exists.
      */
     public static final String getDefaultType() {
+        @SuppressWarnings("removal")
         String cpbtype =
             AccessController.doPrivileged(new PrivilegedAction<>() {
                 public String run() {

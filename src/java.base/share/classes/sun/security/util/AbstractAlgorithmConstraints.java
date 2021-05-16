@@ -49,6 +49,7 @@ public abstract class AbstractAlgorithmConstraints
 
     // Get algorithm constraints from the specified security property.
     static List<String> getAlgorithms(String propertyName) {
+        @SuppressWarnings("removal")
         String property = AccessController.doPrivileged(
                 new PrivilegedAction<String>() {
                     @Override

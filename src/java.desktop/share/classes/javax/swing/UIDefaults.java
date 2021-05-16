@@ -341,6 +341,7 @@ public class UIDefaults extends Hashtable<Object,Object>
      * Test if the specified baseName of the ROOT locale is in java.desktop module.
      * JDK always defines the resource bundle of the ROOT locale.
      */
+    @SuppressWarnings("removal")
     private static boolean isDesktopResourceBundle(String baseName) {
         Module thisModule = UIDefaults.class.getModule();
         return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
@@ -1068,6 +1069,7 @@ public class UIDefaults extends Hashtable<Object,Object>
      * @since 1.3
      */
     public static class ProxyLazyValue implements LazyValue {
+        @SuppressWarnings("removal")
         private AccessControlContext acc;
         private String className;
         private String methodName;
@@ -1122,6 +1124,7 @@ public class UIDefaults extends Hashtable<Object,Object>
          * @param o    an array of <code>Objects</code> to be passed as
          *              paramaters to the static method in class c
          */
+        @SuppressWarnings("removal")
         public ProxyLazyValue(String c, String m, Object[] o) {
             acc = AccessController.getContext();
             className = c;
@@ -1138,6 +1141,7 @@ public class UIDefaults extends Hashtable<Object,Object>
          * @param table  a <code>UIDefaults</code> table
          * @return the created <code>Object</code>
          */
+        @SuppressWarnings("removal")
         public Object createValue(final UIDefaults table) {
             // In order to pick up the security policy in effect at the
             // time of creation we use a doPrivileged with the

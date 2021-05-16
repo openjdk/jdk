@@ -111,6 +111,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
                 InetSocketAddress isa = (local == null) ?
                     new InetSocketAddress(0) : Net.checkAddress(local);
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null)
                     sm.checkListen(isa.getPort());
@@ -248,6 +249,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
             InetSocketAddress isa = isaa[0];
             sc = new SctpChannelImpl(provider(), newfd);
 
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null)
                 sm.checkAccept(isa.getAddress().getHostAddress(),

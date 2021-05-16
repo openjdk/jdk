@@ -121,6 +121,7 @@ class MethodAccessorGenerator extends AccessorGenerator {
     }
 
     /** This routine is not thread-safe */
+    @SuppressWarnings("removal")
     private MagicAccessorImpl generate(final Class<?> declaringClass,
                                        String name,
                                        Class<?>[] parameterTypes,

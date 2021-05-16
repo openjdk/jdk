@@ -48,6 +48,7 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
     }
 
     public void checkAttachPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(

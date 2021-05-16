@@ -48,6 +48,7 @@ import sun.net.ftp.*;
 import sun.util.logging.PlatformLogger;
 
 
+@SuppressWarnings("removal")
 public class FtpClient extends sun.net.ftp.FtpClient {
 
     private static int defaultSoTimeout;

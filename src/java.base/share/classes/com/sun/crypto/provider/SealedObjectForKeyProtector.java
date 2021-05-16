@@ -73,6 +73,7 @@ final class SealedObjectForKeyProtector extends SealedObject {
         return params;
     }
 
+    @SuppressWarnings("removal")
     final Key getKey(Cipher c, int maxLength)
             throws IOException, ClassNotFoundException, IllegalBlockSizeException,
             BadPaddingException {
@@ -112,6 +113,7 @@ final class SealedObjectForKeyProtector extends SealedObject {
         private static final ObjectInputFilter OWN_FILTER;
 
         static {
+            @SuppressWarnings("removal")
             String prop = AccessController.doPrivileged(
                     (PrivilegedAction<String>) () -> {
                         String tmp = System.getProperty(KEY_SERIAL_FILTER);

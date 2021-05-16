@@ -81,6 +81,7 @@ public abstract class AccessibilityProvider {
      *         denies {@link RuntimePermission} {@code "accessibilityProvider"}
      */
     private static Void checkPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(new RuntimePermission("accessibilityProvider"));

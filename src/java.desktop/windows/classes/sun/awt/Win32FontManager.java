@@ -45,6 +45,7 @@ import sun.font.TrueTypeFont;
 /**
  * The X11 implementation of {@link FontManager}.
  */
+@SuppressWarnings("removal")
 public final class Win32FontManager extends SunFontManager {
 
     private static TrueTypeFont eudcFont;

@@ -134,6 +134,7 @@ import sun.awt.SunToolkit;
  * @author      Fred Ecks
  * @since       1.0
  */
+@SuppressWarnings("removal")
 public abstract class Toolkit {
 
     /**

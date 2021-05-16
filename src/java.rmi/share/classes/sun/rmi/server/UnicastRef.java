@@ -64,6 +64,7 @@ public class UnicastRef implements RemoteRef {
     /**
      * Client-side call log.
      */
+    @SuppressWarnings("removal")
     public static final Log clientCallLog =
         Log.getLog("sun.rmi.client.call", "RMI",
                    AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->

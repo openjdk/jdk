@@ -48,6 +48,7 @@ import java.security.AccessController;
  *
  */
 public class PerfCounter {
+    @SuppressWarnings("removal")
     private static final Perf perf =
         AccessController.doPrivileged(new Perf.GetPerfAction());
 

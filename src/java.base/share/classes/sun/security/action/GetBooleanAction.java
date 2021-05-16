@@ -84,6 +84,7 @@ public class GetBooleanAction
      *
      * @param theProp the name of the system property.
      */
+    @SuppressWarnings("removal")
     public static boolean privilegedGetProperty(String theProp) {
         if (System.getSecurityManager() == null) {
             return Boolean.getBoolean(theProp);

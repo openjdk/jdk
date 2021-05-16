@@ -176,6 +176,7 @@ public class WindowsFlags {
         return (propString != null) ? true : false;
     }
 
+    @SuppressWarnings("removal")
     private static void initJavaFlags() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Object>()

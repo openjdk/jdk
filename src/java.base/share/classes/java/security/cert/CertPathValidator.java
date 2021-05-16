@@ -329,6 +329,7 @@ public class CertPathValidator {
      * {@literal "PKIX"} if no such property exists.
      */
     public static final String getDefaultType() {
+        @SuppressWarnings("removal")
         String cpvtype =
             AccessController.doPrivileged(new PrivilegedAction<>() {
                 public String run() {

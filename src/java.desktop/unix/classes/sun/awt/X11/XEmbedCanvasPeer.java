@@ -439,6 +439,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
     }
 
+    @SuppressWarnings("removal")
     void canvasFocusLost(FocusEvent e) {
         if (isXEmbedActive() && !e.isTemporary()) {
             xembedLog.fine("Forwarding FOCUS_LOST");

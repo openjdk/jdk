@@ -49,6 +49,7 @@ final class Tripwire {
     private static final String TRIPWIRE_PROPERTY = "org.openjdk.java.util.stream.tripwire";
 
     /** Should debugging checks be enabled? */
+    @SuppressWarnings("removal")
     static final boolean ENABLED = AccessController.doPrivileged(
             (PrivilegedAction<Boolean>) () -> Boolean.getBoolean(TRIPWIRE_PROPERTY));
 

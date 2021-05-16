@@ -73,6 +73,7 @@ public final class AppleProvider extends Provider {
     }
 
 
+    @SuppressWarnings("removal")
     public AppleProvider() {
         /* We are the Apple provider */
         super("Apple", PROVIDER_VER, info);

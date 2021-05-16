@@ -237,6 +237,7 @@ final public class HashedPasswordManager {
     public synchronized void loadPasswords()
             throws IOException, SecurityException {
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(passwordFile);

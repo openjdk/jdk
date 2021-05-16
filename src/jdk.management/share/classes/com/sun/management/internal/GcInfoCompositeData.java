@@ -68,6 +68,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
     }
 
     public static CompositeData toCompositeData(final GcInfo info) {
+        @SuppressWarnings("removal")
         final GcInfoBuilder builder = AccessController.doPrivileged (new PrivilegedAction<GcInfoBuilder>() {
                         public GcInfoBuilder run() {
                             try {
@@ -80,6 +81,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
                             }
                         }
                     });
+        @SuppressWarnings("removal")
         final Object[] extAttr = AccessController.doPrivileged (new PrivilegedAction<Object[]>() {
                         public Object[] run() {
                             try {

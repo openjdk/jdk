@@ -136,6 +136,7 @@ public class SerialJavaObject implements Serializable, Cloneable {
     public Field[] getFields() throws SerialException {
         if (fields != null) {
             Class<?> c = this.obj.getClass();
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 /*

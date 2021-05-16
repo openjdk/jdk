@@ -225,6 +225,7 @@ public abstract class Preferences {
 
     private static final PreferencesFactory factory = factory();
 
+    @SuppressWarnings("removal")
     private static PreferencesFactory factory() {
         // 1. Try user-specified system property
         String factoryName = AccessController.doPrivileged(
@@ -450,6 +451,7 @@ public abstract class Preferences {
      * @see    RuntimePermission
      */
     public static Preferences userRoot() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null)
             security.checkPermission(prefsPerm);
@@ -466,6 +468,7 @@ public abstract class Preferences {
      * @see    RuntimePermission
      */
     public static Preferences systemRoot() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null)
             security.checkPermission(prefsPerm);

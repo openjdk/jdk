@@ -232,6 +232,7 @@ public final class FlightRecorder {
 
         Utils.ensureValidEventSubclass(eventClass);
         Utils.checkRegisterPermission();
+        @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
         RequestEngine.addHook(acc, EventType.getEventType(eventClass).getPlatformEventType(), hook);
     }

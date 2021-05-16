@@ -292,6 +292,7 @@ public class StreamHandler extends Handler {
 
     // Package-private support for setting OutputStream
     // with elevated privilege.
+    @SuppressWarnings("removal")
     final void setOutputStreamPrivileged(final OutputStream out) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override

@@ -204,6 +204,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
         }
         isMapInitialized = true;
 
+        @SuppressWarnings("removal")
         InputStream is = AccessController.doPrivileged(
             (PrivilegedAction<InputStream>) () -> {
                 return SystemFlavorMap.class.getResourceAsStream(

@@ -800,6 +800,7 @@ public class BufferedImage extends java.awt.Image
         }   // else if ((raster instanceof ByteComponentRaster) &&
     }
 
+    @SuppressWarnings("removal")
     private static boolean isStandard(ColorModel cm, WritableRaster wr) {
         final Class<? extends ColorModel> cmClass = cm.getClass();
         final Class<? extends WritableRaster> wrClass = wr.getClass();

@@ -193,6 +193,7 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
             return FlightRecorder.getFlightRecorder().getInternal();
         }
 
+        @SuppressWarnings("removal")
         @Override
         public AccessControlContext getContext(SettingControl settingControl) {
             return settingControl.getContext();

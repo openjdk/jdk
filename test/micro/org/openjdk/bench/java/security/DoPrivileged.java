@@ -49,11 +49,13 @@ public class DoPrivileged {
         privilegedAction = () -> 42;
     }
 
+    @SuppressWarnings("removal")
     @Benchmark
     public int test() {
         return AccessController.doPrivileged(privilegedAction);
     }
 
+    @SuppressWarnings("removal")
     @Benchmark
     public int testInline() {
         return AccessController.doPrivileged((PrivilegedAction<Integer>) () -> 42);

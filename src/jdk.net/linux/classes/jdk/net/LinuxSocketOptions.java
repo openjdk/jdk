@@ -32,6 +32,7 @@ import java.security.PrivilegedAction;
 import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
 import sun.nio.fs.UnixUserPrincipals;
 
+@SuppressWarnings("removal")
 class LinuxSocketOptions extends PlatformSocketOptions {
 
     public LinuxSocketOptions() {

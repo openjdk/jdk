@@ -64,6 +64,7 @@ class DigestAuthentication extends AuthenticationInfo {
     private static final boolean delimCompatFlag;
 
     static {
+        @SuppressWarnings("removal")
         Boolean b = AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 public Boolean run() {

@@ -224,6 +224,7 @@ public abstract class PlatformMBeanProvider {
     public abstract List<PlatformComponent<?>> getPlatformComponentList();
 
     private static Void checkSubclassPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission(PlatformMBeanProvider.class.getName()+".subclass"));

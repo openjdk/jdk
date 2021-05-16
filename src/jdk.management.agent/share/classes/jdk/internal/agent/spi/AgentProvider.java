@@ -46,6 +46,7 @@ public abstract class AgentProvider {
     }
 
     private static Void checkSubclassPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission(AgentProvider.class.getName() + ".subclass"));

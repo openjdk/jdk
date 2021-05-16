@@ -66,6 +66,7 @@ final class AlpnExtension {
     static final Charset alpnCharset;
 
     static {
+        @SuppressWarnings("removal")
         String alpnCharsetString = AccessController.doPrivileged(
                 (PrivilegedAction<String>) ()
                         -> Security.getProperty("jdk.tls.alpnCharset"));

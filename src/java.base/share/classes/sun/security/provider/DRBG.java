@@ -93,6 +93,7 @@ public final class DRBG extends SecureRandomSpi {
 
         // Can be configured with a security property
 
+        @SuppressWarnings("removal")
         String config = AccessController.doPrivileged((PrivilegedAction<String>)
                 () -> Security.getProperty(PROP_NAME));
 

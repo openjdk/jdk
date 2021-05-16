@@ -98,6 +98,7 @@ public final class SunProvider extends Provider {
         }
     }
 
+    @SuppressWarnings("removal")
     public SunProvider() {
         /* We are the Sun JGSS provider */
         super("SunJGSS", PROVIDER_VER, INFO);

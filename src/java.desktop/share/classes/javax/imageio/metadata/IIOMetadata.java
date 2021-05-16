@@ -402,6 +402,7 @@ public abstract class IIOMetadata {
             // Try to load from the module of the IIOMetadata implementation
             // for this plugin since the IIOMetadataImpl is part of the plugin
             PrivilegedAction<Class<?>> pa = () -> { return getMetadataFormatClass(className); };
+            @SuppressWarnings("removal")
             Class<?> cls = AccessController.doPrivileged(pa);
             Method meth = cls.getMethod("getInstance");
             return (IIOMetadataFormat) meth.invoke(null);

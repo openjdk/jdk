@@ -122,7 +122,7 @@ final class TrustStoreManager {
          * Create an instance of TrustStoreDescriptor for the default
          * trusted KeyStore.
          */
-        @SuppressWarnings("Convert2Lambda")
+        @SuppressWarnings({"removal","Convert2Lambda"})
         static TrustStoreDescriptor createInstance() {
              return AccessController.doPrivileged(
                     new PrivilegedAction<TrustStoreDescriptor>() {
@@ -385,7 +385,7 @@ final class TrustStoreManager {
             }
 
             if (!"NONE".equals(descriptor.storeName)) {
-                try (FileInputStream fis = AccessController.doPrivileged(
+                try (@SuppressWarnings("removal") FileInputStream fis = AccessController.doPrivileged(
                         new OpenFileInputStreamAction(descriptor.storeFile))) {
                     ks.load(fis, password);
                 } catch (FileNotFoundException fnfe) {

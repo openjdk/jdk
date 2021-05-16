@@ -58,6 +58,7 @@ class UnixDomainSockets {
     }
 
     static void checkPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(accessUnixDomainSocket);
@@ -82,6 +83,7 @@ class UnixDomainSockets {
 
     private static native byte[] localAddress0(FileDescriptor fd) throws IOException;
 
+    @SuppressWarnings("removal")
     static String getRevealedLocalAddressAsString(SocketAddress sa) {
         return (System.getSecurityManager() != null) ? sa.toString() : "";
     }

@@ -76,6 +76,7 @@ public class MouseInfo {
             throw new HeadlessException();
         }
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.WATCH_MOUSE_PERMISSION);

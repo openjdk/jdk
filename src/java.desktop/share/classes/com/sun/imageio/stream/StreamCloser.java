@@ -50,6 +50,7 @@ public class StreamCloser {
     private static WeakHashMap<CloseAction, Object> toCloseQueue;
     private static Thread streamCloser;
 
+    @SuppressWarnings("removal")
     public static void addToQueue(CloseAction ca) {
         synchronized (StreamCloser.class) {
             if (toCloseQueue == null) {

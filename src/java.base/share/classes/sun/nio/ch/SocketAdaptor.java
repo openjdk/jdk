@@ -63,6 +63,7 @@ class SocketAdaptor
         this.sc = sc;
     }
 
+    @SuppressWarnings("removal")
     static Socket create(SocketChannelImpl sc) {
         PrivilegedExceptionAction<Socket> pa = () -> new SocketAdaptor(sc);
         try {

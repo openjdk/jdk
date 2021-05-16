@@ -97,6 +97,7 @@ public final class Services {
             if (savedProperties == null) {
                 synchronized (Services.class) {
                     if (savedProperties == null) {
+                        @SuppressWarnings("removal")
                         SecurityManager sm = System.getSecurityManager();
                         if (sm != null) {
                             sm.checkPermission(new JVMCIPermission());
@@ -186,6 +187,7 @@ public final class Services {
      *             {@link RuntimePermission}("jvmci")</tt>
      */
     public static <S> Iterable<S> load(Class<S> service) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new JVMCIPermission());
@@ -203,6 +205,7 @@ public final class Services {
      *             {@link RuntimePermission}("jvmci")</tt>
      */
     public static <S> S loadSingle(Class<S> service, boolean required) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new JVMCIPermission());

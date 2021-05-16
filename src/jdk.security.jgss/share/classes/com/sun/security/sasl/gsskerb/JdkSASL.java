@@ -74,6 +74,7 @@ public final class JdkSASL extends Provider {
         }
     }
 
+    @SuppressWarnings("removal")
     public JdkSASL() {
         super("JdkSASL", PROVIDER_VER, info);
 

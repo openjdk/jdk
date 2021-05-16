@@ -100,6 +100,7 @@ public class DefaultListCellRenderer extends JLabel
         setName("List.cellRenderer");
     }
 
+    @SuppressWarnings("removal")
     private Border getNoFocusBorder() {
         Border border = DefaultLookup.getBorder(this, ui, "List.cellNoFocusBorder");
         if (System.getSecurityManager() != null) {

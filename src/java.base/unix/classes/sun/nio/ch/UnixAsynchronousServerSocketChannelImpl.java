@@ -65,6 +65,7 @@ class UnixAsynchronousServerSocketChannelImpl
     private PendingFuture<AsynchronousSocketChannel,Object> acceptFuture;
 
     // context for permission check when security manager set
+    @SuppressWarnings("removal")
     private AccessControlContext acceptAcc;
 
 
@@ -200,6 +201,7 @@ class UnixAsynchronousServerSocketChannelImpl
      * with an IOException or SecurityException then the channel/file descriptor
      * will be closed.
      */
+    @SuppressWarnings("removal")
     private AsynchronousSocketChannel finishAccept(FileDescriptor newfd,
                                                    final InetSocketAddress remote,
                                                    AccessControlContext acc)
@@ -244,6 +246,7 @@ class UnixAsynchronousServerSocketChannelImpl
         return ch;
     }
 
+    @SuppressWarnings("removal")
     @Override
     Future<AsynchronousSocketChannel> implAccept(Object att,
         CompletionHandler<AsynchronousSocketChannel,Object> handler)

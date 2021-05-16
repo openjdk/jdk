@@ -145,6 +145,7 @@ public class MXBeanLookup {
     throws InstanceAlreadyExistsException {
         ObjectName existing = mxbeanToObjectName.get(mxbean);
         if (existing != null) {
+            @SuppressWarnings("removal")
             String multiname = AccessController.doPrivileged(
                     new GetPropertyAction("jmx.mxbean.multiname"));
             if (!"true".equalsIgnoreCase(multiname)) {

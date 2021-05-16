@@ -37,6 +37,7 @@ import jdk.jfr.SettingControl;
 import jdk.jfr.internal.settings.JDKSettingControl;
 
 public final class Control {
+    @SuppressWarnings("removal")
     private final AccessControlContext context;
     private static final int CACHE_SIZE = 5;
     private final Set<?>[] cachedUnions = new HashSet<?>[CACHE_SIZE];
@@ -70,6 +71,7 @@ public final class Control {
         apply(defaultValue);
     }
 
+    @SuppressWarnings("removal")
     public String getValue() {
         if (context == null) {
             // VM events requires no access control context
@@ -97,6 +99,7 @@ public final class Control {
         setValue(value);
     }
 
+    @SuppressWarnings("removal")
     public void setValue(String value) {
         if (context == null) {
             // VM events requires no access control context
@@ -123,6 +126,7 @@ public final class Control {
     }
 
 
+    @SuppressWarnings("removal")
     public String combine(Set<String> values) {
         if (context == null) {
             // VM events requires no access control context

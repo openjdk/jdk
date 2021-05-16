@@ -33,6 +33,7 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
+@SuppressWarnings("removal")
 public class MimeTable implements FileNameMap {
     /** Keyed by content type, returns MimeEntries */
     private Hashtable<String, MimeEntry> entries

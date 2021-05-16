@@ -313,8 +313,10 @@ public class GSSUtil {
               (initiate? " INIT" : " ACCEPT") + " cred (" +
               (name == null? "<<DEF>>" : name.toString()) + ", " +
               credCls.getName() + ")");
+        @SuppressWarnings("removal")
         final AccessControlContext acc = AccessController.getContext();
         try {
+            @SuppressWarnings("removal")
             Vector<T> creds =
                 AccessController.doPrivileged
                 (new PrivilegedExceptionAction<Vector<T>>() {

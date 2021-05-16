@@ -65,6 +65,7 @@ public class SunJSSE extends java.security.Provider {
         registerAlgorithms();
     }
 
+    @SuppressWarnings("removal")
     private void registerAlgorithms() {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             doRegister();

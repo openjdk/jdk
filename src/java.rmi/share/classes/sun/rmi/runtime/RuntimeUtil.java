@@ -51,6 +51,7 @@ public final class RuntimeUtil {
         Log.getLog("sun.rmi.runtime", null, false);
 
     /** number of scheduler threads */
+    @SuppressWarnings("removal")
     private static final int schedulerThreads =         // default 1
         AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
             Integer.getInteger("sun.rmi.runtime.schedulerThreads", 1));
@@ -70,6 +71,7 @@ public final class RuntimeUtil {
             schedulerThreads,
             new ThreadFactory() {
                 private final AtomicInteger count = new AtomicInteger();
+                @SuppressWarnings("removal")
                 public Thread newThread(Runnable runnable) {
                     try {
                         return AccessController.doPrivileged(
@@ -110,6 +112,7 @@ public final class RuntimeUtil {
     }
 
     private static RuntimeUtil getInstance() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(GET_INSTANCE_PERMISSION);

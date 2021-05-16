@@ -57,6 +57,7 @@ import sun.security.action.GetPropertyAction;
  * <p>
  * @since 1.8
  */
+@SuppressWarnings("removal")
 public final class ZoneInfoFile {
 
     /**

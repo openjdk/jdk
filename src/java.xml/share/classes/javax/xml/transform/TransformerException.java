@@ -229,6 +229,7 @@ public class TransformerException extends Exception {
      * @return A string with location info, or null
      * if there is no location information.
      */
+    @SuppressWarnings("removal")
     public String getLocationAsString() {
         if (locator == null) {
             return null;

@@ -592,6 +592,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
             // Try to load from the same location as the module of the SPI
             final String className = formatClassName;
             PrivilegedAction<Class<?>> pa = () -> { return getMetadataFormatClass(className); };
+            @SuppressWarnings("removal")
             Class<?> cls = AccessController.doPrivileged(pa);
             Method meth = cls.getMethod("getInstance");
             return (IIOMetadataFormat) meth.invoke(null);

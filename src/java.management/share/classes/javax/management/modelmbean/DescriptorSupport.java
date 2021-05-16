@@ -81,7 +81,7 @@ import sun.reflect.misc.ReflectUtil;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
+@SuppressWarnings({"removal","serial"})  // serialVersionUID not constant
 public class DescriptorSupport
          implements javax.management.Descriptor
 {

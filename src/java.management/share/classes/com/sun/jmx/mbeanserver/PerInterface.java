@@ -159,6 +159,7 @@ final class PerInterface<M> {
      * implementation could potentially break code that sets and unsets
      * the property at different times.
      */
+    @SuppressWarnings("removal")
     private Object noSuchMethod(String msg, Object resource, String operation,
                                 Object[] params, String[] signature,
                                 Object cookie)

@@ -146,6 +146,7 @@ class FactoryFinder {
      * @param overrideDefaultParser True to allow overriding the system-default
      * parser.
      */
+    @SuppressWarnings("removal")
     static <T> T newInstance(Class<T> type, String className, ClassLoader cl,
                              boolean doFallback)
         throws TransformerFactoryConfigurationError
@@ -264,6 +265,7 @@ class FactoryFinder {
      *
      * @return instance of provider class if found or null
      */
+    @SuppressWarnings("removal")
     private static <T> T findServiceProvider(final Class<T> type)
         throws TransformerFactoryConfigurationError
     {

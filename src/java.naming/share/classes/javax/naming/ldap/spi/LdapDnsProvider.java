@@ -74,6 +74,7 @@ public abstract class LdapDnsProvider {
     }
 
     private static Void checkPermission() {
+        @SuppressWarnings("removal")
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(DNSPROVIDER_PERMISSION);

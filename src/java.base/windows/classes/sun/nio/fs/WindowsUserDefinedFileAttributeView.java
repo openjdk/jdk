@@ -91,6 +91,7 @@ class WindowsUserDefinedFileAttributeView
         return Collections.unmodifiableList(list);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public List<String> list() throws IOException  {
         if (System.getSecurityManager() != null)
@@ -98,6 +99,7 @@ class WindowsUserDefinedFileAttributeView
         return listUsingStreamEnumeration();
     }
 
+    @SuppressWarnings("removal")
     @Override
     public int size(String name) throws IOException  {
         if (System.getSecurityManager() != null)
@@ -125,6 +127,7 @@ class WindowsUserDefinedFileAttributeView
         }
     }
 
+    @SuppressWarnings("removal")
     @Override
     public int read(String name, ByteBuffer dst) throws IOException {
         if (System.getSecurityManager() != null)
@@ -160,6 +163,7 @@ class WindowsUserDefinedFileAttributeView
         }
     }
 
+    @SuppressWarnings("removal")
     @Override
     public int write(String name, ByteBuffer src) throws IOException {
         if (System.getSecurityManager() != null)
@@ -216,6 +220,7 @@ class WindowsUserDefinedFileAttributeView
         }
     }
 
+    @SuppressWarnings("removal")
     @Override
     public void delete(String name) throws IOException {
         if (System.getSecurityManager() != null)

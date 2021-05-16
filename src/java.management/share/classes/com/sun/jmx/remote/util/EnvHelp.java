@@ -263,6 +263,7 @@ public class EnvHelp {
      * Returns the size of a notification buffer for a connector server.
      * The default value is 1000.
      */
+    @SuppressWarnings("removal")
     public static int getNotifBufferSize(Map<String, ?> env) {
         int defaultQueueSize = 1000; // default value
 

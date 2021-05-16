@@ -159,6 +159,7 @@ public abstract class ImageDecoder {
     public abstract void produceImage() throws IOException,
                                                ImageFormatException;
 
+    @SuppressWarnings("removal")
     public void abort() {
         aborted = true;
         source.doneDecoding(this);

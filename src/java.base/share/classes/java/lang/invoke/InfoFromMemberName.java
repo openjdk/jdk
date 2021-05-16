@@ -87,6 +87,7 @@ final class InfoFromMemberName implements MethodHandleInfo {
             // For more information see comments on {@link MethodHandleNatives#linkMethod}.
             throw new IllegalArgumentException("cannot reflect signature polymorphic method");
         }
+        @SuppressWarnings("removal")
         Member mem = AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Member run() {
                     try {

@@ -117,6 +117,7 @@ class TempFileHelper {
         }
 
         // loop generating random names until file or directory can be created
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         for (;;) {
             Path f;

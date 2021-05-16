@@ -354,6 +354,7 @@ public final class RendererStats implements MarlinConst {
         private final ConcurrentLinkedQueue<RendererStats> allStats
             = new ConcurrentLinkedQueue<RendererStats>();
 
+        @SuppressWarnings("removal")
         private RendererStatsHolder() {
             AccessController.doPrivileged(
                 (PrivilegedAction<Void>) () -> {

@@ -45,6 +45,7 @@ import java.lang.ref.WeakReference;
  *       is also deprecated and subject to removal. There is no replacement for
  *       the Security Manager or this class.
  */
+@SuppressWarnings("removal")
 @Deprecated(since="17", forRemoval=true)
 public class SubjectDomainCombiner implements java.security.DomainCombiner {
 

@@ -44,6 +44,7 @@ abstract class AbstractUserDefinedFileAttributeView
                                boolean checkWrite)
     {
         assert checkRead || checkWrite;
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (checkRead)

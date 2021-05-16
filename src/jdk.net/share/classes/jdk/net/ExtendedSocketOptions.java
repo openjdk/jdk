@@ -357,6 +357,7 @@ public final class ExtendedSocketOptions {
         }
 
         private static PlatformSocketOptions create() {
+            @SuppressWarnings("removal")
             String osname = AccessController.doPrivileged(
                     new PrivilegedAction<String>() {
                         public String run() {

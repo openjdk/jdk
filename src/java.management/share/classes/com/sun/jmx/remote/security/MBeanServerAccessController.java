@@ -175,6 +175,7 @@ public abstract class MBeanServerAccessController
         MBeanException,
         NotCompliantMBeanException {
         checkCreate(className);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             Object object = getMBeanServer().instantiate(className);
@@ -198,6 +199,7 @@ public abstract class MBeanServerAccessController
         MBeanException,
         NotCompliantMBeanException {
         checkCreate(className);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             Object object = getMBeanServer().instantiate(className,
@@ -226,6 +228,7 @@ public abstract class MBeanServerAccessController
         NotCompliantMBeanException,
         InstanceNotFoundException {
         checkCreate(className);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             Object object = getMBeanServer().instantiate(className,
@@ -254,6 +257,7 @@ public abstract class MBeanServerAccessController
         NotCompliantMBeanException,
         InstanceNotFoundException {
         checkCreate(className);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             Object object = getMBeanServer().instantiate(className,
@@ -619,6 +623,7 @@ public abstract class MBeanServerAccessController
     private void checkMLetMethods(ObjectName name, String operation)
     throws InstanceNotFoundException {
         // Check if security manager installed
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             return;
@@ -645,6 +650,7 @@ public abstract class MBeanServerAccessController
             // for this property is false.
             final String propName = "jmx.remote.x.mlet.allow.getMBeansFromURL";
             GetPropertyAction propAction = new GetPropertyAction(propName);
+            @SuppressWarnings("removal")
             String propValue = AccessController.doPrivileged(propAction);
             boolean allowGetMBeansFromURL = "true".equalsIgnoreCase(propValue);
             if (!allowGetMBeansFromURL) {

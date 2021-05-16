@@ -47,6 +47,7 @@ import sun.net.www.URLConnection;
  * URLConnection implementation that can be used to connect to resources
  * contained in the runtime image.
  */
+@SuppressWarnings("removal")
 public class JavaRuntimeURLConnection extends URLConnection {
 
     // ImageReader to access resources in jimage

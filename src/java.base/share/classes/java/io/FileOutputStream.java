@@ -217,6 +217,7 @@ public class FileOutputStream extends OutputStream
         throws FileNotFoundException
     {
         String name = (file != null ? file.getPath() : null);
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkWrite(name);
@@ -259,6 +260,7 @@ public class FileOutputStream extends OutputStream
      * @see        java.lang.SecurityManager#checkWrite(java.io.FileDescriptor)
      */
     public FileOutputStream(FileDescriptor fdObj) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (fdObj == null) {
             throw new NullPointerException();

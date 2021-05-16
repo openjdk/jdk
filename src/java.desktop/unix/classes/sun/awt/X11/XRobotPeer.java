@@ -37,6 +37,7 @@ import sun.awt.X11GraphicsConfig;
 import sun.awt.X11GraphicsDevice;
 import sun.security.action.GetPropertyAction;
 
+@SuppressWarnings("removal")
 final class XRobotPeer implements RobotPeer {
 
     private static final boolean tryGtk;

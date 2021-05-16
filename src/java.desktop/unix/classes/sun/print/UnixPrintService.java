@@ -74,6 +74,7 @@ import javax.print.attribute.standard.Sides;
 import javax.print.event.PrintServiceAttributeListener;
 
 
+@SuppressWarnings("removal")
 public class UnixPrintService implements PrintService, AttributeUpdater,
                                          SunPrinterJobService {
 

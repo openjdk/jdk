@@ -132,6 +132,7 @@ public class ReliableLog {
      * if an exception occurs during invocation of the handler's
      * snapshot method or if other IOException occurs.
      */
+    @SuppressWarnings("removal")
     public ReliableLog(String dirPath,
                      LogHandler handler,
                      boolean pad)
@@ -331,10 +332,12 @@ public class ReliableLog {
     private static Constructor<? extends LogFile>
         getLogClassConstructor() {
 
+        @SuppressWarnings("removal")
         String logClassName = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.log.class"));
         if (logClassName != null) {
             try {
+                @SuppressWarnings("removal")
                 ClassLoader loader =
                     AccessController.doPrivileged(
                         new PrivilegedAction<ClassLoader>() {

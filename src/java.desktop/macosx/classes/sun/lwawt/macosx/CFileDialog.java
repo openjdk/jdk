@@ -65,8 +65,10 @@ class CFileDialog implements FileDialogPeer {
         @Override
         public void run() {
             try {
+                @SuppressWarnings("removal")
                 boolean navigateApps = !AccessController.doPrivileged(
                         new GetBooleanAction("apple.awt.use-file-dialog-packages"));
+                @SuppressWarnings("removal")
                 boolean chooseDirectories = AccessController.doPrivileged(
                         new GetBooleanAction("apple.awt.fileDialogForDirectories"));
 

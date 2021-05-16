@@ -40,6 +40,7 @@ import sun.nio.ch.Net;
 import com.sun.nio.sctp.SctpSocketOption;
 import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 
+@SuppressWarnings("removal")
 public class SctpNet {
     private static final String osName = AccessController.doPrivileged(
         (PrivilegedAction<String>) () -> System.getProperty("os.name"));

@@ -64,7 +64,7 @@ import sun.rmi.server.Util;
  *
  * @author Ann Wollrath
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"removal","deprecation"})
 final class DGCImpl implements DGC {
 
     /* dgc system log */

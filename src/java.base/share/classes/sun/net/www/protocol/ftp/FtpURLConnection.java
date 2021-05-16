@@ -235,6 +235,7 @@ public class FtpURLConnection extends URLConnection {
             /**
              * Do we have to use a proxy?
              */
+            @SuppressWarnings("removal")
             ProxySelector sel = java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction<ProxySelector>() {
                         public ProxySelector run() {

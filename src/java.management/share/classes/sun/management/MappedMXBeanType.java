@@ -609,6 +609,7 @@ public abstract class MappedMXBeanType {
         Method fromMethod = null;
         Method toMethod = null;
 
+        @SuppressWarnings("removal")
         CompositeDataMXBeanType(Class<?> c) throws OpenDataException {
             this.javaClass = c;
             this.mappedTypeClass = COMPOSITE_DATA_CLASS;

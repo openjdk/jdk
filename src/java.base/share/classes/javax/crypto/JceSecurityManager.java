@@ -46,6 +46,7 @@ import java.util.concurrent.ConcurrentMap;
  * @since 1.4
  */
 
+@SuppressWarnings("removal")
 final class JceSecurityManager extends SecurityManager {
 
     private static final CryptoPermissions defaultPolicy;

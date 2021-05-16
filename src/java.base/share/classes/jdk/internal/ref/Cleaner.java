@@ -136,6 +136,7 @@ public class Cleaner
     /**
      * Runs this cleaner, if it has not been run before.
      */
+    @SuppressWarnings("removal")
     public void clean() {
         if (!remove(this))
             return;

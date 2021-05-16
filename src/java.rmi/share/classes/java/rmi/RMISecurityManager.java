@@ -59,6 +59,7 @@ import java.security.*;
  *       is also deprecated and subject to removal. There is no replacement for
  *       the Security Manager or this class.
  */
+@SuppressWarnings("removal")
 @Deprecated(since="1.8", forRemoval = true)
 public class RMISecurityManager extends SecurityManager {
 

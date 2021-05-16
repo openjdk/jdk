@@ -1154,6 +1154,7 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      * getMBeanInfo, getCachedMBeanInfo, cacheMBeanInfo and getNotificationInfo
      * methods.
      */
+    @SuppressWarnings("removal")
     static boolean immutableInfo(Class<? extends StandardMBean> subclass) {
         if (subclass == StandardMBean.class ||
             subclass == StandardEmitterMBean.class)

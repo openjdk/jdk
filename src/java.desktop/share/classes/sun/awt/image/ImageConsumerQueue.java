@@ -76,6 +76,7 @@ class ImageConsumerQueue {
             }
             secure = true;
         } else {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 securityContext = security.getSecurityContext();

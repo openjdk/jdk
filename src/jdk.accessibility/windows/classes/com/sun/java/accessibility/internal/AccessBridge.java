@@ -53,6 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Note: This class has to be public.  It's loaded from the VM like this:
  *       Class.forName(atName).newInstance();
  */
+@SuppressWarnings("removal")
 final public class AccessBridge {
 
     private static AccessBridge theAccessBridge;

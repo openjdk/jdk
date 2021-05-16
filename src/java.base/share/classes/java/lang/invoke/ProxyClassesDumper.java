@@ -56,6 +56,7 @@ final class ProxyClassesDumper {
 
     private final Path dumpDir;
 
+    @SuppressWarnings("removal")
     public static ProxyClassesDumper getInstance(String path) {
         if (null == path) {
             return null;

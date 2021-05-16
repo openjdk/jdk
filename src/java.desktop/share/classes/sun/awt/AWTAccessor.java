@@ -235,6 +235,7 @@ public final class AWTAccessor {
         /*
          * Returns the acc this component was constructed with.
          */
+        @SuppressWarnings("removal")
         AccessControlContext getAccessControlContext(Component comp);
 
         /**
@@ -353,6 +354,7 @@ public final class AWTAccessor {
         /**
          * Returns the acc this event was constructed with.
          */
+        @SuppressWarnings("removal")
         AccessControlContext getAccessControlContext(AWTEvent ev);
 
         /**

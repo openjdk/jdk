@@ -147,6 +147,7 @@ public class DriverManager {
      */
     public static void setLogWriter(java.io.PrintWriter out) {
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(SET_LOG_PERMISSION);
@@ -380,6 +381,7 @@ public class DriverManager {
             return;
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(DEREGISTER_DRIVER_PERMISSION);
@@ -497,6 +499,7 @@ public class DriverManager {
     @Deprecated(since="1.2")
     public static void setLogStream(java.io.PrintStream out) {
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(SET_LOG_PERMISSION);
@@ -567,6 +570,7 @@ public class DriverManager {
      * Load the initial JDBC drivers by checking the System property
      * jdbc.drivers and then use the {@code ServiceLoader} mechanism
      */
+    @SuppressWarnings("removal")
     private static void ensureDriversInitialized() {
         if (driversInitialized) {
             return;

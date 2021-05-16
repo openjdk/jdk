@@ -204,6 +204,7 @@ class DomainName {
         }
 
         private static InputStream getPubSuffixStream() {
+            @SuppressWarnings("removal")
             InputStream is = AccessController.doPrivileged(
                 new PrivilegedAction<>() {
                     @Override

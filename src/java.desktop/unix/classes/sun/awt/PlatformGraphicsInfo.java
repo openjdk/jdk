@@ -46,6 +46,7 @@ public class PlatformGraphicsInfo {
       * headless mode, in the case the application did specify
       * a value for the java.awt.headless system property.
       */
+    @SuppressWarnings("removal")
     public static boolean getDefaultHeadlessProperty() {
         return
             AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> {

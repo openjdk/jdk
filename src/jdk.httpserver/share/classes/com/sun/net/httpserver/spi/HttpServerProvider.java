@@ -85,6 +85,7 @@ public abstract class HttpServerProvider {
      *          {@link RuntimePermission}{@code ("httpServerProvider")}
      */
     protected HttpServerProvider() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(new RuntimePermission("httpServerProvider"));
@@ -165,6 +166,7 @@ public abstract class HttpServerProvider {
      *
      * @return  The system-wide default HttpServerProvider
      */
+    @SuppressWarnings("removal")
     public static HttpServerProvider provider () {
         synchronized (lock) {
             if (provider != null)

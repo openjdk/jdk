@@ -89,6 +89,7 @@ public class Application {
     }
 
     private static void checkSecurity() {
+        @SuppressWarnings("removal")
         final SecurityManager security = System.getSecurityManager();
         if (security == null) return;
         security.checkPermission(new RuntimePermission("canProcessApplicationEvents"));

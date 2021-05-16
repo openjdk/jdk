@@ -51,6 +51,7 @@ class UnixDomainSocketsUtil {
      * 2. ${jdk.net.unixdomain.tmpdir} if set as net property
      * 3. ${java.io.tmpdir} system property
      */
+    @SuppressWarnings("removal")
     static String getTempDir() {
         PrivilegedAction<String> action = () -> {
             String s = NetProperties.get("jdk.net.unixdomain.tmpdir");

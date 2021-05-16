@@ -348,6 +348,7 @@ public class Krb5InitCredential
     // XXX call to this.destroy() should destroy the locally cached copy
     // of krb5Credentials and then call super.destroy().
 
+    @SuppressWarnings("removal")
     private static KerberosTicket getTgt(GSSCaller caller, Krb5NameElement name,
                                                  int initLifetime)
         throws GSSException {

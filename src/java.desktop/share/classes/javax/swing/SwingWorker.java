@@ -798,6 +798,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
             final ExecutorService es = executorService;
             appContext.addPropertyChangeListener(AppContext.DISPOSED_PROPERTY_NAME,
                 new PropertyChangeListener() {
+                    @SuppressWarnings("removal")
                     @Override
                     public void propertyChange(PropertyChangeEvent pce) {
                         boolean disposed = (Boolean)pce.getNewValue();

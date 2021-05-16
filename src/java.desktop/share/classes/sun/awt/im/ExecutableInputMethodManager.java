@@ -252,6 +252,7 @@ class ExecutableInputMethodManager extends InputMethodManager
      * initializes the input method locator list for all
      * installed input method descriptors.
      */
+    @SuppressWarnings("removal")
     private void initializeInputMethodLocatorList() {
         synchronized (javaInputMethodLocatorList) {
             javaInputMethodLocatorList.clear();
@@ -593,6 +594,7 @@ class ExecutableInputMethodManager extends InputMethodManager
         }
     }
 
+    @SuppressWarnings("removal")
     private Preferences getUserRoot() {
         return AccessController.doPrivileged(new PrivilegedAction<Preferences>() {
             public Preferences run() {

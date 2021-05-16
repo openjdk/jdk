@@ -198,6 +198,7 @@ class FileTreeWalker implements Closeable {
      * the walk is following sym links is not. The {@code canUseCached}
      * argument determines whether this method can use cached attributes.
      */
+    @SuppressWarnings("removal")
     private BasicFileAttributes getAttributes(Path file, boolean canUseCached)
         throws IOException
     {

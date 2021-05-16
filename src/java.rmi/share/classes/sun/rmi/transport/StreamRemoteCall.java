@@ -139,6 +139,7 @@ public class StreamRemoteCall implements RemoteCall {
      * Get the InputStream the stub/skeleton should get results/arguments
      * from.
      */
+    @SuppressWarnings("removal")
     public ObjectInput getInputStream() throws IOException {
         if (in == null) {
             Transport.transportLog.log(Log.VERBOSE, "getting input stream");

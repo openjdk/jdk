@@ -64,6 +64,7 @@ public class GarbageCollectionNotifInfoCompositeData extends LazyCompositeData {
     }
 
     private CompositeType getCompositeTypeByBuilder() {
+        @SuppressWarnings("removal")
         final GcInfoBuilder builder = AccessController.doPrivileged (new PrivilegedAction<GcInfoBuilder>() {
                 public GcInfoBuilder run() {
                     try {

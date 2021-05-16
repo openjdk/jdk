@@ -149,6 +149,7 @@ public class Modules {
         ModuleLayer layer = m.getLayer();
 
         PrivilegedAction<ClassLoader> pa = m::getClassLoader;
+        @SuppressWarnings("removal")
         ClassLoader loader = AccessController.doPrivileged(pa);
 
         ClassLoader platformClassLoader = ClassLoaders.platformClassLoader();

@@ -621,6 +621,7 @@ public class Level implements java.io.Serializable {
 
         private static void registerWithClassLoader(Level customLevel) {
             PrivilegedAction<ClassLoader> pa = customLevel.getClass()::getClassLoader;
+            @SuppressWarnings("removal")
             final ClassLoader cl = AccessController.doPrivileged(pa);
             CUSTOM_LEVEL_CLV.computeIfAbsent(cl, (c, v) -> new ArrayList<>())
                 .add(customLevel);

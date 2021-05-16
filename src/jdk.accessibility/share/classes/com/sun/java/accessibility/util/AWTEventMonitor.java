@@ -232,6 +232,7 @@ public class AWTEventMonitor {
      * Check permissions
      */
     static private void checkInstallPermission() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);

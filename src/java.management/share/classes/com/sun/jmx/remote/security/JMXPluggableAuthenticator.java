@@ -85,6 +85,7 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
      * @exception SecurityException if the authentication mechanism cannot be
      *            initialized.
      */
+    @SuppressWarnings("removal")
     public JMXPluggableAuthenticator(Map<?, ?> env) {
 
         String loginConfigName = null;
@@ -155,6 +156,7 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
      * @exception SecurityException if the server cannot authenticate the user
      * with the provided credentials.
      */
+    @SuppressWarnings("removal")
     public Subject authenticate(Object credentials) {
         // Verify that credentials is of type String[].
         //

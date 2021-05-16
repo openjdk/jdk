@@ -85,6 +85,7 @@ public final class OCSP {
      * value is negative, set the timeout length to the default.
      */
     private static int initializeTimeout() {
+        @SuppressWarnings("removal")
         Integer tmp = java.security.AccessController.doPrivileged(
                 new GetIntegerAction("com.sun.security.ocsp.timeout"));
         if (tmp == null || tmp < 0) {

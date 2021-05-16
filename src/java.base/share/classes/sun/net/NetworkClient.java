@@ -39,6 +39,7 @@ import java.security.PrivilegedAction;
  *
  * @author      Jonathan Payne
  */
+@SuppressWarnings("removal")
 public class NetworkClient {
     /* Default value of read timeout, if not specified (infinity) */
     public static final int DEFAULT_READ_TIMEOUT = -1;

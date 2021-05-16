@@ -90,6 +90,7 @@ class TimerQueue implements Runnable
     }
 
 
+    @SuppressWarnings("removal")
     void startIfNeeded() {
         if (! running) {
             runningLock.lock();

@@ -57,6 +57,7 @@ final class TerminalImpl extends CardTerminal {
     }
 
     public synchronized Card connect(String protocol) throws CardException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new CardPermission(name, "connect"));

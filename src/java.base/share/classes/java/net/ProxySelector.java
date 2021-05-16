@@ -96,6 +96,7 @@ public abstract class ProxySelector {
      * @since   1.5
      */
     public static ProxySelector getDefault() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SecurityConstants.GET_PROXYSELECTOR_PERMISSION);
@@ -119,6 +120,7 @@ public abstract class ProxySelector {
      * @since 1.5
      */
     public static void setDefault(ProxySelector ps) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SecurityConstants.SET_PROXYSELECTOR_PERMISSION);

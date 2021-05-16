@@ -77,6 +77,7 @@ class WindowsFileCopy {
 
         // check permissions. If the source file is a symbolic link then
         // later we must also check LinkPermission
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             source.checkRead();
@@ -292,6 +293,7 @@ class WindowsFileCopy {
             throw new UnsupportedOperationException("Unsupported copy option");
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             source.checkWrite();

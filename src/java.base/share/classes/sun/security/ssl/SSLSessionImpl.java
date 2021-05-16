@@ -903,6 +903,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * are currently valid in this process.  For client sessions,
      * this returns null.
      */
+    @SuppressWarnings("removal")
     @Override
     public SSLSessionContext getSessionContext() {
         /*
@@ -1532,6 +1533,7 @@ class SecureKey {
     private final Object            securityCtx;
 
     static Object getCurrentSecurityContext() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         Object context = null;
 

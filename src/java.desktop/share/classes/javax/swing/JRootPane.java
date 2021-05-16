@@ -199,7 +199,7 @@ import sun.security.action.GetBooleanAction;
  * @since 1.2
  */
 /// PENDING(klobad) Who should be opaque in this component?
-@SuppressWarnings("serial")
+@SuppressWarnings({"removal","serial"})
 public class JRootPane extends JComponent implements Accessible {
 
     private static final String uiClassID = "RootPaneUI";

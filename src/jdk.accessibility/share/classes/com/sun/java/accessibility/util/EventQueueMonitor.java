@@ -142,6 +142,7 @@ public class EventQueueMonitor
     /**
      * Tell the {@code EventQueueMonitor} to start listening for events.
      */
+    @SuppressWarnings("removal")
     public static void maybeInitialize() {
         if (cedt == null) {
             java.security.AccessController.doPrivileged(

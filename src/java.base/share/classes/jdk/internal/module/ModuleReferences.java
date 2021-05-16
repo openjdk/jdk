@@ -362,6 +362,7 @@ class ModuleReferences {
 
             // when running with a security manager then check that the caller
             // has access to the directory.
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 boolean unused = Files.isDirectory(dir);

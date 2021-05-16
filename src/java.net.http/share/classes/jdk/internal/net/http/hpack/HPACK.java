@@ -52,6 +52,7 @@ public final class HPACK {
     static {
         String PROPERTY = "jdk.internal.httpclient.hpack.log.level";
 
+        @SuppressWarnings("removal")
         String value = AccessController.doPrivileged(
                 (PrivilegedAction<String>) () -> System.getProperty(PROPERTY));
 

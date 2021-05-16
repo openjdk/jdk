@@ -1322,6 +1322,7 @@ static final class sun_swing_PrintColorUIResource_PersistenceDelegate extends Pe
         }
     }
 
+    @SuppressWarnings("removal")
     static Object getPrivateFieldValue(Object instance, String name) {
         Field field = fields.get(name);
         if (field == null) {

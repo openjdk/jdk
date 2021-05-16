@@ -144,6 +144,7 @@ class UnixFileSystem extends FileSystem {
     @Override
     public String resolve(File f) {
         if (isAbsolute(f)) return f.getPath();
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertyAccess("user.dir");
@@ -345,6 +346,7 @@ class UnixFileSystem extends FileSystem {
     @Override
     public File[] listRoots() {
         try {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 security.checkRead("/");

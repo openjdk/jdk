@@ -295,6 +295,7 @@ final class ClassLoaderRepositorySupport
     public final ClassLoader getClassLoader(ObjectName name) {
         ClassLoader instance = loadersWithNames.get(name);
         if (instance != null) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 Permission perm =

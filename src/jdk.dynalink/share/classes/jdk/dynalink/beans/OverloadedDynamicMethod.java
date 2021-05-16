@@ -194,10 +194,12 @@ class OverloadedDynamicMethod extends DynamicMethod {
         }
     }
 
+    @SuppressWarnings("removal")
     private static final AccessControlContext GET_CALL_SITE_CLASS_LOADER_CONTEXT =
             AccessControlContextFactory.createAccessControlContext(
                     "getClassLoader", SecureLookupSupplier.GET_LOOKUP_PERMISSION_NAME);
 
+    @SuppressWarnings("removal")
     private static ClassLoader getCallSiteClassLoader(final CallSiteDescriptor callSiteDescriptor) {
         return AccessController.doPrivileged(
             (PrivilegedAction<ClassLoader>) () -> callSiteDescriptor.getLookup().lookupClass().getClassLoader(),

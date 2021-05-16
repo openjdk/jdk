@@ -2700,6 +2700,7 @@ public final class LdapCtx extends ComponentDirContext
     }
 
     // Load 'mechsAllowedToSendCredentials' system property value
+    @SuppressWarnings("removal")
     private static String getMechsAllowedToSendCredentials() {
         PrivilegedAction<String> pa = () -> System.getProperty(ALLOWED_MECHS_SP);
         return System.getSecurityManager() == null ? pa.run() : AccessController.doPrivileged(pa);

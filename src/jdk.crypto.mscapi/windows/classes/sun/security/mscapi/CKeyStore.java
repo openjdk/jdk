@@ -199,6 +199,7 @@ abstract class CKeyStore extends KeyStoreSpi {
 
     CKeyStore(String storeName) {
         // Get the compatibility mode
+        @SuppressWarnings("removal")
         String prop = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty(KEYSTORE_COMPATIBILITY_MODE_PROP));
 
@@ -696,6 +697,7 @@ abstract class CKeyStore extends KeyStoreSpi {
         /*
          * Use the same security check as AuthProvider.login
          */
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new SecurityPermission(

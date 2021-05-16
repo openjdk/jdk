@@ -61,6 +61,7 @@ public final class VerificationProvider extends Provider {
         ACTIVE = b;
     }
 
+    @SuppressWarnings("removal")
     public VerificationProvider() {
         super("SunJarVerification", PROVIDER_VER, "Jar Verification Provider");
         // register all algorithms normally registered by the Sun and SunRsaSign

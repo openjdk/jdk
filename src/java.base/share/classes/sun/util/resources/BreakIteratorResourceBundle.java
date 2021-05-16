@@ -80,6 +80,7 @@ public abstract class BreakIteratorResourceBundle extends ResourceBundle {
         return data;
     }
 
+    @SuppressWarnings("removal")
     private InputStream getResourceAsStream(String path) throws Exception {
         PrivilegedExceptionAction<InputStream> pa;
         pa = () -> getClass().getModule().getResourceAsStream(path);

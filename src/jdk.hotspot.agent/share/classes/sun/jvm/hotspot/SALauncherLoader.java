@@ -78,6 +78,7 @@ public class SALauncherLoader extends URLClassLoader {
             throws ClassNotFoundException {
         int i = name.lastIndexOf('.');
         if (i != -1) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPackageAccess(name.substring(0, i));

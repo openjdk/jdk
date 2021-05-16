@@ -388,6 +388,7 @@ public abstract class HttpURLConnection extends URLConnection {
      * @see #getFollowRedirects()
      */
     public static void setFollowRedirects(boolean set) {
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             // seems to be the best check here...
@@ -475,6 +476,7 @@ public abstract class HttpURLConnection extends URLConnection {
         for (int i = 0; i < methods.length; i++) {
             if (methods[i].equals(method)) {
                 if (method.equals("TRACE")) {
+                    @SuppressWarnings("removal")
                     SecurityManager s = System.getSecurityManager();
                     if (s != null) {
                         s.checkPermission(new NetPermission("allowHttpTrace"));

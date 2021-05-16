@@ -43,6 +43,7 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  * @author Yu-Ching Valerie Peng
  */
 
+@SuppressWarnings("removal")
 public final class SunNativeProvider extends Provider {
 
     private static final long serialVersionUID = -238911724858694204L;

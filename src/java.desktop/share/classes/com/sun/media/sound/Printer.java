@@ -66,6 +66,7 @@ final class Printer {
      * Returns {@code true} if the build of the current jdk is "internal".
      */
     private static boolean isBuildInternal() {
+        @SuppressWarnings("removal")
         String javaVersion = AccessController.doPrivileged(
                 new GetPropertyAction("java.version"));
         return javaVersion != null && javaVersion.contains("internal");

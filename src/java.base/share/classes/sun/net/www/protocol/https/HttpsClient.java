@@ -382,6 +382,7 @@ final class HttpsClient extends HttpClient
                 ret.authenticatorKey = httpuc.getAuthenticatorKey();
             }
         } else {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 if (ret.proxy == Proxy.NO_PROXY || ret.proxy == null) {

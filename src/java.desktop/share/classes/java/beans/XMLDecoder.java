@@ -64,6 +64,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author Philip Milne
  */
 public class XMLDecoder implements AutoCloseable {
+    @SuppressWarnings("removal")
     private final AccessControlContext acc = AccessController.getContext();
     private final DocumentHandler handler = new DocumentHandler();
     private final InputSource input;
@@ -188,6 +189,7 @@ public class XMLDecoder implements AutoCloseable {
         }
     }
 
+    @SuppressWarnings("removal")
     private boolean parsingComplete() {
         if (this.input == null) {
             return false;

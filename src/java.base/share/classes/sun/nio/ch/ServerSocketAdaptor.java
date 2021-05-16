@@ -61,6 +61,7 @@ class ServerSocketAdaptor                        // package-private
     // Timeout "option" value for accepts
     private volatile int timeout;
 
+    @SuppressWarnings("removal")
     static ServerSocket create(ServerSocketChannelImpl ssc) {
         PrivilegedExceptionAction<ServerSocket> pa = () -> new ServerSocketAdaptor(ssc);
         try {

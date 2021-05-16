@@ -63,6 +63,7 @@ public final class VersionHelper {
         trustSerialData = "true".equalsIgnoreCase(trustSerialDataSp);
     }
 
+    @SuppressWarnings("removal")
     private static String getPrivilegedProperty(String propertyName, String defaultVal) {
         PrivilegedAction<String> action = () -> System.getProperty(propertyName, defaultVal);
         if (System.getSecurityManager() == null) {
@@ -107,6 +108,7 @@ public final class VersionHelper {
         return Class.forName(className, true, getContextClassLoader());
     }
 
+    @SuppressWarnings("removal")
     Thread createThread(Runnable r) {
         AccessControlContext acc = AccessController.getContext();
         // 4290486: doPrivileged is needed to create a thread in
@@ -116,6 +118,7 @@ public final class VersionHelper {
         return AccessController.doPrivileged(act);
     }
 
+    @SuppressWarnings("removal")
     private ClassLoader getContextClassLoader() {
         PrivilegedAction<ClassLoader> act =
                 Thread.currentThread()::getContextClassLoader;

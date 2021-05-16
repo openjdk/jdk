@@ -318,6 +318,7 @@ public final class MarshalledObject<T> implements Serializable {
          * <code>null</code>, then all annotations will be
          * <code>null</code>.
          */
+        @SuppressWarnings("removal")
         MarshalledObjectInputStream(InputStream objIn, InputStream locIn,
                     ObjectInputFilter filter)
             throws IOException

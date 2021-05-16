@@ -69,6 +69,7 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
      * This method waits for the toolkit to be completely initialized
      * and returns before the message pump is started.
      */
+    @SuppressWarnings("removal")
     protected final void init() {
         AWTAutoShutdown.notifyToolkitThreadBusy();
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
@@ -416,6 +417,7 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
 
     @Override
     public final Clipboard getSystemClipboard() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);

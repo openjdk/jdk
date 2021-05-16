@@ -43,6 +43,7 @@ class PlainSocketImpl extends AbstractPlainSocketImpl {
     private static final JavaIOFileDescriptorAccess fdAccess =
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
+    @SuppressWarnings("removal")
     private static final boolean preferIPv4Stack =
             Boolean.parseBoolean(AccessController.doPrivileged(
                 new GetPropertyAction("java.net.preferIPv4Stack", "false")));
@@ -53,6 +54,7 @@ class PlainSocketImpl extends AbstractPlainSocketImpl {
     private static final boolean useExclusiveBind;
 
     static {
+        @SuppressWarnings("removal")
         String exclBindProp = AccessController.doPrivileged(
                 new GetPropertyAction("sun.net.useExclusiveBind", ""));
         useExclusiveBind = exclBindProp.isEmpty()

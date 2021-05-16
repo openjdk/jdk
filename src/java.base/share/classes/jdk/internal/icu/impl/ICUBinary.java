@@ -81,7 +81,7 @@ public final class ICUBinary {
     public static ByteBuffer getRequiredData(String itemPath) {
         final Class<ICUBinary> root = ICUBinary.class;
 
-        try (InputStream is = AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
+        try (@SuppressWarnings("removal") InputStream is = AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
                 public InputStream run() {
                     return root.getResourceAsStream(itemPath);
                 }

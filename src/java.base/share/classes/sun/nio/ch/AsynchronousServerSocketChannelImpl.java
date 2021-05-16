@@ -150,6 +150,7 @@ abstract class AsynchronousServerSocketChannelImpl
     {
         InetSocketAddress isa = (local == null) ? new InetSocketAddress(0) :
             Net.checkAddress(local);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkListen(isa.getPort());

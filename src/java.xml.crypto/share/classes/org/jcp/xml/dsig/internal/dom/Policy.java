@@ -64,6 +64,7 @@ public final class Policy {
     private Policy() {}
 
     private static void initialize() {
+        @SuppressWarnings("removal")
         String prop =
             AccessController.doPrivileged((PrivilegedAction<String>) () ->
                 Security.getProperty("jdk.xml.dsig.secureValidationPolicy"));

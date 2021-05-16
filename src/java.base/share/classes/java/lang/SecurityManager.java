@@ -344,6 +344,7 @@ public class SecurityManager {
      */
     public SecurityManager() {
         synchronized(SecurityManager.class) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 // ask the currently installed security manager if we
@@ -389,6 +390,7 @@ public class SecurityManager {
      *   java.lang.Object) checkRead
      * @see     java.security.AccessControlContext AccessControlContext
      */
+    @SuppressWarnings("removal")
     public Object getSecurityContext() {
         return AccessController.getContext();
     }
@@ -408,6 +410,7 @@ public class SecurityManager {
      *            {@code null}.
      * @since     1.2
      */
+    @SuppressWarnings("removal")
     public void checkPermission(Permission perm) {
         java.security.AccessController.checkPermission(perm);
     }
@@ -443,6 +446,7 @@ public class SecurityManager {
      * @see java.security.AccessControlContext#checkPermission(java.security.Permission)
      * @since      1.2
      */
+    @SuppressWarnings("removal")
     public void checkPermission(Permission perm, Object context) {
         if (context instanceof AccessControlContext) {
             ((AccessControlContext)context).checkPermission(perm);
@@ -1336,6 +1340,7 @@ public class SecurityManager {
              * Do we need to update our property array?
              */
             if (!packageAccessValid) {
+                @SuppressWarnings("removal")
                 String tmpPropertyStr =
                     AccessController.doPrivileged(
                         new PrivilegedAction<>() {
@@ -1435,6 +1440,7 @@ public class SecurityManager {
              * Do we need to update our property array?
              */
             if (!packageDefinitionValid) {
+                @SuppressWarnings("removal")
                 String tmpPropertyStr =
                     AccessController.doPrivileged(
                         new PrivilegedAction<>() {

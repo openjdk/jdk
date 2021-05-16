@@ -102,6 +102,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
         return false;
     }
 
+    @SuppressWarnings("removal")
     private void init0() {
 
         hostname = java.security.AccessController.doPrivileged(

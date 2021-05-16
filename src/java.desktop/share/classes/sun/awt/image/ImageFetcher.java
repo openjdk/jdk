@@ -276,6 +276,7 @@ class ImageFetcher extends Thread {
     /**
       * Create and start ImageFetcher threads in the appropriate ThreadGroup.
       */
+    @SuppressWarnings("removal")
     private static void createFetchers(final FetcherInfo info) {
        // We need to instantiate a new ImageFetcher thread.
        // First, figure out which ThreadGroup we'll put the

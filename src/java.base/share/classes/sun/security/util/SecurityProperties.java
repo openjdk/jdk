@@ -42,6 +42,7 @@ public class SecurityProperties {
      * @param  propName the name of the system or security property
      * @return the value of the system or security property
      */
+    @SuppressWarnings("removal")
     public static String privilegedGetOverridable(String propName) {
         if (System.getSecurityManager() == null) {
             return getOverridableProperty(propName);

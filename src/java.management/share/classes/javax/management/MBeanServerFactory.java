@@ -407,6 +407,7 @@ public class MBeanServerFactory {
 
     private static void checkPermission(String action)
     throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             Permission perm = new MBeanServerPermission(action);
@@ -477,6 +478,7 @@ public class MBeanServerFactory {
         try {
             GetPropertyAction act =
                     new GetPropertyAction(JMX_INITIAL_BUILDER);
+            @SuppressWarnings("removal")
             String builderClassName = AccessController.doPrivileged(act);
 
             try {

@@ -44,6 +44,7 @@ public class GSSCredElement implements GSSCredentialSpi {
     private GSSLibStub cStub;
 
     // Perform the necessary ServicePermission check on this cred
+    @SuppressWarnings("removal")
     void doServicePermCheck() throws GSSException {
         if (GSSUtil.isKerberosMech(cStub.getMech())) {
             if (System.getSecurityManager() != null) {

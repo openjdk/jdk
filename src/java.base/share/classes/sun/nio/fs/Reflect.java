@@ -36,6 +36,7 @@ import java.security.PrivilegedAction;
 class Reflect {
     private Reflect() {}
 
+    @SuppressWarnings("removal")
     private static void setAccessible(final AccessibleObject ao) {
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 @Override

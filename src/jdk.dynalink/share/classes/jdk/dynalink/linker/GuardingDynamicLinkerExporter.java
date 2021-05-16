@@ -66,6 +66,7 @@ public abstract class GuardingDynamicLinkerExporter implements Supplier<List<Gua
      * granted.
      */
     protected GuardingDynamicLinkerExporter() {
+        @SuppressWarnings("removal")
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(AUTOLOAD_PERMISSION);

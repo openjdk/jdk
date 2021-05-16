@@ -83,6 +83,7 @@ public class Type1Font extends FileFont {
             fileName = name;
         }
 
+        @SuppressWarnings("removal")
         public synchronized void dispose() {
             java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Object>() {
@@ -188,6 +189,7 @@ public class Type1Font extends FileFont {
         if (bbuf == null) {
           //System.out.println("open T1 " + platName);
             try {
+                @SuppressWarnings("removal")
                 RandomAccessFile raf = (RandomAccessFile)
                 java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction<Object>() {
@@ -225,6 +227,7 @@ public class Type1Font extends FileFont {
     }
 
     /* called from native code to read file into a direct byte buffer */
+    @SuppressWarnings("removal")
     void readFile(ByteBuffer buffer) {
         RandomAccessFile raf = null;
         FileChannel fc;

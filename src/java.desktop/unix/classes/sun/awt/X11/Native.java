@@ -43,6 +43,7 @@ class Native {
 
     static int dataModel;
     static {
+        @SuppressWarnings("removal")
         String dataModelProp = AccessController.doPrivileged(
             new PrivilegedAction<String>() {
                 public String run() {

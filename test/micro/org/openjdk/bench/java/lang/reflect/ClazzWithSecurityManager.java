@@ -45,6 +45,7 @@ import org.openjdk.jmh.annotations.State;
 @State(Scope.Benchmark)
 public class ClazzWithSecurityManager extends Clazz {
 
+    @SuppressWarnings("removal")
     @Setup
     public void setup() throws IOException, NoSuchAlgorithmException, URISyntaxException {
         URI policyFile = ClazzWithSecurityManager.class.getResource("/jmh-security.policy").toURI();

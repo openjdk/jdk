@@ -142,6 +142,7 @@ public final class Krb5MechFactory implements MechanismFactory {
     }
 
     public static void checkInitCredPermission(Krb5NameElement name) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             String realm = (name.getKrb5PrincipalName()).getRealmAsString();
@@ -163,6 +164,7 @@ public final class Krb5MechFactory implements MechanismFactory {
 
     public static void checkAcceptCredPermission(Krb5NameElement name,
                                            GSSNameSpi originalName) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null && name != null) {
             ServicePermission perm = new ServicePermission

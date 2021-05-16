@@ -425,6 +425,7 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
             String cn = packageName() + ".package-info";
             Module module = module();
             PrivilegedAction<ClassLoader> pa = module::getClassLoader;
+            @SuppressWarnings("removal")
             ClassLoader loader = AccessController.doPrivileged(pa);
             Class<?> c;
             if (loader != null) {

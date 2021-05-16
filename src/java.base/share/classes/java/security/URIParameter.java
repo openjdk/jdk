@@ -32,6 +32,7 @@ package java.security;
  *
  * @since 1.6
  */
+@SuppressWarnings("removal")
 public class URIParameter implements
         Policy.Parameters, javax.security.auth.login.Configuration.Parameters {
 

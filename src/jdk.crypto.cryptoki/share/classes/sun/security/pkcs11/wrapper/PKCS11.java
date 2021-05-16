@@ -70,6 +70,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
  * @author Martin Schlaeffer <schlaeff@sbox.tugraz.at>
  * @invariants (pkcs11ModulePath_ <> null)
  */
+@SuppressWarnings("removal")
 public class PKCS11 {
 
     /**

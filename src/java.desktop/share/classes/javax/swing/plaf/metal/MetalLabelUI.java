@@ -67,6 +67,7 @@ public class MetalLabelUI extends BasicLabelUI
      * @param c a component
      * @return an instance of {@code MetalLabelUI}
      */
+    @SuppressWarnings("removal")
     public static ComponentUI createUI(JComponent c) {
         if (System.getSecurityManager() != null) {
             AppContext appContext = AppContext.getAppContext();

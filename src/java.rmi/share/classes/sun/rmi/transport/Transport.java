@@ -51,7 +51,7 @@ import sun.rmi.server.UnicastServerRef;
  *
  * @author Ann Wollrath
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"removal","deprecation"})
 public abstract class Transport {
 
     /** "transport" package log level */

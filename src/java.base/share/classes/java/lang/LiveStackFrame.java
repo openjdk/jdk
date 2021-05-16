@@ -177,6 +177,7 @@ interface LiveStackFrame extends StackFrame {
      * and it denies access to {@code RuntimePermission("getStackWalkerWithClassReference")}.
      */
     public static StackWalker getStackWalker(Set<StackWalker.Option> options) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("liveStackFrames"));

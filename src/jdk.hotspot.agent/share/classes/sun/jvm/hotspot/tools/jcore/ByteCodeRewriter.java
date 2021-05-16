@@ -47,6 +47,7 @@ public class ByteCodeRewriter
     public static final boolean DEBUG;
 
     static {
+        @SuppressWarnings("removal")
         String debug = AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 public String run() {

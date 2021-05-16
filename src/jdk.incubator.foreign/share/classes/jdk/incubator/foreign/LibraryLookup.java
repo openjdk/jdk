@@ -102,6 +102,7 @@ public interface LibraryLookup {
      * @return the default library lookup object.
      */
     static LibraryLookup ofDefault() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(new RuntimePermission("java.foreign.getDefaultLibrary"));
@@ -122,6 +123,7 @@ public interface LibraryLookup {
             throw new IllegalArgumentException("Not an absolute path: " + path.toString());
         }
         String absolutePath = path.toString();
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkLink(absolutePath);
@@ -139,6 +141,7 @@ public interface LibraryLookup {
      */
     static LibraryLookup ofLibrary(String libName) {
         Objects.requireNonNull(libName);
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkLink(libName);

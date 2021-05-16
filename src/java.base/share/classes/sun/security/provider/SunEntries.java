@@ -81,6 +81,7 @@ import static sun.security.util.SecurityProviderConstants.getAliases;
  * - JavaLoginConfig is the default file-based LoginModule Configuration type.
  */
 
+@SuppressWarnings("removal")
 public final class SunEntries {
 
     // the default algo used by SecureRandom class for new SecureRandom() calls

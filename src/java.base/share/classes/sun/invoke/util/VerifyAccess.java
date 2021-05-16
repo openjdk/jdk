@@ -323,6 +323,7 @@ public class VerifyAccess {
         // memoization.  And the caller never gets to look at the alternate type binding
         // ("res"), whether it exists or not.
         final String name = type.getName();
+        @SuppressWarnings("removal")
         Class<?> res = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<>() {
                     public Class<?> run() {

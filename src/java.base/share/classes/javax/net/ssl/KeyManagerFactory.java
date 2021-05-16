@@ -62,6 +62,7 @@ public class KeyManagerFactory {
      *          {@code ssl.KeyManagerFactory.algorithm} security property, or an
      *          implementation-specific default if no such property exists.
      */
+    @SuppressWarnings("removal")
     public static final String getDefaultAlgorithm() {
         String type;
         type = AccessController.doPrivileged(new PrivilegedAction<>() {

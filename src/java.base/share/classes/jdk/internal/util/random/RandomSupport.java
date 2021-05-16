@@ -755,6 +755,7 @@ public class RandomSupport {
 
     // The following decides which of two strategies initialSeed() will use.
     private static boolean secureRandomSeedRequested() {
+        @SuppressWarnings("removal")
         String pp = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction(
                         "java.util.secureRandomSeed"));

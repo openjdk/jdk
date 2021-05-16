@@ -43,6 +43,7 @@ public class ExtendedMapMode {
         try {
             PrivilegedExceptionAction<Lookup> pae = () ->
                 MethodHandles.privateLookupIn(MapMode.class, MethodHandles.lookup());
+            @SuppressWarnings("removal")
             Lookup lookup = AccessController.doPrivileged(pae);
             var methodType = MethodType.methodType(void.class, String.class);
             MAP_MODE_CONSTRUCTOR = lookup.findConstructor(MapMode.class, methodType);

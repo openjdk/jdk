@@ -406,7 +406,7 @@ public final class Tools extends JPanel implements ActionListener,
             if (pDialogState) {
                 printJob.print(aset);
             }
-        } catch (java.security.AccessControlException ace) {
+        } catch (@SuppressWarnings("removal") java.security.AccessControlException ace) {
             String errmsg = "Applet access control exception; to allow "
                     + "access to printer, set\n"
                     + "permission for \"queuePrintJob\" in "

@@ -115,11 +115,12 @@ class WindowsAsynchronousServerSocketChannelImpl
      */
     private class AcceptTask implements Runnable, Iocp.ResultHandler {
         private final WindowsAsynchronousSocketChannelImpl channel;
+        @SuppressWarnings("removal")
         private final AccessControlContext acc;
         private final PendingFuture<AsynchronousSocketChannel,Object> result;
 
         AcceptTask(WindowsAsynchronousSocketChannelImpl channel,
-                   AccessControlContext acc,
+                   @SuppressWarnings("removal") AccessControlContext acc,
                    PendingFuture<AsynchronousSocketChannel,Object> result)
         {
             this.channel = channel;
@@ -138,6 +139,7 @@ class WindowsAsynchronousServerSocketChannelImpl
         }
 
         // caller must have acquired read lock for the listener and child channel.
+        @SuppressWarnings("removal")
         void finishAccept() throws IOException {
             /**
              * Set local/remote addresses. This is currently very inefficient
@@ -329,6 +331,7 @@ class WindowsAsynchronousServerSocketChannelImpl
         // need calling context when there is security manager as
         // permission check may be done in a different thread without
         // any application call frames on the stack
+        @SuppressWarnings("removal")
         AccessControlContext acc = (System.getSecurityManager() == null) ?
             null : AccessController.getContext();
 

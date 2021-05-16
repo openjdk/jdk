@@ -71,6 +71,7 @@ public abstract class SurfaceDataProxy
 
     static {
         cachingAllowed = true;
+        @SuppressWarnings("removal")
         String manimg = AccessController.doPrivileged(
             new GetPropertyAction("sun.java2d.managedimages"));
         if (manimg != null && manimg.equals("false")) {
@@ -79,6 +80,7 @@ public abstract class SurfaceDataProxy
         }
 
         defaultThreshold = 1;
+        @SuppressWarnings("removal")
         String num = AccessController.doPrivileged(
             new GetPropertyAction("sun.java2d.accthreshold"));
         if (num != null) {

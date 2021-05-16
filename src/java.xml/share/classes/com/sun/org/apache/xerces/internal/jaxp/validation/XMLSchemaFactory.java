@@ -417,6 +417,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
         }
     }
 
+    @SuppressWarnings("removal")
     public void setFeature(String name, boolean value)
         throws SAXNotRecognizedException, SAXNotSupportedException {
         if (name == null) {

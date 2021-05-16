@@ -144,6 +144,7 @@ public final class PlatformRecorder {
     }
 
     public synchronized static void addListener(FlightRecorderListener changeListener) {
+        @SuppressWarnings("removal")
         AccessControlContext context = AccessController.getContext();
         SecureRecorderListener sl = new SecureRecorderListener(context, changeListener);
         boolean runInitialized;

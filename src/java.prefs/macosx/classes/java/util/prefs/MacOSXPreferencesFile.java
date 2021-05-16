@@ -76,6 +76,7 @@ import java.lang.ref.WeakReference;
   it's expensive and is usually not necessary.
 */
 
+@SuppressWarnings("removal")
 class MacOSXPreferencesFile {
 
     static {

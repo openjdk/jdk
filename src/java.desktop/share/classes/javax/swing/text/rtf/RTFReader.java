@@ -567,6 +567,7 @@ getCharacterSet(final String name)
 {
     char[] set = characterSets.get(name);
     if (set == null) {
+        @SuppressWarnings("removal")
         InputStream charsetStream = AccessController.doPrivileged(
                 new PrivilegedAction<InputStream>() {
                     public InputStream run() {

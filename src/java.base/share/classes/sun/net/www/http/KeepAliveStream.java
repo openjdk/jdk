@@ -158,6 +158,7 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
         }
     }
 
+    @SuppressWarnings("removal")
     private static void queueForCleanup(KeepAliveCleanerEntry kace) {
         queue.lock();
         try {

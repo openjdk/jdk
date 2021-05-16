@@ -58,6 +58,7 @@ import java.nio.file.Files;
  * Remind: This class uses solaris commands. We also need a linux
  * version
  */
+@SuppressWarnings("removal")
 public class PrintServiceLookupProvider extends PrintServiceLookup
     implements BackgroundServiceLookup, Runnable {
 

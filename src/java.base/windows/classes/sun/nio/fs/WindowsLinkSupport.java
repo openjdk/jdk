@@ -90,6 +90,7 @@ class WindowsLinkSupport {
      * Returns the final path of a given path as a String. This should be used
      * prior to calling Win32 system calls that do not follow links.
      */
+    @SuppressWarnings("removal")
     static String getFinalPath(WindowsPath input, boolean followLinks)
         throws IOException
     {

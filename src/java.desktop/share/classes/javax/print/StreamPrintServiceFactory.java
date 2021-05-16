@@ -183,6 +183,7 @@ public abstract class StreamPrintServiceFactory {
      *
      * @return all factories
      */
+    @SuppressWarnings("removal")
     private static ArrayList<StreamPrintServiceFactory> getAllFactories() {
         synchronized (StreamPrintServiceFactory.class) {
 

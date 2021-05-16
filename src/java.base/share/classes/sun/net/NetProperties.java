@@ -40,6 +40,7 @@ import java.util.Properties;
  *
  */
 
+@SuppressWarnings("removal")
 public class NetProperties {
     private static Properties props = new Properties();
     static {

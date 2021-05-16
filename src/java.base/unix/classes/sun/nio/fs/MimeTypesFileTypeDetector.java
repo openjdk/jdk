@@ -93,6 +93,7 @@ class MimeTypesFileTypeDetector extends AbstractFileTypeDetector {
         if (!loaded) {
             synchronized (this) {
                 if (!loaded) {
+                    @SuppressWarnings("removal")
                     List<String> lines = AccessController.doPrivileged(
                         new PrivilegedAction<>() {
                             @Override

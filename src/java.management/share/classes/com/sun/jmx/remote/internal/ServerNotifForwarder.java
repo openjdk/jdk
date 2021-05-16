@@ -93,6 +93,7 @@ public class ServerNotifForwarder {
                 connectionId, name, getSubject());
         }
         try {
+            @SuppressWarnings("removal")
             boolean instanceOf =
             AccessController.doPrivileged(
                     new PrivilegedExceptionAction<Boolean>() {
@@ -345,6 +346,7 @@ public class ServerNotifForwarder {
     // PRIVATE METHODS
     //----------------
 
+    @SuppressWarnings("removal")
     private Subject getSubject() {
         return Subject.getSubject(AccessController.getContext());
     }
@@ -373,6 +375,7 @@ public class ServerNotifForwarder {
         checkMBeanPermission(mbeanServer,name,actions);
     }
 
+    @SuppressWarnings("removal")
     static void checkMBeanPermission(
             final MBeanServer mbs, final ObjectName name, final String actions)
             throws InstanceNotFoundException, SecurityException {

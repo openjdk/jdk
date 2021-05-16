@@ -3569,6 +3569,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         }
     }
 
+    @SuppressWarnings("removal")
     private static class CalendarAccessControlContext {
         private static final AccessControlContext INSTANCE;
         static {
@@ -3586,6 +3587,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Reconstitutes this object from a stream (i.e., deserialize it).
      */
+    @SuppressWarnings("removal")
     @java.io.Serial
     private void readObject(ObjectInputStream stream)
          throws IOException, ClassNotFoundException

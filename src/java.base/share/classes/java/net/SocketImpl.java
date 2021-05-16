@@ -67,6 +67,7 @@ public abstract class SocketImpl implements SocketOptions {
 
     private static boolean usePlainSocketImpl() {
         PrivilegedAction<String> pa = () -> NetProperties.get("jdk.net.usePlainSocketImpl");
+        @SuppressWarnings("removal")
         String s = AccessController.doPrivileged(pa);
         return (s != null) && !s.equalsIgnoreCase("false");
     }

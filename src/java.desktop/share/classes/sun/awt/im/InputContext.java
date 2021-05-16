@@ -1036,6 +1036,7 @@ public class InputContext extends java.awt.im.InputContext
     /**
      * Initializes the input method selection key definition in preference trees
      */
+    @SuppressWarnings("removal")
     private void initializeInputMethodSelectionKey() {
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {

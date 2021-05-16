@@ -74,6 +74,7 @@ public class Sasl {
     private static List<String> disabledMechanisms = new ArrayList<>();
 
     static {
+        @SuppressWarnings("removal")
         String prop = AccessController.doPrivileged(
                 (PrivilegedAction<String>)
                 () -> Security.getProperty("jdk.sasl.disabledMechanisms"));

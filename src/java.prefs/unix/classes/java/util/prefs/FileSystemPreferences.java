@@ -46,6 +46,7 @@ import sun.util.logging.PlatformLogger;
  * @see     Preferences
  * @since   1.4
  */
+@SuppressWarnings("removal")
 class FileSystemPreferences extends AbstractPreferences {
 
     static {

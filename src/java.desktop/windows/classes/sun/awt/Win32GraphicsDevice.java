@@ -96,6 +96,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         // is run as an NT service.  To prevent the loading of ddraw.dll
         // completely, sun.awt.nopixfmt should be set as well.  Apps which use
         // OpenGL w/ Java probably don't want to set this.
+        @SuppressWarnings("removal")
         String nopixfmt = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("sun.awt.nopixfmt"));
         pfDisabled = (nopixfmt != null);
@@ -348,6 +349,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     }
 
     private static boolean isFSExclusiveModeAllowed() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             if (fullScreenExclusivePermission == null) {

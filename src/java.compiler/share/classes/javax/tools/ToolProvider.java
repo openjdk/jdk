@@ -135,6 +135,7 @@ public class ToolProvider {
      * @param moduleName        the name of the module containing the desired implementation
      * @return true if and only if the tool matches the specified criteria
      */
+    @SuppressWarnings("removal")
     private static <T> boolean matches(T tool, String moduleName) {
         PrivilegedAction<Boolean> pa = () -> {
             Module toolModule = tool.getClass().getModule();

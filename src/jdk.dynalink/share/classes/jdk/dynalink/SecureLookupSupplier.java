@@ -61,6 +61,7 @@ public class SecureLookupSupplier {
      * and a check for {@code RuntimePermission("dynalink.getLookup")} fails.
      */
     public final Lookup getLookup() {
+        @SuppressWarnings("removal")
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null && lookup != MethodHandles.publicLookup()) {
             sm.checkPermission(GET_LOOKUP_PERMISSION);

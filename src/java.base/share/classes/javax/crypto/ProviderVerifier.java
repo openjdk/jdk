@@ -83,6 +83,7 @@ final class ProviderVerifier {
      * In OpenJDK, we just need to examine the "cryptoperms" file to see
      * if any permissions were bundled together with this jar file.
      */
+    @SuppressWarnings("removal")
     void verify() throws IOException {
 
         // Short-circuit.  If we weren't asked to save any, we're done.

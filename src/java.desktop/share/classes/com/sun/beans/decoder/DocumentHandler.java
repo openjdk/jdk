@@ -62,6 +62,7 @@ import jdk.internal.access.SharedSecrets;
  * @see ElementHandler
  */
 public final class DocumentHandler extends DefaultHandler {
+    @SuppressWarnings("removal")
     private final AccessControlContext acc = AccessController.getContext();
     private final Map<String, Class<? extends ElementHandler>> handlers = new HashMap<>();
     private final Map<String, Object> environment = new HashMap<>();
@@ -366,6 +367,7 @@ public final class DocumentHandler extends DefaultHandler {
      *
      * @param input  the input source to parse
      */
+    @SuppressWarnings("removal")
     public void parse(final InputSource input) {
         if ((this.acc == null) && (null != System.getSecurityManager())) {
             throw new SecurityException("AccessControlContext is not set");

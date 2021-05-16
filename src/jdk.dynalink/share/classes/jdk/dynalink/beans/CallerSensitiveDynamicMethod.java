@@ -82,6 +82,7 @@ import jdk.dynalink.linker.support.Lookup;
  * every request.
  */
 class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
+    @SuppressWarnings("removal")
     private static final AccessControlContext GET_LOOKUP_CONTEXT =
             AccessControlContextFactory.createAccessControlContext(
                     SecureLookupSupplier.GET_LOOKUP_PERMISSION_NAME);
@@ -126,6 +127,7 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
 
     @Override
     MethodHandle getTarget(final CallSiteDescriptor desc) {
+        @SuppressWarnings("removal")
         final MethodHandles.Lookup lookup = AccessController.doPrivileged(
                 (PrivilegedAction<MethodHandles.Lookup>)desc::getLookup,
                 GET_LOOKUP_CONTEXT);

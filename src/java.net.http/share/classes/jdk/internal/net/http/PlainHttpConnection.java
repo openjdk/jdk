@@ -161,6 +161,7 @@ class PlainHttpConnection extends HttpConnection {
         }
     }
 
+    @SuppressWarnings("removal")
     @Override
     public CompletableFuture<Void> connectAsync(Exchange<?> exchange) {
         CompletableFuture<ConnectState> cf = new MinimalFuture<>();

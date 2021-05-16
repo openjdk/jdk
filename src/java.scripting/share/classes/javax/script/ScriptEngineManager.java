@@ -87,6 +87,7 @@ public class ScriptEngineManager  {
     private void initEngines(final ClassLoader loader) {
         Iterator<ScriptEngineFactory> itr;
         try {
+            @SuppressWarnings("removal")
             var sl = AccessController.doPrivileged(
                 (PrivilegedAction<ServiceLoader<ScriptEngineFactory>>)() -> getServiceLoader(loader));
             itr = sl.iterator();

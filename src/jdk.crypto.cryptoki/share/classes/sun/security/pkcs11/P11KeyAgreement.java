@@ -73,6 +73,7 @@ final class P11KeyAgreement extends KeyAgreementSpi {
 
         private static final boolean VALUE = getValue();
 
+        @SuppressWarnings("removal")
         private static boolean getValue() {
             return AccessController.doPrivileged(
                 (PrivilegedAction<Boolean>)

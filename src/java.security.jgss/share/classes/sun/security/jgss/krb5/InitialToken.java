@@ -171,6 +171,7 @@ abstract class InitialToken extends Krb5Token {
                 String realm = delegateTo.getRealmAsString();
                 sb.append(" \"krbtgt/").append(realm).append('@');
                 sb.append(realm).append('\"');
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     DelegationPermission perm =

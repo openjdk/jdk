@@ -89,6 +89,7 @@ public abstract class AttachProvider {
      *          ("{@code createAttachProvider}")
      */
     protected AttachProvider() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(new AttachPermission("createAttachProvider"));

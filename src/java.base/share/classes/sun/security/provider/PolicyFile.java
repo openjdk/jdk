@@ -238,6 +238,7 @@ import static jdk.internal.access.JavaSecurityAccess.ProtectionDomainCache;
  * @see java.security.Permissions
  * @see java.security.ProtectionDomain
  */
+@SuppressWarnings("removal")
 public class PolicyFile extends java.security.Policy {
 
     private static final Debug debug = Debug.getInstance("policy");

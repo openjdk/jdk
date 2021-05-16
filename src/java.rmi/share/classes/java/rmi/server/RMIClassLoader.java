@@ -114,6 +114,7 @@ public class RMIClassLoader {
         newDefaultProviderInstance();
 
     /** provider instance */
+    @SuppressWarnings("removal")
     private static final RMIClassLoaderSpi provider =
         AccessController.doPrivileged(
             new PrivilegedAction<RMIClassLoaderSpi>() {
@@ -601,6 +602,7 @@ public class RMIClassLoader {
      * @since   1.4
      */
     public static RMIClassLoaderSpi getDefaultProviderInstance() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("setFactory"));

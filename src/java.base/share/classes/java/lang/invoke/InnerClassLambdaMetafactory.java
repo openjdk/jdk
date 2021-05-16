@@ -228,6 +228,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                             "Exception finding " +  LAMBDA_INSTANCE_FIELD + " static field", e);
                 }
             } else {
+                @SuppressWarnings("removal")
                 final Constructor<?>[] ctrs = AccessController.doPrivileged(
                         new PrivilegedAction<>() {
                             @Override
@@ -319,6 +320,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * @throws LambdaConversionException If properly formed functional interface
      * is not found
      */
+    @SuppressWarnings("removal")
     private Class<?> generateInnerClass() throws LambdaConversionException {
         String[] interfaces;
         String samIntf = samBase.getName().replace('.', '/');

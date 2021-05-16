@@ -139,6 +139,7 @@ public abstract class GraphicsEnvironment {
      * @return the value of the property "java.awt.headless"
      * @since 1.4
      */
+    @SuppressWarnings("removal")
     private static boolean getHeadlessProperty() {
         if (headless == null) {
             AccessController.doPrivileged((PrivilegedAction<Void>) () -> {

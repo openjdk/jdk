@@ -62,6 +62,7 @@ final class Config {
     private static final String osArch;
 
     static {
+        @SuppressWarnings("removal")
         List<String> props = AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 @Override

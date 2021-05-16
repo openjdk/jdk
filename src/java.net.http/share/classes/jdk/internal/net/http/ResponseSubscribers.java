@@ -174,6 +174,7 @@ public class ResponseSubscribers {
 
         private final Path file;
         private final OpenOption[] options;
+        @SuppressWarnings("removal")
         private final AccessControlContext acc;
         private final FilePermission[] filePermissions;
         private final boolean isDefaultFS;
@@ -196,6 +197,7 @@ public class ResponseSubscribers {
          */
         public static PathSubscriber create(Path file,
                                             List<OpenOption> options) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             FilePermission filePermission = null;
             if (sm != null) {
@@ -210,6 +212,7 @@ public class ResponseSubscribers {
             }
 
             assert filePermission == null || filePermission.getActions().equals("write");
+            @SuppressWarnings("removal")
             AccessControlContext acc = sm != null ? AccessController.getContext() : null;
             return new PathSubscriber(file, options, acc, filePermission);
         }
@@ -217,7 +220,7 @@ public class ResponseSubscribers {
         // pp so handler implementations in the same package can construct
         /*package-private*/ PathSubscriber(Path file,
                                            List<OpenOption> options,
-                                           AccessControlContext acc,
+                                           @SuppressWarnings("removal") AccessControlContext acc,
                                            FilePermission... filePermissions) {
             this.file = file;
             this.options = options.stream().toArray(OpenOption[]::new);
@@ -236,6 +239,7 @@ public class ResponseSubscribers {
             }
         }
 
+        @SuppressWarnings("removal")
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
             Objects.requireNonNull(subscription);
@@ -303,6 +307,7 @@ public class ResponseSubscribers {
             return result;
         }
 
+        @SuppressWarnings("removal")
         private void close() {
             if (acc == null) {
                 Utils.close(out);

@@ -197,6 +197,7 @@ final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
 
     //This whole static block is a part of 4152317 fix
     static {
+        @SuppressWarnings("removal")
         String filterString = AccessController.doPrivileged(
             new PrivilegedAction<String>() {
                 @Override

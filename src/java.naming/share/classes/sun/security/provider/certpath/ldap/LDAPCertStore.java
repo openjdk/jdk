@@ -136,6 +136,7 @@ public final class LDAPCertStore extends CertStoreSpi {
                         + params.getClass().getName() + " passed");
         }
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkConnect(serverName, port);

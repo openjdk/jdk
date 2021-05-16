@@ -281,6 +281,7 @@ public class EventHandler implements InvocationHandler {
     private String action;
     private final String eventPropertyName;
     private final String listenerMethodName;
+    @SuppressWarnings("removal")
     private final AccessControlContext acc = AccessController.getContext();
 
     /**
@@ -420,6 +421,7 @@ public class EventHandler implements InvocationHandler {
      *
      * @see EventHandler
      */
+    @SuppressWarnings("removal")
     public Object invoke(final Object proxy, final Method method, final Object[] arguments) {
         AccessControlContext acc = this.acc;
         if ((acc == null) && (System.getSecurityManager() != null)) {
@@ -687,6 +689,7 @@ public class EventHandler implements InvocationHandler {
      * @see EventHandler
      * @see Proxy#newProxyInstance
      */
+    @SuppressWarnings("removal")
     public static <T> T create(Class<T> listenerInterface,
                                Object target, String action,
                                String eventPropertyName,

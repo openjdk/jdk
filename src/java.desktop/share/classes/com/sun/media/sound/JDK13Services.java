@@ -170,6 +170,7 @@ public final class JDK13Services {
             return null;
         }
         String name = typeClass.getName();
+        @SuppressWarnings("removal")
         String value = AccessController.doPrivileged(
                 (PrivilegedAction<String>) () -> System.getProperty(name));
         if (value == null) {

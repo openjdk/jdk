@@ -117,6 +117,7 @@ public final class SunJCE extends Provider {
                    attrs));
     }
 
+    @SuppressWarnings("removal")
     public SunJCE() {
         /* We are the "SunJCE" provider */
         super("SunJCE", PROVIDER_VER, info);

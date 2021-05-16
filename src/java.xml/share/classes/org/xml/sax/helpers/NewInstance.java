@@ -51,6 +51,7 @@ class NewInstance {
      *
      * Package private so this code is not exposed at the API level.
      */
+    @SuppressWarnings("removal")
     static <T> T newInstance (Class<T> type, ClassLoader loader, String clsName)
         throws ClassNotFoundException, IllegalAccessException,
             InstantiationException

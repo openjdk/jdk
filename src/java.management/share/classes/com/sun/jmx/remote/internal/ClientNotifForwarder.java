@@ -57,6 +57,7 @@ import java.util.concurrent.RejectedExecutionException;
 
 public abstract class ClientNotifForwarder {
 
+    @SuppressWarnings("removal")
     private final AccessControlContext acc;
 
     public ClientNotifForwarder(Map<String, ?> env) {
@@ -121,6 +122,7 @@ public abstract class ClientNotifForwarder {
         private Thread thread;
     }
 
+    @SuppressWarnings("removal")
     public ClientNotifForwarder(ClassLoader defaultClassLoader, Map<String, ?> env) {
         maxNotifications = EnvHelp.getMaxFetchNotifNumber(env);
         timeout = EnvHelp.getFetchTimeout(env);
@@ -428,6 +430,7 @@ public abstract class ClientNotifForwarder {
         }
 
         // Set new context class loader, returns previous one.
+        @SuppressWarnings("removal")
         private final ClassLoader setContextClassLoader(final ClassLoader loader) {
             final AccessControlContext ctxt = ClientNotifForwarder.this.acc;
             // if ctxt is null, log a config message and throw a

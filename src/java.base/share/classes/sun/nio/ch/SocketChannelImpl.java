@@ -720,6 +720,7 @@ class SocketChannelImpl
         } else {
             isa = Net.checkAddress(local, family);
         }
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkListen(isa.getPort());
@@ -813,6 +814,7 @@ class SocketChannelImpl
             return UnixDomainSockets.checkAddress(sa);
         } else {
             InetSocketAddress isa = Net.checkAddress(sa, family);
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkConnect(isa.getAddress().getHostAddress(), isa.getPort());

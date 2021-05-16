@@ -378,6 +378,7 @@ public class JMXConnectorFactory {
         return provider.newJMXConnector(serviceURL, fixedenv);
     }
 
+    @SuppressWarnings("removal")
     private static String resolvePkgs(Map<String, ?> env)
             throws JMXProviderException {
 
@@ -446,6 +447,7 @@ public class JMXConnectorFactory {
         return instance;
     }
 
+    @SuppressWarnings("removal")
     private static ClassLoader wrap(final ClassLoader parent) {
         return parent != null ? AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
             @Override

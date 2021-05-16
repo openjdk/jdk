@@ -77,6 +77,7 @@ final class ShutdownHook implements Runnable {
         }
     }
 
+    @SuppressWarnings("removal")
     private WriteableUserPath makeDumpOnExitPath(PlatformRecording recording) {
         try {
             String name = Utils.makeFilename(recording.getRecording());

@@ -70,6 +70,7 @@ enum CADistrustPolicy {
     // The policies set in the jdk.security.caDistrustPolicies property.
     static final EnumSet<CADistrustPolicy> POLICIES = parseProperty();
     private static EnumSet<CADistrustPolicy> parseProperty() {
+        @SuppressWarnings("removal")
         String property = AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 @Override

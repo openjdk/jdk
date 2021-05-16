@@ -59,6 +59,7 @@ public class Krb5AcceptCredential
         this.screds = creds;
     }
 
+    @SuppressWarnings("removal")
     static Krb5AcceptCredential getInstance(final GSSCaller caller, Krb5NameElement name)
         throws GSSException {
 

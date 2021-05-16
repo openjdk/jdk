@@ -108,6 +108,7 @@ public final class DebugSettings {
      * Load debug properties from file, then override
      * with any command line specified properties
      */
+    @SuppressWarnings("removal")
     private synchronized void loadProperties() {
         // setup initial properties
         java.security.AccessController.doPrivileged(

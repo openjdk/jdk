@@ -40,6 +40,7 @@ import java.util.ServiceLoader;
 public abstract class JVMCIServiceLocator {
 
     private static Void checkPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new JVMCIPermission());
@@ -99,6 +100,7 @@ public abstract class JVMCIServiceLocator {
      */
     public static <S> List<S> getProviders(Class<S> service) {
         Services.checkJVMCIEnabled();
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new JVMCIPermission());

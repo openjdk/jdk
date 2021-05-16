@@ -61,6 +61,7 @@ free native memory resources.
 
  */
 
+@SuppressWarnings("removal")
 public final class StrikeCache {
 
     static final Unsafe unsafe = Unsafe.getUnsafe();

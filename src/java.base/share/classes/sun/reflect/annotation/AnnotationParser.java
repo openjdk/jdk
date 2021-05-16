@@ -293,6 +293,7 @@ public class AnnotationParser {
      * Returns an annotation of the given type backed by the given
      * member {@literal ->} value map.
      */
+    @SuppressWarnings("removal")
     public static Annotation annotationForMap(final Class<? extends Annotation> type,
                                               final Map<String, Object> memberValues)
     {

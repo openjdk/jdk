@@ -36,7 +36,7 @@ import sun.awt.SunToolkit;
 import sun.lwawt.LWToolkit;
 import sun.lwawt.macosx.*;
 
-@SuppressWarnings("serial") // JDK implementation class
+@SuppressWarnings({"removal","serial"}) // JDK implementation class
 final class ScreenMenu extends Menu
         implements ContainerListener, ComponentListener,
                    ScreenMenuPropertyHandler {

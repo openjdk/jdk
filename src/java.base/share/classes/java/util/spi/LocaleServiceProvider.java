@@ -152,6 +152,7 @@ import java.util.Locale;
 public abstract class LocaleServiceProvider {
 
     private static Void checkPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("localeServiceProvider"));

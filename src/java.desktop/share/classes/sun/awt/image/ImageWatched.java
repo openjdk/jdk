@@ -91,8 +91,10 @@ public abstract class ImageWatched {
 
     static class AccWeakReference<T> extends WeakReference<T> {
 
+         @SuppressWarnings("removal")
          private final AccessControlContext acc;
 
+         @SuppressWarnings("removal")
          AccWeakReference(T ref) {
              super(ref);
              acc = AccessController.getContext();
@@ -134,6 +136,7 @@ public abstract class ImageWatched {
             return this;
         }
 
+        @SuppressWarnings("removal")
         private static boolean update(ImageObserver iw, AccessControlContext acc,
                                       Image img, int info,
                                       int x, int y, int w, int h) {

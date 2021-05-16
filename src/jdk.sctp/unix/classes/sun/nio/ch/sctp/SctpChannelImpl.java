@@ -71,6 +71,7 @@ import static sun.nio.ch.sctp.ResultContainer.SHUTDOWN;
 /**
  * An implementation of an SctpChannel
  */
+@SuppressWarnings("removal")
 public class SctpChannelImpl extends SctpChannel
     implements SelChImpl
 {

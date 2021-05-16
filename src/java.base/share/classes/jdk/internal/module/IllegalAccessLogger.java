@@ -321,6 +321,7 @@ public final class IllegalAccessLogger {
      */
     private URL codeSource(Class<?> clazz) {
         PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
+        @SuppressWarnings("removal")
         CodeSource cs = AccessController.doPrivileged(pa).getCodeSource();
         return (cs != null) ? cs.getLocation() : null;
     }
@@ -338,6 +339,7 @@ public final class IllegalAccessLogger {
         return sj.toString();
     }
 
+    @SuppressWarnings("removal")
     private static class StackWalkerHolder {
         static final StackWalker INSTANCE;
         static {

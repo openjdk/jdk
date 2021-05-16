@@ -170,6 +170,7 @@ public final class IIORegistry extends ServiceRegistry {
      * @see javax.imageio.ImageIO#scanForPlugins
      * @see ClassLoader#getResources
      */
+    @SuppressWarnings("removal")
     public void registerApplicationClasspathSpis() {
         // FIX: load only from application classpath
 
@@ -202,6 +203,7 @@ public final class IIORegistry extends ServiceRegistry {
         }
     }
 
+    @SuppressWarnings("removal")
     private void registerInstalledProviders() {
         /*
           We need to load installed providers

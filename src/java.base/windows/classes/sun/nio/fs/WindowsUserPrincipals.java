@@ -133,6 +133,7 @@ class WindowsUserPrincipals {
     }
 
     static UserPrincipal lookup(String name) throws IOException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("lookupUserInformation"));

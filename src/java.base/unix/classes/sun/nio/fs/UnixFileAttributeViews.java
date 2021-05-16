@@ -179,6 +179,7 @@ class UnixFileAttributeViews {
         }
 
         final void checkReadExtended() {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 file.checkRead();
@@ -187,6 +188,7 @@ class UnixFileAttributeViews {
         }
 
         final void checkWriteExtended() {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 file.checkWrite();

@@ -203,6 +203,7 @@ class VMManagementImpl implements VMManagement {
 
     // Compilation Subsystem
     public String   getCompilerName() {
+        @SuppressWarnings("removal")
         String name =  AccessController.doPrivileged(
             new PrivilegedAction<String>() {
                 public String run() {
@@ -254,6 +255,7 @@ class VMManagementImpl implements VMManagement {
         }
 
         // construct PerfInstrumentation object
+        @SuppressWarnings("removal")
         Perf perf =  AccessController.doPrivileged(new Perf.GetPerfAction());
         try {
             ByteBuffer bb = perf.attach(0, "r");

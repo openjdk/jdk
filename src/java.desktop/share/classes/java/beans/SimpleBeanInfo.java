@@ -154,6 +154,7 @@ public class SimpleBeanInfo implements BeanInfo {
      * @return an image object. May be null if the load failed.
      * @see java.beans.SimpleBeanInfo#loadImage(String)
      */
+    @SuppressWarnings("removal")
     private Image loadStandardImage(final String resourceName) {
         return AccessController.doPrivileged(
                 (PrivilegedAction<Image>) () -> loadImage(resourceName));

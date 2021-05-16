@@ -106,6 +106,7 @@ class DefaultInterface {
 
                 boolean ip4 = false, ip6 = false, isNonLinkLocal = false;
                 PrivilegedAction<Enumeration<InetAddress>> pa = ni::getInetAddresses;
+                @SuppressWarnings("removal")
                 Enumeration<InetAddress> addrs = AccessController.doPrivileged(pa);
                 while (addrs.hasMoreElements()) {
                     InetAddress addr = addrs.nextElement();

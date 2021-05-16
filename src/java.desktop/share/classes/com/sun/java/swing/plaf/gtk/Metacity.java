@@ -469,6 +469,7 @@ class Metacity implements SynthConstants {
         private int type;
         private Object arg;
 
+        @SuppressWarnings("removal")
         public Object doPrivileged(int type, Object arg) {
             this.type = type;
             this.arg = arg;
@@ -1539,6 +1540,7 @@ class Metacity implements SynthConstants {
             documentBuilder =
                 DocumentBuilderFactory.newInstance().newDocumentBuilder();
         }
+        @SuppressWarnings("removal")
         InputStream inputStream =
             AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
                 public InputStream run() {

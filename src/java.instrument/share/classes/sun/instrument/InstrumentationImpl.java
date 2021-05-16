@@ -415,6 +415,7 @@ public class InstrumentationImpl implements Instrumentation {
 
     // Enable or disable Java programming language access checks on a
     // reflected object (for example, a method)
+    @SuppressWarnings("removal")
     private static void setAccessible(final AccessibleObject ao, final boolean accessible) {
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 public Object run() {

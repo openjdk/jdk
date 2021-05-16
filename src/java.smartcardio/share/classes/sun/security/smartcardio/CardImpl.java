@@ -66,6 +66,7 @@ final class CardImpl extends Card {
     private static final boolean isWindows;
 
     static {
+        @SuppressWarnings("removal")
         final String osName = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty("os.name"));
         isWindows = osName.startsWith("Windows");
@@ -127,6 +128,7 @@ final class CardImpl extends Card {
     }
 
     private void checkSecurity(String action) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new CardPermission(terminal.name, action));

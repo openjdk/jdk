@@ -1341,6 +1341,7 @@ public class X500Name implements GeneralNameInterface, Principal {
             }
         };
         try {
+            @SuppressWarnings("removal")
             Object[] result = AccessController.doPrivileged(pa);
             @SuppressWarnings("unchecked")
             Constructor<X500Principal> constr =

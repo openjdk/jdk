@@ -118,9 +118,11 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      */
     static boolean isWindows() {
         if (!checkedWindows) {
+            @SuppressWarnings("removal")
             OSInfo.OSType osType = AccessController.doPrivileged(OSInfo.getOSTypeAction());
             if (osType == OSInfo.OSType.WINDOWS) {
                 isWindows = true;
+                @SuppressWarnings("removal")
                 String systemFonts = AccessController.doPrivileged(
                     new GetPropertyAction("swing.useSystemFontSettings"));
                 useSystemFonts = (systemFonts != null &&
@@ -1635,6 +1637,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             else {
                 // Create the default theme. We prefer Ocean, but will
                 // use DefaultMetalTheme if told to.
+                @SuppressWarnings("removal")
                 String theme = AccessController.doPrivileged(
                                new GetPropertyAction("swing.metalTheme"));
                 if ("steel".equals(theme)) {

@@ -154,6 +154,7 @@ public interface ToolProvider {
      *
      * @throws NullPointerException if {@code name} is {@code null}
      */
+    @SuppressWarnings("removal")
     static Optional<ToolProvider> findFirst(String name) {
         Objects.requireNonNull(name);
         ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();

@@ -113,6 +113,7 @@ import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_VBGR;
 import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_VRGB;
 import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
 
+@SuppressWarnings("removal")
 public abstract class SunToolkit extends Toolkit
     implements ComponentFactory, InputMethodSupport, KeyboardFocusManagerPeerProvider {
 

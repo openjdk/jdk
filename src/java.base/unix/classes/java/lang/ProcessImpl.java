@@ -100,6 +100,7 @@ final class ProcessImpl extends Process {
                 EnumSet.copyOf(Arrays.asList(launchMechanisms));
         }
 
+        @SuppressWarnings("removal")
         LaunchMechanism launchMechanism() {
             return AccessController.doPrivileged(
                 (PrivilegedAction<LaunchMechanism>) () -> {
@@ -300,6 +301,7 @@ final class ProcessImpl extends Process {
                                    boolean redirectErrorStream)
         throws IOException;
 
+    @SuppressWarnings("removal")
     private ProcessImpl(final byte[] prog,
                 final byte[] argBlock, final int argc,
                 final byte[] envBlock, final int envc,
@@ -507,6 +509,7 @@ final class ProcessImpl extends Process {
 
     @Override
     public ProcessHandle toHandle() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("manageProcess"));

@@ -41,6 +41,7 @@ class ExtendedGSSContextImpl extends GSSContextImpl
 
     @Override
     public Object inquireSecContext(InquireType type) throws GSSException {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(

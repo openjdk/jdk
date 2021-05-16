@@ -276,6 +276,7 @@ public final class CPrinterJob extends RasterPrinterJob {
         return destinationAttr;
     }
 
+    @SuppressWarnings("removal")
     @Override
     public void print(PrintRequestAttributeSet attributes) throws PrinterException {
         // NOTE: Some of this code is copied from RasterPrinterJob.

@@ -55,6 +55,7 @@ public class KeyStoreDelegator extends KeyStoreSpi {
     private KeyStoreSpi keystore; // the delegate
     private boolean compatModeEnabled = true;
 
+    @SuppressWarnings("removal")
     public KeyStoreDelegator(
         String primaryType,
         Class<? extends KeyStoreSpi> primaryKeyStore,

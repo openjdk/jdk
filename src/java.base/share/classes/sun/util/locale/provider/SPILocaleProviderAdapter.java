@@ -69,6 +69,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         return LocaleProviderAdapter.Type.SPI;
     }
 
+    @SuppressWarnings("removal")
     @Override
     protected <P extends LocaleServiceProvider> P findInstalledProvider(final Class<P> c) {
         try {

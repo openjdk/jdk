@@ -59,6 +59,7 @@ public final class Target {
     private final Hashtable<VMID, SequenceEntry> sequenceTable =
         new Hashtable<>(5);
     /** access control context in which target was created */
+    @SuppressWarnings("removal")
     private final AccessControlContext acc;
     /** context class loader in which target was created */
     private final ClassLoader ccl;
@@ -85,6 +86,7 @@ public final class Target {
      * collection. Permanent objects do not keep a server from
      * exiting.
      */
+    @SuppressWarnings("removal")
     public Target(Remote impl, Dispatcher disp, Remote stub, ObjID id,
                   boolean permanent)
     {
@@ -175,6 +177,7 @@ public final class Target {
         return disp;
     }
 
+    @SuppressWarnings("removal")
     AccessControlContext getAccessControlContext() {
         return acc;
     }
@@ -304,6 +307,7 @@ public final class Target {
     /**
      * Remove endpoint from the reference set.
      */
+    @SuppressWarnings("removal")
     synchronized private void refSetRemove(VMID vmid) {
         // remove notification request
         DGCImpl.getDGCImpl().unregisterTarget(vmid, this);

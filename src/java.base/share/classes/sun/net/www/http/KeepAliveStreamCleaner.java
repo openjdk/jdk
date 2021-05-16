@@ -64,6 +64,7 @@ class KeepAliveStreamCleaner
 
     static {
         final String maxDataKey = "http.KeepAlive.remainingData";
+        @SuppressWarnings("removal")
         int maxData = AccessController.doPrivileged(
             new PrivilegedAction<Integer>() {
                 public Integer run() {
@@ -72,6 +73,7 @@ class KeepAliveStreamCleaner
         MAX_DATA_REMAINING = maxData;
 
         final String maxCapacityKey = "http.KeepAlive.queuedConnections";
+        @SuppressWarnings("removal")
         int maxCapacity = AccessController.doPrivileged(
             new PrivilegedAction<Integer>() {
                 public Integer run() {

@@ -238,6 +238,7 @@ public final class Jlink {
      * Jlink instance constructor, if a security manager is set, the jlink
      * permission is checked.
      */
+    @SuppressWarnings("removal")
     public Jlink() {
         if (System.getSecurityManager() != null) {
             System.getSecurityManager().

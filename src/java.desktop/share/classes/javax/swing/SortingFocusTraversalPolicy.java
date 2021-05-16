@@ -59,6 +59,7 @@ import java.security.AccessController;
  * @see java.util.Comparator
  * @since 1.4
  */
+@SuppressWarnings("removal")
 public class SortingFocusTraversalPolicy
     extends InternalFrameFocusTraversalPolicy
 {

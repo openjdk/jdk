@@ -54,6 +54,7 @@ abstract class AbstractPoller implements Runnable {
     /**
      * Starts the poller thread
      */
+    @SuppressWarnings("removal")
     public void start() {
         final Runnable thisRunnable = this;
         AccessController.doPrivileged(new PrivilegedAction<>() {

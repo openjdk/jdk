@@ -48,6 +48,7 @@ import java.security.AccessController;
 // Suppreess unchecked conversion warning at line 34.
 //@SuppressWarnings("unchecked")
 public class PerfDataBuffer extends AbstractPerfDataBuffer {
+    @SuppressWarnings("removal")
     private static final Perf perf = AccessController.doPrivileged(new Perf.GetPerfAction());
 
     /**

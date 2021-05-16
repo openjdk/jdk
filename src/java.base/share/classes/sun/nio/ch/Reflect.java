@@ -43,6 +43,7 @@ class Reflect {                                 // package-private
         }
     }
 
+    @SuppressWarnings("removal")
     private static void setAccessible(final AccessibleObject ao) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {

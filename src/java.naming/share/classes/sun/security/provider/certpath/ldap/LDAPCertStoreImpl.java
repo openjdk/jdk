@@ -96,6 +96,7 @@ final class LDAPCertStoreImpl {
         "sun.security.certpath.ldap.disable.app.resource.files";
 
     static {
+        @SuppressWarnings("removal")
         String s = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty(PROP_LIFETIME));
         if (s != null) {
@@ -170,6 +171,7 @@ final class LDAPCertStoreImpl {
         env.put(Context.PROVIDER_URL, url);
 
         // If property is set to true, disable application resource file lookup.
+        @SuppressWarnings("removal")
         boolean disableAppResourceFiles = AccessController.doPrivileged(
             (PrivilegedAction<Boolean>) () -> Boolean.getBoolean(PROP_DISABLE_APP_RESOURCE_FILES));
         if (disableAppResourceFiles) {

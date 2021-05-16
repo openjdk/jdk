@@ -97,6 +97,7 @@ public final class TerminalFactory {
 
     static {
         // lookup up the user specified type, default to PC/SC
+        @SuppressWarnings("removal")
         String type = AccessController.doPrivileged(
              (PrivilegedAction<String>) () -> System.getProperty(PROP_NAME, "PC/SC")).trim();
         TerminalFactory factory = null;

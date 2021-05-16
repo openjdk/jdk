@@ -329,6 +329,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      */
     @Deprecated(since="17", forRemoval=true)
     public final void checkAccess() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkAccess(this);

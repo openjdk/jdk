@@ -65,6 +65,7 @@ public class HttpCapture {
 
     private static synchronized void init() {
         initialized = true;
+        @SuppressWarnings("removal")
         String rulesFile = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<>() {
                 public String run() {

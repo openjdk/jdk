@@ -152,6 +152,7 @@ import static jdk.internal.logger.DefaultLoggerFinder.isSystem;
  * @since 1.4
 */
 
+@SuppressWarnings("removal")
 public class LogManager {
     // The global LogManager object
     private static final LogManager manager;

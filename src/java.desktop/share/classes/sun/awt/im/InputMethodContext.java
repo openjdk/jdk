@@ -72,6 +72,7 @@ public class InputMethodContext
     static {
         // check whether we should use below-the-spot input
         // get property from command line
+        @SuppressWarnings("removal")
         String inputStyle = AccessController.doPrivileged
                 (new GetPropertyAction("java.awt.im.style", null));
         // get property from awt.properties file

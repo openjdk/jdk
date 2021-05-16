@@ -181,6 +181,7 @@ public final class AnnotationSupport {
     /* Reflectively invoke the values-method of the given annotation
      * (container), cast it to an array of annotations and return the result.
      */
+    @SuppressWarnings("removal")
     private static <A extends Annotation> A[] getValueArray(Annotation container) {
         try {
             // According to JLS the container must have an array-valued value

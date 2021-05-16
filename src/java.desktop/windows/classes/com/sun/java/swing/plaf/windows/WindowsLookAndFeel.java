@@ -183,6 +183,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         // performance and compatibility issues, so allow this feature
         // to be switched off either at runtime or programmatically
         //
+        @SuppressWarnings("removal")
         String systemFonts = java.security.AccessController.doPrivileged(
                new GetPropertyAction("swing.useSystemFontSettings"));
         useSystemFontSettings = (systemFonts == null ||
@@ -312,6 +313,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
     // XXX - there are probably a lot of redundant values that could be removed.
     // ie. Take a look at RadioButtonBorder, etc...
+    @SuppressWarnings("removal")
     protected void initComponentDefaults(UIDefaults table)
     {
         super.initComponentDefaults( table );

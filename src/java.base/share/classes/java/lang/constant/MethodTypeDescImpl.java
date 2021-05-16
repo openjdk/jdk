@@ -134,6 +134,7 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
 
     @Override
     public MethodType resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException {
+        @SuppressWarnings("removal")
         MethodType mtype = AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public MethodType run() {

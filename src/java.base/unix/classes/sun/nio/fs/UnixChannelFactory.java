@@ -237,6 +237,7 @@ class UnixChannelFactory {
             oflags |= O_DIRECT;
 
         // permission check before we open the file
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (pathForPermissionCheck == null)

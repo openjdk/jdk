@@ -87,6 +87,7 @@ public abstract class Handler {
      *                           nor found in LogManager configuration properties
      * @param specifiedFormatter if not null, this is the formatter to configure
      */
+    @SuppressWarnings("removal")
     Handler(Level defaultLevel, Formatter defaultFormatter,
             Formatter specifiedFormatter) {
 

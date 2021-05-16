@@ -139,7 +139,7 @@ class XFileDialogPeer extends XDialogPeer
         this.target = target;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"removal","deprecation"})
     private void init(FileDialog target) {
         fileDialog = target; //new Dialog(target, target.getTitle(), false);
         this.title = target.getTitle();

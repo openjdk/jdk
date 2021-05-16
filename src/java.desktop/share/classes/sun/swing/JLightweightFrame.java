@@ -68,7 +68,7 @@ import sun.swing.SwingUtilities2.RepaintListener;
  * @author Artem Ananiev
  * @author Anton Tarasov
  */
-@SuppressWarnings("serial") // JDK-implementation class
+@SuppressWarnings({"removal","serial"}) // JDK-implementation class
 public final class JLightweightFrame extends LightweightFrame implements RootPaneContainer {
 
     private final JRootPane rootPane = new JRootPane();

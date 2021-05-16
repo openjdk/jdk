@@ -72,6 +72,7 @@ public class ThreadPool {
         return poolSize;
     }
 
+    @SuppressWarnings("removal")
     static ThreadFactory defaultThreadFactory() {
         if (System.getSecurityManager() == null) {
             return (Runnable r) -> {
@@ -147,6 +148,7 @@ public class ThreadPool {
     }
 
     private static int getDefaultThreadPoolInitialSize() {
+        @SuppressWarnings("removal")
         String propValue = AccessController.doPrivileged(new
             GetPropertyAction(DEFAULT_THREAD_POOL_INITIAL_SIZE));
         if (propValue != null) {
@@ -161,6 +163,7 @@ public class ThreadPool {
     }
 
     private static ThreadFactory getDefaultThreadPoolThreadFactory() {
+        @SuppressWarnings("removal")
         String propValue = AccessController.doPrivileged(new
             GetPropertyAction(DEFAULT_THREAD_POOL_THREAD_FACTORY));
         if (propValue != null) {

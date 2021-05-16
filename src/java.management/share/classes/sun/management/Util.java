@@ -72,6 +72,7 @@ public class Util {
      */
     static void checkAccess(ManagementPermission p)
          throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(p);

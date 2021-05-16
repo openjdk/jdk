@@ -213,6 +213,7 @@ public class ObjectOutputStream
      * value of "sun.io.serialization.extendedDebugInfo" property,
      * as true or false for extended information about exception's place
      */
+    @SuppressWarnings("removal")
     private static final boolean extendedDebugInfo =
         java.security.AccessController.doPrivileged(
             new sun.security.action.GetBooleanAction(
@@ -274,6 +275,7 @@ public class ObjectOutputStream
      * @see java.io.SerializablePermission
      */
     protected ObjectOutputStream() throws IOException, SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
@@ -621,6 +623,7 @@ public class ObjectOutputStream
             return enable;
         }
         if (enable) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(SUBSTITUTION_PERMISSION);
@@ -1052,6 +1055,7 @@ public class ObjectOutputStream
         if (cl == ObjectOutputStream.class) {
             return;
         }
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             return;
@@ -1073,6 +1077,7 @@ public class ObjectOutputStream
      * override security-sensitive non-final methods.  Returns TRUE if subclass
      * is "safe", FALSE otherwise.
      */
+    @SuppressWarnings("removal")
     private static Boolean auditSubclass(Class<?> subcl) {
         return AccessController.doPrivileged(
             new PrivilegedAction<>() {

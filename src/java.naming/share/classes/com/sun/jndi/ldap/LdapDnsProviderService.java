@@ -49,6 +49,7 @@ final class LdapDnsProviderService {
     /**
      * Creates a new instance of LdapDnsProviderService
      */
+    @SuppressWarnings("removal")
     private LdapDnsProviderService() {
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {

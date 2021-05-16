@@ -53,6 +53,7 @@ import java.io.*;
  *
  * @since 1.4
  */
+@SuppressWarnings("removal")
 public class FileManager {
     static {
         java.security.AccessController.doPrivileged(

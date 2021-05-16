@@ -38,6 +38,7 @@ import sun.util.logging.PlatformLogger;
 /**
  * A collection of utility methods.
  */
+@SuppressWarnings("removal")
 public final class FontUtilities {
 
     public static boolean isLinux;

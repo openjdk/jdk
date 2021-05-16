@@ -61,6 +61,7 @@ public class LoginConfigImpl extends Configuration {
      * @param caller defined in GSSUtil as CALLER_XXX final fields
      * @param mech defined in GSSUtil as XXX_MECH_OID final fields
      */
+    @SuppressWarnings("removal")
     public LoginConfigImpl(GSSCaller caller, Oid mech) {
 
         this.caller = caller;

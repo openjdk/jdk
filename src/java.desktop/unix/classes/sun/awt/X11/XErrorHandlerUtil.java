@@ -59,6 +59,7 @@ public final class XErrorHandlerUtil {
     /**
      * Value of sun.awt.noisyerrorhandler system property.
      */
+    @SuppressWarnings("removal")
     private static boolean noisyAwtHandler = AccessController.doPrivileged(
         new GetBooleanAction("sun.awt.noisyerrorhandler"));
 

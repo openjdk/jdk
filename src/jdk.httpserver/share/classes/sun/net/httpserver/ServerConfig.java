@@ -34,6 +34,7 @@ import java.security.PrivilegedAction;
  * but are useful for debugging
  */
 
+@SuppressWarnings("removal")
 class ServerConfig {
 
     private static final int DEFAULT_CLOCK_TICK = 10000 ; // 10 sec.

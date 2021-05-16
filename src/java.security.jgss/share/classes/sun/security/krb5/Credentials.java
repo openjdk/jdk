@@ -529,6 +529,7 @@ public class Credentials {
     }
 
 
+    @SuppressWarnings("removal")
     static void ensureLoaded() {
         java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Void> () {

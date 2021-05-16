@@ -167,6 +167,7 @@ class FactoryFinder {
      * @param useBSClsLoader True if cl=null actually meant bootstrap classLoader. This parameter
      * is needed since DocumentBuilderFactory/SAXParserFactory defined null as context classLoader.
      */
+    @SuppressWarnings("removal")
     static <T> T newInstance(Class<T> type, String className, ClassLoader cl,
                               boolean doFallback, boolean useBSClsLoader)
         throws FactoryConfigurationError
@@ -332,6 +333,7 @@ class FactoryFinder {
      *
      * @return instance of provider class if found or null
      */
+    @SuppressWarnings("removal")
     private static <T> T findServiceProvider(final Class<T> type, final ClassLoader cl) {
         try {
             return AccessController.doPrivileged(new PrivilegedAction<T>() {

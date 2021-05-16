@@ -62,6 +62,7 @@ import javax.swing.KeyStroke;
 import sun.awt.AWTAccessor;
 import sun.lwawt.LWWindowPeer;
 
+@SuppressWarnings("removal")
 class CAccessibility implements PropertyChangeListener {
     private static Set<String> ignoredRoles;
 

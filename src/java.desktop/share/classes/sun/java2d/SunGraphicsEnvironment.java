@@ -59,6 +59,7 @@ import sun.security.action.GetPropertyAction;
  * @see GraphicsDevice
  * @see GraphicsConfiguration
  */
+@SuppressWarnings("removal")
 public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
     implements DisplayChangedListener {
 

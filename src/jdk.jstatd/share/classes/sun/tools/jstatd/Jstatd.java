@@ -72,7 +72,7 @@ public class Jstatd {
         }
     }
 
-    @SuppressWarnings("deprecation") // Use of RMISecurityManager
+    @SuppressWarnings({"removal","deprecation"}) // Use of RMISecurityManager
     public static void main(String[] args) {
         String rminame = null;
         int rmiPort = 0;

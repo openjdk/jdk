@@ -29,6 +29,7 @@ import java.security.PrivilegedAction;
 import java.util.logging.Level;
 
 // Bridge to java.util.logging.
+@SuppressWarnings("removal")
 public class Logger {
 
     /**

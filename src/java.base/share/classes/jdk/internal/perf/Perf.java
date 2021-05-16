@@ -135,6 +135,7 @@ public final class Perf {
      */
     public static Perf getPerf()
     {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             Permission perm = new RuntimePermission("jdk.internal.perf.Perf.getPerf");

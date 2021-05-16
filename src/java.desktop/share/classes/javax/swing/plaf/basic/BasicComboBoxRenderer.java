@@ -68,6 +68,7 @@ implements ListCellRenderer<Object>, Serializable {
         setBorder(getNoFocusBorder());
     }
 
+    @SuppressWarnings("removal")
     private static Border getNoFocusBorder() {
         if (System.getSecurityManager() != null) {
             return SAFE_NO_FOCUS_BORDER;

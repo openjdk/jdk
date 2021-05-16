@@ -32,6 +32,7 @@ import javax.swing.plaf.UIResource;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
+@SuppressWarnings("removal")
 public class AquaNativeResources {
     static {
         java.security.AccessController.doPrivileged(

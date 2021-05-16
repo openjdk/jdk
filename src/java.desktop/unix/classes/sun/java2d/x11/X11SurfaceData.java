@@ -210,6 +210,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
 
             initIDs(XORComposite.class);
 
+            @SuppressWarnings("removal")
             String xtextpipe = java.security.AccessController.doPrivileged
                 (new sun.security.action.GetPropertyAction("sun.java2d.xtextpipe"));
             if (xtextpipe == null || "true".startsWith(xtextpipe)) {
@@ -247,6 +248,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
             if (GraphicsEnvironment.isHeadless()) {
                 accelerationEnabled = Boolean.FALSE;
             } else {
+                @SuppressWarnings("removal")
                 String prop = java.security.AccessController.doPrivileged(
                         new sun.security.action.GetPropertyAction("sun.java2d.pmoffscreen"));
                 if (prop != null) {

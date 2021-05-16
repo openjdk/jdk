@@ -124,6 +124,7 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
      *  ParserDelegator class.
      * @return a stream representing the resource
      */
+    @SuppressWarnings("removal")
     static InputStream getResourceAsStream(final String name) {
         return AccessController.doPrivileged(
                 new PrivilegedAction<InputStream>() {

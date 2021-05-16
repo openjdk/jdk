@@ -348,6 +348,7 @@ public abstract class PrintServiceLookup {
      *
      * @return all lookup services for this environment
      */
+    @SuppressWarnings("removal")
     private static ArrayList<PrintServiceLookup> getAllLookupServices() {
         synchronized (PrintServiceLookup.class) {
             ArrayList<PrintServiceLookup> listOfLookupServices = getListOfLookupServices();
@@ -429,6 +430,7 @@ public abstract class PrintServiceLookup {
          */
         ArrayList<PrintService> registeredServices = null;
         try {
+          @SuppressWarnings("removal")
           SecurityManager security = System.getSecurityManager();
           if (security != null) {
             security.checkPrintJobAccess();
@@ -493,6 +495,7 @@ public abstract class PrintServiceLookup {
          */
         ArrayList<PrintService> registeredServices = null;
         try {
+          @SuppressWarnings("removal")
           SecurityManager security = System.getSecurityManager();
           if (security != null) {
             security.checkPrintJobAccess();

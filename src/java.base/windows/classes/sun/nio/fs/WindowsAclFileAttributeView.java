@@ -66,6 +66,7 @@ class WindowsAclFileAttributeView
                              boolean checkRead,
                              boolean checkWrite)
     {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (checkRead)

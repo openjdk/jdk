@@ -156,6 +156,7 @@ public final class Channels {
         if (!fd.valid())
             throw new IllegalArgumentException("file descriptor is not valid");
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkRead(fd);

@@ -42,6 +42,7 @@ import java.awt.image.*;
  *
  * @author Jim Graham
  */
+@SuppressWarnings("removal")
 public class JPEGImageDecoder extends ImageDecoder {
     private static ColorModel RGBcolormodel;
     private static ColorModel ARGBcolormodel;

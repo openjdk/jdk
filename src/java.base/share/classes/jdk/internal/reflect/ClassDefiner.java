@@ -56,6 +56,7 @@ class ClassDefiner {
     static Class<?> defineClass(String name, byte[] bytes, int off, int len,
                                 final ClassLoader parentClassLoader)
     {
+        @SuppressWarnings("removal")
         ClassLoader newLoader = AccessController.doPrivileged(
             new PrivilegedAction<ClassLoader>() {
                 public ClassLoader run() {

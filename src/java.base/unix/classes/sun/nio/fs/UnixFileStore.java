@@ -270,6 +270,7 @@ abstract class UnixFileStore
     /**
      * Returns status to indicate if file system supports a given feature
      */
+    @SuppressWarnings("removal")
     FeatureStatus checkIfFeaturePresent(String feature) {
         if (props == null) {
             synchronized (loadLock) {

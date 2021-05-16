@@ -151,6 +151,7 @@ public class MethodHandleProxies {
     // entry points, must be covered by hand-written or automatically
     // generated adapter classes.
     //
+    @SuppressWarnings("removal")
     @CallerSensitive
     public static <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
         if (!intfc.isInterface() || !Modifier.isPublic(intfc.getModifiers()))

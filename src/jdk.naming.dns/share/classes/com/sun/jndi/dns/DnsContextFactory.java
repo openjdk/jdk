@@ -224,6 +224,7 @@ public class DnsContextFactory implements InitialContextFactory {
      * @return the filtered list, all non-permitted input removed
      */
     private static List<String> filterNameServers(List<String> input, boolean oneIsEnough) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security == null || input == null || input.isEmpty()) {
             return input;

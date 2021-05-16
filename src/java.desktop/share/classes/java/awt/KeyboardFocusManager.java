@@ -644,6 +644,7 @@ public abstract class KeyboardFocusManager
         peer.clearGlobalFocusOwner(activeWindow);
     }
 
+    @SuppressWarnings("removal")
     void clearGlobalFocusOwnerPriv() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
@@ -1283,6 +1284,7 @@ public abstract class KeyboardFocusManager
                            newFocusCycleRoot);
     }
 
+    @SuppressWarnings("removal")
     void setGlobalCurrentFocusCycleRootPriv(final Container newFocusCycleRoot) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
@@ -3089,6 +3091,7 @@ public abstract class KeyboardFocusManager
     private static void checkReplaceKFMPermission()
         throws SecurityException
     {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             if (replaceKeyboardFocusManagerPermission == null) {

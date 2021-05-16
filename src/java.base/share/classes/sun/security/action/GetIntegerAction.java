@@ -125,6 +125,7 @@ public class GetIntegerAction
      *
      * @param theProp the name of the system property.
      */
+    @SuppressWarnings("removal")
     public static Integer privilegedGetProperty(String theProp) {
         if (System.getSecurityManager() == null) {
             return Integer.getInteger(theProp);
@@ -147,6 +148,7 @@ public class GetIntegerAction
      * @param theProp the name of the system property.
      * @param defaultVal the default value.
      */
+    @SuppressWarnings("removal")
     public static Integer privilegedGetProperty(String theProp,
             int defaultVal) {
         Integer value;

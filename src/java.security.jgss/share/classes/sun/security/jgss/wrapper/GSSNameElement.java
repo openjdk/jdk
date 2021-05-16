@@ -153,6 +153,7 @@ public class GSSNameElement implements GSSNameSpi {
         pName = cStub.importName(name, nameType);
         setPrintables();
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null && !Realm.AUTODEDUCEREALM) {
             String krbName = getKrbName();
