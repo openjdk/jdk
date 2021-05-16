@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,14 @@
  * questions.
  *
  */
-
-#ifndef SHARE_CDS_LAMBDAFORMINVOKERS_HPP
-#define SHARE_CDS_LAMBDAFORMINVOKERS_HPP
-#include "memory/allStatic.hpp"
-#include "runtime/handles.hpp"
-#include "utilities/growableArray.hpp"
-
-class ClassFileStream;
-template <class T>
-class Array;
-
-class LambdaFormInvokers : public AllStatic {
- private:
-  static GrowableArrayCHeap<char*, mtClassShared>* _lambdaform_lines;
-  // For storing LF form lines (LF_RESOLVE only) in read only table.
-  static Array<Array<char>*>* _static_archive_invokers;
-  static void reload_class(char* name, ClassFileStream& st, TRAPS);
- public:
-  static void append(char* line);
-  static void append_filtered(char* line);
-  static void dump_static_archive_invokers();
-  static void read_static_archive_invokers();
-  static void regenerate_holder_classes(TRAPS);
-  static void serialize(SerializeClosure* soc);
-};
-#endif // SHARE_CDS_LAMBDAFORMINVOKERS_HPP
+import java.util.HashMap;
+public class MiniStoreOom {
+    private static HashMap<Integer, Byte[]>  store = new HashMap<Integer, Byte[]>();
+    public static void main(String... args) throws Exception {
+        int size = Integer.valueOf(args[0]);
+        int i = 0;
+        while (i++ < Integer.MAX_VALUE) {
+            store.put(i, new Byte[size]);
+        }
+    }
+}
