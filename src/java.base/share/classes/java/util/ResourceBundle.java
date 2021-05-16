@@ -3160,19 +3160,19 @@ public abstract class ResourceBundle {
              * that is visible to the given loader and accessible to the given caller.
              */
             String bundleName = toBundleName(baseName, locale);
-            var bundle = newBundle0(baseName, bundleName, format, loader, reload);
+            var bundle = newBundle0(bundleName, format, loader, reload);
             if (bundle == null) {
                 // Try loading legacy ISO language's other bundles
                 var otherBundleName = Bundles.toOtherBundleName(baseName, bundleName, locale);
                 if (!bundleName.equals(otherBundleName)) {
-                    bundle = newBundle0(baseName, otherBundleName, format, loader, reload);
+                    bundle = newBundle0(otherBundleName, format, loader, reload);
                 }
             }
 
             return bundle;
         }
 
-        private ResourceBundle newBundle0(String baseName, String bundleName, String format,
+        private ResourceBundle newBundle0(String bundleName, String format,
                     ClassLoader loader, boolean reload)
                     throws IllegalAccessException, InstantiationException, IOException {
             ResourceBundle bundle = null;

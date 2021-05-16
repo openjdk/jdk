@@ -102,7 +102,7 @@ public final class BaseLocale {
     /**
      * Boolean for the old ISO language code compatibility.
      */
-    public static final boolean OLD_ISO_CODES = GetPropertyAction.privilegedGetProperties()
+    private static final boolean OLD_ISO_CODES = GetPropertyAction.privilegedGetProperties()
             .getProperty("java.locale.useOldISOCodes", "false")
             .equalsIgnoreCase("true");
 
@@ -161,16 +161,20 @@ public final class BaseLocale {
 
         // JDK uses deprecated ISO639.1 language codes for he, yi and id
         if (!language.isEmpty()) {
-            language = switch (language) {
-                case "he", "iw" -> OLD_ISO_CODES ? "iw" : "he";
-                case "id", "in" -> OLD_ISO_CODES ? "in" : "id";
-                case "yi", "ji" -> OLD_ISO_CODES ? "ji" : "yi";
-                default -> language;
-            };
+            language = convertOldISOCodes(language);
         }
 
         Key key = new Key(language, script, region, variant, false);
         return Cache.CACHE.get(key);
+    }
+
+    public static String convertOldISOCodes(String language) {
+        return switch (language) {
+            case "he", "iw" -> OLD_ISO_CODES ? "iw" : "he";
+            case "id", "in" -> OLD_ISO_CODES ? "in" : "id";
+            case "yi", "ji" -> OLD_ISO_CODES ? "ji" : "yi";
+            default -> language;
+        };
     }
 
     public String getLanguage() {

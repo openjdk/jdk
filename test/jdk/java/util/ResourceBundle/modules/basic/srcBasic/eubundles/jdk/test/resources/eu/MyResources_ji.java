@@ -29,9 +29,8 @@ public class MyResources_ji extends ListResourceBundle {
     @Override
     public Object[][] getContents() {
         return new Object[][] {
-            // This is to test getBundle(Locale("yi")) correctly
-            // loads this bundle, so the message here is "yi",
-            // despite the bundle name has the old "_ji" suffix.
+            // returned value is compared with Locale.toLanguageTag()
+            // which always returns NEW code
             { "key", "yi: message" }
         };
     }

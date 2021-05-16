@@ -367,21 +367,21 @@ public abstract class Bundles {
      */
     public static String toOtherBundleName(String baseName, String bundleName, Locale locale) {
         var simpleName= baseName.substring(baseName.lastIndexOf('.') + 1);
-        var ext = bundleName.substring(bundleName.lastIndexOf(simpleName) + simpleName.length());
-        var otherExt = switch(locale.getLanguage()) {
-            case "he" -> ext.replaceFirst("^_he(_.*)?$", "_iw$1");
-            case "id" -> ext.replaceFirst("^_id(_.*)?$", "_in$1");
-            case "yi" -> ext.replaceFirst("^_yi(_.*)?$", "_ji$1");
-            case "iw" -> ext.replaceFirst("^_iw(_.*)?$", "_he$1");
-            case "in" -> ext.replaceFirst("^_in(_.*)?$", "_id$1");
-            case "ji" -> ext.replaceFirst("^_ji(_.*)?$", "_yi$1");
-            default -> ext;
+        var suffix = bundleName.substring(bundleName.lastIndexOf(simpleName) + simpleName.length());
+        var otherSuffix = switch(locale.getLanguage()) {
+            case "he" -> suffix.replaceFirst("^_he(_.*)?$", "_iw$1");
+            case "id" -> suffix.replaceFirst("^_id(_.*)?$", "_in$1");
+            case "yi" -> suffix.replaceFirst("^_yi(_.*)?$", "_ji$1");
+            case "iw" -> suffix.replaceFirst("^_iw(_.*)?$", "_he$1");
+            case "in" -> suffix.replaceFirst("^_in(_.*)?$", "_id$1");
+            case "ji" -> suffix.replaceFirst("^_ji(_.*)?$", "_yi$1");
+            default -> suffix;
         };
 
-        if (ext.equals(otherExt)) {
+        if (suffix.equals(otherSuffix)) {
             return bundleName;
         } else {
-            return bundleName.substring(0, bundleName.lastIndexOf(ext)) + otherExt;
+            return bundleName.substring(0, bundleName.lastIndexOf(suffix)) + otherSuffix;
         }
     }
 

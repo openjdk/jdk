@@ -64,7 +64,6 @@ import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
 import sun.util.locale.provider.LocaleServiceProviderPool;
 import sun.util.locale.provider.TimeZoneNameUtility;
-import static sun.util.locale.BaseLocale.OLD_ISO_CODES;
 
 /**
  * A {@code Locale} object represents a specific geographical, political,
@@ -2390,17 +2389,11 @@ public final class Locale implements Cloneable, Serializable {
 
     private static volatile String[] isoCountries;
 
-    // we accept both the old and the new ISO codes for the languages whose ISO
-    // codes have changed, but we always store the NEW code, unless the property
-    // java.locale.useOldISOCodes is set to "true"
     private static String convertOldISOCodes(String language) {
-        var lang = LocaleUtils.toLowerString(language).intern();
-        return switch (lang) {
-            case "he", "iw" -> OLD_ISO_CODES ? "iw" : "he";
-            case "id", "in" -> OLD_ISO_CODES ? "in" : "id";
-            case "yi", "ji" -> OLD_ISO_CODES ? "ji" : "yi";
-            default -> lang;
-        };
+        // we accept both the old and the new ISO codes for the languages whose ISO
+        // codes have changed, but we always store the NEW code, unless the property
+        // java.locale.useOldISOCodes is set to "true"
+        return BaseLocale.convertOldISOCodes(LocaleUtils.toLowerString(language).intern());
     }
 
     private static LocaleExtensions getCompatibilityExtensions(String language,
