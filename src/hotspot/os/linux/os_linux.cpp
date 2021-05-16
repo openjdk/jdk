@@ -684,9 +684,6 @@ static void *thread_native_entry(Thread *thread) {
 
   osthread->set_thread_id(os::current_thread_id());
 
-  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
-    os::current_thread_id(), (uintx) pthread_self());
-
   if (UseNUMA) {
     int lgrp_id = os::numa_get_group_id();
     if (lgrp_id != -1) {
@@ -712,6 +709,9 @@ static void *thread_native_entry(Thread *thread) {
       sync->wait_without_safepoint_check();
     }
   }
+
+  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
+    os::current_thread_id(), (uintx) pthread_self());
 
   assert(osthread->pthread_id() != 0, "pthread_id was not set as expected");
 
