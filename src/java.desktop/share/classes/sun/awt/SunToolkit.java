@@ -1557,6 +1557,9 @@ public abstract class SunToolkit extends Toolkit
      */
     @SuppressWarnings("serial")
     private final boolean waitForIdle(final long end) {
+        if (timeout(end) <= 0) {
+            return false;
+        }
         flushPendingEvents();
         final boolean queueWasEmpty;
         final AtomicBoolean queueEmpty = new AtomicBoolean();
