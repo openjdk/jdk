@@ -111,6 +111,22 @@ public class TestSegmentAllocators {
         }
     }
 
+    @Test(expectedExceptions = OutOfMemoryError.class)
+    public void testTooBigForBoundedArena() {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            SegmentAllocator allocator = SegmentAllocator.arenaAllocator(10, scope);
+            allocator.allocate(12);
+        }
+    }
+
+    @Test
+    public void testBiggerThanBlockForBoundedArena() {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            SegmentAllocator allocator = SegmentAllocator.arenaAllocator(4 * 1024 * 2, scope);
+            allocator.allocate(4 * 1024 + 1); // should be ok
+        }
+    }
+
     @Test(dataProvider = "arrayScopes")
     public <Z> void testArray(AllocationFactory allocationFactory, ValueLayout layout, AllocationFunction<Object> allocationFunction, ToArrayHelper<Z> arrayHelper) {
         Z arr = arrayHelper.array();

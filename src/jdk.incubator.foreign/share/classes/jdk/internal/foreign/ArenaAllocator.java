@@ -4,54 +4,17 @@ import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.SegmentAllocator;
 import jdk.incubator.foreign.ResourceScope;
 
-import java.util.OptionalLong;
+public abstract class ArenaAllocator implements SegmentAllocator {
 
-public class ArenaAllocator implements SegmentAllocator {
+    protected MemorySegment segment;
 
-    private final SegmentAllocator allocator;
-    private MemorySegment segment;
+    protected long sp = 0L;
 
-    private static final long BLOCK_SIZE = 4 * 1024;
-    private static final long MAX_ALLOC_SIZE = BLOCK_SIZE / 2;
-
-    private long sp = 0L;
-
-    public ArenaAllocator(ResourceScope scope) {
-        this(BLOCK_SIZE, scope);
+    ArenaAllocator(MemorySegment segment) {
+        this.segment = segment;
     }
 
-    ArenaAllocator(long initialSize, ResourceScope scope) {
-        this.allocator = (size, align) -> MemorySegment.allocateNative(size, align, scope);
-        this.segment = allocator.allocate(initialSize, 1);
-    }
-
-    MemorySegment newSegment(long size, long align) {
-        return allocator.allocate(size, align);
-    }
-
-    @Override
-    public MemorySegment allocate(long bytesSize, long bytesAlignment) {
-        checkConfinementIfNeeded();
-        if (Utils.alignUp(bytesSize, bytesAlignment) > MAX_ALLOC_SIZE) {
-            return newSegment(bytesSize, bytesAlignment);
-        }
-        // try to slice from current segment first...
-        MemorySegment slice = trySlice(bytesSize, bytesAlignment);
-        if (slice == null) {
-            // ... if that fails, allocate a new segment and slice from there
-            sp = 0L;
-            segment = newSegment(BLOCK_SIZE, 1L);
-            slice = trySlice(bytesSize, bytesAlignment);
-            if (slice == null) {
-                // this should not be possible - allocations that do not fit in BLOCK_SIZE should get their own
-                // standalone segment (see above).
-                throw new AssertionError("Cannot get here!");
-            }
-        }
-        return slice;
-    }
-
-    private MemorySegment trySlice(long bytesSize, long bytesAlignment) {
+    MemorySegment trySlice(long bytesSize, long bytesAlignment) {
         long min = segment.address().toRawLongValue();
         long start = Utils.alignUp(min + sp, bytesAlignment) - min;
         if (segment.byteSize() - start < bytesSize) {
@@ -63,22 +26,67 @@ public class ArenaAllocator implements SegmentAllocator {
         }
     }
 
-    private void checkConfinementIfNeeded() {
-        Thread segmentThread = segment.scope().ownerThread();
-        if (segmentThread != null && segmentThread != Thread.currentThread()) {
+    void checkConfinementIfNeeded() {
+        Thread ownerThread = scope().ownerThread();
+        if (ownerThread != null && ownerThread != Thread.currentThread()) {
             throw new IllegalStateException("Attempt to allocate outside confinement thread");
+        }
+    }
+
+    ResourceScope scope() {
+        return segment.scope();
+    }
+
+    public static class UnboundedArenaAllocator extends ArenaAllocator {
+
+        private static final long DEFAULT_BLOCK_SIZE = 4 * 1024;
+
+        public UnboundedArenaAllocator(ResourceScope scope) {
+            super(MemorySegment.allocateNative(DEFAULT_BLOCK_SIZE, 1, scope));
+        }
+
+        private MemorySegment newSegment(long size, long align) {
+            return MemorySegment.allocateNative(size, align, segment.scope());
+        }
+
+        @Override
+        public MemorySegment allocate(long bytesSize, long bytesAlignment) {
+            checkConfinementIfNeeded();
+            // try to slice from current segment first...
+            MemorySegment slice = trySlice(bytesSize, bytesAlignment);
+            if (slice != null) {
+                return slice;
+            } else {
+                long maxPossibleAllocationSize = bytesSize + bytesAlignment - 1;
+                if (maxPossibleAllocationSize > DEFAULT_BLOCK_SIZE) {
+                    // too big
+                    return newSegment(bytesSize, bytesAlignment);
+                } else {
+                    // allocate a new segment and slice from there
+                    sp = 0L;
+                    segment = newSegment(DEFAULT_BLOCK_SIZE, 1L);
+                    return trySlice(bytesSize, bytesAlignment);
+                }
+            }
         }
     }
 
     public static class BoundedArenaAllocator extends ArenaAllocator {
 
         public BoundedArenaAllocator(ResourceScope scope, long size) {
-            super(size, scope);
+            super(MemorySegment.allocateNative(size, 1, scope));
         }
 
         @Override
-        MemorySegment newSegment(long size, long align) {
-            throw new OutOfMemoryError("Not enough space left to allocate");
+        public MemorySegment allocate(long bytesSize, long bytesAlignment) {
+            checkConfinementIfNeeded();
+            // try to slice from current segment first...
+            MemorySegment slice = trySlice(bytesSize, bytesAlignment);
+            if (slice != null) {
+                return slice;
+            } else {
+                throw new OutOfMemoryError("Not enough space left to allocate");
+            }
         }
     }
 
@@ -100,7 +108,7 @@ public class ArenaAllocator implements SegmentAllocator {
         final ThreadLocal<ArenaAllocator> allocators = new ThreadLocal<>() {
             @Override
             protected ArenaAllocator initialValue() {
-                return new ArenaAllocator(scope);
+                return new UnboundedArenaAllocator(scope);
             }
         };
 

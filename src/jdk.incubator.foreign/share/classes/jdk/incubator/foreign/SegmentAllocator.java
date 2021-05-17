@@ -426,7 +426,7 @@ public interface SegmentAllocator {
         Objects.requireNonNull(scope);
         return scope.ownerThread() == null ?
                 new ArenaAllocator.UnboundedSharedArenaAllocator(scope) :
-                new ArenaAllocator(scope);
+                new ArenaAllocator.UnboundedArenaAllocator(scope);
     }
 
     /**
