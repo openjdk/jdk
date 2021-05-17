@@ -106,7 +106,7 @@ class ClassListParser : public StackObj {
   bool parse_int_option(const char* option_name, int* value);
   bool parse_uint_option(const char* option_name, int* value);
   InstanceKlass* load_class_from_source(Symbol* class_name, TRAPS);
-  ID2KlassTable *table() {
+  ID2KlassTable* table() {
     return &_id2klass_table;
   }
   InstanceKlass* lookup_class_by_id(int id);
