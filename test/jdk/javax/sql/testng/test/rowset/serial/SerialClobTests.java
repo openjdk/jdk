@@ -557,4 +557,16 @@ public class SerialClobTests extends BaseTest {
         SerialClob sc = new SerialClob(chars);
         int written = sc.setString(1, "hello", 1, length);
     }
+
+    /*
+     * Validate a SerialException is thrown if length + offset >
+     * Integer.MAX_VALUE for setString
+     */
+    @Test(expectedExceptions = SerialException.class)
+    public void test43() throws Exception {
+        int offset = 1;
+        int length = Integer.MAX_VALUE;
+        SerialClob sc = new SerialClob(chars);
+        int written = sc.setString(1, "hello", offset, length);
+    }
 }

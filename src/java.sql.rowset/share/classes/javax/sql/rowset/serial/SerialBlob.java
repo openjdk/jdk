@@ -369,7 +369,7 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
             throw new SerialException("Invalid position in BLOB object set");
         }
 
-        if ((length + offset) > bytes.length) {
+        if (length > bytes.length - offset) {
             throw new SerialException("Invalid OffSet. Cannot have combined offset " +
                     "and length that is greater than the length of bytes");
         }

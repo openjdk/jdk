@@ -458,4 +458,16 @@ public class SerialBlobTests extends BaseTest {
         SerialBlob sb = new SerialBlob(bytes);
         int written = sb.setBytes(1, new byte[]{1}, 1, length);
     }
+
+    /*
+     * Validate a SerialException is thrown if length + offset >
+     * Integer.MAX_VALUE for setBytes
+     */
+    @Test(expectedExceptions = SerialException.class)
+    public void test35() throws Exception {
+        int offset = 1;
+        int length = Integer.MAX_VALUE;
+        SerialBlob sb = new SerialBlob(bytes);
+        int written = sb.setBytes(1, new byte[]{1, 2, 3}, offset, length);
+    }
 }

@@ -418,7 +418,7 @@ public class SerialClob implements Clob, Serializable, Cloneable {
             throw new SerialException("Invalid position in Clob object set");
         }
 
-        if ((length + offset) > str.length()) {
+        if (length > str.length() - offset) {
             // need check to ensure length + offset !> str.length
             throw new SerialException("Invalid OffSet. Cannot have combined offset " +
                 " and length that is greater than the length of str");
