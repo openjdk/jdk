@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.InvalidAlgorithmParameterException;
 import javax.crypto.*;
@@ -203,13 +202,4 @@ abstract class FeedbackCipher {
          throws IllegalBlockSizeException, ShortBufferException {
          return decrypt(cipher, cipherOffset, cipherLen, plain, plainOffset);
      }
-
-    /**
-     * @return the number of bytes that are buffered internally inside
-     * this FeedbackCipher instance.
-     * @since 1.8
-     */
-    int getBufferedLength() {
-        return 0;
-    }
 }

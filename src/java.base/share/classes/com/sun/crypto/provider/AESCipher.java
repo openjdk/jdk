@@ -138,7 +138,7 @@ abstract class AESCipher extends CipherSpi {
             super(32, "CFB", "NOPADDING");
         }
     }
-    public static final class AES128_GCM_NoPadding extends GaloisCounterMode {
+/*    public static final class AES128_GCM_NoPadding extends GaloisCounterMode {
         public AES128_GCM_NoPadding() {
             super(16, new AESCrypt());
         }
@@ -153,7 +153,7 @@ abstract class AESCipher extends CipherSpi {
             super(32, new AESCrypt());
         }
     }
-
+*/
     // utility method used by AESCipher and AESWrapCipher
     static final void checkKeySize(Key key, int fixedKeySize)
         throws InvalidKeyException {
@@ -185,10 +185,6 @@ abstract class AESCipher extends CipherSpi {
      */
     private final int fixedKeySize; // in bytes, -1 if no restriction
 
-    /*
-     * needed to enforce ISE thrown when updateAAD is called after update for GCM mode.
-     */
-    private boolean updateCalled;
 
     /**
      * Creates an instance of AES cipher with default ECB mode and
@@ -322,7 +318,6 @@ abstract class AESCipher extends CipherSpi {
     protected void engineInit(int opmode, Key key, SecureRandom random)
         throws InvalidKeyException {
         checkKeySize(key, fixedKeySize);
-        updateCalled = false;
         core.init(opmode, key, random);
     }
 
@@ -355,7 +350,6 @@ abstract class AESCipher extends CipherSpi {
                               SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
         checkKeySize(key, fixedKeySize);
-        updateCalled = false;
         core.init(opmode, key, params, random);
     }
 
@@ -364,7 +358,6 @@ abstract class AESCipher extends CipherSpi {
                               SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
         checkKeySize(key, fixedKeySize);
-        updateCalled = false;
         core.init(opmode, key, params, random);
     }
 
@@ -389,7 +382,6 @@ abstract class AESCipher extends CipherSpi {
      */
     protected byte[] engineUpdate(byte[] input, int inputOffset,
                                   int inputLen) {
-        updateCalled = true;
         return core.update(input, inputOffset, inputLen);
     }
 
@@ -419,7 +411,6 @@ abstract class AESCipher extends CipherSpi {
     protected int engineUpdate(byte[] input, int inputOffset, int inputLen,
                                byte[] output, int outputOffset)
         throws ShortBufferException {
-        updateCalled = true;
         return core.update(input, inputOffset, inputLen, output,
                            outputOffset);
     }
@@ -458,7 +449,6 @@ abstract class AESCipher extends CipherSpi {
     protected byte[] engineDoFinal(byte[] input, int inputOffset, int inputLen)
         throws IllegalBlockSizeException, BadPaddingException {
         byte[] out = core.doFinal(input, inputOffset, inputLen);
-        updateCalled = false;
         return out;
     }
 
@@ -504,7 +494,6 @@ abstract class AESCipher extends CipherSpi {
                BadPaddingException {
         int outLen = core.doFinal(input, inputOffset, inputLen, output,
                                   outputOffset);
-        updateCalled = false;
         return outLen;
     }
 

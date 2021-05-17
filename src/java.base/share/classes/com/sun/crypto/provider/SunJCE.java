@@ -234,19 +234,18 @@ public final class SunJCE extends Provider {
         attrs.put("SupportedModes", "GCM");
         attrs.put("SupportedKeyFormats", "RAW");
 
-//        ps("Cipher", "GCM",
-//            "com.sun.crypto.provider.GaloisCounterMode$AESGCM", null, attrs);
         ps("Cipher", "AES/GCM/NoPadding",
-            "com.sun.crypto.provider.GaloisCounterMode$AESGCM", null, attrs);
+                "com.sun.crypto.provider.GaloisCounterMode$AESGCM", null,
+                attrs);
         psA("Cipher", "AES_128/GCM/NoPadding",
-            "com.sun.crypto.provider.GaloisCounterMode$AES128",
-            attrs);
+                "com.sun.crypto.provider.GaloisCounterMode$AES128",
+                attrs);
         psA("Cipher", "AES_192/GCM/NoPadding",
-            "com.sun.crypto.provider.GaloisCounterMode$AES192",
-            attrs);
+                "com.sun.crypto.provider.GaloisCounterMode$AES192",
+                attrs);
         psA("Cipher", "AES_256/GCM/NoPadding",
-            "com.sun.crypto.provider.GaloisCounterMode$AES256",
-            attrs);
+                "com.sun.crypto.provider.GaloisCounterMode$AES256",
+                attrs);
 
         attrs.clear();
         attrs.put("SupportedModes", "CBC");

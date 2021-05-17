@@ -1725,6 +1725,10 @@ abstract class GaloisCounterMode extends CipherSpi {
         }
     }
 
+    /**
+     * This class is for encryption operations when both GCTR and GHASH
+     * can operation in parallel.
+     */
     public static final class GCTRGHASH implements GCM {
         GCTR gctr;
         GHASH ghash;
