@@ -815,7 +815,7 @@ public class Base64 {
                      * Calculate how many characters were processed by how many
                      * bytes of data were returned.
                      */
-                    int chars_decoded = (dl * 4) / 3;
+                    int chars_decoded = ((dl + 2) / 3) * 4;
 
                     sp += chars_decoded;
                     dp += dl;
