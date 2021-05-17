@@ -70,8 +70,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     Other,
     GCWorkerTotal,
     GCWorkerEnd,
-    StringDedupQueueFixup,
-    StringDedupTableFixup,
     RedirtyCards,
     FreeCollectionSet,
     YoungFreeCSet,
@@ -145,8 +143,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_collection_initial_evac_time_ms;
   double _cur_optional_evac_time_ms;
   double _cur_collection_code_root_fixup_time_ms;
-
-  double _cur_string_deduplication_time_ms;
 
   double _cur_merge_heap_roots_time_ms;
   double _cur_optional_merge_heap_roots_time_ms;
@@ -291,10 +287,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_or_add_optional_prepare_merge_heap_roots_time(double ms) {
     _cur_optional_prepare_merge_heap_roots_time_ms += ms;
-  }
-
-  void record_string_deduplication_time(double ms) {
-    _cur_string_deduplication_time_ms = ms;
   }
 
   void record_ref_proc_time(double ms) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,24 +47,6 @@ inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Com
 
   Klass** adr = resolved_klasses()->adr_at(kslot.resolved_klass_index());
   return Atomic::load_acquire(adr);
-}
-
-inline bool ConstantPool::is_pseudo_string_at(int which) {
-  assert(tag_at(which).is_string(), "Corrupted constant pool");
-  return slot_at(which).is_pseudo_string();
-}
-
-inline oop ConstantPool::pseudo_string_at(int which, int obj_index) {
-  assert(is_pseudo_string_at(which), "must be a pseudo-string");
-  oop s = resolved_references()->obj_at(obj_index);
-  return s;
-}
-
-inline oop ConstantPool::pseudo_string_at(int which) {
-  assert(is_pseudo_string_at(which), "must be a pseudo-string");
-  int obj_index = cp_to_object_index(which);
-  oop s = resolved_references()->obj_at(obj_index);
-  return s;
 }
 
 #endif // SHARE_OOPS_CONSTANTPOOL_INLINE_HPP

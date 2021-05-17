@@ -1186,11 +1186,6 @@ void LIRGenerator::do_Local(Local* x) {
 }
 
 
-void LIRGenerator::do_IfInstanceOf(IfInstanceOf* x) {
-  Unimplemented();
-}
-
-
 void LIRGenerator::do_Return(Return* x) {
   if (compilation()->env()->dtrace_method_probes()) {
     BasicTypeList signature;
