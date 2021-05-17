@@ -79,11 +79,11 @@ class ResolvedMethodTableConfig : public AllStatic {
   }
 
   // We use default allocation/deallocation but counted
-  static void* allocate_node(size_t size, Value const& value) {
+  static void* allocate_node(void* context, size_t size, Value const& value) {
     ResolvedMethodTable::item_added();
     return AllocateHeap(size, mtClass);
   }
-  static void free_node(void* memory, Value const& value) {
+  static void free_node(void* context, void* memory, Value const& value) {
     value.release(ResolvedMethodTable::_oop_storage);
     FreeHeap(memory);
     ResolvedMethodTable::item_removed();
