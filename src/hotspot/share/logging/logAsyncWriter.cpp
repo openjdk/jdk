@@ -60,9 +60,10 @@ void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
       uint32_t* counter = _stats.add_if_absent(h->output(), 0, &p_created);
       *counter = *counter + 1;
     }
-
-    _buffer.pop_front();
+    // drop the enqueueing message.
+    return;
   }
+
   assert(_buffer.size() < _buffer_max_size, "_buffer is over-sized.");
   _buffer.push_back(msg);
   _sem.signal();
@@ -99,35 +100,42 @@ AsyncLogWriter::AsyncLogWriter()
                     _buffer_max_size, AsyncLogBufferSize);
 }
 
-bool AsyncLogMapIterator::do_entry(LogFileOutput* output, uint32_t* counter) {
-  using none = LogTagSetMapping<LogTag::__NO_TAG>;
-  LogDecorations decorations(LogLevel::Warning, none::tagset(), output->decorators());
-  const int sz = 128;
-  char out_of_band[sz];
+class AsyncLogMapIterator {
+  AsyncLogBuffer& _logs;
 
-  if (*counter > 0) {
-    jio_snprintf(out_of_band, sz, UINT32_FORMAT_W(6) " messages dropped due to async logging", *counter);
-    output->write_blocking(decorations, out_of_band);
-    *counter = 0;
+ public:
+  AsyncLogMapIterator(AsyncLogBuffer& logs) :_logs(logs) {}
+  bool do_entry(LogFileOutput* output, uint32_t* counter) {
+    using none = LogTagSetMapping<LogTag::__NO_TAG>;
+
+    if (*counter > 0) {
+      LogDecorations decorations(LogLevel::Warning, none::tagset(), output->decorators());
+      stringStream ss;
+      ss.print(UINT32_FORMAT_W(6) " messages dropped due to async logging", *counter);
+      AsyncLogMessage msg(*output, decorations, ss.as_string(true /*c_heap*/));
+      _logs.push_back(msg);
+      *counter = 0;
+    }
+
+    return true;
   }
-
-  return true;
-}
+};
 
 void AsyncLogWriter::perform_IO() {
-  // use copy-and-swap idiom here.
-  // 'logs' swaps content with _buffer.
+  // use kind of copy-and-swap idiom here.
+  // Empty 'logs' 'swaps' the content with _buffer.
   // Along with logs destruction, all procceeded messages are deleted.
   //
-  // the atomic operation is done in O(1). All I/O jobs are done without lock.
+  // the atomic operation 'move' is done in O(1). All I/O jobs are done without lock.
   // This guarantees I/O jobs don't block logsites.
-  LinkedListImpl<AsyncLogMessage, ResourceObj::C_HEAP, mtLogging> logs;
+  AsyncLogBuffer logs;
   { // critical region
     AsyncLogLocker ml;
+    AsyncLogMapIterator dropped_counters_iter(logs);
 
     _buffer.pop_all(&logs);
-    AsyncLogMapIterator iter;
-    _stats.iterate(&iter);
+    // append meta-message of dropped counters
+    _stats.iterate(&dropped_counters_iter);
   }
 
   LinkedListIterator<AsyncLogMessage> it(logs.head());

@@ -50,10 +50,17 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
     ++_size;
   }
 
+  // pop all elements to logs.
   void pop_all(LinkedList<E>* logs) {
     logs->move(static_cast<LinkedList<E>* >(this));
     _tail = NULL;
     _size = 0;
+  }
+
+  void pop_all(LinkedListDeque<E, F>* logs) {
+    logs->_size = _size;
+    logs->_tail = _tail;
+    pop_all(static_cast<LinkedList<E>* >(logs));
   }
 
   void pop_front() {
@@ -77,6 +84,10 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
   const E* back() const {
     return _tail == NULL ? NULL : _tail->peek();
   }
+
+  LinkedListNode<E>* head() const {
+    return static_cast<const LinkedList<E>* >(this)->head();
+  }
 };
 
 class AsyncLogMessage {
@@ -98,9 +109,6 @@ public:
 
 typedef LinkedListDeque<AsyncLogMessage, mtLogging> AsyncLogBuffer;
 typedef KVHashtable<LogFileOutput*, uint32_t, mtLogging> AsyncLogMap;
-struct AsyncLogMapIterator {
-  bool do_entry(LogFileOutput* output, uint32_t* counter);
-};
 
 class AsyncLogWriter: public NonJavaThread {
  private:

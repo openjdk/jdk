@@ -23,8 +23,8 @@
  */
 
 /*
- * Note: This runs the asynclog parts of gtest in async mode. 
- * The reason is that hotspot can't safely turn off asynclogging dyanmically. 
+ * Note: This runs the asynclog parts of gtest in async mode.
+ * The reason is that hotspot can't safely turn off asynclogging dyanmically.
  * There's no TEST_OTHER_VM_F.
  */
 
