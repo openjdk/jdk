@@ -641,8 +641,6 @@ public:
 
   void trash_humongous_region_at(ShenandoahHeapRegion *r);
 
-  void deduplicate_string(oop str);
-
 private:
   void trash_cset_regions();
 

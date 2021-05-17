@@ -293,14 +293,14 @@ class VMNativeEntryWrapper {
 #define VM_LEAF_BASE(result_type, header)                            \
   debug_only(NoHandleMark __hm;)                                     \
   MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite,                    \
-                                         Thread::current()));        \
+                                         JavaThread::current()));    \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
 #define VM_ENTRY_BASE_FROM_LEAF(result_type, header, thread)         \
   debug_only(ResetNoHandleMark __rnhm;)                              \
   HandleMarkCleaner __hm(thread);                                    \
-  Thread* THREAD = thread;                                           \
+  JavaThread* THREAD = thread; /* For exception macros. */           \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
@@ -309,7 +309,7 @@ class VMNativeEntryWrapper {
 
 #define VM_ENTRY_BASE(result_type, header, thread)                   \
   HandleMarkCleaner __hm(thread);                                    \
-  Thread* THREAD = thread;                                           \
+  JavaThread* THREAD = thread; /* For exception macros. */           \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
@@ -358,13 +358,13 @@ class VMNativeEntryWrapper {
 #define JRT_BLOCK                                                    \
     {                                                                \
     ThreadInVMfromJava __tiv(current);                               \
-    Thread* THREAD = current;                                        \
+    JavaThread* THREAD = current; /* For exception macros. */        \
     debug_only(VMEntryWrapper __vew;)
 
 #define JRT_BLOCK_NO_ASYNC                                           \
     {                                                                \
     ThreadInVMfromJava __tiv(current, false /* check asyncs */);     \
-    Thread* THREAD = current;                                        \
+    JavaThread* THREAD = current; /* For exception macros. */        \
     debug_only(VMEntryWrapper __vew;)
 
 #define JRT_BLOCK_END }

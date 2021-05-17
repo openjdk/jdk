@@ -558,8 +558,6 @@ Node *Node::clone() const {
     }
   }
   if (n->is_Call()) {
-    // cloning CallNode may need to clone JVMState
-    n->as_Call()->clone_jvms(C);
     // CallGenerator is linked to the original node.
     CallGenerator* cg = n->as_Call()->generator();
     if (cg != NULL) {
@@ -572,6 +570,9 @@ Node *Node::clone() const {
     }
   }
   if (n->is_SafePoint()) {
+    // Scalar replacement and macro expansion might modify the JVMState.
+    // Clone it to make sure it's not shared between SafePointNodes.
+    n->as_SafePoint()->clone_jvms(C);
     n->as_SafePoint()->clone_replaced_nodes();
   }
   return n;                     // Return the clone

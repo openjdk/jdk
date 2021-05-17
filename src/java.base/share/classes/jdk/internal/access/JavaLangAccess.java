@@ -161,7 +161,7 @@ public interface JavaLangAccess {
     /**
      * Returns a class loaded by the bootstrap class loader.
      */
-    Class<?> findBootstrapClassOrNull(ClassLoader cl, String name);
+    Class<?> findBootstrapClassOrNull(String name);
 
     /**
      * Define a Package of the given name and module by the given class loader.
