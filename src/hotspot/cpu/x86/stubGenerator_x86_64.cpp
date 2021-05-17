@@ -6083,24 +6083,24 @@ address generate_avx_ghash_processBlocks() {
     // zmm9 - 0x80808080
 
     __ kmovql(k1, rax);
-    __ evmovdqub(xmm3, k1, Address(source, start_offset, Address::times_1, 0x0), false, Assembler::AVX_512bit);
+    __ evmovdqub(xmm8, k1, Address(source, start_offset, Address::times_1, 0x0), true, Assembler::AVX_512bit);
 
     __ evmovdqaq(xmm10, xmm5, Assembler::AVX_512bit);
-    __ evpermt2b(xmm10, xmm3, xmm6, Assembler::AVX_512bit);
-    __ vporq(xmm3, xmm10, xmm3, Assembler::AVX_512bit);
+    __ evpermt2b(xmm10, xmm8, xmm6, Assembler::AVX_512bit);
+    __ vporq(xmm8, xmm10, xmm8, Assembler::AVX_512bit);
 
     // Check for error
     // TODO: Add this instruction
-    // __ evptestmb(k0, xmm3, xmm9, Assembler::AVX_512bit);
+    // __ evptestmb(k0, xmm8, xmm9, Assembler::AVX_512bit);
     // __ kortestql(k0, k0);
     // __ jcc(notZero, L_errorExit);
 
-    __ vpmaddubsw(xmm3, xmm3, xmm2, Assembler::AVX_512bit);
-    __ vpmaddwd(xmm3, xmm3, xmm1, Assembler::AVX_512bit);
+    __ vpmaddubsw(xmm8, xmm8, xmm2, Assembler::AVX_512bit);
+    __ vpmaddwd(xmm8, xmm8, xmm1, Assembler::AVX_512bit);
 
-    __ vpermb(xmm3, xmm4, xmm3, Assembler::AVX_512bit);
+    __ vpermb(xmm8, xmm4, xmm8, Assembler::AVX_512bit);
     __ kmovql(k1, r15);
-    __ evmovdqub(Address(dest, dp, Address::times_1, 0x00), k1, xmm3, true, Assembler::AVX_512bit);
+    __ evmovdqub(Address(dest, dp, Address::times_1, 0x00), k1, xmm8, true, Assembler::AVX_512bit);
 
     __ addq(dest, r13);
 
