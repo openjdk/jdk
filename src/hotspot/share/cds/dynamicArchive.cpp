@@ -27,6 +27,7 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/dynamicArchive.hpp"
+#include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
@@ -329,6 +330,20 @@ public:
   }
 };
 
+void DynamicArchive::prepare_for_dynamic_dumping_at_exit() {
+  EXCEPTION_MARK;
+  ResourceMark rm(THREAD);
+  MetaspaceShared::link_and_cleanup_shared_classes(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    log_error(cds)("ArchiveClassesAtExit has failed");
+    log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+                   java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+    // We cannot continue to dump the archive anymore.
+    DynamicDumpSharedSpaces = false;
+    CLEAR_PENDING_EXCEPTION;
+  }
+}
+
 bool DynamicArchive::_has_been_dumped_once = false;
 
 void DynamicArchive::dump(const char* archive_name, TRAPS) {
@@ -342,20 +357,20 @@ void DynamicArchive::dump(const char* archive_name, TRAPS) {
   } else {
     // prevent multiple dumps.
     set_has_been_dumped_once();
-  }
-  ArchiveClassesAtExit = archive_name;
-  if (Arguments::init_shared_archive_paths()) {
-    dump();
-  } else {
-    ArchiveClassesAtExit = nullptr;
-    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+    ArchiveClassesAtExit = archive_name;
+    if (Arguments::init_shared_archive_paths()) {
+      dump();
+    } else {
+      ArchiveClassesAtExit = nullptr;
+      THROW_MSG(vmSymbols::java_lang_RuntimeException(),
               "Could not setup SharedDynamicArchivePath");
-  }
-  // prevent do dynamic dump at exit.
-  ArchiveClassesAtExit = nullptr;
-  if (!Arguments::init_shared_archive_paths()) {
-    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
+    }
+    // prevent do dynamic dump at exit.
+    ArchiveClassesAtExit = nullptr;
+    if (!Arguments::init_shared_archive_paths()) {
+      THROW_MSG(vmSymbols::java_lang_RuntimeException(),
              "Could not restore SharedDynamicArchivePath");
+    }
   }
 }
 

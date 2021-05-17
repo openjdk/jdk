@@ -971,7 +971,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
     // If we have a pending async exception deoptimize the frame
     // as otherwise we may never deliver it.
-    if (self->has_async_condition()) {
+    if (self->has_async_exception_condition()) {
       ThreadInVMfromJava __tiv(self, false /* check asyncs */);
       Deoptimization::deoptimize_frame(self, caller_fr.id());
     }

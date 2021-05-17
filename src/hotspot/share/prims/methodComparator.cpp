@@ -279,8 +279,6 @@ bool MethodComparator::pool_constants_same(const int cpi_old, const int cpi_new,
     if (strcmp(old_cp->string_at_noresolve(cpi_old),
                new_cp->string_at_noresolve(cpi_new)) != 0)
       return false;
-    if (old_cp->is_pseudo_string_at(cpi_old) || new_cp->is_pseudo_string_at(cpi_new))
-      return (old_cp->is_pseudo_string_at(cpi_old) == new_cp->is_pseudo_string_at(cpi_new));
   } else if (tag_old.is_klass() || tag_old.is_unresolved_klass()) {
     // tag_old should be klass - 4881222
     if (! (tag_new.is_unresolved_klass() || tag_new.is_klass()))

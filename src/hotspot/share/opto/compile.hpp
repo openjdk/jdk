@@ -877,7 +877,7 @@ class Compile : public Phase {
                                   const TypeOopPtr* receiver_type, bool is_virtual,
                                   bool &call_does_dispatch, int &vtable_index,
                                   bool check_access = true);
-  ciMethod* optimize_inlining(ciMethod* caller, ciInstanceKlass* klass,
+  ciMethod* optimize_inlining(ciMethod* caller, ciInstanceKlass* klass, ciKlass* holder,
                               ciMethod* callee, const TypeOopPtr* receiver_type,
                               bool check_access = true);
 

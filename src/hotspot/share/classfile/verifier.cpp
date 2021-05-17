@@ -2158,9 +2158,7 @@ void ClassVerifier::verify_ldc(
           | (1 << JVM_CONSTANT_Dynamic);
     verify_cp_type(bci, index, cp, types, CHECK_VERIFY(this));
   }
-  if (tag.is_string() && cp->is_pseudo_string_at(index)) {
-    current_frame->push_stack(object_type(), CHECK_VERIFY(this));
-  } else if (tag.is_string()) {
+  if (tag.is_string()) {
     current_frame->push_stack(
       VerificationType::reference_type(
         vmSymbols::java_lang_String()), CHECK_VERIFY(this));
@@ -2876,21 +2874,8 @@ void ClassVerifier::verify_invoke_instructions(
                   current_class()->super()->name()))) {
     bool subtype = false;
     bool have_imr_indirect = cp->tag_at(index).value() == JVM_CONSTANT_InterfaceMethodref;
-    if (!current_class()->is_unsafe_anonymous()) {
-      subtype = ref_class_type.is_assignable_from(
-                 current_type(), this, false, CHECK_VERIFY(this));
-    } else {
-      VerificationType unsafe_anonymous_host_type =
-                        VerificationType::reference_type(current_class()->unsafe_anonymous_host()->name());
-      subtype = ref_class_type.is_assignable_from(unsafe_anonymous_host_type, this, false, CHECK_VERIFY(this));
-
-      // If invokespecial of IMR, need to recheck for same or
-      // direct interface relative to the host class
-      have_imr_indirect = (have_imr_indirect &&
-                           !is_same_or_direct_interface(
-                             current_class()->unsafe_anonymous_host(),
-                             unsafe_anonymous_host_type, ref_class_type));
-    }
+    subtype = ref_class_type.is_assignable_from(
+               current_type(), this, false, CHECK_VERIFY(this));
     if (!subtype) {
       verify_error(ErrorContext::bad_code(bci),
           "Bad invokespecial instruction: "
@@ -2925,24 +2910,7 @@ void ClassVerifier::verify_invoke_instructions(
     } else {   // other methods
       // Ensures that target class is assignable to method class.
       if (opcode == Bytecodes::_invokespecial) {
-        if (!current_class()->is_unsafe_anonymous()) {
-          current_frame->pop_stack(current_type(), CHECK_VERIFY(this));
-        } else {
-          // anonymous class invokespecial calls: check if the
-          // objectref is a subtype of the unsafe_anonymous_host of the current class
-          // to allow an anonymous class to reference methods in the unsafe_anonymous_host
-          VerificationType top = current_frame->pop_stack(CHECK_VERIFY(this));
-          VerificationType hosttype =
-            VerificationType::reference_type(current_class()->unsafe_anonymous_host()->name());
-          bool subtype = hosttype.is_assignable_from(top, this, false, CHECK_VERIFY(this));
-          if (!subtype) {
-            verify_error( ErrorContext::bad_type(current_frame->offset(),
-              current_frame->stack_top_ctx(),
-              TypeOrigin::implicit(top)),
-              "Bad type on operand stack");
-            return;
-          }
-        }
+        current_frame->pop_stack(current_type(), CHECK_VERIFY(this));
       } else if (opcode == Bytecodes::_invokevirtual) {
         VerificationType stack_object_type =
           current_frame->pop_stack(ref_class_type, CHECK_VERIFY(this));
