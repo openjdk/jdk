@@ -1134,9 +1134,9 @@ static bool merge_point_safe(Node* region) {
 }
 
 
-//------------------------------place_near_use---------------------------------
-// Place some computation next to use but not inside inner loops.
-Node* PhaseIdealLoop::place_near_use(Node* useblock, IdealLoopTree* loop) const {
+//------------------------------place_outside_loop---------------------------------
+// Place some computation outside of this loop on the path to the use passed as argument
+Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) const {
   Node* head = loop->_head;
   assert(!loop->is_member(get_loop(useblock)), "must be outside loop");
   if (head->is_Loop() && head->as_Loop()->is_strip_mined()) {
@@ -1457,7 +1457,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
             // x goes next to Phi input path
             x_ctrl = u->in(0)->in(k);
             // Find control for 'x' next to use but not inside inner loops.
-            x_ctrl = place_near_use(x_ctrl, n_loop);
+            x_ctrl = place_outside_loop(x_ctrl, n_loop);
             --j;
           } else {              // Normal use
             if (has_ctrl(u)) {
@@ -1466,7 +1466,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
               x_ctrl = u->in(0);
             }
             // Find control for 'x' next to use but not inside inner loops.
-            x_ctrl = place_near_use(x_ctrl, n_loop);
+            x_ctrl = place_outside_loop(x_ctrl, n_loop);
             // Replace all uses
             if (u->is_ConstraintCast() && u->bottom_type()->higher_equal(_igvn.type(n)) && u->in(0) == x_ctrl) {
               // If we're sinking a chain of data nodes, we might have inserted a cast to pin the use which is not necessary
