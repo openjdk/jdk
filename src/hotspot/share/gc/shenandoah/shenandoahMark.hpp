@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
 
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
@@ -45,7 +46,7 @@ protected:
 
 public:
   template<class T, StringDedupMode STRING_DEDUP>
-  static inline void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
+  static inline void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, StringDedup::Requests* const req, bool weak);
 
   static void clear();
 

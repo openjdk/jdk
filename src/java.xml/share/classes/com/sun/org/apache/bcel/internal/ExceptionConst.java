@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,20 +23,27 @@ package com.sun.org.apache.bcel.internal;
 /**
  * Exception constants.
  * @since 6.0 (intended to replace the InstructionConstant interface)
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 public final class ExceptionConst {
 
-    /** The mother of all exceptions
+    /**
+     * The mother of all exceptions
      */
     public static final Class<Throwable> THROWABLE = Throwable.class;
-    /** Super class of any run-time exception
+
+    /**
+     * Super class of any run-time exception
      */
     public static final Class<RuntimeException> RUNTIME_EXCEPTION = RuntimeException.class;
-    /** Super class of any linking exception (aka Linkage Error)
+
+    /**
+     * Super class of any linking exception (aka Linkage Error)
      */
     public static final Class<LinkageError> LINKING_EXCEPTION = LinkageError.class;
-    /** Linking Exceptions
+
+    /**
+     * Linking Exceptions
      */
     public static final Class<ClassCircularityError> CLASS_CIRCULARITY_ERROR = ClassCircularityError.class;
     public static final Class<ClassFormatError> CLASS_FORMAT_ERROR = ClassFormatError.class;
@@ -52,7 +59,9 @@ public final class ExceptionConst {
     public static final Class<VerifyError> VERIFY_ERROR = VerifyError.class;
     /* UnsupportedClassVersionError is new in JDK 1.2 */
 //    public static final Class UnsupportedClassVersionError = UnsupportedClassVersionError.class;
-    /** Run-Time Exceptions
+
+    /**
+     * Run-Time Exceptions
      */
     public static final Class<NullPointerException> NULL_POINTER_EXCEPTION = NullPointerException.class;
     public static final Class<ArrayIndexOutOfBoundsException> ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION

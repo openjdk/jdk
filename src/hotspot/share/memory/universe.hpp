@@ -343,6 +343,7 @@ class Universe: AllStatic {
     Verify_JNIHandles = 256,
     Verify_CodeCacheOops = 512,
     Verify_ResolvedMethodTable = 1024,
+    Verify_StringDedup = 2048,
     Verify_All = -1
   };
   static void initialize_verify_flags();

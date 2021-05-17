@@ -692,7 +692,7 @@ Node* next_mem(Node* mem, int alias) {
   } else if (mem->is_MergeMem()) {
     res = mem->as_MergeMem()->memory_at(alias);
   } else if (mem->is_Store() || mem->is_LoadStore() || mem->is_ClearArray()) {
-    assert(alias = Compile::AliasIdxRaw, "following raw memory can't lead to a barrier");
+    assert(alias == Compile::AliasIdxRaw, "following raw memory can't lead to a barrier");
     res = mem->in(MemNode::Memory);
   } else {
 #ifdef ASSERT
@@ -1531,7 +1531,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     phase->register_new_node(index_adr, ctrl);
 
     BasicType index_bt = TypeX_X->basic_type();
-    assert(sizeof(size_t) == type2aelembytes(index_bt), "Loading G1 SATBMarkQueue::_index with wrong size.");
+    assert(sizeof(size_t) == type2aelembytes(index_bt), "Loading Shenandoah SATBMarkQueue::_index with wrong size.");
     const TypePtr* adr_type = TypeRawPtr::BOTTOM;
     Node* index = new LoadXNode(ctrl, raw_mem, index_adr, adr_type, TypeX_X, MemNode::unordered);
     phase->register_new_node(index, ctrl);

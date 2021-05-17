@@ -782,6 +782,20 @@ inline bool ConcurrentHashTable<CONFIG, F>::
 }
 
 template <typename CONFIG, MEMFLAGS F>
+inline void ConcurrentHashTable<CONFIG, F>::
+  internal_reset(size_t log2_size)
+{
+  assert(_table != NULL, "table failed");
+  assert(_log2_size_limit >= log2_size, "bad ergo");
+
+  delete _table;
+  // Create and publish a new table
+  InternalTable* table = new InternalTable(log2_size);
+  _size_limit_reached = (log2_size == _log2_size_limit);
+  Atomic::release_store(&_table, table);
+}
+
+template <typename CONFIG, MEMFLAGS F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   internal_grow_prolog(Thread* thread, size_t log2_size)
 {
@@ -866,10 +880,10 @@ inline typename CONFIG::Value* ConcurrentHashTable<CONFIG, F>::
 }
 
 template <typename CONFIG, MEMFLAGS F>
-template <typename LOOKUP_FUNC>
+template <typename LOOKUP_FUNC, typename FOUND_FUNC>
 inline bool ConcurrentHashTable<CONFIG, F>::
-  internal_insert(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
-                  bool* grow_hint, bool* clean_hint)
+  internal_insert_get(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
+                      FOUND_FUNC& foundf, bool* grow_hint, bool* clean_hint)
 {
   bool ret = false;
   bool clean = false;
@@ -888,6 +902,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
       if (old == NULL) {
         new_node->set_next(first_at_start);
         if (bucket->cas_first(new_node, first_at_start)) {
+          foundf(new_node->value());
           JFR_ONLY(_stats_rate.add();)
           new_node = NULL;
           ret = true;
@@ -897,6 +912,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
         locked = bucket->is_locked();
       } else {
         // There is a duplicate.
+        foundf(old->value());
         break; /* leave critical section */
       }
     } /* leave critical section */
@@ -1030,6 +1046,14 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   size_t tmp = size_limit_log2 == 0 ? _log2_start_size : size_limit_log2;
   bool ret = internal_shrink(thread, tmp);
   return ret;
+}
+
+template <typename CONFIG, MEMFLAGS F>
+inline void ConcurrentHashTable<CONFIG, F>::
+  unsafe_reset(size_t size_log2)
+{
+  size_t tmp = size_log2 == 0 ? _log2_start_size : size_log2;
+  internal_reset(tmp);
 }
 
 template <typename CONFIG, MEMFLAGS F>

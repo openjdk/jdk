@@ -1373,7 +1373,7 @@ RefProcMTDegreeAdjuster::RefProcMTDegreeAdjuster(ReferenceProcessor* rp,
                                                  size_t ref_count):
     _rp(rp),
     _saved_num_queues(_rp->num_queues()) {
-  if (!_rp->processing_is_mt() || !_rp->adjust_no_of_processing_threads() || (ReferencesPerThread == 0)) {
+  if (!_rp->adjust_no_of_processing_threads() || (ReferencesPerThread == 0)) {
     return;
   }
 

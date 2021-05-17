@@ -36,7 +36,6 @@
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
-#include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -502,7 +501,7 @@ static void clear_mark_if_set(G1CMBitMap* bitmap, HeapWord* addr) {
 }
 
 void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
-  assert_at_safepoint_on_vm_thread();
+  assert_at_safepoint();
 
   // Need to clear all mark bits of the humongous object.
   clear_mark_if_set(_prev_mark_bitmap, r->bottom());
@@ -1530,8 +1529,6 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
   // Is alive closure.
   G1CMIsAliveClosure g1_is_alive(_g1h);
 
-  // Inner scope to exclude the cleaning of the string table
-  // from the displayed time.
   {
     GCTraceTime(Debug, gc, phases) debug("Reference Processing", _gc_timer_cm);
 
@@ -1565,14 +1562,8 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // is not multi-threaded we use the current (VMThread) thread,
     // otherwise we use the work gang from the G1CollectedHeap and
     // we utilize all the worker threads we can.
-    bool processing_is_mt = rp->processing_is_mt();
-    uint active_workers = (processing_is_mt ? _g1h->workers()->active_workers() : 1U);
+    uint active_workers = (ParallelRefProcEnabled ? _g1h->workers()->active_workers() : 1U);
     active_workers = clamp(active_workers, 1u, _max_num_tasks);
-
-    // Parallel processing task executor.
-    G1CMRefProcTaskExecutor par_task_executor(_g1h, this,
-                                              _g1h->workers(), active_workers);
-    AbstractRefProcTaskExecutor* executor = (processing_is_mt ? &par_task_executor : NULL);
 
     // Set the concurrency level. The phase was already set prior to
     // executing the remark task.
@@ -1583,6 +1574,11 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // the number of active workers.  This is OK as long as the discovered
     // Reference lists are balanced (see balance_all_queues() and balance_queues()).
     rp->set_active_mt_degree(active_workers);
+
+    // Parallel processing task executor.
+    G1CMRefProcTaskExecutor par_task_executor(_g1h, this,
+                                              _g1h->workers(), active_workers);
+    AbstractRefProcTaskExecutor* executor = (rp->processing_is_mt() ? &par_task_executor : NULL);
 
     ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->max_num_queues());
 
@@ -1630,9 +1626,6 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
     bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm);
     _g1h->complete_cleaning(&g1_is_alive, purged_classes);
-  } else if (StringDedup::is_enabled()) {
-    GCTraceTime(Debug, gc, phases) debug("String Deduplication", _gc_timer_cm);
-    _g1h->string_dedup_cleaning(&g1_is_alive, NULL);
   }
 }
 

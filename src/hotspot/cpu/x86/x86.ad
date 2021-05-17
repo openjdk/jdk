@@ -1599,6 +1599,16 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
 #endif // !LP64
+    case Op_SignumF:
+      if (UseSSE < 1) {
+        return false;
+      }
+      break;
+    case Op_SignumD:
+      if (UseSSE < 2) {
+        return false;
+      }
+      break;
   }
   return true;  // Match rules are supported by default.
 }
@@ -1811,9 +1821,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return true;  // Per default match rules are supported.
 }
 
-// x86 supports generic vector operands: vec and legVec.
-const bool Matcher::supports_generic_vector_operands = true;
-
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp) {
   assert(Matcher::is_generic_vector(generic_opnd), "not generic");
   bool legacy = (generic_opnd->opcode() == LEGVEC);
@@ -1864,23 +1871,6 @@ bool Matcher::is_generic_vector(MachOper* opnd) {
 }
 
 //------------------------------------------------------------------------
-
-bool Matcher::supports_vector_variable_shifts(void) {
-  return (UseAVX >= 2);
-}
-
-bool Matcher::supports_vector_variable_rotates(void) {
-  return true;
-}
-
-const bool Matcher::has_predicated_vectors(void) {
-  bool ret_value = false;
-  if (UseAVX > 2) {
-    ret_value = VM_Version::supports_avx512vl();
-  }
-
-  return ret_value;
-}
 
 const RegMask* Matcher::predicate_reg_mask(void) {
   return &_VECTMASK_REG_mask;
@@ -1956,10 +1946,6 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size,max_size);
 }
 
-const bool Matcher::supports_scalable_vector() {
-  return false;
-}
-
 const int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
 }
@@ -1977,14 +1963,6 @@ const uint Matcher::vector_ideal_reg(int size) {
   ShouldNotReachHere();
   return 0;
 }
-
-// x86 supports misaligned vectors store/load.
-const bool Matcher::misaligned_vectors_ok() {
-  return true;
-}
-
-
-const bool Matcher::convi2l_type_required = true;
 
 // Check for shift by small constant as well
 static bool clone_shift(Node* shift, Matcher* matcher, Matcher::MStack& mstack, VectorSet& address_visited) {
@@ -2165,9 +2143,6 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
     return true;
   }
   return false;
-}
-
-void Compile::reshape_address(AddPNode* addp) {
 }
 
 static inline Assembler::ComparisonPredicate booltest_pred_to_comparison_pred(int bt) {
@@ -5775,6 +5750,30 @@ instruct evminmaxFP_reg_eavx(vec dst, vec a, vec b, vec atmp, vec btmp, kReg ktm
     __ evminmax_fp(opcode, elem_bt,
                    $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister,
                    $ktmp$$KRegister, $atmp$$XMMRegister , $btmp$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// --------------------------------- Signum ---------------------------
+
+instruct signumF_reg(regF dst, regF zero, regF one, rRegP scratch, rFlagsReg cr) %{
+  match(Set dst (SignumF dst (Binary zero one)));
+  effect(TEMP scratch, KILL cr);
+  format %{ "signumF $dst, $dst\t! using $scratch as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    __ signum_fp(opcode, $dst$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister, $scratch$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr) %{
+  match(Set dst (SignumD dst (Binary zero one)));
+  effect(TEMP scratch, KILL cr);
+  format %{ "signumD $dst, $dst\t! using $scratch as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    __ signum_fp(opcode, $dst$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister, $scratch$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
