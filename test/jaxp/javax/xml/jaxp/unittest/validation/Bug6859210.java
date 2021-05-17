@@ -42,7 +42,7 @@ import org.xml.sax.SAXParseException;
  * @test
  * @bug 6859210
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6859210
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6859210
  * @run testng/othervm validation.Bug6859210
  * @summary Test Schema Validator can parse xml when maxOccurs is large.
  */
