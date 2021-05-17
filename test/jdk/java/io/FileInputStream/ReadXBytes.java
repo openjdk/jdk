@@ -50,25 +50,28 @@ public class ReadXBytes {
 
         File empty = File.createTempFile("foo", "bar", dir);
         empty.deleteOnExit();
-        FileInputStream fis = new FileInputStream(empty);
-        try {
-            fis.readNBytes(-1);
-            throw new RuntimeException("IllegalArgumentException expecte");
-        } catch (IllegalArgumentException expected) {
+        try (FileInputStream fis = new FileInputStream(empty)) {
+            try {
+                fis.readNBytes(-1);
+                throw new RuntimeException("IllegalArgumentException expected");
+            } catch (IllegalArgumentException expected) {
+            }
+            byte[] nbytes = fis.readNBytes(0);
+            if (nbytes.length != 0)
+                throw new RuntimeException("readNBytes() zero length for empty");
+
+            byte[] b = fis.readNBytes(1);
+            if (b.length != 0)
+                throw new RuntimeException("Zero-length byte[] expected");
         }
 
-        byte[] b = fis.readNBytes(1);
-        fis.close();
-        if (b.length != 0)
-            throw new RuntimeException("Zero-length byte[] expected");
-
-        fis = new FileInputStream(empty);
-        b = fis.readAllBytes();
-        fis.close();
-        if (b.length != 0)
-            throw new RuntimeException("Zero-length byte[] expected");
-
-        empty.delete();
+        try (FileInputStream fis = new FileInputStream(empty)) {
+            byte[] b = fis.readAllBytes();
+            if (b.length != 0)
+                throw new RuntimeException("Zero-length byte[] expected");
+        } finally {
+            empty.delete();
+        }
 
         for (int i = 0; i < ITERATIONS; i++) {
             File file = File.createTempFile("foo", "bar", dir);
@@ -78,34 +81,34 @@ public class ReadXBytes {
             System.out.printf("size %d%n", size);
             byte[] bytes = new byte[size];
             RND.nextBytes(bytes);
-            RandomAccessFile raf = new RandomAccessFile(file, "rw");
-            raf.write(bytes);
-            raf.close();
+            try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
+                raf.write(bytes);
+            }
 
-            fis = new FileInputStream(file);
-            int pos = RND.nextInt(size);
-            int len = RND.nextInt(size - pos);
-            fis.getChannel().position(pos);
-            byte[] nbytes = fis.readNBytes(0);
-            if (nbytes.length != 0)
-                throw new RuntimeException("readNBytes() zero length");
-            nbytes = fis.readNBytes(len);
-            if (nbytes.length != len)
-                throw new RuntimeException("readNBytes() length");
-            if (!Arrays.equals(nbytes, 0, len, bytes, pos, pos + len))
-                throw new RuntimeException("readNBytes() content");
-            fis.close();
+            try (FileInputStream fis = new FileInputStream(file)) {
+                int pos = RND.nextInt(size);
+                int len = RND.nextInt(size - pos);
+                fis.getChannel().position(pos);
+                byte[] nbytes = fis.readNBytes(0);
+                if (nbytes.length != 0)
+                    throw new RuntimeException("readNBytes() zero length");
+                nbytes = fis.readNBytes(len);
+                if (nbytes.length != len)
+                    throw new RuntimeException("readNBytes() length");
+                if (!Arrays.equals(nbytes, 0, len, bytes, pos, pos + len))
+                    throw new RuntimeException("readNBytes() content");
+            }
 
-            fis = new FileInputStream(file);
-            pos = RND.nextInt(size);
-            fis.getChannel().position(pos);
-            byte[] allbytes = fis.readAllBytes();
-            if (allbytes.length != size - pos)
-                throw new RuntimeException("readAllBytes() length");
-            if (!Arrays.equals(allbytes, 0, allbytes.length,
-                               bytes, pos, pos + allbytes.length))
-                throw new RuntimeException("readAllBytes() content");
-            fis.close();
+            try (FileInputStream fis = new FileInputStream(file)) {
+                int pos = RND.nextInt(size);
+                fis.getChannel().position(pos);
+                byte[] allbytes = fis.readAllBytes();
+                if (allbytes.length != size - pos)
+                    throw new RuntimeException("readAllBytes() length");
+                if (!Arrays.equals(allbytes, 0, allbytes.length,
+                                   bytes, pos, pos + allbytes.length))
+                    throw new RuntimeException("readAllBytes() content");
+            }
 
             file.delete();
         }
