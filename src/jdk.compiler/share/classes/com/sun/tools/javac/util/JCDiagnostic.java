@@ -542,14 +542,15 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         }
 
         public DiagnosticInfo toType(DiagnosticType type) {
-            return of(type, prefix, code, args);
+            if (type == this.type) return this;
+            throw new AssertionError("Unsupported kind: " + type);
         }
     }
 
     /**
      * Class representing error diagnostic keys.
      */
-    public static final class Error extends DiagnosticInfo {
+    public static class Error extends DiagnosticInfo {
         public Error(String prefix, String key, Object... args) {
             super(DiagnosticType.ERROR, prefix, key, args);
         }
@@ -558,7 +559,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     /**
      * Class representing warning diagnostic keys.
      */
-    public static final class Warning extends DiagnosticInfo {
+    public static class Warning extends DiagnosticInfo {
         public Warning(String prefix, String key, Object... args) {
             super(DiagnosticType.WARNING, prefix, key, args);
         }
@@ -567,7 +568,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     /**
      * Class representing note diagnostic keys.
      */
-    public static final class Note extends DiagnosticInfo {
+    public static class Note extends DiagnosticInfo {
         public Note(String prefix, String key, Object... args) {
             super(DiagnosticType.NOTE, prefix, key, args);
         }
@@ -576,7 +577,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     /**
      * Class representing fragment diagnostic keys.
      */
-    public static final class Fragment extends DiagnosticInfo {
+    public static class Fragment extends DiagnosticInfo {
         public Fragment(String prefix, String key, Object... args) {
             super(DiagnosticType.FRAGMENT, prefix, key, args);
         }

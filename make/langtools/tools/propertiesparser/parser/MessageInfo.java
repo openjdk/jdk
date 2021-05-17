@@ -42,18 +42,19 @@ import java.util.List;
 public final class MessageInfo {
 
     /** The fields of the Info object. */
-    List<MessageType> types = new ArrayList<>();
+    final List<MessageType> types = new ArrayList<>();
+    final String text;
 
     MessageInfo(String text) throws IllegalArgumentException {
         if (text != null) {
             if (!text.startsWith("# "))
                 throw new IllegalArgumentException();
             String[] segs = text.substring(2).split(", ");
-            types = new ArrayList<>();
             for (String seg : segs) {
                 types.add(parseType(seg));
             }
         }
+        this.text = text == null ? "" : text;
     }
 
     public List<MessageType> getTypes() {
@@ -66,7 +67,7 @@ public final class MessageInfo {
 
     @Override
     public String toString() {
-        return types.toString();
+        return text;
     }
 
     /**
