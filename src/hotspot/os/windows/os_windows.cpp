@@ -2458,9 +2458,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       //
       // 15 bytes seems to be a (very) safe value for max instruction size.
       bool pc_is_near_addr = false;
-      if (addr <= pc) {
-        pc_is_near_addr = pointer_delta((void*) pc, (void*) addr, sizeof(char)) < 15;
-      } else {
+      if (addr >= pc) {
         pc_is_near_addr = pointer_delta((void*) addr, (void*) pc, sizeof(char)) < 15;
       }
 
