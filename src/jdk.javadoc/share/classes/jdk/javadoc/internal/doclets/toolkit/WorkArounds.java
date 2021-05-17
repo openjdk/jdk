@@ -60,8 +60,8 @@ import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.util.Names;
-
 import com.sun.tools.javac.util.Options;
+
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.tool.ToolEnvironment;
 import jdk.javadoc.internal.tool.DocEnvImpl;

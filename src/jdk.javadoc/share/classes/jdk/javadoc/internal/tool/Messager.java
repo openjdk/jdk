@@ -40,10 +40,11 @@ import javax.tools.Diagnostic;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
+import jdk.javadoc.doclet.Reporter;
+
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.util.Context.Factory;
 import com.sun.tools.javac.util.DiagnosticSource;
-import jdk.javadoc.doclet.Reporter;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTreePath;
@@ -231,74 +232,129 @@ public class Messager extends Log implements Reporter {
     }
 
     /**
-     * Print error message, increment error count.
+     * Prints an error message.
      *
-     * @param message message to print
+     * @param message the message
      */
     public void printError(String message) {
         report(DiagnosticType.ERROR,null, null, message);
     }
 
+    /**
+     * Prints an error message for a given documentation tree node.
+     *
+     * @param path    the path for the documentation tree node
+     * @param message the message
+     */
     public void printError(DocTreePath path, String message) {
         DiagnosticSource ds = getDiagnosticSource(path);
         DiagnosticPosition dp = getDiagnosticPosition(path);
         report(DiagnosticType.ERROR, EnumSet.noneOf(DiagnosticFlag.class), ds, dp, message);
     }
 
+    /**
+     * Prints an error message for a given element.
+     *
+     * @param element the element
+     * @param message the message
+     */
     public void printError(Element element, String message) {
         DiagnosticSource ds = getDiagnosticSource(element);
         DiagnosticPosition dp = getDiagnosticPosition(element);
         report(DiagnosticType.ERROR, EnumSet.noneOf(DiagnosticFlag.class), ds, dp, message);
     }
 
+    /**
+     * Prints an error message.
+     *
+     * @param key the resource key for the message
+     * @param args the arguments for the message
+     */
     public void printErrorUsingKey(String key, Object... args) {
         printError(getText(key, args));
     }
 
     /**
-     * Print warning message, increment warning count.
+     * Prints a warning message.
      *
-     * @param message message to print
+     * @param message the message
      */
     public void printWarning(String message) {
         report(DiagnosticType.WARNING, null, null, message);
     }
 
+    /**
+     * Prints a warning message for a given documentation tree node.
+     *
+     * @param path    the path for the documentation tree node
+     * @param message the message
+     */
     public void printWarning(DocTreePath path, String message) {
         DiagnosticSource ds = getDiagnosticSource(path);
         DiagnosticPosition dp = getDiagnosticPosition(path);
         report(DiagnosticType.WARNING, EnumSet.noneOf(DiagnosticFlag.class), ds, dp, message);
     }
 
+    /**
+     * Prints a warning message for a given element.
+     *
+     * @param element the element
+     * @param message the message
+     */
     public void printWarning(Element element, String message) {
         DiagnosticSource ds = getDiagnosticSource(element);
         DiagnosticPosition dp = getDiagnosticPosition(element);
         report(DiagnosticType.WARNING, EnumSet.noneOf(DiagnosticFlag.class), ds, dp, message);
     }
 
+    /**
+     * Prints a warning message.
+     *
+     * @param key the resource key for the message
+     * @param args the arguments for the message
+     */
     public void printWarningUsingKey(String key, Object... args) {
         printWarning(getText(key, args));
     }
 
+    /**
+     * Prints a warning message for an element.
+     *
+     * @param element the element
+     * @param key     the resource key for the message
+     * @param args    the arguments for the message
+     */
     public void printWarningUsingKey(Element element, String key, Object... args) {
         printWarning(element, getText(key, args));
     }
 
     /**
-     * Print a message.
+     * Print a "notice" message.
      *
-     * @param message message to print
+     * @param message the message
      */
     public void printNotice(String message) {
         report(DiagnosticType.NOTE, null, null, message);
     }
 
+    /**
+     * Prints a "notice" message for a given documentation tree node.
+     *
+     * @param path    the path for the documentation tree node
+     * @param message the message
+     */
     public void printNotice(DocTreePath path, String message) {
         DiagnosticSource ds = getDiagnosticSource(path);
         DiagnosticPosition dp = getDiagnosticPosition(path);
         report(DiagnosticType.NOTE, EnumSet.noneOf(DiagnosticFlag.class), ds, dp, message);
     }
 
+    /**
+     * Prints a "notice" message for a given element.
+     *
+     * @param element the element
+     * @param message the message
+     */
     public void printNotice(Element element, String message) {
         DiagnosticSource ds = getDiagnosticSource(element);
         DiagnosticPosition dp = getDiagnosticPosition(element);
@@ -306,9 +362,10 @@ public class Messager extends Log implements Reporter {
     }
 
     /**
-     * Print a message.
+     * Prints a "notice" message.
      *
-     * @param key selects message from resource
+     * @param key  the resource key for the message
+     * @param args the arguments for the message
      */
     public void notice(String key, Object... args) {
         printNotice(getText(key, args));
@@ -329,7 +386,7 @@ public class Messager extends Log implements Reporter {
     }
 
     /**
-     * Print exit message.
+     * Prints the error and warning counts, if any.
      */
     public void printErrorWarningCounts() {
         if (nerrors > 0) {

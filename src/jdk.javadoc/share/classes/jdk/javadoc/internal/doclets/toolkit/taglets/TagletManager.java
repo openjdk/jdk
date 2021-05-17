@@ -40,7 +40,6 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.BiConsumer;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
