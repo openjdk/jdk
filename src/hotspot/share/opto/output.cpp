@@ -1305,7 +1305,6 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
 }
 
 CodeBuffer* PhaseOutput::init_buffer() {
-
   int stub_req  = _buf_sizes._stub;
   int code_req  = _buf_sizes._code;
   int const_req = _buf_sizes._const;
