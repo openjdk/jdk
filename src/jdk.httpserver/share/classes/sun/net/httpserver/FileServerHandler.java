@@ -95,8 +95,8 @@ public final class FileServerHandler implements HttpHandler {
     static void handleNotAllowed(HttpExchange exchange) throws IOException {
         try (exchange) {
             discardRequestBody(exchange);
-            exchange.sendResponseHeaders(405, -1);
             exchange.getResponseHeaders().set("Allow", "HEAD, GET");
+            exchange.sendResponseHeaders(405, -1);
         }
     }
 
