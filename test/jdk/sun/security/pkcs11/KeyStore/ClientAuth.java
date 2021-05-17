@@ -22,8 +22,9 @@
  */
 
 /* @test
- * @bug 4938185
+ * @bug 4938185 7106773
  * @summary KeyStore support for NSS cert/key databases
+ *          512 bits RSA key cannot work with SHA384 and SHA512
  * @library /test/lib ..
  * @run testng/othervm ClientAuth
  */
