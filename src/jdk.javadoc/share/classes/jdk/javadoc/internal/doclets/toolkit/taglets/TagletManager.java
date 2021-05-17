@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -185,6 +186,8 @@ public class TagletManager {
 
     private final String tagletPath;
 
+    private final BaseConfiguration configuration;
+
     /**
      * Constructs a new {@code TagletManager}.
      *
@@ -197,6 +200,7 @@ public class TagletManager {
         standardTagsLowercase = new HashSet<>();
         unseenCustomTags = new HashSet<>();
         allTaglets = new LinkedHashMap<>();
+        this.configuration = configuration;
         BaseOptions options = configuration.getOptions();
         this.nosince = options.noSince();
         this.showversion = options.showVersion();
@@ -223,8 +227,7 @@ public class TagletManager {
      * @throws IOException if an error occurs while setting the location
      */
     public void initTagletPath(JavaFileManager fileManager) throws IOException {
-        if (fileManager instanceof StandardJavaFileManager) {
-            StandardJavaFileManager sfm = (StandardJavaFileManager)fileManager;
+        if (fileManager instanceof StandardJavaFileManager sfm) {
             if (tagletPath != null) {
                 List<File> paths = new ArrayList<>();
                 for (String pathname : tagletPath.split(File.pathSeparator)) {
@@ -251,6 +254,15 @@ public class TagletManager {
         try {
             ClassLoader tagClassLoader;
             tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
+            if (configuration.workArounds.accessInternalAPI()) {
+                Module thisModule = getClass().getModule();
+                Module tagletLoaderUnnamedModule = tagClassLoader.getUnnamedModule();
+                List<String> pkgs = List.of(
+                        "jdk.javadoc.doclet",
+                        "jdk.javadoc.internal.doclets.toolkit",
+                        "jdk.javadoc.internal.doclets.formats.html");
+                pkgs.forEach(p -> thisModule.addOpens(p, tagletLoaderUnnamedModule));
+            }
             Class<? extends jdk.javadoc.doclet.Taglet> customTagClass =
                     tagClassLoader.loadClass(classname).asSubclass(jdk.javadoc.doclet.Taglet.class);
             jdk.javadoc.doclet.Taglet instance = customTagClass.getConstructor().newInstance();
@@ -553,8 +565,7 @@ public class TagletManager {
             case PACKAGE:
                 return blockTagletsByLocation.get(Location.PACKAGE);
             case OTHER:
-                if (e instanceof DocletElement) {
-                    DocletElement de = (DocletElement) e;
+                if (e instanceof DocletElement de) {
                     switch (de.getSubKind()) {
                         case DOCFILE:
                             return blockTagletsByLocation.get(Location.PACKAGE);

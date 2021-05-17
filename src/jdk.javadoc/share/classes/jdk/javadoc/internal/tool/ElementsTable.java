@@ -567,7 +567,7 @@ public class ElementsTable {
             if (!isMandated(mdle, rd) && onlyTransitive == rd.isTransitive()) {
                 if (!haveModuleSources(dep)) {
                     if (!warnedNoSources.contains(dep)) {
-                        messager.printWarning(dep, "main.module_source_not_found", dep.getQualifiedName());
+                        messager.printWarningUsingKey(dep, "main.module_source_not_found", dep.getQualifiedName());
                         warnedNoSources.add(dep);
                     }
                 }
