@@ -3508,7 +3508,7 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
     munmap(p, page_size);
     return true;
   } else {
-      log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) failed sanity check "
+      log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) failed sanity check, "
                          "checking if smaller large page sizes are usable",
                          byte_size_in_exact_unit(page_size),
                          exact_unit_for_byte_size(page_size));
@@ -3658,6 +3658,14 @@ static os::PageSizes scan_multiple_page_support() {
     }
   }
   closedir(dir);
+
+  LogTarget(Debug, pagesize) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print("Large Page sizes: ");
+    page_sizes.print_on(&ls);
+  }
+
   return page_sizes;
 }
 
@@ -3794,8 +3802,6 @@ void os::large_page_init() {
     LogStream ls(lt);
     ls.print("Usable page sizes: ");
     _page_sizes.print_on(&ls);
-    ls.print("All large Page sizes: ");
-    all_large_pages.print_on(&ls);
   }
 
   // Now determine the type of large pages to use:
