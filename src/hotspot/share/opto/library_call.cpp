@@ -2810,7 +2810,7 @@ bool LibraryCallKit::inline_native_classID() {
       make_runtime_call(RC_LEAF,
                         OptoRuntime::trace_id_load_barrier_Type(),
                         CAST_FROM_FN_PTR(address, SharedRuntime::trace_id_load_barrier),
-                        "SharedRuntime::trace_id_load_barrier",
+                        "trace_id_load_barrier",
                         TypePtr::BOTTOM,
                         kls);
 
