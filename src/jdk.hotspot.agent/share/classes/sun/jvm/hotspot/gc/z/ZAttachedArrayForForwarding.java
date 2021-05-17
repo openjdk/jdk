@@ -54,6 +54,11 @@ public class ZAttachedArrayForForwarding extends VMObject {
         return lengthField.getValue(addr);
     }
 
+    // ObjectT: ZForwarding
+    //  ArrayT: ZForwardingEntry
+    //
+    // template <typename ObjectT, typename ArrayT>
+    // inline size_t ZAttachedArray<ObjectT, ArrayT>::object_size()
     private long objectSize() {
         return ZUtils.alignUp(ZForwarding.getSize(), ZForwardingEntry.getSize());
     }
@@ -61,6 +66,6 @@ public class ZAttachedArrayForForwarding extends VMObject {
     // ArrayT* operator()(const ObjectT* obj) const
     public ZForwardingEntry get(ZForwarding obj) {
         Address o = obj.getAddress().addOffsetTo(objectSize());
-        return VMObjectFactory.newObject(ZForwardingEntry.class, o.getAddressAt(0L));
+        return VMObjectFactory.newObject(ZForwardingEntry.class, o);
     }
 }

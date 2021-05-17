@@ -55,8 +55,8 @@ public class ZForwardingEntry extends VMObject {
         super(addr);
     }
 
-    public int entry() {
-        return (int)entryField.getValue(addr);
+    public long entry() {
+        return entryField.getValue(addr);
     }
 
     // typedef ZBitField<uint64_t, bool,   0,   1> field_populated

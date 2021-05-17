@@ -57,18 +57,18 @@ public class ZGranuleMapForForwarding  extends VMObject {
         return ZGlobals.ZAddressOffsetMax >> ZGlobals.ZGranuleSizeShift;
     }
 
-    private long index_for_addr(Address addr) {
-        long index = ZAddress.offset(addr) >> ZGlobals.ZGranuleSizeShift;
+    private long index_for_offset(long offset) {
+        long index = offset >>> ZGlobals.ZGranuleSizeShift;
 
         return index;
     }
 
     Address at(long index) {
-        return map().getAddressAt(index * VM.getVM().getBytesPerLong());
+        return map().getAddressAt(index * VM.getVM().getAddressSize());
     }
 
-    Address get(Address addr) {
-        long index = index_for_addr(addr);
+    Address get(long offset) {
+        long index = index_for_offset(offset);
         return at(index);
     }
 

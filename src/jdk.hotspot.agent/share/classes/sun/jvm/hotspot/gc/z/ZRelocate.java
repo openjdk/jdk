@@ -64,11 +64,11 @@ public class ZRelocate  extends VMObject {
     public Address relocateObject(ZForwarding forwarding, Address o) {
         Address toAddr = forwardingFind(forwarding, o);
         if (toAddr != null) {
+            // Already relocated.
             return toAddr;
+        } else {
+            // Return original address because it is not yet relocated.
+            return o;
         }
-        if (forwarding.retainPage()) {
-            throw new UnsupportedOperationException("Object " + o.toString() + " is unstable");
-        }
-        return forwardObject(forwarding, o);
     }
 }

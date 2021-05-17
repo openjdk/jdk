@@ -40,7 +40,7 @@ class ZAddress {
     }
 
     static boolean is_weak_bad(Address value) {
-        return (as_long(value) & ZGlobals.ZAddressWeakBadMask()) != 0;
+        return (as_long(value) & ZGlobals.ZAddressWeakBadMask()) != 0L;
     }
 
     static boolean is_weak_good(Address value) {

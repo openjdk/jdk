@@ -111,7 +111,7 @@ public class ZHeap extends VMObject {
     }
 
     public Address remapObject(Address o) {
-        ZForwarding forwarding = forwardingTable().get(o);
+        ZForwarding forwarding = forwardingTable().get(addr);
         if (forwarding == null) {
             return ZAddress.good(o);
         }

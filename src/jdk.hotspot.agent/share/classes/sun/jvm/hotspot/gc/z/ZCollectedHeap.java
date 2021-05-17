@@ -109,7 +109,6 @@ public class ZCollectedHeap extends CollectedHeap {
     @Override
     public OopHandle oop_load_in_native(Address addr) {
         Address oopAddress = addr.getAddressAt(0);
-
         return oop_load_barrier(oopAddress);
     }
 

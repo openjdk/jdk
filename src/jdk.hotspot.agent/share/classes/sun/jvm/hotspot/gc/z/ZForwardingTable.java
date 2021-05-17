@@ -55,6 +55,6 @@ public class ZForwardingTable extends VMObject {
     }
 
     public ZForwarding get(Address o) {
-        return VMObjectFactory.newObject(ZForwarding.class, map().get(VM.getVM().getDebugger().newAddress(ZAddress.offset(o))));
+        return VMObjectFactory.newObject(ZForwarding.class, map().get(ZAddress.offset(o)));
     }
 }

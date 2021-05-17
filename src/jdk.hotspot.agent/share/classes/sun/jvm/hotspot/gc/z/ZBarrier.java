@@ -41,14 +41,7 @@ class ZBarrier {
     }
 
     private static Address relocate(Address addr) {
-        ZHeap heap = zheap();
-        if (heap.is_relocating(addr)) {
-            // Forward
-            return heap.relocate_object(addr);
-        }
-
-        // Remap
-        return ZAddress.good(addr);
+        return zheap().relocate_object(addr);
     }
 
     private static ZHeap zheap() {

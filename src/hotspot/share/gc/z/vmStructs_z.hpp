@@ -94,6 +94,8 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   nonstatic_field(ZGranuleMapForPageTable,      _map,                 ZPage** const)                 \
   nonstatic_field(ZGranuleMapForForwarding,     _map,                 ZForwarding** const)           \
                                                                                                      \
+  nonstatic_field(ZForwardingTable,             _map,                 ZGranuleMapForForwarding)      \
+                                                                                                     \
   nonstatic_field(ZVirtualMemory,               _start,               const uintptr_t)               \
   nonstatic_field(ZVirtualMemory,               _end,                 const uintptr_t)               \
                                                                                                      \
