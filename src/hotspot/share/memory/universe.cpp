@@ -626,11 +626,11 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
     // return default
     return default_err;
   } else {
-    Thread* THREAD = Thread::current();
-    Handle default_err_h(THREAD, default_err);
+    JavaThread* current = JavaThread::current();
+    Handle default_err_h(current, default_err);
     // get the error object at the slot and set set it to NULL so that the
     // array isn't keeping it alive anymore.
-    Handle exc(THREAD, preallocated_out_of_memory_errors()->obj_at(next));
+    Handle exc(current, preallocated_out_of_memory_errors()->obj_at(next));
     assert(exc() != NULL, "slot has been used already");
     preallocated_out_of_memory_errors()->obj_at_put(next, NULL);
 

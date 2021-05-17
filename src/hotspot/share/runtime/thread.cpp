@@ -2897,7 +2897,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // after any initialization logic that might modify the flags.
   Arguments::update_vm_info_property(VM_Version::vm_info_string());
 
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   HandleMark hm(THREAD);
 
   // Always call even when there are not JVMTI environments yet, since environments

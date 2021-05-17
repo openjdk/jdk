@@ -264,7 +264,7 @@ void MetaspaceShared::post_initialize(TRAPS) {
 static GrowableArrayCHeap<OopHandle, mtClassShared>* _extra_interned_strings = NULL;
 static GrowableArrayCHeap<Symbol*, mtClassShared>* _extra_symbols = NULL;
 
-void MetaspaceShared::read_extra_data(Thread* current, const char* filename) {
+void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename) {
   _extra_interned_strings = new GrowableArrayCHeap<OopHandle, mtClassShared>(10000);
   _extra_symbols = new GrowableArrayCHeap<Symbol*, mtClassShared>(1000);
 
@@ -289,7 +289,7 @@ void MetaspaceShared::read_extra_data(Thread* current, const char* filename) {
     } else{
       assert(prefix_type == HashtableTextDump::StringPrefix, "Sanity");
       ExceptionMark em(current);
-      Thread* THREAD = current; // For exception macros.
+      JavaThread* THREAD = current; // For exception macros.
       oop str = StringTable::intern(utf8_buffer, THREAD);
 
       if (HAS_PENDING_EXCEPTION) {
@@ -639,7 +639,7 @@ void MetaspaceShared::prepare_for_dumping() {
   Arguments::assert_is_dumping_archive();
   Arguments::check_unsupported_dumping_properties();
 
-  ClassLoader::initialize_shared_path(Thread::current());
+  ClassLoader::initialize_shared_path(JavaThread::current());
 }
 
 // Preload classes from a list, populate the shared spaces and dump to a
@@ -752,9 +752,9 @@ int MetaspaceShared::parse_classlist(const char* classlist_path, TRAPS) {
 }
 
 // Returns true if the class's status has changed.
-bool MetaspaceShared::try_link_class(Thread* current, InstanceKlass* ik) {
+bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
-  Thread* THREAD = current; // For exception macros.
+  JavaThread* THREAD = current; // For exception macros.
   Arguments::assert_is_dumping_archive();
   if (ik->is_loaded() && !ik->is_linked() && !ik->has_old_class_version() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {

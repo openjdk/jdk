@@ -104,7 +104,7 @@ class RetryableAllocationMark: public StackObj {
   ~RetryableAllocationMark() {
     if (_thread != NULL) {
       _thread->set_in_retryable_allocation(false);
-      JavaThread* THREAD = _thread;
+      JavaThread* THREAD = _thread; // For exception macros.
       if (HAS_PENDING_EXCEPTION) {
         oop ex = PENDING_EXCEPTION;
         // Do not clear probable async exceptions.
@@ -1046,7 +1046,7 @@ void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
   {
     MutexUnlocker unlock(JVMCI_lock);
 
-    JavaThread* THREAD = JavaThread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     HandleMark hm(THREAD);
     ResourceMark rm(THREAD);
     if (JVMCIENV->is_hotspot()) {
@@ -1086,7 +1086,7 @@ void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
 }
 
 JVMCIObject JVMCIRuntime::create_jvmci_primitive_type(BasicType type, JVMCI_TRAPS) {
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   // These primitive types are long lived and are created before the runtime is fully set up
   // so skip registering them for scanning.
   JVMCIObject mirror = JVMCIENV->get_object_constant(java_lang_Class::primitive_mirror(type), false, true);
@@ -1197,7 +1197,7 @@ void JVMCIRuntime::describe_pending_hotspot_exception(JavaThread* THREAD, bool c
 
 
 void JVMCIRuntime::fatal_exception(JVMCIEnv* JVMCIENV, const char* message) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
   static volatile int report_error = 0;
   if (!report_error && Atomic::cmpxchg(&report_error, 0, 1) == 0) {

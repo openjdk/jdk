@@ -145,7 +145,7 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
   const char * source_file = NULL;
   const char * trace = "explicit";
   InstanceKlass* caller = NULL;
-  JavaThread* jthread = THREAD->as_Java_thread();
+  JavaThread* jthread = THREAD;
   if (jthread->has_last_Java_frame()) {
     vframeStream vfst(jthread);
 
@@ -841,7 +841,7 @@ static jclass jvm_define_class_common(const char *name,
                                       TRAPS) {
   if (source == NULL)  source = "__JVM_DefineClass__";
 
-  JavaThread* jt = THREAD->as_Java_thread();
+  JavaThread* jt = THREAD;
 
   PerfClassTraceTime vmtimer(ClassLoader::perf_define_appclass_time(),
                              ClassLoader::perf_define_appclass_selftime(),

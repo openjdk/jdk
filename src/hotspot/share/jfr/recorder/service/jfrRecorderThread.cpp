@@ -78,7 +78,7 @@ JfrPostBox& JfrRecorderThread::post_box() {
 }
 
 // defined in JfrRecorderThreadLoop.cpp
-void recorderthread_entry(JavaThread*, Thread*);
+void recorderthread_entry(JavaThread*, JavaThread*);
 
 bool JfrRecorderThread::start(JfrCheckpointManager* cp_manager, JfrPostBox* post_box, TRAPS) {
   assert(cp_manager != NULL, "invariant");

@@ -103,8 +103,7 @@ void ClassLoaderData::init_null_class_loader_data() {
 // and klass are available after the class_loader oop is no longer alive,
 // during unloading.
 void ClassLoaderData::initialize_name(Handle class_loader) {
-  Thread* THREAD = Thread::current();
-  ResourceMark rm(THREAD);
+  ResourceMark rm;
 
   // Obtain the class loader's name.  If the class loader's name was not
   // explicitly set during construction, the CLD's _name field will be null.

@@ -33,6 +33,7 @@
 
 class outputStream;
 class Thread;
+class JavaThread;
 
 class AllocFailStrategy {
 public:
@@ -344,7 +345,7 @@ class MetaspaceObj {
 
   void* operator new(size_t size, ClassLoaderData* loader_data,
                      size_t word_size,
-                     Type type, Thread* thread) throw();
+                     Type type, JavaThread* thread) throw();
                      // can't use TRAPS from this header file.
   void* operator new(size_t size, ClassLoaderData* loader_data,
                      size_t word_size,
