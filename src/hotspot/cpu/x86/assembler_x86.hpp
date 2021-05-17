@@ -1888,6 +1888,8 @@ private:
   // Logical Compare 256bit
   void vptest(XMMRegister dst, XMMRegister src);
   void vptest(XMMRegister dst, Address src);
+  
+  void Assembler::vptestmb(KRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Vector compare
   void vptest(XMMRegister dst, XMMRegister src, int vector_len);

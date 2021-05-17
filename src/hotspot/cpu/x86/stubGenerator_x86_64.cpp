@@ -6089,9 +6089,9 @@ address generate_avx_ghash_processBlocks() {
 
     // Check for error
     // TODO: Add this instruction
-    // __ evptestmb(k0, xmm8, xmm9, Assembler::AVX_512bit);
-    // __ kortestql(k0, k0);
-    // __ jcc(notZero, L_errorExit);
+    __ vptestmb(k0, xmm8, xmm9, Assembler::AVX_512bit);
+    __ kortestql(k0, k0);
+    __ jcc(Assembler::notZero, L_errorExit);
 
     __ vpmaddubsw(xmm10, xmm10, xmm2, Assembler::AVX_512bit);
     __ vpmaddwd(xmm10, xmm10, xmm1, Assembler::AVX_512bit);
