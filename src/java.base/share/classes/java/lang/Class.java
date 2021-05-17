@@ -1631,7 +1631,7 @@ public final class Class<T> implements java.io.Serializable,
      * in source code, can have a non-empty name including special
      * characters, such as "{@code $}".
      *
-     * <p>The simple name of an {@linkplain isArray() array class} is the simple name of the
+     * <p>The simple name of an {@linkplain #isArray() array class} is the simple name of the
      * component type with "[]" appended.  In particular the simple
      * name of an array class whose component type is anonymous is "[]".
      *
@@ -1722,7 +1722,12 @@ public final class Class<T> implements java.io.Serializable,
             String enclosingName = enclosingClass.getCanonicalName();
             if (enclosingName == null)
                 return ReflectionData.NULL_SENTINEL;
-            return enclosingName + "." + getSimpleName();
+            String simpleName = getSimpleName();
+            return new StringBuilder(enclosingName.length() + simpleName.length() + 1)
+                    .append(enclosingName)
+                    .append('.')
+                    .append(simpleName)
+                    .toString();
         }
     }
 
@@ -2360,6 +2365,19 @@ public final class Class<T> implements java.io.Serializable,
      * #isRecord()} returns {@code false}, then this method returns {@code null}.
      * Conversely, if {@link #isRecord()} returns {@code true}, then this method
      * returns a non-null value.
+     *
+     * @apiNote
+     * <p> The following method can be used to find the record canonical constructor:
+     *
+     * <pre>{@code
+     * static <T extends Record> Constructor<T> getCanonicalConstructor(Class<T> cls)
+     *     throws NoSuchMethodException {
+     *   Class<?>[] paramTypes =
+     *     Arrays.stream(cls.getRecordComponents())
+     *           .map(RecordComponent::getType)
+     *           .toArray(Class<?>[]::new);
+     *   return cls.getDeclaredConstructor(paramTypes);
+     * }}</pre>
      *
      * @return  An array of {@code RecordComponent} objects representing all the
      *          record components of this record class, or {@code null} if this
@@ -3113,15 +3131,15 @@ public final class Class<T> implements java.io.Serializable,
             return unsafe.compareAndSetReference(clazz, reflectionDataOffset, oldData, newData);
         }
 
-        static <T> boolean casAnnotationType(Class<?> clazz,
-                                             AnnotationType oldType,
-                                             AnnotationType newType) {
+        static boolean casAnnotationType(Class<?> clazz,
+                                         AnnotationType oldType,
+                                         AnnotationType newType) {
             return unsafe.compareAndSetReference(clazz, annotationTypeOffset, oldType, newType);
         }
 
-        static <T> boolean casAnnotationData(Class<?> clazz,
-                                             AnnotationData oldData,
-                                             AnnotationData newData) {
+        static boolean casAnnotationData(Class<?> clazz,
+                                         AnnotationData oldData,
+                                         AnnotationData newData) {
             return unsafe.compareAndSetReference(clazz, annotationDataOffset, oldData, newData);
         }
     }
@@ -4352,10 +4370,20 @@ public final class Class<T> implements java.io.Serializable,
         } else if (isHidden()) {
             String name = getName();
             int index = name.indexOf('/');
-            return "L" + name.substring(0, index).replace('.', '/')
-                       + "." + name.substring(index+1) + ";";
+            return new StringBuilder(name.length() + 2)
+                    .append('L')
+                    .append(name.substring(0, index).replace('.', '/'))
+                    .append('.')
+                    .append(name, index + 1, name.length())
+                    .append(';')
+                    .toString();
         } else {
-            return "L" + getName().replace('.', '/') + ";";
+            String name = getName().replace('.', '/');
+            return new StringBuilder(name.length() + 2)
+                    .append('L')
+                    .append(name)
+                    .append(';')
+                    .toString();
         }
     }
 

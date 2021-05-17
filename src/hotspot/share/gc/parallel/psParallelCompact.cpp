@@ -446,7 +446,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
   const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
-  ReservedSpace rs(_reserved_byte_size, rs_align, rs_align > 0);
+  ReservedSpace rs(_reserved_byte_size, rs_align, page_sz);
   os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, page_sz, rs.base(),
                        rs.size());
 
@@ -2125,9 +2125,8 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     ReferenceProcessorStats stats;
     ReferenceProcessorPhaseTimes pt(&_gc_timer, ref_processor()->max_num_queues());
 
+    ref_processor()->set_active_mt_degree(active_gc_threads);
     if (ref_processor()->processing_is_mt()) {
-      ref_processor()->set_active_mt_degree(active_gc_threads);
-
       RefProcTaskExecutor task_executor;
       stats = ref_processor()->process_discovered_references(
         is_alive_closure(), &mark_and_push_closure, &follow_stack_closure,

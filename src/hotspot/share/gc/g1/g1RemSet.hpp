@@ -39,8 +39,8 @@
 
 class BitMap;
 class CardTableBarrierSet;
-class G1BlockOffsetTable;
 class CodeBlobClosure;
+class G1AbstractSubTask;
 class G1CollectedHeap;
 class G1CMBitMap;
 class G1HotCardCache;
@@ -107,8 +107,9 @@ public:
   // Prepare for and cleanup after scanning the heap roots. Must be called
   // once before and after in sequential code.
   void prepare_for_scan_heap_roots();
-  // Cleans the card table from temporary duplicate detection information.
-  void cleanup_after_scan_heap_roots();
+  // Creates a gang task for cleaining up temporary data structures and the
+  // card table, removing temporary duplicate detection information.
+  G1AbstractSubTask* create_cleanup_after_scan_heap_roots_task();
   // Excludes the given region from heap root scanning.
   void exclude_region_from_scan(uint region_idx);
   // Creates a snapshot of the current _top values at the start of collection to

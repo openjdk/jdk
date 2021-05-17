@@ -3784,8 +3784,6 @@ void TemplateTable::monitorenter()
   // check for NULL object
   __ null_check(r0);
 
-  __ resolve(IS_NOT_NULL, r0);
-
   const Address monitor_block_top(
         rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   const Address monitor_block_bot(
@@ -3884,8 +3882,6 @@ void TemplateTable::monitorexit()
 
   // check for NULL object
   __ null_check(r0);
-
-  __ resolve(IS_NOT_NULL, r0);
 
   const Address monitor_block_top(
         rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize);

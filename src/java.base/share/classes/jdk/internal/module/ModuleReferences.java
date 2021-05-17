@@ -45,7 +45,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
@@ -274,7 +273,7 @@ class ModuleReferences {
             // take snapshot to avoid async close
             List<String> names = jf.versionedStream()
                     .map(JarEntry::getName)
-                    .collect(Collectors.toList());
+                    .toList();
             return names.stream();
         }
 
@@ -340,7 +339,7 @@ class ModuleReferences {
             List<String> names = jf.stream()
                     .filter(e -> e.section() == JmodFile.Section.CLASSES)
                     .map(JmodFile.Entry::name)
-                    .collect(Collectors.toList());
+                    .toList();
             return names.stream();
         }
 

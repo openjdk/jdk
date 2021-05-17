@@ -33,6 +33,7 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
@@ -3997,6 +3998,10 @@ jint Arguments::apply_ergo() {
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();
+
+  if (!StringDedup::ergo_initialize()) {
+    return JNI_EINVAL;
+  }
 
   // Set compiler flags after GC is selected and GC specific
   // flags (LoopStripMiningIter) are set.

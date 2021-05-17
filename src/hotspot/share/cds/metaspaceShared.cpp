@@ -99,8 +99,8 @@ bool MetaspaceShared::_use_full_module_graph = true;
 //
 //     bm  - bitmap for relocating the above 7 regions.
 //
-// The rw, and ro regions are linearly allocated, in the order of rw->ro.
-// These regions are aligned with MetaspaceShared::reserved_space_alignment().
+// The rw and ro regions are linearly allocated, in the order of rw->ro.
+// These regions are aligned with MetaspaceShared::core_region_alignment().
 //
 // These 2 regions are populated in the following steps:
 // [0] All classes are loaded in MetaspaceShared::preload_classes(). All metadata are
@@ -264,7 +264,7 @@ void MetaspaceShared::post_initialize(TRAPS) {
 static GrowableArrayCHeap<OopHandle, mtClassShared>* _extra_interned_strings = NULL;
 static GrowableArrayCHeap<Symbol*, mtClassShared>* _extra_symbols = NULL;
 
-void MetaspaceShared::read_extra_data(Thread* current, const char* filename) {
+void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename) {
   _extra_interned_strings = new GrowableArrayCHeap<OopHandle, mtClassShared>(10000);
   _extra_symbols = new GrowableArrayCHeap<Symbol*, mtClassShared>(1000);
 
@@ -289,7 +289,7 @@ void MetaspaceShared::read_extra_data(Thread* current, const char* filename) {
     } else{
       assert(prefix_type == HashtableTextDump::StringPrefix, "Sanity");
       ExceptionMark em(current);
-      Thread* THREAD = current; // For exception macros.
+      JavaThread* THREAD = current; // For exception macros.
       oop str = StringTable::intern(utf8_buffer, THREAD);
 
       if (HAS_PENDING_EXCEPTION) {
@@ -361,6 +361,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
 
+  LambdaFormInvokers::serialize(soc);
   soc->do_tag(666);
 }
 
@@ -389,7 +390,7 @@ static void rewrite_nofast_bytecode(const methodHandle& method) {
 void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik) {
   for (int i = 0; i < ik->methods()->length(); i++) {
     methodHandle m(thread, ik->methods()->at(i));
-    if (!is_old_class(ik)) {
+    if (!ik->has_old_class_version()) {
       rewrite_nofast_bytecode(m);
     }
     Fingerprinter fp(m);
@@ -460,6 +461,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 
   SystemDictionaryShared::write_to_archive();
 
+  // Write lambform lines into archive
+  LambdaFormInvokers::dump_static_archive_invokers();
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
@@ -574,31 +577,10 @@ public:
   ClassLoaderData* cld_at(int index) { return _loaded_cld.at(index); }
 };
 
-// Check if a class or its super class/interface is old.
-bool MetaspaceShared::is_old_class(InstanceKlass* ik) {
-  if (ik == NULL) {
-    return false;
-  }
-  if (ik->major_version() < 50 /*JAVA_6_VERSION*/) {
-    return true;
-  }
-  if (is_old_class(ik->java_super())) {
-    return true;
-  }
-  Array<InstanceKlass*>* interfaces = ik->local_interfaces();
-  int len = interfaces->length();
-  for (int i = 0; i < len; i++) {
-    if (is_old_class(interfaces->at(i))) {
-      return true;
-    }
-  }
-  return false;
-}
-
 bool MetaspaceShared::linking_required(InstanceKlass* ik) {
   // For static CDS dump, do not link old classes.
   // For dynamic CDS dump, only link classes loaded by the builtin class loaders.
-  return DumpSharedSpaces ? !MetaspaceShared::is_old_class(ik) : !ik->is_shared_unregistered_class();
+  return DumpSharedSpaces ? !ik->has_old_class_version() : !ik->is_shared_unregistered_class();
 }
 
 bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
@@ -619,6 +601,8 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
 void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
   // Collect all loaded ClassLoaderData.
   ResourceMark rm;
+
+  LambdaFormInvokers::regenerate_holder_classes(CHECK);
   CollectCLDClosure collect_cld;
   {
     // ClassLoaderDataGraph::loaded_cld_do requires ClassLoaderDataGraph_lock.
@@ -655,7 +639,7 @@ void MetaspaceShared::prepare_for_dumping() {
   Arguments::assert_is_dumping_archive();
   Arguments::check_unsupported_dumping_properties();
 
-  ClassLoader::initialize_shared_path(Thread::current());
+  ClassLoader::initialize_shared_path(JavaThread::current());
 }
 
 // Preload classes from a list, populate the shared spaces and dump to a
@@ -739,12 +723,6 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
     log_info(cds)("Reading extra data: done.");
   }
 
-  if (LambdaFormInvokers::lambdaform_lines() != NULL) {
-    log_info(cds)("Regenerate MethodHandle Holder classes...");
-    LambdaFormInvokers::regenerate_holder_classes(CHECK);
-    log_info(cds)("Regenerate MethodHandle Holder classes done.");
-  }
-
   HeapShared::init_for_dumping(CHECK);
 
   // Rewrite and link classes
@@ -774,11 +752,11 @@ int MetaspaceShared::parse_classlist(const char* classlist_path, TRAPS) {
 }
 
 // Returns true if the class's status has changed.
-bool MetaspaceShared::try_link_class(Thread* current, InstanceKlass* ik) {
+bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
-  Thread* THREAD = current; // For exception macros.
+  JavaThread* THREAD = current; // For exception macros.
   Arguments::assert_is_dumping_archive();
-  if (ik->is_loaded() && !ik->is_linked() && !MetaspaceShared::is_old_class(ik) &&
+  if (ik->is_loaded() && !ik->is_linked() && !ik->has_old_class_version() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == NULL) {
@@ -925,12 +903,12 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     char* cds_end =  dynamic_mapped ? dynamic_mapinfo->mapped_end() : static_mapinfo->mapped_end();
     set_shared_metaspace_range(cds_base, static_mapinfo->mapped_end(), cds_end);
     _relocation_delta = static_mapinfo->relocation_delta();
+    _requested_base_address = static_mapinfo->requested_base_address();
     if (dynamic_mapped) {
       FileMapInfo::set_shared_path_table(dynamic_mapinfo);
     } else {
       FileMapInfo::set_shared_path_table(static_mapinfo);
     }
-    _requested_base_address = static_mapinfo->requested_base_address();
   } else {
     set_shared_metaspace_range(NULL, NULL, NULL);
     UseSharedSpaces = false;
@@ -1220,7 +1198,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     // Get the simple case out of the way first:
     // no compressed class space, simple allocation.
     archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
-                                     false /* bool large */, (char*)base_address);
+                                     os::vm_page_size(), (char*)base_address);
     if (archive_space_rs.is_reserved()) {
       assert(base_address == NULL ||
              (address)archive_space_rs.base() == base_address, "Sanity");
@@ -1269,9 +1247,9 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       // via sequential file IO.
       address ccs_base = base_address + archive_space_size + gap_size;
       archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
-                                       false /* large */, (char*)base_address);
+                                       os::vm_page_size(), (char*)base_address);
       class_space_rs   = ReservedSpace(class_space_size, class_space_alignment,
-                                       false /* large */, (char*)ccs_base);
+                                       os::vm_page_size(), (char*)ccs_base);
     }
     if (!archive_space_rs.is_reserved() || !class_space_rs.is_reserved()) {
       release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
@@ -1280,7 +1258,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   } else {
     if (use_archive_base_addr && base_address != nullptr) {
       total_space_rs = ReservedSpace(total_range_size, archive_space_alignment,
-                                     false /* bool large */, (char*) base_address);
+                                     os::vm_page_size(), (char*) base_address);
     } else {
       // Reserve at any address, but leave it up to the platform to choose a good one.
       total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size);
@@ -1396,21 +1374,6 @@ class CountSharedSymbols : public SymbolClosure {
 
 };
 
-// For -XX:PrintSharedArchiveAndExit
-class CountSharedStrings : public OopClosure {
- private:
-  int _count;
- public:
-  CountSharedStrings() : _count(0) {}
-  void do_oop(oop* p) {
-    _count++;
-  }
-  void do_oop(narrowOop* p) {
-    _count++;
-  }
-  int total() { return _count; }
-};
-
 // Read the miscellaneous data from the shared file, and
 // serialize it out to its various destinations.
 
@@ -1444,6 +1407,12 @@ void MetaspaceShared::initialize_shared_spaces() {
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
 
+  // Set up LambdaFormInvokers::_lambdaform_lines for dynamic dump
+  if (DynamicDumpSharedSpaces) {
+    // Read stored LF format lines stored in static archive
+    LambdaFormInvokers::read_static_archive_invokers();
+  }
+
   if (PrintSharedArchiveAndExit) {
     // Print archive names
     if (dynamic_mapinfo != nullptr) {
@@ -1465,9 +1434,7 @@ void MetaspaceShared::initialize_shared_spaces() {
     CountSharedSymbols cl;
     SymbolTable::shared_symbols_do(&cl);
     tty->print_cr("Number of shared symbols: %d", cl.total());
-    CountSharedStrings cs;
-    StringTable::shared_oops_do(&cs);
-    tty->print_cr("Number of shared strings: %d", cs.total());
+    tty->print_cr("Number of shared strings: %zu", StringTable::shared_entry_count());
     tty->print_cr("VM version: %s\r\n", static_mapinfo->vm_version());
     if (FileMapInfo::current_info() == NULL || _archive_loading_failed) {
       tty->print_cr("archive is invalid");
