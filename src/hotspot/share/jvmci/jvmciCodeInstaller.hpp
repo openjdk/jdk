@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,42 +30,6 @@
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciEnv.hpp"
 
-#if INCLUDE_AOT
-class RelocBuffer : public StackObj {
-  enum { stack_size = 1024 };
-public:
-  RelocBuffer() : _size(0), _buffer(0) {}
-  ~RelocBuffer();
-  void ensure_size(size_t bytes);
-  void set_size(size_t bytes);
-  address begin() const;
-  size_t size() const { return _size; }
-private:
-  size_t _size;
-  char _static_buffer[stack_size];
-  char *_buffer;
-};
-
-class CodeInstaller;
-
-class AOTOopRecorder : public OopRecorder {
-public:
-  AOTOopRecorder(CodeInstaller* code_inst, Arena* arena = NULL, bool deduplicate = false);
-
-  virtual int find_index(Metadata* h);
-  virtual int find_index(jobject h);
-  int nr_meta_refs() const;
-  jobject meta_element(int pos) const;
-
-private:
-  void record_meta_ref(jobject ref, int index);
-
-  GrowableArray<jobject>* _meta_refs;
-
-  CodeInstaller* _code_inst;
-};
-#endif // INCLUDE_AOT
-
 class CodeMetadata {
 public:
   CodeMetadata() {}
@@ -77,11 +41,6 @@ public:
 
   u_char* get_scopes_desc() const { return _scopes_desc; }
   int get_scopes_size() const { return _nr_scopes_desc; }
-
-#if INCLUDE_AOT
-  RelocBuffer* get_reloc_buffer() { return &_reloc_buffer; }
-  AOTOopRecorder* get_oop_recorder() { return _oop_recorder; }
-#endif
 
   ExceptionHandlerTable* get_exception_table() { return _exception_table; }
 
@@ -96,12 +55,6 @@ public:
     _scopes_desc = scopes;
     _nr_scopes_desc = size;
   }
-
-#if INCLUDE_AOT
-  void set_oop_recorder(AOTOopRecorder* recorder) {
-    _oop_recorder = recorder;
-  }
-#endif
 
   void set_exception_table(ExceptionHandlerTable* table) {
     _exception_table = table;
@@ -119,10 +72,6 @@ private:
   u_char* _scopes_desc;
   int _nr_scopes_desc;
 
-#if INCLUDE_AOT
-  RelocBuffer _reloc_buffer;
-  AOTOopRecorder* _oop_recorder;
-#endif
   ExceptionHandlerTable* _exception_table;
   ImplicitExceptionTable* _implicit_exception_table;
 };
@@ -202,8 +151,6 @@ private:
   ImplicitExceptionTable    _implicit_exception_table;
   bool                      _has_auto_box;
 
-  bool _immutable_pic_compilation;  // Installer is called for Immutable PIC compilation.
-
   static ConstantOopWriteValue* _oop_null_scope_value;
   static ConstantIntValue*    _int_m1_scope_value;
   static ConstantIntValue*    _int_0_scope_value;
@@ -231,15 +178,11 @@ private:
 
 public:
 
-  CodeInstaller(JVMCIEnv* jvmci_env, bool immutable_pic_compilation) :
+  CodeInstaller(JVMCIEnv* jvmci_env) :
     _arena(mtJVMCI),
     _jvmci_env(jvmci_env),
-    _has_auto_box(false),
-    _immutable_pic_compilation(immutable_pic_compilation) {}
+    _has_auto_box(false) {}
 
-#if INCLUDE_AOT
-  JVMCI::CodeInstallResult gather_metadata(JVMCIObject target, JVMCIObject compiled_code, CodeMetadata& metadata, JVMCI_TRAPS);
-#endif
   JVMCI::CodeInstallResult install(JVMCICompiler* compiler,
                                    JVMCIObject target,
                                    JVMCIObject compiled_code,

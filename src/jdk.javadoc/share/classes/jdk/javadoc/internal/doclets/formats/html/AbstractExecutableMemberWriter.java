@@ -41,6 +41,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
@@ -91,7 +92,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         }
         String signature = utils.flatSignature((ExecutableElement) member, typeElement);
         if (signature.length() > 2) {
-            content.add(Entity.ZERO_WIDTH_SPACE);
+            content.add(new HtmlTree(TagName.WBR));
         }
         content.add(signature);
 
@@ -209,8 +210,8 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected void addParameters(ExecutableElement member, Content htmltree) {
         Content paramTree = getParameters(member, false);
         if (paramTree.charCount() > 2) {
-            // only add zero-width-space for non-empty parameters
-            htmltree.add(Entity.ZERO_WIDTH_SPACE);
+            // only add <wbr> for non-empty parameters
+            htmltree.add(new HtmlTree(TagName.WBR));
         }
         htmltree.add(paramTree);
     }

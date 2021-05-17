@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
@@ -104,7 +103,6 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
       {
         MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations);
         ScavengableNMethods::nmethods_do(&code_closure);
-        AOTLoader::oops_do(&roots_closure);
       }
       break;
 

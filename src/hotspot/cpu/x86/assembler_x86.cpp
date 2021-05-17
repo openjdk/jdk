@@ -1469,6 +1469,13 @@ void Assembler::vaesenclast(XMMRegister dst, XMMRegister nds, XMMRegister src, i
   emit_int16((unsigned char)0xDD, (0xC0 | encode));
 }
 
+void Assembler::andb(Address dst, Register src) {
+  InstructionMark im(this);
+  prefix(dst, src);
+  emit_int8(0x20);
+  emit_operand(src, dst);
+}
+
 void Assembler::andw(Register dst, Register src) {
   (void)prefix_and_encode(dst->encoding(), src->encoding());
   emit_arith(0x23, 0xC0, dst, src);
@@ -1477,14 +1484,19 @@ void Assembler::andw(Register dst, Register src) {
 void Assembler::andl(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefix(dst);
-  emit_int8((unsigned char)0x81);
-  emit_operand(rsp, dst, 4);
-  emit_int32(imm32);
+  emit_arith_operand(0x81, as_Register(4), dst, imm32);
 }
 
 void Assembler::andl(Register dst, int32_t imm32) {
   prefix(dst);
   emit_arith(0x81, 0xE0, dst, imm32);
+}
+
+void Assembler::andl(Address dst, Register src) {
+  InstructionMark im(this);
+  prefix(dst, src);
+  emit_int8(0x21);
+  emit_operand(src, dst);
 }
 
 void Assembler::andl(Register dst, Address src) {
@@ -1649,6 +1661,7 @@ void Assembler::cmovl(Condition cc, Register dst, Register src) {
 
 
 void Assembler::cmovl(Condition cc, Register dst, Address src) {
+  InstructionMark im(this);
   NOT_LP64(guarantee(VM_Version::supports_cmov(), "illegal instruction"));
   prefix(src, dst);
   emit_int16(0x0F, (0x40 | cc));
@@ -1668,6 +1681,12 @@ void Assembler::cmpl(Address dst, int32_t imm32) {
   prefix(dst);
   emit_int8((unsigned char)0x81);
   emit_operand(rdi, dst, 4);
+  emit_int32(imm32);
+}
+
+void Assembler::cmp(Register dst, int32_t imm32) {
+  prefix(dst);
+  emit_int8((unsigned char)0x3D);
   emit_int32(imm32);
 }
 
@@ -1701,6 +1720,14 @@ void Assembler::cmpw(Address dst, int imm16) {
 // The ZF is set if the compared values were equal, and cleared otherwise.
 void Assembler::cmpxchgl(Register reg, Address adr) { // cmpxchg
   InstructionMark im(this);
+  prefix(adr, reg);
+  emit_int16(0x0F, (unsigned char)0xB1);
+  emit_operand(reg, adr);
+}
+
+void Assembler::cmpxchgw(Register reg, Address adr) { // cmpxchg
+  InstructionMark im(this);
+  size_prefix();
   prefix(adr, reg);
   emit_int16(0x0F, (unsigned char)0xB1);
   emit_operand(reg, adr);
@@ -2168,6 +2195,19 @@ void Assembler::imull(Register dst, Register src) {
              (0xC0 | encode));
 }
 
+void Assembler::imull(Register dst, Address src, int32_t value) {
+  InstructionMark im(this);
+  prefix(src, dst);
+  if (is8bit(value)) {
+    emit_int8((unsigned char)0x6B);
+    emit_operand(dst, src);
+    emit_int8(value);
+  } else {
+    emit_int8((unsigned char)0x69);
+    emit_operand(dst, src);
+    emit_int32(value);
+  }
+}
 
 void Assembler::imull(Register dst, Register src, int value) {
   int encode = prefix_and_encode(dst->encoding(), src->encoding());
@@ -2349,6 +2389,10 @@ void Assembler::lfence() {
 
 void Assembler::lock() {
   emit_int8((unsigned char)0xF0);
+}
+
+void Assembler::size_prefix() {
+  emit_int8(0x66);
 }
 
 void Assembler::lzcntl(Register dst, Register src) {
@@ -3246,6 +3290,13 @@ void Assembler::negl(Register dst) {
   emit_int16((unsigned char)0xF7, (0xD8 | encode));
 }
 
+void Assembler::negl(Address dst) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_int8((unsigned char)0xF7);
+  emit_operand(as_Register(3), dst);
+}
+
 void Assembler::nop(int i) {
 #ifdef ASSERT
   assert(i > 0, " ");
@@ -3598,6 +3649,13 @@ void Assembler::orb(Address dst, int imm8) {
   emit_int8((unsigned char)0x80);
   emit_operand(rcx, dst, 1);
   emit_int8(imm8);
+}
+
+void Assembler::orb(Address dst, Register src) {
+  InstructionMark im(this);
+  prefix(dst, src, true);
+  emit_int8(0x08);
+  emit_operand(src, dst);
 }
 
 void Assembler::packsswb(XMMRegister dst, XMMRegister src) {
@@ -5021,6 +5079,65 @@ void Assembler::sahf() {
   emit_int8((unsigned char)0x9E);
 }
 
+void Assembler::sall(Address dst, int imm8) {
+  InstructionMark im(this);
+  assert(isShiftCount(imm8), "illegal shift count");
+  prefix(dst);
+  if (imm8 == 1) {
+    emit_int8((unsigned char)0xD1);
+    emit_operand(as_Register(4), dst);
+  }
+  else {
+    emit_int8((unsigned char)0xC1);
+    emit_operand(as_Register(4), dst);
+    emit_int8(imm8);
+  }
+}
+
+void Assembler::sall(Address dst) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_int8((unsigned char)0xD3);
+  emit_operand(as_Register(4), dst);
+}
+
+void Assembler::sall(Register dst, int imm8) {
+  assert(isShiftCount(imm8), "illegal shift count");
+  int encode = prefix_and_encode(dst->encoding());
+  if (imm8 == 1) {
+    emit_int16((unsigned char)0xD1, (0xE0 | encode));
+  } else {
+    emit_int24((unsigned char)0xC1, (0xE0 | encode), imm8);
+  }
+}
+
+void Assembler::sall(Register dst) {
+  int encode = prefix_and_encode(dst->encoding());
+  emit_int16((unsigned char)0xD3, (0xE0 | encode));
+}
+
+void Assembler::sarl(Address dst, int imm8) {
+  assert(isShiftCount(imm8), "illegal shift count");
+  InstructionMark im(this);
+  prefix(dst);
+  if (imm8 == 1) {
+    emit_int8((unsigned char)0xD1);
+    emit_operand(as_Register(7), dst);
+  }
+  else {
+    emit_int8((unsigned char)0xC1);
+    emit_operand(as_Register(7), dst);
+    emit_int8(imm8);
+  }
+}
+
+void Assembler::sarl(Address dst) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_int8((unsigned char)0xD3);
+  emit_operand(as_Register(7), dst);
+}
+
 void Assembler::sarl(Register dst, int imm8) {
   int encode = prefix_and_encode(dst->encoding());
   assert(isShiftCount(imm8), "illegal shift count");
@@ -5064,6 +5181,21 @@ void Assembler::setb(Condition cc, Register dst) {
   assert(0 <= cc && cc < 16, "illegal cc");
   int encode = prefix_and_encode(dst->encoding(), true);
   emit_int24(0x0F, (unsigned char)0x90 | cc, (0xC0 | encode));
+}
+
+void Assembler::sete(Register dst) {
+  int encode = prefix_and_encode(dst->encoding(), true);
+  emit_int24(0x0F, (unsigned char)0x94, (0xC0 | encode));
+}
+
+void Assembler::setl(Register dst) {
+  int encode = prefix_and_encode(dst->encoding(), true);
+  emit_int24(0x0F, (unsigned char)0x9C, (0xC0 | encode));
+}
+
+void Assembler::setne(Register dst) {
+  int encode = prefix_and_encode(dst->encoding(), true);
+  emit_int24(0x0F, (unsigned char)0x95, (0xC0 | encode));
 }
 
 void Assembler::palignr(XMMRegister dst, XMMRegister src, int imm8) {
@@ -5159,13 +5291,41 @@ void Assembler::shll(Register dst) {
 void Assembler::shrl(Register dst, int imm8) {
   assert(isShiftCount(imm8), "illegal shift count");
   int encode = prefix_and_encode(dst->encoding());
-  emit_int24((unsigned char)0xC1, (0xE8 | encode), imm8);
+  if (imm8 == 1) {
+    emit_int16((unsigned char)0xD1, (0xE8 | encode));
+  }
+  else {
+    emit_int24((unsigned char)0xC1, (0xE8 | encode), imm8);
+  }
 }
 
 void Assembler::shrl(Register dst) {
   int encode = prefix_and_encode(dst->encoding());
   emit_int16((unsigned char)0xD3, (0xE8 | encode));
 }
+
+void Assembler::shrl(Address dst) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_int8((unsigned char)0xD3);
+  emit_operand(as_Register(5), dst);
+}
+
+void Assembler::shrl(Address dst, int imm8) {
+  InstructionMark im(this);
+  assert(isShiftCount(imm8), "illegal shift count");
+  prefix(dst);
+  if (imm8 == 1) {
+    emit_int8((unsigned char)0xD1);
+    emit_operand(as_Register(5), dst);
+  }
+  else {
+    emit_int8((unsigned char)0xC1);
+    emit_operand(as_Register(5), dst);
+    emit_int8(imm8);
+  }
+}
+
 
 void Assembler::shldl(Register dst, Register src) {
   int encode = prefix_and_encode(src->encoding(), dst->encoding());
@@ -5357,12 +5517,8 @@ void Assembler::testl(Register dst, int32_t imm32) {
   // doesn't support sign-extension of
   // 8bit operands
   int encode = dst->encoding();
-  if (encode == 0) {
-    emit_int8((unsigned char)0xA9);
-  } else {
-    encode = prefix_and_encode(encode);
-    emit_int16((unsigned char)0xF7, (0xC0 | encode));
-  }
+  encode = prefix_and_encode(encode);
+  emit_int16((unsigned char)0xF7, (0xC0 | encode));
   emit_int32(imm32);
 }
 
@@ -5507,6 +5663,12 @@ void Assembler::xgetbv() {
   emit_int24(0x0F, 0x01, (unsigned char)0xD0);
 }
 
+void Assembler::xorl(Address dst, int32_t imm32) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_arith_operand(0x81, as_Register(6), dst, imm32);
+}
+
 void Assembler::xorl(Register dst, int32_t imm32) {
   prefix(dst);
   emit_arith(0x81, 0xF0, dst, imm32);
@@ -5524,11 +5686,25 @@ void Assembler::xorl(Register dst, Register src) {
   emit_arith(0x33, 0xC0, dst, src);
 }
 
+void Assembler::xorl(Address dst, Register src) {
+  InstructionMark im(this);
+  prefix(dst, src);
+  emit_int8(0x31);
+  emit_operand(src, dst);
+}
+
 void Assembler::xorb(Register dst, Address src) {
   InstructionMark im(this);
   prefix(src, dst);
   emit_int8(0x32);
   emit_operand(dst, src);
+}
+
+void Assembler::xorb(Address dst, Register src) {
+  InstructionMark im(this);
+  prefix(dst, src, true);
+  emit_int8(0x30);
+  emit_operand(src, dst);
 }
 
 void Assembler::xorw(Register dst, Register src) {
@@ -9257,14 +9433,14 @@ void Assembler::pusha() { // 32bit
 }
 
 void Assembler::set_byte_if_not_zero(Register dst) {
-  emit_int24(0x0F, (unsigned char)0x95, (0xE0 | dst->encoding()));
+  emit_int24(0x0F, (unsigned char)0x95, (0xC0 | dst->encoding()));
 }
 
 #else // LP64
 
 void Assembler::set_byte_if_not_zero(Register dst) {
   int enc = prefix_and_encode(dst->encoding(), true);
-  emit_int24(0x0F, (unsigned char)0x95, (0xE0 | enc));
+  emit_int24(0x0F, (unsigned char)0x95, (0xC0 | enc));
 }
 
 // 64bit only pieces of the assembler
@@ -9691,9 +9867,8 @@ void Assembler::adoxq(Register dst, Register src) {
 
 void Assembler::andq(Address dst, int32_t imm32) {
   InstructionMark im(this);
-  emit_int16(get_prefixq(dst), (unsigned char)0x81);
-  emit_operand(rsp, dst, 4);
-  emit_int32(imm32);
+  prefixq(dst);
+  emit_arith_operand(0x81, as_Register(4), dst, imm32);
 }
 
 void Assembler::andq(Register dst, int32_t imm32) {
@@ -9710,6 +9885,12 @@ void Assembler::andq(Register dst, Address src) {
 void Assembler::andq(Register dst, Register src) {
   (void) prefixq_and_encode(dst->encoding(), src->encoding());
   emit_arith(0x23, 0xC0, dst, src);
+}
+
+void Assembler::andq(Address dst, Register src) {
+  InstructionMark im(this);
+  emit_int16(get_prefixq(dst, src), 0x21);
+  emit_operand(src, dst);
 }
 
 void Assembler::andnq(Register dst, Register src1, Register src2) {
@@ -9979,6 +10160,25 @@ void Assembler::imulq(Register dst, Register src) {
   emit_int24(0x0F, (unsigned char)0xAF, (0xC0 | encode));
 }
 
+void Assembler::imulq(Register src) {
+  int encode = prefixq_and_encode(src->encoding());
+  emit_int16((unsigned char)0xF7, (0xE8 | encode));
+}
+
+void Assembler::imulq(Register dst, Address src, int32_t value) {
+  InstructionMark im(this);
+  prefixq(src, dst);
+  if (is8bit(value)) {
+    emit_int8((unsigned char)0x6B);
+    emit_operand(dst, src);
+    emit_int8(value);
+  } else {
+    emit_int8((unsigned char)0x69);
+    emit_operand(dst, src);
+    emit_int32(value);
+  }
+}
+
 void Assembler::imulq(Register dst, Register src, int value) {
   int encode = prefixq_and_encode(dst->encoding(), src->encoding());
   if (is8bit(value)) {
@@ -10031,6 +10231,13 @@ void Assembler::mov64(Register dst, int64_t imm64) {
   int encode = prefixq_and_encode(dst->encoding());
   emit_int8(0xB8 | encode);
   emit_int64(imm64);
+}
+
+void Assembler::mov64(Register dst, int64_t imm64, relocInfo::relocType rtype, int format) {
+  InstructionMark im(this);
+  int encode = prefixq_and_encode(dst->encoding());
+  emit_int8(0xB8 | encode);
+  emit_data64(imm64, rtype, format);
 }
 
 void Assembler::mov_literal64(Register dst, intptr_t imm64, RelocationHolder const& rspec) {
@@ -10111,6 +10318,19 @@ void Assembler::movq(Address dst, Register src) {
   InstructionMark im(this);
   emit_int16(get_prefixq(dst, src), (unsigned char)0x89);
   emit_operand(src, dst);
+}
+
+void Assembler::movq(Address dst, int32_t imm32) {
+  InstructionMark im(this);
+  emit_int16(get_prefixq(dst), (unsigned char)0xC7);
+  emit_operand(as_Register(0), dst);
+  emit_int32(imm32);
+}
+
+void Assembler::movq(Register dst, int32_t imm32) {
+  int encode = prefixq_and_encode(dst->encoding());
+  emit_int16((unsigned char)0xC7, (0xC0 | encode));
+  emit_int32(imm32);
 }
 
 void Assembler::movsbq(Register dst, Address src) {
@@ -10218,6 +10438,12 @@ void Assembler::negq(Register dst) {
   emit_int16((unsigned char)0xF7, (0xD8 | encode));
 }
 
+void Assembler::negq(Address dst) {
+  InstructionMark im(this);
+  emit_int16(get_prefixq(dst), (unsigned char)0xF7);
+  emit_operand(as_Register(3), dst);
+}
+
 void Assembler::notq(Register dst) {
   int encode = prefixq_and_encode(dst->encoding());
   emit_int16((unsigned char)0xF7, (0xD0 | encode));
@@ -10245,9 +10471,14 @@ void Assembler::btrq(Address dst, int imm8) {
 
 void Assembler::orq(Address dst, int32_t imm32) {
   InstructionMark im(this);
-  emit_int16(get_prefixq(dst), (unsigned char)0x81);
-  emit_operand(rcx, dst, 4);
-  emit_int32(imm32);
+  prefixq(dst);
+  emit_arith_operand(0x81, as_Register(1), dst, imm32);
+}
+
+void Assembler::orq(Address dst, Register src) {
+  InstructionMark im(this);
+  emit_int16(get_prefixq(dst, src), (unsigned char)0x09);
+  emit_operand(src, dst);
 }
 
 void Assembler::orq(Register dst, int32_t imm32) {
@@ -10287,6 +10518,10 @@ void Assembler::popq(Address dst) {
   InstructionMark im(this);
   emit_int16(get_prefixq(dst), (unsigned char)0x8F);
   emit_operand(rax, dst);
+}
+
+void Assembler::popq(Register dst) {
+  emit_int8((unsigned char)0x58 | dst->encoding());
 }
 
 // Precomputable: popa, pusha, vzeroupper
@@ -10458,6 +10693,62 @@ void Assembler::rorxd(Register dst, Register src, int imm8) {
   emit_int24((unsigned char)0xF0, (0xC0 | encode), imm8);
 }
 
+#ifdef _LP64
+void Assembler::salq(Address dst, int imm8) {
+  InstructionMark im(this);
+  assert(isShiftCount(imm8 >> 1), "illegal shift count");
+  if (imm8 == 1) {
+    emit_int16(get_prefixq(dst), (unsigned char)0xD1);
+    emit_operand(as_Register(4), dst);
+  }
+  else {
+    emit_int16(get_prefixq(dst), (unsigned char)0xC1);
+    emit_operand(as_Register(4), dst);
+    emit_int8(imm8);
+  }
+}
+
+void Assembler::salq(Address dst) {
+  InstructionMark im(this);
+  emit_int16(get_prefixq(dst), (unsigned char)0xD3);
+  emit_operand(as_Register(4), dst);
+}
+
+void Assembler::salq(Register dst, int imm8) {
+  assert(isShiftCount(imm8 >> 1), "illegal shift count");
+  int encode = prefixq_and_encode(dst->encoding());
+  if (imm8 == 1) {
+    emit_int16((unsigned char)0xD1, (0xE0 | encode));
+  } else {
+    emit_int24((unsigned char)0xC1, (0xE0 | encode), imm8);
+  }
+}
+
+void Assembler::salq(Register dst) {
+  int encode = prefixq_and_encode(dst->encoding());
+  emit_int16((unsigned char)0xD3, (0xE0 | encode));
+}
+
+void Assembler::sarq(Address dst, int imm8) {
+  InstructionMark im(this);
+  assert(isShiftCount(imm8 >> 1), "illegal shift count");
+  if (imm8 == 1) {
+    emit_int16(get_prefixq(dst), (unsigned char)0xD1);
+    emit_operand(as_Register(7), dst);
+  }
+  else {
+    emit_int16(get_prefixq(dst), (unsigned char)0xC1);
+    emit_operand(as_Register(7), dst);
+    emit_int8(imm8);
+  }
+}
+
+void Assembler::sarq(Address dst) {
+  InstructionMark im(this);
+  emit_int16(get_prefixq(dst), (unsigned char)0xD3);
+  emit_operand(as_Register(7), dst);
+}
+
 void Assembler::sarq(Register dst, int imm8) {
   assert(isShiftCount(imm8 >> 1), "illegal shift count");
   int encode = prefixq_and_encode(dst->encoding());
@@ -10472,6 +10763,7 @@ void Assembler::sarq(Register dst) {
   int encode = prefixq_and_encode(dst->encoding());
   emit_int16((unsigned char)0xD3, (0xF8 | encode));
 }
+#endif
 
 void Assembler::sbbq(Address dst, int32_t imm32) {
   InstructionMark im(this);
@@ -10513,12 +10805,37 @@ void Assembler::shlq(Register dst) {
 void Assembler::shrq(Register dst, int imm8) {
   assert(isShiftCount(imm8 >> 1), "illegal shift count");
   int encode = prefixq_and_encode(dst->encoding());
-  emit_int24((unsigned char)0xC1, (0xE8 | encode), imm8);
+  if (imm8 == 1) {
+    emit_int16((unsigned char)0xD1, (0xE8 | encode));
+  }
+  else {
+    emit_int24((unsigned char)0xC1, (0xE8 | encode), imm8);
+  }
 }
 
 void Assembler::shrq(Register dst) {
   int encode = prefixq_and_encode(dst->encoding());
   emit_int16((unsigned char)0xD3, 0xE8 | encode);
+}
+
+void Assembler::shrq(Address dst) {
+  InstructionMark im(this);
+  emit_int16(get_prefixq(dst), (unsigned char)0xD3);
+  emit_operand(as_Register(5), dst);
+}
+
+void Assembler::shrq(Address dst, int imm8) {
+  InstructionMark im(this);
+  assert(isShiftCount(imm8 >> 1), "illegal shift count");
+  if (imm8 == 1) {
+    emit_int16(get_prefixq(dst), (unsigned char)0xD1);
+    emit_operand(as_Register(5), dst);
+  }
+  else {
+    emit_int16(get_prefixq(dst), (unsigned char)0xC1);
+    emit_operand(as_Register(5), dst);
+    emit_int8(imm8);
+  }
 }
 
 void Assembler::subq(Address dst, int32_t imm32) {
@@ -10555,17 +10872,20 @@ void Assembler::subq(Register dst, Register src) {
   emit_arith(0x2B, 0xC0, dst, src);
 }
 
+void Assembler::testq(Address dst, int32_t imm32) {
+  InstructionMark im(this);
+  emit_int16(get_prefixq(dst), (unsigned char)0xF7);
+  emit_operand(as_Register(0), dst);
+  emit_int32(imm32);
+}
+
 void Assembler::testq(Register dst, int32_t imm32) {
   // not using emit_arith because test
   // doesn't support sign-extension of
   // 8bit operands
   int encode = dst->encoding();
-  if (encode == 0) {
-    emit_int16(REX_W, (unsigned char)0xA9);
-  } else {
-    encode = prefixq_and_encode(encode);
-    emit_int16((unsigned char)0xF7, (0xC0 | encode));
-  }
+  encode = prefixq_and_encode(encode);
+  emit_int16((unsigned char)0xF7, (0xC0 | encode));
   emit_int32(imm32);
 }
 
@@ -10606,6 +10926,23 @@ void Assembler::xorq(Register dst, Address src) {
   InstructionMark im(this);
   emit_int16(get_prefixq(src, dst), 0x33);
   emit_operand(dst, src);
+}
+
+void Assembler::xorq(Register dst, int32_t imm32) {
+  (void) prefixq_and_encode(dst->encoding());
+  emit_arith(0x81, 0xF0, dst, imm32);
+}
+
+void Assembler::xorq(Address dst, int32_t imm32) {
+  InstructionMark im(this);
+  prefixq(dst);
+  emit_arith_operand(0x81, as_Register(6), dst, imm32);
+}
+
+void Assembler::xorq(Address dst, Register src) {
+  InstructionMark im(this);
+  emit_int16(get_prefixq(dst, src), 0x31);
+  emit_operand(src, dst);
 }
 
 #endif // !LP64

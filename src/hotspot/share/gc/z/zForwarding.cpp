@@ -58,7 +58,8 @@ bool ZForwarding::retain_page() {
 
     if (ref_count < 0) {
       // Claimed
-      wait_page_released();
+      const bool success = wait_page_released();
+      assert(success, "Should always succeed");
       return false;
     }
 
@@ -129,14 +130,20 @@ void ZForwarding::release_page() {
   }
 }
 
-void ZForwarding::wait_page_released() const {
+bool ZForwarding::wait_page_released() const {
   if (Atomic::load_acquire(&_ref_count) != 0) {
     ZStatTimer timer(ZCriticalPhaseRelocationStall);
     ZLocker<ZConditionLock> locker(&_ref_lock);
     while (Atomic::load_acquire(&_ref_count) != 0) {
+      if (_ref_abort) {
+        return false;
+      }
+
       _ref_lock.wait();
     }
   }
+
+  return true;
 }
 
 ZPage* ZForwarding::detach_page() {
@@ -152,6 +159,14 @@ ZPage* ZForwarding::detach_page() {
   ZPage* const page = _page;
   _page = NULL;
   return page;
+}
+
+void ZForwarding::abort_page() {
+  ZLocker<ZConditionLock> locker(&_ref_lock);
+  assert(Atomic::load(&_ref_count) > 0, "Invalid state");
+  assert(!_ref_abort, "Invalid state");
+  _ref_abort = true;
+  _ref_lock.notify_all();
 }
 
 void ZForwarding::verify() const {

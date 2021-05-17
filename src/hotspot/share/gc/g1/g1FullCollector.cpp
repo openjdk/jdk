@@ -37,7 +37,6 @@
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
-#include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
@@ -159,7 +158,7 @@ public:
 
   bool do_heap_region(HeapRegion* hr) {
     G1CollectedHeap::heap()->prepare_region_for_full_compaction(hr);
-    _collector->update_attribute_table(hr);
+    _collector->before_marking_update_attribute_table(hr);
     return false;
   }
 };
@@ -228,16 +227,17 @@ void G1FullCollector::complete_collection() {
   _heap->print_heap_after_full_collection(scope()->heap_transition());
 }
 
-void G1FullCollector::update_attribute_table(HeapRegion* hr, bool force_not_compacted) {
+void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
   if (hr->is_free()) {
-    _region_attr_table.set_invalid(hr->hrm_index());
+    // Set as Invalid by default.
+    _region_attr_table.verify_is_invalid(hr->hrm_index());
   } else if (hr->is_closed_archive()) {
     _region_attr_table.set_skip_marking(hr->hrm_index());
-  } else if (hr->is_pinned() || force_not_compacted) {
-    _region_attr_table.set_not_compacted(hr->hrm_index());
+  } else if (hr->is_pinned()) {
+    _region_attr_table.set_skip_compacting(hr->hrm_index());
   } else {
-    // Everything else is processed normally.
-    _region_attr_table.set_compacted(hr->hrm_index());
+    // Everything else should be compacted.
+    _region_attr_table.set_compacting(hr->hrm_index());
   }
 }
 
@@ -296,10 +296,6 @@ void G1FullCollector::phase1_mark_live_objects() {
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(scope()->timer());
     _heap->complete_cleaning(&_is_alive, purged_class);
-  } else if (G1StringDedup::is_enabled()) {
-    GCTraceTime(Debug, gc, phases) debug("Phase 1: String Dedup Cleanup", scope()->timer());
-    // If no class unloading just clean out string deduplication data.
-    _heap->string_dedup_cleaning(&_is_alive, NULL);
   }
 
   scope()->tracer()->report_object_count_after_gc(&_is_alive);

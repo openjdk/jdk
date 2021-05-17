@@ -1227,8 +1227,12 @@ class ZipFileSystem extends FileSystem {
     }
 
     private long readFullyAt(ByteBuffer bb, long pos) throws IOException {
-        synchronized(ch) {
-            return ch.position(pos).read(bb);
+        if (ch instanceof FileChannel fch) {
+            return fch.read(bb, pos);
+        } else {
+            synchronized(ch) {
+                return ch.position(pos).read(bb);
+            }
         }
     }
 
@@ -1912,7 +1916,7 @@ class ZipFileSystem extends FileSystem {
         IndexNode inode = getInode(path);
         if (inode == null) {
             if (path != null && path.length == 0)
-                throw new ZipException("root directory </> can't not be delete");
+                throw new ZipException("root directory </> cannot be deleted");
             if (failIfNotExists)
                 throw new NoSuchFileException(getString(path));
         } else {
@@ -2116,7 +2120,7 @@ class ZipFileSystem extends FileSystem {
             // streams.add(eis);
             return eis;
         } else {  // untouched CEN or COPY
-            eis = new EntryInputStream(e, ch);
+            eis = new EntryInputStream(e);
         }
         if (e.method == METHOD_DEFLATED) {
             // MORE: Compute good size for inflater stream:
@@ -2173,15 +2177,12 @@ class ZipFileSystem extends FileSystem {
     // Inner class implementing the input stream used to read
     // a (possibly compressed) zip file entry.
     private class EntryInputStream extends InputStream {
-        private final SeekableByteChannel zfch; // local ref to zipfs's "ch". zipfs.ch might
-                                                // point to a new channel after sync()
         private long pos;                       // current position within entry data
         private long rem;                       // number of remaining bytes within entry
 
-        EntryInputStream(Entry e, SeekableByteChannel zfch)
+        EntryInputStream(Entry e)
             throws IOException
         {
-            this.zfch = zfch;
             rem = e.csize;
             pos = e.locoff;
             if (pos == -1) {
@@ -2206,14 +2207,10 @@ class ZipFileSystem extends FileSystem {
             if (len > rem) {
                 len = (int) rem;
             }
-            // readFullyAt()
-            long n;
             ByteBuffer bb = ByteBuffer.wrap(b);
             bb.position(off);
             bb.limit(off + len);
-            synchronized(zfch) {
-                n = zfch.position(pos).read(bb);
-            }
+            long n = readFullyAt(bb, pos);
             if (n > 0) {
                 pos += n;
                 rem -= n;

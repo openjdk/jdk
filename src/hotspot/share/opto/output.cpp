@@ -572,10 +572,6 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           if (mcall->is_MachCallJava() && mcall->as_MachCallJava()->_method) {
             stub_size  += CompiledStaticCall::to_interp_stub_size();
             reloc_size += CompiledStaticCall::reloc_to_interp_stub();
-#if INCLUDE_AOT
-            stub_size  += CompiledStaticCall::to_aot_stub_size();
-            reloc_size += CompiledStaticCall::reloc_to_aot_stub();
-#endif
           }
         } else if (mach->is_MachSafePoint()) {
           // If call/safepoint are adjacent, account for possible
@@ -1270,21 +1266,6 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
   // Compute prolog code size
   _method_size = 0;
   _frame_slots = OptoReg::reg2stack(C->matcher()->_old_SP) + C->regalloc()->_framesize;
-#if defined(IA64) && !defined(AIX)
-  if (save_argument_registers()) {
-    // 4815101: this is a stub with implicit and unknown precision fp args.
-    // The usual spill mechanism can only generate stfd's in this case, which
-    // doesn't work if the fp reg to spill contains a single-precision denorm.
-    // Instead, we hack around the normal spill mechanism using stfspill's and
-    // ldffill's in the MachProlog and MachEpilog emit methods.  We allocate
-    // space here for the fp arg regs (f8-f15) we're going to thusly spill.
-    //
-    // If we ever implement 16-byte 'registers' == stack slots, we can
-    // get rid of this hack and have SpillCopy generate stfspill/ldffill
-    // instead of stfd/stfs/ldfd/ldfs.
-    _frame_slots += 8*(16/BytesPerInt);
-  }
-#endif
   assert(_frame_slots >= 0 && _frame_slots < 1000000, "sanity check");
 
   if (C->has_mach_constant_base_node()) {
@@ -3360,8 +3341,7 @@ void PhaseOutput::install() {
   if (!C->should_install_code()) {
     return;
   } else if (C->stub_function() != NULL) {
-    install_stub(C->stub_name(),
-                 C->save_argument_registers());
+    install_stub(C->stub_name());
   } else {
     install_code(C->method(),
                  C->entry_bci(),
@@ -3416,8 +3396,7 @@ void PhaseOutput::install_code(ciMethod*         target,
     }
   }
 }
-void PhaseOutput::install_stub(const char* stub_name,
-                               bool        caller_must_gc_arguments) {
+void PhaseOutput::install_stub(const char* stub_name) {
   // Entry point will be accessed using stub_entry_point();
   if (code_buffer() == NULL) {
     Matcher::soft_match_failure();
@@ -3436,7 +3415,7 @@ void PhaseOutput::install_stub(const char* stub_name,
                                                       // _code_offsets.value(CodeOffsets::Frame_Complete),
                                                       frame_size_in_words(),
                                                       oop_map_set(),
-                                                      caller_must_gc_arguments);
+                                                      false);
       assert(rs != NULL && rs->is_runtime_stub(), "sanity check");
 
       C->set_stub_entry_point(rs->entry_point());

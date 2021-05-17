@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -41,7 +41,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metadataFactory.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/annotations.hpp"
@@ -191,7 +190,7 @@ bool VM_RedefineClasses::doit_prologue() {
     }
 
     oop mirror = JNIHandles::resolve_non_null(_class_defs[i].klass);
-    // classes for primitives, arrays, hidden and vm unsafe anonymous classes
+    // classes for primitives, arrays, and hidden classes
     // cannot be redefined.
     if (!is_modifiable_class(mirror)) {
       _res = JVMTI_ERROR_UNMODIFIABLE_CLASS;
@@ -334,9 +333,8 @@ bool VM_RedefineClasses::is_modifiable_class(oop klass_mirror) {
     return false;
   }
 
-  // Cannot redefine or retransform a hidden or an unsafe anonymous class.
-  if (InstanceKlass::cast(k)->is_hidden() ||
-      InstanceKlass::cast(k)->is_unsafe_anonymous()) {
+  // Cannot redefine or retransform a hidden class.
+  if (InstanceKlass::cast(k)->is_hidden()) {
     return false;
   }
   return true;
@@ -1382,7 +1380,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     // load hook event.
     state->set_class_being_redefined(the_class, _class_load_kind);
 
-    Thread* THREAD = current;  // for exception processing
+    JavaThread* THREAD = current; // For exception macros.
     ExceptionMark em(THREAD);
     Handle protection_domain(THREAD, the_class->protection_domain());
     ClassLoadInfo cl_info(protection_domain);
@@ -2110,7 +2108,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods(InstanceKlass* scratch_class
     return true;
   }
 
-  Thread* THREAD = Thread::current();  // For exception processing
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   ExceptionMark em(THREAD);
 
   // rewrite constant pool references in the methods:
@@ -2940,7 +2938,6 @@ bool VM_RedefineClasses::skip_type_annotation_target(
 
     case 0x10:
     // kind: type in extends clause of class or interface declaration
-    //       (including the direct superclass of an unsafe anonymous class declaration),
     //       or in implements clause of interface declaration
     // location: ClassFile
 
@@ -4407,17 +4404,7 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     scratch_class->enclosing_method_method_index());
   scratch_class->set_enclosing_method_indices(old_class_idx, old_method_idx);
 
-  // Replace fingerprint data
-  the_class->set_has_passed_fingerprint_check(scratch_class->has_passed_fingerprint_check());
-  the_class->store_fingerprint(scratch_class->get_stored_fingerprint());
-
   the_class->set_has_been_redefined();
-
-  if (!the_class->should_be_initialized()) {
-    // Class was already initialized, so AOT has only seen the original version.
-    // We need to let AOT look at it again.
-    AOTLoader::load_for_klass(the_class, current);
-  }
 
   // keep track of previous versions of this class
   the_class->add_previous_version(scratch_class, emcp_method_count);

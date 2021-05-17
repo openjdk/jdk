@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/g1FullCollector.hpp"
+#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
@@ -48,6 +48,7 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_pinned_region(HeapReg
     _g1h->free_region(hr, nullptr);
   }
   prepare_for_compaction(hr);
+  _collector->set_invalid(hr->hrm_index());
 }
 
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
@@ -76,9 +77,8 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
       assert(MarkSweepDeadRatio > 0,
              "only skip compaction for other regions when MarkSweepDeadRatio > 0");
 
-      // Force the high live ratio region as not-compacting to skip these regions in the
-      // later compaction step.
-      force_not_compacted = true;
+      // Too many live objects; skip compacting it.
+      _collector->update_from_compacting_to_skip_compacting(hr->hrm_index());
       if (hr->is_young()) {
         // G1 updates the BOT for old region contents incrementally, but young regions
         // lack BOT information for performance reasons.
@@ -93,7 +93,6 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
 
   // Reset data structures not valid after Full GC.
   reset_region_metadata(hr);
-  _collector->update_attribute_table(hr, force_not_compacted);
 
   return false;
 }

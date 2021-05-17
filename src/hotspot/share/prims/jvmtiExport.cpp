@@ -61,7 +61,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
@@ -2687,7 +2687,7 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
       delete agent_lib;
     } else {
       // Invoke the Agent_OnAttach function
-      JavaThread* THREAD = JavaThread::current();
+      JavaThread* THREAD = JavaThread::current(); // For exception macros.
       {
         extern struct JavaVM_ main_vm;
         JvmtiThreadEventMark jem(THREAD);
