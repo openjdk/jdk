@@ -6093,12 +6093,12 @@ address generate_avx_ghash_processBlocks() {
     // __ kortestql(k0, k0);
     // __ jcc(notZero, L_errorExit);
 
-    __ vpmaddubsw(xmm8, xmm8, xmm2, Assembler::AVX_512bit);
-    __ vpmaddwd(xmm8, xmm8, xmm1, Assembler::AVX_512bit);
+    __ vpmaddubsw(xmm10, xmm10, xmm2, Assembler::AVX_512bit);
+    __ vpmaddwd(xmm10, xmm10, xmm1, Assembler::AVX_512bit);
 
-    __ vpermb(xmm8, xmm4, xmm8, Assembler::AVX_512bit);
+    __ vpermb(xmm10, xmm4, xmm10, Assembler::AVX_512bit);
     __ kmovql(k1, r15);
-    __ evmovdqub(Address(dest, dp, Address::times_1, 0x00), k1, xmm8, true, Assembler::AVX_512bit);
+    __ evmovdqub(Address(dest, dp, Address::times_1, 0x00), k1, xmm10, true, Assembler::AVX_512bit);
 
     __ addq(dest, r13);
 
