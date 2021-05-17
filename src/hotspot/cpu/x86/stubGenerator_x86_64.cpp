@@ -6100,7 +6100,7 @@ address generate_avx_ghash_processBlocks() {
 
     __ vpermb(xmm3, xmm4, xmm3, Assembler::AVX_512bit);
     __ kmovql(k1, r15);
-    __ evmovdqub(Address(dest, dp, Address::times_1, 0x00), k1, xmm3, false, Assembler::AVX_512bit);
+    __ evmovdqub(Address(dest, dp, Address::times_1, 0x00), k1, xmm3, true, Assembler::AVX_512bit);
 
     __ addq(dest, r13);
 
