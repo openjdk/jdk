@@ -112,16 +112,14 @@ public:
 
   // Allocate blocks of memory during mutator time.
 
-  // Attempt allocation in the current alloc region. If use_retained_region_if_available
-  // is set and a retained region is available, the allocation will first be tried in the
-  // retained region.
+  // Attempt allocation in the current alloc region.
   inline HeapWord* attempt_allocation(size_t min_word_size,
                                       size_t desired_word_size,
                                       size_t* actual_word_size);
 
   // Attempt allocation, retiring the current region and allocating a new one. It is
   // assumed that attempt_allocation() has been tried and failed already first.
-  inline HeapWord* attempt_allocation_use_new_region(size_t word_size);
+  inline HeapWord* attempt_allocation_using_new_region(size_t word_size);
 
   // This is to be called when holding an appropriate lock. It first tries in the
   // current allocation region, and then attempts an allocation using a new region.

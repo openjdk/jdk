@@ -441,7 +441,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
       if (!proactive_collection_required) {
         // We've already attempted a lock-free allocation above, so we don't want to
         // do it again. Let's jump straight to replacing the active region.
-        result = _allocator->attempt_allocation_use_new_region(word_size);
+        result = _allocator->attempt_allocation_using_new_region(word_size);
         if (result != NULL) {
           return result;
         }

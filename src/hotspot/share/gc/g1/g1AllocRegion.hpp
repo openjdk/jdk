@@ -168,14 +168,15 @@ public:
   // Second-level allocation: Should be called while holding a
   // lock. We require that the caller takes the appropriate lock
   // before calling this so that it is easier to make it conform
-  // to the locking protocol.
-  // Tries to allocate at least min_word_size words, and at most desired_word_size.
-  // Returns the actual size of the block in actual_word_size.
+  // to the locking protocol. The min and desired word size allow
+  // specifying a minimum and maximum size of the allocation. The
+  // actual size of allocation is returned in actual_word_size.
   inline HeapWord* attempt_allocation_locked(size_t min_word_size,
                                              size_t desired_word_size,
                                              size_t* actual_word_size);
 
-  inline HeapWord* attempt_allocation_use_new_region(size_t min_word_size,
+  // Perform an allocation out of a new allocation region, retiring the current one.
+  inline HeapWord* attempt_allocation_using_new_region(size_t min_word_size,
                                                      size_t desired_word_size,
                                                      size_t* actual_word_size);
 

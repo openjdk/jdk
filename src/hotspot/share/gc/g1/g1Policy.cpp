@@ -1419,7 +1419,7 @@ bool G1Policy::proactive_collection_required(uint alloc_region_count) {
     return false;
   }
 
-  if (_g1h->young_regions_count() == 0 && _collection_set->candidates() != NULL && _collection_set->candidates()->is_empty()) {
+  if (_g1h->young_regions_count() == 0 && !_collection_set->has_candidates()) {
     return false;
   }
 
@@ -1464,14 +1464,14 @@ void G1Policy::update_survival_estimates_for_next_collection() {
   _predicted_surviving_bytes_from_survivor = survivor_bytes;
 
   // Old regions
-  G1CollectionSetCandidates *candidates = _collection_set->candidates();
-  if (candidates == NULL || candidates->is_empty()) {
+  if (!_collection_set->has_candidates()) {
     _predicted_surviving_bytes_from_old = 0;
     return;
   }
 
   // Use the minimum old gen collection set as conservative estimate for the number
   // of regions to take for this calculation.
+  G1CollectionSetCandidates *candidates = _collection_set->candidates();
   uint iterate_count = MIN2(candidates->num_remaining(), calc_min_old_cset_length(candidates));
   uint current_index = candidates->cur_idx();
   size_t old_bytes = 0;

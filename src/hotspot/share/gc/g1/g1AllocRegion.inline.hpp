@@ -103,10 +103,10 @@ inline HeapWord* G1AllocRegion::attempt_allocation_locked(size_t min_word_size,
     return result;
   }
 
-  return attempt_allocation_use_new_region(min_word_size, desired_word_size, actual_word_size);
+  return attempt_allocation_using_new_region(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline HeapWord* G1AllocRegion::attempt_allocation_use_new_region(size_t min_word_size,
+inline HeapWord* G1AllocRegion::attempt_allocation_using_new_region(size_t min_word_size,
                                                                   size_t desired_word_size,
                                                                   size_t* actual_word_size) {
   retire(true /* fill_up */);
