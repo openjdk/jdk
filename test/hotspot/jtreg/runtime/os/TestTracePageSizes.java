@@ -82,6 +82,10 @@
 */
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.LinkedList;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -93,7 +97,18 @@ import java.util.regex.Pattern;
 public class TestTracePageSizes {
     // Store address ranges with known page size.
     private static LinkedList<RangeWithPageSize> ranges = new LinkedList<>();
-    private static boolean debug;
+    private static boolean debug = false;
+    private static int run = 0;
+
+    // Copy smaps locally
+    // (To minimize chances of concurrent modification when parsing, as well as helping with error analysis)
+    private static Path copySmaps() throws Exception {
+        Path p1 = Paths.get("/proc/self/smaps");
+        Path p2 = Paths.get("smaps-copy-" +  ProcessHandle.current().pid() + "-" + run++ + ".txt");
+        Files.copy(p1, p2, StandardCopyOption.REPLACE_EXISTING);
+        System.out.println("Copied " + p1.getFileName() + " to " + p2.getFileName() + "...");
+        return p2;
+    }
 
     // Parse /proc/self/smaps using a regexp capturing the address
     // ranges, what page size they have and if they might use
@@ -101,11 +116,28 @@ public class TestTracePageSizes {
     // match as little as possible so each "segment" in the file
     // will generate a match.
     private static void parseSmaps() throws Exception {
+        // We can override the smaps file to parse to pass in a pre-fetched one
+        String smapsFileToParse = System.getProperty("smaps-file");
+        if (smapsFileToParse != null) {
+            parseSmaps(Paths.get(smapsFileToParse));
+        } else {
+            Path smapsCopy = copySmaps();
+            parseSmaps(smapsCopy);
+        }
+    }
+
+    // Parse /proc/self/smaps using a regexp capturing the address
+    // ranges, what page size they have and if they might use
+    // transparent huge pages. The pattern is not greedy and will
+    // match as little as possible so each "segment" in the file
+    // will generate a match.
+    private static void parseSmaps(Path smapsFileToParse) throws Exception {
+        System.out.println("Parsing: " + smapsFileToParse.getFileName() + "...");
         String smapsPatternString = "(\\w+)-(\\w+).*?" +
                                     "KernelPageSize:\\s*(\\d*) kB.*?" +
                                     "VmFlags: ([\\w\\? ]*)";
         Pattern smapsPattern = Pattern.compile(smapsPatternString, Pattern.DOTALL);
-        Scanner smapsScanner = new Scanner(new File("/proc/self/smaps"));
+        Scanner smapsScanner = new Scanner(smapsFileToParse.toFile());
         // Find all memory segments in the smaps-file.
         smapsScanner.findAll(smapsPattern).forEach(mr -> {
             String start = mr.group(1);
