@@ -93,6 +93,15 @@ public class ContentBuilder extends Content {
     }
 
     @Override
+    public boolean isValid() {
+        for (Content content: contents) {
+            if (content.isValid())
+                return true;
+        }
+        return false;
+    }
+
+    @Override
     public int charCount() {
         int n = 0;
         for (Content c : contents)
