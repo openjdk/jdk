@@ -1161,6 +1161,8 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             processAAD();
 
+            out = overlapDetection(in, inOfs, out, outOfs);
+
             // if there is enough data in the ibuffer and 'in', encrypt it.
             if (bLen > 0) {
                 byte[] buffer = ibuffer.toByteArray();
@@ -1217,6 +1219,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 ibuffer.write(in, inOfs + inLen, remainder);
             }
 
+            restoreOut(out, len);
             return len;
         }
 
@@ -1234,6 +1237,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             // 'len' stores the length returned by the method.
             int len = 0;
 
+            dst = overlapDetection(src, dst);
             // if there is enough data in the ibuffer and 'in', encrypt it.
             if (buffer != null && buffer.remaining() > 0) {
                 // number of bytes not filling a block
@@ -1282,6 +1286,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 }
             }
 
+            restoreDst(dst);
             return len;
         }
 
