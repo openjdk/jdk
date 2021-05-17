@@ -6058,7 +6058,7 @@ address generate_avx_ghash_processBlocks() {
     __ BIND(L_donePadding);
 
     __ movq(r15, -1);
-    __ push(rax);         // Free rax for now
+    __ kmovql(k1, rax);
     __ movq(rax, 64);
     __ subq(rax, r13);
     __ shrxq(r15, r15, rax);
@@ -6066,9 +6066,8 @@ address generate_avx_ghash_processBlocks() {
     __ evpbroadcastd(xmm8, rax, Assembler::AVX_512bit);
     __ movl(rax, 0x80808080);
     __ evpbroadcastd(xmm9, rax, Assembler::AVX_512bit);
-    __ pop(rax);
 
-    // input_mask is rax
+    // input_mask is in k1
     // output_size is in r13
     // output_mask is in r15
     // zmm0 - free
@@ -6082,7 +6081,6 @@ address generate_avx_ghash_processBlocks() {
     // zmm8 - 0x61616161
     // zmm9 - 0x80808080
 
-    __ kmovql(k1, rax);
     __ evmovdqub(xmm8, k1, Address(source, start_offset, Address::times_1, 0x0), true, Assembler::AVX_512bit);
 
     __ evmovdqaq(xmm10, xmm5, Assembler::AVX_512bit);
