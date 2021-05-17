@@ -21,22 +21,5 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8262891
- * @summary Check errors reported for guarded patterns.
- * @compile/fail/ref=GuardsErrors.out -XDrawDiagnostics --enable-preview -source ${jdk.version} GuardsErrors.java
- */
-
-public class GuardsErrors {
-
-    void typeTestPatternSwitchTest(Object o, int check) {
-        switch (o) {
-            case Integer i && i == check -> System.err.println(); //error: check is not effectivelly final
-            default -> {}
-        }
-        check = 0;
-
-    }
-
-}
+sealed interface SealedTypeChangesIntf permits SealedTypeChanges.A, SealedTypeChangesClass {}
+final class SealedTypeChangesClass implements SealedTypeChangesIntf {}

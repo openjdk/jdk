@@ -69,6 +69,7 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.code.Type.WildcardType;
+import com.sun.tools.javac.code.TypeTag;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.jvm.Target;
@@ -253,26 +254,23 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitSwitch(JCSwitch tree) {
-        handleSwitch(tree, tree.selector, tree.cases);
+        handleSwitch(tree, tree.selector, tree.cases, tree.hasTotalPattern, tree.patternSwitch);
     }
 
     @Override
     public void visitSwitchExpression(JCSwitchExpression tree) {
-        handleSwitch(tree, tree.selector, tree.cases);
+        handleSwitch(tree, tree.selector, tree.cases, tree.hasTotalPattern, tree.patternSwitch);
     }
 
     private void handleSwitch(JCTree tree,
                               JCExpression selector,
-                              List<JCCase> cases) {
+                              List<JCCase> cases,
+                              boolean hasTotalPattern,
+                              boolean patternSwitch) {
         Type seltype = selector.type;
         boolean enumSwitch = (seltype.tsym.flags() & Flags.ENUM) != 0;
-        boolean stringSwitch = types.isSameType(seltype, syms.stringType);
-        boolean enhancedType = !types.unboxedTypeOrType(seltype).isPrimitive() &&
-                               !enumSwitch && !stringSwitch;
-        boolean hasPatternLabels = cases.stream()
-                                        .flatMap(c -> c.labels.stream())
-                                        .anyMatch(l -> l.isPattern());
-        if (hasPatternLabels || enhancedType) {
+
+        if (patternSwitch) {
             Assert.check(preview.isEnabled());
             Assert.check(preview.usesPreview(env.toplevel.sourcefile));
 
@@ -343,6 +341,13 @@ public class TransPatterns extends TreeTranslator {
                                        .flatMap(c -> c.labels.stream())
                                        .anyMatch(p -> p.isExpression() &&
                                                       TreeInfo.isNull((JCExpression) p));
+            if (hasTotalPattern && !hasNullCase) {
+                JCCase last = cases.last();
+                if (last.labels.stream().noneMatch(l -> l.hasTag(Tag.DEFAULTCASELABEL))) {
+                    last.labels = last.labels.prepend(makeLit(syms.botType, null));
+                    hasNullCase = true;
+                }
+            }
             statements.append(make.at(tree.pos).VarDef(temp, !hasNullCase ? attr.makeNullCheck(selector)
                                                                           : selector));
             VarSymbol index = new VarSymbol(Flags.SYNTHETIC,

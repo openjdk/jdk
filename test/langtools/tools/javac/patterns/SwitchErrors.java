@@ -25,7 +25,7 @@
  * @test
  * @bug 8262891
  * @summary Verify errors related to pattern switches.
- * @compile/fail/ref=SwitchErrors.out --enable-preview -source ${jdk.version} -XDrawDiagnostics SwitchErrors.java
+ * @compile/fail/ref=SwitchErrors.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
  */
 public class SwitchErrors {
     void incompatibleSelectorObjectString(Object o) {

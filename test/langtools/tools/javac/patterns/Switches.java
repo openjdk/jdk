@@ -22,6 +22,7 @@
  */
 
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /*
@@ -49,6 +50,8 @@ public class Switches {
         runEnumTest(this::testEnumExpression2);
         runStringWithConstant(this::testStringWithConstant);
         runStringWithConstant(this::testStringWithConstantExpression);
+        npeTest(this::npeTestStatement);
+        npeTest(this::npeTestExpression);
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -59,12 +62,6 @@ public class Switches {
         assertEquals(3, mapper.apply(3));
         assertEquals(-1, mapper.apply(2.0));
         assertEquals(-1, mapper.apply(new Object()));
-        try {
-            mapper.apply(null);
-            throw new AssertionError("Expected a NullPointerException, but got nothing.");
-        } catch (NullPointerException ex) {
-            //OK
-        }
     }
 
     void runArrayTypeTest(Function<Object, String> mapper) {
@@ -86,6 +83,15 @@ public class Switches {
         assertEquals(2, mapper.apply("AA"));
         assertEquals(0, mapper.apply(""));
         assertEquals(-1, mapper.apply(null));
+    }
+
+    void npeTest(Consumer<I> testCase) {
+        try {
+            testCase.accept(null);
+            throw new AssertionError("Expected a NullPointerException, but got nothing.");
+        } catch (NullPointerException ex) {
+            //OK
+        }
     }
 
     int typeTestPatternSwitchTest(Object o) {
@@ -187,6 +193,24 @@ public class Switches {
             case E x, null -> String.valueOf(x);
         };
     }
+
+    void npeTestStatement(I i) {
+        switch (i) {
+            case A a -> {}
+            case B b -> {}
+        }
+    }
+
+    void npeTestExpression(I i) {
+        int j = switch (i) {
+            case A a -> 0;
+            case B b -> 1;
+        };
+    }
+
+    sealed interface I {}
+    final class A implements I {}
+    final class B implements I {}
 
     void assertEquals(int expected, int actual) {
         if (expected != actual) {

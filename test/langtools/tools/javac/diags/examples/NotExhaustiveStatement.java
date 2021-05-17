@@ -21,22 +21,15 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8262891
- * @summary Check errors reported for guarded patterns.
- * @compile/fail/ref=GuardsErrors.out -XDrawDiagnostics --enable-preview -source ${jdk.version} GuardsErrors.java
- */
+// key: compiler.err.not.exhaustive.statement
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
+// options: --enable-preview --source ${jdk.version}
 
-public class GuardsErrors {
-
-    void typeTestPatternSwitchTest(Object o, int check) {
+class NotExhaustive {
+    void t(Object o) {
         switch (o) {
-            case Integer i && i == check -> System.err.println(); //error: check is not effectivelly final
-            default -> {}
-        }
-        check = 0;
-
+            case String s -> System.err.println("String of length: " + s.length());
+        };
     }
-
 }

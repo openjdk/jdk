@@ -63,7 +63,6 @@ public class Exhaustiveness extends TestRunner {
         runTests(m -> new Object[] { Paths.get(m.getName()) });
     }
 
-    //TODO: interfaces/classes (abstract non-abstract)/exhaustive non-exhaustive/inaccessible permitted classes
     @Test
     public void testExhaustiveSealedClasses(Path base) throws Exception {
         doTest(base,
@@ -508,4 +507,137 @@ public class Exhaustiveness extends TestRunner {
         }
 
     }
+
+    @Test
+    public void testExhaustiveStatement1(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public interface Lib {}
+                            """},
+               """
+               package test;
+               public class Test {
+                   private int test(Object obj) {
+                       switch (obj) {
+                           case Object o: return 0;
+                       }
+                   }
+               }
+               """);
+    }
+
+    @Test
+    public void testExhaustiveStatement2(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public interface Lib {}
+                            """},
+               """
+               package test;
+               public class Test {
+                   private void test(Object obj) {
+                       switch (obj) {
+                           case String s: return;
+                       };
+                   }
+               }
+               """,
+               "Test.java:4:9: compiler.err.not.exhaustive.statement",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "1 error");
+    }
+
+    @Test
+    public void testExhaustiveStatement3(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public final class B implements S {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(S obj) {
+                       return switch (obj) {
+                           case A a -> 0;
+                           case S s -> 1;
+                       };
+                   }
+               }
+               """);
+    }
+
+    @Test
+    public void testExhaustiveStatement4(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public final class B implements S {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(S obj) {
+                       return switch (obj) {
+                           case A a -> 0;
+                       };
+                   }
+               }
+               """,
+               "Test.java:5:16: compiler.err.not.exhaustive",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "1 error");
+    }
+
+    @Test
+    public void testExhaustiveStatement5(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public final class B implements S {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(S obj) {
+                       return switch (obj) {
+                           case A a -> 0;
+                           case B b -> 0;
+                       };
+                   }
+               }
+               """);
+    }
+
 }
