@@ -62,15 +62,11 @@ public class ReadXBytes {
 
             byte[] b = fis.readNBytes(1);
             if (b.length != 0)
-                throw new RuntimeException("Zero-length byte[] expected");
-        }
+                throw new RuntimeException("readNBytes: zero-length byte[] expected");
 
-        try (FileInputStream fis = new FileInputStream(empty)) {
-            byte[] b = fis.readAllBytes();
+            b = fis.readAllBytes();
             if (b.length != 0)
-                throw new RuntimeException("Zero-length byte[] expected");
-        } finally {
-            empty.delete();
+                throw new RuntimeException("readAllBytes: zero-length byte[] expected");
         }
 
         for (int i = 0; i < ITERATIONS; i++) {
