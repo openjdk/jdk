@@ -177,9 +177,9 @@ public enum SortingHelper {
         @Override
         public void sort(Object a) {
             if (a instanceof int[]) {
-                DualPivotQuicksort.radixSort(null, (int[]) a, 0, ((int[]) a).length);
+                DualPivotQuicksort.tryRadixSort(null, (int[]) a, 0, ((int[]) a).length);
             } else if (a instanceof long[]) {
-                DualPivotQuicksort.radixSort(null, (long[]) a, 0, ((long[]) a).length);
+                DualPivotQuicksort.tryRadixSort(null, (long[]) a, 0, ((long[]) a).length);
             } else if (a instanceof byte[]) {
                 DualPivotQuicksort.sort((byte[]) a, 0, ((byte[]) a).length);
             } else if (a instanceof char[]) {
@@ -187,9 +187,9 @@ public enum SortingHelper {
             } else if (a instanceof short[]) {
                 DualPivotQuicksort.sort((short[]) a, 0, ((short[]) a).length);
             } else if (a instanceof float[]) {
-                DualPivotQuicksort.radixSort(null, (float[]) a, 0, ((float[]) a).length);
+                DualPivotQuicksort.tryRadixSort(null, (float[]) a, 0, ((float[]) a).length);
             } else if (a instanceof double[]) {
-                DualPivotQuicksort.radixSort(null, (double[]) a, 0, ((double[]) a).length);
+                DualPivotQuicksort.tryRadixSort(null, (double[]) a, 0, ((double[]) a).length);
             } else {
                 fail(a);
             }
@@ -198,9 +198,9 @@ public enum SortingHelper {
         @Override
         public void sort(Object a, int low, int high) {
             if (a instanceof int[]) {
-                DualPivotQuicksort.radixSort(null, (int[]) a, low, high);
+                DualPivotQuicksort.tryRadixSort(null, (int[]) a, low, high);
             } else if (a instanceof long[]) {
-                DualPivotQuicksort.radixSort(null, (long[]) a, low, high);
+                DualPivotQuicksort.tryRadixSort(null, (long[]) a, low, high);
             } else if (a instanceof byte[]) {
                 DualPivotQuicksort.sort((byte[]) a, low, high);
             } else if (a instanceof char[]) {
@@ -208,9 +208,9 @@ public enum SortingHelper {
             } else if (a instanceof short[]) {
                 DualPivotQuicksort.sort((short[]) a, 0, low, high);
             } else if (a instanceof float[]) {
-                DualPivotQuicksort.radixSort(null, (float[]) a, low, high);
+                DualPivotQuicksort.tryRadixSort(null, (float[]) a, low, high);
             } else if (a instanceof double[]) {
-                DualPivotQuicksort.radixSort(null, (double[]) a, low, high);
+                DualPivotQuicksort.tryRadixSort(null, (double[]) a, low, high);
             } else {
                 fail(a);
             }

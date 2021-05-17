@@ -260,6 +260,19 @@ final class DualPivotQuicksort {
             if (a[e2] < a[e1]) { int t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
             if (a[e4] < a[e2]) { int t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
 
+            /*
+             * Tries radix sort on large random data.
+             */
+            if (size > MIN_RADIX_SORT_SIZE
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
+                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
+                    && tryRadixSort(sorter, a, low, high)) {
+                return;
+            }
+
+            /*
+             * Insert the last element.
+             */
             if (a3 < a[e2]) {
                 if (a3 < a[e1]) {
                     a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = a3;
@@ -279,17 +292,9 @@ final class DualPivotQuicksort {
             int upper = end; // The index of the first element of the right part
 
             /*
-             * Partitioning with two pivots in case of different elements.
+             * Partitioning with two pivots on array of random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
-
-                /*
-                 * Invoke radix sort on large array.
-                 */
-                if ((bits > MIN_RADIX_SORT_DEPTH || sorter == null) && size > MIN_RADIX_SORT_SIZE
-                        && radixSort(sorter, a, low, high)) {
-                    return;
-                }
 
                 /*
                  * Use the first and fifth of the five sorted elements as
@@ -496,10 +501,10 @@ final class DualPivotQuicksort {
             for (int i, p = high; ++low < end; ) {
                 int ai = a[i = low];
 
-                if (ai < a[i - 1]) { // Small element
+                if (ai < a[i - 1]) { // Element smaller than pin
 
                     /*
-                     * Insert small element into sorted part.
+                     * Insert this element into sorted part.
                      */
                     a[i] = a[--i];
 
@@ -508,7 +513,7 @@ final class DualPivotQuicksort {
                     }
                     a[i + 1] = ai;
 
-                } else if (p > i && ai > pin) { // Large element
+                } else if (p > i && ai > pin) { // Element larger than pin
 
                     /*
                      * Find element smaller than pin.
@@ -524,7 +529,7 @@ final class DualPivotQuicksort {
                     }
 
                     /*
-                     * Insert small element into sorted part.
+                     * Insert smaller element into sorted part.
                      */
                     while (ai < a[--i]) {
                         a[i + 1] = a[i];
@@ -637,18 +642,18 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Sorts the specified range of the array using radix sort.
+     * Tries to sort the specified range of the array using radix sort.
      *
      * @param a the array to be sorted
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      * @return true if finally sorted, false otherwise
      */
-    static boolean radixSort(Sorter sorter, int[] a, int low, int high) {
-        int[] b; int offset = low;
+    static boolean tryRadixSort(Sorter sorter, int[] a, int low, int high) {
+        int[] b; int offset = low, size = high - low;
 
         if (sorter == null || (b = (int[]) sorter.b) == null) {
-            b = (int[]) tryAllocate(a, high - low);
+            b = (int[]) tryAllocate(a, size);
 
             if (b == null) {
                 return false;
@@ -672,10 +677,10 @@ final class DualPivotQuicksort {
             count4[(a[i] >>> 24) ^ 0x80]--;
         }
 
-        boolean passLevel4 = passLevel(count4, 255, low - high, high);
-        boolean passLevel3 = passLevel(count3, 255, low - high, high);
-        boolean passLevel2 = passLevel(count2, 255, low - high, high);
-        boolean passLevel1 = passLevel(count1, 255, low - high, high);
+        boolean passLevel1 = passLevel(count1, 255, -size, high);
+        boolean passLevel2 = passLevel(count2, 255, -size, high);
+        boolean passLevel3 = passLevel(count3, 255, -size, high);
+        boolean passLevel4 = passLevel(count4, 255, -size, high);
 
         if (passLevel1) {
             for (int i = low; i < high; ++i) {
@@ -720,7 +725,7 @@ final class DualPivotQuicksort {
         }
 
         if (passLevel1 ^ passLevel2 ^ passLevel3 ^ passLevel4) {
-            System.arraycopy(b, low - offset, a, low, high - low);
+            System.arraycopy(b, low - offset, a, low, size);
         }
         return true;
     }
@@ -729,24 +734,24 @@ final class DualPivotQuicksort {
      * Scans count array and creates histogram.
      *
      * @param count the count array
-     * @param last the index of the last count
-     * @param size the array size
+     * @param last the last index of count
+     * @param total the total number of elements
      * @param high the index of the last element, exclusive
      * @return false if the level can be skipped, true otherwise
      */
-    private static boolean passLevel(int[] count, int last, int size, int high) {
+    private static boolean passLevel(int[] count, int last, int total, int high) {
         for (int c : count) {
             if (c == 0) {
                 continue;
             }
-            if (c == size) { // All elements are equal
+            if (c == total) { // All elements are equal
                 return false;
             }
             break;
         }
 
         /*
-         * Compute histogram.
+         * Compute the histogram.
          */
         count[last] += high;
 
@@ -1149,6 +1154,19 @@ final class DualPivotQuicksort {
             if (a[e2] < a[e1]) { long t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
             if (a[e4] < a[e2]) { long t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
 
+            /*
+             * Tries radix sort on large random data.
+             */
+            if (size > MIN_RADIX_SORT_SIZE
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
+                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
+                    && tryRadixSort(sorter, a, low, high)) {
+                return;
+            }
+
+            /*
+             * Insert the last element.
+             */
             if (a3 < a[e2]) {
                 if (a3 < a[e1]) {
                     a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = a3;
@@ -1168,17 +1186,9 @@ final class DualPivotQuicksort {
             int upper = end; // The index of the first element of the right part
 
             /*
-             * Partitioning with two pivots in case of different elements.
+             * Partitioning with two pivots on array of random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
-
-                /*
-                 * Invoke radix sort on large array.
-                 */
-                if ((bits > MIN_RADIX_SORT_DEPTH || sorter == null) && size > MIN_RADIX_SORT_SIZE
-                        && radixSort(sorter, a, low, high)) {
-                    return;
-                }
 
                 /*
                  * Use the first and fifth of the five sorted elements as
@@ -1385,10 +1395,10 @@ final class DualPivotQuicksort {
             for (int i, p = high; ++low < end; ) {
                 long ai = a[i = low];
 
-                if (ai < a[i - 1]) { // Small element
+                if (ai < a[i - 1]) { // Element smaller than pin
 
                     /*
-                     * Insert small element into sorted part.
+                     * Insert this element into sorted part.
                      */
                     a[i] = a[--i];
 
@@ -1397,7 +1407,7 @@ final class DualPivotQuicksort {
                     }
                     a[i + 1] = ai;
 
-                } else if (p > i && ai > pin) { // Large element
+                } else if (p > i && ai > pin) { // Element larger than pin
 
                     /*
                      * Find element smaller than pin.
@@ -1413,7 +1423,7 @@ final class DualPivotQuicksort {
                     }
 
                     /*
-                     * Insert small element into sorted part.
+                     * Insert smaller element into sorted part.
                      */
                     while (ai < a[--i]) {
                         a[i + 1] = a[i];
@@ -1526,18 +1536,18 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Sorts the specified range of the array using radix sort.
+     * Tries to sort the specified range of the array using radix sort.
      *
      * @param a the array to be sorted
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      * @return true if finally sorted, false otherwise
      */
-    static boolean radixSort(Sorter sorter, long[] a, int low, int high) {
-        long[] b; int offset = low;
+    static boolean tryRadixSort(Sorter sorter, long[] a, int low, int high) {
+        long[] b; int offset = low, size = high - low;
 
         if (sorter == null || (b = (long[]) sorter.b) == null) {
-            b = (long[]) tryAllocate(a, high - low);
+            b = (long[]) tryAllocate(a, size);
 
             if (b == null) {
                 return false;
@@ -1565,12 +1575,12 @@ final class DualPivotQuicksort {
             count6[(int) ((a[i] >>> 54) ^ 0x200)]--;
         }
 
-        boolean passLevel6 = passLevel(count6, 1023, low - high, high);
-        boolean passLevel5 = passLevel(count5, 2047, low - high, high);
-        boolean passLevel4 = passLevel(count4, 2047, low - high, high);
-        boolean passLevel3 = passLevel(count3, 2047, low - high, high);
-        boolean passLevel2 = passLevel(count2, 2047, low - high, high);
-        boolean passLevel1 = passLevel(count1, 1023, low - high, high);
+        boolean passLevel1 = passLevel(count1, 1023, -size, high);
+        boolean passLevel2 = passLevel(count2, 2047, -size, high);
+        boolean passLevel3 = passLevel(count3, 2047, -size, high);
+        boolean passLevel4 = passLevel(count4, 2047, -size, high);
+        boolean passLevel5 = passLevel(count5, 2047, -size, high);
+        boolean passLevel6 = passLevel(count6, 1023, -size, high);
 
         if (passLevel1) {
             for (int i = low; i < high; ++i) {
@@ -1639,7 +1649,7 @@ final class DualPivotQuicksort {
         }
 
         if (passLevel1 ^ passLevel2 ^ passLevel3 ^ passLevel4 ^ passLevel5 ^ passLevel6) {
-            System.arraycopy(b, low - offset, a, low, high - low);
+            System.arraycopy(b, low - offset, a, low, size);
         }
         return true;
     }
@@ -2115,7 +2125,7 @@ final class DualPivotQuicksort {
             int upper = end; // The index of the first element of the right part
 
             /*
-             * Partitioning with two pivots in case of different elements.
+             * Partitioning with two pivots on array of random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
@@ -2434,7 +2444,7 @@ final class DualPivotQuicksort {
             int upper = end; // The index of the first element of the right part
 
             /*
-             * Partitioning with two pivots in case of different elements.
+             * Partitioning with two pivots on array of random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
@@ -2824,6 +2834,19 @@ final class DualPivotQuicksort {
             if (a[e2] < a[e1]) { float t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
             if (a[e4] < a[e2]) { float t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
 
+            /*
+             * Tries radix sort on large random data.
+             */
+            if (size > MIN_RADIX_SORT_SIZE
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
+                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
+                    && tryRadixSort(sorter, a, low, high)) {
+                return;
+            }
+
+            /*
+             * Insert the last element.
+             */
             if (a3 < a[e2]) {
                 if (a3 < a[e1]) {
                     a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = a3;
@@ -2843,17 +2866,9 @@ final class DualPivotQuicksort {
             int upper = end; // The index of the first element of the right part
 
             /*
-             * Partitioning with two pivots in case of different elements.
+             * Partitioning with two pivots on array of random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
-
-                /*
-                 * Invoke radix sort on large array.
-                 */
-                if ((bits > MIN_RADIX_SORT_DEPTH || sorter == null) && size > MIN_RADIX_SORT_SIZE
-                        && radixSort(sorter, a, low, high)) {
-                    return;
-                }
 
                 /*
                  * Use the first and fifth of the five sorted elements as
@@ -3060,10 +3075,10 @@ final class DualPivotQuicksort {
             for (int i, p = high; ++low < end; ) {
                 float ai = a[i = low];
 
-                if (ai < a[i - 1]) { // Small element
+                if (ai < a[i - 1]) { // Element smaller than pin
 
                     /*
-                     * Insert small element into sorted part.
+                     * Insert this element into sorted part.
                      */
                     a[i] = a[--i];
 
@@ -3072,7 +3087,7 @@ final class DualPivotQuicksort {
                     }
                     a[i + 1] = ai;
 
-                } else if (p > i && ai > pin) { // Large element
+                } else if (p > i && ai > pin) { // Element larger than pin
 
                     /*
                      * Find element smaller than pin.
@@ -3088,7 +3103,7 @@ final class DualPivotQuicksort {
                     }
 
                     /*
-                     * Insert small element into sorted part.
+                     * Insert smaller element into sorted part.
                      */
                     while (ai < a[--i]) {
                         a[i + 1] = a[i];
@@ -3201,18 +3216,18 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Sorts the specified range of the array using radix sort.
+     * Tries to sort the specified range of the array using radix sort.
      *
      * @param a the array to be sorted
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      * @return true if finally sorted, false otherwise
      */
-    static boolean radixSort(Sorter sorter, float[] a, int low, int high) {
-        float[] b; int offset = low;
+    static boolean tryRadixSort(Sorter sorter, float[] a, int low, int high) {
+        float[] b; int offset = low, size = high - low;
 
         if (sorter == null || (b = (float[]) sorter.b) == null) {
-            b = (float[]) tryAllocate(a, high - low);
+            b = (float[]) tryAllocate(a, size);
 
             if (b == null) {
                 return false;
@@ -3236,10 +3251,10 @@ final class DualPivotQuicksort {
             count4[(fti(a[i]) >>> 24) & 0xFF]--;
         }
 
-        boolean passLevel4 = passLevel(count4, 255, low - high, high);
-        boolean passLevel3 = passLevel(count3, 255, low - high, high);
-        boolean passLevel2 = passLevel(count2, 255, low - high, high);
-        boolean passLevel1 = passLevel(count1, 255, low - high, high);
+        boolean passLevel1 = passLevel(count1, 255, -size, high);
+        boolean passLevel2 = passLevel(count2, 255, -size, high);
+        boolean passLevel3 = passLevel(count3, 255, -size, high);
+        boolean passLevel4 = passLevel(count4, 255, -size, high);
 
         if (passLevel1) {
             for (int i = low; i < high; ++i) {
@@ -3284,7 +3299,7 @@ final class DualPivotQuicksort {
         }
 
         if (passLevel1 ^ passLevel2 ^ passLevel3 ^ passLevel4) {
-            System.arraycopy(b, low - offset, a, low, high - low);
+            System.arraycopy(b, low - offset, a, low, size);
         }
         return true;
     }
@@ -3745,6 +3760,19 @@ final class DualPivotQuicksort {
             if (a[e2] < a[e1]) { double t = a[e2]; a[e2] = a[e1]; a[e1] = t; }
             if (a[e4] < a[e2]) { double t = a[e4]; a[e4] = a[e2]; a[e2] = t; }
 
+            /*
+             * Tries radix sort on large random data.
+             */
+            if (size > MIN_RADIX_SORT_SIZE
+                    && (sorter == null || bits > MIN_RADIX_SORT_DEPTH)
+                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
+                    && tryRadixSort(sorter, a, low, high)) {
+                return;
+            }
+
+            /*
+             * Insert the last element.
+             */
             if (a3 < a[e2]) {
                 if (a3 < a[e1]) {
                     a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = a3;
@@ -3764,17 +3792,9 @@ final class DualPivotQuicksort {
             int upper = end; // The index of the first element of the right part
 
             /*
-             * Partitioning with two pivots in case of different elements.
+             * Partitioning with two pivots on array of random elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
-
-                /*
-                 * Invoke radix sort on large array.
-                 */
-                if ((bits > MIN_RADIX_SORT_DEPTH || sorter == null) && size > MIN_RADIX_SORT_SIZE
-                        && radixSort(sorter, a, low, high)) {
-                    return;
-                }
 
                 /*
                  * Use the first and fifth of the five sorted elements as
@@ -3981,10 +4001,10 @@ final class DualPivotQuicksort {
             for (int i, p = high; ++low < end; ) {
                 double ai = a[i = low];
 
-                if (ai < a[i - 1]) { // Small element
+                if (ai < a[i - 1]) { // Element smaller than pin
 
                     /*
-                     * Insert small element into sorted part.
+                     * Insert this element into sorted part.
                      */
                     a[i] = a[--i];
 
@@ -3993,7 +4013,7 @@ final class DualPivotQuicksort {
                     }
                     a[i + 1] = ai;
 
-                } else if (p > i && ai > pin) { // Large element
+                } else if (p > i && ai > pin) { // Element larger than pin
 
                     /*
                      * Find element smaller than pin.
@@ -4009,7 +4029,7 @@ final class DualPivotQuicksort {
                     }
 
                     /*
-                     * Insert small element into sorted part.
+                     * Insert smaller element into sorted part.
                      */
                     while (ai < a[--i]) {
                         a[i + 1] = a[i];
@@ -4122,18 +4142,18 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Sorts the specified range of the array using radix sort.
+     * Tries to sort the specified range of the array using radix sort.
      *
      * @param a the array to be sorted
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      * @return true if finally sorted, false otherwise
      */
-    static boolean radixSort(Sorter sorter, double[] a, int low, int high) {
-        double[] b; int offset = low;
+    static boolean tryRadixSort(Sorter sorter, double[] a, int low, int high) {
+        double[] b; int offset = low, size = high - low;
 
         if (sorter == null || (b = (double[]) sorter.b) == null) {
-            b = (double[]) tryAllocate(a, high - low);
+            b = (double[]) tryAllocate(a, size);
 
             if (b == null) {
                 return false;
@@ -4161,12 +4181,12 @@ final class DualPivotQuicksort {
             count6[(int) ((dtl(a[i]) >>> 54) & 0x3FF)]--;
         }
 
-        boolean passLevel6 = passLevel(count6, 1023, low - high, high);
-        boolean passLevel5 = passLevel(count5, 2047, low - high, high);
-        boolean passLevel4 = passLevel(count4, 2047, low - high, high);
-        boolean passLevel3 = passLevel(count3, 2047, low - high, high);
-        boolean passLevel2 = passLevel(count2, 2047, low - high, high);
-        boolean passLevel1 = passLevel(count1, 1023, low - high, high);
+        boolean passLevel1 = passLevel(count1, 1023, -size, high);
+        boolean passLevel2 = passLevel(count2, 2047, -size, high);
+        boolean passLevel3 = passLevel(count3, 2047, -size, high);
+        boolean passLevel4 = passLevel(count4, 2047, -size, high);
+        boolean passLevel5 = passLevel(count5, 2047, -size, high);
+        boolean passLevel6 = passLevel(count6, 1023, -size, high);
 
         if (passLevel1) {
             for (int i = low; i < high; ++i) {
@@ -4235,7 +4255,7 @@ final class DualPivotQuicksort {
         }
 
         if (passLevel1 ^ passLevel2 ^ passLevel3 ^ passLevel4 ^ passLevel5 ^ passLevel6) {
-            System.arraycopy(b, low - offset, a, low, high - low);
+            System.arraycopy(b, low - offset, a, low, size);
         }
         return true;
     }
