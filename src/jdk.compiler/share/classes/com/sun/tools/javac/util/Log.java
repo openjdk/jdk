@@ -311,6 +311,19 @@ public class Log extends AbstractLog {
     }
 
     /**
+     * Construct a log with given I/O redirections.
+     * @deprecated
+     * This constructor is provided to support the supported but now-deprecated javadoc entry point
+     *      com.sun.tools.javadoc.Main.execute(String programName,
+     *          PrintWriter errWriter, PrintWriter warnWriter, PrintWriter noticeWriter,
+     *          String defaultDocletClassName, String... args)
+     */
+    @Deprecated
+    protected Log(Context context, PrintWriter errWriter, PrintWriter warnWriter, PrintWriter noticeWriter) {
+        this(context, initWriters(errWriter, warnWriter, noticeWriter));
+    }
+
+    /**
      * Initialize a writer map with different streams for different types of diagnostics.
      * @param errWriter a stream for writing error messages
      * @param warnWriter a stream for writing warning messages
