@@ -1103,12 +1103,10 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetAllowAutom
         (JNIEnv *env, jclass clazz, jboolean allowAutomaticTabbing)
 {
     JNI_COCOA_ENTER(env);
-    if (@available(macOS 10.12, *)) {
-        if (allowAutomaticTabbing) {
-            [NSWindow setAllowsAutomaticWindowTabbing:YES];
-        } else {
-            [NSWindow setAllowsAutomaticWindowTabbing:NO];
-        }
+    if (allowAutomaticTabbing) {
+        [NSWindow setAllowsAutomaticWindowTabbing:YES];
+    } else {
+        [NSWindow setAllowsAutomaticWindowTabbing:NO];
     }
     JNI_COCOA_EXIT(env);
 }

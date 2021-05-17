@@ -45,6 +45,8 @@ import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -124,6 +126,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public static final String WINDOW_FULL_CONTENT = "apple.awt.fullWindowContent";
     public static final String WINDOW_TRANSPARENT_TITLE_BAR = "apple.awt.transparentTitleBar";
     public static final String WINDOW_TITLE_VISIBLE = "apple.awt.windowTitleVisible";
+    public static boolean allowAutomaticWindowTabbing;
 
     // Yeah, I know. But it's easier to deal with ints from JNI
     static final int MODELESS = 0;
@@ -186,6 +189,16 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     static boolean IS(final int bits, final int mask) {
         return (bits & mask) != 0;
+    }
+
+    static {
+        AccessController.doPrivileged(
+                (PrivilegedAction<Object>) () -> {
+                    allowAutomaticWindowTabbing = Boolean.parseBoolean(
+                            System.getProperty("jdk.allowTabbedWindows"));
+                    return null;
+                });
+        nativeSetAllowAutomaticTabbingProperty(allowAutomaticWindowTabbing);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -322,7 +335,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         responder = createPlatformResponder();
         contentView.initialize(peer, responder);
-        setAllowAutomaticWindowTabbing();
 
         Rectangle bounds;
         if (!IS(DECORATED, styleBits)) {
@@ -598,11 +610,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     public void setMaximizedBounds(int x, int y, int w, int h) {
         execute(ptr -> nativeSetNSWindowStandardFrame(ptr, x, y, w, h));
-    }
-
-    public void setAllowAutomaticWindowTabbing() {
-        boolean allowAutomaticWindowTabbing = Boolean.parseBoolean(System.getProperty("jdk.allowTabbedWindows"));
-        nativeSetAllowAutomaticTabbingProperty(allowAutomaticWindowTabbing);
     }
 
     private boolean isMaximized() {
