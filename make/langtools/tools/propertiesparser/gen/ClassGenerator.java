@@ -25,8 +25,6 @@
 
 package propertiesparser.gen;
 
-import static java.util.stream.Collectors.toList;
-
 import propertiesparser.parser.Message;
 import propertiesparser.parser.MessageFile;
 import propertiesparser.parser.MessageInfo;
@@ -50,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -119,8 +116,8 @@ public class ClassGenerator {
     enum FactoryKind {
         ERR("err", "Error", "Errors"),
         WARN("warn", "Warning", "Warnings"),
-        NOTE("note", "Note", "Notes"),
         MISC("misc", "Fragment", "Fragments"),
+        NOTE("note", "Note", "Notes"),
         OTHER(null, null, null);
 
         /** The prefix for this factory kind (i.e. 'err'). */
@@ -171,8 +168,8 @@ public class ClassGenerator {
             }
             //emit nested class
             String factoryDecl =
-                    StubKind.FACTORY_CLASS.format(kind.factoryClazz, indent(members, 1));
-            nestedDecls.add(indent(factoryDecl, 1));
+                    StubKind.FACTORY_CLASS.format(kind.factoryClazz, indent(members));
+            nestedDecls.add(indent(factoryDecl));
         }
         String clazz = StubKind.TOPLEVEL.format(
                 packageName(messageFile.file),
@@ -187,7 +184,14 @@ public class ClassGenerator {
     }
 
     /**
-     * Indent a string to a given level.
+     * Indent a string one level deeper.
+     */
+    String indent(String s) {
+        return indent(s, 1);
+    }
+
+    /**
+     * Indent a string to a given depth level.
      */
     String indent(String s, int level) {
         return Stream.of(s.split("\n"))
@@ -239,7 +243,7 @@ public class ClassGenerator {
         String factoryName = factoryName(entry.key());
         if (msgInfo.getTypes().isEmpty()) {
             //generate field
-            String body = generateDuplicateMethods(entry.kind, entry, factoryName, null);
+            String body = generateDiagnosticConversionMethodIfNeeded(entry.kind, entry, factoryName, null);
             String factoryField = StubKind.FACTORY_FIELD.format(entry.kind.keyClazz, factoryName,
                     "\"" + entry.prefix + "\"",
                     "\"" + entry.key + "\"",
@@ -251,7 +255,7 @@ public class ClassGenerator {
             for (List<MessageType> msgTypes : normalizeTypes(0, msgInfo.getTypes())) {
                 List<String> types = generateTypes(msgTypes);
                 List<String> argNames = argNames(types.size());
-                String body = generateDuplicateMethods(entry.kind, entry, factoryName, argNames);
+                String body = generateDiagnosticConversionMethodIfNeeded(entry.kind, entry, factoryName, argNames);
                 String suppressionString = needsSuppressWarnings(msgTypes) ?
                         StubKind.SUPPRESS_WARNINGS.format() : "";
                 String factoryMethod = StubKind.FACTORY_METHOD_DECL.format(suppressionString, entry.kind.keyClazz,
@@ -259,7 +263,7 @@ public class ClassGenerator {
                         indent(StubKind.FACTORY_METHOD_BODY.format(entry.kind.keyClazz,
                                 "\"" + entry.prefix + "\"",
                                 "\"" + entry.key + "\"",
-                                argNames.stream().collect(Collectors.joining(", ")), body), 1),
+                                argNames.stream().collect(Collectors.joining(", ")), body)),
                         javadoc);
                 factoryMethods.add(factoryMethod);
             }
@@ -267,24 +271,8 @@ public class ClassGenerator {
         }
     }
 
-    // TODO: nice record here?
-    static String rest(String key) {
-        String[] keyParts = key.split("\\.");
-        return Stream.of(keyParts).skip(2).collect(Collectors.joining("."));
-    }
-
-    static String prefix(String key) {
-        String[] keyParts = key.split("\\.");
-        return keyParts[0];
-    }
-
-    static FactoryKind kind(String key) {
-        String[] keyParts = key.split("\\.");
-        return FactoryKind.parseFrom(keyParts[1]);
-    }
-
-    String generateDuplicateMethods(FactoryKind thisKind, MessageIndex.Entry entry, String factoryName, List<String> argNames) {
-        List<FactoryKind> duplicates = entry.findDuplicates(thisKind);
+    String generateDiagnosticConversionMethodIfNeeded(FactoryKind thisKind, MessageIndex.Entry entry, String factoryName, List<String> argNames) {
+        List<MessageIndex.Entry> duplicates = entry.findOverloadedDiags();
         if (duplicates.isEmpty()) {
             return "";
         }
@@ -292,7 +280,7 @@ public class ClassGenerator {
         for (FactoryKind kind : FactoryKind.values()) {
             if (kind == thisKind) {
                 clauses.add(StubKind.FACTORY_METHOD_CONVERT_IDENTITY.format());
-            } else if (duplicates.contains(kind)) {
+            } else if (duplicates.stream().anyMatch(e -> e.kind == kind)) {
                 if (argNames == null) {
                     // field
                     clauses.add(StubKind.FACTORY_METHOD_CONVERT_ACCESS_FIELD.format(
@@ -307,8 +295,8 @@ public class ClassGenerator {
                 clauses.add(StubKind.FACTORY_METHOD_CONVERT_THROWS.format());
             }
         }
-        return "{\n" + StubKind.FACTORY_METHOD_CONVERT_DIAG.format(
-                clauses.get(0), clauses.get(1), clauses.get(2), clauses.get(3)) + "\n}";
+        return " {\n" + indent(StubKind.FACTORY_METHOD_CONVERT_DIAG.format(
+                clauses.get(0), clauses.get(1), clauses.get(2), clauses.get(3))) + "\n}";
     }
 
     /**
@@ -492,44 +480,35 @@ public class ClassGenerator {
     };
 
     static class MessageIndex {
-        private final Map<FactoryKind, Map<String, Entry>> groupedEntries;
+        private final Map<String, List<Entry>> groupedEntries;
 
         MessageIndex(MessageFile messageFile) {
             groupedEntries = messageFile.messages.entrySet().stream()
-                    .collect(
-                            Collectors.groupingBy(
-                                    e -> kind(e.getKey()),
-                                    TreeMap::new,
-                                    Collectors.toMap(e -> rest(e.getKey()),
-                                                     e -> new Entry(kind(e.getKey()), prefix(e.getKey()), rest(e.getKey()), e.getValue(), this))));
+                    .map(e -> Entry.fromKey(e.getKey(), e.getValue(), this))
+                    .collect(Collectors.groupingBy(Entry::key));
         }
 
         static record Entry(FactoryKind kind, String prefix, String key, Message message, MessageIndex index) {
-            List<FactoryKind> findDuplicates(FactoryKind kind) {
-                List<FactoryKind> duplicates = new ArrayList<>();
-                for (FactoryKind otherKind : FactoryKind.values()) {
-                    if (otherKind == kind) continue;
-                    Map<String, Entry> entries = index.groupedEntries.get(otherKind);
-                    if (entries == null) continue;
-                    Entry entry = entries.get(key);
-                    if (entry != null && entry.message.getMessageInfo().toString().equals(message.getMessageInfo().toString())) {
-                        duplicates.add(kind);
-                    }
-                }
-//                if (key.equals("prob.found.req") && duplicates.isEmpty()) {
-//                    System.err.println(index.groupedEntries.get(FactoryKind.WARN).get("prob.found.req").message().getMessageInfo());
-//                    System.err.println(index.groupedEntries.get(FactoryKind.ERR).get("prob.found.req").message().getMessageInfo());
-//                    System.err.println(index.groupedEntries.get(FactoryKind.MISC).get("prob.found.req").message().getMessageInfo());
-//                    throw new AssertionError();
-//                }
-                return duplicates;
+            List<Entry> findOverloadedDiags() {
+                return index().groupedEntries.get(key).stream()
+                        .filter(e -> e.kind != this.kind &&
+                                e.message.getMessageInfo().toString().equals(message.getMessageInfo().toString())).toList();
+            }
+
+            static Entry fromKey(String key, Message message, MessageIndex messageIndex) {
+                String[] keyParts = key.split("\\.");
+                String prefix = keyParts[0];
+                FactoryKind kind = FactoryKind.parseFrom(keyParts[1]);
+                String rest = Stream.of(keyParts).skip(2)
+                        .collect(Collectors.joining("."));
+                return new Entry(kind, prefix, rest, message, messageIndex);
             }
         };
 
         List<Entry> getEntries(FactoryKind kind) {
-            Map<String, Entry> messages = groupedEntries.get(kind);
-            if (messages == null) return List.of();
-            return new ArrayList<>(messages.values());
+            return groupedEntries.values().stream()
+                    .flatMap(e -> e.stream())
+                    .filter(entry -> entry.kind() == kind).toList();
         }
     }
 }
