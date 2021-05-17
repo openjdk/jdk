@@ -31,12 +31,16 @@ import java.util.Objects;
 /**
  * Provides access to the current instant.
  * <p>
- * Instances of this interface are used to find the current instant.
- * As such, an {@code InstantSource} can be used instead of {@link System#currentTimeMillis()}.
+ * Instances of this interface are used to access a pluggable representation of the current instant.
+ * For example, {@code InstantSource} can be used instead of {@link System#currentTimeMillis()}.
  * <p>
  * The primary purpose of this abstraction is to allow alternate instant sources to be
  * plugged in as and when required. Applications use an object to obtain the
  * current time rather than a static method. This can simplify testing.
+ * <p>
+ * As such, this interface does not guarantee the result actually represents the current instant
+ * on the time-line. Instead, it allows the application to provide a controlled view as to what
+ * the current instant is.
  * <p>
  * Best practice for applications is to pass an {@code InstantSource} into any method
  * that requires the current instant. A dependency injection framework is one
@@ -61,7 +65,8 @@ import java.util.Objects;
  *
  * @implSpec
  * This interface must be implemented with care to ensure other classes operate correctly.
- * All implementations must be thread-safe.
+ * All implementations must be thread-safe - a single instance must be capable of be invoked
+ * from multiple threads without negative consequences such as race conditions.
  * <p>
  * The principal methods are defined to allow the throwing of an exception.
  * In normal use, no exceptions will be thrown, however one possible implementation would be to

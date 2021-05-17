@@ -76,9 +76,10 @@ import jdk.internal.misc.VM;
 /**
  * A clock providing access to the current instant, date and time using a time-zone.
  * <p>
- * Instances of this class are used to find the current instant, which can be
- * interpreted using the stored time-zone to find the current date and time.
- * As such, a clock can be used instead of {@link System#currentTimeMillis()}
+ * Instances of this abstract class are used to access a pluggable representation of the
+ * current instant, which can be interpreted using the stored time-zone to find the
+ * current date and time.
+ * For example, {@code Clock} can be used instead of {@link System#currentTimeMillis()}
  * and {@link TimeZone#getDefault()}.
  * <p>
  * Use of a {@code Clock} is optional. All key date-time classes also have a
@@ -86,6 +87,10 @@ import jdk.internal.misc.VM;
  * The primary purpose of this abstraction is to allow alternate clocks to be
  * plugged in as and when required. Applications use an object to obtain the
  * current time rather than a static method. This can simplify testing.
+ * <p>
+ * As such, this abstract class does not guarantee the result actually represents the current instant
+ * on the time-line. Instead, it allows the application to provide a controlled view as to what
+ * the current instant and time-zone are.
  * <p>
  * Best practice for applications is to pass a {@code Clock} into any method
  * that requires the current instant and time-zone. A dependency injection framework
@@ -107,6 +112,27 @@ import jdk.internal.misc.VM;
  * The {@code system} factory methods provide clocks based on the best available
  * system clock. This may use {@link System#currentTimeMillis()}, or a higher
  * resolution clock if one is available.
+ *
+ * @implSpec
+ * This abstract class must be implemented with care to ensure other classes operate correctly.
+ * All implementations must be thread-safe - a single instance must be capable of be invoked
+ * from multiple threads without negative consequences such as race conditions.
+ * <p>
+ * The principal methods are defined to allow the throwing of an exception.
+ * In normal use, no exceptions will be thrown, however one possible implementation would be to
+ * obtain the time from a central time server across the network. Obviously, in this case the
+ * lookup could fail, and so the method is permitted to throw an exception.
+ * <p>
+ * The returned instants from {@code Clock} work on a time-scale that ignores leap seconds,
+ * as described in {@link Instant}. If the implementation wraps a source that provides leap
+ * second information, then a mechanism should be used to "smooth" the leap second.
+ * The Java Time-Scale mandates the use of UTC-SLS, however clock implementations may choose
+ * how accurate they are with the time-scale so long as they document how they work.
+ * Implementations are therefore not required to actually perform the UTC-SLS slew or to
+ * otherwise be aware of leap seconds.
+ * <p>
+ * Implementations should implement {@code Serializable} wherever possible and must
+ * document whether or not they do support serialization.
  *
  * @see InstantSource
  *
@@ -706,7 +732,7 @@ public abstract class Clock implements InstantSource {
 
     //-----------------------------------------------------------------------
     /**
-     * Implementation of a clock that adds an offset to an underlying clock.
+     * Implementation of a clock that reduces the tick frequency of an underlying clock.
      */
     static final class TickClock extends Clock implements Serializable {
         @java.io.Serial
