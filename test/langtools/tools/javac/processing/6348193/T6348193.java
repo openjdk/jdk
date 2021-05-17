@@ -28,7 +28,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  * @compile -proc:none T6348193.java
- * @run main/othervm T6348193
+ * @run main/othervm -Djava.security.manager=allow T6348193
  */
 
 import java.io.*;
