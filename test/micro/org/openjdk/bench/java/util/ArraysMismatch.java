@@ -42,12 +42,12 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-@BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
 public abstract class ArraysMismatch {
 
-    @Param({"16", "32", "64", "90", "800"})
+    @Param({"90", "800"})
     private static int size;
 
     static final byte fill = 99;
@@ -62,8 +62,8 @@ public abstract class ArraysMismatch {
     public void setup() {
         leftStartRange = size / 4;
         leftEndRange = size - size / 4;
-        rightStartRange = size / 4 + 1;
-        rightEndRange = size - size / 4 + 1;
+        rightStartRange = size / 4 + 10;
+        rightEndRange = size - size / 4 + 10;
         specificSetup();
     }
 
