@@ -686,7 +686,7 @@ void vm_exit_during_initialization(Handle exception) {
   // If there are exceptions on this thread it must be cleared
   // first and here. Any future calls to EXCEPTION_MARK requires
   // that no pending exceptions exist.
-  Thread *THREAD = Thread::current(); // can't be NULL
+  JavaThread* THREAD = JavaThread::current(); // can't be NULL
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
   }

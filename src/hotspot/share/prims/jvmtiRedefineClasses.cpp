@@ -1380,7 +1380,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     // load hook event.
     state->set_class_being_redefined(the_class, _class_load_kind);
 
-    Thread* THREAD = current;  // for exception processing
+    JavaThread* THREAD = current; // For exception macros.
     ExceptionMark em(THREAD);
     Handle protection_domain(THREAD, the_class->protection_domain());
     ClassLoadInfo cl_info(protection_domain);
@@ -2108,7 +2108,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods(InstanceKlass* scratch_class
     return true;
   }
 
-  Thread* THREAD = Thread::current();  // For exception processing
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   ExceptionMark em(THREAD);
 
   // rewrite constant pool references in the methods:
