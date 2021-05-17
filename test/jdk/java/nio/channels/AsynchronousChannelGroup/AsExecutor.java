@@ -29,7 +29,7 @@
  * @build PrivilegedThreadFactory Attack
  *        jdk.test.lib.util.JarUtils
  * @run driver SetupJar
- * @run main/othervm -Xbootclasspath/a:privileged.jar AsExecutor
+ * @run main/othervm -Djava.security.manager=allow -Xbootclasspath/a:privileged.jar AsExecutor
  */
 
 import java.nio.channels.AsynchronousChannelGroup;
