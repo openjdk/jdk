@@ -173,6 +173,7 @@ public class SimpleFileServerTest {
                 </html>
                 """.getBytes(UTF_8).length);
         var root = Files.createDirectory(CWD.resolve("testDirectoryHEAD"));
+        var file = Files.writeString(root.resolve("yFile.txt"), "some text", CREATE);
         var lastModified = getLastModified(root);
 
         var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
