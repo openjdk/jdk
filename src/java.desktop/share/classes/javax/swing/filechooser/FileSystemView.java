@@ -268,7 +268,7 @@ public abstract class FileSystemView {
     * <p>
     * Example: <pre>
     * FileSystemView fsv = FileSystemView.getFileSystemView();
-    * Icon icon = fsv.getSystemIcon("application.exe", 64);
+    * Icon icon = fsv.getSystemIcon(new File("application.exe"), 64);
     * JLabel label = new JLabel(icon);
     * </pre>
     *
