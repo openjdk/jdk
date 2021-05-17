@@ -59,14 +59,11 @@ public class MethodHandlesTableSwitchOpaqueSingle {
     private static final MutableCallSite cs = new MutableCallSite(callType);
     private static final MethodHandle target = cs.dynamicInvoker();
 
-    private static final MethodHandle MH_SUBTRACT;
     private static final MethodHandle MH_DEFAULT;
     private static final MethodHandle MH_PAYLOAD;
 
     static {
         try {
-            MH_SUBTRACT = MethodHandles.lookup().findStatic(MethodHandlesTableSwitchOpaqueSingle.class, "subtract",
-                    MethodType.methodType(int.class, int.class, int.class));
             MH_DEFAULT = MethodHandles.lookup().findStatic(MethodHandlesTableSwitchOpaqueSingle.class, "defaultCase",
                     MethodType.methodType(int.class, int.class));
             MH_PAYLOAD = MethodHandles.lookup().findStatic(MethodHandlesTableSwitchOpaqueSingle.class, "payload",
@@ -84,17 +81,9 @@ public class MethodHandlesTableSwitchOpaqueSingle {
     @Param({
         "5",
         "10",
-        "25",
-        "50",
-        "100"
+        "25"
     })
     public int numCases;
-
-    @Param({
-        "0",
-        "150"
-    })
-    public int offset;
 
     public int input;
 
@@ -104,20 +93,13 @@ public class MethodHandlesTableSwitchOpaqueSingle {
                 .mapToObj(i -> MethodHandles.insertArguments(MH_PAYLOAD, 1, i))
                 .toArray(MethodHandle[]::new);
         MethodHandle switcher = MethodHandles.tableSwitch(MH_DEFAULT, cases);
-        if (offset != 0) {
-            switcher = MethodHandles.filterArguments(switcher, 0, MethodHandles.insertArguments(MH_SUBTRACT, 1, offset));
-        }
         cs.setTarget(switcher);
 
-        input = ThreadLocalRandom.current().nextInt(numCases) + offset;
+        input = ThreadLocalRandom.current().nextInt(numCases);
     }
 
     private static int payload(int dropped, int constant) {
         return constant;
-    }
-
-    private static int subtract(int a, int b) {
-        return a - b;
     }
 
     private static int defaultCase(int x) {

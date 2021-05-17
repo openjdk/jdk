@@ -1397,12 +1397,12 @@ class InvokerBytecodeGenerator {
 
     private Name emitTableSwitch(int pos, int numCases) {
         Name args    = lambdaForm.names[pos];
-        Name invoker = lambdaForm.names[pos+1];
-        Name result  = lambdaForm.names[pos+2];
+        Name invoker = lambdaForm.names[pos + 1];
+        Name result  = lambdaForm.names[pos + 2];
 
         Class<?> returnType = result.function.resolvedHandle().type().returnType();
         MethodType caseType = args.function.resolvedHandle().type()
-            .dropParameterTypes(0,1) // drop collector
+            .dropParameterTypes(0, 1) // drop collector
             .changeReturnType(returnType);
         String caseDescriptor = caseType.basicType().toMethodDescriptorString();
 

@@ -87,9 +87,7 @@ public class MethodHandlesTableSwitchConstant {
     @Param({
         "5",
         "10",
-        "25",
-        "50",
-        "100"
+        "25"
     })
     public int numCases;
 

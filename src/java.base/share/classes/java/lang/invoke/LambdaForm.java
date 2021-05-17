@@ -718,18 +718,18 @@ class LambdaForm {
         //   t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
         if (pos + 2 >= names.length)  return false;
 
-        final int POS_COLLECT_ARGS  = pos;
-        final int POS_TABLE_SWITCH  = pos + 1;
-        final int POS_UNBOX_RESULT  = pos + 2;
+        final int POS_COLLECT_ARGS = pos;
+        final int POS_TABLE_SWITCH = pos + 1;
+        final int POS_UNBOX_RESULT = pos + 2;
 
-        Name collectArgs  = names[POS_COLLECT_ARGS];
-        Name tableSwitch  = names[POS_TABLE_SWITCH];
-        Name unboxResult  = names[POS_UNBOX_RESULT];
+        Name collectArgs = names[POS_COLLECT_ARGS];
+        Name tableSwitch = names[POS_TABLE_SWITCH];
+        Name unboxResult = names[POS_UNBOX_RESULT];
         return tableSwitch.refersTo(MethodHandleImpl.class, "tableSwitch") &&
                 collectArgs.isInvokeBasic() &&
                 unboxResult.isInvokeBasic() &&
-                tableSwitch.lastUseIndex(collectArgs)  == 3 &&    // t_{n+1}:L=MethodHandleImpl.<invoker>(*, *, *, t_{n});
-                lastUseIndex(collectArgs)  == POS_TABLE_SWITCH && // t_{n} is local: used only in t_{n+1}
+                tableSwitch.lastUseIndex(collectArgs) == 3 &&     // t_{n+1}:L=MethodHandleImpl.<invoker>(*, *, *, t_{n});
+                lastUseIndex(collectArgs) == POS_TABLE_SWITCH &&  // t_{n} is local: used only in t_{n+1}
                 unboxResult.lastUseIndex(tableSwitch) == 1 &&     // t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
                 lastUseIndex(tableSwitch) == POS_UNBOX_RESULT;    // t_{n+1} is local: used only in t_{n+2}
     }
@@ -1094,32 +1094,13 @@ class LambdaForm {
         final MemberName member;
         private @Stable MethodHandle resolvedHandle;
         @Stable MethodHandle invoker;
-        private final MethodHandleImpl.Intrinsic intrinsicName;
-        private final Object intrinsicData;
 
         NamedFunction(MethodHandle resolvedHandle) {
-            this(resolvedHandle.internalMemberName(), resolvedHandle, MethodHandleImpl.Intrinsic.NONE, null);
-        }
-        NamedFunction(MethodHandle resolvedHandle, MethodHandleImpl.Intrinsic intrinsic) {
-            this(resolvedHandle.internalMemberName(), resolvedHandle, intrinsic, null);
-        }
-        NamedFunction(MethodHandle resolvedHandle, MethodHandleImpl.Intrinsic intrinsic, Object intrinsicData) {
-            this(resolvedHandle.internalMemberName(), resolvedHandle, intrinsic, intrinsicData);
+            this(resolvedHandle.internalMemberName(), resolvedHandle);
         }
         NamedFunction(MemberName member, MethodHandle resolvedHandle) {
-            this(member, resolvedHandle, MethodHandleImpl.Intrinsic.NONE, null);
-        }
-        NamedFunction(MemberName member, MethodHandle resolvedHandle, MethodHandleImpl.Intrinsic intrinsic) {
-            this(member, resolvedHandle, intrinsic, null);
-        }
-        NamedFunction(MemberName member, MethodHandle resolvedHandle, MethodHandleImpl.Intrinsic intrinsic, Object intrinsicData) {
             this.member = member;
             this.resolvedHandle = resolvedHandle;
-            this.intrinsicName = intrinsic;
-            this.intrinsicData = intrinsicData;
-            assert(resolvedHandle == null ||
-                   resolvedHandle.intrinsicName() == MethodHandleImpl.Intrinsic.NONE ||
-                   resolvedHandle.intrinsicName() == intrinsic) : resolvedHandle.intrinsicName() + " != " + intrinsic;
              // The following assert is almost always correct, but will fail for corner cases, such as PrivateInvokeTest.
              //assert(!isInvokeBasic(member));
         }
@@ -1132,8 +1113,6 @@ class LambdaForm {
                 // necessary to pass BigArityTest
                 this.member = Invokers.invokeBasicMethod(basicInvokerType);
             }
-            this.intrinsicName = MethodHandleImpl.Intrinsic.NONE;
-            this.intrinsicData = null;
             assert(isInvokeBasic(member));
         }
 
@@ -1286,11 +1265,15 @@ class LambdaForm {
         }
 
         public MethodHandleImpl.Intrinsic intrinsicName() {
-            return intrinsicName;
+            return resolvedHandle != null
+                ? resolvedHandle.intrinsicName()
+                : MethodHandleImpl.Intrinsic.NONE;
         }
 
         public Object intrinsicData() {
-            return intrinsicData;
+            return resolvedHandle != null
+                ? resolvedHandle.intrinsicData()
+                : null;
         }
     }
 
@@ -1772,15 +1755,15 @@ class LambdaForm {
                 Name[] idNames = new Name[] { argument(0, L_TYPE), argument(1, type) };
                 idForm = new LambdaForm(2, idNames, 1, Kind.IDENTITY);
                 idForm.compileToBytecode();
-                idFun = new NamedFunction(idMem, SimpleMethodHandle.make(idMem.getInvocationType(), idForm),
-                            MethodHandleImpl.Intrinsic.IDENTITY);
+                idFun = new NamedFunction(idMem, MethodHandleImpl.makeIntrinsic(SimpleMethodHandle.make(idMem.getInvocationType(), idForm),
+                            MethodHandleImpl.Intrinsic.IDENTITY));
 
                 Object zeValue = Wrapper.forBasicType(btChar).zero();
                 Name[] zeNames = new Name[] { argument(0, L_TYPE), new Name(idFun, zeValue) };
                 zeForm = new LambdaForm(1, zeNames, 1, Kind.ZERO);
                 zeForm.compileToBytecode();
-                zeFun = new NamedFunction(zeMem, SimpleMethodHandle.make(zeMem.getInvocationType(), zeForm),
-                        MethodHandleImpl.Intrinsic.ZERO);
+                zeFun = new NamedFunction(zeMem, MethodHandleImpl.makeIntrinsic(SimpleMethodHandle.make(zeMem.getInvocationType(), zeForm),
+                        MethodHandleImpl.Intrinsic.ZERO));
             }
 
             LF_zero[ord] = zeForm;

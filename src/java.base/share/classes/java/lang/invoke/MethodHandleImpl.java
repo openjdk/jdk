@@ -825,7 +825,9 @@ abstract class MethodHandleImpl {
             names[PROFILE] = new Name(getFunction(NF_profileBoolean), names[CALL_TEST], names[GET_COUNTERS]);
         }
         // call selectAlternative
-        names[SELECT_ALT] = new Name(new NamedFunction(getConstantHandle(MH_selectAlternative), Intrinsic.SELECT_ALTERNATIVE), names[TEST], names[GET_TARGET], names[GET_FALLBACK]);
+        names[SELECT_ALT] = new Name(new NamedFunction(
+                makeIntrinsic(getConstantHandle(MH_selectAlternative), Intrinsic.SELECT_ALTERNATIVE)),
+                names[TEST], names[GET_TARGET], names[GET_FALLBACK]);
 
         // call target or fallback
         invokeArgs[0] = names[SELECT_ALT];
@@ -896,7 +898,7 @@ abstract class MethodHandleImpl {
         Object[] args = new Object[invokeBasic.type().parameterCount()];
         args[0] = names[GET_COLLECT_ARGS];
         System.arraycopy(names, ARG_BASE, args, 1, ARG_LIMIT-ARG_BASE);
-        names[BOXED_ARGS] = new Name(new NamedFunction(invokeBasic, Intrinsic.GUARD_WITH_CATCH), args);
+        names[BOXED_ARGS] = new Name(new NamedFunction(makeIntrinsic(invokeBasic, Intrinsic.GUARD_WITH_CATCH)), args);
 
         // t_{i+1}:L=MethodHandleImpl.guardWithCatch(target:L,exType:L,catcher:L,t_{i}:L);
         Object[] gwcArgs = new Object[] {names[GET_TARGET], names[GET_CLASS], names[GET_CATCHER], names[BOXED_ARGS]};
@@ -1243,11 +1245,17 @@ abstract class MethodHandleImpl {
     static final class IntrinsicMethodHandle extends DelegatingMethodHandle {
         private final MethodHandle target;
         private final Intrinsic intrinsicName;
+        private final Object intrinsicData;
 
         IntrinsicMethodHandle(MethodHandle target, Intrinsic intrinsicName) {
+           this(target, intrinsicName, null);
+        }
+
+        IntrinsicMethodHandle(MethodHandle target, Intrinsic intrinsicName, Object intrinsicData) {
             super(target.type(), target);
             this.target = target;
             this.intrinsicName = intrinsicName;
+            this.intrinsicData = intrinsicData;
         }
 
         @Override
@@ -1258,6 +1266,11 @@ abstract class MethodHandleImpl {
         @Override
         Intrinsic intrinsicName() {
             return intrinsicName;
+        }
+
+        @Override
+        Object intrinsicData() {
+            return intrinsicData;
         }
 
         @Override
@@ -1285,9 +1298,13 @@ abstract class MethodHandleImpl {
     }
 
     static MethodHandle makeIntrinsic(MethodHandle target, Intrinsic intrinsicName) {
+        return makeIntrinsic(target, intrinsicName, null);
+    }
+
+    static MethodHandle makeIntrinsic(MethodHandle target, Intrinsic intrinsicName, Object intrinsicData) {
         if (intrinsicName == target.intrinsicName())
             return target;
-        return new IntrinsicMethodHandle(target, intrinsicName);
+        return new IntrinsicMethodHandle(target, intrinsicName, intrinsicData);
     }
 
     static MethodHandle makeIntrinsic(MethodType type, LambdaForm form, Intrinsic intrinsicName) {
@@ -1609,7 +1626,7 @@ abstract class MethodHandleImpl {
             Object[] args = new Object[invokeBasic.type().parameterCount()];
             args[0] = names[GET_COLLECT_ARGS];
             System.arraycopy(names, ARG_BASE, args, 1, ARG_LIMIT - ARG_BASE);
-            names[BOXED_ARGS] = new Name(new NamedFunction(invokeBasic, Intrinsic.LOOP), args);
+            names[BOXED_ARGS] = new Name(new NamedFunction(makeIntrinsic(invokeBasic, Intrinsic.LOOP)), args);
 
             // t_{i+1}:L=MethodHandleImpl.loop(localTypes:L,clauses:L,t_{i}:L);
             Object[] lArgs =
@@ -1846,7 +1863,7 @@ abstract class MethodHandleImpl {
         Object[] args = new Object[invokeBasic.type().parameterCount()];
         args[0] = names[GET_COLLECT_ARGS];
         System.arraycopy(names, ARG_BASE, args, 1, ARG_LIMIT-ARG_BASE);
-        names[BOXED_ARGS] = new Name(new NamedFunction(invokeBasic, Intrinsic.TRY_FINALLY), args);
+        names[BOXED_ARGS] = new Name(new NamedFunction(makeIntrinsic(invokeBasic, Intrinsic.TRY_FINALLY)), args);
 
         // t_{i+1}:L=MethodHandleImpl.tryFinally(target:L,exType:L,catcher:L,t_{i}:L);
         Object[] tfArgs = new Object[] {names[GET_TARGET], names[GET_CLEANUP], names[BOXED_ARGS]};
@@ -1948,7 +1965,7 @@ abstract class MethodHandleImpl {
              storeNameCursor < STORE_ELEMENT_LIMIT;
              storeIndex++, storeNameCursor++, argCursor++){
 
-            names[storeNameCursor] = new Name(new NamedFunction(storeFunc, Intrinsic.ARRAY_STORE),
+            names[storeNameCursor] = new Name(new NamedFunction(makeIntrinsic(storeFunc, Intrinsic.ARRAY_STORE)),
                     names[CALL_NEW_ARRAY], storeIndex, names[argCursor]);
         }
 
@@ -1990,6 +2007,8 @@ abstract class MethodHandleImpl {
     }
 
     private static class TableSwitchCacheKey {
+        private static final Map<TableSwitchCacheKey, LambdaForm> CACHE = new ConcurrentHashMap<>();
+
         private final MethodType basicType;
         private final int numberOfCases;
 
@@ -2005,14 +2024,11 @@ abstract class MethodHandleImpl {
             TableSwitchCacheKey that = (TableSwitchCacheKey) o;
             return numberOfCases == that.numberOfCases && Objects.equals(basicType, that.basicType);
         }
-
         @Override
         public int hashCode() {
             return Objects.hash(basicType, numberOfCases);
         }
     }
-
-    private static final Map<TableSwitchCacheKey, LambdaForm> TABLE_SWITCH_LAMBDA_FORM_CACHE = new ConcurrentHashMap<>();
 
     private static LambdaForm makeTableSwitchForm(MethodType basicType, BoundMethodHandle.SpeciesData data,
                                                   int numCases) {
@@ -2023,7 +2039,7 @@ abstract class MethodHandleImpl {
         // This also means that we can't use the cache in MethodTypeForm,
         // which only uses the basic type as a key.
         TableSwitchCacheKey key = new TableSwitchCacheKey(basicType, numCases);
-        LambdaForm lform = TABLE_SWITCH_LAMBDA_FORM_CACHE.get(key);
+        LambdaForm lform = TableSwitchCacheKey.CACHE.get(key);
         if (lform != null) {
             return lform;
         }
@@ -2063,7 +2079,7 @@ abstract class MethodHandleImpl {
             Object[] args = new Object[invokeBasic.type().parameterCount()];
             args[0] = names[GET_COLLECT_ARGS];
             System.arraycopy(names, ARG_BASE, args, 1, ARG_LIMIT - ARG_BASE);
-            names[BOXED_ARGS] = new Name(new NamedFunction(invokeBasic, Intrinsic.TABLE_SWITCH, numCases), args);
+            names[BOXED_ARGS] = new Name(new NamedFunction(makeIntrinsic(invokeBasic, Intrinsic.TABLE_SWITCH, numCases)), args);
         }
 
         {
@@ -2079,7 +2095,7 @@ abstract class MethodHandleImpl {
         }
 
         lform = new LambdaForm(lambdaType.parameterCount(), names, Kind.TABLE_SWITCH);
-        LambdaForm prev = TABLE_SWITCH_LAMBDA_FORM_CACHE.putIfAbsent(key, lform);
+        LambdaForm prev = TableSwitchCacheKey.CACHE.putIfAbsent(key, lform);
         return prev != null ? prev : lform;
     }
 
