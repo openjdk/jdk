@@ -627,7 +627,7 @@ void register_jfr_phasetype_serializer(CompilerType compiler_type) {
 // CompileBroker::compilation_init
 //
 // Initialize the Compilation object
-void CompileBroker::compilation_init_phase1(Thread* THREAD) {
+void CompileBroker::compilation_init_phase1(JavaThread* THREAD) {
   // No need to initialize compilation system if we do not use it.
   if (!UseCompiler) {
     return;
@@ -873,7 +873,7 @@ void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_all() {
 #endif // defined(ASSERT) && COMPILER2_OR_JVMCI
 
 
-JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, CompileQueue* queue, AbstractCompiler* comp, Thread* THREAD) {
+JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD) {
   JavaThread* new_thread = NULL;
   {
     MutexLocker mu(THREAD, Threads_lock);
@@ -1060,7 +1060,7 @@ void CompileBroker::init_compiler_sweeper_threads() {
 #endif // defined(ASSERT) && COMPILER2_OR_JVMCI
 }
 
-void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
+void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
 
   julong available_memory = os::available_memory();
   // If SegmentedCodeCache is off, both values refer to the single heap (with type CodeBlobType::All).

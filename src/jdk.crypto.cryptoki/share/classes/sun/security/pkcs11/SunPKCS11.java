@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import javax.security.auth.callback.ConfirmationCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.TextOutputCallback;
 
+import com.sun.crypto.provider.ChaCha20Poly1305Parameters;
+
 import sun.security.util.Debug;
 import sun.security.util.ResourcesMgr;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
@@ -51,6 +53,7 @@ import sun.security.pkcs11.Secmod.*;
 
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
 
 /**
  * PKCS#11 provider main class.
@@ -606,6 +609,8 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_AES_KEY_GEN));
         d(KG,  "Blowfish",      P11KeyGenerator,
                 m(CKM_BLOWFISH_KEY_GEN));
+        d(KG,  "ChaCha20",      P11KeyGenerator,
+                m(CKM_CHACHA20_KEY_GEN));
         d(KG,  "HmacMD5",      P11KeyGenerator, // 1.3.6.1.5.5.8.1.1
                 m(CKM_GENERIC_SECRET_KEY_GEN));
         dA(KG,  "HmacSHA1",      P11KeyGenerator,
@@ -655,6 +660,10 @@ public final class SunPKCS11 extends AuthProvider {
         d(AGP, "GCM",            "sun.security.util.GCMParameters",
                 m(CKM_AES_GCM));
 
+        dA(AGP, "ChaCha20-Poly1305",
+                "com.sun.crypto.provider.ChaCha20Poly1305Parameters",
+                m(CKM_CHACHA20_POLY1305));
+
         d(KA, "DH",             P11KeyAgreement,
                 dhAlias,
                 m(CKM_DH_PKCS_DERIVE));
@@ -671,6 +680,8 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_AES_CBC));
         d(SKF, "Blowfish",      P11SecretKeyFactory,
                 m(CKM_BLOWFISH_CBC));
+        d(SKF, "ChaCha20",      P11SecretKeyFactory,
+                m(CKM_CHACHA20_POLY1305));
 
         // XXX attributes for Ciphers (supported modes, padding)
         dA(CIP, "ARCFOUR",                      P11Cipher,
@@ -731,6 +742,9 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_BLOWFISH_CBC));
         d(CIP, "Blowfish/CBC/PKCS5Padding",     P11Cipher,
                 m(CKM_BLOWFISH_CBC));
+
+        dA(CIP, "ChaCha20-Poly1305",            P11AEADCipher,
+                m(CKM_CHACHA20_POLY1305));
 
         d(CIP, "RSA/ECB/PKCS1Padding",          P11RSACipher,
                 List.of("RSA"),
@@ -1156,7 +1170,8 @@ public final class SunPKCS11 extends AuthProvider {
             } else if (type == CIP) {
                 if (algorithm.startsWith("RSA")) {
                     return new P11RSACipher(token, algorithm, mechanism);
-                } else if (algorithm.endsWith("GCM/NoPadding")) {
+                } else if (algorithm.endsWith("GCM/NoPadding") ||
+                           algorithm.startsWith("ChaCha20-Poly1305")) {
                     return new P11AEADCipher(token, algorithm, mechanism);
                 } else {
                     return new P11Cipher(token, algorithm, mechanism);
@@ -1209,6 +1224,8 @@ public final class SunPKCS11 extends AuthProvider {
                     return new sun.security.util.ECParameters();
                 } else if (algorithm == "GCM") {
                     return new sun.security.util.GCMParameters();
+                } else if (algorithm == "ChaCha20-Poly1305") {
+                    return new ChaCha20Poly1305Parameters(); // from SunJCE
                 } else {
                     throw new NoSuchAlgorithmException("Unsupported algorithm: "
                             + algorithm);

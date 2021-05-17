@@ -111,7 +111,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   Node* ctrl = kit.control();
 #endif
   // Try to inline the intrinsic.
-  if ((CheckIntrinsics ? callee->intrinsic_candidate() : true) &&
+  if (callee->check_intrinsic_candidate() &&
       kit.try_to_inline(_last_predicate)) {
     const char *inline_msg = is_virtual() ? "(intrinsic, virtual)"
                                           : "(intrinsic)";
@@ -668,6 +668,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();
+
+  case vmIntrinsics::_blackhole:
+    return inline_blackhole();
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -1643,9 +1646,7 @@ bool LibraryCallKit::inline_math_pow() {
       Node* base = round_double_node(argument(0));
       set_result(_gvn.transform(new MulDNode(base, base)));
       return true;
-    }
-#if defined(X86) && defined(_LP64)
-    else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
+    } else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
       // Special case: pow(x, 0.5) => sqrt(x)
       Node* base = round_double_node(argument(0));
       Node* zero = _gvn.zerocon(T_DOUBLE);
@@ -1654,7 +1655,10 @@ bool LibraryCallKit::inline_math_pow() {
       Node* phi = new PhiNode(region, Type::DOUBLE);
 
       Node* cmp  = _gvn.transform(new CmpDNode(base, zero));
-      Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
+      // According to the API specs, pow(-0.0, 0.5) = 0.0 and sqrt(-0.0) = -0.0.
+      // So pow(-0.0, 0.5) shouldn't be replaced with sqrt(-0.0).
+      // -0.0/+0.0 are both excluded since floating-point comparison doesn't distinguish -0.0 from +0.0.
+      Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::le));
 
       Node* if_pow = generate_slow_guard(test, NULL);
       Node* value_sqrt = _gvn.transform(new SqrtDNode(C, control(), base));
@@ -1684,7 +1688,6 @@ bool LibraryCallKit::inline_math_pow() {
 
       return true;
     }
-#endif // defined(X86) && defined(_LP64)
   }
 
   return StubRoutines::dpow() != NULL ?
@@ -1737,8 +1740,8 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_dpow:      return inline_math_pow();
   case vmIntrinsics::_dcopySign: return inline_double_math(id);
   case vmIntrinsics::_fcopySign: return inline_math(id);
-  case vmIntrinsics::_dsignum: return inline_double_math(id);
-  case vmIntrinsics::_fsignum: return inline_math(id);
+  case vmIntrinsics::_dsignum: return Matcher::match_rule_supported(Op_SignumD) ? inline_double_math(id) : false;
+  case vmIntrinsics::_fsignum: return Matcher::match_rule_supported(Op_SignumF) ? inline_math(id) : false;
 
    // These intrinsics are not yet correctly implemented
   case vmIntrinsics::_datan2:
@@ -2065,7 +2068,7 @@ LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset, BasicType type)
   }
 }
 
-Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, DecoratorSet decorators, BasicType type, bool can_cast) {
+Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, BasicType type, bool can_cast) {
   Node* uncasted_base = base;
   int kind = classify_unsafe_addr(uncasted_base, offset, type);
   if (kind == Type::RawPtr) {
@@ -2262,7 +2265,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   uint old_sp = sp();
   SafePointNode* old_map = clone_map();
 
-  Node* adr = make_unsafe_address(base, offset, is_store ? ACCESS_WRITE : ACCESS_READ, type, kind == Relaxed);
+  Node* adr = make_unsafe_address(base, offset, type, kind == Relaxed);
 
   if (_gvn.type(base)->isa_ptr() == TypePtr::NULL_PTR) {
     if (type != T_OBJECT) {
@@ -2565,7 +2568,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   // Save state and restore on bailout
   uint old_sp = sp();
   SafePointNode* old_map = clone_map();
-  Node* adr = make_unsafe_address(base, offset, ACCESS_WRITE | ACCESS_READ, type, false);
+  Node* adr = make_unsafe_address(base, offset,type, false);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
   Compile::AliasType* alias_type = C->alias_type(adr_type);
@@ -4031,8 +4034,8 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   assert(Unsafe_field_offset_to_byte_offset(11) == 11,
          "fieldOffset must be byte-scaled");
 
-  Node* src = make_unsafe_address(src_ptr, src_off, ACCESS_READ);
-  Node* dst = make_unsafe_address(dst_ptr, dst_off, ACCESS_WRITE);
+  Node* src = make_unsafe_address(src_ptr, src_off);
+  Node* dst = make_unsafe_address(dst_ptr, dst_off);
 
   // Conservatively insert a memory barrier on all memory slices.
   // Do not let writes of the copy source or destination float below the copy.
@@ -5211,8 +5214,8 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   Node* call;
   jvms()->set_should_reexecute(true);
 
-  Node* obja_adr = make_unsafe_address(obja, aoffset, ACCESS_READ);
-  Node* objb_adr = make_unsafe_address(objb, boffset, ACCESS_READ);
+  Node* obja_adr = make_unsafe_address(obja, aoffset);
+  Node* objb_adr = make_unsafe_address(objb, boffset);
 
   call = make_runtime_call(RC_LEAF,
     OptoRuntime::vectorizedMismatch_Type(),
@@ -6907,6 +6910,26 @@ bool LibraryCallKit::inline_getObjectSize() {
     }
 
     set_result(result_reg, result_val);
+  }
+
+  return true;
+}
+
+//------------------------------- inline_blackhole --------------------------------------
+//
+// Make sure all arguments to this node are alive.
+// This matches methods that were requested to be blackholed through compile commands.
+//
+bool LibraryCallKit::inline_blackhole() {
+  assert(callee()->is_static(), "Should have been checked before: only static methods here");
+  assert(callee()->is_empty(), "Should have been checked before: only empty methods here");
+  assert(callee()->holder()->is_loaded(), "Should have been checked before: only methods for loaded classes here");
+
+  // Bind call arguments as blackhole arguments to keep them alive
+  Node* bh = insert_mem_bar(Op_Blackhole);
+  uint nargs = callee()->arg_size();
+  for (uint i = 0; i < nargs; i++) {
+    bh->add_req(argument(i));
   }
 
   return true;

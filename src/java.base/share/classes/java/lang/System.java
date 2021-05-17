@@ -699,6 +699,9 @@ public final class System {
      *     <td>User's home directory</td></tr>
      * <tr><th scope="row">{@systemProperty user.dir}</th>
      *     <td>User's current working directory</td></tr>
+     * <tr><th scope="row">{@systemProperty native.encoding}</th>
+     *     <td>Character encoding name derived from the host environment and/or
+     *     the user's settings. Setting this system property has no effect.</td></tr>
      * </tbody>
      * </table>
      * <p>
@@ -2215,8 +2218,8 @@ public final class System {
                                         boolean initialize, int flags, Object classData) {
                 return ClassLoader.defineClass0(loader, lookup, name, b, 0, b.length, pd, initialize, flags, classData);
             }
-            public Class<?> findBootstrapClassOrNull(ClassLoader cl, String name) {
-                return cl.findBootstrapClassOrNull(name);
+            public Class<?> findBootstrapClassOrNull(String name) {
+                return ClassLoader.findBootstrapClassOrNull(name);
             }
             public Package definePackage(ClassLoader cl, String name, Module module) {
                 return cl.definePackage(name, module);

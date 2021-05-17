@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2108, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -229,16 +229,6 @@ public:
   static bool is_call_before(address return_address) {
     return is_call_at(return_address - NativeCall::return_address_offset);
   }
-
-#if INCLUDE_AOT
-  // Return true iff a call from instr to target is out of range.
-  // Used for calls from JIT- to AOT-compiled code.
-  static bool is_far_call(address instr, address target) {
-    // On AArch64 we use trampolines which can reach anywhere in the
-    // address space, so calls are never out of range.
-    return false;
-  }
-#endif
 
   // MT-safe patching of a call instruction.
   static void insert(address code_pos, address entry);

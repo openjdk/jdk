@@ -430,8 +430,8 @@ public class Attr extends JCTree.Visitor {
         } catch (BreakAttr b) {
             return b.env;
         } catch (AssertionError ae) {
-            if (ae.getCause() instanceof BreakAttr) {
-                return ((BreakAttr)(ae.getCause())).env;
+            if (ae.getCause() instanceof BreakAttr breakAttr) {
+                return breakAttr.env;
             } else {
                 throw ae;
             }
@@ -5098,7 +5098,8 @@ public class Attr extends JCTree.Visitor {
         chk.checkNonCyclic(null, c.type);
 
         Type st = types.supertype(c.type);
-        if ((c.flags_field & Flags.COMPOUND) == 0) {
+        if ((c.flags_field & Flags.COMPOUND) == 0 &&
+            (c.flags_field & Flags.SUPER_OWNER_ATTRIBUTED) == 0) {
             // First, attribute superclass.
             if (st.hasTag(CLASS))
                 attribClass((ClassSymbol)st.tsym);
@@ -5106,6 +5107,8 @@ public class Attr extends JCTree.Visitor {
             // Next attribute owner, if it is a class.
             if (c.owner.kind == TYP && c.owner.type.hasTag(CLASS))
                 attribClass((ClassSymbol)c.owner);
+
+            c.flags_field |= Flags.SUPER_OWNER_ATTRIBUTED;
         }
 
         // The previous operations might have attributed the current class
@@ -5197,16 +5200,18 @@ public class Attr extends JCTree.Visitor {
                     log.error(TreeInfo.diagnosticPositionFor(c, env.tree), Errors.LocalClassesCantExtendSealed(c.isAnonymous() ? Fragments.Anonymous : Fragments.Local));
                 }
 
-                for (ClassSymbol supertypeSym : sealedSupers) {
-                    if (!supertypeSym.permitted.contains(c.type.tsym)) {
-                        log.error(TreeInfo.diagnosticPositionFor(c.type.tsym, env.tree), Errors.CantInheritFromSealed(supertypeSym));
+                if (!c.type.isCompound()) {
+                    for (ClassSymbol supertypeSym : sealedSupers) {
+                        if (!supertypeSym.permitted.contains(c.type.tsym)) {
+                            log.error(TreeInfo.diagnosticPositionFor(c.type.tsym, env.tree), Errors.CantInheritFromSealed(supertypeSym));
+                        }
                     }
-                }
-                if (!c.isNonSealed() && !c.isFinal() && !c.isSealed()) {
-                    log.error(TreeInfo.diagnosticPositionFor(c, env.tree),
-                            c.isInterface() ?
-                                    Errors.NonSealedOrSealedExpected :
-                                    Errors.NonSealedSealedOrFinalExpected);
+                    if (!c.isNonSealed() && !c.isFinal() && !c.isSealed()) {
+                        log.error(TreeInfo.diagnosticPositionFor(c, env.tree),
+                                c.isInterface() ?
+                                        Errors.NonSealedOrSealedExpected :
+                                        Errors.NonSealedSealedOrFinalExpected);
+                    }
                 }
             }
 

@@ -103,7 +103,7 @@ public class TestTracePageSizes {
     private static void parseSmaps() throws Exception {
         String smapsPatternString = "(\\w+)-(\\w+).*?" +
                                     "KernelPageSize:\\s*(\\d*) kB.*?" +
-                                    "VmFlags: ([\\w ]*)";
+                                    "VmFlags: ([\\w\\? ]*)";
         Pattern smapsPattern = Pattern.compile(smapsPatternString, Pattern.DOTALL);
         Scanner smapsScanner = new Scanner(new File("/proc/self/smaps"));
         // Find all memory segments in the smaps-file.

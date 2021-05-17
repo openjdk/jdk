@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -580,7 +580,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
 
   if (needs_thread_local_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
-    ldr(Rtemp, Address(Rthread, Thread::polling_word_offset()));
+    ldr(Rtemp, Address(Rthread, JavaThread::polling_word_offset()));
     tbnz(Rtemp, exact_log2(SafepointMechanism::poll_bit()), safepoint);
   }
 

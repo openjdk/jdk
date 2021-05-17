@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
@@ -43,6 +42,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -626,11 +626,11 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
     // return default
     return default_err;
   } else {
-    Thread* THREAD = Thread::current();
-    Handle default_err_h(THREAD, default_err);
+    JavaThread* current = JavaThread::current();
+    Handle default_err_h(current, default_err);
     // get the error object at the slot and set set it to NULL so that the
     // array isn't keeping it alive anymore.
-    Handle exc(THREAD, preallocated_out_of_memory_errors()->obj_at(next));
+    Handle exc(current, preallocated_out_of_memory_errors()->obj_at(next));
     assert(exc() != NULL, "slot has been used already");
     preallocated_out_of_memory_errors()->obj_at_put(next, NULL);
 
@@ -754,8 +754,6 @@ jint universe_init() {
   MetaspaceCounters::initialize_performance_counters();
   CompressedClassSpaceCounters::initialize_performance_counters();
 
-  AOTLoader::universe_init();
-
   // Checks 'AfterMemoryInit' constraints.
   if (!JVMFlagLimit::check_all_constraints(JVMFlagConstraintPhase::AfterMemoryInit)) {
     return JNI_EINVAL;
@@ -829,13 +827,17 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
 
-  bool use_large_pages = UseLargePages && is_aligned(alignment, os::large_page_size());
-  assert(!UseLargePages
-      || UseParallelGC
-      || use_large_pages, "Wrong alignment to use large pages");
+  size_t page_size = os::vm_page_size();
+  if (UseLargePages && is_aligned(alignment, os::large_page_size())) {
+    page_size = os::large_page_size();
+  } else {
+    // Parallel is the only collector that might opt out of using large pages
+    // for the heap.
+    assert(!UseLargePages || UseParallelGC , "Wrong alignment to use large pages");
+  }
 
   // Now create the space.
-  ReservedHeapSpace total_rs(total_reserved, alignment, use_large_pages, AllocateHeapAt);
+  ReservedHeapSpace total_rs(total_reserved, alignment, page_size, AllocateHeapAt);
 
   if (total_rs.is_reserved()) {
     assert((total_reserved == total_rs.size()) && ((uintptr_t)total_rs.base() % alignment == 0),
@@ -861,7 +863,7 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
 
   // satisfy compiler
   ShouldNotReachHere();
-  return ReservedHeapSpace(0, 0, false);
+  return ReservedHeapSpace(0, 0, os::vm_page_size());
 }
 
 OopStorage* Universe::vm_weak() {
@@ -1065,6 +1067,8 @@ void Universe::initialize_verify_flags() {
       verify_flags |= Verify_CodeCacheOops;
     } else if (strcmp(token, "resolved_method_table") == 0) {
       verify_flags |= Verify_ResolvedMethodTable;
+    } else if (strcmp(token, "stringdedup") == 0) {
+      verify_flags |= Verify_StringDedup;
     } else {
       vm_exit_during_initialization(err_msg("VerifySubSet: \'%s\' memory sub-system is unknown, please correct it", token));
     }
@@ -1117,11 +1121,9 @@ void Universe::verify(VerifyOption option, const char* prefix) {
     StringTable::verify();
   }
   if (should_verify_subset(Verify_CodeCache)) {
-  {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     log_debug(gc, verify)("CodeCache");
     CodeCache::verify();
-  }
   }
   if (should_verify_subset(Verify_SystemDictionary)) {
     log_debug(gc, verify)("SystemDictionary");
@@ -1146,6 +1148,10 @@ void Universe::verify(VerifyOption option, const char* prefix) {
   if (should_verify_subset(Verify_ResolvedMethodTable)) {
     log_debug(gc, verify)("ResolvedMethodTable Oops");
     ResolvedMethodTable::verify();
+  }
+  if (should_verify_subset(Verify_StringDedup)) {
+    log_debug(gc, verify)("String Deduplication");
+    StringDedup::verify();
   }
 
   _verify_in_progress = false;
