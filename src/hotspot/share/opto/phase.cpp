@@ -158,8 +158,23 @@ void Phase::print_timers() {
   }
   tty->print_cr ("       Code Emission:         %7.3f s", timers[_t_output].seconds());
   tty->print_cr ("         Insn Scheduling:     %7.3f s", timers[_t_instrSched].seconds());
+  tty->print_cr ("         Shorten branches:    %7.3f s", timers[_t_shortenBranches].seconds());
   tty->print_cr ("         Build OOP maps:      %7.3f s", timers[_t_buildOopMaps].seconds());
+  tty->print_cr ("         Fill buffer:         %7.3f s", timers[_t_fillBuffer].seconds());
   tty->print_cr ("         Code Installation:   %7.3f s", timers[_t_registerMethod].seconds());
+
+  {
+    double other = timers[_t_output].seconds() -
+                   (timers[_t_instrSched].seconds() +
+                    timers[_t_shortenBranches].seconds() +
+                    timers[_t_buildOopMaps].seconds() +
+                    timers[_t_fillBuffer].seconds() +
+                    timers[_t_registerMethod].seconds());
+
+    if (other > 0) {
+      tty->print_cr("         Other:               %7.3f s", other);
+    }
+  }
 
   if( timers[_t_temporaryTimer1].seconds() > 0 ) {
     tty->cr();
