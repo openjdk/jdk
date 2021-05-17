@@ -43,6 +43,8 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     private static final int MAX_ATTEMPTS_NUMBER = 10;
     private static final int PER_CPU_SHARES = 1024;
     private final Metrics containerMetrics;
+    private long shareCpuUsage = -1;  // used for cpu-shares-based cpuload calc.
+    private long hostTotalTicks = -1; // used for cpu-shares-based cpuload calc.
 
     OperatingSystemImpl(VMManagement vm) {
         super(vm);
@@ -137,10 +139,9 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         if (containerMetrics != null) {
             long quota = containerMetrics.getCpuQuota();
             long share = containerMetrics.getCpuShares();
-            long periodLength = containerMetrics.getCpuPeriod();
-            long numPeriods = containerMetrics.getCpuNumPeriods();
             long usageNanos = containerMetrics.getCpuUsage();
             if (quota > 0) {
+                long numPeriods = containerMetrics.getCpuNumPeriods();
                 if (numPeriods > 0 && usageNanos > 0) {
                     long quotaNanos = TimeUnit.MICROSECONDS.toNanos(quota * numPeriods);
                     double systemLoad = (double) usageNanos / quotaNanos;
@@ -151,9 +152,38 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
                 }
                 return -1;
             } else if (share > 0) {
-                if (periodLength > 0 && numPeriods > 0 && usageNanos > 0) {
-                    long shareNanos = TimeUnit.MICROSECONDS.toNanos(periodLength * numPeriods * share / PER_CPU_SHARES);
-                    double systemLoad = (double) usageNanos / shareNanos;
+                if (usageNanos > 0) {
+                    // If cpu shares are in effect calculate the cpu load
+                    // based on the following formula (similar to how
+                    // getCpuLoad0() is being calculated):
+                    //
+                    //   | usageticks - usageticks' |
+                    //  ------------------------------
+                    //   | totalticks - totalticks' |
+                    //
+                    // where usageticks' and totalticks' are historical values
+                    // retrieved via an earlier call of this method. Total ticks are
+                    // scaled to the container effective number of cpus.
+                    long distance = 0;
+                    if (this.shareCpuUsage > -1) {
+                        distance = usageNanos - this.shareCpuUsage;
+                    }
+                    this.shareCpuUsage = usageNanos;
+                    long totalDistance = 0;
+                    long hostTicks = getHostTotalCpuTicks0();
+                    if (this.hostTotalTicks > -1 && hostTicks > -1) {
+                         totalDistance = hostTicks - this.hostTotalTicks;
+                    }
+                    this.hostTotalTicks = hostTicks;
+                    int totalCPUs = getHostOnlineCpuCount0();
+                    int containerCPUs = getAvailableProcessors();
+                    // scale the total host load to the actual container cpus
+                    totalDistance = totalDistance * containerCPUs / totalCPUs;
+                    double systemLoad = 0.0;
+                    if (distance > 0 && totalDistance > 0) {
+                        systemLoad = ((double)distance) / totalDistance;
+                    }
+
                     // Ensure the return value is in the range 0.0 -> 1.0
                     systemLoad = Math.max(0.0, systemLoad);
                     systemLoad = Math.min(1.0, systemLoad);
@@ -220,6 +250,8 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     private native double getSingleCpuLoad0(int cpuNum);
     private native int getHostConfiguredCpuCount0();
     private native int getHostOnlineCpuCount0();
+    // CPU ticks since boot in nanoseconds
+    private native long getHostTotalCpuTicks0();
 
     static {
         initialize0();
