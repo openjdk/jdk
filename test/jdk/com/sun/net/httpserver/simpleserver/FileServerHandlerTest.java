@@ -69,6 +69,8 @@ public class FileServerHandlerTest {
         assertEquals(exchange.rCode, 501);
     }
 
+    // 301, 403, 404 response codes tested in SimpleFileServerTest
+
     static class MethodHttpExchange extends StubHttpExchange {
         private final String method;
         volatile int rCode;

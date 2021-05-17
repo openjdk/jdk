@@ -80,7 +80,7 @@ public class SimpleFileServerTest {
     public void testFileGET() throws Exception {
         var root = Files.createDirectory(CWD.resolve("testFileGET"));
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
-        var lastModified = getlastModified(file);
+        var lastModified = getLastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
         var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
@@ -116,7 +116,7 @@ public class SimpleFileServerTest {
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var root = Files.createDirectory(CWD.resolve("testDirectoryGET"));
         var file = Files.writeString(root.resolve("yFile.txt"), "some text", CREATE);
-        var lastModified = getlastModified(root);
+        var lastModified = getLastModified(root);
 
         var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
         ss.start();
@@ -138,7 +138,7 @@ public class SimpleFileServerTest {
     public void testFileHEAD() throws Exception {
         var root = Files.createDirectory(CWD.resolve("testFileHEAD"));
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
-        var lastModified = getlastModified(file);
+        var lastModified = getLastModified(file);
         var expectedLength = Long.toString(Files.size(file));
 
         var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
@@ -173,8 +173,7 @@ public class SimpleFileServerTest {
                 </html>
                 """.getBytes(UTF_8).length);
         var root = Files.createDirectory(CWD.resolve("testDirectoryHEAD"));
-        var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
-        var lastModified = getlastModified(root);
+        var lastModified = getLastModified(root);
 
         var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
         ss.start();
@@ -194,6 +193,51 @@ public class SimpleFileServerTest {
     }
 
     @Test
+    public void testMovedPermanently() throws Exception {
+        var root = Files.createDirectory(CWD.resolve("testMovedPermanently"));
+        Files.createDirectory(root.resolve("aDirectory"));
+
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        ss.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var uri = uri(ss, "aDirectory");
+            var request = HttpRequest.newBuilder(uri).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 301);
+            assertEquals(response.headers().firstValue("content-length").get(), "0");
+            assertEquals(response.headers().firstValue("location").get(), "%s/".formatted(uri));
+        } finally {
+            ss.stop(0);
+        }
+    }
+
+    @Test
+    public void testForbidden() throws Exception {
+        if (!Platform.isWindows()) {  // not applicable on Windows
+            var root = Files.createDirectory(CWD.resolve("testForbidden"));
+            var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
+
+            // make file not readable
+            file.toFile().setReadable(false, false);
+            assert !Files.isReadable(file);
+
+            var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+            ss.start();
+            try {
+                var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+                var request = HttpRequest.newBuilder(uri(ss, "aFile.txt")).build();
+                var response = client.send(request, BodyHandlers.ofString());
+                assertEquals(response.statusCode(), 403);
+                assertEquals(response.headers().firstValue("content-length").get(), "0");
+            } finally {
+                ss.stop(0);
+                file.toFile().setReadable(true, false);
+            }
+        }
+    }
+
+    @Test
     public void testNotFound() throws Exception {
         var root = Files.createDirectory(CWD.resolve("testNotFound"));
 
@@ -204,7 +248,7 @@ public class SimpleFileServerTest {
             var request = HttpRequest.newBuilder(uri(ss, "doesNotExist.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
-            assertTrue(response.headers().map().containsKey("content-length"));
+            assertEquals(response.headers().firstValue("content-length").get(), "48");
             assertTrue(response.body().contains("not found"));  // TODO: why partial html reply?
         } finally {
             ss.stop(0);
@@ -271,10 +315,7 @@ public class SimpleFileServerTest {
             assertTrue(iae.getMessage().contains("does not exist"));
         }
         {   // not readable
-            if (!Platform.isWindows()) {  // not applicable to Windows
-                                          // reason: cannot revoke an owner's read
-                                          // access to a directory that was created
-                                          // by that owner
+            if (!Platform.isWindows()) {  // not reliable on Windows
                 Path p = Files.createDirectory(CWD.resolve("aDir"));
                 p.toFile().setReadable(false, false);
                 assert !Files.isReadable(p);
@@ -313,7 +354,7 @@ public class SimpleFileServerTest {
     static final DateTimeFormatter HTTP_DATE_FORMATTER =
             DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss v");
 
-    static String getlastModified(Path path) throws IOException {
+    static String getLastModified(Path path) throws IOException {
         return Files.getLastModifiedTime(path).toInstant().atZone(ZoneId.of("GMT"))
                 .format(HTTP_DATE_FORMATTER);
     }

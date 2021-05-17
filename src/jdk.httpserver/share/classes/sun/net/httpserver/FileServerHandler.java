@@ -129,10 +129,10 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     void handleMovedPermanently(HttpExchange exchange) throws IOException {
-        exchange.sendResponseHeaders(301, -1);
         exchange.getResponseHeaders().set("Location", "http://"
                 + exchange.getRequestHeaders().getFirst("Host")
                 + exchange.getRequestURI().getPath() + "/");
+        exchange.sendResponseHeaders(301, -1);
     }
 
     void handleForbidden(HttpExchange exchange) throws IOException {
@@ -305,8 +305,6 @@ public final class FileServerHandler implements HttpHandler {
                 exchange.setAttribute("request-path", "could not resolve request URI");
                 handleNotFound(exchange);
             }
-        } finally {
-            exchange.close();
         }
     }
 }
