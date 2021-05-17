@@ -104,8 +104,6 @@ public class TestG1ParallelPhases {
             "CodeRoots",
             "ObjCopy",
             "Termination",
-            "StringDedupQueueFixup",
-            "StringDedupTableFixup",
             "RedirtyCards",
             "RecalculateUsed",
             "ResetHotCardCache",
