@@ -86,7 +86,7 @@
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
- * @run main/othervm/timeout=400 
+ * @run main/othervm/timeout=400
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:VerifyMetaspaceInterval=10
  *      -XX:MetaspaceReclaimPolicy=aggressive
