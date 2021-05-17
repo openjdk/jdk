@@ -31,8 +31,8 @@ import java.security.Permission;
  *
  * @compile WithSecurityManager.java
  *
- * @run main/othervm -Xverify:all WithSecurityManager
- * @run main/othervm -Xverify:all --limit-modules=java.base WithSecurityManager
+ * @run main/othervm -Djava.security.manager=allow -Xverify:all WithSecurityManager
+ * @run main/othervm -Djava.security.manager=allow -Xverify:all --limit-modules=java.base WithSecurityManager
 */
 public class WithSecurityManager {
     public static void main(String[] args) throws Throwable {

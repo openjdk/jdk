@@ -112,6 +112,7 @@ public class TestDriver {
     @Test
     public void testDeniedClassLoaderAccess() throws Exception {
         String[] options = new String[] {
+                "-Djava.security.manager=allow",
                 "--module-path", MOD_DEST_DIR.toString(),
                 "--add-modules", String.join(",", modules),
                 "-m", "m3/p3.NoGetClassLoaderAccess"

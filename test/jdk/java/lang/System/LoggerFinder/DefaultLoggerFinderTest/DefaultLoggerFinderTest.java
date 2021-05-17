@@ -56,8 +56,8 @@ import java.util.stream.Stream;
  * @build AccessSystemLogger DefaultLoggerFinderTest
  * @run  driver AccessSystemLogger
  * @run  main/othervm -Xbootclasspath/a:boot DefaultLoggerFinderTest NOSECURITY
- * @run  main/othervm -Xbootclasspath/a:boot DefaultLoggerFinderTest NOPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot DefaultLoggerFinderTest WITHPERMISSIONS
+ * @run  main/othervm -Djava.security.manager=allow -Xbootclasspath/a:boot DefaultLoggerFinderTest NOPERMISSIONS
+ * @run  main/othervm -Djava.security.manager=allow -Xbootclasspath/a:boot DefaultLoggerFinderTest WITHPERMISSIONS
  * @author danielfuchs
  */
 public class DefaultLoggerFinderTest {

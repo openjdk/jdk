@@ -80,6 +80,7 @@ public class ResourcesTest {
         int exitValue
             = executeTestJava("--module-path", MODS_DIR.toString(),
                               "--add-modules", "m1,m2",
+                              "-Djava.security.manager=allow",
                                "-cp", CLASSES_DIR.toString(),
                               "Main")
                 .outputTo(System.out)

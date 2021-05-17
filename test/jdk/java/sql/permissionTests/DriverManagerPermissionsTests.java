@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,12 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package test.sql.othervm;
 
-import java.security.AccessControlException;
-import java.security.Policy;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -33,6 +28,18 @@ import util.BaseTest;
 import util.StubDriver;
 import util.TestPolicy;
 
+import java.security.AccessControlException;
+import java.security.Policy;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+/*
+ * @test
+ * @library /java/sql/testng
+ * @run testng/othervm -Djava.security.manager=allow DriverManagerPermissionsTests
+ * @summary Tests that a JDBC Driver that is a module can be loaded
+ * via the service-provider loading mechanism.
+ */
 public class DriverManagerPermissionsTests extends BaseTest {
 
     private  static Policy policy;

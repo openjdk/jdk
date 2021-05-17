@@ -67,10 +67,10 @@ import sun.util.logging.PlatformLogger;
  * @build AccessSystemLogger BaseDefaultLoggerFinderTest CustomSystemClassLoader BaseLoggerFinder
  * @run  driver AccessSystemLogger
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest NOSECURITY
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest NOPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHCUSTOMWRAPPERS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHREFLECTION
+ * @run  main/othervm -Djava.security.manager=allow -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest NOPERMISSIONS
+ * @run  main/othervm -Djava.security.manager=allow -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHPERMISSIONS
+ * @run  main/othervm -Djava.security.manager=allow -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHCUSTOMWRAPPERS
+ * @run  main/othervm -Djava.security.manager=allow -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHREFLECTION
  * @author danielfuchs
  */
 public class BaseDefaultLoggerFinderTest {
