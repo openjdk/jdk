@@ -126,31 +126,58 @@ public class TestTracePageSizes {
         }
     }
 
-    // Parse /proc/self/smaps using a regexp capturing the address
-    // ranges, what page size they have and if they might use
-    // transparent huge pages. The pattern is not greedy and will
-    // match as little as possible so each "segment" in the file
-    // will generate a match.
+    static class SmapsParser {
+        String start;
+        String end;
+        String ps;
+        String vmFlags;
+        Pattern sectionStartPat = Pattern.compile("^([a-f0-9]+)-([a-f0-9]+) [\\-rwpsx]{4}.*");
+        Pattern kernelPageSizePat = Pattern.compile("^KernelPageSize:\\s*(\\d*) kB");
+        Pattern vmFlagsPat = Pattern.compile("^VmFlags: ([\\w\\? ]*)");
+        int lineno = 0;
+        void reset() {
+            start = end = ps = vmFlags = null;
+        }
+
+        public void finish() {
+            if (start != null) {
+                RangeWithPageSize range = new RangeWithPageSize(start, end, ps, vmFlags);
+                ranges.add(range);
+                debug("Added range: " + range);
+                reset();
+            }
+        }
+
+        void eatNext(String line) {
+            debug("" + lineno++ + " " + line);
+            Matcher matSectionStart = sectionStartPat.matcher(line);
+            if (matSectionStart.matches()) {
+                finish();
+                start = matSectionStart.group(1);
+                end = matSectionStart.group(2);
+                ps = vmFlags = null;
+                return;
+            } else {
+                Matcher matKernelPageSize = kernelPageSizePat.matcher(line);
+                if (matKernelPageSize.matches()) {
+                    ps = matKernelPageSize.group(1);
+                    return;
+                }
+                Matcher matVmFlags = vmFlagsPat.matcher(line);
+                if (matVmFlags.matches()) {
+                    vmFlags = matVmFlags.group(1);
+                    return;
+                }
+            }
+        }
+    }
+
+    // Parse /proc/self/smaps
     private static void parseSmaps(Path smapsFileToParse) throws Exception {
         System.out.println("Parsing: " + smapsFileToParse.getFileName() + "...");
-        String smapsPatternString = "(\\w+)-(\\w+).*?" +
-                                    "KernelPageSize:\\s*(\\d*) kB.*?" +
-                                    "VmFlags: ([\\w\\? ]*)";
-        Pattern smapsPattern = Pattern.compile(smapsPatternString, Pattern.DOTALL);
-        Scanner smapsScanner = new Scanner(smapsFileToParse.toFile());
-        // Find all memory segments in the smaps-file.
-        smapsScanner.findAll(smapsPattern).forEach(mr -> {
-            String start = mr.group(1);
-            String end = mr.group(2);
-            String ps = mr.group(3);
-            String vmFlags = mr.group(4);
-
-            // Create a range given the match and add it to the list.
-            RangeWithPageSize range = new RangeWithPageSize(start, end, ps, vmFlags);
-            ranges.add(range);
-            debug("Added range: " + range);
-        });
-        smapsScanner.close();
+        SmapsParser parser2 = new SmapsParser();
+        Files.lines(smapsFileToParse).forEach(parser2::eatNext);
+        parser2.finish();
     }
 
     // Search for a range including the given address.
@@ -189,8 +216,6 @@ public class TestTracePageSizes {
         // Check if debug printing is enabled.
         if (args.length > 0 && args[0].equals("-debug")) {
             debug = true;
-        } else {
-            debug = false;
         }
 
         // Parse /proc/self/smaps to compare with values logged in the VM.
@@ -278,11 +303,13 @@ class RangeWithPageSize {
         // Check if the vmFlags line include:
         // * ht - Meaning the range is mapped using explicit huge pages.
         // * hg - Meaning the range is madvised huge.
-        for (String flag : vmFlags.split(" ")) {
-            if (flag.equals("ht")) {
-                vmFlagHT = true;
-            } else if (flag.equals("hg")) {
-                vmFlagHG = true;
+        if (vmFlags != null) {
+            for (String flag : vmFlags.split(" ")) {
+                if (flag.equals("ht")) {
+                    vmFlagHT = true;
+                } else if (flag.equals("hg")) {
+                    vmFlagHG = true;
+                }
             }
         }
     }
