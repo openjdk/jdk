@@ -30,9 +30,9 @@ import org.openjdk.jmh.annotations.*;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
-@Fork(value = 2, jvmArgsAppend = { "-XX:+UnlockDiagnosticVMOptions", "-XX:+UseAdler32Intrinsics", "-Xms4g", "-Xmx4g", "-Xint" })
+@Fork(value = 2)
 @Warmup(iterations = 2, time = 30, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 3, time = 120, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 3, time = 60, timeUnit = TimeUnit.SECONDS)
 
 public class TestAdler32 {
 
