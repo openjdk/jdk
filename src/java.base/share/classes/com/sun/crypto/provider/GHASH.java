@@ -120,7 +120,8 @@ final class GHASH implements Cloneable, GCM {
 
     /* subkeyHtbl and state are stored in long[] for GHASH intrinsic use */
 
-    // hashtable subkeyHtbl; holds 2*9 powers of subkeyH computed using carry-less multiplication
+    // hashtable subkeyHtbl holds 2*9 powers of subkeyH computed using
+    // carry-less multiplication
     private long[] subkeyHtbl;
 
     // buffer for storing hash
@@ -306,6 +307,10 @@ final class GHASH implements Cloneable, GCM {
     }
 
 
+    /**
+     * None of the out or dst values are necessary, they are to satisfy the
+     * GCM interface requirement
+     */
     @Override
     public int update(byte[] in, int inOfs, int inLen, byte[] out, int outOfs) {
         return update(in, inOfs, inLen);
