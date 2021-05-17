@@ -880,10 +880,10 @@ inline typename CONFIG::Value* ConcurrentHashTable<CONFIG, F>::
 }
 
 template <typename CONFIG, MEMFLAGS F>
-template <typename LOOKUP_FUNC>
+template <typename LOOKUP_FUNC, typename FOUND_FUNC>
 inline bool ConcurrentHashTable<CONFIG, F>::
-  internal_insert(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
-                  bool* grow_hint, bool* clean_hint)
+  internal_insert_get(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
+                      FOUND_FUNC& foundf, bool* grow_hint, bool* clean_hint)
 {
   bool ret = false;
   bool clean = false;
@@ -902,6 +902,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
       if (old == NULL) {
         new_node->set_next(first_at_start);
         if (bucket->cas_first(new_node, first_at_start)) {
+          foundf(new_node->value());
           JFR_ONLY(_stats_rate.add();)
           new_node = NULL;
           ret = true;
@@ -911,6 +912,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
         locked = bucket->is_locked();
       } else {
         // There is a duplicate.
+        foundf(old->value());
         break; /* leave critical section */
       }
     } /* leave critical section */
