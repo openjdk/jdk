@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -109,7 +109,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
     _out->print(UINTX_FORMAT_W(4) ": ", _num_loaders);
 
     // Print "CLD for [<loader name>,] instance of <loader class name>"
-    // or    "CLD for <hidden or anonymous class>, loaded by [<loader name>,] instance of <loader class name>"
+    // or    "CLD for <hidden>, loaded by [<loader name>,] instance of <loader class name>"
     ResourceMark rm;
     const char* name = NULL;
     const char* class_name = NULL;
@@ -133,7 +133,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
     }
     _out->print(":");
     if (cld->has_class_mirror_holder()) {
-      _out->print(" <hidden or anonymous class>, loaded by");
+      _out->print(" <hidden class>, loaded by");
     }
     if (name != NULL) {
       _out->print(" \"%s\"", name);

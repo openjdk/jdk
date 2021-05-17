@@ -568,7 +568,7 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
   methodHandle mh(current, m);
   MethodCounters* counters;
   if (current->is_Java_thread()) {
-    Thread* THREAD = current;
+    JavaThread* THREAD = current->as_Java_thread(); // For exception macros.
     // Use the TRAPS version for a JavaThread so it will adjust the GC threshold
     // if needed.
     counters = MethodCounters::allocate_with_exception(mh, THREAD);

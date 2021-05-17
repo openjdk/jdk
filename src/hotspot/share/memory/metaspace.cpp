@@ -816,8 +816,6 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
                               MetaspaceObj::Type type, TRAPS) {
 
-  assert(THREAD->is_Java_thread(), "can't allocate in non-Java thread because we cannot throw exception");
-
   if (HAS_PENDING_EXCEPTION) {
     assert(false, "Should not allocate with exception pending");
     return NULL;  // caller does a CHECK_NULL too
