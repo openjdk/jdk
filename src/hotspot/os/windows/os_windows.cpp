@@ -2457,11 +2457,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       // different - we still want to unguard the 2nd page in this case.
       //
       // 15 bytes seems to be a (very) safe value for max instruction size.
-      bool pc_is_near_addr = false;
-      if (addr >= pc) {
-        pc_is_near_addr = pointer_delta((void*) addr, (void*) pc, sizeof(char)) < 15;
-      }
-
+      bool pc_is_near_addr = (addr >= pc) &&
+        (pointer_delta((void*) addr, (void*) pc, sizeof(char)) < 15);
       bool instr_spans_page_boundary =
         (align_down((intptr_t) pc ^ (intptr_t) addr,
                          (intptr_t) page_size) > 0);
