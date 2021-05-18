@@ -42,26 +42,28 @@
  * @build *
  * @modules java.management
  * @run junit/othervm/timeout=1000 -Djava.security.manager=allow JSR166TestCase
- * @run junit/othervm/timeout=1000 -Djava.security.manager=allow
+ * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
+ *      -Djava.security.manager=allow
  *      -Djsr166.testImplementationDetails=true
  *      JSR166TestCase
- * @run junit/othervm/timeout=1000 -Djava.security.manager=allow
+ * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
+ *      -Djava.security.manager=allow
  *      -Djsr166.testImplementationDetails=true
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=0
  *      JSR166TestCase
- * @run junit/othervm/timeout=1000 -Djava.security.manager=allow
+ * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
+ *      -Djava.security.manager=allow
  *      -Djsr166.testImplementationDetails=true
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
  *      -Djava.util.secureRandomSeed=true
  *      JSR166TestCase
  * @run junit/othervm/timeout=1000/policy=tck.policy
- *      -Djava.security.manager=allow
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
  *      -Djsr166.testImplementationDetails=true

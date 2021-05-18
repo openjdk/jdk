@@ -47,8 +47,8 @@ public class CleanProtectionDomain {
                                   "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                                   "-XX:+UnlockDiagnosticVMOptions",
                                   "-XX:+WhiteBoxAPI",
-                                  "-Djava.security.manager=allow",
                                   "-Xbootclasspath/a:.",
+                                  "-Djava.security.manager=allow",
                                   Test.class.getName());
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("protection domain added");
