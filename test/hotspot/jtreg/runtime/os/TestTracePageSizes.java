@@ -136,7 +136,10 @@ public class TestTracePageSizes {
         static final Pattern VMFLAGS_PATT = Pattern.compile("^VmFlags: ([\\w\\? ]*)");
         int lineno = 0;
         void reset() {
-            start = end = ps = vmFlags = null;
+            start = null;
+            end = null;
+            ps = null;
+            vmFlags = null;
         }
 
         public void finish() {
