@@ -985,9 +985,73 @@ abstract class GaloisCounterMode extends CipherSpi {
             checkDataLength(inLen, getBufferedLength());
             ArrayUtil.nullAndBoundsCheck(in, inOfs, inLen);
             ArrayUtil.nullAndBoundsCheck(out, outOfs, out.length - outOfs);
-            processAAD();
 
-            return encryptBlocks(in, inOfs, inLen, out, outOfs);
+            // 'inLen' stores the length to use with buffer 'in'.
+            // 'len' stores the length returned by the method.
+            int len = 0;
+            int bLen = getBufferedLength();
+
+            processAAD();
+            out = overlapDetection(in, inOfs, out, outOfs);
+
+            // if there is enough data in the ibuffer and 'in', encrypt it.
+            if (bLen > 0) {
+                byte[] buffer = ibuffer.toByteArray();
+                // number of bytes not filling a block
+                int remainder = bLen % blockSize;
+                // number of bytes along block boundary
+                bLen -= remainder;
+
+                // If there is enough bytes in ibuffer for a block or more,
+                // encrypt that first.
+                if (bLen > 0) {
+                    len += cryptBlocks(buffer, 0, bLen, out, outOfs);
+                    outOfs += bLen;
+                }
+
+                // blen is now the offset for 'buffer'
+
+                // Construct and encrypt a block if there is enough 'buffer' and
+                // 'in' to make one
+                if ((inLen + remainder) >= blockSize) {
+                    byte[] block = new byte[blockSize];
+
+                    System.arraycopy(buffer, bLen, block, 0, remainder);
+                    int inLenUsed = blockSize - remainder;
+                    System.arraycopy(in, inOfs, block, remainder, inLenUsed);
+
+                    len += cryptBlocks(block, 0, blockSize, out, outOfs);
+                    inOfs += inLenUsed;
+                    inLen -= inLenUsed;
+                    outOfs += blockSize;
+                    ibuffer.reset();
+                    // Code below will write the remainder from 'in' to ibuffer
+                } else if (remainder > 0) {
+                    // If a block or more was encrypted from 'buffer' only, but
+                    // the rest of 'buffer' with 'in' could not construct a
+                    //  block, then put the rest of 'buffer' back into ibuffer.
+                    ibuffer.reset();
+                    ibuffer.write(buffer, bLen, remainder);
+                    // Code below will write the remainder from 'in' to ibuffer
+                }
+            }
+
+            // Encrypt the remaining blocks inside of 'in'
+            if (inLen > 0) {
+                len += cryptBlocks(in, inOfs, inLen, out, outOfs);
+            }
+
+            // Write any remaining bytes less than a blockSize into ibuffer.
+            int remainder = inLen % blockSize;
+            if (remainder > 0) {
+                initBuffer(remainder);
+                inLen -= remainder;
+                // remainder offset is based on original buffer length
+                ibuffer.write(in, inOfs + inLen, remainder);
+            }
+
+            restoreOut(out, len);
+            return len;
         }
 
         /**
@@ -999,8 +1063,65 @@ abstract class GaloisCounterMode extends CipherSpi {
         public int doUpdate(ByteBuffer src, ByteBuffer dst)
             throws ShortBufferException {
             checkReInit();
-            return encryptBlocks((ibuffer == null || ibuffer.size() == 0) ?
-                null : ByteBuffer.wrap(ibuffer.toByteArray()), src, dst);
+            checkDataLength(src.remaining(), getBufferedLength());
+
+            // 'len' stores the length returned by the method.
+            int len = 0;
+            ByteBuffer buffer = (ibuffer == null || ibuffer.size() == 0) ?
+                null : ByteBuffer.wrap(ibuffer.toByteArray());
+            processAAD();
+
+            dst = overlapDetection(src, dst);
+            // if there is enough data in the ibuffer and 'in', encrypt it.
+            if (buffer != null && buffer.remaining() > 0) {
+                // number of bytes not filling a block
+                int remainder = buffer.remaining() % blockSize;
+                // number of bytes along block boundary
+                int blen = ibuffer.size() - remainder;
+
+                // If there is enough bytes in ibuffer for a block or more,
+                // en/decrypt that first.
+                if (blen > 0) {
+                    len += cryptBlocks(buffer, dst);
+                }
+
+                // Check if there is any data left in the buffer, if there is,
+                // try to construct a block with data from the buffer and src
+                // to en/decrypt.
+                if (buffer.remaining() == 0) {
+                    ibuffer.reset();
+                } else {
+                    if ((buffer.remaining() + src.remaining()) >= blockSize) {
+                        byte[] block = new byte[blockSize];
+                        buffer.get(block, 0, remainder);
+                        src.get(block, remainder, blockSize - remainder);
+                        len += cryptBlocks(
+                            ByteBuffer.wrap(block, 0, blockSize), dst);
+                        ibuffer.reset();
+                    }
+                }
+            }
+
+            // encrypt any blocksized data in 'src'
+            if (src.remaining() >= blockSize) {
+                len += cryptBlocks(src, dst);
+            }
+
+            // Write the remaining bytes into the 'ibuffer'
+            if (src.remaining() > 0) {
+                initBuffer(src.remaining());
+                byte[] b = new byte[src.remaining()];
+                src.get(b);
+                // remainder offset is based on original buffer length
+                try {
+                    ibuffer.write(b);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            restoreDst(dst);
+            return len;
         }
 
         /**
@@ -1146,150 +1267,6 @@ abstract class GaloisCounterMode extends CipherSpi {
             }
         }
 
-        /**
-         * Take any less than blocksize data from ibuffer and combine it with
-         * 'in' to encrypt or decrypt a block, then encrypted what it can
-         * from the remaining blocksize bytes in 'in'.  Any bytes under a
-         * blocksize are put into the 'ibuffer'.
-         */
-        int encryptBlocks(byte[] in, int inOfs, int inLen, byte[] out,
-            int outOfs) {
-            // 'inLen' stores the length to use with buffer 'in'.
-            // 'len' stores the length returned by the method.
-            int len = 0;
-            int bLen = getBufferedLength();
-
-            processAAD();
-
-            out = overlapDetection(in, inOfs, out, outOfs);
-
-            // if there is enough data in the ibuffer and 'in', encrypt it.
-            if (bLen > 0) {
-                byte[] buffer = ibuffer.toByteArray();
-                // number of bytes not filling a block
-                int remainder = bLen % blockSize;
-                // number of bytes along block boundary
-                bLen -= remainder;
-
-                // If there is enough bytes in ibuffer for a block or more,
-                // encrypt that first.
-                if (bLen > 0) {
-                    len += cryptBlocks(buffer, 0, bLen, out, outOfs);
-                    outOfs += bLen;
-                }
-
-                // blen is now the offset for 'buffer'
-
-                // Construct and encrypt a block if there is enough 'buffer' and
-                // 'in' to make one
-                if ((inLen + remainder) >= blockSize) {
-                    byte[] block = new byte[blockSize];
-
-                    System.arraycopy(buffer, bLen, block, 0, remainder);
-                    int inLenUsed = blockSize - remainder;
-                    System.arraycopy(in, inOfs, block, remainder, inLenUsed);
-
-                    len += cryptBlocks(block, 0, blockSize, out, outOfs);
-                    inOfs += inLenUsed;
-                    inLen -= inLenUsed;
-                    outOfs += blockSize;
-                    ibuffer.reset();
-                    // Code below will write the remainder from 'in' to ibuffer
-                } else if (remainder > 0) {
-                    // If a block or more was encrypted from 'buffer' only, but
-                    // the rest of 'buffer' with 'in' could not construct a
-                    //  block, then put the rest of 'buffer' back into ibuffer.
-                    ibuffer.reset();
-                    ibuffer.write(buffer, bLen, remainder);
-                    // Code below will write the remainder from 'in' to ibuffer
-                }
-            }
-
-            // Encrypt the remaining blocks inside of 'in'
-            if (inLen > 0) {
-                len += cryptBlocks(in, inOfs, inLen, out, outOfs);
-            }
-
-            // Write any remaining bytes less than a blockSize into ibuffer.
-            int remainder = inLen % blockSize;
-            if (remainder > 0) {
-                initBuffer(remainder);
-                inLen -= remainder;
-                // remainder offset is based on original buffer length
-                ibuffer.write(in, inOfs + inLen, remainder);
-            }
-
-            restoreOut(out, len);
-            return len;
-        }
-
-        /**
-         * Take any less than blocksize data from ibuffer and combine it with
-         * 'src' to encrypt or decrypt a block, then encrypted what it can
-         * from the remaining blocksize bytes in 'src'.  Any bytes under a
-         * blocksize are put into the 'ibuffer'.
-         *
-         * Because this does encrypt and decrypt, ibuffer could be > blockSize
-         */
-        int encryptBlocks(ByteBuffer buffer, ByteBuffer src, ByteBuffer dst) {
-            processAAD();
-            // 'inLen' stores the length to use with buffer 'in'.
-            // 'len' stores the length returned by the method.
-            int len = 0;
-
-            dst = overlapDetection(src, dst);
-            // if there is enough data in the ibuffer and 'in', encrypt it.
-            if (buffer != null && buffer.remaining() > 0) {
-                // number of bytes not filling a block
-                int remainder = buffer.remaining() % blockSize;
-                // number of bytes along block boundary
-                int blen = ibuffer.size() - remainder;
-
-                // If there is enough bytes in ibuffer for a block or more,
-                // en/decrypt that first.
-                if (blen > 0) {
-                    len += cryptBlocks(buffer, dst);
-                }
-
-                // Check if there is any data left in the buffer, if there is,
-                // try to construct a block with data from the buffer and src
-                // to en/decrypt.
-                if (buffer.remaining() == 0) {
-                    ibuffer.reset();
-                } else {
-                    if ((buffer.remaining() + src.remaining()) >= blockSize) {
-                        byte[] block = new byte[blockSize];
-                        buffer.get(block, 0, remainder);
-                        src.get(block, remainder, blockSize - remainder);
-                        len += cryptBlocks(
-                            ByteBuffer.wrap(block, 0, blockSize), dst);
-                        ibuffer.reset();
-                    }
-                }
-            }
-
-            // encrypt any blocksized data in 'src'
-            if (src.remaining() >= blockSize) {
-                len += cryptBlocks(src, dst);
-            }
-
-            // Write the remaining bytes into the 'ibuffer'
-            if (src.remaining() > 0) {
-                initBuffer(src.remaining());
-                byte[] b = new byte[src.remaining()];
-                src.get(b);
-                // remainder offset is based on original buffer length
-                try {
-                    ibuffer.write(b);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            restoreDst(dst);
-            return len;
-        }
-
         // Handler method for encrypting blocks
         int cryptBlocks(byte[] in, int inOfs, int inLen, byte[] out,
             int outOfs) {
@@ -1332,6 +1309,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
         GCMDecrypt(SymmetricCipher blockCipher) {
             super(blockCipher);
+            initEngine();
         }
 
         @Override
@@ -1358,6 +1336,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         public int doUpdate(byte[] in, int inOfs, int inLen, byte[] out,
             int outOfs) throws ShortBufferException {
 
+            processAAD();
             if (inLen > 0) {
                 // store internally until decryptFinal is called because
                 // spec mentioned that only return recovered data after tag
@@ -1406,9 +1385,6 @@ abstract class GaloisCounterMode extends CipherSpi {
             int outOfs) throws IllegalBlockSizeException, AEADBadTagException,
             ShortBufferException {
             GHASH save = null;
-
-            // Initialize GHASH & GCTR
-            initEngine();
 
             int bufLen = getBufferedLength();
             int len = inLen + bufLen;
@@ -1468,9 +1444,6 @@ abstract class GaloisCounterMode extends CipherSpi {
             throws IllegalBlockSizeException, AEADBadTagException,
             ShortBufferException {
             GHASH save = null;
-
-            // Initialize GHASH & GCTR
-            initEngine();
 
             // If these are array backed ByteBuffers, use the underlying array
             if (src.hasArray() && dst.hasArray()) {
