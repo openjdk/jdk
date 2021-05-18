@@ -87,7 +87,7 @@ public class Utilities {
      * {@link #drawTabbedText(Segment, float, float, Graphics2D, TabExpander, int)}
      */
     @Deprecated(since = "9")
-    public static final int drawTabbedText(Segment s, int x, int y, Graphics g,
+    public static int drawTabbedText(Segment s, int x, int y, Graphics g,
                                            TabExpander e, int startOffset) {
         return drawTabbedText(null, s, x, y, g, e, startOffset);
     }
@@ -247,7 +247,7 @@ public class Utilities {
      *     {@link #getTabbedTextWidth(Segment, FontMetrics, float, TabExpander, int)}
      */
     @Deprecated(since = "9")
-    public static final int getTabbedTextWidth(Segment s, FontMetrics metrics, int x,
+    public static int getTabbedTextWidth(Segment s, FontMetrics metrics, int x,
                                                TabExpander e, int startOffset) {
         return getTabbedTextWidth(null, s, metrics, x, e, startOffset, null);
     }
@@ -389,7 +389,7 @@ public class Utilities {
      *                                 TabExpander, int, boolean)}
      */
     @Deprecated(since = "9")
-    public static final int getTabbedTextOffset(Segment s, FontMetrics metrics,
+    public static int getTabbedTextOffset(Segment s, FontMetrics metrics,
                                              int x0, int x, TabExpander e,
                                              int startOffset) {
         return getTabbedTextOffset(s, metrics, x0, x, e, startOffset, true);
@@ -433,7 +433,7 @@ public class Utilities {
      *                                 TabExpander, int, boolean)}
      */
     @Deprecated(since = "9")
-    public static final int getTabbedTextOffset(Segment s,
+    public static int getTabbedTextOffset(Segment s,
                                                 FontMetrics metrics,
                                                 int x0, int x, TabExpander e,
                                                 int startOffset,
@@ -461,7 +461,7 @@ public class Utilities {
      *
      * @since 9
      */
-    public static final int getTabbedTextOffset(Segment s,
+    public static int getTabbedTextOffset(Segment s,
                                                 FontMetrics metrics,
                                                 float x0, float x,
                                                 TabExpander e,
@@ -610,7 +610,7 @@ public class Utilities {
      *                              TabExpander, int)}
      */
     @Deprecated(since = "9")
-    public static final int getBreakLocation(Segment s, FontMetrics metrics,
+    public static int getBreakLocation(Segment s, FontMetrics metrics,
                                              int x0, int x, TabExpander e,
                                              int startOffset) {
         return getBreakLocation(s, metrics, x0, x, e, startOffset, false);
@@ -667,7 +667,7 @@ public class Utilities {
      *
      * @since 9
      */
-    public static final int getBreakLocation(Segment s, FontMetrics metrics,
+    public static int getBreakLocation(Segment s, FontMetrics metrics,
                                              float x0, float x, TabExpander e,
                                              int startOffset) {
         return getBreakLocation(s, metrics, x0, x, e, startOffset, true);
@@ -686,7 +686,7 @@ public class Utilities {
      * @exception BadLocationException if the offset is out of range
      */
     @SuppressWarnings("deprecation")
-    public static final int getRowStart(JTextComponent c, int offs) throws BadLocationException {
+    public static int getRowStart(JTextComponent c, int offs) throws BadLocationException {
         Rectangle r = c.modelToView(offs);
         if (r == null) {
             return -1;
@@ -717,7 +717,7 @@ public class Utilities {
      * @exception BadLocationException if the offset is out of range
      */
     @SuppressWarnings("deprecation")
-    public static final int getRowEnd(JTextComponent c, int offs) throws BadLocationException {
+    public static int getRowEnd(JTextComponent c, int offs) throws BadLocationException {
         Rectangle2D r = c.modelToView2D(offs);
         if (r == null) {
             return -1;
@@ -753,7 +753,7 @@ public class Utilities {
      *     {@link #getPositionAbove(JTextComponent, int, float)}
      */
     @Deprecated(since = "9")
-    public static final int getPositionAbove(JTextComponent c, int offs, int x)
+    public static int getPositionAbove(JTextComponent c, int offs, int x)
             throws BadLocationException
     {
         return getPositionAbove(c, offs, x, false);
@@ -806,7 +806,7 @@ public class Utilities {
      *
      * @since 9
      */
-    public static final int getPositionAbove(JTextComponent c, int offs, float x)
+    public static int getPositionAbove(JTextComponent c, int offs, float x)
             throws BadLocationException {
         return getPositionAbove(c, offs, x, true);
     }
@@ -828,7 +828,7 @@ public class Utilities {
      *     {@link #getPositionBelow(JTextComponent, int, float)}
      */
     @Deprecated(since = "9")
-    public static final int getPositionBelow(JTextComponent c, int offs, int x)
+    public static int getPositionBelow(JTextComponent c, int offs, int x)
             throws BadLocationException
     {
         return getPositionBelow(c, offs, x, false);
@@ -882,7 +882,7 @@ public class Utilities {
      *
      * @since 9
      */
-    public static final int getPositionBelow(JTextComponent c, int offs, float x)
+    public static int getPositionBelow(JTextComponent c, int offs, float x)
             throws BadLocationException {
         return getPositionBelow(c, offs, x, true);
     }
@@ -896,7 +896,7 @@ public class Utilities {
      * @return the location in the model of the word start &gt;= 0
      * @exception BadLocationException if the offset is out of range
      */
-    public static final int getWordStart(JTextComponent c, int offs) throws BadLocationException {
+    public static int getWordStart(JTextComponent c, int offs) throws BadLocationException {
         Document doc = c.getDocument();
         Element line = getParagraphElement(c, offs);
         if (line == null) {
@@ -930,7 +930,7 @@ public class Utilities {
      * @return the location in the model of the word end &gt;= 0
      * @exception BadLocationException if the offset is out of range
      */
-    public static final int getWordEnd(JTextComponent c, int offs) throws BadLocationException {
+    public static int getWordEnd(JTextComponent c, int offs) throws BadLocationException {
         Document doc = c.getDocument();
         Element line = getParagraphElement(c, offs);
         if (line == null) {
@@ -963,7 +963,7 @@ public class Utilities {
      * @return the location in the model of the word start &gt;= 0
      * @exception BadLocationException if the offset is out of range
      */
-    public static final int getNextWord(JTextComponent c, int offs) throws BadLocationException {
+    public static int getNextWord(JTextComponent c, int offs) throws BadLocationException {
         int nextWord;
         Element line = getParagraphElement(c, offs);
         for (nextWord = getNextWordInParagraph(c, line, offs, false);
@@ -1041,7 +1041,7 @@ public class Utilities {
      * @return the location in the model of the word start &gt;= 0
      * @exception BadLocationException if the offset is out of range
      */
-    public static final int getPreviousWord(JTextComponent c, int offs) throws BadLocationException {
+    public static int getPreviousWord(JTextComponent c, int offs) throws BadLocationException {
         int prevWord;
         Element line = getParagraphElement(c, offs);
         for (prevWord = getPrevWordInParagraph(c, line, offs);
