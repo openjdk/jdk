@@ -1211,12 +1211,13 @@ void ZStatNMethods::print() {
 // Stat metaspace
 //
 void ZStatMetaspace::print() {
+  MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
   log_info(gc, metaspace)("Metaspace: "
                           SIZE_FORMAT "M used, "
                           SIZE_FORMAT "M committed, " SIZE_FORMAT "M reserved",
-                          MetaspaceUtils::used_bytes() / M,
-                          MetaspaceUtils::committed_bytes() / M,
-                          MetaspaceUtils::reserved_bytes() / M);
+                          stats.used() / M,
+                          stats.committed() / M,
+                          stats.reserved() / M);
 }
 
 //
