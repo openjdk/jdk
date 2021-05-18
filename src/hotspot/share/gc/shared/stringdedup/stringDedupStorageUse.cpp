@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, Twitter, Inc.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +22,31 @@
  *
  */
 
-#ifndef SHARE_MEMORY_METASPACE_METASPACESIZESSNAPSHOT_HPP
-#define SHARE_MEMORY_METASPACE_METASPACESIZESSNAPSHOT_HPP
-
+#include "precompiled.hpp"
+#include "gc/shared/stringdedup/stringDedupStorageUse.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalCounter.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-namespace metaspace {
+StringDedup::StorageUse::StorageUse(OopStorage* storage) :
+  _storage(storage), _use_count(0)
+{}
 
-// Todo: clean up after jep387, see JDK-8251392
-class MetaspaceSizesSnapshot {
-public:
-  MetaspaceSizesSnapshot();
+bool StringDedup::StorageUse::is_used_acquire() const {
+  return Atomic::load_acquire(&_use_count) > 0;
+}
 
-  size_t used() const { return _used; }
-  size_t committed() const { return _committed; }
-  size_t non_class_used() const { return _non_class_used; }
-  size_t non_class_committed() const { return _non_class_committed; }
-  size_t class_used() const { return _class_used; }
-  size_t class_committed() const { return _class_committed; }
+StringDedup::StorageUse*
+StringDedup::StorageUse::obtain(StorageUse* volatile* ptr) {
+  GlobalCounter::CriticalSection cs(Thread::current());
+  StorageUse* storage = Atomic::load(ptr);
+  Atomic::inc(&storage->_use_count);
+  return storage;
+}
 
-private:
-  const size_t _used;
-  const size_t _committed;
-  const size_t _non_class_used;
-  const size_t _non_class_committed;
-  const size_t _class_used;
-  const size_t _class_committed;
-};
-
-} // namespace metaspace
-
-#endif // SHARE_MEMORY_METASPACE_METASPACESIZESSNAPSHOT_HPP
+void StringDedup::StorageUse::relinquish() {
+  size_t result = Atomic::sub(&_use_count, size_t(1));
+  assert(result != SIZE_MAX, "use count underflow");
+}

@@ -368,11 +368,11 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   // ... re-reserve in the same spot multiple areas...
   for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = p + (stripe * stripe_len);
-    q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len);
-    EXPECT_NE(q, (address)NULL);
     // Commit, alternatingly with or without exec permission,
     //  to prevent kernel from folding these mappings.
     const bool executable = stripe % 2 == 0;
+    q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, executable);
+    EXPECT_NE(q, (address)NULL);
     EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
   }
   return p;
@@ -412,11 +412,7 @@ struct NUMASwitcher {
 #endif
 
 #ifndef _AIX // JDK-8257041
-#if defined(__APPLE__) && defined(AARCH64)
-TEST_VM(os, DISABLED_release_multi_mappings) {
-#else
 TEST_VM(os, release_multi_mappings) {
-#endif
   // Test that we can release an area created with multiple reservation calls
   const size_t stripe_len = 4 * M;
   const int num_stripes = 4;
@@ -782,28 +778,29 @@ TEST_VM(os, iso8601_time) {
   buffer[os::iso8601_timestamp_size] = 'X'; // canary
   const char* result = NULL;
   // YYYY-MM-DDThh:mm:ss.mmm+zzzz
-  const char* const pattern = "dddd-dd-dd.dd:dd:dd.ddd+dddd";
+  const char* const pattern_utc = "dddd-dd-dd.dd:dd:dd.ddd.0000";
+  const char* const pattern_local = "dddd-dd-dd.dd:dd:dd.ddd.dddd";
 
   result = os::iso8601_time(buffer, sizeof(buffer), true);
   tty->print_cr("%s", result);
   EXPECT_EQ(result, buffer);
-  EXPECT_TRUE(very_simple_string_matcher(pattern, result));
+  EXPECT_TRUE(very_simple_string_matcher(pattern_utc, result));
 
   result = os::iso8601_time(buffer, sizeof(buffer), false);
   tty->print_cr("%s", result);
   EXPECT_EQ(result, buffer);
-  EXPECT_TRUE(very_simple_string_matcher(pattern, result));
+  EXPECT_TRUE(very_simple_string_matcher(pattern_local, result));
 
   // Test with explicit timestamps
   result = os::iso8601_time(0, buffer, sizeof(buffer), true);
   tty->print_cr("%s", result);
   EXPECT_EQ(result, buffer);
-  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.000+dddd", result));
+  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.000+0000", result));
 
   result = os::iso8601_time(17, buffer, sizeof(buffer), true);
   tty->print_cr("%s", result);
   EXPECT_EQ(result, buffer);
-  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.017+dddd", result));
+  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.017+0000", result));
 
   // Canary should still be intact
   EXPECT_EQ(buffer[os::iso8601_timestamp_size], 'X');

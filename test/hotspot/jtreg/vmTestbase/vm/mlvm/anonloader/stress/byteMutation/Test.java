@@ -65,9 +65,6 @@ import vm.share.options.Option;
  * the VM verifier. But this test tries to find pathological cases, such
  * as infinite loops during verification or VM crashes.
  *
- * <p>NB: There is a tool to load invalid classes saved by this test.
- * Please see tool documentation at {@link vm.mlvm.tools.LoadClass}
- *
  */
 public class Test extends StressClassLoadingTest {
     private final static Class<?> HOST_CLASS = AnonkTestee01.class;

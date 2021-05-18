@@ -619,7 +619,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // ParallelCapable class loaders and the bootstrap classloader
   // do not acquire lock here.
   Handle lockObject = get_loader_lock_or_null(class_loader);
-  ObjectLocker ol(lockObject, THREAD->as_Java_thread());
+  ObjectLocker ol(lockObject, THREAD);
 
   bool super_load_in_progress  = false;
   InstanceKlass* loaded_class = NULL;
@@ -682,7 +682,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     {
       MutexLocker mu(THREAD, SystemDictionary_lock);
       if (should_wait_for_loading(class_loader)) {
-        loaded_class = handle_parallel_loading(THREAD->as_Java_thread(),
+        loaded_class = handle_parallel_loading(THREAD,
                                                name_hash,
                                                name,
                                                loader_data,
@@ -864,7 +864,7 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
 
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
-    JvmtiExport::post_class_load(THREAD->as_Java_thread(), k);
+    JvmtiExport::post_class_load(THREAD, k);
   }
   if (class_load_start_event.should_commit()) {
     post_class_load_event(&class_load_start_event, k, loader_data);
@@ -893,7 +893,7 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
   // Classloaders that support parallelism, e.g. bootstrap classloader,
   // do not acquire lock here
   Handle lockObject = get_loader_lock_or_null(class_loader);
-  ObjectLocker ol(lockObject, THREAD->as_Java_thread());
+  ObjectLocker ol(lockObject, THREAD);
 
   // Parse the stream and create a klass.
   // Note that we do this even though this klass might
@@ -1191,7 +1191,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   {
     HandleMark hm(THREAD);
     Handle lockObject = get_loader_lock_or_null(class_loader);
-    ObjectLocker ol(lockObject, THREAD->as_Java_thread());
+    ObjectLocker ol(lockObject, THREAD);
     // prohibited package check assumes all classes loaded from archive call
     // restore_unshareable_info which calls ik->set_package()
     ik->restore_unshareable_info(loader_data, protection_domain, pkg_entry, CHECK_NULL);
@@ -1308,7 +1308,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     // Use user specified class loader to load class. Call loadClass operation on class_loader.
     ResourceMark rm(THREAD);
 
-    JavaThread* jt = THREAD->as_Java_thread();
+    JavaThread* jt = THREAD;
 
     PerfClassTraceTime vmtimer(ClassLoader::perf_app_classload_time(),
                                ClassLoader::perf_app_classload_selftime(),
@@ -1385,7 +1385,7 @@ InstanceKlass* SystemDictionary::load_instance_class(unsigned int name_hash,
     }
 
     if (JvmtiExport::should_post_class_load()) {
-      JvmtiExport::post_class_load(THREAD->as_Java_thread(), loaded_class);
+      JvmtiExport::post_class_load(THREAD, loaded_class);
     }
   }
   return loaded_class;
@@ -1411,7 +1411,7 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   // find_or_define_instance_class to get here, we have a timing
   // hole with systemDictionary updates and check_constraints
   if (!is_parallelCapable(class_loader)) {
-    assert(ObjectSynchronizer::current_thread_holds_lock(THREAD->as_Java_thread(),
+    assert(ObjectSynchronizer::current_thread_holds_lock(THREAD,
            get_loader_lock_or_null(class_loader)),
            "define called without lock");
   }
@@ -1458,7 +1458,7 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
 
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
-    JvmtiExport::post_class_load(THREAD->as_Java_thread(), k);
+    JvmtiExport::post_class_load(THREAD, k);
   }
   post_class_define_event(k, loader_data);
 }

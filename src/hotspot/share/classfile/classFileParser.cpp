@@ -5565,7 +5565,6 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _class_name = name != NULL ? name : vmSymbols::unknown_class_name();
   _class_name->increment_refcount();
 
-  assert(THREAD->is_Java_thread(), "invariant");
   assert(_loader_data != NULL, "invariant");
   assert(stream != NULL, "invariant");
   assert(_stream != NULL, "invariant");

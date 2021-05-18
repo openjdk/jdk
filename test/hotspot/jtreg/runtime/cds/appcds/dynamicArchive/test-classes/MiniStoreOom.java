@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,16 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-
-package gc.g1;
-
-/*
- * @test TestStringDeduplicationPrintOptions
- * @summary Test string deduplication print options
- * @bug 8029075
- * @requires vm.gc.G1
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc:open
- * @modules java.base/java.lang:open
- *          java.management
- * @run driver gc.g1.TestStringDeduplicationPrintOptions
- */
-
-public class TestStringDeduplicationPrintOptions {
-    public static void main(String[] args) throws Exception {
-        TestStringDeduplicationTools.testPrintOptions();
+import java.util.HashMap;
+public class MiniStoreOom {
+    private static HashMap<Integer, Byte[]>  store = new HashMap<Integer, Byte[]>();
+    public static void main(String... args) throws Exception {
+        int size = Integer.valueOf(args[0]);
+        int i = 0;
+        while (i++ < Integer.MAX_VALUE) {
+            store.put(i, new Byte[size]);
+        }
     }
 }
