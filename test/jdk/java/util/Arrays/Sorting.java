@@ -32,10 +32,6 @@
  * @author Vladimir Yaroslavskiy
  * @author Jon Bentley
  * @author Josh Bloch
- *
- * @version 2020.06.14
- *
- * @since 1.7 * 14 & 17
  */
 
 import java.io.PrintStream;
