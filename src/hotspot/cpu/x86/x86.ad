@@ -8068,13 +8068,11 @@ instruct vmask_truecount_evex(rRegI dst, vec mask, rRegL tmp, kReg ktmp, vec xtm
   effect(TEMP_DEF dst, TEMP tmp, TEMP ktmp, TEMP xtmp);
   format %{ "vector_truecount_evex $mask \t! vector mask true count" %}
   ins_encode %{
-    const MachNode* mask_node = static_cast<const MachNode*>(this->in(this->operand_index($mask)));
-    assert(mask_node->bottom_type()->isa_vect(), "");
-    int vector_len = vector_length_encoding(mask_node);
     int opcode = this->ideal_Opcode();
-    int mask_len = mask_node->bottom_type()->is_vect()->length();
+    int vlen_enc = vector_length_encoding(this, $mask);
+    int mask_len = vector_length(this, $mask);
     __ vector_mask_operation(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
-                             $tmp$$Register, $ktmp$$KRegister, mask_len, vector_len);
+                             $tmp$$Register, $ktmp$$KRegister, mask_len, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8086,13 +8084,11 @@ instruct vmask_first_or_last_true_evex(rRegI dst, vec mask, rRegL tmp, kReg ktmp
   effect(TEMP_DEF dst, TEMP tmp, TEMP ktmp, TEMP xtmp, KILL cr);
   format %{ "vector_mask_first_or_last_true_evex $mask \t! vector first/last true location" %}
   ins_encode %{
-    const MachNode* mask_node = static_cast<const MachNode*>(this->in(this->operand_index($mask)));
-    assert(mask_node->bottom_type()->isa_vect(), "");
-    int vector_len = vector_length_encoding(mask_node);
     int opcode = this->ideal_Opcode();
-    int mask_len = mask_node->bottom_type()->is_vect()->length();
+    int vlen_enc = vector_length_encoding(this, $mask);
+    int mask_len = vector_length(this, $mask);
     __ vector_mask_operation(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
-                             $tmp$$Register, $ktmp$$KRegister, mask_len, vector_len);
+                             $tmp$$Register, $ktmp$$KRegister, mask_len, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8103,13 +8099,11 @@ instruct vmask_truecount_avx(rRegI dst, vec mask, rRegL tmp, vec xtmp, vec xtmp1
   effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, TEMP xtmp1);
   format %{ "vector_truecount_avx $mask \t! vector mask true count" %}
   ins_encode %{
-    const MachNode* mask_node = static_cast<const MachNode*>(this->in(this->operand_index($mask)));
-    assert(mask_node->bottom_type()->isa_vect(), "");
-    int vector_len = vector_length_encoding(mask_node);
     int opcode = this->ideal_Opcode();
-    int mask_len = mask_node->bottom_type()->is_vect()->length();
+    int vlen_enc = vector_length_encoding(this, $mask);
+    int mask_len = vector_length(this, $mask);
     __ vector_mask_operation(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
-                             $xtmp1$$XMMRegister, $tmp$$Register, mask_len, vector_len);
+                             $xtmp1$$XMMRegister, $tmp$$Register, mask_len, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8121,13 +8115,11 @@ instruct vmask_first_or_last_true_avx(rRegI dst, vec mask, rRegL tmp, vec xtmp, 
   effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, TEMP xtmp1, KILL cr);
   format %{ "vector_mask_first_or_last_true_avx $mask \t! vector first/last true location" %}
   ins_encode %{
-    const MachNode* mask_node = static_cast<const MachNode*>(this->in(this->operand_index($mask)));
-    assert(mask_node->bottom_type()->isa_vect(), "");
-    int vector_len = vector_length_encoding(mask_node);
     int opcode = this->ideal_Opcode();
-    int mask_len = mask_node->bottom_type()->is_vect()->length();
+    int vlen_enc = vector_length_encoding(this, $mask);
+    int mask_len = vector_length(this, $mask);
     __ vector_mask_operation(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
-                             $xtmp1$$XMMRegister, $tmp$$Register, mask_len, vector_len);
+                             $xtmp1$$XMMRegister, $tmp$$Register, mask_len, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
