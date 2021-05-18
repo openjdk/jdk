@@ -86,7 +86,7 @@ public class TestGCLogMessages {
         }
 
         public boolean isAvailable() {
-            return Compiler.isC2OrJVMCIIncludedInVmBuild();
+            return Compiler.isC2OrJVMCIIncluded();
         }
     }
 
@@ -131,9 +131,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Redirtied Cards", Level.DEBUG),
         // Misc Top-level
         new LogMessageWithLevel("Purge Code Roots", Level.DEBUG),
-        new LogMessageWithLevel("String Deduplication", Level.DEBUG),
-        new LogMessageWithLevel("Queue Fixup", Level.DEBUG),
-        new LogMessageWithLevel("Table Fixup", Level.DEBUG),
         new LogMessageWithLevel("Expand Heap After Collection", Level.DEBUG),
         new LogMessageWithLevel("Region Register", Level.DEBUG),
         new LogMessageWithLevel("Prepare Heap Roots", Level.DEBUG),
@@ -197,7 +194,6 @@ public class TestGCLogMessages {
         output.shouldHaveExitValue(0);
 
         pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:+UseStringDeduplication",
                                                    "-Xmx10M",
                                                    "-Xlog:gc+phases=debug",
                                                    GCTest.class.getName());
@@ -206,7 +202,6 @@ public class TestGCLogMessages {
         checkMessagesAtLevel(output, allLogMessages, Level.DEBUG);
 
         pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:+UseStringDeduplication",
                                                    "-Xmx10M",
                                                    "-Xlog:gc+phases=trace",
                                                    GCTest.class.getName());

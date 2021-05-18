@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
 package java.io;
 
 import java.nio.channels.FileChannel;
+import java.util.Arrays;
+import jdk.internal.util.ArraysSupport;
 import sun.nio.ch.FileChannelImpl;
-
 
 /**
  * A {@code FileInputStream} obtains input bytes
@@ -62,6 +63,8 @@ import sun.nio.ch.FileChannelImpl;
  */
 public class FileInputStream extends InputStream
 {
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
+
     /* File Descriptor - handle to the open file */
     private final FileDescriptor fd;
 
@@ -270,6 +273,94 @@ public class FileInputStream extends InputStream
     public int read(byte b[], int off, int len) throws IOException {
         return readBytes(b, off, len);
     }
+
+    public byte[] readAllBytes() throws IOException {
+        long length = length();
+        long position = position();
+        long size = length - position;
+
+        if (length <= 0 || size <= 0)
+            return super.readAllBytes();
+
+        if (size > (long) Integer.MAX_VALUE) {
+            String msg =
+                String.format("Required array size too large for %s: %d = %d - %d",
+                    path, size, length, position);
+            throw new OutOfMemoryError(msg);
+        }
+
+        int capacity = (int)size;
+        byte[] buf = new byte[capacity];
+
+        int nread = 0;
+        int n;
+        for (;;) {
+            // read to EOF which may read more or less than initial size, e.g.,
+            // file is truncated while we are reading
+            while ((n = read(buf, nread, capacity - nread)) > 0)
+                nread += n;
+
+            // if last call to read() returned -1, we are done; otherwise,
+            // try to read one more byte and if that fails we're done too
+            if (n < 0 || (n = read()) < 0)
+                break;
+
+            // one more byte was read; need to allocate a larger buffer
+            capacity = Math.max(ArraysSupport.newLength(capacity,
+                                                        1,         // min growth
+                                                        capacity), // pref growth
+                                DEFAULT_BUFFER_SIZE);
+            buf = Arrays.copyOf(buf, capacity);
+            buf[nread++] = (byte)n;
+        }
+        return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
+    }
+
+    public byte[] readNBytes(int len) throws IOException {
+        if (len < 0)
+            throw new IllegalArgumentException("len < 0");
+        if (len == 0)
+            return new byte[0];
+
+        long length = length();
+        long position = position();
+        long size = length - position;
+
+        if (length <= 0 || size <= 0)
+            return super.readNBytes(len);
+
+        int capacity = (int)Math.min(len, size);
+        byte[] buf = new byte[capacity];
+
+        int remaining = capacity;
+        int nread = 0;
+        int n;
+        do {
+            n = read(buf, nread, remaining);
+            if (n > 0 ) {
+                nread += n;
+                remaining -= n;
+            } else if (n == 0) {
+                // Block until a byte is read or EOF is detected
+                byte b = (byte)read();
+                if (b == -1 )
+                    break;
+                buf[nread++] = b;
+                remaining--;
+            }
+        } while (n >= 0 && remaining > 0);
+        return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
+    }
+
+    private long length() throws IOException {
+        return length0();
+    }
+    private native long length0() throws IOException;
+
+    private long position() throws IOException {
+        return position0();
+    }
+    private native long position0() throws IOException;
 
     /**
      * Skips over and discards {@code n} bytes of data from the

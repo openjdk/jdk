@@ -2159,7 +2159,9 @@ void GenerateOopMap::error_work(const char *format, va_list ap) {
   os::snprintf(msg_buffer2, sizeof(msg_buffer2), "%s in method %s", msg_buffer, method()->name()->as_C_string());
   Thread* current = Thread::current();
   if (current->can_call_java()) {
-    _exception = Exceptions::new_exception(current, vmSymbols::java_lang_LinkageError(), msg_buffer2);
+    _exception = Exceptions::new_exception(current->as_Java_thread(),
+                                           vmSymbols::java_lang_LinkageError(),
+                                           msg_buffer2);
   } else {
     fatal("%s", msg_buffer2);
   }
@@ -2437,7 +2439,7 @@ class RelocCallback : public RelocatorListener {
 // Returns true if expanding was succesful. Otherwise, reports an error and
 // returns false.
 void GenerateOopMap::expand_current_instr(int bci, int ilen, int newIlen, u_char inst_buffer[]) {
-  Thread *THREAD = Thread::current();  // Could really have TRAPS argument.
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   RelocCallback rcb(this);
   Relocator rc(_method, &rcb);
   methodHandle m= rc.insert_space_at(bci, newIlen, inst_buffer, THREAD);
