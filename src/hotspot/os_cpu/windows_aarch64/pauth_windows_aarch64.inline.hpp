@@ -22,14 +22,13 @@
  *
  */
 
-#ifndef CPU_AARCH64_PAUTH_AARCH64_INLINE_HPP
-#define CPU_AARCH64_PAUTH_AARCH64_INLINE_HPP
+#ifndef OS_CPU_LINUX_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
+#define OS_CPU_LINUX_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
 
-#include OS_CPU_HEADER_INLINE(pauth)
-
-inline bool pauth_ptr_is_raw(address ptr) {
-  // Confirm none of the high bits are set in the pointer.
-  return ptr == pauth_strip_pointer(ptr);
+inline address pauth_strip_pointer(address ptr) {
+  // No PAC support in windows as of yet.
+  return ptr;
 }
 
-#endif // CPU_AARCH64_PAUTH_AARCH64_INLINE_HPP
+#endif // OS_CPU_LINUX_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
+

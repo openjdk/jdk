@@ -22,14 +22,22 @@
  *
  */
 
-#ifndef CPU_AARCH64_PAUTH_AARCH64_INLINE_HPP
-#define CPU_AARCH64_PAUTH_AARCH64_INLINE_HPP
+#ifndef OS_CPU_LINUX_AARCH64_PAUTH_LINUX_AARCH64_INLINE_HPP
+#define OS_CPU_LINUX_AARCH64_PAUTH_LINUX_AARCH64_INLINE_HPP
 
-#include OS_CPU_HEADER_INLINE(pauth)
+// Only the PAC instructions in the NOP space can be used. This ensures the
+// binaries work on systems without PAC. Write these instructions using their
+// alternate "hint" instructions to ensure older compilers can still be used.
 
-inline bool pauth_ptr_is_raw(address ptr) {
-  // Confirm none of the high bits are set in the pointer.
-  return ptr == pauth_strip_pointer(ptr);
+#define XPACLRI "hint #0x7;"
+
+inline address pauth_strip_pointer(address ptr) {
+  asm ("mov x30, %0;"
+       XPACLRI
+       "mov %0, x30;" : "+r"(ptr) : : "x30");
+  return ptr;
 }
 
-#endif // CPU_AARCH64_PAUTH_AARCH64_INLINE_HPP
+#undef XPACLRI
+
+#endif // OS_CPU_LINUX_AARCH64_PAUTH_LINUX_AARCH64_INLINE_HPP
