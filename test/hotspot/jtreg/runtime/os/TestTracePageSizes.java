@@ -179,9 +179,9 @@ public class TestTracePageSizes {
     // Parse /proc/self/smaps
     private static void parseSmaps(Path smapsFileToParse) throws Exception {
         System.out.println("Parsing: " + smapsFileToParse.getFileName() + "...");
-        SmapsParser parser2 = new SmapsParser();
-        Files.lines(smapsFileToParse).forEach(parser2::eatNext);
-        parser2.finish();
+        SmapsParser parser = new SmapsParser();
+        Files.lines(smapsFileToParse).forEach(parser::eatNext);
+        parser.finish();
     }
 
     // Search for a range including the given address.
