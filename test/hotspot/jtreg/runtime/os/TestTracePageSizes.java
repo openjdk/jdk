@@ -131,9 +131,9 @@ public class TestTracePageSizes {
         String end;
         String ps;
         String vmFlags;
-        Pattern sectionStartPat = Pattern.compile("^([a-f0-9]+)-([a-f0-9]+) [\\-rwpsx]{4}.*");
-        Pattern kernelPageSizePat = Pattern.compile("^KernelPageSize:\\s*(\\d*) kB");
-        Pattern vmFlagsPat = Pattern.compile("^VmFlags: ([\\w\\? ]*)");
+        static final Pattern SECTION_START_PATT = Pattern.compile("^([a-f0-9]+)-([a-f0-9]+) [\\-rwpsx]{4}.*");
+        static final Pattern KERNEL_PAGESIZE_PATT = Pattern.compile("^KernelPageSize:\\s*(\\d*) kB");
+        static final Pattern VMFLAGS_PATT = Pattern.compile("^VmFlags: ([\\w\\? ]*)");
         int lineno = 0;
         void reset() {
             start = end = ps = vmFlags = null;
