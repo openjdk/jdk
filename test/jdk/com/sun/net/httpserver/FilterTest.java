@@ -38,8 +38,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -205,9 +204,9 @@ public class FilterTest {
     @Test
     public void testAfterHandler() throws Exception {
         var handler = new EchoHandler();
-        var respCode = new AtomicInteger();
+        var respCode = new CompletableFuture<Integer>();
         var filter = Filter.afterHandler("Log response code",
-                e -> respCode.set(e.getResponseCode()));
+                e -> respCode.complete(e.getResponseCode()));
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
         server.createContext("/", handler).getFilters().add(filter);
         server.start();
@@ -216,7 +215,7 @@ public class FilterTest {
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
-            assertEquals(response.statusCode(), respCode.get());
+            assertEquals(response.statusCode(), (int)respCode.get());
         } finally {
             server.stop(0);
         }
@@ -225,12 +224,12 @@ public class FilterTest {
     @Test
     public void testAfterHandlerRepeated() throws Exception {
         var handler = new EchoHandler();
-        var attr = new AtomicReference<String>();
+        var attr = new CompletableFuture<String>();
         final var value = "some value";
         var filter1 = Filter.afterHandler("Set attribute",
                 e -> e.setAttribute("test-attr", value));
         var filter2 = Filter.afterHandler("Read attribute",
-                e -> attr.set((String) e.getAttribute("test-attr")));
+                e -> attr.complete((String) e.getAttribute("test-attr")));
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
         var context = server.createContext("/", handler);
         context.getFilters().add(filter2);
@@ -250,7 +249,7 @@ public class FilterTest {
     @Test
     public void testAfterHandlerSendResponse() throws Exception {
         var handler = new NoResponseHandler();
-        var respCode = new AtomicInteger();
+        var respCode = new CompletableFuture<Integer>();
         var filter = Filter.afterHandler("Log response code and send response",
                 e -> {
                     try (InputStream is = e.getRequestBody();
@@ -259,7 +258,7 @@ public class FilterTest {
                         var resp = "hello world".getBytes(StandardCharsets.UTF_8);
                         e.sendResponseHeaders(200, resp.length);
                         os.write(resp);
-                        respCode.set(e.getResponseCode());
+                        respCode.complete(e.getResponseCode());
                     } catch (IOException ioe) {
                         ioe.printStackTrace(System.out);
                         throw new UncheckedIOException(ioe);
@@ -273,7 +272,7 @@ public class FilterTest {
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
-            assertEquals(response.statusCode(), respCode.get());
+            assertEquals(response.statusCode(), (int)respCode.get());
         } finally {
             server.stop(0);
         }
@@ -282,11 +281,11 @@ public class FilterTest {
     @Test
     public void testBeforeAndAfterHandler() throws Exception {
         var handler = new EchoHandler();
-        var respCode = new AtomicInteger();
+        var respCode = new CompletableFuture<Integer>();
         var beforeFilter = Filter.beforeHandler("Add x-foo response header",
                 e -> e.getResponseHeaders().set("x-foo", "bar"));
         var afterFilter = Filter.afterHandler("Log response code",
-                e -> respCode.set(e.getResponseCode()));
+                e -> respCode.complete(e.getResponseCode()));
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR, 0), 10);
         var context = server.createContext("/", handler);
         context.getFilters().add(beforeFilter);
@@ -297,9 +296,9 @@ public class FilterTest {
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(response.statusCode(), 200);
-            assertEquals(response.statusCode(), respCode.get());
             assertEquals(response.headers().map().size(), 3);
             assertEquals(response.headers().firstValue("x-foo").orElseThrow(), "bar");
+            assertEquals(response.statusCode(), (int)respCode.get());
         } finally {
             server.stop(0);
         }
