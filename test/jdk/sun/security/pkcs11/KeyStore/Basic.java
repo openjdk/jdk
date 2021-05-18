@@ -26,8 +26,8 @@
  * @summary KeyStore support for NSS cert/key databases
  * To run manually:
  *    set environment variable:
- *		  <token>     [activcard|ibutton|nss|sca1000]
- *        <command>   [list|basic]
+ *     <token>     [activcard|ibutton|nss|sca1000]
+ *     <command>   [list|basic]
  *
  * Note:
  *    . 'list' lists the token aliases
