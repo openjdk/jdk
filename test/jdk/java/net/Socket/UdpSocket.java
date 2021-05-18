@@ -37,9 +37,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.security.Permission;
 import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.net.SocketException;
+import java.net.BindException;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -133,8 +134,21 @@ public class UdpSocket {
         }
     }
 
+
     private Socket newUdpSocket() throws IOException {
-        return new Socket(InetAddress.getLoopbackAddress(), 8000, false);
+        Socket newUdpSocket = null;
+
+        try {
+            newUdpSocket = new Socket(InetAddress.getLoopbackAddress(), 8000, false);
+        } catch (SocketException soEx) {
+            if (soEx instanceof BindException) {
+                System.out.println("BindException caught retry Socket creation");
+                newUdpSocket = new Socket(InetAddress.getLoopbackAddress(), 8000, false);
+            } else {
+                throw soEx;
+            }
+        }
+        return newUdpSocket;
     }
 
     private void closeAll(Deque<Socket> sockets) throws IOException {
