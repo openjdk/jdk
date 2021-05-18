@@ -160,15 +160,20 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   return call_RT(oop_result1, metadata_result, entry, 3);
 }
 
+enum return_state_t {
+  does_not_return, requires_return
+};
+
+
 // Implementation of StubFrame
 
 class StubFrame: public StackObj {
  private:
   StubAssembler* _sasm;
-  bool _does_not_return;
+  bool _return_state;
 
  public:
-  StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, bool does_not_return=false);
+  StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, return_state_t return_state=requires_return);
   void load_argument(int offset_in_words, Register reg);
 
   ~StubFrame();
@@ -186,9 +191,9 @@ void StubAssembler::epilogue() {
 
 #define __ _sasm->
 
-StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, bool does_not_return) {
+StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, return_state_t return_state) {
   _sasm = sasm;
-  _does_not_return = does_not_return;
+  _return_state = return_state;
   __ prologue(name, must_gc_arguments);
 }
 
@@ -199,10 +204,10 @@ void StubFrame::load_argument(int offset_in_words, Register reg) {
 }
 
 StubFrame::~StubFrame() {
-  if (_does_not_return) {
-    __ should_not_reach_here();
-  } else {
+  if (_return_state == requires_return) {
     __ epilogue();
+  } else {
+    __ should_not_reach_here();
   }
 }
 
@@ -604,7 +609,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
   // for better readability
   const bool must_gc_arguments = true;
   const bool dont_gc_arguments = false;
-  const bool does_not_return = true;
 
   // default value; overwritten for some optimized stubs that are called from methods that do not use the fpu
   bool save_fpu_registers = true;
