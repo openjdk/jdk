@@ -49,7 +49,7 @@
  * @summary Canonicalizes Foo.class.getModifiers() with C2 mode
  * @requires vm.compiler2.enabled
  * @library /test/lib
- * @run main/othervm -XX:TieredStopAtLevel=4 -XX:-TieredCompilation
+ * @run main/othervm -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,*CanonicalizeGetModifiers.test
  *                   compiler.c1.CanonicalizeGetModifiers
  */
