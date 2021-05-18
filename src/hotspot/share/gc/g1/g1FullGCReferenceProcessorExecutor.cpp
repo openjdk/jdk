@@ -37,15 +37,11 @@ G1FullGCReferenceProcessingExecutor::G1FullGCReferenceProcessingExecutor(G1FullC
     _collector(collector),
     _reference_processor(collector->reference_processor()),
     _old_mt_degree(_reference_processor->num_queues()) {
-  if (_reference_processor->processing_is_mt()) {
-    _reference_processor->set_active_mt_degree(_collector->workers());
-  }
+  _reference_processor->set_active_mt_degree(_collector->workers());
 }
 
 G1FullGCReferenceProcessingExecutor::~G1FullGCReferenceProcessingExecutor() {
-  if (_reference_processor->processing_is_mt()) {
-    _reference_processor->set_active_mt_degree(_old_mt_degree);
-  }
+  _reference_processor->set_active_mt_degree(_old_mt_degree);
 }
 
 G1FullGCReferenceProcessingExecutor::G1RefProcTaskProxy::G1RefProcTaskProxy(ProcessTask& proc_task,

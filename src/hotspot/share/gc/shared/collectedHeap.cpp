@@ -31,6 +31,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -582,6 +583,7 @@ void CollectedHeap::initialize_reserved_region(const ReservedHeapSpace& rs) {
 }
 
 void CollectedHeap::post_initialize() {
+  StringDedup::initialize();
   initialize_serviceability();
 }
 
@@ -635,10 +637,6 @@ void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
 
 bool CollectedHeap::is_archived_object(oop object) const {
   return false;
-}
-
-void CollectedHeap::deduplicate_string(oop str) {
-  // Do nothing, unless overridden in subclass.
 }
 
 uint32_t CollectedHeap::hash_oop(oop obj) const {
