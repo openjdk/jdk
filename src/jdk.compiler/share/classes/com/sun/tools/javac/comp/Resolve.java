@@ -4334,12 +4334,9 @@ public class Resolve {
                     return simpleDiag;
                 }
             }
-            JCDiagnostic.DiagnosticInfo info;
-            if (details == null) {
-                info = Errors.CantApplyDiamond(Fragments.Diamond(site.tsym), null);
-            } else {
-                info = Errors.CantApplyDiamond1(Fragments.Diamond(site.tsym), details).toType(dkind);
-            }
+            JCDiagnostic.DiagnosticInfo info = (details == null) ?
+                    Errors.CantApplyDiamond(Fragments.Diamond(site.tsym), null) :
+                    Errors.CantApplyDiamond1(Fragments.Diamond(site.tsym), details).toType(dkind);
             return diags.create(log.currentSource(), pos, info);
         }
     }
