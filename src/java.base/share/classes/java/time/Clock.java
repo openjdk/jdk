@@ -509,7 +509,7 @@ public abstract class Clock implements InstantSource {
 
             // bring back the offset in range. We use -1024 to make
             // it more unlikely to hit the 1ns in the future condition.
-            localOffset = System.currentTimeMillis()/1000 - 1024;
+            localOffset = System.currentTimeMillis() / 1000 - 1024;
 
             // retry
             adjustment = VM.getNanoTimeAdjustment(localOffset);

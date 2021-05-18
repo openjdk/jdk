@@ -27,15 +27,12 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-import java.lang.reflect.Field;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.InstantSource;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
@@ -56,7 +53,7 @@ public class TestInstantSource {
         var testInstantMillis = test.instant().toEpochMilli();
         assertTrue(Math.abs(testMillis - millis) < 1000);
         assertTrue(Math.abs(testInstantMillis - millis) < 1000);
-        assertSame(test.equals(InstantSource.system());
+        assertSame(test, InstantSource.system());
         assertEquals(test.hashCode(), InstantSource.system().hashCode());
         assertEquals(test.toString(), "SystemInstantSource");
     }
@@ -70,7 +67,7 @@ public class TestInstantSource {
         assertEquals(test.withZone(PARIS), Clock.tick(Clock.fixed(instant, PARIS), duration));
         assertEquals(test.millis(), (millis / 1000) * 1000);
         assertEquals(test.instant(), instant.truncatedTo(SECONDS));
-        assertSame(test.equals(InstantSource.tick(InstantSource.fixed(instant), duration));
+        assertEquals(test, InstantSource.tick(InstantSource.fixed(instant), duration));
         assertEquals(test.hashCode(), InstantSource.tick(InstantSource.fixed(instant), duration).hashCode());
     }
 
@@ -82,8 +79,8 @@ public class TestInstantSource {
         assertEquals(test.withZone(PARIS), Clock.fixed(instant, PARIS));
         assertEquals(test.millis(), millis);
         assertEquals(test.instant(), instant);
-        assertSame(test.equals(InstantSource..fixed(instant));
-        assertEquals(test.hashCode(), InstantSource..fixed(instant).hashCode());
+        assertEquals(test, InstantSource.fixed(instant));
+        assertEquals(test.hashCode(), InstantSource.fixed(instant).hashCode());
     }
 
     public void test_offset() {
@@ -95,13 +92,14 @@ public class TestInstantSource {
         assertEquals(test.withZone(PARIS), Clock.offset(Clock.fixed(instant, PARIS), duration));
         assertEquals(test.millis(), millis + 120_000);
         assertEquals(test.instant(), instant.plusSeconds(120));
-        assertSame(test.equals(InstantSource.offset(InstantSource.fixed(instant), duration));
+        assertEquals(test, InstantSource.offset(InstantSource.fixed(instant), duration));
         assertEquals(test.hashCode(), InstantSource.offset(InstantSource.fixed(instant), duration).hashCode());
     }
 
     static class MockInstantSource implements InstantSource {
         static final Instant FIXED = Instant.now();
 
+        @Override
         public Instant instant() {
             return FIXED;
         }
@@ -114,7 +112,7 @@ public class TestInstantSource {
         assertEquals(test.withZone(ZoneOffset.UTC).withZone(PARIS).getZone(), PARIS);
         assertEquals(test.millis(), MockInstantSource.FIXED.toEpochMilli());
         assertEquals(test.instant(), MockInstantSource.FIXED);
-        assertSame(test.withZone(ZoneOffset.UTC).equals(test.withZone(ZoneOffset.UTC)));
+        assertEquals(test.withZone(ZoneOffset.UTC), test.withZone(ZoneOffset.UTC));
         assertEquals(test.withZone(ZoneOffset.UTC).hashCode(), test.withZone(ZoneOffset.UTC).hashCode());
     }
 
