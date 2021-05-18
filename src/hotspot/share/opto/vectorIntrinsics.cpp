@@ -351,9 +351,10 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     operation = gen_call_to_svml(opr->get_con(), elem_bt, num_elem, opd1, opd2);
     if (operation == NULL) {
       if (C->print_intrinsics()) {
-        tty->print_cr("  ** svml call failed for %s_%s_%d", (elem_bt == T_FLOAT)?"float":"double",
-                                                            VectorSupport::svmlname[opr->get_con()],
-                                                            num_elem * type2aelembytes(elem_bt));
+        tty->print_cr("  ** svml call failed for %s_%s_%d",
+                         (elem_bt == T_FLOAT)?"float":"double",
+                         VectorSupport::svmlname[opr->get_con() - VectorSupport::VECTOR_OP_SVML_START],
+                         num_elem * type2aelembytes(elem_bt));
       }
       return false;
      }
@@ -1307,11 +1308,12 @@ bool LibraryCallKit::inline_vector_rearrange() {
   return true;
 }
 
-static void get_svml_address(int op, int bits, BasicType bt, char* name_ptr, int name_len, address* addr_ptr) {
+static void get_svml_address(int vop, int bits, BasicType bt, char* name_ptr, int name_len, address* addr_ptr) {
   assert(UseVectorStubs, "sanity");
   assert(name_ptr != NULL, "unexpected");
   assert(addr_ptr != NULL, "unexpected");
-  assert((op >= VectorSupport::VECTOR_OP_SVML_START) && (op <= VectorSupport::VECTOR_OP_SVML_END), "unexpected");
+  assert((vop >= VectorSupport::VECTOR_OP_SVML_START) && (vop <= VectorSupport::VECTOR_OP_SVML_END), "unexpected");
+  int op = vop - VectorSupport::VECTOR_OP_SVML_START;
 
 #ifdef __VECTOR_API_MATH_INTRINSICS_COMMON
   switch(bits) {
@@ -1321,11 +1323,11 @@ static void get_svml_address(int op, int bits, BasicType bt, char* name_ptr, int
     case 512: 
       if (bt == T_FLOAT) {
         snprintf(name_ptr, name_len, "vector_%s_float%d", VectorSupport::svmlname[op], bits);
-        *addr_ptr = StubRoutines::_vector_f_math[exact_log2(bits/64)][op - VectorSupport::VECTOR_OP_SVML_START];
+        *addr_ptr = StubRoutines::_vector_f_math[exact_log2(bits/64)][op];
       } else {
         assert(bt == T_DOUBLE, "must be FP type only");
         snprintf(name_ptr, name_len, "vector_%s_double%d", VectorSupport::svmlname[op], bits);
-        *addr_ptr = StubRoutines::_vector_d_math[exact_log2(bits/64)][op - VectorSupport::VECTOR_OP_SVML_START];
+        *addr_ptr = StubRoutines::_vector_d_math[exact_log2(bits/64)][op];
       }
       break;
     default: 
