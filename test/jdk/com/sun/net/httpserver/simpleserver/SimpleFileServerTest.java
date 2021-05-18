@@ -25,7 +25,7 @@
  * @test
  * @summary Basic tests for SimpleFileServerTest
  * @library /test/lib
- * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.Platform jdk.test.lib.net.URIBuilder
  * @run testng/othervm SimpleFileServerTest
  */
 
@@ -48,6 +48,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 import jdk.test.lib.Platform;
+import jdk.test.lib.net.URIBuilder;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
@@ -341,15 +342,20 @@ public class SimpleFileServerTest {
             var request = HttpRequest.newBuilder(uri(ss, "beginDelim%3C%3EEndDelim")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
-            assertTrue(response.body().contains("beginDelim&lt;&gt;EndDelim"));
-            assertTrue(response.body().contains("not found"));
+            assertTrue(response.body().contains("beginDelim%3C%3EEndDelim"));
+            assertTrue(response.body().contains("File not found"));
         } finally {
             ss.stop(0);
         }
     }
 
     static URI uri(HttpServer server, String path) {
-        return URI.create("http://localhost:%s/%s".formatted(server.getAddress().getPort(), path));
+        return URIBuilder.newBuilder()
+                .host("localhost")
+                .port(server.getAddress().getPort())
+                .scheme("http")
+                .path("/" + path)
+                .buildUnchecked();
     }
 
     static final DateTimeFormatter HTTP_DATE_FORMATTER =

@@ -24,6 +24,8 @@
 /*
  * @test
  * @summary Basic tests for HttpHandlers
+ * @library /test/lib
+ * @build jdk.test.lib.net.URIBuilder
  * @run testng/othervm HttpHandlersTest
  */
 
@@ -40,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jdk.test.lib.net.URIBuilder;
 import com.sun.net.httpserver.*;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -168,6 +171,11 @@ public class HttpHandlersTest {
     }
 
     static URI uri(HttpServer server, String path) {
-        return URI.create("http://localhost:%s/%s".formatted(server.getAddress().getPort(), path));
+        return URIBuilder.newBuilder()
+                .host("localhost")
+                .port(server.getAddress().getPort())
+                .scheme("http")
+                .path("/" + path)
+                .buildUnchecked();
     }
 }

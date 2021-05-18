@@ -36,7 +36,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
+import jdk.test.lib.net.URIBuilder;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import org.testng.annotations.BeforeTest;
@@ -50,6 +50,8 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @summary Basic tests for MIME types in response headers
  * @modules java.base/sun.net.www:+open
+ * @library /test/lib
+ * @build jdk.test.lib.net.URIBuilder
  * @run testng/othervm ServerMimeTypesResolutionTest
  */
 public class ServerMimeTypesResolutionTest {
@@ -164,7 +166,12 @@ public class ServerMimeTypesResolutionTest {
     }
 
     static URI uri(HttpServer server, String path) {
-        return URI.create("http://localhost:%s/%s".formatted(server.getAddress().getPort(), path));
+        return URIBuilder.newBuilder()
+                .host("localhost")
+                .port(server.getAddress().getPort())
+                .scheme("http")
+                .path("/" + path)
+                .buildUnchecked();
     }
 
     // This is not a unit test but a one-off test to check which common file extensions are not supported

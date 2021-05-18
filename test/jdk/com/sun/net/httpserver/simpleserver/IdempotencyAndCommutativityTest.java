@@ -34,8 +34,8 @@ import java.util.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jdk.test.lib.net.URIBuilder;
 import jdk.test.lib.util.FileUtils;
-
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import org.testng.annotations.AfterTest;
@@ -52,7 +52,7 @@ import static org.testng.Assert.assertTrue;
  * @summary Test idempotency and commutativity of responses with an exhaustive
  *          set of binary request sequences
  * @library /test/lib
- * @build jdk.test.lib.util.FileUtils
+ * @build jdk.test.lib.net.URIBuilder jdk.test.lib.util.FileUtils
  * @run testng/othervm  IdempotencyAndCommutativityTest
  */
 public class IdempotencyAndCommutativityTest {
@@ -137,6 +137,11 @@ public class IdempotencyAndCommutativityTest {
     }
 
     static URI uri(HttpServer server, String path) {
-        return URI.create("http://localhost:%s/%s".formatted(server.getAddress().getPort(), path));
+        return URIBuilder.newBuilder()
+                .host("localhost")
+                .port(server.getAddress().getPort())
+                .scheme("http")
+                .path("/" + path)
+                .buildUnchecked();
     }
 }
