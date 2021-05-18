@@ -73,6 +73,9 @@ public final class Secmod {
 
     private static final String TRUST_LIB_NAME = "nssckbi";
 
+    // Slot IDs - defined in j2secmod.h on the native side
+    // Values obtained from NSS's pkcs11i.h header
+
     private final static int NETSCAPE_SLOT_ID = 0x1;
 
     private final static int PRIVATE_KEY_SLOT_ID = 0x2;
@@ -411,8 +414,8 @@ public final class Secmod {
                 } else if (slotId == FIPS_SLOT_ID) {
                     type = ModuleType.FIPS;
                 } else {
-                    throw new RuntimeException("Unexpected slot ID in the" +
-                            " NSS Internal Module");
+                    throw new RuntimeException("Unexpected slot ID " + slotId +
+                            " in the NSS Internal Module");
                 }
             } else {
                 if (libraryName.endsWith(System.mapLibraryName(TRUST_LIB_NAME))

@@ -65,6 +65,7 @@ typedef struct PK11SlotInfoStr PK11SlotInfo;
 typedef struct SECMODModuleStr SECMODModule;
 typedef struct SECMODModuleListStr SECMODModuleList;
 
+// Defined in NSS's secmodt.h header
 /* PKCS #11 disable reasons */
 typedef enum {
     PK11_DIS_NONE = 0,
@@ -74,6 +75,13 @@ typedef enum {
     PK11_DIS_TOKEN_NOT_PRESENT = 4
 } PK11DisableReasons;
 
+// Slot IDs - defined in Secmod.java on the Java side
+// Values obtained from NSS's pkcs11i.h header
+#define NETSCAPE_SLOT_ID 1
+#define PRIVATE_KEY_SLOT_ID 2
+#define FIPS_SLOT_ID 3
+
+// Defined in NSS's secmodti.h header
 /* represent a pkcs#11 slot reference counted. */
 struct PK11SlotInfoStr {
     /* the PKCS11 function list for this slot */
@@ -163,6 +171,7 @@ struct PK11SlotInfoStr {
     int profileCount;
 };
 
+// Defined in NSS's secmodt.h header
 struct SECMODModuleStr {
     void         *v1;
     PRBool       internal;       /* true of internally linked modules, false
@@ -185,6 +194,7 @@ struct SECMODModuleStr {
     // incomplete, sizeof() is wrong
 };
 
+// Defined in NSS's secmodt.h header
 struct SECMODModuleListStr {
     SECMODModuleList    *next;
     SECMODModule        *module;
