@@ -162,7 +162,7 @@ public class ClassGenerator {
             String members = "";
             for (MessageIndex.Entry entry : messageIndex.getEntries(kind)) {
                 //emit members
-                members += String.join("\n\n", generateFactoryMethodsAndFields(entry));
+                members += String.join("\n\n", generateFactoryMethodsAndFields(messageIndex, entry));
                 //add imports
                 importedTypes.addAll(importedTypes(entry.message().getMessageInfo().getTypes()));
             }
@@ -233,7 +233,7 @@ public class ClassGenerator {
     /**
      * Generate a list of factory methods/fields to be added to a given factory nested class.
      */
-    List<String> generateFactoryMethodsAndFields(MessageIndex.Entry entry) {
+    List<String> generateFactoryMethodsAndFields(MessageIndex index, MessageIndex.Entry entry) {
         MessageInfo msgInfo = entry.message().getMessageInfo();
         List<MessageLine> lines = entry.message().getLines(false);
         String javadoc = lines.stream()
@@ -243,7 +243,7 @@ public class ClassGenerator {
         String factoryName = factoryName(entry.key());
         if (msgInfo.getTypes().isEmpty()) {
             //generate field
-            String body = generateDiagnosticConversionMethodIfNeeded(entry.kind, entry, factoryName, null);
+            String body = generateDiagnosticConversionMethodIfNeeded(index, entry.kind, entry, factoryName, null);
             String factoryField = StubKind.FACTORY_FIELD.format(entry.kind.keyClazz, factoryName,
                     "\"" + entry.prefix + "\"",
                     "\"" + entry.key + "\"",
@@ -255,7 +255,7 @@ public class ClassGenerator {
             for (List<MessageType> msgTypes : normalizeTypes(0, msgInfo.getTypes())) {
                 List<String> types = generateTypes(msgTypes);
                 List<String> argNames = argNames(types.size());
-                String body = generateDiagnosticConversionMethodIfNeeded(entry.kind, entry, factoryName, argNames);
+                String body = generateDiagnosticConversionMethodIfNeeded(index, entry.kind, entry, factoryName, argNames);
                 String suppressionString = needsSuppressWarnings(msgTypes) ?
                         StubKind.SUPPRESS_WARNINGS.format() : "";
                 String factoryMethod = StubKind.FACTORY_METHOD_DECL.format(suppressionString, entry.kind.keyClazz,
@@ -271,8 +271,9 @@ public class ClassGenerator {
         }
     }
 
-    String generateDiagnosticConversionMethodIfNeeded(FactoryKind thisKind, MessageIndex.Entry entry, String factoryName, List<String> argNames) {
-        List<MessageIndex.Entry> duplicates = entry.findOverloadedDiags();
+    String generateDiagnosticConversionMethodIfNeeded(MessageIndex index, FactoryKind thisKind, MessageIndex.Entry entry,
+                                                      String factoryName, List<String> argNames) {
+        List<MessageIndex.Entry> duplicates = index.findOverloadedDiags(entry);
         if (duplicates.isEmpty()) {
             return "";
         }
@@ -484,31 +485,31 @@ public class ClassGenerator {
 
         MessageIndex(MessageFile messageFile) {
             groupedEntries = messageFile.messages.entrySet().stream()
-                    .map(e -> Entry.fromKey(e.getKey(), e.getValue(), this))
+                    .map(e -> Entry.fromKey(e.getKey(), e.getValue()))
                     .collect(Collectors.groupingBy(Entry::key));
         }
 
-        static record Entry(FactoryKind kind, String prefix, String key, Message message, MessageIndex index) {
-            List<Entry> findOverloadedDiags() {
-                return index().groupedEntries.get(key).stream()
-                        .filter(e -> e.kind != this.kind &&
-                                e.message.getMessageInfo().toString().equals(message.getMessageInfo().toString())).toList();
-            }
-
-            static Entry fromKey(String key, Message message, MessageIndex messageIndex) {
+        record Entry(FactoryKind kind, String prefix, String key, Message message) {
+            static Entry fromKey(String key, Message message) {
                 String[] keyParts = key.split("\\.");
                 String prefix = keyParts[0];
                 FactoryKind kind = FactoryKind.parseFrom(keyParts[1]);
                 String rest = Stream.of(keyParts).skip(2)
                         .collect(Collectors.joining("."));
-                return new Entry(kind, prefix, rest, message, messageIndex);
+                return new Entry(kind, prefix, rest, message);
             }
-        };
+        }
 
         List<Entry> getEntries(FactoryKind kind) {
             return groupedEntries.values().stream()
                     .flatMap(e -> e.stream())
                     .filter(entry -> entry.kind() == kind).toList();
+        }
+
+        List<Entry> findOverloadedDiags(Entry entry) {
+            return groupedEntries.get(entry.key).stream()
+                    .filter(e -> e.kind != entry.kind &&
+                            e.message.getMessageInfo().toString().equals(entry.message.getMessageInfo().toString())).toList();
         }
     }
 }
