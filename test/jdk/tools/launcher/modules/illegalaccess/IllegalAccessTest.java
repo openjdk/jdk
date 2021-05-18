@@ -23,18 +23,18 @@
 
 /**
  * @test
- * @requires vm.compMode != "Xcomp"
+ * @bug 8266851
  * @library /test/lib
  * @build IllegalAccessTest
  * @run testng IllegalAccessTest
- * @summary Basic test for java --illegal-access=$VALUE
+ * @summary Make sure that --illegal-access=$VALUE is obsolete.
  */
 
 import jdk.test.lib.process.*;
 import org.testng.annotations.*;
 
 /**
- * Basic test of --illegal-access=value to deny or permit access to JDK internals.
+ * Make sure that --illegal-access=$VALUE is obsolete.
  */
 
 @Test
