@@ -104,7 +104,7 @@ public class TestTracePageSizes {
     // (To minimize chances of concurrent modification when parsing, as well as helping with error analysis)
     private static Path copySmaps() throws Exception {
         Path p1 = Paths.get("/proc/self/smaps");
-        Path p2 = Paths.get("smaps-copy-" +  ProcessHandle.current().pid() + "-" + run++ + ".txt");
+        Path p2 = Paths.get("smaps-copy-" +  ProcessHandle.current().pid() + "-" + (run++) + ".txt");
         Files.copy(p1, p2, StandardCopyOption.REPLACE_EXISTING);
         System.out.println("Copied " + p1 + " to " + p2 + "...");
         return p2;
