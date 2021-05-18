@@ -1012,8 +1012,6 @@ class InvokerBytecodeGenerator {
             return false;  // not on BCP
         if (cls.isHidden())
             return false;
-        if (ReflectUtil.isVMAnonymousClass(cls))   // FIXME: Unsafe::defineAnonymousClass to be removed
-            return false;
         if (!isStaticallyInvocableType(member.getMethodOrFieldType()))
             return false;
         if (!member.isPrivate() && VerifyAccess.isSamePackage(MethodHandle.class, cls))
@@ -1044,8 +1042,6 @@ class InvokerBytecodeGenerator {
         if (cls.isPrimitive())
             return true;  // int[].class, for example
         if (cls.isHidden())
-            return false;
-        if (ReflectUtil.isVMAnonymousClass(cls))   // FIXME: Unsafe::defineAnonymousClass to be removed
             return false;
         // could use VerifyAccess.isClassAccessible but the following is a safe approximation
         if (cls.getClassLoader() != Object.class.getClassLoader())

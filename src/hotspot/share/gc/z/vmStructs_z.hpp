@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ public:
 
   uint32_t* _ZGlobalSeqNum;
 
+  uintptr_t* _ZAddressOffsetMask;
   uintptr_t* _ZAddressGoodMask;
   uintptr_t* _ZAddressBadMask;
   uintptr_t* _ZAddressWeakBadMask;
@@ -60,6 +61,7 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   static_field(ZGlobalsForVMStructs,            _instance_p,          ZGlobalsForVMStructs*)         \
   nonstatic_field(ZGlobalsForVMStructs,         _ZGlobalPhase,        uint32_t*)                     \
   nonstatic_field(ZGlobalsForVMStructs,         _ZGlobalSeqNum,       uint32_t*)                     \
+  nonstatic_field(ZGlobalsForVMStructs,         _ZAddressOffsetMask,  uintptr_t*)                    \
   nonstatic_field(ZGlobalsForVMStructs,         _ZAddressGoodMask,    uintptr_t*)                    \
   nonstatic_field(ZGlobalsForVMStructs,         _ZAddressBadMask,     uintptr_t*)                    \
   nonstatic_field(ZGlobalsForVMStructs,         _ZAddressWeakBadMask, uintptr_t*)                    \

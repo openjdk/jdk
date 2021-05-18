@@ -1094,8 +1094,8 @@ void itableMethodEntry::initialize(InstanceKlass* klass, Method* m) {
 #ifdef ASSERT
   if (MetaspaceShared::is_in_shared_metaspace((void*)&_method) &&
      !MetaspaceShared::remapped_readwrite() &&
-     !MetaspaceShared::is_old_class(m->method_holder()) &&
-     !MetaspaceShared::is_old_class(klass)) {
+     !m->method_holder()->has_old_class_version() &&
+     !klass->has_old_class_version()) {
     // At runtime initialize_itable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader.
     // The dumptime itable method entry should be the same as the runtime entry.

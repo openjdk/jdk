@@ -76,7 +76,7 @@ static bool is_allowed(const Klass* k) {
   return !(k->is_abstract() || k->should_be_initialized());
 }
 
-static void fill_klasses(GrowableArray<const void*>& event_subklasses, const InstanceKlass* event_klass, Thread* thread) {
+static void fill_klasses(GrowableArray<const void*>& event_subklasses, const InstanceKlass* event_klass, JavaThread* thread) {
   assert(event_subklasses.length() == 0, "invariant");
   assert(event_klass != NULL, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
@@ -89,7 +89,7 @@ static void fill_klasses(GrowableArray<const void*>& event_subklasses, const Ins
   }
 }
 
-static void transform_klasses_to_local_jni_handles(GrowableArray<const void*>& event_subklasses, Thread* thread) {
+static void transform_klasses_to_local_jni_handles(GrowableArray<const void*>& event_subklasses, JavaThread* thread) {
   assert(event_subklasses.is_nonempty(), "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
 

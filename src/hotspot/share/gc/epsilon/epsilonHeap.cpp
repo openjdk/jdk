@@ -331,9 +331,10 @@ void EpsilonHeap::print_heap_info(size_t used) const {
 }
 
 void EpsilonHeap::print_metaspace_info() const {
-  size_t reserved  = MetaspaceUtils::reserved_bytes();
-  size_t committed = MetaspaceUtils::committed_bytes();
-  size_t used      = MetaspaceUtils::used_bytes();
+  MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
+  size_t reserved  = stats.reserved();
+  size_t committed = stats.committed();
+  size_t used      = stats.used();
 
   if (reserved != 0) {
     log_info(gc, metaspace)("Metaspace: " SIZE_FORMAT "%s reserved, " SIZE_FORMAT "%s (%.2f%%) committed, "
