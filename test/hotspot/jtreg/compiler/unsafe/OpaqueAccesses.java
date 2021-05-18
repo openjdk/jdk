@@ -33,17 +33,7 @@
  *                                 compiler.unsafe.OpaqueAccesses
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                                 -XX:-TieredCompilation -Xbatch
- *                                 -XX:+UseCompressedOops -XX:-UseCompressedClassPointers
- *                                 -XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*
- *                                 compiler.unsafe.OpaqueAccesses
- * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                                 -XX:-TieredCompilation -Xbatch
  *                                 -XX:-UseCompressedOops -XX:+UseCompressedClassPointers
- *                                 -XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*
- *                                 compiler.unsafe.OpaqueAccesses
- * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                                 -XX:-TieredCompilation -Xbatch
- *                                 -XX:-UseCompressedOops -XX:-UseCompressedClassPointers
  *                                 -XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*
  *                                 compiler.unsafe.OpaqueAccesses
  */

@@ -27,14 +27,3 @@
  *  are not tested explicitly in the standard gtests.
  *
  */
-
-/* @test
- * @bug 8264008
- * @summary Run metaspace utils related gtests with compressed class pointers off
- * @requires vm.bits == 64
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=MetaspaceUtils* -XX:-UseCompressedClassPointers
- */

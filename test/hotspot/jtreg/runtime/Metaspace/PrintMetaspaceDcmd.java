@@ -68,26 +68,6 @@ import jdk.test.lib.JDKToolFinder;
  */
 
 /*
- * @test id=test-64bit-noccs
- * @summary Test the VM.metaspace command
- * @requires vm.bits == "64"
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run main/othervm -Dwithout-compressed-class-space -XX:MaxMetaspaceSize=201M -Xmx100M -XX:-UseCompressedOops -XX:-UseCompressedClassPointers PrintMetaspaceDcmd
- */
-
- /*
- * @test id=test-nospecified
- * @summary Test the VM.metaspace command
- * @requires vm.bits == "64"
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run main/othervm -Dno-specified-flag -Xmx100M -XX:-UseCompressedOops -XX:-UseCompressedClassPointers PrintMetaspaceDcmd
- */
-
-/*
  * @test test-32bit
  * @summary Test the VM.metaspace command
  * @requires vm.bits == "32"

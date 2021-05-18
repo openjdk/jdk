@@ -47,8 +47,8 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseSerialGC gc.metaspace.TestMetaspacePerfCounters
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseSerialGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:+UsePerfData -XX:+UseSerialGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UsePerfData -XX:+UseSerialGC gc.metaspace.TestMetaspacePerfCounters
  */
 
 /* @test TestMetaspacePerfCountersParallel
@@ -61,8 +61,8 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseParallelGC gc.metaspace.TestMetaspacePerfCounters
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseParallelGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:+UsePerfData -XX:+UseParallelGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UsePerfData -XX:+UseParallelGC gc.metaspace.TestMetaspacePerfCounters
  */
 
 /* @test TestMetaspacePerfCountersG1
@@ -75,8 +75,8 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseG1GC gc.metaspace.TestMetaspacePerfCounters
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseG1GC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:+UsePerfData -XX:+UseG1GC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UsePerfData -XX:+UseG1GC gc.metaspace.TestMetaspacePerfCounters
  */
 
 /* @test TestMetaspacePerfCountersShenandoah
@@ -89,8 +89,8 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
  */
 public class TestMetaspacePerfCounters {
     public static Class<?> fooClass = null;
@@ -174,7 +174,7 @@ public class TestMetaspacePerfCounters {
     }
 
     private static boolean isUsingCompressedClassPointers() {
-        return Platform.is64bit() && InputArguments.contains("-XX:+UseCompressedClassPointers");
+        return Platform.is64bit();
     }
 
     private static long getMinCapacity(String ns) throws Exception {

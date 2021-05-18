@@ -86,16 +86,3 @@
  * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=3 -XX:+MetaspaceGuardAllocations
  */
-
-
-
-
-/* @test id=balanced-no-ccs
- * @summary Run metaspace-related gtests with compressed class pointers off
- * @requires vm.bits == 64
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:MetaspaceReclaimPolicy=balanced -XX:-UseCompressedClassPointers
- */

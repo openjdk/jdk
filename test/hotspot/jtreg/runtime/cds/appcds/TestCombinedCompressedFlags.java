@@ -46,12 +46,10 @@ public class TestCombinedCompressedFlags {
 
     static class ConfArg {
         public boolean useCompressedOops;            // UseCompressedOops
-        public boolean useCompressedClassPointers;   // UseCompressedClassPointers
         public String  msg;
         public int code;
-        public ConfArg(boolean useCompressedOops, boolean useCompressedClassPointers, String msg, int code) {
+        public ConfArg(boolean useCompressedOops, String msg, int code) {
             this.useCompressedOops = useCompressedOops;
-            this.useCompressedClassPointers = useCompressedClassPointers;
             this.msg  = msg;
             this.code = code;
         }
@@ -66,65 +64,28 @@ public class TestCombinedCompressedFlags {
         }
         private void initExecArgs() {
            /* The combinations have four cases.
-            *          UseCompressedOops   UseCompressedClassPointers  Result
+            *          UseCompressedOops   Result
             *    1.
-            *    dump: on                  on
-            *    test: on                  on                          Pass
-            *          on                  off                         Fail
-            *          off                 on                          Fail
-            *          off                 off                         Fail
+            *    dump: on
+            *    test: on                  Pass
+            *          off                 Fail
             *    2.
-            *    dump: on                  off
-            *    test: on                  off                         Pass
-            *          on                  on                          Fail
-            *          off                 on                          Pass
-            *          off                 off                         Fail
-            *    3.
-            *    dump: off                 on
-            *    test: off                 on                          Pass
-            *          on                  on                          Fail
-            *          on                  off                         Fail
-            *    4.
-            *    dump: off                 off
-            *    test: off                 off                         Pass
-            *          on                  on                          Fail
-            *          on                  off                         Fail
+            *    dump: off
+            *    test: off                 Pass
+            *          on                  Fail
             **/
             execArgs = new ArrayList<ConfArg>();
-            if (dumpArg.useCompressedOops && dumpArg.useCompressedClassPointers) {
+            if (dumpArg.useCompressedOops) {
                 execArgs
-                    .add(new ConfArg(true, true, HELLO_STRING, PASS));
+                    .add(new ConfArg(true, HELLO_STRING, PASS));
                 execArgs
-                    .add(new ConfArg(true, false, EXEC_ABNORMAL_MSG, FAIL));
-                execArgs
-                    .add(new ConfArg(false, true, EXEC_ABNORMAL_MSG, FAIL));
-                execArgs
-                    .add(new ConfArg(false, false, EXEC_ABNORMAL_MSG, FAIL));
+                    .add(new ConfArg(false, EXEC_ABNORMAL_MSG, FAIL));
 
-            }  else if(dumpArg.useCompressedOops && !dumpArg.useCompressedClassPointers) {
+            } else if (!dumpArg.useCompressedOops) {
                 execArgs
-                    .add(new ConfArg(true, false, HELLO_STRING, PASS));
+                    .add(new ConfArg(false, HELLO_STRING, PASS));
                 execArgs
-                    .add(new ConfArg(true, true, EXEC_ABNORMAL_MSG, FAIL));
-                execArgs
-                    .add(new ConfArg(false, true, EXEC_ABNORMAL_MSG, FAIL));
-                execArgs
-                    .add(new ConfArg(false, false, EXEC_ABNORMAL_MSG, FAIL));
-
-            } else if (!dumpArg.useCompressedOops && dumpArg.useCompressedClassPointers) {
-                execArgs
-                    .add(new ConfArg(false, true, HELLO_STRING, PASS));
-                execArgs
-                    .add(new ConfArg(true, true, EXEC_ABNORMAL_MSG, FAIL));
-                execArgs
-                    .add(new ConfArg(true, false, EXEC_ABNORMAL_MSG, FAIL));
-            } else if (!dumpArg.useCompressedOops && !dumpArg.useCompressedClassPointers) {
-                execArgs
-                    .add(new ConfArg(false, false, HELLO_STRING, PASS));
-                execArgs
-                    .add(new ConfArg(true, true, EXEC_ABNORMAL_MSG, FAIL));
-                execArgs
-                    .add(new ConfArg(true, false, EXEC_ABNORMAL_MSG, FAIL));
+                    .add(new ConfArg(true, EXEC_ABNORMAL_MSG, FAIL));
             }
         }
     }
@@ -134,23 +95,14 @@ public class TestCombinedCompressedFlags {
         else    return "-XX:-UseCompressedOops";
     }
 
-    public static String getCompressedClassPointersArg(boolean on) {
-        if (on) return "-XX:+UseCompressedClassPointers";
-        else    return "-XX:-UseCompressedClassPointers";
-    }
-
     public static List<RunArg> runList;
 
     public static void configureRunArgs() {
         runList = new ArrayList<RunArg>();
         runList
-            .add(new RunArg(new ConfArg(true, true, null, PASS)));
+            .add(new RunArg(new ConfArg(true, null, PASS)));
         runList
-            .add(new RunArg(new ConfArg(true, false, null, PASS)));
-        runList
-            .add(new RunArg(new ConfArg(false, true, null, PASS)));
-        runList
-            .add(new RunArg(new ConfArg(false, false, null, PASS)));
+            .add(new RunArg(new ConfArg(false, null, PASS)));
     }
 
     public static void main(String[] args) throws Exception {
@@ -162,7 +114,6 @@ public class TestCombinedCompressedFlags {
                 .dump(helloJar,
                       new String[] {"Hello"},
                       getCompressedOopsArg(t.dumpArg.useCompressedOops),
-                      getCompressedClassPointersArg(t.dumpArg.useCompressedClassPointers),
                       "-Xlog:cds",
                       "-XX:NativeMemoryTracking=detail");
             out.shouldContain("Dumping shared data to file:");
@@ -175,7 +126,6 @@ public class TestCombinedCompressedFlags {
                                       "-Xlog:cds",
                                       "-XX:NativeMemoryTracking=detail",
                                       getCompressedOopsArg(c.useCompressedOops),
-                                      getCompressedClassPointersArg(c.useCompressedClassPointers),
                                       "Hello");
                 out.shouldContain(c.msg);
                 out.shouldHaveExitValue(c.code);
