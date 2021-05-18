@@ -70,7 +70,6 @@ void TestReserveMemorySpecial_test() {
   char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), NULL, false);
   if (result == NULL) {
       // failed to allocate memory, skipping the test
-      log_info(test)("Skipping Windows large page test since first large page allocation failed");
       return;
   }
   MemoryReleaser m1(result, large_allocation_size);
