@@ -253,13 +253,13 @@ public abstract class BaseOptions {
      * Argument for command line option {@code --since}.
      */
     // A list containing release names
-    private final List<String> since = new ArrayList<>();
+    private List<String> since = List.of();
 
     /**
-     * Argument for command line option {@code --since-name}.
+     * Argument for command line option {@code --since-label}.
      */
-    // A list containing release names
-    private String sinceName;
+    // Custom text to use in heading of New API page
+    private String sinceLabel;
 
     /**
      * Argument for command-line option {@code -sourcetab}.
@@ -492,15 +492,15 @@ public abstract class BaseOptions {
                 new Option(resources, "--since", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        since.add(args.get(0));
+                        since = Arrays.stream(args.get(0).split(",")).map(String::trim).toList();
                         return true;
                     }
                 },
 
-                new Option(resources, "--since-name", 1) {
+                new Option(resources, "--since-label", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        sinceName = args.get(0);
+                        sinceLabel = args.get(0);
                         return true;
                     }
                 },
@@ -929,10 +929,10 @@ public abstract class BaseOptions {
     }
 
     /**
-     * Arguments for command line option {@code --since-name}.
+     * Arguments for command line option {@code --since-label}.
      */
-    public String sinceName() {
-        return sinceName;
+    public String sinceLabel() {
+        return sinceLabel;
     }
 
     /**

@@ -333,7 +333,7 @@ define SetupApiDocsGenerationBody
   $1_OPTIONS += -overview $$($1_OVERVIEW)
 
   # Add summary pages for new/deprecated APIs in recent releases
-  $1_OPTIONS += --since 12 --since 13 --since 14 --since 15 --since 16 --since 17 --since-name "JDK 11"
+  $1_OPTIONS += --since 12,13,14,15,16,17 --since-label "New API since JDK 11"
 
   $$(foreach g, $$($1_GROUPS), \
     $$(eval $1_OPTIONS += -group "$$($$g_GROUP_NAME)" "$$($$g_GROUP_MODULES)") \

@@ -130,10 +130,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
     }
 
     private static String getHeading(NewAPIBuilder builder, HtmlConfiguration configuration) {
-        return configuration.docResources.getText(
-                builder.releases.size() > 1 ? "doclet.New_API_Since" : "doclet.New_API_In",
-                configuration.getOptions().sinceName() == null
-                        ? builder.releases.get(0)
-                        : configuration.getOptions().sinceName());
+        String label = configuration.getOptions().sinceLabel();
+        return label == null ? configuration.docResources.getText("doclet.New_API") : label;
     }
 }
