@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires vm.debug == true & vm.flavor == "server"
+ * @requires vm.debug == true & vm.compiler2.enabled
  * @run main/othervm -Xbatch -XX:-TieredCompilation
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+TraceIterativeGVN
  *                   compiler.debug.TraceIterativeGVN
