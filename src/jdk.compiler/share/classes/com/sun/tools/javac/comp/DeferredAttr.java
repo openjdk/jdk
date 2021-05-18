@@ -759,7 +759,6 @@ public class DeferredAttr extends JCTree.Visitor {
                 case SPECULATIVE:
                     if (deferredStuckPolicy.isStuck()) {
                         new StructuralStuckChecker().check(dt, resultInfo, deferredAttrContext);
-                        dt.mode = deferredAttrContext.mode;
                         return true;
                     } else {
                         Assert.error("Cannot get here");
