@@ -310,7 +310,7 @@ void ObjArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
 }
 
 
-Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
+Klass* ObjArrayKlass::array_klass(int n, TRAPS) {
 
   assert(dimension() <= n, "check order of chain");
   int dim = dimension();
@@ -318,10 +318,8 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
 
   // lock-free read needs acquire semantics
   if (higher_dimension_acquire() == NULL) {
-    if (or_null) return NULL;
 
-    ResourceMark rm;
-    JavaThread *jt = THREAD->as_Java_thread();
+    ResourceMark rm(THREAD);
     {
       // Ensure atomic creation of higher dimensions
       MutexLocker mu(THREAD, MultiArray_lock);
@@ -342,15 +340,31 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
   }
 
   ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
-  if (or_null) {
-    return ak->array_klass_or_null(n);
-  }
   THREAD->check_possible_safepoint();
   return ak->array_klass(n, THREAD);
 }
 
-Klass* ObjArrayKlass::array_klass_impl(bool or_null, TRAPS) {
-  return array_klass_impl(or_null, dimension() +  1, THREAD);
+Klass* ObjArrayKlass::array_klass_or_null(int n) {
+
+  assert(dimension() <= n, "check order of chain");
+  int dim = dimension();
+  if (dim == n) return this;
+
+  // lock-free read needs acquire semantics
+  if (higher_dimension_acquire() == NULL) {
+    return NULL;
+  }
+
+  ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
+  return ak->array_klass_or_null(n);
+}
+
+Klass* ObjArrayKlass::array_klass(TRAPS) {
+  return array_klass(dimension() +  1, THREAD);
+}
+
+Klass* ObjArrayKlass::array_klass_or_null() {
+  return array_klass_or_null(dimension() +  1);
 }
 
 bool ObjArrayKlass::can_be_primary_super_slow() const {
@@ -396,16 +410,14 @@ void ObjArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_bottom_klass);
 }
 
-// JVM support
-
-jint ObjArrayKlass::compute_modifier_flags(TRAPS) const {
+jint ObjArrayKlass::compute_modifier_flags() const {
   // The modifier for an objectArray is the same as its element
   if (element_klass() == NULL) {
     assert(Universe::is_bootstrapping(), "partial objArray only at startup");
     return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
   }
   // Return the flags of the bottom element type.
-  jint element_flags = bottom_klass()->compute_modifier_flags(CHECK_0);
+  jint element_flags = bottom_klass()->compute_modifier_flags();
 
   return (element_flags & (JVM_ACC_PUBLIC | JVM_ACC_PRIVATE | JVM_ACC_PROTECTED))
                         | (JVM_ACC_ABSTRACT | JVM_ACC_FINAL);

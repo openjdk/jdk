@@ -27,6 +27,199 @@
  * Defines the Java API for XML Processing (JAXP), the Streaming API for XML (StAX),
  * the Simple API for XML (SAX), and the W3C Document Object Model (DOM) API.
  *
+ * <h2 id="LookupMechanism">JAXP Lookup Mechanism</h2>
+ * JAXP defines an ordered lookup procedure to determine the implementation class
+ * to load for the JAXP factories. Factories that support the mechanism are listed
+ * in the table below along with the method, System Property name, Configuration
+ * File, and System Default method to be used in the procedure.
+ *
+ * <table class="plain" id="Factories">
+ * <caption>JAXP Factories</caption>
+ * <thead>
+ * <tr>
+ * <th scope="col">Factory</th>
+ * <th scope="col">Method</th>
+ * <th scope="col">System Property Name</th>
+ * <th scope="col">Configuration File</th>
+ * <th scope="col">System Default</th>
+ * </tr>
+ * </thead>
+ *
+ * <tbody>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="DOM">
+ *     {@link javax.xml.parsers.DocumentBuilderFactory DocumentBuilderFactory}
+ * </th>
+ * <td>{@link javax.xml.parsers.DocumentBuilderFactory#newInstance() newInstance()}</td>
+ * <td>{@code javax.xml.parsers.DocumentBuilderFactory}</td>
+ * <td><a href="#JaxpProperties">jaxp.properties</a></td>
+ * <td>{@link javax.xml.parsers.DocumentBuilderFactory#newDefaultInstance() newDefaultInstance()}</td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="SAX">
+ *     {@link javax.xml.parsers.SAXParserFactory SAXParserFactory}
+ * </th>
+ * <td>{@link javax.xml.parsers.SAXParserFactory#newInstance() newInstance()}</td>
+ * <td>{@code javax.xml.parsers.SAXParserFactory}</td>
+ * <td><a href="#JaxpProperties">jaxp.properties</a></td>
+ * <td>{@link javax.xml.parsers.SAXParserFactory#newDefaultInstance() newDefaultInstance()}</td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="StAXEvent">
+ *     {@link javax.xml.stream.XMLEventFactory XMLEventFactory}
+ * </th>
+ * <td>{@link javax.xml.stream.XMLEventFactory#newFactory() newFactory()}</td>
+ * <td>{@code javax.xml.stream.XMLEventFactory}</td>
+ * <td>
+ *     <a href="#StAXProperties">stax.properties</a> and then
+ *     <a href="#JaxpProperties">jaxp.properties</a>
+ * </td>
+ * <td>{@link javax.xml.stream.XMLEventFactory#newDefaultFactory() newDefaultFactory()}</td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="StAXInput">
+ *     {@link javax.xml.stream.XMLInputFactory XMLInputFactory}
+ * </th>
+ * <td>{@link javax.xml.stream.XMLInputFactory#newFactory() newFactory()}</td>
+ * <td>{@code javax.xml.stream.XMLInputFactory}</td>
+ * <td>
+ *     <a href="#StAXProperties">stax.properties</a> and then
+ *     <a href="#JaxpProperties">jaxp.properties</a>
+ * </td>
+ * <td>{@link javax.xml.stream.XMLInputFactory#newDefaultFactory() newDefaultFactory()}</td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="StAXOutput">
+ *     {@link javax.xml.stream.XMLOutputFactory XMLOutputFactory}
+ * </th>
+ * <td>{@link javax.xml.stream.XMLOutputFactory#newFactory() newFactory()}</td>
+ * <td>{@code javax.xml.stream.XMLOutputFactory}</td>
+ * <td>
+ *     <a href="#StAXProperties">stax.properties</a> and then
+ *     <a href="#JaxpProperties">jaxp.properties</a>
+ * </td>
+ * <td>{@link javax.xml.stream.XMLOutputFactory#newDefaultFactory() newDefaultFactory()}</td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XSLT">
+ *     {@link javax.xml.transform.TransformerFactory TransformerFactory}
+ * </th>
+ * <td>{@link javax.xml.transform.TransformerFactory#newInstance() newInstance()}</td>
+ * <td>{@code javax.xml.transform.TransformerFactory}</td>
+ * <td><a href="#JaxpProperties">jaxp.properties</a></td>
+ * <td>{@link javax.xml.transform.TransformerFactory#newDefaultInstance() newDefaultInstance()}</td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="Validation">
+ *     {@link javax.xml.validation.SchemaFactory SchemaFactory}
+ * </th>
+ * <td>{@link javax.xml.validation.SchemaFactory#newInstance(java.lang.String) newInstance(schemaLanguage)}</td>
+ * <td>{@code javax.xml.validation.SchemaFactory:}<i>schemaLanguage</i>[1]</td>
+ * <td><a href="#JaxpProperties">jaxp.properties</a></td>
+ * <td>{@link javax.xml.validation.SchemaFactory#newDefaultInstance() newDefaultInstance()}</td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XPath">
+ *     {@link javax.xml.xpath.XPathFactory XPathFactory}
+ * </th>
+ * <td>{@link javax.xml.xpath.XPathFactory#newInstance(java.lang.String) newInstance(uri)}</td>
+ * <td>{@link javax.xml.xpath.XPathFactory#DEFAULT_PROPERTY_NAME DEFAULT_PROPERTY_NAME} + ":uri"[2]</td>
+ * <td><a href="#JaxpProperties">jaxp.properties</a></td>
+ * <td>{@link javax.xml.xpath.XPathFactory#newDefaultInstance() newDefaultInstance()}</td>
+ * </tr>
+ * </tbody>
+ * </table>
+ *
+ * <b>[1]</b> where <i>schemaLanguage</i> is the parameter to the
+ * {@link javax.xml.validation.SchemaFactory#newInstance(java.lang.String) newInstance(schemaLanguage)}
+ * method.
+ * <p>
+ * <b>[2]</b> where <i>uri</i> is the parameter to the
+ * {@link javax.xml.xpath.XPathFactory#newInstance(java.lang.String) newInstance(uri)}
+ * method.
+ *
+ * <h3 id="JaxpProperties">jaxp.properties</h3>
+ * {@code jaxp.properties} is a configuration file in standard
+ * {@link java.util.Properties} format and typically located in the {@code conf}
+ * directory of the Java installation. It contains the fully qualified
+ * name of the implementation class with the key being the system property name
+ * defined in <a href="#Factories">the table</a> above.
+ * <p>
+ * The {@code jaxp.properties} file is read only once by the implementation and
+ * the values are then cached for future use.  If the file does not exist when
+ * the first attempt is made to read from it, no further attempts
+ * are made to check for its existence. It is not possible to change the value
+ * of any property after it has been read for the first time.
+ *
+ * <h3 id="StAXProperties">stax.properties</h3>
+ * {@code stax.properties} is a configuration file that functions the same as
+ * {@code jaxp.properties} except that it is only used by StAX factory lookup.
+ *
+ * <h3 id="LookupProcedure">Lookup Procedure</h3>
+ * The <a href="#Factories">JAXP Factories</a> follow the procedure described
+ * below in order to locate and load the implementation class:
+ *
+ * <ul>
+ * <li>
+ * Use the system property as described in column System Property of the table
+ * <a href="#Factories">JAXP Factories</a> above.
+ * </li>
+ * <li>
+ * <p>
+ * Use the configuration file <a href="#JaxpProperties">jaxp.properties</a> as
+ * indicated in the table <a href="#Factories">JAXP Factories</a>. For StAX,
+ * if <a href="#StAXProperties">stax.properties</a> exists, the factories will
+ * first attempt to read from it instead of <a href="#JaxpProperties">jaxp.properties</a>.
+ * </li>
+ * <li>
+ * <p>
+ * Use the service-provider loading facility, defined by the
+ * {@link java.util.ServiceLoader} class, to attempt to locate and load an
+ * implementation of the service using the {@linkplain
+ * java.util.ServiceLoader#load(java.lang.Class) default loading mechanism}:
+ * the service-provider loading facility will use the {@linkplain
+ * java.lang.Thread#getContextClassLoader() current thread's context class loader}
+ * to attempt to load the service. If the context class
+ * loader is null, the {@linkplain
+ * ClassLoader#getSystemClassLoader() system class loader} will be used.
+ *
+ * <h3>{@link javax.xml.validation.SchemaFactory SchemaFactory}</h3>
+ * In case of the {@link javax.xml.validation.SchemaFactory SchemaFactory},
+ * each potential service provider is required to implement the method
+ * {@link javax.xml.validation.SchemaFactory#isSchemaLanguageSupported(java.lang.String)
+ * isSchemaLanguageSupported(String schemaLanguage)}.
+ * The first service provider found that supports the specified schema language
+ * is returned.
+ *
+ * <h3>{@link javax.xml.xpath.XPathFactory XPathFactory}</h3>
+ * In case of the {@link javax.xml.xpath.XPathFactory XPathFactory},
+ * each potential service provider is required to implement the method
+ * {@link javax.xml.xpath.XPathFactory#isObjectModelSupported(String objectModel)
+ * isObjectModelSupported(String objectModel)}.
+ * The first service provider found that supports the specified object model is
+ * returned.
+ * </li>
+ * <li>
+ * <p>
+ * Otherwise, the {@code system-default} implementation is returned, which is
+ * equivalent to calling the {@code newDefaultInstance() or newDefaultFactory()}
+ * method as shown in column System Default of the table
+ * <a href="#Factories">JAXP Factories</a> above.
+ *
+ * <h3>{@link javax.xml.validation.SchemaFactory SchemaFactory}</h3>
+ * In case of the {@link javax.xml.validation.SchemaFactory SchemaFactory},
+ * there must be a {@linkplain javax.xml.validation.SchemaFactory#newDefaultInstance()
+ * platform default} {@code SchemaFactory} for W3C XML Schema.
+ *
+ * <h3>{@link javax.xml.xpath.XPathFactory XPathFactory}</h3>
+ * In case of the {@link javax.xml.xpath.XPathFactory XPathFactory},
+ * there must be a
+ * {@linkplain javax.xml.xpath.XPathFactory#newDefaultInstance() platform default}
+ * {@code XPathFactory} for the W3C DOM, i.e.
+ * {@link javax.xml.xpath.XPathFactory#DEFAULT_OBJECT_MODEL_URI DEFAULT_OBJECT_MODEL_URI}.
+ * </li>
+ * </ul>
+ *
  * @implNote
  * <h2>Implementation Specific Features and Properties</h2>
  *
@@ -79,15 +272,12 @@
  * to the creation of a processor and may be cleared afterwards.
  *
  * <h3>jaxp.properties</h3>
- * A system property can be specified in the {@code jaxp.properties} file to
- * set the behavior for all invocations of the JDK. The format is
+ * A system property can be specified in the <a href="#JaxpProperties">jaxp.properties</a>
+ * file to set the behavior for all invocations of the JDK. The format is
  * {@code system-property-name=value}. For example:
  * <pre>
  *     {@code jdk.xml.isStandalone=true}
  * </pre>
- * <p>
- * For details about the JAXP configuration file {@code jaxp.properties}, refer to
- * {@link javax.xml.parsers.SAXParserFactory#newInstance() SAXParserFactory#newInstance}.
  *
  * <h3 id="ScopeAndOrder">Scope and Order</h3>
  * The {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING} feature

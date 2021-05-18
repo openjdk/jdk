@@ -318,7 +318,6 @@ class LoopInvariantCodeMotion : public StackObj  {
   ValueStack *          _state;
   bool                  _insert_is_pred;
 
-  void set_invariant(Value v) const    { _gvn->set_processed(v); }
   bool is_invariant(Value v) const     { return _gvn->is_processed(v); }
 
   void process_block(BlockBegin* block);
@@ -328,7 +327,7 @@ class LoopInvariantCodeMotion : public StackObj  {
 };
 
 LoopInvariantCodeMotion::LoopInvariantCodeMotion(ShortLoopOptimizer *slo, GlobalValueNumbering* gvn, BlockBegin* loop_header, BlockList* loop_blocks)
-  : _gvn(gvn), _short_loop_optimizer(slo) {
+  : _gvn(gvn), _short_loop_optimizer(slo), _insertion_point(NULL), _state(NULL), _insert_is_pred(false) {
 
   TRACE_VALUE_NUMBERING(tty->print_cr("using loop invariant code motion loop_header = %d", loop_header->block_id()));
   TRACE_VALUE_NUMBERING(tty->print_cr("** loop invariant code motion for short loop B%d", loop_header->block_id()));
@@ -367,7 +366,6 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
   Instruction* cur = block->next();
 
   while (cur != NULL) {
-
     // determine if cur instruction is loop invariant
     // only selected instruction types are processed here
     bool cur_invariant = false;
@@ -388,6 +386,12 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
     } else if (cur->as_LoadIndexed() != NULL) {
       LoadIndexed *li = (LoadIndexed *)cur->as_LoadIndexed();
       cur_invariant = !_short_loop_optimizer->has_indexed_store(as_BasicType(cur->type())) && is_invariant(li->array()) && is_invariant(li->index()) && _insert_is_pred;
+    } else if (cur->as_NegateOp() != NULL) {
+      NegateOp* neg = (NegateOp*)cur->as_NegateOp();
+      cur_invariant = is_invariant(neg->x());
+    } else if (cur->as_Convert() != NULL) {
+      Convert* cvt = (Convert*)cur->as_Convert();
+      cur_invariant = is_invariant(cvt->value());
     }
 
     if (cur_invariant) {
@@ -412,6 +416,7 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
       cur->set_exception_handlers(NULL);
 
       TRACE_VALUE_NUMBERING(tty->print_cr("Instruction %c%d is loop invariant", cur->type()->tchar(), cur->id()));
+      TRACE_VALUE_NUMBERING(cur->print_line());
 
       if (cur->state_before() != NULL) {
         cur->set_state_before(_state->copy());
@@ -421,7 +426,6 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
       }
 
       cur = prev->set_next(next);
-
     } else {
       prev = cur;
       cur = cur->next();
@@ -585,7 +589,7 @@ void GlobalValueNumbering::substitute(Instruction* instr) {
   if (subst != instr) {
     assert(!subst->has_subst(), "can't have a substitution");
 
-    TRACE_VALUE_NUMBERING(tty->print_cr("substitution for %d set to %d", instr->id(), subst->id()));
+    TRACE_VALUE_NUMBERING(tty->print_cr("substitution for %c%d set to %c%d", instr->type()->tchar(), instr->id(), subst->type()->tchar(), subst->id()));
     instr->set_subst(subst);
     _has_substitutions = true;
   }

@@ -119,7 +119,7 @@ void VMThread::create() {
 
   if (UsePerfData) {
     // jvmstat performance counters
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     _perf_accumulated_vm_operation_time =
                  PerfDataManager::create_counter(SUN_THREADS, "vmOperationTime",
                                                  PerfData::U_Ticks, CHECK);
@@ -521,7 +521,9 @@ void VMThread::execute(VM_Operation* op) {
   SkipGCALot sgcalot(t);
 
   // JavaThread or WatcherThread
-  t->check_for_valid_safepoint_state();
+  if (t->is_Java_thread()) {
+    t->as_Java_thread()->check_for_valid_safepoint_state();
+  }
 
   // New request from Java thread, evaluate prologue
   if (!op->doit_prologue()) {

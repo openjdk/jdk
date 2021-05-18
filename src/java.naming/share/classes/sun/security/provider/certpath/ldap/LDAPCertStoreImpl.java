@@ -72,19 +72,19 @@ final class LDAPCertStoreImpl {
     private static final String ARL = "authorityRevocationList;binary";
 
     // Constants for various empty values
-    private final static String[] STRING0 = new String[0];
+    private static final String[] STRING0 = new String[0];
 
-    private final static byte[][] BB0 = new byte[0][];
+    private static final byte[][] BB0 = new byte[0][];
 
-    private final static Attributes EMPTY_ATTRIBUTES = new BasicAttributes();
+    private static final Attributes EMPTY_ATTRIBUTES = new BasicAttributes();
 
     // cache related constants
-    private final static int DEFAULT_CACHE_SIZE = 750;
-    private final static int DEFAULT_CACHE_LIFETIME = 30;
+    private static final int DEFAULT_CACHE_SIZE = 750;
+    private static final int DEFAULT_CACHE_LIFETIME = 30;
 
-    private final static int LIFETIME;
+    private static final int LIFETIME;
 
-    private final static String PROP_LIFETIME =
+    private static final String PROP_LIFETIME =
                             "sun.security.certpath.ldap.cache.lifetime";
 
     /*
@@ -92,7 +92,7 @@ final class LDAPCertStoreImpl {
      * JNDI application resource files lookup to prevent recursion issues
      * when validating signed JARs with LDAP URLs in certificates.
      */
-    private final static String PROP_DISABLE_APP_RESOURCE_FILES =
+    private static final String PROP_DISABLE_APP_RESOURCE_FILES =
         "sun.security.certpath.ldap.disable.app.resource.files";
 
     static {

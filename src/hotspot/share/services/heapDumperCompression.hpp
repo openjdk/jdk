@@ -199,6 +199,7 @@ class CompressionBackend : StackObj {
   void free_work(WriteWork* work);
   void free_work_list(WorkList* list);
 
+  void do_foreground_work();
   WriteWork* get_work();
   void do_compress(WriteWork* work);
   void finish_work(WriteWork* work);
@@ -221,8 +222,8 @@ public:
   // Commits the old buffer (using the value in *used) and sets up a new one.
   void get_new_buffer(char** buffer, size_t* used, size_t* max);
 
-  // The entry point for a worker thread. If single_run is true, we only handle one entry.
-  void thread_loop(bool single_run);
+  // The entry point for a worker thread.
+  void thread_loop();
 
   // Shuts down the backend, releasing all threads.
   void deactivate();

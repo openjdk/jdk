@@ -48,7 +48,7 @@ public class EnumElementValueGen extends ElementValueGen
     {
         super(ElementValueGen.ENUM_CONSTANT, cpool);
         if (super.getElementValueType() != ENUM_CONSTANT) {
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Only element values of type enum can be built with this ctor - type specified: "
                             + super.getElementValueType());
         }

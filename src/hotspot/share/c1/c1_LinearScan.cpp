@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -6660,8 +6660,7 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
 
         case lir_rtcall:
         case lir_static_call:
-        case lir_optvirtual_call:
-        case lir_virtual_call:    inc_counter(counter_call); break;
+        case lir_optvirtual_call: inc_counter(counter_call); break;
 
         case lir_move: {
           inc_counter(counter_move);

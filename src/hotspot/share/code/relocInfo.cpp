@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,7 @@ void Relocation::set_value(address x) {
 void Relocation::const_set_data_value(address x) {
 #ifdef _LP64
   if (format() == relocInfo::narrow_oop_in_const) {
-    *(narrowOop*)addr() = CompressedOops::encode((oop) x);
+    *(narrowOop*)addr() = CompressedOops::encode(cast_to_oop(x));
   } else {
 #endif
     *(address*)addr() = x;
@@ -290,7 +290,7 @@ void Relocation::const_set_data_value(address x) {
 void Relocation::const_verify_data_value(address x) {
 #ifdef _LP64
   if (format() == relocInfo::narrow_oop_in_const) {
-    guarantee(*(narrowOop*)addr() == CompressedOops::encode((oop) x), "must agree");
+    guarantee(*(narrowOop*)addr() == CompressedOops::encode(cast_to_oop(x)), "must agree");
   } else {
 #endif
     guarantee(*(address*)addr() == x, "must agree");
@@ -415,18 +415,14 @@ void static_stub_Relocation::pack_data_to(CodeSection* dest) {
   short* p = (short*) dest->locs_end();
   CodeSection* insts = dest->outer()->insts();
   normalize_address(_static_call, insts);
-  jint is_aot = _is_aot ? 1 : 0;
-  p = pack_2_ints_to(p, scaled_offset(_static_call, insts->start()), is_aot);
+  p = pack_1_int_to(p, scaled_offset(_static_call, insts->start()));
   dest->set_locs_end((relocInfo*) p);
 }
 
 void static_stub_Relocation::unpack_data() {
   address base = binding()->section_start(CodeBuffer::SECT_INSTS);
-  jint offset;
-  jint is_aot;
-  unpack_2_ints(offset, is_aot);
+  jint offset = unpack_1_int();
   _static_call = address_from_scaled_offset(offset, base);
-  _is_aot = (is_aot == 1);
 }
 
 void trampoline_stub_Relocation::pack_data_to(CodeSection* dest ) {
@@ -541,10 +537,11 @@ oop* oop_Relocation::oop_addr() {
 
 
 oop oop_Relocation::oop_value() {
-  oop v = *oop_addr();
   // clean inline caches store a special pseudo-null
-  if (v == Universe::non_oop_word())  v = NULL;
-  return v;
+  if (Universe::contains_non_oop_word(oop_addr())) {
+    return NULL;
+  }
+  return *oop_addr();
 }
 
 
@@ -647,14 +644,14 @@ bool opt_virtual_call_Relocation::clear_inline_cache() {
   return set_to_clean_no_ic_refill(icache);
 }
 
-address opt_virtual_call_Relocation::static_stub(bool is_aot) {
+address opt_virtual_call_Relocation::static_stub() {
   // search for the static stub who points back to this static call
   address static_call_addr = addr();
   RelocIterator iter(code());
   while (iter.next()) {
     if (iter.type() == relocInfo::static_stub_type) {
       static_stub_Relocation* stub_reloc = iter.static_stub_reloc();
-      if (stub_reloc->static_call() == static_call_addr && stub_reloc->is_aot() == is_aot) {
+      if (stub_reloc->static_call() == static_call_addr) {
         return iter.addr();
       }
     }
@@ -688,14 +685,14 @@ bool static_call_Relocation::clear_inline_cache() {
 }
 
 
-address static_call_Relocation::static_stub(bool is_aot) {
+address static_call_Relocation::static_stub() {
   // search for the static stub who points back to this static call
   address static_call_addr = addr();
   RelocIterator iter(code());
   while (iter.next()) {
     if (iter.type() == relocInfo::static_stub_type) {
       static_stub_Relocation* stub_reloc = iter.static_stub_reloc();
-      if (stub_reloc->static_call() == static_call_addr && stub_reloc->is_aot() == is_aot) {
+      if (stub_reloc->static_call() == static_call_addr) {
         return iter.addr();
       }
     }

@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "memory/heapShared.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -38,7 +38,7 @@
 #include "utilities/macros.hpp"
 
 void oopDesc::print_on(outputStream* st) const {
-  klass()->oop_print_on(oop(this), st);
+  klass()->oop_print_on(const_cast<oopDesc*>(this), st);
 }
 
 void oopDesc::print_address_on(outputStream* st) const {
@@ -68,7 +68,7 @@ char* oopDesc::print_value_string() {
 }
 
 void oopDesc::print_value_on(outputStream* st) const {
-  oop obj = oop(this);
+  oop obj = const_cast<oopDesc*>(this);
   if (java_lang_String::is_instance(obj)) {
     java_lang_String::print(obj, st);
     print_address_on(st);
@@ -91,10 +91,10 @@ void oopDesc::verify(oopDesc* oop_desc) {
 
 intptr_t oopDesc::slow_identity_hash() {
   // slow case; we have to acquire the micro lock in order to locate the header
-  Thread* THREAD = Thread::current();
+  Thread* current = Thread::current();
   ResetNoHandleMark rnm; // Might be called from LEAF/QUICK ENTRY
-  HandleMark hm(THREAD);
-  Handle object(THREAD, this);
+  HandleMark hm(current);
+  Handle object(current, this);
   return ObjectSynchronizer::identity_hash_value_for(object);
 }
 

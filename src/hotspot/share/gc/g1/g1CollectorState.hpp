@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1COLLECTORSTATE_HPP
 #define SHARE_GC_G1_G1COLLECTORSTATE_HPP
 
-#include "gc/g1/g1GCTypes.hpp"
+#include "gc/g1/g1GCPauseType.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // State of the G1 collection.
@@ -112,8 +112,6 @@ public:
 
   // Calculate GC Pause Type from internal state.
   G1GCPauseType young_gc_pause_type(bool concurrent_operation_is_full_mark) const;
-  G1GCYoungPhase young_gc_phase() const;
-
 };
 
 #endif // SHARE_GC_G1_G1COLLECTORSTATE_HPP

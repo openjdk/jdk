@@ -293,9 +293,9 @@
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
   </Event>
 
-  <Event name="G1GarbageCollection" category="Java Virtual Machine, GC, Collector" label="G1 Garbage Collection" description="Extra information specific to G1 Garbage Collections">
+  <Event name="G1GarbageCollection" category="Java Virtual Machine, GC, Collector" label="G1 Young Garbage Collection" description="Extra information specific to G1 Young Garbage Collections">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
-    <Field type="G1YCType" name="type" label="Type" />
+    <Field type="G1YCType" name="type" label="Type"/>
   </Event>
 
   <Event name="G1MMU" category="Java Virtual Machine, GC, Detailed" label="G1 MMU Information" startTime="false">

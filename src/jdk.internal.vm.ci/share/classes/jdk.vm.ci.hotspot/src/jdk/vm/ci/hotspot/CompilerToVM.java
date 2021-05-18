@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,11 +215,11 @@ final class CompilerToVM {
      * constant pool cache first.
      *
      * The behavior of this method is undefined if {@code cpi} does not denote one of the following
-     * entry types: {@code JVM_CONSTANT_String}, {@code JVM_CONSTANT_MethodHandle},
-     * {@code JVM_CONSTANT_MethodHandleInError}, {@code JVM_CONSTANT_MethodType} and
-     * {@code JVM_CONSTANT_MethodTypeInError}.
+     * entry types: {@code JVM_CONSTANT_Dynamic}, {@code JVM_CONSTANT_String},
+     * {@code JVM_CONSTANT_MethodHandle}, {@code JVM_CONSTANT_MethodHandleInError},
+     * {@code JVM_CONSTANT_MethodType} and {@code JVM_CONSTANT_MethodTypeInError}.
      */
-    native HotSpotObjectConstantImpl resolvePossiblyCachedConstantInPool(HotSpotConstantPool constantPool, int cpi);
+    native JavaConstant resolvePossiblyCachedConstantInPool(HotSpotConstantPool constantPool, int cpi);
 
     /**
      * Gets the {@code JVM_CONSTANT_NameAndType} index from the entry at index {@code cpi} in
@@ -513,19 +513,6 @@ final class CompilerToVM {
     native long getLocalVariableTableStart(HotSpotResolvedJavaMethodImpl method);
 
     /**
-     * Reads an object pointer within a VM data structure. That is, any {@link VMField} whose
-     * {@link VMField#type type} is {@code "oop"} (e.g., {@code Klass::_java_mirror},
-     * {@code JavaThread::_threadObj}).
-     *
-     * Note that {@code Unsafe.getObject(Object, long)} cannot be used for this since it does a
-     * {@code narrowOop} read if the VM is using compressed oops whereas oops within VM data
-     * structures are (currently) always uncompressed.
-     *
-     * @param address address of an oop field within a VM data structure
-     */
-    native HotSpotObjectConstantImpl readUncompressedOop(long address);
-
-    /**
      * Sets flags on {@code method} indicating that it should never be inlined or compiled by the
      * VM.
      */
@@ -601,8 +588,9 @@ final class CompilerToVM {
      * {@link HotSpotVMConfig#invalidVtableIndex} if {@code method} is not in {@code type}'s
      * v-table.
      *
-     * @throws InternalError if {@code type} is an interface or {@code method} is not held by an
-     *             interface or class represented by {@code type} is not initialized
+     * @throws InternalError if {@code type} is an interface, {@code method} is not defined by an
+     *             interface, {@code type} does not implement the interface defining {@code method}
+     *             or class represented by {@code type} is not initialized
      */
     native int getVtableIndexForInterfaceMethod(HotSpotResolvedObjectTypeImpl type, HotSpotResolvedJavaMethodImpl method);
 
@@ -736,18 +724,6 @@ final class CompilerToVM {
     native Object getFlagValue(String name);
 
     /**
-     * Gets the host class for {@code type}.
-     */
-    native HotSpotResolvedObjectTypeImpl getHostClass(HotSpotResolvedObjectTypeImpl type);
-
-    /**
-     * Gets the object at the address {@code oopAddress}.
-     *
-     * @param oopAddress a valid {@code oopDesc**} value
-     */
-    native Object getObjectAtAddress(long oopAddress);
-
-    /**
      * @see ResolvedJavaType#getInterfaces()
      */
     native HotSpotResolvedObjectTypeImpl[] getInterfaces(HotSpotResolvedObjectTypeImpl type);
@@ -758,7 +734,7 @@ final class CompilerToVM {
     native HotSpotResolvedJavaType getComponentType(HotSpotResolvedObjectTypeImpl type);
 
     /**
-     * Get the array class for {@code type}. This can't be done symbolically since anonymous types
+     * Get the array class for {@code type}. This can't be done symbolically since hidden classes
      * can't be looked up by name.
      */
     native HotSpotResolvedObjectTypeImpl getArrayType(HotSpotResolvedJavaType type);
@@ -806,14 +782,18 @@ final class CompilerToVM {
     native ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl holder);
 
     /**
-     * Reads the current value of a static field.
+     * Reads the current value of a static field. If {@code expectedType} is non-null, then the
+     * object is exptected to be a subtype of {@code expectedType} and extra sanity checking is
+     * performed on the offset and kind of the read being performed.
      */
-    native JavaConstant readFieldValue(HotSpotResolvedObjectTypeImpl resolvedObjectType, HotSpotResolvedJavaField field, boolean isVolatile);
+    native JavaConstant readFieldValue(HotSpotResolvedObjectTypeImpl object, HotSpotResolvedObjectTypeImpl expectedType, long offset, boolean isVolatile, JavaKind kind);
 
     /**
-     * Reads the current value of an instance field.
+     * Reads the current value of an instance field. If {@code expectedType} is non-null, then the
+     * object is exptected to be a subtype of {@code expectedType} and extra sanity checking is
+     * performed on the offset and kind of the read being performed.
      */
-    native JavaConstant readFieldValue(HotSpotObjectConstantImpl object, HotSpotResolvedJavaField field, boolean isVolatile);
+    native JavaConstant readFieldValue(HotSpotObjectConstantImpl object, HotSpotResolvedObjectTypeImpl expectedType, long offset, boolean isVolatile, JavaKind kind);
 
     /**
      * @see ResolvedJavaType#isInstance(JavaConstant)
@@ -856,31 +836,6 @@ final class CompilerToVM {
      * {@code null} is returned if the {@code index} is out of range or object is not an array.
      */
     native Object readArrayElement(HotSpotObjectConstantImpl object, int index);
-
-    /**
-     * Reads a byte sized value from {@code displacement} in {@code object}.
-     */
-    native byte getByte(HotSpotObjectConstantImpl object, long displacement);
-
-    /**
-     * Reads a short sized value from {@code displacement} in {@code object}.
-     */
-    native short getShort(HotSpotObjectConstantImpl object, long displacement);
-
-    /**
-     * Reads an int sized value from {@code displacement} in {@code object}.
-     */
-    native int getInt(HotSpotObjectConstantImpl object, long displacement);
-
-    /**
-     * Reads a long sized value from {@code displacement} in {@code object}.
-     */
-    native long getLong(HotSpotObjectConstantImpl object, long displacement);
-
-    /**
-     * Reads a Java object from {@code displacement} in {@code object}.
-     */
-    native HotSpotObjectConstantImpl getObject(HotSpotObjectConstantImpl object, long displacement);
 
     /**
      * @see HotSpotJVMCIRuntime#registerNativeMethods

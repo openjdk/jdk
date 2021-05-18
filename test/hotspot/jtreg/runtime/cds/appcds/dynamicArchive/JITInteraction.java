@@ -29,10 +29,12 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build TestJIT
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar testjit.jar TestJIT
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar testjit.jar TestJIT
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar JITInteraction
  */
+
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class JITInteraction extends DynamicArchiveTestBase {
 

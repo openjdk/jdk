@@ -200,6 +200,12 @@ JVM_GetRandomSeedForDumping();
 JNIEXPORT void JNICALL
 JVM_LogLambdaFormInvoker(JNIEnv* env, jstring line);
 
+JNIEXPORT void JNICALL
+JVM_DumpClassListToFile(JNIEnv* env, jstring fileName);
+
+JNIEXPORT void JNICALL
+JVM_DumpDynamicArchive(JNIEnv* env, jstring archiveName);
+
 /*
  * java.lang.Throwable
  */

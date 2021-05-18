@@ -619,7 +619,7 @@ public abstract class NumberFormat extends Format  {
     /**
      * Returns a scientific format for the current default locale.
      */
-    /*public*/ final static NumberFormat getScientificInstance() {
+    /*public*/ static final NumberFormat getScientificInstance() {
         return getInstance(Locale.getDefault(Locale.Category.FORMAT), null, SCIENTIFICSTYLE);
     }
 

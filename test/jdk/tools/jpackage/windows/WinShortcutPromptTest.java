@@ -40,6 +40,7 @@ import jdk.jpackage.test.PackageType;
  * @library ../helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
+ * @build WinShortcutPromptTest
  * @requires (os.family == "windows")
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m  jdk.jpackage.test.Main
@@ -60,6 +61,30 @@ public class WinShortcutPromptTest {
         for (var withStartMenuShortcut : List.of(Boolean.TRUE, Boolean.FALSE)) {
             for (var withDesktopShortcut : List.of(Boolean.TRUE, Boolean.FALSE)) {
                 for (var withShortcutPrompt : List.of(Boolean.TRUE, Boolean.FALSE)) {
+                    if (withShortcutPrompt && withStartMenuShortcut
+                            && withDesktopShortcut) {
+                        // Duplicates WinInstallerUiTestWithShortcutPromptTest (WinInstallerUiTest(withShortcutPrompt=true))
+                        continue;
+                    }
+
+                    if (!withShortcutPrompt && !withStartMenuShortcut
+                            && !withDesktopShortcut) {
+                        // Duplicates SimplePackageTest
+                        continue;
+                    }
+
+                    if (!withShortcutPrompt && !withStartMenuShortcut
+                            && withDesktopShortcut) {
+                        // Duplicates WinShortcutTest
+                        continue;
+                    }
+
+                    if (!withShortcutPrompt && withStartMenuShortcut
+                            && !withDesktopShortcut) {
+                        // Duplicates WinMenuTest
+                        continue;
+                    }
+
                     data.add(new Object[]{withStartMenuShortcut,
                         withDesktopShortcut, withShortcutPrompt});
                 }
