@@ -6986,7 +6986,7 @@ address generate_avx_ghash_processBlocks() {
           StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_512][op] = (address)os::dll_lookup(libsvml, ebuf);
         }
       }
-      const char* avx_sse_str = (UseAVX >= 2) ? "l9" : ((UseAVX == 1) ? "e9" : "ex"); 
+      const char* avx_sse_str = (UseAVX >= 2) ? "l9" : ((UseAVX == 1) ? "e9" : "ex");
       for (int op = 0; op < VectorSupport::NUM_SVML_OP; op++) {
         int vop = VectorSupport::VECTOR_OP_SVML_START + op;
         if (vop == VectorSupport::VECTOR_OP_POW) {

@@ -1320,7 +1320,7 @@ static void get_svml_address(int vop, int bits, BasicType bt, char* name_ptr, in
     case 64:  //fallthough
     case 128: //fallthough
     case 256: //fallthough
-    case 512: 
+    case 512:
       if (bt == T_FLOAT) {
         snprintf(name_ptr, name_len, "vector_%s_float%d", VectorSupport::svmlname[op], bits);
         *addr_ptr = StubRoutines::_vector_f_math[exact_log2(bits/64)][op];
@@ -1330,7 +1330,7 @@ static void get_svml_address(int vop, int bits, BasicType bt, char* name_ptr, in
         *addr_ptr = StubRoutines::_vector_d_math[exact_log2(bits/64)][op];
       }
       break;
-    default: 
+    default:
       snprintf(name_ptr, name_len, "invalid");
       *addr_ptr = NULL;
       Unimplemented();

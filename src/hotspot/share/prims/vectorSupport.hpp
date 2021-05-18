@@ -103,7 +103,7 @@ class VectorSupport : AllStatic {
     NUM_SVML_OP = VECTOR_OP_SVML_END - VECTOR_OP_SVML_START + 1
   };
 
-  enum { 
+  enum {
     VEC_SIZE_64 = 0,
     VEC_SIZE_128 = 1,
     VEC_SIZE_256 = 2,
