@@ -460,9 +460,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * backward compatible forms.
  *
  * <p>The APIs added in 1.7 map between the old and new language codes,
- * maintaining the old codes internal to Locale (so that
- * {@code getLanguage} and {@code toString} reflect the old
- * code), but using the new codes in the BCP 47 language tag APIs (so
+ * maintaining the mapped codes internal to Locale (so that
+ * {@code getLanguage} and {@code toString} reflect the mapped
+ * code, which depends on the {@code java.locale.useOldISOCodes} system
+ * property), but using the new codes in the BCP 47 language tag APIs (so
  * that {@code toLanguageTag} reflects the new one). This
  * preserves the equivalence between Locales no matter which code or
  * API is used to construct them. Java's default resource bundle
