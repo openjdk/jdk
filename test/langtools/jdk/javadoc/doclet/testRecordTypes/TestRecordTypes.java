@@ -520,7 +520,7 @@ public class TestRecordTypes extends JavadocTester {
                     </ul>""",
                 """
                     <div id="record-class">
-                    <div class="caption"><span>Record Classes</span></div>
+                    <div class="caption"><span>Deprecated Record Classes</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Record Class</div>
                     <div class="table-header col-last">Description</div>
@@ -552,7 +552,7 @@ public class TestRecordTypes extends JavadocTester {
                     </ul>""",
                 """
                     <div id="method">
-                    <div class="caption"><span>Methods</span></div>
+                    <div class="caption"><span>Deprecated Methods</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Method</div>
                     <div class="table-header col-last">Description</div>
