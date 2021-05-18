@@ -4944,7 +4944,7 @@ void Assembler::vptest(XMMRegister dst, XMMRegister src, int vector_len) {
   emit_int16(0x17, (0xC0 | encode));
 }
 
-void Assembler::vptestmb(KRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+void Assembler::evptestmb(KRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(VM_Version::supports_evex(), "");
   // Encoding: EVEX.NDS.XXX.66.0F.W0 DB /r
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
