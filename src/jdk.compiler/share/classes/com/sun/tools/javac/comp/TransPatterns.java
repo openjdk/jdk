@@ -341,8 +341,11 @@ public class TransPatterns extends TreeTranslator {
                                        .flatMap(c -> c.labels.stream())
                                        .anyMatch(p -> p.isExpression() &&
                                                       TreeInfo.isNull((JCExpression) p));
+
+            JCCase lastCase = cases.last();
+
             if (hasTotalPattern && !hasNullCase) {
-                JCCase last = cases.last();
+                JCCase last = lastCase;
                 if (last.labels.stream().noneMatch(l -> l.hasTag(Tag.DEFAULTCASELABEL))) {
                     last.labels = last.labels.prepend(makeLit(syms.botType, null));
                     hasNullCase = true;
@@ -445,6 +448,10 @@ public class TransPatterns extends TreeTranslator {
                     for (var p : c.labels) {
                         if (p.hasTag(Tag.DEFAULTCASELABEL)) {
                             translatedLabels.add(p);
+                        } else if (hasTotalPattern && c == lastCase && p.isPattern()) {
+                            //If the switch has total pattern, the last case will contain it.
+                            //Convert the total pattern to default:
+                            translatedLabels.add(make.DefaultCaseLabel());
                         } else {
                             int value;
                             if (p.isNullPattern()) {

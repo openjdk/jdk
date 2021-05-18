@@ -52,6 +52,8 @@ public class Switches {
         runStringWithConstant(this::testStringWithConstantExpression);
         npeTest(this::npeTestStatement);
         npeTest(this::npeTestExpression);
+        exhaustiveStatementSane("");
+        exhaustiveStatementSane(null);
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -206,6 +208,18 @@ public class Switches {
             case A a -> 0;
             case B b -> 1;
         };
+    }
+
+    void exhaustiveStatementSane(Object o) {
+        switch (o) {
+            case Object obj:; //no break intentionally - should not fall through to any possible default
+        }
+        switch (o) {
+            case null, Object obj:; //no break intentionally - should not fall through to any possible default
+        }
+        switch (o) {
+            case Object obj, null:; //no break intentionally - should not fall through to any possible default
+        }
     }
 
     sealed interface I {}
