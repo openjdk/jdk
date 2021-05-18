@@ -1889,7 +1889,7 @@ private:
   void vptest(XMMRegister dst, XMMRegister src);
   void vptest(XMMRegister dst, Address src);
 
-  void vptestmb(KRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evptestmb(KRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Vector compare
   void vptest(XMMRegister dst, XMMRegister src, int vector_len);

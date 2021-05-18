@@ -5813,6 +5813,9 @@ address generate_avx_ghash_processBlocks() {
 
 
 // Code for generating Base64 decoding.
+//
+// Based on the article (and associated code) from https://arxiv.org/abs/1910.05109.
+//
 // Intrinsic function prototype in Base64.java:
 // private void decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
   address generate_base64_decodeBlock() {
@@ -5866,7 +5869,7 @@ address generate_avx_ghash_processBlocks() {
     const XMMRegister join12 = xmm17;
     const XMMRegister join01 = xmm18;
 
-    Label L_process256, L_process64, L_exit, L_processdata, L_loadURL, L_continue, L_errorExit, L_finalBit, L_padding, L_donePadding;
+    Label L_process256, L_process64, L_exit, L_processdata, L_loadURL, L_continue, _finalBit, L_padding, L_donePadding;
 
     // calculate length from offsets
     __ movl(length, end_offset);
@@ -5884,7 +5887,7 @@ address generate_avx_ghash_processBlocks() {
 
     __ BIND(L_continue);
 
-    __ vpxor(xmm7, xmm7, xmm7, Assembler::AVX_128bit);
+    __ vpxor(xmm7, xmm7, xmm7, Assembler::AVX_512bit);
 
     __ cmpl(length, 0xff);
     __ jcc(Assembler::lessEqual, L_process64);
@@ -5927,9 +5930,16 @@ address generate_avx_ghash_processBlocks() {
     __ evpermt2b(xmm4, xmm19, xmm6, Assembler::AVX_512bit);
 
     __ vpternlogd(xmm3, 0xfe, xmm20, xmm21, Assembler::AVX_512bit);
+
     __ evmovdqaq(xmm20, xmm0, Assembler::AVX_512bit);
     __ vpternlogd(xmm19, 0xfe, xmm2, xmm1, Assembler::AVX_512bit);
     __ vpternlogd(xmm20, 0xfe, xmm4, xmm3, Assembler::AVX_512bit);
+    __ vpternlogd(xmm7, 0xfe, xmm19, xmm20, Assembler::AVX_512bit);
+
+    // Check if there was an error - if so, try 64-byte chunks
+    __ evpmovb2m(k3, xmm7, Assembler::AVX_512bit);
+    __ kortestql(k3, k3);
+    __ jcc(Assembler::notZero, L_process64);
 
     __ vpmaddubsw(xmm2, xmm2, xmm18, Assembler::AVX_512bit);
     __ vpmaddubsw(xmm1, xmm1, xmm17, Assembler::AVX_512bit);
@@ -5944,14 +5954,11 @@ address generate_avx_ghash_processBlocks() {
     __ evpermt2b(xmm2, xmm12, xmm1, Assembler::AVX_512bit);
     __ evpermt2b(xmm1, xmm11, xmm0, Assembler::AVX_512bit);
     __ evpermt2b(xmm0, xmm10, xmm4, Assembler::AVX_512bit);
-    __ vpternlogd(xmm3, 0xfe, xmm19, xmm20, Assembler::AVX_512bit);
 
     // Store result
     __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm2, Assembler::AVX_512bit);
     __ evmovdquq(Address(dest, dp, Address::times_1, 0x40), xmm1, Assembler::AVX_512bit);
     __ evmovdquq(Address(dest, dp, Address::times_1, 0x80), xmm0, Assembler::AVX_512bit);
-
-    __ vporq(xmm7, xmm7, xmm3, Assembler::AVX_512bit);
 
     __ addq(source, 0x100);
     __ addq(dest, 0xc0);
@@ -5959,16 +5966,14 @@ address generate_avx_ghash_processBlocks() {
     __ cmpq(length, 64 * 4);
     __ jcc(Assembler::greaterEqual, L_process256);
 
-    __ xorq(rax, rax);
-    __ evpmovb2m(k3, xmm7, Assembler::AVX_512bit);
-    __ kmovql(rax, k3);
-    __ testl(rax, rax);
-    __ jcc(Assembler::notZero, L_errorExit);
-
-    __ align(32);
+    __ align(32)
     __ BIND(L_process64);
     // At this point, we've decoded 64 * 4 * n bytes.
-    // The remaining length will be <= 64 * 4 - 1
+    // The remaining length will be <= 64 * 4 - 1.
+    // UNLESS there was an error decoding the first 256-byte chunk.  In this
+    // case, the length will be arbitrarily long.
+    //
+    // Note that this will be the path for MIME-encoded strings.
 
     __ cmpq(length, 63);
     __ jcc(Assembler::lessEqual, L_finalBit);
@@ -5980,19 +5985,27 @@ address generate_avx_ghash_processBlocks() {
     __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit);
     __ evpermt2b(xmm0, xmm3, xmm6, Assembler::AVX_512bit);
     __ evpbroadcastd(xmm2, rax, Assembler::AVX_512bit);
-    __ addq(source, 64);
 
     __ movl(rax, 0x00011000);
     __ vpternlogd(xmm7, 0xfe, xmm0, xmm3, Assembler::AVX_512bit);
+
+    // Check for error and bomb out before updating dest
+    __ evpmovb2m(k3, xmm7, Assembler::AVX_512bit);
+    __ kortestql(k3, k3);
+    __ jcc(Assembler::notZero, L_exit);
+
     __ evmovdqaq(xmm4, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
     __ evpbroadcastd(xmm1, rax, Assembler::AVX_512bit);
+
     __ vpmaddubsw(xmm0, xmm0, xmm2, Assembler::AVX_512bit);
-    __ subq(length, 64);
     __ vpmaddwd(xmm0, xmm0, xmm1, Assembler::AVX_512bit);
     __ vpermb(xmm0, xmm4, xmm0, Assembler::AVX_512bit);
 
     __ evmovdqaq(xmm3, xmm7, Assembler::AVX_512bit);
     __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm0, Assembler::AVX_512bit);
+
+    __ subq(length, 64);
+    __ addq(source, 64);
     __ addq(dest, 48);
 
     __ cmpq(length, 63);
@@ -6003,14 +6016,21 @@ address generate_avx_ghash_processBlocks() {
     __ evmovdquq(xmm7, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
     __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit);
     __ evpermt2b(xmm0, xmm7, xmm6, Assembler::AVX_512bit);
-    __ addq(source, 64);
     __ vpternlogd(xmm3, 0xfe, xmm0, xmm7, Assembler::AVX_512bit);
+
+    // Check for error and bomb out before updating dest
+    __ evpmovb2m(k3, xmm3, Assembler::AVX_512bit);
+    __ kortestql(k3, k3);
+    __ jcc(Assembler::notZero, L_exit);
+
     __ vpmaddubsw(xmm0, xmm0, xmm2, Assembler::AVX_512bit);
-    __ subq(length, 64);
     __ vpmaddwd(xmm0, xmm0, xmm1, Assembler::AVX_512bit);
     __ vpermb(xmm0, xmm4, xmm0, Assembler::AVX_512bit);
     __ evmovdqaq(xmm7, xmm3, Assembler::AVX_512bit);
     __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm0, Assembler::AVX_512bit);
+
+    __ subq(length, 64);
+    __ addq(source, 64);
     __ addq(dest, 48);
 
     __ cmpq(length, 63);
@@ -6021,23 +6041,25 @@ address generate_avx_ghash_processBlocks() {
     __ evmovdquq(xmm7, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
     __ evmovdqaq(xmm0, xmm5, Assembler::AVX_512bit);
     __ evpermt2b(xmm0, xmm7, xmm6, Assembler::AVX_512bit);
-    __ addq(source, 64);
     __ vpmaddubsw(xmm2, xmm0, xmm2, Assembler::AVX_512bit);
     __ vpmaddwd(xmm1, xmm2, xmm1, Assembler::AVX_512bit);
     __ vpternlogd(xmm3, 0xfe, xmm0, xmm7, Assembler::AVX_512bit);
-    __ subq(length, 64);
+
+    // Check for error and bomb out before updating dest
+    __ evpmovb2m(k3, xmm3, Assembler::AVX_512bit);
+    __ kortestql(k3, k3);
+    __ jcc(Assembler::notZero, L_exit);
+
     __ vpermb(xmm1, xmm4, xmm1, Assembler::AVX_512bit);
     __ evmovdqaq(xmm7, xmm3, Assembler::AVX_512bit);
     __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), xmm1, Assembler::AVX_512bit);
+
+    __ subq(length, 64);
+    __ addq(source, 64);
     __ addq(dest, 48);
 
     __ BIND(L_finalBit);
     // Now have < 64 bytes left to decode
-
-    __ evpmovb2m(k3, xmm7, Assembler::AVX_512bit);
-    __ kmovql(rax, k3);
-    __ testl(rax, rax);
-    __ jcc(Assembler::notZero, L_errorExit);
 
     // I was going to let Java take care of the final fragment
     // however it will repeatedly call this routine for every 4 bytes
@@ -6088,10 +6110,9 @@ address generate_avx_ghash_processBlocks() {
     __ vporq(xmm8, xmm10, xmm8, Assembler::AVX_512bit);
 
     // Check for error
-    // TODO: Add this instruction
-    __ vptestmb(k0, xmm8, xmm9, Assembler::AVX_512bit);
-    __ kortestql(k0, k0);
-    __ jcc(Assembler::notZero, L_errorExit);
+    __ evptestmb(k2, xmm8, xmm9, Assembler::AVX_512bit);
+    __ kortestql(k2, k2);
+    __ jcc(Assembler::notZero, L_exit);
 
     __ vpmaddubsw(xmm10, xmm10, xmm2, Assembler::AVX_512bit);
     __ vpmaddwd(xmm10, xmm10, xmm1, Assembler::AVX_512bit);
@@ -6117,11 +6138,6 @@ address generate_avx_ghash_processBlocks() {
     __ evmovdqaq(xmm5, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_url_addr()), Assembler::AVX_512bit, r13);
     __ evmovdqaq(xmm6, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_url_addr()), Assembler::AVX_512bit, r13);
     __ jmp(L_continue);
-
-    __ BIND(L_errorExit);
-    __ pop(length);
-    __ push(dest);
-    __ jmp(L_exit);
 
     __ BIND(L_padding);
     __ decrementq(r13, 1);
