@@ -84,8 +84,8 @@ public class MaskQueryOperationsBenchmark {
 
     @Setup(Level.Trial)
     public void BmSetup() {
-        bspecies = VectorSpecies.of(int.class, VectorShape.forBitSize(bits));
-        sspecies = VectorSpecies.of(int.class, VectorShape.forBitSize(bits));
+        bspecies = VectorSpecies.of(byte.class, VectorShape.forBitSize(bits));
+        sspecies = VectorSpecies.of(short.class, VectorShape.forBitSize(bits));
         ispecies = VectorSpecies.of(int.class, VectorShape.forBitSize(bits));
         lspecies = VectorSpecies.of(long.class, VectorShape.forBitSize(bits));
 
