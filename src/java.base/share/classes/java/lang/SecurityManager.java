@@ -1089,7 +1089,6 @@ public class SecurityManager {
      * @throws     NullPointerException if the address argument is
      *             {@code null}.
      * @since      1.1
-     * @deprecated Use #checkPermission(java.security.Permission) instead
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     @Deprecated(since="1.4", forRemoval=true)

@@ -446,7 +446,8 @@ public final class AccessController {
      */
     @CallerSensitive
     public static <T> T doPrivileged(PrivilegedAction<T> action,
-        @SuppressWarnings("removal") AccessControlContext context, Permission... perms) {
+            @SuppressWarnings("removal") AccessControlContext context,
+            Permission... perms) {
 
         @SuppressWarnings("removal")
         AccessControlContext parent = getContext();
@@ -511,7 +512,8 @@ public final class AccessController {
      */
     @CallerSensitive
     public static <T> T doPrivilegedWithCombiner(PrivilegedAction<T> action,
-        @SuppressWarnings("removal") AccessControlContext context, Permission... perms) {
+            @SuppressWarnings("removal") AccessControlContext context,
+            Permission... perms) {
 
         @SuppressWarnings("removal")
         AccessControlContext parent = getContext();
@@ -874,7 +876,8 @@ public final class AccessController {
      */
     @CallerSensitive
     public static <T> T doPrivileged(PrivilegedExceptionAction<T> action,
-                                     @SuppressWarnings("removal") AccessControlContext context, Permission... perms)
+            @SuppressWarnings("removal") AccessControlContext context,
+            Permission... perms)
         throws PrivilegedActionException
     {
         @SuppressWarnings("removal")
