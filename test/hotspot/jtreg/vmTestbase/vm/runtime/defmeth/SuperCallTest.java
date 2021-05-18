@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package vm.runtime.defmeth;
 
 import nsk.share.test.TestBase;
 import vm.runtime.defmeth.shared.DefMethTest;
-import vm.runtime.defmeth.shared.annotation.KnownFailure;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
 import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
@@ -352,7 +351,6 @@ public class SuperCallTest extends DefMethTest {
      * TEST: C c = new C(); c.m(new Object()) == 1;
      * TEST: C c = new C(); c.m("") == 1;
      */
-    @KnownFailure(modes = { INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY }) // Test2_J_C_m: AME => IAE => ICCE instead of successful call
     public void testSuperGeneric() {
         TestBuilder b = factory.getBuilder();
 
@@ -394,7 +392,6 @@ public class SuperCallTest extends DefMethTest {
      *
      * TEST: C c = new C(); c.m("string") == 1
      */
-    @KnownFailure(modes = { INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY }) // Test2_J_C_m: AME => IAE => ICCE instead of successful call
     public void testSuperGenericDisqual() {
         TestBuilder b = factory.getBuilder();
 
