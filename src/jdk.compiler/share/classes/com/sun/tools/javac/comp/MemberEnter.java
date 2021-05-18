@@ -44,7 +44,6 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
-import static com.sun.tools.javac.tree.JCTree.Tag.VARDEF;
 
 /** Resolves field, method and constructor header, and constructs corresponding Symbols.
  *
@@ -262,7 +261,7 @@ public class MemberEnter extends JCTree.Visitor {
         try {
             if (TreeInfo.isEnumInit(tree)) {
                 attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
-            } else if (!tree.isImplicitlyTyped()) {
+            } else if (!tree.nullVarType()) {
                 attr.attribType(tree.vartype, localEnv);
                 if (TreeInfo.isReceiverParam(tree))
                     checkReceiver(tree, localEnv);
@@ -282,7 +281,7 @@ public class MemberEnter extends JCTree.Visitor {
             tree.vartype.type = atype.makeVarargs();
         }
         WriteableScope enclScope = enter.enterScope(env);
-        Type vartype = tree.isImplicitlyTyped()
+        Type vartype = tree.nullVarType()
                 ? env.info.scope.owner.kind == MTH ? Type.noType : syms.errType
                 : tree.vartype.type;
         VarSymbol v = new VarSymbol(0, tree.name, vartype, enclScope.owner);
@@ -306,7 +305,7 @@ public class MemberEnter extends JCTree.Visitor {
         }
 
         annotate.annotateLater(tree.mods.annotations, localEnv, v, tree.pos());
-        if (!tree.isImplicitlyTyped()) {
+        if (!tree.nullVarType()) {
             annotate.queueScanTreeAndTypeAnnotate(tree.vartype, localEnv, v, tree.pos());
         }
 

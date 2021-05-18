@@ -957,6 +957,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public VarSymbol sym;
         /** explicit start pos */
         public int startPos = Position.NOPOS;
+        /** declared using `var` */
+        private boolean declaredUsingVar;
 
         protected JCVariableDecl(JCModifiers mods,
                          Name name,
@@ -968,6 +970,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             this.vartype = vartype;
             this.init = init;
             this.sym = sym;
+            this.declaredUsingVar = vartype == null;
         }
 
         protected JCVariableDecl(JCModifiers mods,
@@ -981,10 +984,15 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                 // Only other option is qualified name x.y.this;
                 this.name = ((JCFieldAccess)nameexpr).name;
             }
+            this.declaredUsingVar = vartype == null;
         }
 
-        public boolean isImplicitlyTyped() {
+        public boolean nullVarType() {
             return vartype == null;
+        }
+
+        public boolean declaredUsingVar() {
+            return declaredUsingVar;
         }
 
         @Override
