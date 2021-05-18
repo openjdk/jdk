@@ -38,7 +38,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,6 +47,7 @@ import com.sun.net.httpserver.*;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.*;
 
 public class HttpHandlersTest {
@@ -72,11 +73,19 @@ public class HttpHandlersTest {
         assertThrows(NPE, () -> HttpHandlers.handleOrElse(null, handler, new TestHandler()));
         assertThrows(NPE, () -> HttpHandlers.handleOrElse(p -> true, null, handler));
         assertThrows(NPE, () -> HttpHandlers.handleOrElse(p -> true, handler, null));
+
+        final var headers = new Headers();
+        assertThrows(NPE, () -> HttpHandlers.of(null, 200));
+        assertThrows(NPE, () -> HttpHandlers.of(null, 200, "body"));
+        assertThrows(NPE, () -> HttpHandlers.of(headers, 200, null));
     }
 
     @Test
-    public void testFallbackHandler() throws Exception {
-        var handler = HttpHandlers.fallbackHandler();
+    public void testOfNoBody() throws Exception {
+        var headers = new Headers();
+        headers.put("foo", List.of("bar"));
+
+        var handler = HttpHandlers.of(headers, 200);
         var server = HttpServer.create(LOOPBACK_ADDR, 0);
         server.createContext("/", handler);
         server.start();
@@ -84,8 +93,37 @@ public class HttpHandlersTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 404);
+            assertTrue(response.headers().map().containsKey("date"));
+            assertEquals(response.headers().firstValue("foo").get(), "bar");
+            assertEquals(response.headers().firstValue("content-length").get(), "0");
+            assertEquals(response.headers().map().size(), 3);
+            assertEquals(response.statusCode(), 200);
             assertEquals(response.body(), "");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testOfWithBody() throws Exception {
+        var headers = new Headers();
+        headers.put("foo", List.of("bar"));
+        var expectedLength = Integer.toString("hello world".getBytes(UTF_8).length);
+
+        var handler = HttpHandlers.of(headers, 200, "hello world");
+        var server = HttpServer.create(LOOPBACK_ADDR, 0);
+        server.createContext("/", handler);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertTrue(response.headers().map().containsKey("date"));
+            assertEquals(response.headers().firstValue("foo").get(), "bar");
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.headers().map().size(), 3);
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.body(), "hello world");
         } finally {
             server.stop(0);
         }
@@ -163,7 +201,7 @@ public class HttpHandlersTest {
             try (InputStream is = exchange.getRequestBody();
                  OutputStream os = exchange.getResponseBody()) {
                 is.readAllBytes();
-                var resp = name.getBytes(StandardCharsets.UTF_8);
+                var resp = name.getBytes(UTF_8);
                 exchange.sendResponseHeaders(200, resp.length);
                 os.write(resp);
             }

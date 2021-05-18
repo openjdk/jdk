@@ -26,6 +26,7 @@
 package com.sun.net.httpserver;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -35,9 +36,9 @@ import java.util.function.Predicate;
  *
  * <p> The functionality of a handler can be extended or enhanced through the
  * use of {@link #handleOrElse(Predicate, HttpHandler, HttpHandler) handleOrElse},
- * which allows to complement a given handler. {@link #fallbackHandler() fallbackHandler}
- * provides a convenience handler that always responds with the {@code 404}
- * status code.
+ * which allows to complement a given handler. The factory methods
+ * {@link #of(Headers, int)} and {@link #of(Headers, int, String)} provide
+ * convenience handlers with pre-set response state.
  *
  * <p> Example of complementing a handler with a <i>fallbackHandler</i>:
  * <pre>{@code
@@ -107,20 +108,44 @@ public class HttpHandlers {
     }
 
     /**
-     * Returns an {@code HttpHandler} that sends the status code {@code 404}.
+     * Returns an {@code HttpHandler} that sends a response with the given
+     * {@code headers}, {@code statusCode} and {@code body}.
      *
      * <p> This method creates a handler that reads and discards the request
-     * body before it sends the {@code 404 (Not Found)} status code
-     * unconditionally.
+     * body before it sets the response state.
+     * ...
      *
      * @return a handler
+     * @throws NullPointerException if headers or body is null
      * @since 17
      */
-    public static HttpHandler fallbackHandler() {
+    public static HttpHandler of(Headers headers, int statusCode, String body) {
+        Objects.requireNonNull(headers);
+        Objects.requireNonNull(body);
+        // check status code?
+
+        if (body.length() == 0) return HttpHandlers.of(headers, statusCode);
+
+        var bytes = body.getBytes(StandardCharsets.UTF_8);
         return exchange -> {
             try (exchange) {
                 exchange.getRequestBody().readAllBytes();
-                exchange.sendResponseHeaders(404, -1);
+                exchange.getResponseHeaders().putAll(headers);
+                exchange.sendResponseHeaders(statusCode, bytes.length);
+                exchange.getResponseBody().write(bytes);
+            }
+        };
+    }
+
+    public static HttpHandler of(Headers headers, int statusCode) {
+        Objects.requireNonNull(headers);
+        // check status code?
+
+        return exchange -> {
+            try (exchange) {
+                exchange.getRequestBody().readAllBytes();
+                exchange.getResponseHeaders().putAll(headers);
+                exchange.sendResponseHeaders(statusCode, -1);
             }
         };
     }
