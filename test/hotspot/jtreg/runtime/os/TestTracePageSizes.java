@@ -158,7 +158,8 @@ public class TestTracePageSizes {
                 finish();
                 start = matSectionStart.group(1);
                 end = matSectionStart.group(2);
-                ps = vmFlags = null;
+                ps = null;
+                vmFlags = null;
                 return;
             } else {
                 Matcher matKernelPageSize = kernelPageSizePat.matcher(line);
