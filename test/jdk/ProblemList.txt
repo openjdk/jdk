@@ -543,9 +543,6 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 java/foreign/TestMismatch.java 8249684 macosx-all
 
 java/foreign/StdLibTest.java 8263512 macosx-aarch64
-java/foreign/TestDowncall.java 8265292 macosx-aarch64
-java/foreign/TestIntrinsics.java 8265183 macosx-aarch64
-java/foreign/TestUpcall.java 8265182 macosx-aarch64
 java/foreign/TestVarArgs.java 8263512 macosx-aarch64
 java/foreign/valist/VaListTest.java 8263512 macosx-aarch64
 
