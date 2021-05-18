@@ -5869,7 +5869,7 @@ address generate_avx_ghash_processBlocks() {
     const XMMRegister join12 = xmm17;
     const XMMRegister join01 = xmm18;
 
-    Label L_process256, L_process64, L_exit, L_processdata, L_loadURL, L_continue, _finalBit, L_padding, L_donePadding;
+    Label L_process256, L_process64, L_exit, L_processdata, L_loadURL, L_continue, L_finalBit, L_padding, L_donePadding;
 
     // calculate length from offsets
     __ movl(length, end_offset);
