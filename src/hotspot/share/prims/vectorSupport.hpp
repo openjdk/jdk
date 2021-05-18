@@ -29,7 +29,6 @@
 #include "code/debugInfo.hpp"
 #include "memory/allocation.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "runtime/frame.inline.hpp"
 #include "runtime/registerMap.hpp"
 #include "utilities/exceptions.hpp"
 
@@ -100,8 +99,19 @@ class VectorSupport : AllStatic {
     VECTOR_OP_HYPOT = 118,
 
     VECTOR_OP_SVML_START = VECTOR_OP_TAN,
-    VECTOR_OP_SVML_END   = VECTOR_OP_HYPOT
+    VECTOR_OP_SVML_END   = VECTOR_OP_HYPOT,
+    NUM_SVML_OP = VECTOR_OP_SVML_END - VECTOR_OP_SVML_START + 1
   };
+
+  enum { 
+    VEC_SIZE_64 = 0,
+    VEC_SIZE_128 = 1,
+    VEC_SIZE_256 = 2,
+    VEC_SIZE_512 = 3,
+    NUM_VEC_SIZES = 4
+  };
+
+  static const char* svmlname[VectorSupport::NUM_SVML_OP];
 
   static int vop2ideal(jint vop, BasicType bt);
 
