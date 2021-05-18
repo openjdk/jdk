@@ -48,7 +48,7 @@ class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   virtual ~HandshakeClosure()                      {}
   const char* name() const                         { return _name; }
   virtual bool is_async()                          { return false; }
-  virtual bool remote_executable()                 { return true; }
+  virtual bool self_executed()                     { return false; }
   virtual void do_thread(Thread* thread) = 0;
 };
 
@@ -65,7 +65,7 @@ class SelfExecutedHandshakeClosure : public AsyncHandshakeClosure {
  public:
   SelfExecutedHandshakeClosure(const char* name) : AsyncHandshakeClosure(name) {}
   virtual ~SelfExecutedHandshakeClosure() {}
-  virtual bool remote_executable() { return false; }
+  virtual bool self_executed()            { return true; }
 };
 
 class Handshake : public AllStatic {
@@ -109,7 +109,7 @@ class HandshakeState {
   // state so a safepoint may be in-progress.)
   bool process_self_inner();
 
-  bool has_remote_executable_operation();
+  bool have_non_self_executable_operation();
   HandshakeOperation* pop_for_self();
   HandshakeOperation* pop();
 
