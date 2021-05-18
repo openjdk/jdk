@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.tool;
 
+import java.io.PrintWriter;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
@@ -37,6 +38,7 @@ import javax.tools.JavaFileObject.Kind;
 
 import com.sun.source.util.DocTrees;
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.util.Log;
 import jdk.javadoc.doclet.DocletEnvironment;
 
 /**
@@ -119,5 +121,15 @@ public class DocEnvImpl implements DocletEnvironment {
     @Override
     public boolean isSelected(Element e) {
         return etable.isSelected(e);
+    }
+
+    @Override
+    public PrintWriter getStandardWriter() {
+        return toolEnv.messager.getWriter(Log.WriterKind.STDOUT);
+    }
+
+    @Override
+    public PrintWriter getDiagnosticWriter() {
+        return toolEnv.messager.getWriter(Log.WriterKind.STDERR);
     }
 }

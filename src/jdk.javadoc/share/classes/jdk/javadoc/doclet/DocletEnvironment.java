@@ -25,6 +25,8 @@
 
 package jdk.javadoc.doclet;
 
+import java.io.PrintWriter;
+import java.util.Locale;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
@@ -34,6 +36,8 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject.Kind;
+
+import jdk.javadoc.doclet.Reporter;
 
 import com.sun.source.util.DocTrees;
 
@@ -136,7 +140,47 @@ public interface DocletEnvironment {
      * @param type the type element
      * @return the file kind
      */
-    Kind getFileKind(TypeElement type);
+        Kind getFileKind(TypeElement type);
+
+        /**
+         * Returns a writer that can be used by a doclet to write non-diagnostic output,
+         * or {@code null} if no such writer is available.
+         *
+         * @apiNote
+         * The value may or may not be the same as that returned by {@link #getDiagnosticWriter()}.
+         *
+         * @implSpec
+         * This implementation returns {@code null}.
+         * The implementation provided by the `javadoc` tool to
+         * {@link Doclet#init(Locale, Reporter) initialize doclets}
+         * always returns a non-{@code null} value.
+         *
+         * @return the writer
+         * @since 17
+         */
+        default PrintWriter getStandardWriter() {
+            return null;
+        }
+
+        /**
+         * Returns a writer that can be used by a doclet to write diagnostic output,
+         * or {@code null} if no such writer is available.
+         *
+         * @apiNote
+         * The value may or may not be the same as that returned by {@link #getStandardWriter()}.
+         *
+         * @implSpec
+         * This implementation returns {@code null}.
+         * The implementation provided by the `javadoc` tool to
+         * {@link Doclet#init(Locale, Reporter) initialize doclets}
+         * always returns a non-{@code null} value.
+         *
+         * @return the writer
+         * @since 17
+         */
+        default PrintWriter getDiagnosticWriter() {
+            return null;
+        }
 
     /**
      * The mode specifying the level of detail of module documentation.
