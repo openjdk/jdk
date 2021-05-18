@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@
  *      -threadsPerCpu 4
  *      -threadsExtra 20
  *      -parseTimeout 0
- *      -unsafeLoad true
+ *      -hiddenLoad true
  */
 
 package vm.mlvm.anonloader.stress.parallelLoad;
@@ -55,7 +55,7 @@ import vm.share.FileUtils;
 
 /**
  * Verifies that loading classes in parallel from several threads using
- * {@link sun.misc.Unsafe#defineAnonymousClass}
+ * {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass}
  * does not produce exceptions and crashes.
  *
  */
@@ -90,7 +90,7 @@ public class Test extends MultiThreadedTest {
     /**
      * Constructs a sub-test class and runs it. The sub-test class loads
      * {@link vm.mlvm.anonloader.share.AnonkTestee01} class bytecodes
-     * using {@link sun.misc.Unsafe#defineAnonymousClass}
+     * using {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass}
      * @param numThread Number of the thread
      * @throws Exception if there any exceptions thrown in the sub-test
      */

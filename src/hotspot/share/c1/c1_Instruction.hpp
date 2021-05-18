@@ -87,7 +87,6 @@ class     BlockBegin;
 class     BlockEnd;
 class       Goto;
 class       If;
-class       IfInstanceOf;
 class       Switch;
 class         TableSwitch;
 class         LookupSwitch;
@@ -188,7 +187,6 @@ class InstructionVisitor: public StackObj {
   virtual void do_BlockBegin     (BlockBegin*      x) = 0;
   virtual void do_Goto           (Goto*            x) = 0;
   virtual void do_If             (If*              x) = 0;
-  virtual void do_IfInstanceOf   (IfInstanceOf*    x) = 0;
   virtual void do_TableSwitch    (TableSwitch*     x) = 0;
   virtual void do_LookupSwitch   (LookupSwitch*    x) = 0;
   virtual void do_Return         (Return*          x) = 0;
@@ -566,7 +564,6 @@ class Instruction: public CompilationResourceObj {
   virtual BlockEnd*         as_BlockEnd()        { return NULL; }
   virtual Goto*             as_Goto()            { return NULL; }
   virtual If*               as_If()              { return NULL; }
-  virtual IfInstanceOf*     as_IfInstanceOf()    { return NULL; }
   virtual TableSwitch*      as_TableSwitch()     { return NULL; }
   virtual LookupSwitch*     as_LookupSwitch()    { return NULL; }
   virtual Return*           as_Return()          { return NULL; }
@@ -2031,60 +2028,6 @@ LEAF(If, BlockEnd)
   void set_swapped(bool value)                    { _swapped = value;         }
   // generic
   virtual void input_values_do(ValueVisitor* f)   { BlockEnd::input_values_do(f); f->visit(&_x); f->visit(&_y); }
-};
-
-
-LEAF(IfInstanceOf, BlockEnd)
- private:
-  ciKlass* _klass;
-  Value    _obj;
-  bool     _test_is_instance;                    // jump if instance
-  int      _instanceof_bci;
-
- public:
-  IfInstanceOf(ciKlass* klass, Value obj, bool test_is_instance, int instanceof_bci, BlockBegin* tsux, BlockBegin* fsux)
-  : BlockEnd(illegalType, NULL, false) // temporary set to false
-  , _klass(klass)
-  , _obj(obj)
-  , _test_is_instance(test_is_instance)
-  , _instanceof_bci(instanceof_bci)
-  {
-    ASSERT_VALUES
-    assert(instanceof_bci >= 0, "illegal bci");
-    BlockList* s = new BlockList(2);
-    s->append(tsux);
-    s->append(fsux);
-    set_sux(s);
-  }
-
-  // accessors
-  //
-  // Note 1: If test_is_instance() is true, IfInstanceOf tests if obj *is* an
-  //         instance of klass; otherwise it tests if it is *not* and instance
-  //         of klass.
-  //
-  // Note 2: IfInstanceOf instructions are created by combining an InstanceOf
-  //         and an If instruction. The IfInstanceOf bci() corresponds to the
-  //         bci that the If would have had; the (this->) instanceof_bci() is
-  //         the bci of the original InstanceOf instruction.
-  ciKlass* klass() const                         { return _klass; }
-  Value obj() const                              { return _obj; }
-  int instanceof_bci() const                     { return _instanceof_bci; }
-  bool test_is_instance() const                  { return _test_is_instance; }
-  BlockBegin* sux_for(bool is_true) const        { return sux_at(is_true ? 0 : 1); }
-  BlockBegin* tsux() const                       { return sux_for(true); }
-  BlockBegin* fsux() const                       { return sux_for(false); }
-
-  // manipulation
-  void swap_sux() {
-    assert(number_of_sux() == 2, "wrong number of successors");
-    BlockList* s = sux();
-    BlockBegin* t = s->at(0); s->at_put(0, s->at(1)); s->at_put(1, t);
-    _test_is_instance = !_test_is_instance;
-  }
-
-  // generic
-  virtual void input_values_do(ValueVisitor* f)   { BlockEnd::input_values_do(f); f->visit(&_obj); }
 };
 
 
