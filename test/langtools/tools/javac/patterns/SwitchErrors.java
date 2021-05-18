@@ -130,4 +130,29 @@ public class SwitchErrors {
             case Integer i: break;
         }
     }
+    void incompatible1(String str) {
+        switch (str) {
+            case Integer i: break;
+            default: break;
+        }
+    }
+    void incompatible2(java.util.List l) {
+        switch (l) {
+            case java.util.List<Integer> l2: break;
+        }
+    }
+    void erroneous(Object o) {
+        switch (o) {
+            case String s: break;
+            case Undefined u: break;
+            case Integer i: break;
+            default: break;
+        }
+    }
+    void primitivePattern(Object o) {
+        switch (o) {
+            case int i: break;
+            default: break;
+        }
+    }
 }

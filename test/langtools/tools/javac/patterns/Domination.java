@@ -61,4 +61,29 @@ public class Domination {
         }
     }
 
+    int testDominatesStringConstant(String str) {
+        switch (str) {
+            case String s: return 1;
+            case "": return -1;
+        }
+    }
+
+    int testDominatesIntegerConstant(Integer i) {
+        switch (i) {
+            case Integer j: return 1;
+            case 0: return -1;
+        }
+    }
+
+    int testDominatesEnumConstant() {
+        enum E {
+            A, B;
+        }
+        E e = E.A;
+        switch (e) {
+            case E d: return 1;
+            case A: return -1;
+        }
+    }
+
 }

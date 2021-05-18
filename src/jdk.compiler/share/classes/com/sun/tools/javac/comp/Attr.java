@@ -1708,6 +1708,8 @@ public class Attr extends JCTree.Visitor {
                                 log.error(expr.pos(), Errors.EnumLabelMustBeUnqualifiedEnum);
                             } else if (!labels.add(sym)) {
                                 log.error(c.pos(), Errors.DuplicateCaseLabel);
+                            } else {
+                                checkCaseLabelDominated(pat.pos(), coveredTypes, sym.type);
                             }
                         } else if (errorEnumSwitch) {
                             //error recovery: the selector is erroneous, and all the case labels
@@ -1731,6 +1733,8 @@ public class Attr extends JCTree.Visitor {
                                               (stringSwitch ? Errors.StringConstReq : Errors.ConstExprReq));
                                 } else if (!labels.add(pattype.constValue())) {
                                     log.error(c.pos(), Errors.DuplicateCaseLabel);
+                                } else {
+                                    checkCaseLabelDominated(pat.pos(), coveredTypes, types.boxedTypeOrType(pattype));
                                 }
                             }
                         }
@@ -1748,10 +1752,16 @@ public class Attr extends JCTree.Visitor {
                             log.error(pat.pos(), Errors.FlowsThroughToPattern);
                         }
                         //binding pattern
-                        attribExpr(pat, switchEnv, seltype);
+                        attribExpr(pat, switchEnv);
                         var primary = TreeInfo.primaryPatternType((JCPattern) pat);
-                        Type patternType = types.erasure(primary.type());
+                        Type primaryType = primary.type();
+                        if (!primaryType.hasTag(TYPEVAR)) {
+                            primaryType = chk.checkClassOrArrayType(pat.pos(), primaryType);
+                        }
+                        checkCastablePattern(pat.pos(), seltype, primaryType);
+                        Type patternType = types.erasure(primaryType);
                         boolean isTotal = primary.unconditional() &&
+                                          !patternType.isErroneous() &&
                                           types.isSubtype(types.erasure(seltype), patternType);
                         if (isTotal) {
                             if (hasTotalPattern) {
@@ -1761,12 +1771,8 @@ public class Attr extends JCTree.Visitor {
                             }
                             hasTotalPattern = true;
                         }
-                        for (Type existing : coveredTypes) {
-                            if (types.isSubtype(patternType, existing)) {
-                                log.error(pat.pos(), Errors.PatternDominated);
-                            }
-                        }
-                        if (primary.unconditional()) {
+                        checkCaseLabelDominated(pat.pos(), coveredTypes, patternType);
+                        if (primary.unconditional() && !patternType.isErroneous()) {
                             coveredTypes = coveredTypes.prepend(patternType);
                         }
                     }
@@ -1808,6 +1814,14 @@ public class Attr extends JCTree.Visitor {
                 JCTree stat = stats.head;
                 if (stat.hasTag(VARDEF))
                     switchScope.enter(((JCVariableDecl) stat).sym);
+            }
+        }
+        private void checkCaseLabelDominated(DiagnosticPosition pos,
+                                             List<Type> coveredTypes, Type patternType) {
+            for (Type existing : coveredTypes) {
+                if (types.isSubtype(patternType, existing)) {
+                    log.error(pos, Errors.PatternDominated);
+                }
             }
         }
     // where
@@ -4071,16 +4085,7 @@ public class Attr extends JCTree.Visitor {
         if (!clazztype.isErroneous() && !types.isReifiable(clazztype)) {
             boolean valid = false;
             if (allowReifiableTypesInInstanceof) {
-                Warner warner = new Warner();
-                if (!types.isCastable(exprtype, clazztype, warner)) {
-                    chk.basicHandler.report(tree.expr.pos(),
-                                            diags.fragment(Fragments.InconvertibleTypes(exprtype, clazztype)));
-                } else if (warner.hasLint(LintCategory.UNCHECKED)) {
-                    log.error(tree.expr.pos(),
-                              Errors.InstanceofReifiableNotSafe(exprtype, clazztype));
-                } else {
-                    valid = true;
-                }
+                valid = checkCastablePattern(tree.expr.pos(), exprtype, clazztype);
             } else {
                 log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos(),
                           Feature.REIFIABLE_TYPES_INSTANCEOF.error(this.sourceName));
@@ -4093,6 +4098,23 @@ public class Attr extends JCTree.Visitor {
         chk.validate(typeTree, env, checkRawTypes);
         chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
         result = check(tree, syms.booleanType, KindSelector.VAL, resultInfo);
+    }
+
+    private boolean checkCastablePattern(DiagnosticPosition pos,
+                                         Type exprType,
+                                         Type pattType) {
+        Warner warner = new Warner();
+        if (!types.isCastable(exprType, pattType, warner)) {
+            chk.basicHandler.report(pos,
+                    diags.fragment(Fragments.InconvertibleTypes(exprType, pattType)));
+            return false;
+        } else if (warner.hasLint(LintCategory.UNCHECKED)) {
+            log.error(pos,
+                    Errors.InstanceofReifiableNotSafe(exprType, pattType));
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public void visitBindingPattern(JCBindingPattern tree) {

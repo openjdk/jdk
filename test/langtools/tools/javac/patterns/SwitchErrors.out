@@ -1,10 +1,10 @@
 SwitchErrors.java:33:18: compiler.err.constant.label.not.compatible: java.lang.String, java.lang.Object
 SwitchErrors.java:39:18: compiler.err.constant.label.not.compatible: int, java.lang.Object
 SwitchErrors.java:45:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, java.lang.Integer)
-SwitchErrors.java:46:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.CharSequence, java.lang.Integer)
+SwitchErrors.java:46:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.Integer, java.lang.CharSequence)
 SwitchErrors.java:51:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: compiler.misc.type.null, int)
 SwitchErrors.java:52:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, int)
-SwitchErrors.java:53:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.CharSequence, int)
+SwitchErrors.java:53:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.CharSequence)
 SwitchErrors.java:59:20: compiler.err.total.pattern.and.default
 SwitchErrors.java:65:24: compiler.err.total.pattern.and.default
 SwitchErrors.java:71:18: compiler.err.total.pattern.and.default
@@ -18,8 +18,14 @@ SwitchErrors.java:110:28: compiler.err.flows.through.to.pattern
 SwitchErrors.java:116:18: compiler.err.flows.through.to.pattern
 SwitchErrors.java:123:18: compiler.err.flows.through.to.pattern
 SwitchErrors.java:130:18: compiler.err.flows.through.to.pattern
+SwitchErrors.java:135:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, java.lang.Integer)
+SwitchErrors.java:141:18: compiler.err.instanceof.reifiable.not.safe: java.util.List, java.util.List<java.lang.Integer>
+SwitchErrors.java:147:18: compiler.err.cant.resolve.location: kindname.class, Undefined, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
+SwitchErrors.java:154:18: compiler.err.type.found.req: int, (compiler.misc.type.req.class.array)
 SwitchErrors.java:32:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:38:9: compiler.err.not.exhaustive.statement
+SwitchErrors.java:44:9: compiler.err.not.exhaustive.statement
+SwitchErrors.java:50:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:98:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:104:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:109:9: compiler.err.not.exhaustive.statement
@@ -28,4 +34,4 @@ SwitchErrors.java:120:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:127:9: compiler.err.not.exhaustive.statement
 - compiler.note.preview.filename: SwitchErrors.java, DEFAULT
 - compiler.note.preview.recompile
-28 errors
+34 errors
