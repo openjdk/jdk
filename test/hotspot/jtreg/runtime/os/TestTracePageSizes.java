@@ -127,14 +127,14 @@ public class TestTracePageSizes {
     }
 
     static class SmapsParser {
-        String start;
+        static final Pattern SECTION_START_PATT = Pattern.compile("^([a-f0-9]+)-([a-f0-9]+) [\\-rwpsx]{4}.*");
+        static final Pattern KERNEL_PAGESIZE_PATT = Pattern.compile("^KernelPageSize:\\s*(\\d*) kB");
+        static final Pattern VMFLAGS_PATT = Pattern.compile("^VmFlags: ([\\w\\? ]*)");        String start;
         String end;
         String ps;
         String vmFlags;
-        static final Pattern SECTION_START_PATT = Pattern.compile("^([a-f0-9]+)-([a-f0-9]+) [\\-rwpsx]{4}.*");
-        static final Pattern KERNEL_PAGESIZE_PATT = Pattern.compile("^KernelPageSize:\\s*(\\d*) kB");
-        static final Pattern VMFLAGS_PATT = Pattern.compile("^VmFlags: ([\\w\\? ]*)");
         int lineno = 0;
+
         void reset() {
             start = null;
             end = null;
@@ -153,7 +153,7 @@ public class TestTracePageSizes {
 
         void eatNext(String line) {
             debug("" + (lineno++) + " " + line);
-            Matcher matSectionStart = sectionStartPat.matcher(line);
+            Matcher matSectionStart = SECTION_START_PATT.matcher(line);
             if (matSectionStart.matches()) {
                 finish();
                 start = matSectionStart.group(1);
@@ -162,12 +162,12 @@ public class TestTracePageSizes {
                 vmFlags = null;
                 return;
             } else {
-                Matcher matKernelPageSize = kernelPageSizePat.matcher(line);
+                Matcher matKernelPageSize = KERNEL_PAGESIZE_PATT.matcher(line);
                 if (matKernelPageSize.matches()) {
                     ps = matKernelPageSize.group(1);
                     return;
                 }
-                Matcher matVmFlags = vmFlagsPat.matcher(line);
+                Matcher matVmFlags = VMFLAGS_PATT.matcher(line);
                 if (matVmFlags.matches()) {
                     vmFlags = matVmFlags.group(1);
                     return;
