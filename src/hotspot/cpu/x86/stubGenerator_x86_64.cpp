@@ -5939,6 +5939,7 @@ address generate_avx_ghash_processBlocks() {
     // Check if there was an error - if so, try 64-byte chunks
     __ evpmovb2m(k3, xmm7, Assembler::AVX_512bit);
     __ kortestql(k3, k3);
+    __ vpxor(xmm7, xmm7, xmm7, Assembler::AVX_512bit);
     __ jcc(Assembler::notZero, L_process64);
 
     __ vpmaddubsw(xmm2, xmm2, xmm18, Assembler::AVX_512bit);
@@ -5965,9 +5966,7 @@ address generate_avx_ghash_processBlocks() {
     __ subq(length, 0x100);
     __ cmpq(length, 64 * 4);
     __ jcc(Assembler::greaterEqual, L_process256);
-
-    __ align(32);
-    __ BIND(L_process64);
+    
     // At this point, we've decoded 64 * 4 * n bytes.
     // The remaining length will be <= 64 * 4 - 1.
     // UNLESS there was an error decoding the first 256-byte chunk.  In this
@@ -5977,6 +5976,9 @@ address generate_avx_ghash_processBlocks() {
 
     __ cmpq(length, 63);
     __ jcc(Assembler::lessEqual, L_finalBit);
+
+    __ align(32);
+    __ BIND(L_process64);
 
     // Handle first 64-byte block
 
@@ -5992,6 +5994,7 @@ address generate_avx_ghash_processBlocks() {
     // Check for error and bomb out before updating dest
     __ evpmovb2m(k3, xmm7, Assembler::AVX_512bit);
     __ kortestql(k3, k3);
+    __ vpxor(xmm7, xmm7, xmm7, Assembler::AVX_512bit);
     __ jcc(Assembler::notZero, L_exit);
 
     __ evmovdqaq(xmm4, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
@@ -6021,6 +6024,7 @@ address generate_avx_ghash_processBlocks() {
     // Check for error and bomb out before updating dest
     __ evpmovb2m(k3, xmm3, Assembler::AVX_512bit);
     __ kortestql(k3, k3);
+    __ vpxor(xmm3, xmm3, xmm3, Assembler::AVX_512bit);
     __ jcc(Assembler::notZero, L_exit);
 
     __ vpmaddubsw(xmm0, xmm0, xmm2, Assembler::AVX_512bit);
@@ -6048,6 +6052,7 @@ address generate_avx_ghash_processBlocks() {
     // Check for error and bomb out before updating dest
     __ evpmovb2m(k3, xmm3, Assembler::AVX_512bit);
     __ kortestql(k3, k3);
+    __ vpxor(xmm3, xmm3, xmm3, Assembler::AVX_512bit);
     __ jcc(Assembler::notZero, L_exit);
 
     __ vpermb(xmm1, xmm4, xmm1, Assembler::AVX_512bit);
@@ -6057,6 +6062,9 @@ address generate_avx_ghash_processBlocks() {
     __ subq(length, 64);
     __ addq(source, 64);
     __ addq(dest, 48);
+
+    __ cmpq(length, 64);
+    __ jcc(Assembler::greaterEqual, L_process64);
 
     __ BIND(L_finalBit);
     // Now have < 64 bytes left to decode
