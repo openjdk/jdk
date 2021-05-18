@@ -45,7 +45,7 @@ import static org.testng.Assert.*;
  */
 
 public class TestFinalizerEvent {
-    static boolean finalizerRun = false;
+    static volatile boolean finalizerRun = false;
 
     @Test
     public void test() throws InterruptedException, IOException {
