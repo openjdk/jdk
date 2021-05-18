@@ -144,9 +144,15 @@ public final class FileServerHandler implements HttpHandler {
                 + sanitize.apply(exchange.getRequestURI().getPath(), chars)
                 + "<p>").getBytes();
         exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
-        exchange.sendResponseHeaders(404, bytes.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(bytes);
+
+        if (exchange.getRequestMethod().equals("HEAD")) {  // no response body
+            exchange.getResponseHeaders().set("Content-Length", Integer.toString(bytes.length));
+            exchange.sendResponseHeaders(404, -1);
+        } else {
+            exchange.sendResponseHeaders(404, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
         }
     }
 
