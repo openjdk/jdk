@@ -853,7 +853,7 @@ public class Attr extends JCTree.Visitor {
         final JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
         try {
             Type itype = attribExpr(variable.init, env, type);
-            if (variable.nullVarType()) {
+            if (variable.isImplicitlyTyped()) {
                 //fixup local variable type
                 type = variable.type = variable.sym.type = chk.checkLocalVarType(variable, itype.baseType(), variable.name);
             }
@@ -1246,7 +1246,7 @@ public class Attr extends JCTree.Visitor {
                 // parameters have already been entered
                 env.info.scope.enter(tree.sym);
             } else {
-                if (tree.nullVarType() && (tree.getModifiers().flags & PARAMETER) == 0) {
+                if (tree.isImplicitlyTyped() && (tree.getModifiers().flags & PARAMETER) == 0) {
                     if (tree.init == null) {
                         //cannot use 'var' without initializer
                         log.error(tree, Errors.CantInferLocalVarType(tree.name, Fragments.LocalMissingInit));
@@ -1284,7 +1284,7 @@ public class Attr extends JCTree.Visitor {
         boolean isImplicitLambdaParameter = env.tree.hasTag(LAMBDA) &&
                 ((JCLambda)env.tree).paramKind == JCLambda.ParameterKind.IMPLICIT &&
                 (tree.sym.flags() & PARAMETER) != 0;
-        chk.validate(tree.vartype, env, !isImplicitLambdaParameter && !tree.nullVarType());
+        chk.validate(tree.vartype, env, !isImplicitLambdaParameter && !tree.isImplicitlyTyped());
 
         try {
             v.getConstValue(); // ensure compile-time constant initializer is evaluated
@@ -1305,12 +1305,12 @@ public class Attr extends JCTree.Visitor {
                     // marking the variable as undefined.
                     initEnv.info.enclVar = v;
                     attribExpr(tree.init, initEnv, v.type);
-                    if (tree.nullVarType()) {
+                    if (tree.isImplicitlyTyped()) {
                         //fixup local variable type
                         v.type = chk.checkLocalVarType(tree, tree.init.type.baseType(), tree.name);
                     }
                 }
-                if (tree.nullVarType()) {
+                if (tree.isImplicitlyTyped()) {
                     setSyntheticVariableType(tree, v.type);
                 }
             }
@@ -1546,7 +1546,7 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
             }
-            if (tree.var.nullVarType()) {
+            if (tree.var.isImplicitlyTyped()) {
                 Type inferredType = chk.checkLocalVarType(tree.var, elemtype, tree.var.name);
                 setSyntheticVariableType(tree.var, inferredType);
             }
@@ -3029,7 +3029,7 @@ public class Attr extends JCTree.Visitor {
                     Type argType = arityMismatch ?
                             syms.errType :
                             actuals.head;
-                    if (params.head.nullVarType()) {
+                    if (params.head.isImplicitlyTyped()) {
                         setSyntheticVariableType(params.head, argType);
                     }
                     params.head.sym = null;
@@ -5521,7 +5521,7 @@ public class Attr extends JCTree.Visitor {
         }
         public void visitVarDef(final JCVariableDecl tree) {
             //System.err.println("validateTypeAnnotations.visitVarDef " + tree);
-            if (tree.sym != null && tree.sym.type != null && !tree.nullVarType())
+            if (tree.sym != null && tree.sym.type != null && !tree.isImplicitlyTyped())
                 validateAnnotatedType(tree.vartype, tree.sym.type);
             scan(tree.mods);
             scan(tree.vartype);

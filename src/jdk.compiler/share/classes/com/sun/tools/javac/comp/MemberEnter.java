@@ -261,7 +261,7 @@ public class MemberEnter extends JCTree.Visitor {
         try {
             if (TreeInfo.isEnumInit(tree)) {
                 attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
-            } else if (!tree.nullVarType()) {
+            } else if (!tree.isImplicitlyTyped()) {
                 attr.attribType(tree.vartype, localEnv);
                 if (TreeInfo.isReceiverParam(tree))
                     checkReceiver(tree, localEnv);
@@ -281,7 +281,7 @@ public class MemberEnter extends JCTree.Visitor {
             tree.vartype.type = atype.makeVarargs();
         }
         WriteableScope enclScope = enter.enterScope(env);
-        Type vartype = tree.nullVarType()
+        Type vartype = tree.isImplicitlyTyped()
                 ? env.info.scope.owner.kind == MTH ? Type.noType : syms.errType
                 : tree.vartype.type;
         VarSymbol v = new VarSymbol(0, tree.name, vartype, enclScope.owner);
@@ -305,7 +305,7 @@ public class MemberEnter extends JCTree.Visitor {
         }
 
         annotate.annotateLater(tree.mods.annotations, localEnv, v, tree.pos());
-        if (!tree.nullVarType()) {
+        if (!tree.isImplicitlyTyped()) {
             annotate.queueScanTreeAndTypeAnnotate(tree.vartype, localEnv, v, tree.pos());
         }
 
