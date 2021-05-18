@@ -5966,7 +5966,7 @@ address generate_avx_ghash_processBlocks() {
     __ cmpq(length, 64 * 4);
     __ jcc(Assembler::greaterEqual, L_process256);
 
-    __ align(32)
+    __ align(32);
     __ BIND(L_process64);
     // At this point, we've decoded 64 * 4 * n bytes.
     // The remaining length will be <= 64 * 4 - 1.
