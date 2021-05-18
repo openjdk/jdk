@@ -1406,14 +1406,14 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
 
   if (k->is_hidden() && !is_registered_lambda_proxy_class(k)) {
     ResourceMark rm;
-    log_debug(cds)("Skipping %s: %s", k->name()->as_C_string(), "Hidden class");
+    log_debug(cds)("Skipping %s: Hidden class", k->name()->as_C_string());
     return true;
   }
 
   InstanceKlass* super = k->java_super();
   if (super != NULL && check_for_exclusion(super, NULL)) {
     ResourceMark rm;
-    log_warning(cds)("Skipping %s: super class %s is excluded @%p", k->name()->as_C_string(), super->name()->as_C_string(), super);
+    log_warning(cds)("Skipping %s: super class %s is excluded", k->name()->as_C_string(), super->name()->as_C_string());
     return true;
   }
 
@@ -1422,7 +1422,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   for (int i = 0; i < len; i++) {
     InstanceKlass* intf = interfaces->at(i);
     if (check_for_exclusion(intf, NULL)) {
-      log_warning(cds)("Skipping %s: interface %s is excluded @%p", k->name()->as_C_string(), intf->name()->as_C_string(), intf);
+      log_warning(cds)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
       return true;
     }
   }
