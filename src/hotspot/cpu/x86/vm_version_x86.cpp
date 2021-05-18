@@ -904,8 +904,9 @@ void VM_Version::get_processor_features() {
       UseAdler32Intrinsics = true;
     }
   } else if (UseAdler32Intrinsics) {
-    if (!FLAG_IS_DEFAULT(UseAdler32Intrinsics))
+    if (!FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
       warning("Adler32 Intrinsics requires avx2 instructions (not available on this CPU)");
+    }
     FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
   }
 #else
