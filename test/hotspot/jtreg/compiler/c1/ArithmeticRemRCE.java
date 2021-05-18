@@ -42,6 +42,7 @@ public class ArithmeticRemRCE {
     static int field = 1000;
 
     static void test1() {
+        // seq should be loop invariant, so we can not put it into static fields
         int[] seq = new int[1000];
         for (int i = 0; i < seq.length; i++) {
             seq[i] = i;
@@ -57,8 +58,9 @@ public class ArithmeticRemRCE {
 
             Asserts.assertTrue(seq[i % 1] == 0);
 
-            Asserts.assertTrue(0 <= seq[arg % field] && seq[arg % field] <= 999);
-            Asserts.assertTrue(0 <= seq[arg % -field] && seq[arg % -field] <= 999);
+            // will not apply RCE
+            Asserts.assertTrue(0 <= seq[i % field] && seq[i % field] <= 999);
+            Asserts.assertTrue(0 <= seq[i % -field] && seq[i % -field] <= 999);
         }
     }
 
