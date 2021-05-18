@@ -50,7 +50,6 @@
  * This method Returns a char* representation of that enum value.
  */
 static const char* lookup_diagnosticArgumentEnum(const char* field_name, oop object) {
-  Thread* THREAD = Thread::current();
   const char* enum_sig = "Lsun/hotspot/parser/DiagnosticCommand$DiagnosticArgumentType;";
   TempNewSymbol enumSigSymbol = SymbolTable::new_symbol(enum_sig);
   int offset = WhiteBox::offset_for_field(field_name, object, enumSigSymbol);

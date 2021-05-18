@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1134,7 +1134,7 @@ public abstract class ClassLoader {
                                         Object classData);
 
     // true if the name is null or has the potential to be a valid binary name
-    private boolean checkName(String name) {
+    private static boolean checkName(String name) {
         if ((name == null) || (name.isEmpty()))
             return true;
         if ((name.indexOf('/') != -1) || (name.charAt(0) == '['))
@@ -1254,14 +1254,14 @@ public abstract class ClassLoader {
      * Returns a class loaded by the bootstrap class loader;
      * or return null if not found.
      */
-    Class<?> findBootstrapClassOrNull(String name) {
+    static Class<?> findBootstrapClassOrNull(String name) {
         if (!checkName(name)) return null;
 
         return findBootstrapClass(name);
     }
 
     // return null if not found
-    private native Class<?> findBootstrapClass(String name);
+    private static native Class<?> findBootstrapClass(String name);
 
     /**
      * Returns the class with the given <a href="#binary-name">binary name</a> if this

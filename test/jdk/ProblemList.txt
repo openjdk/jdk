@@ -836,6 +836,7 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    gener
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
+jdk/jfr/event/gc/collection/TestG1ParallelPhases.java           8267133 generic-all
 
 ############################################################################
 
@@ -877,7 +878,6 @@ java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macos
 java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
 java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
 java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
-javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8260331 linux-x64
 
 
 ############################################################################

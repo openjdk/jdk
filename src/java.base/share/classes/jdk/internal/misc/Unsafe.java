@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1328,34 +1328,6 @@ public final class Unsafe {
     public native Class<?> defineClass0(String name, byte[] b, int off, int len,
                                         ClassLoader loader,
                                         ProtectionDomain protectionDomain);
-
-    /**
-     * Defines a class but does not make it known to the class loader or system dictionary.
-     * <p>
-     * For each CP entry, the corresponding CP patch must either be null or have
-     * the a format that matches its tag:
-     * <ul>
-     * <li>Integer, Long, Float, Double: the corresponding wrapper object type from java.lang
-     * <li>Utf8: a string (must have suitable syntax if used as signature or name)
-     * <li>Class: any java.lang.Class object
-     * <li>String: any object (not just a java.lang.String)
-     * <li>InterfaceMethodRef: (NYI) a method handle to invoke on that call site's arguments
-     * </ul>
-     * @param hostClass context for linkage, access control, protection domain, and class loader
-     * @param data      bytes of a class file
-     * @param cpPatches where non-null entries exist, they replace corresponding CP entries in data
-     */
-    @Deprecated(since = "15", forRemoval = true)
-    public Class<?> defineAnonymousClass(Class<?> hostClass, byte[] data, Object[] cpPatches) {
-        if (hostClass == null || data == null) {
-            throw new NullPointerException();
-        }
-        if (hostClass.isArray() || hostClass.isPrimitive()) {
-            throw new IllegalArgumentException();
-        }
-
-        return defineAnonymousClass0(hostClass, data, cpPatches);
-    }
 
     /**
      * Allocates an instance but does not run any constructor.
@@ -3855,7 +3827,6 @@ public final class Unsafe {
     private native void ensureClassInitialized0(Class<?> c);
     private native int arrayBaseOffset0(Class<?> arrayClass);
     private native int arrayIndexScale0(Class<?> arrayClass);
-    private native Class<?> defineAnonymousClass0(Class<?> hostClass, byte[] data, Object[] cpPatches);
     private native int getLoadAverage0(double[] loadavg, int nelems);
 
 

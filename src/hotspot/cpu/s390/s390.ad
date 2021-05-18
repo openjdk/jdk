@@ -1536,10 +1536,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::has_predicated_vectors(void) {
-  return false;
-}
-
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
@@ -1548,20 +1544,8 @@ const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return NULL;
 }
 
-bool Matcher::supports_vector_variable_shifts(void) {
-  return false; // not supported
-}
-
-bool Matcher::supports_vector_variable_rotates(void) {
-  return false; // not supported
-}
-
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
-}
-
-const bool Matcher::convL2FSupported(void) {
-  return true; // False means that conversion is done by runtime call.
 }
 
 //----------SUPERWORD HELPERS----------------------------------------
@@ -1588,17 +1572,8 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
 }
 
-const bool Matcher::supports_scalable_vector() {
-  return false;
-}
-
 const int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
-}
-
-// z/Architecture does support misaligned store/load at minimal extra cost.
-const bool Matcher::misaligned_vectors_ok() {
-  return true;
 }
 
 // RETURNS: whether this branch offset is short enough that a short
@@ -1619,32 +1594,6 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
   return Assembler::is_within_range_of_RelAddr16((address)((long)offset), (address)0);
 }
 
-const bool Matcher::isSimpleConstant64(jlong value) {
-  // Probably always true, even if a temp register is required.
-  return true;
-}
-
-// Should correspond to setting above
-const bool Matcher::init_array_count_is_in_bytes = false;
-
-// Suppress CMOVL. Conditional move available on z/Architecture only from z196 onwards. Not exploited yet.
-const int Matcher::long_cmove_cost() { return ConditionalMoveLimit; }
-
-// Suppress CMOVF. Conditional move available on z/Architecture only from z196 onwards. Not exploited yet.
-const int Matcher::float_cmove_cost() { return ConditionalMoveLimit; }
-
-// Does the CPU require postalloc expand (see block.cpp for description of postalloc expand)?
-const bool Matcher::require_postalloc_expand = false;
-
-// Do we need to mask the count passed to shift instructions or does
-// the cpu only look at the lower 5/6 bits anyway?
-// 32bit shifts mask in emitter, 64bit shifts need no mask.
-// Constant shift counts are handled in Ideal phase.
-const bool Matcher::need_masked_shift_count = false;
-
-// No support for generic vector operands.
-const bool Matcher::supports_generic_vector_operands  = false;
-
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg, bool is_temp) {
   ShouldNotReachHere(); // generic vector operands not supported
   return NULL;
@@ -1659,56 +1608,6 @@ bool Matcher::is_generic_vector(MachOper* opnd)  {
   ShouldNotReachHere();  // generic vector operands not supported
   return false;
 }
-
-// Set this as clone_shift_expressions.
-bool Matcher::narrow_oop_use_complex_address() {
-  if (CompressedOops::base() == NULL && CompressedOops::shift() == 0) return true;
-  return false;
-}
-
-bool Matcher::narrow_klass_use_complex_address() {
-  NOT_LP64(ShouldNotCallThis());
-  assert(UseCompressedClassPointers, "only for compressed klass code");
-  // TODO HS25: z port if (MatchDecodeNodes) return true;
-  return false;
-}
-
-bool Matcher::const_oop_prefer_decode() {
-  // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
-  return CompressedOops::base() == NULL;
-}
-
-bool Matcher::const_klass_prefer_decode() {
-  // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
-  return CompressedKlassPointers::base() == NULL;
-}
-
-// Is it better to copy float constants, or load them directly from memory?
-// Most RISCs will have to materialize an address into a
-// register first, so they would do better to copy the constant from stack.
-const bool Matcher::rematerialize_float_constants = false;
-
-// If CPU can load and store mis-aligned doubles directly then no fixup is
-// needed. Else we split the double into 2 integer pieces and move it
-// piece-by-piece. Only happens when passing doubles into C code as the
-// Java calling convention forces doubles to be aligned.
-const bool Matcher::misaligned_doubles_ok = true;
-
-// Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-const bool Matcher::strict_fp_requires_explicit_rounding = false;
-
-// Do floats take an entire double register or just half?
-//
-// A float in resides in a zarch double register. When storing it by
-// z_std, it cannot be restored in C-code by reloading it as a double
-// and casting it into a float afterwards.
-bool Matcher::float_in_double() { return false; }
-
-// Do ints take an entire long register or just half?
-// The relevant question is how the int is callee-saved:
-// the whole long is written but de-opt'ing will have to extract
-// the relevant 32 bits.
-const bool Matcher::int_in_long = true;
 
 // Constants for c2c and c calling conventions.
 
@@ -1784,8 +1683,6 @@ RegMask Matcher::modL_proj_mask() {
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return RegMask();
 }
-
-const bool Matcher::convi2l_type_required = true;
 
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {

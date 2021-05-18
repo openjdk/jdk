@@ -1107,7 +1107,7 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
   if (!UseSharedSpaces) {
     return NULL;
   }
-  if (class_name == NULL) {  // don't do this for hidden and unsafe anonymous classes
+  if (class_name == NULL) {  // don't do this for hidden classes
     return NULL;
   }
   if (class_loader.is_null() ||
@@ -1332,11 +1332,6 @@ void SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason)
 }
 
 bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
-
-  if (k->is_unsafe_anonymous()) {
-    warn_excluded(k, "Unsafe anonymous class");
-    return true; // unsafe anonymous classes are not archived, skip
-  }
 
   if (k->is_in_error_state()) {
     warn_excluded(k, "In error state");
@@ -1720,7 +1715,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
   loaded_lambda->link_class(CHECK_NULL);
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
-    JvmtiExport::post_class_load(THREAD->as_Java_thread(), loaded_lambda);
+    JvmtiExport::post_class_load(THREAD, loaded_lambda);
   }
   if (class_load_start_event.should_commit()) {
     SystemDictionary::post_class_load_event(&class_load_start_event, loaded_lambda, ClassLoaderData::class_loader_data(class_loader()));
@@ -2205,6 +2200,19 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
 
   unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(name);
   const RunTimeSharedClassInfo* record = NULL;
+  if (DynamicArchive::is_mapped()) {
+    // Those regenerated holder classes are in dynamic archive
+    if (name == vmSymbols::java_lang_invoke_Invokers_Holder() ||
+        name == vmSymbols::java_lang_invoke_DirectMethodHandle_Holder() ||
+        name == vmSymbols::java_lang_invoke_LambdaForm_Holder() ||
+        name == vmSymbols::java_lang_invoke_DelegatingMethodHandle_Holder()) {
+      record = dynamic_dict->lookup(name, hash, 0);
+      if (record != nullptr) {
+        return record;
+      }
+    }
+  }
+
   if (!MetaspaceShared::is_shared_dynamic(name)) {
     // The names of all shared classes in the static dict must also be in the
     // static archive
@@ -2261,7 +2269,7 @@ public:
 
   void do_value(const RunTimeSharedClassInfo* record) {
     ResourceMark rm;
-    _st->print_cr("%4d: %s %s", (_index++), record->_klass->external_name(),
+    _st->print_cr("%4d: %s %s", _index++, record->_klass->external_name(),
         class_loader_name_for_shared(record->_klass));
   }
   int index() const { return _index; }
@@ -2278,7 +2286,7 @@ public:
       ResourceMark rm;
       Klass* k = record->proxy_klass_head();
       while (k != nullptr) {
-        _st->print_cr("%4d: %s %s", (++_index), k->external_name(),
+        _st->print_cr("%4d: %s %s", _index++, k->external_name(),
                       class_loader_name_for_shared(k));
         k = k->next_link();
       }

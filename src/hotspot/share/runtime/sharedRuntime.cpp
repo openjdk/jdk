@@ -788,7 +788,7 @@ JRT_END
 void SharedRuntime::throw_StackOverflowError_common(JavaThread* current, bool delayed) {
   // We avoid using the normal exception construction in this case because
   // it performs an upcall to Java, and we're already out of stack space.
-  Thread* THREAD = current; // For exception processing.
+  JavaThread* THREAD = current; // For exception macros.
   Klass* k = vmClasses::StackOverflowError_klass();
   oop exception_oop = InstanceKlass::cast(k)->allocate_instance(CHECK);
   if (delayed) {
@@ -1050,7 +1050,7 @@ JRT_END
 // put callee has not been invoked yet.  Used by: resolve virtual/static,
 // vtable updates, etc.  Caller frame must be compiled.
 Handle SharedRuntime::find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   ResourceMark rm(current);
 
   // last java frame on stack (which includes native call frames)
@@ -1079,7 +1079,7 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
                                               CallInfo& callinfo, TRAPS) {
   Handle receiver;
   Handle nullHandle;  // create a handy null handle for exception returns
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
 
   assert(!vfst.at_end(), "Java frame must exist");
 
@@ -1196,7 +1196,7 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
 }
 
 methodHandle SharedRuntime::find_callee_method(TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   ResourceMark rm(current);
   // We need first to check if any Java activations (compiled, interpreted)
   // exist on the stack since last JavaCall.  If not, we need
@@ -1336,7 +1336,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
 // Resolves a call.  The compilers generate code for calls that go here
 // and are patched with the real destination of the call.
 methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimized, TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   ResourceMark rm(current);
   RegisterMap cbl_map(current, false);
   frame caller_frame = current->last_frame().sender(&cbl_map);
@@ -1656,7 +1656,7 @@ bool SharedRuntime::handle_ic_miss_helper_internal(Handle receiver, CompiledMeth
 }
 
 methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   ResourceMark rm(current);
   CallInfo call_info;
   Bytecodes::Code bc;
@@ -1763,7 +1763,7 @@ static bool clear_ic_at_addr(CompiledMethod* caller_nm, address call_addr, bool 
 // destination from compiled to interpreted.
 //
 methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   ResourceMark rm(current);
   RegisterMap reg_map(current, false);
   frame stub_frame = current->last_frame();
