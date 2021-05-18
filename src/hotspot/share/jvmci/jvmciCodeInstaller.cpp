@@ -804,7 +804,7 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bo
   }
 #endif
   if (_has_auto_box) {
-    JavaThread* THREAD = JavaThread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     JVMCI::ensure_box_caches_initialized(CHECK_(JVMCI::ok));
   }
   return JVMCI::ok;

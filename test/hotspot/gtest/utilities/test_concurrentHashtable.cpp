@@ -147,6 +147,19 @@ static void cht_insert(Thread* thr) {
   delete cht;
 }
 
+static void cht_insert_get(Thread* thr) {
+  uintptr_t val = 0x2;
+  SimpleTestLookup stl(val);
+  SimpleTestTable* cht = new SimpleTestTable();
+  ValueGet vg;
+  EXPECT_TRUE(cht->insert_get(thr, stl, val, vg)) << "Insert unique value failed.";
+  EXPECT_EQ(val, vg.get_value()) << "Getting an inserted value failed.";
+  ValueGet vg_dup;
+  EXPECT_FALSE(cht->insert_get(thr, stl, val, vg_dup)) << "Insert duplicate value succeeded.";
+  EXPECT_EQ(val, vg_dup.get_value()) << "Getting an existing value failed.";
+  delete cht;
+}
+
 static void cht_get_insert(Thread* thr) {
   uintptr_t val = 0x2;
   SimpleTestLookup stl(val);
@@ -447,6 +460,10 @@ TEST_VM(ConcurrentHashTable, basic_insert) {
 
 TEST_VM(ConcurrentHashTable, basic_get_insert) {
   nomt_test_doer(cht_get_insert);
+}
+
+TEST_VM(ConcurrentHashTable, basic_insert_get) {
+  nomt_test_doer(cht_insert_get);
 }
 
 TEST_VM(ConcurrentHashTable, basic_scope) {

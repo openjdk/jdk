@@ -88,7 +88,7 @@ public:
 
 // iterate an Array<MyMetaData*>
 TEST_VM(MetaspaceClosure, MSOPointerArrayRef) {
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current();
   ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
   Array<MyMetaData*>* array = MetadataFactory::new_array<MyMetaData*>(cld, 4, THREAD);
   for (int i = 0; i < array->length(); i++) {
@@ -113,7 +113,7 @@ TEST_VM(MetaspaceClosure, MSOPointerArrayRef) {
 
 // iterate an Array<MyMetaData>
 TEST_VM(MetaspaceClosure, MSOArrayRef) {
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current();
   ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
   Array<MyMetaData>* array = MetadataFactory::new_array<MyMetaData>(cld, 4, THREAD);
   for (int i = 0; i < array->length(); i++) {
