@@ -38,8 +38,7 @@ ZMarkStackSpace::ZMarkStackSpace() :
     _expand_lock(),
     _start(0),
     _top(0),
-    _end(0),
-    _high_usage(false) {
+    _end(0) {
   assert(ZMarkStackSpaceLimit >= ZMarkStackSpaceExpandSize, "ZMarkStackSpaceLimit too small");
 
   // Reserve address space
@@ -68,18 +67,6 @@ size_t ZMarkStackSpace::size() const {
   return _end - _start;
 }
 
-static bool is_high_usage(size_t size) {
-  // Consider usage to be high if we've used more than one 8th of the available space.
-  // The available space (controlled by ZMarkStackSpaceLimit) is by default 8G, so
-  // the high usage threshold will by default be 1G. The vast majority of workloads
-  // will use a few hundred megabytes of space at most, so hitting the high usage
-  // limit should be a rare event. At the same time, workloads that do see excessive
-  // mark stack usage will typically see continuous mark stack space growth until
-  // the high usage limit it hit, so setting the high usage limit too high will in
-  // those situations just waste memory.
-  return size > (ZMarkStackSpaceLimit / 8);
-}
-
 size_t ZMarkStackSpace::expand_space() {
   const size_t expand_size = ZMarkStackSpaceExpandSize;
   const size_t old_size = size();
@@ -93,12 +80,8 @@ size_t ZMarkStackSpace::expand_space() {
           ZMarkStackSpaceLimit / M);
   }
 
-  if (!_high_usage && is_high_usage(new_size)) {
-    Atomic::store(&_high_usage, true);
-  }
-
-  log_debug(gc, marking)("Expanding mark stack space: " SIZE_FORMAT "M->" SIZE_FORMAT "M (%s Usage)",
-                         old_size / M, new_size / M, _high_usage ? "High" : "Normal");
+  log_debug(gc, marking)("Expanding mark stack space: " SIZE_FORMAT "M->" SIZE_FORMAT "M",
+                         old_size / M, new_size / M);
 
   // Expand
   os::commit_memory_or_exit((char*)_end, expand_size, false /* executable */, "Mark stack space");
@@ -179,7 +162,6 @@ uintptr_t ZMarkStackSpace::alloc(size_t size) {
 void ZMarkStackSpace::free() {
   _top = _start;
   _end -= shrink_space();
-  _high_usage = is_high_usage(size());
 }
 
 ZMarkStackAllocator::ZMarkStackAllocator() :

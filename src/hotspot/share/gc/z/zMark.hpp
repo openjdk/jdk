@@ -64,7 +64,6 @@ private:
   void follow_partial_array(ZMarkStackEntry entry, bool finalizable);
   void follow_array_object(objArrayOop obj, bool finalizable);
   void follow_object(oop obj, bool finalizable);
-  template <bool gc_thread> bool should_mark_before_push() const;
   void mark_and_follow(ZMarkCache* cache, ZMarkStackEntry entry);
 
   template <typename T> bool drain(ZMarkStripe* stripe,
