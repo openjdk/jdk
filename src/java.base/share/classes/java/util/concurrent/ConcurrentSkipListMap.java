@@ -1708,9 +1708,8 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     public boolean equals(Object o) {
         if (o == this)
             return true;
-        if (!(o instanceof Map))
+        if (!(o instanceof Map<?, ?> m))
             return false;
-        Map<?,?> m = (Map<?,?>) o;
         try {
             Comparator<? super K> cmp = comparator;
             // See JDK-8223553 for Iterator type wildcard rationale
@@ -2298,18 +2297,14 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         }
 
         public boolean contains(Object o) {
-            if (!(o instanceof Map.Entry))
+            if (!(o instanceof Map.Entry<?, ?> e))
                 return false;
-            Map.Entry<?,?> e = (Map.Entry<?,?>)o;
             V v = m.get(e.getKey());
             return v != null && v.equals(e.getValue());
         }
         public boolean remove(Object o) {
-            if (!(o instanceof Map.Entry))
-                return false;
-            Map.Entry<?,?> e = (Map.Entry<?,?>)o;
-            return m.remove(e.getKey(),
-                            e.getValue());
+            return o instanceof Map.Entry<?, ?> e
+                    && m.remove(e.getKey(), e.getValue());
         }
         public boolean isEmpty() {
             return m.isEmpty();
