@@ -134,7 +134,7 @@ public class TestTracePageSizes {
         String end;
         String ps;
         String vmFlags;
-        int lineno = 0;
+        int lineno;
 
         void reset() {
             start = null;
