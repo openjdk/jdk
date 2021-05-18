@@ -313,7 +313,7 @@ void ObjectMonitor::ExitOnSuspend::operator()(JavaThread* current) {
     _om->_succ = NULL;
     // Don't need a full fence after clearing successor here because of the call to exit().
     _om->exit(current, false /* not_suspended */);
-    _om_op_done = true;
+    _exited = true;
   }
 }
 
@@ -323,7 +323,6 @@ void ObjectMonitor::ClearSuccOnSuspend::operator()(JavaThread* current) {
       _om->_succ = NULL;
       OrderAccess::fence(); // always do a full fence when successor is cleared
     }
-    _om_op_done = true;
   }
 }
 
@@ -432,7 +431,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
         ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos);
         EnterI(current);
       }
-      if (!eos.om_op_done()) {
+      if (!eos.exited()) {
         // ExitOnSuspend did not exit the OM
         assert(owner_raw() == current, "invariant");
         break;

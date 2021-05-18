@@ -203,7 +203,11 @@ class ThreadInVMfromNative : public ThreadStateTransition {
   }
   ~ThreadInVMfromNative() {
     assert(_thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
-    assert(!_thread->has_last_Java_frame() || _thread->frame_anchor()->walkable(), "Unwalkable stack in vm->native transition");
+    // We cannot assert !_thread->owns_locks() since we have valid cases where
+    // we call known native code using this wrapper holding locks.
+    _thread->check_possible_safepoint();
+    // Once we are in native vm expects stack to be walkable
+    _thread->frame_anchor()->make_walkable(_thread);
     _thread->set_thread_state(_thread_in_native);
   }
 };

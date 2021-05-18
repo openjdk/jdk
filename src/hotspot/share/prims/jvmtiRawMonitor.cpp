@@ -43,7 +43,6 @@ void JvmtiPendingMonitors::transition_raw_monitors() {
          "Java thread has not been created yet or more than one java thread "
          "is running. Raw monitor transition will not work");
   JavaThread* current_java_thread = JavaThread::current();
-  assert(current_java_thread->thread_state() == _thread_in_vm, "Must be in vm");
   {
     ThreadToNativeFromVM ttnfvm(current_java_thread);
     for (int i = 0; i < count(); i++) {
@@ -63,7 +62,6 @@ JvmtiRawMonitor::JvmtiRawMonitor(const char* name) : _owner(NULL),
                                                      _recursions(0),
                                                      _entry_list(NULL),
                                                      _wait_set(NULL),
-                                                     _waiters(0),
                                                      _magic(JVMTI_RM_MAGIC),
                                                      _name(NULL) {
 #ifdef ASSERT
@@ -312,7 +310,7 @@ void JvmtiRawMonitor::simple_notify(Thread* self, bool all) {
 void JvmtiRawMonitor::ExitOnSuspend::operator()(JavaThread* current) {
   // We must exit the monitor in case of a safepoint.
   _rm->simple_exit(current);
-  _rm_exit = true;
+  _rm_exited = true;
 }
 
 // JavaThreads will enter here with state _thread_in_native.
@@ -381,9 +379,7 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
     guarantee(jt->thread_state() == _thread_in_native, "invariant");
 
     _recursions = 0;
-    _waiters++;
     ret = simple_wait(self, millis);
-    _waiters--;
 
     {
       ThreadInVMfromNative tivmfn(jt);
@@ -392,23 +388,21 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
         {
           ThreadBlockInVMPreprocess<ExitOnSuspend> tbivmp(jt, eos);
           simple_enter(jt);
-          _recursions = save;
         }
         if (!eos.monitor_exited()) {
           break;
         }
       }
+      _recursions = save;
       if (jt->is_interrupted(true)) {
         ret = M_INTERRUPTED;
       }
     }
   } else {
     _recursions = 0;
-    _waiters++;
     ret = simple_wait(self, millis);
-    _waiters--;
-    _recursions = save;
     simple_enter(self);
+    _recursions = save;
     assert(ret != M_INTERRUPTED, "Only JavaThreads can be interrupted");
   }
 

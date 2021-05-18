@@ -306,15 +306,17 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   class ExitOnSuspend {
    protected:
     ObjectMonitor* _om;
-    bool _om_op_done;
+    bool _exited;
    public:
-    ExitOnSuspend(ObjectMonitor* om) : _om(om), _om_op_done(false) {}
+    ExitOnSuspend(ObjectMonitor* om) : _om(om), _exited(false) {}
     void operator()(JavaThread* current);
-    bool om_op_done() { return _om_op_done; }
+    bool exited() { return _exited; }
   };
-  class ClearSuccOnSuspend : public ExitOnSuspend {
+  class ClearSuccOnSuspend {
+   protected:
+    ObjectMonitor* _om;
    public:
-    ClearSuccOnSuspend(ObjectMonitor* om) : ExitOnSuspend(om) {}
+    ClearSuccOnSuspend(ObjectMonitor* om) : _om(om)  {}
     void operator()(JavaThread* current);
   };
  public:

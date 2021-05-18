@@ -49,7 +49,7 @@
 // If this were the only thing we needed to think about we could just stay in
 // native for all operations. However we need to honor a suspend request, not
 // entering a monitor if suspended, and check for interrupts. Honoring a suspend
-// request// and reading the interrupt flag must be done from VM state
+// request and reading the interrupt flag must be done from VM state
 // (a safepoint unsafe state).
 
 class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
@@ -74,7 +74,6 @@ class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
                                 // The list is actually composed of nodes,
                                 // acting as proxies for Threads.
   QNode* volatile _wait_set;    // Threads wait()ing on the monitor
-  volatile jint _waiters;       // number of waiting threads
   int _magic;
   char* _name;
   // JVMTI_RM_MAGIC is set in contructor and unset in destructor.
@@ -93,11 +92,11 @@ class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
   class ExitOnSuspend {
    protected:
     JvmtiRawMonitor* _rm;
-    bool _rm_exit;
+    bool _rm_exited;
    public:
-    ExitOnSuspend(JvmtiRawMonitor* rm) : _rm(rm), _rm_exit(false) {}
+    ExitOnSuspend(JvmtiRawMonitor* rm) : _rm(rm), _rm_exited(false) {}
     void operator()(JavaThread* current);
-    bool monitor_exited() { return _rm_exit; }
+    bool monitor_exited() { return _rm_exited; }
   };
 
  public:
