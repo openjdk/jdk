@@ -152,7 +152,7 @@ public class TestTracePageSizes {
         }
 
         void eatNext(String line) {
-            debug("" + lineno++ + " " + line);
+            debug("" + (lineno++) + " " + line);
             Matcher matSectionStart = sectionStartPat.matcher(line);
             if (matSectionStart.matches()) {
                 finish();
