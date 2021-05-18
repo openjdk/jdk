@@ -260,17 +260,17 @@ public abstract class FileSystemView {
     * Returns an icon for a file, directory, or folder as it would be displayed
     * in a system file browser for the requested size.
     * <p>
-    * The default implementation gets information from the
+    * Example: <pre>
+    *     FileSystemView fsv = FileSystemView.getFileSystemView();
+    *     Icon icon = fsv.getSystemIcon(new File("application.exe"), 64);
+    *     JLabel label = new JLabel(icon);
+    * </pre>
+    * <p>
+    * @implSpec The default implementation gets information from the
     * {@code ShellFolder} class. Whenever possible, the icon
     * returned is a multi-resolution icon image,
     * which allows better support for High DPI environments
     * with different scaling factors.
-    * <p>
-    * Example: <pre>
-    * FileSystemView fsv = FileSystemView.getFileSystemView();
-    * Icon icon = fsv.getSystemIcon(new File("application.exe"), 64);
-    * JLabel label = new JLabel(icon);
-    * </pre>
     *
     * @param f a {@code File} object
     * @param size width and height of the icon in virtual pixels
@@ -279,6 +279,7 @@ public abstract class FileSystemView {
     * non-existing file.
     * @see JFileChooser#getIcon
     * @see AbstractMultiResolutionImage
+    * @see FileSystemView#getSystemIcon(File)
     * @since 17
     */
     public Icon getSystemIcon(File f, int size) {
