@@ -56,7 +56,7 @@ public class DataFlavorRemoteTest {
         ProcessResults processResults =
                 ProcessCommunicator
                         .executeChildProcess(Consumer.class, new String[0]);
-        if (!"Hello".equals(processResults.getStdErr())) {
+        if (!"Hello".equals(processResults.getStdOut())) {
             throw new RuntimeException("transfer of remote object failed");
         }
         System.out.println("ok");
@@ -69,7 +69,7 @@ public class DataFlavorRemoteTest {
             DataFlavor dataFlavor = new DataFlavor(DataFlavor.javaRemoteObjectMimeType +
                     ";class=Hello" );
             Object data = clipboard.getData(dataFlavor);
-            System.err.print(((Hello) data).sayHello());
+            System.out.print(((Hello) data).sayHello());
         }
 
     }
