@@ -678,6 +678,13 @@ void MacroAssembler::call_VM_base(Register oop_result,
   // do the call, remove parameters
   MacroAssembler::call_VM_leaf_base(entry_point, number_of_arguments, &l);
 
+  // lr could be poisoned with PAC signature during throw_pending_exception
+  // if it was tail-call optimized by compiler, since lr is not callee-saved
+  // reload it with proper value
+  ldr(lr, Address(rthread,
+                            JavaThread::frame_anchor_offset()
+                            + JavaFrameAnchor::last_Java_pc_offset()));
+
   // reset last Java frame
   // Only interpreter should have to clear fp
   reset_last_Java_frame(true);
