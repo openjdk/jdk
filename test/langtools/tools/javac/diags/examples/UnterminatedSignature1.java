@@ -21,12 +21,12 @@
  * questions.
  */
 
-// key: compiler.err.dc.ref.bad.parens
+// key: compiler.err.dc.unterminated.signature
 // key: compiler.note.note
 // key: compiler.note.proc.messager
 // run: backdoor
 // options: -processor DocCommentProcessor -proc:only
 
-/** @see #m(int)x */
-class RefBadParens1 { }
+/** @see java.util.Set<String */
+class UnterminatedSignature1 { }
 
