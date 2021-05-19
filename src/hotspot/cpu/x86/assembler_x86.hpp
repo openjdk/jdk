@@ -2530,7 +2530,7 @@ private:
   void evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, Address src,
                int comparison, int vector_len);
 
-  void evpmovb2m(KRegister dst, XMMRegister src, int vector_len);
+//  void evpmovb2m(KRegister dst, XMMRegister src, int vector_len);
 
   // Vector blends
   void blendvps(XMMRegister dst, XMMRegister src);

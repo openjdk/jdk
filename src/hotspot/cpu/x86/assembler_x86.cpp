@@ -4159,7 +4159,7 @@ void Assembler::evpcmpeqq(KRegister kdst, XMMRegister nds, Address src, int vect
 }
 
 void Assembler::evpmovb2m(KRegister kdst, XMMRegister src, int vector_len) {
-  assert(UseAVX > 2  && VM_Version::supports_avx512dq(), "");
+  assert(UseAVX > 2  && VM_Version::supports_avx512vlbwcd(), "");
   assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_is_evex_instruction();
@@ -9494,6 +9494,7 @@ void Assembler::shrxq(Register dst, Register src1, Register src2) {
   emit_int16((unsigned char)0xF7, (0xC0 | encode));
 }
 
+#if 0
 void Assembler::evpmovb2m(KRegister dst, XMMRegister src, int vector_len) {
   assert(VM_Version::supports_avx512vlbw(), "");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
@@ -9501,6 +9502,7 @@ void Assembler::evpmovb2m(KRegister dst, XMMRegister src, int vector_len) {
   int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_38, &attributes);
   emit_int16(0x29, (0xC0 | encode));
 }
+#endif
 
 #ifndef _LP64
 
