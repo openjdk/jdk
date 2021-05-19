@@ -242,7 +242,7 @@ public class TestTracePageSizes {
         if (args.length > 0 && args[0].equals("-debug")) {
             debug = true;
         } else {
-            debug =true;// false;
+            debug = false;
         }
 
         // To be able to detect large page use (esp. THP) somewhat reliably, we
@@ -331,7 +331,6 @@ class RangeWithPageSize {
     private long start;
     private long end;
     private long pageSize;
-    private String vmFlags;
     private boolean vmFlagHG;
     private boolean vmFlagHT;
 
@@ -340,7 +339,6 @@ class RangeWithPageSize {
         //  (none of the input strings be null).
         this.start = Long.parseUnsignedLong(start, 16);
         this.end = Long.parseUnsignedLong(end, 16);
-        this.vmFlags = vmFlags;
         this.pageSize = Long.parseLong(pageSize);
         vmFlagHG = false;
         vmFlagHT = false;
