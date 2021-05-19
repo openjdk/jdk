@@ -23,7 +23,7 @@
 
 /**
  * @test SharedBaseAddress
- * @bug 8265705
+ * @bug 8265705 8267351
  * @summary Test variety of values for SharedBaseAddress, making sure
  *          VM handles normal values as well as edge values w/o a crash.
  * @requires vm.cds
