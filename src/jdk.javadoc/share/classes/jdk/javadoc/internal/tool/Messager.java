@@ -66,9 +66,9 @@ public class Messager extends Log implements Reporter {
     /** Get the current messager, which is also the compiler log. */
     public static Messager instance0(Context context) {
         Log instance = context.get(logKey);
-        if (!(instance instanceof Messager msgr))
+        if (!(instance instanceof Messager m))
             throw new InternalError("no messager instance!");
-        return msgr;
+        return m;
     }
 
     public static void preRegister(Context context,

@@ -591,14 +591,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     void warnIfEmpty(TagStackItem tsi, DocTree endTree) {
-        if (tsi.tag != null && tsi.tree instanceof StartElementTree sElemTree) {
+        if (tsi.tag != null && tsi.tree instanceof StartElementTree startTree) {
             if (tsi.tag.flags.contains(HtmlTag.Flag.EXPECT_CONTENT)
                     && !tsi.flags.contains(Flag.HAS_TEXT)
                     && !tsi.flags.contains(Flag.HAS_ELEMENT)
                     && !tsi.flags.contains(Flag.HAS_INLINE_TAG)
                     && !(tsi.tag.elemKind == ElemKind.HTML4)) {
-                DocTree tree = (endTree != null) ? endTree : sElemTree;
-                Name treeName = sElemTree.getName();
+                DocTree tree = (endTree != null) ? endTree : startTree;
+                Name treeName = startTree.getName();
                 env.messages.warning(HTML, tree, "dc.tag.empty", treeName);
             }
         }

@@ -140,8 +140,8 @@ public class Start {
         this.locale = Locale.getDefault();
 
         Log log = context.get(Log.logKey);
-        if (log instanceof Messager mLog){
-            messager = mLog;
+        if (log instanceof Messager m){
+            messager = m;
         } else {
             PrintWriter out = context.get(Log.errKey);
             messager = (out == null)

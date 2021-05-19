@@ -2332,8 +2332,8 @@ public class Utils {
         protected String defaultAction(TypeMirror e, Object val) {
             if (val == null)
                 return null;
-            else if (val instanceof String str)
-                return sourceForm(str);
+            else if (val instanceof String s)
+                return sourceForm(s);
             return val.toString(); // covers int, short
         }
 
@@ -2633,8 +2633,8 @@ public class Utils {
         return getBlockTags(element, t -> {
             if (taglet instanceof BaseTaglet bt) {
                 return bt.accepts(t);
-            } else if (t instanceof UnknownBlockTagTree ukbt) {
-                return ukbt.getTagName().equals(taglet.getName());
+            } else if (t instanceof UnknownBlockTagTree tree) {
+                return tree.getTagName().equals(taglet.getName());
             } else {
                 return false;
             }
