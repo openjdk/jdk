@@ -1736,11 +1736,11 @@ public class Utils {
 
         private Collator createCollator(Locale locale) {
             Collator baseCollator = Collator.getInstance(locale);
-            if (baseCollator instanceof RuleBasedCollator) {
+            if (baseCollator instanceof RuleBasedCollator ruleBaseCollator) {
                 // Extend collator to sort signatures with additional args and var-args in a well-defined order:
                 // () < (int) < (int, int) < (int...)
                 try {
-                    return new RuleBasedCollator(((RuleBasedCollator) baseCollator).getRules()
+                    return new RuleBasedCollator(ruleBaseCollator.getRules()
                             + "& ')' < ',' < '.','['");
                 } catch (ParseException e) {
                     throw new RuntimeException(e);
@@ -2332,8 +2332,8 @@ public class Utils {
         protected String defaultAction(TypeMirror e, Object val) {
             if (val == null)
                 return null;
-            else if (val instanceof String)
-                return sourceForm((String) val);
+            else if (val instanceof String str)
+                return sourceForm(str);
             return val.toString(); // covers int, short
         }
 
@@ -2631,10 +2631,10 @@ public class Utils {
 
     public List<? extends DocTree> getBlockTags(Element element, Taglet taglet) {
         return getBlockTags(element, t -> {
-            if (taglet instanceof BaseTaglet) {
-                return ((BaseTaglet) taglet).accepts(t);
-            } else if (t instanceof UnknownBlockTagTree) {
-                return ((UnknownBlockTagTree) t).getTagName().equals(taglet.getName());
+            if (taglet instanceof BaseTaglet baseTaglet) {
+                return baseTaglet.accepts(t);
+            } else if (t instanceof UnknownBlockTagTree unknownBlockTagTree) {
+                return unknownBlockTagTree.getTagName().equals(taglet.getName());
             } else {
                 return false;
             }

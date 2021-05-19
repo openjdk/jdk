@@ -420,8 +420,7 @@ public class CommentUtils {
         PackageElement pe = null;
         switch (e.getKind()) {
             case OTHER:
-                if (e instanceof DocletElement) {
-                    DocletElement de = (DocletElement)e;
+                if (e instanceof DocletElement de) {
                     fo = de.getFileObject();
                     pe = de.getPackageElement();
                 }

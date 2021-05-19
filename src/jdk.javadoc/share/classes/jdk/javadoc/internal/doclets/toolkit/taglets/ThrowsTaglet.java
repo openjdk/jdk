@@ -74,8 +74,8 @@ public class ThrowsTaglet extends BaseTaglet
         Element exception;
         CommentHelper ch = utils.getCommentHelper(input.element);
         if (input.tagId == null) {
-            exception = input.docTreeInfo.docTree instanceof ThrowsTree
-                    ? ch.getException((ThrowsTree) input.docTreeInfo.docTree) : null;
+            exception = input.docTreeInfo.docTree instanceof ThrowsTree throwsTree
+                    ? ch.getException(throwsTree) : null;
             input.tagId = exception == null
                     ? ch.getExceptionName(input.docTreeInfo.docTree).getSignature()
                     : utils.getFullyQualifiedName(exception);

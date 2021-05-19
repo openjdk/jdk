@@ -158,8 +158,8 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         ListBuffer<JCCompilationUnit> classTrees = new ListBuffer<>();
 
         try {
-            StandardJavaFileManager fm = toolEnv.fileManager instanceof StandardJavaFileManager
-                    ? (StandardJavaFileManager) toolEnv.fileManager
+            StandardJavaFileManager fm = toolEnv.fileManager instanceof StandardJavaFileManager standardJavaFileManager
+                    ? standardJavaFileManager
                     : null;
             Set<String> packageNames = new LinkedHashSet<>();
             // Normally, the args should be a series of package names or file names.

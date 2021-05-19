@@ -148,8 +148,8 @@ public class ToolEnvironment {
         chk = Check.instance(context);
         types = com.sun.tools.javac.code.Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
-        if (fileManager instanceof JavacFileManager) {
-            ((JavacFileManager)fileManager).setSymbolFileEnabled(false);
+        if (fileManager instanceof JavacFileManager javacFileManager) {
+            javacFileManager.setSymbolFileEnabled(false);
         }
         docTrees = JavacTrees.instance(context);
         source = Source.instance(context);

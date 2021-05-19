@@ -113,15 +113,15 @@ public class JavadocTool implements DocumentationTool {
 
             if (out == null)
                 context.put(Log.errKey, new PrintWriter(System.err, true));
-            else if (out instanceof PrintWriter)
-                context.put(Log.errKey, ((PrintWriter) out));
+            else if (out instanceof PrintWriter printWriter)
+                context.put(Log.errKey, printWriter);
             else
                 context.put(Log.errKey, new PrintWriter(out, true));
 
             if (fileManager == null) {
                 fileManager = getStandardFileManager(diagnosticListener, null, null);
-                if (fileManager instanceof BaseFileManager) {
-                    ((BaseFileManager) fileManager).autoClose = true;
+                if (fileManager instanceof BaseFileManager baseFileManager) {
+                    baseFileManager.autoClose = true;
                 }
             }
             fileManager = ccw.wrap(fileManager);
