@@ -2276,7 +2276,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
     if (_major_version < 51) { // backward compatibility
       flags = JVM_ACC_STATIC;
     } else if ((flags & JVM_ACC_STATIC) == JVM_ACC_STATIC) {
-      flags &= JVM_ACC_STATIC | JVM_ACC_STRICT;
+      flags &= JVM_ACC_STATIC | (_major_version <= JAVA_16_VERSION ? JVM_ACC_STRICT : 0);
     } else {
       classfile_parse_error("Method <clinit> is not static in class file %s", THREAD);
       return NULL;
