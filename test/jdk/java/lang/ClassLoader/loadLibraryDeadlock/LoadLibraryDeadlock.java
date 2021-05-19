@@ -32,7 +32,6 @@
  * called from Class1, then acquiring ZipFile during the search for a class
  * triggered from JNI.
  */
-import java.security.*;
 import java.lang.*;
 
 public class LoadLibraryDeadlock {

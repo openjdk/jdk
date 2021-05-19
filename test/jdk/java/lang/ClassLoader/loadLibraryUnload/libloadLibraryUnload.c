@@ -22,13 +22,28 @@
  * questions.
  */
 
-/*
- * Class1 loads a native library that calls ClassLoader.findClass in JNI_OnLoad.
- * Class1 runs concurrently with another thread that opens a signed jar file.
- */
-class Class1 {
-    static {
-        System.loadLibrary("loadLibraryDeadlock");
-        System.out.println("Signed jar loaded from native library.");
+#include <stdio.h>
+#include "jni.h"
+
+JNIEXPORT jint JNICALL
+JNI_OnLoad(JavaVM *vm, void *reserved)
+{
+    JNIEnv *env;
+
+    printf("Native library loaded.\n");
+    fflush(stdout);
+
+    if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_2) != JNI_OK) {
+        return JNI_EVERSION; /* JNI version not supported */
     }
+
+    return JNI_VERSION_1_2;
 }
+
+JNIEXPORT void JNICALL
+JNI_OnUnload(JavaVM *vm, void *reserved) {
+
+    printf("Native library unloaded.\n");
+    fflush(stdout);
+}
+

@@ -23,12 +23,21 @@
  */
 
 /*
- * Class1 loads a native library that calls ClassLoader.findClass in JNI_OnLoad.
- * Class1 runs concurrently with another thread that opens a signed jar file.
+ * Class1 loads a native library.
  */
-class Class1 {
-    static {
-        System.loadLibrary("loadLibraryDeadlock");
-        System.out.println("Signed jar loaded from native library.");
+package p;
+
+public class Class1 {
+
+    public Class1() {
+    }
+
+    // method called from java threads
+    public void loadLibrary() throws Exception {
+        try {
+            System.loadLibrary("loadLibraryUnload");
+            System.out.println("Native library loaded from Class1.");
+        } catch (Exception ignore) {
+        }
     }
 }

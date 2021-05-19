@@ -40,7 +40,6 @@ import java.lang.Process;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.nio.charset.StandardCharsets;
 
 public class TestLoadLibraryDeadlock {
 
@@ -83,7 +82,7 @@ public class TestLoadLibraryDeadlock {
 
     private static OutputAnalyzer createJar(String outputJar, String... classes) throws Throwable {
         String jar = JDKToolFinder.getJDKTool("jar");
-        List<String> commands = new ArrayList<String>();
+        List<String> commands = new ArrayList<>();
         Collections.addAll(commands, jar, "cvf", outputJar);
         Collections.addAll(commands, classes);
         return runCommandInTestClassPath(commands.toArray(new String[0]));
@@ -100,7 +99,7 @@ public class TestLoadLibraryDeadlock {
 
     private static Process runJavaCommand(String... command) throws Throwable {
         String java = JDKToolFinder.getJDKTool("java");
-        List<String> commands = new ArrayList<String>();
+        List<String> commands = new ArrayList<>();
         Collections.addAll(commands, java);
         Collections.addAll(commands, command);
         System.out.println("COMMAND: " + String.join(" ", commands));
@@ -145,6 +144,19 @@ public class TestLoadLibraryDeadlock {
         }
     }
 
+    private final static long countLines(OutputAnalyzer output, String string) {
+        return output.asLines()
+                     .stream()
+                     .filter(s -> s.contains(string))
+                     .count();
+    }
+
+    private final static void dump(OutputAnalyzer output) {
+        output.asLines()
+              .stream()
+              .forEach(s -> System.out.println(s));
+    }
+
     public static void main(String[] args) throws Throwable {
         genKey()
                 .shouldHaveExitValue(0);
@@ -183,55 +195,39 @@ public class TestLoadLibraryDeadlock {
         // dump available output
         String output = readAvailable(process.getInputStream());
         OutputAnalyzer outputAnalyzer = new OutputAnalyzer(output);
-        outputAnalyzer
-                .asLines().stream()
-                .forEach(s -> System.out.println(s));
+        dump(outputAnalyzer);
 
         // if the process is still running, get the thread dump
         OutputAnalyzer outputAnalyzerJcmd = jcmd(process.pid(), "Thread.print");
-        outputAnalyzerJcmd
-                .asLines().stream()
-                .forEach(s -> System.out.println(s));
+        dump(outputAnalyzerJcmd);
 
-        Asserts.assertTrue(outputAnalyzerJcmd
-                .asLines().stream()
-                .filter(s -> s.contains("Java-level deadlock"))
-                .count() == 0,
+        Asserts.assertTrue(
+                countLines(outputAnalyzer, "Java-level deadlock") == 0,
                 "Found a deadlock.");
 
         // if no deadlock, make sure all components have been loaded
-        Asserts.assertTrue(outputAnalyzer
-                .asLines().stream()
-                .filter(s -> s.contains("Class Class1 not found."))
-                .count() == 0,
+        Asserts.assertTrue(
+                countLines(outputAnalyzer, "Class Class1 not found.") == 0,
                 "Unable to load class. Class1 not found.");
 
-        Asserts.assertTrue(outputAnalyzer
-                .asLines().stream()
-                .filter(s -> s.contains("Class Class2 not found."))
-                .count() == 0,
+        Asserts.assertTrue(
+                countLines(outputAnalyzer, "Class Class2 not found.") == 0,
                 "Unable to load class. Class2 not found.");
 
-        Asserts.assertTrue(outputAnalyzer
-                .asLines().stream()
-                .filter(s -> s.contains("Native library loaded."))
-                .count() > 0,
+        Asserts.assertTrue(
+                countLines(outputAnalyzer, "Native library loaded.") > 0,
                 "Unable to load native library.");
 
-        Asserts.assertTrue(outputAnalyzer
-                .asLines().stream()
-                .filter(s -> s.contains("Signed jar loaded."))
-                .count() > 0,
+        Asserts.assertTrue(
+                countLines(outputAnalyzer, "Signed jar loaded.") > 0,
                 "Unable to load signed jar.");
 
-        Asserts.assertTrue(outputAnalyzer
-                .asLines().stream()
-                .filter(s -> s.contains("Signed jar loaded from native library."))
-                .count() > 0,
+        Asserts.assertTrue(
+                countLines(outputAnalyzer, "Signed jar loaded from native library.") > 0,
                 "Unable to load signed jar from native library.");
 
         if (!process.waitFor(5, TimeUnit.SECONDS)) {
-            // if process is still frozen, fail the test even though
+            // if the process is still frozen, fail the test even though
             // the "deadlock" text hasn't been found
             process.destroyForcibly();
             Asserts.assertTrue(process.waitFor() == 0,

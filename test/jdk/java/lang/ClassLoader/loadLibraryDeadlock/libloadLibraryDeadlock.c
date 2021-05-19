@@ -26,8 +26,8 @@
 #include "jni.h"
 
 /*
- * JNI library that loads an arbitrary class from a (signed) jar.
- * This triggers the search in jars, and the lock in ZipFile is being acquired
+ * Native library that loads an arbitrary class from a (signed) jar.
+ * This triggers the search in jars, and the lock in ZipFile is acquired
  * as a result.
  */
 JNIEXPORT jint JNICALL
