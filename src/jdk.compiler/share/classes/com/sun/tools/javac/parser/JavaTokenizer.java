@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -485,7 +485,7 @@ public class JavaTokenizer extends UnicodeReader {
             }
 
             next();
-        } while (digit(pos, digitRadix) >= 0 || is('_'));
+        } while (digit(digitRadix) >= 0 || is('_'));
 
         if (leadingUnderscorePos != NOT_FOUND) {
             lexError(leadingUnderscorePos, Errors.IllegalUnderscore);
@@ -505,7 +505,7 @@ public class JavaTokenizer extends UnicodeReader {
             acceptOneOfThenPut('+', '-');
             skipIllegalUnderscores();
 
-            if (digit(pos, 10) >= 0) {
+            if (digit(10) >= 0) {
                 scanDigits(pos, 10);
             } else {
                 lexError(pos, Errors.MalformedFpLit);
@@ -532,7 +532,7 @@ public class JavaTokenizer extends UnicodeReader {
     private void scanFraction(int pos) {
         skipIllegalUnderscores();
 
-        if (digit(pos, 10) >= 0) {
+        if (digit(10) >= 0) {
             scanDigits(pos, 10);
         }
 
@@ -543,7 +543,7 @@ public class JavaTokenizer extends UnicodeReader {
             acceptOneOfThenPut('+', '-');
             skipIllegalUnderscores();
 
-            if (digit(pos, 10) >= 0) {
+            if (digit(10) >= 0) {
                 scanDigits(pos, 10);
                 return;
             }
@@ -581,7 +581,7 @@ public class JavaTokenizer extends UnicodeReader {
         putThenNext();
         skipIllegalUnderscores();
 
-        if (digit(pos, 16) >= 0) {
+        if (digit(16) >= 0) {
             seendigit = true;
             scanDigits(pos, 16);
         }
@@ -612,7 +612,7 @@ public class JavaTokenizer extends UnicodeReader {
         // for octal, allow base-10 digit in case it's a float literal
         this.radix = radix;
         int digitRadix = (radix == 8 ? 10 : radix);
-        int firstDigit = digit(pos, Math.max(10, digitRadix));
+        int firstDigit = digit(Math.max(10, digitRadix));
         boolean seendigit = firstDigit >= 0;
         boolean seenValidDigit = firstDigit >= 0 && firstDigit < digitRadix;
 
@@ -838,7 +838,7 @@ public class JavaTokenizer extends UnicodeReader {
                             int savePos = position();
                             skip('_');
 
-                            if (digit(pos, 10) < 0) {
+                            if (digit(10) < 0) {
                                 lexError(savePos, Errors.IllegalUnderscore);
                             }
                         }
@@ -862,7 +862,7 @@ public class JavaTokenizer extends UnicodeReader {
 
                         if (accept('.')) {
                             lexError(savePos, Errors.IllegalDot);
-                        } else if (digit(pos, 10) >= 0) {
+                        } else if (digit(10) >= 0) {
                             put('.');
                             scanFractionAndSuffix(pos); // (Spec. 3.10)
                         } else {
@@ -1004,7 +1004,7 @@ public class JavaTokenizer extends UnicodeReader {
 
                         if (isJavaIdentifierStart) {
                             scanIdent();
-                        } else if (digit(pos, 10) >= 0) {
+                        } else if (digit(10) >= 0) {
                             scanNumber(pos, 10);
                         } else if (is((char)EOI) || !isAvailable()) {
                             tk = TokenKind.EOF;
