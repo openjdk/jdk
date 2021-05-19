@@ -5895,7 +5895,7 @@ address generate_avx_ghash_processBlocks() {
 
     const XMMRegister input_initial_valid_b64 = xmm0;
     const XMMRegister tmp = xmm10;
-    const XMMRegister mask = xmm10;
+    const XMMRegister mask = xmm0;
     const XMMRegister invalid_b64 = xmm1;
 
     Label L_process256, L_process64, L_exit, L_processdata, L_loadURL, L_continue, L_finalBit, L_padding, L_donePadding;
