@@ -143,11 +143,11 @@ public class CommandLinePositiveTest {
 
     @Test
     public void testlastOneWinsBindAddress() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-b", "localhost", "-b", "127.0.0.1")
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-b", "123.4.5.6", "-b", LOCALHOST_ADDR)
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on\n" +
-                                    "http://127.0.0.1:");
+                                    "http://" + LOCALHOST_ADDR);
                 });
     }
 

@@ -148,11 +148,11 @@ public class ToolProviderPositiveTest {
 
     @Test
     public void testlastOneWinsBindAddress() throws Exception {
-        simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-p", "0", "-b", "localhost", "-b", "127.0.0.1")
+        simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-p", "0", "-b", "123.4.5.6", "-b", LOCALHOST_ADDR)
                 .resultChecker(r -> {
                     assertContains(r.output,
                             "Serving " + TEST_DIR_STR + " and subdirectories on\n" +
-                                    "http://127.0.0.1:");
+                                    "http://" + LOCALHOST_ADDR);
                 });
     }
 
