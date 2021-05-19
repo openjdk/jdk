@@ -3779,7 +3779,7 @@ void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister
 
 void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
                                               XMMRegister xtmp1, Register tmp, int masklen, int vec_enc) {
-  assert(VM_Version::supports_avx(), "");
+  assert(VM_Version::supports_avx2(), "");
   vpxor(xtmp, xtmp, xtmp, vec_enc);
   vpsubb(xtmp, xtmp, mask, vec_enc);
   vpmovmskb(tmp, xtmp);

@@ -1584,7 +1584,7 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_VectorMaskFirstTrue:
     case Op_VectorMaskLastTrue:
     case Op_VectorMaskTrueCount:
-      if (!is_LP64 || UseAVX < 1) {
+      if (!is_LP64 || UseAVX < 2) {
          return false;
       }
       break;
