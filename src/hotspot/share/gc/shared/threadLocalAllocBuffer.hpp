@@ -194,8 +194,8 @@ private:
   static PerfVariable* _perf_total_allocations;
   static PerfVariable* _perf_total_gc_waste;
   static PerfVariable* _perf_max_gc_waste;
-  static PerfVariable* _perf_total_slow_refill_waste;
-  static PerfVariable* _perf_max_slow_refill_waste;
+  static PerfVariable* _perf_total_refill_waste;
+  static PerfVariable* _perf_max_refill_waste;
   static PerfVariable* _perf_total_slow_allocations;
   static PerfVariable* _perf_max_slow_allocations;
 
@@ -207,8 +207,8 @@ private:
   size_t       _total_allocations;
   size_t       _total_gc_waste;
   size_t       _max_gc_waste;
-  size_t       _total_slow_refill_waste;
-  size_t       _max_slow_refill_waste;
+  size_t       _total_refill_waste;
+  size_t       _max_refill_waste;
   unsigned int _total_slow_allocations;
   unsigned int _max_slow_allocations;
 
