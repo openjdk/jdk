@@ -210,7 +210,7 @@ public abstract class Filter {
      * exchange or {@linkplain HttpExchange#sendResponseHeaders(int, long) send the response headers}.
      * Doing so is likely to fail, since the exchange has commonly been handled
      * before the {@code operation} is invoked. More specifically, the response
-     * will typically be sent before the filter {@code operation} is executed.
+     * may be sent before the filter {@code operation} is executed.
      *
      * <p> Example of adding a filter that logs the response code of all exchanges:
      * <pre>{@code
