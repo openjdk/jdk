@@ -6121,7 +6121,7 @@ address generate_avx_ghash_processBlocks() {
     __ subq(rax, output_size);
     __ shrxq(output_mask, output_mask, rax);
     __ movl(rax, 0x61616161);
-    __ evpbroadcastd(valid_base64, rax, Assembler::AVX_512bit);
+    __ evpbroadcastd(input_initial_valid_b64, rax, Assembler::AVX_512bit);
     __ movl(rax, 0x80808080);
     __ evpbroadcastd(invalid_b64, rax, Assembler::AVX_512bit);
 
