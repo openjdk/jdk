@@ -65,7 +65,7 @@ public class VariablesDeclaredWithVarTest {
 
             class Test {
                 void kaa() {
-                    //@A var c = g(1, 1L);
+                    @A var c = g(1, 1L);
                 }
 
                 <X> X g(X a, X b) {
