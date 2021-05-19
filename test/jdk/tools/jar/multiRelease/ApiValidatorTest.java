@@ -46,22 +46,15 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import java.util.zip.ZipOutputStream;
 
 public class ApiValidatorTest extends MRTestBase {
 
