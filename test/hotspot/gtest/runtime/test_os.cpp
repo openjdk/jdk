@@ -368,11 +368,11 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   // ... re-reserve in the same spot multiple areas...
   for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = p + (stripe * stripe_len);
-    q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len);
-    EXPECT_NE(q, (address)NULL);
     // Commit, alternatingly with or without exec permission,
     //  to prevent kernel from folding these mappings.
     const bool executable = stripe % 2 == 0;
+    q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, executable);
+    EXPECT_NE(q, (address)NULL);
     EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
   }
   return p;
@@ -412,11 +412,7 @@ struct NUMASwitcher {
 #endif
 
 #ifndef _AIX // JDK-8257041
-#if defined(__APPLE__) && defined(AARCH64)
-TEST_VM(os, DISABLED_release_multi_mappings) {
-#else
 TEST_VM(os, release_multi_mappings) {
-#endif
   // Test that we can release an area created with multiple reservation calls
   const size_t stripe_len = 4 * M;
   const int num_stripes = 4;

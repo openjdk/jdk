@@ -34,7 +34,8 @@
 
 enum StringDedupMode {
   NO_DEDUP,      // Do not do anything for String deduplication
-  ENQUEUE_DEDUP  // Enqueue candidate Strings for deduplication
+  ENQUEUE_DEDUP, // Enqueue candidate Strings for deduplication, if meet age threshold
+  ALWAYS_DEDUP   // Enqueue Strings for deduplication
 };
 
 class ShenandoahMarkRefsSuperClosure : public MetadataVisitingOopIterateClosure {
