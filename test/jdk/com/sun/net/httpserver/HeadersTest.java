@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,57 @@
  * @run testng/othervm HeadersTest
  */
 
+import java.util.List;
 import com.sun.net.httpserver.Headers;
 import org.testng.annotations.Test;
-
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
 public class HeadersTest {
 
+    static final Class<NullPointerException> NPE = NullPointerException.class;
+    static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+
     @Test
-    public void TestDefaultConstructor() {
+    public static void testDefaultConstructor() {
         var headers = new Headers();
         assertTrue(headers.isEmpty());
+    }
+
+    @Test
+    public static void testNull() {
+        new Headers().add(null, "value");
+        new Headers().set(null, "value");
+
+        assertThrows(NPE, () -> new Headers().add("name", null));
+        assertThrows(NPE, () -> new Headers().set("name", null));
+
+        assertThrows(NPE, () -> Headers.of((String[])null));
+        assertThrows(NPE, () -> Headers.of(null, "value"));
+        assertThrows(NPE, () -> Headers.of("name", null));
+    }
+
+    @Test
+    public static void testOfNumberOfElements() {
+        assertThrows(IAE, () -> Headers.of(new String[] {}));
+        assertThrows(IAE, () -> Headers.of("a"));
+        assertThrows(IAE, () -> Headers.of("a", "b", "c"));
+    }
+
+    @Test
+    public static void testOf() {
+        final var h = Headers.of("a", "b", "c", "d");
+        assertEquals(h.size(), 2);
+        List.of("a", "c").forEach(n -> assertTrue(h.containsKey(n)));
+        List.of("b", "d").forEach(v -> assertTrue(h.containsValue(List.of(v))));
+    }
+
+    @Test
+    public static void testOfMultipleValues() {
+        final var h = Headers.of("a", "b", "c", "d", "c", "e", "c", "f");
+        assertEquals(h.size(), 2);
+        List.of("a", "c").forEach(n -> assertTrue(h.containsKey(n)));
+        List.of(List.of("b"), List.of("d", "e", "f")).forEach(v -> assertTrue(h.containsValue(v)));
     }
 }

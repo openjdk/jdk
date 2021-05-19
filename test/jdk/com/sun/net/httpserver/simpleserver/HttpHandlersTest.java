@@ -38,7 +38,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -82,10 +81,7 @@ public class HttpHandlersTest {
 
     @Test
     public void testOfNoBody() throws Exception {
-        var headers = new Headers();
-        headers.put("foo", List.of("bar"));
-
-        var handler = HttpHandlers.of(headers, 200);
+        var handler = HttpHandlers.of(Headers.of("foo", "bar"), 200);
         var server = HttpServer.create(LOOPBACK_ADDR, 0);
         server.createContext("/", handler);
         server.start();
@@ -106,11 +102,8 @@ public class HttpHandlersTest {
 
     @Test
     public void testOfWithBody() throws Exception {
-        var headers = new Headers();
-        headers.put("foo", List.of("bar"));
+        var handler = HttpHandlers.of(Headers.of("foo", "bar"), 200, "hello world");
         var expectedLength = Integer.toString("hello world".getBytes(UTF_8).length);
-
-        var handler = HttpHandlers.of(headers, 200, "hello world");
         var server = HttpServer.create(LOOPBACK_ADDR, 0);
         server.createContext("/", handler);
         server.start();
