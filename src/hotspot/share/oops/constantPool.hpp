@@ -222,7 +222,7 @@ class ConstantPool : public Metadata {
   u2 source_file_name_index() const                    { return _source_file_name_index; }
   void set_source_file_name_index(u2 sourcefile_index) { _source_file_name_index = sourcefile_index; }
 
-  void copy_fields(const ConstantPool* orig);
+  void copy_fields(const ConstantPool* orig, bool skip_version = false);
 
   // Redefine classes support.  If a method refering to this constant pool
   // is on the executing stack, or as a handle in vm code, this constant pool
