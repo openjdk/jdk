@@ -39,43 +39,44 @@ import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "ContainerConfiguration")
 @Label("Container Configuration")
-@Category({"Operating System", "Container"})
-@Description("A set of container specific attributes.")
+@Category({"Operating System"})
+@Description("A set of container specific attributes")
 public final class ContainerConfigurationEvent extends AbstractJDKEvent {
-    @Label("Container type")
+    @Label("Container Type")
     @Description("Container type information")
     public String containerType;
 
     @Label("CPU Slice Period")
-    @Description("Length of the scheduling period, in microseconds, for processes within the container.")
+    @Description("Length of the scheduling period for processes within the container")
     @Timespan(Timespan.MICROSECONDS)
     public long cpuSlicePeriod;
 
     @Label("CPU Quota")
-    @Description("Total available run-time allowed, in microseconds, during each scheduling period for all tasks in the container.")
+    @Description("Total available run-time allowed during each scheduling period for all tasks in the container")
+    @Timespan(Timespan.MICROSECONDS)
     public long cpuQuota;
 
     @Label("CPU Shares")
     @Description("Relative weighting of processes with the container used for prioritizing the scheduling of processes across " +
-                 "all containers running on a host.")
+                 "all containers running on a host")
     public long cpuShares;
 
     @Label("Effective CPU Count")
-    @Description("Number of effective processors that this container has available to it.")
+    @Description("Number of effective processors that this container has available to it")
     public long effectiveCpuCount;
 
     @Label("Memory Soft Limit")
-    @Description("Hint to the operating system that allows groups to specify the minimum required amount of physical memory.")
+    @Description("Hint to the operating system that allows groups to specify the minimum required amount of physical memory")
     @DataAmount
     public long memorySoftLimit;
 
     @Label("Memory Limit")
-    @Description("Maximum amount of physical memory, in bytes, that can be allocated in the container.")
+    @Description("Maximum amount of physical memory that can be allocated in the container")
     @DataAmount
     public long memoryLimit;
 
     @Label("Memory and Swap Limit")
-    @Description("Maximum amount of physical memory and swap space, in bytes, that can be allocated in the container.")
+    @Description("Maximum amount of physical memory and swap space, in bytes, that can be allocated in the container")
     @DataAmount
     public long swapMemoryLimit;
 }

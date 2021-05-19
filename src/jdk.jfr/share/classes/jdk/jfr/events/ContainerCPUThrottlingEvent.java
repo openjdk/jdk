@@ -39,19 +39,19 @@ import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "ContainerCPUThrottling")
 @Label("CPU Throttling")
-@Category({"Operating System", "Container", "Processor"})
-@Description("Container CPU throttling related information.")
+@Category({"Operating System", "Processor"})
+@Description("Container CPU throttling related information")
 public class ContainerCPUThrottlingEvent extends AbstractJDKEvent {
   @Label("CPU Elapsed Slices")
-  @Description("Number of time-slice periods that have elapsed if a CPU quota has been setup for the container.")
+  @Description("Number of time-slice periods that have elapsed if a CPU quota has been setup for the container")
   public long cpuElapsedSlices;
 
   @Label("CPU Throttled Slices")
-  @Description("Number of time-slice periods that the CPU has been throttled or limited due to exceeding CPU quota.")
+  @Description("Number of time-slice periods that the CPU has been throttled or limited due to exceeding CPU quota")
   public long cpuThrottledSlices;
 
   @Label("CPU Throttled Time")
-  @Description("Total time duration, in nanoseconds, that the CPU has been throttled or limited due to exceeding CPU quota.")
+  @Description("Total time duration, in nanoseconds, that the CPU has been throttled or limited due to exceeding CPU quota")
   @Timespan
   public long cpuThrottledTime;
 }

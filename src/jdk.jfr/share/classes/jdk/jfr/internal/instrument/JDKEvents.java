@@ -159,14 +159,13 @@ public final class JDKEvents {
     }
 
     private static void initializeContainerEvents() {
+        SecuritySupport.registerEvent(ContainerConfigurationEvent.class);
+        SecuritySupport.registerEvent(ContainerCPUUsageEvent.class);
+        SecuritySupport.registerEvent(ContainerCPUThrottlingEvent.class);
+        SecuritySupport.registerEvent(ContainerMemoryUsageEvent.class);
+        SecuritySupport.registerEvent(ContainerIOUsageEvent.class);
         containerMetrics = Container.metrics();
         if (containerMetrics != null) {
-            SecuritySupport.registerEvent(ContainerConfigurationEvent.class);
-            SecuritySupport.registerEvent(ContainerCPUUsageEvent.class);
-            SecuritySupport.registerEvent(ContainerCPUThrottlingEvent.class);
-            SecuritySupport.registerEvent(ContainerMemoryUsageEvent.class);
-            SecuritySupport.registerEvent(ContainerIOUsageEvent.class);
-
             RequestEngine.addTrustedJDKHook(ContainerConfigurationEvent.class, emitContainerConfiguration);
             RequestEngine.addTrustedJDKHook(ContainerCPUUsageEvent.class, emitContainerCPUUsage);
             RequestEngine.addTrustedJDKHook(ContainerCPUThrottlingEvent.class, emitContainerCPUThrottling);

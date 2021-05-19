@@ -39,25 +39,20 @@ import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "ContainerMemoryUsage")
 @Label("Container Memory Usage")
-@Category({"Operating System", "Container", "Memory"})
-@Description("Container memory usage related information.")
+@Category({"Operating System", "Memory"})
+@Description("Container memory usage related information")
 public final class ContainerMemoryUsageEvent extends AbstractJDKEvent {
-    @Label("Memory Pressure")
-    @Description("(attempts per second * 1000), if enabled, that the operating system tries to satisfy a memory request for any " +
-                 "process in the current container when no free memory is readily available.")
-    public double memoryPressure;
-
     @Label("Memory Fail Count")
-    @Description("Number of times that user memory requests in the container have exceeded the memory limit.")
+    @Description("Number of times that user memory requests in the container have exceeded the memory limit")
     public long memoryFailCount;
 
     @Label("Memory Usage")
-    @Description("Amount of physical memory, in bytes, that is currently allocated in the current container.")
+    @Description("Amount of physical memory, in bytes, that is currently allocated in the current container")
     @DataAmount
     public long memoryUsage;
 
     @Label("Memory and Swap Usage")
-    @Description("Amount of physical memory and swap space, in bytes, that is currently allocated in the current container.")
+    @Description("Amount of physical memory and swap space, in bytes, that is currently allocated in the current container")
     @DataAmount
     public long swapMemoryUsage;
 }

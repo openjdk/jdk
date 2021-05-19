@@ -555,27 +555,27 @@
     </event>
 
     <event name="jdk.ContainerConfiguration">
-      <setting name="enabled" control="container-events-enabled">true</setting>
+      <setting name="enabled">true</setting>
       <setting name="period">beginChunk</setting>
     </event>
 
     <event name="jdk.ContainerCPUUsage">
-      <setting name="enabled" control="container-events-enabled">true</setting>
+      <setting name="enabled">true</setting>
       <setting name="period">30 s</setting>
     </event>
 
     <event name="jdk.ContainerCPUThrottling">
-      <setting name="enabled" control="container-events-enabled">true</setting>
+      <setting name="enabled">true</setting>
       <setting name="period">30 s</setting>
     </event>
 
     <event name="jdk.ContainerMemoryUsage">
-      <setting name="enabled" control="container-events-enabled">true</setting>
+      <setting name="enabled">true</setting>
       <setting name="period">30 s</setting>
     </event>
 
     <event name="jdk.ContainerIOUsage">
-      <setting name="enabled" control="container-events-enabled">true</setting>
+      <setting name="enabled">true</setting>
       <setting name="period">30 s</setting>
     </event>
 
@@ -1043,8 +1043,6 @@
       <text name="socket-threshold" label="Socket I/O Threshold" contentType="timespan" minimum="0 s">20 ms</text>
 
       <flag name="class-loading" label="Class Loading">false</flag>
-
-      <flag name="container-events-enabled" label="Container Events">true</flag>
 
     </control>
 

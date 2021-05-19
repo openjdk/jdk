@@ -39,21 +39,21 @@ import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "ContainerCPUUsage")
 @Label("CPU Usage")
-@Category({"Operating System", "Container", "Processor"})
-@Description("Container CPU usage related information.")
+@Category({"Operating System", "Processor"})
+@Description("Container CPU usage related information")
 public class ContainerCPUUsageEvent extends AbstractJDKEvent {
   @Label("CPU Time")
-  @Description("Aggregate time, in nanoseconds, consumed by all tasks in the container.")
+  @Description("Aggregate time consumed by all tasks in the container")
   @Timespan
   public long cpuTime;
 
   @Label("CPU User Time")
-  @Description("Aggregate user time, in nanoseconds, consumed by all tasks in the container.")
+  @Description("Aggregate user time consumed by all tasks in the container")
   @Timespan
   public long cpuUserTime;
 
   @Label("CPU System Time")
-  @Description("Aggregate system time, in nanoseconds, consumed by all tasks in the container.")
+  @Description("Aggregate system time consumed by all tasks in the container")
   @Timespan
   public long cpuSystemTime;
 }
