@@ -91,7 +91,6 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP_JFR.java 8253437 windows-x64
 runtime/cds/DeterministicDump.java 8253495 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
-runtime/ReservedStack/ReservedStackTest.java 8231031 generic-all
 
 #############################################################################
 

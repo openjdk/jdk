@@ -36,10 +36,10 @@ import com.sun.org.apache.bcel.internal.Const;
  */
 public final class ModuleExports implements Cloneable, Node {
 
-    private final int exports_index;  // points to CONSTANT_Package_info
-    private final int exports_flags;
-    private final int exports_to_count;
-    private final int[] exports_to_index;  // points to CONSTANT_Module_info
+    private final int exportsIndex;  // points to CONSTANT_Package_info
+    private final int exportsFlags;
+    private final int exportsToCount;
+    private final int[] exportsToIndex;  // points to CONSTANT_Module_info
 
 
     /**
@@ -49,12 +49,12 @@ public final class ModuleExports implements Cloneable, Node {
      * @throws IOException if an I/O Exception occurs in readUnsignedShort
      */
     ModuleExports(final DataInput file) throws IOException {
-        exports_index = file.readUnsignedShort();
-        exports_flags = file.readUnsignedShort();
-        exports_to_count = file.readUnsignedShort();
-        exports_to_index = new int[exports_to_count];
-        for (int i = 0; i < exports_to_count; i++) {
-            exports_to_index[i] = file.readUnsignedShort();
+        exportsIndex = file.readUnsignedShort();
+        exportsFlags = file.readUnsignedShort();
+        exportsToCount = file.readUnsignedShort();
+        exportsToIndex = new int[exportsToCount];
+        for (int i = 0; i < exportsToCount; i++) {
+            exportsToIndex[i] = file.readUnsignedShort();
         }
     }
 
@@ -80,10 +80,10 @@ public final class ModuleExports implements Cloneable, Node {
      * @throws IOException if an I/O Exception occurs in writeShort
      */
     public void dump( final DataOutputStream file ) throws IOException {
-        file.writeShort(exports_index);
-        file.writeShort(exports_flags);
-        file.writeShort(exports_to_count);
-        for (final int entry : exports_to_index) {
+        file.writeShort(exportsIndex);
+        file.writeShort(exportsFlags);
+        file.writeShort(exportsToCount);
+        for (final int entry : exportsToIndex) {
             file.writeShort(entry);
         }
     }
@@ -94,7 +94,7 @@ public final class ModuleExports implements Cloneable, Node {
      */
     @Override
     public String toString() {
-        return "exports(" + exports_index + ", " + exports_flags + ", " + exports_to_count + ", ...)";
+        return "exports(" + exportsIndex + ", " + exportsFlags + ", " + exportsToCount + ", ...)";
     }
 
 
@@ -103,11 +103,11 @@ public final class ModuleExports implements Cloneable, Node {
      */
     public String toString( final ConstantPool constant_pool ) {
         final StringBuilder buf = new StringBuilder();
-        final String package_name = constant_pool.constantToString(exports_index, Const.CONSTANT_Package);
+        final String package_name = constant_pool.constantToString(exportsIndex, Const.CONSTANT_Package);
         buf.append(Utility.compactClassName(package_name, false));
-        buf.append(", ").append(String.format("%04x", exports_flags));
-        buf.append(", to(").append(exports_to_count).append("):\n");
-        for (final int index : exports_to_index) {
+        buf.append(", ").append(String.format("%04x", exportsFlags));
+        buf.append(", to(").append(exportsToCount).append("):\n");
+        for (final int index : exportsToIndex) {
             final String module_name = constant_pool.getConstantString(index, Const.CONSTANT_Module);
             buf.append("      ").append(Utility.compactClassName(module_name, false)).append("\n");
         }

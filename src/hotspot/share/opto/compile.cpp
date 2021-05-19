@@ -3129,8 +3129,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       }
     }
 #endif
-    // platform dependent reshaping of the address expression
-    reshape_address(n->as_AddP());
     break;
   }
 
@@ -4060,16 +4058,22 @@ int Compile::static_subtype_check(ciKlass* superk, ciKlass* subk) {
   }
 
   ciType* superelem = superk;
-  if (superelem->is_array_klass())
+  ciType* subelem = subk;
+  if (superelem->is_array_klass()) {
     superelem = superelem->as_array_klass()->base_element_type();
+  }
+  if (subelem->is_array_klass()) {
+    subelem = subelem->as_array_klass()->base_element_type();
+  }
 
   if (!subk->is_interface()) {  // cannot trust static interface types yet
     if (subk->is_subtype_of(superk)) {
       return SSC_always_true;   // (1) false path dead; no dynamic test needed
     }
     if (!(superelem->is_klass() && superelem->as_klass()->is_interface()) &&
+        !(subelem->is_klass() && subelem->as_klass()->is_interface()) &&
         !superk->is_subtype_of(subk)) {
-      return SSC_always_false;
+      return SSC_always_false;  // (2) true path dead; no dynamic test needed
     }
   }
 

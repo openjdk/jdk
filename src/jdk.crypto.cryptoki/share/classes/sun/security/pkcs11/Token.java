@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.TemplateManager.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
 
 /**
  * PKCS#11 token.
@@ -385,7 +386,7 @@ class Token implements Serializable {
                                                 mechanism);
                 mechInfoMap.put(mechanism, result);
             } catch (PKCS11Exception e) {
-                if (e.getErrorCode() != PKCS11Constants.CKR_MECHANISM_INVALID) {
+                if (e.getErrorCode() != CKR_MECHANISM_INVALID) {
                     throw e;
                 } else {
                     mechInfoMap.put(mechanism, INVALID_MECH);

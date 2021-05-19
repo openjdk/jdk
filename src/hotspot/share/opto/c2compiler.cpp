@@ -676,6 +676,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_VectorConvert:
   case vmIntrinsics::_VectorInsert:
   case vmIntrinsics::_VectorExtract:
+  case vmIntrinsics::_VectorMaskOp:
     return EnableVectorSupport;
   case vmIntrinsics::_blackhole:
     break;
