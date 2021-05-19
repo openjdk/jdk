@@ -1776,7 +1776,7 @@ void os::large_page_init() {
 }
 
 
-char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, char* req_addr, bool exec) {
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
   fatal("os::reserve_memory_special should not be called on BSD.");
   return NULL;
 }
@@ -2221,7 +2221,7 @@ bool os::find(address addr, outputStream* st) {
 // on, e.g., Win32.
 void os::os_exception_wrapper(java_call_t f, JavaValue* value,
                               const methodHandle& method, JavaCallArguments* args,
-                              Thread* thread) {
+                              JavaThread* thread) {
   f(value, method, args, thread);
 }
 

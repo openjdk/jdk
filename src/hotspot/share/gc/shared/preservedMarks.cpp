@@ -142,6 +142,10 @@ void PreservedMarksSet::restore(WorkGang* workers) {
   assert_empty();
 }
 
+AbstractGangTask* PreservedMarksSet::create_task() {
+  return new RestorePreservedMarksTask(this);
+}
+
 void PreservedMarksSet::reclaim() {
   assert_empty();
 

@@ -116,7 +116,7 @@ class ClassListParser : public StackObj {
   void print_actual_interfaces(InstanceKlass *ik);
   bool is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS);
 
-  void resolve_indy(Thread* current, Symbol* class_name_symbol);
+  void resolve_indy(JavaThread* current, Symbol* class_name_symbol);
   void resolve_indy_impl(Symbol* class_name_symbol, TRAPS);
   bool parse_one_line();
   Klass* load_current_class(Symbol* class_name_symbol, TRAPS);

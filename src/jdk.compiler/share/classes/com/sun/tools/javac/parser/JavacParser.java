@@ -4815,8 +4815,7 @@ public class JavacParser implements Parser {
         }
 
         public void storeEnd(JCTree tree, int endpos) {
-            endPosMap.putAtIndex(tree, errorEndPos > endpos ? errorEndPos : endpos,
-                                 endPosMap.lookup(tree));
+            endPosMap.put(tree, errorEndPos > endpos ? errorEndPos : endpos);
         }
 
         protected <T extends JCTree> T to(T t) {
@@ -4830,7 +4829,7 @@ public class JavacParser implements Parser {
         }
 
         public int getEndPos(JCTree tree) {
-            int value = endPosMap.getFromIndex(endPosMap.lookup(tree));
+            int value = endPosMap.get(tree);
             // As long as Position.NOPOS==-1, this just returns value.
             return (value == -1) ? Position.NOPOS : value;
         }
