@@ -3274,48 +3274,105 @@ bool os::can_execute_large_page_memory() {
   return true;
 }
 
-char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* addr,
-                                    bool exec) {
-  assert(UseLargePages, "only for large pages");
-  assert(page_size == os::large_page_size(), "Currently only support one large page size on Windows");
-
-  if (!is_aligned(bytes, page_size) || alignment > page_size) {
-    return NULL; // Fallback to small pages.
-  }
+static char* reserve_large_pages_individually(size_t size, char* req_addr, bool exec) {
+  log_debug(pagesize)("Reserving large pages individually.");
 
   const DWORD prot = exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
   const DWORD flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
 
+  char * p_buf = allocate_pages_individually(size, req_addr, flags, prot, LargePagesIndividualAllocationInjectError);
+  if (p_buf == NULL) {
+    // give an appropriate warning message
+    if (UseNUMAInterleaving) {
+      warning("NUMA large page allocation failed, UseLargePages flag ignored");
+    }
+    if (UseLargePagesIndividualAllocation) {
+      warning("Individually allocated large pages failed, "
+              "use -XX:-UseLargePagesIndividualAllocation to turn off");
+    }
+    return NULL;
+  }
+  return p_buf;
+}
+
+static char* reserve_large_pages_single_range(size_t size, char* req_addr, bool exec) {
+  log_debug(pagesize)("Reserving large pages in a single large chunk.");
+
+  const DWORD prot = exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
+  const DWORD flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
+
+  return (char *) virtualAlloc(req_addr, size, flags, prot);
+}
+
+static char* reserve_large_pages(size_t size, char* req_addr, bool exec) {
   // with large pages, there are two cases where we need to use Individual Allocation
   // 1) the UseLargePagesIndividualAllocation flag is set (set by default on WS2003)
   // 2) NUMA Interleaving is enabled, in which case we use a different node for each page
   if (UseLargePagesIndividualAllocation || UseNUMAInterleaving) {
-    log_debug(pagesize)("Reserving large pages individually.");
-
-    char * p_buf = allocate_pages_individually(bytes, addr, flags, prot, LargePagesIndividualAllocationInjectError);
-    if (p_buf == NULL) {
-      // give an appropriate warning message
-      if (UseNUMAInterleaving) {
-        warning("NUMA large page allocation failed, UseLargePages flag ignored");
-      }
-      if (UseLargePagesIndividualAllocation) {
-        warning("Individually allocated large pages failed, "
-                "use -XX:-UseLargePagesIndividualAllocation to turn off");
-      }
-      return NULL;
-    }
-
-    return p_buf;
-
-  } else {
-    log_debug(pagesize)("Reserving large pages in a single large chunk.");
-
-    // normal policy just allocate it all at once
-    DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
-    char * res = (char *)virtualAlloc(addr, bytes, flag, prot);
-
-    return res;
+    return reserve_large_pages_individually(size, req_addr, exec);
   }
+  return reserve_large_pages_single_range(size, req_addr, exec);
+}
+
+static char* find_aligned_address(size_t size, size_t alignment) {
+  // Temporary reserve memory large enough to ensure we can get the requested
+  // alignment and still fit the reservation.
+  char* addr = (char*) virtualAlloc(NULL, size + alignment, MEM_RESERVE, PAGE_NOACCESS);
+  // Align the address to the requested alignment.
+  char* aligned_addr = align_up(addr, alignment);
+  // Free the temporary reservation.
+  virtualFree(addr, 0, MEM_RELEASE);
+
+  return aligned_addr;
+}
+
+static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exec) {
+  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=" SIZE_FORMAT "%s",
+                      byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
+
+  // Will try to find a suitable address at most 20 times. The reason we need to try
+  // multiple times is that between finding the aligned address and trying to commit
+  // the large pages another thread might have reserved an overlapping region.
+  const int attempts_limit = 20;
+  for (int attempts = 0; attempts < attempts_limit; attempts++)  {
+    // Find aligned address.
+    char* aligned_address = find_aligned_address(size, alignment);
+
+    // Try to do the large page reservation using the aligned address.
+    aligned_address = reserve_large_pages(size, aligned_address, exec);
+    if (aligned_address != NULL) {
+      // Reservation at the aligned address succeeded.
+      guarantee(is_aligned(aligned_address, alignment), "Must be aligned");
+      return aligned_address;
+    }
+  }
+
+  log_debug(pagesize)("Failed reserving large pages at aligned address");
+  return NULL;
+}
+
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* addr,
+                                    bool exec) {
+  assert(UseLargePages, "only for large pages");
+  assert(page_size == os::large_page_size(), "Currently only support one large page size on Windows");
+  assert(is_aligned(addr, alignment), "Must be");
+  assert(is_aligned(addr, page_size), "Must be");
+
+  if (!is_aligned(bytes, page_size)) {
+    // Fallback to small pages, Windows does not support mixed mappings.
+    return NULL;
+  }
+
+  // The requested alignment can be larger than the page size, for example with G1
+  // the alignment is bound to the heap region size. So this reservation needs to
+  // ensure that the requested alignment is met. When there is a requested address
+  // this solves it self, since it must be properly aligned already.
+  if (addr == NULL && alignment > page_size) {
+    return reserve_large_pages_aligned(bytes, alignment, exec);
+  }
+
+  // No additional requirements, just reserve the large pages.
+  return reserve_large_pages(bytes, addr, exec);
 }
 
 bool os::pd_release_memory_special(char* base, size_t bytes) {

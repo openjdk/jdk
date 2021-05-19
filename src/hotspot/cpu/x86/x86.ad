@@ -1581,6 +1581,13 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_VectorMaskFirstTrue:
+    case Op_VectorMaskLastTrue:
+    case Op_VectorMaskTrueCount:
+      if (!is_LP64 || UseAVX < 1) {
+         return false;
+      }
+      break;
 #ifndef _LP64
     case Op_AddReductionVF:
     case Op_AddReductionVD:
@@ -1821,9 +1828,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return true;  // Per default match rules are supported.
 }
 
-// x86 supports generic vector operands: vec and legVec.
-const bool Matcher::supports_generic_vector_operands = true;
-
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp) {
   assert(Matcher::is_generic_vector(generic_opnd), "not generic");
   bool legacy = (generic_opnd->opcode() == LEGVEC);
@@ -1874,23 +1878,6 @@ bool Matcher::is_generic_vector(MachOper* opnd) {
 }
 
 //------------------------------------------------------------------------
-
-bool Matcher::supports_vector_variable_shifts(void) {
-  return (UseAVX >= 2);
-}
-
-bool Matcher::supports_vector_variable_rotates(void) {
-  return true;
-}
-
-const bool Matcher::has_predicated_vectors(void) {
-  bool ret_value = false;
-  if (UseAVX > 2) {
-    ret_value = VM_Version::supports_avx512vl();
-  }
-
-  return ret_value;
-}
 
 const RegMask* Matcher::predicate_reg_mask(void) {
   return &_VECTMASK_REG_mask;
@@ -1966,10 +1953,6 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size,max_size);
 }
 
-const bool Matcher::supports_scalable_vector() {
-  return false;
-}
-
 const int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
 }
@@ -1987,14 +1970,6 @@ const uint Matcher::vector_ideal_reg(int size) {
   ShouldNotReachHere();
   return 0;
 }
-
-// x86 supports misaligned vectors store/load.
-const bool Matcher::misaligned_vectors_ok() {
-  return true;
-}
-
-
-const bool Matcher::convi2l_type_required = true;
 
 // Check for shift by small constant as well
 static bool clone_shift(Node* shift, Matcher* matcher, Matcher::MStack& mstack, VectorSet& address_visited) {
@@ -8086,6 +8061,68 @@ instruct vmasked_store64(memory mem, vec src, kReg mask) %{
     BasicType elmType =  src_node->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(src_node);
     __ evmovdqu(elmType, $mask$$KRegister, $mem$$Address, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmask_truecount_evex(rRegI dst, vec mask, rRegL tmp, kReg ktmp, vec xtmp) %{
+  predicate(VM_Version::supports_avx512vlbw());
+  match(Set dst (VectorMaskTrueCount mask));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP ktmp, TEMP xtmp);
+  format %{ "vector_truecount_evex $mask \t! vector mask true count" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this, $mask);
+    int mask_len = vector_length(this, $mask);
+    __ vector_mask_operation(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
+                             $tmp$$Register, $ktmp$$KRegister, mask_len, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmask_first_or_last_true_evex(rRegI dst, vec mask, rRegL tmp, kReg ktmp, vec xtmp, rFlagsReg cr) %{
+  predicate(VM_Version::supports_avx512vlbw());
+  match(Set dst (VectorMaskFirstTrue mask));
+  match(Set dst (VectorMaskLastTrue mask));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP ktmp, TEMP xtmp, KILL cr);
+  format %{ "vector_mask_first_or_last_true_evex $mask \t! vector first/last true location" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this, $mask);
+    int mask_len = vector_length(this, $mask);
+    __ vector_mask_operation(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
+                             $tmp$$Register, $ktmp$$KRegister, mask_len, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmask_truecount_avx(rRegI dst, vec mask, rRegL tmp, vec xtmp, vec xtmp1) %{
+  predicate(!VM_Version::supports_avx512vlbw());
+  match(Set dst (VectorMaskTrueCount mask));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, TEMP xtmp1);
+  format %{ "vector_truecount_avx $mask \t! vector mask true count" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this, $mask);
+    int mask_len = vector_length(this, $mask);
+    __ vector_mask_operation(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
+                             $xtmp1$$XMMRegister, $tmp$$Register, mask_len, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmask_first_or_last_true_avx(rRegI dst, vec mask, rRegL tmp, vec xtmp, vec xtmp1, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx512vlbw());
+  match(Set dst (VectorMaskFirstTrue mask));
+  match(Set dst (VectorMaskLastTrue mask));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, TEMP xtmp1, KILL cr);
+  format %{ "vector_mask_first_or_last_true_avx $mask \t! vector first/last true location" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this, $mask);
+    int mask_len = vector_length(this, $mask);
+    __ vector_mask_operation(opcode, $dst$$Register, $mask$$XMMRegister, $xtmp$$XMMRegister,
+                             $xtmp1$$XMMRegister, $tmp$$Register, mask_len, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

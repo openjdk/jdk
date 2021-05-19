@@ -449,6 +449,10 @@ class AbstractDumpWriter : public StackObj {
     flush();
   }
 
+  // Called by threads used for parallel writing.
+  void writer_loop()                    { _backend.thread_loop(); }
+  // Called when finished to release the threads.
+  void deactivate()                     { flush(); _backend.deactivate(); }
 };
 
 void AbstractDumpWriter::write_fast(void* s, size_t len) {
