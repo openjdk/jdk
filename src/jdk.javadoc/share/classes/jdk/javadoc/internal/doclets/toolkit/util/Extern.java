@@ -396,13 +396,13 @@ public class Extern {
      */
     private Item findElementItem(Element element) {
         Item item = null;
-        if (element instanceof ModuleElement modElem) {
-            item = moduleItems.get(utils.getModuleName(modElem));
+        if (element instanceof ModuleElement me) {
+            item = moduleItems.get(utils.getModuleName(me));
         }
-        else if (element instanceof PackageElement pkgElem) {
-            ModuleElement moduleElement = utils.containingModule(pkgElem);
+        else if (element instanceof PackageElement pkg) {
+            ModuleElement moduleElement = utils.containingModule(pkg);
             Map<String, Item> pkgMap = packageItems.get(utils.getModuleName(moduleElement));
-            item = (pkgMap != null) ? pkgMap.get(utils.getPackageName(pkgElem)) : null;
+            item = (pkgMap != null) ? pkgMap.get(utils.getPackageName(pkg)) : null;
         }
         return item;
     }

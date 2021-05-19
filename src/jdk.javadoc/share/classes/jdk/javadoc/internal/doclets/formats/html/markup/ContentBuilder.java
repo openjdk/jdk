@@ -52,8 +52,8 @@ public class ContentBuilder extends Content {
     public ContentBuilder add(Content content) {
         Objects.requireNonNull(content);
         ensureMutableContents();
-        if (content instanceof ContentBuilder conBldr) {
-            contents.addAll(conBldr.contents);
+        if (content instanceof ContentBuilder cb) {
+            contents.addAll(cb.contents);
         } else
             contents.add(content);
         return this;
