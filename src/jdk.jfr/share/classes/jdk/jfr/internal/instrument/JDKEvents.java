@@ -159,19 +159,18 @@ public final class JDKEvents {
     }
 
     private static void initializeContainerEvents() {
+        containerMetrics = Container.metrics();
         SecuritySupport.registerEvent(ContainerConfigurationEvent.class);
         SecuritySupport.registerEvent(ContainerCPUUsageEvent.class);
         SecuritySupport.registerEvent(ContainerCPUThrottlingEvent.class);
         SecuritySupport.registerEvent(ContainerMemoryUsageEvent.class);
         SecuritySupport.registerEvent(ContainerIOUsageEvent.class);
-        containerMetrics = Container.metrics();
-        if (containerMetrics != null) {
-            RequestEngine.addTrustedJDKHook(ContainerConfigurationEvent.class, emitContainerConfiguration);
-            RequestEngine.addTrustedJDKHook(ContainerCPUUsageEvent.class, emitContainerCPUUsage);
-            RequestEngine.addTrustedJDKHook(ContainerCPUThrottlingEvent.class, emitContainerCPUThrottling);
-            RequestEngine.addTrustedJDKHook(ContainerMemoryUsageEvent.class, emitContainerMemoryUsage);
-            RequestEngine.addTrustedJDKHook(ContainerIOUsageEvent.class, emitContainerIOUsage);
-        }
+
+        RequestEngine.addTrustedJDKHook(ContainerConfigurationEvent.class, emitContainerConfiguration);
+        RequestEngine.addTrustedJDKHook(ContainerCPUUsageEvent.class, emitContainerCPUUsage);
+        RequestEngine.addTrustedJDKHook(ContainerCPUThrottlingEvent.class, emitContainerCPUThrottling);
+        RequestEngine.addTrustedJDKHook(ContainerMemoryUsageEvent.class, emitContainerMemoryUsage);
+        RequestEngine.addTrustedJDKHook(ContainerIOUsageEvent.class, emitContainerIOUsage);
     }
 
     private static void emitExceptionStatistics() {
@@ -265,13 +264,11 @@ public final class JDKEvents {
         RequestEngine.removeHook(emitExceptionStatistics);
         RequestEngine.removeHook(emitDirectBufferStatistics);
 
-        if (containerMetrics != null) {
-            RequestEngine.removeHook(emitContainerConfiguration);
-            RequestEngine.removeHook(emitContainerCPUUsage);
-            RequestEngine.removeHook(emitContainerCPUThrottling);
-            RequestEngine.removeHook(emitContainerMemoryUsage);
-            RequestEngine.removeHook(emitContainerIOUsage);
-        }
+        RequestEngine.removeHook(emitContainerConfiguration);
+        RequestEngine.removeHook(emitContainerCPUUsage);
+        RequestEngine.removeHook(emitContainerCPUThrottling);
+        RequestEngine.removeHook(emitContainerMemoryUsage);
+        RequestEngine.removeHook(emitContainerIOUsage);
     }
 
     private static void emitDirectBufferStatistics() {
