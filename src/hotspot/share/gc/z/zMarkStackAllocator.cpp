@@ -177,6 +177,10 @@ bool ZMarkStackAllocator::is_initialized() const {
   return _space.is_initialized();
 }
 
+size_t ZMarkStackAllocator::size() const {
+  return _space.size();
+}
+
 ZMarkStackMagazine* ZMarkStackAllocator::create_magazine_from_space(uintptr_t addr, size_t size) {
   assert(is_aligned(size, ZMarkStackSize), "Invalid size");
 

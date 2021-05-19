@@ -35,7 +35,6 @@ private:
   volatile uintptr_t _top;
   volatile uintptr_t _end;
 
-  size_t size() const;
   size_t used() const;
 
   size_t expand_space();
@@ -48,6 +47,8 @@ public:
   ZMarkStackSpace();
 
   bool is_initialized() const;
+
+  size_t size() const;
 
   uintptr_t alloc(size_t size);
   void free();
@@ -64,6 +65,8 @@ public:
   ZMarkStackAllocator();
 
   bool is_initialized() const;
+
+  size_t size() const;
 
   ZMarkStackMagazine* alloc_magazine();
   void free_magazine(ZMarkStackMagazine* magazine);

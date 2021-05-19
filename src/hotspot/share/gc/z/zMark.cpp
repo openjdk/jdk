@@ -769,7 +769,11 @@ bool ZMark::end() {
 }
 
 void ZMark::free() {
+  // Free any unused mark stack space
   _allocator.free();
+
+  // Update statistics
+  ZStatMark::set_at_mark_free(_allocator.size());
 }
 
 void ZMark::flush_and_free() {
