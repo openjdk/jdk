@@ -1746,7 +1746,7 @@ private:
   void vpcmpgtq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   void pmovmskb(Register dst, XMMRegister src);
-  void vpmovmskb(Register dst, XMMRegister src);
+  void vpmovmskb(Register dst, XMMRegister src, int vec_enc);
 
   // SSE 4.1 extract
   void pextrd(Register dst, XMMRegister src, int imm8);
