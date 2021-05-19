@@ -352,6 +352,9 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   if (!arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskNotUsed)) {
     return false;
   }
+  if (!arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed)) {
+    return false;
+  }
   if (!arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)) {
     return false;
   }
