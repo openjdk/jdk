@@ -320,12 +320,12 @@ public class TagletWriterImpl extends TagletWriter {
             links.add(htmlWriter.seeTagToContent(holder, dt, context.within(dt)));
         }
         if (utils.isVariableElement(holder) && ((VariableElement)holder).getConstantValue() != null &&
-                htmlWriter instanceof ClassWriterImpl classHtmlWriter) {
+                htmlWriter instanceof ClassWriterImpl clsHtml) {
             //Automatically add link to constant values page for constant fields.
             DocPath constantsPath =
                     htmlWriter.pathToRoot.resolve(DocPaths.CONSTANT_VALUES);
             String whichConstant =
-                    classHtmlWriter.getTypeElement().getQualifiedName() + "." +
+                    clsHtml.getTypeElement().getQualifiedName() + "." +
                     utils.getSimpleName(holder);
             DocLink link = constantsPath.fragment(whichConstant);
             links.add(htmlWriter.links.createLink(link,

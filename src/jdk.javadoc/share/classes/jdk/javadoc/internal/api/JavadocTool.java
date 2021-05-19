@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,15 +113,15 @@ public class JavadocTool implements DocumentationTool {
 
             if (out == null)
                 context.put(Log.errKey, new PrintWriter(System.err, true));
-            else if (out instanceof PrintWriter printWriter)
-                context.put(Log.errKey, printWriter);
+            else if (out instanceof PrintWriter pout)
+                context.put(Log.errKey, pout);
             else
                 context.put(Log.errKey, new PrintWriter(out, true));
 
             if (fileManager == null) {
                 fileManager = getStandardFileManager(diagnosticListener, null, null);
-                if (fileManager instanceof BaseFileManager baseFileManager) {
-                    baseFileManager.autoClose = true;
+                if (fileManager instanceof BaseFileManager bfm) {
+                    bfm.autoClose = true;
                 }
             }
             fileManager = ccw.wrap(fileManager);

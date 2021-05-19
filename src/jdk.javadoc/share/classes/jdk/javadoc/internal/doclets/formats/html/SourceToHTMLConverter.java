@@ -175,9 +175,9 @@ public class SourceToHTMLConverter {
             return;
         }
         for (Element elem : mdl.getEnclosedElements()) {
-            if (elem instanceof PackageElement packageElement && configuration.docEnv.isIncluded(elem)
+            if (elem instanceof PackageElement pkgElem && configuration.docEnv.isIncluded(elem)
                     && !(options.noDeprecated() && utils.isDeprecated(elem))) {
-                convertPackage(packageElement, outputdir);
+                convertPackage(pkgElem, outputdir);
             }
         }
     }

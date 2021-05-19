@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,13 +396,13 @@ public class Extern {
      */
     private Item findElementItem(Element element) {
         Item item = null;
-        if (element instanceof ModuleElement moduleElement) {
-            item = moduleItems.get(utils.getModuleName(moduleElement));
+        if (element instanceof ModuleElement modElem) {
+            item = moduleItems.get(utils.getModuleName(modElem));
         }
-        else if (element instanceof PackageElement packageElement) {
-            ModuleElement moduleElement = utils.containingModule(packageElement);
+        else if (element instanceof PackageElement pkgElem) {
+            ModuleElement moduleElement = utils.containingModule(pkgElem);
             Map<String, Item> pkgMap = packageItems.get(utils.getModuleName(moduleElement));
-            item = (pkgMap != null) ? pkgMap.get(utils.getPackageName(packageElement)) : null;
+            item = (pkgMap != null) ? pkgMap.get(utils.getPackageName(pkgElem)) : null;
         }
         return item;
     }

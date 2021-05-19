@@ -1736,11 +1736,11 @@ public class Utils {
 
         private Collator createCollator(Locale locale) {
             Collator baseCollator = Collator.getInstance(locale);
-            if (baseCollator instanceof RuleBasedCollator ruleBaseCollator) {
+            if (baseCollator instanceof RuleBasedCollator rbc) {
                 // Extend collator to sort signatures with additional args and var-args in a well-defined order:
                 // () < (int) < (int, int) < (int...)
                 try {
-                    return new RuleBasedCollator(ruleBaseCollator.getRules()
+                    return new RuleBasedCollator(rbc.getRules()
                             + "& ')' < ',' < '.','['");
                 } catch (ParseException e) {
                     throw new RuntimeException(e);
@@ -2631,10 +2631,10 @@ public class Utils {
 
     public List<? extends DocTree> getBlockTags(Element element, Taglet taglet) {
         return getBlockTags(element, t -> {
-            if (taglet instanceof BaseTaglet baseTaglet) {
-                return baseTaglet.accepts(t);
-            } else if (t instanceof UnknownBlockTagTree unknownBlockTagTree) {
-                return unknownBlockTagTree.getTagName().equals(taglet.getName());
+            if (taglet instanceof BaseTaglet bt) {
+                return bt.accepts(t);
+            } else if (t instanceof UnknownBlockTagTree ukbt) {
+                return ukbt.getTagName().equals(taglet.getName());
             } else {
                 return false;
             }
