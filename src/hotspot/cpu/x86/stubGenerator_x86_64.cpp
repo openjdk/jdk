@@ -5918,14 +5918,14 @@ address generate_avx_ghash_processBlocks() {
 
     __ vpxor(errorvec, errorvec, errorvec, Assembler::AVX_512bit);
 
-    __ cmpl(length, 0xff);
-    __ jcc(Assembler::lessEqual, L_process64);
-
     __ movl(r15, 0x01400140);
     __ evpbroadcastd(pack16_op, r15, Assembler::AVX_512bit);
 
     __ movl(r15, 0x00011000);
     __ evpbroadcastd(pack32_op, r15, Assembler::AVX_512bit);
+
+    __ cmpl(length, 0xff);
+    __ jcc(Assembler::lessEqual, L_process64);
 
     // load masks required for decoding data
     __ BIND(L_processdata);
