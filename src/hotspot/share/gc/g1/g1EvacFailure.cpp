@@ -31,7 +31,7 @@
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"

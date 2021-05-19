@@ -49,10 +49,13 @@ void G1Arguments::initialize_alignments() {
   // size, but the heap size should be aligned with the region size. To get
   // around this we use the unaligned values for the heap.
   HeapRegion::setup_heap_region_size(MaxHeapSize);
-  HeapRegionRemSet::setup_remset_size();
 
   SpaceAlignment = HeapRegion::GrainBytes;
   HeapAlignment = calculate_heap_alignment(SpaceAlignment);
+
+  // We need to initialize card set configuration as soon as heap region size is
+  // known as it depends on it and is used really early.
+  G1CardSetConfiguration::initialize_globals();
 }
 
 size_t G1Arguments::conservative_max_heap_alignment() {

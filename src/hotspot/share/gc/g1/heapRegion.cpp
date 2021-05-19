@@ -34,7 +34,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionBounds.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "logging/log.hpp"
@@ -230,7 +230,8 @@ void HeapRegion::clear_humongous() {
 
 HeapRegion::HeapRegion(uint hrm_index,
                        G1BlockOffsetTable* bot,
-                       MemRegion mr) :
+                       MemRegion mr,
+                       G1CardSetConfiguration* config) :
   _bottom(mr.start()),
   _end(mr.end()),
   _top(NULL),
@@ -257,7 +258,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
 
-  _rem_set = new HeapRegionRemSet(bot, this);
+  _rem_set = new HeapRegionRemSet(this, config);
   initialize();
 }
 
@@ -614,6 +615,10 @@ public:
 
           if (!_failures) {
             log.error("----------");
+          }
+          {
+            LogStream ls(log.error());
+            to->rem_set()->print_info(&ls, p);
           }
           log.error("Missing rem set entry:");
           log.error("Field " PTR_FORMAT " of obj " PTR_FORMAT " in region " HR_FORMAT,

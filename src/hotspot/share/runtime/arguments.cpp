@@ -525,6 +525,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SuspendRetryCount",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
   { "SuspendRetryDelay",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
   { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "G1RSetRegionEntries",          JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "AlwaysLockClassLoader",        JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "BiasedLockingStartupDelay",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
@@ -539,6 +540,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "G1RSetSparseRegionEntries",    JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
   { "AssertOnSuspendWaitFailure",   JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
@@ -568,8 +570,8 @@ typedef struct {
 } AliasedFlag;
 
 static AliasedFlag const aliased_jvm_flags[] = {
-  { "DefaultMaxRAMFraction",    "MaxRAMFraction"    },
-  { "CreateMinidumpOnCrash",    "CreateCoredumpOnCrash" },
+  { "DefaultMaxRAMFraction",     "MaxRAMFraction"    },
+  { "CreateMinidumpOnCrash",     "CreateCoredumpOnCrash" },
   { NULL, NULL}
 };
 

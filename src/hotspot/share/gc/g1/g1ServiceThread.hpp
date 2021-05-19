@@ -47,13 +47,19 @@ class G1ServiceTask : public CHeapObj<mtGC> {
   void set_service_thread(G1ServiceThread* thread);
   bool is_registered();
 
+  G1ServiceTask* next() const;
 public:
   G1ServiceTask(const char* name);
+  virtual ~G1ServiceTask() { }
 
   jlong time();
   const char* name();
-  G1ServiceTask* next();
 
+  // Returns whether this task has already been enqueued. There is no particular
+  // synchronization effort on this check, so make sure that it is either called
+  // from the thread running this task or in another safe place (e.g. vm thread
+  // in safepoint).
+  bool is_enqueued() const;
   // Do the actual work for the task. To get added back to the
   // execution queue a task can call schedule(delay_ms).
   virtual void execute() = 0;
