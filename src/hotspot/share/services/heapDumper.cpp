@@ -439,20 +439,17 @@ class AbstractDumpWriter : public StackObj {
   void end_sub_record();
   // Finishes the current dump segment if not already finished.
   void finish_dump_segment(bool force_flush = false);
-  virtual void deactivate() = 0;
   // Refresh to get new buffer
   void refresh() {
     assert (_in_dump_segment ==false, "Sanity check");
     _buffer = NULL;
     _size = io_buffer_max_size;
     _pos = 0;
-    flush();
+    // Force flush to guarantee data from parallel dumper are written.
+    flush(true);
   }
-
-  // Called by threads used for parallel writing.
-  void writer_loop()                    { _backend.thread_loop(); }
   // Called when finished to release the threads.
-  void deactivate()                     { flush(); _backend.deactivate(); }
+  virtual void deactivate() = 0;
 };
 
 void AbstractDumpWriter::write_fast(void* s, size_t len) {
@@ -623,7 +620,7 @@ class DumpWriter : public AbstractDumpWriter {
   virtual char const* error() const             { return _backend.error(); }
 
   // Called by threads used for parallel writing.
-  void writer_loop()                    { _backend.thread_loop(false); }
+  void writer_loop()                    { _backend.thread_loop(); }
   // Called when finish to release the threads.
   virtual void deactivate()             { flush(); _backend.deactivate(); }
   // Get the backend pointer, used by parallel dump writer.
@@ -1683,10 +1680,9 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
 
   HeapDumpLargeObjectListElem* _head;
   uint _length;
-  uint _length1;
 
  public:
-  HeapDumpLargeObjectList() : _head(NULL),  _length(0) { _length1 = 0; }
+  HeapDumpLargeObjectList() : _head(NULL),  _length(0) { }
 
   void atomic_push(oop obj) {
     assert (obj != NULL, "sanity check");
@@ -1696,7 +1692,6 @@ class HeapDumpLargeObjectList : public CHeapObj<mtInternal> {
       return;
     }
     assert (entry->_obj != NULL, "sanity check");
-    Atomic::inc(&_length1);
     while (true) {
       HeapDumpLargeObjectListElem* old_head = Atomic::load_acquire(&_head);
       HeapDumpLargeObjectListElem* new_head = entry;
