@@ -12,8 +12,6 @@ nbproject/private/
 .recommenders/
 test/nashorn/script/external
 test/nashorn/lib
-test/make/
-test/make/bin
 NashornProfile.txt
 **/JTreport/**
 **/JTwork/**

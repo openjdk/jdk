@@ -34,8 +34,6 @@
 #include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"
 
-#include "logging/log.hpp"
-
 // 2^30 = 1G buckets
 #define SIZE_BIG_LOG2 30
 // 2^2  = 4 buckets
@@ -1142,8 +1140,6 @@ inline void ConcurrentHashTable<CONFIG, F>::
   // We only allow this method to be used during a safepoint.
   assert(SafepointSynchronize::is_at_safepoint(),
          "must only be called in a safepoint");
-/*  assert(Thread::current()->is_VM_thread(),
-         "should be in vm thread"); */
 
   // Here we skip protection,
   // thus no other thread may use this table at the same time.

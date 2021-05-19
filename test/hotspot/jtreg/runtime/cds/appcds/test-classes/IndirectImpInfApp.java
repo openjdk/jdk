@@ -21,7 +21,6 @@
  * questions.
  *
  */
-
 public class IndirectImpInfApp {
     public static void main(String args[]) {
         IndirectImpInf i = new IndirectImpInf();
