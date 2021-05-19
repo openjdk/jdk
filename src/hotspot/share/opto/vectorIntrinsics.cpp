@@ -405,6 +405,60 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   return true;
 }
 
+// <E, M>
+// int maskReductionCoerced(int oper, Class<? extends M> maskClass, Class<?> elemClass,
+//                          int length, M m, VectorMaskOp<M> defaultImpl)
+bool LibraryCallKit::inline_vector_mask_operation() {
+  const TypeInt*     oper       = gvn().type(argument(0))->isa_int();
+  const TypeInstPtr* mask_klass = gvn().type(argument(1))->isa_instptr();
+  const TypeInstPtr* elem_klass = gvn().type(argument(2))->isa_instptr();
+  const TypeInt*     vlen       = gvn().type(argument(3))->isa_int();
+  Node*              mask       = argument(4);
+
+  if (mask_klass == NULL || elem_klass == NULL || mask->is_top() || vlen == NULL) {
+    return false; // dead code
+  }
+
+  if (!is_klass_initialized(mask_klass)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** klass argument not initialized");
+    }
+    return false;
+  }
+
+  int num_elem = vlen->get_con();
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  BasicType elem_bt = elem_type->basic_type();
+
+  if (!arch_supports_vector(Op_LoadVector, num_elem, T_BOOLEAN, VecMaskNotUsed)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s",
+                    Op_LoadVector, num_elem, type2name(T_BOOLEAN));
+    }
+    return false; // not supported
+  }
+
+  int mopc = VectorSupport::vop2ideal(oper->get_con(), elem_bt);
+  if (!arch_supports_vector(mopc, num_elem, elem_bt, VecMaskNotUsed)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s",
+                    mopc, num_elem, type2name(elem_bt));
+    }
+    return false; // not supported
+  }
+
+  const Type* elem_ty = Type::get_const_basic_type(elem_bt);
+  ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  const TypeInstPtr* mask_box_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
+  Node* mask_vec = unbox_vector(mask, mask_box_type, elem_bt, num_elem, true);
+  Node* store_mask = gvn().transform(VectorStoreMaskNode::make(gvn(), mask_vec, elem_bt, num_elem));
+  Node* maskoper = gvn().transform(VectorMaskOpNode::make(store_mask, TypeInt::INT, mopc));
+  set_result(maskoper);
+
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
+  return true;
+}
+
 // <VM ,Sh extends VectorShuffle<E>, E>
 // VM shuffleToVector(Class<VM> VecClass, Class<?>E , Class<?> ShuffleClass, Sh s, int length,
 //                    ShuffleToVectorOperation<VM,Sh,E> defaultImpl)

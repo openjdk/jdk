@@ -77,7 +77,12 @@ class VectorSupport : AllStatic {
 
     // Convert
     VECTOR_OP_CAST        = 17,
-    VECTOR_OP_REINTERPRET = 18
+    VECTOR_OP_REINTERPRET = 18,
+
+    // Mask manipulation operations
+    VECTOR_OP_MASK_TRUECOUNT = 19,
+    VECTOR_OP_MASK_FIRSTTRUE = 20,
+    VECTOR_OP_MASK_LASTTRUE  = 21
   };
 
   static int vop2ideal(jint vop, BasicType bt);

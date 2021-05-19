@@ -762,6 +762,29 @@ final class Byte512Vector extends ByteVector {
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
 
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Byte512Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((Byte512Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Byte512Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((Byte512Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Byte512Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((Byte512Mask)m).getBits()));
+        }
+
         // Reductions
 
         @Override
