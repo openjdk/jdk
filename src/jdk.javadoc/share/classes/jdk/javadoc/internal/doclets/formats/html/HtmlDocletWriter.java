@@ -1124,7 +1124,7 @@ public class HtmlDocletWriter {
                 // The current class either overrides the referenced member or
                 // inherits it automatically.
                 if (this instanceof ClassWriterImpl classWriterImpl) {
-                    containing = (classWriterImpl.getTypeElement();
+                    containing = classWriterImpl.getTypeElement();
                 } else if (!utils.isPublic(containing)) {
                     messages.warning(
                         ch.getDocTreePath(see), "doclet.see.class_or_package_not_accessible",

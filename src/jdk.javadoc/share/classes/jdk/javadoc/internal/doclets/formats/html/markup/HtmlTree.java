@@ -175,7 +175,7 @@ public class HtmlTree extends Content {
     @Override
     public HtmlTree add(Content content) {
         if (content instanceof ContentBuilder contentBuilder) {
-            (contentBuilder.contents.forEach(this::add);
+            contentBuilder.contents.forEach(this::add);
         }
         else if (content == HtmlTree.EMPTY || content.isValid()) {
             // quietly avoid adding empty or invalid nodes (except EMPTY)
