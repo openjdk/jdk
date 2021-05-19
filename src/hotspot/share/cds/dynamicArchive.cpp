@@ -170,7 +170,6 @@ void DynamicArchiveBuilder::init_header() {
   assert(FileMapInfo::dynamic_info() == mapinfo, "must be");
   _header = mapinfo->dynamic_header();
 
-  Thread* THREAD = Thread::current();
   FileMapInfo* base_info = FileMapInfo::current_info();
   _header->set_base_header_crc(base_info->crc());
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
@@ -251,7 +250,6 @@ void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
   }
 #endif
 
-  Thread* THREAD = Thread::current();
   Method::sort_methods(ik->methods(), /*set_idnums=*/true, dynamic_dump_method_comparator);
   if (ik->default_methods() != NULL) {
     Method::sort_methods(ik->default_methods(), /*set_idnums=*/false, dynamic_dump_method_comparator);
@@ -332,6 +330,20 @@ public:
   }
 };
 
+void DynamicArchive::prepare_for_dynamic_dumping_at_exit() {
+  EXCEPTION_MARK;
+  ResourceMark rm(THREAD);
+  MetaspaceShared::link_and_cleanup_shared_classes(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    log_error(cds)("ArchiveClassesAtExit has failed");
+    log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+                   java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+    // We cannot continue to dump the archive anymore.
+    DynamicDumpSharedSpaces = false;
+    CLEAR_PENDING_EXCEPTION;
+  }
+}
+
 bool DynamicArchive::_has_been_dumped_once = false;
 
 void DynamicArchive::dump(const char* archive_name, TRAPS) {
@@ -347,7 +359,7 @@ void DynamicArchive::dump(const char* archive_name, TRAPS) {
     set_has_been_dumped_once();
     ArchiveClassesAtExit = archive_name;
     if (Arguments::init_shared_archive_paths()) {
-      dump(CHECK);
+      dump();
     } else {
       ArchiveClassesAtExit = nullptr;
       THROW_MSG(vmSymbols::java_lang_RuntimeException(),
@@ -362,16 +374,11 @@ void DynamicArchive::dump(const char* archive_name, TRAPS) {
   }
 }
 
-void DynamicArchive::dump(TRAPS) {
+void DynamicArchive::dump() {
   if (Arguments::GetSharedDynamicArchivePath() == NULL) {
     log_warning(cds, dynamic)("SharedDynamicArchivePath is not specified");
     return;
   }
-
-  // regenerate lambdaform holder classes
-  log_info(cds, dynamic)("Regenerate lambdaform holder classes ...");
-  LambdaFormInvokers::regenerate_holder_classes(CHECK);
-  log_info(cds, dynamic)("Regenerate lambdaform holder classes ...done");
 
   VM_PopulateDynamicDumpSharedSpace op;
   VMThread::execute(&op);

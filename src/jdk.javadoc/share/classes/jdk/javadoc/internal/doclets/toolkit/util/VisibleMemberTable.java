@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.toolkit.util;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -53,7 +54,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -98,7 +98,7 @@ import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
 public class VisibleMemberTable {
 
     public enum Kind {
-        INNER_CLASSES,
+        NESTED_CLASSES,
         ENUM_CONSTANTS,
         FIELDS,
         CONSTRUCTORS,
@@ -107,8 +107,38 @@ public class VisibleMemberTable {
         ANNOTATION_TYPE_MEMBER_REQUIRED,
         PROPERTIES;
 
-        public static final EnumSet<Kind> summarySet = EnumSet.range(INNER_CLASSES, METHODS);
-        public static final EnumSet<Kind> detailSet = EnumSet.range(ENUM_CONSTANTS, METHODS);
+        private static final EnumSet<Kind> defaultSummarySet = EnumSet.of(
+                NESTED_CLASSES, FIELDS, CONSTRUCTORS, METHODS);
+        private static final EnumSet<Kind> enumSummarySet = EnumSet.of(
+                NESTED_CLASSES, ENUM_CONSTANTS, FIELDS, METHODS);
+        private static final EnumSet<Kind> annotationSummarySet = EnumSet.of(
+                FIELDS, ANNOTATION_TYPE_MEMBER_OPTIONAL, ANNOTATION_TYPE_MEMBER_REQUIRED);
+        private static final EnumSet<Kind> defaultDetailSet = EnumSet.of(
+                FIELDS, CONSTRUCTORS, METHODS);
+        private static final EnumSet<Kind> enumDetailSet = EnumSet.of(
+                ENUM_CONSTANTS, FIELDS, METHODS);
+
+        /**
+         * {@return the set of possible member kinds for the summaries section of a type element}
+         * @param kind the kind of type element being documented
+         */
+        public static Set<Kind> forSummariesOf(ElementKind kind) {
+            return switch (kind) {
+                case ANNOTATION_TYPE -> annotationSummarySet;
+                case ENUM -> enumSummarySet;
+                default -> defaultSummarySet;
+            };
+        }
+
+        /**
+         * {@return the set of possible member kinds for the details section of a type element}
+         * @param kind the kind of type element being documented
+         */
+        public static Set<Kind> forDetailsOf(ElementKind kind) {
+            return kind == ElementKind.ENUM
+                    ? enumDetailSet
+                    : defaultDetailSet;
+        }
     }
 
     final TypeElement te;
@@ -119,12 +149,12 @@ public class VisibleMemberTable {
     final Utils utils;
     final VisibleMemberCache mcache;
 
-    private List<VisibleMemberTable> allSuperclasses;
-    private List<VisibleMemberTable> allSuperinterfaces;
-    private List<VisibleMemberTable> parents;
+    private final List<VisibleMemberTable> allSuperclasses;
+    private final List<VisibleMemberTable> allSuperinterfaces;
+    private final List<VisibleMemberTable> parents;
 
     private Map<Kind, List<Element>> visibleMembers = null;
-    private Map<ExecutableElement, PropertyMembers> propertyMap = new HashMap<>();
+    private final Map<ExecutableElement, PropertyMembers> propertyMap = new HashMap<>();
 
     // Keeps track of method overrides
     Map<ExecutableElement, OverriddenMethodInfo> overriddenMethodTable
@@ -295,7 +325,8 @@ public class VisibleMemberTable {
     }
 
     /**
-     * Returns true if this table contains visible members.
+     * Returns true if this table contains visible members of
+     * any kind, including inherited members.
      *
      * @return true if visible members are present.
      */
@@ -394,7 +425,7 @@ public class VisibleMemberTable {
 
     void computeVisibleMembers(LocalMemberTable lmt, Kind kind) {
         switch (kind) {
-            case FIELDS: case INNER_CLASSES:
+            case FIELDS: case NESTED_CLASSES:
                 computeVisibleFieldsAndInnerClasses(lmt, kind);
                 return;
 
@@ -719,7 +750,7 @@ public class VisibleMemberTable {
                     case ENUM:
                     case ANNOTATION_TYPE:
                     case RECORD:
-                        addMember(e, Kind.INNER_CLASSES);
+                        addMember(e, Kind.NESTED_CLASSES);
                         break;
                     case FIELD:
                         addMember(e, Kind.FIELDS);

@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -56,6 +57,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * Generate the Class Information Page.
@@ -150,7 +152,17 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 contents.moduleLabel);
         return super.getNavBar(pageMode, element)
                 .setNavLinkModule(linkContent)
-                .setMemberSummaryBuilder(configuration.getBuilderFactory().getMemberSummaryBuilder(this));
+                .setSubNavLinks(() -> {
+                    List<Content> list = new ArrayList<>();
+                    VisibleMemberTable vmt = configuration.getVisibleMemberTable(typeElement);
+                    Set<VisibleMemberTable.Kind> summarySet =
+                            VisibleMemberTable.Kind.forSummariesOf(element.getKind());
+                    for (VisibleMemberTable.Kind kind : summarySet) {
+                        list.add(links.createLink(HtmlIds.forMemberSummary(kind),
+                                contents.getNavLinkLabelContent(kind), vmt.hasVisibleMembers(kind)));
+                    }
+                    return list;
+                });
     }
 
     @Override

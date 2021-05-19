@@ -537,7 +537,7 @@
           "in a comma separated string. Sub-systems are: "                  \
           "threads, heap, symbol_table, string_table, codecache, "          \
           "dictionary, classloader_data_graph, metaspace, jni_handles, "    \
-          "codecache_oops")                                                 \
+          "codecache_oops, resolved_method_table, stringdedup")             \
                                                                             \
   product(bool, GCParallelVerificationEnabled, true, DIAGNOSTIC,            \
           "Enable parallel memory system verification")                     \

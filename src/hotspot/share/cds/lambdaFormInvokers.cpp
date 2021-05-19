@@ -46,9 +46,10 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
 
 GrowableArrayCHeap<char*, mtClassShared>* LambdaFormInvokers::_lambdaform_lines = nullptr;
-Array<Array<char>*>* LambdaFormInvokers::_static_archive_invokers = nullptr;
+Array<Array<char>*>*  LambdaFormInvokers::_static_archive_invokers = nullptr;
 
 #define NUM_FILTER 4
 static const char* filter[NUM_FILTER] = {"java.lang.invoke.Invokers$Holder",
@@ -73,13 +74,26 @@ void LambdaFormInvokers::append_filtered(char* line) {
 #undef NUM_FILTER
 
 void LambdaFormInvokers::append(char* line) {
+  MutexLocker ml(Thread::current(), LambdaFormInvokers_lock);
   if (_lambdaform_lines == NULL) {
     _lambdaform_lines = new GrowableArrayCHeap<char*, mtClassShared>(150);
   }
   _lambdaform_lines->append(line);
 }
 
+// convenient output
+class PrintLambdaFormMessage {
+ public:
+  PrintLambdaFormMessage() {
+    log_info(cds)("Regenerate MethodHandle Holder classes...");
+  }
+  ~PrintLambdaFormMessage() {
+    log_info(cds)("Regenerate MethodHandle Holder classes...done");
+  }
+};
+
 void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
+  PrintLambdaFormMessage plm;
   if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
     log_info(cds)("Nothing to regenerate for holder classes");
     return;
@@ -90,16 +104,18 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
   Klass*  cds_klass = SystemDictionary::resolve_or_null(cds_name, THREAD);
   guarantee(cds_klass != NULL, "jdk/internal/misc/CDS must exist!");
-  log_debug(cds)("Total lambdaform lines %d", _lambdaform_lines->length());
 
   HandleMark hm(THREAD);
   int len = _lambdaform_lines->length();
-  objArrayHandle list_lines = oopFactory::new_objArray_handle(vmClasses::String_klass(), len, CHECK);
-  for (int i = 0; i < len; i++) {
-    Handle h_line = java_lang_String::create_from_str(_lambdaform_lines->at(i), CHECK);
-    list_lines->obj_at_put(i, h_line());
-  }
-
+  objArrayHandle list_lines;
+  {
+    MutexLocker ml(Thread::current(), LambdaFormInvokers_lock);
+    list_lines = oopFactory::new_objArray_handle(vmClasses::String_klass(), len, CHECK);
+    for (int i = 0; i < len; i++) {
+      Handle h_line = java_lang_String::create_from_str(_lambdaform_lines->at(i), CHECK);
+      list_lines->obj_at_put(i, h_line());
+    }
+  } // Before calling into java, release vm lock.
   //
   // Object[] CDS.generateLambdaFormHolderClasses(String[] lines)
   // the returned Object[] layout:
@@ -175,7 +191,8 @@ void LambdaFormInvokers::reload_class(char* name, ClassFileStream& st, TRAPS) {
   // exclude the existing class from dump
   SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass));
   SystemDictionaryShared::init_dumptime_info(result);
-  log_debug(cds, lambda)("Replaced class %s, old: %p  new: %p", name, klass, result);
+  log_info(cds, lambda)("Replaced class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
+                 name, p2i(klass), p2i(result));
 }
 
 void LambdaFormInvokers::dump_static_archive_invokers() {
@@ -188,7 +205,6 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
         count++;
       }
     }
-    log_debug(cds)("Number of LF invoker lines stored: %d", count);
     if (count > 0) {
       _static_archive_invokers = ArchiveBuilder::new_ro_array<Array<char>*>(count);
       int index = 0;
@@ -206,6 +222,7 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
       }
       assert(index == count, "Should match");
     }
+    log_debug(cds)("Total LF lines stored into static archive: %d", count);
   }
 }
 
@@ -214,8 +231,9 @@ void LambdaFormInvokers::read_static_archive_invokers() {
     for (int i = 0; i < _static_archive_invokers->length(); i++) {
       Array<char>* line = _static_archive_invokers->at(i);
       char* str = line->adr_at(0);
-      append_filtered(str);
+      append(str);
     }
+    log_debug(cds)("Total LF lines read from static archive: %d", _static_archive_invokers->length());
   }
 }
 
