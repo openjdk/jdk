@@ -1,0 +1,43 @@
+diff --git a/src/hotspot/share/opto/vectorIntrinsics.cpp b/src/hotspot/share/opto/vectorIntrinsics.cpp
+index 3b8261d91d0..ad4bfd57f53 100644
+--- a/src/hotspot/share/opto/vectorIntrinsics.cpp
++++ b/src/hotspot/share/opto/vectorIntrinsics.cpp
+@@ -429,8 +429,12 @@ bool LibraryCallKit::inline_vector_mask_operation() {
+   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+   BasicType elem_bt = elem_type->basic_type();
+ 
+-  if (num_elem <= 2) {
+-    return false;
++  if (!arch_supports_vector(Op_LoadVector, num_elem, T_BOOLEAN, VecMaskNotUsed)) {
++    if (C->print_intrinsics()) {
++      tty->print_cr("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s",
++                    Op_LoadVector, num_elem, type2name(T_BOOLEAN));
++    }
++    return false; // not supported
+   }
+ 
+   int mopc = VectorSupport::vop2ideal(oper->get_con(), elem_bt);
+@@ -439,7 +443,7 @@ bool LibraryCallKit::inline_vector_mask_operation() {
+       tty->print_cr("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s",
+                     mopc, num_elem, type2name(elem_bt));
+     }
+-    return false;
++    return false; // not supported
+   }
+ 
+   const Type* elem_ty = Type::get_const_basic_type(elem_bt);
+diff --git a/test/micro/org/openjdk/bench/jdk/incubator/vector/MaskQueryOperationsBenchmark.java b/test/micro/org/openjdk/bench/jdk/incubator/vector/MaskQueryOperationsBenchmark.java
+index 50add676c62..6f9df1800f6 100644
+--- a/test/micro/org/openjdk/bench/jdk/incubator/vector/MaskQueryOperationsBenchmark.java
++++ b/test/micro/org/openjdk/bench/jdk/incubator/vector/MaskQueryOperationsBenchmark.java
+@@ -84,8 +84,8 @@ public class MaskQueryOperationsBenchmark {
+ 
+     @Setup(Level.Trial)
+     public void BmSetup() {
+-        bspecies = VectorSpecies.of(int.class, VectorShape.forBitSize(bits));
+-        sspecies = VectorSpecies.of(int.class, VectorShape.forBitSize(bits));
++        bspecies = VectorSpecies.of(byte.class, VectorShape.forBitSize(bits));
++        sspecies = VectorSpecies.of(short.class, VectorShape.forBitSize(bits));
+         ispecies = VectorSpecies.of(int.class, VectorShape.forBitSize(bits));
+         lspecies = VectorSpecies.of(long.class, VectorShape.forBitSize(bits));
+ 

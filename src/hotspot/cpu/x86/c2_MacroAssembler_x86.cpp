@@ -3750,3 +3750,54 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
     vpxor(vec2, vec2);
   }
 }
+
+#ifdef _LP64
+void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
+                                              Register tmp, KRegister ktmp, int masklen, int vec_enc) {
+  assert(VM_Version::supports_avx512vlbw(), "");
+  vpxor(xtmp, xtmp, xtmp, vec_enc);
+  vpsubb(xtmp, xtmp, mask, vec_enc);
+  evpmovb2m(ktmp, xtmp, vec_enc);
+  kmovql(tmp, ktmp);
+  switch(opc) {
+    case Op_VectorMaskTrueCount:
+      popcntq(dst, tmp);
+      break;
+    case Op_VectorMaskLastTrue:
+      mov64(dst, -1);
+      bsrq(tmp, tmp);
+      cmov(Assembler::notZero, dst, tmp);
+      break;
+    case Op_VectorMaskFirstTrue:
+      mov64(dst, masklen);
+      bsfq(tmp, tmp);
+      cmov(Assembler::notZero, dst, tmp);
+      break;
+    default: assert(false, "Unhandled mask operation");
+  }
+}
+
+void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
+                                              XMMRegister xtmp1, Register tmp, int masklen, int vec_enc) {
+  assert(VM_Version::supports_avx(), "");
+  vpxor(xtmp, xtmp, xtmp, vec_enc);
+  vpsubb(xtmp, xtmp, mask, vec_enc);
+  vpmovmskb(tmp, xtmp);
+  switch(opc) {
+    case Op_VectorMaskTrueCount:
+      popcntq(dst, tmp);
+      break;
+    case Op_VectorMaskLastTrue:
+      mov64(dst, -1);
+      bsrq(tmp, tmp);
+      cmov(Assembler::notZero, dst, tmp);
+      break;
+    case Op_VectorMaskFirstTrue:
+      mov64(dst, masklen);
+      bsfq(tmp, tmp);
+      cmov(Assembler::notZero, dst, tmp);
+      break;
+    default: assert(false, "Unhandled mask operation");
+  }
+}
+#endif
