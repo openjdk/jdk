@@ -44,7 +44,7 @@ import java.nio.file.*;
 
 public class TestClasses {
 
-  static final int CLASSES = 768;
+  static final int CLASSES = 1024;
   static final int FIELDS = 1024;
 
   static volatile Object sink;
