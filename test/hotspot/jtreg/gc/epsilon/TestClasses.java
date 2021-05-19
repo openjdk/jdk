@@ -44,7 +44,7 @@ import java.nio.file.*;
 
 public class TestClasses {
 
-  static final int COUNT = 32*1024;
+  static final int COUNT = 1024;
 
   static volatile Object sink;
 
