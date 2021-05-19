@@ -1223,7 +1223,9 @@ public class TypeAnnotations {
                                 .methodParameter(tree, i, param.vartype.pos);
                         push(param);
                         try {
-                            separateAnnotationsKinds(param.vartype, param.sym.type, param.sym, pos);
+                            if (!param.declaredUsingVar()) {
+                                separateAnnotationsKinds(param.vartype, param.sym.type, param.sym, pos);
+                            }
                         } finally {
                             pop();
                         }

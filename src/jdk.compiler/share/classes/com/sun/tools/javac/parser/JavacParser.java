@@ -3472,7 +3472,8 @@ public class JavacParser implements Parser {
         }
         type = bracketsOpt(type);
 
-        return toP(F.at(pos).VarDef(mods, name, type, null));
+        return toP(F.at(pos).VarDef(mods, name, type, null,
+                type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var));
     }
 
     /** Resources = Resource { ";" Resources }
