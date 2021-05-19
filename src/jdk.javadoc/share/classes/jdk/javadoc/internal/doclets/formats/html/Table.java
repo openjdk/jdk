@@ -44,6 +44,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
@@ -327,7 +328,7 @@ public class Table extends Content {
                     ? null
                     : columnStyles.get(colIndex);
             // Replace invalid content with HtmlTree.EMPTY to make sure the cell isn't dropped
-            HtmlTree cell = HtmlTree.DIV(cellStyle, c.isValid() ? c : HtmlTree.EMPTY);
+            HtmlTree cell = HtmlTree.DIV(cellStyle, c.isValid() ? c : Text.VALID_EMPTY);
             if (rowStyle != null) {
                 cell.addStyle(rowStyle);
             }

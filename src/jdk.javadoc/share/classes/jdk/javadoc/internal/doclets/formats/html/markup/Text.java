@@ -42,7 +42,22 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 public class Text extends Content {
     private final String string;
 
+    /**
+     * An empty {@code Text} instance. Like most other empty content, this is
+     * considered invalid and silently ignored when added to a content tree.
+     */
     public static final Text EMPTY = Text.of("");
+
+    /**
+     * An empty yet valid {@code Text} instance. This is useful for building
+     * valid content trees without adding actual content.
+     */
+    public static final Text VALID_EMPTY = new Text("") {
+        @Override
+        public boolean isValid() {
+            return true;
+        }
+    };
 
     /**
      * Creates a new object containing immutable text.

@@ -85,12 +85,6 @@ public class HtmlTree extends Content {
     private List<Content> content = List.of();
 
     /**
-     * A sentinel value to explicitly indicate empty content.
-     * The '==' identity of this object is significant.
-     */
-    public static final Content EMPTY = Text.of("");
-
-    /**
      * Creates an {@code HTMLTree} object representing an HTML element
      * with the given name.
      *
@@ -177,8 +171,8 @@ public class HtmlTree extends Content {
         if (content instanceof ContentBuilder) {
             ((ContentBuilder) content).contents.forEach(this::add);
         }
-        else if (content == HtmlTree.EMPTY || content.isValid()) {
-            // quietly avoid adding empty or invalid nodes (except EMPTY)
+        else if (content.isValid()) {
+            // quietly avoid adding invalid nodes
             if (this.content.isEmpty())
                 this.content = new ArrayList<>();
             this.content.add(content);
