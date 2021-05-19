@@ -103,11 +103,6 @@ public final class Utils {
         return (AbstractMemorySegmentImpl)segment;
     }
 
-    private static void throwIllegalAccessError(String value, String method) {
-        throw new IllegalAccessError("Illegal access to restricted foreign method: " + method +
-                " ; system property 'foreign.restricted' is set to '" + value + "'");
-    }
-
     public static void checkPrimitiveCarrierCompat(Class<?> carrier, MemoryLayout layout) {
         checkLayoutType(layout, ValueLayout.class);
         if (!isValidPrimitiveCarrier(carrier))

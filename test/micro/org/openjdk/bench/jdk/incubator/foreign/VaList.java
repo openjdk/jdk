@@ -64,7 +64,7 @@ public class VaList {
                 MethodType.methodType(void.class, int.class, int.class, double.class, long.class),
                 FunctionDescriptor.ofVoid(C_INT, asVarArg(C_INT), asVarArg(C_DOUBLE), asVarArg(C_LONG_LONG)));
         MH_vaList = linker.downcallHandle(lookup.lookup("vaList").get(),
-                MethodType.methodType(void.class, int.class, VaList.class),
+                MethodType.methodType(void.class, int.class, CLinker.VaList.class),
                 FunctionDescriptor.ofVoid(C_INT, C_VA_LIST));
     }
 
