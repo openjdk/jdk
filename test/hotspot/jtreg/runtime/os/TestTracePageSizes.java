@@ -103,6 +103,7 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 
 // Check that page sizes logged match what is recorded in /proc/self/smaps.
 // For transparent huge pages the matching is best effort since we can't
@@ -114,14 +115,10 @@ public class TestTracePageSizes {
     private static int run;
 
     private static long getKernelVersion() {
-        return Platform.getOsVersionMajor() << 8 | Platform.getOsVersionMajor();
+        long kernelVersion = Platform.getOsVersionMajor() << 8 | Platform.getOsVersionMinor();
+        debug("kernelVersion " + Long.toHexString(kernelVersion));
+        return kernelVersion;
     }
-
-    private static boolean canSafelyDetectTPHFromSmaps() {
-        // Not before 3.8
-        return getKernelVersion() >= 0x308;
-    }
-
 
     // Copy smaps locally
     // (To minimize chances of concurrent modification when parsing, as well as helping with error analysis)
@@ -129,15 +126,11 @@ public class TestTracePageSizes {
         Path p1 = Paths.get("/proc/self/smaps");
         Path p2 = Paths.get("smaps-copy-" +  ProcessHandle.current().pid() + "-" + (run++) + ".txt");
         Files.copy(p1, p2, StandardCopyOption.REPLACE_EXISTING);
-        System.out.println("Copied " + p1 + " to " + p2 + "...");
+        debug("Copied " + p1 + " to " + p2 + "...");
         return p2;
     }
 
-    // Parse /proc/self/smaps using a regexp capturing the address
-    // ranges, what page size they have and if they might use
-    // transparent huge pages. The pattern is not greedy and will
-    // match as little as possible so each "segment" in the file
-    // will generate a match.
+    // Parse /proc/self/smaps.
     private static void parseSmaps() throws Exception {
         // We can override the smaps file to parse to pass in a pre-fetched one
         String smapsFileToParse = System.getProperty("smaps-file");
@@ -150,6 +143,10 @@ public class TestTracePageSizes {
     }
 
     static class SmapsParser {
+        // This is a simple smaps parser; it will recognize smaps section start lines
+        //  (e.g. "40fa00000-439b80000 rw-p 00000000 00:00 0 ") and look for keywords inside the section.
+        // Section will be finished and written into a RangeWithPageSize when either the next section is found
+        //  or the end of file is encountered.
         static final Pattern SECTION_START_PATT = Pattern.compile("^([a-f0-9]+)-([a-f0-9]+) [\\-rwpsx]{4}.*");
         static final Pattern KERNEL_PAGESIZE_PATT = Pattern.compile("^KernelPageSize:\\s*(\\d*) kB");
         static final Pattern VMFLAGS_PATT = Pattern.compile("^VmFlags: ([\\w\\? ]*)");
@@ -202,7 +199,7 @@ public class TestTracePageSizes {
 
     // Parse /proc/self/smaps
     private static void parseSmaps(Path smapsFileToParse) throws Exception {
-        System.out.println("Parsing: " + smapsFileToParse.getFileName() + "...");
+        debug("Parsing: " + smapsFileToParse.getFileName() + "...");
         SmapsParser parser = new SmapsParser();
         Files.lines(smapsFileToParse).forEach(parser::eatNext);
         parser.finish();
@@ -245,7 +242,21 @@ public class TestTracePageSizes {
         if (args.length > 0 && args[0].equals("-debug")) {
             debug = true;
         } else {
-            debug = false;
+            debug =true;// false;
+        }
+
+        // To be able to detect large page use (esp. THP) somewhat reliably, we
+        //  need at least kernel 3.8 to get the "VmFlags" tag in smaps.
+        // (Note: its still good we started the VM at least since this serves as a nice
+        //  test for all manners of large page options).
+        if (getKernelVersion() < 0x308) {
+            throw new SkippedException("Kernel older than 3.8 - skipping this test.");
+        }
+
+        // For similar reasons, we skip the test on ppc platforms, since there the smaps
+        //  format may follow a different logic.
+        if (Platform.isPPC()) {
+            throw new SkippedException("PPC - skipping this test.");
         }
 
         // Parse /proc/self/smaps to compare with values logged in the VM.
@@ -325,26 +336,22 @@ class RangeWithPageSize {
     private boolean vmFlagHT;
 
     public RangeWithPageSize(String start, String end, String pageSize, String vmFlags) {
+        // Note: since we insist on kernels >= 3.8, all the following information should be present
+        //  (none of the input strings be null).
         this.start = Long.parseUnsignedLong(start, 16);
         this.end = Long.parseUnsignedLong(end, 16);
         this.vmFlags = vmFlags;
-
-        if (pageSize != null) { // "KernelPageSize" needs Linux 2.6.29 or later
-            this.pageSize = Long.parseLong(pageSize);
-        }
-
+        this.pageSize = Long.parseLong(pageSize);
         vmFlagHG = false;
         vmFlagHT = false;
         // Check if the vmFlags line include:
         // * ht - Meaning the range is mapped using explicit huge pages.
         // * hg - Meaning the range is madvised huge.
-        if (vmFlags != null) { // "VmFlags" needs Linux 3.8 or later
-            for (String flag : vmFlags.split(" ")) {
-                if (flag.equals("ht")) {
-                    vmFlagHT = true;
-                } else if (flag.equals("hg")) {
-                    vmFlagHG = true;
-                }
+        for (String flag : vmFlags.split(" ")) {
+            if (flag.equals("ht")) {
+                vmFlagHT = true;
+            } else if (flag.equals("hg")) {
+                vmFlagHG = true;
             }
         }
     }
