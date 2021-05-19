@@ -67,6 +67,10 @@ size_t ZMarkStackSpace::size() const {
   return _end - _start;
 }
 
+size_t ZMarkStackSpace::used() const {
+  return _top - _start;
+}
+
 size_t ZMarkStackSpace::expand_space() {
   const size_t expand_size = ZMarkStackSpaceExpandSize;
   const size_t old_size = size();
@@ -90,8 +94,9 @@ size_t ZMarkStackSpace::expand_space() {
 }
 
 size_t ZMarkStackSpace::shrink_space() {
+  // Shrink to what is currently used
   const size_t old_size = size();
-  const size_t new_size = ZMarkStackSpaceExpandSize;
+  const size_t new_size = align_up(used(), ZMarkStackSpaceExpandSize);
   const size_t shrink_size = old_size - new_size;
 
   if (shrink_size > 0) {
@@ -160,8 +165,8 @@ uintptr_t ZMarkStackSpace::alloc(size_t size) {
 }
 
 void ZMarkStackSpace::free() {
-  _top = _start;
   _end -= shrink_space();
+  _top = _start;
 }
 
 ZMarkStackAllocator::ZMarkStackAllocator() :

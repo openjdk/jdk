@@ -36,6 +36,7 @@ private:
   volatile uintptr_t _end;
 
   size_t size() const;
+  size_t used() const;
 
   size_t expand_space();
   size_t shrink_space();
