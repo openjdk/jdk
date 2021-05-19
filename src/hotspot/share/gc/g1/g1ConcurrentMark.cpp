@@ -1562,14 +1562,8 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // is not multi-threaded we use the current (VMThread) thread,
     // otherwise we use the work gang from the G1CollectedHeap and
     // we utilize all the worker threads we can.
-    bool processing_is_mt = rp->processing_is_mt();
-    uint active_workers = (processing_is_mt ? _g1h->workers()->active_workers() : 1U);
+    uint active_workers = (ParallelRefProcEnabled ? _g1h->workers()->active_workers() : 1U);
     active_workers = clamp(active_workers, 1u, _max_num_tasks);
-
-    // Parallel processing task executor.
-    G1CMRefProcTaskExecutor par_task_executor(_g1h, this,
-                                              _g1h->workers(), active_workers);
-    AbstractRefProcTaskExecutor* executor = (processing_is_mt ? &par_task_executor : NULL);
 
     // Set the concurrency level. The phase was already set prior to
     // executing the remark task.
@@ -1580,6 +1574,11 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // the number of active workers.  This is OK as long as the discovered
     // Reference lists are balanced (see balance_all_queues() and balance_queues()).
     rp->set_active_mt_degree(active_workers);
+
+    // Parallel processing task executor.
+    G1CMRefProcTaskExecutor par_task_executor(_g1h, this,
+                                              _g1h->workers(), active_workers);
+    AbstractRefProcTaskExecutor* executor = (rp->processing_is_mt() ? &par_task_executor : NULL);
 
     ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->max_num_queues());
 

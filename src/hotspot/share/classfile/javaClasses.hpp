@@ -191,6 +191,7 @@ class java_lang_String : AllStatic {
   static char*  as_utf8_string(oop java_string, typeArrayOop value, int start, int len, char* buf, int buflen);
   static char*  as_platform_dependent_str(Handle java_string, TRAPS);
   static jchar* as_unicode_string(oop java_string, int& length, TRAPS);
+  static jchar* as_unicode_string_or_null(oop java_string, int& length);
   // produce an ascii string with all other values quoted using \u####
   static char*  as_quoted_ascii(oop java_string);
 

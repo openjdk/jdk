@@ -468,7 +468,7 @@ void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Kla
 
 Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
                                    TRAPS) {
-  JavaThread* javaThread = THREAD->as_Java_thread();
+  JavaThread* javaThread = THREAD;
 
   // A resolved constantPool entry will contain a Klass*, otherwise a Symbol*.
   // It is not safe to rely on the tag bit's here, since we don't have a lock, and
@@ -576,19 +576,19 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
   } else if (this_cp->tag_at(which).is_unresolved_klass_in_error()) {
     return NULL;
   } else {
-    Thread *thread = Thread::current();
+    Thread* current = Thread::current();
     Symbol* name = this_cp->symbol_at(name_index);
     oop loader = this_cp->pool_holder()->class_loader();
     oop protection_domain = this_cp->pool_holder()->protection_domain();
-    Handle h_prot (thread, protection_domain);
-    Handle h_loader (thread, loader);
+    Handle h_prot (current, protection_domain);
+    Handle h_loader (current, loader);
     Klass* k = SystemDictionary::find_instance_klass(name, h_loader, h_prot);
 
-    // Avoid constant pool verification at a safepoint, which takes the Module_lock.
-    if (k != NULL && !SafepointSynchronize::is_at_safepoint()) {
+    // Avoid constant pool verification at a safepoint, as it takes the Module_lock.
+    if (k != NULL && current->is_Java_thread()) {
       // Make sure that resolving is legal
-      ExceptionMark em(thread);
-      Thread* THREAD = thread; // For exception macros.
+      JavaThread* THREAD = current->as_Java_thread(); // For exception macros.
+      ExceptionMark em(THREAD);
       // return NULL if verification fails
       verify_constant_pool_resolve(this_cp, k, THREAD);
       if (HAS_PENDING_EXCEPTION) {

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, Twitter, Inc.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +21,14 @@
  * questions.
  *
  */
-
-#include "precompiled.hpp"
-#include "memory/metaspace.hpp"
-#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
-#include "memory/metaspaceUtils.hpp"
-
-namespace metaspace {
-
-MetaspaceSizesSnapshot::MetaspaceSizesSnapshot() :
-  _used(MetaspaceUtils::used_bytes()),
-  _committed(MetaspaceUtils::committed_bytes()),
-  _non_class_used(MetaspaceUtils::used_bytes(Metaspace::NonClassType)),
-  _non_class_committed(MetaspaceUtils::committed_bytes(Metaspace::NonClassType)),
-  _class_used(MetaspaceUtils::used_bytes(Metaspace::ClassType)),
-  _class_committed(MetaspaceUtils::committed_bytes(Metaspace::ClassType))
-{}
-
-} // namespace metaspace
+import java.util.HashMap;
+public class MiniStoreOom {
+    private static HashMap<Integer, Byte[]>  store = new HashMap<Integer, Byte[]>();
+    public static void main(String... args) throws Exception {
+        int size = Integer.valueOf(args[0]);
+        int i = 0;
+        while (i++ < Integer.MAX_VALUE) {
+            store.put(i, new Byte[size]);
+        }
+    }
+}

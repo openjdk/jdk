@@ -308,10 +308,10 @@ class ConcurrentHashTable : public CHeapObj<F> {
   VALUE* internal_get(Thread* thread, LOOKUP_FUNC& lookup_f,
                       bool* grow_hint = NULL);
 
-  // Plain insert.
-  template <typename LOOKUP_FUNC>
-  bool internal_insert(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
-                       bool* grow_hint, bool* clean_hint);
+  // Insert and get current value.
+  template <typename LOOKUP_FUNC, typename FOUND_FUNC>
+  bool internal_insert_get(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
+                           FOUND_FUNC& foundf, bool* grow_hint, bool* clean_hint);
 
   // Returns true if an item matching LOOKUP_FUNC is removed.
   // Calls DELETE_FUNC before destroying the node.
@@ -410,7 +410,18 @@ class ConcurrentHashTable : public CHeapObj<F> {
   template <typename LOOKUP_FUNC>
   bool insert(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
               bool* grow_hint = NULL, bool* clean_hint = NULL) {
-    return internal_insert(thread, lookup_f, value, grow_hint, clean_hint);
+    struct NOP {
+        void operator()(...) const {}
+    } nop;
+    return internal_insert_get(thread, lookup_f, value, nop, grow_hint, clean_hint);
+  }
+
+  // Returns true if the item was inserted, duplicates are found with
+  // LOOKUP_FUNC then FOUND_FUNC is called.
+  template <typename LOOKUP_FUNC, typename FOUND_FUNC>
+  bool insert_get(Thread* thread, LOOKUP_FUNC& lookup_f, VALUE& value, FOUND_FUNC& foundf,
+                  bool* grow_hint = NULL, bool* clean_hint = NULL) {
+    return internal_insert_get(thread, lookup_f, value, foundf, grow_hint, clean_hint);
   }
 
   // This does a fast unsafe insert and can thus only be used when there is no
