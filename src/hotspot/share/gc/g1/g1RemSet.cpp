@@ -1484,7 +1484,7 @@ void G1RemSet::print_merge_heap_roots_stats() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   size_t total_old_region_cards =
     (g1h->num_regions() - (g1h->num_free_regions() - g1h->collection_set()->cur_length())) * HeapRegion::CardsPerRegion;
-  
+
   ls.print_cr("Visited cards " SIZE_FORMAT " Total dirty " SIZE_FORMAT " (%.2lf%%) Total old " SIZE_FORMAT " (%.2lf%%)",
               num_visited_cards,
               total_dirty_region_cards,

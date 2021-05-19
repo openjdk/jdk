@@ -123,7 +123,7 @@ public:
 
   uint elem_size() const { return _elem_size; }
 
-  size_t mem_size() const { return sizeof(*this) + (size_t)_num_elems * _elem_size; } 
+  size_t mem_size() const { return sizeof(*this) + (size_t)_num_elems * _elem_size; }
 
   bool is_full() const { return _next_allocate >= _num_elems; }
 };
@@ -185,7 +185,7 @@ public:
 // only then trying to bump-allocate from the current G1CardSetBuffer. If there is
 // none, this class allocates a new G1CardSetBuffer (allocated from the C heap,
 // asking the G1CardSetAllocOptions instance about sizes etc) and uses that one.
-// 
+//
 // The G1CardSetMemoryObjects free list is a linked list of G1CardSetMemoryObjects
 // within all G1CardSetBuffer instances allocated so far. It uses a separate
 // pending list and global synchronization to avoid the ABA problem when the

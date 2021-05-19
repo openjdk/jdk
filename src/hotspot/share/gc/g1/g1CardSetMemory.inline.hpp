@@ -43,7 +43,7 @@ G1CardSetBuffer* G1CardSetAllocator<Elem>::create_new_buffer(G1CardSetBuffer* co
     next->reset(prev);
   }
 
-  // Install it as current allocation buffer. 
+  // Install it as current allocation buffer.
   G1CardSetBuffer* old = Atomic::cmpxchg(&_first, prev, next);
   if (old != prev) {
     // Somebody else installed the buffer, use that one.

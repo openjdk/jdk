@@ -71,10 +71,10 @@ inline void G1CardSet::iterate_cards_or_ranges_in_container(CardSetPtr const car
         return;
       }
       if (found.start_iterate(G1GCPhaseTimes::MergeRSMergedHowl)) {
-        card_set_ptr<G1CardSetHowl>(card_set)->iterate(found, _config);        
+        card_set_ptr<G1CardSetHowl>(card_set)->iterate(found, _config);
       }
       return;
-    }    
+    }
   }
   log_error(gc)("Unkown card set type %u", card_set_type(card_set));
   ShouldNotReachHere();

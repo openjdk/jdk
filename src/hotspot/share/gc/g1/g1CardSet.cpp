@@ -78,7 +78,7 @@ void G1CardSetConfiguration::initialize_globals() {
     FormatBuffer<> buf("Maximum Howl card set container bucket size %u smaller than requested bucket size %u",
                        G1RemSetHowlMaxNumBuckets, G1RemSetHowlNumBuckets);
     vm_exit_during_initialization(buf);
-  }    
+  }
 }
 
 G1CardSetConfiguration::G1CardSetConfiguration() :
@@ -126,7 +126,7 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
   _log2_num_cards_in_howl_bitmap = log2i_exact(_num_cards_in_howl_bitmap);
   _bitmap_hash_mask = ~(~(0) << _log2_num_cards_in_howl_bitmap);
 
-  log_configuration();  
+  log_configuration();
 }
 
 void G1CardSetConfiguration::log_configuration() {
@@ -277,7 +277,7 @@ public:
     }
 
     G1CardSetHashTableValue value(region_idx, G1CardSetInlinePtr());
-    bool inserted = _table.insert(Thread::current(), lookup, value, should_grow);
+    bool inserted = _table.insert_get(Thread::current(), lookup, value, found, should_grow);
 
     if (!_inserted_elem && inserted) {
       // It does not matter to us who is setting the flag so a regular atomic store
@@ -285,7 +285,6 @@ public:
       Atomic::store(&_inserted_elem, true);
     }
 
-    _table.get(Thread::current(), lookup, found);
     return found.value();
   }
 
@@ -509,7 +508,7 @@ G1AddCardResult G1CardSet::add_to_howl(CardSetPtr parent_card_set,
     // Somebody else beat us to coarsening. Retry.
     release_and_maybe_free_card_set(card_set);
   }
-  // Increment counters.
+
   if (increment_total && add_result == Added) {
     Atomic::inc(&howling_array->_num_entries, memory_order_relaxed);
   }
