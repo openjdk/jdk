@@ -276,6 +276,9 @@ namespace {
     JP_PROPERTY(memory, "app.memory"); \
     JP_PROPERTY(arguments, "arguments"); \
     JP_PROPERTY(javaOptions, "java-options"); \
+    JP_PROPERTY(runtimeRelease, "runtime.release"); \
+    JP_PROPERTY(runtimeVersion, "runtime.version"); \
+    JP_PROPERTY(runtimeInstallDir, "runtime.install"); \
 
 namespace PropertyName {
 #define JP_PROPERTY(varName, name) const CfgFile::PropertyName varName(_T(name))

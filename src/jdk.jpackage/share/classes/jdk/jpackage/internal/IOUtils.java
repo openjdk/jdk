@@ -57,6 +57,10 @@ import javax.xml.stream.XMLStreamWriter;
 public class IOUtils {
 
     public static void deleteRecursive(Path directory) throws IOException {
+        deleteRecursive(directory, null);
+    }
+
+    public static void deleteRecursive(Path directory, final Path excludeDir) throws IOException {
         final AtomicReference<IOException> exception = new AtomicReference<>();
 
         if (!Files.exists(directory)) {
@@ -83,6 +87,9 @@ public class IOUtils {
                             BasicFileAttributes attr) throws IOException {
                 if (Platform.getPlatform() == Platform.WINDOWS) {
                     Files.setAttribute(dir, "dos:readonly", false);
+                }
+                if (dir.getFileName().equals(excludeDir)) {
+                    return FileVisitResult.SKIP_SUBTREE;
                 }
                 return FileVisitResult.CONTINUE;
             }

@@ -126,6 +126,10 @@ namespace PropertyName {
     extern const CfgFile::PropertyName memory;
     extern const CfgFile::PropertyName arguments;
     extern const CfgFile::PropertyName javaOptions;
+    extern const CfgFile::PropertyName runtimeRelease;
+    extern const CfgFile::PropertyName runtimeVersion;
+    extern const CfgFile::PropertyName runtimeInstallDir;
+
 } // namespace AppPropertyName
 
 #endif // CfgFile_h

@@ -301,6 +301,17 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                 (s, p) -> null
             );
 
+    static final BundlerParamInfo<Path> RUNTIME_ROOT =
+            new StandardBundlerParam<>(
+                "runtimeRoot",
+                Path.class,
+                params ->
+                    TEMP_ROOT.fetchFrom(params).resolve("runtime"),
+                (s, p) -> null
+            );
+
+
+
     static final StandardBundlerParam<Boolean> VERBOSE  =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.VERBOSE.getId(),
@@ -418,6 +429,16 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                         return modulePath;
                     });
 
+    static final StandardBundlerParam<SplitRuntime> SPLIT_RUNTIME =
+            new StandardBundlerParam<>(
+                    "split-runtime",
+                    SplitRuntime.class,
+                    params -> new SplitRuntime(null, null),
+                    // valueOf(null) is false, and we actually do want null
+                    (s, p) -> null
+            );
+
+    @SuppressWarnings("unchecked")
     // Returns the path to the JDK modules in the user defined module path.
     private static Path findPathOfModule( List<Path> modulePath, String moduleName) {
 
@@ -491,44 +512,42 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
     }
 
     static void copyPredefinedRuntimeImage(Map<String, ? super Object> params,
-            ApplicationLayout appLayout) throws IOException, ConfigException {
-        Path topImage = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
-        if (!IOUtils.exists(topImage)) {
+            Path source, Path target, Path modsDir)
+            throws IOException, ConfigException {
+        if (!IOUtils.exists(source)) {
             throw new ConfigException(
                     MessageFormat.format(I18N.getString(
                     "message.runtime-image-dir-does-not-exist"),
                     PREDEFINED_RUNTIME_IMAGE.getID(),
-                    topImage.toString()),
+                    source.toString()),
                     MessageFormat.format(I18N.getString(
                     "message.runtime-image-dir-does-not-exist.advice"),
                     PREDEFINED_RUNTIME_IMAGE.getID()));
         }
 
         if (Platform.isMac()) {
-            // On Mac topImage can be runtime root or runtime home.
-            Path runtimeHome = topImage.resolve("Contents/Home");
+            // On Mac source can be runtime root or runtime home.
+            Path runtimeHome = source.resolve("Contents/Home");
             if (Files.isDirectory(runtimeHome)) {
-                // topImage references runtime root, adjust it to pick data from
+                // source references runtime root, adjust it to pick data from
                 // runtime home
-                topImage = runtimeHome;
+                source = runtimeHome;
             }
         }
 
         // copy whole runtime, need to skip jmods and src.zip
         final List<String> excludes = Arrays.asList("jmods", "src.zip");
-        IOUtils.copyRecursive(topImage,
-                appLayout.runtimeHomeDirectory(), excludes);
+        IOUtils.copyRecursive(source, target, excludes);
 
         // if module-path given - copy modules to appDir/mods
         List<Path> modulePath = MODULE_PATH.fetchFrom(params);
         List<Path> defaultModulePath = getDefaultModulePath();
-        Path dest = appLayout.appModsDirectory();
 
-        if (dest != null) {
+        if (modsDir != null) {
             for (Path mp : modulePath) {
                 if (!defaultModulePath.contains(mp)) {
-                    Files.createDirectories(dest);
-                    IOUtils.copyRecursive(mp, dest);
+                    Files.createDirectories(modsDir);
+                    IOUtils.copyRecursive(mp, modsDir);
                 }
             }
         }

@@ -46,34 +46,48 @@ tstring_array& ReleaseFile::getModules() {
     return modules;
 }
 
-bool versionAtLeast(tstring& required, tstring& other) {
-    tstring_array rvers = tstrings::split(required, _T("."));
-    tstring_array overs = tstrings::split(other, _T("."));
+bool versionMatch(const tstring& versionSpec, tstring& version) {
+    bool greaterThan = tstrings::endsWith(versionSpec, _T("+"));
+    tstring reqVer = tstrings::trim(versionSpec, _T("+*"));
 
-    tstring_array::const_iterator rit = rvers.begin();
-    const tstring_array::const_iterator rend = rvers.end();
-
-    tstring_array::const_iterator oit = overs.begin();
-    const tstring_array::const_iterator oend = overs.end();
-
-
-    for (; rit != rend; ++rit) {
-        int rnum = stoi(*rit);
-        const tstring oitstr = (oit != oend) ? *oit++ : _T("0");
-        int onum = stoi(oitstr);
-
-        if (rnum < onum) {
+    if (tstrings::endsWith(versionSpec, _T("*"))) {
+        if (!tstrings::startsWith(version, reqVer)) {
             return false;
+        }
+    } else {
+
+        tstring_array rvers = tstrings::split(reqVer, _T("."));
+        tstring_array overs = tstrings::split(version, _T("."));
+
+        tstring_array::const_iterator rit = rvers.begin();
+        const tstring_array::const_iterator rend = rvers.end();
+
+        tstring_array::const_iterator oit = overs.begin();
+        const tstring_array::const_iterator oend = overs.end();
+
+        for (; rit != rend; ++rit) {
+            int rnum = stoi(*rit);
+            const tstring oitstr = (oit != oend) ? *oit++ : _T("0");
+            int onum = stoi(oitstr);
+            if (greaterThan) {
+                if (rnum > onum) {
+                    return false;
+                }
+            } else {
+                if (rnum != onum) {
+                    return false;
+                }
+            }
         }
     }
     return true;
 }
 
-bool ReleaseFile::satisfies(ReleaseFile required) {
-    // We need to insure version >= required.version
-    if (versionAtLeast(required.version, version)) {
-        LOG_TRACE(tstrings::any() << "version: " << version
-                << " matches version: " << required.version);
+bool ReleaseFile::satisfies(ReleaseFile required, const tstring& versionSpec) {
+    // We need to insure version satisfies the versionSpec
+    if (versionMatch(versionSpec, getVersion())) {
+        LOG_TRACE(tstrings::any() << "version: " << versionSpec
+                << " matches version: " << getVersion());
         // now we need to make sure all required modules are there.
         tstring_array reqmods = required.modules;
         tstring_array canmods = modules;

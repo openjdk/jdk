@@ -71,6 +71,7 @@ class ValidOptions {
         options.put(CLIOptions.COPYRIGHT.getId(), USE.ALL);
         options.put(CLIOptions.PACKAGE_TYPE.getId(), USE.ALL);
         options.put(CLIOptions.ICON.getId(), USE.ALL);
+        options.put(CLIOptions.SPLIT_RUNTIME.getId(), USE.ALL);
 
         options.put(CLIOptions.INPUT.getId(), USE.LAUNCHER);
         options.put(CLIOptions.MODULE.getId(), USE.LAUNCHER);

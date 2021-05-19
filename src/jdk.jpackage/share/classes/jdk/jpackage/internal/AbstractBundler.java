@@ -53,10 +53,10 @@ abstract class AbstractBundler implements Bundler {
     }
 
     @Override
-    public void cleanup(Map<String, ? super Object> params) {
+    public void cleanup(Map<String, ? super Object> params, boolean includeRuntime) {
         try {
-            IOUtils.deleteRecursive(
-                    StandardBundlerParam.TEMP_ROOT.fetchFrom(params));
+            IOUtils.deleteRecursive(StandardBundlerParam.TEMP_ROOT.fetchFrom(params),
+                    (includeRuntime ? null : Path.of("runtime")));
         } catch (IOException e) {
             Log.verbose(e.getMessage());
         }

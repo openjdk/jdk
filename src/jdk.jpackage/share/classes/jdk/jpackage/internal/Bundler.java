@@ -110,7 +110,7 @@ public interface Bundler {
      /**
      * Removes temporary files that are used for bundling.
      */
-    public void cleanup(Map<String, ? super Object> params);
+    public void cleanup(Map<String, ? super Object> params, boolean includeRuntime);
 
     /**
      * Returns "true" if this bundler is supported on current platform.

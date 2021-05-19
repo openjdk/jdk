@@ -673,15 +673,6 @@ LOG_TRACE(tstrings::any() << "listing content in: "
     return listNamedContents(basedir, name);
 }
 
-bool writeTextFile(const tstring& path, tstring_array lines) {
-    FileUtils::FileWriter writer(path);
-    for (tstring_array::const_iterator it = lines.begin();
-            it != lines.end(); it++) {
-       writer.writeln(*it);
-    }
-    writer.finalize();
-    return true;
-}
 tstring stripExeSuffix(const tstring& path) {
     // for windows - there is a ".exe" suffix to remove
     const tstring::size_type pos = path.rfind(_T(".exe"));

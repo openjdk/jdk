@@ -67,10 +67,6 @@ tstring_array listContents(const tstring& basedir, const tstring& filename) {
     return reply;
 }
 
-bool writeTextFile(const tstring& path, const tstring_array lines) {
-    return false;
-}
-
 tstring stripExeSuffix(const tstring& path) {
     // for unix - there is no suffix to remove
     return path;

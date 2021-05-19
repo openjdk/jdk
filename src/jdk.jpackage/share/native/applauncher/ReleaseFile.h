@@ -62,7 +62,7 @@ public:
 
     tstring_array& getModules();
 
-    bool satisfies(ReleaseFile other);
+    bool satisfies(ReleaseFile other, const tstring& versionSpec);
 
     static ReleaseFile load(const tstring& path);
 

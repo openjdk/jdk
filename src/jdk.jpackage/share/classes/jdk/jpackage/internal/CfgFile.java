@@ -37,11 +37,15 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.JAVA_OPTIONS;
 import static jdk.jpackage.internal.StandardBundlerParam.ARGUMENTS;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.jpackage.internal.StandardBundlerParam.SPLIT_RUNTIME;
 
 /**
  * App launcher's config file.
  */
 final class CfgFile {
+
+    static final String RELEASE_FILE_NAME = "runtime.release";
+
     CfgFile() {
         appLayout = ApplicationLayout.platformAppImage();
     }
@@ -52,6 +56,7 @@ final class CfgFile {
         javaOptions = JAVA_OPTIONS.fetchFrom(params);
         arguments = ARGUMENTS.fetchFrom(params);
         version = VERSION.fetchFrom(params);
+        splitRuntime = SPLIT_RUNTIME.fetchFrom(params);
         return this;
     }
 
@@ -81,6 +86,16 @@ final class CfgFile {
         for (var value : launcherData.classPath()) {
             content.add(Map.entry("app.classpath",
                     appCfgLayout.appDirectory().resolve(value).toString()));
+        }
+        if (splitRuntime.getName() != null) {
+            content.add(Map.entry("runtime.version",
+                    splitRuntime.getVersionSpec()));
+            content.add(Map.entry("runtime.release",
+                    "$APPDIR" + File.separator + RELEASE_FILE_NAME));
+            String installDir = splitRuntime.getInstallDir();
+            if (installDir != null) {
+                content.add(Map.entry("runtime.install", installDir));
+            }
         }
 
         ApplicationLayout appImagelayout = appLayout.resolveAt(appImage);
@@ -143,6 +158,6 @@ final class CfgFile {
     List<String> arguments;
     List<String> javaOptions;
     private final ApplicationLayout appLayout;
-
+    private SplitRuntime splitRuntime;
     private static final Object SECTION_TAG = new Object();
 }

@@ -103,6 +103,7 @@ public class Arguments {
     private boolean runtimeInstaller = false;
 
     private List<AddLauncherArguments> addLaunchers = null;
+    private SplitRuntime splitRuntime = null;
 
     private static final Map<String, CLIOptions> argIds = new HashMap<>();
     private static final Map<String, CLIOptions> argShortIds = new HashMap<>();
@@ -274,6 +275,19 @@ public class Arguments {
             }
             context().addLaunchers.add(
                 new AddLauncherArguments(name, filename));
+        }),
+
+        SPLIT_RUNTIME ("split-runtime", OptionCategories.PROPERTY, () -> {
+            String spec = popArg();
+            String name = null;
+            String filename = spec;
+            if (spec.contains("=")) {
+                String[] values = spec.split("=", 2);
+                name = values[0];
+                filename = values[1];
+            }
+            context().splitRuntime = new SplitRuntime(name, filename);
+            setOptionValue("split-runtime", context().splitRuntime);
         }),
 
         TEMP_ROOT ("temp", OptionCategories.PROPERTY, () -> {
@@ -577,6 +591,8 @@ public class Arguments {
         boolean installerOnly = !imageOnly && hasAppImage;
         runtimeInstaller = !imageOnly && hasRuntime && !hasAppImage &&
                 !hasMainModule && !hasMainJar;
+        boolean isSplitRuntime =  allOptions.contains(
+                CLIOptions.SPLIT_RUNTIME);
 
         for (CLIOptions option : allOptions) {
             if (!ValidOptions.checkIfSupported(option)) {
@@ -625,6 +641,11 @@ public class Arguments {
         if (imageOnly && !hasMainJar && !hasMainModule) {
             throw new PackagerException("ERR_NoEntryPoint");
         }
+        if (isSplitRuntime && runtimeInstaller) {
+            // only case where split-runtime invalid is when we
+            // are already creating a runtime installer.
+            throw new PackagerException("ERR_NoSplitRuntime");
+        }
     }
 
     private jdk.jpackage.internal.Bundler getPlatformBundler() {
@@ -660,7 +681,7 @@ public class Arguments {
         // the default is used (the default is a new temp directory)
         // The bundler.cleanup() below would not otherwise be able to
         // clean these extra (and unneeded) temp directories.
-        StandardBundlerParam.TEMP_ROOT.fetchFrom(params);
+        Path tempRoot = StandardBundlerParam.TEMP_ROOT.fetchFrom(params);
 
         // determine what bundler to run
         jdk.jpackage.internal.Bundler bundler = getPlatformBundler();
@@ -680,7 +701,51 @@ public class Arguments {
             }
             Log.verbose(MessageFormat.format(
                     I18N.getString("message.bundle-created"),
-                    bundler.getName()));
+                    bundler.getName(), result));
+
+            SplitRuntime spr =
+                    StandardBundlerParam.SPLIT_RUNTIME.fetchFrom(localParams);
+            if (spr != null) {
+                localParams = new HashMap<>(params);
+                // here we have created a runtime in tempRoot/runtime
+                if (deployParams.isTargetAppImage()) {
+                    // what to do with split runtime and app-image ? error ?
+                    Log.info("Warning: split runtime of type app-image");
+                } else {
+Log.info("------------- cleanup with true");
+                    bundler.cleanup(localParams, false);
+
+                    // remove LauncherData from map so it will be re-computed
+                    localParams.remove(StandardBundlerParam.LAUNCHER_DATA.getID());
+                    // remove "application-name" so it will be re-computed
+                    localParams.remove(StandardBundlerParam.APP_NAME.getID());
+
+                    // Runtime Installer has no module, main-jar, or app-image,
+                    // but must have a runtime-image
+                    localParams.remove(CLIOptions.MODULE.getId());
+                    localParams.remove(CLIOptions.MAIN_JAR.getId());
+                    localParams.remove(CLIOptions.PREDEFINED_APP_IMAGE.getId());
+                    localParams.put(CLIOptions.PREDEFINED_RUNTIME_IMAGE.getId(),
+                        tempRoot.resolve("runtime"));
+
+                    // different name, and install-dir from SplitRuntime (version ?)
+                    localParams.put(CLIOptions.INSTALL_DIR.getId(),
+                            spr.getInstallDir());
+                    localParams.put(CLIOptions.NAME.getId(), spr.getName());
+
+                    bundler.validate(localParams);
+Log.info("------- running localParams: " + localParams);
+                    result = bundler.execute(localParams, deployParams.outdir);
+Log.info("------ result: " + result);
+                    if (result == null) {
+                        throw new PackagerException("MSG_BundlerFailed",
+                                bundler.getID(), bundler.getName());
+                    }
+                    Log.verbose(MessageFormat.format(
+                            I18N.getString("message.bundle-created"),
+                            bundler.getName(), result));
+                }
+            }
         } catch (ConfigException e) {
             Log.verbose(e);
             if (e.getAdvice() != null)  {
@@ -703,7 +768,7 @@ public class Arguments {
             } else {
                 // always clean up the temporary directory created
                 // when --temp option not used.
-                bundler.cleanup(localParams);
+                bundler.cleanup(localParams, true);
             }
         }
     }

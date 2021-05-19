@@ -35,6 +35,8 @@ import java.util.function.Function;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_DATA;
+import static jdk.jpackage.internal.StandardBundlerParam.SPLIT_RUNTIME;
+import static jdk.jpackage.internal.StandardBundlerParam.RUNTIME_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 
 
@@ -162,12 +164,27 @@ class AppImageBundler extends AbstractBundler {
 
         Path rootDirectory = createRoot(params, outputDirectory);
         AbstractAppImageBuilder appBuilder = appImageSupplier.apply(rootDirectory);
-        if (PREDEFINED_RUNTIME_IMAGE.fetchFrom(params) == null ) {
-            JLinkBundlerHelper.execute(params,
-                    appBuilder.getAppLayout().runtimeHomeDirectory());
+        ApplicationLayout layout = appBuilder.getAppLayout();
+        Path runtimeTarget = layout.runtimeHomeDirectory();
+        Path runtimeSource = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
+        SplitRuntime splitRuntime = SPLIT_RUNTIME.fetchFrom(params);
+        if (splitRuntime.getName() != null) {
+            runtimeTarget = RUNTIME_ROOT.fetchFrom(params);
+            if (runtimeSource == null) {
+                runtimeSource = Path.of(System.getProperty("java.home"));
+            }
+        }
+        if (runtimeSource == null ) {
+            JLinkBundlerHelper.execute(params, runtimeTarget);
         } else {
-            StandardBundlerParam.copyPredefinedRuntimeImage(
-                    params, appBuilder.getAppLayout());
+Log.info("----- copyRuntime from: " + runtimeSource + " to: " + runtimeTarget);
+            StandardBundlerParam.copyPredefinedRuntimeImage(params,
+                    runtimeSource, runtimeTarget, layout.appModsDirectory());
+        }
+        if (splitRuntime.getName() != null) {
+Log.info("--- copy release file from: " + runtimeTarget.resolve("release"));
+            IOUtils.copyFile(runtimeTarget.resolve("release"),
+                    layout.appDirectory().resolve(CfgFile.RELEASE_FILE_NAME));
         }
         appBuilder.prepareApplicationFiles(params);
         return rootDirectory;

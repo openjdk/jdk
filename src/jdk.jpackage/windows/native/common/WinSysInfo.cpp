@@ -209,10 +209,13 @@ tstring getAppDataPath() {
     return getEnvVariable(std::nothrow, _T("APPDATA"));
 }
 
-tstring_array getJavaSearchPaths() {
+tstring_array getJavaSearchPaths(const tstring& installDir) {
     tstring_array result;
     const tstring pf = SysInfo::getEnvVariable(std::nothrow, _T("PROGRAMFILES"));
-    result.push_back(FileUtils::mkpath() << pf << _T("/Java"));
+    {
+        result.push_back(FileUtils::mkpath() << pf << installDir);
+    }
+    result.push_back(FileUtils::mkpath() << pf << _T("Java"));
     return result;
 }
 
