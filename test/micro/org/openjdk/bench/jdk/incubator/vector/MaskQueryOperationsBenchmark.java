@@ -38,16 +38,15 @@ public class MaskQueryOperationsBenchmark {
     @Param({"1","2","3"})
     int inputs;
 
-    VectorSpecies bspecies;
-    VectorSpecies sspecies;
-    VectorSpecies ispecies;
-    VectorSpecies lspecies;
-    VectorMask    bmask;
-    VectorMask    smask;
-    VectorMask    imask;
-    VectorMask    lmask;
-    boolean []    mask_arr;
-
+    VectorSpecies<Byte> bspecies;
+    VectorSpecies<Short> sspecies;
+    VectorSpecies<Integer> ispecies;
+    VectorSpecies<Long> lspecies;
+    VectorMask<Byte> bmask;
+    VectorMask<Short> smask;
+    VectorMask<Integer> imask;
+    VectorMask<Long> lmask;
+    boolean [] mask_arr;
 
     static final boolean [] mask_avg_case = {
        false, false, false, true, false, false, false, false,
