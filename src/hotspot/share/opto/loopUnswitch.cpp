@@ -247,7 +247,6 @@ IfNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
                                                       IfNode* unswitch_iff,
                                                       CloneLoopMode mode) {
   LoopNode* head  = loop->_head->as_Loop();
-  bool counted_loop = head->is_CountedLoop();
   Node*     entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
   _igvn.rehash_node_delayed(entry);
   IdealLoopTree* outer_loop = loop->_parent;
@@ -290,7 +289,6 @@ IfNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
 LoopNode* PhaseIdealLoop::create_reserve_version_of_loop(IdealLoopTree *loop, CountedLoopReserveKit* lk) {
   Node_List old_new;
   LoopNode* head  = loop->_head->as_Loop();
-  bool counted_loop = head->is_CountedLoop();
   Node*     entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
   _igvn.rehash_node_delayed(entry);
   IdealLoopTree* outer_loop = head->is_strip_mined() ? loop->_parent->_parent : loop->_parent;
