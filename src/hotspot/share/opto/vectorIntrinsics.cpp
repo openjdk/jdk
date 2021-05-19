@@ -1308,14 +1308,13 @@ bool LibraryCallKit::inline_vector_rearrange() {
   return true;
 }
 
-static void get_svml_address(int vop, int bits, BasicType bt, char* name_ptr, int name_len, address* addr_ptr) {
+static address get_svml_address(int vop, int bits, BasicType bt, char* name_ptr, int name_len) {
+  address addr = NULL;
   assert(UseVectorStubs, "sanity");
   assert(name_ptr != NULL, "unexpected");
-  assert(addr_ptr != NULL, "unexpected");
   assert((vop >= VectorSupport::VECTOR_OP_SVML_START) && (vop <= VectorSupport::VECTOR_OP_SVML_END), "unexpected");
   int op = vop - VectorSupport::VECTOR_OP_SVML_START;
 
-#ifdef __VECTOR_API_MATH_INTRINSICS_COMMON
   switch(bits) {
     case 64:  //fallthough
     case 128: //fallthough
@@ -1323,23 +1322,21 @@ static void get_svml_address(int vop, int bits, BasicType bt, char* name_ptr, in
     case 512:
       if (bt == T_FLOAT) {
         snprintf(name_ptr, name_len, "vector_%s_float%d", VectorSupport::svmlname[op], bits);
-        *addr_ptr = StubRoutines::_vector_f_math[exact_log2(bits/64)][op];
+        addr = StubRoutines::_vector_f_math[exact_log2(bits/64)][op];
       } else {
         assert(bt == T_DOUBLE, "must be FP type only");
         snprintf(name_ptr, name_len, "vector_%s_double%d", VectorSupport::svmlname[op], bits);
-        *addr_ptr = StubRoutines::_vector_d_math[exact_log2(bits/64)][op];
+        addr = StubRoutines::_vector_d_math[exact_log2(bits/64)][op];
       }
       break;
     default:
       snprintf(name_ptr, name_len, "invalid");
-      *addr_ptr = NULL;
+      addr = NULL;
       Unimplemented();
       break;
   }
-#else
-  snprintf(name_ptr, name_len, "invalid");
-  *addr_ptr = NULL;
-#endif // __VECTOR_API_MATH_INTRINSICS_COMMON
+
+  return addr;
 }
 
 Node* LibraryCallKit::gen_call_to_svml(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2) {
@@ -1349,10 +1346,9 @@ Node* LibraryCallKit::gen_call_to_svml(int vector_api_op_id, BasicType bt, int n
   const TypeVect* vt = TypeVect::make(bt, num_elem);
   const TypeFunc* call_type = OptoRuntime::Math_Vector_Vector_Type(opd2 != NULL ? 2 : 1, vt, vt);
   char name[100] = "";
-  address addr = NULL;
 
   // Get address for svml method.
-  get_svml_address(vector_api_op_id, vt->length_in_bytes() * BitsPerByte, bt, name, 100, &addr);
+  address addr = get_svml_address(vector_api_op_id, vt->length_in_bytes() * BitsPerByte, bt, name, 100);
 
   if (addr == NULL) {
     return NULL;

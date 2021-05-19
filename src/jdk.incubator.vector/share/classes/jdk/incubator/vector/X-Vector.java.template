@@ -720,8 +720,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                         v0.bOp(v1, (i, a, n) -> ($type$)((a & LSHR_SETUP_MASK) >>> n));
 #end[BITWISE]
 #if[FP]
-                case VECTOR_OP_OR: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, b) -> fromBits(toBits(a) | toBits(b)));
                 case VECTOR_OP_ATAN2: return (v0, v1) ->
                         v0.bOp(v1, (i, a, b) -> ($type$) Math.atan2(a, b));
                 case VECTOR_OP_POW: return (v0, v1) ->

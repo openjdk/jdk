@@ -1297,7 +1297,7 @@ void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_
   }
 #endif
 
-  Matcher::vector_calling_convention(parm_regs, _num_bits, argcnt);
+  SharedRuntime::vector_calling_convention(parm_regs, _num_bits, argcnt);
 }
 
 void CallNativeNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {

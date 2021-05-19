@@ -183,10 +183,8 @@ address StubRoutines::_safefetchN_entry                  = NULL;
 address StubRoutines::_safefetchN_fault_pc               = NULL;
 address StubRoutines::_safefetchN_continuation_pc        = NULL;
 
-#ifdef __VECTOR_API_MATH_INTRINSICS_COMMON
 address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{NULL}, {NULL}};
 address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{NULL}, {NULL}};
-#endif // __VECTOR_API_MATH_INTRINSICS_COMMON
 
 // Initialization
 //

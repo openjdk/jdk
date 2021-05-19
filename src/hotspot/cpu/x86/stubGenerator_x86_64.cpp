@@ -6966,7 +6966,8 @@ address generate_avx_ghash_processBlocks() {
       StubRoutines::_montgomerySquare
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
     }
-#ifdef __VECTOR_API_MATH_INTRINSICS_COMMON
+
+    // Get svml stub routine addresses
     void *libsvml = NULL;
     char ebuf[1024];
     libsvml = os::dll_load(JNI_LIB_PREFIX "svml" JNI_LIB_SUFFIX, ebuf, sizeof ebuf);
@@ -7026,7 +7027,6 @@ address generate_avx_ghash_processBlocks() {
         StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libsvml, ebuf);
       }
     }
-#endif // __VECTOR_API_MATH_INTRINSICS_COMMON
 #endif // COMPILER2
 
     if (UseVectorizedMismatchIntrinsic) {

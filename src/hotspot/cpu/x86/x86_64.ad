@@ -1701,11 +1701,6 @@ const bool Matcher::supports_vector_calling_convention(void) {
   return false;
 }
 
-void Matcher::vector_calling_convention(VMRegPair *regs, uint num_bits, uint total_args_passed) {
-  assert(EnableVectorSupport && UseVectorStubs, "sanity");
-  (void) SharedRuntime::vector_calling_convention(regs, num_bits, total_args_passed);
-}
-
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
   assert(EnableVectorSupport && UseVectorStubs, "sanity");
   int lo = XMM0_num;

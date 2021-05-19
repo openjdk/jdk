@@ -417,9 +417,6 @@ public:
 
   // Java-Native vector calling convention
   static const bool supports_vector_calling_convention();
-  static void vector_calling_convention(VMRegPair *regs,
-                                        uint num_bits,
-                                        uint total_args_passed);
   static OptoRegPair vector_return_value(uint ideal_reg);
 
   // Is this branch offset small enough to be addressed by a short branch?

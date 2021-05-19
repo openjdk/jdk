@@ -266,12 +266,9 @@ class StubRoutines: AllStatic {
   static address _safefetchN_fault_pc;
   static address _safefetchN_continuation_pc;
 
-#ifdef __VECTOR_API_MATH_INTRINSICS_COMMON
   // Vector Math Routines
   static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
   static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
-#endif // __VECTOR_API_MATH_INTRINSICS_COMMON
-
 
  public:
   // Initialization/Testing

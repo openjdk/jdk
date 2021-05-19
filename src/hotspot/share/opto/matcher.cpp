@@ -1367,8 +1367,8 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       RegMask *rm = &mcall->_in_rms[i+TypeFunc::Parms];
       VMReg first = parm_regs[i].first();
       VMReg second = parm_regs[i].second();
-      if( !first->is_valid() &&
-          !second->is_valid() ) {
+      if(!first->is_valid() &&
+         !second->is_valid()) {
         continue;               // Avoid Halves
       }
       // Handle case where arguments are in vector registers.
