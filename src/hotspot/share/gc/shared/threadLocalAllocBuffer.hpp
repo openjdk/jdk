@@ -63,7 +63,7 @@ private:
   static unsigned _target_refills;                    // expected number of refills between GCs
 
   unsigned  _number_of_refills;
-  unsigned  _slow_refill_waste;
+  unsigned  _refill_waste;
   unsigned  _gc_waste;
   unsigned  _slow_allocations;
   size_t    _allocated_size;
@@ -221,7 +221,7 @@ public:
   void update_fast_allocations(unsigned int refills,
                                size_t allocations,
                                size_t gc_waste,
-                               size_t slow_refill_waste);
+                               size_t refill_waste);
   void update_slow_allocations(unsigned int allocations);
   void update(const ThreadLocalAllocStats& other);
 
