@@ -57,7 +57,7 @@ ShenandoahInitMarkRootsClosure::ShenandoahInitMarkRootsClosure(ShenandoahObjToSc
 
 template <class T>
 void ShenandoahInitMarkRootsClosure::do_oop_work(T* p) {
-  ShenandoahMark::mark_through_ref<T, NO_DEDUP>(p, _queue, _mark_context, false);
+  ShenandoahMark::mark_through_ref<T, NO_DEDUP>(p, _queue, _mark_context, NULL, false);
 }
 
 class ShenandoahSTWMarkTask : public AbstractGangTask {
@@ -133,7 +133,7 @@ void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->ref_processor();
 
   mark_loop(worker_id, &_terminator, rp,
-            false, // not cancellable
-            ShenandoahStringDedup::is_enabled());
+            false /* not cancellable */,
+            ShenandoahStringDedup::is_enabled() ? ALWAYS_DEDUP : NO_DEDUP);
 }
 

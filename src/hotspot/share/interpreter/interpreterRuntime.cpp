@@ -316,7 +316,7 @@ void InterpreterRuntime::note_trap_inner(JavaThread* current, int reason,
     MethodData* trap_mdo = trap_method->method_data();
     if (trap_mdo == NULL) {
       ExceptionMark em(current);
-      JavaThread* THREAD = current; // for exception macros
+      JavaThread* THREAD = current; // For exception macros.
       Method::build_interpreter_method_data(trap_method, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         // Only metaspace OOM is expected. No Java code executed.
@@ -655,7 +655,7 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
 
   {
     JvmtiHideSingleStepping jhss(current);
-    Thread* THREAD = current;  // for exception macros
+    JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_field_access(info, pool, last_frame.get_index_u2_cpcache(bytecode),
                                        m, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
@@ -826,7 +826,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
 
   {
     JvmtiHideSingleStepping jhss(current);
-    Thread* THREAD = current;  // for exception macros
+    JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, receiver, pool,
                                  last_frame.get_index_u2_cpcache(bytecode), bytecode,
                                  CHECK);
@@ -866,11 +866,10 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
            info.call_kind() == CallInfo::vtable_call, "");
   }
 #endif
-  // Get sender or sender's unsafe_anonymous_host, and only set cpCache entry to resolved if
-  // it is not an interface.  The receiver for invokespecial calls within interface
+  // Get sender and only set cpCache entry to resolved if it is not an
+  // interface.  The receiver for invokespecial calls within interface
   // methods must be checked for every call.
   InstanceKlass* sender = pool->pool_holder();
-  sender = sender->is_unsafe_anonymous() ? sender->unsafe_anonymous_host() : sender;
 
   switch (info.call_kind()) {
   case CallInfo::direct_call:
@@ -907,7 +906,7 @@ void InterpreterRuntime::resolve_invokehandle(JavaThread* current) {
   constantPoolHandle pool(current, last_frame.method()->constants());
   {
     JvmtiHideSingleStepping jhss(current);
-    Thread* THREAD = current;  // for exception macros
+    JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, Handle(), pool,
                                  last_frame.get_index_u2_cpcache(bytecode), bytecode,
                                  CHECK);
@@ -928,7 +927,7 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
   int index = last_frame.get_index_u4(bytecode);
   {
     JvmtiHideSingleStepping jhss(current);
-    Thread* THREAD = current;  // for exception macros
+    JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, Handle(), pool,
                                  index, bytecode, CHECK);
   } // end JvmtiHideSingleStepping

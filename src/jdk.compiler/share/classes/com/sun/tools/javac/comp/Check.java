@@ -2246,7 +2246,7 @@ public class Check {
 
     class CycleChecker extends TreeScanner {
 
-        List<Symbol> seenClasses = List.nil();
+        Set<Symbol> seenClasses = new HashSet<>();
         boolean errorFound = false;
         boolean partialCheck = false;
 
@@ -2265,7 +2265,7 @@ public class Check {
                 } else if (sym.kind == TYP) {
                     checkClass(pos, sym, List.nil());
                 }
-            } else {
+            } else if (sym == null || sym.kind != PCK) {
                 //not completed yet
                 partialCheck = true;
             }
@@ -2314,7 +2314,7 @@ public class Check {
                 noteCyclic(pos, (ClassSymbol)c);
             } else if (!c.type.isErroneous()) {
                 try {
-                    seenClasses = seenClasses.prepend(c);
+                    seenClasses.add(c);
                     if (c.type.hasTag(CLASS)) {
                         if (supertypes.nonEmpty()) {
                             scan(supertypes);
@@ -2337,7 +2337,7 @@ public class Check {
                         }
                     }
                 } finally {
-                    seenClasses = seenClasses.tail;
+                    seenClasses.remove(c);
                 }
             }
         }

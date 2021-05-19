@@ -1722,7 +1722,12 @@ public final class Class<T> implements java.io.Serializable,
             String enclosingName = enclosingClass.getCanonicalName();
             if (enclosingName == null)
                 return ReflectionData.NULL_SENTINEL;
-            return enclosingName + "." + getSimpleName();
+            String simpleName = getSimpleName();
+            return new StringBuilder(enclosingName.length() + simpleName.length() + 1)
+                    .append(enclosingName)
+                    .append('.')
+                    .append(simpleName)
+                    .toString();
         }
     }
 
@@ -4365,10 +4370,20 @@ public final class Class<T> implements java.io.Serializable,
         } else if (isHidden()) {
             String name = getName();
             int index = name.indexOf('/');
-            return "L" + name.substring(0, index).replace('.', '/')
-                       + "." + name.substring(index+1) + ";";
+            return new StringBuilder(name.length() + 2)
+                    .append('L')
+                    .append(name.substring(0, index).replace('.', '/'))
+                    .append('.')
+                    .append(name, index + 1, name.length())
+                    .append(';')
+                    .toString();
         } else {
-            return "L" + getName().replace('.', '/') + ";";
+            String name = getName().replace('.', '/');
+            return new StringBuilder(name.length() + 2)
+                    .append('L')
+                    .append(name)
+                    .append(';')
+                    .toString();
         }
     }
 

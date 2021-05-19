@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,14 +381,7 @@ final class Float512Vector extends FloatVector {
     @Override
     @ForceInline
     public Float512Vector slice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Float512Shuffle Iota = iotaShuffle();
-         VectorMask<Float> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((float)(VLENGTH-origin))));
-         Iota = iotaShuffle(origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (Float512Vector) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -409,14 +402,7 @@ final class Float512Vector extends FloatVector {
     @Override
     @ForceInline
     public Float512Vector unslice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Float512Shuffle Iota = iotaShuffle();
-         VectorMask<Float> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((float)(origin))));
-         Iota = iotaShuffle(-origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (Float512Vector) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -674,6 +660,29 @@ final class Float512Vector extends FloatVector {
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Float512Mask.class, int.class, VLENGTH,
                                           this, m,
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+        }
+
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Float512Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((Float512Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Float512Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((Float512Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Float512Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((Float512Mask)m).getBits()));
         }
 
         // Reductions

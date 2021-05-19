@@ -3957,14 +3957,15 @@ bool os::Linux::commit_memory_special(size_t bytes,
 
 char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
                                                    size_t alignment,
+                                                   size_t page_size,
                                                    char* req_addr,
                                                    bool exec) {
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
-  assert(is_aligned(req_addr, os::large_page_size()), "Must be");
+  assert(is_aligned(req_addr, page_size), "Must be");
   assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
-  assert(is_power_of_2(os::large_page_size()), "Must be");
-  assert(bytes >= os::large_page_size(), "Shouldn't allocate large pages for small sizes");
+  assert(_page_sizes.contains(page_size), "Must be a valid page size");
+  assert(bytes >= page_size, "Shouldn't allocate large pages for small sizes");
 
   // We only end up here when at least 1 large page can be used.
   // If the size is not a multiple of the large page size, we
@@ -3974,15 +3975,15 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
   // a requested address is given it will be used and it must be
   // aligned to both the large page size and the given alignment.
   // The larger of the two will be used.
-  size_t required_alignment = MAX(os::large_page_size(), alignment);
+  size_t required_alignment = MAX(page_size, alignment);
   char* const aligned_start = anon_mmap_aligned(req_addr, bytes, required_alignment);
   if (aligned_start == NULL) {
     return NULL;
   }
 
   // First commit using large pages.
-  size_t large_bytes = align_down(bytes, os::large_page_size());
-  bool large_committed = commit_memory_special(large_bytes, os::large_page_size(), aligned_start, exec);
+  size_t large_bytes = align_down(bytes, page_size);
+  bool large_committed = commit_memory_special(large_bytes, page_size, aligned_start, exec);
 
   if (large_committed && bytes == large_bytes) {
     // The size was large page aligned so no additional work is
@@ -4011,16 +4012,17 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
   return aligned_start;
 }
 
-char* os::pd_reserve_memory_special(size_t bytes, size_t alignment,
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size,
                                     char* req_addr, bool exec) {
   assert(UseLargePages, "only for large pages");
 
   char* addr;
   if (UseSHM) {
+    // No support for using specific page sizes with SHM.
     addr = os::Linux::reserve_memory_special_shm(bytes, alignment, req_addr, exec);
   } else {
     assert(UseHugeTLBFS, "must be");
-    addr = os::Linux::reserve_memory_special_huge_tlbfs(bytes, alignment, req_addr, exec);
+    addr = os::Linux::reserve_memory_special_huge_tlbfs(bytes, alignment, page_size, req_addr, exec);
   }
 
   if (addr != NULL) {
@@ -4762,7 +4764,7 @@ bool os::find(address addr, outputStream* st) {
 // on, e.g., Win32.
 void
 os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method,
-                         JavaCallArguments* args, Thread* thread) {
+                         JavaCallArguments* args, JavaThread* thread) {
   f(value, method, args, thread);
 }
 

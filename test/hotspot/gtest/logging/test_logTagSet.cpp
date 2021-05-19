@@ -27,6 +27,7 @@
 #include "logging/logOutput.hpp"
 #include "logging/logTag.hpp"
 #include "logging/logTagSet.hpp"
+#include "utilities/ostream.hpp"
 #include "unittest.hpp"
 
 // Test the default level for each tagset
@@ -119,6 +120,11 @@ TEST(LogTagSet, label) {
   ASSERT_NE(-1, ts.label(buf, sizeof(buf), "++"));
   EXPECT_STREQ("logging++safepoint", buf);
 
+  // Test with a stream too
+  stringStream ss(buf, sizeof(buf));
+  ts.label(&ss, "*-*");
+  EXPECT_STREQ("logging*-*safepoint", buf);
+
   // Verify with three tags
   const LogTagSet& ts1 = LogTagSetMapping<LOG_TAGS(logging, safepoint, jni)>::tagset();
   ASSERT_NE(-1, ts1.label(buf, sizeof(buf)));
@@ -128,6 +134,7 @@ TEST(LogTagSet, label) {
   const LogTagSet& ts2 = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
   ASSERT_NE(-1, ts2.label(buf, sizeof(buf)));
   EXPECT_STREQ("logging", buf);
+
 }
 
 TEST(LogTagSet, duplicates) {
