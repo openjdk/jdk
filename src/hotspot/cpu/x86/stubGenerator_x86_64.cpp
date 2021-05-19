@@ -6971,6 +6971,21 @@ address generate_avx_ghash_processBlocks() {
     char ebuf[1024];
     libsvml = os::dll_load(JNI_LIB_PREFIX "svml" JNI_LIB_SUFFIX, ebuf, sizeof ebuf);
     if (libsvml != NULL) {
+      // SVML method naming convention
+      //   All the methods are named as __svml_op<T><N>_ha_<VV>
+      //   Where:
+      //      ha stands for high accuracy
+      //      <T> is optional to indicate float/double
+      //              Set to f for vector float operation
+      //              Omitted for vector double operation
+      //      <N> is the number of elements in the vector
+      //              1, 2, 4, 8, 16
+      //              e.g. 128 bit float vector has 4 float elements
+      //      <VV> indicates the avx/sse level:
+      //              z0 is AVX512, l9 is AVX2, e9 is AVX1 and ex is for SSE2
+      //      e.g. __svml_expf16_ha_z0 is the method for computing 16 element vector float exp using AVX 512 insns
+      //           __svml_exp8_ha_z0 is the method for computing 8 element vector double exp using AVX 512 insns
+
       log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "svml" JNI_LIB_SUFFIX, p2i(libsvml));
       if (UseAVX > 2) {
         for (int op = 0; op < VectorSupport::NUM_SVML_OP; op++) {
