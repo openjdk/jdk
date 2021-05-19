@@ -69,7 +69,7 @@ public class LoadLibraryUnload {
             }
         }
     }
-    
+
     private static class LoadLibraryFromClass implements Runnable {
         Object object;
         Method method;
