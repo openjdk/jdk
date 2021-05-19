@@ -64,7 +64,7 @@ public:
   // runnableArg - what to run
   // nrOfThreadsArg - how many threads to use concurrently
   // testDurationMillisArg - duration for each test run
-  ConcurrentTestRunner(TestRunnable* const runnableArg, int nrOfThreadsArg, long testDurationMillisArg) :
+  ConcurrentTestRunner(TestRunnable* const runnableArg, int nrOfThreadsArg, long testDurationMillisArg = 5000) :
     unitTestRunnable(runnableArg),
     nrOfThreads(nrOfThreadsArg),
     testDurationMillis(testDurationMillisArg) {}

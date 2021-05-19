@@ -416,7 +416,7 @@ public:
 
 TEST_VM(os_linux, reserve_memory_special_concurrent) {
   ReserveMemorySpecialRunnable runnable;
-  ConcurrentTestRunner testRunner(&runnable, 30, 15000);
+  ConcurrentTestRunner testRunner(&runnable, 30);
   testRunner.run();
 }
 
