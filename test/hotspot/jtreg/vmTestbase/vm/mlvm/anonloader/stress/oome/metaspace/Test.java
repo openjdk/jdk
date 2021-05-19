@@ -36,7 +36,7 @@
  * @build vm.mlvm.anonloader.stress.oome.metaspace.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm -XX:-UseGCOverheadLimit -XX:MetaspaceSize=10m -XX:MaxMetaspaceSize=20m vm.mlvm.anonloader.stress.oome.metaspace.Test
+ * @run main/othervm -Xmx256m -XX:-UseGCOverheadLimit -XX:MaxMetaspaceSize=8m vm.mlvm.anonloader.stress.oome.metaspace.Test
  */
 
 package vm.mlvm.anonloader.stress.oome.metaspace;
