@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8267262
  * @summary Tests for Filter static factory methods
  * @run testng/othervm FilterTest
  */
