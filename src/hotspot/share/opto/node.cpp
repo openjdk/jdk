@@ -2247,6 +2247,7 @@ void Node::verify(int verify_depth, VectorSet& visited, Node_List& worklist) {
         }
       }
       if (cnt == 2) {
+        // x is already checked as n's previous input, skip its duplicated def-use count checking
         continue;
       }
       for (uint j = i + 1; j < in_len; j++) {
