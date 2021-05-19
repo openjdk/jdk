@@ -109,23 +109,6 @@ public interface HotSpotResolvedObjectType extends ResolvedJavaType {
     ResolvedJavaMethod getClassInitializer();
 
     /**
-     * Checks whether this type is an unsafe anonymous class.
-     *
-     * @return {@code true} if this type is an unsafe anonymous class
-     */
-    boolean isUnsafeAnonymous();
-
-    /**
-     * Checks whether this type is an unsafe anonymous class.
-     * This method is here to maintain compatibility with JDK11.
-     *
-     * @return {@code true} if this type is an unsafe anonymous class
-     */
-    default boolean isAnonymous() {
-      return isUnsafeAnonymous();
-    }
-
-    /**
      * Gets the fingerprint for this type.
      *
      * @return the value of the fingerprint ({@code 0} for arrays and synthetic classes or if the VM

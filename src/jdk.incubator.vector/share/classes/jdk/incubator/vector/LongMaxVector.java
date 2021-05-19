@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -377,14 +377,7 @@ final class LongMaxVector extends LongVector {
     @Override
     @ForceInline
     public LongMaxVector slice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         LongMaxShuffle Iota = iotaShuffle();
-         VectorMask<Long> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((long)(VLENGTH-origin))));
-         Iota = iotaShuffle(origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (LongMaxVector) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -405,14 +398,7 @@ final class LongMaxVector extends LongVector {
     @Override
     @ForceInline
     public LongMaxVector unslice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         LongMaxShuffle Iota = iotaShuffle();
-         VectorMask<Long> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((long)(origin))));
-         Iota = iotaShuffle(-origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (LongMaxVector) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -638,6 +624,29 @@ final class LongMaxVector extends LongVector {
             return VectorSupport.binaryOp(VECTOR_OP_XOR, LongMaxMask.class, long.class, VLENGTH,
                                           this, m,
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+        }
+
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, LongMaxMask.class, long.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((LongMaxMask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, LongMaxMask.class, long.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((LongMaxMask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, LongMaxMask.class, long.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((LongMaxMask)m).getBits()));
         }
 
         // Reductions

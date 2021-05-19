@@ -730,7 +730,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(ThreadShadow,                _pending_exception,                            oop)                                   \
   nonstatic_field(ThreadShadow,                _exception_file,                               const char*)                           \
   nonstatic_field(ThreadShadow,                _exception_line,                               int)                                   \
-  volatile_nonstatic_field(Thread,             _suspend_flags,                                uint32_t)                              \
   nonstatic_field(Thread,                      _active_handles,                               JNIHandleBlock*)                       \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                      _allocated_bytes,                              jlong)                                 \
@@ -743,11 +742,12 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(JavaThread,                  _current_pending_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(JavaThread,                  _current_pending_monitor_is_from_java,         bool)                                  \
   nonstatic_field(JavaThread,                  _current_waiting_monitor,                      ObjectMonitor*)                        \
+  volatile_nonstatic_field(JavaThread,         _suspend_flags,                                uint32_t)                              \
+  nonstatic_field(JavaThread,                  _async_exception_condition,                    JavaThread::AsyncExceptionCondition)   \
   nonstatic_field(JavaThread,                  _pending_async_exception,                      oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
-  nonstatic_field(JavaThread,                  _special_runtime_exit_condition,               JavaThread::AsyncRequests)             \
   nonstatic_field(JavaThread,                  _saved_exception_pc,                           address)                               \
   volatile_nonstatic_field(JavaThread,         _thread_state,                                 JavaThreadState)                       \
   nonstatic_field(JavaThread,                  _osthread,                                     OSThread*)                             \
@@ -912,7 +912,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   c2_nonstatic_field(Compile,                  _regalloc,                                     PhaseRegAlloc*)                        \
   c2_nonstatic_field(Compile,                  _method,                                       ciMethod*)                             \
   c2_nonstatic_field(Compile,                  _compile_id,                                   const int)                             \
-  c2_nonstatic_field(Compile,                  _save_argument_registers,                      const bool)                            \
   c2_nonstatic_field(Compile,                  _subsume_loads,                                const bool)                            \
   c2_nonstatic_field(Compile,                  _do_escape_analysis,                           const bool)                            \
   c2_nonstatic_field(Compile,                  _eliminate_boxing,                             const bool)                            \
@@ -1596,6 +1595,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(MemBarVolatileNode, MemBarNode)                         \
   declare_c2_type(MemBarCPUOrderNode, MemBarNode)                         \
   declare_c2_type(OnSpinWaitNode, MemBarNode)                             \
+  declare_c2_type(BlackholeNode, MemBarNode)                              \
   declare_c2_type(InitializeNode, MemBarNode)                             \
   declare_c2_type(ThreadLocalNode, Node)                                  \
   declare_c2_type(Opaque1Node, Node)                                      \
@@ -1983,7 +1983,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_toplevel_type(JavaThread*)                                      \
   declare_toplevel_type(JavaThread *const *const)                         \
   declare_toplevel_type(java_lang_Class)                                  \
-  declare_integer_type(JavaThread::AsyncRequests)                         \
+  declare_integer_type(JavaThread::AsyncExceptionCondition)               \
   declare_integer_type(JavaThread::TerminatedTypes)                       \
   declare_toplevel_type(jbyte*)                                           \
   declare_toplevel_type(jbyte**)                                          \
@@ -2143,7 +2143,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* Thread::SuspendFlags enum */                                         \
   /*****************************/                                         \
                                                                           \
-  declare_constant(Thread::_has_async_exception)                          \
+  declare_constant(JavaThread::_has_async_exception)                      \
                                                                           \
   /*******************/                                                   \
   /* JavaThreadState */                                                   \
@@ -2296,7 +2296,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_constant(InstanceKlass::_misc_rewritten)                        \
   declare_constant(InstanceKlass::_misc_has_nonstatic_fields)             \
   declare_constant(InstanceKlass::_misc_should_verify_class)              \
-  declare_constant(InstanceKlass::_misc_is_unsafe_anonymous)              \
   declare_constant(InstanceKlass::_misc_is_contended)                     \
   declare_constant(InstanceKlass::_misc_has_nonstatic_concrete_methods)   \
   declare_constant(InstanceKlass::_misc_declares_nonstatic_concrete_methods)\

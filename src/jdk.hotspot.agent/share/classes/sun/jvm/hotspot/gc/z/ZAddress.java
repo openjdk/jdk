@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,15 +52,11 @@ class ZAddress {
     }
 
     static long offset(Address address) {
-        return as_long(address) & ZGlobals.ZAddressOffsetMask;
-    }
-
-    static Address address(long value) {
-        return ZUtils.longToAddress(value);
+        return as_long(address) & ZGlobals.ZAddressOffsetMask();
     }
 
     static Address good(Address value) {
-        return address(offset(value) | ZGlobals.ZAddressGoodMask());
+        return VM.getVM().getDebugger().newAddress(offset(value) | ZGlobals.ZAddressGoodMask());
     }
 
     static Address good_or_null(Address value) {

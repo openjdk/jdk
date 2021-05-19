@@ -692,7 +692,7 @@ Node* next_mem(Node* mem, int alias) {
   } else if (mem->is_MergeMem()) {
     res = mem->as_MergeMem()->memory_at(alias);
   } else if (mem->is_Store() || mem->is_LoadStore() || mem->is_ClearArray()) {
-    assert(alias = Compile::AliasIdxRaw, "following raw memory can't lead to a barrier");
+    assert(alias == Compile::AliasIdxRaw, "following raw memory can't lead to a barrier");
     res = mem->in(MemNode::Memory);
   } else {
 #ifdef ASSERT

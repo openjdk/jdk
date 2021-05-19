@@ -215,6 +215,7 @@ class TestPolicy extends Policy {
         permissions.add(new PropertyPermission("testng.show.stack.frames",
                 "read"));
         permissions.add(new PropertyPermission("testng.thread.affinity", "read"));
+        permissions.add(new PropertyPermission("testng.memory.friendly", "read"));
         permissions.add(new PropertyPermission("testng.mode.dryrun", "read"));
         permissions.add(new PropertyPermission("testng.report.xml.name", "read"));
         permissions.add(new PropertyPermission("testng.timezone", "read"));

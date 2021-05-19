@@ -636,7 +636,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP("printing bug submit message")
 
-     if (should_report_bug(_id) && _verbose) {
+     if (should_submit_bug_report(_id) && _verbose) {
        print_bug_submit_message(st, _thread);
      }
 
@@ -1584,7 +1584,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     }
   }
 
-  static bool skip_bug_url = !should_report_bug(_id);
+  static bool skip_bug_url = !should_submit_bug_report(_id);
   if (!skip_bug_url) {
     skip_bug_url = true;
 
@@ -1770,8 +1770,8 @@ static void crash_with_sigfpe() {
 // crash with sigsegv at non-null address.
 static void crash_with_segfault() {
 
-  char* const crash_addr = (char*)VMError::segfault_address;
-  *crash_addr = 'X';
+  int* crash_addr = reinterpret_cast<int*>(VMError::segfault_address);
+  *crash_addr = 1;
 
 } // end: crash_with_segfault
 

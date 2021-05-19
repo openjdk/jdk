@@ -568,7 +568,7 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
   methodHandle mh(current, m);
   MethodCounters* counters;
   if (current->is_Java_thread()) {
-    Thread* THREAD = current;
+    JavaThread* THREAD = current->as_Java_thread(); // For exception macros.
     // Use the TRAPS version for a JavaThread so it will adjust the GC threshold
     // if needed.
     counters = MethodCounters::allocate_with_exception(mh, THREAD);
@@ -618,11 +618,6 @@ void Method::compute_from_signature(Symbol* sig) {
   set_size_of_parameters(fp.size_of_parameters());
   constMethod()->set_result_type(fp.return_type());
   constMethod()->set_fingerprint(fp.fingerprint());
-}
-
-bool Method::is_empty_method() const {
-  return  code_size() == 1
-      && *code_base() == Bytecodes::_return;
 }
 
 bool Method::is_vanilla_constructor() const {
@@ -2230,8 +2225,6 @@ void Method::set_on_stack(const bool value) {
   if (value && !already_set) {
     MetadataOnStackMark::record(this);
   }
-  assert(!value || !is_old() || is_obsolete() || is_running_emcp(),
-         "emcp methods cannot run after emcp bit is cleared");
 }
 
 // Called when the class loader is unloaded to make all methods weak.

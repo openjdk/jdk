@@ -747,8 +747,20 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """,
                 """
                 record R() {
+                    void test(U u) {}
+                }
+                """,
+                """
+                record R() {
                     void test1() {
                         class X { void test2(T t) {} }
+                    }
+                }
+                """,
+                """
+                record R() {
+                    void test1() {
+                        class X { void test2(U u) {} }
                     }
                 }
                 """,
@@ -802,11 +814,23 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """,
                 """
                 interface I {
+                    default void test(U u) {}
+                }
+                """,
+                """
+                interface I {
                     default void test1() {
                         class X { void test2(T t) {} }
                     }
                 }
                 """,
+                """
+                interface I {
+                    default void test1() {
+                        class X { void test2(U u) {} }
+                    }
+                }
+                """,
 
                 """
                 enum E {
@@ -865,8 +889,22 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """
                 enum E {
                     A;
+                    void test(U u) {}
+                }
+                """,
+                """
+                enum E {
+                    A;
                     void test1() {
                         class X { void test2(T t) {} }
+                    }
+                }
+                """,
+                """
+                enum E {
+                    A;
+                    void test1() {
+                        class X { void test2(U u) {} }
                     }
                 }
                 """,
@@ -920,8 +958,20 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """,
                 """
                 static class SC {
+                    void test(U u) {}
+                }
+                """,
+                """
+                static class SC {
                     void test1() {
                         class X { void test2(T t) {} }
+                    }
+                }
+                """,
+                """
+                static class SC {
+                    void test1() {
+                        class X { void test2(U u) {} }
                     }
                 }
                 """
@@ -965,6 +1015,30 @@ public class RecordCompilationTests extends CompilationTestCase {
                 }
                 """
         );
+
+        // but still non-static declarations can't be accessed from a static method inside a local class
+        for (String s : List.of(
+                "System.out.println(localVar)",
+                "System.out.println(param)",
+                "System.out.println(field)",
+                "T t",
+                "U u"
+        )) {
+            assertFail("compiler.err.non-static.cant.be.ref",
+                    """
+                    class C<T> {
+                        int field = 0;
+                        <U> void foo(int param) {
+                            int localVar = 1;
+                            class Local {
+                                static void m() {
+                                    #S;
+                                }
+                            }
+                        }
+                    }
+                    """.replaceFirst("#S", s));
+        }
     }
 
     public void testReturnInCanonical_Compact() {
