@@ -1337,7 +1337,7 @@ static void get_svml_address(int vop, int bits, BasicType bt, char* name_ptr, in
       break;
   }
 #else
-  *name_ptr = "invalid";
+  snprintf(name_ptr, name_len, "invalid");
   *addr_ptr = NULL;
 #endif // __VECTOR_API_MATH_INTRINSICS_COMMON
 }
