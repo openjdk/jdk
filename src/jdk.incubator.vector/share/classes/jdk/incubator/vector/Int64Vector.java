@@ -638,6 +638,29 @@ final class Int64Vector extends IntVector {
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
 
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Int64Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((Int64Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Int64Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((Int64Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Int64Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((Int64Mask)m).getBits()));
+        }
+
         // Reductions
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,16 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-
-/**
- * @test
- * @bug 8200788
- * @summary Optimal initial capacity of AccessMode.methodNameToAccessMode
- * @library /test/lib
- * @modules java.base/java.lang.invoke:open
- *          java.base/java.util:open
- * @build jdk.test.lib.util.OptimalCapacity
- * @run main OptimalMapSize
- */
-
-import java.lang.invoke.VarHandle.AccessMode;
-import jdk.test.lib.util.OptimalCapacity;
-
-public class OptimalMapSize {
-    public static void main(String[] args) throws Throwable {
-        int initialCapacity = (int)(AccessMode.values().length / 0.75f) + 1;
-        OptimalCapacity.ofHashMap(AccessMode.class, "methodNameToAccessMode",
-                initialCapacity);
+import java.util.HashMap;
+public class MiniStoreOom {
+    private static HashMap<Integer, Byte[]>  store = new HashMap<Integer, Byte[]>();
+    public static void main(String... args) throws Exception {
+        int size = Integer.valueOf(args[0]);
+        int i = 0;
+        while (i++ < Integer.MAX_VALUE) {
+            store.put(i, new Byte[size]);
+        }
     }
 }

@@ -154,6 +154,7 @@ Mutex*   DumpTimeTable_lock           = NULL;
 Mutex*   CDSLambda_lock               = NULL;
 Mutex*   DumpRegion_lock              = NULL;
 Mutex*   ClassListFile_lock           = NULL;
+Mutex*   LambdaFormInvokers_lock      = NULL;
 #endif // INCLUDE_CDS
 Mutex*   Bootclasspath_lock           = NULL;
 
@@ -344,6 +345,7 @@ void mutex_init() {
   def(CDSLambda_lock               , PaddedMutex  , leaf,        true,  _safepoint_check_never);
   def(DumpRegion_lock              , PaddedMutex  , leaf,        true,  _safepoint_check_never);
   def(ClassListFile_lock           , PaddedMutex  , leaf,        true,  _safepoint_check_never);
+  def(LambdaFormInvokers_lock      , PaddedMutex  , nonleaf+2,   false, _safepoint_check_always);
 #endif // INCLUDE_CDS
   def(Bootclasspath_lock           , PaddedMutex  , leaf,        false, _safepoint_check_never);
 

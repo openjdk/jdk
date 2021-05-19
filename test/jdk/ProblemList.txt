@@ -543,9 +543,6 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 java/foreign/TestMismatch.java 8249684 macosx-all
 
 java/foreign/StdLibTest.java 8263512 macosx-aarch64
-java/foreign/TestDowncall.java 8265292 macosx-aarch64
-java/foreign/TestIntrinsics.java 8265183 macosx-aarch64
-java/foreign/TestUpcall.java 8265182 macosx-aarch64
 java/foreign/TestVarArgs.java 8263512 macosx-aarch64
 java/foreign/valist/VaListTest.java 8263512 macosx-aarch64
 
@@ -877,7 +874,6 @@ java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macos
 java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
 java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
 java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
-javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8260331 linux-x64
 
 
 ############################################################################

@@ -2221,7 +2221,7 @@ bool os::find(address addr, outputStream* st) {
 // on, e.g., Win32.
 void os::os_exception_wrapper(java_call_t f, JavaValue* value,
                               const methodHandle& method, JavaCallArguments* args,
-                              Thread* thread) {
+                              JavaThread* thread) {
   f(value, method, args, thread);
 }
 
