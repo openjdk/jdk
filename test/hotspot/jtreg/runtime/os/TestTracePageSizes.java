@@ -25,6 +25,8 @@
  * @test id=no-options
  * @summary Run test with no arguments apart from the ones required by
  *          the test.
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log TestTracePageSizes
  */
@@ -33,6 +35,8 @@
  * @test id=explicit-large-page-size
  * @summary Run test explicitly with both 2m and 1g pages on x64. Excluding ZGC since
  *          it fail initialization if no large pages are available on the system.
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @requires vm.gc != "Z"
@@ -44,6 +48,8 @@
  * @test id=compiler-options
  * @summary Run test without segmented code cache. Excluding ZGC since it
  *          fail initialization if no large pages are available on the system.
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires vm.gc != "Z"
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache TestTracePageSizes
@@ -54,6 +60,8 @@
 /*
  * @test id=with-G1
  * @summary Run tests with G1
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires vm.gc.G1
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseG1GC TestTracePageSizes
@@ -64,6 +72,8 @@
 /*
  * @test id=with-Parallel
  * @summary Run tests with Parallel
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires vm.gc.Parallel
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseParallelGC TestTracePageSizes
@@ -74,6 +84,8 @@
 /*
  * @test id=with-Serial
  * @summary Run tests with Serial
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
  * @requires vm.gc.Serial
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseSerialGC TestTracePageSizes
@@ -90,6 +102,7 @@ import java.util.LinkedList;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import jdk.test.lib.Platform;
 
 // Check that page sizes logged match what is recorded in /proc/self/smaps.
 // For transparent huge pages the matching is best effort since we can't
@@ -97,8 +110,18 @@ import java.util.regex.Pattern;
 public class TestTracePageSizes {
     // Store address ranges with known page size.
     private static LinkedList<RangeWithPageSize> ranges = new LinkedList<>();
-    private static boolean debug = false;
-    private static int run = 0;
+    private static boolean debug;
+    private static int run;
+
+    private static long getKernelVersion() {
+        return Platform.getOsVersionMajor() << 8 | Platform.getOsVersionMajor();
+    }
+
+    private static boolean canSafelyDetectTPHFromSmaps() {
+        // Not before 3.8
+        return getKernelVersion() >= 0x308;
+    }
+
 
     // Copy smaps locally
     // (To minimize chances of concurrent modification when parsing, as well as helping with error analysis)
@@ -220,6 +243,8 @@ public class TestTracePageSizes {
         // Check if debug printing is enabled.
         if (args.length > 0 && args[0].equals("-debug")) {
             debug = true;
+        } else {
+            debug = false;
         }
 
         // Parse /proc/self/smaps to compare with values logged in the VM.
@@ -294,20 +319,25 @@ class RangeWithPageSize {
     private long start;
     private long end;
     private long pageSize;
+    private String vmFlags;
     private boolean vmFlagHG;
     private boolean vmFlagHT;
 
     public RangeWithPageSize(String start, String end, String pageSize, String vmFlags) {
         this.start = Long.parseUnsignedLong(start, 16);
         this.end = Long.parseUnsignedLong(end, 16);
-        this.pageSize = Long.parseLong(pageSize);
+        this.vmFlags = vmFlags;
+
+        if (pageSize != null) { // "KernelPageSize" needs Linux 2.6.29 or later
+            this.pageSize = Long.parseLong(pageSize);
+        }
 
         vmFlagHG = false;
         vmFlagHT = false;
         // Check if the vmFlags line include:
         // * ht - Meaning the range is mapped using explicit huge pages.
         // * hg - Meaning the range is madvised huge.
-        if (vmFlags != null) {
+        if (vmFlags != null) { // "VmFlags" needs Linux 3.8 or later
             for (String flag : vmFlags.split(" ")) {
                 if (flag.equals("ht")) {
                     vmFlagHT = true;
