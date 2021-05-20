@@ -68,15 +68,6 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
  * {@link Object#equals(Object)} method. There is no guarantee that any
  * particular entity will always be represented by the same descriptor instance.
  *
- * @apiNote In the future, if the Java language permits, {@linkplain ConstantDesc}
- * may become a {@code sealed} interface, which would prohibit subclassing except by
- * explicitly permitted types.  Clients can assume that the following
- * set of subtypes is exhaustive: {@link String}, {@link Integer},
- * {@link Long}, {@link Float}, {@link Double}, {@link ClassDesc},
- * {@link MethodTypeDesc}, {@link MethodHandleDesc}, and
- * {@link DynamicConstantDesc}; this list may be extended to reflect future
- * changes to the constant pool format as defined in JVMS 4.4.
- *
  * @see Constable
  * @see ConstantDescs
  *

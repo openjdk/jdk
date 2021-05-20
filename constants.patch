@@ -1,0 +1,102 @@
+diff --git a/src/java.base/share/classes/java/lang/constant/ClassDesc.java b/src/java.base/share/classes/java/lang/constant/ClassDesc.java
+index 39b98659cf5..abc218fd774 100644
+--- a/src/java.base/share/classes/java/lang/constant/ClassDesc.java
++++ b/src/java.base/share/classes/java/lang/constant/ClassDesc.java
+@@ -58,9 +58,11 @@ import static java.util.stream.Collectors.joining;
+  *
+  * @since 12
+  */
+-public interface ClassDesc
++sealed public interface ClassDesc
+         extends ConstantDesc,
+-                TypeDescriptor.OfField<ClassDesc> {
++                TypeDescriptor.OfField<ClassDesc>
++        permits PrimitiveClassDescImpl,
++                ReferenceClassDescImpl {
+ 
+     /**
+      * Returns a {@linkplain ClassDesc} for a class or interface type,
+diff --git a/src/java.base/share/classes/java/lang/constant/ConstantDesc.java b/src/java.base/share/classes/java/lang/constant/ConstantDesc.java
+index 9d410e6774b..2c7d6a725f3 100644
+--- a/src/java.base/share/classes/java/lang/constant/ConstantDesc.java
++++ b/src/java.base/share/classes/java/lang/constant/ConstantDesc.java
+@@ -84,7 +84,16 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
+  *
+  * @since 12
+  */
+-public interface ConstantDesc {
++sealed public interface ConstantDesc
++        permits ClassDesc,
++                MethodHandleDesc,
++                MethodTypeDesc,
++                Double,
++                DynamicConstantDesc,
++                Float,
++                Integer,
++                Long,
++                String {
+     /**
+      * Resolves this descriptor reflectively, emulating the resolution behavior
+      * of JVMS 5.4.3 and the access control behavior of JVMS 5.4.4.  The resolution
+diff --git a/src/java.base/share/classes/java/lang/constant/DirectMethodHandleDesc.java b/src/java.base/share/classes/java/lang/constant/DirectMethodHandleDesc.java
+index 6b9e8482442..f6f555d2c98 100644
+--- a/src/java.base/share/classes/java/lang/constant/DirectMethodHandleDesc.java
++++ b/src/java.base/share/classes/java/lang/constant/DirectMethodHandleDesc.java
+@@ -53,7 +53,9 @@ import static java.lang.invoke.MethodHandleInfo.REF_putStatic;
+  *
+  * @since 12
+  */
+-public interface DirectMethodHandleDesc extends MethodHandleDesc {
++sealed public interface DirectMethodHandleDesc
++        extends MethodHandleDesc
++        permits DirectMethodHandleDescImpl {
+     /**
+      * Kinds of method handles that can be described with {@linkplain DirectMethodHandleDesc}.
+      *
+diff --git a/src/java.base/share/classes/java/lang/constant/DynamicConstantDesc.java b/src/java.base/share/classes/java/lang/constant/DynamicConstantDesc.java
+index 96d7677a567..a1f6a8f6408 100644
+--- a/src/java.base/share/classes/java/lang/constant/DynamicConstantDesc.java
++++ b/src/java.base/share/classes/java/lang/constant/DynamicConstantDesc.java
+@@ -56,7 +56,7 @@ import static java.util.stream.Collectors.joining;
+  *
+  * @since 12
+  */
+-public abstract class DynamicConstantDesc<T>
++non-sealed public abstract class DynamicConstantDesc<T>
+         implements ConstantDesc {
+ 
+     private final DirectMethodHandleDesc bootstrapMethod;
+diff --git a/src/java.base/share/classes/java/lang/constant/MethodHandleDesc.java b/src/java.base/share/classes/java/lang/constant/MethodHandleDesc.java
+index a066114de8f..b10eac623c8 100644
+--- a/src/java.base/share/classes/java/lang/constant/MethodHandleDesc.java
++++ b/src/java.base/share/classes/java/lang/constant/MethodHandleDesc.java
+@@ -42,8 +42,10 @@ import static java.lang.constant.DirectMethodHandleDesc.Kind.CONSTRUCTOR;
+  *
+  * @since 12
+  */
+-public interface MethodHandleDesc
+-        extends ConstantDesc {
++sealed public interface MethodHandleDesc
++        extends ConstantDesc
++        permits AsTypeMethodHandleDesc,
++                DirectMethodHandleDesc {
+ 
+     /**
+      * Creates a {@linkplain MethodHandleDesc} corresponding to an invocation of a
+diff --git a/src/java.base/share/classes/java/lang/constant/MethodTypeDesc.java b/src/java.base/share/classes/java/lang/constant/MethodTypeDesc.java
+index d5ab684e1d8..55ccbd31071 100644
+--- a/src/java.base/share/classes/java/lang/constant/MethodTypeDesc.java
++++ b/src/java.base/share/classes/java/lang/constant/MethodTypeDesc.java
+@@ -41,9 +41,10 @@ import java.util.stream.Stream;
+  *
+  * @since 12
+  */
+-public interface MethodTypeDesc
++sealed public interface MethodTypeDesc
+         extends ConstantDesc,
+-                TypeDescriptor.OfMethod<ClassDesc, MethodTypeDesc> {
++                TypeDescriptor.OfMethod<ClassDesc, MethodTypeDesc>
++        permits MethodTypeDescImpl {
+     /**
+      * Creates a {@linkplain MethodTypeDesc} given a method descriptor string.
+      *

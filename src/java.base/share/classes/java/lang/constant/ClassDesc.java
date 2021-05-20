@@ -49,11 +49,6 @@ import static java.util.stream.Collectors.joining;
  * {@linkplain ClassDesc} for the component type and then call the {@link #arrayType()}
  * or {@link #arrayType(int)} methods.
  *
- * @apiNote In the future, if the Java language permits, {@linkplain ClassDesc}
- * may become a {@code sealed} interface, which would prohibit subclassing except
- * by explicitly permitted types.  Non-platform classes should not implement
- * {@linkplain ClassDesc} directly.
- *
  * @see ConstantDescs
  *
  * @since 12
