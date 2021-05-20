@@ -576,35 +576,25 @@ final class Short64Vector extends ShortVector {
         }
 
         /**
-         * Helper function for all sorts of lane-wise conversions.
+         * Helper function for lane-wise mask conversions.
          * This function kicks in after intrinsic failure.
          */
-        /*package-private*/
         @ForceInline
-        final <E>
-        VectorMask<E> defaultMaskReinterpret(VectorSpecies<E> dsp) {
-            AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorMask length and species length differ");
+        private final <E>
+        VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
             boolean[] maskArray = toArray();
             // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte64Vector.Byte64Mask(maskArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short64Vector.Short64Mask(maskArray).check(species);
-            case LaneType.SK_INT:
-                return new Int64Vector.Int64Mask(maskArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long64Vector.Long64Mask(maskArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float64Vector.Float64Mask(maskArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double64Vector.Double64Mask(maskArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return (
+                switch (dsp.laneType.switchKey) {
+                    case LaneType.SK_BYTE   -> new Byte64Vector.Byte64Mask(maskArray).check(dsp);
+                    case LaneType.SK_SHORT  -> new Short64Vector.Short64Mask(maskArray).check(dsp);
+                    case LaneType.SK_INT    -> new Int64Vector.Int64Mask(maskArray).check(dsp);
+                    case LaneType.SK_LONG   -> new Long64Vector.Long64Mask(maskArray).check(dsp);
+                    case LaneType.SK_FLOAT  -> new Float64Vector.Float64Mask(maskArray).check(dsp);
+                    case LaneType.SK_DOUBLE -> new Double64Vector.Double64Mask(maskArray).check(dsp);
+                    default                 -> throw new AssertionError(dsp);
+                }
+            );
         }
 
         @Override
@@ -620,9 +610,9 @@ final class Short64Vector extends ShortVector {
                     this.getClass(), ETYPE, VLENGTH,
                     dmtype, dtype, VLENGTH,
                     this, species,
-                    Short64Mask::defaultMaskReinterpret);
+                    Short64Mask::defaultMaskCast);
             }
-            return this.defaultMaskReinterpret(species);
+            return this.defaultMaskCast(species);
         }
 
         // Unary operations

@@ -580,35 +580,25 @@ final class Float256Vector extends FloatVector {
         }
 
         /**
-         * Helper function for all sorts of lane-wise conversions.
+         * Helper function for lane-wise mask conversions.
          * This function kicks in after intrinsic failure.
          */
-        /*package-private*/
         @ForceInline
-        final <E>
-        VectorMask<E> defaultMaskReinterpret(VectorSpecies<E> dsp) {
-            AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorMask length and species length differ");
+        private final <E>
+        VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
             boolean[] maskArray = toArray();
             // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte256Vector.Byte256Mask(maskArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short256Vector.Short256Mask(maskArray).check(species);
-            case LaneType.SK_INT:
-                return new Int256Vector.Int256Mask(maskArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long256Vector.Long256Mask(maskArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float256Vector.Float256Mask(maskArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double256Vector.Double256Mask(maskArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return (
+                switch (dsp.laneType.switchKey) {
+                    case LaneType.SK_BYTE   -> new Byte256Vector.Byte256Mask(maskArray).check(dsp);
+                    case LaneType.SK_SHORT  -> new Short256Vector.Short256Mask(maskArray).check(dsp);
+                    case LaneType.SK_INT    -> new Int256Vector.Int256Mask(maskArray).check(dsp);
+                    case LaneType.SK_LONG   -> new Long256Vector.Long256Mask(maskArray).check(dsp);
+                    case LaneType.SK_FLOAT  -> new Float256Vector.Float256Mask(maskArray).check(dsp);
+                    case LaneType.SK_DOUBLE -> new Double256Vector.Double256Mask(maskArray).check(dsp);
+                    default                 -> throw new AssertionError(dsp);
+                }
+            );
         }
 
         @Override
@@ -624,9 +614,9 @@ final class Float256Vector extends FloatVector {
                     this.getClass(), ETYPE, VLENGTH,
                     dmtype, dtype, VLENGTH,
                     this, species,
-                    Float256Mask::defaultMaskReinterpret);
+                    Float256Mask::defaultMaskCast);
             }
-            return this.defaultMaskReinterpret(species);
+            return this.defaultMaskCast(species);
         }
 
         // Unary operations

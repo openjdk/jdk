@@ -560,35 +560,25 @@ final class LongMaxVector extends LongVector {
         }
 
         /**
-         * Helper function for all sorts of lane-wise conversions.
+         * Helper function for lane-wise mask conversions.
          * This function kicks in after intrinsic failure.
          */
-        /*package-private*/
         @ForceInline
-        final <E>
-        VectorMask<E> defaultMaskReinterpret(VectorSpecies<E> dsp) {
-            AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorMask length and species length differ");
+        private final <E>
+        VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
             boolean[] maskArray = toArray();
             // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new ByteMaxVector.ByteMaxMask(maskArray).check(species);
-            case LaneType.SK_SHORT:
-                return new ShortMaxVector.ShortMaxMask(maskArray).check(species);
-            case LaneType.SK_INT:
-                return new IntMaxVector.IntMaxMask(maskArray).check(species);
-            case LaneType.SK_LONG:
-                return new LongMaxVector.LongMaxMask(maskArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new FloatMaxVector.FloatMaxMask(maskArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new DoubleMaxVector.DoubleMaxMask(maskArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return (
+                switch (dsp.laneType.switchKey) {
+                    case LaneType.SK_BYTE   -> new ByteMaxVector.ByteMaxMask(maskArray).check(dsp);
+                    case LaneType.SK_SHORT  -> new ShortMaxVector.ShortMaxMask(maskArray).check(dsp);
+                    case LaneType.SK_INT    -> new IntMaxVector.IntMaxMask(maskArray).check(dsp);
+                    case LaneType.SK_LONG   -> new LongMaxVector.LongMaxMask(maskArray).check(dsp);
+                    case LaneType.SK_FLOAT  -> new FloatMaxVector.FloatMaxMask(maskArray).check(dsp);
+                    case LaneType.SK_DOUBLE -> new DoubleMaxVector.DoubleMaxMask(maskArray).check(dsp);
+                    default                 -> throw new AssertionError(dsp);
+                }
+            );
         }
 
         @Override
@@ -604,9 +594,9 @@ final class LongMaxVector extends LongVector {
                     this.getClass(), ETYPE, VLENGTH,
                     dmtype, dtype, VLENGTH,
                     this, species,
-                    LongMaxMask::defaultMaskReinterpret);
+                    LongMaxMask::defaultMaskCast);
             }
-            return this.defaultMaskReinterpret(species);
+            return this.defaultMaskCast(species);
         }
 
         // Unary operations
