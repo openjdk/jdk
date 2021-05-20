@@ -5948,16 +5948,19 @@ address generate_avx_ghash_processBlocks() {
     __ evmovdquq(input2, Address(source, start_offset, Address::times_1, 0x80), Assembler::AVX_512bit);
     __ evmovdquq(input3, Address(source, start_offset, Address::times_1, 0xc0), Assembler::AVX_512bit);
 
+    // Copy the low part of the lookup table into the destination of the permutation
     __ evmovdqaq(translated0, lookup_lo, Assembler::AVX_512bit);
     __ evmovdqaq(translated1, lookup_lo, Assembler::AVX_512bit);
     __ evmovdqaq(translated2, lookup_lo, Assembler::AVX_512bit);
     __ evmovdqaq(translated3, lookup_lo, Assembler::AVX_512bit);
 
+    // Translate the base64 input into "decoded" bytes
     __ evpermt2b(translated0, input0, lookup_hi, Assembler::AVX_512bit);
     __ evpermt2b(translated1, input1, lookup_hi, Assembler::AVX_512bit);
     __ evpermt2b(translated2, input2, lookup_hi, Assembler::AVX_512bit);
     __ evpermt2b(translated3, input3, lookup_hi, Assembler::AVX_512bit);
 
+    // OR all of the translations together to check for errors (high-order bit of byte set)
     __ vpternlogd(t0, 0xfe, input1, input2, Assembler::AVX_512bit);
 
     __ vpternlogd(t1, 0xfe, translated0, translated1, Assembler::AVX_512bit);
@@ -5966,22 +5969,33 @@ address generate_avx_ghash_processBlocks() {
     __ evmovdqaq(errorvec, t0, Assembler::AVX_512bit);
     __ vpternlogd(errorvec, 0xfe, t1, t2, Assembler::AVX_512bit);
 
-    // Check if there was an error - if so, try 64-byte chunks
+    // Check if there was an error - if so, try 64-byte chunks - may be MIME
     __ evpmovb2m(k3, errorvec, Assembler::AVX_512bit);
     __ kortestql(k3, k3);
     __ vpxor(errorvec, errorvec, errorvec, Assembler::AVX_512bit);
     __ jcc(Assembler::notZero, L_process64);
 
+    // The merging and shuffling happens here
+    // We multiply each byte pair [00dddddd | 00cccccc | 00bbbbbb | 00aaaaaa]
+    // Multiply [00cccccc] by 2^6 added to [00dddddd] to get [0000cccc | ccdddddd]
+    // The pack16_op is a vector of 0x01400140, so multiply D by 1 and C by 0x40
     __ vpmaddubsw(merge_ab_bc0, translated0, tmp16_op3, Assembler::AVX_512bit);
     __ vpmaddubsw(merge_ab_bc1, translated1, tmp16_op2, Assembler::AVX_512bit);
     __ vpmaddubsw(merge_ab_bc2, translated2, tmp16_op1, Assembler::AVX_512bit);
     __ vpmaddubsw(merge_ab_bc3, translated3, pack16_op, Assembler::AVX_512bit);
 
+    // Now do the same with packed 16-bit values.
+    // We start with [0000cccc | ccdddddd | 0000aaaa | aabbbbbb]
+    // pack32_op is 0x00011000 (2^12, 1), so this multiplies [0000aaaa | aabbbbbb] by 2^12
+    // and adds [0000cccc | ccdddddd] to yield [00000000 | aaaaaabb | bbbbcccc | ccdddddd]
     __ vpmaddwd(merged0, merge_ab_bc0, tmp32_op2, Assembler::AVX_512bit);
     __ vpmaddwd(merged1, merge_ab_bc1, tmp32_op1, Assembler::AVX_512bit);
     __ vpmaddwd(merged2, merge_ab_bc2, tmp32_op3, Assembler::AVX_512bit);
     __ vpmaddwd(merged3, merge_ab_bc3, pack32_op, Assembler::AVX_512bit);
 
+    // The join vectors specify which byte from which vector goes into the outputs
+    // One of every 4 bytes in the extended vector is zero, so we pack them into their
+    // final positions in the register for storing (256 bytes in, 192 bytes out)
     __ evpermt2b(arr01, join01, merged1, Assembler::AVX_512bit);
     __ evpermt2b(arr12, join12, merged2, Assembler::AVX_512bit);
     __ evpermt2b(arr23, join23, merged3, Assembler::AVX_512bit);
@@ -6021,7 +6035,6 @@ address generate_avx_ghash_processBlocks() {
     // Check for error and bomb out before updating dest
     __ evpmovb2m(k3, errorvec, Assembler::AVX_512bit);
     __ kortestql(k3, k3);
-    __ vpxor(errorvec, errorvec, errorvec, Assembler::AVX_512bit);
     __ jcc(Assembler::notZero, L_exit);
 
     __ evmovdqaq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
@@ -6051,7 +6064,6 @@ address generate_avx_ghash_processBlocks() {
     // Check for error and bomb out before updating dest
     __ evpmovb2m(k3, errorvec, Assembler::AVX_512bit);
     __ kortestql(k3, k3);
-    __ vpxor(errorvec, errorvec, errorvec, Assembler::AVX_512bit);
     __ jcc(Assembler::notZero, L_exit);
 
     __ vpmaddubsw(xmm0, xmm0, xmm2, Assembler::AVX_512bit);
@@ -6079,7 +6091,6 @@ address generate_avx_ghash_processBlocks() {
     // Check for error and bomb out before updating dest
     __ evpmovb2m(k3, errorvec, Assembler::AVX_512bit);
     __ kortestql(k3, k3);
-    __ vpxor(errorvec, errorvec, errorvec, Assembler::AVX_512bit);
     __ jcc(Assembler::notZero, L_exit);
 
     __ vpermb(xmm1, xmm4, xmm1, Assembler::AVX_512bit);
