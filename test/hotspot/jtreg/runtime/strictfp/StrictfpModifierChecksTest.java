@@ -64,7 +64,7 @@ public class StrictfpModifierChecksTest {
 
         for (String version61ClassName : List.of("AbstractStrictfpMethod61",
                                                  "AbstractStrictfpIntMethod61")) {
-            // Same combination of modifiers is accpeted in class file version 61
+            // Same combination of modifiers is accepted in class file version 61
             Class<?> newClass = Class.forName(version61ClassName);
             // Should succeed without an exception
         }
