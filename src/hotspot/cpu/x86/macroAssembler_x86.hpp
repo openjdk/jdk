@@ -1154,22 +1154,6 @@ public:
   }
   void evmovdquq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register scratch_reg);
 
-  void evmovdqaq(XMMRegister dst, Address src, int vector_len) { Assembler::evmovdqaq(dst, src, vector_len); }
-  void evmovdqaq(Address dst, XMMRegister src, int vector_len) { Assembler::evmovdqaq(dst, src, vector_len); }
-  void evmovdqaq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch);
-  void evmovdqaq(XMMRegister dst, XMMRegister src, int vector_len) {
-    if (dst->encoding() == src->encoding()) return;
-    Assembler::evmovdqaq(dst, src, vector_len);
-  }
-  void evmovdqaq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdqaq(dst, mask, src, merge, vector_len); }
-  void evmovdqaq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len) { Assembler::evmovdqaq(dst, mask, src, merge, vector_len); }
-  void evmovdqaq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
-    if (dst->encoding() == src->encoding() && mask == k0) return;
-    Assembler::evmovdqaq(dst, mask, src, merge, vector_len);
-  }
-  void evmovdqaq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register scratch_reg);
-  void evmovdqaq(AddressLiteral dst, XMMRegister src, int vector_len, Register rscratch);// { Assembler::evmovdqaq(dst, src, vector_len, rscratch); }
-
   // Move Aligned Double Quadword
   void movdqa(XMMRegister dst, Address src)       { Assembler::movdqa(dst, src); }
   void movdqa(XMMRegister dst, XMMRegister src)   { Assembler::movdqa(dst, src); }

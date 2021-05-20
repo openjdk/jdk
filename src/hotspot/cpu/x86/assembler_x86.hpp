@@ -1536,12 +1536,6 @@ private:
   void evmovdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdquq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
   void evmovdquq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
-  void evmovdqaq(Address dst, XMMRegister src, int vector_len);
-  void evmovdqaq(XMMRegister dst, Address src, int vector_len);
-  void evmovdqaq(XMMRegister dst, XMMRegister src, int vector_len);
-  void evmovdqaq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
-  void evmovdqaq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
-  void evmovdqaq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
   // Move lower 64bit to high 64bit in 128bit register
   void movlhps(XMMRegister dst, XMMRegister src);
@@ -1819,8 +1813,7 @@ private:
   // Multiply add
   void pmaddwd(XMMRegister dst, XMMRegister src);
   void vpmaddwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
-  void vpmaddubsw(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
-  void vpmaddubsw(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
+  void evpmaddubsw(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
 
   // Multiply add accumulate
   void evpdpwssd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -2158,7 +2151,6 @@ private:
   void bzhiq(Register dst, Register src1, Register src2);
 
   //====================VECTOR ARITHMETIC=====================================
-  void evpmovb2m(KRegister kdst, XMMRegister src, int vector_len);
   void evpmovd2m(KRegister kdst, XMMRegister src, int vector_len);
   void evpmovq2m(KRegister kdst, XMMRegister src, int vector_len);
 
@@ -2530,7 +2522,7 @@ private:
   void evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, Address src,
                int comparison, int vector_len);
 
-//  void evpmovb2m(KRegister dst, XMMRegister src, int vector_len);
+  void evpmovb2m(KRegister dst, XMMRegister src, int vector_len);
 
   // Vector blends
   void blendvps(XMMRegister dst, XMMRegister src);

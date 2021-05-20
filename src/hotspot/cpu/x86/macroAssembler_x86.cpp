@@ -2633,34 +2633,6 @@ void MacroAssembler::evmovdquq(XMMRegister dst, AddressLiteral src, int vector_l
   }
 }
 
-void MacroAssembler::evmovdqaq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge,
-                               int vector_len, Register scratch_reg) {
-  if (reachable(src)) {
-    Assembler::evmovdqaq(dst, mask, as_Address(src), merge, vector_len);
-  } else {
-    lea(scratch_reg, src);
-    Assembler::evmovdqaq(dst, mask, Address(scratch_reg, 0), merge, vector_len);
-  }
-}
-
-void MacroAssembler::evmovdqaq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
-  if (reachable(src)) {
-    Assembler::evmovdqaq(dst, as_Address(src), vector_len);
-  } else {
-    lea(rscratch, src);
-    Assembler::evmovdqaq(dst, Address(rscratch, 0), vector_len);
-  }
-}
-
-void MacroAssembler::evmovdqaq(AddressLiteral dst, XMMRegister src, int vector_len, Register rscratch) {
-  if (reachable(dst)) {
-    Assembler::evmovdqaq(as_Address(dst), src, vector_len);
-  } else {
-    lea(rscratch, dst);
-    Assembler::evmovdqaq(Address(rscratch, 0), src, vector_len);
-  }
-}
-
 void MacroAssembler::movdqa(XMMRegister dst, AddressLiteral src) {
   if (reachable(src)) {
     Assembler::movdqa(dst, as_Address(src));
