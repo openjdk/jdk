@@ -34,6 +34,7 @@ import java.text.ParseException;
 import java.text.RuleBasedCollator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -54,6 +55,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
@@ -488,7 +490,6 @@ public class Utils {
         return configuration.workArounds.definesSerializableFields( aclass);
     }
 
-    @SuppressWarnings("preview")
     public String modifiersToString(Element e, boolean trailingSpace) {
         SortedSet<Modifier> modifiers = new TreeSet<>(e.getModifiers());
         modifiers.remove(NATIVE);
@@ -2988,29 +2989,12 @@ public class Utils {
      * @param e the Element to check.
      * @return the set of preview language features used to declare the given element
      */
-    @SuppressWarnings("preview")
     public Set<DeclarationPreviewLanguageFeatures> previewLanguageFeaturesUsed(Element e) {
-        Set<DeclarationPreviewLanguageFeatures> result = new HashSet<>();
-
-        if ((e.getKind().isClass() || e.getKind().isInterface()) &&
-            e.getModifiers().contains(Modifier.SEALED)) {
-            List<? extends TypeMirror> permits = ((TypeElement) e).getPermittedSubclasses();
-            boolean hasLinkablePermits = permits.stream()
-                                                .anyMatch(t -> isLinkable(asTypeElement(t)));
-            if (hasLinkablePermits) {
-                result.add(DeclarationPreviewLanguageFeatures.SEALED_PERMITS);
-            } else {
-                result.add(DeclarationPreviewLanguageFeatures.SEALED);
-            }
-        }
-
-        return result;
+        return new HashSet<>();
     }
 
     public enum DeclarationPreviewLanguageFeatures {
-
-        SEALED(List.of("sealed")),
-        SEALED_PERMITS(List.of("sealed", "permits"));
+        NONE(List.of(""));
         public final List<String> features;
 
         DeclarationPreviewLanguageFeatures(List<String> features) {
@@ -3018,7 +3002,6 @@ public class Utils {
         }
     }
 
-    @SuppressWarnings("preview")
     public PreviewSummary declaredUsingPreviewAPIs(Element el) {
         List<TypeElement> usedInDeclaration = new ArrayList<>();
         usedInDeclaration.addAll(annotations2Classes(el));
