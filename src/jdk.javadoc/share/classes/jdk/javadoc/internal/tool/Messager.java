@@ -25,7 +25,7 @@
 
 package jdk.javadoc.internal.tool;
 
-
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -137,17 +137,25 @@ public class Messager extends Log implements Reporter {
     private final JavacMessages messages;
     private final JCDiagnostic.Factory javadocDiags;
 
-    /** The default writer for diagnostics
-     */
-    static final PrintWriter defaultOutWriter = new PrintWriter(System.out);
-    static final PrintWriter defaultErrWriter = new PrintWriter(System.err);
+    private static PrintWriter createPrintWriter(PrintStream ps, boolean autoflush) {
+        return new PrintWriter(ps, autoflush) {
+            // avoid closing system streams
+            @Override
+            public void close() {
+                super.flush();
+            }
+        };
+    }
 
     /**
      * Constructor
      * @param programName  Name of the program (for error messages).
      */
     public Messager(Context context, String programName) {
-        this(context, programName, defaultOutWriter, defaultErrWriter);
+        // use the current values of System.out, System,err, in case they have been redirected
+        this(context, programName,
+                createPrintWriter(System.out, false),
+                createPrintWriter(System.err, true));
     }
 
     /**
@@ -166,6 +174,16 @@ public class Messager extends Log implements Reporter {
         this.programName = programName;
         this.context = context;
         locale = Locale.getDefault();
+    }
+
+    @Override // Reporter
+    public PrintWriter getStandardWriter() {
+        return getWriter(Log.WriterKind.STDOUT);
+    }
+
+    @Override // Reporter
+    public PrintWriter getDiagnosticWriter() {
+        return getWriter(Log.WriterKind.STDERR);
     }
 
     public void setLocale(Locale locale) {
