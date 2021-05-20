@@ -37,13 +37,16 @@ static const u2 JFR_VERSION_MINOR = 1;
 // strictly monotone
 static jlong nanos_now() {
   static jlong last = 0;
-  // We use javaTimeMillis so this can be correlated with
-  // external timestamps.
-  const jlong now = os::javaTimeMillis() * JfrTimeConverter::NANOS_PER_MILLISEC;
+
+  jlong seconds;
+  jlong nanos;
+  // Use same clock source as Instant.now() to ensure
+  // that Recording::getStopTime() returns an Instant that
+  // is in sync.
+  os::javaTimeSystemUTC(seconds, nanos);
+  const jlong now = seconds * 1000000000 + nanos;
   if (now > last) {
     last = now;
-  } else {
-    ++last;
   }
   return last;
 }
