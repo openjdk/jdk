@@ -76,7 +76,7 @@ import sun.security.util.SecurityConstants;
  * @since 1.2
  * @revised 9
  */
-public class AccessibleObject implements AnnotatedElement {
+public sealed class AccessibleObject implements AnnotatedElement permits Executable, Field {
     static {
         // AccessibleObject is initialized early in initPhase1
         SharedSecrets.setJavaLangReflectAccess(new ReflectAccess());
