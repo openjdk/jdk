@@ -38,21 +38,15 @@ public class TestVoidHtmlElements {
     public static void main(String[] args) {
         int checks = 0;
 
+        // For tags that are represented as both an HtmlTag and a TagName,
+        // check that the definition of void-ness is the same.
         for (HtmlTag htmlTag : HtmlTag.values()) {
             try {
                 TagName tagName = TagName.valueOf(htmlTag.name());
                 checks++;
                 check(htmlTag, tagName);
             } catch (IllegalArgumentException e) {
-            }
-        }
-
-        for (TagName tagName : TagName.values()) {
-            try {
-                HtmlTag htmlTag = HtmlTag.valueOf(tagName.name());
-                checks++;
-                check(htmlTag, tagName);
-            } catch (IllegalArgumentException e) {
+                // no matching TagName
             }
         }
 
