@@ -393,8 +393,8 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         // Not needed for runtime installer and it might break runtime installer
         // if parent does not have any other files
         if (!StandardBundlerParam.isRuntimeInstaller(params)) {
-            Path[] list = Files.list(rootDir).toArray(Path[]::new);
-            if (list != null) { // Should not happend
+            try (var fileList = Files.list(rootDir)) {
+                Path[] list = fileList.toArray(Path[]::new);
                 // We should only have app image and/or .DS_Store
                 if (list.length == 1) {
                     return rootDir.toString();
