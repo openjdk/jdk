@@ -51,7 +51,7 @@ public class LinkOutputImpl implements LinkOutput {
 
     @Override
     public void append(Object o) {
-        output.append(o.toString());
+        output.append(o instanceof String s ? s : ((LinkOutputImpl) o).toString());
     }
 
     @Override
