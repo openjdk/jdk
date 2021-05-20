@@ -152,13 +152,10 @@ try (ResourceScope scope = ResourceScope.newSharedScope()) {
 }
  * }</pre></blockquote>
  *
- * @apiNote In the future, if the Java language permits, {@link MemorySegment}
- * may become a {@code sealed} interface, which would prohibit subclassing except by other explicitly permitted subtypes.
- *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public interface MemorySegment extends Addressable {
+public sealed interface MemorySegment extends Addressable permits AbstractMemorySegmentImpl {
 
     /**
      * The base memory address associated with this memory segment.

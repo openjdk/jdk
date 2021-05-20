@@ -49,7 +49,7 @@ import java.util.Objects;
  * shared scopes use a more sophisticated synchronization mechanism, which guarantees that no concurrent
  * access is possible when a scope is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
-public abstract class ResourceScopeImpl implements ResourceScope, ScopedMemoryAccess.Scope, SegmentAllocator {
+public abstract non-sealed class ResourceScopeImpl implements ResourceScope, ScopedMemoryAccess.Scope, SegmentAllocator {
 
     final ResourceList resourceList;
 
@@ -151,7 +151,7 @@ public abstract class ResourceScopeImpl implements ResourceScope, ScopedMemoryAc
     /**
      * Internal interface used to implement resource scope handles.
      */
-    interface HandleImpl extends ResourceScope.Handle, ScopedMemoryAccess.Scope.Handle {
+    public non-sealed interface HandleImpl extends ResourceScope.Handle, ScopedMemoryAccess.Scope.Handle {
 
         @Override
         ResourceScopeImpl scope();

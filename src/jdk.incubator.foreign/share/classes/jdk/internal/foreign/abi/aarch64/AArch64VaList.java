@@ -46,7 +46,7 @@ import static jdk.internal.foreign.abi.SharedUtils.checkCompatibleType;
 import static jdk.internal.foreign.abi.SharedUtils.vhPrimitiveOrAddress;
 import static jdk.internal.foreign.abi.aarch64.CallArranger.MAX_REGISTER_ARGUMENTS;
 
-public class AArch64VaList implements VaList {
+public non-sealed class AArch64VaList implements VaList {
     private static final Unsafe U = Unsafe.getUnsafe();
 
     static final Class<?> CARRIER = MemoryAddress.class;
@@ -397,7 +397,7 @@ public class AArch64VaList implements VaList {
             + '}';
     }
 
-    static class Builder implements VaList.Builder {
+    public static non-sealed class Builder implements VaList.Builder {
         private final ResourceScope scope;
         private final MemorySegment gpRegs;
         private final MemorySegment fpRegs;

@@ -46,7 +46,7 @@ import static jdk.internal.foreign.abi.SharedUtils.checkCompatibleType;
 import static jdk.internal.foreign.abi.SharedUtils.vhPrimitiveOrAddress;
 
 // See https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf "3.5.7 Variable Argument Lists"
-public class SysVVaList implements VaList {
+public non-sealed class SysVVaList implements VaList {
     private static final Unsafe U = Unsafe.getUnsafe();
 
     static final Class<?> CARRIER = MemoryAddress.class;
@@ -340,7 +340,7 @@ public class SysVVaList implements VaList {
                + '}';
     }
 
-    static class Builder implements VaList.Builder {
+    public static non-sealed class Builder implements VaList.Builder {
         private final ResourceScope scope;
         private final MemorySegment reg_save_area;
         private long currentGPOffset = 0;

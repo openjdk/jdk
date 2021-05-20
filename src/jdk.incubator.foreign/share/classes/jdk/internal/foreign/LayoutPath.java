@@ -317,7 +317,7 @@ public class LayoutPath {
      * This class provides an immutable implementation for the {@code PathElement} interface. A path element implementation
      * is simply a pointer to one of the selector methods provided by the {@code LayoutPath} class.
      */
-    public static class PathElementImpl implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
+    public static final class PathElementImpl implements MemoryLayout.PathElement, UnaryOperator<LayoutPath> {
 
         public enum PathKind {
             SEQUENCE_ELEMENT("unbound sequence element"),

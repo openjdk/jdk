@@ -140,13 +140,10 @@ try {
  * clients can use e.g. {@link java.lang.ref.Reference#reachabilityFence(Object)} to make sure that resources associated
  * with implicit scopes are not released prematurely. That said, the above code snippet works (trivially) for implicit scopes too.
  *
- * @apiNote In the future, if the Java language permits, {@link ResourceScope}
- * may become a {@code sealed} interface, which would prohibit subclassing except by other explicitly permitted subtypes.
- *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public interface ResourceScope extends AutoCloseable {
+public sealed interface ResourceScope extends AutoCloseable permits ResourceScopeImpl {
     /**
      * Is this resource scope alive?
      * @return true, if this resource scope is alive.
@@ -218,7 +215,7 @@ public interface ResourceScope extends AutoCloseable {
      * Once obtained, resource scope handles can be {@linkplain #release(Handle)} released}; an explicit resource scope can
      * be closed only <em>after</em> all the resource scope handles acquired from it have been released.
      */
-    interface Handle {
+    sealed interface Handle permits ResourceScopeImpl.HandleImpl {
 
         /**
          * Returns the resource scope associated with this handle.

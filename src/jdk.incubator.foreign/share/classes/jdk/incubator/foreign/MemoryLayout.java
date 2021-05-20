@@ -194,14 +194,10 @@ long offset2 = (long) offsetHandle.invokeExact(2L); // 16
  * is the <em>layout name</em> (see {@link #LAYOUT_NAME}), a custom name that can be associated with memory layouts and that can be referred to when
  * constructing <a href="MemoryLayout.html#layout-paths"><em>layout paths</em></a>.
  *
- * @apiNote In the future, if the Java language permits, {@link MemoryLayout}
- * may become a {@code sealed} interface, which would prohibit subclassing except by
- * explicitly permitted types.
- *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public interface MemoryLayout extends Constable {
+public sealed interface MemoryLayout extends Constable permits AbstractLayout, SequenceLayout, GroupLayout, PaddingLayout, ValueLayout {
 
     /**
      * Returns an {@link Optional} containing the nominal descriptor for this
@@ -605,14 +601,10 @@ public interface MemoryLayout extends Constable {
      * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
      * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
      *
-     * @apiNote In the future, if the Java language permits, {@link PathElement}
-     * may become a {@code sealed} interface, which would prohibit subclassing except by
-     * explicitly permitted types.
-     *
      * @implSpec
      * Implementations of this interface are immutable and thread-safe.
      */
-    interface PathElement {
+    sealed interface PathElement permits LayoutPath.PathElementImpl {
 
         /**
          * Returns a path element which selects a member layout with given name from a given group layout.

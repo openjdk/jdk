@@ -48,7 +48,7 @@ import static java.lang.constant.ConstantDescs.BSM_INVOKE;
 import static java.lang.constant.ConstantDescs.CD_String;
 import static java.lang.constant.ConstantDescs.CD_long;
 
-abstract class AbstractLayout implements MemoryLayout {
+abstract non-sealed class AbstractLayout implements MemoryLayout {
 
     private final OptionalLong size;
     final long alignment;

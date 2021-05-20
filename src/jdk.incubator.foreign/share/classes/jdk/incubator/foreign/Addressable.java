@@ -30,11 +30,6 @@ package jdk.incubator.foreign;
  * a memory address instance (see {@link #address()}). Examples of addressable types are {@link MemorySegment},
  * {@link MemoryAddress} and {@link CLinker.VaList}.
  *
- * @apiNote In the future, if the Java language permits, {@link Addressable}
- * may become a {@code sealed} interface, which would prohibit subclassing except by
- * explicitly permitted types, such as {@link MemorySegment}, {@link MemoryAddress}
- * and {@link CLinker.VaList}.
- *
  * @implSpec
  * Implementations of this interface are <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */

@@ -25,9 +25,13 @@
  */
 package jdk.incubator.foreign;
 
+import jdk.internal.foreign.AbstractCLinker;
 import jdk.internal.foreign.NativeMemorySegmentImpl;
 import jdk.internal.foreign.PlatformLayouts;
 import jdk.internal.foreign.abi.SharedUtils;
+import jdk.internal.foreign.abi.aarch64.AArch64VaList;
+import jdk.internal.foreign.abi.x64.sysv.SysVVaList;
+import jdk.internal.foreign.abi.x64.windows.WinVaList;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
@@ -101,14 +105,10 @@ import static jdk.internal.foreign.PlatformLayouts.*;
  * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
  * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  *
- * @apiNote In the future, if the Java language permits, {@link CLinker}
- * may become a {@code sealed} interface, which would prohibit subclassing except by
- * explicitly permitted types.
- *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public interface CLinker {
+public sealed interface CLinker permits AbstractCLinker {
 
     /**
      * Returns the C linker for the current platform.
@@ -174,7 +174,6 @@ public interface CLinker {
      * If the provided method type's return type is {@code MemorySegment}, then the resulting method handle features an
      * additional prefix parameter (inserted immediately after the address parameter), of type {@link SegmentAllocator}),
      * which will be used by the linker runtime to allocate structs returned by-value.
-     * <p>
      *
      * @see LibraryLookup#lookup(String)
      *
@@ -498,13 +497,8 @@ public interface CLinker {
      *
      * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
      * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
-     *
-     * @apiNote In the future, if the Java language permits, {@link VaList}
-     * may become a {@code sealed} interface, which would prohibit subclassing except by
-     * explicitly permitted types.
-     *
      */
-    interface VaList extends Addressable {
+    sealed interface VaList extends Addressable permits WinVaList, SysVVaList, AArch64VaList, SharedUtils.EmptyVaList {
 
         /**
          * Reads the next value as an {@code int} and advances this va list's position.
@@ -709,13 +703,8 @@ public interface CLinker {
          *
          * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
          * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
-         *
-         * @apiNote In the future, if the Java language permits, {@link Builder}
-         * may become a {@code sealed} interface, which would prohibit subclassing except by
-         * explicitly permitted types.
-         *
          */
-        interface Builder {
+        sealed interface Builder permits WinVaList.Builder, SysVVaList.Builder, AArch64VaList.Builder {
 
             /**
              * Adds a native value represented as an {@code int} to the C {@code va_list} being constructed.

@@ -52,7 +52,7 @@ import java.util.stream.StreamSupport;
  * are defined for each memory segment kind, see {@link NativeMemorySegmentImpl}, {@link HeapMemorySegmentImpl} and
  * {@link MappedMemorySegmentImpl}.
  */
-public abstract class AbstractMemorySegmentImpl extends MemorySegmentProxy implements MemorySegment {
+public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegmentProxy implements MemorySegment {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 

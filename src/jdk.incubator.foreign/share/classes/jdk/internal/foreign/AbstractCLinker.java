@@ -36,7 +36,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Objects;
 
-public abstract class AbstractCLinker implements CLinker {
+public abstract non-sealed class AbstractCLinker implements CLinker {
 
     public final MethodHandle downcallHandle(Addressable symbol, MethodType type, FunctionDescriptor function) {
         Objects.requireNonNull(symbol);

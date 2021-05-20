@@ -58,14 +58,10 @@ import java.lang.ref.Cleaner;
  * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
  * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  *
- * @apiNote In the future, if the Java language permits, {@link MemoryAddress}
- * may become a {@code sealed} interface, which would prohibit subclassing except by
- * explicitly permitted types.
- *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public interface MemoryAddress extends Addressable {
+public sealed interface MemoryAddress extends Addressable permits MemoryAddressImpl {
 
     @Override
     default MemoryAddress address() {

@@ -66,7 +66,7 @@ MemoryLayout.structLayout(
  * @implSpec
  * This class is immutable and thread-safe.
  */
-public final class SequenceLayout extends AbstractLayout {
+public final class SequenceLayout extends AbstractLayout implements MemoryLayout {
 
     private final OptionalLong elemCount;
     private final MemoryLayout elementLayout;

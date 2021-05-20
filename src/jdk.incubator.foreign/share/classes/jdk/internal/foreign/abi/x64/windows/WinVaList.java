@@ -55,7 +55,7 @@ import static jdk.internal.foreign.PlatformLayouts.Win64.C_POINTER;
 //            ? **(t**)((ap += sizeof(__int64)) - sizeof(__int64))             \
 //            :  *(t* )((ap += sizeof(__int64)) - sizeof(__int64)))
 //
-class WinVaList implements VaList {
+public non-sealed class WinVaList implements VaList {
     public static final Class<?> CARRIER = MemoryAddress.class;
     private static final long VA_SLOT_SIZE_BYTES = 8;
     private static final VarHandle VH_address = MemoryHandles.asAddressVarHandle(C_POINTER.varHandle(long.class));
@@ -170,7 +170,7 @@ class WinVaList implements VaList {
         return segment.address();
     }
 
-    static class Builder implements VaList.Builder {
+    public static non-sealed class Builder implements VaList.Builder {
 
         private final ResourceScope scope;
         private final List<SimpleVaArg> args = new ArrayList<>();

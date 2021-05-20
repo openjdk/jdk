@@ -531,7 +531,7 @@ public class SharedUtils {
         }
     }
 
-    public static class EmptyVaList implements VaList {
+    public static non-sealed class EmptyVaList implements VaList {
 
         private final MemoryAddress address;
 
