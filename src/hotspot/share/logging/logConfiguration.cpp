@@ -554,7 +554,7 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->cr();
   out->print_cr("\nAsynchronous logging(off by default):");
   out->print_cr(" -Xlog:async");
-  out->print_cr("  All log messages write to an intermediate buffer first and then will be flushed"
+  out->print_cr("  All log messages are written to an intermediate buffer first and will then be flushed"
                 " to the corresponding log outputs by a standalone thread. Write operations at logsites are"
                 " guaranteed non-blocking.");
   out->cr();
@@ -603,7 +603,7 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
 
   out->print_cr(" -Xlog:async -Xlog:gc=debug:file=gc.log -Xlog:safepoint=trace");
   out->print_cr("\t Write logs asynchronously. Enable messages tagged with 'safepoint' up to 'trace' level to stdout ");
-  out->print_cr("\t and messages tagged with 'gc' up to 'trace' level to file 'gc.log'.");
+  out->print_cr("\t and messages tagged with 'gc' up to 'debug' level to file 'gc.log'.");
 }
 
 void LogConfiguration::rotate_all_outputs() {

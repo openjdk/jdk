@@ -22,14 +22,12 @@
  *
  */
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
-#include "logTestFixture.hpp"
-#include "logTestUtils.inline.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logMessage.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/vmOperations.hpp"
-#include "runtime/vmThread.hpp"
+#include "logTestFixture.hpp"
+#include "logTestUtils.inline.hpp"
 #include "unittest.hpp"
 
 class AsyncLogTest : public LogTestFixture {

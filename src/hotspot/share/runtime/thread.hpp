@@ -103,7 +103,7 @@ class JavaThread;
 //         - GangWorker
 //     - WatcherThread
 //     - JfrThreadSampler
-//     - LogAsyncFlusher
+//     - LogAsyncWriter
 //
 // All Thread subclasses must be either JavaThread or NonJavaThread.
 // This means !t->is_Java_thread() iff t is a NonJavaThread, or t is

@@ -86,7 +86,7 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
   }
 
   LinkedListNode<E>* head() const {
-    return static_cast<const LinkedList<E>* >(this)->head();
+    return this->_head;
   }
 };
 
@@ -111,7 +111,6 @@ typedef LinkedListDeque<AsyncLogMessage, mtLogging> AsyncLogBuffer;
 typedef KVHashtable<LogFileOutput*, uint32_t, mtLogging> AsyncLogMap;
 
 class AsyncLogWriter: public NonJavaThread {
- private:
   static AsyncLogWriter* _instance;
   static Semaphore _sem;
 
@@ -126,10 +125,9 @@ class AsyncLogWriter: public NonJavaThread {
   AsyncLogMap _stats; // statistics of dropping messages.
   AsyncLogBuffer _buffer;
 
-  // The memory use of each AsyncLogMessage(payload) consist of itself, a logDecoration object
-  // and a variable-length c-string message.
-  // A normal logging  message is smaller than vwrite_buffer_size, which is defined in logtagset.cpp
-  const size_t _buffer_max_size = {AsyncLogBufferSize / (sizeof(AsyncLogMessage) + sizeof(LogDecorations) + vwrite_buffer_size)};
+  // The memory use of each AsyncLogMessage(payload) consist of itself and a variable-length c-str message.
+  // A regular logging message is smaller than vwrite_buffer_size, which is defined in logtagset.cpp
+  const size_t _buffer_max_size = {AsyncLogBufferSize / (sizeof(AsyncLogMessage) + vwrite_buffer_size)};
 
   AsyncLogWriter();
   void enqueue_locked(const AsyncLogMessage& msg);

@@ -22,7 +22,6 @@
  *
  */
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
@@ -52,14 +51,9 @@ debug_only(intx AsyncLogLocker::_locking_thread_id = -1;)
 
 void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
   if (_buffer.size() >= _buffer_max_size)  {
-    const AsyncLogMessage* h = _buffer.front();
-    assert(h != NULL, "sanity check");
-
-    if (h->message() != nullptr) {
-      bool p_created;
-      uint32_t* counter = _stats.add_if_absent(h->output(), 0, &p_created);
-      *counter = *counter + 1;
-    }
+    bool p_created;
+    uint32_t* counter = _stats.add_if_absent(msg.output(), 0, &p_created);
+    *counter = *counter + 1;
     // drop the enqueueing message.
     return;
   }
@@ -122,19 +116,19 @@ class AsyncLogMapIterator {
 };
 
 void AsyncLogWriter::perform_IO() {
-  // use kind of copy-and-swap idiom here.
-  // Empty 'logs' 'swaps' the content with _buffer.
+  // Use kind of copy-and-swap idiom here.
+  // Empty 'logs' swaps the content with _buffer.
   // Along with logs destruction, all procceeded messages are deleted.
   //
-  // the atomic operation 'move' is done in O(1). All I/O jobs are done without lock.
-  // This guarantees I/O jobs don't block logsites.
+  // The operation 'pop_all()' is done in O(1). All I/O jobs are then performed without
+  // lock protection. This guarantees I/O jobs don't block logsites.
   AsyncLogBuffer logs;
   { // critical region
     AsyncLogLocker ml;
     AsyncLogMapIterator dropped_counters_iter(logs);
 
     _buffer.pop_all(&logs);
-    // append meta-message of dropped counters
+    // append meta-messages of dropped counters
     _stats.iterate(&dropped_counters_iter);
   }
 
@@ -172,10 +166,9 @@ void AsyncLogWriter::initialize() {
 
     if (self->_state == ThreadState::Initialized) {
       Atomic::release_store_fence(&AsyncLogWriter::_instance, self);
-      // all readers of _instance after fence see NULL,
-      // but we still need to ensure no active reader of any tagset.
-      // After then, we start AsyncLog Thread and it exclusively takes
-      // over all logging I/O.
+      // All readers of _instance after the fence see non-NULL.
+      // We make use LogOutputList's RCU counters to ensure all synchronous logsites have completed.
+      // After that, we start AsyncLog Thread and it exclusively takee over all logging I/O.
       for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
         ts->wait_until_no_readers();
       }
