@@ -121,6 +121,7 @@
          public boolean run(DocletEnvironment environment) {
              reporter.getStandardWriter().println("Writing to the standard writer");
              reporter.getDiagnosticWriter().println("Writing to the diagnostic writer");
+             // the following is little more than a null check for the locale
              reporter.print(Diagnostic.Kind.NOTE, "The locale is " + locale.getDisplayName());
              return true;
          }
