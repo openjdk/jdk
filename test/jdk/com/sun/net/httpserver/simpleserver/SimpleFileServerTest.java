@@ -107,10 +107,10 @@ public class SimpleFileServerTest {
                 <!DOCTYPE html>
                 <html>
                 <body>
-                <h2>Directory listing for &#x2F;</h2>
+                <h1>Directory listing for &#x2F;</h1>
                 <ul>
                 <li><a href="yFile.txt">yFile.txt</a></li>
-                </ul><p><hr>
+                </ul>
                 </body>
                 </html>
                 """;
@@ -166,10 +166,10 @@ public class SimpleFileServerTest {
                 <!DOCTYPE html>
                 <html>
                 <body>
-                <h2>Directory listing for &#x2F;</h2>
+                <h1>Directory listing for &#x2F;</h1>
                 <ul>
                 <li><a href="yFile.txt">yFile.txt</a></li>
-                </ul><p><hr>
+                </ul>
                 </body>
                 </html>
                 """.getBytes(UTF_8).length);
@@ -240,8 +240,18 @@ public class SimpleFileServerTest {
     }
 
     @Test
-    public void testNotFound() throws Exception {
-        var root = Files.createDirectory(CWD.resolve("testNotFound"));
+    public void testNotFoundGET() throws Exception {
+        var expectedBody = """
+                <!DOCTYPE html>
+                <html>
+                <body>
+                <h1>File not found</h1>
+                <p>&#x2F;doesNotExist.txt<p>
+                </body>
+                </html>
+                """;
+        var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
+        var root = Files.createDirectory(CWD.resolve("testNotFoundGET"));
 
         var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
         ss.start();
@@ -250,8 +260,37 @@ public class SimpleFileServerTest {
             var request = HttpRequest.newBuilder(uri(ss, "doesNotExist.txt")).build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 404);
-            assertEquals(response.headers().firstValue("content-length").get(), "48");
-            assertTrue(response.body().contains("not found"));  // TODO: why partial html reply?
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.body(), expectedBody);
+        } finally {
+            ss.stop(0);
+        }
+    }
+
+    @Test
+    public void testNotFoundHEAD() throws Exception {
+        var expectedBody = """
+                <!DOCTYPE html>
+                <html>
+                <body>
+                <h1>File not found</h1>
+                <p>&#x2F;doesNotExist.txt<p>
+                </body>
+                </html>
+                """;
+        var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
+        var root = Files.createDirectory(CWD.resolve("testNotFoundHEAD"));
+
+        var ss = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.NONE);
+        ss.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(ss, "doesNotExist.txt"))
+                    .method("HEAD", BodyPublishers.noBody()).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 404);
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.body(), "");
         } finally {
             ss.stop(0);
         }

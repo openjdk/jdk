@@ -140,12 +140,13 @@ public final class FileServerHandler implements HttpHandler {
     }
 
     void handleNotFound(HttpExchange exchange) throws IOException {
-        var bytes = ("<h2>File not found</h2>"
-                + sanitize.apply(exchange.getRequestURI().getPath(), chars)
-                + "<p>").getBytes();
+        var bytes = (openHTML
+                + "<h1>File not found</h1>\n"
+                + "<p>" + sanitize.apply(exchange.getRequestURI().getPath(), chars) + "<p>\n"
+                + closeHTML).getBytes(UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
 
-        if (exchange.getRequestMethod().equals("HEAD")) {  // no response body
+        if (exchange.getRequestMethod().equals("HEAD")) {
             exchange.getResponseHeaders().set("Content-Length", Integer.toString(bytes.length));
             exchange.sendResponseHeaders(404, -1);
         } else {
@@ -235,22 +236,23 @@ public final class FileServerHandler implements HttpHandler {
             """;
 
     private static final String closeHTML = """
-            </ul><p><hr>
             </body>
             </html>
             """;
 
     String dirListing(HttpExchange exchange, Path path) throws IOException {
         var sb = new StringBuffer(openHTML
-                + "<h2>Directory listing for "
+                + "<h1>Directory listing for "
                 + sanitize.apply(exchange.getRequestURI().getPath(), chars)
-                + "</h2>\n" + "<ul>\n");
+                + "</h1>\n"
+                + "<ul>\n");
         Files.list(path)
                 .filter(p -> !isHiddenOrSymLink(p))
                 .map(p -> path.toUri().relativize(p.toUri()).toASCIIString())
-                .forEach(uri -> sb.append("<li><a href=\"" + uri
-                        + "\">" + sanitize.apply(uri, chars) + "</a></li>\n"));
+                .forEach(uri -> sb.append("<li><a href=\"" + uri + "\">" + sanitize.apply(uri, chars) + "</a></li>\n"));
+        sb.append("</ul>\n");
         sb.append(closeHTML);
+
         return sb.toString();
     }
 
