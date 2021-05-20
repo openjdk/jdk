@@ -41,7 +41,7 @@
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @requires vm.gc != "Z"
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseLargePages -XX:LargePageSizeInBytes=2m TestTracePageSizes
- * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseLargePages -XX:LargePageSizeInBytes=1g TestTracePageSizes
+ * @run main/othervm -XX:+AlwaysPreTouch -Xmx2g -Xlog:pagesize:ps-%p.log -XX:+UseLargePages -XX:LargePageSizeInBytes=1g TestTracePageSizes
  */
 
 /*
@@ -113,12 +113,6 @@ public class TestTracePageSizes {
     private static LinkedList<RangeWithPageSize> ranges = new LinkedList<>();
     private static boolean debug;
     private static int run;
-
-    private static long getKernelVersion() {
-        long kernelVersion = Platform.getOsVersionMajor() << 8 | Platform.getOsVersionMinor();
-        debug("kernelVersion " + Long.toHexString(kernelVersion));
-        return kernelVersion;
-    }
 
     // Copy smaps locally
     // (To minimize chances of concurrent modification when parsing, as well as helping with error analysis)
@@ -249,7 +243,8 @@ public class TestTracePageSizes {
         //  need at least kernel 3.8 to get the "VmFlags" tag in smaps.
         // (Note: its still good we started the VM at least since this serves as a nice
         //  test for all manners of large page options).
-        if (getKernelVersion() < 0x308) {
+        if (Platform.getOsVersionMajor() < 3 ||
+            (Platform.getOsVersionMajor() == 3 && Platform.getOsVersionMinor() < 8)) {
             throw new SkippedException("Kernel older than 3.8 - skipping this test.");
         }
 
@@ -340,6 +335,7 @@ class RangeWithPageSize {
         this.start = Long.parseUnsignedLong(start, 16);
         this.end = Long.parseUnsignedLong(end, 16);
         this.pageSize = Long.parseLong(pageSize);
+
         vmFlagHG = false;
         vmFlagHT = false;
         // Check if the vmFlags line include:
