@@ -112,6 +112,7 @@ public class TestMeetXor {
         testBound1S(r.nextInt());
         testBound2S(r.nextInt());
         testBound3S(r.nextInt(), r.nextInt());
+        testBound4S(r.nextInt());
     }
 
     public static void testBound1S(int i1) throws ArrayIndexOutOfBoundsException {
