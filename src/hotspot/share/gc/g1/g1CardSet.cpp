@@ -734,7 +734,6 @@ G1AddCardResult G1CardSet::add_card(uint card_region, uint card_in_region, bool 
     release_and_maybe_free_card_set(card_set);
   }
 
-  // Increment counters.
   if (increment_total && add_result == Added) {
     Atomic::inc(&table_entry->_num_occupied, memory_order_relaxed);
     Atomic::inc(&_num_occupied, memory_order_relaxed);

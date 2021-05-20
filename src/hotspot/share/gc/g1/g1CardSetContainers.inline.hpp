@@ -122,9 +122,19 @@ inline bool G1CardSetOnHeap::try_increment_refcount() {
 }
 
 inline uint64_t G1CardSetOnHeap::decrement_refcount() {
+  // There is no 64 bit Atomic::sub() for 32 bit platforms. Emulate using cmpxchg.
   uint64_t old_value = refcount();
-  assert((old_value & 0x1) != 0 && old_value >= 3, "precondition");
-  return Atomic::sub(&_ref_count, 2u);
+  while (true) {
+    assert((old_value & 0x1) != 0, "precondition");
+    assert(old_value >= 3, "precondition");
+
+    uint64_t new_value = old_value - 2;
+    uint64_t ref_count = Atomic::cmpxchg(&_ref_count, old_value, new_value);
+    if (ref_count == old_value) {
+      return new_value;
+    }
+    old_value = ref_count;
+  }
 }
 
 inline G1CardSetArray::G1CardSetArray(uint card_in_region, EntryCountType num_elems) :
