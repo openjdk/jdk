@@ -3673,6 +3673,12 @@ size_t os::Linux::default_large_page_size() {
   return _default_large_page_size;
 }
 
+void warn_no_large_pages_configured() {
+  if (!FLAG_IS_DEFAULT(UseLargePages)) {
+    log_warning(pagesize)("UseLargePages disabled, no large pages configured and available on the system.");
+  }
+}
+
 bool os::Linux::setup_large_page_type(size_t page_size) {
   if (FLAG_IS_DEFAULT(UseHugeTLBFS) &&
       FLAG_IS_DEFAULT(UseSHM) &&
@@ -3715,9 +3721,7 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
     UseSHM = false;
   }
 
-  if (!FLAG_IS_DEFAULT(UseLargePages)) {
-    log_warning(pagesize)("UseLargePages disabled, no large pages configured and available on the system.");
-  }
+  warn_no_large_pages_configured();
   return false;
 }
 
@@ -3746,6 +3750,8 @@ void os::large_page_init() {
   os::Linux::_default_large_page_size = default_large_page_size;
   if (default_large_page_size == 0) {
     // No large pages configured, return.
+    warn_no_large_pages_configured();
+    UseLargePages = false;
     UseTransparentHugePages = false;
     UseHugeTLBFS = false;
     UseSHM = false;
