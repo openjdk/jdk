@@ -576,19 +576,18 @@ final class ByteMaxVector extends ByteVector {
         @ForceInline
         private final <E>
         VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
+            assert(length() == dsp.laneCount());
             boolean[] maskArray = toArray();
             // enum-switches don't optimize properly JDK-8161245
-            return (
-                switch (dsp.laneType.switchKey) {
-                    case LaneType.SK_BYTE   -> new ByteMaxVector.ByteMaxMask(maskArray).check(dsp);
-                    case LaneType.SK_SHORT  -> new ShortMaxVector.ShortMaxMask(maskArray).check(dsp);
-                    case LaneType.SK_INT    -> new IntMaxVector.IntMaxMask(maskArray).check(dsp);
-                    case LaneType.SK_LONG   -> new LongMaxVector.LongMaxMask(maskArray).check(dsp);
-                    case LaneType.SK_FLOAT  -> new FloatMaxVector.FloatMaxMask(maskArray).check(dsp);
-                    case LaneType.SK_DOUBLE -> new DoubleMaxVector.DoubleMaxMask(maskArray).check(dsp);
-                    default                 -> throw new AssertionError(dsp);
-                }
-            );
+            return switch (dsp.laneType.switchKey) {
+                     case LaneType.SK_BYTE   -> new ByteMaxVector.ByteMaxMask(maskArray).check(dsp);
+                     case LaneType.SK_SHORT  -> new ShortMaxVector.ShortMaxMask(maskArray).check(dsp);
+                     case LaneType.SK_INT    -> new IntMaxVector.IntMaxMask(maskArray).check(dsp);
+                     case LaneType.SK_LONG   -> new LongMaxVector.LongMaxMask(maskArray).check(dsp);
+                     case LaneType.SK_FLOAT  -> new FloatMaxVector.FloatMaxMask(maskArray).check(dsp);
+                     case LaneType.SK_DOUBLE -> new DoubleMaxVector.DoubleMaxMask(maskArray).check(dsp);
+                     default                 -> throw new AssertionError(dsp);
+            };
         }
 
         @Override

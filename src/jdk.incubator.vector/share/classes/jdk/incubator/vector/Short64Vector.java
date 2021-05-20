@@ -582,19 +582,18 @@ final class Short64Vector extends ShortVector {
         @ForceInline
         private final <E>
         VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
+            assert(length() == dsp.laneCount());
             boolean[] maskArray = toArray();
             // enum-switches don't optimize properly JDK-8161245
-            return (
-                switch (dsp.laneType.switchKey) {
-                    case LaneType.SK_BYTE   -> new Byte64Vector.Byte64Mask(maskArray).check(dsp);
-                    case LaneType.SK_SHORT  -> new Short64Vector.Short64Mask(maskArray).check(dsp);
-                    case LaneType.SK_INT    -> new Int64Vector.Int64Mask(maskArray).check(dsp);
-                    case LaneType.SK_LONG   -> new Long64Vector.Long64Mask(maskArray).check(dsp);
-                    case LaneType.SK_FLOAT  -> new Float64Vector.Float64Mask(maskArray).check(dsp);
-                    case LaneType.SK_DOUBLE -> new Double64Vector.Double64Mask(maskArray).check(dsp);
-                    default                 -> throw new AssertionError(dsp);
-                }
-            );
+            return switch (dsp.laneType.switchKey) {
+                     case LaneType.SK_BYTE   -> new Byte64Vector.Byte64Mask(maskArray).check(dsp);
+                     case LaneType.SK_SHORT  -> new Short64Vector.Short64Mask(maskArray).check(dsp);
+                     case LaneType.SK_INT    -> new Int64Vector.Int64Mask(maskArray).check(dsp);
+                     case LaneType.SK_LONG   -> new Long64Vector.Long64Mask(maskArray).check(dsp);
+                     case LaneType.SK_FLOAT  -> new Float64Vector.Float64Mask(maskArray).check(dsp);
+                     case LaneType.SK_DOUBLE -> new Double64Vector.Double64Mask(maskArray).check(dsp);
+                     default                 -> throw new AssertionError(dsp);
+            };
         }
 
         @Override
