@@ -909,6 +909,29 @@ final class $vectortype$ extends $abstractvectortype$ {
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
 
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, $masktype$.class, $bitstype$.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper((($masktype$)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, $masktype$.class, $bitstype$.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper((($masktype$)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, $masktype$.class, $bitstype$.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper((($masktype$)m).getBits()));
+        }
+
         // Reductions
 
         @Override

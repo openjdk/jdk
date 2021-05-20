@@ -186,8 +186,7 @@ public class JavacParser implements Parser {
         this.allowYieldStatement = (!preview.isPreview(Feature.SWITCH_EXPRESSION) || preview.isEnabled()) &&
                 Feature.SWITCH_EXPRESSION.allowedInSource(source);
         this.allowRecords = Feature.RECORDS.allowedInSource(source);
-        this.allowSealedTypes = (!preview.isPreview(Feature.SEALED_CLASSES) || preview.isEnabled()) &&
-                Feature.SEALED_CLASSES.allowedInSource(source);
+        this.allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
     }
 
     protected AbstractEndPosTable newEndPosTable(boolean keepEndPositions) {

@@ -636,7 +636,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP("printing bug submit message")
 
-     if (should_report_bug(_id) && _verbose) {
+     if (should_submit_bug_report(_id) && _verbose) {
        print_bug_submit_message(st, _thread);
      }
 
@@ -1584,7 +1584,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     }
   }
 
-  static bool skip_bug_url = !should_report_bug(_id);
+  static bool skip_bug_url = !should_submit_bug_report(_id);
   if (!skip_bug_url) {
     skip_bug_url = true;
 

@@ -1647,16 +1647,14 @@ bool Dependencies::is_concrete_method(Method* m, Klass* k) {
   return true;
  }
 
-Klass* Dependencies::find_finalizable_subclass(Klass* k) {
-  if (k->is_interface())  return NULL;
-  if (k->has_finalizer()) return k;
-  k = k->subklass();
-  while (k != NULL) {
-    Klass* result = find_finalizable_subclass(k);
-    if (result != NULL) return result;
-    k = k->next_sibling();
+Klass* Dependencies::find_finalizable_subclass(InstanceKlass* ik) {
+  for (ClassHierarchyIterator iter(ik); !iter.done(); iter.next()) {
+    Klass* sub = iter.klass();
+    if (sub->has_finalizer() && !sub->is_interface()) {
+      return sub;
+    }
   }
-  return NULL;
+  return NULL; // not found
 }
 
 bool Dependencies::is_concrete_klass(ciInstanceKlass* k) {
@@ -1895,9 +1893,10 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
 }
 
 Klass* Dependencies::check_has_no_finalizable_subclasses(InstanceKlass* ctxk, NewKlassDepChange* changes) {
-  Klass* search_at = ctxk;
-  if (changes != NULL)
+  InstanceKlass* search_at = ctxk;
+  if (changes != NULL) {
     search_at = changes->new_type(); // just look at the new bit
+  }
   return find_finalizable_subclass(search_at);
 }
 

@@ -1996,7 +1996,7 @@ static void mark_from_roots_work(ParallelRootType::Value root_type, uint worker_
   cm->follow_marking_stacks();
 }
 
-static void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
+void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   ParCompactionManager* cm =
@@ -2017,7 +2017,6 @@ static void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
 }
 
 class MarkFromRootsTask : public AbstractGangTask {
-  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
   StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
   OopStorageSetStrongParState<false /* concurrent */, false /* is_const */> _oop_storage_set_par_state;
   SequentialSubTasksDone _subtasks;
@@ -2056,43 +2055,24 @@ public:
   }
 };
 
-class PCRefProcTask : public AbstractGangTask {
-  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
-  ProcessTask& _task;
-  uint _ergo_workers;
+class ParallelCompactRefProcProxyTask : public RefProcProxyTask {
   TaskTerminator _terminator;
 
 public:
-  PCRefProcTask(ProcessTask& task, uint ergo_workers) :
-      AbstractGangTask("PCRefProcTask"),
-      _task(task),
-      _ergo_workers(ergo_workers),
-      _terminator(_ergo_workers, ParCompactionManager::oop_task_queues()) {
+  ParallelCompactRefProcProxyTask(uint max_workers)
+    : RefProcProxyTask("ParallelCompactRefProcProxyTask", max_workers),
+      _terminator(_max_workers, ParCompactionManager::oop_task_queues()) {}
+
+  void work(uint worker_id) override {
+    assert(worker_id < _max_workers, "sanity");
+    ParCompactionManager* cm = (_tm == RefProcThreadModel::Single) ? ParCompactionManager::get_vmthread_cm() : ParCompactionManager::gc_thread_compaction_manager(worker_id);
+    PCMarkAndPushClosure keep_alive(cm);
+    ParCompactionManager::FollowStackClosure complete_gc(cm, (_tm == RefProcThreadModel::Single) ? nullptr : &_terminator, worker_id);
+    _rp_task->rp_work(worker_id, PSParallelCompact::is_alive_closure(), &keep_alive, &complete_gc);
   }
 
-  virtual void work(uint worker_id) {
-    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-    assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
-
-    ParCompactionManager* cm =
-      ParCompactionManager::gc_thread_compaction_manager(worker_id);
-    PCMarkAndPushClosure mark_and_push_closure(cm);
-    ParCompactionManager::FollowStackClosure follow_stack_closure(cm);
-    _task.work(worker_id, *PSParallelCompact::is_alive_closure(),
-               mark_and_push_closure, follow_stack_closure);
-
-    steal_marking_work(_terminator, worker_id);
-  }
-};
-
-class RefProcTaskExecutor: public AbstractRefProcTaskExecutor {
-  void execute(ProcessTask& process_task, uint ergo_workers) {
-    assert(ParallelScavengeHeap::heap()->workers().active_workers() == ergo_workers,
-           "Ergonomically chosen workers (%u) must be equal to active workers (%u)",
-           ergo_workers, ParallelScavengeHeap::heap()->workers().active_workers());
-
-    PCRefProcTask task(process_task, ergo_workers);
-    ParallelScavengeHeap::heap()->workers().run_task(&task);
+  void prepare_run_task_hook() override {
+    _terminator.reset_for_reuse(_queue_count);
   }
 };
 
@@ -2102,11 +2082,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   // Recursively traverse all live objects and mark them
   GCTraceTime(Info, gc, phases) tm("Marking Phase", &_gc_timer);
 
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   uint active_gc_threads = ParallelScavengeHeap::heap()->workers().active_workers();
-
-  PCMarkAndPushClosure mark_and_push_closure(cm);
-  ParCompactionManager::FollowStackClosure follow_stack_closure(cm);
 
   // Need new claim bits before marking starts.
   ClassLoaderDataGraph::clear_claimed_marks();
@@ -2126,16 +2102,8 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     ReferenceProcessorPhaseTimes pt(&_gc_timer, ref_processor()->max_num_queues());
 
     ref_processor()->set_active_mt_degree(active_gc_threads);
-    if (ref_processor()->processing_is_mt()) {
-      RefProcTaskExecutor task_executor;
-      stats = ref_processor()->process_discovered_references(
-        is_alive_closure(), &mark_and_push_closure, &follow_stack_closure,
-        &task_executor, &pt);
-    } else {
-      stats = ref_processor()->process_discovered_references(
-        is_alive_closure(), &mark_and_push_closure, &follow_stack_closure, NULL,
-        &pt);
-    }
+    ParallelCompactRefProcProxyTask task(ref_processor()->max_num_queues());
+    stats = ref_processor()->process_discovered_references(task, pt);
 
     gc_tracer->report_gc_reference_stats(stats);
     pt.print_all_references();
@@ -2522,7 +2490,6 @@ static void compaction_with_stealing_work(TaskTerminator* terminator, uint worke
 }
 
 class UpdateDensePrefixAndCompactionTask: public AbstractGangTask {
-  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
   TaskQueue& _tq;
   TaskTerminator _terminator;
   uint _active_workers;

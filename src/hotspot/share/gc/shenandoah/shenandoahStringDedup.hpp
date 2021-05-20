@@ -29,6 +29,7 @@
 
 class ShenandoahStringDedup : public StringDedup {
 public:
+  static inline bool is_string_candidate(oop obj);
   static inline bool is_candidate(oop obj);
 };
 

@@ -278,8 +278,7 @@ public class ClassReader {
         preview = Preview.instance(context);
         allowModules     = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
-        allowSealedTypes = (!preview.isPreview(Feature.SEALED_CLASSES) || preview.isEnabled()) &&
-                Feature.SEALED_CLASSES.allowedInSource(source);
+        allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
 
         saveParameterNames = options.isSet(PARAMETERS);
 
