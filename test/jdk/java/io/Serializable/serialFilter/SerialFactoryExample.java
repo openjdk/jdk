@@ -47,9 +47,9 @@ import static java.io.ObjectInputFilter.Status.REJECTED;
 import static java.io.ObjectInputFilter.Status.UNDECIDED;
 
 /* @test
- * @run testng  SerialFactoryExample
- * @run testng/othervm SerialFactoryExample
- * @run testng/othervm -Djdk.serialFilterFactory=SerialFactoryExample$FilterInThread  SerialFactoryExample
+ * @run testng/othervm -Djdk.serialFilterTrace=true SerialFactoryExample
+ * @run testng/othervm -Djdk.serialFilterTrace=true SerialFactoryExample
+ * @run testng/othervm -Djdk.serialFilterFactory=SerialFactoryExample$FilterInThread -Djdk.serialFilterTrace=true SerialFactoryExample
  * @summary Test SerialFactoryExample
  */
 
@@ -89,7 +89,17 @@ public class SerialFactoryExample {
                         NO_EXCEPTION},
                 {new Point(1, 2), ObjectInputFilter.Config.createFilter("SerialFactoryExample$Point"),
                         NO_EXCEPTION},
-                {10, Filters.allowPlatformClasses().merge(ObjectInputFilter.Config.allowMaxLimits()),
+                {10, Filters.allowPlatformClasses(),
+                        NO_EXCEPTION},
+                {new Integer[10], ObjectInputFilter.Config.createFilter("SerialFactoryExample$Point"),
+                        InvalidClassException.class},       // Component type is tested and not allowed
+                {new int[10], ObjectInputFilter.Config.createFilter("SerialFactoryExample$Point"),
+                        NO_EXCEPTION},
+                {int.class, ObjectInputFilter.Config.createFilter("SerialFactoryExample$Point"),
+                        NO_EXCEPTION},
+                {int.class, Filters.allowPlatformClasses(),
+                        NO_EXCEPTION},
+                {new Point[] {new Point(1, 1)}, ObjectInputFilter.Config.createFilter("SerialFactoryExample$Point"),
                         NO_EXCEPTION},
                 {new Point(1, 2), ObjectInputFilter.Config.createFilter("!SerialFactoryExample$Point"),
                         InvalidClassException.class},
@@ -266,15 +276,14 @@ public class SerialFactoryExample {
         public ObjectInputFilter apply(ObjectInputFilter curr, ObjectInputFilter next) {
             if (curr == null) {
                 // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no previous filter
-                // Prepend next to the threadFilter, both may be null or non-null
                 var filter = filterThreadLocal.get();
                 if (filter != null) {
                     // Prepend a filter to assert that all classes have been Allowed or Rejected
                     filter = filter.rejectUndecidedClass();
                 }
                 if (next != null) {
-                    // Prepend the next filter to the thread filter, if any
-                    // Initially this would be the static JVM-wide filter passed from the OIS constructor
+                    // Prepend the `next` filter to the thread filter, if any
+                    // Initially this is the static JVM-wide filter passed from the OIS constructor
                     // Append the filter to reject all UNDECIDED results
                     filter = next.merge(filter).rejectUndecidedClass();
                 }

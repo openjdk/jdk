@@ -189,30 +189,18 @@ import sun.security.action.GetIntegerAction;
  * the case that the fields of that class are accessible (public, package, or
  * protected) or that there are get and set methods that can be used to restore
  * the state.
- *
- * The deserialization filter for a stream is determined in one of the following ways:
- * <ul>
- * <li>A JVM-wide filter factory can be set via {@link Config#setSerialFilterFactory(BinaryOperator)}
- *     or the system property {@code jdk.serialFilterFactory} or
- *     the security property {@code jdk.serialFilterFactory}.
- *     The filter factory is invoked for each new ObjectInputStream and
- *     when a filter is set for a stream.
- *     The filter factory determines the filter to be used for each stream based
- *     on its inputs, thread context, other filters, or state that is available.
- * <li>If a JVM-wide filter factory is not set, a builtin deserialization filter factory
- *     provides the {@link Config#getSerialFilter static JVM-wide filter} when invoked from the
- *     {@link ObjectInputStream#ObjectInputStream(InputStream) ObjectInputStream constructors}
- *     and replaces the static filter when invoked from
- *     {@link ObjectInputStream#setObjectInputFilter(ObjectInputFilter)}.
- *     See {@link Config#getSerialFilterFactory() getSerialFilterFactory}.
- * <li>A stream-specific filter can be set for an individual ObjectInputStream
- *     via {@link ObjectInputStream#setObjectInputFilter setObjectInputFilter}.
- *     Note that the filter may be used directly or combined with other filters by the
- *     {@linkplain Config#setSerialFilterFactory(BinaryOperator) JVM-wide filter factory}.
- * </ul>
- *
- * The JVM-wide factory ensures that a filter can be set on every {@link ObjectInputStream}
+ * <p>
+ * The key to disabling deserialization attacks is to prevent instances of
+ * arbitrary classes from being deserialized, thereby preventing the direct or
+ * indirect execution of their methods.  Each stream has an optional deserialization filter
+ * to check the classes and resource limits during deserialization.
+ * The JVM-wide filter factory ensures that a filter can be set on every {@link ObjectInputStream}
  * and every object read from the stream can be checked.
+ * The {@linkplain #ObjectInputStream() ObjectInputStream constructors} invoke the filter factory
+ * to select the initial filter and it is updated by {@link #setObjectInputFilter}.
+ * {@link ObjectInputFilter} describes how to use filters and
+ * {@link ObjectInputFilter.Config} describes how to configure the filter and filter factory.
+ * <p>
  * If an ObjectInputStream has a filter, the {@link ObjectInputFilter} can check that
  * the classes, array lengths, number of references in the stream, depth, and
  * number of bytes consumed from the input stream are allowed and
@@ -1265,14 +1253,14 @@ public class ObjectInputStream
 
     /**
      * Set the deserialization filter for the stream.
-     * The filter must be set before reading any objects from the stream;
+     * The filter must be set and only set once before reading any objects from the stream;
      * for example, by calling {@link #readObject} or {@link #readUnshared}.
      *
      * <p>The serialization filter is set to the filter returned
      * by invoking the {@link Config#getSerialFilterFactory()}
      * with the current filter and the {@code filter} parameter.
-     * If there is a non-null filter for the stream, one was set in the constructor, then the filter factory
-     * must return a replacement filter, it is not permitted to remove filtering once established.
+     * If there is a non-null filter for the stream, one was set in the constructor, and the filter factory
+     * must return a non-null filter, it is not permitted to remove filtering once established.
      * See the {@linkplain ObjectInputFilter filter models} for examples of composition and delegation.
      *
      * <p>The filter's {@link ObjectInputFilter#checkInput checkInput} method is called
@@ -1336,7 +1324,7 @@ public class ObjectInputStream
      * @throws IllegalStateException if an object has been read,
      *       if the filter factory returns {@code null} when the
      *       {@linkplain #getObjectInputFilter() current filter} is non-null, or
-     *       if the filter can not be replaced.
+     *       if the filter has already been.
      * @since 9
      */
     public final void setObjectInputFilter(ObjectInputFilter filter) {
