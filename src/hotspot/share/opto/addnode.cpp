@@ -920,7 +920,7 @@ const Type* XorINode::Value(PhaseGVN* phase) const {
   if (in1->eqv_uncast(in2)) {
     return add_id();
   }
-  return AddNode::Value(phase);
+  return t1->meet(t2);
 }
 
 //------------------------------add_ring---------------------------------------
@@ -970,7 +970,7 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   if (in1->eqv_uncast(in2)) {
     return add_id();
   }
-  return AddNode::Value(phase);
+  return t1->meet(t2);
 }
 
 Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn) {
