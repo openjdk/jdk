@@ -1588,7 +1588,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
          * @param i zero-based index of actions. The first action
          * (index 0) is AccessibleAction.INCREMENT and the second
          * action (index 1) is AccessibleAction.DECREMENT.
-         * @return true.
+         * @return true if the action was performed, otherwise false
          * @see #getAccessibleActionCount
          */
         public boolean doAccessibleAction(int i) {

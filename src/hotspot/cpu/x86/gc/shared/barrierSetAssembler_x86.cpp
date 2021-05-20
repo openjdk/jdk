@@ -195,27 +195,6 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   }
 }
 
-#ifndef _LP64
-void BarrierSetAssembler::obj_equals(MacroAssembler* masm,
-                                     Address obj1, jobject obj2) {
-  __ cmpoop_raw(obj1, obj2);
-}
-
-void BarrierSetAssembler::obj_equals(MacroAssembler* masm,
-                                     Register obj1, jobject obj2) {
-  __ cmpoop_raw(obj1, obj2);
-}
-#endif
-void BarrierSetAssembler::obj_equals(MacroAssembler* masm,
-                                     Register obj1, Address obj2) {
-  __ cmpptr(obj1, obj2);
-}
-
-void BarrierSetAssembler::obj_equals(MacroAssembler* masm,
-                                     Register obj1, Register obj2) {
-  __ cmpptr(obj1, obj2);
-}
-
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
   __ clear_jweak_tag(obj);

@@ -38,7 +38,7 @@ class OopStorageSet : public AllStatic {
 
   // Must be updated when new OopStorages are introduced
   static const uint strong_count = 4 JVMTI_ONLY(+ 1);
-  static const uint weak_count = 5 JVMTI_ONLY(+ 1) JFR_ONLY(+ 1);
+  static const uint weak_count = 8 JVMTI_ONLY(+ 1) JFR_ONLY(+ 1);
 
   static const uint all_count = strong_count + weak_count;
   static const uint all_start = 0;

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/filemap.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
@@ -37,7 +38,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -65,7 +65,7 @@ void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
   ClassLoader::add_to_boot_append_entries(new_entry);
 }
 
-void ClassLoaderExt::setup_app_search_path(Thread* current) {
+void ClassLoaderExt::setup_app_search_path(JavaThread* current) {
   Arguments::assert_is_dumping_archive();
   _app_class_paths_start_index = ClassLoader::num_boot_classpath_entries();
   char* app_class_path = os::strdup(Arguments::get_appclasspath());
@@ -81,7 +81,7 @@ void ClassLoaderExt::setup_app_search_path(Thread* current) {
   }
 }
 
-void ClassLoaderExt::process_module_table(Thread* current, ModuleEntryTable* met) {
+void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable* met) {
   ResourceMark rm(current);
   for (int i = 0; i < met->table_size(); i++) {
     for (ModuleEntry* m = met->bucket(i); m != NULL;) {
@@ -94,7 +94,7 @@ void ClassLoaderExt::process_module_table(Thread* current, ModuleEntryTable* met
     }
   }
 }
-void ClassLoaderExt::setup_module_paths(Thread* current) {
+void ClassLoaderExt::setup_module_paths(JavaThread* current) {
   Arguments::assert_is_dumping_archive();
   _app_module_paths_start_index = ClassLoader::num_boot_classpath_entries() +
                               ClassLoader::num_app_classpath_entries();
@@ -103,7 +103,8 @@ void ClassLoaderExt::setup_module_paths(Thread* current) {
   process_module_table(current, met);
 }
 
-char* ClassLoaderExt::read_manifest(Thread* current, ClassPathEntry* entry, jint *manifest_size, bool clean_text) {
+char* ClassLoaderExt::read_manifest(JavaThread* current, ClassPathEntry* entry,
+                                    jint *manifest_size, bool clean_text) {
   const char* name = "META-INF/MANIFEST.MF";
   char* manifest;
   jint size;
@@ -163,7 +164,7 @@ char* ClassLoaderExt::get_class_path_attr(const char* jar_path, char* manifest, 
   return found;
 }
 
-void ClassLoaderExt::process_jar_manifest(Thread* current, ClassPathEntry* entry,
+void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* entry,
                                           bool check_for_duplicates) {
   ResourceMark rm(current);
   jint manifest_size;
@@ -225,7 +226,7 @@ void ClassLoaderExt::process_jar_manifest(Thread* current, ClassPathEntry* entry
   }
 }
 
-void ClassLoaderExt::setup_search_paths(Thread* current) {
+void ClassLoaderExt::setup_search_paths(JavaThread* current) {
   ClassLoaderExt::setup_app_search_path(current);
 }
 
@@ -270,7 +271,7 @@ InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS)
 
   {
     PerfClassTraceTime vmtimer(perf_sys_class_lookup_time(),
-                               THREAD->as_Java_thread()->get_thread_stat()->perf_timers_addr(),
+                               THREAD->get_thread_stat()->perf_timers_addr(),
                                PerfClassTraceTime::CLASS_LOAD);
     stream = e->open_stream(THREAD, file_name);
   }
@@ -300,7 +301,7 @@ struct CachedClassPathEntry {
 
 static GrowableArray<CachedClassPathEntry>* cached_path_entries = NULL;
 
-ClassPathEntry* ClassLoaderExt::find_classpath_entry_from_cache(Thread* current, const char* path) {
+ClassPathEntry* ClassLoaderExt::find_classpath_entry_from_cache(JavaThread* current, const char* path) {
   // This is called from dump time so it's single threaded and there's no need for a lock.
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
   if (cached_path_entries == NULL) {

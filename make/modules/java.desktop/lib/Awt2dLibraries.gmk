@@ -139,7 +139,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     EXTRA_SRC := $(LIBAWT_EXTRA_SRC), \
     EXCLUDES := $(LIBAWT_EXCLUDES), \
     EXCLUDE_FILES := $(LIBAWT_EXFILES), \
-    OPTIMIZATION := LOW, \
+    OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
     DISABLED_WARNINGS_gcc := sign-compare unused-result maybe-uninitialized \
@@ -339,7 +339,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVAJPEG, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB), \
     HEADERS_FROM_SRC := $(LIBJPEG_HEADERS_FROM_SRC), \
-    DISABLED_WARNINGS_gcc := clobbered implicit-fallthrough shift-negative-value, \
+    DISABLED_WARNINGS_gcc := clobbered implicit-fallthrough shift-negative-value array-bounds, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(LIBJPEG_LIBS) $(JDKLIB_LIBS), \
@@ -465,7 +465,7 @@ else
 
    HARFBUZZ_DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
-        maybe-uninitialized class-memaccess
+        maybe-uninitialized class-memaccess unused-result extra
    HARFBUZZ_DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
         undef missing-field-initializers range-loop-analysis \

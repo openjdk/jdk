@@ -154,6 +154,8 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
     ciReplay::initialize(this);
   }
 #endif
+
+  CompilerOracle::tag_blackhole_if_possible(h_m);
 }
 
 
@@ -301,7 +303,9 @@ bool ciMethod::has_balanced_monitors() {
     ExceptionMark em(THREAD);
     ResourceMark rm(THREAD);
     GeneratePairingInfo gpi(method);
-    gpi.compute_map(CATCH);
+    if (!gpi.compute_map(THREAD)) {
+      fatal("Unrecoverable verification or out-of-memory error");
+    }
     if (!gpi.monitor_safe()) {
       return false;
     }
@@ -710,7 +714,15 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   {
     MutexLocker locker(Compile_lock);
     InstanceKlass* context = actual_recv->get_instanceKlass();
-    target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context, root_m->get_Method()));
+    if (UseVtableBasedCHA) {
+      target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context,
+                                                                              root_m->get_Method(),
+                                                                              callee_holder->get_Klass(),
+                                                                              this->get_Method()));
+    } else {
+      target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context, root_m->get_Method()));
+    }
+    assert(target() == NULL || !target()->is_abstract(), "not allowed");
     // %%% Should upgrade this ciMethod API to look for 1 or 2 concrete methods.
   }
 
@@ -1212,6 +1224,7 @@ bool ciMethod::is_getter      () const {         FETCH_FLAG_FROM_VM(is_getter); 
 bool ciMethod::is_setter      () const {         FETCH_FLAG_FROM_VM(is_setter); }
 bool ciMethod::is_accessor    () const {         FETCH_FLAG_FROM_VM(is_accessor); }
 bool ciMethod::is_initializer () const {         FETCH_FLAG_FROM_VM(is_initializer); }
+bool ciMethod::is_empty       () const {         FETCH_FLAG_FROM_VM(is_empty_method); }
 
 bool ciMethod::is_boxing_method() const {
   if (intrinsic_id() != vmIntrinsics::_none && holder()->is_box_klass()) {

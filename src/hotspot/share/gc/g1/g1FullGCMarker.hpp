@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
 #include "oops/markWord.hpp"
@@ -59,10 +60,11 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   PreservedMarks*    _preserved_stack;
 
   // Marking closures
-  G1MarkAndPushClosure _mark_closure;
-  G1VerifyOopClosure   _verify_closure;
-  G1FollowStackClosure _stack_closure;
-  CLDToOopClosure      _cld_closure;
+  G1MarkAndPushClosure  _mark_closure;
+  G1VerifyOopClosure    _verify_closure;
+  G1FollowStackClosure  _stack_closure;
+  CLDToOopClosure       _cld_closure;
+  StringDedup::Requests _string_dedup_requests;
 
 
   G1RegionMarkStatsCache _mark_stats_cache;

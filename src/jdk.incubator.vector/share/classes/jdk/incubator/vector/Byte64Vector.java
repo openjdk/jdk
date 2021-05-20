@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,14 +387,7 @@ final class Byte64Vector extends ByteVector {
     @Override
     @ForceInline
     public Byte64Vector slice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Byte64Shuffle Iota = iotaShuffle();
-         VectorMask<Byte> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(VLENGTH-origin))));
-         Iota = iotaShuffle(origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (Byte64Vector) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -415,14 +408,7 @@ final class Byte64Vector extends ByteVector {
     @Override
     @ForceInline
     public Byte64Vector unslice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Byte64Shuffle Iota = iotaShuffle();
-         VectorMask<Byte> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((byte)(origin))));
-         Iota = iotaShuffle(-origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (Byte64Vector) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -662,6 +648,29 @@ final class Byte64Vector extends ByteVector {
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Byte64Mask.class, byte.class, VLENGTH,
                                           this, m,
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+        }
+
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Byte64Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((Byte64Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Byte64Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((Byte64Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Byte64Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((Byte64Mask)m).getBits()));
         }
 
         // Reductions

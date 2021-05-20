@@ -852,6 +852,14 @@ char * os::native_path(char *path) {
 }
 
 bool os::same_files(const char* file1, const char* file2) {
+  if (file1 == nullptr && file2 == nullptr) {
+    return true;
+  }
+
+  if (file1 == nullptr || file2 == nullptr) {
+    return false;
+  }
+
   if (strcmp(file1, file2) == 0) {
     return true;
   }

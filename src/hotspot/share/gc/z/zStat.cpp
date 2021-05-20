@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -642,6 +643,12 @@ void ZStatPhaseCycle::register_start(const Ticks& start) const {
 }
 
 void ZStatPhaseCycle::register_end(const Ticks& start, const Ticks& end) const {
+  if (ZAbort::should_abort()) {
+    log_info(gc)("Garbage Collection (%s) Aborted",
+                 GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
+    return;
+  }
+
   timer()->register_gc_end(end);
 
   ZCollectedHeap::heap()->print_heap_after_gc();
@@ -712,6 +719,10 @@ void ZStatPhaseConcurrent::register_start(const Ticks& start) const {
 }
 
 void ZStatPhaseConcurrent::register_end(const Ticks& start, const Ticks& end) const {
+  if (ZAbort::should_abort()) {
+    return;
+  }
+
   timer()->register_gc_concurrent_end(end);
 
   const Tickspan duration = end - start;
@@ -730,6 +741,10 @@ void ZStatSubPhase::register_start(const Ticks& start) const {
 }
 
 void ZStatSubPhase::register_end(const Ticks& start, const Ticks& end) const {
+  if (ZAbort::should_abort()) {
+    return;
+  }
+
   ZTracer::tracer()->report_thread_phase(name(), start, end);
 
   const Tickspan duration = end - start;
@@ -1196,12 +1211,13 @@ void ZStatNMethods::print() {
 // Stat metaspace
 //
 void ZStatMetaspace::print() {
+  MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
   log_info(gc, metaspace)("Metaspace: "
                           SIZE_FORMAT "M used, "
                           SIZE_FORMAT "M committed, " SIZE_FORMAT "M reserved",
-                          MetaspaceUtils::used_bytes() / M,
-                          MetaspaceUtils::committed_bytes() / M,
-                          MetaspaceUtils::reserved_bytes() / M);
+                          stats.used() / M,
+                          stats.committed() / M,
+                          stats.reserved() / M);
 }
 
 //
@@ -1326,7 +1342,9 @@ void ZStatHeap::set_at_relocate_start(const ZPageAllocatorStats& stats) {
   _at_relocate_start.reclaimed = stats.reclaimed();
 }
 
-void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats) {
+void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated) {
+  const size_t reclaimed = stats.reclaimed() - MIN2(non_worker_relocated, stats.reclaimed());
+
   _at_relocate_end.capacity = stats.capacity();
   _at_relocate_end.capacity_high = capacity_high();
   _at_relocate_end.capacity_low = capacity_low();
@@ -1336,9 +1354,9 @@ void ZStatHeap::set_at_relocate_end(const ZPageAllocatorStats& stats) {
   _at_relocate_end.used = stats.used();
   _at_relocate_end.used_high = stats.used_high();
   _at_relocate_end.used_low = stats.used_low();
-  _at_relocate_end.allocated = allocated(stats.used(), stats.reclaimed());
-  _at_relocate_end.garbage = garbage(stats.reclaimed());
-  _at_relocate_end.reclaimed = stats.reclaimed();
+  _at_relocate_end.allocated = allocated(stats.used(), reclaimed);
+  _at_relocate_end.garbage = garbage(reclaimed);
+  _at_relocate_end.reclaimed = reclaimed;
 }
 
 size_t ZStatHeap::max_capacity() {

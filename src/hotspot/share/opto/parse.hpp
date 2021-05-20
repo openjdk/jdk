@@ -71,17 +71,14 @@ protected:
                             int caller_bci,
                             JVMState* jvms,
                             ciCallProfile& profile,
-                            WarmCallInfo* wci_result,
                             bool& should_delay);
   bool        should_inline(ciMethod* callee_method,
                             ciMethod* caller_method,
                             int caller_bci,
-                            ciCallProfile& profile,
-                            WarmCallInfo* wci_result);
+                            ciCallProfile& profile);
   bool        should_not_inline(ciMethod* callee_method,
                                 ciMethod* caller_method,
-                                JVMState* jvms,
-                                WarmCallInfo* wci_result);
+                                JVMState* jvms);
   bool        is_not_reached(ciMethod* callee_method,
                              ciMethod* caller_method,
                              int caller_bci,
@@ -112,7 +109,7 @@ public:
   // and may be accessed by find_subtree_from_root.
   // The call_method is the dest_method for a special or static invocation.
   // The call_method is an optimized virtual method candidate otherwise.
-  WarmCallInfo* ok_to_inline(ciMethod *call_method, JVMState* caller_jvms, ciCallProfile& profile, WarmCallInfo* wci, bool& should_delay);
+  bool ok_to_inline(ciMethod *call_method, JVMState* caller_jvms, ciCallProfile& profile, bool& should_delay);
 
   // Information about inlined method
   JVMState*   caller_jvms()       const { return _caller_jvms; }
@@ -483,7 +480,7 @@ class Parse : public GraphKit {
 
   // Insert a compiler safepoint into the graph, if there is a back-branch.
   void maybe_add_safepoint(int target_bci) {
-    if (UseLoopSafepoints && target_bci <= bci()) {
+    if (target_bci <= bci()) {
       add_safepoint();
     }
   }
