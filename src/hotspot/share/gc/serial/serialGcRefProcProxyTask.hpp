@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/**
- * @test
- * @bug 8200788
- * @summary Optimal initial capacity of AccessMode.methodNameToAccessMode
- * @library /test/lib
- * @modules java.base/java.lang.invoke:open
- *          java.base/java.util:open
- * @build jdk.test.lib.util.OptimalCapacity
- * @run main OptimalMapSize
- */
+#ifndef SHARE_GC_SERIAL_SERIALGCREFPROCPROXYTASK_HPP
+#define SHARE_GC_SERIAL_SERIALGCREFPROCPROXYTASK_HPP
 
-import java.lang.invoke.VarHandle.AccessMode;
-import jdk.test.lib.util.OptimalCapacity;
+#include "gc/shared/referenceProcessor.hpp"
 
-public class OptimalMapSize {
-    public static void main(String[] args) throws Throwable {
-        int initialCapacity = (int)(AccessMode.values().length / 0.75f) + 1;
-        OptimalCapacity.ofHashMap(AccessMode.class, "methodNameToAccessMode",
-                initialCapacity);
-    }
-}
+class SerialGCRefProcProxyTask : public RefProcProxyTask {
+  BoolObjectClosure& _is_alive;
+  OopClosure& _keep_alive;
+  VoidClosure& _complete_gc;
+
+public:
+  SerialGCRefProcProxyTask(BoolObjectClosure& is_alive, OopClosure& keep_alive, VoidClosure& complete_gc)
+    : RefProcProxyTask("SerialGCRefProcProxyTask", 1),
+      _is_alive(is_alive),
+      _keep_alive(keep_alive),
+      _complete_gc(complete_gc) {}
+
+  void work(uint worker_id) override {
+    assert(worker_id < _max_workers, "sanity");
+    _rp_task->rp_work(worker_id, &_is_alive, &_keep_alive, &_complete_gc);
+  }
+};
+
+#endif /* SHARE_GC_SERIAL_SERIALGCREFPROCPROXYTASK_HPP */

@@ -3532,12 +3532,6 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
                      CHECK);
 }
 
-bool ClassFileParser::supports_sealed_types() {
-  return _major_version == JVM_CLASSFILE_MAJOR_VERSION &&
-         _minor_version == JAVA_PREVIEW_MINOR_VERSION &&
-         Arguments::enable_preview();
-}
-
 void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cfs,
                                                  ConstantPool* cp,
                  ClassFileParser::ClassAnnotationCollector* parsed_annotations,
@@ -3794,8 +3788,8 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
             parsed_record_attribute = true;
             record_attribute_start = cfs->current();
             record_attribute_length = attribute_length;
-          } else if (tag == vmSymbols::tag_permitted_subclasses()) {
-            if (supports_sealed_types()) {
+          } else if (_major_version >= JAVA_17_VERSION) {
+            if (tag == vmSymbols::tag_permitted_subclasses()) {
               if (parsed_permitted_subclasses_attribute) {
                 classfile_parse_error("Multiple PermittedSubclasses attributes in class file %s", CHECK);
                 return;
@@ -3810,7 +3804,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
               permitted_subclasses_attribute_length = attribute_length;
             }
           }
-          // Skip attribute_length for any attribute where major_verson >= JAVA_16_VERSION
+          // Skip attribute_length for any attribute where major_verson >= JAVA_17_VERSION
           cfs->skip_u1(attribute_length, CHECK);
         } else {
           // Unknown attribute
