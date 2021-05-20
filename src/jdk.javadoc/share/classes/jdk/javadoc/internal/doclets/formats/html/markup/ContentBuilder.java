@@ -65,8 +65,8 @@ public class ContentBuilder extends Content {
             ensureMutableContents();
             Content c = contents.isEmpty() ? null : contents.get(contents.size() - 1);
             TextBuilder tb;
-            if (c instanceof TextBuilder txtBldr) {
-                tb = txtBldr;
+            if (c instanceof TextBuilder tbi) {
+                tb = tbi;
             } else {
                 contents.add(tb = new TextBuilder());
             }

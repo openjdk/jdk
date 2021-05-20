@@ -2132,8 +2132,8 @@ public class HtmlDocletWriter {
         if (element instanceof PackageElement pkg) {
             stylesheets.addAll(getModuleStylesheets(pkg));
             basePath = docPaths.forPackage(pkg);
-        } else if (element instanceof ModuleElement modElem) {
-            basePath = DocPaths.forModule(modElem);
+        } else if (element instanceof ModuleElement mdle) {
+            basePath = DocPaths.forModule(mdle);
         }
         for (DocPath stylesheet : getStylesheets(element)) {
             stylesheets.add(basePath.resolve(stylesheet.getPath()));
