@@ -636,6 +636,29 @@ final class ByteMaxVector extends ByteVector {
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
 
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, ByteMaxMask.class, byte.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((ByteMaxMask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, ByteMaxMask.class, byte.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((ByteMaxMask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, ByteMaxMask.class, byte.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((ByteMaxMask)m).getBits()));
+        }
+
         // Reductions
 
         @Override

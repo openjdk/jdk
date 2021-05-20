@@ -205,7 +205,6 @@ public class CommentUtils {
      * Generates the description for the standard {@code equals} method for a record.
      * @param ee the {@code equals} method
      */
-    @SuppressWarnings("preview")
     public void setRecordEqualsTree(ExecutableElement ee) {
         List<DocTree> fullBody = new ArrayList<>();
         add(fullBody, "doclet.record_equals_doc.fullbody.head");

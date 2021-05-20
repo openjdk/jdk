@@ -1686,7 +1686,6 @@ public class HtmlDocletWriter {
      *
      * @return the text, with all the relative links redirected to work.
      */
-    @SuppressWarnings("preview")
     private String redirectRelativeLinks(Element element, TextTree tt) {
         String text = tt.getBody();
         if (element == null || utils.isOverviewElement(element) || shouldNotRedirectRelativeLinks()) {
@@ -2232,7 +2231,6 @@ public class HtmlDocletWriter {
         }
     }
 
-    @SuppressWarnings("preview")
     private List<Content> getPreviewNotes(TypeElement el) {
         String className = el.getSimpleName().toString();
         List<Content> result = new ArrayList<>();
@@ -2257,9 +2255,6 @@ public class HtmlDocletWriter {
         }
         previewLanguageFeatures.addAll(utils.previewLanguageFeaturesUsed(el));
         if (!previewLanguageFeatures.isEmpty()) {
-            if (previewLanguageFeatures.contains(DeclarationPreviewLanguageFeatures.SEALED_PERMITS)) {
-                previewLanguageFeatures.remove(DeclarationPreviewLanguageFeatures.SEALED);
-            }
             for (DeclarationPreviewLanguageFeatures feature : previewLanguageFeatures) {
                 String featureDisplayName =
                         resources.getText("doclet.Declared_Using_Preview." + feature.name());

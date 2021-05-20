@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -84,8 +85,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                      "java.lang.constant.ConstantDesc",
                      "java.io.Serializable");
 
-    private static final Set<String> previewModifiers
-            = Set.of("sealed", "non-sealed");
+    private static final Set<String> previewModifiers = Collections.emptySet();
 
     protected final TypeElement typeElement;
 
@@ -196,7 +196,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         return typeElement;
     }
 
-    @Override @SuppressWarnings("preview")
+    @Override
     public void addClassSignature(String modifiers, Content classInfoTree) {
         ContentBuilder mods = new ContentBuilder();
         String sep = null;
