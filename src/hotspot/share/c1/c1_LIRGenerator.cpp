@@ -2098,14 +2098,16 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
   }
 
   LIR_Opr result = rlock_result(x, type);
-  if (!x->is_raw_get()) {
+  if (!x->is_raw()) {
     access_load_at(decorators, type, src, off.result(), result);
   } else {
+    // Currently it is only used in GraphBuilder::setup_osr_entry_block.
+    // It reads the value from [src + offset] directly.
 #ifdef _LP64
-  LIR_Opr offset = new_register(T_LONG);
-  __ convert(Bytecodes::_i2l, off.result(), offset);
+    LIR_Opr offset = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, off.result(), offset);
 #else
-  LIR_Opr offset = off.result();
+    LIR_Opr offset = off.result();
 #endif
     LIR_Address* addr = new LIR_Address(src.result(), offset, type);
     if (type == T_LONG || type == T_DOUBLE) {

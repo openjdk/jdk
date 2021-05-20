@@ -2300,22 +2300,22 @@ BASE(UnsafeObjectOp, UnsafeOp)
 
 LEAF(UnsafeGetObject, UnsafeObjectOp)
  private:
-  bool _is_raw_get;
+  bool _is_raw;
  public:
   UnsafeGetObject(BasicType basic_type, Value object, Value offset, bool is_volatile)
   : UnsafeObjectOp(basic_type, object, offset, false, is_volatile)
   {
     ASSERT_VALUES
-    _is_raw_get = false;
+    _is_raw = false;
   }
-  UnsafeGetObject(BasicType basic_type, Value object, Value offset, bool is_volatile, bool is_raw_get)
-  : UnsafeObjectOp(basic_type, object, offset, false, is_volatile), _is_raw_get(is_raw_get)
+  UnsafeGetObject(BasicType basic_type, Value object, Value offset, bool is_volatile, bool is_raw)
+  : UnsafeObjectOp(basic_type, object, offset, false, is_volatile), _is_raw(is_raw)
   {
     ASSERT_VALUES
   }
 
   // accessors
-  bool is_raw_get()                             { return _is_raw_get; }
+  bool is_raw()                             { return _is_raw; }
 };
 
 

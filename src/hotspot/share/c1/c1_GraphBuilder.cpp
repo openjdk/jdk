@@ -3150,9 +3150,9 @@ void GraphBuilder::setup_osr_entry_block() {
     } else {
       Value off_val = append(new Constant(new IntConstant(offset)));
       get = append(new UnsafeGetObject(as_BasicType(local->type()), e,
-                                      off_val,
-                                      false/*is_volatile*/,
-                                      true/*is_raw_get*/));
+                                       off_val,
+                                       false/*is_volatile*/,
+                                       true/*is_raw*/));
     }
     _state->store_local(index, get);
   }
