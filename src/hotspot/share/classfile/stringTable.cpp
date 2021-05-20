@@ -105,17 +105,16 @@ class StringTableConfig : public StackObj {
   typedef WeakHandle Value;
 
   static uintx get_hash(Value const& value, bool* is_dead) {
-    EXCEPTION_MARK;
     oop val_oop = value.peek();
     if (val_oop == NULL) {
       *is_dead = true;
       return 0;
     }
     *is_dead = false;
-    ResourceMark rm(THREAD);
+    ResourceMark rm;
     // All String oops are hashed as unicode
     int length;
-    jchar* chars = java_lang_String::as_unicode_string(val_oop, length, THREAD);
+    jchar* chars = java_lang_String::as_unicode_string_or_null(val_oop, length);
     if (chars != NULL) {
       return hash_string(chars, length, _alt_hash);
     }
@@ -123,11 +122,11 @@ class StringTableConfig : public StackObj {
     return 0;
   }
   // We use default allocation/deallocation but counted
-  static void* allocate_node(size_t size, Value const& value) {
+  static void* allocate_node(void* context, size_t size, Value const& value) {
     StringTable::item_added();
     return AllocateHeap(size, mtSymbol);
   }
-  static void free_node(void* memory, Value const& value) {
+  static void free_node(void* context, void* memory, Value const& value) {
     value.release(StringTable::_oop_storage);
     FreeHeap(memory);
     StringTable::item_removed();

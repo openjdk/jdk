@@ -161,7 +161,7 @@ void DCmdParser::add_dcmd_option(GenDCmdArgument* arg) {
     o->set_next(arg);
   }
   arg->set_next(NULL);
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   arg->init_value(THREAD);
   if (HAS_PENDING_EXCEPTION) {
     fatal("Initialization must be successful");
@@ -180,7 +180,7 @@ void DCmdParser::add_dcmd_argument(GenDCmdArgument* arg) {
     a->set_next(arg);
   }
   arg->set_next(NULL);
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   arg->init_value(THREAD);
   if (HAS_PENDING_EXCEPTION) {
     fatal("Initialization must be successful");

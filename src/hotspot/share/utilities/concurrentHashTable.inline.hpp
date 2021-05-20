@@ -364,7 +364,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
     while (node != NULL) {
       Node* free_node = node;
       node = node->next();
-      Node::destroy_node(free_node);
+      Node::destroy_node(_context, free_node);
     }
   }
 }
@@ -469,7 +469,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   // Publish the deletion.
   GlobalCounter::write_synchronize();
   delete_f(rem_n->value());
-  Node::destroy_node(rem_n);
+  Node::destroy_node(_context, rem_n);
   JFR_ONLY(_stats_rate.remove();)
   return true;
 }
@@ -518,7 +518,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
     }
     for (size_t node_it = 0; node_it < nd; node_it++) {
       del_f(ndel[node_it]->value());
-      Node::destroy_node(ndel[node_it]);
+      Node::destroy_node(_context, ndel[node_it]);
       JFR_ONLY(_stats_rate.remove();)
       DEBUG_ONLY(ndel[node_it] = (Node*)POISON_PTR;)
     }
@@ -557,7 +557,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   if (dels > 0) {
     GlobalCounter::write_synchronize();
     for (size_t node_it = 0; node_it < dels; node_it++) {
-      Node::destroy_node(ndel[node_it]);
+      Node::destroy_node(_context, ndel[node_it]);
       JFR_ONLY(_stats_rate.remove();)
       DEBUG_ONLY(ndel[node_it] = (Node*)POISON_PTR;)
     }
@@ -686,7 +686,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
     // chain.
     write_synchonize_on_visible_epoch(thread);
     if (delete_me != NULL) {
-      Node::destroy_node(delete_me);
+      Node::destroy_node(_context, delete_me);
       delete_me = NULL;
     }
   }
@@ -880,10 +880,10 @@ inline typename CONFIG::Value* ConcurrentHashTable<CONFIG, F>::
 }
 
 template <typename CONFIG, MEMFLAGS F>
-template <typename LOOKUP_FUNC>
+template <typename LOOKUP_FUNC, typename FOUND_FUNC>
 inline bool ConcurrentHashTable<CONFIG, F>::
-  internal_insert(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
-                  bool* grow_hint, bool* clean_hint)
+  internal_insert_get(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
+                      FOUND_FUNC& foundf, bool* grow_hint, bool* clean_hint)
 {
   bool ret = false;
   bool clean = false;
@@ -891,7 +891,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   size_t loops = 0;
   size_t i = 0;
   uintx hash = lookup_f.get_hash();
-  Node* new_node = Node::create_node(value, NULL);
+  Node* new_node = Node::create_node(_context, value, NULL);
 
   while (true) {
     {
@@ -902,6 +902,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
       if (old == NULL) {
         new_node->set_next(first_at_start);
         if (bucket->cas_first(new_node, first_at_start)) {
+          foundf(new_node->value());
           JFR_ONLY(_stats_rate.add();)
           new_node = NULL;
           ret = true;
@@ -911,6 +912,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
         locked = bucket->is_locked();
       } else {
         // There is a duplicate.
+        foundf(old->value());
         break; /* leave critical section */
       }
     } /* leave critical section */
@@ -924,7 +926,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
 
   if (new_node != NULL) {
     // CAS failed and a duplicate was inserted, we must free this node.
-    Node::destroy_node(new_node);
+    Node::destroy_node(_context, new_node);
   } else if (i == 0 && clean) {
     // We only do cleaning on fast inserts.
     Bucket* bucket = get_bucket_locked(thread, lookup_f.get_hash());
@@ -1005,11 +1007,11 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
 // Constructor
 template <typename CONFIG, MEMFLAGS F>
 inline ConcurrentHashTable<CONFIG, F>::
-  ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint)
-    : _new_table(NULL), _log2_size_limit(log2size_limit),
-       _log2_start_size(log2size), _grow_hint(grow_hint),
-       _size_limit_reached(false), _resize_lock_owner(NULL),
-       _invisible_epoch(0)
+  ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, void* context)
+    : _context(context), _new_table(NULL), _log2_size_limit(log2size_limit),
+      _log2_start_size(log2size), _grow_hint(grow_hint),
+      _size_limit_reached(false), _resize_lock_owner(NULL),
+      _invisible_epoch(0)
 {
   _stats_rate = TableRateStatistics();
   _resize_lock =
@@ -1089,7 +1091,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   InternalTable* table = get_table();
   Bucket* bucket = get_bucket_in(table, hash);
   assert(!bucket->have_redirect() && !bucket->is_locked(), "bad");
-  Node* new_node = Node::create_node(value, bucket->first());
+  Node* new_node = Node::create_node(_context, value, bucket->first());
   if (!bucket->cas_first(new_node, bucket->first())) {
     assert(false, "bad");
   }

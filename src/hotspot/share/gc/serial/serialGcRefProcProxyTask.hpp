@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, Twitter, Inc.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +22,27 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "memory/metaspace.hpp"
-#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
-#include "memory/metaspaceUtils.hpp"
+#ifndef SHARE_GC_SERIAL_SERIALGCREFPROCPROXYTASK_HPP
+#define SHARE_GC_SERIAL_SERIALGCREFPROCPROXYTASK_HPP
 
-namespace metaspace {
+#include "gc/shared/referenceProcessor.hpp"
 
-MetaspaceSizesSnapshot::MetaspaceSizesSnapshot() :
-  _used(MetaspaceUtils::used_bytes()),
-  _committed(MetaspaceUtils::committed_bytes()),
-  _non_class_used(MetaspaceUtils::used_bytes(Metaspace::NonClassType)),
-  _non_class_committed(MetaspaceUtils::committed_bytes(Metaspace::NonClassType)),
-  _class_used(MetaspaceUtils::used_bytes(Metaspace::ClassType)),
-  _class_committed(MetaspaceUtils::committed_bytes(Metaspace::ClassType))
-{}
+class SerialGCRefProcProxyTask : public RefProcProxyTask {
+  BoolObjectClosure& _is_alive;
+  OopClosure& _keep_alive;
+  VoidClosure& _complete_gc;
 
-} // namespace metaspace
+public:
+  SerialGCRefProcProxyTask(BoolObjectClosure& is_alive, OopClosure& keep_alive, VoidClosure& complete_gc)
+    : RefProcProxyTask("SerialGCRefProcProxyTask", 1),
+      _is_alive(is_alive),
+      _keep_alive(keep_alive),
+      _complete_gc(complete_gc) {}
+
+  void work(uint worker_id) override {
+    assert(worker_id < _max_workers, "sanity");
+    _rp_task->rp_work(worker_id, &_is_alive, &_keep_alive, &_complete_gc);
+  }
+};
+
+#endif /* SHARE_GC_SERIAL_SERIALGCREFPROCPROXYTASK_HPP */
