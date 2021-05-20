@@ -326,8 +326,8 @@ public class Table extends Content {
             HtmlStyle cellStyle = (columnStyles == null || colIndex > columnStyles.size())
                     ? null
                     : columnStyles.get(colIndex);
-            // Replace empty content with HtmlTree.EMPTY to make sure the cell isn't dropped
-            HtmlTree cell = HtmlTree.DIV(cellStyle, !c.isEmpty() ? c : HtmlTree.EMPTY);
+            // Replace invalid content with HtmlTree.EMPTY to make sure the cell isn't dropped
+            HtmlTree cell = HtmlTree.DIV(cellStyle, c.isValid() ? c : HtmlTree.EMPTY);
             if (rowStyle != null) {
                 cell.addStyle(rowStyle);
             }
