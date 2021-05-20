@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,12 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8225056
- * @compile --enable-preview -source ${jdk.version} AbstractSealedTest.java
- * @run main/othervm --enable-preview AbstractSealedTest
- */
+// key: compiler.err.dc.ref.bad.parens
+// key: compiler.note.note
+// key: compiler.note.proc.messager
+// run: backdoor
+// options: -processor DocCommentProcessor -proc:only
 
-// Test that a sealed class can be abstract
-public class AbstractSealedTest {
+/** @see #m(int)x */
+class RefBadParens1 { }
 
-    abstract sealed class AbstractShape permits Circle {
-        abstract void draw();
-    }
-
-    final class Circle extends AbstractShape {
-        void draw() {}
-    }
-
-    Circle circle = new Circle();
-
-    public static void main(String... args) { }
-}

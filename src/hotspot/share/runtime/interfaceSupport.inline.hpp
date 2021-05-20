@@ -290,6 +290,14 @@ class VMNativeEntryWrapper {
 
 // LEAF routines do not lock, GC or throw exceptions
 
+// On macos/aarch64 we need to maintain the W^X state of the thread.  So we
+// take WXWrite on the enter to VM from the "outside" world, so the rest of JVM
+// code can assume writing (but not executing) codecache is always possible
+// without preliminary actions.
+// JavaThread state should be changed only after taking WXWrite. The state
+// change may trigger a safepoint, that would need WXWrite to do bookkeeping
+// in the codecache.
+
 #define VM_LEAF_BASE(result_type, header)                            \
   debug_only(NoHandleMark __hm;)                                     \
   MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite,                    \

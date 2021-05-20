@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,12 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8200788
- * @summary Optimal initial capacity of AccessMode.methodNameToAccessMode
- * @library /test/lib
- * @modules java.base/java.lang.invoke:open
- *          java.base/java.util:open
- * @build jdk.test.lib.util.OptimalCapacity
- * @run main OptimalMapSize
- */
+// key: compiler.err.dc.ref.unexpected.input
+// key: compiler.note.note
+// key: compiler.note.proc.messager
+// run: backdoor
+// options: -processor DocCommentProcessor -proc:only
 
-import java.lang.invoke.VarHandle.AccessMode;
-import jdk.test.lib.util.OptimalCapacity;
+/** @see RefUnexpectedInput1<Object>> */
+class RefUnexpectedInput1<T> { }
 
-public class OptimalMapSize {
-    public static void main(String[] args) throws Throwable {
-        int initialCapacity = (int)(AccessMode.values().length / 0.75f) + 1;
-        OptimalCapacity.ofHashMap(AccessMode.class, "methodNameToAccessMode",
-                initialCapacity);
-    }
-}

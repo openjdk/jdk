@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @bug 8225056
- * @compile --enable-preview -source ${jdk.version} SealedTest.java
- * @run main/othervm --enable-preview SealedTest
- */
+#ifndef SHARE_GC_SERIAL_SERIALGCREFPROCPROXYTASK_HPP
+#define SHARE_GC_SERIAL_SERIALGCREFPROCPROXYTASK_HPP
 
-public class SealedTest {
+#include "gc/shared/referenceProcessor.hpp"
 
-    sealed class Sealed1 permits Sub1 {}
+class SerialGCRefProcProxyTask : public RefProcProxyTask {
+  BoolObjectClosure& _is_alive;
+  OopClosure& _keep_alive;
+  VoidClosure& _complete_gc;
 
-    final class Sub1 extends Sealed1 {}
+public:
+  SerialGCRefProcProxyTask(BoolObjectClosure& is_alive, OopClosure& keep_alive, VoidClosure& complete_gc)
+    : RefProcProxyTask("SerialGCRefProcProxyTask", 1),
+      _is_alive(is_alive),
+      _keep_alive(keep_alive),
+      _complete_gc(complete_gc) {}
 
-    sealed interface SealedI1 permits Sub2 {}
+  void work(uint worker_id) override {
+    assert(worker_id < _max_workers, "sanity");
+    _rp_task->rp_work(worker_id, &_is_alive, &_keep_alive, &_complete_gc);
+  }
+};
 
-    final class Sub2 extends Sealed2 implements SealedI1 {}
-
-    sealed class Sealed2 permits Sub2 {}
-
-    Sub1 sub1 = new Sub1();
-    Sub2 sub2 = new Sub2();
-
-    public static void main(String... args) {
-        System.out.println("Basic testing of sealed types");
-    }
-}
+#endif /* SHARE_GC_SERIAL_SERIALGCREFPROCPROXYTASK_HPP */
