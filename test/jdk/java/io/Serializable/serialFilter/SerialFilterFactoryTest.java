@@ -37,8 +37,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Objects;
-import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Predicate;
 
 import static java.io.ObjectInputFilter.Status;
@@ -62,7 +61,7 @@ public class SerialFilterFactoryTest {
     private static final byte[] simpleStream = simpleStream();
     private static final Validator v1 = new Validator("v1");
     private static final Validator v2 = new Validator("v2");
-    private static final BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter> jdkSerialFilterFactory
+    private static final BinaryOperator<ObjectInputFilter> jdkSerialFilterFactory
             = Config.getSerialFilterFactory();
     private static final MyFilterFactory contextFilterFactory = new MyFilterFactory("DynFF");
     private static final String jdkSerialFilterFactoryProp = System.getProperty("jdk.serialFilterFactory");
@@ -286,11 +285,11 @@ public class SerialFilterFactoryTest {
         FilterInfo info = new SerialInfo(Object.class); // an info structure, unused
 
         ObjectInputFilter undecided = getFilter(UNDECIDED);
-        Assert.assertEquals(undecided.rejectUndecided().checkInput(info), REJECTED, "undecided -> rejected");
+        Assert.assertEquals(undecided.rejectUndecidedClass().checkInput(info), REJECTED, "undecided -> rejected");
         ObjectInputFilter allowed = getFilter(ALLOWED);
-        Assert.assertEquals(allowed.rejectUndecided().checkInput(info), ALLOWED, "allowed -> rejected");
+        Assert.assertEquals(allowed.rejectUndecidedClass().checkInput(info), ALLOWED, "allowed -> rejected");
         ObjectInputFilter rejected = getFilter(REJECTED);
-        Assert.assertEquals(rejected.rejectUndecided().checkInput(info), REJECTED, "rejected -> rejected");
+        Assert.assertEquals(rejected.rejectUndecidedClass().checkInput(info), REJECTED, "rejected -> rejected");
     }
 
     @Test
@@ -324,7 +323,7 @@ public class SerialFilterFactoryTest {
      * A simple filter factory that retains its arguments.
      */
     private static class MyFilterFactory
-            implements BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter> {
+            implements BinaryOperator<ObjectInputFilter> {
         private final String name;
         private ObjectInputFilter current;
         private ObjectInputFilter next;
@@ -384,7 +383,7 @@ public class SerialFilterFactoryTest {
      * Used for testing incorrect initialization.
      */
     public static class NotMyFilterFactory
-            implements BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter> {
+            implements BinaryOperator<ObjectInputFilter> {
 
         public NotMyFilterFactory() {}
 

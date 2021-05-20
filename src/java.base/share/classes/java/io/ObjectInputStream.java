@@ -45,7 +45,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 
 import static java.io.ObjectStreamClass.processQueue;
 
@@ -192,7 +192,7 @@ import sun.security.action.GetIntegerAction;
  *
  * The deserialization filter for a stream is determined in one of the following ways:
  * <ul>
- * <li>A JVM-wide filter factory can be set via {@link Config#setSerialFilterFactory(BiFunction)}
+ * <li>A JVM-wide filter factory can be set via {@link Config#setSerialFilterFactory(BinaryOperator)}
  *     or the system property {@code jdk.serialFilterFactory} or
  *     the security property {@code jdk.serialFilterFactory}.
  *     The filter factory is invoked for each new ObjectInputStream and
@@ -208,7 +208,7 @@ import sun.security.action.GetIntegerAction;
  * <li>A stream-specific filter can be set for an individual ObjectInputStream
  *     via {@link ObjectInputStream#setObjectInputFilter setObjectInputFilter}.
  *     Note that the filter may be used directly or combined with other filters by the
- *     {@linkplain Config#setSerialFilterFactory(BiFunction) JVM-wide filter factory}.
+ *     {@linkplain Config#setSerialFilterFactory(BinaryOperator) JVM-wide filter factory}.
  * </ul>
  *
  * The JVM-wide factory ensures that a filter can be set on every {@link ObjectInputStream}

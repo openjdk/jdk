@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -69,7 +69,7 @@ import static java.io.ObjectInputFilter.Status.*;
  * }</pre>
  *
  * <p>In an application with multiple execution contexts, the
- * {@linkplain Config#setSerialFilterFactory(BiFunction) filter factory} can better
+ * {@linkplain Config#setSerialFilterFactory(BinaryOperator) filter factory} can better
  * protect individual contexts by providing a custom filter for each. When the stream
  * is constructed, the filter factory can identify the execution context based upon
  * the current thread-local state, hierarchy of callers, library, module, and class loader.
@@ -87,7 +87,7 @@ import static java.io.ObjectInputFilter.Status.*;
  * <p>
  * The deserialization filter for a stream is determined in one of the following ways:
  * <ul>
- * <li>A JVM-wide filter factory can be set via {@link Config#setSerialFilterFactory(BiFunction)}
+ * <li>A JVM-wide filter factory can be set via {@link Config#setSerialFilterFactory(BinaryOperator)}
  *     or the system property {@code jdk.serialFilterFactory} or
  *     the security property {@code jdk.serialFilterFactory}.
  *     The filter factory is invoked for each new ObjectInputStream and
@@ -103,7 +103,7 @@ import static java.io.ObjectInputFilter.Status.*;
  * <li>A stream-specific filter can be set for an individual ObjectInputStream
  *     via {@link ObjectInputStream#setObjectInputFilter setObjectInputFilter}.
  *     Note that the filter may be used directly or combined with other filters by the
- *     {@linkplain Config#setSerialFilterFactory(BiFunction) JVM-wide filter factory}.
+ *     {@linkplain Config#setSerialFilterFactory(BinaryOperator) JVM-wide filter factory}.
  * </ul>
  * <p>
  * A deserialization filter determines whether the arguments are allowed or rejected and
@@ -148,8 +148,7 @@ import static java.io.ObjectInputFilter.Status.*;
  * and invokes a Runnable.
  *
  * <pre>{@code
- * public static final class FilterInThread
- *           implements BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter> {
+ * public static final class FilterInThread implements BinaryOperator<ObjectInputFilter> {
  *
  *     private final ThreadLocal<ObjectInputFilter> filterThreadLocal = new InheritableThreadLocal<>();
  *
@@ -161,24 +160,25 @@ import static java.io.ObjectInputFilter.Status.*;
  *     public ObjectInputFilter apply(ObjectInputFilter curr, ObjectInputFilter next) {
  *         if (curr == null) {
  *             // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no previous filter
- *             // no current filter, prepend next to threadFilter, both may be null or non-null
- *
- *             // Assemble the filters in sequence, most recently added first
+ *             // Prepend next to the threadFilter, both may be null or non-null
  *             var filter = filterThreadLocal.get();
+ *             if (filter != null) {
+ *                 // Prepend a filter to assert that all classes have been Allowed or Rejected
+ *                 filter = filter.rejectUndecidedClass();
+ *             }
  *             if (next != null) {
  *                 // Prepend the next filter to the thread filter, if any
  *                 // Initially this would be the static JVM-wide filter passed from the OIS constructor
- *                 filter = next.merge(filter);
- *             }
- *             if (filter != null) {
  *                 // Append the filter to reject all UNDECIDED results
- *                 filter = filter.rejectUndecided();
+ *                 filter = next.merge(filter).rejectUndecidedClass();
  *             }
  *             return filter;
  *         } else {
- *             // Called from OIS.setObjectInputFilter with a previously set filter.
- *             // Prepend the stream-specific filter or use the current filter
- *             return (next == null) ? curr : next.merge(curr);
+ *             // Called from OIS.setObjectInputFilter with a current filter and a stream-specific filter.
+ *             // The curr filter already incorporates the thread filter and static JVM-wide filter
+ *             // and rejection of undecided classes
+ *             // Use the current filter or prepend the stream-specific filter and recheck for undecided
+ *             return (next == null) ? curr : next.merge(curr).rejectUndecidedClass();
  *         }
  *     }
  *
@@ -259,24 +259,25 @@ public interface ObjectInputFilter {
     }
 
     /**
-     * Returns a filter that maps the status {@code UNDECIDED} to {@code Status.REJECTED},
-     * otherwise return the {@code REJECTED} or {@code ALLOWED} status.
-     * Object serialization accepts a class if the filter returns {@code UNDECIDED} or {@code ALLOWED}.
+     * Returns a filter, that when applied to this filter that is checking a class, maps
+     * {@code Status.UNDECIDED} to {@code Status.REJECTED}, otherwise returns the status of the other filter.
+     * Object serialization accepts a class if the filter returns {@code UNDECIDED}.
      * Appending a filter to reject undecided results for classes that have not been
      * either allowed or rejected can prevent classes from slipping through the filter.
-     *
      * <p>
      * When used as an ObjectInputFilter by invoking the {@link ObjectInputFilter#checkInput} method,
      * the result is:
      * <ul>
-     *     <li>{@link ObjectInputFilter.Status#ALLOWED}, if this filter  {@link ObjectInputFilter.Status#ALLOWED}, </li>
-     *     <li>Otherwise, return {@link ObjectInputFilter.Status#REJECTED}</li>
+     *     <li>{@link ObjectInputFilter.Status#REJECTED}, if the filter is checking a class
+     *     and the filter returns {@link ObjectInputFilter.Status#UNDECIDED}, </li>
+     *     <li>Otherwise, return the status</li>
      * </ul>
      *
      * @return an {@link ObjectInputFilter} that maps an {@link ObjectInputFilter.Status#UNDECIDED}
-     *      status to {@link ObjectInputFilter.Status#REJECTED}
+     *      status to {@link ObjectInputFilter.Status#REJECTED} for classes, otherwise returns the
+     *      filter status
      */
-    default ObjectInputFilter rejectUndecided() {
+    default ObjectInputFilter rejectUndecidedClass() {
         return new Config.RejectUndecided(this);
     }
 
@@ -372,13 +373,13 @@ public interface ObjectInputFilter {
      * The {@linkplain Config#getSerialFilterFactory() JVM-wide filter factory} is also
      * invoked when a stream-specific filter is set to enable combining that filter with the initial filter.
      * <p>
-     * Setting a {@linkplain #setSerialFilterFactory(BiFunction) deserialization filter factory}
+     * Setting a {@linkplain #setSerialFilterFactory(BinaryOperator) deserialization filter factory}
      * allows the application provided factory to choose a filter for each stream when it is created
      * based on the context of the thread and call stack. It may simply return a static filter,
      * select a filter, compose a filter from the requested filter and any other filters including
      * the {@linkplain #getSerialFilter() JVM-wide filter}.
      * <p>
-     * If a JVM-wide filter factory is {@linkplain Config#setSerialFilterFactory(BiFunction) not set}
+     * If a JVM-wide filter factory is {@linkplain Config#setSerialFilterFactory(BinaryOperator) not set}
      * the builtin deserialization filter factory returns the
      * {@link Config#getSerialFilter() static JVM-wide filter}.
      * <p>
@@ -405,10 +406,10 @@ public interface ObjectInputFilter {
      * If the system property is not defined, and the {@link java.security.Security} property
      * {@code jdk.serialFilterFactory} is defined then it is used to configure the filter factory.
      * The class must have a public zero-argument constructor, implement the
-     * {@link BiFunction} interface,
+     * {@link BinaryOperator} interface,
      * and provide its implementation.
      * The filter factory configured using the system or security property during initialization
-     * can NOT be replaced with {@link #setSerialFilterFactory(BiFunction) Config.setSerialFilterFactory}.
+     * can NOT be replaced with {@link #setSerialFilterFactory(BinaryOperator) Config.setSerialFilterFactory}.
      * This ensures that a filter factory set on the command line is not overridden accidentally
      * or intentionally by the application.
      * Setting the {@code jdk.serialFilterFactory} with {@link System#setProperty(String, String)
@@ -442,9 +443,9 @@ public interface ObjectInputFilter {
 
         /**
          * Current serial filter factory.
-         * @see Config#setSerialFilterFactory(BiFunction)
+         * @see Config#setSerialFilterFactory(BinaryOperator)
          */
-        private static volatile BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter>
+        private static volatile BinaryOperator<ObjectInputFilter>
                 serialFilterFactory;
 
         /**
@@ -499,7 +500,7 @@ public interface ObjectInputFilter {
 
             // Initialize the filter factory if the jdk.serialFilterFactory is defined
             // otherwise use the builtin filter factory.
-            BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter> factory;
+            BinaryOperator<ObjectInputFilter> factory;
             if (factoryClassName != null) {
                 configLog.log(System.Logger.Level.INFO,
                         "Creating deserialization filter factory for {0}", factoryClassName);
@@ -511,8 +512,8 @@ public interface ObjectInputFilter {
                     Class<?> factoryClass= Class.forName(factoryClassName, true,
                             ClassLoader.getSystemClassLoader());
                     @SuppressWarnings("unchecked")
-                    BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter> f =
-                            (BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter>)
+                    BinaryOperator<ObjectInputFilter> f =
+                            (BinaryOperator<ObjectInputFilter>)
                             factoryClass.getConstructor().newInstance(new Object[0]);
                     if (serialFilterFactory != null) {
                         configLog.log(System.Logger.Level.ERROR,
@@ -585,7 +586,7 @@ public interface ObjectInputFilter {
 
         /**
          * Returns the JVM-wide deserialization filter factory.
-         * If the filter factory has been {@link #setSerialFilterFactory(BiFunction) set} it is returned,
+         * If the filter factory has been {@link #setSerialFilterFactory(BinaryOperator) set} it is returned,
          * otherwise, a builtin deserialization filter factory is returned.
          * The filter factory provides a filter for every ObjectInputStream when invoked from
          * {@link ObjectInputStream#ObjectInputStream(InputStream) ObjectInputStream constructors}
@@ -607,7 +608,7 @@ public interface ObjectInputFilter {
          * @return the JVM-wide deserialization filter factory; non-null
          * @since TBD
          */
-        public static BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter> getSerialFilterFactory() {
+        public static BinaryOperator<ObjectInputFilter> getSerialFilterFactory() {
             if (serialFilterFactory == null)
                 throw new IllegalStateException("Serial filter factory initialization incomplete");
             return serialFilterFactory;
@@ -638,7 +639,7 @@ public interface ObjectInputFilter {
          * @since TBD
          */
         public static void setSerialFilterFactory(
-                BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter> filterFactory) {
+                BinaryOperator<ObjectInputFilter> filterFactory) {
             Objects.requireNonNull(filterFactory, "filterFactory");
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
@@ -1074,7 +1075,8 @@ public interface ObjectInputFilter {
                         return status.orElse(Status.UNDECIDED);
                     }
                 }
-                return Status.UNDECIDED;
+                // There are no classes to check and none of the limits have been exceeded.
+                return Status.ALLOWED;
             }
 
             /**
@@ -1243,7 +1245,7 @@ public interface ObjectInputFilter {
          *
          */
         private static final class BuiltinFilterFactory
-                implements BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter> {
+                implements BinaryOperator<ObjectInputFilter> {
             /**
              * Returns the ObjectInputFilter to be used for an ObjectInputStream.
              * This method implements the builtin deserialization filter factory.

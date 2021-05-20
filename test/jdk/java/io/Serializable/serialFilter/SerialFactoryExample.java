@@ -37,8 +37,9 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
 import java.util.ArrayDeque;
+import java.util.List;
 import java.util.Objects;
-import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Predicate;
 
 import static java.io.ObjectInputFilter.Status.ALLOWED;
@@ -92,11 +93,11 @@ public class SerialFactoryExample {
                         NO_EXCEPTION},
                 {new Point(1, 2), ObjectInputFilter.Config.createFilter("!SerialFactoryExample$Point"),
                         InvalidClassException.class},
-                {new Point(1, 3), Filters.allowPlatformClasses()
-                            .merge(ObjectInputFilter.Config.allowMaxLimits()),   // class is null in all of the metrics checks
+                {new Point(1, 3), Filters.allowPlatformClasses(),
                         InvalidClassException.class},
-                {new Point(1, 4), ObjectInputFilter.Config.allowFilter(cl -> cl.getClassLoader() == ClassLoader.getPlatformClassLoader(), UNDECIDED)
-                            .merge(ObjectInputFilter.Config.allowMaxLimits()),    // allow all of the metrics checks
+                {new Point(1, 4), ObjectInputFilter.Config.createFilter("java.lang.Integer"),
+                        InvalidClassException.class},
+                {new Point(1, 5), ObjectInputFilter.Config.allowFilter(cl -> cl.getClassLoader() == ClassLoader.getPlatformClassLoader(), UNDECIDED),
                         InvalidClassException.class},
         };
     }
@@ -146,7 +147,7 @@ public class SerialFactoryExample {
      * to be invoked after the filter is applied.
      */
     public static final class FilterInThread
-            implements BiFunction<ObjectInputFilter, ObjectInputFilter, ObjectInputFilter> {
+            implements BinaryOperator<ObjectInputFilter> {
 
         // ThreadLocal holding the Deque of serial filters to be applied, not null
         private final ThreadLocal<ArrayDeque<ObjectInputFilter>> filterThreadLocal =
@@ -222,24 +223,82 @@ public class SerialFactoryExample {
                     filter = f.merge(filter);
                 }
                 if (next != null) {
+                    // Prepend a filter to assert that all classes have been Allowed or Rejected
+                    if (filter != null) {
+                        filter = filter.rejectUndecidedClass();
+                    }
+
                     // Prepend the next filter to the thread filter, if any
                     // Initially this would be the static JVM-wide filter passed from the OIS constructor
+                    // The static JVM-wide filter allow, reject, or leave classes undecided
                     filter = next.merge(filter);
                 }
+                // Check that the static JVM-wide filter did not leave any classes undecided
                 if (filter != null) {
                     // Append the filter to reject all UNDECIDED results
-                    filter = filter.rejectUndecided();
+                    filter = filter.rejectUndecidedClass();
                 }
+                // Return the filter, unless a stream-specific filter is set later
+                // The filter may be null if no filters are configured
                 return filter;
             } else {
                 // Called from OIS.setObjectInputFilter with a previously set filter.
                 // The curr filter already incorporates the thread filter and rejection of undecided status
-                // Prepend the stream-specific filter or the current filter if not stream-specific filter
-                return (next == null) ? curr : next.merge(curr);
+                // Prepend the stream-specific filter or the current filter if no stream-specific filter
+                return (next == null) ? curr : next.merge(curr).rejectUndecidedClass();
             }
         }
     }
 
+
+    /**
+     * Simple example code from the ObjectInputFilter Class javadoc.
+     */
+    public static final class SimpleFilterInThread implements BinaryOperator<ObjectInputFilter> {
+
+        private final ThreadLocal<ObjectInputFilter> filterThreadLocal = new InheritableThreadLocal<>();
+
+        // Construct a FilterInThread deserialization filter factory.
+        public SimpleFilterInThread() {}
+
+        // Returns a composite filter of the static JVM-wide filter, a thread-specific filter,
+        // and the stream-specific filter.
+        public ObjectInputFilter apply(ObjectInputFilter curr, ObjectInputFilter next) {
+            if (curr == null) {
+                // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no previous filter
+                // Prepend next to the threadFilter, both may be null or non-null
+                var filter = filterThreadLocal.get();
+                if (filter != null) {
+                    // Prepend a filter to assert that all classes have been Allowed or Rejected
+                    filter = filter.rejectUndecidedClass();
+                }
+                if (next != null) {
+                    // Prepend the next filter to the thread filter, if any
+                    // Initially this would be the static JVM-wide filter passed from the OIS constructor
+                    // Append the filter to reject all UNDECIDED results
+                    filter = next.merge(filter).rejectUndecidedClass();
+                }
+                return filter;
+            } else {
+                // Called from OIS.setObjectInputFilter with a current filter and a stream-specific filter.
+                // The curr filter already incorporates the thread filter and static JVM-wide filter
+                // and rejection of undecided classes
+                // Use the current filter or prepend the stream-specific filter and recheck for undecided
+                return (next == null) ? curr : next.merge(curr).rejectUndecidedClass();
+            }
+        }
+
+        // Applies the filter to the thread and invokes the runnable.
+        public void doWithSerialFilter(ObjectInputFilter filter, Runnable runnable) {
+            var prevFilter = filterThreadLocal.get();
+            try {
+                filterThreadLocal.set(filter);
+                runnable.run();
+            } finally {
+                filterThreadLocal.set(prevFilter);
+            }
+        }
+    }
 
     /**
      * Write an object and return a byte array with the bytes.
@@ -354,6 +413,27 @@ public class SerialFactoryExample {
                 return otherFilter;
             return (otherFilter == null) ? filter :
                     new MergeFilter(filter, otherFilter);
+        }
+
+        /**
+         * Returns a filter that merges the status of a list of filters.
+         * <p>
+         * When used as an ObjectInputFilter by invoking the {@link ObjectInputFilter#checkInput} method,
+         * the result is:
+         * <ul>
+         *     <li>{@link Status#UNDECIDED}, if the serialClass is null,</li>
+         *     <li>Otherwize, {@link Status#REJECTED}, if any filter returns {@link Status#REJECTED}, </li>
+         *     <li>Otherwise, {@link Status#ALLOWED}, if any filter returns {@link Status#ALLOWED}, </li>
+         *     <li>Otherwise, return {@code otherStatus}</li>
+         * </ul>
+         *
+         * @param filters a List of filters evaluate
+         * @param otherStatus the status to returned if none produce REJECTED or ALLOWED
+         * @return an {@link ObjectInputFilter}
+         */
+        public static ObjectInputFilter mergeOrUndecided(List<ObjectInputFilter> filters,
+                                                         Status otherStatus) {
+            return new MergeManyFilter(filters, otherStatus);
         }
 
         /**
@@ -477,6 +557,51 @@ public class SerialFactoryExample {
             @Override
             public String toString() {
                 return "merge(" + first + ", " + second + ")";
+            }
+        }
+
+        /**
+         * An ObjectInputFilter that merges the results of two filters.
+         */
+        private static class MergeManyFilter implements ObjectInputFilter {
+            private final List<ObjectInputFilter> filters;
+            private final Status otherStatus;
+
+            MergeManyFilter(List<ObjectInputFilter> first, Status otherStatus) {
+                this.filters = Objects.requireNonNull(first, "filters");
+                this.otherStatus = Objects.requireNonNull(otherStatus, "otherStatus");
+            }
+
+            /**
+             * Returns REJECTED if any of the filters returns REJECTED,
+             * and ALLOWED if any of the filters returns ALLOWED.
+             * Returns UNDECIDED if there is no class to be checked or all filters return UNDECIDED.
+             *
+             * @param info the FilterInfo
+             * @return Status.UNDECIDED if there is no class to check,
+             *      Status.REJECTED if any of the filters returns REJECTED,
+             *      Status.ALLOWED if any filter returns ALLOWED;
+             *      otherwise returns {@code otherStatus}
+             */
+            public ObjectInputFilter.Status checkInput(FilterInfo info) {
+                if (info.serialClass() == null)
+                    return UNDECIDED;
+                Status status = otherStatus;
+                for (ObjectInputFilter filter : filters) {
+                    Status aStatus = filter.checkInput(info);
+                    if (REJECTED.equals(aStatus)) {
+                        return REJECTED;
+                    }
+                    if (ALLOWED.equals(aStatus)) {
+                        status = ALLOWED;
+                    }
+                }
+                return status;
+            }
+
+            @Override
+            public String toString() {
+                return "mergeManyFilter(" + filters + ")";
             }
         }
 
