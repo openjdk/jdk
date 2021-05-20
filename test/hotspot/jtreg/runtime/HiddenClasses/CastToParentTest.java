@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,12 @@
 /*
  * @test
  * @summary Test that a hidden class can be cast to its parent.
+ * DESCRIPTION
+ *     Try to cast an object of a hidden class to its parent (called CastToParentTest)
+ *         - (CastToParentTest) o
+ *         - o.getClass().cast(<hiddenClassObj>);
+ *     and cast to its grandparent (java.lang.Object).
+ *
  * @library /test/lib
  * @modules jdk.compiler
  * @run main CastToParentTest
@@ -35,7 +41,6 @@ import java.lang.invoke.MethodHandles.Lookup;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
-// This test is based on vmTestbase/vm/mlvm/anonloader/func/castToGrandparent/Test.java
 public class CastToParentTest {
 
     static byte klassbuf[] = InMemoryJavaCompiler.compile("TestClass",
@@ -58,5 +63,17 @@ public class CastToParentTest {
 
         // Try to cast using a different mechanism.
         new CastToParentTest().getClass().cast(hiddenClassObj);
+
+
+        // Cast hidden class to its grandparent.
+        java.lang.Object grandparentObj = (java.lang.Object)hiddenClassObj;
+
+        if (!grandparentObj.equals(hiddenClassObj)) {
+            throw new RuntimeException("Hidden class object cannot be cast to grandparent");
+        }
+
+        // Try to cast using a different mechanism.
+        new java.lang.Object().getClass().cast(hiddenClassObj);
     }
+
 }

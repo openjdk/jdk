@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,7 +293,6 @@ public:
   void initialize(bool clear_space = false, bool mangle_space = SpaceDecorator::Mangle);
 
   static int    LogOfHRGrainBytes;
-  static int    LogOfHRGrainWords;
   static int    LogCardsPerRegion;
 
   static size_t GrainBytes;
@@ -316,11 +315,10 @@ public:
   static size_t max_region_size();
   static size_t min_region_size_in_words();
 
-  // It sets up the heap region size (GrainBytes / GrainWords), as
-  // well as other related fields that are based on the heap region
-  // size (LogOfHRGrainBytes / LogOfHRGrainWords /
-  // CardsPerRegion). All those fields are considered constant
-  // throughout the JVM's execution, therefore they should only be set
+  // It sets up the heap region size (GrainBytes / GrainWords), as well as
+  // other related fields that are based on the heap region size
+  // (LogOfHRGrainBytes / CardsPerRegion). All those fields are considered
+  // constant throughout the JVM's execution, therefore they should only be set
   // up once during initialization time.
   static void setup_heap_region_size(size_t max_heap_size);
 

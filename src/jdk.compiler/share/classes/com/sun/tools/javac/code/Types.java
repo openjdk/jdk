@@ -3161,12 +3161,9 @@ public class Types {
 
             @Override
             public boolean equals(Object obj) {
-                if (obj instanceof Entry) {
-                    Entry e = (Entry)obj;
-                    return e.msym == msym && isSameType(site, e.site);
-                } else {
-                    return false;
-                }
+                return (obj instanceof Entry entry)
+                        && entry.msym == msym
+                        && isSameType(site, entry.site);
             }
 
             @Override
@@ -3850,11 +3847,9 @@ public class Types {
             }
             @Override
             public boolean equals(Object obj) {
-                if (!(obj instanceof TypePair))
-                    return false;
-                TypePair typePair = (TypePair)obj;
-                return isSameType(t1, typePair.t1)
-                    && isSameType(t2, typePair.t2);
+                return (obj instanceof TypePair typePair)
+                        && isSameType(t1, typePair.t1)
+                        && isSameType(t2, typePair.t2);
             }
         }
         Set<TypePair> mergeCache = new HashSet<>();
@@ -4877,8 +4872,8 @@ public class Types {
         }
 
         public boolean equals(Object obj) {
-            return (obj instanceof UniqueType) &&
-                types.isSameType(type, ((UniqueType)obj).type);
+            return (obj instanceof UniqueType uniqueType) &&
+                    types.isSameType(type, uniqueType.type);
         }
 
         public String toString() {
@@ -5032,8 +5027,8 @@ public class Types {
         Attribute.Compound c = sym.attribute(syms.retentionType.tsym);
         if (c != null) {
             Attribute value = c.member(names.value);
-            if (value != null && value instanceof Attribute.Enum) {
-                Name levelName = ((Attribute.Enum)value).value.name;
+            if (value != null && value instanceof Attribute.Enum attributeEnum) {
+                Name levelName = attributeEnum.value.name;
                 if (levelName == names.SOURCE) vis = RetentionPolicy.SOURCE;
                 else if (levelName == names.CLASS) vis = RetentionPolicy.CLASS;
                 else if (levelName == names.RUNTIME) vis = RetentionPolicy.RUNTIME;

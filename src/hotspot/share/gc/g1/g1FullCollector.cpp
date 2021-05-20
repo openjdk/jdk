@@ -33,12 +33,10 @@
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/g1/g1FullGCMarkTask.hpp"
 #include "gc/g1/g1FullGCPrepareTask.hpp"
-#include "gc/g1/g1FullGCReferenceProcessorExecutor.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
-#include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
@@ -243,6 +241,24 @@ void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
   }
 }
 
+class G1FullGCRefProcProxyTask : public RefProcProxyTask {
+  G1FullCollector& _collector;
+
+public:
+  G1FullGCRefProcProxyTask(G1FullCollector &collector, uint max_workers)
+    : RefProcProxyTask("G1FullGCRefProcProxyTask", max_workers),
+      _collector(collector) {}
+
+  void work(uint worker_id) override {
+    assert(worker_id < _max_workers, "sanity");
+    G1IsAliveClosure is_alive(&_collector);
+    uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
+    G1FullKeepAliveClosure keep_alive(_collector.marker(index));
+    G1FollowStackClosure* complete_gc = _collector.marker(index)->stack_closure();
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, complete_gc);
+  }
+};
+
 void G1FullCollector::phase1_mark_live_objects() {
   // Recursively traverse all live objects and mark them.
   GCTraceTime(Info, gc, phases) info("Phase 1: Mark live objects", scope()->timer());
@@ -254,9 +270,18 @@ void G1FullCollector::phase1_mark_live_objects() {
   }
 
   {
-    // Process references discovered during marking.
-    G1FullGCReferenceProcessingExecutor reference_processing(this);
-    reference_processing.execute(scope()->timer(), scope()->tracer());
+    uint old_active_mt_degree = reference_processor()->num_queues();
+    reference_processor()->set_active_mt_degree(workers());
+    GCTraceTime(Debug, gc, phases) debug("Phase 1: Reference Processing", scope()->timer());
+    // Process reference objects found during marking.
+    ReferenceProcessorPhaseTimes pt(scope()->timer(), reference_processor()->max_num_queues());
+    G1FullGCRefProcProxyTask task(*this, reference_processor()->max_num_queues());
+    const ReferenceProcessorStats& stats = reference_processor()->process_discovered_references(task, pt);
+    scope()->tracer()->report_gc_reference_stats(stats);
+    pt.print_all_references();
+    assert(marker(0)->oop_stack()->is_empty(), "Should be no oops on the stack");
+
+    reference_processor()->set_active_mt_degree(old_active_mt_degree);
   }
 
   // Weak oops cleanup.
@@ -271,10 +296,6 @@ void G1FullCollector::phase1_mark_live_objects() {
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(scope()->timer());
     _heap->complete_cleaning(&_is_alive, purged_class);
-  } else if (G1StringDedup::is_enabled()) {
-    GCTraceTime(Debug, gc, phases) debug("Phase 1: String Dedup Cleanup", scope()->timer());
-    // If no class unloading just clean out string deduplication data.
-    _heap->string_dedup_cleaning(&_is_alive, NULL);
   }
 
   scope()->tracer()->report_object_count_after_gc(&_is_alive);

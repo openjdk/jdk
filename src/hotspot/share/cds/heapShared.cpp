@@ -561,7 +561,15 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
   _entry_field_records = NULL;
   _subgraph_object_klasses = NULL;
   _is_full_module_graph = info->is_full_module_graph();
-  _has_non_early_klasses = info->has_non_early_klasses();
+
+  if (_is_full_module_graph) {
+    // Consider all classes referenced by the full module graph as early -- we will be
+    // allocating objects of these classes during JVMTI early phase, so they cannot
+    // be processed by (non-early) JVMTI ClassFileLoadHook
+    _has_non_early_klasses = false;
+  } else {
+    _has_non_early_klasses = info->has_non_early_klasses();
+  }
 
   if (_has_non_early_klasses) {
     ResourceMark rm;
@@ -677,7 +685,7 @@ static void verify_the_heap(Klass* k, const char* which) {
 // Note: if a ArchivedKlassSubGraphInfoRecord contains non-early classes, and JVMTI
 // ClassFileLoadHook is enabled, it's possible for this class to be dynamically replaced. In
 // this case, we will not load the ArchivedKlassSubGraphInfoRecord and will clear its roots.
-void HeapShared::resolve_classes(Thread* THREAD) {
+void HeapShared::resolve_classes(JavaThread* THREAD) {
   if (!is_mapped()) {
     return; // nothing to do
   }
@@ -693,7 +701,7 @@ void HeapShared::resolve_classes(Thread* THREAD) {
 }
 
 void HeapShared::resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[],
-                                               int num, Thread* THREAD) {
+                                               int num, JavaThread* THREAD) {
   for (int i = 0; i < num; i++) {
     ArchivableStaticFieldInfo* info = &fields[i];
     TempNewSymbol klass_name = SymbolTable::new_symbol(info->klass_name);
@@ -703,7 +711,7 @@ void HeapShared::resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[
   }
 }
 
-void HeapShared::resolve_classes_for_subgraph_of(Klass* k, Thread* THREAD) {
+void HeapShared::resolve_classes_for_subgraph_of(Klass* k, JavaThread* THREAD) {
   ExceptionMark em(THREAD);
   const ArchivedKlassSubGraphInfoRecord* record =
    resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
@@ -715,7 +723,7 @@ void HeapShared::resolve_classes_for_subgraph_of(Klass* k, Thread* THREAD) {
   }
 }
 
-void HeapShared::initialize_from_archived_subgraph(Klass* k, Thread* THREAD) {
+void HeapShared::initialize_from_archived_subgraph(Klass* k, JavaThread* THREAD) {
   if (!is_mapped()) {
     return; // nothing to do
   }

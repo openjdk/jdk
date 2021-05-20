@@ -53,7 +53,7 @@
 // Implementation of JavaCallWrapper
 
 JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle receiver, JavaValue* result, TRAPS) {
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
   bool clear_pending_exception = true;
 
   guarantee(thread->is_Java_thread(), "crucial check - the VM thread cannot and must not escape to Java code");
@@ -336,17 +336,16 @@ Handle JavaCalls::construct_new_instance(InstanceKlass* klass, Symbol* construct
 
 
 void JavaCalls::call(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
-  // Check if we need to wrap a potential OS exception handler around thread
-  // This is used for e.g. Win32 structured exception handlers
-  assert(THREAD->is_Java_thread(), "only JavaThreads can make JavaCalls");
+  // Check if we need to wrap a potential OS exception handler around thread.
+  // This is used for e.g. Win32 structured exception handlers.
   // Need to wrap each and every time, since there might be native code down the
-  // stack that has installed its own exception handlers
+  // stack that has installed its own exception handlers.
   os::os_exception_wrapper(call_helper, result, method, args, THREAD);
 }
 
 void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
 
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
   assert(method.not_null(), "must have a method to call");
   assert(!SafepointSynchronize::is_at_safepoint(), "call to Java code during VM operation");
   assert(!thread->handle_area()->no_handle_mark_active(), "cannot call out to Java here");
