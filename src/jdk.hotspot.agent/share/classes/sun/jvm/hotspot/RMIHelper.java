@@ -93,14 +93,19 @@ public class RMIHelper {
         Matcher matcher = CONNECT_PATTERN.matcher(connectionString);
         matcher.find();
 
-        String rmiObjectName = matcher.group("servername") == null ? DEFAULT_RMI_OBJECT_NAME
-                                                                   : matcher.group("servername");
         String serverNamePrefix = System.getProperty("sun.jvm.hotspot.rmi.serverNamePrefix");
+        String rmiObjectName = matcher.group("servername");
         if (serverNamePrefix != null) {
-            System.err.println("WARNING: sun.jvm.hotspot.rmi.serverNamePrefix is deprecated. Please specify it in --connect.");
-            rmiObjectName = serverNamePrefix;
+            if (rmiObjectName == null) {
+                System.err.println("WARNING: sun.jvm.hotspot.rmi.serverNamePrefix is deprecated. Please specify it in --connect.");
+                rmiObjectName = serverNamePrefix;
+            } else {
+                throw new DebuggerException("Cannot set both sun.jvm.hotspot.rmi.serverNamePrefix and servername in --connect together");
+            }
         }
-
+        if (rmiObjectName == null) {
+            rmiObjectName = DEFAULT_RMI_OBJECT_NAME;
+        }
         StringBuilder nameBuf = new StringBuilder("//");
         nameBuf.append(matcher.group("host"));
         nameBuf.append('/');
@@ -118,11 +123,18 @@ public class RMIHelper {
     }
 
     private static String getName(String serverID, String serverName) {
-        String name = serverName == null ? DEFAULT_RMI_OBJECT_NAME : serverName;
+        String name = serverName;
         String serverNamePrefix = System.getProperty("sun.jvm.hotspot.rmi.serverNamePrefix");
         if (serverNamePrefix != null) {
-            System.err.println("WARNING: sun.jvm.hotspot.rmi.serverNamePrefix is deprecated. Please specify it in --servername.");
-            name = serverNamePrefix;
+            if (serverName == null) {
+                System.err.println("WARNING: sun.jvm.hotspot.rmi.serverNamePrefix is deprecated. Please specify it with --servername.");
+                name = serverNamePrefix;
+            } else {
+                throw new DebuggerException("Cannot set both sun.jvm.hotspot.rmi.serverNamePrefix and in --servername together");
+            }
+        }
+        if (name == null) {
+            name = DEFAULT_RMI_OBJECT_NAME;
         }
         if (serverID != null) {
            name += "_" + serverID;

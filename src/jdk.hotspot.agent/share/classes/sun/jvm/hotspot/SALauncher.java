@@ -91,7 +91,8 @@ public class SALauncher {
     }
 
     private static boolean debugdHelp() {
-        System.out.println("    --serverid <id>         A unique identifier for this debug server.");
+        System.out.println("    --serverid <id>         A unique identifier for this debugd server.");
+        System.out.println("    --servername <name>     Instance name of debugd server.");
         System.out.println("    --rmiport <port>        Sets the port number to which the RMI connector is bound." +
                 " If not specified a random available port is used.");
         System.out.println("    --registryport <port>   Sets the RMI registry port." +
@@ -102,7 +103,6 @@ public class SALauncher {
                 " be a hostname or an IPv4/IPv6 address. This option overrides the system property" +
                 " 'java.rmi.server.hostname'. If not specified, the system property is used. If the system" +
                 " property is not set, a system hostname is used.");
-        System.out.println("    --servername <name>     Instance name of debugd server.");
         return commonHelp("debugd");
     }
 
