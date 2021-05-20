@@ -53,7 +53,9 @@ import static java.lang.invoke.MethodHandleInfo.REF_putStatic;
  *
  * @since 12
  */
-public interface DirectMethodHandleDesc extends MethodHandleDesc {
+sealed public interface DirectMethodHandleDesc
+        extends MethodHandleDesc
+        permits DirectMethodHandleDescImpl {
     /**
      * Kinds of method handles that can be described with {@linkplain DirectMethodHandleDesc}.
      *

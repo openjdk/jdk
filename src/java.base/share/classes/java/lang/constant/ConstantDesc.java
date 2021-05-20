@@ -84,7 +84,16 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
  *
  * @since 12
  */
-public interface ConstantDesc {
+sealed public interface ConstantDesc
+        permits ClassDesc,
+                MethodHandleDesc,
+                MethodTypeDesc,
+                Double,
+                DynamicConstantDesc,
+                Float,
+                Integer,
+                Long,
+                String {
     /**
      * Resolves this descriptor reflectively, emulating the resolution behavior
      * of JVMS 5.4.3 and the access control behavior of JVMS 5.4.4.  The resolution
