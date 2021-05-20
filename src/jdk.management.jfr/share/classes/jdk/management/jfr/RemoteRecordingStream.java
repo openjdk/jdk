@@ -579,8 +579,8 @@ public final class RemoteRecordingStream implements EventStream {
      * @throws SecurityException if a security manager exists and the caller doesn't
      *         have {@code FilePermission} to write to the destination path
      *
-     * @see RecordingStream#setMaxAge(Duration)
-     * @see RecordingStream#setMaxSize(Duration)
+     * @see RemoteRecordingStream#setMaxAge(Duration)
+     * @see RemoteRecordingStream#setMaxSize(Duration)
      */
     public void dump(Path destination) throws IOException {
         Objects.requireNonNull(destination);
