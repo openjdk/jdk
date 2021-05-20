@@ -92,6 +92,7 @@ gc/epsilon/TestClasses.java 8267348 linux-x64
 runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP_JFR.java 8253437 windows-x64
 runtime/cds/DeterministicDump.java 8253495 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
+runtime/os/TestTracePageSizes.java 8267460 linux-aarch64
 
 #############################################################################
 
