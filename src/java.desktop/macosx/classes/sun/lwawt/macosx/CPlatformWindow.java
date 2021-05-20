@@ -126,7 +126,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public static final String WINDOW_FULL_CONTENT = "apple.awt.fullWindowContent";
     public static final String WINDOW_TRANSPARENT_TITLE_BAR = "apple.awt.transparentTitleBar";
     public static final String WINDOW_TITLE_VISIBLE = "apple.awt.windowTitleVisible";
-    public static boolean allowAutomaticWindowTabbing;
+    public static boolean allowMacOSAutomaticWindowTabbing;
 
     // Yeah, I know. But it's easier to deal with ints from JNI
     static final int MODELESS = 0;
@@ -194,11 +194,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     static {
         AccessController.doPrivileged(
                 (PrivilegedAction<Object>) () -> {
-                    allowAutomaticWindowTabbing = Boolean.parseBoolean(
-                            System.getProperty("jdk.allowTabbedWindows"));
+                    allowMacOSAutomaticWindowTabbing = Boolean.parseBoolean(
+                            System.getProperty("jdk.allowMacOSTabbedWindows"));
                     return null;
                 });
-        nativeSetAllowAutomaticTabbingProperty(allowAutomaticWindowTabbing);
+        nativeSetAllowAutomaticTabbingProperty(allowMacOSAutomaticWindowTabbing);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
