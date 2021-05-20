@@ -26,6 +26,7 @@
  * @summary Spliterator.iterator traversing tests
  * @library /lib/testlibrary/bootlib
  * @run testng IteratorFromSpliteratorTest
+ * @bug 8267452
  */
 import org.testng.annotations.Test;
 
