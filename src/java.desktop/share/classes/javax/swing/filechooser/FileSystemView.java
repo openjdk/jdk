@@ -265,7 +265,6 @@ public abstract class FileSystemView {
     *     Icon icon = fsv.getSystemIcon(new File("application.exe"), 64);
     *     JLabel label = new JLabel(icon);
     * </pre>
-    * <p>
     * @implSpec The default implementation gets information from the
     * {@code ShellFolder} class. Whenever possible, the icon
     * returned is a multi-resolution icon image,
