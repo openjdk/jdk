@@ -551,6 +551,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   // the si_code for this condition may change in the future.
   // Furthermore, a false-positive should be harmless.
   if (UnguardOnExecutionViolation > 0 &&
+      stub == NULL &&
       (sig == SIGSEGV || sig == SIGBUS) &&
       uc->context_trapno == trap_page_fault) {
     int page_size = os::vm_page_size();
@@ -564,7 +565,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // different - we still want to unguard the 2nd page in this case.
     //
     // 15 bytes seems to be a (very) safe value for max instruction size.
-    bool pc_is_near_addr = (addr >= pc) &&
+    bool pc_is_near_addr =
       (pointer_delta((void*) addr, (void*) pc, sizeof(char)) < 15);
     bool instr_spans_page_boundary =
       (align_down((intptr_t) pc ^ (intptr_t) addr,
