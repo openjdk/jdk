@@ -265,17 +265,22 @@ public abstract class FileSystemView {
     *     Icon icon = fsv.getSystemIcon(new File("application.exe"), 64);
     *     JLabel label = new JLabel(icon);
     * </pre>
-    * @implSpec The default implementation gets information from the
-    * {@code ShellFolder} class. Whenever possible, the icon
-    * returned is a multi-resolution icon image,
+    *
+    * @implSpec The default implementation is platform specific
+    * and while we will do our best to find an icon of a specific size the exact
+    * match can not be guaranteed. Wherever supported by the underlying
+    * implementation, the icon returned is a multi-resolution icon image,
     * which allows better support for High DPI environments
     * with different scaling factors.
     *
-    * @param f a {@code File} object
-    * @param size width and height of the icon in virtual pixels
+    * @param f a {@code File} object for which the icon will be retrieved
+    * @param size width and height of the icon in user coordinate system.
+    * This API only supports square icons with the edge length
+    * equals or greater than 1. Maximum size allowed is defined by the
+    * underlying implementation.
     * @return an icon as it would be displayed by a native file chooser
     * or null if invalid parameters are passed such as pointer to a
-    * non-existing file.
+    * non-existing file or a size outside of supported range.
     * @see JFileChooser#getIcon
     * @see AbstractMultiResolutionImage
     * @see FileSystemView#getSystemIcon(File)
