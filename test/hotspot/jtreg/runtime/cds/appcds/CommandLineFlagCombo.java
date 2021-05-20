@@ -121,7 +121,7 @@ public class CommandLineFlagCombo {
             }
         }
 
-        if (!WhiteBox.getWhiteBox().isJFRIncludedInVmBuild())
+        if (!WhiteBox.getWhiteBox().isJFRIncluded())
         {
             System.out.println("JFR does not exist");
             return true;

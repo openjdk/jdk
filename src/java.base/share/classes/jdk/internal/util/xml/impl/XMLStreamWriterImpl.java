@@ -578,7 +578,7 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
      * Start of Internal classes.
      *
      */
-    protected class Element {
+    protected static class Element {
 
         /**
          * the parent element
