@@ -373,38 +373,33 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
   OrderAccess::fence();
 
   intptr_t save = _recursions;
+  _recursions = 0;
+  ret = simple_wait(self, millis);
 
-  if (self->is_Java_thread()) {
+  // Now we need to re-enter the monitor. For JavaThread's
+  // we need to manage suspend requests.
+  if (self->is_Java_thread()) { // JavaThread re-enter
     JavaThread* jt = self->as_Java_thread();
-    guarantee(jt->thread_state() == _thread_in_native, "invariant");
-
-    _recursions = 0;
-    ret = simple_wait(self, millis);
-
-    {
-      ThreadInVMfromNative tivmfn(jt);
-      for (;;) {
-        ExitOnSuspend eos(this);
-        {
-          ThreadBlockInVMPreprocess<ExitOnSuspend> tbivmp(jt, eos);
-          simple_enter(jt);
-        }
-        if (!eos.monitor_exited()) {
-          break;
-        }
+    ThreadInVMfromNative tivmfn(jt);
+    for (;;) {
+      ExitOnSuspend eos(this);
+      {
+        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivmp(jt, eos);
+        simple_enter(jt);
       }
-      _recursions = save;
-      if (jt->is_interrupted(true)) {
-        ret = M_INTERRUPTED;
+      if (!eos.monitor_exited()) {
+        break;
       }
     }
-  } else {
-    _recursions = 0;
-    ret = simple_wait(self, millis);
-    simple_enter(self);
-    _recursions = save;
+    if (jt->is_interrupted(true)) {
+      ret = M_INTERRUPTED;
+    }
+  } else { // Non-JavaThread re-enter
     assert(ret != M_INTERRUPTED, "Only JavaThreads can be interrupted");
+    simple_enter(self);
   }
+
+  _recursions = save;
 
   guarantee(self == _owner, "invariant");
   guarantee(save == _recursions, "invariant");

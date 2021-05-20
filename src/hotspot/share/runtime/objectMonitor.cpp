@@ -313,7 +313,9 @@ void ObjectMonitor::ExitOnSuspend::operator()(JavaThread* current) {
     _om->_succ = NULL;
     // Don't need a full fence after clearing successor here because of the call to exit().
     _om->exit(current, false /* not_suspended */);
-    _exited = true;
+    _om_exited = true;
+
+    current->set_current_pending_monitor(_om);
   }
 }
 
@@ -430,6 +432,12 @@ bool ObjectMonitor::enter(JavaThread* current) {
       {
         ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos);
         EnterI(current);
+        current->set_current_pending_monitor(NULL);
+        // We can go to a safepoint at the end of this block. If we
+        // do a thread dump during that safepoint, then this thread will show
+        // as having "-locked" the monitor, but the OS and java.lang.Thread
+        // states will still report that the thread is blocked trying to
+        // acquire it.
       }
       if (!eos.exited()) {
         // ExitOnSuspend did not exit the OM
@@ -438,17 +446,9 @@ bool ObjectMonitor::enter(JavaThread* current) {
       }
     }
 
-    current->set_current_pending_monitor(NULL);
-
     // We cleared the pending monitor info since we've just gotten past
     // the enter-check-for-suspend dance and we now own the monitor free
     // and clear, i.e., it is no longer pending.
-    // We can go to a safepoint at the end of this block. If we
-    // do a thread dump during that safepoint, then this thread will show
-    // as having "-locked" the monitor, but the OS and java.lang.Thread
-    // states will still report that the thread is blocked trying to
-    // acquire it.
-
   }
 
   add_to_contentions(-1);

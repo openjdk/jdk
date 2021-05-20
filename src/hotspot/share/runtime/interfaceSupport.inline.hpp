@@ -208,6 +208,7 @@ class ThreadInVMfromNative : public ThreadStateTransition {
     _thread->check_possible_safepoint();
     // Once we are in native vm expects stack to be walkable
     _thread->frame_anchor()->make_walkable(_thread);
+    OrderAccess::storestore();
     _thread->set_thread_state(_thread_in_native);
   }
 };
@@ -232,6 +233,10 @@ class ThreadToNativeFromVM : public ThreadStateTransition {
   }
 };
 
+// Perform a transition to _thread_blocked and take a call-back to be executed before
+// SafepointMechanism::process_if_requested when returning to the VM. This allows us
+// to perform an "undo" action if we might block processing a safepoint/handshake operation
+// (such as thread suspension).
 template <typename PRE_PROC>
 class ThreadBlockInVMPreprocess : public ThreadStateTransition {
  private:
