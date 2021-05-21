@@ -266,10 +266,11 @@ public abstract class FileSystemView {
     *     JLabel label = new JLabel(icon);
     * </pre>
     *
-    * @implSpec The default implementation is platform specific
-    * and while we will do our best to find an icon of a specific size the exact
-    * match can not be guaranteed. Wherever supported by the underlying
-    * implementation, the icon returned is a multi-resolution icon image,
+    * @implSpec The available icons may be platform specific and so the
+    * available sizes determined by the platform. Therefore an exact match
+    * for the requested size may not be possible.
+    *
+    * The icon returned may be a multi-resolution icon image,
     * which allows better support for High DPI environments
     * with different scaling factors.
     *
