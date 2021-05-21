@@ -130,7 +130,7 @@ public class RMIHelper {
                 System.err.println("WARNING: sun.jvm.hotspot.rmi.serverNamePrefix is deprecated. Please specify it with --servername.");
                 name = serverNamePrefix;
             } else {
-                throw new DebuggerException("Cannot set both sun.jvm.hotspot.rmi.serverNamePrefix and in --servername together");
+                throw new DebuggerException("Cannot set both sun.jvm.hotspot.rmi.serverNamePrefix and --servername together");
             }
         }
         if (name == null) {
