@@ -246,7 +246,7 @@ public class SimpleFileServerTest {
                 <html>
                 <body>
                 <h1>File not found</h1>
-                <p>&#x2F;doesNotExist.txt<p>
+                <p>&#x2F;doesNotExist.txt</p>
                 </body>
                 </html>
                 """;
@@ -274,7 +274,7 @@ public class SimpleFileServerTest {
                 <html>
                 <body>
                 <h1>File not found</h1>
-                <p>&#x2F;doesNotExist.txt<p>
+                <p>&#x2F;doesNotExist.txt</p>
                 </body>
                 </html>
                 """;

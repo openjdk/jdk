@@ -142,7 +142,7 @@ public final class FileServerHandler implements HttpHandler {
     void handleNotFound(HttpExchange exchange) throws IOException {
         var bytes = (openHTML
                 + "<h1>File not found</h1>\n"
-                + "<p>" + sanitize.apply(exchange.getRequestURI().getPath(), chars) + "<p>\n"
+                + "<p>" + sanitize.apply(exchange.getRequestURI().getPath(), chars) + "</p>\n"
                 + closeHTML).getBytes(UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
 
