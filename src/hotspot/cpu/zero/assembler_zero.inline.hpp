@@ -26,8 +26,6 @@
 #ifndef CPU_ZERO_ASSEMBLER_ZERO_INLINE_HPP
 #define CPU_ZERO_ASSEMBLER_ZERO_INLINE_HPP
 
-#include "assembler_zero.hpp"
-
 #include "asm/assembler.inline.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"

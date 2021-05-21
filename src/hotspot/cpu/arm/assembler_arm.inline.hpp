@@ -25,6 +25,5 @@
 #ifndef CPU_ARM_ASSEMBLER_ARM_INLINE_HPP
 #define CPU_ARM_ASSEMBLER_ARM_INLINE_HPP
 
-#include "assembler_arm.hpp"
 
 #endif // CPU_ARM_ASSEMBLER_ARM_INLINE_HPP

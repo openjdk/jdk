@@ -26,8 +26,6 @@
 #ifndef CPU_PPC_ASSEMBLER_PPC_INLINE_HPP
 #define CPU_PPC_ASSEMBLER_PPC_INLINE_HPP
 
-#include "assembler_ppc.hpp"
-
 #include "asm/assembler.inline.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"

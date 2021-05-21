@@ -25,8 +25,6 @@
 #ifndef CPU_X86_ASSEMBLER_X86_INLINE_HPP
 #define CPU_X86_ASSEMBLER_X86_INLINE_HPP
 
-#include "assembler_x86.hpp"
-
 #include "asm/assembler.inline.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"

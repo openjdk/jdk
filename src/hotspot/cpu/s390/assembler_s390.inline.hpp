@@ -26,8 +26,6 @@
 #ifndef CPU_S390_ASSEMBLER_S390_INLINE_HPP
 #define CPU_S390_ASSEMBLER_S390_INLINE_HPP
 
-#include "assembler_s390.hpp"
-
 #include "asm/assembler.inline.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
