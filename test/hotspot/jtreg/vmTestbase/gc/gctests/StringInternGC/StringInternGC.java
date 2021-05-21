@@ -31,7 +31,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm -Xmx1g gc.gctests.StringInternGC.StringInternGC
+ * @run main/othervm gc.gctests.StringInternGC.StringInternGC
  */
 
 package gc.gctests.StringInternGC;
@@ -46,13 +46,17 @@ import nsk.share.gc.*;
  * String pool should not overflow.
  */
 public class StringInternGC extends ThreadedGCTest {
-        private int maxLength = 1000;
+        private int maxLength = 1000; // Maximum length to add per operation.
+        private int maxTotalLength = 128 * 1024; // Random total maximum length of the string.
 
         private class StringGenerator implements Runnable {
                 private StringBuffer sb = new StringBuffer();
 
                 private String generateString() {
                         int length = LocalRandom.nextInt(maxLength);
+                        if (sb.length() > maxTotalLength) {
+                                sb = new StringBuffer();
+                        }
                         for (int i = 0; i < length; ++i)
                                 sb.append((char) LocalRandom.nextInt(Integer.MAX_VALUE));
                         return sb.toString();
