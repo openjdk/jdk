@@ -113,7 +113,7 @@ public class Signatures {
              this.writer = writer;
              this.utils = writer.utils;
              this.configuration = writer.configuration;
-             this.modifiers = markPreviewModifiers(getModifiers(typeElement));
+             this.modifiers = markPreviewModifiers(getModifiers());
          }
 
         public TypeSignature setModifiers(Content modifiers) {
@@ -254,8 +254,8 @@ public class Signatures {
              return content;
         }
 
-        private static List<String> getModifiers(Element e) {
-            SortedSet<Modifier> modifiers = new TreeSet<>(e.getModifiers());
+        private List<String> getModifiers() {
+            SortedSet<Modifier> modifiers = new TreeSet<>(typeElement.getModifiers());
             modifiers.remove(NATIVE);
             modifiers.remove(STRICTFP);
             modifiers.remove(SYNCHRONIZED);
@@ -338,7 +338,7 @@ public class Signatures {
                     return list;
                 }
 
-            }.visit(e, modifiers);
+            }.visit(typeElement, modifiers);
         }
     }
 
