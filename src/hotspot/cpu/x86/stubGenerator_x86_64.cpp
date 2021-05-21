@@ -6206,11 +6206,11 @@ address generate_avx_ghash_processBlocks() {
 
     __ incrementl(source, 4);
 
-    __ movb(Address(dest, 0, Address::times_1, 0), byte1);
+    __ movb(Address(dest, RegisterOrConstant(0), Address::times_1, 0), byte1);
     __ shrl(byte1, 8);
-    __ movb(Address(dest, 0, Address::times_1, 1), byte1);
+    __ movb(Address(dest, RegisterOrConstant(0), Address::times_1, 1), byte1);
     __ shrl(byte1, 8);
-    __ movb(Address(dest, 0, Address::times_1, 2), byte1);
+    __ movb(Address(dest, RegisterOrConstant(0), Address::times_1, 2), byte1);
 
     __ incrementl(dest, 3);
 
@@ -6219,12 +6219,12 @@ address generate_avx_ghash_processBlocks() {
 
     __ BIND(L_bottomLoop);
     __ movl(decode_table, ExternalAddress(StubRoutines::x86::base64_decoding_table_addr()));
-    __ load_signed_byte(byte1, Address(source, 0, Address::times_1, 0));
-    __ load_signed_byte(byte2, Address(source, 0, Address::times_1, 1));
+    __ load_signed_byte(byte1, Address(source, RegisterOrConstant(0), Address::times_1, 0));
+    __ load_signed_byte(byte2, Address(source, RegisterOrConstant(0), Address::times_1, 1));
     __ load_signed_byte(byte1, Address(decode_table, byte1, Address::times_1, 0));
     __ load_signed_byte(byte2, Address(decode_table, byte2, Address::times_1, 0));
-    __ load_signed_byte(byte3, Address(source, 0, Address::times_1, 2));
-    __ load_signed_byte(byte4, Address(source, 0, Address::times_1, 3));
+    __ load_signed_byte(byte3, Address(source, RegisterOrConstant(0), Address::times_1, 2));
+    __ load_signed_byte(byte4, Address(source, RegisterOrConstant(0), Address::times_1, 3));
     __ load_signed_byte(byte3, Address(decode_table, byte3, Address::times_1, 0));
     __ load_signed_byte(byte4, Address(decode_table, byte4, Address::times_1, 0));
 
