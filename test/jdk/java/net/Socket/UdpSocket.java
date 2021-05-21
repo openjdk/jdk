@@ -39,7 +39,6 @@ import java.security.Permission;
 import java.util.Arrays;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.net.SocketException;
 import java.net.BindException;
 
 import org.testng.annotations.Test;
@@ -60,7 +59,6 @@ public class UdpSocket {
 
             int port = ((InetSocketAddress) dc.getLocalAddress()).getPort();
             try (Socket s = new Socket(loopback, port, false)) {
-
                 // send datagram with socket output stream
                 byte[] array1 = MESSAGE.getBytes("UTF-8");
                 s.getOutputStream().write(array1);
@@ -140,13 +138,9 @@ public class UdpSocket {
 
         try {
             newUdpSocket = new Socket(InetAddress.getLoopbackAddress(), 8000, false);
-        } catch (SocketException soEx) {
-            if (soEx instanceof BindException) {
-                System.out.println("BindException caught retry Socket creation");
-                newUdpSocket = new Socket(InetAddress.getLoopbackAddress(), 8000, false);
-            } else {
-                throw soEx;
-            }
+        } catch (BindException biEx) {
+            System.out.println("BindException caught retry Socket creation");
+            newUdpSocket = new Socket(InetAddress.getLoopbackAddress(), 8000, false);
         }
         return newUdpSocket;
     }
