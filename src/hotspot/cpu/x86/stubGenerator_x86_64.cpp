@@ -6228,6 +6228,7 @@ address generate_avx_ghash_processBlocks() {
     __ addl(dest, dp);
     __ pop(byte2);    // Clear old dest from stack
     __ push(dest);
+    __ lea(decode_table, ExternalAddress(StubRoutines::x86::base64_decoding_table_addr()));
 
     __ decrementl(length, 1);         // Bottom-entry loop
 
@@ -6256,7 +6257,6 @@ address generate_avx_ghash_processBlocks() {
     __ jcc(Assembler::zero, L_exit);
 
     __ BIND(L_bottomLoop);
-    __ movl(decode_table, ExternalAddress(StubRoutines::x86::base64_decoding_table_addr()));
     __ load_signed_byte(byte1, Address(source, RegisterOrConstant(), Address::times_1, 0));
     __ load_signed_byte(byte2, Address(source, RegisterOrConstant(), Address::times_1, 1));
     __ load_signed_byte(byte1, Address(decode_table, byte1, Address::times_1, 0));
