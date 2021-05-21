@@ -75,7 +75,7 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
  *
  * @since 12
  */
-sealed public interface ConstantDesc
+public sealed interface ConstantDesc
         permits ClassDesc,
                 MethodHandleDesc,
                 MethodTypeDesc,

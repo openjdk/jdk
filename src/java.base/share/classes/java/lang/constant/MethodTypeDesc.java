@@ -36,7 +36,7 @@ import java.util.stream.Stream;
  *
  * @since 12
  */
-sealed public interface MethodTypeDesc
+public sealed interface MethodTypeDesc
         extends ConstantDesc,
                 TypeDescriptor.OfMethod<ClassDesc, MethodTypeDesc>
         permits MethodTypeDescImpl {

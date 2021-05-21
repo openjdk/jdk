@@ -48,7 +48,7 @@ import static java.lang.invoke.MethodHandleInfo.REF_putStatic;
  *
  * @since 12
  */
-sealed public interface DirectMethodHandleDesc
+public sealed interface DirectMethodHandleDesc
         extends MethodHandleDesc
         permits DirectMethodHandleDescImpl {
     /**

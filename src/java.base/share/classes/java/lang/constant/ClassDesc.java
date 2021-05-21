@@ -53,7 +53,7 @@ import static java.util.stream.Collectors.joining;
  *
  * @since 12
  */
-sealed public interface ClassDesc
+public sealed interface ClassDesc
         extends ConstantDesc,
                 TypeDescriptor.OfField<ClassDesc>
         permits PrimitiveClassDescImpl,

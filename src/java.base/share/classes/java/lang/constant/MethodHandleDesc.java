@@ -37,7 +37,7 @@ import static java.lang.constant.DirectMethodHandleDesc.Kind.CONSTRUCTOR;
  *
  * @since 12
  */
-sealed public interface MethodHandleDesc
+public sealed interface MethodHandleDesc
         extends ConstantDesc
         permits AsTypeMethodHandleDesc,
                 DirectMethodHandleDesc {
