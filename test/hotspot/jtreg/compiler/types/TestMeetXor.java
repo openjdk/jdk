@@ -23,10 +23,11 @@
 
 /*
  * @test
+ * @key randomness
  * @bug 8267332
  * @summary Test meet on xor
  * @library /test/lib /
- * @run main/othervm compiler.types.TestMeetXor -XX::CompileCommand=dontinline,*::test*
+ * @run main/othervm compiler.types.TestMeetXor -Xbatch -XX::CompileCommand=dontinline,*::test*
  */
 
 package compiler.types;
@@ -36,17 +37,18 @@ import jdk.test.lib.Asserts;
 
 public class TestMeetXor {
     public static void main(String[] args) throws Exception {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 50_000; i++) {
             testCase1E();
             testCase2E();
             testCase3E();
+            testCase4E();
 
             testCaseS();
         }
     }
 
     static int[] count = new int[256];
-    static Random r = new Random(5);
+    static Random r = jdk.test.lib.Utils.getRandomInstance();
 
     public static void testCase1E() {
         boolean aiobe = false;
