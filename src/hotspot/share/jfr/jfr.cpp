@@ -25,12 +25,14 @@
 #include "precompiled.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdLoadBarrier.inline.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/thread.hpp"
 
@@ -109,3 +111,10 @@ bool Jfr::on_flight_recorder_option(const JavaVMOption** option, char* delimiter
 bool Jfr::on_start_flight_recording_option(const JavaVMOption** option, char* delimiter) {
   return JfrOptionSet::parse_start_flight_recording_option(option, delimiter);
 }
+
+#ifdef JFR_HAVE_INTRINSICS
+JRT_LEAF(void, Jfr::trace_id_load_barrier(Klass * klass))
+  assert(klass != NULL, "sanity");
+  JfrTraceIdLoadBarrier::load_barrier(klass);
+JRT_END
+#endif

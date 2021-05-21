@@ -1499,6 +1499,7 @@ const TypeFunc *OptoRuntime::register_finalizer_Type() {
   return TypeFunc::make(domain,range);
 }
 
+#if INCLUDE_JFR
 const TypeFunc *OptoRuntime::trace_id_load_barrier_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
@@ -1512,6 +1513,7 @@ const TypeFunc *OptoRuntime::trace_id_load_barrier_Type() {
 
   return TypeFunc::make(domain,range);
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Dtrace support.  entry and exit probes have the same signature

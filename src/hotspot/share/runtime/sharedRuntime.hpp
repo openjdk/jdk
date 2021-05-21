@@ -522,10 +522,6 @@ class SharedRuntime: AllStatic {
                                           const GrowableArray<VMReg>& output_registers);
 #endif
 
-#ifdef JFR_HAVE_INTRINSICS
-  static void trace_id_load_barrier(Klass* klass);
-#endif
-
 #ifndef PRODUCT
 
   // Collect and print inline cache miss statistics

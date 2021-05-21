@@ -142,9 +142,6 @@ public final class JVM {
     @IntrinsicCandidate
     public static native long getClassId(Class<?> clazz);
 
-    // temporary workaround until we solve intrinsics supporting epoch shift tagging
-    public static native long getClassIdNonIntrinsic(Class<?> clazz);
-
     /**
      * Return process identifier.
      *

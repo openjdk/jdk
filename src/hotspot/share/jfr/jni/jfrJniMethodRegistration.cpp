@@ -45,7 +45,6 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"emitEvent", (char*)"(JJJ)Z", (void*)jfr_emit_event,
       (char*)"getAllEventClasses", (char*)"()Ljava/util/List;", (void*)jfr_get_all_event_classes,
       (char*)"getClassId", (char*)"(Ljava/lang/Class;)J", (void*)jfr_class_id,
-      (char*)"getClassIdNonIntrinsic", (char*)"(Ljava/lang/Class;)J", (void*)jfr_class_id,
       (char*)"getPid", (char*)"()Ljava/lang/String;", (void*)jfr_get_pid,
       (char*)"getStackTraceId", (char*)"(I)J", (void*)jfr_stacktrace_id,
       (char*)"getThreadId", (char*)"(Ljava/lang/Thread;)J", (void*)jfr_id_for_thread,

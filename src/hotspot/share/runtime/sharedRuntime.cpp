@@ -1880,12 +1880,6 @@ address SharedRuntime::handle_unsafe_access(JavaThread* thread, address next_pc)
   return next_pc;
 }
 
-#ifdef JFR_HAVE_INTRINSICS
-JRT_LEAF(void, SharedRuntime::trace_id_load_barrier(Klass * klass))
-  JfrTraceIdLoadBarrier::enqueue(klass);
-JRT_END
-#endif
-
 #ifdef ASSERT
 void SharedRuntime::check_member_name_argument_is_last_argument(const methodHandle& method,
                                                                 const BasicType* sig_bt,
