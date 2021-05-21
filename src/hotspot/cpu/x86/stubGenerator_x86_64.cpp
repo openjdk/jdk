@@ -5898,14 +5898,16 @@ address generate_avx_ghash_processBlocks() {
     const XMMRegister mask = xmm0;
     const XMMRegister invalid_b64 = xmm1;
 
-    Label L_process256, L_process64, L_exit, L_processdata, L_loadURL, L_continue, L_finalBit, L_padding, L_donePadding;
+    Label L_process256, L_process64, L_exit, L_processdata, L_loadURL;
+    Label L_continue, L_finalBit, L_padding, L_donePadding, L_bruteForce;
+    Label L_forceLoop, L_bottomLoop;
 
     // calculate length from offsets
     __ movl(length, end_offset);
     __ subl(length, start_offset);
     __ push(dest);          // Save for return value calc
-    __ cmpl(length, 0);
-    __ jcc(Assembler::lessEqual, L_exit);
+    __ cmpl(length, 128);     // 128-bytes is break-even for AVX-512
+    __ jcc(Assembler::lessEqual, L_bruteForce);
 
     // Load lookup tables based on isURL
     __ cmpl(isURL, 0);
@@ -6145,6 +6147,94 @@ address generate_avx_ghash_processBlocks() {
     __ decrementq(r13, 1);
     __ shrq(rax, 1);
     __ jmp(L_donePadding);
+
+    __ align(32);
+    __ BIND(L_bruteForce);
+
+    // Use non-AVX code to decode 4-byte chunks into 3 bytes of output
+
+    // Register state (Linux):
+    // r12-15 - saved on stack
+    // rdi - src
+    // rsi - sp
+    // rdx - sl
+    // rcx - dst
+    // r8 - dp
+    // r9 - isURL
+
+    // Register state (Windows):
+    // r12-15 - saved on stack
+    // rcx - src
+    // rdx - sp
+    // r8 - sl
+    // r9 - dst
+    // r12 - dp
+    // r10 - isURL
+
+    // Registers (common):
+    // length (r14) - bytes in src
+
+    const Register decode_table = r11;
+    const Register out_byte_count = rbx;
+    const Register byte1 = r13;
+    const Register byte2 = r14;
+    const Register byte3 = WINDOWS_ONLY(r12) NOT_WINDOWS(r8);
+    const Register byte4 = WINDOWS_ONLY(rdx) NOT_WINDOWS(rsi);
+
+    __ shrl(length, 2);    // Multiple of 4 bytes only - length is # 4-byte chunks
+    __ cmpl(length, 0);
+    __ jcc(Assembler::lessEqual, L_exit);
+
+    // Set up src and dst pointers properly
+    __ addl(source, start_offset);     // Initial offset
+    __ addl(dest, dp);
+    __ pop(byte2);    // Clear old dest from stack
+    __ push(dest);
+
+    __ decrementl(length, 1);         // Bottom-entry loop
+
+    __ jmp(L_bottomLoop);
+
+    __ align(32);
+    __ BIND(L_forceLoop);
+    __ shll(byte1, 18);
+    __ shll(byte2, 12);
+    __ shll(byte3, 6);
+    __ orl(byte1, byte2);
+    __ orl(byte1, byte3);
+    __ orl(byte1, byte4);
+
+    __ incrementl(source, 4);
+
+    __ movb(Address(dest, 0, Address::times_1, 0), byte1);
+    __ shrl(byte1, 8);
+    __ movb(Address(dest, 0, Address::times_1, 1), byte1);
+    __ shrl(byte1, 8);
+    __ movb(Address(dest, 0, Address::times_1, 2), byte1);
+
+    __ incrementl(dest, 3);
+
+    __ decrementl(length, 1);
+    __ jcc(Assembler::zero, L_exit);
+
+    __ BIND(L_bottomLoop);
+    __ movl(decode_table, ExternalAddress(StubRoutines::x86::base64_decoding_table_addr()));
+    __ load_signed_byte(byte1, Address(source, 0, Address::times_1, 0));
+    __ load_signed_byte(byte2, Address(source, 0, Address::times_1, 1));
+    __ load_signed_byte(byte1, Address(decode_table, byte1, Address::times_1, 0));
+    __ load_signed_byte(byte2, Address(decode_table, byte2, Address::times_1, 0));
+    __ load_signed_byte(byte3, Address(source, 0, Address::times_1, 2));
+    __ load_signed_byte(byte4, Address(source, 0, Address::times_1, 3));
+    __ load_signed_byte(byte3, Address(decode_table, byte3, Address::times_1, 0));
+    __ load_signed_byte(byte4, Address(decode_table, byte4, Address::times_1, 0));
+
+    __ mov(rax, byte1);
+    __ orl(rax, byte2);
+    __ orl(rax, byte3);
+    __ orl(rax, byte4);
+    __ jcc(Assembler::positive, L_forceLoop);
+
+    __ jmp(L_exit);
 
     return start;
   }
