@@ -247,6 +247,7 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
     thread->check_possible_safepoint();
     // Once we are blocked vm expects stack to be walkable
     thread->frame_anchor()->make_walkable(thread);
+    OrderAccess::storestore();
     thread->set_thread_state(_thread_blocked);
   }
   ~ThreadBlockInVMPreprocess() {

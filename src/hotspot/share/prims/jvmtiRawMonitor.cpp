@@ -376,7 +376,7 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
   _recursions = 0;
   ret = simple_wait(self, millis);
 
-  // Now we need to re-enter the monitor. For JavaThread's
+  // Now we need to re-enter the monitor. For JavaThreads
   // we need to manage suspend requests.
   if (self->is_Java_thread()) { // JavaThread re-enter
     JavaThread* jt = self->as_Java_thread();
