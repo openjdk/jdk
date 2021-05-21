@@ -6083,7 +6083,6 @@ address generate_avx_ghash_processBlocks() {
     __ vpmaddwd(merged0, merge_ab_bc0, pack32_op, Assembler::AVX_512bit);
     __ vpermb(merged0, pack24bits, merged0, Assembler::AVX_512bit);
 
-//    __ evmovdquq(xmm3, xmm7, Assembler::AVX_512bit);
     __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), merged0, Assembler::AVX_512bit);
 
     __ subq(length, 64);
