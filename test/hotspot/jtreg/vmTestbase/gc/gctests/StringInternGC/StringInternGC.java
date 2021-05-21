@@ -59,12 +59,6 @@ public class StringInternGC extends ThreadedGCTest {
                                 sb = new StringBuffer();
                         }
 
-                        long currentTime = System.currentTimeMillis();
-                        if (currentTime - lastTime > 5000) { // Cause a full gc every 5s.
-                                lastTime = currentTime;
-                                System.gc();
-                        }
-
                         for (int i = 0; i < length; ++i)
                                 sb.append((char) LocalRandom.nextInt(Integer.MAX_VALUE));
                         return sb.toString();
@@ -72,6 +66,12 @@ public class StringInternGC extends ThreadedGCTest {
 
 
                 public void run() {
+                        long currentTime = System.currentTimeMillis();
+                        if (currentTime - lastTime > 5000) { // Cause a full gc every 5s.
+                                lastTime = currentTime;
+                                System.gc();
+                        }
+
                         generateString().intern();
                 }
         }
