@@ -29,7 +29,9 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
+#if INCLUDE_JFR
 #include "jfr/jfr.hpp"
+#endif
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
@@ -2783,7 +2785,7 @@ bool LibraryCallKit::inline_native_classID() {
     Node* kls_trace_id_addr = basic_plus_adr(kls, in_bytes(KLASS_TRACE_ID_OFFSET));
     Node* kls_trace_id_raw = ideal.load(ideal.ctrl(), kls_trace_id_addr,TypeLong::LONG, T_LONG, Compile::AliasIdxRaw);
 
-    Node* epoch_address = makecon(TypeRawPtr::make(JfrTraceIdEpoch::epoch_address()));
+    Node* epoch_address = makecon(TypeRawPtr::make(Jfr::epoch_address()));
     Node* epoch = ideal.load(ideal.ctrl(), epoch_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
     epoch = _gvn.transform(new LShiftLNode(longcon(1), epoch));
     Node* mask = _gvn.transform(new LShiftLNode(epoch, intcon(META_SHIFT)));
@@ -2817,7 +2819,7 @@ bool LibraryCallKit::inline_native_classID() {
       ideal.set(result, _gvn.transform(longcon(LAST_TYPE_ID + 1)));
     } __ end_if();
 
-    Node* signaled_flag_address = makecon(TypeRawPtr::make(JfrTraceIdEpoch::signal_address()));
+    Node* signaled_flag_address = makecon(TypeRawPtr::make(Jfr::signal_address()));
     Node* signaled = ideal.load(ideal.ctrl(), signaled_flag_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw, true, MemNode::acquire);
     __ if_then(signaled, BoolTest::ne, ideal.ConI(1)); {
       ideal.store(ideal.ctrl(), signaled_flag_address, ideal.ConI(1), T_BOOLEAN, Compile::AliasIdxRaw, MemNode::release, true);

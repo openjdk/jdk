@@ -112,9 +112,15 @@ bool Jfr::on_start_flight_recording_option(const JavaVMOption** option, char* de
   return JfrOptionSet::parse_start_flight_recording_option(option, delimiter);
 }
 
-#ifdef JFR_HAVE_INTRINSICS
 JRT_LEAF(void, Jfr::trace_id_load_barrier(Klass * klass))
   assert(klass != NULL, "sanity");
   JfrTraceIdLoadBarrier::load_barrier(klass);
 JRT_END
-#endif
+
+address Jfr::epoch_address() {
+  return JfrTraceIdEpoch::epoch_address();
+}
+
+address Jfr::signal_address() {
+  return JfrTraceIdEpoch::signal_address();
+}

@@ -28,11 +28,6 @@
 #include "jni.h"
 #include "memory/allocation.hpp"
 
-#include "jfr/support/jfrIntrinsics.hpp"
-#ifdef JFR_HAVE_INTRINSICS
-#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
-#endif
-
 class JavaThread;
 class Thread;
 
@@ -60,9 +55,10 @@ class Jfr : AllStatic {
   static bool is_excluded(Thread* thread);
   static void include_thread(Thread* thread);
 
-#ifdef JFR_HAVE_INTRINSICS
+  // get_class_id intrinsic support
   static void trace_id_load_barrier(Klass* klass);
-#endif
+  static address epoch_address();
+  static address signal_address();
 };
 
 #endif // SHARE_JFR_JFR_HPP
