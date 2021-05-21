@@ -177,7 +177,7 @@ class x86 {
   static address _join_0_1;
   static address _join_1_2;
   static address _join_2_3;
-  static address_decoding_table;
+  static address _decoding_table;
 #endif
   // byte flip mask for sha256
   static address _pshuffle_byte_flip_mask_addr;
