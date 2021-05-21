@@ -177,6 +177,7 @@ class x86 {
   static address _join_0_1;
   static address _join_1_2;
   static address _join_2_3;
+  static address_decoding_table;
 #endif
   // byte flip mask for sha256
   static address _pshuffle_byte_flip_mask_addr;
@@ -329,6 +330,7 @@ class x86 {
   static address base64_vbmi_join_0_1_addr() { return _join_0_1; }
   static address base64_vbmi_join_1_2_addr() { return _join_1_2; }
   static address base64_vbmi_join_2_3_addr() { return _join_2_3; }
+  static address base64_decoding_table_addr() { return _decoding_table; }
 #endif
   static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);

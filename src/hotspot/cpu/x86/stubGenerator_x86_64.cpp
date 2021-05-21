@@ -5810,6 +5810,44 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
 
+  address base64_decoding_table_addr() {
+    StubCodeMark mark(this, "StubRoutines", "decoding_table");
+    address start = __ pc();
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0x3fffffff3effffff, relocInfo::none);
+    __ emit_data64(0x3b3a393837363534, relocInfo::none);
+    __ emit_data64(0xffffffffffff3d3c, relocInfo::none);
+    __ emit_data64(0x06050403020100ff, relocInfo::none);
+    __ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
+    __ emit_data64(0x161514131211100f, relocInfo::none);
+    __ emit_data64(0xffffffffff191817, relocInfo::none);
+    __ emit_data64(0x201f1e1d1c1b1aff, relocInfo::none);
+    __ emit_data64(0x2827262524232221, relocInfo::none);
+    __ emit_data64(0x302f2e2d2c2b2a29, relocInfo::none);
+    __ emit_data64(0xffffffffff333231, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    return start;
+  }
+
 
 // Code for generating Base64 decoding.
 //
@@ -6206,11 +6244,11 @@ address generate_avx_ghash_processBlocks() {
 
     __ incrementl(source, 4);
 
-    __ movb(Address(dest, RegisterOrConstant(0), Address::times_1, 0), byte1);
+    __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 0), byte1);
     __ shrl(byte1, 8);
-    __ movb(Address(dest, RegisterOrConstant(0), Address::times_1, 1), byte1);
+    __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 1), byte1);
     __ shrl(byte1, 8);
-    __ movb(Address(dest, RegisterOrConstant(0), Address::times_1, 2), byte1);
+    __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 2), byte1);
 
     __ incrementl(dest, 3);
 
@@ -6219,12 +6257,12 @@ address generate_avx_ghash_processBlocks() {
 
     __ BIND(L_bottomLoop);
     __ movl(decode_table, ExternalAddress(StubRoutines::x86::base64_decoding_table_addr()));
-    __ load_signed_byte(byte1, Address(source, RegisterOrConstant(0), Address::times_1, 0));
-    __ load_signed_byte(byte2, Address(source, RegisterOrConstant(0), Address::times_1, 1));
+    __ load_signed_byte(byte1, Address(source, RegisterOrConstant(), Address::times_1, 0));
+    __ load_signed_byte(byte2, Address(source, RegisterOrConstant(), Address::times_1, 1));
     __ load_signed_byte(byte1, Address(decode_table, byte1, Address::times_1, 0));
     __ load_signed_byte(byte2, Address(decode_table, byte2, Address::times_1, 0));
-    __ load_signed_byte(byte3, Address(source, RegisterOrConstant(0), Address::times_1, 2));
-    __ load_signed_byte(byte4, Address(source, RegisterOrConstant(0), Address::times_1, 3));
+    __ load_signed_byte(byte3, Address(source, RegisterOrConstant(), Address::times_1, 2));
+    __ load_signed_byte(byte4, Address(source, RegisterOrConstant(), Address::times_1, 3));
     __ load_signed_byte(byte3, Address(decode_table, byte3, Address::times_1, 0));
     __ load_signed_byte(byte4, Address(decode_table, byte4, Address::times_1, 0));
 
@@ -7505,6 +7543,7 @@ address generate_avx_ghash_processBlocks() {
         StubRoutines::x86::_join_0_1 = base64_vbmi_join_0_1_addr();
         StubRoutines::x86::_join_1_2 = base64_vbmi_join_1_2_addr();
         StubRoutines::x86::_join_2_3 = base64_vbmi_join_2_3_addr();
+        StubRoutines::x86::_decoding_table = base64_decoding_table_addr();
         StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
       }
     }

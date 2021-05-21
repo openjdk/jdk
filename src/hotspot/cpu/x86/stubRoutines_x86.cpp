@@ -81,6 +81,7 @@ address StubRoutines::x86::_pack_vec = NULL;
 address StubRoutines::x86::_join_0_1 = NULL;
 address StubRoutines::x86::_join_1_2 = NULL;
 address StubRoutines::x86::_join_2_3 = NULL;
+address StubRoutines::x86::_decoding_table = NULL;
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = NULL;
 
