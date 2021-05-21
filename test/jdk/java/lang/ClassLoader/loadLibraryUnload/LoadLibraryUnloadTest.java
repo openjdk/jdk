@@ -86,16 +86,16 @@ public class LoadLibraryUnloadTest {
         dump(outputAnalyzer);
 
         Asserts.assertTrue(
-                countLines(outputAnalyzer, "Native library loaded from Class1.") > 1,
-                "Unable to load Class1.");
+                countLines(outputAnalyzer, "Native library loaded from Class1.") == 2,
+                "Native library expected to be loaded in 2 threads.");
 
         long refCount = countLines(outputAnalyzer, "Native library loaded.");
 
-        Asserts.assertTrue(
-                refCount > 0,
-                "Failed to load native library.");
+        Asserts.assertTrue(refCount > 0, "Failed to load native library.");
 
         System.out.println("Native library loaded in " + refCount + " threads");
+
+        Asserts.assertTrue(refCount == 1, "Native library is loaded more than once.");
 
         Asserts.assertTrue(
                 countLines(outputAnalyzer, "Native library unloaded.") == refCount,

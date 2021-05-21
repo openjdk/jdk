@@ -42,6 +42,8 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import p.Class1;
 
@@ -95,14 +97,27 @@ public class LoadLibraryUnload {
 
     public static void main(String[] args) throws Exception {
 
-        URLClassLoader loader = new TestLoader();
-        Class<?> class1 = loader.loadClass("p.Class1");
+        Class<?> clazz = null;
         List<Thread> threads = new ArrayList<>();
 
-        for (int i = 0 ; i < 10 ; i++) {
-            threads.add(new Thread(new LoadLibraryFromClass(class1)));
+        for (int i = 0 ; i < 5 ; i++) {
+            // 5 loaders and 10 threads in total.
+            // winner loads the library in 2 threads
+            clazz = new TestLoader().loadClass("p.Class1");
+            threads.add(new Thread(new LoadLibraryFromClass(clazz)));
+            threads.add(new Thread(new LoadLibraryFromClass(clazz)));
         }
+
+        final Set<Throwable> exceptions = ConcurrentHashMap.newKeySet();
         threads.forEach( t -> {
+            t.setUncaughtExceptionHandler((th, ex) -> {
+                // collect the root cause of each failure
+                Throwable rootCause = ex;
+                while((ex = ex.getCause()) != null) {
+                    rootCause = ex;
+                }
+                exceptions.add(rootCause);
+            });
             t.start();
         });
 
@@ -110,12 +125,26 @@ public class LoadLibraryUnload {
         for (Thread t : threads) {
             t.join();
         }
-        WeakReference<Class> wClass = new WeakReference<>(class1);
+
+        // expect all errors to be UnsatisfiedLinkError 
+        boolean allAreUnsatisfiedLinkError = exceptions
+                .stream()
+                .map(e -> e instanceof UnsatisfiedLinkError)
+                .reduce(true, (i, a) -> i && a);
+
+        // expect exactly 8 errors
+        Asserts.assertTrue(exceptions.size() == 8,
+                "Expected to see 8 failing threads");
+
+        Asserts.assertTrue(allAreUnsatisfiedLinkError,
+                "All errors have to be UnsatisfiedLinkError");
+
+        WeakReference<Class> wClass = new WeakReference<>(clazz);
 
         // release strong refs
-        class1 = null;
-        loader = null;
+        clazz = null;
         threads = null;
+        exceptions.clear();
         waitForUnload(wClass);
         Asserts.assertTrue(wClass.get() == null, "Class1 hasn't been GC'ed");
     }
