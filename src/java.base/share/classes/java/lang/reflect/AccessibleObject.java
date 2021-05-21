@@ -76,7 +76,7 @@ import sun.security.util.SecurityConstants;
  * @since 1.2
  * @revised 9
  */
-public sealed class AccessibleObject implements AnnotatedElement permits Executable, Field {
+public class AccessibleObject implements AnnotatedElement {
     static {
         // AccessibleObject is initialized early in initPhase1
         SharedSecrets.setJavaLangReflectAccess(new ReflectAccess());
@@ -497,6 +497,7 @@ public sealed class AccessibleObject implements AnnotatedElement permits Executa
     /**
      * Constructor: only used by the Java Virtual Machine.
      */
+    @Deprecated(since="17")
     protected AccessibleObject() {}
 
     // Indicates whether language-level access checks are overridden
@@ -520,12 +521,16 @@ public sealed class AccessibleObject implements AnnotatedElement permits Executa
      * <p> Note that any annotation returned by this method is a
      * declaration annotation.
      *
+     * @implSpec
+     * The default implementation throws {@code
+     * IllegalStateException}; subclasses should override this method.
+     *
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        throw new AssertionError("All subclasses should override this method");
+        throw new IllegalStateException("All subclasses should override this method");
     }
 
     /**
@@ -545,12 +550,16 @@ public sealed class AccessibleObject implements AnnotatedElement permits Executa
      * <p> Note that any annotations returned by this method are
      * declaration annotations.
      *
+     * @implSpec
+     * The default implementation throws {@code
+     * IllegalStateException}; subclasses should override this method.
+     *
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
     @Override
     public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
-        throw new AssertionError("All subclasses should override this method");
+        throw new IllegalStateException("All subclasses should override this method");
     }
 
     /**
@@ -606,11 +615,15 @@ public sealed class AccessibleObject implements AnnotatedElement permits Executa
      * <p> Note that any annotations returned by this method are
      * declaration annotations.
      *
+     * @implSpec
+     * The default implementation throws {@code
+     * IllegalStateException}; subclasses should override this method.
+     *
      * @since 1.5
      */
     @Override
     public Annotation[] getDeclaredAnnotations()  {
-        throw new AssertionError("All subclasses should override this method");
+        throw new IllegalStateException("All subclasses should override this method");
     }
 
     // Shared access checking logic.
