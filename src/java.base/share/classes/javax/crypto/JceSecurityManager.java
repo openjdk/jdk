@@ -30,6 +30,8 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.lang.StackWalker.*;
+import java.util.stream.Collectors;
 
 /**
  * The JCE security manager.
@@ -46,7 +48,7 @@ import java.util.concurrent.ConcurrentMap;
  * @since 1.4
  */
 
-final class JceSecurityManager extends SecurityManager {
+final class JceSecurityManager {
 
     private static final CryptoPermissions defaultPolicy;
     private static final CryptoPermissions exemptPolicy;
@@ -82,6 +84,7 @@ final class JceSecurityManager extends SecurityManager {
      * applet/application, for the given algorithm.
      */
     CryptoPermission getCryptoPermission(String alg) {
+
         // Need to convert to uppercase since the crypto perm
         // lookup is case sensitive.
         alg = alg.toUpperCase(Locale.ENGLISH);
@@ -99,11 +102,13 @@ final class JceSecurityManager extends SecurityManager {
         // javax.crypto.* packages.
         // NOTE: javax.crypto.* package maybe subject to package
         // insertion, so need to check its classloader as well.
-        Class<?>[] context = getClassContext();
+        List<StackFrame> stack = StackWalker.getInstance(
+                StackWalker.Option.RETAIN_CLASS_REFERENCE)
+                .walk((s) -> s.collect(Collectors.toList()));
+
         URL callerCodeBase = null;
-        int i;
-        for (i=0; i<context.length; i++) {
-            Class<?> cls = context[i];
+        for (StackFrame stackFrame : stack) {
+            Class<?> cls = stackFrame.getDeclaringClass();
             callerCodeBase = JceSecurity.getCodeBase(cls);
             if (callerCodeBase != null) {
                 break;
@@ -117,7 +122,7 @@ final class JceSecurityManager extends SecurityManager {
             }
         }
 
-        if (i == context.length) {
+        if (callerCodeBase == null) {
             return defaultPerm;
         }
 
@@ -232,12 +237,15 @@ final class JceSecurityManager extends SecurityManager {
     // 4334690 for more info).
     boolean isCallerTrusted(Provider provider) {
         // Get the caller and its codebase.
-        Class<?>[] context = getClassContext();
-        if (context.length >= 3) {
+        Optional<StackFrame> stackFrame = StackWalker.getInstance(
+                StackWalker.Option.RETAIN_CLASS_REFERENCE)
+                .walk((s) -> s.skip(2).findFirst());
+
+        if (stackFrame.isPresent()) {
             // context[0]: class javax.crypto.JceSecurityManager
             // context[1]: class javax.crypto.Cipher (or other JCE API class)
             // context[2]: this is what we are gonna check
-            Class<?> caller = context[2];
+            Class<?> caller = stackFrame.get().getDeclaringClass();
             URL callerCodeBase = JceSecurity.getCodeBase(caller);
             if (callerCodeBase == null) {
                 return true;
