@@ -5941,10 +5941,10 @@ address generate_avx_ghash_processBlocks() {
     Label L_forceLoop, L_bottomLoop;
 
     // calculate length from offsets
-    __ movl(length, end_offset);
-    __ subl(length, start_offset);
+    __ movq(length, end_offset);
+    __ subq(length, start_offset);
     __ push(dest);          // Save for return value calc
-    __ cmpl(length, 128);     // 128-bytes is break-even for AVX-512
+    __ cmpq(length, 128);     // 128-bytes is break-even for AVX-512
     __ jcc(Assembler::lessEqual, L_bruteForce);
 
     // Load lookup tables based on isURL
@@ -5964,7 +5964,7 @@ address generate_avx_ghash_processBlocks() {
     __ movl(r15, 0x00011000);
     __ evpbroadcastd(pack32_op, r15, Assembler::AVX_512bit);
 
-    __ cmpl(length, 0xff);
+    __ cmpq(length, 0xff);
     __ jcc(Assembler::lessEqual, L_process64);
 
     // load masks required for decoding data
@@ -6099,13 +6099,13 @@ address generate_avx_ghash_processBlocks() {
     // I was going to let Java take care of the final fragment
     // however it will repeatedly call this routine for every 4 bytes
     // of input data, so handle the rest here.
-    __ movl(output_size, 0x40);
-    __ subl(output_size, length);
+    __ movq(output_size, 0x40);
+    __ subq(output_size, length);
     __ movq(rax, -1);
     __ shrxq(rax, rax, output_size);    // Input mask in rax
 
     __ movq(output_size, length);
-    __ shrl(output_size, 2);   // Find (len / 4) * 3 (output length)
+    __ shrq(output_size, 2);   // Find (len / 4) * 3 (output length)
     __ lea(output_size, Address(output_size, output_size, Address::times_2, 0));
     // output_size in r13
 
@@ -6219,18 +6219,18 @@ address generate_avx_ghash_processBlocks() {
     const Register byte3 = WINDOWS_ONLY(r12) NOT_WINDOWS(r8);
     const Register byte4 = WINDOWS_ONLY(rdx) NOT_WINDOWS(rsi);
 
-    __ shrl(length, 2);    // Multiple of 4 bytes only - length is # 4-byte chunks
-    __ cmpl(length, 0);
+    __ shrq(length, 2);    // Multiple of 4 bytes only - length is # 4-byte chunks
+    __ cmpq(length, 0);
     __ jcc(Assembler::lessEqual, L_exit);
 
     // Set up src and dst pointers properly
-    __ addl(source, start_offset);     // Initial offset
-    __ addl(dest, dp);
+    __ addq(source, start_offset);     // Initial offset
+    __ addq(dest, dp);
     __ pop(byte2);    // Clear old dest from stack
     __ push(dest);
     __ lea(decode_table, ExternalAddress(StubRoutines::x86::base64_decoding_table_addr()));
 
-    __ decrementl(length, 1);         // Bottom-entry loop
+    __ decrementq(length, 1);         // Bottom-entry loop
 
     __ jmp(L_bottomLoop);
 
@@ -6243,7 +6243,7 @@ address generate_avx_ghash_processBlocks() {
     __ orl(byte1, byte3);
     __ orl(byte1, byte4);
 
-    __ incrementl(source, 4);
+    __ incrementq(source, 4);
 
     __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 2), byte1);
     __ shrl(byte1, 8);
@@ -6251,9 +6251,9 @@ address generate_avx_ghash_processBlocks() {
     __ shrl(byte1, 8);
     __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 0), byte1);
 
-    __ incrementl(dest, 3);
+    __ incrementq(dest, 3);
 
-    __ decrementl(length, 1);
+    __ decrementq(length, 1);
     __ jcc(Assembler::zero, L_exit);
 
     __ BIND(L_bottomLoop);
