@@ -55,7 +55,7 @@ final class GCTR extends CounterMode implements GCM {
 
     // Maximum buffer size rotating ByteBuffer->byte[] intrinsic copy
     private static final int MAX_LEN = 1024;
-    byte[] block;
+    private byte[] block;
 
     GCTR(SymmetricCipher cipher, byte[] initialCounterBlk) {
         super(cipher);
@@ -83,7 +83,7 @@ final class GCTR extends CounterMode implements GCM {
         return blocksLeft;
     }
 
-    void checkBlock() {
+    private void checkBlock() {
         if (block == null) {
             block = new byte[blockSize];
         } else {
@@ -92,9 +92,9 @@ final class GCTR extends CounterMode implements GCM {
     }
 
     /**
-     * Using the given inLen, this operations only on blockSize data, leaving
+     * Using the given inLen, this operates only on blockSize data, leaving
      * the remainder in 'in'.
-     * The return value will be (inLen - (inLen - blockSize))
+     * The return value will be (inLen - (inLen % blockSize))
      */
     public int update(byte[] in, int inOfs, int inLen, byte[] out, int outOfs) {
         if (inLen == 0) {

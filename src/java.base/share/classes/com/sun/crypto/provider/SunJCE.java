@@ -252,7 +252,7 @@ public final class SunJCE extends Provider {
         attrs.put("SupportedPaddings", "NOPADDING");
         attrs.put("SupportedKeyFormats", "RAW");
         ps("Cipher", "DESedeWrap",
-            "com.sun.crypto.provider.DESedeWrapCipher", null, attrs);
+                "com.sun.crypto.provider.DESedeWrapCipher", null, attrs);
 
         attrs.clear();
         attrs.put("SupportedModes", "ECB");
@@ -261,7 +261,7 @@ public final class SunJCE extends Provider {
         psA("Cipher", "ARCFOUR",
                 "com.sun.crypto.provider.ARCFOURCipher", attrs);
         ps("Cipher", "AESWrap", "com.sun.crypto.provider.AESWrapCipher$General",
-            null, attrs);
+                null, attrs);
         psA("Cipher", "AESWrap_128",
                 "com.sun.crypto.provider.AESWrapCipher$AES128",
                 attrs);

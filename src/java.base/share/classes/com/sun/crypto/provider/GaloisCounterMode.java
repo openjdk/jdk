@@ -26,6 +26,7 @@
 package com.sun.crypto.provider;
 
 import sun.nio.ch.DirectBuffer;
+import sun.security.jca.JCAUtil;
 import sun.security.util.ArrayUtil;
 
 import javax.crypto.AEADBadTagException;
@@ -46,6 +47,7 @@ import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.SecureRandom;
@@ -67,14 +69,8 @@ import java.util.Arrays;
  * @since 1.8
  */
 abstract class GaloisCounterMode extends CipherSpi {
-
-    SymmetricCipher blockCipher;
-    // Engine instance for encryption or decryption
-    private GCMEngine engine;
-
-    private boolean encryption = true;
     static int DEFAULT_IV_LEN = 12; // in bytes
-
+    static int DEFAULT_TAG_LEN = 16; // in bytes
     // In NIST SP 800-38D, GCM input size is limited to be no longer
     // than (2^36 - 32) bytes. Otherwise, the counter will wrap
     // around and lead to a leak of plaintext.
@@ -84,22 +80,28 @@ abstract class GaloisCounterMode extends CipherSpi {
     // java byte array, e.g. Integer.MAX_VALUE, since all data
     // can only be returned by the doFinal(...) call.
     private static final int MAX_BUF_SIZE = Integer.MAX_VALUE;
-
     // data size when buffer is divided up to aid in intrinsics
     private static final int TRIGGERLEN = 65536;  // 64k
 
+    static final byte[] EMPTY_BUF = new byte[0];
+
     private boolean initialized = false;
-    // Default value is 128bits, this in stores bytes.
+
+    SymmetricCipher blockCipher;
+    // Engine instance for encryption or decryption
+    private GCMEngine engine;
+    private boolean encryption = true;
+
+    // Default value is 128bits, this is in bytes.
     int tagLenBytes = 16;
-    // Key size if the value is passed
+    // Key size if the value is passed, in bytes.
     int keySize;
     // Prevent reuse of iv or key
     boolean reInit = false;
-    final static byte[] emptyBuf = new byte[0];
-    byte[] lastKey = emptyBuf;
-    byte[] lastIv = emptyBuf;
+    byte[] lastKey = EMPTY_BUF;
+    byte[] lastIv = EMPTY_BUF;
     byte[] iv = null;
-
+    SecureRandom random = null;
 
     /**
      *
@@ -134,19 +136,18 @@ abstract class GaloisCounterMode extends CipherSpi {
 
         // Check for reuse
         if (encryption) {
-            if (Arrays.compare(keyValue, lastKey) == 0 && Arrays.compare(iv,
-                lastIv) == 0) {
+            if (MessageDigest.isEqual(keyValue, lastKey) &&
+                MessageDigest.isEqual(iv, lastIv)) {
                 throw new InvalidAlgorithmParameterException(
                     "Cannot reuse iv for GCM encryption");
             }
 
             // Both values are already clones
+            if (lastKey != null) {
+                Arrays.fill(lastKey, (byte) 0);
+            }
             lastKey = keyValue;
             lastIv = iv;
-        } else {
-            if (spec == null) {
-                throw new InvalidKeyException("No GCMParameterSpec specified");
-            }
         }
 
         reInit = false;
@@ -161,11 +162,6 @@ abstract class GaloisCounterMode extends CipherSpi {
 
         // always encrypt mode for embedded cipher
         blockCipher.init(false, key.getAlgorithm(), keyValue);
-    }
-
-    // return tag length in bytes
-    int getTagLen() {
-        return this.tagLenBytes;
     }
 
     @Override
@@ -196,11 +192,20 @@ abstract class GaloisCounterMode extends CipherSpi {
 
     @Override
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
-        return super.engineGetKeySize(key);
+        byte[] encoded = key.getEncoded();
+        Arrays.fill(encoded, (byte)0);
+        if (!AESCrypt.isKeySizeValid(encoded.length)) {
+            throw new InvalidKeyException("Invalid key length: " +
+                                          encoded.length + " bytes");
+        }
+        return Math.multiplyExact(encoded.length, 8);
     }
 
     @Override
     protected byte[] engineGetIV() {
+        if (iv == null) {
+            return null;
+        }
         return iv.clone();
     }
 
@@ -214,19 +219,17 @@ abstract class GaloisCounterMode extends CipherSpi {
      */
     private static byte[] createIv(SecureRandom random) {
         byte[] iv = new byte[DEFAULT_IV_LEN];
-        if (random != null) {
-            random.nextBytes(iv);
-        } else {
-            new SecureRandom().nextBytes(iv);
+        if (random == null) {
+            random = JCAUtil.getDefSecureRandom();
         }
+        random.nextBytes(iv);
         return iv;
     }
 
-    SecureRandom random = null;
     @Override
     protected AlgorithmParameters engineGetParameters() {
         GCMParameterSpec spec;
-        spec = new GCMParameterSpec(getTagLen() * 8,
+        spec = new GCMParameterSpec(DEFAULT_TAG_LEN * 8,
             iv == null ? createIv(random) : iv.clone());
         try {
             AlgorithmParameters params =
@@ -263,7 +266,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         engine = null;
         if (params == null) {
             iv = createIv(random);
-            spec = new GCMParameterSpec(getTagLen() * 8, iv);
+            spec = new GCMParameterSpec(DEFAULT_TAG_LEN * 8, iv);
         } else {
             if (!(params instanceof GCMParameterSpec)) {
                 throw new InvalidAlgorithmParameterException(
@@ -374,11 +377,18 @@ abstract class GaloisCounterMode extends CipherSpi {
     @Override
     protected byte[] engineDoFinal(byte[] input, int inputOffset,
         int inputLen) throws IllegalBlockSizeException, BadPaddingException {
+        if (input == null) {
+            input = EMPTY_BUF;
+        }
+        try {
+            ArrayUtil.nullAndBoundsCheck(input, inputOffset, inputLen);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new IllegalBlockSizeException("input array invalid");
+        }
+
         checkInit();
         byte[] output = new byte[engine.getOutputSize(inputLen, true)];
-        if (input == null) {
-            input = emptyBuf;
-        }
+
         try {
             engine.doFinal(input, inputOffset, inputLen, output, 0);
         } catch (ShortBufferException e) {
@@ -394,17 +404,18 @@ abstract class GaloisCounterMode extends CipherSpi {
     protected int engineDoFinal(byte[] input, int inputOffset, int inputLen,
         byte[] output, int outputOffset) throws ShortBufferException,
         IllegalBlockSizeException, BadPaddingException {
-        checkInit();
+
         if (input == null) {
-            input = emptyBuf;
+            input = EMPTY_BUF;
         }
         try {
             ArrayUtil.nullAndBoundsCheck(input, inputOffset, inputLen);
-        } catch (Exception e) {
+        } catch (ArrayIndexOutOfBoundsException e) {
             // Release crypto engine
             engine = null;
             throw new IllegalBlockSizeException("input array invalid");
         }
+        checkInit();
         int len = engine.doFinal(input, inputOffset, inputLen, output,
             outputOffset);
 
@@ -431,9 +442,11 @@ abstract class GaloisCounterMode extends CipherSpi {
     @Override
     protected byte[] engineWrap(Key key) throws IllegalBlockSizeException,
         InvalidKeyException {
+        byte[] encodedKey = null;
+
         checkInit();
         try {
-            byte[] encodedKey = key.getEncoded();
+            encodedKey = key.getEncoded();
             if ((encodedKey == null) || (encodedKey.length == 0)) {
                 throw new InvalidKeyException(
                     "Cannot get an encoding of the key to be wrapped");
@@ -444,6 +457,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         } finally {
             // Release crypto engine
             engine = null;
+            Arrays.fill(encodedKey, (byte)0);
         }
         return null;
     }
@@ -465,8 +479,12 @@ abstract class GaloisCounterMode extends CipherSpi {
             throw new InvalidKeyException(
                 "The wrapped key does not have the correct length");
         }
-        return ConstructKeys.constructKey(encodedKey, wrappedKeyAlgorithm,
-                                          wrappedKeyType);
+        try {
+            return ConstructKeys.constructKey(encodedKey, wrappedKeyAlgorithm,
+                wrappedKeyType);
+        } finally {
+            Arrays.fill(encodedKey, (byte)0);
+        }
     }
 
     // value must be 16-byte long; used by GCTR and GHASH as well
@@ -553,7 +571,6 @@ abstract class GaloisCounterMode extends CipherSpi {
      */
     abstract class GCMEngine {
         byte[] preCounterBlock;
-
         GCTR gctrPAndC;
         GHASH ghashAllToS;
 
@@ -625,6 +642,14 @@ abstract class GaloisCounterMode extends CipherSpi {
             return (ibuffer == null ? 0 : ibuffer.size());
         }
 
+        /**
+         * The method takes two buffers to create one block of data.  The
+         * difference with the other mergeBlock is this will calculate
+         * the bufLen from the existing 'buffer' length & offset
+         *
+         * This is only called when buffer length is less than a blockSize
+         * @return number of bytes used from 'in'
+         */
         int mergeBlock(byte[] buffer, int bufOfs, byte[] in, int inOfs,
             int inLen, byte[] block) {
             return mergeBlock(buffer, bufOfs, buffer.length - bufOfs, in,
@@ -634,7 +659,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         /**
          * The method takes two buffers to create one block of data
          *
-         * This in only called when buffer length is less that a blockSize
+         * This is only called when buffer length is less than a blockSize
          * @return number of bytes used from 'in'
          */
         int mergeBlock(byte[] buffer, int bufOfs, int bufLen, byte[] in,
@@ -645,8 +670,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             }
 
             System.arraycopy(buffer, bufOfs, block, 0, bufLen);
-            int inUsed = Math.min(block.length - bufLen,
-                (Math.min(inLen, block.length)));
+            int inUsed = Math.min(block.length - bufLen, inLen);
             System.arraycopy(in, inOfs, block, bufLen, inUsed);
             return inUsed;
         }
@@ -1468,25 +1492,34 @@ abstract class GaloisCounterMode extends CipherSpi {
                 return len;
             }
 
-            // Check for overlap in the bytebuffers
-            dst = overlapDetection(src, dst);
-
             // Length of the input
             ByteBuffer tag;
             ByteBuffer ct = src.duplicate();
+            ByteBuffer buffer = null;
 
-            ByteBuffer buffer = ((ibuffer == null || ibuffer.size() == 0) ?
-                null : ByteBuffer.wrap(ibuffer.toByteArray()));
-            int len;
+            // The 'len' the total amount of ciphertext
+            int len = ct.remaining() - tagLenBytes;
 
+            // Check if ibuffer has data
+            if (getBufferedLength() != 0) {
+                buffer = ByteBuffer.wrap(ibuffer.toByteArray());
+                len += buffer.remaining();
+            }
+
+            checkDataLength(len);
+
+            // Save GHASH context to allow the tag to be checked even though
+            // the dst buffer is too short.  Context will be restored so the
+            // method can be called again with the proper sized dst buffer.
+            if (len > dst.remaining()) {
+                save = ghashAllToS.clone();
+            }
+
+            // Create buffer 'tag' that contains only the auth tag
             if (ct.remaining() >= tagLenBytes) {
                 tag = src.duplicate();
                 tag.position(ct.limit() - tagLenBytes);
                 ct.limit(ct.limit() - tagLenBytes);
-                len = ct.remaining();
-                if (buffer != null) {
-                    len += buffer.remaining();
-                }
             } else if (buffer != null) {
                 // It's unlikely the tag will be between the buffer and data
                 tag = ByteBuffer.allocate(tagLenBytes);
@@ -1497,30 +1530,19 @@ abstract class GaloisCounterMode extends CipherSpi {
                 tag.put(buffer);
                 // reset buffer to data only
                 buffer.reset();
+                // Set the limit to where the ciphertext ends
                 buffer.limit(limit);
                 tag.put(ct);
                 tag.flip();
-                // Limit is how much of the ibuffer has been chopped off.
-                len = buffer.remaining();
             } else {
                 throw new AEADBadTagException("Input too short - need tag");
             }
 
-            // 'len' contains the length in ibuffer and src
-            checkDataLength(len);
-
-            // Save GHASH context to allow the tag to be checked even though
-            // the dst buffer is too short.  Context will be restored so the
-            // method can be called again with the proper sized dst buffer.
-            if (len > dst.remaining()) {
-                save = ghashAllToS.clone();
-            }
-
-            processAAD();
             // Set the mark for a later reset. Either it will be zero, or the
             // tag buffer creation above will have consume some or all of it.
             ct.mark();
 
+            processAAD();
             // Perform GHASH check on data
             doLastBlock(ghashAllToS, buffer, ct, null);
 
@@ -1552,9 +1574,10 @@ abstract class GaloisCounterMode extends CipherSpi {
             }
             ct.reset();
             processed = 0;
+            // Check for overlap in the bytebuffers
+            dst = overlapDetection(src, dst);
 
             // Decrypt the all the input data and put it into dst
-            //decryptBlocks(buffer, ct, dst);
             doLastBlock(gctrPAndC, buffer, ct, dst);
             restoreDst(dst);
             src.position(src.limit());

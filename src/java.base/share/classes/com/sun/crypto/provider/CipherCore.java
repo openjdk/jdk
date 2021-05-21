@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -125,8 +124,6 @@ final class CipherCore {
     private static final int CTR_MODE = 5;
     private static final int CTS_MODE = 6;
 
-    private byte[] lastEncKey = null;
-
     /**
      * Creates an instance of CipherCore with default ECB mode and
      * PKCS5Padding.
@@ -196,15 +193,6 @@ final class CipherCore {
             throw new NoSuchAlgorithmException("Cipher mode: " + mode
                                                + " not found");
         }
-    }
-
-    /**
-     * Returns the mode of this cipher.
-     *
-     * @return the parsed cipher mode
-     */
-    int getMode() {
-        return cipherMode;
     }
 
     private static int getNumOfUnit(String mode, int offset, int blockSize)
@@ -446,58 +434,51 @@ final class CipherCore {
                   || (opmode == Cipher.UNWRAP_MODE);
 
         byte[] keyBytes = getKeyBytes(key);
-        try {
-            byte[] ivBytes = null;
-            if (params != null) {
-                if (params instanceof IvParameterSpec) {
-                    ivBytes = ((IvParameterSpec) params).getIV();
-                    if ((ivBytes == null) || (ivBytes.length != blockSize)) {
-                        throw new InvalidAlgorithmParameterException
-                            ("Wrong IV length: must be " + blockSize +
-                                " bytes long");
-                    }
-                } else if (params instanceof RC2ParameterSpec) {
-                    ivBytes = ((RC2ParameterSpec) params).getIV();
-                    if ((ivBytes != null) && (ivBytes.length != blockSize)) {
-                        throw new InvalidAlgorithmParameterException
-                            ("Wrong IV length: must be " + blockSize +
-                                " bytes long");
-                    }
-                } else {
+        byte[] ivBytes = null;
+        if (params != null) {
+            if (params instanceof IvParameterSpec) {
+                ivBytes = ((IvParameterSpec) params).getIV();
+                if ((ivBytes == null) || (ivBytes.length != blockSize)) {
                     throw new InvalidAlgorithmParameterException
-                        ("Unsupported parameter: " + params);
+                        ("Wrong IV length: must be " + blockSize +
+                            " bytes long");
                 }
-            }
-            if (cipherMode == ECB_MODE) {
-                if (ivBytes != null) {
+            } else if (params instanceof RC2ParameterSpec) {
+                ivBytes = ((RC2ParameterSpec) params).getIV();
+                if ((ivBytes != null) && (ivBytes.length != blockSize)) {
                     throw new InvalidAlgorithmParameterException
-                            ("ECB mode cannot use IV");
+                        ("Wrong IV length: must be " + blockSize +
+                            " bytes long");
                 }
-            } else if (ivBytes == null) {
-                if (decrypting) {
-                    throw new InvalidAlgorithmParameterException("Parameters "
-                            + "missing");
-                }
-
-                if (random == null) {
-                    random = SunJCE.getRandom();
-                }
-
-                ivBytes = new byte[blockSize];
-                random.nextBytes(ivBytes);
-            }
-
-            buffered = 0;
-            diffBlocksize = blockSize;
-
-            String algorithm = key.getAlgorithm();
-            cipher.init(decrypting, algorithm, keyBytes, ivBytes);
-            // skip checking key+iv from now on until after doFinal()
-        } finally {
-            if (lastEncKey != keyBytes) {
-                Arrays.fill(keyBytes, (byte) 0);
+            } else {
+                throw new InvalidAlgorithmParameterException
+                    ("Unsupported parameter: " + params);
             }
         }
+        if (cipherMode == ECB_MODE) {
+            if (ivBytes != null) {
+                throw new InvalidAlgorithmParameterException
+                    ("ECB mode cannot use IV");
+            }
+        } else if (ivBytes == null) {
+            if (decrypting) {
+                throw new InvalidAlgorithmParameterException("Parameters "
+                    + "missing");
+            }
+
+            if (random == null) {
+                random = SunJCE.getRandom();
+            }
+
+            ivBytes = new byte[blockSize];
+            random.nextBytes(ivBytes);
+        }
+
+        buffered = 0;
+        diffBlocksize = blockSize;
+
+        String algorithm = key.getAlgorithm();
+        cipher.init(decrypting, algorithm, keyBytes, ivBytes);
     }
 
     void init(int opmode, Key key, AlgorithmParameters params,
@@ -754,7 +735,7 @@ final class CipherCore {
             if (outLen < output.length) {
                 byte[] copy = Arrays.copyOf(output, outLen);
                 if (decrypting) {
-                    // Zero out internal (ouput) array
+                    // Zero out internal (output) array
                     Arrays.fill(output, (byte) 0x00);
                 }
                 return copy;

@@ -217,9 +217,6 @@ public final class SecurityProviderConstants {
 
         store("DiffieHellman", KnownOIDs.DiffieHellman);
 
-        store("AES/GCM", KnownOIDs.AES_128$GCM$NoPadding,
-            "AES/GCM/NoPadding");
-
         store("EC", KnownOIDs.EC, "EllipticCurve");
 
         store("X.509", null, "X509");
