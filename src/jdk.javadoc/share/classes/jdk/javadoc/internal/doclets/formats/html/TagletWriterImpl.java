@@ -287,7 +287,6 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @Override
-    @SuppressWarnings("preview")
     public Content paramTagOutput(Element element, ParamTree paramTag, String paramName) {
         ContentBuilder body = new ContentBuilder();
         CommentHelper ch = utils.getCommentHelper(element);
@@ -461,7 +460,6 @@ public class TagletWriterImpl extends TagletWriter {
         return htmlWriter.getCurrentPageElement();
     }
 
-    @SuppressWarnings("preview")
     private Content createAnchorAndSearchIndex(Element element, String tagText, String desc, DocTree tree) {
         Content result = null;
         if (context.isFirstSentence && context.inSummary || context.inTags.contains(DocTree.Kind.INDEX)) {

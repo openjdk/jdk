@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,11 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-
-/*
- * @test
- * @bug 8225056
- * @compile --enable-preview -source ${jdk.version} AbstractSealedTest.java
- * @run main/othervm --enable-preview AbstractSealedTest
- */
-
-// Test that a sealed class can be abstract
-public class AbstractSealedTest {
-
-    abstract sealed class AbstractShape permits Circle {
-        abstract void draw();
+public class OldInfDefMethApp {
+    public static void main(String args[]) {
+        OldInfDefMethImpl o = new OldInfDefMethImpl();
+        System.out.println(o.SayHello());
     }
-
-    final class Circle extends AbstractShape {
-        void draw() {}
-    }
-
-    Circle circle = new Circle();
-
-    public static void main(String... args) { }
 }

@@ -977,7 +977,6 @@ public class ElementsTable {
         return (xclasses || toolEnv.getFileKind(te) == SOURCE) && isSelected(te);
     }
 
-    @SuppressWarnings("preview")
     SimpleElementVisitor14<Boolean, Void> visibleElementVisitor = null;
     /**
      * Returns true if the element is selected, by applying
@@ -989,7 +988,6 @@ public class ElementsTable {
      * @param e the element to be checked
      * @return true if the element is visible
      */
-    @SuppressWarnings("preview")
     public boolean isSelected(Element e) {
         if (toolEnv.isSynthetic((Symbol) e)) {
             return false;
@@ -1029,7 +1027,6 @@ public class ElementsTable {
         return visibleElementVisitor.visit(e);
     }
 
-    @SuppressWarnings("preview")
     private class IncludedVisitor extends SimpleElementVisitor14<Boolean, Void> {
         private final Set<Element> includedCache;
 

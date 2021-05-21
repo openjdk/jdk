@@ -1116,6 +1116,7 @@ public class TestResolvedJavaType extends TypeUniverse {
         "isLinked",
         "getJavaClass",
         "getObjectHub",
+        "getHostClass",
         "hasFinalizableSubclass",
         "hasFinalizer",
         "isLocal",
