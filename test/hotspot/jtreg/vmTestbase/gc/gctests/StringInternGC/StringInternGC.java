@@ -47,7 +47,7 @@ import nsk.share.gc.*;
  */
 public class StringInternGC extends ThreadedGCTest {
         private int maxLength = 1000; // Maximum number of characters to add per operation.
-        private int maxTotalLength = 128 * 1024; // Random total maximum length of the string.
+        private int maxTotalLength = 128 * 1024; // Total maximum length of the string until a new StringBuffer will be allocated.
 
         private class StringGenerator implements Runnable {
                 private StringBuffer sb = new StringBuffer();
