@@ -72,7 +72,7 @@ public final class SetPositionHang implements Runnable {
             t3.join();
             t4.join();
             t5.join();
-        } catch (LineUnavailableException | IllegalArgumentException e) {
+        } catch (LineUnavailableException | IllegalArgumentException ignored) {
             // the test is not applicable
         }
     }
