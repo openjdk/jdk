@@ -6058,8 +6058,6 @@ address generate_avx_ghash_processBlocks() {
     //
     // Note that this will be the path for MIME-encoded strings.
 
-    __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
-
     __ cmpq(length, 63);
     __ jcc(Assembler::lessEqual, L_finalBit);
 
@@ -6079,6 +6077,8 @@ address generate_avx_ghash_processBlocks() {
     __ kortestql(k3, k3);
     __ jcc(Assembler::notZero, L_exit);
 
+    __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
+
     __ evpmaddubsw(merge_ab_bc0, translated0, pack16_op, Assembler::AVX_512bit);
     __ vpmaddwd(merged0, merge_ab_bc0, pack32_op, Assembler::AVX_512bit);
     __ vpermb(merged0, pack24bits, merged0, Assembler::AVX_512bit);
@@ -6092,6 +6092,9 @@ address generate_avx_ghash_processBlocks() {
     __ cmpq(length, 64);
     __ jcc(Assembler::greaterEqual, L_process64);
 
+    __ cmpq(length, 0);
+    __ jcc(Assembler::lessEqual, L_exit);
+
     __ BIND(L_finalBit);
     // Now have < 64 bytes left to decode
 
@@ -6102,6 +6105,8 @@ address generate_avx_ghash_processBlocks() {
     __ subq(output_size, length);
     __ movq(rax, -1);
     __ shrxq(rax, rax, output_size);    // Input mask in rax
+
+    __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
 
     __ movq(output_size, length);
     __ shrq(output_size, 2);   // Find (len / 4) * 3 (output length)
