@@ -42,7 +42,7 @@ public class Test {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xshare:off", "-XX:MaxMetaspaceSize=100k", "-version");
+            "-Xshare:off", "-XX:MaxMetaspaceSize=512k", "-version");
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
