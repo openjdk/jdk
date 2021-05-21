@@ -24,10 +24,12 @@
 /* @test
    @bug 8262731
    @key headful printer
-   @summary Verify that "PrinterJob.print" throws the exception, if
-            "Printable.print" throws "PrinterException".
-   @run main/manual ExceptionFromPrintableIsIgnoredTest MAIN
-   @run main/manual ExceptionFromPrintableIsIgnoredTest EDT
+   @summary Verify that "PrinterJob.print" throws the expected exception,
+            if "Printable.print" throws an exception.
+   @run main/manual ExceptionFromPrintableIsIgnoredTest MAIN PE
+   @run main/manual ExceptionFromPrintableIsIgnoredTest MAIN RE
+   @run main/manual ExceptionFromPrintableIsIgnoredTest EDT PE
+   @run main/manual ExceptionFromPrintableIsIgnoredTest EDT RE
  */
 
 import java.awt.Graphics;
@@ -40,28 +42,34 @@ import javax.swing.SwingUtilities;
 
 public class ExceptionFromPrintableIsIgnoredTest {
     private enum TestThreadType {MAIN, EDT}
+    private enum TestExceptionType {PE, RE}
 
     public static void main(String[] args) {
-        if (args.length < 1) {
-            throw new RuntimeException("Test thread type is not specified.");
+        if (args.length < 2) {
+            throw new RuntimeException("Two arguments are expected:"
+                    + " test thread type and test exception type.");
         }
 
-        TestThreadType threadType = TestThreadType.valueOf(args[0]);
-        new ExceptionFromPrintableIsIgnoredTest(threadType);
+        new ExceptionFromPrintableIsIgnoredTest(
+            TestThreadType.valueOf(args[0]),
+            TestExceptionType.valueOf(args[1]));
     }
 
-    public ExceptionFromPrintableIsIgnoredTest(TestThreadType threadType) {
+    public ExceptionFromPrintableIsIgnoredTest(
+            final TestThreadType threadType,
+            final TestExceptionType exceptionType) {
         System.out.println(String.format(
-                "Test started. threadType='%s'", threadType));
+                "Test started. threadType='%s', exceptionType='%s'",
+                threadType, exceptionType));
 
         if (threadType == TestThreadType.MAIN) {
-            runTest();
+            runTest(exceptionType);
         } else if (threadType == TestThreadType.EDT) {
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
                     @Override
                     public void run() {
-                        runTest();
+                        runTest(exceptionType);
                     }
                 });
             } catch (InterruptedException | InvocationTargetException e) {
@@ -71,8 +79,12 @@ public class ExceptionFromPrintableIsIgnoredTest {
         System.out.println("Test passed.");
     }
 
-    private void runTest() {
+    private void runTest(final TestExceptionType exceptionType) {
         PrinterJob job = PrinterJob.getPrinterJob();
+        if (job.getPrintService() == null) {
+            throw new RuntimeException("No printers are available.");
+        }
+
         job.setPrintable(new Printable() {
             @Override
             public int print(Graphics graphics, PageFormat pageFormat,
@@ -80,26 +92,38 @@ public class ExceptionFromPrintableIsIgnoredTest {
                 if (pageIndex > 1) {
                     return NO_SUCH_PAGE;
                 }
-                throw new PrinterException("Exception from Printable.print");
+                if (exceptionType == TestExceptionType.PE) {
+                    throw new PrinterException(
+                        "Exception from 'Printable.print'.");
+                } else if (exceptionType == TestExceptionType.RE) {
+                    throw new RuntimeException(
+                        "Exception from 'Printable.print'.");
+                }
+                return PAGE_EXISTS;
             }
         });
-        if (job.printDialog()) {
-            Exception printEx = null;
-            try {
-                job.print();
-            } catch (PrinterException pe) {
-                printEx = pe;
-            }
 
-            if (printEx != null) {
-                System.out.println("'PrinterJob.print' threw the exception:");
-                printEx.printStackTrace(System.out);
-            } else {
-                throw new RuntimeException(
-                    "'PrinterJob.print' did not throw any exception.");
+        Throwable printEx = null;
+        try {
+            job.print();
+        } catch (Throwable t) {
+            printEx = t;
+        }
+
+        if (printEx != null) {
+            System.out.println("'PrinterJob.print' threw the exception:");
+            printEx.printStackTrace(System.out);
+
+            if (((printEx instanceof PrinterException) &&
+                    (exceptionType == TestExceptionType.PE)) ||
+                ((printEx instanceof RuntimeException) &&
+                    (exceptionType == TestExceptionType.RE))) {
+                return;// Test passed.
             }
+            throw new RuntimeException("Unexpected exception was thrown.");
         } else {
-            throw new RuntimeException("User canceled the print dialog.");
+            throw new RuntimeException(
+                "'PrinterJob.print' did not throw any exception.");
         }
     }
 }
