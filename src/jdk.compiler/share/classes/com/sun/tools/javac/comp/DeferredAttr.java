@@ -927,6 +927,11 @@ public class DeferredAttr extends JCTree.Visitor {
             }
 
             @Override
+            public void visitSwitchExpression(JCSwitchExpression tree) {
+                scan(tree.cases);
+            }
+
+            @Override
             public void visitReference(JCMemberReference tree) {
                 Assert.checkNonNull(tree.getOverloadKind());
                 Check.CheckContext checkContext = resultInfo.checkContext;
@@ -1151,7 +1156,7 @@ public class DeferredAttr extends JCTree.Visitor {
     static class PolyScanner extends FilterScanner {
 
         PolyScanner() {
-            super(EnumSet.of(CONDEXPR, PARENS, LAMBDA, REFERENCE));
+            super(EnumSet.of(CONDEXPR, PARENS, LAMBDA, REFERENCE, SWITCH_EXPRESSION));
         }
     }
 
@@ -1287,6 +1292,24 @@ public class DeferredAttr extends JCTree.Visitor {
                 lambdaScanner.scan(lambda.body);
             }
         }
+
+        @Override
+        public void visitSwitchExpression(JCSwitchExpression expr) {
+            SwitchExpressionScanner switchScanner = new SwitchExpressionScanner() {
+                @Override
+                public void visitYield(JCYield tree) {
+                    Type prevPt = CheckStuckPolicy.this.pt;
+                    try {
+                        CheckStuckPolicy.this.pt = pt;
+                        CheckStuckPolicy.this.scan(tree.value);
+                    } finally {
+                        CheckStuckPolicy.this.pt = prevPt;
+                    }
+                }
+            };
+            switchScanner.scan(expr.cases);
+        }
+
     }
 
     /**

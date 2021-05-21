@@ -152,7 +152,8 @@ static void setBlendingFactors(
     if ((composite != nil && FLT_LT([composite getExtraAlpha], 1.0f))) {
         subIndex |= 1 << 6;
     }
-    int index = compositeRule*64 + subIndex;
+
+    int index = compositeRule*128 + subIndex;
 
     NSPointerArray * subStates = [self getSubStates:vertexShaderId fragmentShader:fragmentShaderId];
 

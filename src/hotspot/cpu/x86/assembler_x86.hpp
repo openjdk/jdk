@@ -1746,7 +1746,7 @@ private:
   void vpcmpgtq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   void pmovmskb(Register dst, XMMRegister src);
-  void vpmovmskb(Register dst, XMMRegister src);
+  void vpmovmskb(Register dst, XMMRegister src, int vec_enc);
 
   // SSE 4.1 extract
   void pextrd(Register dst, XMMRegister src, int imm8);
@@ -2442,11 +2442,12 @@ private:
   void evbroadcasti64x2(XMMRegister dst, XMMRegister src, int vector_len);
   void evbroadcasti64x2(XMMRegister dst, Address src, int vector_len);
 
-  // scalar single/double precision replicate
+  // scalar single/double/128bit precision replicate
   void vbroadcastss(XMMRegister dst, XMMRegister src, int vector_len);
   void vbroadcastss(XMMRegister dst, Address src, int vector_len);
   void vbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len);
   void vbroadcastsd(XMMRegister dst, Address src, int vector_len);
+  void vbroadcastf128(XMMRegister dst, Address src, int vector_len);
 
   // gpr sourced byte/word/dword/qword replicate
   void evpbroadcastb(XMMRegister dst, Register src, int vector_len);
@@ -2515,6 +2516,8 @@ private:
                int comparison, int vector_len);
   void evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, Address src,
                int comparison, int vector_len);
+
+  void evpmovb2m(KRegister dst, XMMRegister src, int vector_len);
 
   // Vector blends
   void blendvps(XMMRegister dst, XMMRegister src);

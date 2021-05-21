@@ -118,6 +118,9 @@ inline void ParCompactionManager::follow_klass(Klass* klass) {
 
 inline void ParCompactionManager::FollowStackClosure::do_void() {
   _compaction_manager->follow_marking_stacks();
+  if (_terminator != nullptr) {
+    steal_marking_work(*_terminator, _worker_id);
+  }
 }
 
 template <typename T>
