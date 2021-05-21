@@ -31,7 +31,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm gc.gctests.StringInternGC.StringInternGC
+ * @run main/othervm -XX:+ExplicitGCInvokesConcurrent gc.gctests.StringInternGC.StringInternGC
  */
 
 package gc.gctests.StringInternGC;
@@ -48,6 +48,7 @@ import nsk.share.gc.*;
 public class StringInternGC extends ThreadedGCTest {
         private int maxLength = 1000; // Maximum number of characters to add per operation.
         private int maxTotalLength = 128 * 1024; // Total maximum length of the string until a new StringBuffer will be allocated.
+        private long lastTime = System.currentTimeMillis();
 
         private class StringGenerator implements Runnable {
                 private StringBuffer sb = new StringBuffer();
@@ -57,6 +58,13 @@ public class StringInternGC extends ThreadedGCTest {
                         if (sb.length() > maxTotalLength) {
                                 sb = new StringBuffer();
                         }
+
+                        long currentTime = System.currentTimeMillis();
+                        if (currentTime - lastTime > 5000) { // Cause a full gc every 5s.
+                                lastTime = currentTime;
+                                System.gc();
+                        }
+
                         for (int i = 0; i < length; ++i)
                                 sb.append((char) LocalRandom.nextInt(Integer.MAX_VALUE));
                         return sb.toString();
