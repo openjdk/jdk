@@ -38,12 +38,13 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.Platform;
 
 public class LoaderConstraintsTest  {
     static String mainClass = LoaderConstraintsApp.class.getName();
     static String httpHandlerClass = HttpHandler.class.getName().replace(".", "/");
     static String httpExchangeClass = HttpExchange.class.getName().replace(".", "/");
-    static String appJar = null;   
+    static String appJar = null;
     static String appClasses[] = {
         mainClass,
         httpHandlerClass,
@@ -107,10 +108,13 @@ public class LoaderConstraintsTest  {
     }
 
     public static void main(String... args) throws Exception {
-        loaderJar = ClassFileInstaller.writeJar("custom_app_loader.jar", loaderClasses);
         appJar = ClassFileInstaller.writeJar("loader_constraints.jar", appClasses);
         doTest();
-        doTestCustomLoader();
+        if (!Platform.isWindows()) {
+            // custom loaders are not supported on Windows yet.
+            loaderJar = ClassFileInstaller.writeJar("custom_app_loader.jar", loaderClasses);
+            doTestCustomLoader();
+        }
     }
 }
 

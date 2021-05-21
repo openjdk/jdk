@@ -41,6 +41,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.Platform;
 
 public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
     static String mainClass = LoaderConstraintsApp.class.getName();
@@ -67,12 +68,16 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
     }
 
     static void doTest() throws Exception  {
-        loaderJar = ClassFileInstaller.writeJar("custom_app_loader.jar", loaderClasses);
         appJar = ClassFileInstaller.writeJar("loader_constraints.jar", appClasses);
         doTest(false, false);
-        doTest(false, true);
         doTest(true,  false);
-        doTest(true,  true);
+
+        if (!Platform.isWindows()) {
+            // custom loaders are not supported on Windows yet.
+            loaderJar = ClassFileInstaller.writeJar("custom_app_loader.jar", loaderClasses);
+            doTest(false, true);
+            doTest(true,  true);
+        }
     }
 
     /*
