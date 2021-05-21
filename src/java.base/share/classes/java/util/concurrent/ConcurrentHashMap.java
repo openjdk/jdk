@@ -1146,8 +1146,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                     break;
                             }
                         }
-                        else if (f instanceof TreeBin<K, V> t) {
+                        else if (f instanceof TreeBin) {
                             validated = true;
+                            TreeBin<K,V> t = (TreeBin<K,V>)f;
                             TreeNode<K,V> r, p;
                             if ((r = t.root) != null &&
                                 (p = r.findTreeNode(hash, key, null)) != null) {
@@ -1348,8 +1349,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public boolean equals(Object o) {
         if (o != this) {
-            if (!(o instanceof Map<?, ?> m))
+            if (!(o instanceof Map))
                 return false;
+            Map<?,?> m = (Map<?,?>) o;
             Node<K,V>[] t;
             int f = (t = table) == null ? 0 : t.length;
             Traverser<K,V> it = new Traverser<K,V>(t, f, 0, f);
@@ -1745,8 +1747,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                 }
                             }
                         }
-                        else if (f instanceof TreeBin<K, V> t) {
+                        else if (f instanceof TreeBin) {
                             binCount = 2;
+                            TreeBin<K,V> t = (TreeBin<K,V>)f;
                             TreeNode<K,V> r, p;
                             if ((r = t.root) != null &&
                                 (p = r.findTreeNode(h, key, null)) != null)
@@ -1840,8 +1843,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                     break;
                             }
                         }
-                        else if (f instanceof TreeBin<K, V> t) {
+                        else if (f instanceof TreeBin) {
                             binCount = 2;
+                            TreeBin<K,V> t = (TreeBin<K,V>)f;
                             TreeNode<K,V> r, p;
                             if ((r = t.root) != null &&
                                 (p = r.findTreeNode(h, key, null)) != null) {
@@ -1959,8 +1963,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                 }
                             }
                         }
-                        else if (f instanceof TreeBin<K, V> t) {
+                        else if (f instanceof TreeBin) {
                             binCount = 1;
+                            TreeBin<K,V> t = (TreeBin<K,V>)f;
                             TreeNode<K,V> r, p;
                             if ((r = t.root) != null)
                                 p = r.findTreeNode(h, key, null);
@@ -2070,8 +2075,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                 }
                             }
                         }
-                        else if (f instanceof TreeBin<K, V> t) {
+                        else if (f instanceof TreeBin) {
                             binCount = 2;
+                            TreeBin<K,V> t = (TreeBin<K,V>)f;
                             TreeNode<K,V> r = t.root;
                             TreeNode<K,V> p = (r == null) ? null :
                                 r.findTreeNode(h, key, null);
@@ -2507,7 +2513,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                             setTabAt(tab, i, fwd);
                             advance = true;
                         }
-                        else if (f instanceof TreeBin<K, V> t) {
+                        else if (f instanceof TreeBin) {
+                            TreeBin<K,V> t = (TreeBin<K,V>)f;
                             TreeNode<K,V> lo = null, loTail = null;
                             TreeNode<K,V> hi = null, hiTail = null;
                             int lc = 0, hc = 0;

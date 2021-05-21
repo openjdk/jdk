@@ -248,7 +248,8 @@ public class ScheduledThreadPoolExecutor
         public int compareTo(Delayed other) {
             if (other == this) // compare zero if same object
                 return 0;
-            if (other instanceof ScheduledFutureTask<?> x) {
+            if (other instanceof ScheduledFutureTask) {
+                ScheduledFutureTask<?> x = (ScheduledFutureTask<?>)other;
                 long diff = time - x.time;
                 if (diff < 0)
                     return -1;
@@ -377,7 +378,8 @@ public class ScheduledThreadPoolExecutor
         // TODO: implement and use efficient removeIf
         // super.getQueue().removeIf(...);
         for (Object e : q.toArray()) {
-            if (e instanceof RunnableScheduledFuture<?> t) {
+            if (e instanceof RunnableScheduledFuture) {
+                RunnableScheduledFuture<?> t = (RunnableScheduledFuture<?>)e;
                 if ((t.isPeriodic()
                      ? !keepPeriodic
                      : (!keepDelayed && t.getDelay(NANOSECONDS) > 0))

@@ -1924,7 +1924,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                             (a = q.array) != null && (cap = a.length) > 0) {
                             int k = (cap - 1) & (b = q.base), nextBase = b + 1;
                             ForkJoinTask<?> t = WorkQueue.getSlot(a, k);
-                            if (t instanceof CountedCompleter<?> f) {
+                            if (t instanceof CountedCompleter) {
+                                CountedCompleter<?> f = (CountedCompleter<?>)t;
                                 do {} while (!(eligible = (f == task)) &&
                                              (f = f.completer) != null);
                             }

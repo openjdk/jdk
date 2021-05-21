@@ -978,9 +978,10 @@ public class CopyOnWriteArrayList<E>
     public boolean equals(Object o) {
         if (o == this)
             return true;
-        if (!(o instanceof List<?> list))
+        if (!(o instanceof List))
             return false;
 
+        List<?> list = (List<?>)o;
         Iterator<?> it = list.iterator();
         for (Object element : getArray())
             if (!it.hasNext() || !Objects.equals(element, it.next()))
