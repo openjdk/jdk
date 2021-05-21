@@ -1066,10 +1066,6 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
       }
 #endif
 
-      if (is_updateBytes) {
-        base_op = access_resolve(IS_NOT_NULL | ACCESS_READ, base_op);
-      }
-
       LIR_Address* a = new LIR_Address(base_op,
                                        index,
                                        offset,
@@ -1127,7 +1123,7 @@ void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
     constant_aOffset = result_aOffset->as_jlong();
     result_aOffset = LIR_OprFact::illegalOpr;
   }
-  LIR_Opr result_a = access_resolve(ACCESS_READ, a.result());
+  LIR_Opr result_a = a.result();
 
   long constant_bOffset = 0;
   LIR_Opr result_bOffset = bOffset.result();
@@ -1135,7 +1131,7 @@ void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
     constant_bOffset = result_bOffset->as_jlong();
     result_bOffset = LIR_OprFact::illegalOpr;
   }
-  LIR_Opr result_b = access_resolve(ACCESS_READ, b.result());
+  LIR_Opr result_b = b.result();
 
 #ifndef _LP64
   result_a = new_register(T_INT);

@@ -173,6 +173,7 @@
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
+  nonstatic_field(JavaThread,                  _stack_overflow_state._stack_overflow_limit,   address)                               \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
@@ -341,7 +342,6 @@
   nonstatic_field(ThreadLocalAllocBuffer,   _desired_size,                                    size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,   _refill_waste_limit,                              size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,   _number_of_refills,                               unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,   _fast_refill_waste,                               unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,   _slow_allocations,                                unsigned)                              \
                                                                                                                                      \
   nonstatic_field(SafepointMechanism::ThreadData, _polling_word,                              volatile uintptr_t)                    \
@@ -584,7 +584,6 @@
   /* InstanceKlass _misc_flags */                                         \
   /*********************************/                                     \
                                                                           \
-  declare_constant(InstanceKlass::_misc_is_unsafe_anonymous)              \
   declare_constant(InstanceKlass::_misc_has_nonstatic_concrete_methods)   \
   declare_constant(InstanceKlass::_misc_declares_nonstatic_concrete_methods) \
                                                                           \

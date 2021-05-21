@@ -224,6 +224,25 @@ juint StubRoutines::x86::_shuf_table_crc32_avx512[] =
     0x83828100UL, 0x87868584UL, 0x8b8a8988UL, 0x8f8e8d8cUL,
     0x03020100UL, 0x07060504UL, 0x0b0a0908UL, 0x000e0d0cUL
 };
+
+juint StubRoutines::x86::_adler32_ascale_table[] =
+{
+    0x00000000UL, 0x00000001UL, 0x00000002UL, 0x00000003UL,
+    0x00000004UL, 0x00000005UL, 0x00000006UL, 0x00000007UL
+};
+
+juint StubRoutines::x86::_adler32_shuf0_table[] =
+{
+    0xFFFFFF00UL, 0xFFFFFF01UL, 0xFFFFFF02UL, 0xFFFFFF03UL,
+    0xFFFFFF04UL, 0xFFFFFF05UL, 0xFFFFFF06UL, 0xFFFFFF07UL
+};
+
+juint StubRoutines::x86::_adler32_shuf1_table[] =
+{
+    0xFFFFFF08UL, 0xFFFFFF09, 0xFFFFFF0AUL, 0xFFFFFF0BUL,
+    0xFFFFFF0CUL, 0xFFFFFF0D, 0xFFFFFF0EUL, 0xFFFFFF0FUL
+};
+
 #endif // _LP64
 
 #define D 32

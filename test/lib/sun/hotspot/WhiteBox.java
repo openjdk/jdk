@@ -231,7 +231,7 @@ public class WhiteBox {
   public native void NMTArenaMalloc(long arena, long size);
 
   // Compiler
-  public native boolean isC2OrJVMCIIncludedInVmBuild();
+  public native boolean isC2OrJVMCIIncluded();
   public native boolean isJVMCISupportedByGC();
 
   public native int     matchesMethod(Executable method, String pattern);
@@ -591,8 +591,8 @@ public class WhiteBox {
   public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
   public native boolean areSharedStringsIgnored();
-  public native boolean isCDSIncludedInVmBuild();
-  public native boolean isJFRIncludedInVmBuild();
+  public native boolean isCDSIncluded();
+  public native boolean isJFRIncluded();
   public native boolean isJavaHeapArchiveSupported();
   public native Object  getResolvedReferences(Class<?> c);
   public native void    linkClass(Class<?> c);

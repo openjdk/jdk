@@ -288,8 +288,7 @@ void report_vm_status_error(const char* file, int line, const char* error_msg,
   report_vm_error(file, line, error_msg, "error %s(%d), %s", os::errno_name(status), status, detail);
 }
 
-void report_fatal(const char* file, int line, const char* detail_fmt, ...)
-{
+void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) {
   if (Debugging || error_is_suppressed(file, line)) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
@@ -302,7 +301,9 @@ void report_fatal(const char* file, int line, const char* detail_fmt, ...)
 
   print_error_for_unit_test("fatal error", detail_fmt, detail_args);
 
-  VMError::report_and_die(Thread::current_or_null(), context, file, line, "fatal error", detail_fmt, detail_args);
+  VMError::report_and_die(error_type, "fatal error", detail_fmt, detail_args,
+                          Thread::current_or_null(), NULL, NULL, context,
+                          file, line, 0);
   va_end(detail_args);
 }
 
@@ -360,7 +361,7 @@ void report_java_out_of_memory(const char* message) {
 
     if (CrashOnOutOfMemoryError) {
       tty->print_cr("Aborting due to java.lang.OutOfMemoryError: %s", message);
-      fatal("OutOfMemory encountered: %s", message);
+      report_fatal(OOM_JAVA_HEAP_FATAL, __FILE__, __LINE__, "OutOfMemory encountered: %s", message);
     }
 
     if (ExitOnOutOfMemoryError) {
@@ -501,12 +502,9 @@ extern "C" JNIEXPORT void ps() { // print stack
   if (p->has_last_Java_frame()) {
     // If the last_Java_fp is set we are in C land and
     // can call the standard stack_trace function.
-#ifdef PRODUCT
     p->print_stack();
-  } else {
-    tty->print_cr("Cannot find the last Java frame, printing stack disabled.");
-#else // !PRODUCT
-    p->trace_stack();
+#ifndef PRODUCT
+    if (Verbose) p->trace_stack();
   } else {
     frame f = os::current_frame();
     RegisterMap reg_map(p);
@@ -514,9 +512,8 @@ extern "C" JNIEXPORT void ps() { // print stack
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
     f.pd_ps();
-#endif // PRODUCT
+#endif
   }
-
 }
 
 extern "C" JNIEXPORT void pfl() {
@@ -603,14 +600,6 @@ extern "C" JNIEXPORT nmethod* findnm(intptr_t addr) {
   Command c("findnm");
   return  CodeCache::find_nmethod((address)addr);
 }
-
-// Another interface that isn't ambiguous in dbx.
-// Can we someday rename the other find to hsfind?
-extern "C" JNIEXPORT void hsfind(intptr_t x) {
-  Command c("hsfind");
-  os::print_location(tty, x, false);
-}
-
 
 extern "C" JNIEXPORT void find(intptr_t x) {
   Command c("find");

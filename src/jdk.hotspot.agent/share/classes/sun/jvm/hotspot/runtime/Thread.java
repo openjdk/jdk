@@ -52,16 +52,17 @@ public class Thread extends VMObject {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("Thread");
+    Type typeThread = db.lookupType("Thread");
+    Type typeJavaThread = db.lookupType("JavaThread");
 
-    suspendFlagsField = type.getCIntegerField("_suspend_flags");
-    HAS_ASYNC_EXCEPTION = db.lookupIntConstant("Thread::_has_async_exception").intValue();
+    suspendFlagsField = typeJavaThread.getCIntegerField("_suspend_flags");
+    HAS_ASYNC_EXCEPTION = db.lookupIntConstant("JavaThread::_has_async_exception").intValue();
 
-    tlabFieldOffset    = type.getField("_tlab").getOffset();
-    activeHandlesField = type.getAddressField("_active_handles");
-    currentPendingMonitorField = type.getAddressField("_current_pending_monitor");
-    currentWaitingMonitorField = type.getAddressField("_current_waiting_monitor");
-    allocatedBytesField = type.getJLongField("_allocated_bytes");
+    tlabFieldOffset    = typeThread.getField("_tlab").getOffset();
+    activeHandlesField = typeThread.getAddressField("_active_handles");
+    currentPendingMonitorField = typeJavaThread.getAddressField("_current_pending_monitor");
+    currentWaitingMonitorField = typeJavaThread.getAddressField("_current_waiting_monitor");
+    allocatedBytesField = typeThread.getJLongField("_allocated_bytes");
   }
 
   public Thread(Address addr) {

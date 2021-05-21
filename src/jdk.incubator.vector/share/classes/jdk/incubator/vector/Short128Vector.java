@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,14 +387,7 @@ final class Short128Vector extends ShortVector {
     @Override
     @ForceInline
     public Short128Vector slice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Short128Shuffle Iota = iotaShuffle();
-         VectorMask<Short> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((short)(VLENGTH-origin))));
-         Iota = iotaShuffle(origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (Short128Vector) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -415,14 +408,7 @@ final class Short128Vector extends ShortVector {
     @Override
     @ForceInline
     public Short128Vector unslice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Short128Shuffle Iota = iotaShuffle();
-         VectorMask<Short> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((short)(origin))));
-         Iota = iotaShuffle(-origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (Short128Vector) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -662,6 +648,29 @@ final class Short128Vector extends ShortVector {
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Short128Mask.class, short.class, VLENGTH,
                                           this, m,
                                           (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+        }
+
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Short128Mask.class, short.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(((Short128Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Short128Mask.class, short.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(((Short128Mask)m).getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Short128Mask.class, short.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(((Short128Mask)m).getBits()));
         }
 
         // Reductions

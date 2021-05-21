@@ -229,13 +229,13 @@ MTLTR_AddToGlyphCache(GlyphInfo *glyph, MTLContext *mtlc,
             unsigned char imageData[imageBytes];
             memset(&imageData, 0, sizeof(imageData));
 
-            for (int i = 0; i < h; i++) {
-                for (int j = 0; j < w; j++) {
-                    imageData[(i * w * 4) + j * 4] = glyph->image[(i * w * 3) + j * 3];
-                    imageData[(i * w * 4) + j * 4 + 1] = glyph->image[(i * w * 3) + j * 3 + 1];
-                    imageData[(i * w * 4) + j * 4 + 2] = glyph->image[(i * w * 3) + j * 3 + 2];
-                    imageData[(i * w * 4) + j * 4 + 3] = 0xFF;
-                }
+            int srcIndex = 0;
+            int dstIndex = 0;
+            for (int i = 0; i < (w * h); i++) {
+                imageData[dstIndex++] = glyph->image[srcIndex++];
+                imageData[dstIndex++] = glyph->image[srcIndex++];
+                imageData[dstIndex++] = glyph->image[srcIndex++];
+                imageData[dstIndex++] = 0xFF;
             }
 
             NSUInteger bytesPerRow = 4 * w;
@@ -530,17 +530,17 @@ MTLTR_DrawLCDGlyphNoCache(MTLContext *mtlc, BMTLSDOps *dstOps,
     encoder = [mtlc.encoderManager getLCDEncoder:dstOps->pTexture isSrcOpaque:YES isDstOpaque:YES];
     MTLTR_SetLCDContrast(mtlc, contrast, encoder);
 
-    unsigned int imageBytes = w * h *4;
+    unsigned int imageBytes = w * h * 4;
     unsigned char imageData[imageBytes];
     memset(&imageData, 0, sizeof(imageData));
 
-    for (int i = 0; i < h; i++) {
-        for (int j = 0; j < w; j++) {
-            imageData[(i * w * 4) + j * 4] = ginfo->image[((i * w * 3) + j * 3) + rowBytesOffset];
-            imageData[(i * w * 4) + j * 4 + 1] = ginfo->image[((i * w * 3) + j * 3 + 1) + rowBytesOffset];
-            imageData[(i * w * 4) + j * 4 + 2] = ginfo->image[((i * w * 3) + j * 3 + 2) + rowBytesOffset];
-            imageData[(i * w * 4) + j * 4 + 3] = 0xFF;
-        }
+    int srcIndex = 0;
+    int dstIndex = 0;
+    for (int i = 0; i < (w * h); i++) {
+        imageData[dstIndex++] = ginfo->image[srcIndex++ + rowBytesOffset];
+        imageData[dstIndex++] = ginfo->image[srcIndex++ + rowBytesOffset];
+        imageData[dstIndex++] = ginfo->image[srcIndex++ + rowBytesOffset];
+        imageData[dstIndex++] = 0xFF;
     }
 
     // copy LCD mask into glyph texture tile

@@ -1890,18 +1890,6 @@ public abstract class VarHandle implements Constable {
         GET_AND_BITWISE_XOR_ACQUIRE("getAndBitwiseXorAcquire", AccessType.GET_AND_UPDATE),
         ;
 
-        static final Map<String, AccessMode> methodNameToAccessMode;
-        static {
-            AccessMode[] values = AccessMode.values();
-            // Initial capacity of # values divided by the load factor is sufficient
-            // to avoid resizes for the smallest table size (64)
-            int initialCapacity = (int)(values.length / 0.75f) + 1;
-            methodNameToAccessMode = new HashMap<>(initialCapacity);
-            for (AccessMode am : values) {
-                methodNameToAccessMode.put(am.methodName, am);
-            }
-        }
-
         final String methodName;
         final AccessType at;
 
@@ -1934,9 +1922,40 @@ public abstract class VarHandle implements Constable {
          * @see #methodName()
          */
         public static AccessMode valueFromMethodName(String methodName) {
-            AccessMode am = methodNameToAccessMode.get(methodName);
-            if (am != null) return am;
-            throw new IllegalArgumentException("No AccessMode value for method name " + methodName);
+            return switch (methodName) {
+                case "get" -> GET;
+                case "set" -> SET;
+                case "getVolatile" -> GET_VOLATILE;
+                case "setVolatile" -> SET_VOLATILE;
+                case "getAcquire" -> GET_ACQUIRE;
+                case "setRelease" -> SET_RELEASE;
+                case "getOpaque" -> GET_OPAQUE;
+                case "setOpaque" -> SET_OPAQUE;
+                case "compareAndSet" -> COMPARE_AND_SET;
+                case "compareAndExchange" -> COMPARE_AND_EXCHANGE;
+                case "compareAndExchangeAcquire" -> COMPARE_AND_EXCHANGE_ACQUIRE;
+                case "compareAndExchangeRelease" -> COMPARE_AND_EXCHANGE_RELEASE;
+                case "weakCompareAndSet" -> WEAK_COMPARE_AND_SET;
+                case "weakCompareAndSetPlain" -> WEAK_COMPARE_AND_SET_PLAIN;
+                case "weakCompareAndSetAcquire" -> WEAK_COMPARE_AND_SET_ACQUIRE;
+                case "weakCompareAndSetRelease" -> WEAK_COMPARE_AND_SET_RELEASE;
+                case "getAndSet" -> GET_AND_SET;
+                case "getAndSetAcquire" -> GET_AND_SET_ACQUIRE;
+                case "getAndSetRelease" -> GET_AND_SET_RELEASE;
+                case "getAndAdd" -> GET_AND_ADD;
+                case "getAndAddAcquire" -> GET_AND_ADD_ACQUIRE;
+                case "getAndAddRelease" -> GET_AND_ADD_RELEASE;
+                case "getAndBitwiseOr" -> GET_AND_BITWISE_OR;
+                case "getAndBitwiseOrRelease" -> GET_AND_BITWISE_OR_RELEASE;
+                case "getAndBitwiseOrAcquire" -> GET_AND_BITWISE_OR_ACQUIRE;
+                case "getAndBitwiseAnd" -> GET_AND_BITWISE_AND;
+                case "getAndBitwiseAndRelease" -> GET_AND_BITWISE_AND_RELEASE;
+                case "getAndBitwiseAndAcquire" -> GET_AND_BITWISE_AND_ACQUIRE;
+                case "getAndBitwiseXor" -> GET_AND_BITWISE_XOR;
+                case "getAndBitwiseXorRelease" -> GET_AND_BITWISE_XOR_RELEASE;
+                case "getAndBitwiseXorAcquire" -> GET_AND_BITWISE_XOR_ACQUIRE;
+                default -> throw new IllegalArgumentException("No AccessMode value for method name " + methodName);
+            };
         }
     }
 

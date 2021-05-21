@@ -93,6 +93,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
+  case vmIntrinsics::_updateBytesAdler32:
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
@@ -153,6 +154,7 @@ bool vmIntrinsics::should_be_pinned(vmIntrinsics::ID id) {
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
+  case vmIntrinsics::_blackhole:
     return true;
   default:
     return false;
