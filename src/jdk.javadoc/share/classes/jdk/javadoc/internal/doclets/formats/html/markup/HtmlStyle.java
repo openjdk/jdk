@@ -340,6 +340,17 @@ public enum HtmlStyle {
     propertyDetails,
 
     /**
+     * The class for the list containing the {@code @see} tags of an element.
+     */
+    seeList,
+
+    /**
+     * The class for the list containing the {@code @see} tags of an element
+     * when some of the tags have longer labels.
+     */
+    seeListLong,
+
+    /**
      * The class for a {@code section} element containing details of the
      * serialized form of an element, on the "Serialized Form" page.
      */

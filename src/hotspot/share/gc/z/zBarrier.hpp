@@ -33,6 +33,9 @@ typedef uintptr_t (*ZBarrierSlowPath)(uintptr_t);
 
 class ZBarrier : public AllStatic {
 private:
+  static const bool GCThread    = true;
+  static const bool AnyThread   = false;
+
   static const bool Follow      = true;
   static const bool DontFollow  = false;
 
@@ -55,7 +58,7 @@ private:
   static bool during_mark();
   static bool during_relocate();
   template <bool finalizable> static bool should_mark_through(uintptr_t addr);
-  template <bool follow, bool finalizable, bool publish> static uintptr_t mark(uintptr_t addr);
+  template <bool gc_thread, bool follow, bool finalizable, bool publish> static uintptr_t mark(uintptr_t addr);
   static uintptr_t remap(uintptr_t addr);
   static uintptr_t relocate(uintptr_t addr);
   static uintptr_t relocate_or_mark(uintptr_t addr);
@@ -69,6 +72,7 @@ private:
   static uintptr_t weak_load_barrier_on_weak_oop_slow_path(uintptr_t addr);
   static uintptr_t weak_load_barrier_on_phantom_oop_slow_path(uintptr_t addr);
 
+  static uintptr_t keep_alive_barrier_on_oop_slow_path(uintptr_t addr);
   static uintptr_t keep_alive_barrier_on_weak_oop_slow_path(uintptr_t addr);
   static uintptr_t keep_alive_barrier_on_phantom_oop_slow_path(uintptr_t addr);
 
@@ -104,10 +108,10 @@ public:
   static bool is_alive_barrier_on_phantom_oop(oop o);
 
   // Keep alive barrier
+  static void keep_alive_barrier_on_oop(oop o);
   static void keep_alive_barrier_on_weak_oop_field(volatile oop* p);
   static void keep_alive_barrier_on_phantom_oop_field(volatile oop* p);
   static void keep_alive_barrier_on_phantom_root_oop_field(oop* p);
-  static void keep_alive_barrier_on_oop(oop o);
 
   // Mark barrier
   static void mark_barrier_on_oop_field(volatile oop* p, bool finalizable);

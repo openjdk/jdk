@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,8 +148,8 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             throw new IllegalArgumentException(); // d should have source set
         if (fullname)
             return fo.getName();
-        else if (fo instanceof PathFileObject)
-            return ((PathFileObject) fo).getShortName();
+        else if (fo instanceof PathFileObject pathFileObject)
+            return pathFileObject.getShortName();
         else
             return PathFileObject.getSimpleName(fo);
     }
@@ -178,50 +178,50 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
      * @return string representation of the diagnostic argument
      */
     protected String formatArgument(JCDiagnostic d, Object arg, Locale l) {
-        if (arg instanceof JCDiagnostic) {
+        if (arg instanceof JCDiagnostic diagnostic) {
             String s = null;
             depth++;
             try {
-                s = formatMessage((JCDiagnostic)arg, l);
+                s = formatMessage(diagnostic, l);
             }
             finally {
                 depth--;
             }
             return s;
         }
-        else if (arg instanceof JCExpression) {
-            return expr2String((JCExpression)arg);
+        else if (arg instanceof JCExpression expression) {
+            return expr2String(expression);
         }
-        else if (arg instanceof Iterable<?> && !(arg instanceof Path)) {
-            return formatIterable(d, (Iterable<?>)arg, l);
+        else if (arg instanceof Iterable<?> iterable && !(arg instanceof Path)) {
+            return formatIterable(d, iterable, l);
         }
-        else if (arg instanceof Type) {
-            return printer.visit((Type)arg, l);
+        else if (arg instanceof Type type) {
+            return printer.visit(type, l);
         }
-        else if (arg instanceof Symbol) {
-            return printer.visit((Symbol)arg, l);
+        else if (arg instanceof Symbol symbol) {
+            return printer.visit(symbol, l);
         }
-        else if (arg instanceof JavaFileObject) {
-            return ((JavaFileObject)arg).getName();
+        else if (arg instanceof JavaFileObject javaFileObject) {
+            return javaFileObject.getName();
         }
-        else if (arg instanceof Profile) {
-            return ((Profile)arg).name;
+        else if (arg instanceof Profile profile) {
+            return profile.name;
         }
-        else if (arg instanceof Option) {
-            return ((Option)arg).primaryName;
+        else if (arg instanceof Option option) {
+            return option.primaryName;
         }
-        else if (arg instanceof Formattable) {
-            return ((Formattable)arg).toString(l, messages);
+        else if (arg instanceof Formattable formattable) {
+            return formattable.toString(l, messages);
         }
-        else if (arg instanceof Target) {
-            return ((Target)arg).name;
+        else if (arg instanceof Target target) {
+            return target.name;
         }
-        else if (arg instanceof Source) {
-            return ((Source)arg).name;
+        else if (arg instanceof Source source) {
+            return source.name;
         }
-        else if (arg instanceof Tag) {
+        else if (arg instanceof Tag tag) {
             return messages.getLocalizedString(l, "compiler.misc.tree.tag." +
-                                                  StringUtils.toLowerCase(((Tag) arg).name()));
+                                                  StringUtils.toLowerCase(tag.name()));
         }
         else {
             return String.valueOf(arg);

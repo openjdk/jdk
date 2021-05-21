@@ -114,19 +114,20 @@ public:
   // Object allocation
   uintptr_t alloc_tlab(size_t size);
   uintptr_t alloc_object(size_t size);
-  uintptr_t alloc_object_non_blocking(size_t size);
-  void undo_alloc_object(uintptr_t addr, size_t size);
+  uintptr_t alloc_object_for_relocation(size_t size);
+  void undo_alloc_object_for_relocation(uintptr_t addr, size_t size);
   bool is_alloc_stalled() const;
   void check_out_of_memory();
 
   // Marking
   bool is_object_live(uintptr_t addr) const;
   bool is_object_strongly_live(uintptr_t addr) const;
-  template <bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
+  template <bool gc_thread, bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
   void mark_start();
   void mark(bool initial);
   void mark_flush_and_free(Thread* thread);
   bool mark_end();
+  void mark_free();
   void keep_alive(oop obj);
 
   // Relocation set

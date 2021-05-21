@@ -426,16 +426,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Delay in milliseconds for option AbortVMOnVMOperationTimeout")   \
           range(0, max_intx)                                                \
                                                                             \
-  /* 50 retries * (5 * current_retry_count) millis = ~6.375 seconds */      \
-  /* typically, at most a few retries are needed                    */      \
-  product(intx, SuspendRetryCount, 50,                                      \
-          "Maximum retry count for an external suspend request")            \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(intx, SuspendRetryDelay, 5,                                       \
-          "Milliseconds to delay per retry (* current_retry_count)")        \
-          range(0, max_intx)                                                \
-                                                                            \
   product(bool, MaxFDLimit, true,                                           \
           "Bump the number of file descriptors to maximum (Unix only)")     \
                                                                             \
@@ -1004,6 +994,9 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, UseCHA, true,                                               \
           "Enable CHA")                                                     \
                                                                             \
+  product(bool, UseVtableBasedCHA, true,  DIAGNOSTIC,                       \
+          "Use vtable information during CHA")                              \
+                                                                            \
   product(bool, UseTypeProfile, true,                                       \
           "Check interpreter profile for historically monomorphic calls")   \
                                                                             \
@@ -1155,9 +1148,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   notproduct(bool, CollectIndexSetStatistics, false,                        \
           "Collect information about IndexSets")                            \
-                                                                            \
-  develop(bool, UseLoopSafepoints, true,                                    \
-          "Generate Safepoint nodes in every loop")                         \
                                                                             \
   develop(intx, FastAllocateSizeLimit, 128*K,                               \
           /* Note:  This value is zero mod 1<<13 for a cheap sparc set. */  \
@@ -1644,25 +1634,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Non-segmented code cache: X[%] of the total code cache")         \
           range(0, 100)                                                     \
                                                                             \
-  /* AOT parameters */                                                      \
-  product(bool, UseAOT, false, EXPERIMENTAL,                                \
-          "Use AOT compiled files")                                         \
-                                                                            \
-  product(ccstrlist, AOTLibrary, NULL, EXPERIMENTAL,                        \
-          "AOT library")                                                    \
-                                                                            \
-  product(bool, PrintAOT, false, EXPERIMENTAL,                              \
-          "Print used AOT klasses and methods")                             \
-                                                                            \
-  notproduct(bool, PrintAOTStatistics, false,                               \
-          "Print AOT statistics")                                           \
-                                                                            \
-  product(bool, UseAOTStrictLoading, false, DIAGNOSTIC,                     \
-          "Exit the VM if any of the AOT libraries has invalid config")     \
-                                                                            \
-  product(bool, CalculateClassFingerprint, false,                           \
-          "Calculate class fingerprint")                                    \
-                                                                            \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
           "Minimal number of lookupswitch entries for rewriting to binary " \
@@ -1969,16 +1940,39 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, UseStringDeduplication, false,                              \
           "Use string deduplication")                                       \
                                                                             \
-  product(uintx, StringDeduplicationAgeThreshold, 3,                        \
+  product(uint, StringDeduplicationAgeThreshold, 3,                         \
           "A string must reach this age (or be promoted to an old region) " \
           "to be considered for deduplication")                             \
           range(1, markWord::max_age)                                       \
                                                                             \
-  product(bool, StringDeduplicationResizeALot, false, DIAGNOSTIC,           \
-          "Force table resize every time the table is scanned")             \
+  product(size_t, StringDeduplicationInitialTableSize, 500, EXPERIMENTAL,   \
+          "Approximate initial number of buckets in the table")             \
+          range(1, 1 * G)                                                   \
                                                                             \
-  product(bool, StringDeduplicationRehashALot, false, DIAGNOSTIC,           \
-          "Force table rehash every time the table is scanned")             \
+  product(double, StringDeduplicationGrowTableLoad, 14.0, EXPERIMENTAL,     \
+          "Entries per bucket above which the table should be expanded")    \
+          range(0.1, 1000.0)                                                \
+                                                                            \
+  product(double, StringDeduplicationShrinkTableLoad, 1.0, EXPERIMENTAL,    \
+          "Entries per bucket below which the table should be shrunk")      \
+          range(0.01, 100.0)                                                \
+                                                                            \
+  product(double, StringDeduplicationTargetTableLoad, 7.0, EXPERIMENTAL,    \
+          "Desired entries per bucket when resizing the table")             \
+          range(0.01, 1000.0)                                               \
+                                                                            \
+  product(size_t, StringDeduplicationCleanupDeadMinimum, 100, EXPERIMENTAL, \
+          "Minimum number of dead table entries for cleaning the table")    \
+                                                                            \
+  product(int, StringDeduplicationCleanupDeadPercent, 5, EXPERIMENTAL,      \
+          "Minimum percentage of dead table entries for cleaning the table") \
+          range(1, 100)                                                     \
+                                                                            \
+  product(bool, StringDeduplicationResizeALot, false, DIAGNOSTIC,           \
+          "Force more frequent table resizing")                             \
+                                                                            \
+  product(uint64_t, StringDeduplicationHashSeed, 0, DIAGNOSTIC,             \
+          "Seed for the table hashing function; 0 requests computed seed")  \
                                                                             \
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \

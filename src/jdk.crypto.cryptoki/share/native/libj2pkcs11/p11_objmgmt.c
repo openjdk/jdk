@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -218,6 +218,8 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetAttributeVa
     CK_ULONG i;
     jobject jAttribute;
     CK_RV rv;
+    char* msg = NULL;
+    char* temp1, *temp2;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
     if (ckpFunctions == NULL) { return; }
@@ -245,13 +247,35 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetAttributeVa
     }
 
     rv = (*ckpFunctions->C_GetAttributeValue)(ckSessionHandle, ckObjectHandle, ckpAttributes, ckAttributesLength);
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+
+    if (rv != CKR_OK) {
+        if (rv == CKR_ATTRIBUTE_SENSITIVE || rv == CKR_ATTRIBUTE_TYPE_INVALID) {
+            msg = malloc(80); // should be more than sufficient
+            if (msg == NULL) {
+                throwOutOfMemoryError(env, 0);
+                free(ckpAttributes);
+                return;
+            }
+            // format msg w/ attribute(s) whose value is unavailable
+            temp1 = msg;
+            temp2 = msg + 80;
+            for (i = 0; i < ckAttributesLength && temp1 < temp2; i++) {
+                if (ckpAttributes[i].ulValueLen == CK_UNAVAILABLE_INFORMATION) {
+                    temp1 += snprintf(temp1, (temp2-temp1), " 0x%lX",
+                            ckpAttributes[i].type);
+                }
+            }
+            ckAssertReturnValueOK2(env, rv, msg);
+            free(msg);
+        } else {
+            ckAssertReturnValueOK(env, rv);
+        }
         free(ckpAttributes);
-        return ;
+        return;
     }
 
-    /* now, the ulValueLength field of each attribute should hold the exact buffer length needed
-     * allocate the needed buffers accordingly
+    /* now, the ulValueLength field of each attribute should hold the exact
+     * buffer length needed.
      */
     for (i = 0; i < ckAttributesLength; i++) {
         ckBufferLength = sizeof(CK_BYTE) * ckpAttributes[i].ulValueLen;
@@ -264,8 +288,9 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetAttributeVa
         ckpAttributes[i].ulValueLen = ckBufferLength;
     }
 
-    /* now get the attributes with all values */
-    rv = (*ckpFunctions->C_GetAttributeValue)(ckSessionHandle, ckObjectHandle, ckpAttributes, ckAttributesLength);
+    /* now get all attribute values */
+    rv = (*ckpFunctions->C_GetAttributeValue)(ckSessionHandle,
+            ckObjectHandle, ckpAttributes, ckAttributesLength);
 
     if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
         /* copy back the values to the Java attributes */

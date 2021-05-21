@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -32,13 +33,13 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -47,7 +48,7 @@
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vm_version.hpp"
@@ -521,6 +522,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "SuspendRetryCount",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "SuspendRetryDelay",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
   { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
   { "AlwaysLockClassLoader",        JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
@@ -3137,21 +3140,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
 #endif
 
-#if !INCLUDE_AOT
-  UNSUPPORTED_OPTION(UseAOT);
-  UNSUPPORTED_OPTION(PrintAOT);
-  UNSUPPORTED_OPTION(UseAOTStrictLoading);
-  UNSUPPORTED_OPTION_NULL(AOTLibrary);
-
-  UNSUPPORTED_OPTION_INIT(Tier3AOTInvocationThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier3AOTMinInvocationThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier3AOTCompileThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier3AOTBackEdgeThreshold, 0);
-#ifndef PRODUCT
-  UNSUPPORTED_OPTION(PrintAOTStatistics);
-#endif
-#endif
-
 #ifndef CAN_SHOW_REGISTERS_ON_ASSERT
   UNSUPPORTED_OPTION(ShowRegistersOnAssert);
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
@@ -4010,6 +3998,10 @@ jint Arguments::apply_ergo() {
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();
+
+  if (!StringDedup::ergo_initialize()) {
+    return JNI_EINVAL;
+  }
 
   // Set compiler flags after GC is selected and GC specific
   // flags (LoopStripMiningIter) are set.

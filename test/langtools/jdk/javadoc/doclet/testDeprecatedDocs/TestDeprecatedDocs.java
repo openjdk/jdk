@@ -355,11 +355,11 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">class_test5 passes. This is the second sentence of deprecated description for a method.</div>
                     </div>
-                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#overloadedMethod(int)">pkg.TestClass.overloadedMethod&#8203;(int)</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#overloadedMethod(int)">pkg.TestClass.overloadedMethod<wbr>(int)</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">class_test7 passes. Overloaded method 2.</div>
                     </div>
-                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestClass.html#overloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod&#8203;(String)</a></div>
+                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestClass.html#overloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod<wbr>(String)</a></div>
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">class_test6 passes. Overloaded method 1.</div>
                     </div>""",
@@ -375,7 +375,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">class_test3 passes. This is the second sentence of deprecated description for a constructor.</div>
                     </div>
-                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#%3Cinit%3E(java.lang.String)">pkg.TestClass&#8203;(String)</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#%3Cinit%3E(java.lang.String)">pkg.TestClass<wbr>(String)</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">class_test4 passes. Overloaded constructor.</div>
                     </div>""");

@@ -180,9 +180,9 @@ void javaVFrame::print_locked_object_class_name(outputStream* st, Handle obj, co
 }
 
 void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
-  Thread* THREAD = Thread::current();
-  ResourceMark rm(THREAD);
-  HandleMark hm(THREAD);
+  Thread* current = Thread::current();
+  ResourceMark rm(current);
+  HandleMark hm(current);
 
   // If this is the first frame and it is java.lang.Object.wait(...)
   // then print out the receiver. Locals are not always available,
@@ -237,7 +237,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
           Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
           st->print("\t- eliminated <owner is scalar replaced> (a %s)", k->external_name());
         } else {
-          Handle obj(THREAD, monitor->owner());
+          Handle obj(current, monitor->owner());
           if (obj() != NULL) {
             print_locked_object_class_name(st, obj, "eliminated");
           }
@@ -266,7 +266,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
             lock_state = "waiting to lock";
           }
         }
-        print_locked_object_class_name(st, Handle(THREAD, monitor->owner()), lock_state);
+        print_locked_object_class_name(st, Handle(current, monitor->owner()), lock_state);
 
         found_first_monitor = true;
       }

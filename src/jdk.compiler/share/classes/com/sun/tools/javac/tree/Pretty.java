@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -701,9 +701,9 @@ public class Pretty extends JCTree.Visitor {
                 if ((tree.mods.flags & VARARGS) != 0) {
                     JCTree vartype = tree.vartype;
                     List<JCAnnotation> tas = null;
-                    if (vartype instanceof JCAnnotatedType) {
-                        tas = ((JCAnnotatedType)vartype).annotations;
-                        vartype = ((JCAnnotatedType)vartype).underlyingType;
+                    if (vartype instanceof JCAnnotatedType annotatedType) {
+                        tas = annotatedType.annotations;
+                        vartype = annotatedType.underlyingType;
                     }
                     printExpr(((JCArrayTypeTree) vartype).elemtype);
                     if (tas != null) {

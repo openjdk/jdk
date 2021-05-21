@@ -373,7 +373,7 @@ public final class PlatformRecording implements AutoCloseable {
     public void setMaxSize(long maxSize) {
         synchronized (recorder) {
             if (getState() == RecordingState.CLOSED) {
-                throw new IllegalStateException("Can't set max age when recording is closed");
+                throw new IllegalStateException("Can't set max size when recording is closed");
             }
             this.maxSize = maxSize;
             trimToSize();

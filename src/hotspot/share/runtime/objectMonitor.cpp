@@ -403,39 +403,49 @@ bool ObjectMonitor::enter(JavaThread* current) {
     }
 
     OSThreadContendState osts(current->osthread());
-    ThreadBlockInVM tbivm(current);
 
-    // TODO-FIXME: change the following for(;;) loop to straight-line code.
+    assert(current->thread_state() == _thread_in_vm, "invariant");
+
+    current->frame_anchor()->make_walkable(current);
+    // Thread must be walkable before it is blocked.
+    // Read in reverse order.
+    OrderAccess::storestore();
     for (;;) {
-      current->set_suspend_equivalent();
-      // cleared by handle_special_suspend_equivalent_condition()
-      // or java_suspend_self()
-
+      current->set_thread_state(_thread_blocked);
       EnterI(current);
-
-      if (!current->handle_special_suspend_equivalent_condition()) break;
-
-      // We have acquired the contended monitor, but while we were
-      // waiting another thread suspended us. We don't want to enter
-      // the monitor while suspended because that would surprise the
-      // thread that suspended us.
-      //
-      _recursions = 0;
-      _succ = NULL;
-      exit(current, false /* not_suspended */);
-
-      current->java_suspend_self();
+      current->set_thread_state_fence(_thread_blocked_trans);
+      if (SafepointMechanism::should_process(current) &&
+        current->is_suspended()) {
+        // We have acquired the contended monitor, but while we were
+        // waiting another thread suspended us. We don't want to enter
+        // the monitor while suspended because that would surprise the
+        // thread that suspended us.
+        _recursions = 0;
+        _succ = NULL;
+        // Don't need a full fence after clearing successor here because of the call to exit().
+        exit(current, false /* not_suspended */);
+        SafepointMechanism::process_if_requested(current);
+        // Since we are going to _thread_blocked we skip setting _thread_in_vm here.
+      } else {
+        // Only exit path from for loop
+        break;
+      }
     }
+
     current->set_current_pending_monitor(NULL);
 
     // We cleared the pending monitor info since we've just gotten past
     // the enter-check-for-suspend dance and we now own the monitor free
-    // and clear, i.e., it is no longer pending. The ThreadBlockInVM
-    // destructor can go to a safepoint at the end of this block. If we
+    // and clear, i.e., it is no longer pending.
+    // We can go to a safepoint at the end of this block. If we
     // do a thread dump during that safepoint, then this thread will show
     // as having "-locked" the monitor, but the OS and java.lang.Thread
     // states will still report that the thread is blocked trying to
     // acquire it.
+
+    // Completed the tranisition.
+    SafepointMechanism::process_if_requested(current);
+    current->set_thread_state(_thread_in_vm);
   }
 
   add_to_contentions(-1);
@@ -954,25 +964,26 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
     if (TryLock(current) > 0) break;
     if (TrySpin(current) > 0) break;
 
-    // State transition wrappers around park() ...
-    // ReenterI() wisely defers state transitions until
-    // it's clear we must park the thread.
     {
       OSThreadContendState osts(current->osthread());
-      ThreadBlockInVM tbivm(current);
 
-      // cleared by handle_special_suspend_equivalent_condition()
-      // or java_suspend_self()
-      current->set_suspend_equivalent();
+      assert(current->thread_state() == _thread_in_vm, "invariant");
+
+      current->frame_anchor()->make_walkable(current);
+      // Thread must be walkable before it is blocked.
+      // Read in reverse order.
+      OrderAccess::storestore();
+      current->set_thread_state(_thread_blocked);
       current->_ParkEvent->park();
-
-      // were we externally suspended while we were waiting?
-      for (;;) {
-        if (!current->handle_special_suspend_equivalent_condition()) break;
-        if (_succ == current) { _succ = NULL; OrderAccess::fence(); }
-        current->java_suspend_self();
-        current->set_suspend_equivalent();
+      current->set_thread_state_fence(_thread_blocked_trans);
+      if (SafepointMechanism::should_process(current)) {
+        if (_succ == current) {
+            _succ = NULL;
+            OrderAccess::fence(); // always do a full fence when successor is cleared
+        }
+        SafepointMechanism::process_if_requested(current);
       }
+      current->set_thread_state(_thread_in_vm);
     }
 
     // Try again, but just so we distinguish between futile wakeups and
@@ -1410,7 +1421,7 @@ bool ObjectMonitor::reenter(intx recursions, JavaThread* current) {
 // (IMSE). If there is a pending exception and the specified thread
 // is not the owner, that exception will be replaced by the IMSE.
 bool ObjectMonitor::check_owner(TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   void* cur = owner_raw();
   if (cur == current) {
     return true;
@@ -1448,7 +1459,7 @@ static void post_monitor_wait_event(EventJavaMonitorWait* event,
 // Note: a subset of changes to ObjectMonitor::wait()
 // will need to be replicated in complete_exit
 void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
 
   assert(InitDone, "Unexpectedly not initialized");
 
@@ -1526,11 +1537,15 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   { // State transition wrappers
     OSThread* osthread = current->osthread();
     OSThreadWaitState osts(osthread, true);
-    {
-      ThreadBlockInVM tbivm(current);
-      // Thread is in thread_blocked state and oop access is unsafe.
-      current->set_suspend_equivalent();
 
+    assert(current->thread_state() == _thread_in_vm, "invariant");
+
+    {
+      current->frame_anchor()->make_walkable(current);
+      // Thread must be walkable before it is blocked.
+      // Read in reverse order.
+      OrderAccess::storestore();
+      current->set_thread_state(_thread_blocked);
       if (interrupted || HAS_PENDING_EXCEPTION) {
         // Intentionally empty
       } else if (node._notified == 0) {
@@ -1540,14 +1555,16 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
           ret = current->_ParkEvent->park(millis);
         }
       }
-
-      // were we externally suspended while we were waiting?
-      if (current->handle_special_suspend_equivalent_condition()) {
-        // TODO-FIXME: add -- if succ == current then succ = null.
-        current->java_suspend_self();
+      current->set_thread_state_fence(_thread_blocked_trans);
+      if (SafepointMechanism::should_process(current)) {
+        if (_succ == current) {
+            _succ = NULL;
+            OrderAccess::fence(); // always do a full fence when successor is cleared
+        }
+        SafepointMechanism::process_if_requested(current);
       }
-
-    } // Exit thread safepoint: transition _thread_blocked -> _thread_in_vm
+      current->set_thread_state(_thread_in_vm);
+    }
 
     // Node may be on the WaitSet, the EntryList (or cxq), or in transition
     // from the WaitSet to the EntryList.
@@ -1736,7 +1753,7 @@ void ObjectMonitor::INotify(JavaThread* current) {
 // that suggests a lost wakeup bug.
 
 void ObjectMonitor::notify(TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   CHECK_OWNER();  // Throws IMSE if not owner.
   if (_WaitSet == NULL) {
     return;
@@ -1755,7 +1772,7 @@ void ObjectMonitor::notify(TRAPS) {
 // mode the waitset will be empty and the EntryList will be "DCBAXYZ".
 
 void ObjectMonitor::notifyAll(TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   CHECK_OWNER();  // Throws IMSE if not owner.
   if (_WaitSet == NULL) {
     return;

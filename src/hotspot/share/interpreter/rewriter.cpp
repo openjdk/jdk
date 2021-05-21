@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -567,9 +568,12 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
 }
 
 void Rewriter::rewrite(InstanceKlass* klass, TRAPS) {
-  if (!DumpSharedSpaces) {
-    assert(!klass->is_shared(), "archive methods must not be rewritten at run time");
+#if INCLUDE_CDS
+  if (klass->is_shared()) {
+    assert(!klass->is_rewritten(), "rewritten shared classes cannot be rewritten again");
+    assert(klass->has_old_class_version(), "only shared old classes aren't rewritten");
   }
+#endif // INCLUDE_CDS
   ResourceMark rm(THREAD);
   constantPoolHandle cpool(THREAD, klass->constants());
   Rewriter     rw(klass, cpool, klass->methods(), CHECK);

@@ -35,7 +35,7 @@
   CompilerThread* thread=CompilerThread::current(); \
   ThreadInVMfromNative __tiv(thread);       \
   HandleMarkCleaner __hm(thread);           \
-  Thread* THREAD = thread;                  \
+  JavaThread* THREAD = thread; /* For exception macros. */ \
   debug_only(VMNativeEntryWrapper __vew;)
 
 
@@ -50,13 +50,13 @@
  * removed, causes the NoHandleMark assert to trigger. \
  * debug_only(NoHandleMark __hm();)         \
  */                                         \
-  Thread* THREAD = thread;                  \
+  JavaThread* THREAD = thread; /* For exception macros. */ \
   debug_only(VMNativeEntryWrapper __vew;)
 
 
 #define EXCEPTION_CONTEXT \
-  CompilerThread* thread=CompilerThread::current(); \
-  Thread* THREAD = thread;
+  CompilerThread* thread = CompilerThread::current(); \
+  JavaThread* THREAD = thread; // For exception macros.
 
 
 #define GUARDED_VM_ENTRY(action)            \

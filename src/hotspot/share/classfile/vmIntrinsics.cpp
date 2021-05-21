@@ -93,6 +93,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
+  case vmIntrinsics::_updateBytesAdler32:
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
@@ -153,6 +154,7 @@ bool vmIntrinsics::should_be_pinned(vmIntrinsics::ID id) {
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
+  case vmIntrinsics::_blackhole:
     return true;
   default:
     return false;
@@ -678,6 +680,46 @@ vmIntrinsics::ID vmIntrinsics::find_id_impl(vmSymbolID holder,
 #undef VM_INTRINSIC_CASE
 }
 
+class vmIntrinsicsLookup {
+  bool _class_map[vmSymbols::number_of_symbols()];
+
+  constexpr int as_index(vmSymbolID id) const {
+    int index = vmSymbols::as_int(id);
+    assert(0 <= index && index < int(sizeof(_class_map)), "must be");
+    return index;
+  }
+
+  constexpr void set_class_map(vmSymbolID id) {
+    _class_map[as_index(id)] = true;
+  }
+
+public:
+  constexpr vmIntrinsicsLookup() : _class_map() {
+
+#define VM_INTRINSIC_CLASS_MAP(id, klass, name, sig, fcode) \
+    set_class_map(SID_ENUM(klass));
+
+    VM_INTRINSICS_DO(VM_INTRINSIC_CLASS_MAP,
+                     VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
+#undef VM_INTRINSIC_CLASS_MAP
+
+
+    // A few slightly irregular cases. See Method::init_intrinsic_id
+    set_class_map(SID_ENUM(java_lang_StrictMath));
+    set_class_map(SID_ENUM(java_lang_invoke_MethodHandle));
+    set_class_map(SID_ENUM(java_lang_invoke_VarHandle));
+  }
+
+  bool class_has_intrinsics(vmSymbolID holder) const {
+    return _class_map[as_index(holder)];
+  }
+};
+
+constexpr vmIntrinsicsLookup _intrinsics_lookup;
+
+bool vmIntrinsics::class_has_intrinsics(vmSymbolID holder) {
+  return _intrinsics_lookup.class_has_intrinsics(holder);
+}
 
 const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf, int buflen) {
   const char* str = name_at(id);

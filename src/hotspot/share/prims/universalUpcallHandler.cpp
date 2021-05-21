@@ -35,7 +35,7 @@
 extern struct JavaVM_ main_vm;
 
 void ProgrammableUpcallHandler::upcall_helper(JavaThread* thread, jobject rec, address buff) {
-  JavaThread* THREAD = thread;
+  JavaThread* THREAD = thread; // For exception macros.
   ThreadInVMfromNative tiv(THREAD);
   const UpcallMethod& upcall_method = instance().upcall_method;
 
@@ -78,7 +78,7 @@ const ProgrammableUpcallHandler& ProgrammableUpcallHandler::instance() {
 }
 
 ProgrammableUpcallHandler::ProgrammableUpcallHandler() {
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   ResourceMark rm(THREAD);
   Symbol* sym = SymbolTable::new_symbol(FOREIGN_ABI "ProgrammableUpcallHandler");
   Klass* k = SystemDictionary::resolve_or_null(sym, Handle(), Handle(), CATCH);

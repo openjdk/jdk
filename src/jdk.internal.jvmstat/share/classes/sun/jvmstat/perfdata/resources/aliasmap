@@ -525,14 +525,10 @@ alias sun.gc.tlab.alloc                           // 1.5.0 b39
 	hotspot.gc.tlab.alloc                     // 1.5.0 b21
 alias sun.gc.tlab.allocThreads                    // 1.5.0 b39
 	hotspot.gc.tlab.alloc_thrds               // 1.5.0 b21
-alias sun.gc.tlab.fastWaste                       // 1.5.0 b39
-	hotspot.gc.tlab.fastwaste                 // 1.5.0 b21
 alias sun.gc.tlab.fills                           // 1.5.0 b39
 	hotspot.gc.tlab.fills                     // 1.5.0 b21
 alias sun.gc.tlab.gcWaste                         // 1.5.0 b39
 	hotspot.gc.tlab.gcwaste                   // 1.5.0 b21
-alias sun.gc.tlab.maxFastWaste                    // 1.5.0 b39
-	hotspot.gc.tlab.maxfastwaste              // 1.5.0 b21
 alias sun.gc.tlab.maxFills                        // 1.5.0 b39
 	hotspot.gc.tlab.maxfills                  // 1.5.0 b21
 alias sun.gc.tlab.maxGcWaste                      // 1.5.0 b39
