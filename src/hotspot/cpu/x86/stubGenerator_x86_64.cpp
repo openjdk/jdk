@@ -6058,6 +6058,8 @@ address generate_avx_ghash_processBlocks() {
     //
     // Note that this will be the path for MIME-encoded strings.
 
+    __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
+
     __ cmpq(length, 63);
     __ jcc(Assembler::lessEqual, L_finalBit);
 
@@ -6076,8 +6078,6 @@ address generate_avx_ghash_processBlocks() {
     __ evpmovb2m(k3, errorvec, Assembler::AVX_512bit);
     __ kortestql(k3, k3);
     __ jcc(Assembler::notZero, L_exit);
-
-    __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
 
     __ evpmaddubsw(merge_ab_bc0, translated0, pack16_op, Assembler::AVX_512bit);
     __ vpmaddwd(merged0, merge_ab_bc0, pack32_op, Assembler::AVX_512bit);
