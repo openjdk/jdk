@@ -924,12 +924,10 @@ const Type* XorINode::Value(PhaseGVN* phase) const {
   // inputs have bits set. lo can always become 0.
   const TypeInt* t1i = t1->is_int();
   const TypeInt* t2i = t2->is_int();
-  if ((t1i->_lo >= 0)        &&
-      (t1i->_hi > 0)         &&
-      (t1i->_hi < max_power_of_2<jint>()) &&
-      (t2i->_lo >= 0)        &&
-      (t2i->_hi > 0)         &&
-      (t2i->_hi < max_power_of_2<jint>())) {
+  if ((t1i->_lo >= 0) &&
+      (t1i->_hi > 0)  &&
+      (t2i->_lo >= 0) &&
+      (t2i->_hi > 0)) {
     // hi - set all bits below the highest bit. Using round_down to avoid overflow.
     const TypeInt* t1x = TypeInt::make(0, round_down_power_of_2(t1i->_hi) + (round_down_power_of_2(t1i->_hi) - 1), t1i->_widen);
     const TypeInt* t2x = TypeInt::make(0, round_down_power_of_2(t2i->_hi) + (round_down_power_of_2(t2i->_hi) - 1), t2i->_widen);
@@ -990,12 +988,10 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   // inputs have bits set. lo can always become 0.
   const TypeLong* t1l = t1->is_long();
   const TypeLong* t2l = t2->is_long();
-  if ((t1l->_lo >= 0)        &&
-      (t1l->_hi > 0)         &&
-      (t1l->_hi < max_power_of_2<jlong>()) &&
-      (t2l->_lo >= 0)        &&
-      (t2l->_hi > 0)         &&
-      (t2l->_hi < max_power_of_2<jlong>())) {
+  if ((t1l->_lo >= 0) &&
+      (t1l->_hi > 0)  &&
+      (t2l->_lo >= 0) &&
+      (t2l->_hi > 0)) {
     // hi - set all bits below the highest bit. Using round_down to avoid overflow.
     const TypeLong* t1x = TypeLong::make(0, round_down_power_of_2(t1l->_hi) + (round_down_power_of_2(t1l->_hi) - 1), t1l->_widen);
     const TypeLong* t2x = TypeLong::make(0, round_down_power_of_2(t2l->_hi) + (round_down_power_of_2(t2l->_hi) - 1), t2l->_widen);
