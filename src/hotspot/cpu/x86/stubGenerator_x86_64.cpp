@@ -6215,7 +6215,7 @@ address generate_avx_ghash_processBlocks() {
     const Register decode_table = r11;
     const Register out_byte_count = rbx;
     const Register byte1 = r13;
-    const Register byte2 = r14;
+    const Register byte2 = r15;
     const Register byte3 = WINDOWS_ONLY(r12) NOT_WINDOWS(r8);
     const Register byte4 = WINDOWS_ONLY(rdx) NOT_WINDOWS(rsi);
 
