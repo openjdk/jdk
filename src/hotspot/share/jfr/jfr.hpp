@@ -30,6 +30,7 @@
 
 class JavaThread;
 class Thread;
+class Klass;
 
 extern "C" void JNICALL jfr_register_natives(JNIEnv*, jclass);
 
@@ -55,8 +56,8 @@ class Jfr : AllStatic {
   static bool is_excluded(Thread* thread);
   static void include_thread(Thread* thread);
 
-  // get_class_id intrinsic support
-  static void trace_id_load_barrier(Klass* klass);
+  // intrinsic support
+  static void get_class_id_intrinsic(const Klass* klass);
   static address epoch_address();
   static address signal_address();
 };

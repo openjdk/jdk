@@ -29,9 +29,6 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
-#if INCLUDE_JFR
-#include "jfr/jfr.hpp"
-#endif
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
@@ -59,6 +56,10 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
@@ -2796,9 +2797,9 @@ bool LibraryCallKit::inline_native_classID() {
     __ if_then(kls_trace_id_raw_and_mask, BoolTest::ne, epoch, unlikely); {
       sync_kit(ideal);
       make_runtime_call(RC_LEAF,
-                        OptoRuntime::trace_id_load_barrier_Type(),
-                        CAST_FROM_FN_PTR(address, Jfr::trace_id_load_barrier),
-                        "trace_id_load_barrier",
+                        OptoRuntime::get_class_id_intrinsic_Type(),
+                        CAST_FROM_FN_PTR(address, Jfr::get_class_id_intrinsic),
+                        "get_class_id_intrinsic",
                         TypePtr::BOTTOM,
                         kls);
       ideal.sync_kit(this);

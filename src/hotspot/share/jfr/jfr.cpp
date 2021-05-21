@@ -112,7 +112,7 @@ bool Jfr::on_start_flight_recording_option(const JavaVMOption** option, char* de
   return JfrOptionSet::parse_start_flight_recording_option(option, delimiter);
 }
 
-JRT_LEAF(void, Jfr::trace_id_load_barrier(Klass * klass))
+JRT_LEAF(void, Jfr::get_class_id_intrinsic(const Klass* klass))
   assert(klass != NULL, "sanity");
   JfrTraceIdLoadBarrier::load_barrier(klass);
 JRT_END
