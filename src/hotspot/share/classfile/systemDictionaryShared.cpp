@@ -80,6 +80,7 @@ bool SystemDictionaryShared::_dump_in_progress = false;
 class DumpTimeSharedClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
   bool                         _is_early_klass;
+  bool                         _has_checked_exclusion;
 public:
   struct DTLoaderConstraint {
     Symbol* _name;
@@ -122,6 +123,7 @@ public:
     _nest_host = NULL;
     _failed_verification = false;
     _is_archived_lambda_proxy = false;
+    _has_checked_exclusion = false;
     _id = -1;
     _clsfile_size = -1;
     _clsfile_crc32 = -1;
@@ -174,10 +176,6 @@ public:
     }
   }
 
-  void set_excluded() {
-    _excluded = true;
-  }
-
   bool is_excluded() {
     // _klass may become NULL due to DynamicArchiveBuilder::set_to_null
     return _excluded || _failed_verification || _klass == NULL;
@@ -188,21 +186,14 @@ public:
     return _is_early_klass;
   }
 
-  void set_failed_verification() {
-    _failed_verification = true;
-  }
-
-  bool failed_verification() {
-    return _failed_verification;
-  }
-
-  void set_nest_host(InstanceKlass* nest_host) {
-    _nest_host = nest_host;
-  }
-
-  InstanceKlass* nest_host() {
-    return _nest_host;
-  }
+  // simple accessors
+  void set_excluded()                               { _excluded = true; }
+  bool has_checked_exclusion() const                { return _has_checked_exclusion; }
+  void set_has_checked_exclusion()                  { _has_checked_exclusion = true; }
+  bool failed_verification() const                  { return _failed_verification; }
+  void set_failed_verification()                    { _failed_verification = true; }
+  InstanceKlass* nest_host() const                  { return _nest_host; }
+  void set_nest_host(InstanceKlass* nest_host)      { _nest_host = nest_host; }
 };
 
 inline unsigned DumpTimeSharedClassTable_hash(InstanceKlass* const& k) {
@@ -1326,41 +1317,60 @@ bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
   return (info != NULL) ? info->is_early_klass() : false;
 }
 
-void SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
+// Returns true so the caller can do:    return warn_excluded(".....");
+bool SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
   ResourceMark rm;
   log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
+  return true;
 }
 
-bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
+bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeSharedClassInfo* info) {
+  if (MetaspaceShared::is_in_shared_metaspace(k)) {
+    // We have reached a super type that's already in the base archive. Treat it
+    // as "not excluded".
+    assert(DynamicDumpSharedSpaces, "must be");
+    return false;
+  }
 
+  if (info == NULL) {
+    info = _dumptime_table->get(k);
+    assert(info != NULL, "supertypes of any classes in _dumptime_table must either be shared, or must also be in _dumptime_table");
+  }
+
+  if (!info->has_checked_exclusion()) {
+    if (check_for_exclusion_impl(k)) {
+      info->set_excluded();
+    }
+    info->set_has_checked_exclusion();
+  }
+
+  return info->is_excluded();
+}
+
+bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   if (k->is_in_error_state()) {
-    warn_excluded(k, "In error state");
-    return true;
+    return warn_excluded(k, "In error state");
   }
   if (k->has_been_redefined()) {
-    warn_excluded(k, "Has been redefined");
-    return true;
+    return warn_excluded(k, "Has been redefined");
   }
   if (!k->is_hidden() && k->shared_classpath_index() < 0 && is_builtin(k)) {
     // These are classes loaded from unsupported locations (such as those loaded by JVMTI native
     // agent during dump time).
-    warn_excluded(k, "Unsupported location");
-    return true;
+    return warn_excluded(k, "Unsupported location");
   }
   if (k->signers() != NULL) {
     // We cannot include signed classes in the archive because the certificates
     // used during dump time may be different than those used during
     // runtime (due to expiration, etc).
-    warn_excluded(k, "Signed JAR");
-    return true;
+    return warn_excluded(k, "Signed JAR");
   }
   if (is_jfr_event_class(k)) {
     // We cannot include JFR event classes because they need runtime-specific
     // instrumentation in order to work with -XX:FlightRecorderOptions:retransform=false.
     // There are only a small number of these classes, so it's not worthwhile to
     // support them and make CDS more complicated.
-    warn_excluded(k, "JFR event class");
-    return true;
+    return warn_excluded(k, "JFR event class");
   }
   if (k->init_state() < InstanceKlass::linked) {
     // In CDS dumping, we will attempt to link all classes. Those that fail to link will
@@ -1374,12 +1384,10 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
     //    a custom ClassLoader.loadClass() may be called, at a point where the
     //    class loader doesn't expect it.
     if (has_class_failed_verification(k)) {
-      warn_excluded(k, "Failed verification");
-      return true;
+      return warn_excluded(k, "Failed verification");
     } else {
       if (!k->has_old_class_version()) {
-        warn_excluded(k, "Not linked");
-        return true;
+        return warn_excluded(k, "Not linked");
       }
     }
   }
@@ -1393,20 +1401,19 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
   }
 
   if (k->has_old_class_version() && k->is_linked()) {
-    warn_excluded(k, "Old class has been linked");
-    return true;
-  }
-
-  InstanceKlass* super = k->java_super();
-  if (super != NULL && should_be_excluded(super)) {
-    ResourceMark rm;
-    log_warning(cds)("Skipping %s: super class %s is excluded", k->name()->as_C_string(), super->name()->as_C_string());
-    return true;
+    return warn_excluded(k, "Old class has been linked");
   }
 
   if (k->is_hidden() && !is_registered_lambda_proxy_class(k)) {
     ResourceMark rm;
-    log_debug(cds)("Skipping %s: %s", k->name()->as_C_string(), "Hidden class");
+    log_debug(cds)("Skipping %s: Hidden class", k->name()->as_C_string());
+    return true;
+  }
+
+  InstanceKlass* super = k->java_super();
+  if (super != NULL && check_for_exclusion(super, NULL)) {
+    ResourceMark rm;
+    log_warning(cds)("Skipping %s: super class %s is excluded", k->name()->as_C_string(), super->name()->as_C_string());
     return true;
   }
 
@@ -1414,13 +1421,13 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
   int len = interfaces->length();
   for (int i = 0; i < len; i++) {
     InstanceKlass* intf = interfaces->at(i);
-    if (should_be_excluded(intf)) {
+    if (check_for_exclusion(intf, NULL)) {
       log_warning(cds)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
       return true;
     }
   }
 
-  return false;
+  return false; // false == k should NOT be excluded
 }
 
 // k is a class before relocating by ArchiveBuilder
@@ -1447,9 +1454,7 @@ void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
 class ExcludeDumpTimeSharedClasses : StackObj {
 public:
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
-    if (SystemDictionaryShared::should_be_excluded(k) || info.is_excluded()) {
-      info.set_excluded();
-    }
+    SystemDictionaryShared::check_for_exclusion(k, &info);
     return true; // keep on iterating
   }
 };
