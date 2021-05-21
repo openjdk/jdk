@@ -68,7 +68,7 @@ public final class TestClearStaleConstants {
         Class<?> clz = recordClassDefinition(firstClassLoader);
         JVM jvm = JVM.getJVM();
         // we will now tag the defined and loaded clz as being in use (no recordings are running here)
-        jvm.getClassIdNonIntrinsic(clz);
+        jvm.getClassId(clz);
         // null out for unload to occur
         firstClassLoader = null;
         clz = null;
