@@ -39,13 +39,13 @@
 
 inline address pauth_strip_pointer(address ptr) {
 #ifdef __APPLE__
-  ptrauth_strip(ptr, ptrauth_key_asib);
+  return ptrauth_strip(ptr, ptrauth_key_asib);
 #else
   asm ("mov x30, %0;"
        XPACLRI
        "mov %0, x30;" : "+r"(ptr) : : "x30");
-#endif
   return ptr;
+#endif
 }
 
 #undef XPACLRI
