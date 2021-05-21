@@ -6245,11 +6245,11 @@ address generate_avx_ghash_processBlocks() {
 
     __ incrementl(source, 4);
 
-    __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 0), byte1);
+    __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 2), byte1);
     __ shrl(byte1, 8);
     __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 1), byte1);
     __ shrl(byte1, 8);
-    __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 2), byte1);
+    __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 0), byte1);
 
     __ incrementl(dest, 3);
 
