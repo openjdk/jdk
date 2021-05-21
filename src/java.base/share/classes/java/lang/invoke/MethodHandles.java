@@ -7778,6 +7778,32 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * method handle as well. Any arguments assigned to these parameters will be forwarded,
      * together with the selector value, to the selected method handle when invoking it.
      *
+     * @apiNote Example:
+     * The cases each drop the {@code selector} value they are given, and take an additional
+     * {@code String} argument, which is concatenated (using {@link String#concat(String)})
+     * to a specific constant label string for each case:
+     * <blockquote><pre>{@code
+     * MethodHandles.Lookup lookup = MethodHandles.lookup();
+     * MethodHandle caseMh = lookup.findVirtual(String.class, "concat",
+     *         MethodType.methodType(String.class, String.class));
+     * caseMh = MethodHandles.dropArguments(caseMh, 0, int.class);
+     *
+     * MethodHandle caseDefault = MethodHandles.insertArguments(caseMh, 1, "default: ");
+     * MethodHandle case0 = MethodHandles.insertArguments(caseMh, 1, "case 0: ");
+     * MethodHandle case1 = MethodHandles.insertArguments(caseMh, 1, "case 1: ");
+     *
+     * MethodHandle mhSwitch = MethodHandles.tableSwitch(
+     *     caseDefault,
+     *     case0,
+     *     case1
+     * );
+     *
+     * assertEquals("default: data", (String) mhSwitch.invokeExact(-1, "data"));
+     * assertEquals("case 0: data", (String) mhSwitch.invokeExact(0, "data"));
+     * assertEquals("case 1: data", (String) mhSwitch.invokeExact(1, "data"));
+     * assertEquals("default: data", (String) mhSwitch.invokeExact(2, "data"));
+     * }</pre></blockquote>
+     *
      * @param fallback the fallback method handle that is called when the selector is not
      *                 within the range {@code [0, N)}.
      * @param targets array of target method handles.
