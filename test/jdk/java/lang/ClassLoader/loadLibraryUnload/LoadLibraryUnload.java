@@ -126,7 +126,7 @@ public class LoadLibraryUnload {
             t.join();
         }
 
-        // expect all errors to be UnsatisfiedLinkError 
+        // expect all errors to be UnsatisfiedLinkError
         boolean allAreUnsatisfiedLinkError = exceptions
                 .stream()
                 .map(e -> e instanceof UnsatisfiedLinkError)
