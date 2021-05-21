@@ -89,8 +89,6 @@ static jboolean MTLSurfaceData_initTexture(BMTLSDOps *bmtlsdo, jboolean isOpaque
         stencilTextureDescriptor.storageMode = MTLStorageModePrivate;
         bmtlsdo->pStencilTexture = [ctx.device newTextureWithDescriptor:stencilTextureDescriptor];
         bmtlsdo->isOpaque = isOpaque;
-        bmtlsdo->xOffset = 0;
-        bmtlsdo->yOffset = 0;
         bmtlsdo->width = width;
         bmtlsdo->height = height;
         bmtlsdo->drawableType = rtt ? MTLSD_RT_TEXTURE : MTLSD_TEXTURE;
@@ -323,10 +321,8 @@ Java_sun_java2d_metal_MTLSurfaceData_initOps
     bmtlsdo->sdOps.GetRasInfo         = MTLSD_GetRasInfo;
     bmtlsdo->sdOps.Unlock             = MTLSD_Unlock;
     bmtlsdo->sdOps.Dispose            = MTLSD_Dispose;
-
     bmtlsdo->drawableType = MTLSD_UNDEFINED;
-    bmtlsdo->xOffset = xoff;
-    bmtlsdo->yOffset = yoff;
+
     bmtlsdo->isOpaque = isOpaque;
 
     mtlsdo->peerData = (AWTView *)jlong_to_ptr(pPeerData);

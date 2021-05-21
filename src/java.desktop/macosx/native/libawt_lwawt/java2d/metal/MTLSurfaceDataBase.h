@@ -51,10 +51,6 @@
  * isOpaque is true, then we should take appropriate action to ensure that the
  * surface remains fully opaque.
  *
- *     jint x/yOffset;
- * The offset in pixels of the viewport origin from the lower-left
- * corner of the heavyweight drawable.
- *
  *     jint width/height;
  * The cached surface bounds.  For offscreen surface types (
  * MTLSD_TEXTURE, MTLSD_RT_TEXTURE etc.) these values must remain constant.
@@ -77,8 +73,6 @@ typedef struct {
     jobject                      graphicsConfig;
     jint                         drawableType;
     jboolean                     isOpaque;
-    jint                         xOffset;
-    jint                         yOffset;
     jint                         width;
     jint                         height;
     void*                        pTexture;

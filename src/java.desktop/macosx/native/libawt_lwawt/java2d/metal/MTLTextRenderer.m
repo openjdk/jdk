@@ -557,8 +557,7 @@ MTLTR_DrawLCDGlyphNoCache(MTLContext *mtlc, BMTLSDOps *dstOps,
     tx2 = 1.0f;
     ty2 = 1.0f;
 
-    J2dTraceLn4(J2D_TRACE_INFO, "xOffset = %d yOffset = %d, dstOps->width = %d, dstOps->height = %d", dstOps->xOffset, dstOps->yOffset, dstOps->width, dstOps->height);
-    J2dTraceLn4(J2D_TRACE_INFO, "tx1 = %f, ty1 = %f, tx2 = %f, ty2 = %f", tx1, ty1, tx2, ty2);
+    J2dTraceLn2(J2D_TRACE_INFO, "MTLTR_DrawLCDGlyphNoCache : dstOps->width = %d, dstOps->height = %d", dstOps->width, dstOps->height);
 
     LCD_ADD_TRIANGLES(tx1, ty1, tx2, ty2, x, y, x+w, y+h);
 
