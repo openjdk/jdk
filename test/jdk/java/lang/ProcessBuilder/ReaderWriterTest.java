@@ -37,8 +37,11 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.List;
 import java.util.Locale;
+
+import jtreg.SkippedException;
 
 /*
  * @test
@@ -77,7 +80,7 @@ public class ReaderWriterTest {
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("ReaderWriterTest$ChildWithCharset");
         Process p = pb.start();
-        writeTestChars(p.outputWriter(true));
+        writeTestChars(p.outputWriter());
         checkReader(p.inputReader(), cs, "Out");
         checkReader(p.errorReader(), cs, "Err");
         try {
@@ -103,27 +106,31 @@ public class ReaderWriterTest {
     }
 
     /**
+     * Test a child with a character set.
+     * A Process is spawned; characters are written to and read from the child
+     * using the character set and compared.
      *
-     * @param nativeEncoding
+     * @param nativeEncoding a charset name
      */
     @Test(dataProvider = "CharsetCases", enabled = true)
     void testCase(String nativeEncoding) throws IOException {
-        String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-
-        Charset cs = Charset.forName(nativeEncoding);
-        System.out.println("Charset: " + cs);
+        Charset cs = null;
+        try {
+            cs = Charset.forName(nativeEncoding);
+            System.out.println("Charset: " + cs);
+        } catch (UnsupportedCharsetException use) {
+            throw new SkippedException("Charset not supported: " + nativeEncoding);
+        }
         String cleanCSName = cleanCharsetName(cs);
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-Dsun.stdout.encoding=" + cleanCSName,     // Encode in the child using the charset
                 "-Dsun.stderr.encoding=" + cleanCSName,
                 "ReaderWriterTest$ChildWithCharset");
-        var env = pb.environment();
-        env.put("LANG", "en_US." + cleanCSName);
 
         Process p = pb.start();
         // Write the test data to the child
-        writeTestChars(p.outputWriter(true, cs));
+        writeTestChars(p.outputWriter(cs));
         checkReader(p.inputReader(cs), cs, "Out");
         checkReader(p.errorReader(cs), cs, "Err");
         try {

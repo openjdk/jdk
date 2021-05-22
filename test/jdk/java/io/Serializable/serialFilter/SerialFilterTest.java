@@ -52,8 +52,8 @@ import org.testng.annotations.DataProvider;
 /* @test
  * @bug 8234836
  * @build SerialFilterTest
- * @run testng/othervm  SerialFilterTest
- * @run testng/othervm  -Djdk.serialSetFilterAfterRead=true SerialFilterTest
+ * @run testng/othervm  -Djdk.serialFilterTrace SerialFilterTest
+ * @run testng/othervm  -Djdk.serialSetFilterAfterRead=true -Djdk.serialFilterTrace SerialFilterTest
  *
  * @summary Test ObjectInputFilters
  */

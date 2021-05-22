@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,17 +259,15 @@ public abstract class Process {
     }
 
     /**
-     * Returns a {@code PrintWriter} connected to the normal input of the process.
-     * PrintWriter prints formatted representations of objects to a text-output stream.
-     * PrintWriter does not throw exceptions; instead, exceptional situations set
-     * an internal flag that can be tested via the {@link PrintWriter#checkError} method.
+     * Returns a {@code BufferedWriter} connected to the normal input of the process the native encoding.
+     * Writes text to a character-output stream, buffering characters so as to provide
+     * for the efficient writing of single characters, arrays, and strings.
      *
-     * <p>Characters written to the writer are converted to bytes using the
-     * {@link Charset} named by the {@systemProperty native.encoding} system property
+     * <p>Characters written encoded to bytes using {@link OutputStreamWriter}
+     * and the {@link Charset} named by the {@systemProperty native.encoding} system property
      * piped into the standard input of the process represented by this {@code Process} object.
      * If the {@code Charset} is not supported, the {@link Charset#defaultCharset()} is used.
-     * Call the {@link PrintWriter#flush()} method to flush buffered output
-     * to the process.
+     * Call the {@link BufferedWriter#flush()} method to flush buffered output to the process.
      *
      * <p>If the standard input of the process has been redirected using
      * {@link ProcessBuilder#redirectInput(Redirect)
@@ -277,32 +275,31 @@ public abstract class Process {
      * <a href="ProcessBuilder.html#redirect-input">null output writer</a>.
      *
      * @apiNote
+     * A {@linkplain BufferedWriter} writes characters, arrays of characters, and strings.
+     * Wrapping the {@link BufferedWriter} with a {@link PrintWriter} provides
+     * efficient buffering and formatting of primitives and objects as well as support
+     * for auto-flush on line endings.
+     * <p>
      * Use {@link #getOutputStream} and {@link #outputWriter} with extreme care.
-     * Output to the PrintWriter may be held in the buffer until
-     * {@linkplain PrintWriter#flush flush} is called.
+     * Output to the BufferedWriter may be held in the buffer until
+     * {@linkplain BufferedWriter#flush flush} is called.
      *
-     * @param autoFlush if {@code true} the {@code println}, {@code printf}, or {@code format}
-     *                  methods will flush the output buffer
-     * @return a PrintWriter to the standard input of the process using the charset
+     * @return a BufferedWriter to the standard input of the process using the charset
      *          for the {@code native.encoding} system property
      */
-    public PrintWriter outputWriter(boolean autoFlush) {
-        return new PrintWriter(getOutputStream(), autoFlush, CharsetHolder.nativeCharset());
+    public BufferedWriter outputWriter() {
+        return outputWriter(CharsetHolder.nativeCharset());
     }
 
     /**
-     * Returns a {@code PrintWriter} connected to the normal input of the process using a Charset.
-     * PrintWriter prints formatted representations of objects to a text-output stream.
-     * PrintWriter does not throw exceptions; instead, exceptional situations set
-     * an internal flag that can be tested via the {@link PrintWriter#checkError} method.
+     * Returns a {@code BufferedWriter} connected to the normal input of the process using a Charset.
+     * Writes text to a character-output stream, buffering characters so as to provide
+     * for the efficient writing of single characters, arrays, and strings.
      *
-     * <p>Characters written to the writer are converted to bytes using the
-     * {@link Charset} named by the {@systemProperty native.encoding} system property
+     * <p>Characters written by the writer are encoded to bytes using {@link OutputStreamWriter}
+     * and the {@link Charset}
      * piped into the standard input of the process represented by this {@code Process} object.
-     * If the {@code Charset} for the {@code native.encoding} is not supported,
-     * the {@link Charset#defaultCharset()} is used.
-     * Call the {@link PrintWriter#flush()} method to flush buffered output
-     * to the process.
+     * Call the {@link BufferedWriter#flush()} method to flush buffered output to the process.
      *
      * <p>If the standard input of the process has been redirected using
      * {@link ProcessBuilder#redirectInput(Redirect)
@@ -310,17 +307,20 @@ public abstract class Process {
      * <a href="ProcessBuilder.html#redirect-input">null output writer</a>.
      *
      * @apiNote
+     * A {@linkplain BufferedWriter} writes characters, arrays of characters, and strings.
+     * Wrapping the {@link BufferedWriter} with a {@link PrintWriter} provides
+     * efficient buffering and formatting of primitives and objects as well as support
+     * for auto-flush on line endings.
+     * <p>
      * Use {@link #getOutputStream} and {@link #outputWriter} with extreme care.
-     * Output to the PrintWriter may be held in the buffer until
-     * {@linkplain PrintWriter#flush flush} is called.
+     * Output to the BufferedWriter may be held in the buffer until
+     * {@linkplain BufferedWriter#flush flush} is called.
      *
-     * @param autoFlush if {@code true} the {@code println}, {@code printf}, or {@code format}
-     *                  methods will flush the output buffer
-     * @param charset the {@code Charset} to convert characters to bytes
-     * @return a PrintWriter to the standard input of the process using the {@code charset}
+     * @param charset the {@code Charset} to encode characters to bytes
+     * @return a BufferedWriter to the standard input of the process using the {@code charset}
      */
-    public PrintWriter outputWriter(boolean autoFlush, Charset charset) {
-        return new PrintWriter(getOutputStream(), autoFlush, charset);
+    public BufferedWriter outputWriter(Charset charset) {
+        return new BufferedWriter(new OutputStreamWriter(getOutputStream(), charset));
     }
 
     /**
@@ -769,8 +769,6 @@ public abstract class Process {
 
         /**
          * {@return Charset for the native encoding or {@link Charset#defaultCharset()}
-         *
-         * @return the Charset for the native encoding or {@link Charset#defaultCharset()}
          */
         static Charset nativeCharset() {
             return nativeCharset;
