@@ -55,10 +55,6 @@ public enum HtmlStyle {
     blockList,
     circle,
     classUses,
-    deprecatedLabel,
-    deprecationBlock,
-    deprecationComment,
-    descfrmTypeLabel,
     externalLink,
     hierarchy,
     horizontal,
@@ -74,18 +70,11 @@ public enum HtmlStyle {
     packages,
     packageHierarchyLabel,
     packageUses,
-    permitsNote,
-    previewBlock,
-    previewComment,
-    previewLabel,
-    searchTagLink,
-    searchTagResult,
     serializedPackageContainer,
     sourceContainer,
     sourceLineNo,
     typeNameLabel,
     typeNameLink,
-    verticalSeparator,
 
     //<editor-fold desc="navigation bar">
     //
@@ -358,6 +347,57 @@ public enum HtmlStyle {
 
     //</editor-fold>
 
+    //<editor-fold desc="additional details">
+    //
+    // The following constants are used for the additional information that may be provided
+    // for a declaration, such as whether it is deprecated or is a "preview" feature.
+
+    /**
+     * The class for the "Deprecated" label in a block describing the "deprecated" status
+     * of a declaration.
+     */
+    deprecatedLabel,
+
+    /**
+     * The class for a block describing the "deprecated" status of a declaration.
+     */
+    deprecationBlock,
+
+    /**
+     * The class for the details in a block describing the "deprecated" status of a declaration.
+     */
+    deprecationComment,
+
+    /**
+     * The class for a label indicating the element from which a description has been copied.
+     */
+    // This should be renamed to something less cryptic
+    descfrmTypeLabel,
+
+    /**
+     * The class for a note providing information about the permitted subtypes of a
+     * sealed class.
+     */
+    permitsNote,
+
+    /**
+     * The class for a block describing the "preview" status of a declaration.
+     */
+    previewBlock,
+
+    /**
+     * The class for the details in a block describing the "preview" status of a declaration.
+     */
+    previewComment,
+
+    /**
+     * The class for the "Preview" label in a block describing the "preview" status
+     * of a declaration.
+     */
+    previewLabel,
+
+    //</editor-fold>
+
     //<editor-fold desc="tables">
     //
     // The following constants are used for "summary" and "details" tables.
@@ -621,6 +661,30 @@ public enum HtmlStyle {
     typeParametersLong,
     //</editor-fold>
 
+    //<editor-fold desc="search index and results">
+    //
+    // The following constants are used for items in the static and interactive search indexes.
+
+    /**
+     * The class for a link in the static "Index" pages to a custom searchable item,
+     * such as defined with an {@code @index} tag.
+     */
+    searchTagLink,
+
+    /**
+     * The class for a custom searchable item,
+     * such as defined with an {@code @index} tag.
+     */
+    searchTagResult,
+
+    /**
+     * The class for the separator in the list of pages given at the top of the
+     * static "Index" page(s).
+     */
+    verticalSeparator,
+
+    //</editor-fold>
+
     //<editor-fold desc="page styles for <body> elements">
     //
     // The following constants are used for the class of the {@code <body>} element
@@ -732,10 +796,9 @@ public enum HtmlStyle {
     treePage,
     //</editor-fold>
 
-    //<editor-fold desc="page styles for <body> elements">
+    //<editor-fold desc="help page">
     //
-    // The following constants are used for the class of the {@code <body>} element
-    // for the corresponding pages.
+    // The following constants are used for the contents of the "Help" page.
 
     /**
      * The class of the footnote at the bottom of the page.
