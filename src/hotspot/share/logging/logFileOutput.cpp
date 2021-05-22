@@ -309,7 +309,7 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
   AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
   if (aio_writer != nullptr) {
     aio_writer->enqueue(*this, decorations, msg);
-    return -1;
+    return 0;
   }
 
   return write_blocking(decorations, msg);
@@ -324,7 +324,7 @@ int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
   AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
   if (aio_writer != nullptr) {
     aio_writer->enqueue(*this, msg_iterator);
-    return -1;
+    return 0;
   }
 
   _rotation_semaphore.wait();

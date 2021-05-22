@@ -72,8 +72,8 @@ void AsyncLogWriter::enqueue(LogFileOutput& output, const LogDecorations& decora
   }
 }
 
-// LogMessageBuffer consists of a multiple-part/multiple-line messsages.
-// the mutex here gurantees its integrity.
+// LogMessageBuffer consists of a multiple-part/multiple-line messsage.
+// The lock here gurantees its integrity.
 void AsyncLogWriter::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator) {
   AsyncLogLocker lock;
 
@@ -88,6 +88,8 @@ AsyncLogWriter::AsyncLogWriter()
     _stats(17 /*table_size*/) {
   if (os::create_thread(this, os::asynclog_thread)) {
     _state = ThreadState::Initialized;
+  } else {
+    log_warning(logging, thread)("AsyncLogging failed to create thread. Falling back to synchronous logging.");
   }
 
   log_info(logging)("The maximum entries of AsyncLogBuffer: " SIZE_FORMAT ", estimated memory use: " SIZE_FORMAT " bytes",
@@ -115,10 +117,10 @@ class AsyncLogMapIterator {
   }
 };
 
-void AsyncLogWriter::perform_IO() {
+void AsyncLogWriter::write() {
   // Use kind of copy-and-swap idiom here.
   // Empty 'logs' swaps the content with _buffer.
-  // Along with logs destruction, all procceeded messages are deleted.
+  // Along with logs destruction, all processed messages are deleted.
   //
   // The operation 'pop_all()' is done in O(1). All I/O jobs are then performed without
   // lock protection. This guarantees I/O jobs don't block logsites.
@@ -145,15 +147,14 @@ void AsyncLogWriter::perform_IO() {
 }
 
 void AsyncLogWriter::run() {
-  assert(_state == ThreadState::Running, "sanity check");
+  _state = ThreadState::Running;
 
   while (_state == ThreadState::Running) {
+    // The value of a semphore cannot be negative. Therefore, the current thread falls asleep
+    // when its value is zero. It will be waken up when new messages are enqueued.
     _sem.wait();
-    perform_IO();
+    write();
   }
-
-  assert(_state == ThreadState::Terminated, "sanity check");
-  perform_IO(); // in case there are some messages left
 }
 
 AsyncLogWriter* AsyncLogWriter::_instance = nullptr;
@@ -161,23 +162,19 @@ AsyncLogWriter* AsyncLogWriter::_instance = nullptr;
 void AsyncLogWriter::initialize() {
   if (!LogConfiguration::is_async_mode()) return;
 
-  if (_instance == nullptr) {
-    AsyncLogWriter* self = new AsyncLogWriter();
+  assert(_instance == nullptr, "initialize() should only be invoked once.");
 
-    if (self->_state == ThreadState::Initialized) {
-      Atomic::release_store_fence(&AsyncLogWriter::_instance, self);
-      // All readers of _instance after the fence see non-NULL.
-      // We make use LogOutputList's RCU counters to ensure all synchronous logsites have completed.
-      // After that, we start AsyncLog Thread and it exclusively takee over all logging I/O.
-      for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
-        ts->wait_until_no_readers();
-      }
-      self->_state = ThreadState::Running;
-      os::start_thread(self);
-      log_debug(logging, thread)("AsyncLogging starts working.");
-    } else {
-      log_warning(logging, thread)("AsyncLogging failed to launch thread. fall back to synchronous logging.");
+  AsyncLogWriter* self = new AsyncLogWriter();
+  if (self->_state == ThreadState::Initialized) {
+    Atomic::release_store_fence(&AsyncLogWriter::_instance, self);
+    // All readers of _instance after the fence see non-NULL.
+    // We use LogOutputList's RCU counters to ensure all synchronous logsites have completed.
+    // After that, we start AsyncLog Thread and it exclusively takes over all logging I/O.
+    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+      ts->wait_until_no_readers();
     }
+    os::start_thread(self);
+    log_debug(logging, thread)("Async logging thread started.");
   }
 }
 
@@ -187,6 +184,6 @@ AsyncLogWriter* AsyncLogWriter::instance() {
 
 void AsyncLogWriter::flush() {
   if (_instance != nullptr) {
-    _instance->perform_IO();
+    _instance->write();
   }
 }

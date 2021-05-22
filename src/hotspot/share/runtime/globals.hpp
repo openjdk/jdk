@@ -1990,7 +1990,7 @@ const intx ObjectAlignmentInBytes = 8;
              "and not as a general purpose register.")                      \
                                                                             \
   product(size_t, AsyncLogBufferSize, 2*M,                                  \
-          "Memory budget(in bytes) for the buffer of Asynchronous "         \
+          "Memory budget (in bytes) for the buffer of Asynchronous "        \
           "Logging (-Xlog:async).")                                         \
           range(100*K, 50*M)                                                \
                                                                             \

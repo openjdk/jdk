@@ -552,7 +552,7 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
                                     " If set to 0, log rotation is disabled."
                                     " This will cause existing log files to be overwritten.");
   out->cr();
-  out->print_cr("\nAsynchronous logging(off by default):");
+  out->print_cr("\nAsynchronous logging (off by default):");
   out->print_cr(" -Xlog:async");
   out->print_cr("  All log messages are written to an intermediate buffer first and will then be flushed"
                 " to the corresponding log outputs by a standalone thread. Write operations at logsites are"

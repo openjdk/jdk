@@ -21,8 +21,8 @@
  * questions.
  *
  */
-#ifndef SHARE_LOG_ASYNC_WTRITER_HPP
-#define SHARE_LOG_ASYNC_WTRITER_HPP
+#ifndef SHARE_LOGGING_LOGASYNCWRITER_HPP
+#define SHARE_LOGGING_LOGASYNCWRITER_HPP
 #include "logging/log.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logFileOutput.hpp"
@@ -110,8 +110,31 @@ public:
 typedef LinkedListDeque<AsyncLogMessage, mtLogging> AsyncLogBuffer;
 typedef KVHashtable<LogFileOutput*, uint32_t, mtLogging> AsyncLogMap;
 
-class AsyncLogWriter: public NonJavaThread {
+//
+// ASYNC LOGGING SUPPORT
+//
+// Summary:
+// Async Logging is working on the basis of singleton AsyncLogWriter, which manages an immediate buffer and a flushing thread.
+//
+// Interface:
+//
+// initialize() is called once when JVM is initialized. It creates and initializes the singleton instance of AsyncLogWriter.
+// Once async logging is established, there's no way to turn it off.
+//
+// instance() is MT-safe and returns the pointer of the singleton instance if and only if async logging is enabled and has well
+// initialized. Clients can use its return value to determine async logging is established or not.
+//
+// The basic operation of AsyncLogWriter is enqueue(). 2 overloading versions of it are provided to match LogOutput::write().
+// They are both MT-safe and non-blocking. Derived classes of LogOutput can invoke the corresponding enqueue() in write() and
+// return 0. AsyncLogWriter is responsible of copying neccessary data.
+//
+// The static member function flush() is designated to flush out all pending messages when JVM is terminating or aborting.
+// In normal JVM termination, flush() is invoked in LogConfiguration::finalize(). In abortion situation, flush() is invoked in
+// os::shutdown(). flush() is MT-safe and can be invoked arbitrary times. It is no-op if async logging is not established.
+//
+class AsyncLogWriter : public NonJavaThread {
   static AsyncLogWriter* _instance;
+  // _sem is a semaphore whose value denotes how many messages have been enqueued.
   static Semaphore _sem;
 
   enum class ThreadState {
@@ -122,16 +145,16 @@ class AsyncLogWriter: public NonJavaThread {
   };
 
   volatile ThreadState _state;
-  AsyncLogMap _stats; // statistics of dropping messages.
+  AsyncLogMap _stats; // statistics for dropped messages
   AsyncLogBuffer _buffer;
 
-  // The memory use of each AsyncLogMessage(payload) consist of itself and a variable-length c-str message.
+  // The memory use of each AsyncLogMessage (payload) consists of itself and a variable-length c-str message.
   // A regular logging message is smaller than vwrite_buffer_size, which is defined in logtagset.cpp
   const size_t _buffer_max_size = {AsyncLogBufferSize / (sizeof(AsyncLogMessage) + vwrite_buffer_size)};
 
   AsyncLogWriter();
   void enqueue_locked(const AsyncLogMessage& msg);
-  void perform_IO();
+  void write();
   void run() override;
   void pre_run() override {
     NonJavaThread::pre_run();
@@ -149,10 +172,9 @@ class AsyncLogWriter: public NonJavaThread {
   void enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg);
   void enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator);
 
-  // None of following functions are thread-safe.
   static AsyncLogWriter* instance();
   static void initialize();
   static void flush();
 };
 
-#endif // SHARE_LOG_ASYNC_WTRITER_HPP
+#endif // SHARE_LOGGING_LOGASYNCWRITER_HPP
