@@ -366,9 +366,9 @@ public class ObjectInputStream
      * This constructor will block until the corresponding ObjectOutputStream
      * has written and flushed the header.
      *
-     * <p>The serialization filter is initialized to the filter returned
+     * <p>The deserialization filter is initialized to the filter returned
      * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
-     * and {@linkplain  Config#getSerialFilter() static JVM-wide filter} for the requested filter.
+     * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
      *
      * <p>If a security manager is installed, this constructor will check for
      * the "enableSubclassImplementation" SerializablePermission when invoked
@@ -403,9 +403,9 @@ public class ObjectInputStream
      * ObjectInputStream to not have to allocate private data just used by this
      * implementation of ObjectInputStream.
      *
-     * <p>The serialization filter is initialized to the filter returned
+     * <p>The deserialization filter is initialized to the filter returned
      * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
-     * and {@linkplain  Config#getSerialFilter() static JVM-wide filter} for the requested filter.
+     * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
      *
      * <p>If there is a security manager installed, this method first calls the
      * security manager's {@code checkPermission} method with the
@@ -447,7 +447,7 @@ public class ObjectInputStream
      * priorities. The callbacks are registered by objects (in the readObject
      * special methods) as they are individually restored.
      *
-     * <p>The serialization filter, when not {@code null}, is invoked for
+     * <p>The deserialization filter, when not {@code null}, is invoked for
      * each object (regular or class) read to reconstruct the root object.
      * See {@link #setObjectInputFilter(ObjectInputFilter) setObjectInputFilter} for details.
      *
@@ -459,7 +459,7 @@ public class ObjectInputStream
      * @throws  ClassNotFoundException Class of a serialized object cannot be
      *          found.
      * @throws  InvalidClassException Something is wrong with a class used by
-     *          serialization.
+     *          deserialization.
      * @throws  StreamCorruptedException Control information in the
      *          stream is inconsistent.
      * @throws  OptionalDataException Primitive data was found in the
@@ -580,7 +580,7 @@ public class ObjectInputStream
      * invocation of readObject or readUnshared on the ObjectInputStream,
      * even if the underlying data stream has been manipulated.
      *
-     * <p>The serialization filter, when not {@code null}, is invoked for
+     * <p>The deserialization filter, when not {@code null}, is invoked for
      * each object (regular or class) read to reconstruct the root object.
      * See {@link #setObjectInputFilter(ObjectInputFilter) setObjectInputFilter} for details.
      *
@@ -888,7 +888,7 @@ public class ObjectInputStream
      * <p>When a subclass is replacing objects it must insure that the
      * substituted object is compatible with every field where the reference
      * will be stored.  Objects whose type is not a subclass of the type of the
-     * field or array element abort the serialization by raising an exception
+     * field or array element abort the deserialization by raising an exception
      * and the object is not be stored.
      *
      * <p>This method is called only once when each object is first
@@ -1238,13 +1238,13 @@ public class ObjectInputStream
     }
 
     /**
-     * Returns the serialization filter for this stream.
+     * Returns the deserialization filter for this stream.
      * The filter is the result of invoking the
      * {@link Config#getSerialFilterFactory() JVM-wide filter factory}
      * either by the {@linkplain #ObjectInputStream() constructor} or the most recent invocation of
      * {@link #setObjectInputFilter setObjectInputFilter}.
      *
-     * @return the serialization filter for the stream; may be null
+     * @return the deserialization filter for the stream; may be null
      * @since 9
      */
     public final ObjectInputFilter getObjectInputFilter() {
@@ -1253,14 +1253,14 @@ public class ObjectInputStream
 
     /**
      * Set the deserialization filter for the stream.
-     * The filter must be set and only set once before reading any objects from the stream;
+     * The filter can be set and only set once before reading any objects from the stream;
      * for example, by calling {@link #readObject} or {@link #readUnshared}.
      *
-     * <p>The serialization filter is set to the filter returned
-     * by invoking the {@link Config#getSerialFilterFactory()}
+     * <p>The deserialization filter is set to the filter returned
+     * by invoking the {@linkplain Config#getSerialFilterFactory() JVM-wide filter factory}
      * with the current filter and the {@code filter} parameter.
      * If there is a non-null filter for the stream, one was set in the constructor, and the filter factory
-     * must return a non-null filter, it is not permitted to remove filtering once established.
+     * must return a non-null filter. It is not permitted to remove filtering once established.
      * See the {@linkplain ObjectInputFilter filter models} for examples of composition and delegation.
      *
      * <p>The filter's {@link ObjectInputFilter#checkInput checkInput} method is called
@@ -1324,7 +1324,7 @@ public class ObjectInputStream
      * @throws IllegalStateException if an object has been read,
      *       if the filter factory returns {@code null} when the
      *       {@linkplain #getObjectInputFilter() current filter} is non-null, or
-     *       if the filter has already been.
+     *       if the filter has already been set.
      * @since 9
      */
     public final void setObjectInputFilter(ObjectInputFilter filter) {
@@ -1350,7 +1350,7 @@ public class ObjectInputStream
     }
 
     /**
-     * Invokes the serialization filter if non-null.
+     * Invokes the deserialization filter if non-null.
      *
      * If the filter rejects or an exception is thrown, throws InvalidClassException.
      *

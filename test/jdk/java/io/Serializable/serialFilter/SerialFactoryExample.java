@@ -48,7 +48,6 @@ import static java.io.ObjectInputFilter.Status.UNDECIDED;
 
 /* @test
  * @run testng/othervm -Djdk.serialFilterTrace=true SerialFactoryExample
- * @run testng/othervm -Djdk.serialFilterTrace=true SerialFactoryExample
  * @run testng/othervm -Djdk.serialFilterFactory=SerialFactoryExample$FilterInThread -Djdk.serialFilterTrace=true SerialFactoryExample
  * @summary Test SerialFactoryExample
  */
@@ -86,35 +85,33 @@ public class SerialFactoryExample {
     static Object[][] examples() {
         return new Object[][]{
                 {new Point(1, 2), null,
-                        NO_EXCEPTION},
+                        ALLOWED},
                 {new Point(1, 2), ObjectInputFilter.Config.createFilter("SerialFactoryExample$Point"),
-                        NO_EXCEPTION},
-                {10, Filters.allowPlatformClasses(),
-                        NO_EXCEPTION},
-                {new Integer[10], ObjectInputFilter.Config.createFilter("SerialFactoryExample$Point"),
-                        InvalidClassException.class},       // Component type is tested and not allowed
+                        ALLOWED},
+                {Integer.valueOf(10), Filters.allowPlatformClasses(),
+                        ALLOWED},          // Integer is a platform class
                 {new int[10], ObjectInputFilter.Config.createFilter("SerialFactoryExample$Point"),
-                        NO_EXCEPTION},
+                        UNDECIDED},          // arrays of primitives are UNDECIDED -> allowed
                 {int.class, ObjectInputFilter.Config.createFilter("SerialFactoryExample$Point"),
-                        NO_EXCEPTION},
-                {int.class, Filters.allowPlatformClasses(),
-                        NO_EXCEPTION},
+                        UNDECIDED},          // primitive classes are UNDECIDED -> allowed
                 {new Point[] {new Point(1, 1)}, ObjectInputFilter.Config.createFilter("SerialFactoryExample$Point"),
-                        NO_EXCEPTION},
+                        ALLOWED},          // Arrays of allowed classes are allowed
+                {new Integer[10], ObjectInputFilter.Config.createFilter("SerialFactoryExample$Point"),
+                        REJECTED},   // Base component type is checked -> REJECTED
                 {new Point(1, 2), ObjectInputFilter.Config.createFilter("!SerialFactoryExample$Point"),
-                        InvalidClassException.class},
+                        REJECTED},   // Denied
                 {new Point(1, 3), Filters.allowPlatformClasses(),
-                        InvalidClassException.class},
+                        REJECTED},   // Not a platform class
                 {new Point(1, 4), ObjectInputFilter.Config.createFilter("java.lang.Integer"),
-                        InvalidClassException.class},
+                        REJECTED},   // Only Integer is ALLOWED
                 {new Point(1, 5), ObjectInputFilter.Config.allowFilter(cl -> cl.getClassLoader() == ClassLoader.getPlatformClassLoader(), UNDECIDED),
-                        InvalidClassException.class},
+                        REJECTED},   // Not platform loader is UNDECIDED -> a class that should not be undecided -> rejected
         };
     }
 
 
     @Test(dataProvider = "Examples")
-    static void examples(Serializable obj, ObjectInputFilter filter, Class<?> exception) {
+    static void examples(Serializable obj, ObjectInputFilter filter, Status expected) {
         // Establish FilterInThread as the application-wide filter factory
         FilterInThread filterInThread;
         if (ObjectInputFilter.Config.getSerialFilterFactory() instanceof FilterInThread fit) {
@@ -132,10 +129,51 @@ public class SerialFactoryExample {
                 byte[] bytes = writeObject(obj);
                 Object o = deserializeObject(bytes);
             });
-            Assert.assertNull(exception, "exception should have occurred: " + exception);
+            if (expected.equals(REJECTED))
+                Assert.fail("IllegalClassException should have occurred");
         } catch (UncheckedIOException uioe) {
             IOException ioe = uioe.getCause();
-            Assert.assertEquals(ioe.getClass(), exception, "Wrong exception");
+            Assert.assertEquals(ioe.getClass(), InvalidClassException.class, "Wrong exception");
+            Assert.assertTrue(expected.equals(REJECTED), "Exception should not have occurred");
+        }
+    }
+
+    /**
+     * Test various filters with various objects and the resulting status
+     * @param obj an object
+     * @param filter a filter
+     * @param expected status
+     */
+    @Test(dataProvider = "Examples")
+    static void checkStatus(Serializable obj, ObjectInputFilter filter, Status expected) {
+        // Establish FilterInThread as the application-wide filter factory
+        FilterInThread filterInThread;
+        if (ObjectInputFilter.Config.getSerialFilterFactory() instanceof FilterInThread fit) {
+            // Filter factory selected on the command line with -Djdk.serialFilterFactory=<classname>
+            filterInThread = fit;
+        } else {
+            // Create a FilterInThread filter factory and set
+            // An IllegalStateException will be thrown if the filter factory was already
+            // initialized to an incompatible filter factory.
+            filterInThread = new FilterInThread();
+            ObjectInputFilter.Config.setSerialFilterFactory(filterInThread);
+        }
+
+        try {
+            filterInThread.doWithSerialFilter(filter, () -> {
+                // Classes are serialized as themselves, otherwise pass the object's class
+                Class<?> clazz = (obj instanceof Class<?>) ? (Class<?>)obj : obj.getClass();
+                ObjectInputFilter.FilterInfo info = new SerialInfo(clazz);
+                var compositeFilter = filterInThread.apply(null, ObjectInputFilter.Config.getSerialFilter());
+                System.out.println("    filter in effect: " + filterInThread.currFilter);
+                if (compositeFilter != null) {
+                    Status actualStatus = compositeFilter.checkInput(info);
+                    Assert.assertEquals(actualStatus, expected, "Wrong Status");
+                }
+            });
+
+        } catch (Exception ex) {
+            Assert.fail("unexpected exception", ex);
         }
     }
 
@@ -162,6 +200,8 @@ public class SerialFactoryExample {
         // ThreadLocal holding the Deque of serial filters to be applied, not null
         private final ThreadLocal<ArrayDeque<ObjectInputFilter>> filterThreadLocal =
                 ThreadLocal.withInitial(() -> new ArrayDeque<>());
+
+        private ObjectInputFilter currFilter;
 
         /**
          * Construct a FilterInThread deserialization filter factory.
@@ -250,13 +290,18 @@ public class SerialFactoryExample {
                 }
                 // Return the filter, unless a stream-specific filter is set later
                 // The filter may be null if no filters are configured
-                return filter;
+                currFilter = filter;
+                return currFilter;
             } else {
                 // Called from OIS.setObjectInputFilter with a previously set filter.
                 // The curr filter already incorporates the thread filter and rejection of undecided status
                 // Prepend the stream-specific filter or the current filter if no stream-specific filter
-                return (next == null) ? curr : next.merge(curr).rejectUndecidedClass();
+                currFilter = (next == null) ? curr : next.merge(curr).rejectUndecidedClass();
+                return currFilter;
             }
+        }
+        public String toString() {
+            return Objects.toString(currFilter, "none");
         }
     }
 
@@ -697,6 +742,42 @@ public class SerialFactoryExample {
             public String toString() {
                 return "allowPlatformClasses";
             }
+        }
+    }
+
+    /**
+     * FilterInfo instance with a specific class.
+     */
+    static class SerialInfo implements ObjectInputFilter.FilterInfo {
+        private final Class<?> clazz;
+
+        SerialInfo(Class<?> clazz) {
+            this.clazz = clazz;
+        }
+
+        @Override
+        public Class<?> serialClass() {
+            return clazz;
+        }
+
+        @Override
+        public long arrayLength() {
+            return 0;
+        }
+
+        @Override
+        public long depth() {
+            return 0;
+        }
+
+        @Override
+        public long references() {
+            return 0;
+        }
+
+        @Override
+        public long streamBytes() {
+            return 0;
         }
     }
 

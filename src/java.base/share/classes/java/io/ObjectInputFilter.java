@@ -28,7 +28,6 @@ package java.io;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetBooleanAction;
-import sun.security.action.GetPropertyAction;
 
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
@@ -80,12 +79,12 @@ import static java.lang.System.Logger.Level.INFO;
  * and class loader. At that point, a policy for creating or selecting filters can choose a specific filter
  * or composition of filters based on the context.
  *
- * <p> When a filter is set on an {@link ObjectInputStream}, the {@link #checkInput checkInput(FilterInfo)}
- * method is called to validate classes, the length of each array,
+ * <p>
+ * If a filter is set on an ObjectInputStream, the filter's {@link #checkInput checkInput(FilterInfo)}
+ * method is invoked zero or more times while {@linkplain ObjectInputStream#readObject() reading objects}.
+ * The method is called to validate classes, the length of each array,
  * the number of objects being read from the stream, the depth of the graph,
  * and the total number of bytes read from the stream.
- * The filter is invoked zero or more times
- * while {@linkplain ObjectInputStream#readObject() reading objects}.
  * The JVM-wide deserialization filter factory ensures that a deserialization filter can be set
  * on every {@link ObjectInputStream} and every object read from the stream can be checked.
  * <p>
@@ -120,7 +119,7 @@ import static java.lang.System.Logger.Level.INFO;
  * A filter may be called with class equals {@code null}, {@code arrayLength} equal -1,
  * the depth, number of references, and stream size and return a status
  * that reflects only one or only some of the values.
- * This allows a filter to specific about the choice it is reporting and
+ * This allows a filter to be specific about the choice it is reporting and
  * to use other filters without forcing either allowed or rejected status.
  *
  * <h2>Filter Model Examples</h2>
@@ -263,9 +262,14 @@ public interface ObjectInputFilter {
     }
 
     /**
-     * Returns a filter, that when applied to this filter that is checking a class, maps
-     * {@code Status.UNDECIDED} to {@code Status.REJECTED}, otherwise returns the status of this filter.
-     * Object serialization accepts a class if the filter returns {@code UNDECIDED}.
+     * Returns a filter that invokes this filter and maps UNDECIDED to REJECTED for classes,
+     * with some exceptions, and otherwise returns the status.
+     * The filter ensures that classes not ALLOWED and not REJECTED by this filter
+     * are REJECTED, if the class is an array and the base component type is not allowed,
+     * otherwise the result is UNDECIDED.
+     *
+     * <p>
+     * Object deserialization accepts a class if the filter returns {@code UNDECIDED}.
      * Adding a filter to reject undecided results for classes that have not been
      * either allowed or rejected can prevent classes from slipping through the filter.
      * <p>
@@ -282,7 +286,7 @@ public interface ObjectInputFilter {
      *      filter status
      */
     default ObjectInputFilter rejectUndecidedClass() {
-        return new Config.RejectUndecided(this);
+        return new Config.RejectUndecidedClass(this);
     }
 
     /**
@@ -383,7 +387,7 @@ public interface ObjectInputFilter {
      * A stream-specific filter can be set with
      * {@link ObjectInputStream#setObjectInputFilter(ObjectInputFilter) ObjectInputStream.setObjectInputFilter}.
      * If {@code ObjectInputStream.setObjectInputFilter} is called, the filter factory is called a second time
-     * with the initial filter returned from the first call and the requested new filter.
+     * with the stream's initial filter, and the requested new filter.
      * The factory determines how to combine the two filters and returns a filter, replacing the filter on the stream.
      * <p>
      * Setting a {@linkplain #setSerialFilterFactory(BinaryOperator) deserialization filter factory}
@@ -401,7 +405,6 @@ public interface ObjectInputFilter {
      * <p>
      * The JVM-wide filter is configured during the initialization of the
      * {@code ObjectInputFilter.Config} class.
-     * For example, by calling {@link #getSerialFilter() Config.getSerialFilter}.
      * If the Java virtual machine is started with the system property
      * {@systemProperty jdk.serialFilter}, its value is used to configure the filter.
      * If the system property is not defined, and the {@link java.security.Security} property
@@ -420,7 +423,7 @@ public interface ObjectInputFilter {
      * {@code jdk.serialFilterFactory} is defined then it is used to configure the filter factory.
      * The class must be public, must have a public zero-argument constructor, implement the
      * {@link BinaryOperator {@literal BinaryOperator<ObjectInputFilter>}} interface, provide its implementation and
-     * be accessible via the {@linkplain ClassLoader#getSystemClassLoader() the application class loader}.
+     * be accessible via the {@linkplain ClassLoader#getSystemClassLoader() application class loader}.
      * The filter factory configured using the system or security property during initialization
      * can NOT be replaced with {@link #setSerialFilterFactory(BinaryOperator) Config.setSerialFilterFactory}.
      * This ensures that a filter factory set on the command line is not overridden accidentally
@@ -1090,8 +1093,8 @@ public interface ObjectInputFilter {
 
                     if (clazz.isPrimitive())  {
                         // Primitive types are undecided; let someone else decide
-                        traceFilter("Pattern ALLOWED, primitive class: {0}, filter: {1}", clazz, this);
-                        return Status.ALLOWED;
+                        traceFilter("Pattern UNDECIDED, primitive class: {0}, filter: {1}", clazz, this);
+                        return UNDECIDED;
                     } else {
                         // Find any filter that allowed or rejected the class
                         final Class<?> cl = clazz;
@@ -1246,16 +1249,17 @@ public interface ObjectInputFilter {
         /**
          * A filter that maps the status {@code UNDECIDED} to {@code REJECTED} when checking a class.
          */
-        private static class RejectUndecided implements ObjectInputFilter {
+        private static class RejectUndecidedClass implements ObjectInputFilter {
             private final ObjectInputFilter filter;
 
-            private RejectUndecided(ObjectInputFilter filter) {
+            private RejectUndecidedClass(ObjectInputFilter filter) {
                 this.filter = Objects.requireNonNull(filter, "filter");
             }
 
             /**
              * Apply the filter and return the status if not UNDECIDED and checking a class.
-             * Make an exception for Primitive classes that are implicitly allowed by the pattern based filte.
+             * For array classes, re-check the final component type against the filter.
+             * Make an exception for Primitive classes that are implicitly allowed by the pattern based filter.
              * @param info the FilterInfo
              * @return the status of applying the filter and checking the class
              */
@@ -1264,15 +1268,70 @@ public interface ObjectInputFilter {
                 Class<?> clazz = info.serialClass();
                 if (clazz == null || !UNDECIDED.equals(status))
                     return status;
-                status = (clazz.isPrimitive()) ? ALLOWED : REJECTED;
+                status = REJECTED;
+                // Find the base component type
+                while (clazz.isArray()) {
+                    clazz = clazz.getComponentType();
+                }
+                if (clazz.isPrimitive()) {
+                    status = UNDECIDED;
+                } else {
+                    // for non-primitive types;  re-filter the base component type
+                    FilterInfo clazzInfo = new SerialInfo(info, clazz);
+                    Status clazzStatus = filter.checkInput(clazzInfo);
+                    traceFilter("RejectUndecidedClass Array Component type {0} class: {1}, filter: {2}",
+                            clazzStatus, clazz, this);
+                    if (!ALLOWED.equals(clazzStatus))
+                        status = REJECTED;
+                }
                 traceFilter("RejectUndecidedClass {0} class: {1}, filter: {2}",
-                        status, clazz, this);
+                        status, info.serialClass(), this);
                 return status;
             }
 
             public String toString() {
-                return "rejectUndecided(" + filter + ")";
+                return "rejectUndecidedClass(" + filter + ")";
             }
+
+            /**
+             * FilterInfo instance with a specific class and delegating to an existing FilterInfo.
+             * Nested in the rejectUndecided class.
+             */
+            static class SerialInfo implements ObjectInputFilter.FilterInfo {
+                private final FilterInfo base;
+                private final Class<?> clazz;
+
+                SerialInfo(FilterInfo base, Class<?> clazz) {
+                    this.base = base;
+                    this.clazz = clazz;
+                }
+
+                @Override
+                public Class<?> serialClass() {
+                    return clazz;
+                }
+
+                @Override
+                public long arrayLength() {
+                    return base.arrayLength();
+                }
+
+                @Override
+                public long depth() {
+                    return base.depth();
+                }
+
+                @Override
+                public long references() {
+                    return base.references();
+                }
+
+                @Override
+                public long streamBytes() {
+                    return base.streamBytes();
+                }
+            }
+
         }
 
         /**
