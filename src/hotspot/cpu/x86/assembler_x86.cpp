@@ -1471,7 +1471,7 @@ void Assembler::vaesenclast(XMMRegister dst, XMMRegister nds, XMMRegister src, i
 
 void Assembler::andb(Address dst, Register src) {
   InstructionMark im(this);
-  prefix(dst, src);
+  prefix(dst, src, true);
   emit_int8(0x20);
   emit_operand(src, dst);
 }
