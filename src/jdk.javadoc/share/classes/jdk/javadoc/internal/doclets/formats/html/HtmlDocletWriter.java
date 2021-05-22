@@ -690,13 +690,6 @@ public class HtmlDocletWriter {
         return label;
     }
 
-    public Content interfaceName(TypeElement typeElement, boolean qual) {
-        Content name = Text.of((qual)
-                ? typeElement.getQualifiedName()
-                : utils.getSimpleName(typeElement));
-        return (utils.isInterface(typeElement)) ?  HtmlTree.SPAN(HtmlStyle.interfaceName, name) : name;
-    }
-
     /**
      * Add the link to the content tree.
      *
