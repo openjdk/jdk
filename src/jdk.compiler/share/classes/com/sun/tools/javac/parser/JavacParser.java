@@ -64,8 +64,8 @@ import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndI
 
 /**
  * The parser maps a token sequence into an abstract syntax tree.
- * The current javac parser is a hand-written recursive-descent parser.
- * It implements the grammar described in the Java Language Specification.
+ * The parser is a hand-written recursive-descent parser that
+ * implements the grammar described in the Java Language Specification.
  * For efficiency reasons, an operator precedence scheme is used
  * for parsing binary operation expressions.
  *
