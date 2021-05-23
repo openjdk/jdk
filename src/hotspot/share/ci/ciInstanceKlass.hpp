@@ -56,7 +56,6 @@ private:
   SubklassValue          _has_subklass;
   bool                   _has_nonstatic_fields;
   bool                   _has_nonstatic_concrete_methods;
-  bool                   _is_unsafe_anonymous;
   bool                   _is_hidden;
   bool                   _is_record;
 
@@ -194,10 +193,6 @@ public:
     return _has_nonstatic_concrete_methods;
   }
 
-  bool is_unsafe_anonymous() const {
-    return _is_unsafe_anonymous;
-  }
-
   bool is_hidden() const {
     return _is_hidden;
   }
@@ -289,8 +284,6 @@ public:
     }
     return NULL;
   }
-
-  ciInstanceKlass* unsafe_anonymous_host();
 
   bool can_be_instantiated() {
     assert(is_loaded(), "must be loaded");

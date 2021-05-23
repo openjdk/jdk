@@ -251,6 +251,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_RegisterFinalizer(Intrinsic* x);
   void do_isInstance(Intrinsic* x);
   void do_isPrimitive(Intrinsic* x);
+  void do_getModifiers(Intrinsic* x);
   void do_getClass(Intrinsic* x);
   void do_currentThread(Intrinsic* x);
   void do_getObjectSize(Intrinsic* x);
@@ -574,7 +575,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_BlockBegin     (BlockBegin*      x);
   virtual void do_Goto           (Goto*            x);
   virtual void do_If             (If*              x);
-  virtual void do_IfInstanceOf   (IfInstanceOf*    x);
   virtual void do_TableSwitch    (TableSwitch*     x);
   virtual void do_LookupSwitch   (LookupSwitch*    x);
   virtual void do_Return         (Return*          x);

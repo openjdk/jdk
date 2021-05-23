@@ -228,6 +228,24 @@ void RangeCheckEliminator::Visitor::do_ArithmeticOp(ArithmeticOp *ao) {
     Bound* y_bound = _rce->get_bound(y);
     if (x_bound->lower() >= 0 && x_bound->lower_instr() == NULL && y->as_ArrayLength() != NULL) {
       _bound = new Bound(0, NULL, -1, y);
+    } else if (y->type()->as_IntConstant() && y->type()->as_IntConstant()->value() != 0) {
+      // The binary % operator is said to yield the remainder of its operands from an implied division; the
+      // left-hand operand is the dividend and the right-hand operand is the divisor.
+      //
+      // % operator follows from this rule that the result of the remainder operation can be negative only
+      // if the dividend is negative, and can be positive only if the dividend is positive. Moreover, the
+      // magnitude of the result is always less than the magnitude of the divisor(See JLS 15.17.3).
+      //
+      // So if y is a constant integer and not equal to 0, then we can deduce the bound of remainder operation:
+      // x % -y  ==> [0, y - 1] Apply RCE
+      // x % y   ==> [0, y - 1] Apply RCE
+      // -x % y  ==> [-y + 1, 0]
+      // -x % -y ==> [-y + 1, 0]
+      if (x_bound->has_lower() && x_bound->lower() >= 0) {
+        _bound = new Bound(0, NULL, y->type()->as_IntConstant()->value() - 1, NULL);
+      } else {
+        _bound = new Bound();
+      }
     } else {
       _bound = new Bound();
     }
@@ -805,6 +823,15 @@ void RangeCheckEliminator::process_access_indexed(BlockBegin *loop_header, Block
       array_bound = get_bound(ai->array());
     }
 
+    TRACE_RANGE_CHECK_ELIMINATION(
+      tty->fill_to(block->dominator_depth()*2);
+      tty->print("Index bound: ");
+      index_bound->print();
+      tty->print(", Array bound: ");
+      array_bound->print();
+      tty->cr();
+    );
+
     if (in_array_bound(index_bound, ai->array()) ||
       (index_bound && array_bound && index_bound->is_smaller(array_bound) && !index_bound->lower_instr() && index_bound->lower() >= 0)) {
         TRACE_RANGE_CHECK_ELIMINATION(
@@ -1250,7 +1277,6 @@ RangeCheckEliminator::Bound::~Bound() {
 
 // Bound constructor
 RangeCheckEliminator::Bound::Bound() {
-  init();
   this->_lower = min_jint;
   this->_upper = max_jint;
   this->_lower_instr = NULL;
@@ -1259,7 +1285,6 @@ RangeCheckEliminator::Bound::Bound() {
 
 // Bound constructor
 RangeCheckEliminator::Bound::Bound(int lower, Value lower_instr, int upper, Value upper_instr) {
-  init();
   assert(!lower_instr || !lower_instr->as_Constant() || !lower_instr->type()->as_IntConstant(), "Must not be constant!");
   assert(!upper_instr || !upper_instr->as_Constant() || !upper_instr->type()->as_IntConstant(), "Must not be constant!");
   this->_lower = lower;
@@ -1273,7 +1298,6 @@ RangeCheckEliminator::Bound::Bound(Instruction::Condition cond, Value v, int con
   assert(!v || (v->type() && (v->type()->as_IntType() || v->type()->as_ObjectType())), "Type must be array or integer!");
   assert(!v || !v->as_Constant() || !v->type()->as_IntConstant(), "Must not be constant!");
 
-  init();
   if (cond == Instruction::eql) {
     _lower = constant;
     _lower_instr = v;
@@ -1325,10 +1349,6 @@ void RangeCheckEliminator::Bound::set_upper(int value, Value v) {
 void RangeCheckEliminator::Bound::add_constant(int value) {
   this->_lower += value;
   this->_upper += value;
-}
-
-// Init
-void RangeCheckEliminator::Bound::init() {
 }
 
 // or

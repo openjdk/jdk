@@ -278,28 +278,6 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   }
 }
 
-bool ZMark::try_mark_object(ZMarkCache* cache, uintptr_t addr, bool finalizable) {
-  ZPage* const page = _page_table->get(addr);
-  if (page->is_allocating()) {
-    // Newly allocated objects are implicitly marked
-    return false;
-  }
-
-  // Try mark object
-  bool inc_live = false;
-  const bool success = page->mark_object(addr, finalizable, inc_live);
-  if (inc_live) {
-    // Update live objects/bytes for page. We use the aligned object
-    // size since that is the actual number of bytes used on the page
-    // and alignment paddings can never be reclaimed.
-    const size_t size = ZUtils::object_size(addr);
-    const size_t aligned_size = align_up(size, page->object_alignment());
-    cache->inc_live(page, aligned_size);
-  }
-
-  return success;
-}
-
 void ZMark::mark_and_follow(ZMarkCache* cache, ZMarkStackEntry entry) {
   // Decode flags
   const bool finalizable = entry.finalizable();
@@ -310,24 +288,38 @@ void ZMark::mark_and_follow(ZMarkCache* cache, ZMarkStackEntry entry) {
     return;
   }
 
-  // Decode object address and follow flag
+  // Decode object address and additional flags
   const uintptr_t addr = entry.object_address();
+  const bool mark = entry.mark();
+  bool inc_live = entry.inc_live();
+  const bool follow = entry.follow();
 
-  if (!try_mark_object(cache, addr, finalizable)) {
+  ZPage* const page = _page_table->get(addr);
+  assert(page->is_relocatable(), "Invalid page state");
+
+  // Mark
+  if (mark && !page->mark_object(addr, finalizable, inc_live)) {
     // Already marked
     return;
   }
 
-  if (is_array(addr)) {
-    // Decode follow flag
-    const bool follow = entry.follow();
+  // Increment live
+  if (inc_live) {
+    // Update live objects/bytes for page. We use the aligned object
+    // size since that is the actual number of bytes used on the page
+    // and alignment paddings can never be reclaimed.
+    const size_t size = ZUtils::object_size(addr);
+    const size_t aligned_size = align_up(size, page->object_alignment());
+    cache->inc_live(page, aligned_size);
+  }
 
-    // The follow flag is currently only relevant for object arrays
-    if (follow) {
+  // Follow
+  if (follow) {
+    if (is_array(addr)) {
       follow_array_object(objArrayOop(ZOop::from_address(addr)), finalizable);
+    } else {
+      follow_object(ZOop::from_address(addr), finalizable);
     }
-  } else {
-    follow_object(ZOop::from_address(addr), finalizable);
   }
 }
 
@@ -774,6 +766,14 @@ bool ZMark::end() {
 
   // Mark completed
   return true;
+}
+
+void ZMark::free() {
+  // Free any unused mark stack space
+  _allocator.free();
+
+  // Update statistics
+  ZStatMark::set_at_mark_free(_allocator.size());
 }
 
 void ZMark::flush_and_free() {

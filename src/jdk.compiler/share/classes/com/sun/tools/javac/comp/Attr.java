@@ -27,7 +27,6 @@ package com.sun.tools.javac.comp;
 
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.ElementKind;
 import javax.tools.JavaFileObject;

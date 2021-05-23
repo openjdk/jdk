@@ -186,8 +186,7 @@ public class JavacParser implements Parser {
         this.allowYieldStatement = (!preview.isPreview(Feature.SWITCH_EXPRESSION) || preview.isEnabled()) &&
                 Feature.SWITCH_EXPRESSION.allowedInSource(source);
         this.allowRecords = Feature.RECORDS.allowedInSource(source);
-        this.allowSealedTypes = (!preview.isPreview(Feature.SEALED_CLASSES) || preview.isEnabled()) &&
-                Feature.SEALED_CLASSES.allowedInSource(source);
+        this.allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
     }
 
     protected AbstractEndPosTable newEndPosTable(boolean keepEndPositions) {
@@ -3328,6 +3327,7 @@ public class JavacParser implements Parser {
      */
     JCVariableDecl variableDeclaratorRest(int pos, JCModifiers mods, JCExpression type, Name name,
                                   boolean reqInit, Comment dc, boolean localDecl, boolean compound) {
+        boolean declaredUsingVar = false;
         type = bracketsOpt(type);
         JCExpression init = null;
         if (token.kind == EQ) {
@@ -3346,6 +3346,7 @@ public class JavacParser implements Parser {
                     //error - 'var' and arrays
                     reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedArray(typeName));
                 } else {
+                    declaredUsingVar = true;
                     if(compound)
                         //error - 'var' in compound local var decl
                         reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedCompound(typeName));
@@ -3358,7 +3359,7 @@ public class JavacParser implements Parser {
             }
         }
         JCVariableDecl result =
-            toP(F.at(pos).VarDef(mods, name, type, init));
+            toP(F.at(pos).VarDef(mods, name, type, init, declaredUsingVar));
         attach(result, dc);
         result.startPos = startPos;
         return result;
@@ -3470,7 +3471,8 @@ public class JavacParser implements Parser {
         }
         type = bracketsOpt(type);
 
-        return toP(F.at(pos).VarDef(mods, name, type, null));
+        return toP(F.at(pos).VarDef(mods, name, type, null,
+                type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var));
     }
 
     /** Resources = Resource { ";" Resources }
