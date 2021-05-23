@@ -93,24 +93,24 @@ import sun.security.util.SecurityConstants;
  * manager to be set dynamically by invoking the
  * {@link System#setSecurityManager(SecurityManager) setSecurityManager} method.
  * In the JDK implementation, the default value of the
- * {@systemProperty java.security.manager} system property, if not set, is
+ * {@code java.security.manager} system property, if not set, is
  * the special token "{@code disallow}". If the Java virtual machine is
- * started with the {@systemProperty java.security.manager} system property
+ * started with the {@code java.security.manager} system property
  * not set or set to "{@code disallow}" then a security manager will not be
  * set at startup and cannot be set dynamically (the
  * {@link System#setSecurityManager(SecurityManager) setSecurityManager}
  * method will throw an {@code UnsupportedOperationException}). If the
- * {@systemProperty java.security.manager} system property is set to the
+ * {@code java.security.manager} system property is set to the
  * special token "{@code allow}", then a security manager will not be set at
  * startup but can be set dynamically. Finally, if the
- * {@systemProperty java.security.manager} system property is set to the
+ * {@code java.security.manager} system property is set to the
  * class name of the security manager, or to the empty String ("") or the
  * special token "{@code default}", then a security manager is set at startup
  * (as described previously) and can also be subsequently replaced (or
  * disabled) dynamically (subject to the policy of the currently installed
  * security manager). The following table illustrates the behavior of the JDK
  * implementation for the different settings of the
- * {@systemProperty java.security.manager} system property:
+ * {@code java.security.manager} system property:
  * <table class="striped">
  * <caption style="display:none">property value,
  *  the SecurityManager set at startup,

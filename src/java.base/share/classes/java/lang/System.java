@@ -341,12 +341,12 @@ public final class System {
      * the method simply returns.
      *
      * @implNote In the JDK implementation, the default value of the
-     * {@systemProperty java.security.manager} system property, if not set, is
+     * {@code java.security.manager} system property, if not set, is
      * the special token "{@code disallow}". If the Java virtual machine is
-     * started with the {@systemProperty java.security.manager} system property
+     * started with the {@code java.security.manager} system property
      * set to the special token "{@code allow}", then a security manager can
      * be set dynamically. If the Java virtual machine is started with the
-     * system property {@systemProperty java.security.manager} not set or set
+     * system property {@code java.security.manager} not set or set
      * to "{@code disallow}" then a security manager cannot be set
      * dynamically (the {@code setSecurityManager} method will throw an
      * {@code UnsupportedOperationException}).
