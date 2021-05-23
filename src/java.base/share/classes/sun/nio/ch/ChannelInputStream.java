@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,6 +140,71 @@ public class ChannelInputStream
 
     public void close() throws IOException {
         ch.close();
+    }
+
+    private static final int TRANSFER_SIZE = 8192;
+
+    @Override
+    public long transferTo(final OutputStream out) throws IOException {
+        if (out instanceof Channels.ChannelOutputStream) {
+            final var oc = ((Channels.ChannelOutputStream) out).channel();
+
+            if (ch instanceof FileChannel) {
+                final var fc = (FileChannel) ch;
+                final var pos = fc.position();
+                final var size = fc.size();
+                var i = 0L;
+                for (final var n = size - pos; i < n;
+                  i += fc.transferTo(pos + i, Long.MAX_VALUE, oc));
+                fc.position(size);
+                return i;
+            }
+
+            if (oc instanceof FileChannel) {
+                final var fc = (FileChannel) oc;
+                final var fcpos = fc.position();
+
+                if (ch instanceof SeekableByteChannel) {
+                    final var pos = ((SeekableByteChannel) ch).position();
+                    final var size = ((SeekableByteChannel) ch).size();
+                    var i = 0L;
+                    for (final var n = size - pos; i < n;
+                      i += fc.transferFrom(ch, fcpos + i, Long.MAX_VALUE));
+                    fc.position(fcpos + i);
+                    return i;
+                }
+
+                final var bb = ByteBuffer.allocateDirect(TRANSFER_SIZE);
+                var i = 0L;
+                int r;
+                do {
+                    i += fc.transferFrom(ch, fcpos + i, Long.MAX_VALUE);
+                    r = ch.read(bb); // detect end-of-stream
+                    if (r > -1) {
+                        bb.flip();
+                        while (bb.hasRemaining())
+                          oc.write(bb);
+                        bb.clear();
+                        i += r;
+                    }
+                } while (r > -1);
+                fc.position(fcpos + i);
+                return i;
+            }
+
+            final var bb = ByteBuffer.allocateDirect(TRANSFER_SIZE);
+            var i = 0L;
+            for (var r = ch.read(bb); r > -1; r = ch.read(bb)) {
+                bb.flip();
+                while (bb.hasRemaining())
+                  oc.write(bb);
+                bb.clear();
+                i += r;
+            }
+            return i;
+        }
+
+        return super.transferTo(out);
     }
 
 }

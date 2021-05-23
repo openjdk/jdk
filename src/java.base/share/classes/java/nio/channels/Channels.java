@@ -136,47 +136,66 @@ public final class Channels {
      */
     public static OutputStream newOutputStream(WritableByteChannel ch) {
         Objects.requireNonNull(ch, "ch");
+        return new ChannelOutputStream(ch);
+    }
 
-        return new OutputStream() {
+    /**
+     * @since 18
+     */
+    public static class ChannelOutputStream extends OutputStream {
 
-            private ByteBuffer bb;
-            private byte[] bs;       // Invoker's previous array
-            private byte[] b1;
+        private final WritableByteChannel ch;
+        private ByteBuffer bb;
+        private byte[] bs;       // Invoker's previous array
+        private byte[] b1;
 
-            @Override
-            public synchronized void write(int b) throws IOException {
-                if (b1 == null)
-                    b1 = new byte[1];
-                b1[0] = (byte) b;
-                this.write(b1);
+        /**
+         * @param ch The channel wrapped by this stream.
+         */
+        public ChannelOutputStream(final WritableByteChannel ch) {
+            this.ch = ch;
+        }
+
+        /**
+         * @return The channel wrapped by this stream.
+         */
+        public WritableByteChannel channel() {
+            return ch;
+        }
+
+        @Override
+        public synchronized void write(int b) throws IOException {
+            if (b1 == null)
+                b1 = new byte[1];
+            b1[0] = (byte) b;
+            this.write(b1);
+        }
+
+        @Override
+        public synchronized void write(byte[] bs, int off, int len)
+                throws IOException
+        {
+            if ((off < 0) || (off > bs.length) || (len < 0) ||
+                ((off + len) > bs.length) || ((off + len) < 0)) {
+                throw new IndexOutOfBoundsException();
+            } else if (len == 0) {
+                return;
             }
+            ByteBuffer bb = ((this.bs == bs)
+                             ? this.bb
+                             : ByteBuffer.wrap(bs));
+            bb.limit(Math.min(off + len, bb.capacity()));
+            bb.position(off);
+            this.bb = bb;
+            this.bs = bs;
+            Channels.writeFully(ch, bb);
+        }
 
-            @Override
-            public synchronized void write(byte[] bs, int off, int len)
-                    throws IOException
-            {
-                if ((off < 0) || (off > bs.length) || (len < 0) ||
-                    ((off + len) > bs.length) || ((off + len) < 0)) {
-                    throw new IndexOutOfBoundsException();
-                } else if (len == 0) {
-                    return;
-                }
-                ByteBuffer bb = ((this.bs == bs)
-                                 ? this.bb
-                                 : ByteBuffer.wrap(bs));
-                bb.limit(Math.min(off + len, bb.capacity()));
-                bb.position(off);
-                this.bb = bb;
-                this.bs = bs;
-                Channels.writeFully(ch, bb);
-            }
+        @Override
+        public void close() throws IOException {
+            ch.close();
+        }
 
-            @Override
-            public void close() throws IOException {
-                ch.close();
-            }
-
-        };
     }
 
     /**
