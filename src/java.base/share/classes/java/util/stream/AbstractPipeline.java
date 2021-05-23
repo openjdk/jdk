@@ -466,18 +466,24 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
 
     @Override
     final <P_IN> long exactOutputSizeIfKnown(Spliterator<P_IN> spliterator) {
-        long size = StreamOpFlag.SIZED.isKnown(getStreamAndOpFlags()) ? spliterator.getExactSizeIfKnown() : -1;
-        return size == -1 ? size : exactOutputSize(size);
+        int flags = getStreamAndOpFlags();
+        long size = StreamOpFlag.SIZED.isKnown(flags) ? spliterator.getExactSizeIfKnown() : -1;
+        if (size != -1 && StreamOpFlag.SIZE_ADJUSTING.isKnown(flags) && !isParallel()) {
+            for (AbstractPipeline<?, ?, ?> stage = sourceStage.nextStage; stage != null; stage = stage.nextStage) {
+                size = stage.exactOutputSize(size);
+            }
+        }
+        return size;
     }
 
     /**
-     * Returns the exact output size of the pipeline given the exact size reported by the source spliterator.
+     * Returns the exact output size of the pipeline given the exact size reported by the previous stage.
      *
-     * @param sourceSize the exact size reported by the source spliterator
-     * @return the exact output size
+     * @param previousSize the exact size reported by the previous stage
+     * @return the output size of this stage
      */
-    long exactOutputSize(long sourceSize) {
-        return previousStage == null ? sourceSize : previousStage.exactOutputSize(sourceSize);
+    long exactOutputSize(long previousSize) {
+        return previousSize;
     }
 
     @Override
