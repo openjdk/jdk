@@ -215,20 +215,6 @@ class Thread: public ThreadShadow {
  protected:
   static void* allocate(size_t size, bool throw_excpt, MEMFLAGS flags = mtThread);
 
-  enum SuspendFlags {
-    // NOTE: avoid using the sign-bit as cc generates different test code
-    //       when the sign-bit is used, and sometimes incorrectly - see CR 6398077
-
-    _has_async_exception    = 0x00000001U, // there is a pending async exception
-
-    _trace_flag             = 0x00000004U, // call tracing backend
-    _obj_deopt              = 0x00000008U  // suspend for object reallocation and relocking for JVMTI agent
-  };
-
-  // various suspension related flags - atomically updated
-  // overloaded for async exception checking in check_special_condition_for_native_trans.
-  volatile uint32_t _suspend_flags;
-
  private:
   DEBUG_ONLY(bool _suspendible_thread;)
 
@@ -308,16 +294,8 @@ class Thread: public ThreadShadow {
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_FIELD_JFR;)      // Thread-local data for jfr
 
-  ObjectMonitor* _current_pending_monitor;      // ObjectMonitor this thread
-                                                // is waiting to lock
-  bool _current_pending_monitor_is_from_java;   // locking is from Java code
   JvmtiRawMonitor* _current_pending_raw_monitor; // JvmtiRawMonitor this thread
                                                  // is waiting to lock
-
-
-  // ObjectMonitor on which this thread called Object.wait()
-  ObjectMonitor* _current_waiting_monitor;
-
  public:
   // Constructor
   Thread();
@@ -404,20 +382,6 @@ class Thread: public ThreadShadow {
     os::set_native_thread_name(name);
   }
 
-  bool has_async_exception() const { return (_suspend_flags & _has_async_exception) != 0; }
-
-  inline void set_suspend_flag(SuspendFlags f);
-  inline void clear_suspend_flag(SuspendFlags f);
-
-  inline void set_has_async_exception();
-  inline void clear_has_async_exception();
-
-  inline void set_trace_flag();
-  inline void clear_trace_flag();
-
-  inline void set_obj_deopt_flag();
-  inline void clear_obj_deopt_flag();
-
   // Support for Unhandled Oop detection
   // Add the field for both, fastdebug and debug, builds to keep
   // Thread's fields layout the same.
@@ -447,9 +411,6 @@ class Thread: public ThreadShadow {
   bool skip_gcalot()           { return _skip_gcalot; }
   void set_skip_gcalot(bool v) { _skip_gcalot = v;    }
 #endif
-
-  // Installs a pending exception to be inserted later
-  static void send_async_exception(oop thread_oop, oop java_throwable);
 
   // Resource area
   ResourceArea* resource_area() const            { return _resource_area; }
@@ -485,32 +446,6 @@ class Thread: public ThreadShadow {
   ThreadStatisticalInfo& statistical_info() { return _statistical_info; }
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_ACCESSOR_JFR;)
-
-  bool is_trace_suspend()               { return (_suspend_flags & _trace_flag) != 0; }
-
-  bool is_obj_deopt_suspend()           { return (_suspend_flags & _obj_deopt) != 0; }
-
-  // For tracking the heavyweight monitor the thread is pending on.
-  ObjectMonitor* current_pending_monitor() {
-    return _current_pending_monitor;
-  }
-  void set_current_pending_monitor(ObjectMonitor* monitor) {
-    _current_pending_monitor = monitor;
-  }
-  void set_current_pending_monitor_is_from_java(bool from_java) {
-    _current_pending_monitor_is_from_java = from_java;
-  }
-  bool current_pending_monitor_is_from_java() {
-    return _current_pending_monitor_is_from_java;
-  }
-
-  // For tracking the ObjectMonitor on which this thread called Object.wait()
-  ObjectMonitor* current_waiting_monitor() {
-    return _current_waiting_monitor;
-  }
-  void set_current_waiting_monitor(ObjectMonitor* monitor) {
-    _current_waiting_monitor = monitor;
-  }
 
   // For tracking the Jvmti raw monitor the thread is pending on.
   JvmtiRawMonitor* current_pending_raw_monitor() {
@@ -689,8 +624,6 @@ protected:
   JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
 
  public:
-  volatile intptr_t _Stalled;
-  volatile int _TypeTag;
   ParkEvent * volatile _ParkEvent;            // for Object monitors, JVMTI raw monitors,
                                               // and ObjectSynchronizer::read_stable_mark
 
@@ -699,7 +632,6 @@ protected:
   // (which can't itself be read from the signal handler if a signal hits during the Thread destructor).
   bool has_terminated()                       { return Atomic::load(&_ParkEvent) == NULL; };
 
-  volatile int _OnTrap;                       // Resume-at IP delta
   jint _hashStateW;                           // Marsaglia Shift-XOR thread-local RNG
   jint _hashStateX;                           // thread-specific hashCode generator state
   jint _hashStateY;
@@ -717,6 +649,10 @@ protected:
  public:
   void init_wx();
   WXMode enable_wx(WXMode new_state);
+
+  void assert_wx_state(WXMode expected) {
+    assert(_wx_state == expected, "wrong state");
+  }
 #endif // __APPLE__ && AARCH64
 };
 
@@ -809,18 +745,93 @@ class JavaThread: public Thread {
   // elided card-marks for performance along the fast-path.
   MemRegion     _deferred_card_mark;
 
-  MonitorChunk* _monitor_chunks;                 // Contains the off stack monitors
-                                                 // allocated during deoptimization
-                                                 // and by JNI_MonitorEnter/Exit
+  ObjectMonitor* _current_pending_monitor;              // ObjectMonitor this thread is waiting to lock
+  bool           _current_pending_monitor_is_from_java; // locking is from Java code
+  ObjectMonitor* _current_waiting_monitor;              // ObjectMonitor on which this thread called Object.wait()
+ public:
+  volatile intptr_t _Stalled;
 
-  // Async. requests support
-  enum AsyncRequests {
+  // For tracking the heavyweight monitor the thread is pending on.
+  ObjectMonitor* current_pending_monitor() {
+    return _current_pending_monitor;
+  }
+  void set_current_pending_monitor(ObjectMonitor* monitor) {
+    _current_pending_monitor = monitor;
+  }
+  void set_current_pending_monitor_is_from_java(bool from_java) {
+    _current_pending_monitor_is_from_java = from_java;
+  }
+  bool current_pending_monitor_is_from_java() {
+    return _current_pending_monitor_is_from_java;
+  }
+  ObjectMonitor* current_waiting_monitor() {
+    return _current_waiting_monitor;
+  }
+  void set_current_waiting_monitor(ObjectMonitor* monitor) {
+    _current_waiting_monitor = monitor;
+  }
+
+ private:
+  MonitorChunk* _monitor_chunks;              // Contains the off stack monitors
+                                              // allocated during deoptimization
+                                              // and by JNI_MonitorEnter/Exit
+
+  enum SuspendFlags {
+    // NOTE: avoid using the sign-bit as cc generates different test code
+    //       when the sign-bit is used, and sometimes incorrectly - see CR 6398077
+    _has_async_exception    = 0x00000001U, // there is a pending async exception
+    _trace_flag             = 0x00000004U, // call tracing backend
+    _obj_deopt              = 0x00000008U  // suspend for object reallocation and relocking for JVMTI agent
+  };
+
+  // various suspension related flags - atomically updated
+  // overloaded with async exceptions so that we do a single check when transitioning from native->Java
+  volatile uint32_t _suspend_flags;
+
+  inline void set_suspend_flag(SuspendFlags f);
+  inline void clear_suspend_flag(SuspendFlags f);
+
+ public:
+  inline void set_trace_flag();
+  inline void clear_trace_flag();
+  inline void set_obj_deopt_flag();
+  inline void clear_obj_deopt_flag();
+  bool is_trace_suspend()      { return (_suspend_flags & _trace_flag) != 0; }
+  bool is_obj_deopt_suspend()  { return (_suspend_flags & _obj_deopt) != 0; }
+
+  // Asynchronous exceptions support
+ private:
+  enum AsyncExceptionCondition {
     _no_async_condition = 0,
     _async_exception,
     _async_unsafe_access_error
   };
-  AsyncRequests _special_runtime_exit_condition; // Enum indicating pending async. request
-  oop           _pending_async_exception;
+  AsyncExceptionCondition _async_exception_condition;
+  oop                     _pending_async_exception;
+
+  void set_async_exception_condition(AsyncExceptionCondition aec) { _async_exception_condition = aec; }
+  AsyncExceptionCondition clear_async_exception_condition() {
+    AsyncExceptionCondition x = _async_exception_condition;
+    _async_exception_condition = _no_async_condition;
+    return x;
+  }
+
+ public:
+  bool has_async_exception_condition(bool check_unsafe_access_error = true) {
+    return check_unsafe_access_error ? _async_exception_condition != _no_async_condition
+                                     : _async_exception_condition == _async_exception;
+  }
+  inline void set_pending_async_exception(oop e);
+  void set_pending_unsafe_access_error()  {
+    // Don't overwrite an asynchronous exception sent by another thread
+    if (_async_exception_condition == _no_async_condition) {
+      set_async_exception_condition(_async_unsafe_access_error);
+    }
+  }
+  void check_and_handle_async_exceptions();
+  // Installs a pending exception to be inserted later
+  static void send_async_exception(oop thread_oop, oop java_throwable);
+  void send_thread_stop(oop throwable);
 
   // Safepoint support
  public:                                                        // Expose _thread_state for SafeFetchInt()
@@ -1133,32 +1144,15 @@ class JavaThread: public Thread {
   // current thread, i.e. reverts optimizations based on escape analysis.
   void wait_for_object_deoptimization();
 
-  // Thread.stop support
-  void send_thread_stop(oop throwable);
-  AsyncRequests clear_special_runtime_exit_condition() {
-    AsyncRequests x = _special_runtime_exit_condition;
-    _special_runtime_exit_condition = _no_async_condition;
-    return x;
-  }
-
-  // Are any async conditions present?
-  bool has_async_condition() { return (_special_runtime_exit_condition != _no_async_condition); }
-
-  void check_and_handle_async_exceptions(bool check_unsafe_error = true);
-
   // these next two are also used for self-suspension and async exception support
   void handle_special_runtime_exit_condition(bool check_asyncs = true);
 
   // Return true if JavaThread has an asynchronous condition or
   // if external suspension is requested.
   bool has_special_runtime_exit_condition() {
-    return (_special_runtime_exit_condition != _no_async_condition) ||
+    return (_async_exception_condition != _no_async_condition) ||
            (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
   }
-
-  void set_pending_unsafe_access_error()          { _special_runtime_exit_condition = _async_unsafe_access_error; }
-
-  inline void set_pending_async_exception(oop e);
 
   // Fast-locking support
   bool is_lock_owned(address adr) const;

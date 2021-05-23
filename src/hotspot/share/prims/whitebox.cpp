@@ -180,6 +180,25 @@ public:
       Symbol* ksym = k->name();
       if (ksym->fast_compare(_name) == 0) {
         _count++;
+      } else if (k->is_instance_klass()) {
+        // Need special handling for hidden classes because the JVM
+        // appends "+<hex-address>" to hidden class names.
+        InstanceKlass *ik = InstanceKlass::cast(k);
+        if (ik->is_hidden()) {
+          ResourceMark rm;
+          char* k_name = ksym->as_C_string();
+          // Find the first '+' char and truncate the string at that point.
+          // NOTE: This will not work correctly if the original hidden class
+          // name contains a '+'.
+          char* plus_char = strchr(k_name, '+');
+          if (plus_char != NULL) {
+            *plus_char = 0;
+            char* c_name = _name->as_C_string();
+            if (strcmp(c_name, k_name) == 0) {
+              _count++;
+            }
+          }
+        }
       }
     }
 
@@ -251,7 +270,7 @@ WB_END
 
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(100 * granularity, granularity, false);
+  ReservedHeapSpace rhs(100 * granularity, granularity, os::vm_page_size());
   VirtualSpace vs;
   vs.initialize(rhs, 50 * granularity);
 
@@ -278,7 +297,7 @@ WB_END
 static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
                                            size_t magnitude, size_t iterations) {
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, false);
+  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, os::vm_page_size());
   VirtualSpace vs;
   if (!vs.initialize(rhs, 0)) {
     tty->print_cr("Failed to initialize VirtualSpace. Can't proceed.");
@@ -983,7 +1002,7 @@ bool WhiteBox::validate_cgroup(const char* proc_cgroups,
 }
 #endif
 
-bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* THREAD) {
+bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThread* THREAD) {
   // Screen for unavailable/bad comp level or null method
   AbstractCompiler* comp = CompileBroker::compiler(comp_level);
   if (method == NULL) {
@@ -1039,7 +1058,7 @@ WB_END
 WB_ENTRY(jboolean, WB_EnqueueInitializerForCompilation(JNIEnv* env, jobject o, jclass klass, jint comp_level))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   Method* clinit = ik->class_initializer();
-  if (clinit == NULL) {
+  if (clinit == NULL || clinit->method_holder()->is_not_initialized()) {
     return false;
   }
   return WhiteBox::compile_method(clinit, comp_level, InvocationEntryBci, THREAD);
@@ -1950,7 +1969,7 @@ WB_ENTRY(jboolean, WB_AreOpenArchiveHeapObjectsMapped(JNIEnv* env))
   return HeapShared::open_archive_heap_region_mapped();
 WB_END
 
-WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
+WB_ENTRY(jboolean, WB_IsCDSIncluded(JNIEnv* env))
 #if INCLUDE_CDS
   return true;
 #else
@@ -1958,7 +1977,7 @@ WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
 #endif // INCLUDE_CDS
 WB_END
 
-WB_ENTRY(jboolean, WB_isC2OrJVMCIIncludedInVmBuild(JNIEnv* env))
+WB_ENTRY(jboolean, WB_isC2OrJVMCIIncluded(JNIEnv* env))
 #if COMPILER2_OR_JVMCI
   return true;
 #else
@@ -1979,7 +1998,7 @@ WB_ENTRY(jboolean, WB_IsJavaHeapArchiveSupported(JNIEnv* env))
 WB_END
 
 
-WB_ENTRY(jboolean, WB_IsJFRIncludedInVmBuild(JNIEnv* env))
+WB_ENTRY(jboolean, WB_IsJFRIncluded(JNIEnv* env))
 #if INCLUDE_JFR
   return true;
 #else
@@ -2061,7 +2080,6 @@ WB_END
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
   assert(field_name != NULL && strlen(field_name) > 0, "Field name not valid");
-  Thread* THREAD = Thread::current();
 
   //Get the class of our object
   Klass* arg_klass = object->klass();
@@ -2302,7 +2320,11 @@ WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log))
 WB_END
 
 WB_ENTRY(jboolean, WB_IsJVMTIIncluded(JNIEnv* env, jobject wb))
-  return INCLUDE_JVMTI ? JNI_TRUE : JNI_FALSE;
+#if INCLUDE_JVMTI
+  return JNI_TRUE;
+#else
+  return JNI_FALSE;
+#endif
 WB_END
 
 WB_ENTRY(void, WB_WaitUnsafe(JNIEnv* env, jobject wb, jint time))
@@ -2533,9 +2555,9 @@ static JNINativeMethod methods[] = {
   {CC"getResolvedReferences", CC"(Ljava/lang/Class;)Ljava/lang/Object;", (void*)&WB_GetResolvedReferences},
   {CC"linkClass",          CC"(Ljava/lang/Class;)V",  (void*)&WB_LinkClass},
   {CC"areOpenArchiveHeapObjectsMapped",   CC"()Z",    (void*)&WB_AreOpenArchiveHeapObjectsMapped},
-  {CC"isCDSIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsCDSIncludedInVmBuild },
-  {CC"isJFRIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsJFRIncludedInVmBuild },
-  {CC"isC2OrJVMCIIncludedInVmBuild",      CC"()Z",    (void*)&WB_isC2OrJVMCIIncludedInVmBuild },
+  {CC"isCDSIncluded",                     CC"()Z",    (void*)&WB_IsCDSIncluded },
+  {CC"isJFRIncluded",                     CC"()Z",    (void*)&WB_IsJFRIncluded },
+  {CC"isC2OrJVMCIIncluded",               CC"()Z",    (void*)&WB_isC2OrJVMCIIncluded },
   {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
   {CC"isJavaHeapArchiveSupported",        CC"()Z",    (void*)&WB_IsJavaHeapArchiveSupported },
   {CC"cdsMemoryMappingFailed",            CC"()Z",    (void*)&WB_CDSMemoryMappingFailed },

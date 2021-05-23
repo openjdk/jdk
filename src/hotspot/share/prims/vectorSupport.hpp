@@ -42,7 +42,7 @@ class VectorSupport : AllStatic {
   static Handle allocate_vector_payload(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ScopeValue* payload, TRAPS);
   static Handle allocate_vector_payload_helper(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, Location location, TRAPS);
 
-  static void init_payload_element(typeArrayOop arr, bool is_mask, BasicType elem_bt, int index, address addr);
+  static void init_payload_element(typeArrayOop arr, BasicType elem_bt, int index, address addr);
 
   static BasicType klass2bt(InstanceKlass* ik);
   static jint klass2length(InstanceKlass* ik);
@@ -74,12 +74,19 @@ class VectorSupport : AllStatic {
     VECTOR_OP_LSHIFT  = 14,
     VECTOR_OP_RSHIFT  = 15,
     VECTOR_OP_URSHIFT = 16,
-    VECTOR_OP_LROTATE = 17,
-    VECTOR_OP_RROTATE = 18,
 
     // Convert
-    VECTOR_OP_CAST        = 19,
-    VECTOR_OP_REINTERPRET = 20
+    VECTOR_OP_CAST        = 17,
+    VECTOR_OP_REINTERPRET = 18,
+
+    // Mask manipulation operations
+    VECTOR_OP_MASK_TRUECOUNT = 19,
+    VECTOR_OP_MASK_FIRSTTRUE = 20,
+    VECTOR_OP_MASK_LASTTRUE  = 21,
+
+    // Rotate operations
+    VECTOR_OP_LROTATE = 22,
+    VECTOR_OP_RROTATE = 23
   };
 
   static int vop2ideal(jint vop, BasicType bt);

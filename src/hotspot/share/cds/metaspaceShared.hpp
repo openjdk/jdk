@@ -133,14 +133,13 @@ public:
     NOT_CDS(return false);
   }
 
-  static bool try_link_class(Thread* current, InstanceKlass* ik);
+  static bool try_link_class(JavaThread* current, InstanceKlass* ik);
   static void link_and_cleanup_shared_classes(TRAPS) NOT_CDS_RETURN;
   static bool link_class_for_cds(InstanceKlass* ik, TRAPS) NOT_CDS_RETURN_(false);
   static bool linking_required(InstanceKlass* ik) NOT_CDS_RETURN_(false);
-  static bool is_old_class(InstanceKlass* ik) NOT_CDS_RETURN_(false);
 
 #if INCLUDE_CDS
-  // Alignment for the 3 core CDS regions (MC/RW/RO) only.
+  // Alignment for the 2 core CDS regions (RW/RO) only.
   // (Heap region alignments are decided by GC).
   static size_t core_region_alignment();
   static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik);
@@ -185,7 +184,7 @@ public:
   static void disable_full_module_graph() { _use_full_module_graph = false; }
 
 private:
-  static void read_extra_data(Thread* current, const char* filename) NOT_CDS_RETURN;
+  static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
   // use_requested_addr: If true (default), attempt to map at the address the

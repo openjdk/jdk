@@ -121,22 +121,12 @@ void MacroAssembler::cmpklass(Register src1, Metadata* obj) {
   cmp_literal32(src1, (int32_t)obj, metadata_Relocation::spec_for_immediate());
 }
 
-void MacroAssembler::cmpoop_raw(Address src1, jobject obj) {
-  cmp_literal32(src1, (int32_t)obj, oop_Relocation::spec_for_immediate());
-}
-
-void MacroAssembler::cmpoop_raw(Register src1, jobject obj) {
-  cmp_literal32(src1, (int32_t)obj, oop_Relocation::spec_for_immediate());
-}
-
 void MacroAssembler::cmpoop(Address src1, jobject obj) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, src1, obj);
+  cmp_literal32(src1, (int32_t)obj, oop_Relocation::spec_for_immediate());
 }
 
 void MacroAssembler::cmpoop(Register src1, jobject obj) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, src1, obj);
+  cmp_literal32(src1, (int32_t)obj, oop_Relocation::spec_for_immediate());
 }
 
 void MacroAssembler::extend_sign(Register hi, Register lo) {
@@ -1794,20 +1784,17 @@ void MacroAssembler::cmpptr(Address src1, AddressLiteral src2) {
 }
 
 void MacroAssembler::cmpoop(Register src1, Register src2) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, src1, src2);
+  cmpptr(src1, src2);
 }
 
 void MacroAssembler::cmpoop(Register src1, Address src2) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, src1, src2);
+  cmpptr(src1, src2);
 }
 
 #ifdef _LP64
 void MacroAssembler::cmpoop(Register src1, jobject src2) {
   movoop(rscratch1, src2);
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->obj_equals(this, src1, rscratch1);
+  cmpptr(src1, rscratch1);
 }
 #endif
 
@@ -3229,9 +3216,9 @@ void MacroAssembler::vpmovzxbw(XMMRegister dst, Address src, int vector_len) {
   Assembler::vpmovzxbw(dst, src, vector_len);
 }
 
-void MacroAssembler::vpmovmskb(Register dst, XMMRegister src) {
+void MacroAssembler::vpmovmskb(Register dst, XMMRegister src, int vector_len) {
   assert((src->encoding() < 16),"XMM register should be 0-15");
-  Assembler::vpmovmskb(dst, src);
+  Assembler::vpmovmskb(dst, src, vector_len);
 }
 
 void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
@@ -3242,6 +3229,16 @@ void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, 
 void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
   assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpmullw(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpmulld(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg) {
+  assert((UseAVX > 0), "AVX support is needed");
+  if (reachable(src)) {
+    Assembler::vpmulld(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(scratch_reg, src);
+    Assembler::vpmulld(dst, nds, Address(scratch_reg, 0), vector_len);
+  }
 }
 
 void MacroAssembler::vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
@@ -4559,15 +4556,6 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Ad
   } else {
     bs->store_at(this, decorators, type, dst, src, tmp1, tmp2);
   }
-}
-
-void MacroAssembler::resolve(DecoratorSet decorators, Register obj) {
-  // Use stronger ACCESS_WRITE|ACCESS_READ by default.
-  if ((decorators & (ACCESS_READ | ACCESS_WRITE)) == 0) {
-    decorators |= ACCESS_READ | ACCESS_WRITE;
-  }
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  return bs->resolve(this, decorators, obj);
 }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,

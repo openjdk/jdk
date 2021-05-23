@@ -69,6 +69,7 @@ import static com.sun.source.doctree.DocTree.Kind.EXCEPTION;
 import static com.sun.source.doctree.DocTree.Kind.HIDDEN;
 import static com.sun.source.doctree.DocTree.Kind.LINK;
 import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
+import static com.sun.source.doctree.DocTree.Kind.PARAM;
 import static com.sun.source.doctree.DocTree.Kind.PROVIDES;
 import static com.sun.source.doctree.DocTree.Kind.SEE;
 import static com.sun.source.doctree.DocTree.Kind.SERIAL;
@@ -352,7 +353,6 @@ public class TagletManager {
      * @param trees the trees containing the comments
      * @param inlineTrees true if the trees are inline and false otherwise
      */
-    @SuppressWarnings("preview")
     public void checkTags(Element element, Iterable<? extends DocTree> trees, boolean inlineTrees) {
         if (trees == null) {
             return;
@@ -594,6 +594,7 @@ public class TagletManager {
         // init the serialized form tags for the serialized form page
         serializedFormTags = new ArrayList<>();
         serializedFormTags.add(allTaglets.get(SERIAL_DATA.tagName));
+        serializedFormTags.add(allTaglets.get(PARAM.tagName));
         serializedFormTags.add(allTaglets.get(THROWS.tagName));
         if (!nosince)
             serializedFormTags.add(allTaglets.get(SINCE.tagName));

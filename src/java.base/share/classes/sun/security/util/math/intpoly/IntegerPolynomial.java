@@ -777,7 +777,7 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
 
     }
 
-    class Limb implements SmallValue {
+    static class Limb implements SmallValue {
         int value;
 
         Limb(int value) {

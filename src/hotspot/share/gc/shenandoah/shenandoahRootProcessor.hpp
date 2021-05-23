@@ -96,29 +96,6 @@ public:
   void threads_do(ThreadClosure* tc, uint worker_id);
 };
 
-class ShenandoahStringDedupRoots {
-private:
-  ShenandoahPhaseTimings::Phase _phase;
-public:
-  ShenandoahStringDedupRoots(ShenandoahPhaseTimings::Phase phase);
-  ~ShenandoahStringDedupRoots();
-
-  void oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
-};
-
-class ShenandoahConcurrentStringDedupRoots {
-private:
-  ShenandoahPhaseTimings::Phase _phase;
-
-public:
-  ShenandoahConcurrentStringDedupRoots(ShenandoahPhaseTimings::Phase phase);
-
-  void prologue();
-  void epilogue();
-
-  void oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
-};
-
 class ShenandoahCodeCacheRoots {
 private:
   ShenandoahPhaseTimings::Phase _phase;
@@ -191,7 +168,6 @@ private:
                                   _cld_roots;
   ShenandoahVMRoots<false /*concurrent*/>
                                   _vm_roots;
-  ShenandoahStringDedupRoots      _dedup_roots;
   const bool                      _unload_classes;
 public:
   ShenandoahSTWRootScanner(ShenandoahPhaseTimings::Phase phase);
@@ -228,12 +204,10 @@ private:
   ShenandoahClassLoaderDataRoots<false /*concurrent*/, true /*single threaded*/>
                                                            _cld_roots;
   ShenandoahVMWeakRoots<false /*concurrent*/>              _weak_roots;
-  ShenandoahConcurrentStringDedupRoots                     _dedup_roots;
   ShenandoahCodeCacheRoots                                 _code_roots;
 
 public:
   ShenandoahHeapIterationRootScanner();
-  ~ShenandoahHeapIterationRootScanner();
 
   void roots_do(OopClosure* cl);
 };
@@ -246,7 +220,6 @@ private:
                                                             _cld_roots;
   ShenandoahThreadRoots                                     _thread_roots;
   ShenandoahVMWeakRoots<false /*concurrent*/>               _weak_roots;
-  ShenandoahStringDedupRoots                                _dedup_roots;
   ShenandoahCodeCacheRoots                                  _code_roots;
 
 public:
@@ -264,7 +237,6 @@ private:
                                                             _cld_roots;
   ShenandoahThreadRoots                                     _thread_roots;
   ShenandoahVMWeakRoots<false /*concurrent*/>               _weak_roots;
-  ShenandoahStringDedupRoots                                _dedup_roots;
   ShenandoahCodeCacheRoots                                  _code_roots;
 
 public:
