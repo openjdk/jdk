@@ -309,8 +309,8 @@ public class JavacParser implements Parser {
 
     @SuppressWarnings("unchecked")
     protected boolean peekToken(int lookahead, Predicate<TokenKind>... kinds) {
-        for (; lookahead < kinds.length ; lookahead++) {
-            if (!kinds[lookahead].test(S.token(lookahead + 1).kind)) {
+        for (Predicate<TokenKind> kind : kinds) {
+            if (!kind.test(S.token(++lookahead).kind)) {
                 return false;
             }
         }
