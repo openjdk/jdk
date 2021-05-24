@@ -1771,9 +1771,9 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out) {
       const markWord mark = mid->header();
       ResourceMark rm;
       out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(mid),
-                 mid->is_busy() != 0, mark.hash() != 0, mid->owner() != NULL,
+                 mid->is_busy(), mark.hash() != 0, mid->owner() != NULL,
                  p2i(obj), obj == NULL ? "" : obj->klass()->external_name());
-      if (mid->is_busy() != 0) {
+      if (mid->is_busy()) {
         out->print(" (%s)", mid->is_busy_to_string(&ss));
         ss.reset();
       }

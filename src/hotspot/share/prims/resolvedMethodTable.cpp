@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -53,7 +54,8 @@ static const size_t GROW_HINT = 32;
 static const size_t ResolvedMethodTableSizeLog = 10;
 
 unsigned int method_hash(const Method* method) {
-  unsigned int hash = method->klass_name()->identity_hash();
+  unsigned int hash = method->method_holder()->class_loader_data()->identity_hash();
+  hash = (hash * 31) ^ method->klass_name()->identity_hash();
   hash = (hash * 31) ^ method->name()->identity_hash();
   hash = (hash * 31) ^ method->signature()->identity_hash();
   return hash;
