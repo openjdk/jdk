@@ -197,7 +197,8 @@ public interface JavaShellToolBuilder {
      * following the specific terminal connected to {@code System.in}.
      *
      * @implSpec If this method is not called, the behavior should be
-     * equivalent to calling {@code interactiveTerminal(false)}.
+     * equivalent to calling {@code interactiveTerminal(false)}. The default implementation of
+     * this method returns {@code this}.
      *
      * @param terminal if {@code true}, an terminal that can interpret the ANSI escape codes is
      *                 assumed to interpret the output. If {@code false}, a simpler output is selected.
