@@ -140,8 +140,8 @@ public class Start {
         this.locale = Locale.getDefault();
 
         Log log = context.get(Log.logKey);
-        if (log instanceof Messager) {
-            messager = (Messager) log;
+        if (log instanceof Messager m){
+            messager = m;
         } else {
             PrintWriter out = context.get(Log.errKey);
             messager = (out == null)
@@ -360,8 +360,8 @@ public class Start {
         if (fileManager == null) {
             JavacFileManager.preRegister(context);
             fileManager = context.get(JavaFileManager.class);
-            if (fileManager instanceof BaseFileManager) {
-                ((BaseFileManager) fileManager).autoClose = true;
+            if (fileManager instanceof BaseFileManager bfm) {
+                bfm.autoClose = true;
             }
         }
 
@@ -435,9 +435,8 @@ public class Start {
             reportInternalError(ee);
             result = ABNORMAL;
         } finally {
-            if (fileManager != null
-                    && fileManager instanceof BaseFileManager
-                    && ((BaseFileManager) fileManager).autoClose) {
+            if (fileManager instanceof BaseFileManager bfm
+                    && bfm.autoClose) {
                 try {
                     fileManager.close();
                 } catch (IOException ignore) {}
@@ -520,8 +519,8 @@ public class Start {
             return CMDERR;
         }
 
-        if (fileManager instanceof BaseFileManager) {
-            ((BaseFileManager) fileManager).handleOptions(options.fileManagerOptions());
+        if (fileManager instanceof BaseFileManager bfm) {
+            bfm.handleOptions(options.fileManagerOptions());
         }
 
         String mr = com.sun.tools.javac.main.Option.MULTIRELEASE.primaryName;

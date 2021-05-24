@@ -30,7 +30,7 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestSymmCiphersNoPad
- * @run main/othervm TestSymmCiphersNoPad sm
+ * @run main/othervm -Djava.security.manager=allow TestSymmCiphersNoPad sm
  */
 
 import java.io.ByteArrayInputStream;

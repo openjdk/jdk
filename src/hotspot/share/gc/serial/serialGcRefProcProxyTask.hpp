@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @bug 8225056
- * @compile --enable-preview -source ${jdk.version} AbstractSealedTest.java
- * @run main/othervm --enable-preview AbstractSealedTest
- */
+#ifndef SHARE_GC_SERIAL_SERIALGCREFPROCPROXYTASK_HPP
+#define SHARE_GC_SERIAL_SERIALGCREFPROCPROXYTASK_HPP
 
-// Test that a sealed class can be abstract
-public class AbstractSealedTest {
+#include "gc/shared/referenceProcessor.hpp"
 
-    abstract sealed class AbstractShape permits Circle {
-        abstract void draw();
-    }
+class SerialGCRefProcProxyTask : public RefProcProxyTask {
+  BoolObjectClosure& _is_alive;
+  OopClosure& _keep_alive;
+  VoidClosure& _complete_gc;
 
-    final class Circle extends AbstractShape {
-        void draw() {}
-    }
+public:
+  SerialGCRefProcProxyTask(BoolObjectClosure& is_alive, OopClosure& keep_alive, VoidClosure& complete_gc)
+    : RefProcProxyTask("SerialGCRefProcProxyTask", 1),
+      _is_alive(is_alive),
+      _keep_alive(keep_alive),
+      _complete_gc(complete_gc) {}
 
-    Circle circle = new Circle();
+  void work(uint worker_id) override {
+    assert(worker_id < _max_workers, "sanity");
+    _rp_task->rp_work(worker_id, &_is_alive, &_keep_alive, &_complete_gc);
+  }
+};
 
-    public static void main(String... args) { }
-}
+#endif /* SHARE_GC_SERIAL_SERIALGCREFPROCPROXYTASK_HPP */

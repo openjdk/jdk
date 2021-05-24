@@ -364,7 +364,6 @@ public class TagletManager {
      * @param trees the trees containing the comments
      * @param inlineTrees true if the trees are inline and false otherwise
      */
-    @SuppressWarnings("preview")
     public void checkTags(Element element, Iterable<? extends DocTree> trees, boolean inlineTrees) {
         if (trees == null) {
             return;
@@ -763,7 +762,7 @@ public class TagletManager {
                     + format(t.inMethod(), "method") + " "
                     + format(t.inField(), "field") + " "
                     + format(t.isInlineTag(), "inline")+ " "
-                    + format((t instanceof SimpleTaglet) && !((SimpleTaglet) t).enabled, "disabled"));
+                    + format((t instanceof SimpleTaglet st) && !st.enabled, "disabled"));
         });
     }
 

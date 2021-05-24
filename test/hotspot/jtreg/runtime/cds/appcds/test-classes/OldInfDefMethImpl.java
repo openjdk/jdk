@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,8 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-
-/*
- * @test
- * @bug 8225056
- * @compile --enable-preview -source ${jdk.version} SealedTest.java
- * @run main/othervm --enable-preview SealedTest
- */
-
-public class SealedTest {
-
-    sealed class Sealed1 permits Sub1 {}
-
-    final class Sub1 extends Sealed1 {}
-
-    sealed interface SealedI1 permits Sub2 {}
-
-    final class Sub2 extends Sealed2 implements SealedI1 {}
-
-    sealed class Sealed2 permits Sub2 {}
-
-    Sub1 sub1 = new Sub1();
-    Sub2 sub2 = new Sub2();
-
-    public static void main(String... args) {
-        System.out.println("Basic testing of sealed types");
-    }
+public class OldInfDefMethImpl implements OldInfDefMeth {
+    public String SayHello() { return "Hello from OldInfDefMethImpl"; }
 }

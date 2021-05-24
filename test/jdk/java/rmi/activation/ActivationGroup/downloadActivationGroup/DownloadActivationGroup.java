@@ -127,6 +127,7 @@ public class DownloadActivationGroup
             rmid = RMID.createRMIDOnEphemeralPort();
             String execPolicyOption = "-Dsun.rmi.activation.execPolicy=none";
             rmid.addOptions(new String[] { execPolicyOption });
+            rmid.addArguments(new String[] { "-C-Djava.security.manager=allow" });
             rmid.start();
 
             /*

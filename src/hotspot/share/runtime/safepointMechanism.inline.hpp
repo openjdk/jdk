@@ -65,6 +65,16 @@ bool SafepointMechanism::should_process(JavaThread* thread) {
 }
 
 void SafepointMechanism::process_if_requested(JavaThread* thread) {
+
+  // Macos/aarch64 should be in the right state for safepoint (e.g.
+  // deoptimization needs WXWrite).  Crashes caused by the wrong state rarely
+  // happens in practice, making such issues hard to find and reproduce.
+#if defined(ASSERT) && defined(__APPLE__) && defined(AARCH64)
+  if (AssertWXAtThreadSync) {
+    thread->assert_wx_state(WXWrite);
+  }
+#endif
+
   if (local_poll_armed(thread)) {
     process_if_requested_slow(thread);
   }

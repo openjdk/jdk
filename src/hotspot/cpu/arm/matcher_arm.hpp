@@ -139,7 +139,7 @@
   // true means we have fast l2f convers
   // false means that conversion is done by runtime call
   static constexpr bool convL2FSupported(void) {
-      return true;
+      return false;
   }
 
 #endif // CPU_ARM_MATCHER_ARM_HPP
