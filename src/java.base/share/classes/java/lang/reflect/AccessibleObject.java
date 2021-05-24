@@ -522,8 +522,8 @@ public class AccessibleObject implements AnnotatedElement {
      * declaration annotation.
      *
      * @implSpec
-     * The default implementation throws {@code
-     * IllegalStateException}; subclasses should override this method.
+     * The default implementation throws {@link
+     * UnsupportedOperationException}; subclasses should override this method.
      *
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
@@ -551,7 +551,7 @@ public class AccessibleObject implements AnnotatedElement {
      * declaration annotations.
      *
      * @implSpec
-     * The default implementation throws {@code
+     * The default implementation throws {@link
      * UnsupportedOperationException}; subclasses should override this method.
      *
      * @throws NullPointerException {@inheritDoc}
@@ -616,7 +616,7 @@ public class AccessibleObject implements AnnotatedElement {
      * declaration annotations.
      *
      * @implSpec
-     * The default implementation throws {@code
+     * The default implementation throws {@link
      * UnsupportedOperationException}; subclasses should override this method.
      *
      * @since 1.5
