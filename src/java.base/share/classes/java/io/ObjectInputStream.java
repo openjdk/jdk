@@ -45,7 +45,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.BinaryOperator;
 
 import static java.io.ObjectStreamClass.processQueue;
 
@@ -392,7 +391,7 @@ public class ObjectInputStream
         handles = new HandleTable(10);
         vlist = new ValidationList();
         streamFilterSet = false;
-        serialFilter = Config.getSerialFilterFactory().apply(null, Config.getSerialFilter());
+        serialFilter = Config.getSerialFilterFactorySingleton().apply(null, Config.getSerialFilter());
         enableOverride = false;
         readStreamHeader();
         bin.setBlockDataMode(true);
@@ -428,7 +427,7 @@ public class ObjectInputStream
         handles = null;
         vlist = null;
         streamFilterSet = false;
-        serialFilter = Config.getSerialFilterFactory().apply(null, Config.getSerialFilter());
+        serialFilter = Config.getSerialFilterFactorySingleton().apply(null, Config.getSerialFilter());
         enableOverride = true;
     }
 
