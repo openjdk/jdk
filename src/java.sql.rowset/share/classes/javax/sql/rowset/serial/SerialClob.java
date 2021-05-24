@@ -361,16 +361,16 @@ public class SerialClob implements Clob, Serializable, Cloneable {
     }
 
     /**
-     * Writes the given Java <code>String</code> to the <code>CLOB</code>
-     * value that this <code>SerialClob</code> object represents, at the position
-     * <code>pos</code>.
+     * Writes the given Java {@code String} to the {@code CLOB}
+     * value that this {@code SerialClob} object represents, at the position
+     * {@code pos}.
      *
-     * @param pos the position at which to start writing to the <code>CLOB</code>
-     *         value that this <code>SerialClob</code> object represents; the first
-     *         position is <code>1</code>; must not be less than <code>1</code> nor
+     * @param pos the position at which to start writing to the {@code CLOB}
+     *         value that this {@code SerialClob} object represents; the first
+     *         position is {@code 1}; must not be less than {@code 1} nor
      *         greater than the length+1 of this {@code SerialClob} object
-     * @param str the string to be written to the <code>CLOB</code>
-     *        value that this <code>SerialClob</code> object represents
+     * @param str the string to be written to the {@code CLOB}
+     *        value that this {@code SerialClob} object represents
      * @return the number of characters written
      * @throws SerialException if there is an error accessing the
      *     {@code CLOB} value; if an invalid position is set;
@@ -381,22 +381,22 @@ public class SerialClob implements Clob, Serializable, Cloneable {
     }
 
     /**
-     * Writes <code>len</code> characters of <code>str</code>, starting
-     * at character <code>offset</code>, to the <code>CLOB</code> value
-     * that this <code>Clob</code> represents.
+     * Writes {@code len} characters of {@code str}, starting
+     * at character {@code offset}, to the {@code CLOB} value
+     * that this {@code Clob} represents.
      *
-     * @param pos the position at which to start writing to the <code>CLOB</code>
-     *         value that this <code>SerialClob</code> object represents; the first
-     *         position is <code>1</code>; must not be less than <code>1</code> nor
+     * @param pos the position at which to start writing to the {@code CLOB}
+     *         value that this {@code SerialClob} object represents; the first
+     *         position is {@code 1}; must not be less than {@code 1} nor
      *         greater than the length+1 of this {@code SerialClob} object
-     * @param str the string to be written to the <code>CLOB</code>
-     *        value that this <code>Clob</code> object represents
-     * @param offset the offset into <code>str</code> to start reading
+     * @param str the string to be written to the {@code CLOB}
+     *        value that this {@code Clob} object represents
+     * @param offset the offset into {@code str} to start reading
      *        the characters to be written
      * @param length the number of characters to be written
      * @return the number of characters written
      * @throws SerialException if there is an error accessing the
-     *     <code>CLOB</code> value; if an invalid position is set; if an
+     *     {@code CLOB} value; if an invalid position is set; if an
      *     invalid offset value is set; or the combined values of the
      *     {@code length} and {@code offset} is greater than the length of
      *     {@code str};

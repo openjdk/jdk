@@ -298,21 +298,21 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
     }
 
     /**
-     * Writes the given array of bytes to the <code>BLOB</code> value that
-     * this <code>Blob</code> object represents, starting at position
-     * <code>pos</code>, and returns the number of bytes written.
+     * Writes the given array of bytes to the {@code BLOB} value that
+     * this {@code Blob} object represents, starting at position
+     * {@code pos}, and returns the number of bytes written.
      *
-     * @param pos the position in the SQL <code>BLOB</code> value at which
-     *     to start writing. The first position is <code>1</code>;
-     *     must not be less than <code>1</code> nor greater than
+     * @param pos the position in the SQL {@code BLOB} value at which
+     *     to start writing. The first position is {@code 1};
+     *     must not be less than {@code 1} nor greater than
      *     the length+1 of this {@code SerialBlob} object.
-     * @param bytes the array of bytes to be written to the <code>BLOB</code>
-     *        value that this <code>Blob</code> object represents
+     * @param bytes the array of bytes to be written to the {@code BLOB}
+     *        value that this {@code Blob} object represents
      * @return the number of bytes written
      * @throws SerialException if there is an error accessing the
      *     {@code BLOB} value; or if an invalid position is set;
      * if {@code free} had previously been called on this object
-     * @throws SQLException if there is an error accessing the <code>BLOB</code>
+     * @throws SQLException if there is an error accessing the {@code BLOB}
      *         value from the database
      * @see #getBytes
      */
@@ -322,33 +322,33 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
     }
 
     /**
-     * Writes all or part of the given <code>byte</code> array to the
-     * <code>BLOB</code> value that this <code>Blob</code> object represents
+     * Writes all or part of the given {@code byte} array to the
+     * {@code BLOB} value that this {@code Blob} object represents
      * and returns the number of bytes written.
-     * Writing starts at position <code>pos</code> in the <code>BLOB</code>
+     * Writing starts at position {@code pos} in the {@code BLOB}
      * value; {@code length} bytes from the given byte array are written.
      *
-     * @param pos the position in the <code>BLOB</code> object at which
-     *     to start writing. The first position is <code>1</code>;
-     *     must not be less than <code>1</code> nor greater than
+     * @param pos the position in the {@code BLOB} object at which
+     *     to start writing. The first position is {@code 1};
+     *     must not be less than {@code 1} nor greater than
      *     the length+1 of this {@code SerialBlob} object.
-     * @param bytes the array of bytes to be written to the <code>BLOB</code>
+     * @param bytes the array of bytes to be written to the {@code BLOB}
      *     value
      * @param offset the offset into the array {@code bytes} at which
      *     to start reading the bytes to be set. The first offset position is
-     *     <code>0</code>; must not be less than <code>0</code> nor greater
+     *     {@code 0}; must not be less than {@code 0} nor greater
      *     than the length of the array {@code bytes}
      * @param length the number of bytes to be written to the
-     *     <code>BLOB</code> value from the array of bytes {@code bytes}
+     *     {@code BLOB} value from the array of bytes {@code bytes}
      *
      * @return the number of bytes written
      * @throws SerialException if there is an error accessing the
-     *     <code>BLOB</code> value; if an invalid position is set; if an
+     *     {@code BLOB} value; if an invalid position is set; if an
      *     invalid offset value is set; or the combined values of the
      *     {@code length} and {@code offset} is greater than the length of
      *     {@code bytes};
      * if {@code free} had previously been called on this object
-     * @throws SQLException if there is an error accessing the <code>BLOB</code>
+     * @throws SQLException if there is an error accessing the {@code BLOB}
      *         value from the database.
      * @see #getBytes
      */
