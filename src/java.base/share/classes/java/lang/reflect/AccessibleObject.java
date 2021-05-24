@@ -530,7 +530,7 @@ public class AccessibleObject implements AnnotatedElement {
      */
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        throw new IllegalStateException("All subclasses should override this method");
+        throw new UnsupportedOperationException("All subclasses should override this method");
     }
 
     /**
@@ -552,14 +552,14 @@ public class AccessibleObject implements AnnotatedElement {
      *
      * @implSpec
      * The default implementation throws {@code
-     * IllegalStateException}; subclasses should override this method.
+     * UnsupportedOperationException}; subclasses should override this method.
      *
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
     @Override
     public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
-        throw new IllegalStateException("All subclasses should override this method");
+        throw new UnsupportedOperationException("All subclasses should override this method");
     }
 
     /**
@@ -617,13 +617,13 @@ public class AccessibleObject implements AnnotatedElement {
      *
      * @implSpec
      * The default implementation throws {@code
-     * IllegalStateException}; subclasses should override this method.
+     * UnsupportedOperationException}; subclasses should override this method.
      *
      * @since 1.5
      */
     @Override
     public Annotation[] getDeclaredAnnotations()  {
-        throw new IllegalStateException("All subclasses should override this method");
+        throw new UnsupportedOperationException("All subclasses should override this method");
     }
 
     // Shared access checking logic.
