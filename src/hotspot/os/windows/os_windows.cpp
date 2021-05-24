@@ -1456,18 +1456,108 @@ static int _print_module(const char* fname, address base_address,
   return 0;
 }
 
+static errno_t convert_to_UTF16(char const* source_str, UINT source_encoding, LPWSTR* dest_utf16_str) {
+  const int flag_source_str_is_null_terminated = -1;
+  const int flag_estimate_chars_count = 0;
+  int utf16_chars_count_estimated = MultiByteToWideChar(source_encoding,
+                                                        MB_ERR_INVALID_CHARS,
+                                                        source_str, flag_source_str_is_null_terminated,
+                                                        NULL, flag_estimate_chars_count);
+  if (utf16_chars_count_estimated == 0) {
+    // Probably source_str contains characters that cannot be represented in the source_encoding given.
+    *dest_utf16_str = NULL;
+    return EINVAL;
+  }
+
+  *dest_utf16_str = NEW_C_HEAP_ARRAY(WCHAR, utf16_chars_count_estimated, mtInternal);
+
+  int utf16_chars_count_real = MultiByteToWideChar(source_encoding,
+                                                   MB_ERR_INVALID_CHARS,
+                                                   source_str, flag_source_str_is_null_terminated,
+                                                   *dest_utf16_str, utf16_chars_count_estimated);
+  assert(utf16_chars_count_real == utf16_chars_count_estimated, "length already checked above");
+
+  return ERROR_SUCCESS;
+}
+
+// Converts a string in the "platform" encoding to UTF16.
+static errno_t convert_to_UTF16(char const* platform_str, LPWSTR* utf16_str) {
+  return convert_to_UTF16(platform_str, CP_ACP, utf16_str);
+}
+
+static errno_t convert_UTF8_to_UTF16(char const* utf8_str, LPWSTR* utf16_str) {
+  return convert_to_UTF16(utf8_str, CP_UTF8, utf16_str);
+}
+
+// Converts a wide-character string in UTF-16 encoding to the 8-bit "platform" encoding.
+// Unless the platform encoding is UTF-8, not all characters in the source string can be represented in the dest string.
+// The function succeeds in this case anyway and just replaces these with a certain character.
+static errno_t convert_UTF16_to_platform(LPWSTR source_utf16_str, char*& dest_str) {
+  const int flag_source_str_is_null_terminated = -1;
+  const int flag_estimate_chars_count = 0;
+  int chars_count_estimated = WideCharToMultiByte(CP_ACP,
+                                                  0,
+                                                  source_utf16_str, flag_source_str_is_null_terminated,
+                                                  NULL, flag_estimate_chars_count, NULL, NULL);
+  if (chars_count_estimated == 0) {
+    dest_str = NULL;
+    return EINVAL;
+  }
+
+  dest_str = NEW_C_HEAP_ARRAY(CHAR, chars_count_estimated, mtInternal);
+
+  int chars_count_real = WideCharToMultiByte(CP_ACP,
+                                             0,
+                                             source_utf16_str, flag_source_str_is_null_terminated,
+                                             dest_str, chars_count_estimated, NULL, NULL);
+  assert(chars_count_real == chars_count_estimated, "length already checked above");
+
+  return ERROR_SUCCESS;
+}
+
+class MemoryReleaserW : public StackObj {
+private:
+  WCHAR* _object_ptr;
+
+public:
+  MemoryReleaserW(WCHAR * object_ptr) : _object_ptr(object_ptr) {}
+  ~MemoryReleaserW() { if (_object_ptr != NULL) FREE_C_HEAP_ARRAY(WCHAR, _object_ptr); }
+};
+
+class MemoryReleaser : public StackObj {
+private:
+  CHAR* _object_ptr;
+
+public:
+  MemoryReleaser(CHAR * object_ptr) : _object_ptr(object_ptr) {}
+  ~MemoryReleaser() { if (_object_ptr != NULL) FREE_C_HEAP_ARRAY(CHAR, _object_ptr); }
+};
+
 // Loads .dll/.so and
 // in case of error it checks if .dll/.so was built for the
 // same architecture as Hotspot is running on
-void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
-  log_info(os)("attempting shared library load of %s", name);
+void * os::dll_load(const char *utf8_name, char *ebuf, int ebuflen) {
+  LPWSTR utf16_name = NULL;
+  errno_t err = convert_UTF8_to_UTF16(utf8_name, &utf16_name);
+  MemoryReleaserW release_utf16_name(utf16_name);
+  if (err != ERROR_SUCCESS) {
+    errno = err;
+    return NULL;
+  }
 
-  void * result = LoadLibrary(name);
+  char* platform_name = NULL; // name of the library converted to the "platform" encoding for use in log messages
+  errno_t ignored_err = convert_UTF16_to_platform(utf16_name, platform_name);
+  MemoryReleaser release_platform_name(platform_name);
+
+  log_info(os)("attempting shared library load of %s", platform_name);
+
+  void * result = LoadLibraryW(utf16_name);
+
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", name);
+    Events::log(NULL, "Loaded shared library %s", platform_name);
     // Recalculate pdb search path if a DLL was loaded successfully.
     SymbolEngine::recalc_search_path();
-    log_info(os)("shared library load of %s was successful", name);
+    log_info(os)("shared library load of %s was successful", platform_name);
     return result;
   }
   DWORD errcode = GetLastError();
@@ -1475,8 +1565,8 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // It may or may not be overwritten below (in the for loop and just above)
   lasterror(ebuf, (size_t) ebuflen);
   ebuf[ebuflen - 1] = '\0';
-  Events::log(NULL, "Loading shared library %s failed, error code %lu", name, errcode);
-  log_info(os)("shared library load of %s failed, error code %lu", name, errcode);
+  Events::log(NULL, "Loading shared library %s failed, error code %lu", platform_name, errcode);
+  log_info(os)("shared library load of %s failed, error code %lu", platform_name, errcode);
 
   if (errcode == ERROR_MOD_NOT_FOUND) {
     strncpy(ebuf, "Can't find dependent libraries", ebuflen - 1);
@@ -1489,7 +1579,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // for an architecture other than Hotspot is running in
   // - then print to buffer "DLL was built for a different architecture"
   // else call os::lasterror to obtain system error message
-  int fd = ::open(name, O_RDONLY | O_BINARY, 0);
+  int fd = ::wopen(utf16_name, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
     return NULL;
   }
@@ -4293,27 +4383,6 @@ static void file_attribute_data_to_stat(struct stat* sbuf, WIN32_FILE_ATTRIBUTE_
   }
 }
 
-static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path) {
-  // Get required buffer size to convert to Unicode
-  int unicode_path_len = MultiByteToWideChar(CP_ACP,
-                                             MB_ERR_INVALID_CHARS,
-                                             char_path, -1,
-                                             NULL, 0);
-  if (unicode_path_len == 0) {
-    return EINVAL;
-  }
-
-  *unicode_path = NEW_C_HEAP_ARRAY(WCHAR, unicode_path_len, mtInternal);
-
-  int result = MultiByteToWideChar(CP_ACP,
-                                   MB_ERR_INVALID_CHARS,
-                                   char_path, -1,
-                                   *unicode_path, unicode_path_len);
-  assert(result == unicode_path_len, "length already checked above");
-
-  return ERROR_SUCCESS;
-}
-
 static errno_t get_full_path(LPCWSTR unicode_path, LPWSTR* full_path) {
   // Get required buffer size to convert to full path. The return
   // value INCLUDES the terminating null character.
@@ -4374,7 +4443,7 @@ static wchar_t* wide_abs_unc_path(char const* path, errno_t & err, int additiona
   set_path_prefix(buf, &prefix, &prefix_off, &needs_fullpath);
 
   LPWSTR unicode_path = NULL;
-  err = convert_to_unicode(buf, &unicode_path);
+  err = convert_to_UTF16(buf, &unicode_path);
   FREE_C_HEAP_ARRAY(char, buf);
   if (err != ERROR_SUCCESS) {
     return NULL;

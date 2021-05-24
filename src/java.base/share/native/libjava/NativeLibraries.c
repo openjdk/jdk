@@ -115,7 +115,6 @@ JNIEXPORT jboolean JNICALL
 Java_jdk_internal_loader_NativeLibraries_load
   (JNIEnv *env, jobject this, jobject lib, jstring name, jboolean isBuiltin, jboolean isJNI)
 {
-    const char *cname;
     jint jniVersion;
     jthrowable cause;
     void * handle;
@@ -124,15 +123,20 @@ Java_jdk_internal_loader_NativeLibraries_load
     if (!initIDs(env))
         return JNI_FALSE;
 
-    cname = JNU_GetStringPlatformChars(env, name, 0);
-    if (cname == 0)
-        return JNI_FALSE;
-    handle = isBuiltin ? procHandle : JVM_LoadLibrary(cname);
+    const int utf8_len    = (*env)->GetStringUTFLength(env, name);
+    const int chars_count = (*env)->GetStringLength(env, name);
+    char * utf8_name = malloc(utf8_len + 1);
+    if (utf8_name == NULL) {
+      JNU_ThrowOutOfMemoryError(env, NULL);
+      return JNI_FALSE;
+    }
+    (*env)->GetStringUTFRegion(env, name, 0, chars_count, utf8_name);
+    handle = isBuiltin ? procHandle : JVM_LoadLibrary(utf8_name);
     if (isJNI) {
         if (handle) {
             JNI_OnLoad_t JNI_OnLoad;
             JNI_OnLoad = (JNI_OnLoad_t)findJniFunction(env, handle,
-                                                       isBuiltin ? cname : NULL,
+                                                       isBuiltin ? utf8_name : NULL,
                                                        JNI_TRUE);
             if (JNI_OnLoad) {
                 JavaVM *jvm;
@@ -157,7 +161,7 @@ Java_jdk_internal_loader_NativeLibraries_load
                 char msg[256];
                 jio_snprintf(msg, sizeof(msg),
                              "unsupported JNI version 0x%08X required by %s",
-                             jniVersion, cname);
+                             jniVersion, utf8_name);
                 JNU_ThrowByName(env, "java/lang/UnsatisfiedLinkError", msg);
                 if (!isBuiltin) {
                     JVM_UnloadLibrary(handle);
@@ -179,7 +183,7 @@ Java_jdk_internal_loader_NativeLibraries_load
     loaded = JNI_TRUE;
 
  done:
-    JNU_ReleaseStringPlatformChars(env, name, cname);
+    free(utf8_name);
     return loaded;
 }
 
