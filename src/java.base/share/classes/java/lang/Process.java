@@ -62,7 +62,7 @@ import java.util.stream.Stream;
  * {@link #getInputStream()}, and
  * {@link #getErrorStream()}.
  * The I/O streams of characters and lines can be written and read using the methods
- * {@link #outputWriter(boolean)}, {@link #outputWriter(boolean, Charset)}},
+ * {@link #outputWriter()}, {@link #outputWriter(Charset)}},
  * {@link #inputReader()}, {@link #inputReader(Charset)},
  * {@link #errorReader()}, and {@link #errorReader(Charset)}.
  * The parent process uses these streams to feed input to and get output
@@ -170,38 +170,51 @@ public abstract class Process {
     public abstract InputStream getErrorStream();
 
     /**
-     * Returns a {@link BufferedReader BufferedReader} connected to the standard output of the process.
-     * The {@code BufferedReader} can be used to read characters, lines, or stream lines of the standard output.
-     * The reader decodes the standard output of this process using the
-     * {@link Charset} named by the {@systemProperty native.encoding} system property.
-     * If the {@code Charset} is not supported, the {@link Charset#defaultCharset()} is used.
+     * Returns a {@link BufferedReader BufferedReader} connected to the standard
+     * output of the process. The {@link Charset} for the native encoding is used
+     * to read characters, lines, or stream lines from standard output.
      *
-     * @return a {@link BufferedReader BufferedReader} using the {@code native.encoding} if supported,
-     *          otherwise, the {@link Charset#defaultCharset()}
+     * <p>This method delegates to {@link #inputReader(Charset)} using the
+     * {@link Charset} named by the {@systemProperty native.encoding}
+     * system property or the {@link Charset#defaultCharset()} if the
+     * {@code native.encoding} is not supported.
+     *
+     * @return a {@link BufferedReader BufferedReader} using the
+     *          {@code native.encoding} if supported, otherwise, the
+     *          {@link Charset#defaultCharset()}
+     * @since 17
      */
     public BufferedReader inputReader() {
-        return new BufferedReader(new InputStreamReader(getInputStream(), CharsetHolder.nativeCharset()));
+        return inputReader(CharsetHolder.nativeCharset());
     }
 
     /**
-     * Returns a {@link BufferedReader BufferedReader} connected to the standard output
-     * of the process using a Charset.
-     * The {@code BufferedReader} can be used to read characters, lines, or stream lines of the standard output.
-     * The reader decodes the standard output of this process using the {@code charset}.
+     * Returns a {@link BufferedReader BufferedReader} connected to the
+     * standard output of this process using a Charset.
+     * The {@code BufferedReader} can be used to read characters, lines,
+     * or stream lines of the standard output.
+     *
+     * <p>Characters are read by an InputStreamReader that reads and decodes bytes
+     * from this process {@link #getInputStream()}. Bytes are decoded to characters
+     * using the {@code charset}; malformed-input and unmappable-character
+     * sequences are replaced with the charset's default replacement.
+     * The BufferedReader reads and buffers characters from the InputStreamReader.
      *
      * <p>If the standard output of the process has been redirected using
      * {@link ProcessBuilder#redirectOutput(Redirect) ProcessBuilder.redirectOutput}
-     * then this method will return a
-     * <a href="ProcessBuilder.html#redirect-output">null input reader</a>.
+     * then the {@code InputStreamReader} will be reading from a
+     * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
      * <p>Otherwise, if the standard error of the process has been redirected using
-     * {@link ProcessBuilder#redirectErrorStream(boolean) ProcessBuilder.redirectErrorStream}
-     * then the input stream returned by this method will receive the
-     * merged standard output and the standard error of the process.
+     * {@link ProcessBuilder#redirectErrorStream(boolean)
+     * ProcessBuilder.redirectErrorStream} then the input reader returned by
+     * this method will receive the merged standard output and the standard error
+     * of the process.
      *
      * @apiNote
-     * Using both {@link #getInputStream} and {@link #inputReader} has unpredictable behavior
-     * since the buffered reader reads ahead from the input stream.
+     * Using both {@link #getInputStream} and {@link #inputReader} has
+     * unpredictable behavior since the buffered reader reads ahead from the
+     * input stream.
      *
      * @implNote
      * This is equivalent to:
@@ -209,41 +222,56 @@ public abstract class Process {
      *     return new BufferedReader(new InputStreamReader(getInputStream(), charset));
      * }
      *
-     * @param charset the {@code Charset} used to convert bytes to characters, not null
+     * @param charset the {@code Charset} used to decode bytes to characters, not null
      * @return a BufferedReader for the standard output of the process using the {@code charset}
+     * @throws NullPointerException if the {@code charset} is {@code null}
+     * @since 17
      */
     public BufferedReader inputReader(Charset charset) {
         return new BufferedReader(new InputStreamReader(getInputStream(), charset));
     }
 
     /**
-     * Returns a {@link BufferedReader BufferedReader} connected to the standard error of the process.
-     * The {@code BufferedReader} can be used to read characters, lines, or stream lines of the error output.
-     * The reader decodes the standard error of this process using the
-     * {@link Charset} named by the {@systemProperty native.encoding} system property.
-     * If the {@code Charset} is not supported, the {@link Charset#defaultCharset()} is used.
+     * Returns a {@link BufferedReader BufferedReader} connected to the standard
+     * error of the process. The {@link Charset} for the native encoding is used
+     * to read characters, lines, or stream lines from standard error.
      *
-     * @return a {@link BufferedReader BufferedReader} using the {@code native.encoding} if supported,
-     *          otherwise, the {@link Charset#defaultCharset()}
+     * <p>This method delegates to {@link #errorReader(Charset)} using the
+     * {@link Charset} named by the {@systemProperty native.encoding}
+     * system property or the {@link Charset#defaultCharset()} if the
+     * {@code native.encoding} is not supported.
+     *
+     * @return a {@link BufferedReader BufferedReader} using the
+     *          {@code native.encoding} if supported, otherwise, the
+     *          {@link Charset#defaultCharset()}
+     * @since 17
      */
     public BufferedReader errorReader() {
-        return new BufferedReader(new InputStreamReader(getErrorStream(), CharsetHolder.nativeCharset()));
+        return errorReader(CharsetHolder.nativeCharset());
     }
 
     /**
-     * Returns a {@link BufferedReader BufferedReader} connected to the standard error of the process using a Charset.
-     * The {@code BufferedReader} can be used to read characters, lines, or stream lines of the error output.
-     * The reader decodes the standard error of this process using the {@code charset}.
+     * Returns a {@link BufferedReader BufferedReader} connected to the
+     * standard error of this process using a Charset.
+     * The {@code BufferedReader} can be used to read characters, lines,
+     * or stream lines of the standard error.
+     *
+     * <p>Characters are read by an InputStreamReader that reads and decodes bytes
+     * from this process {@link #getErrorStream()}. Bytes are decoded to characters
+     * using the {@code charset}; malformed-input and unmappable-character
+     * sequences are replaced with the charset's default replacement.
+     * The BufferedReader reads and buffers characters from the InputStreamReader.
      *
      * <p>If the standard error of the process has been redirected using
      * {@link ProcessBuilder#redirectError(Redirect) ProcessBuilder.redirectError} or
      * {@link ProcessBuilder#redirectErrorStream(boolean) ProcessBuilder.redirectErrorStream}
-     * then this method will return a
-     * <a href="ProcessBuilder.html#redirect-output">null input reader</a>.
+     * then the {@code InputStreamReader} will be reading from a
+     * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
      * @apiNote
-     * Using both {@link #getErrorStream} and {@link #errorReader} has unpredictable behavior
-     * since the buffered reader reads ahead from the input stream.
+     * Using both {@link #getErrorStream} and {@link #errorReader} has
+     * unpredictable behavior since the buffered reader reads ahead from the
+     * error stream.
      *
      * @implNote
      * This is equivalent to:
@@ -251,8 +279,10 @@ public abstract class Process {
      *     return new BufferedReader(new InputStreamReader(getErrorStream(), charset));
      * }
      *
-     * @param charset the {@code Charset} used to convert bytes to characters, not null
+     * @param charset the {@code Charset} used to decode bytes to characters, not null
      * @return a BufferedReader for the standard error of the process using the {@code charset}
+     * @throws NullPointerException if the {@code charset} is {@code null}
+     * @since 17
      */
     public BufferedReader errorReader(Charset charset) {
         return new BufferedReader(new InputStreamReader(getErrorStream(), charset));
@@ -286,6 +316,7 @@ public abstract class Process {
      *
      * @return a BufferedWriter to the standard input of the process using the charset
      *          for the {@code native.encoding} system property
+     * @since 17
      */
     public BufferedWriter outputWriter() {
         return outputWriter(CharsetHolder.nativeCharset());
@@ -316,8 +347,10 @@ public abstract class Process {
      * Output to the BufferedWriter may be held in the buffer until
      * {@linkplain BufferedWriter#flush flush} is called.
      *
-     * @param charset the {@code Charset} to encode characters to bytes
+     * @param charset the {@code Charset} to encode characters to bytes, not null
      * @return a BufferedWriter to the standard input of the process using the {@code charset}
+     * @throws NullPointerException if the {@code charset} is {@code null}
+     * @since 17
      */
     public BufferedWriter outputWriter(Charset charset) {
         return new BufferedWriter(new OutputStreamWriter(getOutputStream(), charset));

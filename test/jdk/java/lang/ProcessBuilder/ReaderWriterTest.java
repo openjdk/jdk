@@ -33,9 +33,12 @@ import jdk.test.lib.hexdump.HexPrinter;
 import jdk.test.lib.hexdump.HexPrinter.Formatters;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.nio.file.Files;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.List;
@@ -93,6 +96,70 @@ public class ReaderWriterTest {
     }
 
     /**
+     * Test that redirects of input and error streams result in Readers that are empty.
+     * Test that when the output to a process is redirected, the writer acts as
+     * a null stream and throws an exception as expected for a null output stream
+     * as specified by ProcessBuilder.
+     */
+    @Test
+    void testRedirects() throws IOException {
+        String nativeEncoding = System.getProperty("native.encoding");
+        Charset cs = Charset.forName(nativeEncoding);
+        System.out.println("Native.encoding Charset: " + cs);
+
+        Path inPath = Path.of("InFile.tmp");
+        BufferedWriter inWriter = Files.newBufferedWriter(inPath);
+        inWriter.close();
+
+        Path outPath = Path.of("OutFile.tmp");
+        Path errorPath = Path.of("ErrFile.tmp");
+
+        for (int errType = 1; errType < 4; errType++) {
+            // Three cases to test for which the error stream is empty
+            // 1: redirectErrorStream(false); redirect of errorOutput to a file
+            // 2: redirectErrorStream(true); no redirect of errorOutput
+            // 3: redirectErrorStream(true); redirect of errorOutput to a file
+
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("ReaderWriterTest$ChildWithCharset");
+            pb.redirectInput(inPath.toFile());
+            pb.redirectOutput(outPath.toFile());
+            if (errType == 1 || errType == 3) {
+                pb.redirectError(errorPath.toFile());
+            }
+            if (errType == 2 || errType == 3) {
+                pb.redirectErrorStream(true);
+            }
+            Process p = pb.start();
+            // Output has been redirected to a null stream; success is IOException on the write
+            try {
+                BufferedWriter wr = p.outputWriter();
+                wr.write("X");
+                wr.flush();
+                Assert.fail("writing to null stream should throw IOException");
+            } catch (IOException ioe) {
+                // Normal, A Null output stream is closed when created.
+            }
+
+            // InputReader should be empty; and at EOF
+            BufferedReader inputReader = p.inputReader();
+            int ch = inputReader.read();
+            Assert.assertEquals(ch, -1, "inputReader not at EOF: ch: " + (char)ch);
+
+            // InputReader should be empty; and at EOF
+            BufferedReader errorReader = p.errorReader();
+            ch = errorReader.read();
+            Assert.assertEquals(ch, -1, "errorReader not at EOF: ch: " + (char)ch);
+
+            try {
+                int exitValue = p.waitFor();
+                if (exitValue != 0) System.out.println("exitValue: " + exitValue);
+            } catch (InterruptedException ie) {
+                Assert.fail("waitFor interrupted");
+            }
+        }
+    }
+
+    /**
      * Write the test characters to the child using the Process.outputWriter.
      * @param writer the Writer
      * @throws IOException if an I/O error occurs
@@ -110,16 +177,16 @@ public class ReaderWriterTest {
      * A Process is spawned; characters are written to and read from the child
      * using the character set and compared.
      *
-     * @param nativeEncoding a charset name
+     * @param encoding a charset name
      */
     @Test(dataProvider = "CharsetCases", enabled = true)
-    void testCase(String nativeEncoding) throws IOException {
+    void testCase(String encoding) throws IOException {
         Charset cs = null;
         try {
-            cs = Charset.forName(nativeEncoding);
+            cs = Charset.forName(encoding);
             System.out.println("Charset: " + cs);
         } catch (UnsupportedCharsetException use) {
-            throw new SkippedException("Charset not supported: " + nativeEncoding);
+            throw new SkippedException("Charset not supported: " + encoding);
         }
         String cleanCSName = cleanCharsetName(cs);
 
@@ -139,6 +206,42 @@ public class ReaderWriterTest {
                 System.out.println("exitValue: " + exitValue);
         } catch (InterruptedException ie) {
 
+        }
+    }
+
+
+    @Test
+    void testNullCharsets()  throws IOException {
+        // Launch a child; its behavior is not interesting and is ignored
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "ReaderWriterTest$ChildWithCharset");
+
+        Process p = pb.start();
+        try {
+            writeTestChars(p.outputWriter(null));
+            Assert.fail("Process.outputWriter(null) did not throw NPE");
+        } catch (NullPointerException npe) {
+            // expected, ignore
+        }
+        try {
+            checkReader(p.inputReader(null), null, "Out");
+            Assert.fail("Process.inputReader(null) did not throw NPE");
+        } catch (NullPointerException npe) {
+            // expected, ignore
+        }
+        try {
+            checkReader(p.errorReader(null), null, "Err");
+            Assert.fail("Process.errorReader(null) did not throw NPE");
+        } catch (NullPointerException npe) {
+            // expected, ignore
+        }
+
+        p.destroyForcibly();
+        try {
+            // Collect the exit status to cleanup after the process; but ignore it
+            p.waitFor();
+        } catch (InterruptedException ie) {
+            // Ignored
         }
     }
 
