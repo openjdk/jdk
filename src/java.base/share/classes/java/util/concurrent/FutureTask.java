@@ -493,25 +493,17 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * @return a string representation of this FutureTask
      */
     public String toString() {
-        final String status;
-        switch (state) {
-        case NORMAL:
-            status = "[Completed normally]";
-            break;
-        case EXCEPTIONAL:
-            status = "[Completed exceptionally: " + outcome + "]";
-            break;
-        case CANCELLED:
-        case INTERRUPTING:
-        case INTERRUPTED:
-            status = "[Cancelled]";
-            break;
-        default:
-            final Callable<?> callable = this.callable;
-            status = (callable == null)
-                ? "[Not completed]"
-                : "[Not completed, task = " + callable + "]";
-        }
+        final String status = switch (state) {
+            case NORMAL -> "[Completed normally]";
+            case EXCEPTIONAL -> "[Completed exceptionally: " + outcome + "]";
+            case CANCELLED, INTERRUPTING, INTERRUPTED -> "[Cancelled]";
+            default -> {
+                final Callable<?> callable = this.callable;
+                yield (callable == null)
+                    ? "[Not completed]"
+                    : "[Not completed, task = " + callable + "]";
+            }
+        };
         return super.toString() + status;
     }
 

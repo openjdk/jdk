@@ -183,13 +183,13 @@ public enum TimeUnit {
      * or {@code Long.MAX_VALUE} if it would positively overflow.
      */
     public long convert(long sourceDuration, TimeUnit sourceUnit) {
-        switch (this) {
-        case NANOSECONDS:  return sourceUnit.toNanos(sourceDuration);
-        case MICROSECONDS: return sourceUnit.toMicros(sourceDuration);
-        case MILLISECONDS: return sourceUnit.toMillis(sourceDuration);
-        case SECONDS:      return sourceUnit.toSeconds(sourceDuration);
-        default: return cvt(sourceDuration, scale, sourceUnit.scale);
-        }
+        return switch (this) {
+            case NANOSECONDS -> sourceUnit.toNanos(sourceDuration);
+            case MICROSECONDS -> sourceUnit.toMicros(sourceDuration);
+            case MILLISECONDS -> sourceUnit.toMillis(sourceDuration);
+            case SECONDS -> sourceUnit.toSeconds(sourceDuration);
+            default -> cvt(sourceDuration, scale, sourceUnit.scale);
+        };
     }
 
     /**
@@ -454,16 +454,15 @@ public enum TimeUnit {
      * @since 9
      */
     public ChronoUnit toChronoUnit() {
-        switch (this) {
-        case NANOSECONDS:  return ChronoUnit.NANOS;
-        case MICROSECONDS: return ChronoUnit.MICROS;
-        case MILLISECONDS: return ChronoUnit.MILLIS;
-        case SECONDS:      return ChronoUnit.SECONDS;
-        case MINUTES:      return ChronoUnit.MINUTES;
-        case HOURS:        return ChronoUnit.HOURS;
-        case DAYS:         return ChronoUnit.DAYS;
-        default: throw new AssertionError();
-        }
+        return switch (this) {
+            case NANOSECONDS -> ChronoUnit.NANOS;
+            case MICROSECONDS -> ChronoUnit.MICROS;
+            case MILLISECONDS -> ChronoUnit.MILLIS;
+            case SECONDS -> ChronoUnit.SECONDS;
+            case MINUTES -> ChronoUnit.MINUTES;
+            case HOURS -> ChronoUnit.HOURS;
+            case DAYS -> ChronoUnit.DAYS;
+        };
     }
 
     /**
@@ -477,18 +476,16 @@ public enum TimeUnit {
      * @since 9
      */
     public static TimeUnit of(ChronoUnit chronoUnit) {
-        switch (Objects.requireNonNull(chronoUnit, "chronoUnit")) {
-        case NANOS:   return TimeUnit.NANOSECONDS;
-        case MICROS:  return TimeUnit.MICROSECONDS;
-        case MILLIS:  return TimeUnit.MILLISECONDS;
-        case SECONDS: return TimeUnit.SECONDS;
-        case MINUTES: return TimeUnit.MINUTES;
-        case HOURS:   return TimeUnit.HOURS;
-        case DAYS:    return TimeUnit.DAYS;
-        default:
-            throw new IllegalArgumentException(
-                "No TimeUnit equivalent for " + chronoUnit);
-        }
+        return switch (Objects.requireNonNull(chronoUnit, "chronoUnit")) {
+            case NANOS -> TimeUnit.NANOSECONDS;
+            case MICROS -> TimeUnit.MICROSECONDS;
+            case MILLIS -> TimeUnit.MILLISECONDS;
+            case SECONDS -> TimeUnit.SECONDS;
+            case MINUTES -> TimeUnit.MINUTES;
+            case HOURS -> TimeUnit.HOURS;
+            case DAYS -> TimeUnit.DAYS;
+            default -> throw new IllegalArgumentException("No TimeUnit equivalent for " + chronoUnit);
+        };
     }
 
 }

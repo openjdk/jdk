@@ -81,11 +81,11 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     private final ZipCoder zc;
 
     private static int version(ZipEntry e) throws ZipException {
-        switch (e.method) {
-        case DEFLATED: return 20;
-        case STORED:   return 10;
-        default: throw new ZipException("unsupported compression method");
-        }
+        return switch (e.method) {
+            case DEFLATED -> 20;
+            case STORED -> 10;
+            default -> throw new ZipException("unsupported compression method");
+        };
     }
 
     /**
@@ -258,54 +258,53 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         if (current != null) {
             ZipEntry e = current.entry;
             switch (e.method) {
-            case DEFLATED:
-                def.finish();
-                while (!def.finished()) {
-                    deflate();
+                case DEFLATED -> {
+                    def.finish();
+                    while (!def.finished()) {
+                        deflate();
+                    }
+                    if ((e.flag & 8) == 0) {
+                        // verify size, compressed size, and crc-32 settings
+                        if (e.size != def.getBytesRead()) {
+                            throw new ZipException(
+                                "invalid entry size (expected " + e.size +
+                                " but got " + def.getBytesRead() + " bytes)");
+                        }
+                        if (e.csize != def.getBytesWritten()) {
+                            throw new ZipException(
+                                "invalid entry compressed size (expected " +
+                                e.csize + " but got " + def.getBytesWritten() + " bytes)");
+                        }
+                        if (e.crc != crc.getValue()) {
+                            throw new ZipException(
+                                "invalid entry CRC-32 (expected 0x" +
+                                Long.toHexString(e.crc) + " but got 0x" +
+                                Long.toHexString(crc.getValue()) + ")");
+                        }
+                    } else {
+                        e.size = def.getBytesRead();
+                        e.csize = def.getBytesWritten();
+                        e.crc = crc.getValue();
+                        writeEXT(e);
+                    }
+                    def.reset();
+                    written += e.csize;
                 }
-                if ((e.flag & 8) == 0) {
-                    // verify size, compressed size, and crc-32 settings
-                    if (e.size != def.getBytesRead()) {
+                case STORED -> {
+                    // we already know that both e.size and e.csize are the same
+                    if (e.size != written - locoff) {
                         throw new ZipException(
                             "invalid entry size (expected " + e.size +
-                            " but got " + def.getBytesRead() + " bytes)");
-                    }
-                    if (e.csize != def.getBytesWritten()) {
-                        throw new ZipException(
-                            "invalid entry compressed size (expected " +
-                            e.csize + " but got " + def.getBytesWritten() + " bytes)");
+                            " but got " + (written - locoff) + " bytes)");
                     }
                     if (e.crc != crc.getValue()) {
                         throw new ZipException(
-                            "invalid entry CRC-32 (expected 0x" +
+                            "invalid entry crc-32 (expected 0x" +
                             Long.toHexString(e.crc) + " but got 0x" +
                             Long.toHexString(crc.getValue()) + ")");
                     }
-                } else {
-                    e.size  = def.getBytesRead();
-                    e.csize = def.getBytesWritten();
-                    e.crc = crc.getValue();
-                    writeEXT(e);
                 }
-                def.reset();
-                written += e.csize;
-                break;
-            case STORED:
-                // we already know that both e.size and e.csize are the same
-                if (e.size != written - locoff) {
-                    throw new ZipException(
-                        "invalid entry size (expected " + e.size +
-                        " but got " + (written - locoff) + " bytes)");
-                }
-                if (e.crc != crc.getValue()) {
-                    throw new ZipException(
-                         "invalid entry crc-32 (expected 0x" +
-                         Long.toHexString(e.crc) + " but got 0x" +
-                         Long.toHexString(crc.getValue()) + ")");
-                }
-                break;
-            default:
-                throw new ZipException("invalid compression method");
+                default -> throw new ZipException("invalid compression method");
             }
             crc.reset();
             current = null;
@@ -336,19 +335,16 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         }
         ZipEntry entry = current.entry;
         switch (entry.method) {
-        case DEFLATED:
-            super.write(b, off, len);
-            break;
-        case STORED:
-            written += len;
-            if (written - locoff > entry.size) {
-                throw new ZipException(
-                    "attempt to write past end of STORED entry");
+            case DEFLATED -> super.write(b, off, len);
+            case STORED -> {
+                written += len;
+                if (written - locoff > entry.size) {
+                    throw new ZipException(
+                        "attempt to write past end of STORED entry");
+                }
+                out.write(b, off, len);
             }
-            out.write(b, off, len);
-            break;
-        default:
-            throw new ZipException("invalid compression method");
+            default -> throw new ZipException("invalid compression method");
         }
         crc.update(b, off, len);
     }
