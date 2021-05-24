@@ -133,7 +133,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));       \
   ThreadInVMfromNative __tiv(thread);                             \
   HandleMarkCleaner __hm(thread);                                 \
-  Thread* THREAD = thread;                                        \
+  JavaThread* THREAD = thread;                                        \
   debug_only(VMNativeEntryWrapper __vew;)
 
 // Native method block that transitions current thread to '_thread_in_vm'.
@@ -827,7 +827,11 @@ C2V_END
 C2V_VMENTRY_0(jboolean, hasFinalizableSubclass,(JNIEnv* env, jobject, jobject jvmci_type))
   Klass* klass = JVMCIENV->asKlass(jvmci_type);
   assert(klass != NULL, "method must not be called for primitive types");
-  return Dependencies::find_finalizable_subclass(klass) != NULL;
+  if (!klass->is_instance_klass()) {
+    return false;
+  }
+  InstanceKlass* iklass = InstanceKlass::cast(klass);
+  return Dependencies::find_finalizable_subclass(iklass) != NULL;
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, getClassInitializer, (JNIEnv* env, jobject, jobject jvmci_type))
@@ -1567,14 +1571,6 @@ C2V_END
 
 C2V_VMENTRY_0(jlong, getFingerprint, (JNIEnv* env, jobject, jlong metaspace_klass))
   JVMCI_THROW_MSG_0(InternalError, "unimplemented");
-C2V_END
-
-C2V_VMENTRY_NULL(jobject, getHostClass, (JNIEnv* env, jobject, jobject jvmci_type))
-  InstanceKlass* k = InstanceKlass::cast(JVMCIENV->asKlass(jvmci_type));
-  InstanceKlass* host = k->unsafe_anonymous_host();
-  JVMCIKlassHandle handle(THREAD, host);
-  JVMCIObject result = JVMCIENV->get_jvmci_type(handle, JVMCI_CHECK_NULL);
-  return JVMCIENV->get_jobject(result);
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, getInterfaces, (JNIEnv* env, jobject, jobject jvmci_type))
@@ -2673,7 +2669,6 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "flushDebugOutput",                             CC "()V",                                                                             FN_PTR(flushDebugOutput)},
   {CC "methodDataProfileDataSize",                    CC "(JI)I",                                                                           FN_PTR(methodDataProfileDataSize)},
   {CC "getFingerprint",                               CC "(J)J",                                                                            FN_PTR(getFingerprint)},
-  {CC "getHostClass",                                 CC "(" HS_RESOLVED_KLASS ")" HS_RESOLVED_KLASS,                                       FN_PTR(getHostClass)},
   {CC "interpreterFrameSize",                         CC "(" BYTECODE_FRAME ")I",                                                           FN_PTR(interpreterFrameSize)},
   {CC "compileToBytecode",                            CC "(" OBJECTCONSTANT ")V",                                                           FN_PTR(compileToBytecode)},
   {CC "getFlagValue",                                 CC "(" STRING ")" OBJECT,                                                             FN_PTR(getFlagValue)},

@@ -77,7 +77,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
-                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a><wbr>(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -98,7 +98,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
-                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a><wbr>(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -149,7 +149,7 @@ public class TestRecordTypes extends JavadocTester {
                     <dd><code><span id="param-r1">r1</span></code> - This is a component.</dd>
                     </dl>""",
                 """
-                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a><wbr>(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -182,7 +182,7 @@ public class TestRecordTypes extends JavadocTester {
                     <dd><code><span id="param-r1">r1</span></code> - This is a component.</dd>
                     </dl>""",
                 """
-                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a>&#8203;(int&nbsp;r1)</code>""");
+                    <code><a href="#%3Cinit%3E(int)" class="member-name-link">R</a><wbr>(int&nbsp;r1)</code>""");
     }
 
     @Test
@@ -484,7 +484,7 @@ public class TestRecordTypes extends JavadocTester {
                             /span>&nbsp;<span class="element-name">i</span></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="element-name">R</span>&#8203;<span class="parameters">("""
+                    lass="element-name">R</span><wbr><span class="parameters">("""
                         + pAnno
                         + "int&nbsp;i)</span></div>",
                 "<div class=\"member-signature\">"

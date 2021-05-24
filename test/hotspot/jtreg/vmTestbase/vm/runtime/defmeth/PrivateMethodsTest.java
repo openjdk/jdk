@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@ package vm.runtime.defmeth;
 
 import nsk.share.test.TestBase;
 import vm.runtime.defmeth.shared.DefMethTest;
-import vm.runtime.defmeth.shared.annotation.Crash;
-import vm.runtime.defmeth.shared.annotation.KnownFailure;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
 import vm.runtime.defmeth.shared.data.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke.*;
@@ -60,10 +58,6 @@ public class PrivateMethodsTest extends DefMethTest {
     //   the private interface method privateM(). It is the latter call we are
     //   really testing, but it is the call of the default method that occurs
     //   via reflection.
-    //   In private cases reflection triggers a NoSuchMethodException instead of the
-    //   expected IllegalAccessError. This indicates it is getDeclaredMethod() that is
-    //   failing rather than the actual invoke(). Which in turn suggests the wrong class
-    //   is being used, or that getMethod() is being used instead of getDeclaredMethod().
 
     /*
      * testPrivateInvokeVirtual
@@ -336,7 +330,6 @@ public class PrivateMethodsTest extends DefMethTest {
      * class C implements I {}
      *
      * TEST: { I o = new C(); o.m()I throws IllegalAccessError; }
-     *                 -mode reflect throws NoSuchMethodException
      * TEST: { C o = new C(); o.m()I throws NoSuchMethodError; }
      */
     public void testPrivate() {
@@ -349,15 +342,8 @@ public class PrivateMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        Class expectedClass;
-        if (factory.getExecutionMode().equals("REFLECTION")) {
-            expectedClass = NoSuchMethodException.class;
-        } else {
-            expectedClass = IllegalAccessError.class;
-        }
-
-        b.test().callSite(I, C, "m", "()I").throws_(expectedClass).done()
-         .test().callSite(C, C, "m", "()I").throws_(NoSuchMethodError.class).done()
+        b.test().privateCallSite(I, C, "m", "()I").throws_(IllegalAccessError.class).done()
+         .test().       callSite(C, C, "m", "()I").throws_(NoSuchMethodError.class).done()
 
         .run();
     }
@@ -373,7 +359,6 @@ public class PrivateMethodsTest extends DefMethTest {
      * }
      *
      * TEST: { I o = new C(); o.m()I  == IllegalAccessError; }
-     *                 -mode reflect throws NoSuchMethodException
      * TEST: { C o = new C(); o.m()I  == 2; }
      */
     public void testPrivateVsConcrete() {
@@ -388,15 +373,8 @@ public class PrivateMethodsTest extends DefMethTest {
                 .concreteMethod("m", "()I").returns(2).build()
             .build();
 
-        Class expectedClass;
-        if (factory.getExecutionMode().equals("REFLECTION")) {
-            expectedClass = NoSuchMethodException.class;
-        } else {
-            expectedClass = IllegalAccessError.class;
-        }
-
-        b.test().callSite(I, C, "m", "()I").throws_(expectedClass).done()
-         .test().callSite(C, C, "m", "()I").returns(2).done()
+        b.test().privateCallSite(I, C, "m", "()I").throws_(IllegalAccessError.class).done()
+         .test().       callSite(C, C, "m", "()I").returns(2).done()
 
         .run();
     }
@@ -413,7 +391,6 @@ public class PrivateMethodsTest extends DefMethTest {
      * class C implements J {}
      *
      * TEST: { I o = new C(); o.m()I throws IllegalAccessError; }
-     *                 -mode reflect throws NoSuchMethodException
      * TEST: { J o = new C(); o.m()I  == 2; }
      * TEST: { C o = new C(); o.m()I  == 2; }
      */
@@ -432,16 +409,9 @@ public class PrivateMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(J).build();
 
-        Class expectedClass;
-        if (factory.getExecutionMode().equals("REFLECTION")) {
-            expectedClass = NoSuchMethodException.class;
-        } else {
-            expectedClass = IllegalAccessError.class;
-        }
-
-        b.test().callSite(I, C, "m", "()I").throws_(expectedClass).done()
-         .test().callSite(J, C, "m", "()I").returns(2).done()
-         .test().callSite(C, C, "m", "()I").returns(2).done()
+        b.test().privateCallSite(I, C, "m", "()I").throws_(IllegalAccessError.class).done()
+         .test().       callSite(J, C, "m", "()I").returns(2).done()
+         .test().       callSite(C, C, "m", "()I").returns(2).done()
 
         .run();
     }
@@ -495,7 +465,6 @@ public class PrivateMethodsTest extends DefMethTest {
      * class C implements J {}
      *
      * TEST: { I o = new C(); o.m()I throws IllegalAccessError; } II I.m
-     *                 -mode reflect throws NoSuchMethodException
      * TEST: { J o = new C(); o.m()I throws java/lang/AbstractMethodError; }
      * TEST: { C o = new C(); o.m()I throws java/lang/AbstractMethodError; }
      */
@@ -513,16 +482,9 @@ public class PrivateMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(J).build();
 
-        Class expectedClass;
-        if (factory.getExecutionMode().equals("REFLECTION")) {
-            expectedClass = NoSuchMethodException.class;
-        } else {
-            expectedClass = IllegalAccessError.class;
-        }
-
-        b.test().callSite(I, C, "m", "()I").throws_(expectedClass).done()
-         .test().callSite(J, C, "m", "()I").throws_(AbstractMethodError.class).done()
-         .test().callSite(C, C, "m", "()I").throws_(AbstractMethodError.class).done()
+        b.test().privateCallSite(I, C, "m", "()I").throws_(IllegalAccessError.class).done()
+         .test().       callSite(J, C, "m", "()I").throws_(AbstractMethodError.class).done()
+         .test().       callSite(C, C, "m", "()I").throws_(AbstractMethodError.class).done()
 
         .run();
     }
@@ -572,7 +534,6 @@ public class PrivateMethodsTest extends DefMethTest {
      * class C extends B {}
      *
      * TEST: { I o = new C(); o.m()I throws IllegalAccessError } II I.m
-     *                 -mode reflect throws NoSuchMethodException
      * TEST: { B o = new C(); o.m()I throws NoSuchMethodError }
      * TEST: { C o = new C(); o.m()I throws NoSuchMethodError }
      */
@@ -587,16 +548,9 @@ public class PrivateMethodsTest extends DefMethTest {
         ConcreteClass B = b.clazz("B").implement(I).build();
         ConcreteClass C = b.clazz("C").extend(B).build();
 
-        Class expectedClass;
-        if (factory.getExecutionMode().equals("REFLECTION")) {
-            expectedClass = NoSuchMethodException.class;
-        } else {
-            expectedClass = IllegalAccessError.class;
-        }
-
-        b.test().callSite(I, C, "m","()I").throws_(expectedClass).done()
-         .test().callSite(B, C, "m","()I").throws_(NoSuchMethodError.class).done()
-         .test().callSite(C, C, "m","()I").throws_(NoSuchMethodError.class).done()
+        b.test().privateCallSite(I, C, "m","()I").throws_(IllegalAccessError.class).done()
+         .test().       callSite(B, C, "m","()I").throws_(NoSuchMethodError.class).done()
+         .test().       callSite(C, C, "m","()I").throws_(NoSuchMethodError.class).done()
 
         .run();
 
@@ -614,7 +568,6 @@ public class PrivateMethodsTest extends DefMethTest {
      * class C extends B implements I {}
      *
      * TEST: { I o = new C(); o.m()I  == throws IllegalAccessError; }
-     *                     -mode reflect throws NoSuchMethodException
      * TEST: { B o = new C(); o.m()I  == 2; }
      * TEST: { C o = new C(); o.m()I  == 2; }
      */
@@ -632,16 +585,9 @@ public class PrivateMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").extend(B).implement(I).build();
 
-        Class expectedClass;
-        if (factory.getExecutionMode().equals("REFLECTION")) {
-            expectedClass = NoSuchMethodException.class;
-        } else {
-            expectedClass = IllegalAccessError.class;
-        }
-
-        b.test().callSite(I, C, "m","()I").throws_(expectedClass).done()
-         .test().callSite(B, C, "m","()I").returns(2).done()
-         .test().callSite(C, C, "m","()I").returns(2).done()
+        b.test().privateCallSite(I, C, "m","()I").throws_(IllegalAccessError.class).done()
+         .test().       callSite(B, C, "m","()I").returns(2).done()
+         .test().       callSite(C, C, "m","()I").returns(2).done()
 
         .run();
     }
@@ -660,7 +606,6 @@ public class PrivateMethodsTest extends DefMethTest {
      * class C implements I, J {}
      *
      * TEST: { I o = new C(); o.m()I throws IllegalAccessError; }
-     *                 -mode reflect throws NoSuchMethodException
      * TEST: { J o = new C(); o.m()I  == 2; }
      * TEST: { C o = new C(); o.m()I  == 2; }
      */
@@ -677,16 +622,9 @@ public class PrivateMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I,J).build();
 
-        Class expectedClass;
-        if (factory.getExecutionMode().equals("REFLECTION")) {
-            expectedClass = NoSuchMethodException.class;
-        } else {
-            expectedClass = IllegalAccessError.class;
-        }
-
-        b.test().callSite(I, C, "m", "()I").throws_(expectedClass).done()
-         .test().callSite(J, C, "m", "()I").returns(2).done()
-         .test().callSite(C, C, "m", "()I").returns(2).done()
+        b.test().privateCallSite(I, C, "m", "()I").throws_(IllegalAccessError.class).done()
+         .test().       callSite(J, C, "m", "()I").returns(2).done()
+         .test().       callSite(C, C, "m", "()I").returns(2).done()
 
         .run();
     }

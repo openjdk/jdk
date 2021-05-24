@@ -5790,6 +5790,47 @@ address generate_avx_ghash_processBlocks() {
       return start;
   }
 
+
+  /***
+   *  Arguments:
+   *
+   *  Inputs:
+   *   c_rarg0   - int   adler
+   *   c_rarg1   - byte* buff
+   *   c_rarg2   - int   len
+   *
+   * Output:
+   *   rax   - int adler result
+   */
+
+  address generate_updateBytesAdler32() {
+      assert(UseAdler32Intrinsics, "need AVX2");
+
+      __ align(CodeEntryAlignment);
+      StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
+
+      address start = __ pc();
+
+      const Register data = r9;
+      const Register size = r10;
+
+      const XMMRegister yshuf0 = xmm6;
+      const XMMRegister yshuf1 = xmm7;
+      assert_different_registers(c_rarg0, c_rarg1, c_rarg2, data, size);
+
+      BLOCK_COMMENT("Entry:");
+      __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+      __ vmovdqu(yshuf0, ExternalAddress((address) StubRoutines::x86::_adler32_shuf0_table), r9);
+      __ vmovdqu(yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_shuf1_table), r9);
+      __ movptr(data, c_rarg1); //data
+      __ movl(size, c_rarg2); //length
+      __ updateBytesAdler32(c_rarg0, data, size, yshuf0, yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_ascale_table));
+      __ leave();
+      __ ret(0);
+      return start;
+  }
+
   /**
    *  Arguments:
    *
@@ -6754,6 +6795,11 @@ address generate_avx_ghash_processBlocks() {
       StubRoutines::_crc32c_table_addr = (address)StubRoutines::x86::_crc32c_table;
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
     }
+
+    if (UseAdler32Intrinsics) {
+       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
+    }
+
     if (UseLibmIntrinsic && InlineIntrinsics) {
       if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin) ||
           vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos) ||

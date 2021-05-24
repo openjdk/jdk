@@ -813,7 +813,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // processes as vector in RA.
         if (RegMask::is_vector(ireg)) {
           lrg._is_vector = 1;
-          if (ireg == Op_VecA) {
+          if (Matcher::implements_scalable_vector && ireg == Op_VecA) {
             assert(Matcher::supports_scalable_vector(), "scalable vector should be supported");
             lrg._is_scalable = 1;
             // For scalable vector, when it is allocated in physical register,
