@@ -5845,6 +5845,40 @@ address generate_avx_ghash_processBlocks() {
     __ emit_data64(0xffffffffffffffff, relocInfo::none);
     __ emit_data64(0xffffffffffffffff, relocInfo::none);
     __ emit_data64(0xffffffffffffffff, relocInfo::none);
+
+    // URL table
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffff3effffffffff, relocInfo::none);
+    __ emit_data64(0x3b3a393837363534, relocInfo::none);
+    __ emit_data64(0xffffffffffff3d3c, relocInfo::none);
+    __ emit_data64(0x06050403020100ff, relocInfo::none);
+    __ emit_data64(0x0e0d0c0b0a090807, relocInfo::none);
+    __ emit_data64(0x161514131211100f, relocInfo::none);
+    __ emit_data64(0x3fffffffff191817, relocInfo::none);
+    __ emit_data64(0x201f1e1d1c1b1aff, relocInfo::none);
+    __ emit_data64(0x2827262524232221, relocInfo::none);
+    __ emit_data64(0x302f2e2d2c2b2a29, relocInfo::none);
+    __ emit_data64(0xffffffffff333231, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
+    __ emit_data64(0xffffffffffffffff, relocInfo::none);
     return start;
   }
 
@@ -5866,30 +5900,27 @@ address generate_avx_ghash_processBlocks() {
     __ push(r13);
     __ push(r14);
     __ push(r15);
+    __ push(rbx);
 
     // arguments
     const Register source = c_rarg0; // Source Array
     const Register start_offset = c_rarg1; // start offset
     const Register end_offset = c_rarg2; // end offset
     const Register dest = c_rarg3; // destination array
+    const Register isMIME = rbx;
 
 #ifndef _WIN64
     const Register dp = c_rarg4;  // Position for writing to dest array
     const Register isURL = c_rarg5;// Base64 or URL character set
+    __ movl(isMIME, Address(rbp, 2 * wordSize));
 #else
     const Address  dp_mem(rbp, 6 * wordSize);  // length is on stack on Win64
     const Address isURL_mem(rbp, 7 * wordSize);
     const Register isURL = r10;      // pick the volatile windows register
     const Register dp = r12;
-    const Register isMIME = r15;
     __ movl(dp, dp_mem);
     __ movl(isURL, isURL_mem);
-#endif
-#ifdef _WIN64
-    // on win64, fill len_reg from stack position
     __ movl(isMIME, Address(rbp, 8 * wordSize));
-#else
-    __ movl(isMIME, Address(rbp, 2 * wordSize));
 #endif
 
     const XMMRegister lookup_lo = xmm5;
@@ -5945,7 +5976,7 @@ address generate_avx_ghash_processBlocks() {
 
     Label L_process256, L_process64, L_exit, L_processdata, L_loadURL;
     Label L_continue, L_finalBit, L_padding, L_donePadding, L_bruteForce;
-    Label L_forceLoop, L_bottomLoop;
+    Label L_forceLoop, L_bottomLoop, L_checkMIME;
 
     // calculate length from offsets
     __ movq(length, end_offset);
@@ -5953,6 +5984,9 @@ address generate_avx_ghash_processBlocks() {
     __ push(dest);          // Save for return value calc
     __ cmpq(length, 128);     // 128-bytes is break-even for AVX-512
     __ jcc(Assembler::lessEqual, L_bruteForce);
+
+    __ cmpl(isMIME, 0);
+    __ jcc(Assembler::notEqual, L_bruteForce);
 
     // Load lookup tables based on isURL
     __ cmpl(isURL, 0);
@@ -6174,6 +6208,7 @@ address generate_avx_ghash_processBlocks() {
     __ pop(rax);             // Get original dest value
     __ subq(dest, rax);      // Number of bytes converted
     __ movq(rax, dest);
+    __ pop(rbx);
     __ pop(r15);
     __ pop(r14);
     __ pop(r13);
@@ -6237,11 +6272,12 @@ address generate_avx_ghash_processBlocks() {
     // Set up src and dst pointers properly
     __ addq(source, start_offset);     // Initial offset
     __ addq(dest, dp);
-    __ pop(byte2);    // Clear old dest from stack
+    __ pop(byte2);    // Clear old dest from stack  TODO:
     __ push(dest);
-    __ lea(decode_table, ExternalAddress(StubRoutines::x86::base64_decoding_table_addr()));
 
-    __ decrementq(length, 1);         // Bottom-entry loop
+    __ shll(isURL, 8);    // index into decode table based on isURL
+    __ lea(decode_table, ExternalAddress(StubRoutines::x86::base64_decoding_table_addr()));
+    __ addq(decode_table, isURL);
 
     __ jmp(L_bottomLoop);
 
@@ -6263,8 +6299,7 @@ address generate_avx_ghash_processBlocks() {
     __ movb(Address(dest, RegisterOrConstant(), Address::times_1, 0), byte1);
 
     __ incrementq(dest, 3);
-
-    __ decrementq(length, 1);
+    __ decrementl(length, 1);
     __ jcc(Assembler::zero, L_exit);
 
     __ BIND(L_bottomLoop);
