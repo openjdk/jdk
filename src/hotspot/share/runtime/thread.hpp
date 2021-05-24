@@ -355,7 +355,7 @@ class Thread: public ThreadShadow {
   virtual bool is_active_Java_thread() const         { return false; }
 
   // Casts
-  virtual WorkerThread* as_Worker_thread() const     { return NULL; }
+  WorkerThread* as_Worker_thread() const;
   inline JavaThread* as_Java_thread();
   inline const JavaThread* as_Java_thread() const;
 
@@ -1587,6 +1587,11 @@ public:
 // Inline implementation of JavaThread::current
 inline JavaThread* JavaThread::current() {
   return Thread::current()->as_Java_thread();
+}
+
+inline WorkerThread* Thread::as_Worker_thread() const {
+  assert(is_Worker_thread(), "Dubious cast to WorkerThread*?");
+  return (WorkerThread*)this;
 }
 
 inline JavaThread* Thread::as_Java_thread() {
