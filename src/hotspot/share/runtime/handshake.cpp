@@ -327,7 +327,7 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
   // here to make sure memory operations executed in the handshake
   // closure are visible to the VMThread/Handshaker after it reads
   // that the operation has completed.
-  Atomic::dec(&_pending_threads, memory_order_acq_rel);
+  Atomic::dec(&_pending_threads);
 
   // It is no longer safe to refer to 'this' as the VMThread/Handshaker may have destroyed this operation
 }
