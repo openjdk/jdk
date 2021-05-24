@@ -21,13 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @summary Spliterator.iterator traversing tests
- * @library /lib/testlibrary/bootlib
- * @run testng IteratorFromSpliteratorTest
- * @bug 8267452
- */
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
@@ -46,84 +39,107 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.fail;
 
+/**
+ * @test
+ * @summary Spliterator.iterator traversing tests
+ * @library /lib/testlibrary/bootlib
+ * @run testng IteratorFromSpliteratorTest
+ * @bug 8267452
+ */
 public class IteratorFromSpliteratorTest {
-  @Test
-  public void testIteratorFromSpliterator() {
-    List<Integer> input = List.of(1, 2, 3, 4, 5);
-    for (int i = 0; i < input.size(); i++) {
-      Iterator<Integer> iterator = Spliterators.iterator(input.spliterator());
-      List<Integer> result = new ArrayList<>();
-      int j = i;
-      while (j++ < input.size() && iterator.hasNext()) {
-        result.add(iterator.next());
-      }
-      assertEquals(iterator.hasNext(), result.size() < input.size());
-      iterator.forEachRemaining(result::add);
-      iterator.forEachRemaining(x -> fail("Should not be called"));
-      assertFalse(iterator.hasNext());
-      assertThrows(NoSuchElementException.class, iterator::next);
-      iterator.forEachRemaining(x -> fail("Should not be called"));
-      assertEquals(result, input);
+    @Test
+    public void testIteratorFromSpliterator() {
+        List<Integer> input = List.of(1, 2, 3, 4, 5);
+        for (int i = 0; i < input.size(); i++) {
+            Iterator<Integer> iterator = Spliterators.iterator(input.spliterator());
+            List<Integer> result = new ArrayList<>();
+            int j = i;
+            while (j++ < input.size() && iterator.hasNext()) {
+                result.add(iterator.next());
+            }
+            assertEquals(iterator.hasNext(), result.size() < input.size());
+            iterator.forEachRemaining(result::add);
+            iterator.forEachRemaining(x -> fail("Should not be called"));
+            assertFalse(iterator.hasNext());
+            assertThrows(NoSuchElementException.class, iterator::next);
+            iterator.forEachRemaining(x -> fail("Should not be called"));
+            assertEquals(result, input);
+        }
     }
-  }
 
-  @Test
-  public void testIteratorFromSpliteratorInt() {
-    int[] input = {1, 2, 3, 4, 5};
-    for (int i = 0; i < input.length; i++) {
-      PrimitiveIterator.OfInt iterator = Spliterators.iterator(Arrays.spliterator(input));
-      List<Integer> result = new ArrayList<>();
-      int j = i;
-      while (j++ < input.length && iterator.hasNext()) {
-        result.add(iterator.nextInt());
-      }
-      assertEquals(iterator.hasNext(), result.size() < input.length);
-      iterator.forEachRemaining((IntConsumer) result::add);
-      iterator.forEachRemaining((IntConsumer) (x -> fail("Should not be called")));
-      assertFalse(iterator.hasNext());
-      assertThrows(NoSuchElementException.class, iterator::next);
-      iterator.forEachRemaining((IntConsumer) (x -> fail("Should not be called")));
-      assertEquals(result.stream().mapToInt(x -> x).toArray(), input);
+    @Test
+    public void testIteratorFromSpliteratorInt() {
+        int[] input = {1, 2, 3, 4, 5};
+        for (int i = 0; i < input.length; i++) {
+            PrimitiveIterator.OfInt iterator = Spliterators.iterator(Arrays.spliterator(input));
+            List<Integer> result = new ArrayList<>();
+            int j = i;
+            while (j++ < input.length && iterator.hasNext()) {
+                result.add(iterator.nextInt());
+            }
+            assertEquals(iterator.hasNext(), result.size() < input.length);
+            iterator.forEachRemaining((IntConsumer) result::add);
+            iterator.forEachRemaining((IntConsumer) (x -> fail("Should not be called")));
+            assertFalse(iterator.hasNext());
+            assertThrows(NoSuchElementException.class, iterator::next);
+            iterator.forEachRemaining((IntConsumer) (x -> fail("Should not be called")));
+            assertEquals(result.stream().mapToInt(x -> x).toArray(), input);
+        }
     }
-  }
 
-  @Test
-  public void testIteratorFromSpliteratorLong() {
-    long[] input = {1, 2, 3, 4, 5};
-    for (int i = 0; i < input.length; i++) {
-      PrimitiveIterator.OfLong iterator = Spliterators.iterator(Arrays.spliterator(input));
-      List<Long> result = new ArrayList<>();
-      int j = i;
-      while (j++ < input.length && iterator.hasNext()) {
-        result.add(iterator.nextLong());
-      }
-      assertEquals(iterator.hasNext(), result.size() < input.length);
-      iterator.forEachRemaining((LongConsumer) result::add);
-      iterator.forEachRemaining((LongConsumer) (x -> fail("Should not be called")));
-      assertFalse(iterator.hasNext());
-      assertThrows(NoSuchElementException.class, iterator::next);
-      iterator.forEachRemaining((LongConsumer) (x -> fail("Should not be called")));
-      assertEquals(result.stream().mapToLong(x -> x).toArray(), input);
+    @Test
+    public void testIteratorFromSpliteratorLong() {
+        long[] input = {1, 2, 3, 4, 5};
+        for (int i = 0; i < input.length; i++) {
+            PrimitiveIterator.OfLong iterator = Spliterators.iterator(Arrays.spliterator(input));
+            List<Long> result = new ArrayList<>();
+            int j = i;
+            while (j++ < input.length && iterator.hasNext()) {
+                result.add(iterator.nextLong());
+            }
+            assertEquals(iterator.hasNext(), result.size() < input.length);
+            iterator.forEachRemaining((LongConsumer) result::add);
+            iterator.forEachRemaining((LongConsumer) (x -> fail("Should not be called")));
+            assertFalse(iterator.hasNext());
+            assertThrows(NoSuchElementException.class, iterator::next);
+            iterator.forEachRemaining((LongConsumer) (x -> fail("Should not be called")));
+            assertEquals(result.stream().mapToLong(x -> x).toArray(), input);
+        }
     }
-  }
 
-  @Test
-  public void testIteratorFromSpliteratorDouble() {
-    double[] input = {1, 2, 3, 4, 5};
-    for (int i = 0; i < input.length; i++) {
-      PrimitiveIterator.OfDouble iterator = Spliterators.iterator(Arrays.spliterator(input));
-      List<Double> result = new ArrayList<>();
-      int j = i;
-      while (j++ < input.length && iterator.hasNext()) {
-        result.add(iterator.nextDouble());
-      }
-      assertEquals(iterator.hasNext(), result.size() < input.length);
-      iterator.forEachRemaining((DoubleConsumer) result::add);
-      iterator.forEachRemaining((DoubleConsumer) (x -> fail("Should not be called")));
-      assertFalse(iterator.hasNext());
-      assertThrows(NoSuchElementException.class, iterator::next);
-      iterator.forEachRemaining((DoubleConsumer) (x -> fail("Should not be called")));
-      assertEquals(result.stream().mapToDouble(x -> x).toArray(), input);
+    @Test
+    public void testIteratorFromSpliteratorDouble() {
+        double[] input = {1, 2, 3, 4, 5};
+        for (int i = 0; i < input.length; i++) {
+            PrimitiveIterator.OfDouble iterator = Spliterators.iterator(Arrays.spliterator(input));
+            List<Double> result = new ArrayList<>();
+            int j = i;
+            while (j++ < input.length && iterator.hasNext()) {
+                result.add(iterator.nextDouble());
+            }
+            assertEquals(iterator.hasNext(), result.size() < input.length);
+            iterator.forEachRemaining((DoubleConsumer) result::add);
+            iterator.forEachRemaining((DoubleConsumer) (x -> fail("Should not be called")));
+            assertFalse(iterator.hasNext());
+            assertThrows(NoSuchElementException.class, iterator::next);
+            iterator.forEachRemaining((DoubleConsumer) (x -> fail("Should not be called")));
+            assertEquals(result.stream().mapToDouble(x -> x).toArray(), input);
+        }
     }
-  }
+
+    @Test
+    public void testIteratorFromSpliteratorEmpty() {
+        Iterator<?>[] iterators = {
+            Spliterators.iterator(Spliterators.emptySpliterator()),
+            Spliterators.iterator(Spliterators.emptyIntSpliterator()),
+            Spliterators.iterator(Spliterators.emptyLongSpliterator()),
+            Spliterators.iterator(Spliterators.emptyDoubleSpliterator())
+        };
+        for (Iterator<?> iterator : iterators) {
+            iterator.forEachRemaining(x -> fail("Should not be called"));
+            assertFalse(iterator.hasNext());
+            iterator.forEachRemaining(x -> fail("Should not be called"));
+            assertThrows(NoSuchElementException.class, iterator::next);
+        }
+    }
 }
