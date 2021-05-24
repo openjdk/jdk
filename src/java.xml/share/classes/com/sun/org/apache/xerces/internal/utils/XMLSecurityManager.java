@@ -25,9 +25,11 @@
 
 package com.sun.org.apache.xerces.internal.utils;
 
-import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import java.util.concurrent.CopyOnWriteArrayList;
+import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkProperty.State;
+import jdk.xml.internal.JdkProperty.ImplPropMap;
 import jdk.xml.internal.SecuritySupport;
 import org.xml.sax.SAXException;
 
@@ -38,50 +40,29 @@ import org.xml.sax.SAXException;
 public final class XMLSecurityManager {
 
     /**
-     * States of the settings of a property, in the order: default value, value
-     * set by FEATURE_SECURE_PROCESSING, jaxp.properties file, jaxp system
-     * properties, and jaxp api properties
-     */
-    public static enum State {
-        //this order reflects the overriding order
-
-        DEFAULT("default"), FSP("FEATURE_SECURE_PROCESSING"),
-        JAXPDOTPROPERTIES("jaxp.properties"), SYSTEMPROPERTY("system property"),
-        APIPROPERTY("property");
-
-        final String literal;
-        State(String literal) {
-            this.literal = literal;
-        }
-
-        String literal() {
-            return literal;
-        }
-    }
-
-    /**
      * Limits managed by the security manager
      */
+    @SuppressWarnings("deprecation")
     public static enum Limit {
 
         ENTITY_EXPANSION_LIMIT("EntityExpansionLimit",
-                Constants.JDK_ENTITY_EXPANSION_LIMIT, Constants.SP_ENTITY_EXPANSION_LIMIT, 0, 64000),
+                JdkConstants.JDK_ENTITY_EXPANSION_LIMIT, JdkConstants.SP_ENTITY_EXPANSION_LIMIT, 0, 64000),
         MAX_OCCUR_NODE_LIMIT("MaxOccurLimit",
-                Constants.JDK_MAX_OCCUR_LIMIT, Constants.SP_MAX_OCCUR_LIMIT, 0, 5000),
+                JdkConstants.JDK_MAX_OCCUR_LIMIT, JdkConstants.SP_MAX_OCCUR_LIMIT, 0, 5000),
         ELEMENT_ATTRIBUTE_LIMIT("ElementAttributeLimit",
-                Constants.JDK_ELEMENT_ATTRIBUTE_LIMIT, Constants.SP_ELEMENT_ATTRIBUTE_LIMIT, 0, 10000),
+                JdkConstants.JDK_ELEMENT_ATTRIBUTE_LIMIT, JdkConstants.SP_ELEMENT_ATTRIBUTE_LIMIT, 0, 10000),
         TOTAL_ENTITY_SIZE_LIMIT("TotalEntitySizeLimit",
-                Constants.JDK_TOTAL_ENTITY_SIZE_LIMIT, Constants.SP_TOTAL_ENTITY_SIZE_LIMIT, 0, 50000000),
+                JdkConstants.JDK_TOTAL_ENTITY_SIZE_LIMIT, JdkConstants.SP_TOTAL_ENTITY_SIZE_LIMIT, 0, 50000000),
         GENERAL_ENTITY_SIZE_LIMIT("MaxEntitySizeLimit",
-                Constants.JDK_GENERAL_ENTITY_SIZE_LIMIT, Constants.SP_GENERAL_ENTITY_SIZE_LIMIT, 0, 0),
+                JdkConstants.JDK_GENERAL_ENTITY_SIZE_LIMIT, JdkConstants.SP_GENERAL_ENTITY_SIZE_LIMIT, 0, 0),
         PARAMETER_ENTITY_SIZE_LIMIT("MaxEntitySizeLimit",
-                Constants.JDK_PARAMETER_ENTITY_SIZE_LIMIT, Constants.SP_PARAMETER_ENTITY_SIZE_LIMIT, 0, 1000000),
+                JdkConstants.JDK_PARAMETER_ENTITY_SIZE_LIMIT, JdkConstants.SP_PARAMETER_ENTITY_SIZE_LIMIT, 0, 1000000),
         MAX_ELEMENT_DEPTH_LIMIT("MaxElementDepthLimit",
-                Constants.JDK_MAX_ELEMENT_DEPTH, Constants.SP_MAX_ELEMENT_DEPTH, 0, 0),
+                JdkConstants.JDK_MAX_ELEMENT_DEPTH, JdkConstants.SP_MAX_ELEMENT_DEPTH, 0, 0),
         MAX_NAME_LIMIT("MaxXMLNameLimit",
-                Constants.JDK_XML_NAME_LIMIT, Constants.SP_XML_NAME_LIMIT, 1000, 1000),
+                JdkConstants.JDK_XML_NAME_LIMIT, JdkConstants.SP_XML_NAME_LIMIT, 1000, 1000),
         ENTITY_REPLACEMENT_LIMIT("EntityReplacementLimit",
-                Constants.JDK_ENTITY_REPLACEMENT_LIMIT, Constants.SP_ENTITY_REPLACEMENT_LIMIT, 0, 3000000);
+                JdkConstants.JDK_ENTITY_REPLACEMENT_LIMIT, JdkConstants.SP_ENTITY_REPLACEMENT_LIMIT, 0, 3000000);
 
         final String key;
         final String apiProperty;
@@ -97,12 +78,36 @@ public final class XMLSecurityManager {
             this.secureValue = secureValue;
         }
 
-        public boolean equalsAPIPropertyName(String propertyName) {
-            return (propertyName == null) ? false : apiProperty.equals(propertyName);
+        /**
+         * Checks whether the specified name is a limit. Checks both the
+         * property and System Property which is now the new property name.
+         *
+         * @param name the specified name
+         * @return true if there is a match, false otherwise
+         */
+        public boolean is(String name) {
+            // current spec: new property name == systemProperty
+            return (systemProperty != null && systemProperty.equals(name)) ||
+                   // current spec: apiProperty is legacy
+                   (apiProperty.equals(name));
         }
 
-        public boolean equalsSystemPropertyName(String propertyName) {
-            return (propertyName == null) ? false : systemProperty.equals(propertyName);
+        /**
+         * Returns the state of a property name. By the specification as of JDK 17,
+         * the "jdk.xml." prefixed System property name is also the current API
+         * name. The URI-based qName is legacy.
+         *
+         * @param name the property name
+         * @return the state of the property name, null if no match
+         */
+        public State getState(String name) {
+            if (systemProperty != null && systemProperty.equals(name)) {
+                return State.APIPROPERTY;
+            } else if (apiProperty.equals(name)) {
+                //the URI-style qName is legacy
+                return State.LEGACY_APIPROPERTY;
+            }
+            return null;
         }
 
         public String key() {
@@ -131,9 +136,9 @@ public final class XMLSecurityManager {
      */
     public static enum NameMap {
 
-        ENTITY_EXPANSION_LIMIT(Constants.SP_ENTITY_EXPANSION_LIMIT, Constants.ENTITY_EXPANSION_LIMIT),
-        MAX_OCCUR_NODE_LIMIT(Constants.SP_MAX_OCCUR_LIMIT, Constants.MAX_OCCUR_LIMIT),
-        ELEMENT_ATTRIBUTE_LIMIT(Constants.SP_ELEMENT_ATTRIBUTE_LIMIT, Constants.ELEMENT_ATTRIBUTE_LIMIT);
+        ENTITY_EXPANSION_LIMIT(JdkConstants.SP_ENTITY_EXPANSION_LIMIT, JdkConstants.ENTITY_EXPANSION_LIMIT),
+        MAX_OCCUR_NODE_LIMIT(JdkConstants.SP_MAX_OCCUR_LIMIT, JdkConstants.MAX_OCCUR_LIMIT),
+        ELEMENT_ATTRIBUTE_LIMIT(JdkConstants.SP_ELEMENT_ATTRIBUTE_LIMIT, JdkConstants.ELEMENT_ATTRIBUTE_LIMIT);
         final String newName;
         final String oldName;
 
@@ -228,6 +233,24 @@ public final class XMLSecurityManager {
         return secureProcessing;
     }
 
+    /**
+     * Finds a limit's new name with the given property name.
+     * @param propertyName the property name specified
+     * @return the limit's new name if found, null otherwise
+     */
+    public String find(String propertyName) {
+        for (Limit limit : Limit.values()) {
+            if (limit.is(propertyName)) {
+                // current spec: new property name == systemProperty
+                return limit.systemProperty();
+            }
+        }
+        //ENTITYCOUNT's new name is qName
+        if (ImplPropMap.ENTITYCOUNT.is(propertyName)) {
+            return ImplPropMap.ENTITYCOUNT.qName();
+        }
+        return null;
+    }
 
     /**
      * Set limit by property name and state
@@ -240,7 +263,11 @@ public final class XMLSecurityManager {
     public boolean setLimit(String propertyName, State state, Object value) {
         int index = getIndex(propertyName);
         if (index > -1) {
-            setLimit(index, state, value);
+            State pState = state;
+            if (index != indexEntityCountInfo && state == State.APIPROPERTY) {
+                pState = (Limit.values()[index]).getState(propertyName);
+            }
+            setLimit(index, pState, value);
             return true;
         }
         return false;
@@ -291,7 +318,7 @@ public final class XMLSecurityManager {
     public void setLimit(int index, State state, int value) {
         if (index == indexEntityCountInfo) {
             //if it's explicitly set, it's treated as yes no matter the value
-            printEntityCountInfo = Constants.JDK_YES;
+            printEntityCountInfo = JdkConstants.JDK_YES;
         } else {
             //only update if it shall override
             if (state.compareTo(states[index]) >= 0) {
@@ -380,14 +407,13 @@ public final class XMLSecurityManager {
     public int getIndex(String propertyName) {
         for (Limit limit : Limit.values()) {
             // see JDK-8265248, accept both the URL and jdk.xml as prefix
-            if (limit.equalsAPIPropertyName(propertyName) ||
-                    limit.equalsSystemPropertyName(propertyName)) {
+            if (limit.is(propertyName)) {
                 //internally, ordinal is used as index
                 return limit.ordinal();
             }
         }
         //special property to return entity count info
-        if (propertyName.equals(Constants.JDK_ENTITY_COUNT_INFO)) {
+        if (ImplPropMap.ENTITYCOUNT.is(propertyName)) {
             return indexEntityCountInfo;
         }
         return -1;
@@ -466,7 +492,7 @@ public final class XMLSecurityManager {
     }
 
     public void debugPrint(XMLLimitAnalyzer limitAnalyzer) {
-        if (printEntityCountInfo.equals(Constants.JDK_YES)) {
+        if (printEntityCountInfo.equals(JdkConstants.JDK_YES)) {
             limitAnalyzer.debugPrint(this);
         }
     }
@@ -482,7 +508,7 @@ public final class XMLSecurityManager {
     }
 
     public boolean printEntityCountInfo() {
-        return printEntityCountInfo.equals(Constants.JDK_YES);
+        return printEntityCountInfo.equals(JdkConstants.JDK_YES);
     }
 
     /**
@@ -580,26 +606,5 @@ public final class XMLSecurityManager {
             }
             return securityManager;
         }
-    }
-
-    /**
-     * Maps to the qualified property name if the specified name is the System
-     * Property. This method can be used to accept input of a property with
-     * "jdk.xml" prefix as specified in the module summary, but allow the
-     * internal operations to continue using the existing name with an URL
-     * style prefix.
-     *
-     * @param name the specified name
-     * @return the qualified property name if the specified name matches the
-     * System Property of one of the limits, null otherwise
-     * @see JDK-8265248
-     */
-    public static String mapPropertyName(String name) {
-        for (Limit limit : Limit.values()) {
-            if (limit.equalsSystemPropertyName(name)) {
-                return limit.apiProperty();
-            }
-        }
-        return null;
     }
 }

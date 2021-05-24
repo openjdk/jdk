@@ -723,13 +723,27 @@
  * <p id="Note6">
  * <b>[6]</b> Indicates the initial release the property is introduced.
  *
- * <h3>Legacy Property Names</h3>
- * JDK releases prior to JDK 17 support the use of URI style prefix for properties
- * which will continue to be supported. The following table lists the legacy names
- * for the properties.
+ * <h3>Legacy Property Names (deprecated)</h3>
+ * JDK releases prior to JDK 17 support the use of URI style prefix for properties.
+ * These legacy property names are <b>deprecated</b> as of JDK 17 and may be removed
+ * in future releases. If both new and legacy properties are set, the new property
+ * names take precedence regardless of how and where they are set. The overriding order
+ * as defined in <a href="#ScopeAndOrder">Scope and Order</a> thus becomes, in
+ * descending order:
+ *
+ * <ul>
+ * <li>The default value;</li>
+ * <li>Value set by FEATURE_SECURE_PROCESSING;</li>
+ * <li>Value set in jaxp.properties;</li>
+ * <li>Value set as System Property;</li>
+ * <li>Value set on factories or processors using <b>legacy property names</b>;</li>
+ * <li>Value set on factories or processors using new property names.</li>
+ * </ul>
+ * <p>
+ * The following table lists the properties and their corresponding legacy names.
  *
  * <table class="striped" id="LegacyProperties">
- * <caption>Legacy Property Names</caption>
+ * <caption>Legacy Property Names (deprecated since 17)</caption>
  * <thead>
  * <tr>
  * <th>Property</th>
