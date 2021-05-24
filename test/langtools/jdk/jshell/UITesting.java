@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Locale;
@@ -97,7 +98,7 @@ public class UITesting {
             }
         });
 
-        Writer inputSink = new OutputStreamWriter(input.createOutput()) {
+        Writer inputSink = new OutputStreamWriter(input.createOutput(), StandardCharsets.UTF_8) {
             @Override
             public void write(String str) throws IOException {
                 super.write(str);
