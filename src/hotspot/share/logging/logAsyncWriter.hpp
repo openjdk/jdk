@@ -140,14 +140,7 @@ class AsyncLogWriter : public NonJavaThread {
   // A lock of IO
   static Semaphore _io_sem;
 
-  enum class ThreadState {
-    NotReady,
-    Initialized,
-    Running,
-    Terminated,
-  };
-
-  volatile ThreadState _state;
+  volatile bool _initialized;
   AsyncLogMap _stats; // statistics for dropped messages
   AsyncLogBuffer _buffer;
 

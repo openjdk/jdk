@@ -81,10 +81,10 @@ void AsyncLogWriter::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator m
 }
 
 AsyncLogWriter::AsyncLogWriter()
-  : _state(ThreadState::NotReady),
+  : _initialized(false),
     _stats(17 /*table_size*/) {
   if (os::create_thread(this, os::asynclog_thread)) {
-    _state = ThreadState::Initialized;
+    _initialized = true;
   } else {
     log_warning(logging, thread)("AsyncLogging failed to create thread. Falling back to synchronous logging.");
   }
@@ -122,6 +122,8 @@ void AsyncLogWriter::write() {
   // The operation 'pop_all()' is done in O(1). All I/O jobs are then performed without
   // lock protection. This guarantees I/O jobs don't block logsites.
   AsyncLogBuffer logs;
+  bool own_io = false;
+
   { // critical region
     AsyncLogLocker lock;
 
@@ -129,10 +131,14 @@ void AsyncLogWriter::write() {
     // append meta-messages of dropped counters
     AsyncLogMapIterator dropped_counters_iter(logs);
     _stats.iterate(&dropped_counters_iter);
+    own_io = _io_sem.trywait();
   }
 
   LinkedListIterator<AsyncLogMessage> it(logs.head());
-  _io_sem.wait();
+  if (!own_io) {
+    _io_sem.wait();
+  }
+
   while (!it.is_empty()) {
     AsyncLogMessage* e = it.next();
     char* msg = e->message();
@@ -162,7 +168,7 @@ void AsyncLogWriter::initialize() {
   assert(_instance == nullptr, "initialize() should only be invoked once.");
 
   AsyncLogWriter* self = new AsyncLogWriter();
-  if (self->_state == ThreadState::Initialized) {
+  if (self->_initialized) {
     Atomic::release_store_fence(&AsyncLogWriter::_instance, self);
     // All readers of _instance after the fence see non-NULL.
     // We use LogOutputList's RCU counters to ensure all synchronous logsites have completed.
