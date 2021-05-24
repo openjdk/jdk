@@ -218,7 +218,7 @@ public class SerialFilterFactoryTest {
         FilterInfo info = new SerialInfo(Object.class);
         for (Status st1 : cases) {
             for (Status st2 : cases) {
-                ObjectInputFilter f = getFilter(st1).merge(getFilter(st2));
+                ObjectInputFilter f = Config.merge(getFilter(st1), getFilter(st2));
                 Status r = f.checkInput(info);
                 Assert.assertEquals(evalAndThen(st1, st2), r, "eval andThen");
             }
@@ -285,11 +285,11 @@ public class SerialFilterFactoryTest {
         FilterInfo info = new SerialInfo(Object.class); // an info structure, unused
 
         ObjectInputFilter undecided = getFilter(UNDECIDED);
-        Assert.assertEquals(undecided.rejectUndecidedClass().checkInput(info), REJECTED, "undecided -> rejected");
+        Assert.assertEquals(Config.rejectUndecidedClass(undecided).checkInput(info), REJECTED, "undecided -> rejected");
         ObjectInputFilter allowed = getFilter(ALLOWED);
-        Assert.assertEquals(allowed.rejectUndecidedClass().checkInput(info), ALLOWED, "allowed -> rejected");
+        Assert.assertEquals(Config.rejectUndecidedClass(allowed).checkInput(info), ALLOWED, "allowed -> rejected");
         ObjectInputFilter rejected = getFilter(REJECTED);
-        Assert.assertEquals(rejected.rejectUndecidedClass().checkInput(info), REJECTED, "rejected -> rejected");
+        Assert.assertEquals(Config.rejectUndecidedClass(rejected).checkInput(info), REJECTED, "rejected -> rejected");
     }
 
     @Test

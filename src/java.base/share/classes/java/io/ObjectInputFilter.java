@@ -249,71 +249,6 @@ public interface ObjectInputFilter {
     Status checkInput(FilterInfo filterInfo);
 
     /**
-     * Returns a filter that merges the status of this filter and another filter.
-     * If the other filter is {@code null}, this filter is returned.
-     * Otherwise, a filter is returned to merge the pair of {@code non-null} filters.
-     *
-     * @implSpec
-     * The filter returned implements the {@link ObjectInputFilter#checkInput(FilterInfo)} method
-     * as follows:
-     * <ul>
-     *     <li>Invoke this filter on the {@code FilterInfo} to get its {@code status};
-     *     <li>Return  {@code REJECTED} if the {@code status} is {@code REJECTED};
-     *     <li>Invoke the {@code otherFilter} to get the {@code otherStatus};
-     *     <li>Return {@code REJECTED} if the {@code otherStatus} is {@code REJECTED};
-     *     <li>Return {@code ALLOWED}, if either {@code status} or {@code otherStatus}
-     *          is {@code ALLOWED}, </li>
-     *     <li>Otherwise, return {@code UNDECIDED}</li>
-     * </ul>
-     *
-     * @param otherFilter a filter to be merged with this filter, may be null
-     * @return an {@link ObjectInputFilter} that merges the status of this and another filter
-     * @since 17
-     */
-    default ObjectInputFilter merge(ObjectInputFilter otherFilter) {
-        return (otherFilter == null) ? ObjectInputFilter.this : new Config.MergeFilter(this, otherFilter);
-    }
-
-    /**
-     * Returns a filter that invokes this filter and maps {@code UNDECIDED} to {@code REJECTED}
-     * for classes, with some exceptions, and otherwise returns the status.
-     * The filter ensures that classes not {@code ALLOWED} and not {@code REJECTED} by this filter
-     * are REJECTED, if the class is an array and the base component type is not allowed,
-     * otherwise the result is {@code UNDECIDED}.
-     *
-     * <p>
-     * Object deserialization accepts a class if the filter returns {@code UNDECIDED}.
-     * Adding a filter to reject undecided results for classes that have not been
-     * either allowed or rejected can prevent classes from slipping through the filter.
-     *
-     * @implSpec
-     * The filter returned implements the {@link ObjectInputFilter#checkInput(FilterInfo)} method
-     * as follows:
-     * <ul>
-     *     <li>Invoke this filter on the {@code FilterInfo} to get its {@code status};
-     *     <li>Return the {@code status} if the status is {@code REJECTED} or {@code ALLOWED};
-     *     <li>Return {@code UNDECIDED} if the {@code filterInfo.getSerialClass() serialClass}
-     *          is {@code null};
-     *     <li>Determine the base component type if the {@code serialClass} is
-     *          an {@linkplain Class#isArray() array};
-     *     <li>Return {@code UNDECIDED} if the base component type is
-     *          a {@linkplain Class#isPrimitive() primitive class};
-     *     <li>Invoke this filter on the {@code base component type} to get its
-     *          {@code component status};</li>
-     *     <li>Return {@code ALLOWED} if the component status is {@code ALLOWED};
-     *     <li>Otherwise, return {@code REJECTED}.</li>
-     * </ul>
-     *
-     * @return an {@link ObjectInputFilter} that maps an {@link ObjectInputFilter.Status#UNDECIDED}
-     *      status to {@link ObjectInputFilter.Status#REJECTED} for classes, otherwise returns the
-     *      filter status
-     * @since 17
-     */
-    default ObjectInputFilter rejectUndecidedClass() {
-        return new Config.RejectUndecidedClass(this);
-    }
-
-    /**
      * FilterInfo provides access to information about the current object
      * being deserialized and the status of the {@link ObjectInputStream}.
      * @since 9
@@ -403,7 +338,14 @@ public interface ObjectInputFilter {
      * <p>Filters can be created from a {@linkplain Config#createFilter(String) pattern string},
      * to {@linkplain #allowFilter(Predicate, Status) allow} or
      * {@linkplain #rejectFilter(Predicate, Status) reject} classes based on a
-     * {@linkplain Predicate predicate}.
+     * {@linkplain Predicate predicate of a class}.
+     *
+     * <p>Composite filters combine or check the results of other filters.
+     * The {@linkplain #merge(ObjectInputFilter, ObjectInputFilter) merge} filter combines
+     * the status value of two filters.
+     * The {@linkplain #rejectUndecidedClass(ObjectInputFilter) rejectUndecidedClass(filter)}
+     * checks the result of a filter for classes when the status is {@code UNDECIDED}.
+     * In many cases any class not {@code ALLOWED} by the filter should be {@code REJECTED}.
      * The {@linkplain #allowMaxLimits() limits allow} filter converts {@code UNDECIDED} to
      * {@code ALLOWED} for limit checks that are not {@code REJECTED}.
      * <p>
@@ -920,6 +862,74 @@ public interface ObjectInputFilter {
         }
 
         /**
+         * Returns a filter that merges the status of a filter and another filter.
+         * If the other filter is {@code null}, the filter is returned.
+         * Otherwise, a filter is returned to merge the pair of {@code non-null} filters.
+         *
+         * The filter returned implements the {@link ObjectInputFilter#checkInput(FilterInfo)} method
+         * as follows:
+         * <ul>
+         *     <li>Invoke {@code filter} on the {@code FilterInfo} to get its {@code status};
+         *     <li>Return {@code REJECTED} if the {@code status} is {@code REJECTED};
+         *     <li>Invoke the {@code otherFilter} to get the {@code otherStatus};
+         *     <li>Return {@code REJECTED} if the {@code otherStatus} is {@code REJECTED};
+         *     <li>Return {@code ALLOWED}, if either {@code status} or {@code otherStatus}
+         *          is {@code ALLOWED}, </li>
+         *     <li>Otherwise, return {@code UNDECIDED}</li>
+         * </ul>
+         *
+         * @param filter a filter, non-null
+         * @param anotherFilter a filter to be merged with the filter, may be {@code null}
+         * @return an {@link ObjectInputFilter} that merges the status of the filter and another filter
+         * @since 17
+         */
+        public static ObjectInputFilter merge(ObjectInputFilter filter, ObjectInputFilter anotherFilter) {
+            Objects.requireNonNull(filter, "filter");
+            return (anotherFilter == null) ? filter : new MergeFilter(filter, anotherFilter);
+        }
+
+        /**
+         * Returns a filter that invokes a filter and maps {@code UNDECIDED} to {@code REJECTED}
+         * for classes, with some exceptions, and otherwise returns the status.
+         * The filter returned checks that classes not {@code ALLOWED} and not {@code REJECTED} by the filter
+         * are {@code REJECTED}, if the class is an array and the base component type is not allowed,
+         * otherwise the result is {@code UNDECIDED}.
+         *
+         * <p>
+         * Object deserialization accepts a class if the filter returns {@code UNDECIDED}.
+         * Adding a filter to reject undecided results for classes that have not been
+         * either allowed or rejected can prevent classes from slipping through the filter.
+         *
+         * @implSpec
+         * The filter returned implements the {@link ObjectInputFilter#checkInput(FilterInfo)} method
+         * as follows:
+         * <ul>
+         *     <li>Invoke the filter on the {@code FilterInfo} to get its {@code status};
+         *     <li>Return the {@code status} if the status is {@code REJECTED} or {@code ALLOWED};
+         *     <li>Return {@code UNDECIDED} if the {@code filterInfo.getSerialClass() serialClass}
+         *          is {@code null};
+         *     <li>Determine the base component type if the {@code serialClass} is
+         *          an {@linkplain Class#isArray() array};
+         *     <li>Return {@code UNDECIDED} if the base component type is
+         *          a {@linkplain Class#isPrimitive() primitive class};
+         *     <li>Invoke the filter on the {@code base component type} to get its
+         *          {@code component status};</li>
+         *     <li>Return {@code ALLOWED} if the component status is {@code ALLOWED};
+         *     <li>Otherwise, return {@code REJECTED}.</li>
+         * </ul>
+         *
+         * @param filter a filter, non-null
+         * @return an {@link ObjectInputFilter} that maps an {@link Status#UNDECIDED}
+         *      status to {@link Status#REJECTED} for classes, otherwise returns the
+         *      filter status
+         * @since 17
+         */
+        public static ObjectInputFilter rejectUndecidedClass(ObjectInputFilter filter) {
+            Objects.requireNonNull(filter, "filter");
+            return new RejectUndecidedFilter(filter);
+        }
+
+        /**
          * Implementation of ObjectInputFilter that performs the checks of
          * the JVM-wide deserialization filter. If configured, it will be
          * used for all ObjectInputStreams that do not set their own filters.
@@ -1319,10 +1329,10 @@ public interface ObjectInputFilter {
         /**
          * A filter that maps the status {@code UNDECIDED} to {@code REJECTED} when checking a class.
          */
-        private static class RejectUndecidedClass implements ObjectInputFilter {
+        private static class RejectUndecidedFilter implements ObjectInputFilter {
             private final ObjectInputFilter filter;
 
-            private RejectUndecidedClass(ObjectInputFilter filter) {
+            private RejectUndecidedFilter(ObjectInputFilter filter) {
                 this.filter = Objects.requireNonNull(filter, "filter");
             }
 
@@ -1349,11 +1359,11 @@ public interface ObjectInputFilter {
                     // for non-primitive types;  re-filter the base component type
                     FilterInfo clazzInfo = new SerialInfo(info, clazz);
                     Status clazzStatus = filter.checkInput(clazzInfo);
-                    traceFilter("RejectUndecidedClass Array Component type {0} class: {1}, filter: {2}",
+                    traceFilter("RejectUndecidedFilter Array Component type {0} class: {1}, filter: {2}",
                             clazzStatus, clazz, this);
                     status = (ALLOWED.equals(clazzStatus)) ? ALLOWED : REJECTED;
                 }
-                traceFilter("RejectUndecidedClass {0} class: {1}, filter: {2}",
+                traceFilter("RejectUndecidedFilter {0} class: {1}, filter: {2}",
                         status, info.serialClass(), this);
                 return status;
             }
