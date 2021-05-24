@@ -183,8 +183,7 @@ public class JavacParser implements Parser {
         this.keepLineMap = keepLineMap;
         this.errorTree = F.Erroneous();
         endPosTable = newEndPosTable(keepEndPositions);
-        this.allowYieldStatement = (!preview.isPreview(Feature.SWITCH_EXPRESSION) || preview.isEnabled()) &&
-                Feature.SWITCH_EXPRESSION.allowedInSource(source);
+        this.allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
         this.allowRecords = Feature.RECORDS.allowedInSource(source);
         this.allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
     }
