@@ -40,6 +40,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import jdk.internal.util.Preconditions;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -2026,6 +2027,19 @@ public abstract class VarHandle implements Constable {
      */
     public final MethodType accessModeType(AccessMode accessMode) {
         return accessModeType(accessMode.at.ordinal());
+    }
+
+    @ForceInline
+    final void checkExactAccessMode(VarHandle.AccessDescriptor ad) {
+        if (exact && accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
+            throwWrongMethodTypeException(ad);
+        }
+    }
+
+    @DontInline
+    private final void throwWrongMethodTypeException(VarHandle.AccessDescriptor ad) {
+        throw new WrongMethodTypeException("expected " + accessModeType(ad.type) + " but found "
+                + ad.symbolicMethodTypeExact);
     }
 
     @ForceInline
