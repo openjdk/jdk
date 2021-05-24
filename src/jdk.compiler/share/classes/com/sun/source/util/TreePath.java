@@ -33,7 +33,7 @@ import com.sun.source.tree.*;
 
 /**
  * A path of tree nodes, typically used to represent the sequence of ancestor
- * nodes of a tree node up to the top-level {@link CompilationUnitTree} node.
+ * nodes of a tree node up to the top-level {@code CompilationUnitTree} node.
  *
  * @author Jonathan Gibbons
  * @since 1.6
