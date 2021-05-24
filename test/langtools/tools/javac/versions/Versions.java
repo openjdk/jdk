@@ -85,7 +85,8 @@ public class Versions {
         FOURTEEN(false, "58.0", "14", Versions::checksrc14),
         FIFTEEN(false,  "59.0", "15", Versions::checksrc15),
         SIXTEEN(false,  "60.0", "16", Versions::checksrc16),
-        SEVENTEEN(false,  "61.0", "17", Versions::checksrc17);
+        SEVENTEEN(false,  "61.0", "17", Versions::checksrc17),
+        EIGHTEEN(false,  "62.0", "18", Versions::checksrc18);
 
         private final boolean dotOne;
         private final String classFileVer;
@@ -301,13 +302,20 @@ public class Versions {
        printargs("checksrc16", args);
        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
                                   "New14.java", "New15.java", "New16.java"));
-       // Add expectedFail after new language features added in a later release.
+        expectedFail(args, List.of("New17.java"));
     }
 
    protected void checksrc17(List<String> args) {
        printargs("checksrc17", args);
        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
-                                  "New14.java", "New15.java", "New16.java"));
+                                  "New14.java", "New15.java", "New16.java", "New17.java"));
+       // Add expectedFail after new language features added in a later release.
+    }
+
+   protected void checksrc18(List<String> args) {
+       printargs("checksrc18", args);
+       expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
+                                  "New14.java", "New15.java", "New16.java", "New17.java"));
        // Add expectedFail after new language features added in a later release.
     }
 
@@ -532,6 +540,21 @@ public class Versions {
                 public record Record(double rpm) {
                     public static final Record LONG_PLAY = new Record(100.0/3.0);
                 }
+            }
+            """
+        );
+
+        /*
+         * Create a file with a new feature in 17, not in 16 : sealed classes
+         */
+        writeSourceFile("New17.java",
+            """
+            public class New17 {
+                public static sealed class Seal { }
+
+                public static final class Pinniped extends Seal {}
+                public static final class TaperedThread extends Seal {}
+                public static final class Wax extends Seal {}
             }
             """
         );
