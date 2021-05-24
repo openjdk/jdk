@@ -336,7 +336,7 @@ enum StreamOpFlag {
     // 13, 0x04000000
     SIZE_ADJUSTING(13,
                    set(Type.OP));
-    
+
     // The following 2 flags are currently undefined and a free for any further
     // stream flags if/when required
     //
