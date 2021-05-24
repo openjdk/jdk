@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.EventsTest.Issue58Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.EventsTest.Issue58Test
  * @run testng/othervm stream.EventsTest.Issue58Test
  * @summary Test XMLEvent.getLocation() returns a non-volatile Location.
  */

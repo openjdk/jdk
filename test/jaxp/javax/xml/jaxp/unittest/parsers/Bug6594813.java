@@ -43,7 +43,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6594813
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug6594813
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug6594813
  * @run testng/othervm parsers.Bug6594813
  * @summary Test SAXParser output is wellformed with name space.
  */

@@ -45,7 +45,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6341770
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug6341770
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug6341770
  * @run testng/othervm parsers.Bug6341770
  * @summary Test external entity linked to non-ASCII base URL.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,8 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package test.rowset.spi;
-
 import java.security.AccessControlException;
 import java.security.Policy;
 import java.util.logging.Level;
@@ -35,7 +33,13 @@ import org.testng.annotations.Test;
 import util.BaseTest;
 import util.StubContext;
 import util.TestPolicy;
-
+/*
+ * @test
+ * @library /java/sql/testng
+ * @library /javax/sql/testng
+ * @run testng/othervm -Djava.security.manager=allow SyncFactoryPermissionsTests
+ * @summary Tests SyncFactory permissions.
+ */
 public class SyncFactoryPermissionsTests extends BaseTest {
 
     Context ctx;

@@ -57,8 +57,8 @@ import java.security.AllPermission;
  * @build CustomLoggerTest AccessSystemLogger
  * @run driver AccessSystemLogger
  * @run main/othervm -Xbootclasspath/a:boot CustomLoggerTest NOSECURITY
- * @run main/othervm -Xbootclasspath/a:boot CustomLoggerTest NOPERMISSIONS
- * @run main/othervm -Xbootclasspath/a:boot CustomLoggerTest WITHPERMISSIONS
+ * @run main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow CustomLoggerTest NOPERMISSIONS
+ * @run main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow CustomLoggerTest WITHPERMISSIONS
  * @author danielfuchs
  */
 public class CustomLoggerTest {
