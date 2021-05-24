@@ -983,29 +983,39 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
     return TypeInt::ZERO;
   }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
-
   const TypeInt *i1 = t1->is_int();
   const TypeInt *i2 = t2->is_int();
-  if( !i1->is_con() || !i2->is_con() ) {
-    if( i1->_lo >= 0 && i2->_lo >= 0 )
+  if (i2->is_con()) {
+    // Mod by zero?  Throw exception at runtime!
+    if (i2->get_con() == 0) {
       return TypeInt::POS;
-    // If both numbers are not constants, we know little.
-    return TypeInt::INT;
+    }
+    if (i1->is_con()) {
+      // We must be modulo'ing 2 float constants.
+      // Check for min_jint % '-1', result is defined to be '0'.
+      if (i1->get_con() == min_jint && i2->get_con() == -1) {
+        return TypeInt::ZERO;
+      }
+      // x and y are both constant!
+      return TypeInt::make(i1->get_con() % i2->get_con());
+    }
+    // Otherwise, the bound can be deduced given that divisor is a known constant 
+    // x % -y  ==> [0, y - 1]
+    // x % y   ==> [0, y - 1]
+    // -x % y  ==> [-y + 1, 0]
+    // -x % -y ==> [-y + 1, 0]
+    if (i1->lo_as_long() >= 0) {
+      return TypeInt::make(0, ABS(i2->get_con()) - 1, i1->_widen);
+    } else if (i1->hi_as_long() < 0) {
+      return TypeInt::make(-ABS(i2->get_con()) + 1, 0, i1->_widen);
+    } else {
+      // x could be positive or negative, we know little about the result.
+      return bottom_type();
+    }
+  } else {
+    // If divisor is not constant, we know little.
+    return bottom_type();
   }
-  // Mod by zero?  Throw exception at runtime!
-  if( !i2->get_con() ) return TypeInt::POS;
-
-  // We must be modulo'ing 2 float constants.
-  // Check for min_jint % '-1', result is defined to be '0'.
-  if( i1->get_con() == min_jint && i2->get_con() == -1 )
-    return TypeInt::ZERO;
-
-  return TypeInt::make( i1->get_con() % i2->get_con() );
 }
 
 
@@ -1150,29 +1160,39 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
     return TypeLong::ZERO;
   }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
-
   const TypeLong *i1 = t1->is_long();
   const TypeLong *i2 = t2->is_long();
-  if( !i1->is_con() || !i2->is_con() ) {
-    if( i1->_lo >= CONST64(0) && i2->_lo >= CONST64(0) )
+  if (i2->is_con()) {
+    // Mod by zero?  Throw exception at runtime!
+    if (i2->get_con() == 0) {
       return TypeLong::POS;
-    // If both numbers are not constants, we know little.
-    return TypeLong::LONG;
+    }
+    if (i1->is_con()) {
+      // We must be modulo'ing 2 float constants.
+      // Check for min_jint % '-1', result is defined to be '0'.
+      if (i1->get_con() == min_jlong && i2->get_con() == -1) {
+        return TypeLong::ZERO;
+      }
+      // x and y are both constant!
+      return TypeLong::make(i1->get_con() % i2->get_con());
+    }
+    // Otherwise, the bound can be deduced given that divisor is a known constant 
+    // x % -y  ==> [0, y - 1]
+    // x % y   ==> [0, y - 1]
+    // -x % y  ==> [-y + 1, 0]
+    // -x % -y ==> [-y + 1, 0]
+    if (i1->lo_as_long() >= 0) {
+      return TypeLong::make(0, ABS(i2->get_con()) - 1, i1->_widen);
+    } else if (i1->hi_as_long() < 0) {
+      return TypeLong::make(-ABS(i2->get_con()) + 1, 0, i1->_widen);
+    } else {
+      // x could be positive or negative, we know little about the result.
+      return bottom_type();
+    }
+  } else {
+    // If divisor is not constant, we know little.
+    return bottom_type();
   }
-  // Mod by zero?  Throw exception at runtime!
-  if( !i2->get_con() ) return TypeLong::POS;
-
-  // We must be modulo'ing 2 float constants.
-  // Check for min_jint % '-1', result is defined to be '0'.
-  if( i1->get_con() == min_jlong && i2->get_con() == -1 )
-    return TypeLong::ZERO;
-
-  return TypeLong::make( i1->get_con() % i2->get_con() );
 }
 
 
