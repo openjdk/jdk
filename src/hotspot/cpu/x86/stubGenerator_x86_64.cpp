@@ -5854,7 +5854,7 @@ address generate_avx_ghash_processBlocks() {
 // Based on the article (and associated code) from https://arxiv.org/abs/1910.05109.
 //
 // Intrinsic function prototype in Base64.java:
-// private void decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
+// private void decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL, isMIME) {
   address generate_base64_decodeBlock() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "implDecode");
@@ -5881,8 +5881,15 @@ address generate_avx_ghash_processBlocks() {
     const Address isURL_mem(rbp, 7 * wordSize);
     const Register isURL = r10;      // pick the volatile windows register
     const Register dp = r12;
+    const Register isMIME = r15;
     __ movl(dp, dp_mem);
     __ movl(isURL, isURL_mem);
+#endif
+#ifdef _WIN64
+    // on win64, fill len_reg from stack position
+    __ movl(isMIME, Address(rbp, 8 * wordSize));
+#else
+    __ movl(isMIME, Address(rbp, 2 * wordSize));
 #endif
 
     const XMMRegister lookup_lo = xmm5;

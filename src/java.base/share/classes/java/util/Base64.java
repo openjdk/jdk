@@ -782,7 +782,7 @@ public class Base64 {
          * @return the number of destination data bytes produced
          */
         @IntrinsicCandidate
-        private int decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
+        private int decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL, boolean isMIME) {
             int[] base64 = isURL ? fromBase64URL : fromBase64;
             int sl0 = sp + ((sl - sp) & ~0b11);
             int new_dp = dp;
@@ -810,7 +810,7 @@ public class Base64 {
 
             while (sp < sl) {
                 if (shiftto == 18 && sp < sl - 4) {       // fast path
-                    int dl = decodeBlock(src, sp, sl, dst, dp, isURL);
+                    int dl = decodeBlock(src, sp, sl, dst, dp, isURL, isMIME);
                     /*
                      * Calculate how many characters were processed by how many
                      * bytes of data were returned.
