@@ -269,6 +269,12 @@ JVM_ResumeThread(JNIEnv *env, jobject thread);
 JNIEXPORT void JNICALL
 JVM_SetThreadPriority(JNIEnv *env, jobject thread, jint prio);
 
+JNIEXPORT jobject JNICALL
+JVM_ScopeLocalCache(JNIEnv *env, jclass threadClass);
+
+JNIEXPORT void JNICALL
+JVM_SetScopeLocalCache(JNIEnv *env, jclass threadClass, jobject theCache);
+
 JNIEXPORT void JNICALL
 JVM_Yield(JNIEnv *env, jclass threadClass);
 

@@ -187,6 +187,13 @@ public class Thread implements Runnable {
      */
     ThreadLocal.ThreadLocalMap inheritableThreadLocals = null;
 
+    // A simple (not very) random string of bits to use when evicting
+    // cache entries from the scoped variable cache.
+    int victims = 0b1100_1001_0000_1111_1101_1010_1010_0010;
+
+    ScopeLocal.Snapshot noninheritableScopeLocalBindings;
+    ScopeLocal.Snapshot inheritableScopeLocalBindings;
+
     /*
      * The requested stack size for this thread, or 0 if the creator did
      * not specify a stack size.  It is up to the VM to do whatever it
@@ -258,6 +265,14 @@ public class Thread implements Runnable {
      */
     @IntrinsicCandidate
     public static native Thread currentThread();
+
+    // ScopeLocal support:
+
+    // @IntrinsicCandidate
+    static native Object[] scopeLocalCache();
+
+    // @IntrinsicCandidate
+    static native void setScopeLocalCache(Object[] cache);
 
     /**
      * A hint to the scheduler that the current thread is willing to yield
