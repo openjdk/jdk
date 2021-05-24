@@ -101,7 +101,7 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
             String topArchiveName = getNewArchiveName();
             String testCase = Integer.toString(i);
             String cmdLine[] = new String[] {
-               "--add-modules",
+                "--add-modules",
                 "java.base,jdk.httpserver",
                 "--add-exports",
                 "java.base/jdk.internal.misc=ALL-UNNAMED",

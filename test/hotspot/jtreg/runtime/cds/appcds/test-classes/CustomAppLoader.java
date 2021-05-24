@@ -29,7 +29,7 @@ import java.net.URLClassLoader;
 
 
 // This is a handy class for running an application inside a custom class loader. This
-// is used for testing CDS handling of unregistered classes (i.e., archved classes loaded
+// is used for testing CDS handling of unregistered classes (i.e., archived classes loaded
 // by custom class loaders).
 //
 // See test/hotspot/jtreg/runtime/cds/appcds/loaderConstraints/LoaderConstraintsTest.java
