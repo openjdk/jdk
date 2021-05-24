@@ -1068,22 +1068,13 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
       in1 = step_over_gc_barrier(in1);
     }
 
-    PhaseIterGVN* igvn = phase->is_IterGVN();
     if (in1 != n->in(1)) {
-      if (igvn != NULL) {
-        n->set_req_X(1, in1, igvn);
-      } else {
-        n->set_req(1, in1);
-      }
+      n->set_req_X(1, in1, phase);
       assert(in2 == n->in(2), "only one change");
       return n;
     }
     if (in2 != n->in(2)) {
-      if (igvn != NULL) {
-        n->set_req_X(2, in2, igvn);
-      } else {
-        n->set_req(2, in2);
-      }
+      n->set_req_X(2, in2, phase);
       return n;
     }
   } else if (can_reshape &&
