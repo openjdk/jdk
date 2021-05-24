@@ -1609,7 +1609,7 @@ instruct reduce_add$1$2`'(iRegINoSp dst, iRegIorL2I isrc, vec$3 vsrc, vec$3 vtmp
   effect(TEMP vtmp, TEMP itmp);
   format %{ ifelse($1, 2, `"addpv  $vtmp, T2S, $vsrc, $vsrc\n\t"',`"addv  $vtmp, T4S, $vsrc\n\t"')
             "umov  $itmp, $vtmp, S, 0\n\t"
-            "addw  $dst, $itmp, $isrc\t# add reduction4I"
+            "addw  $dst, $itmp, $isrc\t# add reduction$1I"
   %}
   ins_encode %{
     ifelse($1, 2, `__ addpv(as_FloatRegister($vtmp$$reg), __ T2S,

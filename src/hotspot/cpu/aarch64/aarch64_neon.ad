@@ -4057,7 +4057,7 @@ instruct reduce_add2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecD vtmp, iReg
   effect(TEMP vtmp, TEMP itmp);
   format %{ "addpv  $vtmp, T2S, $vsrc, $vsrc\n\t"
             "umov  $itmp, $vtmp, S, 0\n\t"
-            "addw  $dst, $itmp, $isrc\t# add reduction4I"
+            "addw  $dst, $itmp, $isrc\t# add reduction2I"
   %}
   ins_encode %{
     __ addpv(as_FloatRegister($vtmp$$reg), __ T2S,
