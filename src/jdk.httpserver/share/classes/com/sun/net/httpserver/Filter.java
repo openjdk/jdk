@@ -283,7 +283,7 @@ public abstract class Filter {
      * @param requestOperator the request operator
      * @return a filter that adapts the request state before the exchange is handled
      * @throws NullPointerException if the argument is null
-     * @since 17
+     * @since 18
      */
     public static Filter adaptRequest(String description,
                                       UnaryOperator<Request> requestOperator) {

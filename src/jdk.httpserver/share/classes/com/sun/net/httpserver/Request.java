@@ -33,7 +33,7 @@ import sun.net.httpserver.UnmodifiableHeaders;
 /**
  * The immutable HTTP request state.
  *
- * @since 17
+ * @since 18
  */
 public interface Request {
 
@@ -99,12 +99,12 @@ public interface Request {
         Objects.requireNonNull(headerValues);
         final Request r = this;
 
-        Headers h = new Headers();
+        var h = new Headers();
         h.putAll(r.getRequestHeaders());
         if (!h.containsKey(headerName)) {
             h.put(headerName, headerValues);
         }
-        UnmodifiableHeaders unmodifiableHeaders = new UnmodifiableHeaders(h);
+        var unmodifiableHeaders = new UnmodifiableHeaders(h);
         return new Request() {
             @Override
             public URI getRequestURI() { return r.getRequestURI(); }

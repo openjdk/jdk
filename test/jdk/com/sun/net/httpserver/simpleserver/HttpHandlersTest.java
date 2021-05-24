@@ -52,7 +52,9 @@ import static org.testng.Assert.*;
 public class HttpHandlersTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
+    static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
     static final InetSocketAddress LOOPBACK_ADDR = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
@@ -77,6 +79,13 @@ public class HttpHandlersTest {
         assertThrows(NPE, () -> HttpHandlers.of(null, 200));
         assertThrows(NPE, () -> HttpHandlers.of(null, 200, "body"));
         assertThrows(NPE, () -> HttpHandlers.of(headers, 200, null));
+    }
+
+    @Test
+    public void testOfStatusCode() {
+        final var headers = new Headers();
+        assertThrows(IAE, () -> HttpHandlers.of(headers, 99));
+        assertThrows(IAE, () -> HttpHandlers.of(headers, 1000));
     }
 
     @Test
@@ -115,6 +124,28 @@ public class HttpHandlersTest {
             assertEquals(response.headers().firstValue("foo").get(), "bar");
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.headers().map().size(), 3);
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.body(), "hello world");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testOfOverwriteHeaders() throws Exception {
+        var headers = Headers.of("content-length", "1000", "date", "12345");
+        var handler = HttpHandlers.of(headers, 200, "hello world");
+        var expectedLength = Integer.toString("hello world".getBytes(UTF_8).length);
+        var server = HttpServer.create(LOOPBACK_ADDR, 0);
+        server.createContext("/", handler);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertNotEquals(response.headers().firstValue("date").get(), "12345");
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.headers().map().size(), 2);
             assertEquals(response.statusCode(), 200);
             assertEquals(response.body(), "hello world");
         } finally {

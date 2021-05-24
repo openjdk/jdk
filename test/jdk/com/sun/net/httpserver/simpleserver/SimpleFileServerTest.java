@@ -102,7 +102,6 @@ public class SimpleFileServerTest {
 
     @Test
     public void testDirectoryGET() throws Exception {
-        // TODO: why listing for >>>>&#x2F<<<<;
         var expectedBody = """
                 <!DOCTYPE html>
                 <html>

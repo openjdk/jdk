@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import sun.net.httpserver.UnmodifiableHeaders;
 
 /**
  * HTTP request and response headers are represented by this class which
@@ -234,20 +235,19 @@ public class Headers implements Map<String,List<String>> {
     public int hashCode() {return map.hashCode();}
 
     /**
-     * Returns a {@code Headers} with the given name value pairs as its set of
-     * headers.
+     * Returns an immutable {@code Headers} with the given name value pairs as
+     * its set of headers.
      *
      * <p> The supplied {@code String} instances must alternate as header names
      * and header values. To add several values to the same name, the same name
      * must be supplied with each new value.
      *
      * @param headers the list of name value pairs
-     * @return a headers with the given name value pairs
+     * @return an immutable headers with the given name value pairs
      * @throws NullPointerException     if {@code headers} or any of its
      *                                  elements are null
      * @throws IllegalArgumentException if the number of supplied strings is
      *                                  zero or odd
-     * @since 17
      */
     public static Headers of(String... headers) {
         Objects.requireNonNull(headers);
@@ -263,6 +263,6 @@ public class Headers implements Map<String,List<String>> {
             String value = headers[i + 1];
             h.add(name, value);
         }
-        return h;
+        return new UnmodifiableHeaders(h);
     }
 }

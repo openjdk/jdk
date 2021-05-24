@@ -51,7 +51,7 @@ import java.util.function.Predicate;
  * the {@code GetHandler}, otherwise handling of the exchange is delegated to
  * the {@code fallbackHandler}.
  *
- * @since 17
+ * @since 18
  */
 public class HttpHandlers {
 
@@ -89,7 +89,7 @@ public class HttpHandlers {
      * @return a handler
      * @throws IOException          if an I/O error occurs
      * @throws NullPointerException if any argument is null
-     * @since 17
+     * @since 18
      */
     public static HttpHandler handleOrElse(Predicate<Request> handlerTest,
                                     HttpHandler handler,
@@ -108,45 +108,66 @@ public class HttpHandlers {
     }
 
     /**
-     * Returns an {@code HttpHandler} that sends a response with the given
+     * Returns an {@code HttpHandler} that sends a response comprising the given
      * {@code headers}, {@code statusCode} and {@code body}.
      *
-     * <p> This method creates a handler that reads and discards the request
-     * body before it sets the response state.
-     * ...
+     * <p>This method creates a handler that reads and discards the request
+     * body before it sets the response state and sends the response.
      *
+     * <p>{@code headers} are the effective headers of the response. The
+     * response {@link HttpExchange#sendResponseHeaders(int, long) is sent}
+     * with the given {@code statusCode} and a responseLength of {@code -1} if
+     * {@code body} is of length zero, meaning no response body is sent.
+     * Otherwise, the {@code body} string is encoded in {@code UTF-8} to a
+     * sequence of bytes whose length is set as response length before it is
+     * sent as the response body.
+     *
+     * @param headers a headers
+     * @param statusCode a response status code
+     * @param body a body string
      * @return a handler
-     * @throws NullPointerException if headers or body is null
-     * @since 17
+     * @throws NullPointerException     if headers or body is null
+     * @throws IllegalArgumentException if statusCode is not a positive 3-digit
+     *                                  integer, as per rfc2616, section 6.1.1
+     * @since 18
      */
     public static HttpHandler of(Headers headers, int statusCode, String body) {
         Objects.requireNonNull(headers);
         Objects.requireNonNull(body);
-        // check status code?
-
-        if (body.length() == 0) return HttpHandlers.of(headers, statusCode);
+        if (statusCode < 100 || statusCode > 999)
+            throw new IllegalArgumentException("statusCode must be 3-digit: " + statusCode);
 
         var bytes = body.getBytes(StandardCharsets.UTF_8);
         return exchange -> {
             try (exchange) {
                 exchange.getRequestBody().readAllBytes();
                 exchange.getResponseHeaders().putAll(headers);
-                exchange.sendResponseHeaders(statusCode, bytes.length);
-                exchange.getResponseBody().write(bytes);
+                if (bytes.length == 0) {
+                    exchange.sendResponseHeaders(statusCode, -1);
+                } else {
+                    exchange.sendResponseHeaders(statusCode, bytes.length);
+                    exchange.getResponseBody().write(bytes);
+                }
             }
         };
     }
 
+    /**
+     * Returns an {@code HttpHandler} that sends a response with no body
+     * comprising the given {@code headers} and {@code statusCode}.
+     *
+     * The handler is created as if by an invocation of
+     * {@link #of(Headers, int, String)} with an empty string as {@code body}.
+     *
+     * @param headers a headers
+     * @param statusCode a response status code
+     * @return a handler
+     * @throws NullPointerException     if headers is null
+     * @throws IllegalArgumentException if statusCode is not a positive 3-digit
+     *                                  integer, as per rfc2616, section 6.1.1
+     * @since 18
+     */
     public static HttpHandler of(Headers headers, int statusCode) {
-        Objects.requireNonNull(headers);
-        // check status code?
-
-        return exchange -> {
-            try (exchange) {
-                exchange.getRequestBody().readAllBytes();
-                exchange.getResponseHeaders().putAll(headers);
-                exchange.sendResponseHeaders(statusCode, -1);
-            }
-        };
+        return HttpHandlers.of(headers, statusCode, "");
     }
 }
