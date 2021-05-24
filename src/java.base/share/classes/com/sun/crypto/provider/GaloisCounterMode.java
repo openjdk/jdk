@@ -37,6 +37,7 @@ import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.ProviderException;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static com.sun.crypto.provider.AESConstants.AES_BLOCK_SIZE;
 
@@ -70,7 +71,7 @@ final class GaloisCounterMode extends FeedbackCipher {
     private static final int MAX_BUF_SIZE = Integer.MAX_VALUE;
 
     // data size when buffer is divided up to aid in intrinsics
-    private static final int TRIGGERLEN = 65536;  // 64k
+    private static final int TRIGGERLEN = 768;  // Interleaved implementation can deal with 768 bytes or higher lengths.
 
     // buffer for AAD data; if null, meaning update has been called
     private ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
@@ -89,6 +90,9 @@ final class GaloisCounterMode extends FeedbackCipher {
     // called, e.g. after cipher key k is set, and STAY UNCHANGED
     private byte[] subkeyH = null;
     private byte[] preCounterBlock = null;
+    private long[] subkeyHtbl = null;
+    private long[] state = null;
+    private byte[] counter = null;
 
     private GCTR gctrPAndC = null;
     private GHASH ghashAllToS = null;
@@ -330,6 +334,10 @@ final class GaloisCounterMode extends FeedbackCipher {
         gctrPAndC = new GCTR(embeddedCipher, j0Plus1);
         ghashAllToS = new GHASH(subkeyH);
 
+        this.subkeyHtbl = ghashAllToS.getSubkeyHtbl();
+        this.state = ghashAllToS.getState();
+        this.counter = gctrPAndC.counter;
+
         this.tagLenBytes = tagLenBytes;
         if (aadBuffer == null) {
             aadBuffer = new ByteArrayOutputStream();
@@ -404,7 +412,7 @@ final class GaloisCounterMode extends FeedbackCipher {
         byte[] ct;
         int ctOfs;
         int ilen = len;  // internal length
-
+        int tlen = 0;
         if (isEncrypt) {
             ct = out;
             ctOfs = outOfs;
@@ -413,25 +421,14 @@ final class GaloisCounterMode extends FeedbackCipher {
             ctOfs = inOfs;
         }
 
-        // Divide up larger data sizes to trigger CTR & GHASH intrinsic quicker
-        if (len > TRIGGERLEN) {
-            int i = 0;
-            int tlen;  // incremental lengths
-            final int plen = AES_BLOCK_SIZE * 6;
-            // arbitrary formula to aid intrinsic without reaching buffer end
-            final int count = len / 1024;
-
-            while (count > i) {
-                tlen = gctrPAndC.update(in, inOfs, plen, out, outOfs);
-                ghashAllToS.update(ct, ctOfs, tlen);
-                inOfs += tlen;
-                outOfs += tlen;
-                ctOfs += tlen;
-                i++;
-            }
-            ilen -= count * plen;
-            processed += count * plen;
-        }
+          if (len > TRIGGERLEN) {
+              tlen = implGCMCrypt(in, inOfs, len, ct, ctOfs, out, outOfs, true, isEncrypt, state, subkeyHtbl, counter);
+              inOfs += tlen;
+              outOfs += tlen;
+              ctOfs += tlen;
+              ilen -= tlen;
+              processed += tlen;
+          }
 
         gctrPAndC.doFinal(in, inOfs, ilen, out, outOfs);
         processed += ilen;
@@ -503,6 +500,35 @@ final class GaloisCounterMode extends FeedbackCipher {
             ibuffer.write(in, inOfs, len);
         }
         return len;
+    }
+
+    // Intrinsic for Vector AES Galois Counter Mode implementation.
+    // AES and GHASH operations are interleaved in the intrinsic implementation.
+    // return - number of processed bytes
+    @IntrinsicCandidate
+    private int implGCMCrypt(byte[] in, int inOfs, int len, byte[] ct, int ctOfs, byte[] out, int outOfs, boolean processInChunks, boolean isEncrypt,
+                             long[] state, long[] subkeyHtbl, byte[] counter) {
+        int processedBytes = 0;
+        if (processInChunks) {
+            int i = 0;
+            int tlen = 0; // incremental length
+            final int plen = AES_BLOCK_SIZE * 6;
+            // arbitrary formula to aid intrinsic without reaching buffer end
+            final int count = len / 1024;
+            while (count > i) {
+                tlen = gctrPAndC.update(in, inOfs, plen, out, outOfs);
+                ghashAllToS.update(ct, ctOfs, tlen);
+                inOfs += tlen;
+                outOfs += tlen;
+                ctOfs += tlen;
+                processedBytes += tlen;
+                i++;
+            }
+        } else {
+            processedBytes = gctrPAndC.update(in, inOfs, len, out, outOfs);
+            ghashAllToS.update(ct, ctOfs, processedBytes);
+        }
+        return processedBytes;
     }
 
     /**
@@ -596,9 +622,17 @@ final class GaloisCounterMode extends FeedbackCipher {
     }
 
     void encryptBlocks(byte[] in, int inOfs, int len, byte[] out, int outOfs) {
-        gctrPAndC.update(in, inOfs, len, out, outOfs);
-        processed += len;
-        ghashAllToS.update(out, outOfs, len);
+        //intrinsic processes 768 bytes or multiples of 768 bytes of data. Remaining length to be processed outside intrinsic.
+        int tlen = implGCMCrypt(in, inOfs, len, out, outOfs, out, outOfs, false, true, state, subkeyHtbl, counter);
+        processed += tlen;
+        inOfs += tlen;
+        outOfs += tlen;
+        if (len > tlen) {
+          int ilen = len - tlen;
+          tlen = gctrPAndC.update(in, inOfs, ilen, out, outOfs);
+          ghashAllToS.update(out, outOfs, tlen);
+          processed += tlen;
+        }
     }
 
     /**

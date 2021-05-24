@@ -331,6 +331,7 @@
   static_field(StubRoutines,                _vectorizedMismatch,                              address)                               \
   static_field(StubRoutines,                _bigIntegerRightShiftWorker,                      address)                               \
   static_field(StubRoutines,                _bigIntegerLeftShiftWorker,                       address)                               \
+  static_field(StubRoutines,                _galoisCounterMode_AESCrypt,                      address)                               \
                                                                                                                                      \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                   _allocated_bytes,                                 jlong)                                 \

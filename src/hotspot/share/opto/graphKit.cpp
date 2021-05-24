@@ -2489,7 +2489,8 @@ Node* GraphKit::make_runtime_call(int flags,
                                   Node* parm0, Node* parm1,
                                   Node* parm2, Node* parm3,
                                   Node* parm4, Node* parm5,
-                                  Node* parm6, Node* parm7) {
+                                  Node* parm6, Node* parm7,
+                                  Node* parm8, Node* parm9) {
   assert(call_addr != NULL, "must not call NULL targets");
 
   // Slow-path call
@@ -2533,7 +2534,9 @@ Node* GraphKit::make_runtime_call(int flags,
   if (parm5 != NULL) { call->init_req(TypeFunc::Parms+5, parm5);
   if (parm6 != NULL) { call->init_req(TypeFunc::Parms+6, parm6);
   if (parm7 != NULL) { call->init_req(TypeFunc::Parms+7, parm7);
-    /* close each nested if ===> */  } } } } } } } }
+  if (parm8 != NULL) { call->init_req(TypeFunc::Parms+8, parm8);
+  if (parm9 != NULL) { call->init_req(TypeFunc::Parms+9, parm9);
+  /* close each nested if ===> */  } } } } } } } } } }
   assert(call->in(call->req()-1) != NULL, "must initialize all parms");
 
   if (!is_leaf) {

@@ -150,7 +150,7 @@ final class GHASH {
             throw new ProviderException("Internal error");
         }
         state = new long[2];
-        subkeyHtbl = new long[2*9];
+        subkeyHtbl = new long[2*57]; // 48 keys for the interleaved implementation, 8 for avx-ghash implementation and one for the original key
         subkeyHtbl[0] = getLong(subkeyH, 0);
         subkeyHtbl[1] = getLong(subkeyH, 8);
     }
@@ -252,7 +252,7 @@ final class GHASH {
             throw new RuntimeException("internal state has invalid length: " +
                                        st.length);
         }
-        if (subH.length != 18) {
+        if (subH.length != 114) {
             throw new RuntimeException("internal subkeyHtbl has invalid length: " +
                                        subH.length);
         }
@@ -278,5 +278,13 @@ final class GHASH {
         putLong(result, 8, state[1]);
         reset();
         return result;
+    }
+
+    long[] getState() {
+        return state;
+    }
+
+    long[] getSubkeyHtbl() {
+        return subkeyHtbl;
     }
 }
