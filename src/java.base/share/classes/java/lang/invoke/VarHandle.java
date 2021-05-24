@@ -1636,7 +1636,7 @@ public abstract class VarHandle implements Constable {
         COMPARE_AND_EXCHANGE(Object.class),
         GET_AND_UPDATE(Object.class);
 
-        static final int COUNT = 5;
+        static final int COUNT = GET_AND_UPDATE.ordinal() + 1;
         static {
             assert (COUNT == values().length);
         }
@@ -1894,7 +1894,7 @@ public abstract class VarHandle implements Constable {
         GET_AND_BITWISE_XOR_ACQUIRE("getAndBitwiseXorAcquire", AccessType.GET_AND_UPDATE),
         ;
 
-        static final int COUNT = 31;
+        static final int COUNT = GET_AND_BITWISE_XOR_ACQUIRE.ordinal() + 1;
         static {
             assert (COUNT == values().length);
         }
