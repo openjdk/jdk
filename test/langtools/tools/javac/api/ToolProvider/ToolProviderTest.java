@@ -33,7 +33,7 @@ import javax.tools.ToolProvider;
  * @summary Test javax.tools.ToolProvider running with security manager
  * @modules java.compiler
  *          jdk.compiler
- * @run main/othervm ToolProviderTest
+ * @run main/othervm -Djava.security.manager=allow ToolProviderTest
  */
 
 // run in other vm to ensure the initialization code path is exercised.
