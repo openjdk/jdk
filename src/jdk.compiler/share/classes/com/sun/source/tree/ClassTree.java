@@ -93,10 +93,8 @@ public interface ClassTree extends StatementTree {
      *
      * @return the subclasses
      *
-     * @since 15
+     * @since 17
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES,
-                                       reflective=true)
     default List<? extends Tree> getPermitsClause() {
         return List.of();
     }

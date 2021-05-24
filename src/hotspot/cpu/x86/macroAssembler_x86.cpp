@@ -3216,9 +3216,9 @@ void MacroAssembler::vpmovzxbw(XMMRegister dst, Address src, int vector_len) {
   Assembler::vpmovzxbw(dst, src, vector_len);
 }
 
-void MacroAssembler::vpmovmskb(Register dst, XMMRegister src) {
+void MacroAssembler::vpmovmskb(Register dst, XMMRegister src, int vector_len) {
   assert((src->encoding() < 16),"XMM register should be 0-15");
-  Assembler::vpmovmskb(dst, src);
+  Assembler::vpmovmskb(dst, src, vector_len);
 }
 
 void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
@@ -3229,6 +3229,16 @@ void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, 
 void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
   assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpmullw(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpmulld(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg) {
+  assert((UseAVX > 0), "AVX support is needed");
+  if (reachable(src)) {
+    Assembler::vpmulld(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(scratch_reg, src);
+    Assembler::vpmulld(dst, nds, Address(scratch_reg, 0), vector_len);
+  }
 }
 
 void MacroAssembler::vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {

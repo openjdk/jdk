@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +34,15 @@
 #include "memory/metaspace/chunkHeaderPool.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
+#include "memory/metaspace/internalStats.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/metaspaceReporter.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
-#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspaceTracer.hpp"
+#include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -87,8 +89,65 @@ size_t MetaspaceUtils::committed_words(Metaspace::MetadataType mdtype) {
   return mdtype == Metaspace::ClassType ? RunningCounters::committed_words_class() : RunningCounters::committed_words_nonclass();
 }
 
-void MetaspaceUtils::print_metaspace_change(const metaspace::MetaspaceSizesSnapshot& pre_meta_values) {
-  const metaspace::MetaspaceSizesSnapshot meta_values;
+// Helper for get_statistics()
+static void get_values_for(Metaspace::MetadataType mdtype, size_t* reserved, size_t* committed, size_t* used) {
+#define w2b(x) (x * sizeof(MetaWord))
+  if (mdtype == Metaspace::ClassType) {
+    *reserved = w2b(RunningCounters::reserved_words_class());
+    *committed = w2b(RunningCounters::committed_words_class());
+    *used = w2b(RunningCounters::used_words_class());
+  } else {
+    *reserved = w2b(RunningCounters::reserved_words_nonclass());
+    *committed = w2b(RunningCounters::committed_words_nonclass());
+    *used = w2b(RunningCounters::used_words_nonclass());
+  }
+#undef w2b
+}
+
+// Retrieve all statistics in one go; make sure the values are consistent.
+MetaspaceStats MetaspaceUtils::get_statistics(Metaspace::MetadataType mdtype) {
+
+  // Consistency:
+  // This function reads three values (reserved, committed, used) from different counters. These counters
+  // may (very rarely) be out of sync. This has been a source for intermittent test errors in the past
+  //  (see e.g. JDK-8237872, JDK-8151460).
+  // - reserved and committed counter are updated under protection of Metaspace_lock; an inconsistency
+  //   between them can be the result of a dirty read.
+  // - used is an atomic counter updated outside any lock range; there is no way to guarantee
+  //   a clean read wrt the other two values.
+  // Reading these values under lock protection would would only help for the first case. Therefore
+  //   we don't bother and just re-read several times, then give up and correct the values.
+
+  size_t r = 0, c = 0, u = 0; // Note: byte values.
+  get_values_for(mdtype, &r, &c, &u);
+  int retries = 10;
+  // If the first retrieval resulted in inconsistent values, retry a bit...
+  while ((r < c || c < u) && --retries >= 0) {
+    get_values_for(mdtype, &r, &c, &u);
+  }
+  if (c < u || r < c) { // still inconsistent.
+    // ... but not endlessly. If we don't get consistent values, correct them on the fly.
+    // The logic here is that we trust the used counter - its an atomic counter and whatever we see
+    // must have been the truth once - and from that we reconstruct a likely set of committed/reserved
+    // values.
+    metaspace::InternalStats::inc_num_inconsistent_stats();
+    if (c < u) {
+      c = align_up(u, Metaspace::commit_alignment());
+    }
+    if (r < c) {
+      r = align_up(c, Metaspace::reserve_alignment());
+    }
+  }
+  return MetaspaceStats(r, c, u);
+}
+
+MetaspaceCombinedStats MetaspaceUtils::get_combined_statistics() {
+  return MetaspaceCombinedStats(get_statistics(Metaspace::ClassType), get_statistics(Metaspace::NonClassType));
+}
+
+void MetaspaceUtils::print_metaspace_change(const MetaspaceCombinedStats& pre_meta_values) {
+  // Get values now:
+  const MetaspaceCombinedStats meta_values = get_combined_statistics();
 
   // We print used and committed since these are the most useful at-a-glance vitals for Metaspace:
   // - used tells you how much memory is actually used for metadata
@@ -150,24 +209,23 @@ void MetaspaceUtils::print_report(outputStream* out, size_t scale) {
 void MetaspaceUtils::print_on(outputStream* out) {
 
   // Used from all GCs. It first prints out totals, then, separately, the class space portion.
-
+  MetaspaceCombinedStats stats = get_combined_statistics();
   out->print_cr(" Metaspace       "
                 "used "      SIZE_FORMAT "K, "
                 "committed " SIZE_FORMAT "K, "
                 "reserved "  SIZE_FORMAT "K",
-                used_bytes()/K,
-                committed_bytes()/K,
-                reserved_bytes()/K);
+                stats.used()/K,
+                stats.committed()/K,
+                stats.reserved()/K);
 
   if (Metaspace::using_class_space()) {
-    const Metaspace::MetadataType ct = Metaspace::ClassType;
     out->print_cr("  class space    "
                   "used "      SIZE_FORMAT "K, "
                   "committed " SIZE_FORMAT "K, "
                   "reserved "  SIZE_FORMAT "K",
-                  used_bytes(ct)/K,
-                  committed_bytes(ct)/K,
-                  reserved_bytes(ct)/K);
+                  stats.class_space_stats().used()/K,
+                  stats.class_space_stats().committed()/K,
+                  stats.class_space_stats().reserved()/K);
   }
 }
 
@@ -870,7 +928,6 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
     MetaspaceUtils::print_basic_report(&ls, 0);
   }
 
-  // TODO: this exception text may be wrong and misleading. This needs more thinking. See JDK-8252189.
   bool out_of_compressed_class_space = false;
   if (is_class_space_allocation(mdtype)) {
     ClassLoaderMetaspace* metaspace = loader_data->metaspace_non_null();

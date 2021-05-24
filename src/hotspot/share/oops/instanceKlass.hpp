@@ -1406,7 +1406,6 @@ class ClassHierarchyIterator : public StackObj {
 
  public:
   ClassHierarchyIterator(InstanceKlass* root) : _root(root), _current(root), _visit_subclasses(true) {
-    assert(!root->is_interface(), "no subclasses");
     assert(_root == _current, "required"); // initial state
   }
 

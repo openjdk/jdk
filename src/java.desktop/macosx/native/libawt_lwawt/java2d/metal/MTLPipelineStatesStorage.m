@@ -152,7 +152,8 @@ static void setBlendingFactors(
     if ((composite != nil && FLT_LT([composite getExtraAlpha], 1.0f))) {
         subIndex |= 1 << 6;
     }
-    int index = compositeRule*64 + subIndex;
+
+    int index = compositeRule*128 + subIndex;
 
     NSPointerArray * subStates = [self getSubStates:vertexShaderId fragmentShader:fragmentShaderId];
 
@@ -264,13 +265,13 @@ static void setBlendingFactors(
  * The MTLBlendRule structure encapsulates the two enumerated values that
  * comprise a given Porter-Duff blending (compositing) rule.  For example,
  * the "SrcOver" rule can be represented by:
- *     rule.src = GL_ONE;
- *     rule.dst = GL_ONE_MINUS_SRC_ALPHA;
+ *     rule.src = MTLBlendFactorZero;
+ *     rule.dst = MTLBlendFactorOneMinusSourceAlpha;
  *
- *     GLenum src;
+ *     MTLBlendFactor src;
  * The constant representing the source factor in this Porter-Duff rule.
  *
- *     GLenum dst;
+ *     MTLBlendFactor dst;
  * The constant representing the destination factor in this Porter-Duff rule.
  */
 struct MTLBlendRule {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,32 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.util.links;
-
-/**
- *  Stores output of a link.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+#import "GroupAccessibility.h"
+#import "JNIUtilities.h"
+#import "ThreadUtilities.h"
+/*
+ * This is the protocol for the components that contain children.
+ * Basic logic of accessibilityChildren might be overridden in the specific implementing
+ * classes reflecting the logic of the class.
  */
-public interface LinkOutput {
+@implementation GroupAccessibility
 
-    /**
-     * Append the given object to the output.
-     *
-     * @param o the object to append.
-     */
-    void append(Object o);
+/*
+ * Return all non-ignored children.
+ */
+- (NSArray *)accessibilityChildren {
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
 
-    /**
-     * Insert the given object into the output sequence.
-     *
-     * @param offset the offset.
-     * @param o the object to be inserted.
-     */
-    void insert(int offset, Object o);
+    NSArray *children = [JavaComponentAccessibility childrenOfParent:self
+                                                             withEnv:env
+                                                    withChildrenCode:JAVA_AX_ALL_CHILDREN
+                                                        allowIgnored:NO];
+
+    if ([children count] == 0) {
+        return nil;
+    } else {
+        return children;
+    }
 }
+
+@end

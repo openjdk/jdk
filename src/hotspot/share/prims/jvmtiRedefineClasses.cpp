@@ -4420,7 +4420,7 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     the_class->oop_map_cache()->flush_obsolete_entries();
   }
 
-  increment_class_counter((InstanceKlass *)the_class);
+  increment_class_counter(the_class);
 
   if (EventClassRedefinition::is_enabled()) {
     EventClassRedefinition event;
@@ -4449,24 +4449,20 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
 
 // Increment the classRedefinedCount field in the specific InstanceKlass
 // and in all direct and indirect subclasses.
-void VM_RedefineClasses::increment_class_counter(InstanceKlass *ik) {
-  oop class_mirror = ik->java_mirror();
-  Klass* class_oop = java_lang_Class::as_Klass(class_mirror);
-  int new_count = java_lang_Class::classRedefinedCount(class_mirror) + 1;
-  java_lang_Class::set_classRedefinedCount(class_mirror, new_count);
+void VM_RedefineClasses::increment_class_counter(InstanceKlass* ik) {
+  for (ClassHierarchyIterator iter(ik); !iter.done(); iter.next()) {
+    // Only update instanceKlasses
+    Klass* sub = iter.klass();
+    if (sub->is_instance_klass()) {
+      oop class_mirror = InstanceKlass::cast(sub)->java_mirror();
+      Klass* class_oop = java_lang_Class::as_Klass(class_mirror);
+      int new_count = java_lang_Class::classRedefinedCount(class_mirror) + 1;
+      java_lang_Class::set_classRedefinedCount(class_mirror, new_count);
 
-  if (class_oop != _the_class) {
-    // _the_class count is printed at end of redefine_single_class()
-    log_debug(redefine, class, subclass)("updated count in subclass=%s to %d", ik->external_name(), new_count);
-  }
-
-  for (Klass *subk = ik->subklass(); subk != NULL;
-       subk = subk->next_sibling()) {
-    if (subk->is_instance_klass()) {
-      // Only update instanceKlasses
-      InstanceKlass *subik = InstanceKlass::cast(subk);
-      // recursively do subclasses of the current subclass
-      increment_class_counter(subik);
+      if (class_oop != _the_class) {
+        // _the_class count is printed at end of redefine_single_class()
+        log_debug(redefine, class, subclass)("updated count in subclass=%s to %d", ik->external_name(), new_count);
+      }
     }
   }
 }

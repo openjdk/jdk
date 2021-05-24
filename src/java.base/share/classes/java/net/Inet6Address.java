@@ -176,7 +176,7 @@ public final
 class Inet6Address extends InetAddress {
     static final int INADDRSZ = 16;
 
-    private class Inet6AddressHolder {
+    private static class Inet6AddressHolder {
 
         private Inet6AddressHolder() {
             ipaddress = new byte[INADDRSZ];

@@ -63,12 +63,12 @@ class ConcurrentHashTable : public CHeapObj<F> {
     VALUE* value()                    { return &_value; }
 
     // Creates a node.
-    static Node* create_node(const VALUE& value, Node* next = NULL) {
-      return new (CONFIG::allocate_node(sizeof(Node), value)) Node(value, next);
+    static Node* create_node(void* context, const VALUE& value, Node* next = NULL) {
+      return new (CONFIG::allocate_node(context, sizeof(Node), value)) Node(value, next);
     }
     // Destroys a node.
-    static void destroy_node(Node* node) {
-      CONFIG::free_node((void*)node, node->_value);
+    static void destroy_node(void* context, Node* node) {
+      CONFIG::free_node(context, (void*)node, node->_value);
     }
 
     void print_on(outputStream* st) const {};
@@ -199,6 +199,8 @@ class ConcurrentHashTable : public CHeapObj<F> {
     LazyValueRetrieve(const VALUE& val) : _val(val) {}
     const VALUE& operator()() { return _val; }
   };
+
+  void* _context;
 
   InternalTable* _table;      // Active table.
   InternalTable* _new_table;  // Table we are resizing to.
@@ -372,7 +374,11 @@ class ConcurrentHashTable : public CHeapObj<F> {
  public:
   ConcurrentHashTable(size_t log2size = DEFAULT_START_SIZE_LOG2,
                       size_t log2size_limit = DEFAULT_MAX_SIZE_LOG2,
-                      size_t grow_hint = DEFAULT_GROW_HINT);
+                      size_t grow_hint = DEFAULT_GROW_HINT,
+                      void* context = NULL);
+
+  explicit ConcurrentHashTable(void* context, size_t log2size = DEFAULT_START_SIZE_LOG2) :
+    ConcurrentHashTable(log2size, DEFAULT_MAX_SIZE_LOG2, DEFAULT_GROW_HINT, context) {}
 
   ~ConcurrentHashTable();
 

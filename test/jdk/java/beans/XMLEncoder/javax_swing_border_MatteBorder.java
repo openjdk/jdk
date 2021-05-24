@@ -25,6 +25,7 @@
  * @test
  * @bug 6402062
  * @summary Tests MatteBorder encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_border_MatteBorder
  * @author Sergey Malenkov
  */
 

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @run testng/othervm -Dsun.net.maxDatagramSockets=32 UdpSocket
+ * @run testng/othervm -Djava.security.manager=allow -Dsun.net.maxDatagramSockets=32 UdpSocket
  * @summary Basic test for a Socket to a UDP socket
  */
 
