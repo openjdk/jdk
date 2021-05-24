@@ -468,6 +468,19 @@ public final class ImageReader implements AutoCloseable {
 
         Node handleResource(String name) {
             Node n = null;
+            if (!name.startsWith("/modules/")) {
+                return null;
+            }
+            // Make sure that the thing that follows "/modules/" is a module name.
+            int moduleEndIndex = name.indexOf('/', "/modules/".length());
+            if (moduleEndIndex == -1) {
+                return null;
+            }
+            ImageLocation moduleLoc = findLocation(name.substring(0, moduleEndIndex));
+            if (moduleLoc == null || moduleLoc.getModuleOffset() == 0) {
+                return null;
+            }
+
             String locationPath = name.substring("/modules".length());
             ImageLocation resourceLoc = findLocation(locationPath);
             if (resourceLoc != null) {

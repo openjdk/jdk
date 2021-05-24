@@ -43,14 +43,12 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
 import javax.lang.model.element.Element;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.WeakHashMap;
 
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 /**
  * Generates the file with the summary of all the system properties.
@@ -148,7 +146,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
 
     private Map<String, List<IndexItem>> groupSystemProperties() {
         return configuration.mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).stream()
-                .collect(groupingBy(IndexItem::getLabel, TreeMap::new, toList()));
+                .collect(groupingBy(IndexItem::getLabel, TreeMap::new, Collectors.toCollection(ArrayList::new)));
     }
 
     private Content createLink(IndexItem i) {

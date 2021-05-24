@@ -341,9 +341,9 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
 void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
   assert(bang_size_in_bytes >= framesize, "stack bang size incorrect");
   // Make sure there is enough stack space for this method's activation.
-  // Note that we do this before doing an enter().
+  // Note that we do this before creating a frame.
   generate_stack_overflow_check(bang_size_in_bytes);
-  MacroAssembler::build_frame(framesize + 2 * wordSize);
+  MacroAssembler::build_frame(framesize);
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -351,7 +351,7 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
 }
 
 void C1_MacroAssembler::remove_frame(int framesize) {
-  MacroAssembler::remove_frame(framesize + 2 * wordSize);
+  MacroAssembler::remove_frame(framesize);
 }
 
 

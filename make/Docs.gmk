@@ -154,13 +154,14 @@ COPYRIGHT_BOTTOM = \
     <a href="$(REDISTRIBUTION_URL)">documentation redistribution policy</a>. \
     $(DRAFT_MARKER_STR) <!-- Version $(VERSION_STRING) -->
 
-JAVADOC_BOTTOM := \
+# $1 - Optional "Other Versions" link
+JAVADOC_BOTTOM = \
     <a href="$(BUG_SUBMIT_URL)">Report a bug or suggest an enhancement</a><br> \
     For further API reference and developer documentation see the \
     <a href="$(JAVADOC_BASE_URL)" target="_blank">Java SE \
     Documentation</a>, which contains more detailed, \
     developer-targeted descriptions with conceptual overviews, definitions \
-    of terms, workarounds, and working code examples.<br> \
+    of terms, workarounds, and working code examples. $1<br> \
     Java is a trademark or registered trademark of $(FULL_COMPANY_NAME) in \
     the US and other countries.<br> \
     $(call COPYRIGHT_BOTTOM, {@docroot}/../)
@@ -300,22 +301,21 @@ define SetupApiDocsGenerationBody
   $1_OPTIONS += -Xdoclint/package:$$(call CommaList, $$(addprefix -, \
       $$(JAVADOC_DISABLED_DOCLINT_PACKAGES)))
 
-  ifneq ($$($1_OTHER_VERSIONS), )
-    $1_LINKED_SHORT_NAME = <a href="$$($1_OTHER_VERSIONS)">$$($1_SHORT_NAME)</a>
-  else
-    $1_LINKED_SHORT_NAME = $$($1_SHORT_NAME)
-  endif
-
   $1_DOC_TITLE := $$($1_LONG_NAME)<br>Version $$(VERSION_SPECIFICATION) API \
       Specification
   $1_WINDOW_TITLE := $$(subst &amp;,&,$$($1_SHORT_NAME))$$(DRAFT_MARKER_TITLE)
-  $1_HEADER_TITLE := <div $$(HEADER_STYLE)><strong>$$($1_LINKED_SHORT_NAME)</strong> \
+  $1_HEADER_TITLE := <div $$(HEADER_STYLE)><strong>$$($1_SHORT_NAME)</strong> \
       $$(DRAFT_MARKER_STR)</div>
+  ifneq ($$($1_OTHER_VERSIONS), )
+      $1_JAVADOC_BOTTOM := $$(call JAVADOC_BOTTOM, <a href="$$($1_OTHER_VERSIONS)">Other versions.</a>)
+  else
+      $1_JAVADOC_BOTTOM := $$(call JAVADOC_BOTTOM, )
+  endif
 
   $1_OPTIONS += -doctitle '$$($1_DOC_TITLE)'
   $1_OPTIONS += -windowtitle '$$($1_WINDOW_TITLE)'
   $1_OPTIONS += -header '$$($1_HEADER_TITLE)'
-  $1_OPTIONS += -bottom '$$(JAVADOC_BOTTOM)'
+  $1_OPTIONS += -bottom '$$($1_JAVADOC_BOTTOM)'
   ifeq ($$(IS_DRAFT), true)
     $1_OPTIONS += -top '$$(JAVADOC_TOP)'
   endif

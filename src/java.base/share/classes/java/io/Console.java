@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
+import sun.security.action.GetPropertyAction;
 
 /**
  * Methods to access the character-based console device, if any, associated
@@ -390,13 +391,31 @@ public final class Console implements Flushable
         pw.flush();
     }
 
+
+    /**
+     * Returns the {@link java.nio.charset.Charset Charset} object used for
+     * the {@code Console}.
+     * <p>
+     * The returned charset corresponds to the input and output source
+     * (e.g., keyboard and/or display) specified by the host environment or user.
+     * It may not necessarily be the same as the default charset returned from
+     * {@link java.nio.charset.Charset#defaultCharset() Charset.defaultCharset()}.
+     *
+     * @return a {@link java.nio.charset.Charset Charset} object used for the
+     *          {@code Console}
+     * @since 17
+     */
+    public Charset charset() {
+        assert CHARSET != null : "charset() should not return null";
+        return CHARSET;
+    }
+
     private Object readLock;
     private Object writeLock;
     private Reader reader;
     private Writer out;
     private PrintWriter pw;
     private Formatter formatter;
-    private Charset cs;
     private char[] rcb;
     private boolean restoreEcho;
     private boolean shutdownHookInstalled;
@@ -551,8 +570,21 @@ public final class Console implements Flushable
         }
     }
 
-    // Set up JavaIOAccess in SharedSecrets
+    private static final Charset CHARSET;
     static {
+        String csname = encoding();
+        Charset cs = null;
+        if (csname == null) {
+            csname = GetPropertyAction.privilegedGetProperty("sun.stdout.encoding");
+        }
+        if (csname != null) {
+            try {
+                cs = Charset.forName(csname);
+            } catch (Exception ignored) { }
+        }
+        CHARSET = cs == null ? Charset.defaultCharset() : cs;
+
+        // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
                 if (istty()) {
@@ -564,9 +596,7 @@ public final class Console implements Flushable
             }
 
             public Charset charset() {
-                // This method is called in sun.security.util.Password,
-                // cons already exists when this method is called
-                return cons.cs;
+                return CHARSET;
             }
         });
     }
@@ -575,24 +605,16 @@ public final class Console implements Flushable
     private Console() {
         readLock = new Object();
         writeLock = new Object();
-        String csname = encoding();
-        if (csname != null) {
-            try {
-                cs = Charset.forName(csname);
-            } catch (Exception x) {}
-        }
-        if (cs == null)
-            cs = Charset.defaultCharset();
         out = StreamEncoder.forOutputStreamWriter(
                   new FileOutputStream(FileDescriptor.out),
                   writeLock,
-                  cs);
+                  CHARSET);
         pw = new PrintWriter(out, true) { public void close() {} };
         formatter = new Formatter(out);
         reader = new LineReader(StreamDecoder.forInputStreamReader(
                      new FileInputStream(FileDescriptor.in),
                      readLock,
-                     cs));
+                     CHARSET));
         rcb = new char[1024];
     }
 }

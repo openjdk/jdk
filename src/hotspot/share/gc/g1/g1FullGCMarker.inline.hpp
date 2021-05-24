@@ -34,15 +34,15 @@
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
-#include "gc/g1/g1StringDedupQueue.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 
 inline bool G1FullGCMarker::mark_object(oop obj) {
-  if (_collector->is_in_closed(obj)) {
+  if (_collector->is_skip_marking(obj)) {
     return false;
   }
 
@@ -55,16 +55,17 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
   // Marked by us, preserve if needed.
   markWord mark = obj->mark();
   if (obj->mark_must_be_preserved(mark) &&
-      // It is not necessary to preserve marks for objects in pinned regions because
-      // we do not change their headers (i.e. forward them).
-      !_collector->is_in_pinned(obj)) {
+      // It is not necessary to preserve marks for objects in regions we do not
+      // compact because we do not change their headers (i.e. forward them).
+      _collector->is_compacting(obj)) {
     preserved_stack()->push(obj, mark);
   }
 
   // Check if deduplicatable string.
-  if (G1StringDedup::is_enabled() &&
-      java_lang_String::is_instance_inlined(obj)) {
-    G1StringDedup::enqueue_from_mark(obj, _worker_id);
+  if (StringDedup::is_enabled() &&
+      java_lang_String::is_instance_inlined(obj) &&
+      G1StringDedup::is_candidate_from_mark(obj)) {
+    _string_dedup_requests.add(obj);
   }
 
   // Collect live words.
@@ -81,8 +82,8 @@ template <class T> inline void G1FullGCMarker::mark_and_push(T* p) {
       _oop_stack.push(obj);
       assert(_bitmap->is_marked(obj), "Must be marked now - map self");
     } else {
-      assert(_bitmap->is_marked(obj) || _collector->is_in_closed(obj),
-             "Must be marked by other or closed archive object");
+      assert(_bitmap->is_marked(obj) || _collector->is_skip_marking(obj),
+             "Must be marked by other or object in skip marking region");
     }
   }
 }

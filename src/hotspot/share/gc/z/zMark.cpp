@@ -26,6 +26,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
@@ -277,28 +278,6 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   }
 }
 
-bool ZMark::try_mark_object(ZMarkCache* cache, uintptr_t addr, bool finalizable) {
-  ZPage* const page = _page_table->get(addr);
-  if (page->is_allocating()) {
-    // Newly allocated objects are implicitly marked
-    return false;
-  }
-
-  // Try mark object
-  bool inc_live = false;
-  const bool success = page->mark_object(addr, finalizable, inc_live);
-  if (inc_live) {
-    // Update live objects/bytes for page. We use the aligned object
-    // size since that is the actual number of bytes used on the page
-    // and alignment paddings can never be reclaimed.
-    const size_t size = ZUtils::object_size(addr);
-    const size_t aligned_size = align_up(size, page->object_alignment());
-    cache->inc_live(page, aligned_size);
-  }
-
-  return success;
-}
-
 void ZMark::mark_and_follow(ZMarkCache* cache, ZMarkStackEntry entry) {
   // Decode flags
   const bool finalizable = entry.finalizable();
@@ -309,24 +288,38 @@ void ZMark::mark_and_follow(ZMarkCache* cache, ZMarkStackEntry entry) {
     return;
   }
 
-  // Decode object address and follow flag
+  // Decode object address and additional flags
   const uintptr_t addr = entry.object_address();
+  const bool mark = entry.mark();
+  bool inc_live = entry.inc_live();
+  const bool follow = entry.follow();
 
-  if (!try_mark_object(cache, addr, finalizable)) {
+  ZPage* const page = _page_table->get(addr);
+  assert(page->is_relocatable(), "Invalid page state");
+
+  // Mark
+  if (mark && !page->mark_object(addr, finalizable, inc_live)) {
     // Already marked
     return;
   }
 
-  if (is_array(addr)) {
-    // Decode follow flag
-    const bool follow = entry.follow();
+  // Increment live
+  if (inc_live) {
+    // Update live objects/bytes for page. We use the aligned object
+    // size since that is the actual number of bytes used on the page
+    // and alignment paddings can never be reclaimed.
+    const size_t size = ZUtils::object_size(addr);
+    const size_t aligned_size = align_up(size, page->object_alignment());
+    cache->inc_live(page, aligned_size);
+  }
 
-    // The follow flag is currently only relevant for object arrays
-    if (follow) {
+  // Follow
+  if (follow) {
+    if (is_array(addr)) {
       follow_array_object(objArrayOop(ZOop::from_address(addr)), finalizable);
+    } else {
+      follow_object(ZOop::from_address(addr), finalizable);
     }
-  } else {
-    follow_object(ZOop::from_address(addr), finalizable);
   }
 }
 
@@ -346,20 +339,27 @@ bool ZMark::drain(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, ZMarkCach
   }
 
   // Success
-  return true;
+  return !timeout->has_expired();
 }
 
-template <typename T>
-bool ZMark::drain_and_flush(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, ZMarkCache* cache, T* timeout) {
-  const bool success = drain(stripe, stacks, cache, timeout);
+bool ZMark::try_steal_local(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks) {
+  // Try to steal a local stack from another stripe
+  for (ZMarkStripe* victim_stripe = _stripes.stripe_next(stripe);
+       victim_stripe != stripe;
+       victim_stripe = _stripes.stripe_next(victim_stripe)) {
+    ZMarkStack* const stack = stacks->steal(&_stripes, victim_stripe);
+    if (stack != NULL) {
+      // Success, install the stolen stack
+      stacks->install(&_stripes, stripe, stack);
+      return true;
+    }
+  }
 
-  // Flush and publish worker stacks
-  stacks->flush(&_allocator, &_stripes);
-
-  return success;
+  // Nothing to steal
+  return false;
 }
 
-bool ZMark::try_steal(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks) {
+bool ZMark::try_steal_global(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks) {
   // Try to steal a stack from another stripe
   for (ZMarkStripe* victim_stripe = _stripes.stripe_next(stripe);
        victim_stripe != stripe;
@@ -374,6 +374,10 @@ bool ZMark::try_steal(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks) {
 
   // Nothing to steal
   return false;
+}
+
+bool ZMark::try_steal(ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks) {
+  return try_steal_local(stripe, stacks) || try_steal_global(stripe, stacks);
 }
 
 void ZMark::idle() const {
@@ -486,7 +490,8 @@ bool ZMark::try_terminate() {
 class ZMarkNoTimeout : public StackObj {
 public:
   bool has_expired() {
-    return false;
+    // No timeout, but check for signal to abort
+    return ZAbort::should_abort();
   }
 };
 
@@ -495,7 +500,10 @@ void ZMark::work_without_timeout(ZMarkCache* cache, ZMarkStripe* stripe, ZMarkTh
   ZMarkNoTimeout no_timeout;
 
   for (;;) {
-    drain_and_flush(stripe, stacks, cache, &no_timeout);
+    if (!drain(stripe, stacks, cache, &no_timeout)) {
+      // Abort
+      break;
+    }
 
     if (try_steal(stripe, stacks)) {
       // Stole work
@@ -557,7 +565,7 @@ void ZMark::work_with_timeout(ZMarkCache* cache, ZMarkStripe* stripe, ZMarkThrea
   ZMarkTimeout timeout(timeout_in_micros);
 
   for (;;) {
-    if (!drain_and_flush(stripe, stacks, cache, &timeout)) {
+    if (!drain(stripe, stacks, cache, &timeout)) {
       // Timed out
       break;
     }
@@ -583,8 +591,8 @@ void ZMark::work(uint64_t timeout_in_micros) {
     work_with_timeout(&cache, stripe, stacks, timeout_in_micros);
   }
 
-  // Make sure stacks have been flushed
-  assert(stacks->is_empty(&_stripes), "Should be empty");
+  // Flush and publish stacks
+  stacks->flush(&_allocator, &_stripes);
 
   // Free remaining stacks
   stacks->free(&_allocator);
@@ -758,6 +766,14 @@ bool ZMark::end() {
 
   // Mark completed
   return true;
+}
+
+void ZMark::free() {
+  // Free any unused mark stack space
+  _allocator.free();
+
+  // Update statistics
+  ZStatMark::set_at_mark_free(_allocator.size());
 }
 
 void ZMark::flush_and_free() {

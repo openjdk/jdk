@@ -109,7 +109,6 @@ public class Signatures {
             return this;
         }
 
-        @SuppressWarnings("preview")
         public Content toContent() {
             Content content = new ContentBuilder();
             Content annotationInfo = classWriter.getAnnotationInfo(typeElement, true);
@@ -177,7 +176,7 @@ public class Signatures {
             List<? extends TypeMirror> permits = typeElement.getPermittedSubclasses();
             List<? extends TypeMirror> linkablePermits = permits.stream()
                     .filter(t -> utils.isLinkable(utils.asTypeElement(t)))
-                    .collect(Collectors.toList());
+                    .toList();
             if (!linkablePermits.isEmpty()) {
                 Content permitsSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.permits);
                 boolean isFirst = true;
@@ -185,10 +184,6 @@ public class Signatures {
                     if (isFirst) {
                         content.add(DocletConstants.NL);
                         permitsSpan.add("permits");
-                        Content link =
-                                classWriter.links.createLink(classWriter.htmlIds.forPreviewSection(typeElement),
-                                                             classWriter.contents.previewMark);
-                        permitsSpan.add(HtmlTree.SUP(link));
                         permitsSpan.add(" ");
                         isFirst = false;
                     } else {
@@ -209,7 +204,6 @@ public class Signatures {
             return HtmlTree.DIV(HtmlStyle.typeSignature, content);
         }
 
-        @SuppressWarnings("preview")
         private Content getRecordComponents() {
             Content content = new ContentBuilder();
             content.add("(");
@@ -457,7 +451,7 @@ public class Signatures {
                 // empty parameters are added without packing
                 htmlTree.add(parameters);
             } else {
-                htmlTree.add(Entity.ZERO_WIDTH_SPACE)
+                htmlTree.add(new HtmlTree(TagName.WBR))
                         .add(HtmlTree.SPAN(HtmlStyle.parameters, parameters));
             }
 

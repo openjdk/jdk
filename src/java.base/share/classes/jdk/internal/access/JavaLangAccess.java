@@ -161,7 +161,7 @@ public interface JavaLangAccess {
     /**
      * Returns a class loaded by the bootstrap class loader.
      */
-    Class<?> findBootstrapClassOrNull(ClassLoader cl, String name);
+    Class<?> findBootstrapClassOrNull(String name);
 
     /**
      * Define a Package of the given name and module by the given class loader.
@@ -366,6 +366,11 @@ public interface JavaLangAccess {
      * Update lengthCoder for constant
      */
     long stringConcatMix(long lengthCoder, String constant);
+
+    /**
+     * Join strings
+     */
+    String join(String prefix, String suffix, String delimiter, String[] elements, int size);
 
     /*
      * Get the class data associated with the given class.

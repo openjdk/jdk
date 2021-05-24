@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import com.sun.source.tree.MemberReferenceTree;
@@ -926,6 +927,11 @@ public class DeferredAttr extends JCTree.Visitor {
             }
 
             @Override
+            public void visitSwitchExpression(JCSwitchExpression tree) {
+                scan(tree.cases);
+            }
+
+            @Override
             public void visitReference(JCMemberReference tree) {
                 Assert.checkNonNull(tree.getOverloadKind());
                 Check.CheckContext checkContext = resultInfo.checkContext;
@@ -1120,7 +1126,7 @@ public class DeferredAttr extends JCTree.Visitor {
      */
     abstract static class FilterScanner extends com.sun.tools.javac.tree.TreeScanner {
 
-        final Filter<JCTree> treeFilter;
+        final Predicate<JCTree> treeFilter;
 
         FilterScanner(final Set<JCTree.Tag> validTags) {
             this.treeFilter = t -> validTags.contains(t.getTag());
@@ -1129,7 +1135,7 @@ public class DeferredAttr extends JCTree.Visitor {
         @Override
         public void scan(JCTree tree) {
             if (tree != null) {
-                if (treeFilter.accepts(tree)) {
+                if (treeFilter.test(tree)) {
                     super.scan(tree);
                 } else {
                     skip(tree);
@@ -1150,7 +1156,7 @@ public class DeferredAttr extends JCTree.Visitor {
     static class PolyScanner extends FilterScanner {
 
         PolyScanner() {
-            super(EnumSet.of(CONDEXPR, PARENS, LAMBDA, REFERENCE));
+            super(EnumSet.of(CONDEXPR, PARENS, LAMBDA, REFERENCE, SWITCH_EXPRESSION));
         }
     }
 
@@ -1286,6 +1292,24 @@ public class DeferredAttr extends JCTree.Visitor {
                 lambdaScanner.scan(lambda.body);
             }
         }
+
+        @Override
+        public void visitSwitchExpression(JCSwitchExpression expr) {
+            SwitchExpressionScanner switchScanner = new SwitchExpressionScanner() {
+                @Override
+                public void visitYield(JCYield tree) {
+                    Type prevPt = CheckStuckPolicy.this.pt;
+                    try {
+                        CheckStuckPolicy.this.pt = pt;
+                        CheckStuckPolicy.this.scan(tree.value);
+                    } finally {
+                        CheckStuckPolicy.this.pt = prevPt;
+                    }
+                }
+            };
+            switchScanner.scan(expr.cases);
+        }
+
     }
 
     /**

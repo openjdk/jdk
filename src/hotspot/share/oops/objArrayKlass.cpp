@@ -310,7 +310,7 @@ void ObjArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
 }
 
 
-Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
+Klass* ObjArrayKlass::array_klass(int n, TRAPS) {
 
   assert(dimension() <= n, "check order of chain");
   int dim = dimension();
@@ -318,7 +318,6 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
 
   // lock-free read needs acquire semantics
   if (higher_dimension_acquire() == NULL) {
-    if (or_null) return NULL;
 
     ResourceMark rm(THREAD);
     {
@@ -341,15 +340,31 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
   }
 
   ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
-  if (or_null) {
-    return ak->array_klass_or_null(n);
-  }
   THREAD->check_possible_safepoint();
   return ak->array_klass(n, THREAD);
 }
 
-Klass* ObjArrayKlass::array_klass_impl(bool or_null, TRAPS) {
-  return array_klass_impl(or_null, dimension() +  1, THREAD);
+Klass* ObjArrayKlass::array_klass_or_null(int n) {
+
+  assert(dimension() <= n, "check order of chain");
+  int dim = dimension();
+  if (dim == n) return this;
+
+  // lock-free read needs acquire semantics
+  if (higher_dimension_acquire() == NULL) {
+    return NULL;
+  }
+
+  ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
+  return ak->array_klass_or_null(n);
+}
+
+Klass* ObjArrayKlass::array_klass(TRAPS) {
+  return array_klass(dimension() +  1, THREAD);
+}
+
+Klass* ObjArrayKlass::array_klass_or_null() {
+  return array_klass_or_null(dimension() +  1);
 }
 
 bool ObjArrayKlass::can_be_primary_super_slow() const {
