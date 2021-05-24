@@ -29,25 +29,22 @@
 #include "runtime/atomic.hpp"
 
 Semaphore AsyncLogWriter::_sem(0);
+Semaphore AsyncLogWriter::_io_sem(1);
 
 class AsyncLogLocker : public StackObj {
  private:
-  debug_only(static intx _locking_thread_id;)
   static Semaphore _lock;
  public:
   AsyncLogLocker() {
     _lock.wait();
-    debug_only(_locking_thread_id = os::current_thread_id());
   }
 
   ~AsyncLogLocker() {
-    debug_only(_locking_thread_id = -1);
     _lock.signal();
   }
 };
 
 Semaphore AsyncLogLocker::_lock(1);
-debug_only(intx AsyncLogLocker::_locking_thread_id = -1;)
 
 void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
   if (_buffer.size() >= _buffer_max_size)  {
@@ -126,15 +123,16 @@ void AsyncLogWriter::write() {
   // lock protection. This guarantees I/O jobs don't block logsites.
   AsyncLogBuffer logs;
   { // critical region
-    AsyncLogLocker ml;
-    AsyncLogMapIterator dropped_counters_iter(logs);
+    AsyncLogLocker lock;
 
     _buffer.pop_all(&logs);
     // append meta-messages of dropped counters
+    AsyncLogMapIterator dropped_counters_iter(logs);
     _stats.iterate(&dropped_counters_iter);
   }
 
   LinkedListIterator<AsyncLogMessage> it(logs.head());
+  _io_sem.wait();
   while (!it.is_empty()) {
     AsyncLogMessage* e = it.next();
     char* msg = e->message();
@@ -144,12 +142,11 @@ void AsyncLogWriter::write() {
       os::free(msg);
     }
   }
+  _io_sem.signal();
 }
 
 void AsyncLogWriter::run() {
-  _state = ThreadState::Running;
-
-  while (_state == ThreadState::Running) {
+  while (true) {
     // The value of a semphore cannot be negative. Therefore, the current thread falls asleep
     // when its value is zero. It will be waken up when new messages are enqueued.
     _sem.wait();
@@ -182,6 +179,8 @@ AsyncLogWriter* AsyncLogWriter::instance() {
   return _instance;
 }
 
+// write() acquires and releases _io_sem even _buffer is empty.
+// This guarantees all logging I/O of dequeued messages are done when it returns.
 void AsyncLogWriter::flush() {
   if (_instance != nullptr) {
     _instance->write();

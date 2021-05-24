@@ -262,6 +262,7 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   }
 
   if (!enabled && idx > 1) {
+    AsyncLogWriter::flush();
     // Output is unused and should be removed, unless it is stdout/stderr (idx < 2)
     delete_output(idx);
     return;
