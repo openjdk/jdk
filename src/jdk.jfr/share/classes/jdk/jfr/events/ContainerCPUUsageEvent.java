@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, DataDog. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +23,37 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.events;
 
-package jdk.javadoc.internal.doclets.toolkit.util.links;
+import jdk.jfr.Category;
+import jdk.jfr.DataAmount;
+import jdk.jfr.Description;
+import jdk.jfr.Enabled;
+import jdk.jfr.Label;
+import jdk.jfr.Name;
+import jdk.jfr.Period;
+import jdk.jfr.StackTrace;
+import jdk.jfr.Threshold;
+import jdk.jfr.Timespan;
+import jdk.jfr.internal.Type;
 
-/**
- *  Stores output of a link.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- */
-public interface LinkOutput {
+@Name(Type.EVENT_NAME_PREFIX + "ContainerCPUUsage")
+@Label("CPU Usage")
+@Category({"Operating System", "Processor"})
+@Description("Container CPU usage related information")
+public class ContainerCPUUsageEvent extends AbstractJDKEvent {
+  @Label("CPU Time")
+  @Description("Aggregate time consumed by all tasks in the container")
+  @Timespan
+  public long cpuTime;
 
-    /**
-     * Append the given object to the output.
-     *
-     * @param o the object to append.
-     */
-    void append(Object o);
+  @Label("CPU User Time")
+  @Description("Aggregate user time consumed by all tasks in the container")
+  @Timespan
+  public long cpuUserTime;
 
-    /**
-     * Insert the given object into the output sequence.
-     *
-     * @param offset the offset.
-     * @param o the object to be inserted.
-     */
-    void insert(int offset, Object o);
+  @Label("CPU System Time")
+  @Description("Aggregate system time consumed by all tasks in the container")
+  @Timespan
+  public long cpuSystemTime;
 }
