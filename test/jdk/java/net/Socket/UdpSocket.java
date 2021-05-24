@@ -134,15 +134,15 @@ public class UdpSocket {
 
 
     private Socket newUdpSocket() throws IOException {
-        Socket newUdpSocket = null;
+        Socket s = null;
 
         try {
-            newUdpSocket = new Socket(InetAddress.getLoopbackAddress(), 8000, false);
-        } catch (BindException biEx) {
+            s = new Socket(InetAddress.getLoopbackAddress(), 8000, false);
+        } catch (BindException unexpected) {
             System.out.println("BindException caught retry Socket creation");
-            newUdpSocket = new Socket(InetAddress.getLoopbackAddress(), 8000, false);
+            s = new Socket(InetAddress.getLoopbackAddress(), 8000, false);
         }
-        return newUdpSocket;
+        return s;
     }
 
     private void closeAll(Deque<Socket> sockets) throws IOException {
