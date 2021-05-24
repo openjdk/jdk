@@ -64,7 +64,7 @@ import com.sun.tools.javac.util.Log;
  * The class leverages the javac support for reporting diagnostics, for stylistic consistency
  * of diagnostic messages and to avoid code duplication.
  *
- * The class is a subtype of javac's Log, and is primarily aa adapter between
+ * The class is a subtype of javac's Log, and is primarily an adapter between
  * javadoc method signatures and the underlying javac methods. Within this class,
  * the methods call down to a core {@code report} method which hands off to
  * a similar method in the superclass ({@code Log.report}, which takes care
@@ -88,7 +88,7 @@ import com.sun.tools.javac.util.Log;
  * The primary data types are:
  * <ul>
  *     <li>{@code Diagnostic.Kind} -- maps to {@code DiagnosticType} and {@code Set<DiagnosticFlag>}
- *     <li>{@code Element} -- maps to {@code DiagnosticSource) and {@code DiagnosticPosition}
+ *     <li>{@code Element} -- maps to {@code DiagnosticSource} and {@code DiagnosticPosition}
  *     <li>{@code DocTreePath} -- maps to {@code DiagnosticSource} and {@code DiagnosticPosition}
  * </ul>
  *
