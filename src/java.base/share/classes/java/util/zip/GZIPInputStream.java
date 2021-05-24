@@ -27,6 +27,7 @@ package java.util.zip;
 
 import java.io.SequenceInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
@@ -53,6 +54,8 @@ public class GZIPInputStream extends InflaterInputStream {
     protected boolean eos;
 
     private boolean closed = false;
+
+    private GZIPHeaderBuilder.GZIPHeaderData headerData;
 
     /**
      * Check to make sure that this stream has not been closed
@@ -140,6 +143,14 @@ public class GZIPInputStream extends InflaterInputStream {
     }
 
     /**
+     * Retures GZIP header data
+     * @return header data
+     */
+    public GZIPHeaderBuilder.GZIPHeaderData headerData() {
+        return headerData;
+    }
+
+    /**
      * GZIP header magic number.
      */
     public static final int GZIP_MAGIC = 0x8b1f;
@@ -158,6 +169,7 @@ public class GZIPInputStream extends InflaterInputStream {
      * of this member header.
      */
     private int readHeader(InputStream this_in) throws IOException {
+        GZIPHeaderBuilder builder = new GZIPHeaderBuilder();
         CheckedInputStream in = new CheckedInputStream(this_in, crc);
         crc.reset();
         // Check header magic
@@ -173,23 +185,24 @@ public class GZIPInputStream extends InflaterInputStream {
         // Skip MTIME, XFL, and OS fields
         skipBytes(in, 6);
         int n = 2 + 2 + 6;
+
         // Skip optional extra field
         if ((flg & FEXTRA) == FEXTRA) {
             int m = readUShort(in);
-            skipBytes(in, m);
+            builder.withExtraFieldBytes(readBytes(in, m));
             n += m + 2;
         }
         // Skip optional file name
         if ((flg & FNAME) == FNAME) {
-            do {
-                n++;
-            } while (readUByte(in) != 0);
+            String filename = readString(in);
+            builder.withFileName(filename);
+            n += filename.getBytes("ISO-8859-1").length + 1;
         }
         // Skip optional file comment
         if ((flg & FCOMMENT) == FCOMMENT) {
-            do {
-                n++;
-            } while (readUByte(in) != 0);
+            String fcomm = readString(in);
+            builder.withFileComment(fcomm);
+            n += fcomm.getBytes("ISO-8859-1").length + 1;
         }
         // Check optional header CRC
         if ((flg & FHCRC) == FHCRC) {
@@ -197,9 +210,11 @@ public class GZIPInputStream extends InflaterInputStream {
             if (readUShort(in) != v) {
                 throw new ZipException("Corrupt GZIP header");
             }
+            builder.calculateHeaderCRC(true);
             n += 2;
         }
         crc.reset();
+        headerData = builder.build();
         return n;
     }
 
@@ -290,4 +305,38 @@ public class GZIPInputStream extends InflaterInputStream {
             n -= len;
         }
     }
+
+    /*
+     * Reads bytes of input data blocking until all bytes are read.
+     * Does not assume that the input stream is capable of seeking.
+     */
+    private byte[] readBytes(InputStream in, int n) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        while (n > 0) {
+            int len = in.read(tmpbuf, 0, n < tmpbuf.length ? n : tmpbuf.length);
+            if (len == -1) {
+                throw new EOFException();
+            }
+            baos.write(tmpbuf, 0, len);
+            n -= len;
+        }
+        baos.close();
+        return baos.toByteArray();
+    }
+
+    /*
+     * Reads string of input data blocking until all bytes are read.
+     * Does not assume that the input stream is capable of seeking.
+     */
+    private String readString(InputStream in) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        do {
+            int c = in.read();
+            if (c == 0) break;
+            baos.write(c);
+        } while (true);
+        baos.close();
+        return new String(baos.toByteArray(), "ISO-8859-1");
+    }
+
 }
