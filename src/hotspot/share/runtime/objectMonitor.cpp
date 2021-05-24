@@ -519,7 +519,7 @@ int ObjectMonitor::TryLock(JavaThread* current) {
 // Contending threads that see that condition know to retry their operation.
 //
 bool ObjectMonitor::deflate_monitor() {
-  if (is_busy() != 0) {
+  if (is_busy()) {
     // Easy checks are first - the ObjectMonitor is busy so no deflation.
     return false;
   }

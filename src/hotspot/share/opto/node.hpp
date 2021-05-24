@@ -1202,7 +1202,7 @@ public:
   void collect_nodes_out_all_ctrl_boundary(GrowableArray<Node*> *ns) const;
 
   void verify_edges(Unique_Node_List &visited); // Verify bi-directional edges
-  static void verify(Node* n, int verify_depth);
+  static void verify(int verify_depth, VectorSet& visited, Node_List& worklist);
 
   // This call defines a class-unique string used to identify class instances
   virtual const char *Name() const;

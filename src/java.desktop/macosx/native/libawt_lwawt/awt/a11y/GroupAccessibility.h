@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,24 +23,14 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8200788
- * @summary Optimal initial capacity of AccessMode.methodNameToAccessMode
- * @library /test/lib
- * @modules java.base/java.lang.invoke:open
- *          java.base/java.util:open
- * @build jdk.test.lib.util.OptimalCapacity
- * @run main OptimalMapSize
- */
+#import "JavaComponentAccessibility.h"
+#import "CommonComponentAccessibility.h"
 
-import java.lang.invoke.VarHandle.AccessMode;
-import jdk.test.lib.util.OptimalCapacity;
+#import <AppKit/AppKit.h>
 
-public class OptimalMapSize {
-    public static void main(String[] args) throws Throwable {
-        int initialCapacity = (int)(AccessMode.values().length / 0.75f) + 1;
-        OptimalCapacity.ofHashMap(AccessMode.class, "methodNameToAccessMode",
-                initialCapacity);
-    }
-}
+@interface GroupAccessibility : CommonComponentAccessibility <NSAccessibilityGroup> {
+
+};
+
+- (NSArray * _Nullable)accessibilityChildren;
+@end

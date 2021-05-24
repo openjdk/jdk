@@ -423,7 +423,7 @@ class VM_RedefineClasses: public VM_Operation {
 
   // Increment the classRedefinedCount field in the specific InstanceKlass
   // and in all direct and indirect subclasses.
-  void increment_class_counter(InstanceKlass *ik);
+  void increment_class_counter(InstanceKlass* ik);
 
   // Support for constant pool merging (these routines are in alpha order):
   void append_entry(const constantPoolHandle& scratch_cp, int scratch_i,
