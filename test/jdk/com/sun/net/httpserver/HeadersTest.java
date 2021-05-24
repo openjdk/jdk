@@ -25,12 +25,14 @@
  * @test
  * @bug 8251496
  * @summary Tests for methods in Headers class
+ * @modules jdk.httpserver/sun.net.httpserver:+open
  * @run testng/othervm HeadersTest
  */
 
 import java.util.List;
 import com.sun.net.httpserver.Headers;
 import org.testng.annotations.Test;
+import sun.net.httpserver.UnmodifiableHeaders;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
@@ -47,6 +49,19 @@ public class HeadersTest {
     }
 
     @Test
+    public static void test1ArgConstructor() {
+        var h1 = new Headers();
+        assertTrue(h1.isEmpty());
+
+        var h2 = new Headers(h1);
+        assertTrue(h2.isEmpty());
+
+        var h3 = new Headers(new UnmodifiableHeaders(h1));
+        assertTrue(h3.isEmpty());
+        h3.put("foo", List.of("bar"));  // not unmodifiable
+    }
+
+    @Test
     public static void testNull() {
         new Headers().add(null, "value");
         new Headers().set(null, "value");
@@ -57,28 +72,30 @@ public class HeadersTest {
         assertThrows(NPE, () -> Headers.of((String[])null));
         assertThrows(NPE, () -> Headers.of(null, "value"));
         assertThrows(NPE, () -> Headers.of("name", null));
+
+        assertThrows(NPE, () -> Headers.of((Headers)null));
     }
 
     @Test
     public static void testOfNumberOfElements() {
         assertThrows(IAE, () -> Headers.of(new String[] {}));
         assertThrows(IAE, () -> Headers.of("a"));
-        assertThrows(IAE, () -> Headers.of("a", "b", "c"));
+        assertThrows(IAE, () -> Headers.of("a", "x", "b"));
     }
 
     @Test
     public static void testOf() {
-        final var h = Headers.of("a", "b", "c", "d");
+        final var h = Headers.of("a", "x", "b", "y");
         assertEquals(h.size(), 2);
-        List.of("a", "c").forEach(n -> assertTrue(h.containsKey(n)));
-        List.of("b", "d").forEach(v -> assertTrue(h.containsValue(List.of(v))));
+        List.of("a", "b").forEach(n -> assertTrue(h.containsKey(n)));
+        List.of("x", "y").forEach(v -> assertTrue(h.containsValue(List.of(v))));
     }
 
     @Test
     public static void testOfMultipleValues() {
-        final var h = Headers.of("a", "b", "c", "d", "c", "e", "c", "f");
+        final var h = Headers.of("a", "x", "b", "x", "b", "y", "b", "z");
         assertEquals(h.size(), 2);
-        List.of("a", "c").forEach(n -> assertTrue(h.containsKey(n)));
-        List.of(List.of("b"), List.of("d", "e", "f")).forEach(v -> assertTrue(h.containsValue(v)));
+        List.of("a", "b").forEach(n -> assertTrue(h.containsKey(n)));
+        List.of(List.of("x"), List.of("x", "y", "z")).forEach(v -> assertTrue(h.containsValue(v)));
     }
 }

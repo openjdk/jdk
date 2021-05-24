@@ -66,6 +66,14 @@ import sun.net.httpserver.UnmodifiableHeaders;
  *     value given overwriting any existing values in the value list.
  * </ul>
  *
+ * <p> An instance of {@code Headers} is either <i>mutable</i> or <i>immutable</i>.
+ * A <i>mutable headers</i> allows to add, remove, or modify header names and
+ * values, e.g. the instance returned by {@link HttpExchange#getResponseHeaders()}.
+ * An <i>immutable headers</i> disallows any modification to header names or
+ * values, e.g. the instance returned by {@link HttpExchange#getRequestHeaders()}.
+ * The mutator methods for an immutable headers instance unconditionally throw
+ * {@code UnsupportedOperationException}.
+ *
  * <p> All methods in this class accept {@code null} values for keys and values.
  * However, {@code null} keys will never will be present in HTTP request
  * headers, and will not be output/sent in response headers. Null values can be
@@ -81,9 +89,21 @@ public class Headers implements Map<String,List<String>> {
     HashMap<String,List<String>> map;
 
     /**
-    * Creates an empty instance of {@code Headers}.
-    */
+     * Creates a mutable empty {@code Headers}.
+     */
     public Headers () {map = new HashMap<String,List<String>>(32);}
+
+    /**
+     * Creates a mutable {@code Headers} from the given {@code headers} with
+     * the same header names and values.
+     *
+     * @param headers a headers
+     * @throws NullPointerException if {@code headers} is null
+     */
+    public Headers(Headers headers) {
+        Objects.requireNonNull(headers);
+        map = new HashMap<>(headers.map);
+    }
 
     /**
      * Normalize the key by converting to following form.
@@ -264,5 +284,18 @@ public class Headers implements Map<String,List<String>> {
             h.add(name, value);
         }
         return new UnmodifiableHeaders(h);
+    }
+
+    /**
+     * Returns an immutable {@code Headers} from the given {@code headers} with
+     * the same header names and values.
+     *
+     * @param headers a headers
+     * @return an immutable headers
+     * @throws NullPointerException if {@code headers} is null
+     */
+    public static Headers of(Headers headers) {
+        Objects.requireNonNull(headers);
+        return new UnmodifiableHeaders(headers);
     }
 }

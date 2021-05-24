@@ -26,9 +26,9 @@
 package com.sun.net.httpserver;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Predicate;
+import sun.net.httpserver.UnmodifiableHeaders;
 
 /**
  * This class allows customization and retrieval of {@link HttpHandler HttpHandler}
@@ -36,14 +36,15 @@ import java.util.function.Predicate;
  *
  * <p> The functionality of a handler can be extended or enhanced through the
  * use of {@link #handleOrElse(Predicate, HttpHandler, HttpHandler) handleOrElse},
- * which allows to complement a given handler. The factory methods
- * {@link #of(Headers, int)} and {@link #of(Headers, int, String)} provide
- * convenience handlers with pre-set response state.
+ * which allows to complement a given handler. The factory method
+ * {@link #of(int, Headers, byte[])} provides a means to create handlers with
+ * pre-set response state.
  *
  * <p> Example of complementing a handler with a <i>fallbackHandler</i>:
  * <pre>{@code
  *   Predicate<Request> IS_GET = r -> r.getRequestMethod().equals("GET");
- *   var h = HttpHandlers.handleOrElse(IS_GET, new GetHandler(), HttpHandlers.fallbackHandler());
+ *   var fallbackHandler = HttpHandlers.of(405, Headers.of("Allow", "GET"), new byte[]{});
+ *   var handler = HttpHandlers.handleOrElse(IS_GET, new GetHandler(), fallbackHandler);
  * }</pre>
  *
  * The above <i>handleOrElse</i> {@code handler} offers an if-else like construct;
@@ -109,65 +110,65 @@ public class HttpHandlers {
 
     /**
      * Returns an {@code HttpHandler} that sends a response comprising the given
-     * {@code headers}, {@code statusCode} and {@code body}.
+     * {@code statusCode}, {@code headers}, and {@code body}.
      *
      * <p>This method creates a handler that reads and discards the request
      * body before it sets the response state and sends the response.
      *
-     * <p>{@code headers} are the effective headers of the response. The
-     * response {@link HttpExchange#sendResponseHeaders(int, long) is sent}
-     * with the given {@code statusCode} and a responseLength of {@code -1} if
-     * {@code body} is of length zero, meaning no response body is sent.
-     * Otherwise, the {@code body} string is encoded in {@code UTF-8} to a
-     * sequence of bytes whose length is set as response length before it is
-     * sent as the response body.
+     * <p>{@code headers} are the effective headers of the response. The response
+     * {@linkplain HttpExchange#sendResponseHeaders(int, long) is sent} with
+     * the given {@code statusCode} and the length of {@code body} as
+     * response length. The {@code body} bytes are sent as response body, unless
+     * {@code body} is of length zero, in which case no response body is sent.
      *
-     * @param headers a headers
      * @param statusCode a response status code
-     * @param body a body string
+     * @param headers a headers
+     * @param body a byte[] response body
      * @return a handler
-     * @throws NullPointerException     if headers or body is null
      * @throws IllegalArgumentException if statusCode is not a positive 3-digit
      *                                  integer, as per rfc2616, section 6.1.1
+     * @throws NullPointerException     if headers or body is null
      * @since 18
      */
-    public static HttpHandler of(Headers headers, int statusCode, String body) {
-        Objects.requireNonNull(headers);
-        Objects.requireNonNull(body);
+    public static HttpHandler of(int statusCode, Headers headers, byte[] body) {
         if (statusCode < 100 || statusCode > 999)
             throw new IllegalArgumentException("statusCode must be 3-digit: " + statusCode);
+        Objects.requireNonNull(headers);
+        Objects.requireNonNull(body);
 
-        var bytes = body.getBytes(StandardCharsets.UTF_8);
+        final var headersCopy = new UnmodifiableHeaders(headers);
+
         return exchange -> {
             try (exchange) {
                 exchange.getRequestBody().readAllBytes();
-                exchange.getResponseHeaders().putAll(headers);
-                if (bytes.length == 0) {
+                exchange.getResponseHeaders().putAll(headersCopy);
+                if (body.length == 0) {
                     exchange.sendResponseHeaders(statusCode, -1);
                 } else {
-                    exchange.sendResponseHeaders(statusCode, bytes.length);
-                    exchange.getResponseBody().write(bytes);
+                    exchange.sendResponseHeaders(statusCode, body.length);
+                    exchange.getResponseBody().write(body);
                 }
             }
         };
     }
 
     /**
-     * Returns an {@code HttpHandler} that sends a response with no body
-     * comprising the given {@code headers} and {@code statusCode}.
+     * Returns an {@code HttpHandler} that sends a response comprising the given
+     * {@code statusCode} and {@code body}.
      *
-     * The handler is created as if by an invocation of
-     * {@link #of(Headers, int, String)} with an empty string as {@code body}.
+     * <p>The handler is created as if by an invocation of
+     * {@link #of(int, Headers, byte[])} with the given {@code statusCode} and
+     * {@code body} bytes and an empty {@code Headers} instance.
      *
-     * @param headers a headers
      * @param statusCode a response status code
+     * @param body a byte[] response body
      * @return a handler
-     * @throws NullPointerException     if headers is null
      * @throws IllegalArgumentException if statusCode is not a positive 3-digit
      *                                  integer, as per rfc2616, section 6.1.1
+     * @throws NullPointerException     if body is null
      * @since 18
      */
-    public static HttpHandler of(Headers headers, int statusCode) {
-        return HttpHandlers.of(headers, statusCode, "");
+    public static HttpHandler of(int statusCode, byte[] body) {
+        return of(statusCode, new Headers(), body);
     }
 }
