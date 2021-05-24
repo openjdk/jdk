@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,8 +148,8 @@ public class ToolEnvironment {
         chk = Check.instance(context);
         types = com.sun.tools.javac.code.Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
-        if (fileManager instanceof JavacFileManager) {
-            ((JavacFileManager)fileManager).setSymbolFileEnabled(false);
+        if (fileManager instanceof JavacFileManager jfm) {
+            jfm.setSymbolFileEnabled(false);
         }
         docTrees = JavacTrees.instance(context);
         source = Source.instance(context);

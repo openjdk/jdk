@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,9 @@ public class Messager extends Log implements Reporter {
     /** Get the current messager, which is also the compiler log. */
     public static Messager instance0(Context context) {
         Log instance = context.get(logKey);
-        if (instance == null || !(instance instanceof Messager))
+        if (!(instance instanceof Messager m))
             throw new InternalError("no messager instance!");
-        return (Messager)instance;
+        return m;
     }
 
     public static void preRegister(Context context,
