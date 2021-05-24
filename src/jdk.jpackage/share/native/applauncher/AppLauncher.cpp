@@ -61,14 +61,13 @@ private:
  * Returns path to a java runtime conforming to the giver release file.
  */
 tstring findRuntime(const tstring& releasePath,
-        const tstring& versionSpec, const tstring& installDir) {
+        const tstring& versionSpec, const tstring_array places);
     tstring bestPath;
     tstring bestVersion;
 
     ReleaseFile required;
     required = ReleaseFile::load(releasePath);
 
-    const tstring_array places = SysInfo::getJavaSearchPaths(installDir);
     tstring_array::const_iterator it_places = places.begin();
     for(; it_places != places.end(); ++it_places) {
         tstring place = *it_places;
@@ -122,6 +121,21 @@ LOG_TRACE(tstrings::any() << "releasePath: " << releasePath);
             _T("") : CfgFile::asString(*versionProp));
 LOG_TRACE(tstrings::any() << "version: " << version);
 
+    const CfgFile::Properties::const_iterator searchpath = appOptions.find(
+                PropertyName::runtimeSearchPath);
+
+    tstring_array places;
+    if (searchpath != appOptions.end()) {
+        tstring_array::const_iterator it = searchpath->second.begin();
+        const tstring_array::const_iterator end = searchpath->second.end();
+        for (; it != end; ++it) {
+            places.push_back(*it);
+        };
+    } else {
+        places = SysInfo::getJavaSearchPaths();
+    }
+
+
     if (FileUtils::isFileExists(
             FileUtils::mkpath() << runtimePath << _T("/lib"))) {
         LOG_TRACE(tstrings::any()
@@ -140,7 +154,7 @@ LOG_TRACE(tstrings::any() << "version: " << version);
     } else {
         tstring releaseFile = FileUtils::mkpath() << releasePath;
         if (FileUtils::isFileExists(releaseFile)) {
-            runtimePath = findRuntime(releaseFile, version, installDir);
+            runtimePath = findRuntime(releaseFile, version, places);
             if (FileUtils::isFileExists(runtimePath)) {
                 LOG_TRACE(tstrings::any()
                         << "Searching for runtime image matching: "

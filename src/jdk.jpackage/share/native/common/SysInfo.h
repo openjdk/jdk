@@ -88,7 +88,7 @@ namespace SysInfo {
      */
     bool isEnvVariableSet(const tstring& name);
 
-    tstring_array getJavaSearchPaths(const tstring& installDir);
+    tstring_array getJavaSearchPaths();
 
 }
 

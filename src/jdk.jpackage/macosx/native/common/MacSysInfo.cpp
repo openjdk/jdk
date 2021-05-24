@@ -94,9 +94,8 @@ tstring getAppDataPath() {
     return "~/Library/Application Support";
 }
 
-tstring_array getJavaSearchPaths(const tstring& installDir) {
+tstring_array getJavaSearchPaths() {
     tstring_array result;
-    result.push_back(installDir);
     result.push_back("/System/Library/Frameworks/JavaVM.framework/Versions");
     return result;
 }

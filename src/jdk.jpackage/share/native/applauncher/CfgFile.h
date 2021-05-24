@@ -129,6 +129,7 @@ namespace PropertyName {
     extern const CfgFile::PropertyName runtimeRelease;
     extern const CfgFile::PropertyName runtimeVersion;
     extern const CfgFile::PropertyName runtimeInstallDir;
+    extern const CfgFile::PropertyName runtimeSearchPath;
 
 } // namespace AppPropertyName
 

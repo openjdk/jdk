@@ -54,9 +54,8 @@ tstring_array getCommandArgs(CommandArgProgramNameMode progNameMode) {
 tstring getAppDataPath() {
     return "~/.config";
 }
-tstring_array getJavaSearchPaths(const tstring& installDir) {
+tstring_array getJavaSearchPaths() {
     tstring_array result;
-    result.push_back(installDir);
     result.push_back("/usr/lib/jvm");
     result.push_back("/usr/lib/jdk");
     return result;
