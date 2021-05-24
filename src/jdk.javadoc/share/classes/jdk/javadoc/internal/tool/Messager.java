@@ -64,7 +64,7 @@ import com.sun.tools.javac.util.Log;
  * The class leverages the javac support for reporting diagnostics, for stylistic consistency
  * of diagnostic messages and to avoid code duplication.
  *
- * The class is a subtype of javac's Log, and is primarily a transducer between
+ * The class is a subtype of javac's Log, and is primarily aa adapter between
  * javadoc method signatures and the underlying javac methods. Within this class,
  * the methods call down to a core {@code report} method which hands off to
  * a similar method in the superclass ({@code Log.report}, which takes care
@@ -88,15 +88,18 @@ import com.sun.tools.javac.util.Log;
  * The primary data types are:
  * <ul>
  *     <li>{@code Diagnostic.Kind} -- maps to {@code DiagnosticType} and {@code Set<DiagnosticFlag>}
- *     <li>{@code Element} -- maps to {@code DiagnosticSource and {@code DiagnosticPosition}
- *     <li>{@code DocTreePath} -- maps to {@code DiagnosticSource and {@code DiagnosticPosition}
+ *     <li>{@code Element} -- maps to {@code DiagnosticSource) and {@code DiagnosticPosition}
+ *     <li>{@code DocTreePath} -- maps to {@code DiagnosticSource} and {@code DiagnosticPosition}
  * </ul>
  *
- * The javac layer deals primarily in pre-localized (key, args) pairs,
- * while the javadoc layer, especially the {@code Reporter} interface, deals in localized strings.
- * To accommodate this, "wrapper" resources are used, whose value is {@code {0}}, to pass
- * the localized string down to javac; given the limitations of the API, it is not possible
- * to do any better.
+ * The reporting methods in the javac layer primarily take pre-localized (key, args) pairs,
+ * while the methods in the javadoc layer, especially the {@code Reporter} interface, take
+ * localized strings. To accommodate this, "wrapper" resources are used, whose value is {@code {0}},
+ * to pass the localized string down to javac. A side-effect is that clients using a
+ * {@code DiagnosticListener} with a {@code DocumentationTask} cannot access the original resource
+ * key for the localized message.
+ * Given the limitations of the API, it is not possible to do any better.
+ * The javac Annotation Processing API has the same problem.
  *
  * There is a slight disparity between javac's use of streams and javadoc's use of streams.
  * javac reports <b>all</b> diagnostics to the "error" stream, and provides a separate
@@ -122,7 +125,7 @@ public class Messager extends Log implements Reporter {
     /** The tool environment, providing access to the tool's utility classes and tables. */
     private ToolEnvironment toolEnv;
 
-    /** The utility class to access the positions of items in doc comments., */
+    /** The utility class to access the positions of items in doc comments. */
     private DocSourcePositions sourcePositions;
 
     /**
@@ -329,7 +332,7 @@ public class Messager extends Log implements Reporter {
     }
 
     /**
-     * Print a "notice" message.
+     * Prints a "notice" message.
      *
      * @param message the message
      */
@@ -445,7 +448,7 @@ public class Messager extends Log implements Reporter {
      * standard doclet, which uses notes to report the various "progress" messages,
      * such as  "Generating class ...".  Therefore, for now, we detect and report those
      * messages directly. (A better solution would be to expose access to the output
-     * and error streams via {@code DocletEnvironment}.
+     * and error streams via {@code Reporter}).
      *
      * Note: there is an intentional difference in behavior between the diagnostic source
      * being set to {@code null} (no source intended) and {@code NO_SOURCE} (no source available).
@@ -471,7 +474,6 @@ public class Messager extends Log implements Reporter {
      * @return the diagnostic position
      */
     private DiagnosticPosition getDiagnosticPosition(DocTreePath path) {
-        ToolEnvironment toolEnv = getToolEnv();
         DocSourcePositions posns = getSourcePositions();
         CompilationUnitTree compUnit = path.getTreePath().getCompilationUnit();
         int start = (int) posns.getStartPosition(compUnit, path.getDocComment(), path.getLeaf());

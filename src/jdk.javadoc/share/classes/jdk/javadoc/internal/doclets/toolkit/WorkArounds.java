@@ -540,8 +540,8 @@ public class WorkArounds {
     /**
      * Returns whether or not to permit dynamically loaded components to access
      * part of the javadoc internal API. The flag is the same (hidden) compiler
-     * option that allows javac plugins and annotation processors to javac internal
-     * API.
+     * option that allows javac plugins and annotation processors to access
+     * javac internal API.
      *
      * As with all workarounds, it is better to consider updating the public API,
      * rather than relying on undocumented features like this, that may be withdrawn
