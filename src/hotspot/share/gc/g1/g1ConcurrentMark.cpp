@@ -36,7 +36,6 @@
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
-#include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -1459,70 +1458,33 @@ class G1CMDrainMarkingStackClosure : public VoidClosure {
   }
 };
 
-// Implementation of AbstractRefProcTaskExecutor for parallel
-// reference processing at the end of G1 concurrent marking
-
-class G1CMRefProcTaskExecutor : public AbstractRefProcTaskExecutor {
-private:
-  G1CollectedHeap*  _g1h;
-  G1ConcurrentMark* _cm;
-  WorkGang*         _workers;
-  uint              _active_workers;
+class G1CMRefProcProxyTask : public RefProcProxyTask {
+  G1CollectedHeap& _g1h;
+  G1ConcurrentMark& _cm;
 
 public:
-  G1CMRefProcTaskExecutor(G1CollectedHeap* g1h,
-                          G1ConcurrentMark* cm,
-                          WorkGang* workers,
-                          uint n_workers) :
-    _g1h(g1h), _cm(cm),
-    _workers(workers), _active_workers(n_workers) { }
+  G1CMRefProcProxyTask(uint max_workers, G1CollectedHeap& g1h, G1ConcurrentMark &cm)
+    : RefProcProxyTask("G1CMRefProcProxyTask", max_workers),
+      _g1h(g1h),
+      _cm(cm) {}
 
-  virtual void execute(ProcessTask& task, uint ergo_workers);
-};
-
-class G1CMRefProcTaskProxy : public AbstractGangTask {
-  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
-  ProcessTask&      _proc_task;
-  G1CollectedHeap*  _g1h;
-  G1ConcurrentMark* _cm;
-
-public:
-  G1CMRefProcTaskProxy(ProcessTask& proc_task,
-                       G1CollectedHeap* g1h,
-                       G1ConcurrentMark* cm) :
-    AbstractGangTask("Process reference objects in parallel"),
-    _proc_task(proc_task), _g1h(g1h), _cm(cm) {
-    ReferenceProcessor* rp = _g1h->ref_processor_cm();
-    assert(rp->processing_is_mt(), "shouldn't be here otherwise");
+  void work(uint worker_id) override {
+    assert(worker_id < _max_workers, "sanity");
+    G1CMIsAliveClosure is_alive(&_g1h);
+    uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
+    G1CMKeepAliveAndDrainClosure keep_alive(&_cm, _cm.task(index), _tm == RefProcThreadModel::Single);
+    G1CMDrainMarkingStackClosure complete_gc(&_cm, _cm.task(index), _tm == RefProcThreadModel::Single);
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
   }
 
-  virtual void work(uint worker_id) {
-    ResourceMark rm;
-    G1CMTask* task = _cm->task(worker_id);
-    G1CMIsAliveClosure g1_is_alive(_g1h);
-    G1CMKeepAliveAndDrainClosure g1_par_keep_alive(_cm, task, false /* is_serial */);
-    G1CMDrainMarkingStackClosure g1_par_drain(_cm, task, false /* is_serial */);
-
-    _proc_task.work(worker_id, g1_is_alive, g1_par_keep_alive, g1_par_drain);
+  void prepare_run_task_hook() override {
+    // We need to reset the concurrency level before each
+    // proxy task execution, so that the termination protocol
+    // and overflow handling in G1CMTask::do_marking_step() knows
+    // how many workers to wait for.
+    _cm.set_concurrency(_queue_count);
   }
 };
-
-void G1CMRefProcTaskExecutor::execute(ProcessTask& proc_task, uint ergo_workers) {
-  assert(_workers != NULL, "Need parallel worker threads.");
-  assert(_g1h->ref_processor_cm()->processing_is_mt(), "processing is not MT");
-  assert(_workers->active_workers() >= ergo_workers,
-         "Ergonomically chosen workers(%u) should be less than or equal to active workers(%u)",
-         ergo_workers, _workers->active_workers());
-
-  G1CMRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _cm);
-
-  // We need to reset the concurrency level before each
-  // proxy task execution, so that the termination protocol
-  // and overflow handling in G1CMTask::do_marking_step() knows
-  // how many workers to wait for.
-  _cm->set_concurrency(ergo_workers);
-  _workers->run_task(&proc_task_proxy, ergo_workers);
-}
 
 void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
   ResourceMark rm;
@@ -1530,8 +1492,6 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
   // Is alive closure.
   G1CMIsAliveClosure g1_is_alive(_g1h);
 
-  // Inner scope to exclude the cleaning of the string table
-  // from the displayed time.
   {
     GCTraceTime(Debug, gc, phases) debug("Reference Processing", _gc_timer_cm);
 
@@ -1544,35 +1504,12 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     rp->setup_policy(clear_all_soft_refs);
     assert(_global_mark_stack.is_empty(), "mark stack should be empty");
 
-    // Instances of the 'Keep Alive' and 'Complete GC' closures used
-    // in serial reference processing. Note these closures are also
-    // used for serially processing (by the the current thread) the
-    // JNI references during parallel reference processing.
-    //
-    // These closures do not need to synchronize with the worker
-    // threads involved in parallel reference processing as these
-    // instances are executed serially by the current thread (e.g.
-    // reference processing is not multi-threaded and is thus
-    // performed by the current thread instead of a gang worker).
-    //
-    // The gang tasks involved in parallel reference processing create
-    // their own instances of these closures, which do their own
-    // synchronization among themselves.
-    G1CMKeepAliveAndDrainClosure g1_keep_alive(this, task(0), true /* is_serial */);
-    G1CMDrainMarkingStackClosure g1_drain_mark_stack(this, task(0), true /* is_serial */);
-
     // We need at least one active thread. If reference processing
     // is not multi-threaded we use the current (VMThread) thread,
     // otherwise we use the work gang from the G1CollectedHeap and
     // we utilize all the worker threads we can.
-    bool processing_is_mt = rp->processing_is_mt();
-    uint active_workers = (processing_is_mt ? _g1h->workers()->active_workers() : 1U);
+    uint active_workers = (ParallelRefProcEnabled ? _g1h->workers()->active_workers() : 1U);
     active_workers = clamp(active_workers, 1u, _max_num_tasks);
-
-    // Parallel processing task executor.
-    G1CMRefProcTaskExecutor par_task_executor(_g1h, this,
-                                              _g1h->workers(), active_workers);
-    AbstractRefProcTaskExecutor* executor = (processing_is_mt ? &par_task_executor : NULL);
 
     // Set the concurrency level. The phase was already set prior to
     // executing the remark task.
@@ -1584,15 +1521,12 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // Reference lists are balanced (see balance_all_queues() and balance_queues()).
     rp->set_active_mt_degree(active_workers);
 
+    // Parallel processing task executor.
+    G1CMRefProcProxyTask task(rp->max_num_queues(), *_g1h, *this);
     ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->max_num_queues());
 
     // Process the weak references.
-    const ReferenceProcessorStats& stats =
-        rp->process_discovered_references(&g1_is_alive,
-                                          &g1_keep_alive,
-                                          &g1_drain_mark_stack,
-                                          executor,
-                                          &pt);
+    const ReferenceProcessorStats& stats = rp->process_discovered_references(task, pt);
     _gc_tracer_cm->report_gc_reference_stats(stats);
     pt.print_all_references();
 
@@ -1630,9 +1564,6 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
     bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm);
     _g1h->complete_cleaning(&g1_is_alive, purged_classes);
-  } else if (StringDedup::is_enabled()) {
-    GCTraceTime(Debug, gc, phases) debug("String Deduplication", _gc_timer_cm);
-    _g1h->string_dedup_cleaning(&g1_is_alive, NULL);
   }
 }
 

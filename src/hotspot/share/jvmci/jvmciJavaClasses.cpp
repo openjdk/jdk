@@ -180,7 +180,7 @@ void HotSpotJVMCI::compute_offsets(TRAPS) {
 
 #define START_CLASS(className, fullClassName)                                           \
   void HotSpotJVMCI::className::initialize(JVMCI_TRAPS) {                               \
-    Thread* THREAD = Thread::current();                                                 \
+    JavaThread* THREAD = JavaThread::current(); /* For exception macros. */             \
     className::klass()->initialize(CHECK);                                              \
   }                                                                                     \
   bool HotSpotJVMCI::className::is_instance(JVMCIEnv* env, JVMCIObject object) {        \
@@ -306,7 +306,6 @@ void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz,
     env->ExceptionDescribe();
     env->ExceptionClear();
     ResourceMark rm;
-    Thread* THREAD = Thread::current();
     fatal("Could not find field %s.%s with signature %s", class_name, name, signature);
   }
 }
@@ -379,7 +378,7 @@ class ThrowableInitDumper : public SymbolClosure {
  public:
   ThrowableInitDumper(fileStream* st)     { _st = st; }
   void do_symbol(Symbol** p) {
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     Symbol* name = *p;
     if (name == NULL) {
       return;
@@ -488,7 +487,7 @@ void JNIJVMCI::initialize_ids(JNIEnv* env) {
 } while(0)
 
   if (JVMCILibDumpJNIConfig != NULL) {
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     fileStream* st = JVMCIGlobals::get_jni_config_file();
 
     DUMP_ALL_NATIVE_METHODS(vmSymbols::jdk_vm_ci_hotspot_CompilerToVM());

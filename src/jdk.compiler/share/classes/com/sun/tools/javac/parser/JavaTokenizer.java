@@ -640,6 +640,13 @@ public class JavaTokenizer extends UnicodeReader {
                     break;
                 }
             }
+            // If it is not a floating point literal,
+            // the octal number should be rescanned correctly.
+            if (radix == 8) {
+                sb.setLength(0);
+                reset(pos);
+                scanDigits(pos, 8);
+            }
 
             if (acceptOneOf('l', 'L')) {
                 tk = TokenKind.LONGLITERAL;

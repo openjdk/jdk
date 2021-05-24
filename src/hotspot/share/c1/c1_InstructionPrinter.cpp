@@ -740,11 +740,6 @@ void InstructionPrinter::do_If(If* x) {
 }
 
 
-void InstructionPrinter::do_IfInstanceOf(IfInstanceOf* x) {
-  output()->print("<IfInstanceOf>");
-}
-
-
 void InstructionPrinter::do_TableSwitch(TableSwitch* x) {
   output()->print("tableswitch ");
   if (x->is_safepoint()) output()->print("(safepoint) ");

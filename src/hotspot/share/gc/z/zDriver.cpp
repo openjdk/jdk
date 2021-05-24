@@ -44,6 +44,7 @@ static const ZStatPhaseCycle      ZPhaseCycle("Garbage Collection Cycle");
 static const ZStatPhasePause      ZPhasePauseMarkStart("Pause Mark Start");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMark("Concurrent Mark");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMarkContinue("Concurrent Mark Continue");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkFree("Concurrent Mark Free");
 static const ZStatPhasePause      ZPhasePauseMarkEnd("Pause Mark End");
 static const ZStatPhaseConcurrent ZPhaseConcurrentProcessNonStrongReferences("Concurrent Process Non-Strong References");
 static const ZStatPhaseConcurrent ZPhaseConcurrentResetRelocationSet("Concurrent Reset Relocation Set");
@@ -322,6 +323,11 @@ void ZDriver::concurrent_mark_continue() {
   ZHeap::heap()->mark(false /* initial */);
 }
 
+void ZDriver::concurrent_mark_free() {
+  ZStatTimer timer(ZPhaseConcurrentMarkFree);
+  ZHeap::heap()->mark_free();
+}
+
 void ZDriver::concurrent_process_non_strong_references() {
   ZStatTimer timer(ZPhaseConcurrentProcessNonStrongReferences);
   ZBreakpoint::at_after_reference_processing_started();
@@ -426,22 +432,25 @@ void ZDriver::gc(GCCause::Cause cause) {
     concurrent(mark_continue);
   }
 
-  // Phase 4: Concurrent Process Non-Strong References
+  // Phase 4: Concurrent Mark Free
+  concurrent(mark_free);
+
+  // Phase 5: Concurrent Process Non-Strong References
   concurrent(process_non_strong_references);
 
-  // Phase 5: Concurrent Reset Relocation Set
+  // Phase 6: Concurrent Reset Relocation Set
   concurrent(reset_relocation_set);
 
-  // Phase 6: Pause Verify
+  // Phase 7: Pause Verify
   pause_verify();
 
-  // Phase 7: Concurrent Select Relocation Set
+  // Phase 8: Concurrent Select Relocation Set
   concurrent(select_relocation_set);
 
-  // Phase 8: Pause Relocate Start
+  // Phase 9: Pause Relocate Start
   pause_relocate_start();
 
-  // Phase 9: Concurrent Relocate
+  // Phase 10: Concurrent Relocate
   concurrent(relocate);
 }
 

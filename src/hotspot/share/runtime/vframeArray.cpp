@@ -568,8 +568,8 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
   //  in the above picture.
 
   // Find the skeletal interpreter frames to unpack into
-  JavaThread* THREAD = JavaThread::current();
-  RegisterMap map(THREAD, false);
+  JavaThread* current = JavaThread::current();
+  RegisterMap map(current, false);
   // Get the youngest frame we will unpack (last to be unpacked)
   frame me = unpack_frame.sender(&map);
   int index;
@@ -588,8 +588,8 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
     if (index == 0) {
       callee_parameters = callee_locals = 0;
     } else {
-      methodHandle caller(THREAD, elem->method());
-      methodHandle callee(THREAD, element(index - 1)->method());
+      methodHandle caller(current, elem->method());
+      methodHandle callee(current, element(index - 1)->method());
       Bytecode_invoke inv(caller, elem->bci());
       // invokedynamic instructions don't have a class but obviously don't have a MemberName appendix.
       // NOTE:  Use machinery here that avoids resolving of any kind.
