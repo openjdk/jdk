@@ -94,7 +94,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
     protected void addTableTabs(Table table, String headingKey) {
         List<String> releases = configuration.newAPIPageBuilder.releases;
         if (!releases.isEmpty()) {
-            table.setDefaultTab(getTableCaption(headingKey));
+            table.setDefaultTab(getTableCaption(headingKey)).setAlwaysShowDefaultTab(true);
             ListIterator<String> it = releases.listIterator(releases.size());
             while (it.hasPrevious()) {
                 String release = it.previous();
