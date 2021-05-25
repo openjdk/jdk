@@ -29,7 +29,10 @@
  * @run testng/othervm HeadersTest
  */
 
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import com.sun.net.httpserver.Headers;
 import org.testng.annotations.Test;
 import sun.net.httpserver.UnmodifiableHeaders;
@@ -50,30 +53,52 @@ public class HeadersTest {
 
     @Test
     public static void test1ArgConstructor() {
-        var h1 = new Headers();
+        var h0 = new Headers();
+        assertTrue(h0.isEmpty());
+
+        var h1 = new Headers(h0);
         assertTrue(h1.isEmpty());
 
-        var h2 = new Headers(h1);
+        var h2 = new Headers(new UnmodifiableHeaders(h0));
         assertTrue(h2.isEmpty());
+        h2.put("foo", List.of("bar"));  // modifiable
+        assertEquals(h2.get("foo"), List.of("bar"));
+        assertEquals(h2.size(), 1);
 
-        var h3 = new Headers(new UnmodifiableHeaders(h1));
-        assertTrue(h3.isEmpty());
-        h3.put("foo", List.of("bar"));  // not unmodifiable
+        var h3 = new Headers(Map.of("foo", List.of("bar")));
+        assertEquals(h3.get("foo"), List.of("bar"));
+        assertEquals(h3.size(), 1);
     }
 
     @Test
     public static void testNull() {
-        new Headers().add(null, "value");
-        new Headers().set(null, "value");
+        new Headers().add(null, "bar");
+        new Headers().set(null, "bar");
 
-        assertThrows(NPE, () -> new Headers().add("name", null));
-        assertThrows(NPE, () -> new Headers().set("name", null));
+        assertThrows(NPE, () -> new Headers().add("foo", null));
+        assertThrows(NPE, () -> new Headers().set("foo", null));
+
+        final var list = new LinkedList<String>();
+        list.add(null);
+        assertThrows(NPE, () -> new Headers().put("foo", list));
 
         assertThrows(NPE, () -> Headers.of((String[])null));
-        assertThrows(NPE, () -> Headers.of(null, "value"));
-        assertThrows(NPE, () -> Headers.of("name", null));
+        assertThrows(NPE, () -> Headers.of(null, "bar"));
+        assertThrows(NPE, () -> Headers.of("foo", null));
 
-        assertThrows(NPE, () -> Headers.of((Headers)null));
+        assertThrows(NPE, () -> Headers.of((Map<String, List<String>>) null));
+
+        final var m1 = new HashMap<String, List<String>>();
+        m1.put(null, List.of("bar"));
+        assertThrows(NPE, () -> Headers.of(m1));
+
+        final var m2 = new HashMap<String, List<String>>();
+        m2.put("foo", null);
+        assertThrows(NPE, () -> Headers.of(m2));
+
+        final var m3 = new HashMap<String, List<String>>();
+        m3.put("foo", list);
+        assertThrows(NPE, () -> Headers.of(m3));
     }
 
     @Test

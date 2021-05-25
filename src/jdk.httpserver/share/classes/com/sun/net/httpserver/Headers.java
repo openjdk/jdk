@@ -97,12 +97,21 @@ public class Headers implements Map<String,List<String>> {
      * Creates a mutable {@code Headers} from the given {@code headers} with
      * the same header names and values.
      *
-     * @param headers a headers
-     * @throws NullPointerException if {@code headers} is null
+     * @param headers a map of header names and values
+     * @throws NullPointerException if {@code headers} or any of its names or
+     *                              values are null, or if any value contains
+     *                              null.
      */
-    public Headers(Headers headers) {
+    public Headers(Map<String,List<String>> headers) {
         Objects.requireNonNull(headers);
-        map = new HashMap<>(headers.map);
+        var h = headers;
+        h.forEach((k, v) -> {
+            Objects.requireNonNull(k);
+            Objects.requireNonNull(v);
+            v.forEach(Objects::requireNonNull);
+        });
+        map = new HashMap<>(32);
+        h.forEach(this::put);
     }
 
     /**
@@ -290,12 +299,13 @@ public class Headers implements Map<String,List<String>> {
      * Returns an immutable {@code Headers} from the given {@code headers} with
      * the same header names and values.
      *
-     * @param headers a headers
+     * @param headers a map of header names and values
      * @return an immutable headers
-     * @throws NullPointerException if {@code headers} is null
+     * @throws NullPointerException if {@code headers} or any of its names or
+     *                              values are null, or if any value contains
+     *                              null.
      */
-    public static Headers of(Headers headers) {
-        Objects.requireNonNull(headers);
-        return new UnmodifiableHeaders(headers);
+    public static Headers of(Map<String,List<String>> headers) {
+        return new UnmodifiableHeaders(new Headers(headers));
     }
 }
