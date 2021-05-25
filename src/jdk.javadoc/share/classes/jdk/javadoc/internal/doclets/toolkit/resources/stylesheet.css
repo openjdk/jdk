@@ -552,7 +552,7 @@ h1.hidden {
 .package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link, .preview-label {
     font-weight:bold;
 }
-.deprecation-comment, .help-footnote, .interface-name, .preview-comment {
+.deprecation-comment, .help-footnote, .preview-comment {
     font-style:italic;
 }
 .deprecation-block {
@@ -577,8 +577,7 @@ h1.hidden {
     margin-right:10px;
     display:inline-block;
 }
-div.block div.deprecation-comment, div.block div.block span.emphasized-phrase,
-div.block div.block span.interface-name {
+div.block div.deprecation-comment {
     font-style:normal;
 }
 /*
