@@ -1397,7 +1397,7 @@ static bool should_force_instrumentation() {
   return !JfrOptionSet::allow_event_retransforms() || JfrEventClassTransformer::is_force_instrumentation();
 }
 
-static ClassFileStream* create_new_bytes_for_subklass(const InstanceKlass* ik, const ClassFileParser& parser, Thread* t) {
+static ClassFileStream* create_new_bytes_for_subklass(const InstanceKlass* ik, const ClassFileParser& parser, JavaThread* t) {
   assert(JdkJfrEvent::is_a(ik), "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(t));
   jint size_of_new_bytes = 0;

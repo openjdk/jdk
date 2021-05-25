@@ -57,10 +57,10 @@ inline bool ZHeap::is_object_strongly_live(uintptr_t addr) const {
   return page->is_object_strongly_live(addr);
 }
 
-template <bool follow, bool finalizable, bool publish>
+template <bool gc_thread, bool follow, bool finalizable, bool publish>
 inline void ZHeap::mark_object(uintptr_t addr) {
   assert(ZGlobalPhase == ZPhaseMark, "Mark not allowed");
-  _mark.mark_object<follow, finalizable, publish>(addr);
+  _mark.mark_object<gc_thread, follow, finalizable, publish>(addr);
 }
 
 inline uintptr_t ZHeap::alloc_tlab(size_t size) {

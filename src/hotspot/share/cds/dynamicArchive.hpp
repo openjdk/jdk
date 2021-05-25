@@ -60,6 +60,7 @@ public:
 class DynamicArchive : AllStatic {
   static bool _has_been_dumped_once;
 public:
+  static void prepare_for_dynamic_dumping_at_exit();
   static void dump(const char* archive_name, TRAPS);
   static void dump();
   static bool has_been_dumped_once() { return _has_been_dumped_once; }

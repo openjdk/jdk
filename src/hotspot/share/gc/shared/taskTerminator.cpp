@@ -78,7 +78,6 @@ TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
 TaskTerminator::~TaskTerminator() {
   if (_offered_termination != 0) {
     assert(_offered_termination == _n_threads, "Must be terminated or aborted");
-    assert_queue_set_empty();
   }
 
   assert(_spin_master == NULL, "Should have been reset");

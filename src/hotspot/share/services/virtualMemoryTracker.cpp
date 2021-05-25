@@ -23,8 +23,8 @@
  */
 #include "precompiled.hpp"
 #include "logging/log.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "memory/metaspaceStats.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/memTracker.hpp"
@@ -692,35 +692,4 @@ bool VirtualMemoryTracker::transition(NMT_TrackingLevel from, NMT_TrackingLevel 
   }
 
   return true;
-}
-
-// Metaspace Support
-MetaspaceSnapshot::MetaspaceSnapshot() {
-  for (int index = (int)Metaspace::ClassType; index < (int)Metaspace::MetadataTypeCount; index ++) {
-    Metaspace::MetadataType type = (Metaspace::MetadataType)index;
-    assert_valid_metadata_type(type);
-    _reserved_in_bytes[type]  = 0;
-    _committed_in_bytes[type] = 0;
-    _used_in_bytes[type]      = 0;
-    _free_in_bytes[type]      = 0;
-  }
-}
-
-void MetaspaceSnapshot::snapshot(Metaspace::MetadataType type, MetaspaceSnapshot& mss) {
-  assert_valid_metadata_type(type);
-
-  mss._reserved_in_bytes[type]   = MetaspaceUtils::reserved_bytes(type);
-  mss._committed_in_bytes[type]  = MetaspaceUtils::committed_bytes(type);
-  mss._used_in_bytes[type]       = MetaspaceUtils::used_bytes(type);
-
-  // The answer to "what is free" in metaspace is complex and cannot be answered with a single number.
-  // Free as in available to all loaders? Free, pinned to one loader? For now, keep it simple.
-  mss._free_in_bytes[type] = mss._committed_in_bytes[type] - mss._used_in_bytes[type];
-}
-
-void MetaspaceSnapshot::snapshot(MetaspaceSnapshot& mss) {
-  snapshot(Metaspace::NonClassType, mss);
-  if (Metaspace::using_class_space()) {
-    snapshot(Metaspace::ClassType, mss);
-  }
 }

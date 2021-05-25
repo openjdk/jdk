@@ -554,6 +554,31 @@
      <setting name="period">beginChunk</setting>
     </event>
 
+    <event name="jdk.ContainerConfiguration">
+      <setting name="enabled">true</setting>
+      <setting name="period">beginChunk</setting>
+    </event>
+
+    <event name="jdk.ContainerCPUUsage">
+      <setting name="enabled">true</setting>
+      <setting name="period">30 s</setting>
+    </event>
+
+    <event name="jdk.ContainerCPUThrottling">
+      <setting name="enabled">true</setting>
+      <setting name="period">30 s</setting>
+    </event>
+
+    <event name="jdk.ContainerMemoryUsage">
+      <setting name="enabled">true</setting>
+      <setting name="period">30 s</setting>
+    </event>
+
+    <event name="jdk.ContainerIOUsage">
+      <setting name="enabled">true</setting>
+      <setting name="period">30 s</setting>
+    </event>
+
     <event name="jdk.CPUInformation">
       <setting name="enabled">true</setting>
       <setting name="period">beginChunk</setting>
