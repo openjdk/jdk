@@ -25,6 +25,7 @@
  * @test
  * @requires vm.cds
  * @summary Test class loader constraint checks for archived classes
+ * @bug 8267347
  * @library /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
@@ -37,14 +38,17 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.Platform;
 
 public class LoaderConstraintsTest  {
     static String mainClass = LoaderConstraintsApp.class.getName();
+    static String httpHandlerClass = HttpHandler.class.getName().replace(".", "/");
+    static String httpExchangeClass = HttpExchange.class.getName().replace(".", "/");
     static String appJar = null;
     static String appClasses[] = {
         mainClass,
-        HttpHandler.class.getName(),
-        HttpExchange.class.getName(),
+        httpHandlerClass,
+        httpExchangeClass,
         Asserts.class.getName(),
         MyHttpHandler.class.getName(),
         MyHttpHandlerB.class.getName(),
@@ -52,18 +56,50 @@ public class LoaderConstraintsTest  {
         MyClassLoader.class.getName()
     };
 
+    static String loaderMainClass = CustomAppLoader.class.getName();
+    static String loaderJar = null;
+    static String loaderClasses[] = {
+        loaderMainClass
+    };
+
     static void doTest() throws Exception  {
-        appJar = ClassFileInstaller.writeJar("loader_constraints.jar", appClasses);
-        TestCommon.dump(appJar, appClasses, "-Xlog:cds+load");
-        String joptsMain[] = TestCommon.concat("-cp", appJar,
-                                          "-Xlog:cds",
-                                          "-Xlog:class+loader+constraints=debug",
-                                          "--add-exports",
-                                          "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                          mainClass);
-        runWithArchive(joptsMain, "1");
-        runWithArchive(joptsMain, "2");
-        runWithArchive(joptsMain, "3");
+        TestCommon.dump(appJar, appClasses, "-Xlog:cds");
+        String cmdLine[] =
+            TestCommon.concat("-cp", appJar,
+                              "-Xlog:cds",
+                              "-Xlog:class+loader+constraints=debug",
+                              "--add-exports",
+                              "java.base/jdk.internal.misc=ALL-UNNAMED",
+                              mainClass);
+        runWithArchive(cmdLine, "1");
+        runWithArchive(cmdLine, "2");
+        runWithArchive(cmdLine, "3");
+    }
+
+    // Same as doTest, except that LoaderConstraintsApp and MyHttpHandler* are loaded
+    // by a custom loader. This is test case for JDK-8267347.
+    static void doTestCustomLoader() throws Exception  {
+        String src = " source: " + appJar;
+        String classList[] =
+            TestCommon.concat(loaderClasses,
+                              "java/lang/Object id: 1",
+                              mainClass + " id: 2 super: 1" + src,
+                              httpHandlerClass + " id: 3",
+                              "MyHttpHandler id: 5 super: 1 interfaces: 3" + src,
+                              "MyHttpHandlerB id: 6 super: 1 interfaces: 3" + src,
+                              "MyHttpHandlerC id: 7 super: 1 interfaces: 3" + src);
+        TestCommon.dump(loaderJar, classList, "-Xlog:cds");
+
+        String cmdLine[] =
+            TestCommon.concat("-cp", loaderJar,
+                              "-Xlog:cds",
+                              "-Xlog:class+loader+constraints=debug",
+                              "--add-exports",
+                              "java.base/jdk.internal.misc=ALL-UNNAMED",
+                              loaderMainClass, appJar, mainClass);
+        runWithArchive(cmdLine, "1");
+        runWithArchive(cmdLine, "2");
+        runWithArchive(cmdLine, "3");
     }
 
     static void runWithArchive(String[] optsMain, String arg) throws Exception {
@@ -72,7 +108,13 @@ public class LoaderConstraintsTest  {
     }
 
     public static void main(String... args) throws Exception {
+        appJar = ClassFileInstaller.writeJar("loader_constraints.jar", appClasses);
         doTest();
+        if (!Platform.isWindows()) {
+            // custom loaders are not supported on Windows yet.
+            loaderJar = ClassFileInstaller.writeJar("custom_app_loader.jar", loaderClasses);
+            doTestCustomLoader();
+        }
     }
 }
 

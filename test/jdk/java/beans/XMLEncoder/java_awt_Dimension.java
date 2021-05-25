@@ -25,6 +25,7 @@
  * @test
  * @bug 4741757 6402062 6471539
  * @summary Tests Dimension encoding
+ * @run main/othervm -Djava.security.manager=allow java_awt_Dimension
  * @author Sergey Malenkov
  */
 

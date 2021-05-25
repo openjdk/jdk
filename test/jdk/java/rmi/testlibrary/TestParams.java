@@ -78,8 +78,11 @@ public class TestParams {
         defaultGroupPolicy =
             testSrc + File.separatorChar + "group.security.policy";
 
-        defaultSecurityManager = TestLibrary.getProperty(
-            "java.security.manager", "java.lang.SecurityManager");
+        String tmp = TestLibrary.getProperty("java.security.manager", null);
+        if (tmp == null || tmp.equals("allow")) {
+            tmp = "java.lang.SecurityManager";
+        }
+        defaultSecurityManager = tmp;
 
         testVmOpts = TestLibrary.getProperty("test.vm.opts", "");
 

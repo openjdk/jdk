@@ -68,7 +68,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6439439 8087303 8174025 8223291 8249867 8261209 8260858
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true common.prettyprint.PrettyPrintTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.prettyprint.PrettyPrintTest
  * @run testng/othervm common.prettyprint.PrettyPrintTest
  * @summary Test serializing xml and html with indentation.
  */

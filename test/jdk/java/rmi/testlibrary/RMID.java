@@ -335,6 +335,9 @@ public class RMID extends JavaVM {
         // a well recognized exception (port already in use...).
 
         mesg("Starting rmid on port " + port + ", at " + LocalTime.now());
+        if (!options.contains("-Djava.security.manager")) {
+            options += " -Djava.security.manager=allow";
+        }
         int p = super.startAndGetPort();
         if (p != -1)
             port = p;

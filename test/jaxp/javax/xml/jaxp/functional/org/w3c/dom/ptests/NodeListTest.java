@@ -35,7 +35,7 @@ import org.w3c.dom.NodeList;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.NodeListTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.NodeListTest
  * @run testng/othervm org.w3c.dom.ptests.NodeListTest
  * @summary Verifies a bug found in jaxp1.0.1 and 1.1FCS. After going out of
  * bound, the last element of a NodeList returns null. The bug has been fixed
