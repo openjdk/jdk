@@ -577,7 +577,7 @@ h1.hidden {
     margin-right:10px;
     display:inline-block;
 }
-div.block div.deprecation-comment, div.block div.block {
+div.block div.deprecation-comment {
     font-style:normal;
 }
 /*
