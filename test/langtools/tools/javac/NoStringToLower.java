@@ -68,7 +68,8 @@ public class NoStringToLower {
                 "com.sun.tools.javah",
                 "com.sun.tools.javap",
                 "com.sun.tools.jdeps",
-                "com.sun.tools.sjavac"
+                "com.sun.tools.sjavac",
+                "jdk.javadoc"
             };
             for (String pkg: pkgs) {
                 for (JavaFileObject fo: fm.list(javacLoc,
