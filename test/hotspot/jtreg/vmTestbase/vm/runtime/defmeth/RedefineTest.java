@@ -44,8 +44,6 @@ import java.util.Map;
 import java.util.Set;
 
 import nsk.share.Pair;
-import nsk.share.TestFailure;
-import nsk.share.test.TestBase;
 import vm.runtime.defmeth.shared.DefMethTest;
 import vm.runtime.defmeth.shared.DefMethTestFailure;
 import vm.runtime.defmeth.shared.MemoryClassLoader;
@@ -68,7 +66,7 @@ public class RedefineTest extends DefMethTest {
     public static void main(String[] args) {
         DefMethTest.runTest(RedefineTest.class,
                 /* majorVer */ Set.of(MIN_MAJOR_VER, MAX_MAJOR_VER),
-                /* flags    */ Set.of(0, ACC_SYNCHRONIZED, ACC_STRICT, ACC_SYNCHRONIZED | ACC_STRICT),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED),
                 /* redefine */ Set.of(true),
                 /* execMode */ Set.of(DIRECT, INVOKE_EXACT, INVOKE_GENERIC, INDY));
     }

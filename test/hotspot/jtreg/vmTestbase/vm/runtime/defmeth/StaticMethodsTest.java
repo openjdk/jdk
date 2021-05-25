@@ -38,14 +38,12 @@
  */
 package vm.runtime.defmeth;
 
-import nsk.share.test.TestBase;
+import java.util.Set;
+
 import vm.runtime.defmeth.shared.DefMethTest;
-import vm.runtime.defmeth.shared.builder.TesterBuilder;
 import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
-
-import java.util.Set;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke.*;
@@ -60,7 +58,7 @@ public class StaticMethodsTest extends DefMethTest {
     public static void main(String[] args) {
         DefMethTest.runTest(StaticMethodsTest.class,
                 /* majorVer */ Set.of(MIN_MAJOR_VER, MAX_MAJOR_VER),
-                /* flags    */ Set.of(0, ACC_SYNCHRONIZED, ACC_STRICT, ACC_SYNCHRONIZED | ACC_STRICT),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED),
                 /* redefine */ Set.of(false, true),
                 /* execMode */ Set.of(DIRECT, REFLECTION, INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY));
     }

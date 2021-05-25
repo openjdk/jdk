@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+
 import nsk.share.TestFailure;
 import nsk.share.test.StressOptions;
 import nsk.share.test.Stresser;
@@ -53,6 +54,7 @@ import vm.share.options.Option;
 import vm.share.options.OptionSupport;
 import vm.share.options.Options;
 import jdk.test.lib.Utils;
+
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static vm.runtime.defmeth.shared.DefMethTest.MAX_MAJOR_VER;
 import static vm.runtime.defmeth.shared.DefMethTest.MIN_MAJOR_VER;
@@ -159,12 +161,7 @@ public class StressTest implements Runnable {
             majorVerValues[i] = MIN_MAJOR_VER + i;
         }
 
-        int[] flagsValues = new int[] {
-            0,
-            ACC_STRICT,
-            ACC_SYNCHRONIZED,
-            ACC_STRICT | ACC_SYNCHRONIZED
-        };
+        int[] flagsValues = new int[] {0, ACC_SYNCHRONIZED};
 
         boolean[] doRedefineValues;
         if (noRedefine) {

@@ -38,18 +38,16 @@
  */
 package vm.runtime.defmeth;
 
+import java.util.Set;
+
 import vm.runtime.defmeth.shared.DefMethTest;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
+import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.data.*;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STRICT;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.IndexbyteOp.*;
-import vm.runtime.defmeth.shared.builder.TestBuilder;
-
-import java.util.Set;
-
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
 
 /**
@@ -71,7 +69,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
     public static void main(String[] args) {
         DefMethTest.runTest(ConflictingDefaultsTest.class,
                 /* majorVer */ Set.of(MIN_MAJOR_VER, MAX_MAJOR_VER),
-                /* flags    */ Set.of(0, ACC_SYNCHRONIZED, ACC_STRICT, ACC_SYNCHRONIZED | ACC_STRICT),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED),
                 /* redefine */ Set.of(false, true),
                 /* execMode */ Set.of(DIRECT, REFLECTION, INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY));
     }

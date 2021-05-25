@@ -38,15 +38,13 @@
  */
 package vm.runtime.defmeth;
 
-import nsk.share.test.TestBase;
+import java.util.Set;
+
 import vm.runtime.defmeth.shared.DefMethTest;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
 import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 
-import java.util.Set;
-
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STRICT;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
 
@@ -74,7 +72,7 @@ public class SuperCallTest extends DefMethTest {
     public static void main(String[] args) {
         DefMethTest.runTest(SuperCallTest.class,
                 /* majorVer */ Set.of(MAX_MAJOR_VER),
-                /* flags    */ Set.of(0, ACC_SYNCHRONIZED, ACC_STRICT, ACC_SYNCHRONIZED | ACC_STRICT),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED),
                 /* redefine */ Set.of(false, true),
                 /* execMode */ Set.of(DIRECT, REFLECTION, INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY));
     }

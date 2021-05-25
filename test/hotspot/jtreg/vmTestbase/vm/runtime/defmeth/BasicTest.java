@@ -39,18 +39,18 @@
 
 package vm.runtime.defmeth;
 
+import java.util.Map;
+import java.util.Set;
+
 import nsk.share.TestFailure;
 import vm.runtime.defmeth.shared.MemoryClassLoader;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.data.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import vm.runtime.defmeth.shared.DefMethTest;
 import vm.runtime.defmeth.shared.executor.TestExecutor;
 
-import java.util.Map;
-import java.util.Set;
-
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
 
 /**
@@ -61,7 +61,7 @@ public class BasicTest extends DefMethTest {
     public static void main(String[] args) {
         DefMethTest.runTest(BasicTest.class,
                 /* majorVer */ Set.of(MIN_MAJOR_VER, MAX_MAJOR_VER),
-                /* flags    */ Set.of(0, ACC_SYNCHRONIZED, ACC_STRICT, ACC_SYNCHRONIZED | ACC_STRICT),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED),
                 /* redefine */ Set.of(false, true),
                 /* execMode */ Set.of(DIRECT, REFLECTION, INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY));
     }
