@@ -1637,6 +1637,10 @@ public abstract class VarHandle implements Constable {
         COMPARE_AND_EXCHANGE(Object.class),
         GET_AND_UPDATE(Object.class);
 
+        static final int COUNT = GET_AND_UPDATE.ordinal() + 1;
+        static {
+            assert (COUNT == values().length);
+        }
         final Class<?> returnType;
         final boolean isMonomorphicInReturnType;
 
@@ -1891,6 +1895,10 @@ public abstract class VarHandle implements Constable {
         GET_AND_BITWISE_XOR_ACQUIRE("getAndBitwiseXorAcquire", AccessType.GET_AND_UPDATE),
         ;
 
+        static final int COUNT = GET_AND_BITWISE_XOR_ACQUIRE.ordinal() + 1;
+        static {
+            assert (COUNT == values().length);
+        }
         final String methodName;
         final AccessType at;
 
@@ -2126,12 +2134,10 @@ public abstract class VarHandle implements Constable {
 
     static class TypesAndInvokers {
         final @Stable
-        MethodType[] methodType_table =
-                new MethodType[VarHandle.AccessType.values().length];
+        MethodType[] methodType_table = new MethodType[VarHandle.AccessType.COUNT];
 
         final @Stable
-        MethodHandle[] methodHandle_table =
-                new MethodHandle[AccessMode.values().length];
+        MethodHandle[] methodHandle_table = new MethodHandle[AccessMode.COUNT];
     }
 
     @ForceInline
