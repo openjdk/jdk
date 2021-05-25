@@ -1114,7 +1114,8 @@ final class Win32ShellFolder2 extends ShellFolder {
                         }
 
                         if (hiResIconAvailable(getParentIShellFolder(), getRelativePIDL()) || newIcon == null) {
-                            newIcon = getIcon(getLargeIcon ? LARGE_ICON_SIZE : SMALL_ICON_SIZE);
+                            int size = getLargeIcon ? LARGE_ICON_SIZE : SMALL_ICON_SIZE;
+                            newIcon = getIcon(size, size);
                         }
 
                         if (newIcon == null) {
@@ -1130,13 +1131,14 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * @return The icon image of specified size used to display this shell folder
      */
-    public Image getIcon(int size) {
+    public Image getIcon(int width, int height) {
+        int size = Math.max(width, height);
         return invoke(() -> {
             Image newIcon = null;
             if (isLink()) {
                 Win32ShellFolder2 folder = getLinkLocation(false);
                 if (folder != null && folder.isLibrary()) {
-                    return folder.getIcon(size);
+                    return folder.getIcon(size, size);
                 }
             }
             Map<Integer, Image> multiResolutionIcon = new HashMap<>();

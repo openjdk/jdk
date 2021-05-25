@@ -262,7 +262,7 @@ public abstract class FileSystemView {
     * <p>
     * Example: <pre>
     *     FileSystemView fsv = FileSystemView.getFileSystemView();
-    *     Icon icon = fsv.getSystemIcon(new File("application.exe"), 64);
+    *     Icon icon = fsv.getSystemIcon(new File("application.exe"), 64, 64);
     *     JLabel label = new JLabel(icon);
     * </pre>
     *
@@ -275,20 +275,22 @@ public abstract class FileSystemView {
     * with different scaling factors.
     *
     * @param f a {@code File} object for which the icon will be retrieved
-    * @param size width and height of the icon in user coordinate system.
-    * This API only supports square icons with the edge length
-    * equals or greater than 1. Maximum size allowed is defined by the
-    * underlying implementation.
+    * @param width width of the icon in user coordinate system.
+    * @param height height of the icon in user coordinate system.
     * @return an icon as it would be displayed by a native file chooser
-    * or null if invalid parameters are passed such as pointer to a
-    * non-existing file or a size outside of supported range.
+    * or null if invalid parameters are passed such as reference to a
+    * non-existing file.
     * @see JFileChooser#getIcon
     * @see AbstractMultiResolutionImage
     * @see FileSystemView#getSystemIcon(File)
     * @since 17
     */
-    public Icon getSystemIcon(File f, int size) {
-        if (f == null) {
+    public Icon getSystemIcon(File f, int width, int height) {
+        if (height <1 || width < 1) {
+            throw new IllegalArgumentException("Icon size can not be below 1");
+        }
+
+        if (f == null || !f.exists()) {
             return null;
         }
 
@@ -300,7 +302,7 @@ public abstract class FileSystemView {
             return null;
         }
 
-        Image img = sf.getIcon(size);
+        Image img = sf.getIcon(width, height);
 
         if (img != null) {
             return new ImageIcon(img, sf.getFolderType());

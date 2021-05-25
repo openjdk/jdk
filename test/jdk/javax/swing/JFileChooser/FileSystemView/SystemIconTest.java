@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8182043
- * @requires os.family == "windows"
  * @summary Access to Windows Large Icons
  * sun.awt.shell.ShellFolder
  * @run main SystemIconTest
@@ -39,20 +38,45 @@ public class SystemIconTest {
 
     public static void main(String[] args) {
         testSystemIcon();
-        System.out.println("ok");
+        negativeTests();
     }
 
     static void testSystemIcon() {
-        String windir = System.getenv("windir");
-        testSystemIcon(new File(windir));
-        testSystemIcon(new File(windir + "/explorer.exe"));
-        return;
+        String os = System.getProperty("os.name");
+        if (os.startsWith("Windows")) {
+            String windir = System.getenv("windir");
+            testSystemIcon(new File(windir), true);
+            testSystemIcon(new File(windir + "/explorer.exe"),
+                    true);
+        } else {
+            String homedir = System.getProperty("user.home");
+            testSystemIcon(new File(homedir), false);
+        }
     }
 
-    static void testSystemIcon(File file) {
+    static void negativeTests() {
+        ImageIcon icon;
+        boolean gotException = false;
+        try {
+            icon = (ImageIcon) fsv.getSystemIcon(new File("."), -1, 16);
+        } catch (IllegalArgumentException iae) {
+            gotException = true;
+        }
+        if (!gotException) {
+            throw new RuntimeException("Negative size icon should throw invalid argument exception");
+        }
+
+        icon = (ImageIcon) fsv.getSystemIcon(new File("thereisdefinitelynosuchfile.why"),
+                16, 16);
+        if (icon != null) {
+            throw new RuntimeException("Icons for files with invalid names should be null");
+        }
+    }
+
+    static void testSystemIcon(File file, boolean implComplete) {
         int[] sizes = new int[] {16, 32, 48, 64, 128};
         for (int size : sizes) {
-            ImageIcon icon = (ImageIcon) fsv.getSystemIcon(file, size);
+            ImageIcon icon = (ImageIcon) fsv.getSystemIcon(file, size, size);
 
             //Enable below to see the icon
             //JLabel label = new JLabel(icon);
@@ -62,7 +86,7 @@ public class SystemIconTest {
                 throw new RuntimeException("icon is null!!!");
             }
 
-            if (icon.getIconWidth() != size) {
+            if (implComplete && icon.getIconWidth() != size) {
                 throw new RuntimeException("Wrong icon size " +
                         icon.getIconWidth() + " when requested " + size);
             }
@@ -74,7 +98,9 @@ public class SystemIconTest {
                             + size + " in the multi resolution icon");
                 }
             } else {
-                throw new RuntimeException("icon is supposed to be multi-resolution but it is not");
+                if (implComplete) {
+                    throw new RuntimeException("icon is supposed to be multi-resolution but it is not");
+                }
             }
         }
     }
