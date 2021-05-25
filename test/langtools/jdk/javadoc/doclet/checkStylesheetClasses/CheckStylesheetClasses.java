@@ -78,7 +78,7 @@ public class CheckStylesheetClasses {
 
         // help page
         htmlStyleNames.removeIf(s -> switch (s) {
-            case "help-footnote", "help-note", "help-sec tion-list", "help-subtoc" -> false;
+            case "help-footnote", "help-note", "help-section-list", "help-subtoc" -> false;
             default -> s.startsWith("help-");
         });
 
