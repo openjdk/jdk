@@ -115,9 +115,9 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
             ListIterator<String> it = releases.listIterator(releases.size());
             while (it.hasPrevious()) {
                 String release = it.previous();
-                String tab = TERMINALLY_DEPRECATED_KEY.equals(headingKey)
-                        ? resources.getText("doclet.Terminally_Deprecated_In_Release", release)
-                        : resources.getText("doclet.Deprecated_In_Release", release);
+                Content tab = TERMINALLY_DEPRECATED_KEY.equals(headingKey)
+                        ? contents.getContent("doclet.Terminally_Deprecated_In_Release", release)
+                        : contents.getContent("doclet.Deprecated_In_Release", release);
                 table.addTab(tab,
                         element -> release.equals(utils.getDeprecatedSince(element)));
             }
@@ -126,9 +126,9 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     }
 
     @Override
-    protected String getTableCaption(String headingKey) {
-        String caption = resources.getText(headingKey);
+    protected Content getTableCaption(String headingKey) {
+        Content caption = contents.getContent(headingKey);
         return TERMINALLY_DEPRECATED_KEY.equals(headingKey)
-                ? caption : resources.getText("doclet.Deprecated_Elements", caption);
+                ? caption : contents.getContent("doclet.Deprecated_Elements", caption);
     }
 }

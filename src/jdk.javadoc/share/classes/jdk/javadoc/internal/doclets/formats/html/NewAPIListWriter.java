@@ -101,7 +101,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
                 table.addTab(
                         releases.size() == 1
                                 ? getTableCaption(headingKey)
-                                : configuration.docResources.getText(
+                                : contents.getContent(
                                         "doclet.New_Elements_Added_In_Release", release),
                         element -> {
                             if (!utils.hasDocCommentTree(element)) {
@@ -125,8 +125,8 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
     }
 
     @Override
-    protected String getTableCaption(String headingKey) {
-        return resources.getText("doclet.New_Elements", super.getTableCaption(headingKey));
+    protected Content getTableCaption(String headingKey) {
+        return contents.getContent("doclet.New_Elements", super.getTableCaption(headingKey));
     }
 
     private static String getHeading(NewAPIBuilder builder, HtmlConfiguration configuration) {

@@ -36,10 +36,9 @@ import static com.sun.source.doctree.DocTree.Kind.SINCE;
 
 /**
  * Build list of all the packages, classes, constructors, fields and methods
- * that were added in the current release. This class is only used when documenting
- * the platform library code, since that is the only time we know the version of
- * the code. To enable testing, the feature can also be activated by setting a system
- * property.
+ * that were added in one of the releases specified by the {@code --since}
+ * option. The release names must exactly match the names used in the javadoc
+ * {@code @since} tags of the respective elements.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.

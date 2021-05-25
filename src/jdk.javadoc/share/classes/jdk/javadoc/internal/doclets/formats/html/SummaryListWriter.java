@@ -209,7 +209,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
                     contents.getContent(headerKey), contents.descriptionLabel);
 
             Table table = new Table(HtmlStyle.summaryTable)
-                    .setCaption(Text.of(getTableCaption(headingKey)))
+                    .setCaption(getTableCaption(headingKey))
                     .setHeader(tableHeader)
                     .setId(id)
                     .setColumnStyles(HtmlStyle.colSummaryItemName, HtmlStyle.colLast);
@@ -279,8 +279,8 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
     protected void addExtraIndexLink(L list, Content target) {
     }
 
-    protected String getTableCaption(String headingKey) {
-        return resources.getText(headingKey);
+    protected Content getTableCaption(String headingKey) {
+        return contents.getContent(headingKey);
     }
 
     /**
