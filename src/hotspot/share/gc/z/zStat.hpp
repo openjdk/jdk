@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -407,6 +407,7 @@ private:
   static size_t _nterminateflush;
   static size_t _ntrycomplete;
   static size_t _ncontinue;
+  static size_t _mark_stack_usage;
 
 public:
   static void set_at_mark_start(size_t nstripes);
@@ -414,6 +415,7 @@ public:
                               size_t nterminateflush,
                               size_t ntrycomplete,
                               size_t ncontinue);
+  static void set_at_mark_free(size_t mark_stack_usage);
 
   static void print();
 };
@@ -541,7 +543,7 @@ public:
   static void set_at_mark_end(const ZPageAllocatorStats& stats);
   static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
   static void set_at_relocate_start(const ZPageAllocatorStats& stats);
-  static void set_at_relocate_end(const ZPageAllocatorStats& stats);
+  static void set_at_relocate_end(const ZPageAllocatorStats& stats, size_t non_worker_relocated);
 
   static size_t max_capacity();
   static size_t used_at_mark_start();

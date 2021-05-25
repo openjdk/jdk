@@ -63,7 +63,8 @@ public class UseCustomSocketFactory {
         for (String protocol : protocols) {
             System.err.println("test policy: " +
                     TestParams.defaultPolicy);
-            JavaVM serverVM = new JavaVM("EchoImpl", "-Djava.security.policy=" +
+            JavaVM serverVM = new JavaVM("EchoImpl",
+                    "-Djava.security.manager=allow -Djava.security.policy=" +
                     TestParams.defaultPolicy +
                     " -Drmi.registry.port=" +
                     registryPort, protocol);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -957,23 +957,35 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public VarSymbol sym;
         /** explicit start pos */
         public int startPos = Position.NOPOS;
+        /** declared using `var` */
+        private boolean declaredUsingVar;
 
         protected JCVariableDecl(JCModifiers mods,
                          Name name,
                          JCExpression vartype,
                          JCExpression init,
                          VarSymbol sym) {
+            this(mods, name, vartype, init, sym, false);
+        }
+
+        protected JCVariableDecl(JCModifiers mods,
+                                 Name name,
+                                 JCExpression vartype,
+                                 JCExpression init,
+                                 VarSymbol sym,
+                                 boolean declaredUsingVar) {
             this.mods = mods;
             this.name = name;
             this.vartype = vartype;
             this.init = init;
             this.sym = sym;
+            this.declaredUsingVar = declaredUsingVar;
         }
 
         protected JCVariableDecl(JCModifiers mods,
                          JCExpression nameexpr,
                          JCExpression vartype) {
-            this(mods, null, vartype, null, null);
+            this(mods, null, vartype, null, null, false);
             this.nameexpr = nameexpr;
             if (nameexpr.hasTag(Tag.IDENT)) {
                 this.name = ((JCIdent)nameexpr).name;
@@ -985,6 +997,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         public boolean isImplicitlyTyped() {
             return vartype == null;
+        }
+
+        public boolean declaredUsingVar() {
+            return declaredUsingVar;
         }
 
         @Override
@@ -2178,7 +2194,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         @Override @DefinedBy(Api.COMPILER_TREE)
         public JCPattern getPattern() {
-            return pattern instanceof JCPattern ? (JCPattern) pattern : null;
+            return pattern instanceof JCPattern jcPattern ? jcPattern : null;
         }
 
         @DefinedBy(Api.COMPILER_TREE)

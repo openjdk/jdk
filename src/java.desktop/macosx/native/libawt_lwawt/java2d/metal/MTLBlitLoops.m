@@ -49,8 +49,14 @@ typedef struct {
     // Consider deleting this field, since it's always MTLPixelFormatBGRA8Unorm
     jboolean hasAlpha;
     jboolean isPremult;
-    NSString* swizzleKernel;
+    const uint8_t* swizzleMap;
 } MTLRasterFormatInfo;
+
+
+const uint8_t rgb_to_rgba[4] =  {0, 1, 2, 3};
+const uint8_t xrgb_to_rgba[4] = {1, 2, 3, 0};
+const uint8_t bgr_to_rgba[4] =  {2, 1, 0, 3};
+const uint8_t xbgr_to_rgba[4] = {3, 2, 1, 0};
 
 /**
  * This table contains the "pixel formats" for all system memory surfaces
@@ -62,10 +68,10 @@ typedef struct {
 MTLRasterFormatInfo RasterFormatInfos[] = {
         { 1, 0, nil }, /* 0 - IntArgb      */ // Argb (in java notation)
         { 1, 1, nil }, /* 1 - IntArgbPre   */
-        { 0, 1, @"rgb_to_rgba" }, /* 2 - IntRgb       */
-        { 0, 1, @"xrgb_to_rgba" }, /* 3 - IntRgbx      */
-        { 0, 1, @"bgr_to_rgba"  }, /* 4 - IntBgr       */
-        { 0, 1, @"xbgr_to_rgba" }, /* 5 - IntBgrx      */
+        { 0, 1, rgb_to_rgba }, /* 2 - IntRgb       */
+        { 0, 1, xrgb_to_rgba }, /* 3 - IntRgbx      */
+        { 0, 1, bgr_to_rgba  }, /* 4 - IntBgr       */
+        { 0, 1, xbgr_to_rgba }, /* 5 - IntBgrx      */
 
 //        TODO: support 2-byte formats
 //        { GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV,
@@ -152,14 +158,21 @@ void drawTex2Tex(MTLContext *mtlc,
     [encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:6];
 }
 
+static void fillSwizzleUniforms(struct SwizzleUniforms *uniforms, const MTLRasterFormatInfo *rfi) {
+    const size_t SWIZZLE_MAP_SIZE = 4;
+    memcpy(&uniforms->swizzle, rfi->swizzleMap, SWIZZLE_MAP_SIZE);
+    uniforms->hasAlpha = rfi->hasAlpha;
+}
+
 static void
 replaceTextureRegion(MTLContext *mtlc, id<MTLTexture> dest, const SurfaceDataRasInfo *srcInfo,
                      const MTLRasterFormatInfo *rfi,
                      int dx1, int dy1, int dx2, int dy2) {
-    const int sw = srcInfo->bounds.x2 - srcInfo->bounds.x1;
-    const int sh = srcInfo->bounds.y2 - srcInfo->bounds.y1;
-    const int dw = dx2 - dx1;
-    const int dh = dy2 - dy1;
+    const int sw = MIN(srcInfo->bounds.x2 - srcInfo->bounds.x1, MTL_GPU_FAMILY_MAC_TXT_SIZE);
+    const int sh = MIN(srcInfo->bounds.y2 - srcInfo->bounds.y1, MTL_GPU_FAMILY_MAC_TXT_SIZE);
+    const int dw = MIN(dx2 - dx1, MTL_GPU_FAMILY_MAC_TXT_SIZE);
+    const int dh = MIN(dy2 - dy1, MTL_GPU_FAMILY_MAC_TXT_SIZE);
+
     if (dw < sw || dh < sh) {
         J2dTraceLn4(J2D_TRACE_ERROR, "replaceTextureRegion: dest size: (%d, %d) less than source size: (%d, %d)", dw, dh, sw, sh);
         return;
@@ -180,24 +193,30 @@ replaceTextureRegion(MTLContext *mtlc, id<MTLTexture> dest, const SurfaceDataRas
         }
         [buff didModifyRange:NSMakeRange(0, buff.length)];
 
-        if (rfi->swizzleKernel != nil) {
+        if (rfi->swizzleMap != nil) {
             id <MTLBuffer> swizzled = [[mtlc.device newBufferWithLength:(sw * sh * srcInfo->pixelStride) options:MTLResourceStorageModeManaged] autorelease];
 
             // this should be cheap, since data is already on GPU
             id<MTLCommandBuffer> cb = [mtlc createCommandBuffer];
             id<MTLComputeCommandEncoder> computeEncoder = [cb computeCommandEncoder];
             id<MTLComputePipelineState> computePipelineState = [mtlc.pipelineStateStorage
-                                                                getComputePipelineState:rfi->swizzleKernel];
+                                                                getComputePipelineState:@"swizzle_to_rgba"];
             [computeEncoder setComputePipelineState:computePipelineState];
 
             [computeEncoder setBuffer:buff offset:0 atIndex:0];
             [computeEncoder setBuffer:swizzled offset:0 atIndex:1];
 
+            struct SwizzleUniforms uniforms;
+            fillSwizzleUniforms(&uniforms, rfi);
+            [computeEncoder setBytes:&uniforms length:sizeof(struct SwizzleUniforms) atIndex:2];
+
+            NSUInteger pixelCount = buff.length / srcInfo->pixelStride;
+            [computeEncoder setBytes:&pixelCount length:sizeof(NSUInteger) atIndex:3];
+
             NSUInteger threadGroupSize = computePipelineState.maxTotalThreadsPerThreadgroup;
             if (threadGroupSize == 0) {
                threadGroupSize = 1;
             }
-            NSUInteger pixelCount = buff.length / srcInfo->pixelStride;
             MTLSize threadsPerGroup = MTLSizeMake(threadGroupSize, 1, 1);
             MTLSize threadGroups = MTLSizeMake((pixelCount + threadGroupSize - 1) / threadGroupSize,
                                                1, 1);
@@ -682,9 +701,6 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
             pDst = PtrPixelsRow(pDst, dstx, dstInfo.pixelStride);
             pDst = PtrPixelsRow(pDst, dsty, dstInfo.scanStride);
 
-            // Metal texture is (0,0) at left-top
-            srcx = srcOps->xOffset + srcx;
-            srcy = srcOps->yOffset + srcy;
             NSUInteger byteLength = w * h * 4; // NOTE: assume that src format is MTLPixelFormatBGRA8Unorm
 
             // Create MTLBuffer (or use static)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,10 +208,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
         Map<String, String> data = new HashMap<>();
 
-        Path appLocation = Path.of(getInstallDir(params),
+        Path appLocation = Path.of(getInstallDir(params, false),
                          APP_NAME.fetchFrom(params) + ".app", "Contents", "app");
 
-        data.put("INSTALL_LOCATION", getInstallDir(params));
+        data.put("INSTALL_LOCATION", getInstallDir(params, false));
         data.put("APP_LOCATION", appLocation.toString());
 
         createResource(TEMPLATE_PREINSTALL_SCRIPT, params)
@@ -284,6 +284,8 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             xml.writeStartElement("options");
             xml.writeAttribute("customize", "never");
             xml.writeAttribute("require-scripts", "false");
+            xml.writeAttribute("hostArchitectures",
+                    Platform.isArmMac() ? "arm64" : "x86_64");
             xml.writeEndElement(); // </options>
             xml.writeStartElement("choices-outline");
             xml.writeStartElement("line");
@@ -388,16 +390,20 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         Path rootDir = appLocation.getParent() == null ?
                 Path.of(".") : appLocation.getParent();
 
-        Path[] list = Files.list(rootDir).toArray(Path[]::new);
-        if (list != null) { // Should not happend
-            // We should only have app image and/or .DS_Store
-            if (list.length == 1) {
-                return rootDir.toString();
-            } else if (list.length == 2) {
-                // Check case with app image and .DS_Store
-                if (list[0].toString().toLowerCase().endsWith(".ds_store") ||
-                    list[1].toString().toLowerCase().endsWith(".ds_store")) {
-                    return rootDir.toString(); // Only app image and .DS_Store
+        // Not needed for runtime installer and it might break runtime installer
+        // if parent does not have any other files
+        if (!StandardBundlerParam.isRuntimeInstaller(params)) {
+            try (var fileList = Files.list(rootDir)) {
+                Path[] list = fileList.toArray(Path[]::new);
+                // We should only have app image and/or .DS_Store
+                if (list.length == 1) {
+                    return rootDir.toString();
+                } else if (list.length == 2) {
+                    // Check case with app image and .DS_Store
+                    if (list[0].toString().toLowerCase().endsWith(".ds_store") ||
+                        list[1].toString().toLowerCase().endsWith(".ds_store")) {
+                        return rootDir.toString(); // Only app image and .DS_Store
+                    }
                 }
             }
         }
@@ -441,7 +447,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     "--root",
                     root,
                     "--install-location",
-                    getInstallDir(params),
+                    getInstallDir(params, false),
                     "--analyze",
                     cpl.toAbsolutePath().toString());
 
@@ -455,7 +461,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                         "--root",
                         root,
                         "--install-location",
-                        getInstallDir(params),
+                        getInstallDir(params, false),
                         "--component-plist",
                         cpl.toAbsolutePath().toString(),
                         "--identifier",
@@ -468,7 +474,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                         "--root",
                         root,
                         "--install-location",
-                        getInstallDir(params),
+                        getInstallDir(params, false),
                         "--component-plist",
                         cpl.toAbsolutePath().toString(),
                         "--scripts",
@@ -523,7 +529,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 commandLine.add("--component");
                 Path p = Path.of(root, APP_NAME.fetchFrom(params) + ".app");
                 commandLine.add(p.toAbsolutePath().toString());
-                commandLine.add(getInstallDir(params));
+                commandLine.add(getInstallDir(params, false));
             } else {
                 commandLine.add("--distribution");
                 commandLine.add(getConfig_DistributionXMLFile(params)

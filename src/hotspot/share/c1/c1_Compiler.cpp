@@ -150,6 +150,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_getClass:
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_isPrimitive:
+  case vmIntrinsics::_getModifiers:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_dsqrt:
@@ -224,6 +225,8 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_getEventWriter:
 #endif
   case vmIntrinsics::_getObjectSize:
+    break;
+  case vmIntrinsics::_blackhole:
     break;
   default:
     return false; // Intrinsics not on the previous list are not available.

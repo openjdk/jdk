@@ -51,6 +51,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getTicksFrequency", (char*)"()J", (void*)jfr_elapsed_frequency,
       (char*)"subscribeLogLevel", (char*)"(Ljdk/jfr/internal/LogTag;I)V", (void*)jfr_subscribe_log_level,
       (char*)"log", (char*)"(IILjava/lang/String;)V", (void*)jfr_log,
+      (char*)"logEvent", (char*)"(I[Ljava/lang/String;Z)V", (void*)jfr_log_event,
       (char*)"retransformClasses", (char*)"([Ljava/lang/Class;)V", (void*)jfr_retransform_classes,
       (char*)"setEnabled", (char*)"(JZ)V", (void*)jfr_set_enabled,
       (char*)"setFileNotification", (char*)"(J)V", (void*)jfr_set_file_notification,

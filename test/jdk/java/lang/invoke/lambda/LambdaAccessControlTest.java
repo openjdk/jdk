@@ -28,7 +28,7 @@
  * @modules jdk.compiler
  * @compile -XDignore.symbol.file LambdaAccessControlTest.java LUtils.java
  *
- * @run main/othervm LambdaAccessControlTest
+ * @run main/othervm -Djava.security.manager=allow LambdaAccessControlTest
  */
 
 public class LambdaAccessControlTest extends LUtils {

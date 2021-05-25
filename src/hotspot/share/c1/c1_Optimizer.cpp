@@ -521,7 +521,6 @@ public:
   void do_BlockBegin     (BlockBegin*      x);
   void do_Goto           (Goto*            x);
   void do_If             (If*              x);
-  void do_IfInstanceOf   (IfInstanceOf*    x);
   void do_TableSwitch    (TableSwitch*     x);
   void do_LookupSwitch   (LookupSwitch*    x);
   void do_Return         (Return*          x);
@@ -707,7 +706,6 @@ void NullCheckVisitor::do_Intrinsic      (Intrinsic*       x) { nce()->handle_In
 void NullCheckVisitor::do_BlockBegin     (BlockBegin*      x) {}
 void NullCheckVisitor::do_Goto           (Goto*            x) {}
 void NullCheckVisitor::do_If             (If*              x) {}
-void NullCheckVisitor::do_IfInstanceOf   (IfInstanceOf*    x) {}
 void NullCheckVisitor::do_TableSwitch    (TableSwitch*     x) {}
 void NullCheckVisitor::do_LookupSwitch   (LookupSwitch*    x) {}
 void NullCheckVisitor::do_Return         (Return*          x) {}

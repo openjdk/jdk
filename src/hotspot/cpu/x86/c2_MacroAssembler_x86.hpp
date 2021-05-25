@@ -89,6 +89,10 @@ public:
                    KRegister ktmp, XMMRegister atmp, XMMRegister btmp,
                    int vlen_enc);
 
+  void signum_fp(int opcode, XMMRegister dst,
+                 XMMRegister zero, XMMRegister one,
+                 Register scratch);
+
   void vextendbw(bool sign, XMMRegister dst, XMMRegister src, int vector_len);
   void vextendbw(bool sign, XMMRegister dst, XMMRegister src);
   void vextendbd(bool sign, XMMRegister dst, XMMRegister src, int vector_len);
@@ -211,7 +215,13 @@ public:
   void reduce_operation_256(BasicType typ, int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
  public:
+#ifdef _LP64
+  void vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp, Register tmp,
+                             KRegister ktmp, int masklen, int vec_enc);
 
+  void vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp, XMMRegister xtmp1,
+                             Register tmp, int masklen, int vec_enc);
+#endif
   void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,
                            XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp);
 

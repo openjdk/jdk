@@ -32,6 +32,15 @@
 #include "opto/vector.hpp"
 #include "utilities/macros.hpp"
 
+static bool is_vector_mask(ciKlass* klass) {
+  return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
+}
+
+static bool is_vector_shuffle(ciKlass* klass) {
+  return klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
+}
+
+
 void PhaseVector::optimize_vector_boxes() {
   Compile::TracePhase tp("vector_elimination", &timers[_t_vector_elimination]);
 
@@ -238,12 +247,23 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     }
   }
 
+  ciInstanceKlass* iklass = vec_box->box_type()->klass()->as_instance_klass();
+  int n_fields = iklass->nof_nonstatic_fields();
+  assert(n_fields == 1, "sanity");
+
+  // If a mask is feeding into safepoint[s], then its value should be
+  // packed into a boolean/byte vector first, this will simplify the
+  // re-materialization logic for both predicated and non-predicated
+  // targets.
+  bool is_mask = is_vector_mask(iklass);
+  if (is_mask && vec_value->Opcode() != Op_VectorStoreMask) {
+    const TypeVect* vt = vec_value->bottom_type()->is_vect();
+    BasicType bt = vt->element_basic_type();
+    vec_value = gvn.transform(VectorStoreMaskNode::make(gvn, vec_value, bt, vt->length()));
+  }
+
   while (safepoints.size() > 0) {
     SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
-
-    ciInstanceKlass* iklass = vec_box->box_type()->klass()->as_instance_klass();
-    int n_fields = iklass->nof_nonstatic_fields();
-    assert(n_fields == 1, "sanity");
 
     uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
     Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(),
@@ -303,14 +323,6 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
     // TODO: assert that expanded vbox is initialized with the same value (vect).
     return vbox; // already expanded
   }
-}
-
-static bool is_vector_mask(ciKlass* klass) {
-  return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
-}
-
-static bool is_vector_shuffle(ciKlass* klass) {
-  return klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
 }
 
 Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,

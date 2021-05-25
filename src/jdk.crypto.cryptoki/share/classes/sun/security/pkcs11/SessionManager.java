@@ -69,9 +69,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 final class SessionManager {
 
-    private final static int DEFAULT_MAX_SESSIONS = 32;
+    private static final int DEFAULT_MAX_SESSIONS = 32;
 
-    private final static Debug debug = Debug.getInstance("pkcs11");
+    private static final Debug debug = Debug.getInstance("pkcs11");
 
     // token instance
     private final Token token;

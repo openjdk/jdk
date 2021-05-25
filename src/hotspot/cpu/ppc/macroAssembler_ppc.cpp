@@ -3058,7 +3058,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod) {
-  ld(temp, in_bytes(Thread::polling_word_offset()), R16_thread);
+  ld(temp, in_bytes(JavaThread::polling_word_offset()), R16_thread);
 
   if (at_return) {
     if (in_nmethod) {
