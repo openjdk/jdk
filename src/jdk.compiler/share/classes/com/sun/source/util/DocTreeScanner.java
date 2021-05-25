@@ -42,7 +42,7 @@ import com.sun.source.doctree.*;
  * <li>If the node being visited has one child, the result will be the
  * result of calling {@code scan} with that child. The child may be a simple node
  * or itself a list of nodes.
- * <li> If the node being visited has more than one child, the result will
+ * <li>If the node being visited has more than one child, the result will
  * be determined by calling {@code scan} with each child in turn, and then combining the
  * result of each scan after the first with the cumulative result
  * so far, as determined by the {@link #reduce} method. Each child may be either
