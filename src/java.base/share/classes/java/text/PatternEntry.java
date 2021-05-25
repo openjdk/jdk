@@ -131,12 +131,12 @@ class PatternEntry {
                 toAddTo.append(' ');
         }
         switch (strength) {
-        case Collator.IDENTICAL: toAddTo.append('='); break;
-        case Collator.TERTIARY:  toAddTo.append(','); break;
-        case Collator.SECONDARY: toAddTo.append(';'); break;
-        case Collator.PRIMARY:   toAddTo.append('<'); break;
-        case RESET: toAddTo.append('&'); break;
-        case UNSET: toAddTo.append('?'); break;
+            case Collator.IDENTICAL -> toAddTo.append('=');
+            case Collator.TERTIARY  -> toAddTo.append(',');
+            case Collator.SECONDARY -> toAddTo.append(';');
+            case Collator.PRIMARY   -> toAddTo.append('<');
+            case RESET              -> toAddTo.append('&');
+            case UNSET              -> toAddTo.append('?');
         }
         if (showWhiteSpace)
             toAddTo.append(' ');
