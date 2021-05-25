@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -660,7 +660,7 @@ public class SSLParameters {
      *     String HUK_UN_I = new String(bytes, StandardCharsets.ISO_8859_1);
      *
      *     // 0x00-0xFF:  1 byte
-     *     String rfc7301Grease8F = "\u005c008F\u005c008F";
+     *     String rfc7301Grease8A = "\u005cu008A\u005cu008A";
      *
      *     SSLParameters p = sslSocket.getSSLParameters();
      *     p.setApplicationProtocols(new String[] {
