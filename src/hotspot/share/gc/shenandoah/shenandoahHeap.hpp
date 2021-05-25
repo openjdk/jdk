@@ -702,7 +702,7 @@ public:
   static inline oop cas_oop(oop n, oop* addr, oop c);
   static inline oop cas_oop(oop n, narrowOop* addr, narrowOop c);
 
-  void trash_humongous_region_at(ShenandoahHeapRegion *r);
+  size_t trash_humongous_region_at(ShenandoahHeapRegion *r);
 
   void deduplicate_string(oop str);
 

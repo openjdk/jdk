@@ -1155,7 +1155,7 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   }
 }
 
-void ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
+size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
   assert(start->is_humongous_start(), "reclaim regions starting with the first one");
 
   oop humongous_obj = oop(start->bottom());
@@ -1175,6 +1175,7 @@ void ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
 
     region->make_trash_immediate();
   }
+  return required_regions;
 }
 
 class ShenandoahCheckCleanGCLABClosure : public ThreadClosure {

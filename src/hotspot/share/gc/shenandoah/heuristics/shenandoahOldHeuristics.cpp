@@ -165,59 +165,29 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     ShenandoahHeapRegion* region = heap->get_region(i);
     if (!in_generation(region)) {
       continue;
-    } else {
-      size_t garbage = region->garbage();
-      total_garbage += garbage;
+    }
 
+    size_t garbage = region->garbage();
+    total_garbage += garbage;
+
+    if (region->is_regular()) {
       candidates[cand_idx]._region = region;
       candidates[cand_idx]._garbage = garbage;
       cand_idx++;
-    }
-  }
-
-  // Give special treatment to humongous regions.  Assume humongous regions is entirely
-  // garbage or entirely non-garbage.  Assume that a head humongous region and the associated
-  // humongous continuous regions are uniformly entirely garbage or entirely non-garbage.
-  //
-  // Sift garbage humongous regions to front, non-garbage humongous regions to end of array.
-  size_t first_non_humongous_empty = 0;
-  size_t first_humongous_non_empty = cand_idx;
-
-  size_t i = 0;
-  while (i < first_humongous_non_empty) {
-    ShenandoahHeapRegion* region = candidates[i]._region;
-    if (region->is_humongous()) {
-      if (region->get_live_data_bytes() == 0) {
-        // Humongous region is entirely garbage.  Reclaim it.
-        if (i == first_non_humongous_empty) {
-          first_non_humongous_empty++;
-        } else {
-          RegionData swap_tmp = candidates[i];
-          candidates[i] = candidates[first_non_humongous_empty];
-          candidates[first_non_humongous_empty++] = swap_tmp;
-        }
-        i++;
-      } else {
-        // Humongous region is non garbage.  Don't reclaim it.
-        if (i + 1 == first_humongous_non_empty) {
-          first_humongous_non_empty--;
-          i++;
-        } else {
-          RegionData swap_tmp = candidates[i];
-          candidates[i] = candidates[--first_humongous_non_empty];
-          candidates[first_humongous_non_empty] = swap_tmp;
-          // Do not increment i so we can revisit swapped entry on next iteration
-        }
+    } else if (region->is_humongous_start()) {
+      if (!region->has_live()) {
+        // The humongous object is dead, we can just return this region and the continuations
+        // immediately to the freeset - no evacuations are necessary here. The continuations
+        // will be made into trash by this method, so they'll be skipped by the 'is_regular'
+        // check above.
+        size_t region_count = heap->trash_humongous_region_at(region);
+        log_debug(gc)("Trashed " SIZE_FORMAT " regions for humongous object.", region_count);
       }
-    } else {
-      i++;
     }
   }
-
 
   // Prioritize regions to select garbage-first regions
-  QuickSort::sort<RegionData>(candidates + first_non_humongous_empty, (int)(first_humongous_non_empty - first_non_humongous_empty),
-                              compare_by_garbage, false);
+  QuickSort::sort<RegionData>(candidates, cand_idx, compare_by_garbage, false);
 
   // Any old-gen region that contains (ShenandoahGarbageThreshold (default value 25))% garbage or more is to
   // be evacuated.
@@ -230,7 +200,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   const size_t collection_threshold_garbage_percent = ShenandoahGarbageThreshold;
 
   size_t region_size = ShenandoahHeapRegion::region_size_bytes();
-  for (size_t i = first_non_humongous_empty; i < first_humongous_non_empty; i++) {
+  for (size_t i = 0; i < cand_idx; i++) {
     // Do approximate percent to avoid floating point math
     size_t percent_garbage = candidates[i]._garbage * 100 / region_size;
 
@@ -242,9 +212,8 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
 
       // Note that we do not coalesce and fill occupied humongous regions
       // HR: humongous regions, RR: regular regions, CF: coalesce and fill regions
-      log_info(gc)("Old-gen mark evac (%u HR, %llu RR), %llu CF)",
-                   (unsigned int) first_non_humongous_empty,
-                   (unsigned long long) (_hidden_old_collection_candidates - first_non_humongous_empty),
+      log_info(gc)("Old-gen mark evac (%llu RR), %llu CF)",
+                   (unsigned long long) (_hidden_old_collection_candidates),
                    (unsigned long long) _old_coalesce_and_fill_candidates);
       return;
     }
@@ -252,15 +221,14 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
 
   // If we reach here, all of non-humogous old-gen regions are candidates for collection set.
   _hidden_next_old_collection_candidate = 0;
-  _hidden_old_collection_candidates = (uint)first_humongous_non_empty;
+  _hidden_old_collection_candidates = (uint)cand_idx;
   _first_coalesce_and_fill_candidate = 0;
   _old_coalesce_and_fill_candidates = 0;
 
   // Note that we do not coalesce and fill occupied humongous regions
   // HR: humongous regions, RR: regular regions, CF: coalesce and fill regions
-  log_info(gc)("Old-gen mark evac (%u HR, %llu RR), %llu CF)",
-               (unsigned int) first_non_humongous_empty,
-               (unsigned long long) (_hidden_old_collection_candidates - first_non_humongous_empty),
+  log_info(gc)("Old-gen mark evac (%llu RR), %llu CF)",
+               (unsigned long long) (_hidden_old_collection_candidates),
                (unsigned long long) _old_coalesce_and_fill_candidates);
 }
 
