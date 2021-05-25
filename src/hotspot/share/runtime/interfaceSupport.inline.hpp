@@ -208,7 +208,7 @@ class ThreadInVMfromNative : public ThreadStateTransition {
     _thread->check_possible_safepoint();
     // Once we are in native vm expects stack to be walkable
     _thread->frame_anchor()->make_walkable(_thread);
-    OrderAccess::storestore();
+    OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
     _thread->set_thread_state(_thread_in_native);
   }
 };
@@ -247,7 +247,7 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
     thread->check_possible_safepoint();
     // Once we are blocked vm expects stack to be walkable
     thread->frame_anchor()->make_walkable(thread);
-    OrderAccess::storestore();
+    OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
     thread->set_thread_state(_thread_blocked);
   }
   ~ThreadBlockInVMPreprocess() {

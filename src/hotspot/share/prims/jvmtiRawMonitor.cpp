@@ -402,7 +402,6 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
   _recursions = save;
 
   guarantee(self == _owner, "invariant");
-  guarantee(save == _recursions, "invariant");
   return ret;
 }
 

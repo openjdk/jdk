@@ -438,6 +438,8 @@ bool ObjectMonitor::enter(JavaThread* current) {
         // as having "-locked" the monitor, but the OS and java.lang.Thread
         // states will still report that the thread is blocked trying to
         // acquire it.
+        // If there is a suspend request, ExitOnSuspend will exit the OM
+        // and set the OM as pending.
       }
       if (!eos.exited()) {
         // ExitOnSuspend did not exit the OM
@@ -446,9 +448,8 @@ bool ObjectMonitor::enter(JavaThread* current) {
       }
     }
 
-    // We cleared the pending monitor info since we've just gotten past
-    // the enter-check-for-suspend dance and we now own the monitor free
-    // and clear, i.e., it is no longer pending.
+    // We've just gotten past the enter-check-for-suspend dance and we now own
+    // the monitor free and clear.
   }
 
   add_to_contentions(-1);
