@@ -152,14 +152,14 @@ SPEC_DIR=`dirname $SPEC`
 RELATIVE_SPEC_DIR="`realpath --relative-to=\"$TOPLEVEL_DIR\" \"$SPEC_DIR\"`"
 add_replacement "###BUILD_DIR###" "$RELATIVE_SPEC_DIR"
 add_replacement "###IMAGES_DIR###" "$RELATIVE_SPEC_DIR/images/jdk"
-if [ "$CUSTOM_IDEA_OUTPUT" = true ]; then
-  if [ "x$PATHTOOL" != "x" ]; then
-    add_replacement "###IDEA_DIR###" "`$PATHTOOL -am $IDEA_OUTPUT`"
+if [ "x$PATHTOOL" != "x" ]; then
+  if [ "$CUSTOM_IDEA_OUTPUT" = true ]; then
+    add_replacement "###BASH_RUNNER_PREFIX###" "`$PATHTOOL -am $IDEA_OUTPUT/.idea/bash.bat`"
   else
-    add_replacement "###IDEA_DIR###" "$IDEA_OUTPUT"
+    add_replacement "###BASH_RUNNER_PREFIX###" ".idea\\\\bash.bat"
   fi
 else
-  add_replacement "###IDEA_DIR###" "\$PROJECT_DIR\$/.idea"
+  add_replacement "###BASH_RUNNER_PREFIX###" ""
 fi
 if [ "x$PATHTOOL" != "x" ]; then
     if [ "x$JT_HOME" = "x" ]; then
@@ -225,47 +225,13 @@ done
 )
 rm "$IDEA_OUTPUT/module.iml"
 
-### Compile the custom Logger
+### Create shell script runner for Windows
 
-CLASSES=$IDEA_OUTPUT/classes
-
-if [ "x$ANT_HOME" = "x" ] ; then
-   # try some common locations, before giving up
-   if [ -f "/usr/share/ant/lib/ant.jar" ] ; then
-     ANT_HOME="/usr/share/ant"
-   elif [ -f "/usr/local/Cellar/ant/1.9.4/libexec/lib/ant.jar" ] ; then
-     ANT_HOME="/usr/local/Cellar/ant/1.9.4/libexec"
-   else
-     echo "FATAL: cannot find ant. Try setting ANT_HOME." >&2; exit 1
-   fi
-fi
-CP=$ANT_HOME/lib/ant.jar
-rm -rf $CLASSES; mkdir $CLASSES
-
-if [ "x$WSL_DISTRO_NAME" != "x" ] ; then
-  JAVAC_SOURCE_FILE=`realpath --relative-to=./ $IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java`
-  JAVAC_SOURCE_PATH=`realpath --relative-to=./ $IDEA_OUTPUT/src`
-  JAVAC_CLASSES=`realpath --relative-to=./ $CLASSES`
-  ANT_TEMP=`mktemp -d -p ./`
-  cp $ANT_HOME/lib/ant.jar $ANT_TEMP/ant.jar
-  JAVAC_CP=$ANT_TEMP/ant.jar
-  JAVAC=javac.exe
-elif [ "x$PATHTOOL" != "x" ] ; then ## PATHTOOL may be set in env.cfg
-  JAVAC_SOURCE_FILE=`$PATHTOOL -am $IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java`
-  JAVAC_SOURCE_PATH=`$PATHTOOL -am $IDEA_OUTPUT/src`
-  JAVAC_CLASSES=`$PATHTOOL -am $CLASSES`
-  JAVAC_CP=`$PATHTOOL -am $CP`
-  JAVAC=javac
-else
-  JAVAC_SOURCE_FILE=$IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java
-  JAVAC_SOURCE_PATH=$IDEA_OUTPUT/src
-  JAVAC_CLASSES=$CLASSES
-  JAVAC_CP=$CP
-  JAVAC=javac
-fi
-
-$BOOT_JDK/bin/$JAVAC -d $JAVAC_CLASSES -sourcepath $JAVAC_SOURCE_PATH -cp $JAVAC_CP $JAVAC_SOURCE_FILE
-
-if [ "x$WSL_DISTRO_NAME" != "x" ]; then
-  rm -rf $ANT_TEMP
+if [ "x$PATHTOOL" != "x" ]; then
+  echo "@echo off" > "$IDEA_OUTPUT/bash.bat"
+  if [ "x$WSL_DISTRO_NAME" != "x" ] ; then
+    echo "wsl -d $WSL_DISTRO_NAME --cd \"%cd%\" -e %*" >> "$IDEA_OUTPUT/bash.bat"
+  else
+    echo "$WINENV_ROOT\bin\bash.exe -l -c \"cd %CD:\=/%/ && %*\"" >> "$IDEA_OUTPUT/bash.bat"
+  fi
 fi

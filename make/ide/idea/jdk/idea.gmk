@@ -54,5 +54,6 @@ else #with SPEC
 	$(ECHO) "PATHTOOL=\"$(PATHTOOL)\"" >> $(OUT)
 	$(ECHO) "SPEC=\"$(SPEC)\"" >> $(OUT)
 	$(ECHO) "JT_HOME=\"$(JT_HOME)\"" >> $(OUT)
+	$(ECHO) "WINENV_ROOT=\"$(WINENV_ROOT)\"" >> $(OUT)
 
 endif
