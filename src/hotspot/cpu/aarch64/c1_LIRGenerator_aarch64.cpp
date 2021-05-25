@@ -422,10 +422,6 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
     left.load_item();
 
   LIR_Opr reg = rlock(x);
-  LIR_Opr tmp = LIR_OprFact::illegalOpr;
-  if (x->op() == Bytecodes::_dmul || x->op() == Bytecodes::_ddiv) {
-    tmp = new_register(T_DOUBLE);
-  }
 
   arithmetic_op_fpu(x->op(), reg, left.result(), right.result());
 
