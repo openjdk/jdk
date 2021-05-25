@@ -1864,20 +1864,20 @@ public class ObjectInputStream
         throws IOException
     {
         byte tc = bin.peekByte();
-        ObjectStreamClass descriptor;
-        switch (tc) {
-            case TC_NULL            -> descriptor = (ObjectStreamClass) readNull();
-            case TC_PROXYCLASSDESC  -> descriptor = readProxyDesc(unshared);
-            case TC_CLASSDESC       -> descriptor = readNonProxyDesc(unshared);
+
+        return switch (tc) {
+            case TC_NULL            -> (ObjectStreamClass) readNull();
+            case TC_PROXYCLASSDESC  -> readProxyDesc(unshared);
+            case TC_CLASSDESC       -> readNonProxyDesc(unshared);
             case TC_REFERENCE       -> {
-                descriptor = (ObjectStreamClass) readHandle(unshared);
+                var d = (ObjectStreamClass) readHandle(unshared);
                 // Should only reference initialized class descriptors
-                descriptor.checkInitialized();
+                d.checkInitialized();
+                yield d;
             }
             default                 -> throw new StreamCorruptedException(
                     String.format("invalid type code: %02X", tc));
-        }
-        return descriptor;
+        };
     }
 
     private boolean isCustomSubclass() {

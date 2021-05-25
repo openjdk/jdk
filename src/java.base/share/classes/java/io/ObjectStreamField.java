@@ -110,18 +110,18 @@ public class ObjectStreamField
         this.unshared = unshared;
         this.field = null;
 
-        switch (signature.charAt(0)) {
-            case 'Z'      -> type = Boolean.TYPE;
-            case 'B'      -> type = Byte.TYPE;
-            case 'C'      -> type = Character.TYPE;
-            case 'S'      -> type = Short.TYPE;
-            case 'I'      -> type = Integer.TYPE;
-            case 'J'      -> type = Long.TYPE;
-            case 'F'      -> type = Float.TYPE;
-            case 'D'      -> type = Double.TYPE;
-            case 'L', '[' -> type = Object.class;
+        type = switch (signature.charAt(0)) {
+            case 'Z'      -> Boolean.TYPE;
+            case 'B'      -> Byte.TYPE;
+            case 'C'      -> Character.TYPE;
+            case 'S'      -> Short.TYPE;
+            case 'I'      -> Integer.TYPE;
+            case 'J'      -> Long.TYPE;
+            case 'F'      -> Float.TYPE;
+            case 'D'      -> Double.TYPE;
+            case 'L', '[' -> Object.class;
             default       -> throw new IllegalArgumentException("illegal signature");
-        }
+        };
     }
 
     /**

@@ -778,8 +778,8 @@ public class StreamTokenizer {
      * @see     java.io.StreamTokenizer#ttype
      */
     public String toString() {
-        String ret;
-        switch (ttype) {
+
+        String ret = switch (ttype) {
             case TT_EOF     -> ret = "EOF";
             case TT_EOL     -> ret = "EOL";
             case TT_WORD    -> ret = sval;
@@ -794,16 +794,14 @@ public class StreamTokenizer {
                  */
                 if (ttype < 256 && ((ctype[ttype] & CT_QUOTE) != 0)) {
                     ret = sval;
-                    break;
                 }
 
                 char s[] = new char[3];
                 s[0] = s[2] = '\'';
                 s[1] = (char) ttype;
-                ret = new String(s);
-                break;
+                yield new String(s);
             }
-        }
+        };
         return "Token[" + ret + "], line " + LINENO;
     }
 

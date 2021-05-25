@@ -560,14 +560,13 @@ public abstract class BreakIterator implements Cloneable
 
     private static BreakIterator createBreakInstance(LocaleProviderAdapter adapter, Locale locale, int type) {
         BreakIteratorProvider breakIteratorProvider = adapter.getBreakIteratorProvider();
-        BreakIterator iterator = switch (type) {
+        return switch (type) {
             case CHARACTER_INDEX -> breakIteratorProvider.getCharacterInstance(locale);
             case WORD_INDEX      -> breakIteratorProvider.getWordInstance(locale);
             case LINE_INDEX      -> breakIteratorProvider.getLineInstance(locale);
             case SENTENCE_INDEX  -> breakIteratorProvider.getSentenceInstance(locale);
             default              -> null;
         };
-        return iterator;
     }
 
     /**
