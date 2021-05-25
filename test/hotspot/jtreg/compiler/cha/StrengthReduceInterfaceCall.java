@@ -609,14 +609,15 @@ public class StrengthReduceInterfaceCall {
 
         interface K1 extends I {}
         interface K2 extends I { Object m(); }
-        interface K3 extends I { default Object m() { return WRONG; }}
+        interface K3 extends J { default Object m() { return WRONG; }}
 
         static class DI implements I { public Object m() { return WRONG; }}
         static class DJ implements J { public Object m() { return WRONG; }}
+        static class DK3 implements K3 {}
 
         @DontInline
         public Object test(I i) {
-            return i.m(); // no inlining since J.m is a default method
+            return i.m();
         }
 
         @TestCase
@@ -625,7 +626,7 @@ public class StrengthReduceInterfaceCall {
             compile(megamorphic()); // C1,C2,C3 <: C.m <: intf I <: intf J.m ABSTRACT
             assertCompiled();
 
-            // Dependency: none
+            // Dependency: type = unique_concrete_method, context = I, method = C.m
 
             checkInvalidReceiver(); // ensure proper type check on receiver is preserved
 
@@ -633,12 +634,21 @@ public class StrengthReduceInterfaceCall {
             repeat(100, () -> call(new C() {}));
             assertCompiled();
 
-            // 2. No dependency and no inlining
-            initialize(DJ.class,  //      DJ.m                    <: intf J.m ABSTRACT
-                       DI.class,  //      DI.m          <: intf I <: intf J.m ABSTRACT
-                       K1.class,  // intf K1            <: intf I <: intf J.m ABSTRACT
-                       K2.class); // intf K2.m ABSTRACT <: intf I <: intf J.m ABSTRACT
+            // 2. No dependency invalidation
+            initialize(DJ.class,    //      DJ.m                               <: intf J.m ABSTRACT
+                       K1.class,   // intf  K1            <: intf I            <: intf J.m ABSTRACT
+                       K2.class,   // intf  K2.m ABSTRACT <: intf I            <: intf J.m ABSTRACT
+                       DK3.class); //      DK3.m          <: intf K3.m DEFAULT <: intf J.m ABSTRACT
             assertCompiled();
+
+            // 3. Dependency invalidation
+            initialize(DI.class); // DI.m <: intf I <: intf J.m ABSTRACT
+            assertNotCompiled();
+
+            // 4. Recompilation w/o a dependency
+            compile(megamorphic());
+            call(new C() { public Object m() { return CORRECT; }});
+            assertCompiled(); // no inlining
         }
 
         @Override
@@ -676,7 +686,7 @@ public class StrengthReduceInterfaceCall {
 
         @DontInline
         public Object test(I i) {
-            return i.m(); // no inlining since J.m is a default method
+            return i.m();
         }
 
         @TestCase
@@ -685,7 +695,7 @@ public class StrengthReduceInterfaceCall {
             compile(megamorphic());
             assertCompiled();
 
-            // Dependency: none
+            // Dependency: type = unique_concrete_method, context = I, method = C.m
 
             checkInvalidReceiver(); // ensure proper type check on receiver is preserved
 
@@ -693,15 +703,22 @@ public class StrengthReduceInterfaceCall {
             repeat(100, () -> call(new C() {}));
             assertCompiled();
 
-            // 2. No dependency, no inlining
-            // CHA doesn't support default methods yet.
+            // 2. No dependency invalidation
             initialize(DJ1.class,
                        DJ2.class,
-                       DI.class,
                        K1.class,
                        K2.class,
                        K3.class);
             assertCompiled();
+
+            // 3. Dependency invalidation
+            initialize(DI.class); // DI.m <: intf I <: intf J.m ABSTRACT
+            assertNotCompiled();
+
+            // 4. Recompilation w/o a dependency
+            compile(megamorphic());
+            call(new C() { public Object m() { return CORRECT; }});
+            assertCompiled(); // no inlining
         }
 
         @Override
