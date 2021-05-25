@@ -82,10 +82,12 @@ class ShenandoahProcessOldSATB : public SATBBufferClosure {
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
       ShenandoahHeapRegion* region = _heap->heap_region_containing(*p);
-      if (!region->is_trash()) {
-        ShenandoahMark::mark_through_ref<oop, OLD, STRING_DEDUP>(p, _queue, NULL, _mark_context, false);
-      } else {
-        ++_trashed_oops;
+      if (region->is_old()) {
+        if (!region->is_trash()) {
+          ShenandoahMark::mark_through_ref<oop, OLD, STRING_DEDUP>(p, _queue, NULL, _mark_context, false);
+        } else {
+          ++_trashed_oops;
+        }
       }
     }
   }

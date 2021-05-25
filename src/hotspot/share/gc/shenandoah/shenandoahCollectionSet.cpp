@@ -40,6 +40,7 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
   _cset_map(_map_space.base() + ((uintx)heap_base >> _region_size_bytes_shift)),
   _biased_cset_map(_map_space.base()),
   _heap(heap),
+  _has_old_regions(false),
   _garbage(0),
   _used(0),
   _region_count(0),
@@ -87,6 +88,7 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   _region_count++;
   _garbage += r->garbage();
   _used += r->used();
+  _has_old_regions |= r->is_old();
 
   // Update the region status too. State transition would be checked internally.
   r->make_cset();
@@ -107,6 +109,8 @@ void ShenandoahCollectionSet::clear() {
 
   _region_count = 0;
   _current_index = 0;
+
+  _has_old_regions = false;
 }
 
 ShenandoahHeapRegion* ShenandoahCollectionSet::claim_next() {
