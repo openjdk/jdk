@@ -67,28 +67,27 @@ public class CheckStylesheetClasses {
 
         // the page names are provided to override a style on a specific page;
         // some are used in the stylesheet
-        htmlStyleNames.removeIf(s -> switch (s) {
-            case "module-declaration-page", "class-declaration-page", "class-use-page" -> false;
-            default -> s.endsWith("-page");
-        });
+        htmlStyleNames.removeIf(s -> s.endsWith("-page") && !styleSheetNames.contains(s));
 
         // descriptions; class-description is used;
         // surprisingly?  module-description and package-description are not
-        htmlStyleNames.removeAll(List.of("module-description", "package-description"));
+        htmlStyleNames.removeIf(s -> s.endsWith("-description") && !styleSheetNames.contains(s));
 
         // help page
-        htmlStyleNames.removeIf(s -> switch (s) {
-            case "help-footnote", "help-note", "help-section-list", "help-subtoc" -> false;
-            default -> s.startsWith("help-");
-        });
-
+        htmlStyleNames.removeIf(s -> s.startsWith("help-") && !styleSheetNames.contains(s));
 
         // summary and details tables
         htmlStyleNames.removeIf(s -> s.endsWith("-details"));
-        htmlStyleNames.removeIf(s -> switch (s) {
-            case "two-column-summary", "three-column-summary", "four-column-summary" -> false;
-            default -> s.endsWith("-summary");
-        });
+        htmlStyleNames.removeIf(s -> s.endsWith("-summary") && !styleSheetNames.contains(s));
+
+        // signature classes
+        htmlStyleNames.removeAll(List.of("annotations", "element-name", "extends-implements",
+                "modifiers", "permits", "return-type"));
+
+        // misc: these are defined in HtmlStyle, and used by the doclet
+        htmlStyleNames.removeAll(List.of("col-plain", "details-table", "external-link",
+                "hierarchy", "index", "package-uses", "packages", "permits-note",
+                "serialized-package-container", "source-container"));
 
         // false positives: file extensions and URL components
         styleSheetNames.removeAll(List.of("css", "png", "w3"));
@@ -96,8 +95,23 @@ public class CheckStylesheetClasses {
         // intentional; maybe worthy of inclusion in HtmlStyle, just to be documented
         styleSheetNames.removeAll(List.of("borderless", "plain", "striped"));
 
+        // used in search.js; may be worth documenting in HtmlStyle
+        styleSheetNames.removeAll(List.of("result-highlight", "result-item",
+                "search-tag-desc-result", "search-tag-holder-result",
+                "ui-autocomplete", "ui-autocomplete-category",
+                "watermark"));
+
         // very JDK specific
         styleSheetNames.remove("module-graph");
+
+        // apparently unused
+        // "tab" is commented implying it is in the header/footer, but
+        // (a) it is a poorly chosen name
+        // (b) it does not seem to be used in make/Docs.gmk or anywhere else
+        styleSheetNames.removeAll(List.of("all-classes-container", "all-packages-container",
+                "bottom-nav", "clear", "constant-values-container", "deprecated-content",
+                "footer", "hidden", "override-specify-label", "serialized-class-details",
+                "tab", "table-sub-heading-color"));
 
         boolean ok = check(htmlStyleNames, "HtmlStyle", styleSheetNames, "stylesheet")
                     & check(styleSheetNames, "stylesheet", htmlStyleNames, "HtmlStyle");
