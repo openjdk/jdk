@@ -312,6 +312,10 @@ public class Log extends AbstractLog {
 
     /**
      * Construct a log with given I/O redirections.
+     * @deprecated
+     * This constructor is provided to support
+     *      jdk.javadoc.internal.tool.Messager.Messager(com.sun.tools.javac.util.Context,
+     *          java.lang.String, java.io.PrintWriter, java.io.PrintWriter)
      */
     @Deprecated
     protected Log(Context context, PrintWriter errWriter, PrintWriter warnWriter, PrintWriter noticeWriter) {
