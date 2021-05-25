@@ -878,19 +878,14 @@ public class SimpleTimeZone extends TimeZone {
      * @return     True if the given {@code obj} is the same as this
      *             {@code SimpleTimeZone} object; false otherwise.
      */
-    public boolean equals(Object obj)
-    {
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof SimpleTimeZone)) {
-            return false;
-        }
 
-        SimpleTimeZone that = (SimpleTimeZone) obj;
-
-        return getID().equals(that.getID()) &&
-            hasSameRules(that);
+        return obj instanceof SimpleTimeZone that
+                && getID().equals(that.getID())
+                && hasSameRules(that);
     }
 
     /**
@@ -904,28 +899,26 @@ public class SimpleTimeZone extends TimeZone {
         if (this == other) {
             return true;
         }
-        if (!(other instanceof SimpleTimeZone)) {
-            return false;
-        }
-        SimpleTimeZone that = (SimpleTimeZone) other;
-        return rawOffset == that.rawOffset &&
-            useDaylight == that.useDaylight &&
-            (!useDaylight
-             // Only check rules if using DST
-             || (dstSavings == that.dstSavings &&
-                 startMode == that.startMode &&
-                 startMonth == that.startMonth &&
-                 startDay == that.startDay &&
-                 startDayOfWeek == that.startDayOfWeek &&
-                 startTime == that.startTime &&
-                 startTimeMode == that.startTimeMode &&
-                 endMode == that.endMode &&
-                 endMonth == that.endMonth &&
-                 endDay == that.endDay &&
-                 endDayOfWeek == that.endDayOfWeek &&
-                 endTime == that.endTime &&
-                 endTimeMode == that.endTimeMode &&
-                 startYear == that.startYear));
+        return other instanceof SimpleTimeZone that
+                && rawOffset == that.rawOffset
+                && useDaylight == that.useDaylight
+                && (!useDaylight ||
+                        // Only check rules if using DST
+                        (dstSavings == that.dstSavings
+                        && startMode == that.startMode
+                        && startMonth == that.startMonth
+                        && startDay == that.startDay
+                        && startDayOfWeek == that.startDayOfWeek
+                        && startTime == that.startTime
+                        && startTimeMode == that.startTimeMode
+                        && endMode == that.endMode
+                        && endMonth == that.endMonth
+                        && endDay == that.endDay
+                        && endDayOfWeek == that.endDayOfWeek
+                        && endTime == that.endTime
+                        && endTimeMode == that.endTimeMode
+                        && startYear == that.startYear)
+                    );
     }
 
     /**
