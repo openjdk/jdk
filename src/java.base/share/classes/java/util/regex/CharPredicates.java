@@ -173,11 +173,11 @@ class CharPredicates {
         return switch (name) {
             case "ALPHA" -> ALPHABETIC();
             case "LOWER" -> caseIns
-                            ? LOWERCASE().union(UPPERCASE(), TITLECASE())
-                            : LOWERCASE();
+                                ? LOWERCASE().union(UPPERCASE(), TITLECASE())
+                                : LOWERCASE();
             case "UPPER" -> caseIns
-                            ? UPPERCASE().union(LOWERCASE(), TITLECASE())
-                            : UPPERCASE();
+                                ? UPPERCASE().union(LOWERCASE(), TITLECASE())
+                                : UPPERCASE();
             case "SPACE" -> WHITE_SPACE();
             case "PUNCT" -> PUNCTUATION();
             case "XDIGIT" -> HEX_DIGIT();
@@ -201,16 +201,16 @@ class CharPredicates {
             case "JOINCONTROL", "JOIN_CONTROL" -> JOIN_CONTROL();
             case "LETTER" -> LETTER();
             case "LOWERCASE" -> caseIns
-                                ? LOWERCASE().union(UPPERCASE(), TITLECASE())
-                                : LOWERCASE();
+                                    ? LOWERCASE().union(UPPERCASE(), TITLECASE())
+                                    : LOWERCASE();
             case "NONCHARACTERCODEPOINT", "NONCHARACTER_CODE_POINT" -> NONCHARACTER_CODE_POINT();
             case "TITLECASE" -> caseIns
-                                ? TITLECASE().union(LOWERCASE(), UPPERCASE())
-                                : TITLECASE();
+                                    ? TITLECASE().union(LOWERCASE(), UPPERCASE())
+                                    : TITLECASE();
             case "PUNCTUATION" -> PUNCTUATION();
             case "UPPERCASE" -> caseIns
-                                ? UPPERCASE().union(LOWERCASE(), TITLECASE())
-                                : UPPERCASE();
+                                    ? UPPERCASE().union(LOWERCASE(), TITLECASE())
+                                    : UPPERCASE();
             case "WHITESPACE", "WHITE_SPACE" -> WHITE_SPACE();
             case "WORD" -> WORD();
             default -> null;
