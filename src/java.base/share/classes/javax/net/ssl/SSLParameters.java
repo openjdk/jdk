@@ -660,7 +660,7 @@ public class SSLParameters {
      *     String HUK_UN_I = new String(bytes, StandardCharsets.ISO_8859_1);
      *
      *     // 0x00-0xFF:  1 byte
-     *     String rfc7301Grease8F = "\u005cu008F\u005cu008F";
+     *     String rfc7301Grease8A = "\u005cu008A\u005cu008A";
      *
      *     SSLParameters p = sslSocket.getSSLParameters();
      *     p.setApplicationProtocols(new String[] {
