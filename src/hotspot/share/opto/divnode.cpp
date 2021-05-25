@@ -999,7 +999,7 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
       // x and y are both constant!
       return TypeInt::make(i1->get_con() % i2->get_con());
     }
-    // Otherwise, the bound can be deduced given that divisor is a known constant 
+    // Otherwise, the bound can be deduced given that divisor is a known constant
     // x % -y  ==> [0, y - 1]
     // x % y   ==> [0, y - 1]
     // -x % y  ==> [-y + 1, 0]
@@ -1176,7 +1176,7 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
       // x and y are both constant!
       return TypeLong::make(i1->get_con() % i2->get_con());
     }
-    // Otherwise, the bound can be deduced given that divisor is a known constant 
+    // Otherwise, the bound can be deduced given that divisor is a known constant
     // x % -y  ==> [0, y - 1]
     // x % y   ==> [0, y - 1]
     // -x % y  ==> [-y + 1, 0]
