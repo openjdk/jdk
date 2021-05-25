@@ -70,9 +70,10 @@ public class Versions {
         Set.of("1.2", "1.3", "1.4", "1.5", "1.6");
 
     public static final Set<String> VALID_SOURCES =
-        Set.of("1.7", "1.8", "1.9", "1.10", "11", "12", "13", "14", "15", "16", "17");
+        Set.of("1.7", "1.8", "1.9", "1.10", "11", "12", "13", "14",
+               "15", "16", "17", "18");
 
-    public static final String LATEST_MAJOR_VERSION = "61.0";
+    public static final String LATEST_MAJOR_VERSION = "62.0";
 
     static enum SourceTarget {
         SEVEN(true,   "51.0",  "7", Versions::checksrc7),
@@ -85,7 +86,7 @@ public class Versions {
         FOURTEEN(false, "58.0", "14", Versions::checksrc14),
         FIFTEEN(false,  "59.0", "15", Versions::checksrc15),
         SIXTEEN(false,  "60.0", "16", Versions::checksrc16),
-        SEVENTEEN(false,  "61.0", "17", Versions::checksrc17),
+        SEVENTEEN(false, "61.0", "17", Versions::checksrc17),
         EIGHTEEN(false,  "62.0", "18", Versions::checksrc18);
 
         private final boolean dotOne;
@@ -550,7 +551,7 @@ public class Versions {
         writeSourceFile("New17.java",
             """
             public class New17 {
-                public static sealed class Seal { }
+                public static sealed class Seal {}
 
                 public static final class Pinniped extends Seal {}
                 public static final class TaperedThread extends Seal {}
