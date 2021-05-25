@@ -279,18 +279,24 @@ public abstract class FileSystemView {
     * @param height height of the icon in user coordinate system.
     * @return an icon as it would be displayed by a native file chooser
     * or null if invalid parameters are passed such as reference to a
-    * non-existing file.
+    * non-existent file.
+    * @throws IllegalArgumentException if invalid parameter such
+    * as negative size or null file reference is passed.
     * @see JFileChooser#getIcon
     * @see AbstractMultiResolutionImage
     * @see FileSystemView#getSystemIcon(File)
     * @since 17
     */
     public Icon getSystemIcon(File f, int width, int height) {
-        if (height <1 || width < 1) {
+        if (height < 1 || width < 1) {
             throw new IllegalArgumentException("Icon size can not be below 1");
         }
 
-        if (f == null || !f.exists()) {
+        if (f == null){
+            throw new IllegalArgumentException("File reference should be specified");
+        }
+
+        if(!f.exists()) {
             return null;
         }
 
