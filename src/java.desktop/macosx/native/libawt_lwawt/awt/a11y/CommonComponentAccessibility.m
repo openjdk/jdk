@@ -48,7 +48,7 @@ static jobject sAccessibilityClass = NULL;
     /*
      * Here we should keep all the mapping between the accessibility roles and implementing classes
      */
-    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:35];
+    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:36];
 
     [rolesMap setObject:@"ButtonAccessibility" forKey:@"pushbutton"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"icon"];
