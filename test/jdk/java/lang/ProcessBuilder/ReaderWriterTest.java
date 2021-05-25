@@ -40,6 +40,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.List;
 import java.util.Locale;
@@ -209,7 +210,10 @@ public class ReaderWriterTest {
         }
     }
 
-
+    /**
+     * Test passing null when a charset is expected
+     * @throws IOException if an I/O error occurs; not expected
+     */
     @Test
     void testNullCharsets()  throws IOException {
         // Launch a child; its behavior is not interesting and is ignored
@@ -234,6 +238,61 @@ public class ReaderWriterTest {
             Assert.fail("Process.errorReader(null) did not throw NPE");
         } catch (NullPointerException npe) {
             // expected, ignore
+        }
+
+        p.destroyForcibly();
+        try {
+            // Collect the exit status to cleanup after the process; but ignore it
+            p.waitFor();
+        } catch (InterruptedException ie) {
+            // Ignored
+        }
+    }
+
+    /**
+     * Test passing different charset on multiple calls when the same charset is expected.
+     * @throws IOException if an I/O error occurs; not expected
+     */
+    @Test
+    void testIllegalArgCharsets()  throws IOException {
+        String nativeEncoding = System.getProperty("native.encoding");
+        Charset cs = Charset.forName(nativeEncoding);
+        System.out.println("Native.encoding Charset: " + cs);
+        Charset otherCharset = cs.equals(StandardCharsets.UTF_8)
+                ? StandardCharsets.ISO_8859_1
+                : StandardCharsets.UTF_8;
+
+        // Launch a child; its behavior is not interesting and is ignored
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "ReaderWriterTest$ChildWithCharset");
+
+        Process p = pb.start();
+        try {
+            var writer = p.outputWriter(cs);
+            writer = p.outputWriter(cs);        // try again with same
+            writer = p.outputWriter(otherCharset);  // this should throw
+            Assert.fail("Process.outputWriter(otherCharset) did not throw IllegalArgumentException");
+        } catch (IllegalArgumentException ile) {
+            // expected, ignore
+            System.out.println(ile);
+        }
+        try {
+            var reader = p.inputReader(cs);
+            reader = p.inputReader(cs);             // try again with same
+            reader = p.inputReader(otherCharset);   // this should throw
+            Assert.fail("Process.inputReader(otherCharset) did not throw IllegalArgumentException");
+        } catch (IllegalArgumentException ile) {
+            // expected, ignore
+            System.out.println(ile);
+        }
+        try {
+            var reader = p.errorReader(cs);
+            reader = p.errorReader(cs);             // try again with same
+            reader = p.errorReader(otherCharset);   // this should throw
+            Assert.fail("Process.errorReader(otherCharset) did not throw IllegalArgumentException");
+        } catch (IllegalArgumentException ile) {
+            // expected, ignore
+            System.out.println(ile);
         }
 
         p.destroyForcibly();
