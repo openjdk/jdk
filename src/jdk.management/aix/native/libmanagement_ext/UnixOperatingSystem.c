@@ -53,7 +53,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getSingleCpuLoad0
 
 JNIEXPORT jlong JNICALL
 Java_com_sun_management_internal_OperatingSystemImpl_getHostTotalCpuTicks0
-(JNIEnv *env, jobject dummy, jint cpu_number)
+(JNIEnv *env, jobject mbean)
 {
     return -1.0;
 }
