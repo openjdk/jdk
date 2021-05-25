@@ -27,7 +27,7 @@
 #import "CGLGraphicsConfig.h"
 #import "AWTView.h"
 #import "AWTWindow.h"
-#import "JavaComponentAccessibility.h"
+#import "a11y/CommonComponentAccessibility.h"
 #import "JavaTextAccessibility.h"
 #import "JavaAccessibilityUtilities.h"
 #import "GeomUtilities.h"
@@ -611,42 +611,29 @@ static BOOL shouldUsePressAndHold() {
 - (id)getAxData:(JNIEnv*)env
 {
     jobject jcomponent = [self awtComponent:env];
-    id ax = [[[JavaComponentAccessibility alloc] initWithParent:self withEnv:env withAccessible:jcomponent withIndex:-1 withView:self withJavaRole:nil] autorelease];
+    id ax = [[[CommonComponentAccessibility alloc] initWithParent:self withEnv:env withAccessible:jcomponent withIndex:-1 withView:self withJavaRole:nil] autorelease];
     (*env)->DeleteLocalRef(env, jcomponent);
     return ax;
 }
 
-- (NSArray *)accessibilityAttributeNames
-{
-    return [[super accessibilityAttributeNames] arrayByAddingObject:NSAccessibilityChildrenAttribute];
-}
-
 // NSAccessibility messages
-// attribute methods
-- (id)accessibilityAttributeValue:(NSString *)attribute
+- (id)accessibilityChildren
 {
     AWT_ASSERT_APPKIT_THREAD;
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
 
-    if ([attribute isEqualToString:NSAccessibilityChildrenAttribute])
-    {
-        JNIEnv *env = [ThreadUtilities getJNIEnv];
+    (*env)->PushLocalFrame(env, 4);
 
-        (*env)->PushLocalFrame(env, 4);
+    id result = NSAccessibilityUnignoredChildrenForOnlyChild([self getAxData:env]);
 
-        id result = NSAccessibilityUnignoredChildrenForOnlyChild([self getAxData:env]);
+    (*env)->PopLocalFrame(env, NULL);
 
-        (*env)->PopLocalFrame(env, NULL);
-
-        return result;
-    }
-    else
-    {
-        return [super accessibilityAttributeValue:attribute];
-    }
+    return result;
 }
-- (BOOL)accessibilityIsIgnored
+
+- (BOOL)isAccessibilityElement
 {
-    return YES;
+    return NO;
 }
 
 - (id)accessibilityHitTest:(NSPoint)point
@@ -656,7 +643,7 @@ static BOOL shouldUsePressAndHold() {
 
     (*env)->PushLocalFrame(env, 4);
 
-    id result = [[self getAxData:env] accessibilityHitTest:point withEnv:env];
+    id result = [[self getAxData:env] accessibilityHitTest:point];
 
     (*env)->PopLocalFrame(env, NULL);
 
