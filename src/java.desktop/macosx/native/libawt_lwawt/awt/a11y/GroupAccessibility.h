@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,25 +23,14 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8225056
- * @compile --enable-preview -source ${jdk.version} AbstractSealedTest.java
- * @run main/othervm --enable-preview AbstractSealedTest
- */
+#import "JavaComponentAccessibility.h"
+#import "CommonComponentAccessibility.h"
 
-// Test that a sealed class can be abstract
-public class AbstractSealedTest {
+#import <AppKit/AppKit.h>
 
-    abstract sealed class AbstractShape permits Circle {
-        abstract void draw();
-    }
+@interface GroupAccessibility : CommonComponentAccessibility <NSAccessibilityGroup> {
 
-    final class Circle extends AbstractShape {
-        void draw() {}
-    }
+};
 
-    Circle circle = new Circle();
-
-    public static void main(String... args) { }
-}
+- (NSArray * _Nullable)accessibilityChildren;
+@end

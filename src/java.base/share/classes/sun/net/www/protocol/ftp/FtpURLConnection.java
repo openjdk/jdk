@@ -121,7 +121,7 @@ public class FtpURLConnection extends URLConnection {
      *   - The command socket (FtpClient).
      * Since that's the only class that needs to see that, it is an inner class.
      */
-    protected class FtpInputStream extends FilterInputStream {
+    protected static class FtpInputStream extends FilterInputStream {
         FtpClient ftp;
         FtpInputStream(FtpClient cl, InputStream fd) {
             super(new BufferedInputStream(fd));
@@ -144,7 +144,7 @@ public class FtpURLConnection extends URLConnection {
      *   - The command socket (FtpClient).
      * Since that's the only class that needs to see that, it is an inner class.
      */
-    protected class FtpOutputStream extends FilterOutputStream {
+    protected static class FtpOutputStream extends FilterOutputStream {
         FtpClient ftp;
         FtpOutputStream(FtpClient cl, OutputStream fd) {
             super(fd);

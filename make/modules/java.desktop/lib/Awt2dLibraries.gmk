@@ -447,9 +447,6 @@ else
    ifeq ($(call isTargetOs, linux macosx), true)
      HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES
    endif
-   ifeq ($(call isTargetOs, macosx), true)
-     HARFBUZZ_CFLAGS += -DHAVE_CORETEXT
-   endif
 
    # Early re-canonizing has to be disabled to workaround an internal XlC compiler error
    # when building libharfbuzz
@@ -457,9 +454,6 @@ else
      HARFBUZZ_CFLAGS += -qdebug=necan
    endif
 
-   ifeq ($(call isTargetOs, macosx), false)
-     LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-coretext.cc
-   endif
    # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
    LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
 

@@ -236,7 +236,7 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   volatile markWord* header_addr();
   void               set_header(markWord hdr);
 
-  intptr_t is_busy() const {
+  bool is_busy() const {
     // TODO-FIXME: assert _owner == null implies _recursions = 0
     intptr_t ret_code = _waiters | intptr_t(_cxq) | intptr_t(_EntryList);
     if (contentions() > 0) {
@@ -245,7 +245,7 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
     if (!owner_is_DEFLATER_MARKER()) {
       ret_code |= intptr_t(owner_raw());
     }
-    return ret_code;
+    return ret_code != 0;
   }
   const char* is_busy_to_string(stringStream* ss);
 

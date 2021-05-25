@@ -39,7 +39,7 @@ import org.xml.sax.InputSource;
  * @test
  * @bug 4992788
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true xpath.Bug4992788
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow xpath.Bug4992788
  * @run testng/othervm xpath.Bug4992788
  * @summary Test XPath.evaluate(expression,source,returnType) throws NPE if source is null.
  */

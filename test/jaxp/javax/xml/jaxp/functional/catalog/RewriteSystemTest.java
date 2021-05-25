@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.RewriteSystemTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.RewriteSystemTest
  * @run testng/othervm catalog.RewriteSystemTest
  * @summary Get matched URIs from rewriteSystem entries.
  */

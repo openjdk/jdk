@@ -67,18 +67,14 @@ public enum Modifier {
 
     /**
      * The modifier {@code sealed}
-     * @since 15
+     * @since 17
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES,
-                                             reflective=true)
     SEALED,
 
     /**
      * The modifier {@code non-sealed}
-     * @since 15
+     * @since 17
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES,
-            reflective=true)
     NON_SEALED {
         public String toString() {
             return "non-sealed";

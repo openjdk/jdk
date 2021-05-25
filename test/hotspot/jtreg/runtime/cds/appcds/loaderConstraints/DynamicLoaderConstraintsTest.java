@@ -25,6 +25,7 @@
  * @test
  * @requires vm.cds
  * @summary Test class loader constraint checks for archived classes (dynamic archive)
+ * @bug 8267347
  * @library /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
@@ -40,6 +41,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.Platform;
 
 public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
     static String mainClass = LoaderConstraintsApp.class.getName();
@@ -55,14 +57,27 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
         MyClassLoader.class.getName()
     };
 
+    static String loaderMainClass = CustomAppLoader.class.getName();
+    static String loaderJar = null;
+    static String loaderClasses[] = {
+        loaderMainClass
+    };
+
     public static void main(String[] args) throws Exception {
         runTest(DynamicLoaderConstraintsTest::doTest);
     }
 
     static void doTest() throws Exception  {
         appJar = ClassFileInstaller.writeJar("loader_constraints.jar", appClasses);
-        doTest(false);
-        doTest(true);
+        doTest(false, false);
+        doTest(true,  false);
+
+        if (!Platform.isWindows()) {
+            // custom loaders are not supported on Windows yet.
+            loaderJar = ClassFileInstaller.writeJar("custom_app_loader.jar", loaderClasses);
+            doTest(false, true);
+            doTest(true,  true);
+        }
     }
 
     /*
@@ -74,20 +89,33 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
      *        causing LinkageError. This ensures the test classes will be
      *        archived so we can test CDS's handling of loader constraints during
      *        run time.
+     *
+     * useCustomLoader: if true, load the LoaderConstraintsApp in a custom loader before executing it.
+     *                  if false, LoaderConstraintsApp will be loaded by the built-in AppClassLoader.
      */
-    static void doTest(boolean errorInDump) throws Exception  {
+  static void doTest(boolean errorInDump, boolean useCustomLoader) throws Exception  {
         for (int i = 1; i <= 3; i++) {
+            System.out.println("========================================");
+            System.out.println("errorInDump: " + errorInDump + ", useCustomLoader: " + useCustomLoader + ", case: " + i);
+            System.out.println("========================================");
             String topArchiveName = getNewArchiveName();
             String testCase = Integer.toString(i);
             String cmdLine[] = new String[] {
-                "-cp", appJar,
                 "--add-modules",
                 "java.base,jdk.httpserver",
                 "--add-exports",
                 "java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-Xlog:class+load,class+loader+constraints",
-                mainClass, testCase
             };
+
+            if (useCustomLoader) {
+                cmdLine = TestCommon.concat(cmdLine, "-cp", loaderJar,
+                                          loaderMainClass, appJar);
+            } else {
+                cmdLine = TestCommon.concat(cmdLine, "-cp", appJar);
+            }
+
+            cmdLine = TestCommon.concat(cmdLine, mainClass, testCase);
 
             String[] dumpCmdLine = cmdLine;
             if (!errorInDump) {

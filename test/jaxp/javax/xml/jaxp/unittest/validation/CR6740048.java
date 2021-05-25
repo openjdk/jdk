@@ -42,7 +42,7 @@ import org.xml.sax.SAXParseException;
  * @test
  * @bug 6740048
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.CR6740048
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.CR6740048
  * @run testng/othervm validation.CR6740048
  * @summary Test DocumentBuilder can be reused when the DocumentBuilderFactory sets schema.
  */
