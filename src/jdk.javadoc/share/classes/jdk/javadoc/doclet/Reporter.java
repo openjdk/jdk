@@ -29,6 +29,7 @@ import java.io.PrintWriter;
 import java.util.Locale;
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
+import javax.tools.FileObject;
 
 import com.sun.source.util.DocTreePath;
 
@@ -86,6 +87,23 @@ public interface Reporter {
      * @param message the message to be printed
      */
     void print(Diagnostic.Kind kind, Element element, String message);
+
+    /**
+     * Prints a diagnostic message related to a position within a range of characters in a file.
+     * The positions are all 0-based character offsets from the beginning of content of the file.
+     *
+     * @param kind    the kind of diagnostic
+     * @param file    the file
+     * @param start   the beginning of the enclosing range
+     * @param pos     the position
+     * @param end     the end of the enclosing range
+     * @param message the message to be printed
+     * @throws IllegalArgumentException if any of the positions are negative,
+     *              or beyond the end of the file's content,
+     *              or if the following relation is not true:  {@code start <= pos <= end}
+     */
+    void print(Diagnostic.Kind kind, FileObject file, int start, int pos, int end, String message)
+            throws IllegalArgumentException;
 
 
     /**

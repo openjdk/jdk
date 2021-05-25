@@ -3216,9 +3216,9 @@ void MacroAssembler::vpmovzxbw(XMMRegister dst, Address src, int vector_len) {
   Assembler::vpmovzxbw(dst, src, vector_len);
 }
 
-void MacroAssembler::vpmovmskb(Register dst, XMMRegister src) {
+void MacroAssembler::vpmovmskb(Register dst, XMMRegister src, int vector_len) {
   assert((src->encoding() < 16),"XMM register should be 0-15");
-  Assembler::vpmovmskb(dst, src);
+  Assembler::vpmovmskb(dst, src, vector_len);
 }
 
 void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {

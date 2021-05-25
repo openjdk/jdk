@@ -1439,9 +1439,10 @@ bool LibraryCallKit::inline_vector_convert() {
     return false; // should be primitive type
   }
   BasicType elem_bt_to = elem_type_to->basic_type();
-  if (is_mask && elem_bt_from != elem_bt_to) {
-    return false; // type mismatch
+  if (is_mask && (type2aelembytes(elem_bt_from) != type2aelembytes(elem_bt_to))) {
+    return false; // elem size mismatch
   }
+
   int num_elem_from = vlen_from->get_con();
   int num_elem_to = vlen_to->get_con();
 

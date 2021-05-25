@@ -40,7 +40,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6883209
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.OpenJDK100017Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.OpenJDK100017Test
  * @run testng/othervm transform.OpenJDK100017Test
  * @summary Test XSLT won't cause StackOverflow when it handle many characters.
  */

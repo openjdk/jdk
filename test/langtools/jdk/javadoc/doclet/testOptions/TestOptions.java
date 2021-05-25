@@ -161,7 +161,7 @@ public class TestOptions extends JavadocTester {
         checkExit(Exit.ERROR);
 
         checkOutput(Output.OUT, true,
-                "javadoc: error - File not found:",
+                "error: File not found:",
                 "custom-stylesheet-1.css");
     }
 
@@ -174,7 +174,7 @@ public class TestOptions extends JavadocTester {
         checkExit(Exit.ERROR);
 
         checkOutput(Output.OUT, true,
-                "javadoc: error - File not found:",
+                "error: File not found:",
                 "additional-stylesheet-4.css");
     }
 
