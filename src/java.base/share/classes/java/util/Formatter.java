@@ -4346,8 +4346,8 @@ public final class Formatter implements Closeable, Flushable {
                     int size = 2;
                     switch (c) {
                         case DateTime.CENTURY -> i /= 100;
-                        case DateTime.YEAR_2 -> i %= 100;
-                        case DateTime.YEAR_4 -> size = 4;
+                        case DateTime.YEAR_2  -> i %= 100;
+                        case DateTime.YEAR_4  -> size = 4;
                     }
                     Flags flags = Flags.ZERO_PAD;
                     sb.append(localizedMagnitude(null, i, flags, size, l));

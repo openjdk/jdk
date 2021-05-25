@@ -184,11 +184,11 @@ public enum TimeUnit {
      */
     public long convert(long sourceDuration, TimeUnit sourceUnit) {
         return switch (this) {
-            case NANOSECONDS -> sourceUnit.toNanos(sourceDuration);
+            case NANOSECONDS  -> sourceUnit.toNanos(sourceDuration);
             case MICROSECONDS -> sourceUnit.toMicros(sourceDuration);
             case MILLISECONDS -> sourceUnit.toMillis(sourceDuration);
-            case SECONDS -> sourceUnit.toSeconds(sourceDuration);
-            default -> cvt(sourceDuration, scale, sourceUnit.scale);
+            case SECONDS      -> sourceUnit.toSeconds(sourceDuration);
+            default           -> cvt(sourceDuration, scale, sourceUnit.scale);
         };
     }
 
@@ -455,13 +455,13 @@ public enum TimeUnit {
      */
     public ChronoUnit toChronoUnit() {
         return switch (this) {
-            case NANOSECONDS -> ChronoUnit.NANOS;
+            case NANOSECONDS  -> ChronoUnit.NANOS;
             case MICROSECONDS -> ChronoUnit.MICROS;
             case MILLISECONDS -> ChronoUnit.MILLIS;
-            case SECONDS -> ChronoUnit.SECONDS;
-            case MINUTES -> ChronoUnit.MINUTES;
-            case HOURS -> ChronoUnit.HOURS;
-            case DAYS -> ChronoUnit.DAYS;
+            case SECONDS      -> ChronoUnit.SECONDS;
+            case MINUTES      -> ChronoUnit.MINUTES;
+            case HOURS        -> ChronoUnit.HOURS;
+            case DAYS         -> ChronoUnit.DAYS;
         };
     }
 
@@ -477,14 +477,14 @@ public enum TimeUnit {
      */
     public static TimeUnit of(ChronoUnit chronoUnit) {
         return switch (Objects.requireNonNull(chronoUnit, "chronoUnit")) {
-            case NANOS -> TimeUnit.NANOSECONDS;
-            case MICROS -> TimeUnit.MICROSECONDS;
-            case MILLIS -> TimeUnit.MILLISECONDS;
+            case NANOS   -> TimeUnit.NANOSECONDS;
+            case MICROS  -> TimeUnit.MICROSECONDS;
+            case MILLIS  -> TimeUnit.MILLISECONDS;
             case SECONDS -> TimeUnit.SECONDS;
             case MINUTES -> TimeUnit.MINUTES;
-            case HOURS -> TimeUnit.HOURS;
-            case DAYS -> TimeUnit.DAYS;
-            default -> throw new IllegalArgumentException("No TimeUnit equivalent for " + chronoUnit);
+            case HOURS   -> TimeUnit.HOURS;
+            case DAYS    -> TimeUnit.DAYS;
+            default      -> throw new IllegalArgumentException("No TimeUnit equivalent for " + chronoUnit);
         };
     }
 

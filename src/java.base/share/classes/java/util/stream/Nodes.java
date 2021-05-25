@@ -89,9 +89,9 @@ final class Nodes {
     @SuppressWarnings("unchecked")
     static <T> Node<T> emptyNode(StreamShape shape) {
         return (Node<T>) switch (shape) {
-            case REFERENCE -> EMPTY_NODE;
-            case INT_VALUE -> EMPTY_INT_NODE;
-            case LONG_VALUE -> EMPTY_LONG_NODE;
+            case REFERENCE    -> EMPTY_NODE;
+            case INT_VALUE    -> EMPTY_INT_NODE;
+            case LONG_VALUE   -> EMPTY_LONG_NODE;
             case DOUBLE_VALUE -> EMPTY_DOUBLE_NODE;
         };
     }
@@ -118,9 +118,9 @@ final class Nodes {
     @SuppressWarnings("unchecked")
     static <T> Node<T> conc(StreamShape shape, Node<T> left, Node<T> right) {
         return (Node<T>) switch (shape) {
-            case REFERENCE -> new ConcNode<>(left, right);
-            case INT_VALUE -> new ConcNode.OfInt((Node.OfInt) left, (Node.OfInt) right);
-            case LONG_VALUE -> new ConcNode.OfLong((Node.OfLong) left, (Node.OfLong) right);
+            case REFERENCE    -> new ConcNode<>(left, right);
+            case INT_VALUE    -> new ConcNode.OfInt((Node.OfInt) left, (Node.OfInt) right);
+            case LONG_VALUE   -> new ConcNode.OfLong((Node.OfLong) left, (Node.OfLong) right);
             case DOUBLE_VALUE -> new ConcNode.OfDouble((Node.OfDouble) left, (Node.OfDouble) right);
         };
     }

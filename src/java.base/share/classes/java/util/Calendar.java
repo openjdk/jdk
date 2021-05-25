@@ -1703,8 +1703,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
                 cal = switch (caltype) {
                     case "buddhist" -> new BuddhistCalendar(zone, aLocale);
                     case "japanese" -> new JapaneseImperialCalendar(zone, aLocale);
-                    case "gregory" -> new GregorianCalendar(zone, aLocale);
-                    default -> null;
+                    case "gregory"  -> new GregorianCalendar(zone, aLocale);
+                    default         -> null;
                 };
             }
         }
@@ -2258,10 +2258,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         }
 
         return switch (field) {
-            case ERA -> symbols.getEras();
-            case MONTH -> (baseStyle == LONG) ? symbols.getMonths() : symbols.getShortMonths();
+            case ERA         -> symbols.getEras();
+            case MONTH       -> (baseStyle == LONG) ? symbols.getMonths() : symbols.getShortMonths();
             case DAY_OF_WEEK -> (baseStyle == LONG) ? symbols.getWeekdays() : symbols.getShortWeekdays();
-            case AM_PM -> symbols.getAmPmStrings();
+            case AM_PM       -> symbols.getAmPmStrings();
             default -> null;
         };
     }

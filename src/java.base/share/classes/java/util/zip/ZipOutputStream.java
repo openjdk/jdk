@@ -82,9 +82,9 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
 
     private static int version(ZipEntry e) throws ZipException {
         return switch (e.method) {
-            case DEFLATED -> 20;
-            case STORED -> 10;
-            default -> throw new ZipException("unsupported compression method");
+        case DEFLATED -> 20;
+        case STORED   -> 10;
+        default       -> throw new ZipException("unsupported compression method");
         };
     }
 

@@ -77,21 +77,21 @@ class PrintPattern {
 
     private static String toStringCtype(int type) {
         return switch (type) {
-            case UPPER -> "ASCII.UPPER";
-            case LOWER -> "ASCII.LOWER";
-            case DIGIT -> "ASCII.DIGIT";
-            case SPACE -> "ASCII.SPACE";
-            case PUNCT -> "ASCII.PUNCT";
-            case CNTRL -> "ASCII.CNTRL";
-            case BLANK -> "ASCII.BLANK";
-            case UNDER -> "ASCII.UNDER";
-            case ASCII -> "ASCII.ASCII";
-            case ALPHA -> "ASCII.ALPHA";
-            case ALNUM -> "ASCII.ALNUM";
-            case GRAPH -> "ASCII.GRAPH";
-            case WORD -> "ASCII.WORD";
+            case UPPER  -> "ASCII.UPPER";
+            case LOWER  -> "ASCII.LOWER";
+            case DIGIT  -> "ASCII.DIGIT";
+            case SPACE  -> "ASCII.SPACE";
+            case PUNCT  -> "ASCII.PUNCT";
+            case CNTRL  -> "ASCII.CNTRL";
+            case BLANK  -> "ASCII.BLANK";
+            case UNDER  -> "ASCII.UNDER";
+            case ASCII  -> "ASCII.ASCII";
+            case ALPHA  -> "ASCII.ALPHA";
+            case ALNUM  -> "ASCII.ALNUM";
+            case GRAPH  -> "ASCII.GRAPH";
+            case WORD   -> "ASCII.WORD";
             case XDIGIT -> "ASCII.XDIGIT";
-            default -> "ASCII ?";
+            default     -> "ASCII ?";
         };
     }
 

@@ -494,9 +494,11 @@ public class FutureTask<V> implements RunnableFuture<V> {
      */
     public String toString() {
         final String status = switch (state) {
-            case NORMAL -> "[Completed normally]";
+            case NORMAL      -> "[Completed normally]";
             case EXCEPTIONAL -> "[Completed exceptionally: " + outcome + "]";
-            case CANCELLED, INTERRUPTING, INTERRUPTED -> "[Cancelled]";
+            case CANCELLED,
+                 INTERRUPTING,
+                 INTERRUPTED -> "[Cancelled]";
             default -> {
                 final Callable<?> callable = this.callable;
                 yield (callable == null)

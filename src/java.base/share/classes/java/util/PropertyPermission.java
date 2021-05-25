@@ -327,10 +327,10 @@ public final class PropertyPermission extends BasicPermission {
      */
     static String getActions(int mask) {
         return switch (mask & (READ | WRITE)) {
-            case READ -> SecurityConstants.PROPERTY_READ_ACTION;
-            case WRITE -> SecurityConstants.PROPERTY_WRITE_ACTION;
+            case READ         -> SecurityConstants.PROPERTY_READ_ACTION;
+            case WRITE        -> SecurityConstants.PROPERTY_WRITE_ACTION;
             case READ | WRITE -> SecurityConstants.PROPERTY_RW_ACTION;
-            default -> "";
+            default           -> "";
         };
     }
 
