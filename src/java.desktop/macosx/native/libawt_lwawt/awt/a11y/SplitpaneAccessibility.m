@@ -24,8 +24,6 @@
  */
 
 #import "SplitpaneAccessibility.h"
-#import "ThreadUtilities.h"
-#import "JNIUtilities.h"
 
 /*
  * Implementation of the accessibility peer for the ScrollBar role
@@ -34,7 +32,6 @@
 
 - (NSAccessibilityRole _Nonnull)accessibilityRole
 {
-    NSLog(@"In splitpane get role");
     return NSAccessibilitySplitGroupRole;
 }
 
