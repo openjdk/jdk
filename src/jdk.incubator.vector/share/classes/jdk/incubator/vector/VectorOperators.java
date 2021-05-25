@@ -488,9 +488,7 @@ public abstract class VectorOperators {
      *  Not guaranteed to be monotonic. See section "Operations on floating point vectors" above
      */
     public static final /*float*/ Unary LOG10 = unary("LOG10", "log10", VectorSupport.VECTOR_OP_LOG10, VO_ONLYFP);
-    /** Produce {@code sqrt(a)}.  Floating only.
-     *  Not guaranteed to be monotonic. See section "Operations on floating point vectors" above
-     */
+    /** Produce {@code sqrt(a)}.  Floating only.  See section "Operations on floating point vectors" above */
     public static final /*float*/ Unary SQRT = unary("SQRT", "sqrt", VectorSupport.VECTOR_OP_SQRT, VO_ONLYFP);
     /** Produce {@code cbrt(a)}.  Floating only.
      *  Not guaranteed to be monotonic. See section "Operations on floating point vectors" above
