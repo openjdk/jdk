@@ -608,7 +608,6 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
-java/net/Socket/UdpSocket.java                                  8265362 macosx-aarch64
 
 java/net/httpclient/websocket/PendingBinaryPongClose.java       8265367 macosx-aarch64
 java/net/httpclient/websocket/PendingBinaryPingClose.java       8265367 macosx-aarch64
