@@ -132,13 +132,13 @@ public class JarIndex {
 
     /*
      * Add the key, value pair to the hashmap, the value will
-     * be put in a linked list which is created if necessary.
+     * be put in a list which is created if necessary.
      */
     private void addToList(String key, String value,
                            HashMap<String, List<String>> t) {
         List<String> list = t.get(key);
         if (list == null) {
-            list = new ArrayList<>();
+            list = new ArrayList<>(1);
             list.add(value);
             t.put(key, list);
         } else if (!list.contains(value)) {
@@ -166,7 +166,7 @@ public class JarIndex {
     /**
      * Add the mapping from the specified file to the specified
      * jar file. If there were no mapping for the package of the
-     * specified file before, a new linked list will be created,
+     * specified file before, a new list will be created,
      * the jar file is added to the list and a new mapping from
      * the package to the jar file list is added to the hashmap.
      * Otherwise, the jar file will be added to the end of the

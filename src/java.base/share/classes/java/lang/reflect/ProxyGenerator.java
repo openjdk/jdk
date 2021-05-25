@@ -241,7 +241,7 @@ final class ProxyGenerator extends ClassWriter {
          * List of return types that are not yet known to be
          * assignable from ("covered" by) any of the others.
          */
-        ArrayList<Class<?>> uncoveredReturnTypes = new ArrayList<>();
+        List<Class<?>> uncoveredReturnTypes = new ArrayList<>(1);
 
         nextNewReturnType:
         for (ProxyMethod pm : methods) {
