@@ -148,24 +148,14 @@ add_replacement "###MODULE_NAMES###" "$MODULE_NAMES"
 add_replacement "###VCS_TYPE###" "$VCS_TYPE"
 SPEC_DIR=`dirname $SPEC`
 if [ "x$CYGPATH" != "x" ]; then
-    add_replacement "###BUILD_DIR###" "`cygpath -am $SPEC_DIR`"
-    add_replacement "###IMAGES_DIR###" "`cygpath -am $SPEC_DIR`/images/jdk"
-    add_replacement "###ROOT_DIR###" "`cygpath -am $TOPLEVEL_DIR`"
-    add_replacement "###IDEA_DIR###" "`cygpath -am $IDEA_OUTPUT`"
+    add_replacement "###BUILD_DIR###" "`$CYGPATH -am $SPEC_DIR`"
+    add_replacement "###IMAGES_DIR###" "`$CYGPATH -am $SPEC_DIR`/images/jdk"
+    add_replacement "###ROOT_DIR###" "`$CYGPATH -am $TOPLEVEL_DIR`"
+    add_replacement "###IDEA_DIR###" "`$CYGPATH -am $IDEA_OUTPUT`"
     if [ "x$JT_HOME" = "x" ]; then
       add_replacement "###JTREG_HOME###" ""
     else
-      add_replacement "###JTREG_HOME###" "`cygpath -am $JT_HOME`"
-    fi
-elif [ "x$WSL_DISTRO_NAME" != "x" ]; then
-    add_replacement "###BUILD_DIR###" "`wslpath -am $SPEC_DIR`"
-    add_replacement "###IMAGES_DIR###" "`wslpath -am $SPEC_DIR`/images/jdk"
-    add_replacement "###ROOT_DIR###" "`wslpath -am $TOPLEVEL_DIR`"
-    add_replacement "###IDEA_DIR###" "`wslpath -am $IDEA_OUTPUT`"
-    if [ "x$JT_HOME" = "x" ]; then
-      add_replacement "###JTREG_HOME###" ""
-    else
-      add_replacement "###JTREG_HOME###" "`wslpath -am $JT_HOME`"
+      add_replacement "###JTREG_HOME###" "`$CYGPATH -am $JT_HOME`"
     fi
 else
     add_replacement "###BUILD_DIR###" "$SPEC_DIR"
@@ -179,11 +169,7 @@ SOURCE_PREFIX="<sourceFolder url=\"file://"
 SOURCE_POSTFIX="\" isTestSource=\"false\" />"
 
 for root in $MODULE_ROOTS; do
-    if [ "x$CYGPATH" != "x" ]; then
-      root=`cygpath -am $root`
-    elif [ "x$WSL_DISTRO_NAME" != "x" ]; then
-      root=`wslpath -am $root`
-    fi
+    root=`$CYGPATH -am $root`
 
     VM_CI="jdk.internal.vm.ci/share/classes"
     VM_COMPILER="src/jdk.internal.vm.compiler/share/classes"
@@ -219,13 +205,7 @@ fi
 CP=$ANT_HOME/lib/ant.jar
 rm -rf $CLASSES; mkdir $CLASSES
 
-if [ "x$CYGPATH" != "x" ] ; then ## CYGPATH may be set in env.cfg
-  JAVAC_SOURCE_FILE=`cygpath -am $IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java`
-  JAVAC_SOURCE_PATH=`cygpath -am $IDEA_OUTPUT/src`
-  JAVAC_CLASSES=`cygpath -am $CLASSES`
-  JAVAC_CP=`cygpath -am $CP`
-  JAVAC=javac
-elif [ "x$WSL_DISTRO_NAME" != "x" ]; then
+if [ "x$WSL_DISTRO_NAME" != "x" ] ; then
   JAVAC_SOURCE_FILE=`realpath --relative-to=./ $IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java`
   JAVAC_SOURCE_PATH=`realpath --relative-to=./ $IDEA_OUTPUT/src`
   JAVAC_CLASSES=`realpath --relative-to=./ $CLASSES`
@@ -233,6 +213,12 @@ elif [ "x$WSL_DISTRO_NAME" != "x" ]; then
   cp $ANT_HOME/lib/ant.jar $ANT_TEMP/ant.jar
   JAVAC_CP=$ANT_TEMP/ant.jar
   JAVAC=javac.exe
+elif [ "x$CYGPATH" != "x" ] ; then ## CYGPATH may be set in env.cfg
+  JAVAC_SOURCE_FILE=`$CYGPATH -am $IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java`
+  JAVAC_SOURCE_PATH=`$CYGPATH -am $IDEA_OUTPUT/src`
+  JAVAC_CLASSES=`$CYGPATH -am $CLASSES`
+  JAVAC_CP=`$CYGPATH -am $CP`
+  JAVAC=javac
 else
   JAVAC_SOURCE_FILE=$IDEA_OUTPUT/src/idea/IdeaLoggerWrapper.java
   JAVAC_SOURCE_PATH=$IDEA_OUTPUT/src
