@@ -128,9 +128,9 @@ typedef KVHashtable<LogFileOutput*, uint32_t, mtLogging> AsyncLogMap;
 // They are both MT-safe and non-blocking. Derived classes of LogOutput can invoke the corresponding enqueue() in write() and
 // return 0. AsyncLogWriter is responsible of copying neccessary data.
 //
-// The static member function flush() is designated to flush out all pending messages when JVM is terminating or aborting.
-// In normal JVM termination, flush() is invoked in LogConfiguration::finalize(). In abortion situation, flush() is invoked in
-// os::shutdown(). flush() is MT-safe and can be invoked arbitrary times. It is no-op if async logging is not established.
+// The static member function flush() is designated to flush out all pending messages when JVM is terminating.
+// In normal JVM termination, flush() is invoked in LogConfiguration::finalize(). flush() is MT-safe and can be invoked arbitrary
+// times. It is no-op if async logging is not established.
 //
 class AsyncLogWriter : public NonJavaThread {
   static AsyncLogWriter* _instance;

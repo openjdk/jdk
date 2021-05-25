@@ -38,7 +38,6 @@
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_share_windows.hpp"
@@ -1095,9 +1094,6 @@ bool os::getTimesSecs(double* process_real_time,
 void os::shutdown() {
   // allow PerfMemory to attempt cleanup of any persistent resources
   perfMemory_exit();
-
-  // flush buffered messages
-  AsyncLogWriter::flush();
 
   // flush buffered output, finish log files
   ostream_abort();

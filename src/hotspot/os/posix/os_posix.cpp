@@ -29,7 +29,6 @@
 #endif
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
-#include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "os_posix.inline.hpp"
 #include "runtime/globals_extension.hpp"
@@ -1946,9 +1945,6 @@ void os::shutdown() {
 
   // needs to remove object in file system
   AttachListener::abort();
-
-  // flush buffered messages
-  AsyncLogWriter::flush();
 
   // flush buffered output, finish log files
   ostream_abort();

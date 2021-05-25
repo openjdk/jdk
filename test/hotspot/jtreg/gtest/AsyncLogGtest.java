@@ -23,15 +23,16 @@
  */
 
 /*
- * Note: This runs the asynclog parts of gtest in async mode.
+ * Note: This runs the unified logging part of gtest in async mode.
  * The reason is that hotspot can't safely turn off asynclogging dyanmically.
  * There's no TEST_OTHER_VM_F.
  */
 
 /* @test
- * @summary Run asynclog gtest in async mode.
+ * @summary Run logging gtest in async mode.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @run main/native GTestWrapper --gtest_filter=AsyncLogTest* -Xlog:async
+ * @run main/native GTestWrapper --gtest_filter=Log*Test* -Xlog:async
  */
