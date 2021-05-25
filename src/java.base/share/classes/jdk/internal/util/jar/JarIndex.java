@@ -52,13 +52,13 @@ public class JarIndex {
      * The hash map that maintains mappings from
      * package/classe/resource to jar file list(s)
      */
-    private HashMap<String, ArrayList<String>> indexMap;
+    private final HashMap<String, List<String>> indexMap;
 
     /**
      * The hash map that maintains mappings from
      * jar file to package/class/resource lists
      */
-    private HashMap<String, ArrayList<String>> jarMap;
+    private final HashMap<String, List<String>> jarMap;
 
     /*
      * An ordered list of jar file names.
@@ -135,8 +135,8 @@ public class JarIndex {
      * be put in a linked list which is created if necessary.
      */
     private void addToList(String key, String value,
-                           HashMap<String, ArrayList<String>> t) {
-        ArrayList<String> list = t.get(key);
+                           HashMap<String, List<String>> t) {
+        List<String> list = t.get(key);
         if (list == null) {
             list = new ArrayList<>();
             list.add(value);
@@ -152,7 +152,7 @@ public class JarIndex {
      * @param fileName the key of the mapping
      */
     public List<String> get(String fileName) {
-        ArrayList<String> jarFiles;
+        List<String> jarFiles;
         if ((jarFiles = indexMap.get(fileName)) == null) {
             /* try the package name again */
             int pos;
@@ -261,7 +261,7 @@ public class JarIndex {
                 /* print out the jar file name */
                 String jar = jarFiles[i];
                 bw.write(jar + "\n");
-                ArrayList<String> jarlist = jarMap.get(jar);
+                List<String> jarlist = jarMap.get(jar);
                 if (jarlist != null) {
                     Iterator<String> listitr = jarlist.iterator();
                     while(listitr.hasNext()) {
@@ -288,7 +288,7 @@ public class JarIndex {
         String currentJar = null;
 
         /* an ordered list of jar file names */
-        Vector<String> jars = new Vector<>();
+        List<String> jars = new ArrayList<>();
 
         /* read until we see a .jar line */
         while((line = br.readLine()) != null && !line.endsWith(".jar"));
@@ -320,11 +320,11 @@ public class JarIndex {
      *
      */
     public void merge(JarIndex toIndex, String path) {
-        Iterator<Map.Entry<String, ArrayList<String>>> itr = indexMap.entrySet().iterator();
+        Iterator<Map.Entry<String, List<String>>> itr = indexMap.entrySet().iterator();
         while(itr.hasNext()) {
-            Map.Entry<String, ArrayList<String>> e = itr.next();
+            Map.Entry<String, List<String>> e = itr.next();
             String packageName = e.getKey();
-            ArrayList<String> from_list = e.getValue();
+            List<String> from_list = e.getValue();
             Iterator<String> listItr = from_list.iterator();
             while(listItr.hasNext()) {
                 String jarName = listItr.next();
