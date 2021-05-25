@@ -39,6 +39,7 @@ public class GCMShortBuffer {
     static final GCMParameterSpec iv = new GCMParameterSpec(128, new byte[16]);
     static final SecretKeySpec keySpec = new SecretKeySpec(new byte[16], "AES");
     static byte cipherText[], plaintext[] = new byte[51];
+    boolean error = false;
 
     GCMShortBuffer(byte[] out) throws Exception {
         int len = cipherText.length - 1;
@@ -53,11 +54,22 @@ public class GCMShortBuffer {
         } catch (Exception e) {
             throw e;
         }
-        c.doFinal(cipherText, 1, len, pt, 0);
+        int r = c.doFinal(cipherText, 1, len, pt, 0);
+        if (r != pt.length) {
+            System.out.println(
+                "doFinal() return ( " + r + ") is not the same" +
+                    "as getOutputSize returned" + pt.length);
+            error = true;
+        }
         if (Arrays.compare(pt, plaintext) != 0) {
             System.out.println("output  : " + HexFormat.of().formatHex(pt));
-            System.out.println("expected: " + HexFormat.of().formatHex(plaintext));
+            System.out.println("expected: " +
+                HexFormat.of().formatHex(plaintext));
             System.out.println("output and plaintext do not match");
+            error = true;
+        }
+        if (error) {
+            throw new Exception("An error has occurred");
         }
     }
 
@@ -75,13 +87,24 @@ public class GCMShortBuffer {
         } catch (Exception e) {
             throw e;
         }
-        c.doFinal(ByteBuffer.wrap(cipherText, 1, len), out);
+        int r = c.doFinal(ByteBuffer.wrap(cipherText, 1, len), out);
         out.flip();
+        if (r != out.capacity()) {
+            System.out.println(
+                "doFinal() return ( " + r + ") is not the same" +
+                    " as getOutputSize returned" + out.capacity());
+            error = true;
+        }
         if (out.compareTo(ByteBuffer.wrap(plaintext)) != 0) {
-            System.out.println("output  : " + HexFormat.of().formatHex(out.array()));
-            System.out.println("expected: " + HexFormat.of().formatHex(plaintext));
-            throw new Exception("output and plaintext do not match");
-
+            System.out.println("output and plaintext do not match");
+            System.out.println("output  : " +
+                HexFormat.of().formatHex(out.array()));
+            System.out.println("expected: " +
+                HexFormat.of().formatHex(plaintext));
+            error = true;
+        }
+        if (error) {
+            throw new Exception("An error has occurred");
         }
     }
 

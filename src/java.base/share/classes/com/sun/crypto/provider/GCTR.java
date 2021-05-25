@@ -150,7 +150,7 @@ final class GCTR extends CounterMode implements GCM {
         if (inLen - inOfs > in.length) {
             throw new RuntimeException("input length out of bound");
         }
-        if (inLen < 0 || inLen % blockSize != 0) {
+        if (inLen < 0) {
             throw new RuntimeException("input length unsupported");
         }
         // See GaloisCounterMode. decryptFinal(bytebuffer, bytebuffer) for
@@ -199,8 +199,7 @@ final class GCTR extends CounterMode implements GCM {
 
         // If the bytebuffer is backed by arrays, use that instead of
         // allocating and copying for direct bytebuffers
-        if (!src.isDirect() && !dst.isDirect() &&
-            !src.isReadOnly() && !dst.isReadOnly()) {
+        if (src.hasArray() && dst.hasArray()) {
             len = update(src.array(), src.arrayOffset() + src.position(),
                 src.remaining() - (src.remaining() % blockSize),
                 dst.array(), dst.arrayOffset() + dst.position());
@@ -215,8 +214,8 @@ final class GCTR extends CounterMode implements GCM {
         if (numOfCompleteBlocks >= blocksLeft) {
             // Counter Mode encryption cannot be used because counter will
             // roll over incorrectly. Use GCM-specific code instead.
+            checkBlock();
             for (int i = 0; i < numOfCompleteBlocks; i++) {
-                checkBlock();
                 embeddedCipher.encryptBlock(counter, 0, block, 0);
                 for (int n = 0; n < blockSize; n++) {
                     dst.put((byte) (src.get() ^ block[n]));
@@ -255,17 +254,19 @@ final class GCTR extends CounterMode implements GCM {
         int lastBlockSize = inLen % blockSize;
         int completeBlkLen = inLen - lastBlockSize;
         // process the complete blocks first
-        update(in, inOfs, completeBlkLen, out, outOfs);
-        if (lastBlockSize != 0) {
-            // do the last partial block
-            checkBlock();
-            embeddedCipher.encryptBlock(counter, 0, block, 0);
-            for (int n = 0; n < lastBlockSize; n++) {
-                out[outOfs + completeBlkLen + n] =
-                    (byte) ((in[inOfs + completeBlkLen + n] ^ block[n]));
+        try {
+            update(in, inOfs, completeBlkLen, out, outOfs);
+            if (lastBlockSize != 0) {
+                // do the last partial block
+                checkBlock();
+                embeddedCipher.encryptBlock(counter, 0, block, 0);
+                for (int n = 0; n < lastBlockSize; n++) {
+                    out[outOfs + completeBlkLen + n] = (byte) ((in[inOfs + completeBlkLen + n] ^ block[n]));
+                }
             }
+        } finally {
+            reset();
         }
-        reset();
         return inLen;
     }
 
@@ -279,8 +280,7 @@ final class GCTR extends CounterMode implements GCM {
     public int doFinal(ByteBuffer src, ByteBuffer dst) {
         // If the bytebuffer is backed by arrays, use that instead of
         // allocating and copying for direct bytebuffers
-        if (!src.isDirect() && !dst.isDirect() &&
-            !src.isReadOnly() && !dst.isReadOnly()) {
+        if (src.hasArray() && dst.hasArray()) {
             int len = doFinal(src.array(), src.arrayOffset() + src.position(),
                 src.remaining(), dst.array(),
                 dst.arrayOffset() + dst.position());

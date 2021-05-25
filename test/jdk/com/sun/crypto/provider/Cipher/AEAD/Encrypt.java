@@ -233,10 +233,10 @@ public class Encrypt {
         for (int k = 0; k < outputTexts.size(); k++) {
             HexFormat hex = HexFormat.of().withUpperCase();
             if (!Arrays.equals(output, outputTexts.get(k))) {
-                System.out.println("Combination #" + k + 1 + "\nresult    " +
+                System.out.println("Combination #" + (k + 1) + "\nresult    " +
                     hex.formatHex(outputTexts.get(k)) +
                     "\nexpected: " + hex.formatHex(output));
-                throw new RuntimeException("Combination #" + k + " failed");
+                throw new RuntimeException("Combination #" + (k + 1) + " failed");
             }
         }
         return output;

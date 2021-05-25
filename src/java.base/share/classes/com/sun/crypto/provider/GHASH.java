@@ -47,8 +47,11 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * @since 1.8
  */
+
 final class GHASH implements Cloneable, GCM {
+
     private static final int AES_BLOCK_SIZE = 16;
+
     // Handle for converting byte[] <-> long
     private static final VarHandle asLongView =
         MethodHandles.byteArrayViewVarHandle(long[].class,
@@ -56,7 +59,6 @@ final class GHASH implements Cloneable, GCM {
 
     // Maximum buffer size rotating ByteBuffer->byte[] intrinsic copy
     private static final int MAX_LEN = 1024;
-
 
     // Multiplies state[0], state[1] by subkeyH[0], subkeyH[1].
     private static void blockMult(long[] st, long[] subH) {
@@ -179,12 +181,15 @@ final class GHASH implements Cloneable, GCM {
 
     // Will process as many blocks it can and will leave the remaining.
     int update(ByteBuffer ct, int inLen) {
+        inLen -= (inLen % AES_BLOCK_SIZE);
+        if (inLen == 0) {
+            return 0;
+        }
 
-        // If src is a direct bytebuffer, send it directly to the intrinsic
+        // If ct is a direct bytebuffer, send it directly to the intrinsic
         if (ct.isDirect()) {
-            int processed = inLen - (inLen % AES_BLOCK_SIZE);
+            int processed = inLen;
             processBlocksDirect(ct, inLen);
-            ct.position(ct.position());
             return processed;
         } else if (!ct.isReadOnly()) {
             // If a non-read only heap bytebuffer, use the array update method
@@ -196,10 +201,6 @@ final class GHASH implements Cloneable, GCM {
         }
 
         // Read only heap bytebuffers have to be copied and operated on
-        inLen -= (inLen % AES_BLOCK_SIZE);
-        if (inLen == 0) {
-            return 0;
-        }
         int to_process = inLen;
         byte[] in = new byte[Math.min(MAX_LEN, inLen)];
         while (to_process > MAX_LEN ) {

@@ -122,6 +122,14 @@ abstract class GaloisCounterMode extends CipherSpi {
         encryption = (opmode == Cipher.ENCRYPT_MODE) ||
             (opmode == Cipher.WRAP_MODE);
 
+        int tagLen = spec.getTLen();
+        if (tagLen < 96 || tagLen > 128 || ((tagLen & 0x07) != 0)) {
+            throw new InvalidAlgorithmParameterException
+                ("Unsupported TLen value.  Must be one of " +
+                    "{128, 120, 112, 104, 96}");
+        }
+        tagLenBytes = tagLen >> 3;
+
         // Check the Key object is valid and the right size
         if (key == null) {
             throw new InvalidKeyException("The key must not be null");
@@ -130,6 +138,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         if (keyValue == null) {
             throw new InvalidKeyException("Key encoding must not be null");
         } else if (keySize != -1 && keyValue.length != keySize) {
+            Arrays.fill(keyValue, (byte) 0);
             throw new InvalidKeyException("The key must be " +
                 keySize + " bytes");
         }
@@ -138,6 +147,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         if (encryption) {
             if (MessageDigest.isEqual(keyValue, lastKey) &&
                 MessageDigest.isEqual(iv, lastIv)) {
+                Arrays.fill(keyValue, (byte) 0);
                 throw new InvalidAlgorithmParameterException(
                     "Cannot reuse iv for GCM encryption");
             }
@@ -151,14 +161,6 @@ abstract class GaloisCounterMode extends CipherSpi {
         }
 
         reInit = false;
-
-        int tagLen = spec.getTLen();
-        if (tagLen < 96 || tagLen > 128 || ((tagLen & 0x07) != 0)) {
-            throw new InvalidAlgorithmParameterException
-                ("Unsupported TLen value.  Must be one of " +
-                    "{128, 120, 112, 104, 96}");
-        }
-        tagLenBytes = tagLen >> 3;
 
         // always encrypt mode for embedded cipher
         blockCipher.init(false, key.getAlgorithm(), keyValue);
@@ -229,7 +231,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     @Override
     protected AlgorithmParameters engineGetParameters() {
         GCMParameterSpec spec;
-        spec = new GCMParameterSpec(DEFAULT_TAG_LEN * 8,
+        spec = new GCMParameterSpec(tagLenBytes * 8,
             iv == null ? createIv(random) : iv.clone());
         try {
             AlgorithmParameters params =
@@ -1223,7 +1225,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                     processed += r;
                 }
 
-                doLastBlock(in, inOfs, inLen, out, outOfs + resultLen);
+                processed += gctrghash.doFinal(in, inOfs, inLen, out,
+                    outOfs + resultLen);
                 resultLen += inLen;
             }
 
@@ -1270,7 +1273,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 ibuffer.reset();
             }
 
-            byte[] block =  getLengthBlock(sizeOfAAD, processed);
+            byte[] block = getLengthBlock(sizeOfAAD, processed);
             ghashAllToS.update(block);
             block = ghashAllToS.digest();
             new GCTR(blockCipher, preCounterBlock).doFinal(block, 0,
@@ -1280,22 +1283,6 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             reInit = true;
             return (len + tagLenBytes);
-        }
-
-
-        void doLastBlock(byte[] in, int inOfs, int inLen, byte[] out,
-            int outOfs) {
-            gctrPAndC.doFinal(in, inOfs, inLen, out, outOfs);
-            processed += inLen;
-
-            int lastLen = inLen % blockSize;
-            if (lastLen != 0) {
-                ghashAllToS.update(out, outOfs, inLen - lastLen);
-                ghashAllToS.update(expandToOneBlock(out,
-                    (outOfs + inLen - lastLen), lastLen, blockSize));
-            } else {
-                ghashAllToS.update(out, outOfs, inLen);
-            }
         }
 
         // Handler method for encrypting blocks
@@ -1687,7 +1674,7 @@ abstract class GaloisCounterMode extends CipherSpi {
      * This class is for encryption operations when both GCTR and GHASH
      * can operation in parallel.
      */
-    public static final class GCTRGHASH implements GCM {
+    static final class GCTRGHASH implements GCM {
         GCTR gctr;
         GHASH ghash;
 

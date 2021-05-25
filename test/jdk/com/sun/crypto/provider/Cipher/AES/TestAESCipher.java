@@ -95,7 +95,7 @@ public class TestAESCipher {
         System.out.println("Testing " + algo + "/" + mo + "/" + pad);
 
         byte[] iv = makeData(16);
-        AlgorithmParameterSpec aps = new GCMParameterSpec(128, new byte[16]);
+        AlgorithmParameterSpec aps = new GCMParameterSpec(128, iv);
         SecretKey key = new SecretKeySpec(this.key, 0, KEY_LENGTH,"AES");
 
         try {
@@ -112,9 +112,9 @@ public class TestAESCipher {
             }
 
             byte[] cipherText = new byte[ci.getOutputSize(plainText.length)];
-            //int offset = ci.update(plainText, 0, plainText.length, cipherText, 0);
-            //ci.doFinal(cipherText, offset);
-            ci.doFinal(plainText, 0, plainText.length, cipherText, 0);
+            int offset = ci.update(plainText, 0, plainText.length, cipherText,
+                0);
+            ci.doFinal(cipherText, offset);
 
             if (!mo.equalsIgnoreCase("ECB")) {
                 iv = ci.getIV();
