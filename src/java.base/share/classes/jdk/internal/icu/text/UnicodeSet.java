@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,8 +188,6 @@ import jdk.internal.icu.util.VersionInfo;
  * <td>The set of characters <em>not</em> having the given
  * Unicode property
  * </table>
- *
- * <p><b>Warning</b>: you cannot add an empty string ("") to a UnicodeSet.</p>
  *
  * <p><b>Formal syntax</b></p>
  *
@@ -487,7 +485,7 @@ public class UnicodeSet {
         else if (i > 0 && c == list[i-1]) {
             // c is after end of prior range
             list[i-1]++;
-            // no need to chcek for collapse here
+            // no need to check for collapse here
         }
 
         else {
@@ -528,7 +526,6 @@ public class UnicodeSet {
      * present.  If this set already contains the multicharacter,
      * the call leaves this set unchanged.
      * Thus {@code "ch" => {"ch"}}
-     * <br><b>Warning: you cannot add an empty string ("") to a UnicodeSet.</b>
      * @param s the source string
      * @return this object, for chaining
      * @stable ICU 2.0
@@ -546,22 +543,19 @@ public class UnicodeSet {
 
     /**
      * Utility for getting code point from single code point CharSequence.
-     * See the public UTF16.getSingleCodePoint()
+     * See the public UTF16.getSingleCodePoint() (which returns -1 for null rather than throwing NPE).
+     *
      * @return a code point IF the string consists of a single one.
      * otherwise returns -1.
      * @param s to test
      */
     private static int getSingleCP(CharSequence s) {
-        if (s.length() < 1) {
-            throw new IllegalArgumentException("Can't use zero-length strings in UnicodeSet");
-        }
-        if (s.length() > 2) return -1;
         if (s.length() == 1) return s.charAt(0);
-
-        // at this point, len = 2
-        int cp = UTF16.charAt(s, 0);
-        if (cp > 0xFFFF) { // is surrogate pair
-            return cp;
+        if (s.length() == 2) {
+            int cp = Character.codePointAt(s, 0);
+            if (cp > 0xFFFF) { // is surrogate pair
+                return cp;
+            }
         }
         return -1;
     }
@@ -569,13 +563,11 @@ public class UnicodeSet {
     /**
      * Complements the specified range in this set.  Any character in
      * the range will be removed if it is in this set, or will be
-     * added if it is not in this set.  If {@code end > start}
+     * added if it is not in this set.  If <code>start &gt; end</code>
      * then an empty range is complemented, leaving the set unchanged.
      *
-     * @param start first character, inclusive, of range to be removed
-     * from this set.
-     * @param end last character, inclusive, of range to be removed
-     * from this set.
+     * @param start first character, inclusive, of range
+     * @param end last character, inclusive, of range
      * @stable ICU 2.0
      */
     public UnicodeSet complement(int start, int end) {
