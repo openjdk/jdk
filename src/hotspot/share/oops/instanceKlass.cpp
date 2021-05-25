@@ -2402,7 +2402,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void InstanceKlass::remove_unshareable_info() {
 
-  if (has_old_class_version()) {
+  if (can_be_verified_at_dumptime()) {
     // Set the old class bit.
     set_is_shared_old_klass();
   }
@@ -2546,17 +2546,17 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
 // without changing the old verifier, the verification constraint cannot be
 // retrieved during dump time.
 // Verification of archived old classes will be performed during run time.
-bool InstanceKlass::has_old_class_version() const {
+bool InstanceKlass::can_be_verified_at_dumptime() const {
   if (major_version() < 50 /*JAVA_6_VERSION*/) {
     return true;
   }
-  if (java_super() != NULL && java_super()->has_old_class_version()) {
+  if (java_super() != NULL && java_super()->can_be_verified_at_dumptime()) {
     return true;
   }
   Array<InstanceKlass*>* interfaces = local_interfaces();
   int len = interfaces->length();
   for (int i = 0; i < len; i++) {
-    if (interfaces->at(i)->has_old_class_version()) {
+    if (interfaces->at(i)->can_be_verified_at_dumptime()) {
       return true;
     }
   }
