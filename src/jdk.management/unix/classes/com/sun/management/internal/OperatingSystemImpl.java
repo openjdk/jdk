@@ -41,7 +41,6 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     implements com.sun.management.UnixOperatingSystemMXBean {
 
     private static final int MAX_ATTEMPTS_NUMBER = 10;
-    private static final int PER_CPU_SHARES = 1024;
     private final Metrics containerMetrics;
     private long shareCpuUsage = -1;  // used for cpu-shares-based cpuload calc.
     private long hostTotalTicks = -1; // used for cpu-shares-based cpuload calc.
