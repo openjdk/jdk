@@ -2167,11 +2167,10 @@ public class ObjectStreamClass implements Serializable {
              * in array should be equal to Unsafe.INVALID_FIELD_OFFSET.
              */
             for (int i = numPrimFields; i < fields.length; i++) {
-                switch (typeCodes[i]) {
-                    case 'L', '[' -> vals[offsets[i]] = unsafe.getReference(obj, readKeys[i]);
+                vals[offsets[i]] = switch (typeCodes[i]) {
+                    case 'L', '[' -> unsafe.getReference(obj, readKeys[i]);
                     default       -> throw new InternalError();
-                }
-            }
+                };
         }
 
         /**

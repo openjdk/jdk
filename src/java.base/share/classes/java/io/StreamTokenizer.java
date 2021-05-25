@@ -778,13 +778,12 @@ public class StreamTokenizer {
      * @see     java.io.StreamTokenizer#ttype
      */
     public String toString() {
-
         String ret = switch (ttype) {
-            case TT_EOF     -> ret = "EOF";
-            case TT_EOL     -> ret = "EOL";
-            case TT_WORD    -> ret = sval;
-            case TT_NUMBER  -> ret = "n=" + nval;
-            case TT_NOTHING -> ret = "NOTHING";
+            case TT_EOF     -> "EOF";
+            case TT_EOL     -> "EOL";
+            case TT_WORD    -> sval;
+            case TT_NUMBER  -> "n=" + nval;
+            case TT_NOTHING -> "NOTHING";
             default         -> {
                 /*
                  * ttype is the first character of either a quoted string or
@@ -793,9 +792,8 @@ public class StreamTokenizer {
                  * case statements
                  */
                 if (ttype < 256 && ((ctype[ttype] & CT_QUOTE) != 0)) {
-                    ret = sval;
+                    yield sval;
                 }
-
                 char s[] = new char[3];
                 s[0] = s[2] = '\'';
                 s[1] = (char) ttype;

@@ -130,14 +130,18 @@ class PatternEntry {
             if (showWhiteSpace)
                 toAddTo.append(' ');
         }
-        switch (strength) {
-            case Collator.IDENTICAL -> toAddTo.append('=');
-            case Collator.TERTIARY  -> toAddTo.append(',');
-            case Collator.SECONDARY -> toAddTo.append(';');
-            case Collator.PRIMARY   -> toAddTo.append('<');
-            case RESET              -> toAddTo.append('&');
-            case UNSET              -> toAddTo.append('?');
-        }
+        var c = switch (strength) {
+            case Collator.IDENTICAL -> '=';
+            case Collator.TERTIARY  -> ',';
+            case Collator.SECONDARY -> ';';
+            case Collator.PRIMARY   -> '<';
+            case RESET              -> '&';
+            case UNSET              -> '?';
+
+            default -> throw new IllegalStateException("Unexpected value: " + strength);
+        };
+        toAddTo.append(c);
+        
         if (showWhiteSpace)
             toAddTo.append(' ');
         appendQuoted(chars,toAddTo);
