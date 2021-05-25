@@ -67,6 +67,7 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"GroupAccessibility" forKey:@"internalframe"];
     [rolesMap setObject:@"GroupAccessibility" forKey:@"swingcomponent"];
     [rolesMap setObject:@"ToolbarAccessibility" forKey:@"toolbar"];
+    [rolesMap setObject:@"SplitpaneAccessibility" forKey:@"splitpane"];
 
     /*
      * All the components below should be ignored by the accessibility subsystem,
