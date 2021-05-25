@@ -42,8 +42,8 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
 
     private static final int MAX_ATTEMPTS_NUMBER = 10;
     private final Metrics containerMetrics;
-    private long shareCpuUsage = -1;  // used for cpu-shares-based cpuload calc.
-    private long hostTotalTicks = -1; // used for cpu-shares-based cpuload calc.
+    private long usageTicks = -1; // used for cpu load calculation
+    private long totalTicks = -1; // used for cpu load calculation
 
     OperatingSystemImpl(VMManagement vm) {
         super(vm);
@@ -164,16 +164,16 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
                     // retrieved via an earlier call of this method. Total ticks are
                     // scaled to the container effective number of cpus.
                     long distance = 0;
-                    if (this.shareCpuUsage > -1) {
-                        distance = usageNanos - this.shareCpuUsage;
+                    if (this.usageTicks > -1) {
+                        distance = usageNanos - this.usageTicks;
                     }
-                    this.shareCpuUsage = usageNanos;
+                    this.usageTicks = usageNanos;
                     long totalDistance = 0;
                     long hostTicks = getHostTotalCpuTicks0();
-                    if (this.hostTotalTicks > -1 && hostTicks > -1) {
-                         totalDistance = hostTicks - this.hostTotalTicks;
+                    if (this.totalTicks > -1 && hostTicks > -1) {
+                         totalDistance = hostTicks - this.totalTicks;
                     }
-                    this.hostTotalTicks = hostTicks;
+                    this.totalTicks = hostTicks;
                     int totalCPUs = getHostOnlineCpuCount0();
                     int containerCPUs = getAvailableProcessors();
                     // scale the total host load to the actual container cpus
