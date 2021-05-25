@@ -35,8 +35,8 @@
 
 };
 - (NSAccessibilityRole _Nonnull)accessibilityRole;
-- (nullable NSString *)accessibilityAttributedStringForRange:(NSRange)range;
-- (nullable NSString *)accessibilityValue;
+- (NSString * _Nullable)accessibilityAttributedStringForRange:(NSRange)range;
+- (NSString * _Nullable)accessibilityValue;
 - (NSRange)accessibilityVisibleCharacterRange;
 @end
 #endif
