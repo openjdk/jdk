@@ -283,9 +283,6 @@ abstract class KeyWrapCipher extends CipherSpi {
     // actual impl for various engineInit(...) methods
     private void implInit(int opmode, Key key, byte[] iv, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-        if (opmode < Cipher.ENCRYPT_MODE || opmode > Cipher.UNWRAP_MODE) {
-            throw new RuntimeException("Invalid opmode for Cipher");
-        }
         byte[] keyBytes = key.getEncoded();
         if (keyBytes == null) {
             throw new InvalidKeyException("Null key");
