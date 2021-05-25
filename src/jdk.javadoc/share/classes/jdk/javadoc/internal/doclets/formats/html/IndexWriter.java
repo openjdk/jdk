@@ -367,7 +367,11 @@ public class IndexWriter extends HtmlDocletWriter {
                 .sorted((i1,i2)-> utils.compareStrings(i1.getLabel(), i2.getLabel()))
                 .map(i -> links.createLink(pathToRoot.resolve(i.getUrl()),
                         contents.getNonBreakString(i.getLabel())))
-                .collect(Collectors.toList());
+                .toList();
         contentTree.add(contents.join(getVerticalSeparator(), pageLinks));
+    }
+
+    private Content getVerticalSeparator() {
+        return HtmlTree.SPAN(HtmlStyle.verticalSeparator, Text.of("|"));
     }
 }

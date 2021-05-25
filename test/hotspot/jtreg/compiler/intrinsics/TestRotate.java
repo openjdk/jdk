@@ -27,13 +27,14 @@
  * @summary Support for scalar rotates ([Integer/Long].rotate[Left/Right]).
  * @library /test/lib
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -XX:CompileThreshold=1000 -Xbatch
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *      compiler.intrinsics.TestRotate
  */
 package compiler.intrinsics;
 
 public class TestRotate {
 
-    static final int ITERS = 500000;
+    static final int ITERS = 50000;
     static final int[] INT_VALUES = {Integer.MIN_VALUE, Integer.MAX_VALUE, 0, 1, 2, 3, 5, 8, 13};
     static final long[] LONG_VALUES = {Long.MIN_VALUE, Long.MAX_VALUE, 0L, 1L, 2L, 3L, 5L, 8L, 13L};
 
@@ -555,122 +556,290 @@ public class TestRotate {
         }
     }
 
-    public static void main(String[] args) {
-        try {
-            for (int count = 0; count < ITERS; count++) {
-                for (int i = 0; i < INT_VALUES.length; i++) {
-                    int val = INT_VALUES[i];
-                    verify("testRorOrInt1(" + val + ")", testRorOrInt1(val), TEST_ROR_OR_INT_1_EXPECTED[i]);
-                    verify("testRorOrInt16(" + val + ")", testRorOrInt16(val), TEST_ROR_OR_INT_16_EXPECTED[i]);
-                    verify("testRorOrInt31(" + val + ")", testRorOrInt31(val), TEST_ROR_OR_INT_31_EXPECTED[i]);
-                    verify("testRorOrInt32(" + val + ")", testRorOrInt32(val), TEST_ROR_OR_INT_32_EXPECTED[i]);
-
-                    verify("testRorAddInt1(" + val + ")", testRorAddInt1(val), TEST_ROR_ADD_INT_1_EXPECTED[i]);
-                    verify("testRorAddInt16(" + val + ")", testRorAddInt16(val), TEST_ROR_ADD_INT_16_EXPECTED[i]);
-                    verify("testRorAddInt31(" + val + ")", testRorAddInt31(val), TEST_ROR_ADD_INT_31_EXPECTED[i]);
-                    verify("testRorAddInt32(" + val + ")", testRorAddInt32(val), TEST_ROR_ADD_INT_32_EXPECTED[i]);
-
-                    verify("testRorOrInt1Eor(" + val + ")", testRorOrInt1Eor(val), TEST_EOR_ROR_SHIFT_1_INT_EXPECTED[i]);
-                    verify("testRorOrInt16Eor(" + val + ")", testRorOrInt16Eor(val), TEST_EOR_ROR_SHIFT_16_INT_EXPECTED[i]);
-                    verify("testRorOrInt31Eor(" + val + ")", testRorOrInt31Eor(val), TEST_EOR_ROR_SHIFT_31_INT_EXPECTED[i]);
-                    verify("testRorOrInt32Eor(" + val + ")", testRorOrInt32Eor(val), TEST_EOR_ROR_SHIFT_32_INT_EXPECTED[i]);
-
-                    verify("testRorOrInt1And(" + val + ")", testRorOrInt1And(val), TEST_AND_ROR_SHIFT_1_INT_EXPECTED[i]);
-                    verify("testRorOrInt16And(" + val + ")", testRorOrInt16And(val), TEST_AND_ROR_SHIFT_16_INT_EXPECTED[i]);
-                    verify("testRorOrInt31And(" + val + ")", testRorOrInt31And(val), TEST_AND_ROR_SHIFT_31_INT_EXPECTED[i]);
-                    verify("testRorOrInt32And(" + val + ")", testRorOrInt32And(val), TEST_AND_ROR_SHIFT_32_INT_EXPECTED[i]);
-
-                    verify("testRorOrInt1Or(" + val + ")", testRorOrInt1Or(val), TEST_OR_ROR_SHIFT_1_INT_EXPECTED[i]);
-                    verify("testRorOrInt16Or(" + val + ")", testRorOrInt16Or(val), TEST_OR_ROR_SHIFT_16_INT_EXPECTED[i]);
-                    verify("testRorOrInt31Or(" + val + ")", testRorOrInt31Or(val), TEST_OR_ROR_SHIFT_31_INT_EXPECTED[i]);
-                    verify("testRorOrInt32Or(" + val + ")", testRorOrInt32Or(val), TEST_OR_ROR_SHIFT_32_INT_EXPECTED[i]);
-
-                    verify("testRorOrInt1Eon(" + val + ")", testRorOrInt1Eon(val), TEST_EON_ROR_SHIFT_1_INT_EXPECTED[i]);
-                    verify("testRorOrInt16Eon(" + val + ")", testRorOrInt16Eon(val), TEST_EON_ROR_SHIFT_16_INT_EXPECTED[i]);
-                    verify("testRorOrInt31Eon(" + val + ")", testRorOrInt31Eon(val), TEST_EON_ROR_SHIFT_31_INT_EXPECTED[i]);
-                    verify("testRorOrInt32Eon(" + val + ")", testRorOrInt32Eon(val), TEST_EON_ROR_SHIFT_32_INT_EXPECTED[i]);
-
-                    verify("testRorOrInt1Bic(" + val + ")", testRorOrInt1Bic(val), TEST_BIC_ROR_SHIFT_1_INT_EXPECTED[i]);
-                    verify("testRorOrInt16Bic(" + val + ")", testRorOrInt16Bic(val), TEST_BIC_ROR_SHIFT_16_INT_EXPECTED[i]);
-                    verify("testRorOrInt31Bic(" + val + ")", testRorOrInt31Bic(val), TEST_BIC_ROR_SHIFT_31_INT_EXPECTED[i]);
-                    verify("testRorOrInt32Bic(" + val + ")", testRorOrInt32Bic(val), TEST_BIC_ROR_SHIFT_32_INT_EXPECTED[i]);
-
-                    verify("testRorOrInt1Orn(" + val + ")", testRorOrInt1Orn(val), TEST_ORN_ROR_SHIFT_1_INT_EXPECTED[i]);
-                    verify("testRorOrInt16Orn(" + val + ")", testRorOrInt16Orn(val), TEST_ORN_ROR_SHIFT_16_INT_EXPECTED[i]);
-                    verify("testRorOrInt31Orn(" + val + ")", testRorOrInt31Orn(val), TEST_ORN_ROR_SHIFT_31_INT_EXPECTED[i]);
-                    verify("testRorOrInt32Orn(" + val + ")", testRorOrInt32Orn(val), TEST_ORN_ROR_SHIFT_32_INT_EXPECTED[i]);
-
-                    verify("testRorIntApi(" + val + ", 1)", testRorIntApi(val, 1), TEST_ROR_INT_API_1_EXPECTED[i]);
-                    verify("testRorIntApi(" + val + ", 16)", testRorIntApi(val, 16), TEST_ROR_INT_API_16_EXPECTED[i]);
-                    verify("testRorIntApi(" + val + ", 31)", testRorIntApi(val, 31), TEST_ROR_INT_API_31_EXPECTED[i]);
-                    verify("testRorIntApi(" + val + ", 32)", testRorIntApi(val, 32), TEST_ROR_INT_API_32_EXPECTED[i]);
-                    verify("testRolIntApi(" + val + ", 1)", testRolIntApi(val, 1), TEST_ROL_INT_API_1_EXPECTED[i]);
-                    verify("testRolIntApi(" + val + ", 16)", testRolIntApi(val, 16), TEST_ROL_INT_API_16_EXPECTED[i]);
-                    verify("testRolIntApi(" + val + ", 31)", testRolIntApi(val, 31), TEST_ROL_INT_API_31_EXPECTED[i]);
-                    verify("testRolIntApi(" + val + ", 32)", testRolIntApi(val, 32), TEST_ROL_INT_API_32_EXPECTED[i]);
-
-                    testRolIntZero(val);
-                    testRorIntZero(val);
-                }
-
-                for (int i = 0; i < LONG_VALUES.length; i++) {
-                    long val = LONG_VALUES[i];
-                    verify("testRorOrLong1(" + val + ")", testRorOrLong1(val), TEST_ROR_OR_LONG_1_EXPECTED[i]);
-                    verify("testRorOrLong16(" + val + ")", testRorOrLong16(val), TEST_ROR_OR_LONG_16_EXPECTED[i]);
-                    verify("testRorOrLong63(" + val + ")", testRorOrLong63(val), TEST_ROR_OR_LONG_63_EXPECTED[i]);
-                    verify("testRorOrLong64(" + val + ")", testRorOrLong64(val), TEST_ROR_OR_LONG_64_EXPECTED[i]);
-
-                    verify("testRorAddLong1(" + val + ")", testRorAddLong1(val), TEST_ROR_ADD_LONG_1_EXPECTED[i]);
-                    verify("testRorAddLong16(" + val + ")", testRorAddLong16(val), TEST_ROR_ADD_LONG_16_EXPECTED[i]);
-                    verify("testRorAddLong63(" + val + ")", testRorAddLong63(val), TEST_ROR_ADD_LONG_63_EXPECTED[i]);
-                    verify("testRorAddLong64(" + val + ")", testRorAddLong64(val), TEST_ROR_ADD_LONG_64_EXPECTED[i]);
-
-                    verify("testRorOrLong1Eor(" + val + ")", testRorOrLong1Eor(val), TEST_EOR_ROR_SHIFT_1_LONG_EXPECTED[i]);
-                    verify("testRorOrLong16Eor(" + val + ")", testRorOrLong16Eor(val), TEST_EOR_ROR_SHIFT_16_LONG_EXPECTED[i]);
-                    verify("testRorOrLong63Eor(" + val + ")", testRorOrLong63Eor(val), TEST_EOR_ROR_SHIFT_63_LONG_EXPECTED[i]);
-                    verify("testRorOrLong64Eor(" + val + ")", testRorOrLong64Eor(val), TEST_EOR_ROR_SHIFT_64_LONG_EXPECTED[i]);
-
-                    verify("testRorOrLong1And(" + val + ")", testRorOrLong1And(val), TEST_AND_ROR_SHIFT_1_LONG_EXPECTED[i]);
-                    verify("testRorOrLong16And(" + val + ")", testRorOrLong16And(val), TEST_AND_ROR_SHIFT_16_LONG_EXPECTED[i]);
-                    verify("testRorOrLong63And(" + val + ")", testRorOrLong63And(val), TEST_AND_ROR_SHIFT_63_LONG_EXPECTED[i]);
-                    verify("testRorOrLong64And(" + val + ")", testRorOrLong64And(val), TEST_AND_ROR_SHIFT_64_LONG_EXPECTED[i]);
-
-                    verify("testRorOrLong1Or(" + val + ")", testRorOrLong1Or(val), TEST_OR_ROR_SHIFT_1_LONG_EXPECTED[i]);
-                    verify("testRorOrLong16Or(" + val + ")", testRorOrLong16Or(val), TEST_OR_ROR_SHIFT_16_LONG_EXPECTED[i]);
-                    verify("testRorOrLong63Or(" + val + ")", testRorOrLong63Or(val), TEST_OR_ROR_SHIFT_63_LONG_EXPECTED[i]);
-                    verify("testRorOrLong64Or(" + val + ")", testRorOrLong64Or(val), TEST_OR_ROR_SHIFT_64_LONG_EXPECTED[i]);
-
-                    verify("testRorOrLong1Eon(" + val + ")", testRorOrLong1Eon(val), TEST_EON_ROR_SHIFT_1_LONG_EXPECTED[i]);
-                    verify("testRorOrLong16Eon(" + val + ")", testRorOrLong16Eon(val), TEST_EON_ROR_SHIFT_16_LONG_EXPECTED[i]);
-                    verify("testRorOrLong63Eon(" + val + ")", testRorOrLong63Eon(val), TEST_EON_ROR_SHIFT_63_LONG_EXPECTED[i]);
-                    verify("testRorOrLong64Eon(" + val + ")", testRorOrLong64Eon(val), TEST_EON_ROR_SHIFT_64_LONG_EXPECTED[i]);
-
-                    verify("testRorOrLong1Bic(" + val + ")", testRorOrLong1Bic(val), TEST_BIC_ROR_SHIFT_1_LONG_EXPECTED[i]);
-                    verify("testRorOrLong16Bic(" + val + ")", testRorOrLong16Bic(val), TEST_BIC_ROR_SHIFT_16_LONG_EXPECTED[i]);
-                    verify("testRorOrLong63Bic(" + val + ")", testRorOrLong63Bic(val), TEST_BIC_ROR_SHIFT_63_LONG_EXPECTED[i]);
-                    verify("testRorOrLong64Bic(" + val + ")", testRorOrLong64Bic(val), TEST_BIC_ROR_SHIFT_64_LONG_EXPECTED[i]);
-
-                    verify("testRorOrLong1Orn(" + val + ")", testRorOrLong1Orn(val), TEST_ORN_ROR_SHIFT_1_LONG_EXPECTED[i]);
-                    verify("testRorOrLong16Orn(" + val + ")", testRorOrLong16Orn(val), TEST_ORN_ROR_SHIFT_16_LONG_EXPECTED[i]);
-                    verify("testRorOrLong63Orn(" + val + ")", testRorOrLong63Orn(val), TEST_ORN_ROR_SHIFT_63_LONG_EXPECTED[i]);
-                    verify("testRorOrLong64Orn(" + val + ")", testRorOrLong64Orn(val), TEST_ORN_ROR_SHIFT_64_LONG_EXPECTED[i]);
-
-                    verify("testRorLongApi(" + val + ", 1)", testRorLongApi(val, 1), TEST_ROR_LONG_API_1_EXPECTED[i]);
-                    verify("testRorLongApi(" + val + ", 16)", testRorLongApi(val, 16), TEST_ROR_LONG_API_16_EXPECTED[i]);
-                    verify("testRorLongApi(" + val + ", 63)", testRorLongApi(val, 63), TEST_ROR_LONG_API_63_EXPECTED[i]);
-                    verify("testRorLongApi(" + val + ", 64)", testRorLongApi(val, 64), TEST_ROR_LONG_API_64_EXPECTED[i]);
-                    verify("testRolLongApi(" + val + ", 1)", testRolLongApi(val, 1), TEST_ROL_LONG_API_1_EXPECTED[i]);
-                    verify("testRolLongApi(" + val + ", 16)", testRolLongApi(val, 16), TEST_ROL_LONG_API_16_EXPECTED[i]);
-                    verify("testRolLongApi(" + val + ", 63)", testRolLongApi(val, 63), TEST_ROL_LONG_API_63_EXPECTED[i]);
-                    verify("testRolLongApi(" + val + ", 64)", testRolLongApi(val, 64), TEST_ROL_LONG_API_64_EXPECTED[i]);
-
-                    testRolLongZero(i);
-                    testRorLongZero(i);
-                }
+    public static void testRorOrInts() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < INT_VALUES.length; i++) {
+                int val = INT_VALUES[i];
+                verify("testRorOrInt1(" + val + ")",  testRorOrInt1(val),  TEST_ROR_OR_INT_1_EXPECTED[i]);
+                verify("testRorOrInt16(" + val + ")", testRorOrInt16(val), TEST_ROR_OR_INT_16_EXPECTED[i]);
+                verify("testRorOrInt31(" + val + ")", testRorOrInt31(val), TEST_ROR_OR_INT_31_EXPECTED[i]);
+                verify("testRorOrInt32(" + val + ")", testRorOrInt32(val), TEST_ROR_OR_INT_32_EXPECTED[i]);
             }
-            System.out.println("test status : PASS");
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
         }
     }
+
+    public static void testRorAddInts() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < INT_VALUES.length; i++) {
+                int val = INT_VALUES[i];
+                verify("testRorAddInt1(" + val + ")",  testRorAddInt1(val),  TEST_ROR_ADD_INT_1_EXPECTED[i]);
+                verify("testRorAddInt16(" + val + ")", testRorAddInt16(val), TEST_ROR_ADD_INT_16_EXPECTED[i]);
+                verify("testRorAddInt31(" + val + ")", testRorAddInt31(val), TEST_ROR_ADD_INT_31_EXPECTED[i]);
+                verify("testRorAddInt32(" + val + ")", testRorAddInt32(val), TEST_ROR_ADD_INT_32_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorOrIntEors() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < INT_VALUES.length; i++) {
+                int val = INT_VALUES[i];
+                verify("testRorOrInt1Eor(" + val + ")",  testRorOrInt1Eor(val),  TEST_EOR_ROR_SHIFT_1_INT_EXPECTED[i]);
+                verify("testRorOrInt16Eor(" + val + ")", testRorOrInt16Eor(val), TEST_EOR_ROR_SHIFT_16_INT_EXPECTED[i]);
+                verify("testRorOrInt31Eor(" + val + ")", testRorOrInt31Eor(val), TEST_EOR_ROR_SHIFT_31_INT_EXPECTED[i]);
+                verify("testRorOrInt32Eor(" + val + ")", testRorOrInt32Eor(val), TEST_EOR_ROR_SHIFT_32_INT_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorOrIntAnds() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < INT_VALUES.length; i++) {
+                int val = INT_VALUES[i];
+                verify("testRorOrInt1And(" + val + ")",  testRorOrInt1And(val),  TEST_AND_ROR_SHIFT_1_INT_EXPECTED[i]);
+                verify("testRorOrInt16And(" + val + ")", testRorOrInt16And(val), TEST_AND_ROR_SHIFT_16_INT_EXPECTED[i]);
+                verify("testRorOrInt31And(" + val + ")", testRorOrInt31And(val), TEST_AND_ROR_SHIFT_31_INT_EXPECTED[i]);
+                verify("testRorOrInt32And(" + val + ")", testRorOrInt32And(val), TEST_AND_ROR_SHIFT_32_INT_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorOrIntOrs() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < INT_VALUES.length; i++) {
+                int val = INT_VALUES[i];
+                verify("testRorOrInt1Or(" + val + ")",  testRorOrInt1Or(val),  TEST_OR_ROR_SHIFT_1_INT_EXPECTED[i]);
+                verify("testRorOrInt16Or(" + val + ")", testRorOrInt16Or(val), TEST_OR_ROR_SHIFT_16_INT_EXPECTED[i]);
+                verify("testRorOrInt31Or(" + val + ")", testRorOrInt31Or(val), TEST_OR_ROR_SHIFT_31_INT_EXPECTED[i]);
+                verify("testRorOrInt32Or(" + val + ")", testRorOrInt32Or(val), TEST_OR_ROR_SHIFT_32_INT_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorOrIntEons() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < INT_VALUES.length; i++) {
+                int val = INT_VALUES[i];
+                verify("testRorOrInt1Eon(" + val + ")",  testRorOrInt1Eon(val),  TEST_EON_ROR_SHIFT_1_INT_EXPECTED[i]);
+                verify("testRorOrInt16Eon(" + val + ")", testRorOrInt16Eon(val), TEST_EON_ROR_SHIFT_16_INT_EXPECTED[i]);
+                verify("testRorOrInt31Eon(" + val + ")", testRorOrInt31Eon(val), TEST_EON_ROR_SHIFT_31_INT_EXPECTED[i]);
+                verify("testRorOrInt32Eon(" + val + ")", testRorOrInt32Eon(val), TEST_EON_ROR_SHIFT_32_INT_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorOrIntBics() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < INT_VALUES.length; i++) {
+                int val = INT_VALUES[i];
+                verify("testRorOrInt1Bic(" + val + ")",  testRorOrInt1Bic(val),  TEST_BIC_ROR_SHIFT_1_INT_EXPECTED[i]);
+                verify("testRorOrInt16Bic(" + val + ")", testRorOrInt16Bic(val), TEST_BIC_ROR_SHIFT_16_INT_EXPECTED[i]);
+                verify("testRorOrInt31Bic(" + val + ")", testRorOrInt31Bic(val), TEST_BIC_ROR_SHIFT_31_INT_EXPECTED[i]);
+                verify("testRorOrInt32Bic(" + val + ")", testRorOrInt32Bic(val), TEST_BIC_ROR_SHIFT_32_INT_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorOrIntOrns() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < INT_VALUES.length; i++) {
+                int val = INT_VALUES[i];
+                verify("testRorOrInt1Orn(" + val + ")",  testRorOrInt1Orn(val),  TEST_ORN_ROR_SHIFT_1_INT_EXPECTED[i]);
+                verify("testRorOrInt16Orn(" + val + ")", testRorOrInt16Orn(val), TEST_ORN_ROR_SHIFT_16_INT_EXPECTED[i]);
+                verify("testRorOrInt31Orn(" + val + ")", testRorOrInt31Orn(val), TEST_ORN_ROR_SHIFT_31_INT_EXPECTED[i]);
+                verify("testRorOrInt32Orn(" + val + ")", testRorOrInt32Orn(val), TEST_ORN_ROR_SHIFT_32_INT_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorIntApis() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < INT_VALUES.length; i++) {
+                int val = INT_VALUES[i];
+                verify("testRorIntApi(" + val + ", 1)",  testRorIntApi(val, 1),  TEST_ROR_INT_API_1_EXPECTED[i]);
+                verify("testRorIntApi(" + val + ", 16)", testRorIntApi(val, 16), TEST_ROR_INT_API_16_EXPECTED[i]);
+                verify("testRorIntApi(" + val + ", 31)", testRorIntApi(val, 31), TEST_ROR_INT_API_31_EXPECTED[i]);
+                verify("testRorIntApi(" + val + ", 32)", testRorIntApi(val, 32), TEST_ROR_INT_API_32_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRolIntApis() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < INT_VALUES.length; i++) {
+                int val = INT_VALUES[i];
+                verify("testRolIntApi(" + val + ", 1)",  testRolIntApi(val, 1),  TEST_ROL_INT_API_1_EXPECTED[i]);
+                verify("testRolIntApi(" + val + ", 16)", testRolIntApi(val, 16), TEST_ROL_INT_API_16_EXPECTED[i]);
+                verify("testRolIntApi(" + val + ", 31)", testRolIntApi(val, 31), TEST_ROL_INT_API_31_EXPECTED[i]);
+                verify("testRolIntApi(" + val + ", 32)", testRolIntApi(val, 32), TEST_ROL_INT_API_32_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRolrIntZeros() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < INT_VALUES.length; i++) {
+                int val = INT_VALUES[i];
+                testRolIntZero(val);
+                testRorIntZero(val);
+            }
+        }
+    }
+
+    public static void testRorOrLongs() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < LONG_VALUES.length; i++) {
+                long val = LONG_VALUES[i];
+                verify("testRorOrLong1(" + val + ")",  testRorOrLong1(val),  TEST_ROR_OR_LONG_1_EXPECTED[i]);
+                verify("testRorOrLong16(" + val + ")", testRorOrLong16(val), TEST_ROR_OR_LONG_16_EXPECTED[i]);
+                verify("testRorOrLong63(" + val + ")", testRorOrLong63(val), TEST_ROR_OR_LONG_63_EXPECTED[i]);
+                verify("testRorOrLong64(" + val + ")", testRorOrLong64(val), TEST_ROR_OR_LONG_64_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorAddLongs() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < LONG_VALUES.length; i++) {
+                long val = LONG_VALUES[i];
+                verify("testRorAddLong1(" + val + ")",  testRorAddLong1(val),  TEST_ROR_ADD_LONG_1_EXPECTED[i]);
+                verify("testRorAddLong16(" + val + ")", testRorAddLong16(val), TEST_ROR_ADD_LONG_16_EXPECTED[i]);
+                verify("testRorAddLong63(" + val + ")", testRorAddLong63(val), TEST_ROR_ADD_LONG_63_EXPECTED[i]);
+                verify("testRorAddLong64(" + val + ")", testRorAddLong64(val), TEST_ROR_ADD_LONG_64_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorOrLongEors() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < LONG_VALUES.length; i++) {
+                long val = LONG_VALUES[i];
+                verify("testRorOrLong1Eor(" + val + ")",  testRorOrLong1Eor(val),  TEST_EOR_ROR_SHIFT_1_LONG_EXPECTED[i]);
+                verify("testRorOrLong16Eor(" + val + ")", testRorOrLong16Eor(val), TEST_EOR_ROR_SHIFT_16_LONG_EXPECTED[i]);
+                verify("testRorOrLong63Eor(" + val + ")", testRorOrLong63Eor(val), TEST_EOR_ROR_SHIFT_63_LONG_EXPECTED[i]);
+                verify("testRorOrLong64Eor(" + val + ")", testRorOrLong64Eor(val), TEST_EOR_ROR_SHIFT_64_LONG_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorOrLongAnds() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < LONG_VALUES.length; i++) {
+                long val = LONG_VALUES[i];
+                verify("testRorOrLong1And(" + val + ")",  testRorOrLong1And(val),  TEST_AND_ROR_SHIFT_1_LONG_EXPECTED[i]);
+                verify("testRorOrLong16And(" + val + ")", testRorOrLong16And(val), TEST_AND_ROR_SHIFT_16_LONG_EXPECTED[i]);
+                verify("testRorOrLong63And(" + val + ")", testRorOrLong63And(val), TEST_AND_ROR_SHIFT_63_LONG_EXPECTED[i]);
+                verify("testRorOrLong64And(" + val + ")", testRorOrLong64And(val), TEST_AND_ROR_SHIFT_64_LONG_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorOrLongOrs() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < LONG_VALUES.length; i++) {
+                long val = LONG_VALUES[i];
+                verify("testRorOrLong1Or(" + val + ")",  testRorOrLong1Or(val),  TEST_OR_ROR_SHIFT_1_LONG_EXPECTED[i]);
+                verify("testRorOrLong16Or(" + val + ")", testRorOrLong16Or(val), TEST_OR_ROR_SHIFT_16_LONG_EXPECTED[i]);
+                verify("testRorOrLong63Or(" + val + ")", testRorOrLong63Or(val), TEST_OR_ROR_SHIFT_63_LONG_EXPECTED[i]);
+                verify("testRorOrLong64Or(" + val + ")", testRorOrLong64Or(val), TEST_OR_ROR_SHIFT_64_LONG_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorOrLongEons() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < LONG_VALUES.length; i++) {
+                long val = LONG_VALUES[i];
+                verify("testRorOrLong1Eon(" + val + ")",  testRorOrLong1Eon(val),  TEST_EON_ROR_SHIFT_1_LONG_EXPECTED[i]);
+                verify("testRorOrLong16Eon(" + val + ")", testRorOrLong16Eon(val), TEST_EON_ROR_SHIFT_16_LONG_EXPECTED[i]);
+                verify("testRorOrLong63Eon(" + val + ")", testRorOrLong63Eon(val), TEST_EON_ROR_SHIFT_63_LONG_EXPECTED[i]);
+                verify("testRorOrLong64Eon(" + val + ")", testRorOrLong64Eon(val), TEST_EON_ROR_SHIFT_64_LONG_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorOrLongBics() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < LONG_VALUES.length; i++) {
+                long val = LONG_VALUES[i];
+                verify("testRorOrLong1Bic(" + val + ")",  testRorOrLong1Bic(val),  TEST_BIC_ROR_SHIFT_1_LONG_EXPECTED[i]);
+                verify("testRorOrLong16Bic(" + val + ")", testRorOrLong16Bic(val), TEST_BIC_ROR_SHIFT_16_LONG_EXPECTED[i]);
+                verify("testRorOrLong63Bic(" + val + ")", testRorOrLong63Bic(val), TEST_BIC_ROR_SHIFT_63_LONG_EXPECTED[i]);
+                verify("testRorOrLong64Bic(" + val + ")", testRorOrLong64Bic(val), TEST_BIC_ROR_SHIFT_64_LONG_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorOrLongOrns() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < LONG_VALUES.length; i++) {
+                long val = LONG_VALUES[i];
+                verify("testRorOrLong1Orn(" + val + ")",  testRorOrLong1Orn(val),  TEST_ORN_ROR_SHIFT_1_LONG_EXPECTED[i]);
+                verify("testRorOrLong16Orn(" + val + ")", testRorOrLong16Orn(val), TEST_ORN_ROR_SHIFT_16_LONG_EXPECTED[i]);
+                verify("testRorOrLong63Orn(" + val + ")", testRorOrLong63Orn(val), TEST_ORN_ROR_SHIFT_63_LONG_EXPECTED[i]);
+                verify("testRorOrLong64Orn(" + val + ")", testRorOrLong64Orn(val), TEST_ORN_ROR_SHIFT_64_LONG_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRorLongApis() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < LONG_VALUES.length; i++) {
+                long val = LONG_VALUES[i];
+                verify("testRorLongApi(" + val + ", 1)",  testRorLongApi(val, 1),  TEST_ROR_LONG_API_1_EXPECTED[i]);
+                verify("testRorLongApi(" + val + ", 16)", testRorLongApi(val, 16), TEST_ROR_LONG_API_16_EXPECTED[i]);
+                verify("testRorLongApi(" + val + ", 63)", testRorLongApi(val, 63), TEST_ROR_LONG_API_63_EXPECTED[i]);
+                verify("testRorLongApi(" + val + ", 64)", testRorLongApi(val, 64), TEST_ROR_LONG_API_64_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRolLongApis() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < LONG_VALUES.length; i++) {
+                long val = LONG_VALUES[i];
+                verify("testRolLongApi(" + val + ", 1)",  testRolLongApi(val, 1),  TEST_ROL_LONG_API_1_EXPECTED[i]);
+                verify("testRolLongApi(" + val + ", 16)", testRolLongApi(val, 16), TEST_ROL_LONG_API_16_EXPECTED[i]);
+                verify("testRolLongApi(" + val + ", 63)", testRolLongApi(val, 63), TEST_ROL_LONG_API_63_EXPECTED[i]);
+                verify("testRolLongApi(" + val + ", 64)", testRolLongApi(val, 64), TEST_ROL_LONG_API_64_EXPECTED[i]);
+            }
+        }
+    }
+
+    public static void testRolrLongZeros() {
+        for (int count = 0; count < ITERS; count++) {
+            for (int i = 0; i < LONG_VALUES.length; i++) {
+                long val = LONG_VALUES[i];
+                testRolLongZero(i);
+                testRorLongZero(i);
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        testRorOrInts();
+        testRorAddInts();
+        testRorOrIntEors();
+        testRorOrIntAnds();
+        testRorOrIntOrs();
+        testRorOrIntEons();
+        testRorOrIntBics();
+        testRorOrIntOrns();
+        testRorIntApis();
+        testRolIntApis();
+        testRolrIntZeros();
+
+        testRorOrLongs();
+        testRorAddLongs();
+        testRorOrLongEors();
+        testRorOrLongAnds();
+        testRorOrLongOrs();
+        testRorOrLongEons();
+        testRorOrLongBics();
+        testRorOrLongOrns();
+        testRorLongApis();
+        testRolLongApis();
+        testRolrLongZeros();
+    }
+
 }

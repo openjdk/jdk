@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6175602
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6175602
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6175602
  * @run testng/othervm transform.Bug6175602
  * @summary Test compilation of MsWordXMLImport.xsl.
  */

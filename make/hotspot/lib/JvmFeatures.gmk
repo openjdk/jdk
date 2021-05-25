@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -116,23 +116,10 @@ endif
 ifneq ($(call check-jvm-feature, cds), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_CDS=0
   JVM_EXCLUDE_FILES += \
-      archiveBuilder.cpp \
-      archiveUtils.cpp \
-      classListParser.cpp \
       classLoaderDataShared.cpp \
       classLoaderExt.cpp \
-      cppVtables.cpp \
-      dumpAllocStats.cpp \
-      dynamicArchive.cpp \
-      filemap.cpp \
-      heapShared.cpp \
-      lambdaFormInvokers.cpp \
-      metaspaceShared.cpp \
-      metaspaceShared_$(HOTSPOT_TARGET_CPU).cpp \
-      metaspaceShared_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
-      sharedClassUtil.cpp \
-      sharedPathsMiscInfo.cpp \
       systemDictionaryShared.cpp
+  JVM_EXCLUDE_PATTERNS += cds/
 endif
 
 ifneq ($(call check-jvm-feature, nmt), true)
@@ -140,14 +127,6 @@ ifneq ($(call check-jvm-feature, nmt), true)
   JVM_EXCLUDE_FILES += \
       memBaseline.cpp memReporter.cpp mallocTracker.cpp virtualMemoryTracker.cpp nmtCommon.cpp \
       memTracker.cpp nmtDCmd.cpp mallocSiteTable.cpp threadStackTracker.cpp
-endif
-
-ifneq ($(call check-jvm-feature, aot), true)
-  JVM_CFLAGS_FEATURES += -DINCLUDE_AOT=0
-  JVM_EXCLUDE_FILES += \
-      compiledIC_aot_x86_64.cpp compiledIC_aot_aarch64.cpp      \
-      compilerRuntime.cpp aotCodeHeap.cpp aotCompiledMethod.cpp \
-      aotLoader.cpp compiledIC_aot.cpp
 endif
 
 ifneq ($(call check-jvm-feature, g1gc), true)

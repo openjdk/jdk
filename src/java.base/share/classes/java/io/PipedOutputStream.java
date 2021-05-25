@@ -49,7 +49,7 @@ public class PipedOutputStream extends OutputStream {
            more sophisticated.  Either using thread groups (but what about
            pipes within a thread?) or using finalization (but it may be a
            long time until the next GC). */
-    private PipedInputStream sink;
+    private volatile PipedInputStream sink;
 
     /**
      * Creates a piped output stream connected to the specified piped
@@ -115,6 +115,7 @@ public class PipedOutputStream extends OutputStream {
      *          closed, or if an I/O error occurs.
      */
     public void write(int b)  throws IOException {
+        var sink = this.sink;
         if (sink == null) {
             throw new IOException("Pipe not connected");
         }
@@ -135,6 +136,7 @@ public class PipedOutputStream extends OutputStream {
      *          closed, or if an I/O error occurs.
      */
     public void write(byte b[], int off, int len) throws IOException {
+        var sink = this.sink;
         if (sink == null) {
             throw new IOException("Pipe not connected");
         } else if (b == null) {
@@ -171,6 +173,7 @@ public class PipedOutputStream extends OutputStream {
      * @throws     IOException  if an I/O error occurs.
      */
     public void close()  throws IOException {
+        var sink = this.sink;
         if (sink != null) {
             sink.receivedLast();
         }

@@ -41,7 +41,7 @@ import org.w3c.dom.Text;
  * @test
  * @bug 6520131
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.Bug6520131
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug6520131
  * @run testng/othervm dom.Bug6520131
  * @summary Test DOMErrorHandler reports an error for invalid character.
  */

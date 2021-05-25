@@ -22,10 +22,43 @@
  */
 
 /*
- * @test
+ * @test id=with_SerialGC
+ * @requires vm.gc.Serial
  * @bug 8198540
- * @summary Test TypeConverterFactory is not leaking method handles
- * @author Attila Szegedi
+ * @summary Test TypeConverterFactory is not leaking method handles (Serial GC)
+ * @run main/othervm -XX:+UseSerialGC TypeConverterFactoryMemoryLeakTest
+ */
+
+/*
+ * @test id=with_ParallelGC
+ * @requires vm.gc.Parallel
+ * @bug 8198540
+ * @summary Test TypeConverterFactory is not leaking method handles (Parallel GC)
+ * @run main/othervm -XX:+UseParallelGC TypeConverterFactoryMemoryLeakTest
+ */
+
+/*
+ * @test id=with_G1GC
+ * @requires vm.gc.G1
+ * @bug 8198540
+ * @summary Test TypeConverterFactory is not leaking method handles (G1 GC)
+ * @run main/othervm -XX:+UseG1GC TypeConverterFactoryMemoryLeakTest
+ */
+
+/*
+ * @test id=with_ZGC
+ * @requires vm.gc.Z
+ * @bug 8198540
+ * @summary Test TypeConverterFactory is not leaking method handles (Z GC)
+ * @run main/othervm -XX:+UseZGC TypeConverterFactoryMemoryLeakTest
+ */
+
+/*
+ * @test id=with_ShenandoahGC
+ * @requires vm.gc.Shenandoah
+ * @bug 8198540
+ * @summary Test TypeConverterFactory is not leaking method handles (Shenandoah GC)
+ * @run main/othervm -XX:+UseShenandoahGC TypeConverterFactoryMemoryLeakTest
  */
 
 import java.lang.invoke.MethodHandles;
@@ -34,7 +67,6 @@ import java.lang.invoke.MethodType;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -52,8 +84,9 @@ import jdk.dynalink.linker.LinkerServices;
  * becomes unreachable.
  */
 public class TypeConverterFactoryMemoryLeakTest {
-    // Usually succeeds in less than a second, but give it time
-    private static final Duration MAX_DURATION = Duration.ofSeconds(15);
+    // With explicit GC calls succeeds in 11-12 iterations depending on GC used.
+    // 1000 should be a safe upper limit after which we can consider it failed.
+    private static final int MAX_ITERATIONS = 1000;
 
     private static final ReferenceQueue<MethodHandle> refQueue = new ReferenceQueue<>();
     private static final List<Reference<MethodHandle>> refs = new ArrayList<>();
@@ -74,11 +107,10 @@ public class TypeConverterFactoryMemoryLeakTest {
     }
 
     public static void main(String[] args) {
-        long start = System.nanoTime();
-        long deadline = start + MAX_DURATION.toNanos();
-        while (System.nanoTime() < deadline) {
+        for (int count = 0; count < MAX_ITERATIONS; count++) {
             // Just create them as fast as possible without retaining.
             makeOne();
+            System.gc();
             if (refQueue.poll() != null) {
                 // Success, a method handle became phantom reachable.
                 return;

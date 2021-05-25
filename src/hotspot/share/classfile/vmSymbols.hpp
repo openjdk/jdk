@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,6 +283,7 @@
   template(signature_name,                            "signature")                                \
   template(slot_name,                                 "slot")                                     \
   template(trusted_final_name,                        "trustedFinal")                             \
+  template(blackhole_name,                            "<blackhole>")  /*fake name*/               \
                                                                                                   \
   /* Support for annotations (JDK 1.5 and above) */                                               \
                                                                                                   \
@@ -296,10 +297,6 @@
   template(base_name,                                 "base")                                     \
   /* Type Annotations (JDK 8 and above) */                                                        \
   template(type_annotations_name,                     "typeAnnotations")                          \
-  /* used by CDS */                                                                               \
-  template(jdk_internal_misc_CDS, "jdk/internal/misc/CDS")                                        \
-  template(generateLambdaFormHolderClasses, "generateLambdaFormHolderClasses")                    \
-  template(generateLambdaFormHolderClasses_signature, "([Ljava/lang/String;)[Ljava/lang/Object;") \
                                                                                                   \
   /* Intrinsic Annotation (JDK 9 and above) */                                                    \
   template(jdk_internal_vm_annotation_DontInline_signature,  "Ljdk/internal/vm/annotation/DontInline;")  \
@@ -535,13 +532,14 @@
   template(object_object_signature,                   "(Ljava/lang/Object;)Ljava/lang/Object;")   \
   template(string_void_signature,                     "(Ljava/lang/String;)V")                    \
   template(string_int_signature,                      "(Ljava/lang/String;)I")                    \
+  template(throwable_signature,                       "Ljava/lang/Throwable;")                    \
   template(throwable_void_signature,                  "(Ljava/lang/Throwable;)V")                 \
   template(void_throwable_signature,                  "()Ljava/lang/Throwable;")                  \
-  template(throwable_throwable_signature,             "(Ljava/lang/Throwable;)Ljava/lang/Throwable;")             \
   template(class_void_signature,                      "(Ljava/lang/Class;)V")                     \
   template(class_int_signature,                       "(Ljava/lang/Class;)I")                     \
   template(class_long_signature,                      "(Ljava/lang/Class;)J")                     \
   template(class_boolean_signature,                   "(Ljava/lang/Class;)Z")                     \
+  template(throwable_throwable_signature,             "(Ljava/lang/Throwable;)Ljava/lang/Throwable;")             \
   template(throwable_string_void_signature,           "(Ljava/lang/Throwable;Ljava/lang/String;)V")               \
   template(string_array_void_signature,               "([Ljava/lang/String;)V")                                   \
   template(string_array_string_array_void_signature,  "([Ljava/lang/String;[Ljava/lang/String;)V")                \
@@ -690,13 +688,22 @@
   /* jfr signatures */                                                                                            \
   JFR_TEMPLATES(template)                                                                                         \
                                                                                                                   \
-  /* cds */                                                                                                       \
-  template(jdk_internal_loader_ClassLoaders,       "jdk/internal/loader/ClassLoaders")                            \
-  template(java_util_concurrent_ConcurrentHashMap, "java/util/concurrent/ConcurrentHashMap")                      \
-  template(java_util_ArrayList,                    "java/util/ArrayList")                                         \
-  template(toFileURL_name,                         "toFileURL")                                                   \
-  template(toFileURL_signature,                    "(Ljava/lang/String;)Ljava/net/URL;")                          \
-  template(url_void_signature,                     "(Ljava/net/URL;)V")                                           \
+  /* CDS */                                                                                                       \
+  template(dumpSharedArchive,                               "dumpSharedArchive")                                  \
+  template(dumpSharedArchive_signature,                     "(ZLjava/lang/String;)V")                             \
+  template(generateLambdaFormHolderClasses,                 "generateLambdaFormHolderClasses")                    \
+  template(generateLambdaFormHolderClasses_signature,       "([Ljava/lang/String;)[Ljava/lang/Object;")           \
+  template(java_lang_invoke_Invokers_Holder,                "java/lang/invoke/Invokers$Holder")                   \
+  template(java_lang_invoke_DirectMethodHandle_Holder,      "java/lang/invoke/DirectMethodHandle$Holder")         \
+  template(java_lang_invoke_LambdaForm_Holder,              "java/lang/invoke/LambdaForm$Holder")                 \
+  template(java_lang_invoke_DelegatingMethodHandle_Holder,  "java/lang/invoke/DelegatingMethodHandle$Holder")     \
+  template(jdk_internal_loader_ClassLoaders,                "jdk/internal/loader/ClassLoaders")                   \
+  template(jdk_internal_misc_CDS,                           "jdk/internal/misc/CDS")                              \
+  template(java_util_concurrent_ConcurrentHashMap,          "java/util/concurrent/ConcurrentHashMap")             \
+  template(java_util_ArrayList,                             "java/util/ArrayList")                                \
+  template(toFileURL_name,                                  "toFileURL")                                          \
+  template(toFileURL_signature,                             "(Ljava/lang/String;)Ljava/net/URL;")                 \
+  template(url_void_signature,                              "(Ljava/net/URL;)V")                                  \
                                                                                                                   \
   /*end*/
 
@@ -768,7 +775,7 @@ class vmSymbols: AllStatic {
 
  public:
   // Initialization
-  static void initialize(TRAPS);
+  static void initialize();
   // Accessing
   #define VM_SYMBOL_DECLARE(name, ignore)                 \
     static Symbol* name() {                               \

@@ -55,6 +55,8 @@ void launchApp() {
 
     AppLauncher appLauncher;
     appLauncher.addJvmLibName(_T("lib/libjli.so"));
+    // add backup - older version such as JDK11 have it in jli sub-dir
+    appLauncher.addJvmLibName(_T("lib/jli/libjli.so"));
 
     if (ownerPackage.name().empty()) {
         // Launcher should be in "bin" subdirectory of app image.

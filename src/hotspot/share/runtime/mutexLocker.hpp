@@ -34,7 +34,6 @@
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method and OSR queues
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
-extern Mutex*   ProtectionDomainSet_lock;        // a lock on the pd_set list in the system dictionary
 extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
@@ -52,8 +51,8 @@ extern Mutex*   AdapterHandlerLibrary_lock;      // a lock on the AdapterHandler
 extern Mutex*   SignatureHandlerLibrary_lock;    // a lock on the SignatureHandlerLibrary
 extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
 extern Mutex*   SymbolArena_lock;                // a lock on the symbol table arena
-extern Monitor* StringDedupQueue_lock;           // a lock on the string deduplication queue
-extern Mutex*   StringDedupTable_lock;           // a lock on the string deduplication table
+extern Monitor* StringDedup_lock;                // a lock on the string deduplication facility
+extern Mutex*   StringDedupIntern_lock;          // a lock on StringTable notification of StringDedup
 extern Monitor* CodeCache_lock;                  // a lock on the CodeCache, rank is special
 extern Monitor* CodeSweeper_lock;                // a lock used by the sweeper only for wait notify
 extern Mutex*   MethodData_lock;                 // a lock on installation of method data
@@ -67,7 +66,6 @@ extern Mutex*   NonJavaThreadsListSync_lock;     // a lock for NonJavaThreads li
 extern Monitor* CGC_lock;                        // used for coordination between
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
-extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc
 extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
 extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card
                                                  // queue shared by
@@ -134,6 +132,7 @@ extern Mutex*   DumpTimeTable_lock;              // SystemDictionaryShared::find
 extern Mutex*   CDSLambda_lock;                  // SystemDictionaryShared::get_shared_lambda_proxy_class
 extern Mutex*   DumpRegion_lock;                 // Symbol::operator new(size_t sz, int len)
 extern Mutex*   ClassListFile_lock;              // ClassListWriter()
+extern Mutex*   LambdaFormInvokers_lock;         // Protecting LambdaFormInvokers::_lambdaform_lines
 #endif // INCLUDE_CDS
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
@@ -198,7 +197,6 @@ void assert_locked_or_safepoint_or_handshake(const Mutex* lock, const JavaThread
 class MutexLocker: public StackObj {
  protected:
   Mutex* _mutex;
- private:
  public:
   MutexLocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex) {
@@ -242,36 +240,40 @@ class MutexLocker: public StackObj {
 
 class MonitorLocker: public MutexLocker {
   Mutex::SafepointCheckFlag _flag;
-  Monitor* _monitor;
+
+ protected:
+  Monitor* as_monitor() const {
+    return static_cast<Monitor*>(_mutex);
+  }
+
  public:
   MonitorLocker(Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-    MutexLocker(monitor, flag), _flag(flag), _monitor(monitor) {
+    MutexLocker(monitor, flag), _flag(flag) {
     // Superclass constructor did locking
-    assert(_monitor != NULL, "NULL monitor not allowed");
+    assert(monitor != NULL, "NULL monitor not allowed");
   }
 
   MonitorLocker(Thread* thread, Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-    MutexLocker(thread, monitor, flag), _flag(flag), _monitor(monitor)  {
+    MutexLocker(thread, monitor, flag), _flag(flag) {
     // Superclass constructor did locking
-    assert(_monitor != NULL, "NULL monitor not allowed");
+    assert(monitor != NULL, "NULL monitor not allowed");
   }
 
-  bool wait(int64_t timeout = 0,
-            bool as_suspend_equivalent = !Mutex::_as_suspend_equivalent_flag) {
+  bool wait(int64_t timeout = 0) {
     if (_flag == Mutex::_safepoint_check_flag) {
-      return _monitor->wait(timeout, as_suspend_equivalent);
+      return as_monitor()->wait(timeout);
     } else {
-      return _monitor->wait_without_safepoint_check(timeout);
+      return as_monitor()->wait_without_safepoint_check(timeout);
     }
     return false;
   }
 
   void notify_all() {
-    _monitor->notify_all();
+    as_monitor()->notify_all();
   }
 
   void notify() {
-    _monitor->notify();
+    as_monitor()->notify();
   }
 };
 

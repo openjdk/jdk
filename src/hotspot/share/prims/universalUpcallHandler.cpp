@@ -35,7 +35,7 @@
 extern struct JavaVM_ main_vm;
 
 void ProgrammableUpcallHandler::upcall_helper(JavaThread* thread, jobject rec, address buff) {
-  JavaThread* THREAD = thread;
+  JavaThread* THREAD = thread; // For exception macros.
   ThreadInVMfromNative tiv(THREAD);
   const UpcallMethod& upcall_method = instance().upcall_method;
 
@@ -61,7 +61,10 @@ void ProgrammableUpcallHandler::attach_thread_and_do_upcall(jobject rec, address
     thread = Thread::current();
   }
 
-  upcall_helper(thread->as_Java_thread(), rec, buff);
+  {
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+    upcall_helper(thread->as_Java_thread(), rec, buff);
+  }
 
   if (should_detach) {
     JavaVM_ *vm = (JavaVM *)(&main_vm);
@@ -75,7 +78,7 @@ const ProgrammableUpcallHandler& ProgrammableUpcallHandler::instance() {
 }
 
 ProgrammableUpcallHandler::ProgrammableUpcallHandler() {
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   ResourceMark rm(THREAD);
   Symbol* sym = SymbolTable::new_symbol(FOREIGN_ABI "ProgrammableUpcallHandler");
   Klass* k = SystemDictionary::resolve_or_null(sym, Handle(), Handle(), CATCH);

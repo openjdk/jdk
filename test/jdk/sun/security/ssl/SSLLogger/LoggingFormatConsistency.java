@@ -38,18 +38,7 @@
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.security.SecurityUtils;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
-import java.net.URL;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class LoggingFormatConsistency extends SSLSocketTemplate {
 
@@ -89,63 +78,19 @@ public class LoggingFormatConsistency extends SSLSocketTemplate {
                         "LoggingFormatConsistency",
                         "runTest"); // Ensuring args.length is greater than 0 when test JVM starts
 
+                output.asLines()
+                        .stream()
+                        .filter(line -> line.startsWith("Connecting to"))
+                        .forEach(System.out::println); // prints connection info from test jvm output
+
                 if (output.getExitValue() != 0) {
-                    throw new RuntimeException("Test JVM process failed. JVM stderr= " + output.getStderr());
+                    output.asLines().forEach(System.out::println);
+                    throw new RuntimeException("Test JVM process failed");
                 }
 
                 output.shouldContain(expectedTLSVersion);
                 output.shouldNotContain(incorrectTLSVersion);
             }
-        }
-    }
-
-    @Override
-    protected boolean isCustomizedClientConnection() { return true; }
-
-    @Override
-    protected void runServerApplication(SSLSocket socket) throws Exception {
-        var response = "Hello World!";
-        var out = new DataOutputStream(socket.getOutputStream());
-        try {
-            // We don't need to process the data from the socket
-            // Simply sending a response right away is sufficient
-            // to generate the desired debug output
-            var responseBytes = response.getBytes(UTF_8);
-
-            out.writeBytes("HTTP/1.0 200 OK\r\n");
-            out.writeBytes("Content-Length: " + responseBytes.length + "\r\n");
-            out.writeBytes("Content-Type: text/html\r\n\r\n");
-            out.write(responseBytes);
-            out.flush();
-        } catch (IOException e) {
-            out.writeBytes("HTTP/1.0 400 " + e.getMessage() + "\r\n");
-            out.writeBytes("Content-Type: text/html\r\n\r\n");
-            out.flush();
-        }
-    }
-
-    @Override
-    protected void runClientApplication(int serverPort) throws Exception {
-        var context = createClientSSLContext();
-        HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
-        HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
-
-        var host = serverAddress == null ? "localhost" : serverAddress.getHostAddress();
-        var url = new URL("https://" + host + ":" + serverPort + "/");
-        var httpsConnection = (HttpsURLConnection) url.openConnection();
-        httpsConnection.disconnect();
-        try (var in = new BufferedReader(new InputStreamReader(httpsConnection.getInputStream()))) {
-            // Getting the input stream from the BufferedReader is sufficient to generate the desired debug output
-            // We don't need to process the data
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static class NameVerifier implements HostnameVerifier {
-        @Override
-        public boolean verify(String s, SSLSession sslSession) {
-            return true;
         }
     }
 }

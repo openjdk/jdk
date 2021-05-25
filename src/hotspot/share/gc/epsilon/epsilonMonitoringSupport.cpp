@@ -111,7 +111,6 @@ void EpsilonMonitoringSupport::update_counters() {
     _heap_counters->update_all();
     _space_counters->update_all(capacity, used);
     MetaspaceCounters::update_performance_counters();
-    CompressedClassSpaceCounters::update_performance_counters();
   }
 }
 

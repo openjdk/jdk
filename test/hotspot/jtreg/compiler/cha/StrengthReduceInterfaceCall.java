@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
 
 /*
  * @test
- * @requires !vm.graal.enabled
+ * @requires !vm.graal.enabled & vm.opt.final.UseVtableBasedCHA == true
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+PrintCompilation -XX:+PrintInlining -XX:+TraceDependencies -verbose:class -XX:CompileCommand=quiet
@@ -263,7 +263,8 @@ public class StrengthReduceInterfaceCall {
 
         interface K1 extends I {}
         interface K2 extends I { Object m(); }
-        interface K3 extends I { default Object m() { return WRONG; }}
+        interface K3 extends I { default Object m() { return WRONG;   }}
+        interface K4 extends I { default Object m() { return CORRECT; }}
 
         static class D implements I { public Object m() { return WRONG;   }}
 
@@ -318,19 +319,43 @@ public class StrengthReduceInterfaceCall {
 
             checkInvalidReceiver(); // ensure proper type check on receiver is preserved
 
-            // 1. Dependency invalidation
+            // 1. No invalidation: interfaces don't participate in CHA.
             initialize(K3.class); // intf K3.m DEFAULT <: intf I.m ABSTRACT <: intf J.m DEFAULT
-            assertNotCompiled();
+            assertCompiled();
 
-            // 2. Recompilation: still inlines
-            // FIXME: no default method support in CHA yet
-            compile(megamorphic());
+            // 2. Dependency invalidation on K3n <: I with concrete method.
             call(new K3() { public Object m() { return CORRECT; }}); // K3n.m <: intf K3.m DEFAULT <: intf I.m ABSTRACT <: intf J.m ABSTRACT
             assertNotCompiled();
 
             // 3. Recompilation: no inlining, no dependencies
             compile(megamorphic());
-            call(new K3() { public Object m() { return CORRECT; }}); // Kn.m <: intf K3.m DEFAULT  <: intf I.m ABSTRACT <: intf J.m DEFAULT
+            call(new K3() { public Object m() { return CORRECT; }}); // K3n.m <: intf K3.m DEFAULT  <: intf I.m ABSTRACT <: intf J.m DEFAULT
+            assertCompiled();
+
+            checkInvalidReceiver(); // ensure proper type check on receiver is preserved
+        }
+
+        @TestCase
+        public void testMega3() {
+            // 0. Trigger compilation of a megamorphic call site
+            compile(megamorphic()); // C1,C2,C3 <: C.m <: intf I.m ABSTRACT <: intf J.m DEFAULT
+            assertCompiled();
+
+            // Dependency: type = unique_concrete_method, context = I, method = C.m
+
+            checkInvalidReceiver(); // ensure proper type check on receiver is preserved
+
+            // 1. No invalidation: interfaces don't participate in CHA.
+            initialize(K4.class); // intf K4.m DEFAULT <: intf I.m ABSTRACT <: intf J.m DEFAULT
+            assertCompiled();
+
+            // 2. Dependency invalidation on K4n <: I with default method.
+            call(new K4() { /* default method K4.m */ }); // K4n <: intf K4.m DEFAULT <: intf I.m ABSTRACT <: intf J.m ABSTRACT
+            assertNotCompiled();
+
+            // 3. Recompilation: no inlining, no dependencies
+            compile(megamorphic());
+            call(new K4() { /* default method K4.m */  }); // K4n <: intf K3.m DEFAULT  <: intf I.m ABSTRACT <: intf J.m DEFAULT
             assertCompiled();
 
             checkInvalidReceiver(); // ensure proper type check on receiver is preserved
@@ -360,7 +385,8 @@ public class StrengthReduceInterfaceCall {
 
         interface K1 extends I {}
         interface K2 extends I { Object m(); }
-        interface K3 extends I { default Object m() { return WRONG; }}
+        interface K3 extends I { default Object m() { return WRONG;   }}
+        interface K4 extends I { default Object m() { return CORRECT; }}
 
         static class C  implements I { public Object m() { return CORRECT; }}
 
@@ -413,12 +439,8 @@ public class StrengthReduceInterfaceCall {
 
             checkInvalidReceiver(); // ensure proper type check on receiver is preserved
 
-            // Dependency invalidation
+            // No invalidation: interfaces don't participate in CHA.
             initialize(K3.class); // intf K3.m DEFAULT <: intf I;
-            assertNotCompiled(); // FIXME: default methods in sub-interfaces shouldn't be taken into account by CHA
-
-            // Recompilation with a dependency
-            compile(megamorphic());
             assertCompiled();
 
             // Dependency: type = unique_concrete_method, context = I, method = C.m
@@ -426,6 +448,34 @@ public class StrengthReduceInterfaceCall {
             checkInvalidReceiver(); // ensure proper type check on receiver is preserved
 
             call(new K3() { public Object m() { return CORRECT; }}); // Kn.m <: K3.m DEFAULT <: intf I <: intf J.m ABSTRACT
+            assertNotCompiled();
+
+            // Recompilation w/o a dependency
+            compile(megamorphic());
+            // Dependency: none
+            checkInvalidReceiver(); // ensure proper type check on receiver is preserved
+            call(new C() { public Object m() { return CORRECT; }}); // Cn.m <: C.m <: intf I <: intf J.m ABSTRACT
+            assertCompiled();
+        }
+
+        @TestCase
+        public void testMega3() {
+            compile(megamorphic()); // C1,C2,C3 <: C.m <: intf I <: intf J.m ABSTRACT
+            assertCompiled();
+
+            // Dependency: type = unique_concrete_method, context = I, method = C.m
+
+            checkInvalidReceiver(); // ensure proper type check on receiver is preserved
+
+            // No invalidation: interfaces don't participate in CHA.
+            initialize(K4.class); // intf K3.m DEFAULT <: intf I;
+            assertCompiled();
+
+            // Dependency: type = unique_concrete_method, context = I, method = C.m
+
+            checkInvalidReceiver(); // ensure proper type check on receiver is preserved
+
+            call(new K4() { /* default method K4.m */ }); // K4n <: K4.m DEFAULT <: intf I <: intf J.m ABSTRACT
             assertNotCompiled();
 
             // Recompilation w/o a dependency

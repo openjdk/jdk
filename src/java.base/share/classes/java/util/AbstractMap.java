@@ -476,9 +476,8 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
         if (o == this)
             return true;
 
-        if (!(o instanceof Map))
+        if (!(o instanceof Map<?, ?> m))
             return false;
-        Map<?,?> m = (Map<?,?>) o;
         if (m.size() != size())
             return false;
 
@@ -688,10 +687,9 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
          * @see    #hashCode
          */
         public boolean equals(Object o) {
-            if (!(o instanceof Map.Entry))
-                return false;
-            Map.Entry<?,?> e = (Map.Entry<?,?>)o;
-            return eq(key, e.getKey()) && eq(value, e.getValue());
+            return o instanceof Map.Entry<?, ?> e
+                    && eq(key, e.getKey())
+                    && eq(value, e.getValue());
         }
 
         /**
@@ -822,10 +820,9 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
          * @see    #hashCode
          */
         public boolean equals(Object o) {
-            if (!(o instanceof Map.Entry))
-                return false;
-            Map.Entry<?,?> e = (Map.Entry<?,?>)o;
-            return eq(key, e.getKey()) && eq(value, e.getValue());
+            return o instanceof Map.Entry<?, ?> e
+                    && eq(key, e.getKey())
+                    && eq(value, e.getValue());
         }
 
         /**

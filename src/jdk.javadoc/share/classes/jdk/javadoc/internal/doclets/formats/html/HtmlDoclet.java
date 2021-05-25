@@ -127,6 +127,7 @@ public class HtmlDoclet extends AbstractDoclet {
                 // in standard.properties
                 { "doclet.Enum_Hierarchy", "doclet.Enum_Class_Hierarchy" },
                 { "doclet.Annotation_Type_Hierarchy", "doclet.Annotation_Interface_Hierarchy" },
+                { "doclet.Href_Annotation_Title", "doclet.Href_Annotation_Interface_Title" },
                 { "doclet.Href_Enum_Title", "doclet.Href_Enum_Class_Title" },
                 { "doclet.Annotation_Types", "doclet.Annotation_Interfaces" },
                 { "doclet.Annotation_Type_Members", "doclet.Annotation_Interface_Members" },
@@ -138,8 +139,6 @@ public class HtmlDoclet extends AbstractDoclet {
                 { "doclet.help.annotation_type.description", "doclet.help.annotation_interface.description" },
 
                 // in doclets.properties
-                { "doclet.Annotation_Types_Summary", "doclet.Annotation_Interfaces_Summary" },
-                { "doclet.Enum_Summary", "doclet.Enum_Class_Summary" },
                 { "doclet.Enums", "doclet.EnumClasses" },
                 { "doclet.AnnotationType", "doclet.AnnotationInterface" },
                 { "doclet.AnnotationTypes", "doclet.AnnotationInterfaces" },

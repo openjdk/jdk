@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,13 @@ void OptoReg::dump(int r, outputStream *st) {
 //=============================================================================
 const RegMask RegMask::Empty;
 
+const RegMask RegMask::All(
+# define BODY(I) -1,
+  FORALL_BODY
+# undef BODY
+  0
+);
+
 //=============================================================================
 bool RegMask::is_vector(uint ireg) {
   return (ireg == Op_VecA || ireg == Op_VecS || ireg == Op_VecD ||
@@ -67,6 +74,8 @@ int RegMask::num_registers(uint ireg) {
       return SlotsPerVecX;
     case Op_VecD:
       return SlotsPerVecD;
+    case Op_RegVectMask:
+      return SlotsPerRegVectMask;
     case Op_RegD:
     case Op_RegL:
 #ifdef _LP64

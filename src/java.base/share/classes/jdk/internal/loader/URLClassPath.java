@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -599,7 +599,7 @@ public class URLClassPath {
             try {
                 url = new URL(base, ParseUtil.encodePath(name, false));
             } catch (MalformedURLException e) {
-                throw new IllegalArgumentException("name");
+                return null;
             }
 
             try {
@@ -635,7 +635,7 @@ public class URLClassPath {
             try {
                 url = new URL(base, ParseUtil.encodePath(name, false));
             } catch (MalformedURLException e) {
-                throw new IllegalArgumentException("name");
+                return null;
             }
             final URLConnection uc;
             try {
@@ -643,7 +643,7 @@ public class URLClassPath {
                     URLClassPath.check(url);
                 }
                 uc = url.openConnection();
-                InputStream in = uc.getInputStream();
+
                 if (uc instanceof JarURLConnection) {
                     /* Need to remember the jar file so it can be closed
                      * in a hurry.
@@ -651,6 +651,8 @@ public class URLClassPath {
                     JarURLConnection juc = (JarURLConnection)uc;
                     jarfile = JarLoader.checkJar(juc.getJarFile());
                 }
+
+                InputStream in = uc.getInputStream();
             } catch (Exception e) {
                 return null;
             }

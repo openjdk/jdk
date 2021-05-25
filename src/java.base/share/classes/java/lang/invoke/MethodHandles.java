@@ -59,7 +59,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
@@ -1681,7 +1680,7 @@ public class MethodHandles {
          * (used during {@link #findClass} invocations)
          * are determined by the lookup class' loader,
          * which may change due to this operation.
-         * <p>
+         *
          * @param requestedLookupClass the desired lookup class for the new lookup object
          * @return a lookup object which reports the desired lookup class, or the same object
          * if there is no change
@@ -1891,7 +1890,7 @@ public class MethodHandles {
              *
              * <p> By default, a hidden class or interface may be unloaded
              * even if the class loader that is marked as its defining loader is
-             * <a href="../ref/package.html#reachability">reachable</a>.
+             * <a href="../ref/package-summary.html#reachability">reachable</a>.
 
              *
              * @jls 12.7 Unloading of Classes and Interfaces
@@ -2031,7 +2030,7 @@ public class MethodHandles {
          *
          * By default, however, a hidden class or interface may be unloaded even if
          * the class loader that is marked as its defining loader is
-         * <a href="../ref/package.html#reachability">reachable</a>.
+         * <a href="../ref/package-summary.html#reachability">reachable</a>.
          * This behavior is useful when a hidden class or interface serves multiple
          * classes defined by arbitrary class loaders.  In other cases, a hidden
          * class or interface may be linked to a single class (or a small number of classes)
@@ -2262,10 +2261,9 @@ public class MethodHandles {
                     // workaround to read `this_class` using readConst and validate the value
                     int thisClass = reader.readUnsignedShort(reader.header + 2);
                     Object constant = reader.readConst(thisClass, new char[reader.getMaxStringLength()]);
-                    if (!(constant instanceof Type)) {
+                    if (!(constant instanceof Type type)) {
                         throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
                     }
-                    Type type = ((Type) constant);
                     if (!type.getDescriptor().startsWith("L")) {
                         throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
                     }
@@ -3645,9 +3643,8 @@ return mh1;
 
         MemberName resolveOrFail(byte refKind, Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
-            Objects.requireNonNull(name);
             Objects.requireNonNull(type);
-            checkMethodName(refKind, name);  // NPE check on name
+            checkMethodName(refKind, name);  // implicit null-check of name
             return IMPL_NAMES.resolveOrFail(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(), allowedModes,
                                             NoSuchMethodException.class);
         }
@@ -3670,6 +3667,19 @@ return mh1;
             return IMPL_NAMES.resolveOrNull(refKind, member, lookupClassOrNull(), allowedModes);
         }
 
+        MemberName resolveOrNull(byte refKind, Class<?> refc, String name, MethodType type) {
+            // do this before attempting to resolve
+            if (!isClassAccessible(refc)) {
+                return null;
+            }
+            Objects.requireNonNull(type);
+            // implicit null-check of name
+            if (name.startsWith("<") && refKind != REF_newInvokeSpecial) {
+                return null;
+            }
+            return IMPL_NAMES.resolveOrNull(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(), allowedModes);
+        }
+
         void checkSymbolicClass(Class<?> refc) throws IllegalAccessException {
             if (!isClassAccessible(refc)) {
                 throw new MemberName(refc).makeAccessException("symbolic reference class is not accessible", this);
@@ -3687,7 +3697,6 @@ return mh1;
             if (name.startsWith("<") && refKind != REF_newInvokeSpecial)
                 throw new NoSuchMethodException("illegal method name: "+name);
         }
-
 
         /**
          * Find my trustable caller class if m is a caller sensitive method.
@@ -5732,14 +5741,7 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
         MethodType newType = collectArgumentsChecks(target, pos, filter);
         MethodType collectorType = filter.type();
         BoundMethodHandle result = target.rebind();
-        LambdaForm lform;
-        if (collectorType.returnType().isArray() && filter.intrinsicName() == Intrinsic.NEW_ARRAY) {
-            lform = result.editor().collectArgumentArrayForm(1 + pos, filter);
-            if (lform != null) {
-                return result.copyWith(newType, lform);
-            }
-        }
-        lform = result.editor().collectArgumentsForm(1 + pos, collectorType.basicType());
+        LambdaForm lform = result.editor().collectArgumentsForm(1 + pos, collectorType.basicType());
         return result.copyWithExtendL(newType, lform, filter);
     }
 
@@ -6646,8 +6648,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                 iterationVariableTypes.add(in == null ? st.type().returnType() : in.type().returnType());
             }
         }
-        final List<Class<?>> commonPrefix = iterationVariableTypes.stream().filter(t -> t != void.class).
-                collect(Collectors.toList());
+        final List<Class<?>> commonPrefix = iterationVariableTypes.stream().filter(t -> t != void.class).toList();
 
         // Step 1B: determine loop parameters (A...).
         final List<Class<?>> commonSuffix = buildCommonSuffix(init, step, pred, fini, commonPrefix.size());
@@ -6776,11 +6777,11 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             int pc = h.type().parameterCount();
             int tpsize = targetParams.size();
             return pc < tpsize ? dropArguments0(h, pc, targetParams.subList(pc, tpsize)) : h;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     private static List<MethodHandle> fixArities(List<MethodHandle> hs) {
-        return hs.stream().map(MethodHandle::asFixedArity).collect(Collectors.toList());
+        return hs.stream().map(MethodHandle::asFixedArity).toList();
     }
 
     /**

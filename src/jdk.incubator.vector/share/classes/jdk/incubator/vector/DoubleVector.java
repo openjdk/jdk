@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1894,14 +1894,11 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     DoubleVector sliceTemplate(int origin, Vector<Double> v1) {
         DoubleVector that = (DoubleVector) v1;
         that.check(this);
-        double[] a0 = this.vec();
-        double[] a1 = that.vec();
-        double[] res = new double[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Double> iota = iotaShuffle();
+        VectorMask<Double> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((double)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -1923,6 +1920,17 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     public abstract
     DoubleVector slice(int origin);
 
+    /*package-private*/
+    final
+    @ForceInline
+    DoubleVector sliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Double> iota = iotaShuffle();
+        VectorMask<Double> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((double)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -1937,21 +1945,12 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     unsliceTemplate(int origin, Vector<Double> w, int part) {
         DoubleVector that = (DoubleVector) w;
         that.check(this);
-        double[] slice = this.vec();
-        double[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Double> iota = iotaShuffle();
+        VectorMask<Double> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+                                                                  (broadcast((double)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return that.blend(this.rearrange(iota), blendMask);
     }
 
     /*package-private*/
@@ -1980,6 +1979,19 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     @Override
     public abstract
     DoubleVector unslice(int origin);
+
+    /*package-private*/
+    final
+    @ForceInline
+    DoubleVector
+    unsliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Double> iota = iotaShuffle();
+        VectorMask<Double> blendMask = iota.toVector().compare(VectorOperators.GE,
+                                                                  (broadcast((double)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
 
     private ArrayIndexOutOfBoundsException
     wrongPartForSlice(int part) {
@@ -2057,7 +2069,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                                            S shuffle,
                                            DoubleVector v) {
         VectorMask<Double> valid = shuffle.laneIsValid();
-        S ws = shuffletype.cast(shuffle.wrapIndexes());
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         DoubleVector r0 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, double.class, length(),

@@ -47,7 +47,7 @@ inline oop CompressedOops::decode_raw_not_null(narrowOop v) {
 }
 
 inline oop CompressedOops::decode_raw(narrowOop v) {
-  return (oop)(void*)((uintptr_t)base() + ((uintptr_t)v << shift()));
+  return cast_to_oop((uintptr_t)base() + ((uintptr_t)v << shift()));
 }
 
 inline oop CompressedOops::decode_not_null(narrowOop v) {

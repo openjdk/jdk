@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2000,9 +2000,9 @@ void GraphKit::increment_counter(address counter_addr) {
 void GraphKit::increment_counter(Node* counter_addr) {
   int adr_type = Compile::AliasIdxRaw;
   Node* ctrl = control();
-  Node* cnt  = make_load(ctrl, counter_addr, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-  Node* incr = _gvn.transform(new AddINode(cnt, _gvn.intcon(1)));
-  store_to_memory(ctrl, counter_addr, incr, T_INT, adr_type, MemNode::unordered);
+  Node* cnt  = make_load(ctrl, counter_addr, TypeLong::LONG, T_LONG, adr_type, MemNode::unordered);
+  Node* incr = _gvn.transform(new AddLNode(cnt, _gvn.longcon(1)));
+  store_to_memory(ctrl, counter_addr, incr, T_LONG, adr_type, MemNode::unordered);
 }
 
 
@@ -2632,9 +2632,9 @@ Node* GraphKit::make_native_call(const TypeFunc* call_type, uint nargs, ciNative
 
   address call_addr = nep->entry_point();
   if (nep->need_transition()) {
-    BufferBlob* invoker = SharedRuntime::make_native_invoker(call_addr,
-                                                             nep->shadow_space(),
-                                                             arg_regs, ret_regs);
+    RuntimeStub* invoker = SharedRuntime::make_native_invoker(call_addr,
+                                                              nep->shadow_space(),
+                                                              arg_regs, ret_regs);
     if (invoker == NULL) {
       C->record_failure("native invoker not implemented on this platform");
       return NULL;
@@ -4206,7 +4206,7 @@ Node* GraphKit::compress_string(Node* src, const TypeAryPtr* src_type, Node* dst
   //  LoadB -> compress_string -> MergeMem(CharMem, StoreB(ByteMem))
   Node* mem = capture_memory(src_type, TypeAryPtr::BYTES);
   StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), mem, src, dst, count);
-  Node* res_mem = _gvn.transform(new SCMemProjNode(str));
+  Node* res_mem = _gvn.transform(new SCMemProjNode(_gvn.transform(str)));
   set_memory(res_mem, TypeAryPtr::BYTES);
   return str;
 }
@@ -4228,6 +4228,8 @@ void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* coun
    * }
    */
   add_empty_predicates();
+  C->set_has_loops(true);
+
   RegionNode* head = new RegionNode(3);
   head->init_req(1, control());
   gvn().set_type(head, Type::CONTROL);

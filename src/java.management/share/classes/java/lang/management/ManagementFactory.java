@@ -254,42 +254,42 @@ public class ManagementFactory {
      * String representation of the
      * {@code ObjectName} for the {@link ClassLoadingMXBean}.
      */
-    public final static String CLASS_LOADING_MXBEAN_NAME =
+    public static final String CLASS_LOADING_MXBEAN_NAME =
         "java.lang:type=ClassLoading";
 
     /**
      * String representation of the
      * {@code ObjectName} for the {@link CompilationMXBean}.
      */
-    public final static String COMPILATION_MXBEAN_NAME =
+    public static final String COMPILATION_MXBEAN_NAME =
         "java.lang:type=Compilation";
 
     /**
      * String representation of the
      * {@code ObjectName} for the {@link MemoryMXBean}.
      */
-    public final static String MEMORY_MXBEAN_NAME =
+    public static final String MEMORY_MXBEAN_NAME =
         "java.lang:type=Memory";
 
     /**
      * String representation of the
      * {@code ObjectName} for the {@link OperatingSystemMXBean}.
      */
-    public final static String OPERATING_SYSTEM_MXBEAN_NAME =
+    public static final String OPERATING_SYSTEM_MXBEAN_NAME =
         "java.lang:type=OperatingSystem";
 
     /**
      * String representation of the
      * {@code ObjectName} for the {@link RuntimeMXBean}.
      */
-    public final static String RUNTIME_MXBEAN_NAME =
+    public static final String RUNTIME_MXBEAN_NAME =
         "java.lang:type=Runtime";
 
     /**
      * String representation of the
      * {@code ObjectName} for the {@link ThreadMXBean}.
      */
-    public final static String THREAD_MXBEAN_NAME =
+    public static final String THREAD_MXBEAN_NAME =
         "java.lang:type=Threading";
 
     /**
@@ -299,7 +299,7 @@ public class ManagementFactory {
      * can be formed by appending this string with
      * "{@code ,name=}<i>collector's name</i>".
      */
-    public final static String GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE =
+    public static final String GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE =
         "java.lang:type=GarbageCollector";
 
     /**
@@ -309,7 +309,7 @@ public class ManagementFactory {
      * can be formed by appending this string with
      * "{@code ,name=}<i>manager's name</i>".
      */
-    public final static String MEMORY_MANAGER_MXBEAN_DOMAIN_TYPE=
+    public static final String MEMORY_MANAGER_MXBEAN_DOMAIN_TYPE=
         "java.lang:type=MemoryManager";
 
     /**
@@ -319,7 +319,7 @@ public class ManagementFactory {
      * can be formed by appending this string with
      * {@code ,name=}<i>pool's name</i>.
      */
-    public final static String MEMORY_POOL_MXBEAN_DOMAIN_TYPE=
+    public static final String MEMORY_POOL_MXBEAN_DOMAIN_TYPE=
         "java.lang:type=MemoryPool";
 
     /**

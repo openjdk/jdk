@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,29 @@
 #define __ ce->masm()->
 
 void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
-  ShouldNotReachHere();
+  if (UseSIGTRAP) {
+    DEBUG_ONLY( __ should_not_reach_here("C1SafepointPollStub::emit_code"); )
+  } else {
+    assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
+           "polling page return stub not created yet");
+    address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+
+    __ bind(_entry);
+    // Using pc relative address computation.
+    {
+      Label next_pc;
+      __ bl(next_pc);
+      __ bind(next_pc);
+    }
+    int current_offset = __ offset();
+    __ mflr(R12);
+    __ add_const_optimized(R12, R12, safepoint_offset() - current_offset);
+    __ std(R12, in_bytes(JavaThread::saved_exception_pc_offset()), R16_thread);
+
+    __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
+    __ mtctr(R0);
+    __ bctr();
+  }
 }
 
 RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)

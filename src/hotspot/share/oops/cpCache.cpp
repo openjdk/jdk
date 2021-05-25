@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -33,7 +34,6 @@
 #include "interpreter/rewriter.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
@@ -135,8 +135,7 @@ void ConstantPoolCacheEntry::set_field(Bytecodes::Code get_code,
                                        int field_offset,
                                        TosState field_type,
                                        bool is_final,
-                                       bool is_volatile,
-                                       Klass* root_klass) {
+                                       bool is_volatile) {
   set_f1(field_holder);
   set_f2(field_offset);
   assert((field_index & field_index_mask) == field_index,
@@ -374,13 +373,14 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
 
-  objArrayHandle resolved_references(Thread::current(), cpool->resolved_references());
+  JavaThread* current = JavaThread::current();
+  objArrayHandle resolved_references(current, cpool->resolved_references());
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.
   assert(resolved_references() != NULL,
          "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, Thread::current());
+  ObjectLocker ol(resolved_references, current);
   if (!is_f1_null()) {
     return;
   }
@@ -399,7 +399,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
     guarantee(index >= 0, "Didn't find cpCache entry!");
     int encoded_index = ResolutionErrorTable::encode_cpcache_index(
                           ConstantPool::encode_invokedynamic_index(index));
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     ConstantPool::throw_resolution_error(cpool, encoded_index, THREAD);
     return;
   }
@@ -482,10 +482,11 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.
-  objArrayHandle resolved_references(Thread::current(), cpool->resolved_references());
+  JavaThread* current = THREAD;
+  objArrayHandle resolved_references(current, cpool->resolved_references());
   assert(resolved_references() != NULL,
          "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, THREAD);
+  ObjectLocker ol(resolved_references, current);
 
   // if f1 is not null or the indy_resolution_failed flag is set then another
   // thread either succeeded in resolving the method or got a LinkageError
@@ -728,12 +729,12 @@ void ConstantPoolCache::walk_entries_for_initialization(bool check_only) {
   bool* f2_used = NEW_RESOURCE_ARRAY(bool, length());
   memset(f2_used, 0, sizeof(bool) * length());
 
-  Thread* THREAD = Thread::current();
+  Thread* current = Thread::current();
 
   // Find all the slots that we need to preserve f2
   for (int i = 0; i < ik->methods()->length(); i++) {
     Method* m = ik->methods()->at(i);
-    RawBytecodeStream bcs(methodHandle(THREAD, m));
+    RawBytecodeStream bcs(methodHandle(current, m));
     while (!bcs.is_last_bytecode()) {
       Bytecodes::Code opcode = bcs.raw_next();
       switch (opcode) {

@@ -22,10 +22,43 @@
  */
 
 /*
- * @test
+ * @test id=with_SerialGC
+ * @requires vm.gc.Serial
  * @bug 8198540
- * @summary Test TypeConverterFactory is not leaking class loaders
- * @author Attila Szegedi
+ * @summary Test TypeConverterFactory is not leaking class loaders (Serial GC)
+ * @run main/othervm -XX:+UseSerialGC TypeConverterFactoryRetentionTests
+ */
+
+/*
+ * @test id=with_ParallelGC
+ * @requires vm.gc.Parallel
+ * @bug 8198540
+ * @summary Test TypeConverterFactory is not leaking class loaders (Parallel GC)
+ * @run main/othervm -XX:+UseParallelGC TypeConverterFactoryRetentionTests
+ */
+
+/*
+ * @test id=with_G1GC
+ * @requires vm.gc.G1
+ * @bug 8198540
+ * @summary Test TypeConverterFactory is not leaking class loaders (G1 GC)
+ * @run main/othervm -XX:+UseG1GC TypeConverterFactoryRetentionTests
+ */
+
+/*
+ * @test id=with_ZGC
+ * @requires vm.gc.Z
+ * @bug 8198540
+ * @summary Test TypeConverterFactory is not leaking class loaders (Z GC)
+ * @run main/othervm -XX:+UseZGC TypeConverterFactoryRetentionTests
+ */
+
+/*
+ * @test id=with_ShenandoahGC
+ * @requires vm.gc.Shenandoah
+ * @bug 8198540
+ * @summary Test TypeConverterFactory is not leaking class loaders (Shenandoah GC)
+ * @run main/othervm -XX:+UseShenandoahGC TypeConverterFactoryRetentionTests
  */
 
 import java.lang.invoke.MethodHandle;
@@ -33,7 +66,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -50,8 +82,9 @@ import jdk.dynalink.linker.LinkerServices;
  * from getting garbage collected.
  */
 public class TypeConverterFactoryRetentionTests {
-    // Usually succeeds in less than a second, but give it time
-    private static final Duration MAX_DURATION = Duration.ofSeconds(15);
+    // With explicit GC calls succeeds in 1-2 iterations depending on GC used.
+    // 1000 should be a safe upper limit after which we can consider it failed.
+    private static final int MAX_ITERATIONS = 1000;
 
     private static class TestLinker implements GuardingDynamicLinker, GuardingTypeConverterFactory {
         public GuardedInvocation getGuardedInvocation(LinkRequest linkRequest, LinkerServices linkerServices) {
@@ -134,15 +167,14 @@ public class TypeConverterFactoryRetentionTests {
 
         LinkerServices linkerServices = createLinkerServices();
 
-        long start = System.nanoTime();
-        long deadline = start + MAX_DURATION.toNanos();
-        while (System.nanoTime() < deadline) {
+        for (int count = 0; count < MAX_ITERATIONS; count++) {
             TestClassLoader cl = new TestClassLoader(y.getClassLoader(), "X");
             Class<?> x = Class.forName("X", true, cl);
             assert x.getClassLoader() == cl;
             linkerServices.getTypeConverter(y, x);
             linkerServices.getTypeConverter(x, y);
             refs.add(new PhantomReference<>(cl, refQueue));
+            System.gc();
             if (refQueue.poll() != null) {
                 return;
             }
@@ -165,9 +197,7 @@ public class TypeConverterFactoryRetentionTests {
 
         LinkerServices linkerServices = createLinkerServices();
 
-        long start = System.nanoTime();
-        long deadline = start + MAX_DURATION.toNanos();
-        while (System.nanoTime() < deadline) {
+        for (int count = 0; count < MAX_ITERATIONS; count++) {
             TestClassLoader cl1 = new TestClassLoader(null, "X");
             Class<?> x = Class.forName("X", true, cl1);
             assert x.getClassLoader() == cl1;
@@ -178,6 +208,7 @@ public class TypeConverterFactoryRetentionTests {
             linkerServices.getTypeConverter(x, y);
             refs.add(new PhantomReference<>(cl1, refQueue1));
             refs.add(new PhantomReference<>(cl2, refQueue2));
+            System.gc();
             if (refQueue1.poll() != null) {
                 gc1 = true;
             }

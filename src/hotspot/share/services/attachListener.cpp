@@ -64,7 +64,7 @@ static InstanceKlass* load_and_initialize_klass(Symbol* sh, TRAPS) {
 }
 
 static jint get_properties(AttachOperation* op, outputStream* out, Symbol* serializePropertiesMethod) {
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   HandleMark hm(THREAD);
 
   // load VMSupport
@@ -95,7 +95,7 @@ static jint get_properties(AttachOperation* op, outputStream* out, Symbol* seria
   }
 
   // The result should be a [B
-  oop res = (oop)result.get_jobject();
+  oop res = result.get_oop();
   assert(res->is_typeArray(), "just checking");
   assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
 
@@ -116,7 +116,7 @@ static jint load_agent(AttachOperation* op, outputStream* out) {
 
   // If loading a java agent then need to ensure that the java.instrument module is loaded
   if (strcmp(agent, "instrument") == 0) {
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);
     JavaValue result(T_OBJECT);
@@ -201,7 +201,7 @@ static jint thread_dump(AttachOperation* op, outputStream* out) {
 // A jcmd attach operation request was received, which will now
 // dispatch to the diagnostic commands used for serviceability functions.
 static jint jcmd(AttachOperation* op, outputStream* out) {
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   // All the supplied jcmd arguments are stored as a single
   // string (op->arg(0)). This is parsed by the Dcmd framework.
   DCmd::parse_and_execute(DCmd_Source_AttachAPI, out, op->arg(0), ' ', THREAD);

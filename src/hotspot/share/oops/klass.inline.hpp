@@ -27,6 +27,7 @@
 
 #include "classfile/classLoaderData.inline.hpp"
 #include "oops/klass.hpp"
+#include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
 
 // This loads the klass's holder as a phantom. This is useful when a weak Klass
@@ -42,7 +43,7 @@ inline bool Klass::is_non_strong_hidden() const {
          class_loader_data()->has_class_mirror_holder();
 }
 
-// Iff the class loader (or mirror for unsafe anonymous classes) is alive the
+// Iff the class loader (or mirror for non-strong hidden classes) is alive the
 // Klass is considered alive. This is safe to call before the CLD is marked as
 // unloading, and hence during concurrent class unloading.
 inline bool Klass::is_loader_alive() const {

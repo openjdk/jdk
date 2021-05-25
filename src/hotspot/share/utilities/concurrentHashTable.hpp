@@ -63,12 +63,12 @@ class ConcurrentHashTable : public CHeapObj<F> {
     VALUE* value()                    { return &_value; }
 
     // Creates a node.
-    static Node* create_node(const VALUE& value, Node* next = NULL) {
-      return new (CONFIG::allocate_node(sizeof(Node), value)) Node(value, next);
+    static Node* create_node(void* context, const VALUE& value, Node* next = NULL) {
+      return new (CONFIG::allocate_node(context, sizeof(Node), value)) Node(value, next);
     }
     // Destroys a node.
-    static void destroy_node(Node* node) {
-      CONFIG::free_node((void*)node, node->_value);
+    static void destroy_node(void* context, Node* node) {
+      CONFIG::free_node(context, (void*)node, node->_value);
     }
 
     void print_on(outputStream* st) const {};
@@ -200,6 +200,8 @@ class ConcurrentHashTable : public CHeapObj<F> {
     const VALUE& operator()() { return _val; }
   };
 
+  void* _context;
+
   InternalTable* _table;      // Active table.
   InternalTable* _new_table;  // Table we are resizing to.
 
@@ -292,6 +294,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   void internal_shrink_epilog(Thread* thread);
   void internal_shrink_range(Thread* thread, size_t start, size_t stop);
   bool internal_shrink(Thread* thread, size_t size_limit_log2);
+  void internal_reset(size_t log2_size);
 
   // Methods for growing.
   bool unzip_bucket(Thread* thread, InternalTable* old_table,
@@ -307,10 +310,10 @@ class ConcurrentHashTable : public CHeapObj<F> {
   VALUE* internal_get(Thread* thread, LOOKUP_FUNC& lookup_f,
                       bool* grow_hint = NULL);
 
-  // Plain insert.
-  template <typename LOOKUP_FUNC>
-  bool internal_insert(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
-                       bool* grow_hint, bool* clean_hint);
+  // Insert and get current value.
+  template <typename LOOKUP_FUNC, typename FOUND_FUNC>
+  bool internal_insert_get(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
+                           FOUND_FUNC& foundf, bool* grow_hint, bool* clean_hint);
 
   // Returns true if an item matching LOOKUP_FUNC is removed.
   // Calls DELETE_FUNC before destroying the node.
@@ -371,7 +374,11 @@ class ConcurrentHashTable : public CHeapObj<F> {
  public:
   ConcurrentHashTable(size_t log2size = DEFAULT_START_SIZE_LOG2,
                       size_t log2size_limit = DEFAULT_MAX_SIZE_LOG2,
-                      size_t grow_hint = DEFAULT_GROW_HINT);
+                      size_t grow_hint = DEFAULT_GROW_HINT,
+                      void* context = NULL);
+
+  explicit ConcurrentHashTable(void* context, size_t log2size = DEFAULT_START_SIZE_LOG2) :
+    ConcurrentHashTable(log2size, DEFAULT_MAX_SIZE_LOG2, DEFAULT_GROW_HINT, context) {}
 
   ~ConcurrentHashTable();
 
@@ -388,6 +395,10 @@ class ConcurrentHashTable : public CHeapObj<F> {
   // Re-size operations.
   bool shrink(Thread* thread, size_t size_limit_log2 = 0);
   bool grow(Thread* thread, size_t size_limit_log2 = 0);
+  // Unsafe reset and resize the table. This method assumes that we
+  // want to clear and maybe resize the internal table without the
+  // overhead of clearing individual items in the table.
+  void unsafe_reset(size_t size_log2 = 0);
 
   // All callbacks for get are under critical sections. Other callbacks may be
   // under critical section or may have locked parts of table. Calling any
@@ -405,7 +416,18 @@ class ConcurrentHashTable : public CHeapObj<F> {
   template <typename LOOKUP_FUNC>
   bool insert(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
               bool* grow_hint = NULL, bool* clean_hint = NULL) {
-    return internal_insert(thread, lookup_f, value, grow_hint, clean_hint);
+    struct NOP {
+        void operator()(...) const {}
+    } nop;
+    return internal_insert_get(thread, lookup_f, value, nop, grow_hint, clean_hint);
+  }
+
+  // Returns true if the item was inserted, duplicates are found with
+  // LOOKUP_FUNC then FOUND_FUNC is called.
+  template <typename LOOKUP_FUNC, typename FOUND_FUNC>
+  bool insert_get(Thread* thread, LOOKUP_FUNC& lookup_f, VALUE& value, FOUND_FUNC& foundf,
+                  bool* grow_hint = NULL, bool* clean_hint = NULL) {
+    return internal_insert_get(thread, lookup_f, value, foundf, grow_hint, clean_hint);
   }
 
   // This does a fast unsafe insert and can thus only be used when there is no

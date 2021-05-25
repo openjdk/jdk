@@ -551,6 +551,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   // the si_code for this condition may change in the future.
   // Furthermore, a false-positive should be harmless.
   if (UnguardOnExecutionViolation > 0 &&
+      stub == NULL &&
       (sig == SIGSEGV || sig == SIGBUS) &&
       uc->context_trapno == trap_page_fault) {
     int page_size = os::vm_page_size();
@@ -639,26 +640,6 @@ void os::Bsd::init_thread_fpu_state(void) {
 // versions do not support SSE without patches.
 bool os::supports_sse() {
   return true;
-}
-
-bool os::is_allocatable(size_t bytes) {
-#ifdef AMD64
-  // unused on amd64?
-  return true;
-#else
-
-  if (bytes < 2 * G) {
-    return true;
-  }
-
-  char* addr = reserve_memory(bytes);
-
-  if (addr != NULL) {
-    release_memory(addr, bytes);
-  }
-
-  return addr != NULL;
-#endif // AMD64
 }
 
 juint os::cpu_microcode_revision() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,15 +290,19 @@ class ServerImpl implements TimeSource {
             try {
                 if (r instanceof WriteFinishedEvent) {
 
+                    logger.log(Level.TRACE, "Write Finished");
                     int exchanges = endExchange();
                     if (terminating && exchanges == 0) {
                         finished = true;
                     }
-                    responseCompleted (c);
                     LeftOverInputStream is = t.getOriginalInputStream();
                     if (!is.isEOF()) {
                         t.close = true;
+                        if (c.getState() == State.REQUEST) {
+                            requestCompleted(c);
+                        }
                     }
+                    responseCompleted (c);
                     if (t.close || idleConnections.size() >= MAX_IDLE_CONNECTIONS) {
                         c.close();
                         allConnections.remove (c);
@@ -512,6 +516,7 @@ class ServerImpl implements TimeSource {
 
         public void run () {
             /* context will be null for new connections */
+            logger.log(Level.TRACE, "exchange started");
             context = connection.getHttpContext();
             boolean newconnection;
             SSLEngine engine = null;
@@ -649,11 +654,11 @@ class ServerImpl implements TimeSource {
                  * They are linked together by a LinkHandler
                  * so that they can both be invoked in one call.
                  */
-                List<Filter> sf = ctx.getSystemFilters();
-                List<Filter> uf = ctx.getFilters();
+                final List<Filter> sf = ctx.getSystemFilters();
+                final List<Filter> uf = ctx.getFilters();
 
-                Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
-                Filter.Chain uc = new Filter.Chain(uf, new LinkHandler (sc));
+                final Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
+                final Filter.Chain uc = new Filter.Chain(uf, new LinkHandler (sc));
 
                 /* set up the two stream references */
                 tx.getRequestBody();
@@ -667,15 +672,20 @@ class ServerImpl implements TimeSource {
             } catch (IOException e1) {
                 logger.log (Level.TRACE, "ServerImpl.Exchange (1)", e1);
                 closeConnection(connection);
-            } catch (NumberFormatException e3) {
+            } catch (NumberFormatException e2) {
+                logger.log (Level.TRACE, "ServerImpl.Exchange (2)", e2);
                 reject (Code.HTTP_BAD_REQUEST,
                         requestLine, "NumberFormatException thrown");
-            } catch (URISyntaxException e) {
+            } catch (URISyntaxException e3) {
+                logger.log (Level.TRACE, "ServerImpl.Exchange (3)", e3);
                 reject (Code.HTTP_BAD_REQUEST,
                         requestLine, "URISyntaxException thrown");
             } catch (Exception e4) {
-                logger.log (Level.TRACE, "ServerImpl.Exchange (2)", e4);
+                logger.log (Level.TRACE, "ServerImpl.Exchange (4)", e4);
                 closeConnection(connection);
+            } catch (Throwable t) {
+                logger.log(Level.TRACE, "ServerImpl.Exchange (5)", t);
+                throw t;
             }
         }
 

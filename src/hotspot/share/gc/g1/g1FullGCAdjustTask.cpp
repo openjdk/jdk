@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
     if (r->is_humongous()) {
       // Special handling for humongous regions to get somewhat better
       // work distribution.
-      oop obj = oop(r->humongous_start_region()->bottom());
+      oop obj = cast_to_oop(r->humongous_start_region()->bottom());
       obj->oop_iterate(&cl, MemRegion(r->bottom(), r->top()));
     } else if (!r->is_closed_archive() && !r->is_free()) {
       // Closed archive regions never change references and only contain
@@ -84,8 +84,7 @@ G1FullGCAdjustTask::G1FullGCAdjustTask(G1FullCollector* collector) :
     _references_done(false),
     _weak_proc_task(collector->workers()),
     _hrclaimer(collector->workers()),
-    _adjust(collector),
-    _string_dedup_cleaning_task(NULL, &_adjust, false) {
+    _adjust(collector) {
   // Need cleared claim bits for the roots processing
   ClassLoaderDataGraph::clear_claimed_marks();
 }
@@ -109,9 +108,6 @@ void G1FullGCAdjustTask::work(uint worker_id) {
   CLDToOopClosure adjust_cld(&_adjust, ClassLoaderData::_claim_strong);
   CodeBlobToOopClosure adjust_code(&_adjust, CodeBlobToOopClosure::FixRelocations);
   _root_processor.process_all_roots(&_adjust, &adjust_cld, &adjust_code);
-
-  // Adjust string dedup data structures.
-  _string_dedup_cleaning_task.work(worker_id);
 
   // Now adjust pointers region by region
   G1AdjustRegionClosure blk(collector(), worker_id);
