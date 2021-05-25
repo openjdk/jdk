@@ -327,13 +327,7 @@ public class Start {
 
 
     /**
-     * Main program - external wrapper. In order to maintain backward
-     * CLI compatibility, the execution is dispatched to the appropriate
-     * Start mechanism, depending on the doclet variant.
-     *
-     * The doclet tests are performed in the begin method, further on,
-     * this is to minimize argument processing and most importantly the impact
-     * of class loader creation, needed to detect the doclet class variants.
+     * Main program - external wrapper.
      */
     @SuppressWarnings("deprecation")
     Result begin(String... argv) {
@@ -398,11 +392,19 @@ public class Start {
         try {
             result = parseAndExecute(options, fileObjects);
         } catch (com.sun.tools.javac.main.Option.InvalidValueException e) {
-            messager.printError(e.getMessage());
+            // The detail message from javac already includes a localized "error: " prefix,
+            // so print the message directly.
+            // It would be even better to rethrow this as IllegalArgumentException
+            // when invoked via the API.
+            // See javac Arguments.error(InvalidValueException) for an example
+            messager.printRawLines(e.getMessage());
             Throwable t = e.getCause();
             dumpStack(t == null ? e : t);
             return ERROR;
         } catch (OptionException oe) {
+            // It would be even better to rethrow this as IllegalArgumentException
+            // when invoked via the API.
+            // See javac Arguments.error(InvalidValueException) for an example
             if (oe.message != null)
                 messager.printError(oe.message);
 

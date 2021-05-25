@@ -88,16 +88,14 @@ public class ToolEnvironment {
     /** Predefined symbols known to the compiler. */
     public final Symtab syms;
 
-    /** Referenced directly in RootDocImpl. */
+    /** JavaDoc's subtype of the compiler's class finder */
     private final ClassFinder finder;
 
-    /** Javadoc's own version of the compiler's enter phase. */
+    /** Javadoc's subtype of the compiler's enter phase. */
     final Enter enter;
 
     /** The name table. */
     private Names names;
-
-    final Symbol externalizableSym;
 
     /** If true, prevent printing of any notifications. */
     boolean quiet = false;
@@ -144,7 +142,6 @@ public class ToolEnvironment {
         finder = JavadocClassFinder.instance(context);
         enter = JavadocEnter.instance(context);
         names = Names.instance(context);
-        externalizableSym = syms.enterClass(syms.java_base, names.fromString("java.io.Externalizable"));
         chk = Check.instance(context);
         types = com.sun.tools.javac.code.Types.instance(context);
         fileManager = context.get(JavaFileManager.class);

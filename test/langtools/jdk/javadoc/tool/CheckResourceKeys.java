@@ -233,6 +233,10 @@ public class CheckResourceKeys {
             results.add("javadoc.note.pos.msg");
             results.add("javadoc.warning.msg");
 
+            results.add("javadoc.err.message");
+            results.add("javadoc.warn.message");
+            results.add("javadoc.note.message");
+
             return results;
         }
     }

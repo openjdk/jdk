@@ -185,6 +185,8 @@ public class TagletManager {
 
     private final String tagletPath;
 
+    private final BaseConfiguration configuration;
+
     /**
      * Constructs a new {@code TagletManager}.
      *
@@ -197,6 +199,7 @@ public class TagletManager {
         standardTagsLowercase = new HashSet<>();
         unseenCustomTags = new HashSet<>();
         allTaglets = new LinkedHashMap<>();
+        this.configuration = configuration;
         BaseOptions options = configuration.getOptions();
         this.nosince = options.noSince();
         this.showversion = options.showVersion();
@@ -250,6 +253,15 @@ public class TagletManager {
         try {
             ClassLoader tagClassLoader;
             tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
+            if (configuration.workArounds.accessInternalAPI()) {
+                Module thisModule = getClass().getModule();
+                Module tagletLoaderUnnamedModule = tagClassLoader.getUnnamedModule();
+                List<String> pkgs = List.of(
+                        "jdk.javadoc.doclet",
+                        "jdk.javadoc.internal.doclets.toolkit",
+                        "jdk.javadoc.internal.doclets.formats.html");
+                pkgs.forEach(p -> thisModule.addOpens(p, tagletLoaderUnnamedModule));
+            }
             Class<? extends jdk.javadoc.doclet.Taglet> customTagClass =
                     tagClassLoader.loadClass(classname).asSubclass(jdk.javadoc.doclet.Taglet.class);
             jdk.javadoc.doclet.Taglet instance = customTagClass.getConstructor().newInstance();

@@ -93,6 +93,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
+import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
@@ -2632,10 +2633,10 @@ public class Utils {
 
     public List<? extends DocTree> getBlockTags(Element element, Taglet taglet) {
         return getBlockTags(element, t -> {
-            if (taglet instanceof BaseTaglet bt) {
-                return bt.accepts(t);
-            } else if (t instanceof UnknownBlockTagTree tree) {
-                return tree.getTagName().equals(taglet.getName());
+            if (taglet instanceof BaseTaglet baseTaglet) {
+                return baseTaglet.accepts(t);
+            } else if (t instanceof BlockTagTree blockTagTree) {
+                return blockTagTree.getTagName().equals(taglet.getName());
             } else {
                 return false;
             }
