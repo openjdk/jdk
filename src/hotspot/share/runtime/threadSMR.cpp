@@ -193,17 +193,7 @@ class ThreadScanHashtable : public CHeapObj<mtThread> {
   }
 
   int _table_size;
-  // Note: I want this to be mtThread, but that causes linkage errors:
-  //
-  //   Undefined symbols for architecture x86_64:
-  //   "BasicHashtable<(MEMFLAGS)2>::free_buckets()", referenced from:
-  //   ThreadsSMRSupport::free_list(ThreadsList*) in threadSMR.o
-  //   ThreadsSMRSupport::is_a_protected_JavaThread(JavaThread*) in threadSMR.o
-  //   "BasicHashtable<(MEMFLAGS)2>::new_entry(unsigned int)", referenced from:
-  //   KVHashtable<void*, bool, (MEMFLAGS)2, &(unsigned int primitive_hash<void*>(void* const&)), &(bool primitive_equals<void*>(void* const&, void* const&))>::add_if_absent(void*, bool, bool*) in threadSMR.o
-  //
-  // so I'm using mtInternal instead.
-  KVHashtable<void *, bool, mtInternal, &ThreadScanHashtable::ptr_hash,
+  KVHashtable<void *, bool, mtThread, &ThreadScanHashtable::ptr_hash,
                             &ThreadScanHashtable::ptr_equals> _ptrs;
 
  public:
