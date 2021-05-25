@@ -27,7 +27,6 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.ObjectInputFilter;
-import java.io.ObjectInputFilter.Config;
 import java.io.ObjectInputFilter.FilterInfo;
 import java.util.function.Predicate;
 
@@ -51,12 +50,12 @@ public class SerialFilterFunctionTest {
             ObjectInputFilter filter1 = getFilter(st1);
             for (Status st2 : cases) {
                 ObjectInputFilter filter2 = getFilter(st2);
-                ObjectInputFilter f = Config.merge(filter1, filter2);
+                ObjectInputFilter f = ObjectInputFilter.merge(filter1, filter2);
                 Status r = f.checkInput(info);
                 Assert.assertEquals(merge(st1, st2), r, "merge");
             }
-            Assert.assertSame(Config.merge(filter1, null), filter1, "merge with null fail");
-            Assert.assertThrows(NullPointerException.class, () -> Config.merge(null, filter1));
+            Assert.assertSame(ObjectInputFilter.merge(filter1, null), filter1, "merge with null fail");
+            Assert.assertThrows(NullPointerException.class, () -> ObjectInputFilter.merge(null, filter1));
         }
     }
 
@@ -98,9 +97,9 @@ public class SerialFilterFunctionTest {
     void testAllowPredicates(Class<?> clazz, Predicate<Class<?>> predicate, Status expected) {
         ObjectInputFilter.FilterInfo info = new SerialInfo(clazz);
         if (predicate == null || expected == null) {
-            Assert.assertThrows(NullPointerException.class, () -> Config.allowFilter(predicate, expected));
+            Assert.assertThrows(NullPointerException.class, () -> ObjectInputFilter.allowFilter(predicate, expected));
         } else {
-            Assert.assertEquals(Config.allowFilter(predicate, Status.UNDECIDED).checkInput(info),
+            Assert.assertEquals(ObjectInputFilter.allowFilter(predicate, Status.UNDECIDED).checkInput(info),
                     expected, "Predicate result");
         }
     }
@@ -119,22 +118,22 @@ public class SerialFilterFunctionTest {
     void testRejectPredicates(Class<?> clazz, Predicate<Class<?>> predicate, Status expected) {
         ObjectInputFilter.FilterInfo info = new SerialInfo(clazz);
         if (predicate == null || expected == null) {
-            Assert.assertThrows(NullPointerException.class, () -> Config.allowFilter(predicate, expected));
+            Assert.assertThrows(NullPointerException.class, () -> ObjectInputFilter.allowFilter(predicate, expected));
         } else {
-            Assert.assertEquals(Config.rejectFilter(predicate, Status.UNDECIDED).checkInput(info), expected, "Predicate result");
+            Assert.assertEquals(ObjectInputFilter.rejectFilter(predicate, Status.UNDECIDED).checkInput(info), expected, "Predicate result");
         }
     }
 
     @Test
-    static void testRejectUndecided() {
+    void testRejectUndecided() {
         FilterInfo info = new SerialInfo(Object.class); // an info structure, unused
 
         ObjectInputFilter undecided = getFilter(UNDECIDED);
-        Assert.assertEquals(Config.rejectUndecidedClass(undecided).checkInput(info), REJECTED, "undecided -> rejected");
+        Assert.assertEquals(ObjectInputFilter.rejectUndecidedClass(undecided).checkInput(info), REJECTED, "undecided -> rejected");
         ObjectInputFilter allowed = getFilter(ALLOWED);
-        Assert.assertEquals(Config.rejectUndecidedClass(allowed).checkInput(info), ALLOWED, "allowed -> rejected");
+        Assert.assertEquals(ObjectInputFilter.rejectUndecidedClass(allowed).checkInput(info), ALLOWED, "allowed -> rejected");
         ObjectInputFilter rejected = getFilter(REJECTED);
-        Assert.assertEquals(Config.rejectUndecidedClass(rejected).checkInput(info), REJECTED, "rejected -> rejected");
+        Assert.assertEquals(ObjectInputFilter.rejectUndecidedClass(rejected).checkInput(info), REJECTED, "rejected -> rejected");
     }
 
     /**

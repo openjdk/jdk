@@ -104,14 +104,14 @@ public class SerialFactoryExample {
                         REJECTED},   // Not a platform class
                 {new Point(1, 4), ObjectInputFilter.Config.createFilter("java.lang.Integer"),
                         REJECTED},   // Only Integer is ALLOWED
-                {new Point(1, 5), ObjectInputFilter.Config.allowFilter(cl -> cl.getClassLoader() == ClassLoader.getPlatformClassLoader(), UNDECIDED),
+                {new Point(1, 5), ObjectInputFilter.allowFilter(cl -> cl.getClassLoader() == ClassLoader.getPlatformClassLoader(), UNDECIDED),
                         REJECTED},   // Not platform loader is UNDECIDED -> a class that should not be undecided -> rejected
         };
     }
 
 
     @Test(dataProvider = "Examples")
-    static void examples(Serializable obj, ObjectInputFilter filter, Status expected) {
+    void examples(Serializable obj, ObjectInputFilter filter, Status expected) {
         // Establish FilterInThread as the application-wide filter factory
         FilterInThread filterInThread;
         if (ObjectInputFilter.Config.getSerialFilterFactory() instanceof FilterInThread fit) {
@@ -145,7 +145,7 @@ public class SerialFactoryExample {
      * @param expected status
      */
     @Test(dataProvider = "Examples")
-    static void checkStatus(Serializable obj, ObjectInputFilter filter, Status expected) {
+    void checkStatus(Serializable obj, ObjectInputFilter filter, Status expected) {
         // Establish FilterInThread as the application-wide filter factory
         FilterInThread filterInThread;
         if (ObjectInputFilter.Config.getSerialFilterFactory() instanceof FilterInThread fit) {
@@ -270,23 +270,23 @@ public class SerialFactoryExample {
                 var filters = filterThreadLocal.get();
                 ObjectInputFilter filter = null;
                 for (ObjectInputFilter f : filters) {
-                    filter = ObjectInputFilter.Config.merge(f, filter);
+                    filter = ObjectInputFilter.merge(f, filter);
                 }
                 if (next != null) {
                     // Prepend a filter to assert that all classes have been Allowed or Rejected
                     if (filter != null) {
-                        filter = ObjectInputFilter.Config.rejectUndecidedClass(filter);
+                        filter = ObjectInputFilter.rejectUndecidedClass(filter);
                     }
 
                     // Prepend the next filter to the thread filter, if any
                     // Initially this would be the static JVM-wide filter passed from the OIS constructor
                     // The static JVM-wide filter allow, reject, or leave classes undecided
-                    filter = ObjectInputFilter.Config.merge(next, filter);
+                    filter = ObjectInputFilter.merge(next, filter);
                 }
                 // Check that the static JVM-wide filter did not leave any classes undecided
                 if (filter != null) {
                     // Append the filter to reject all UNDECIDED results
-                    filter = ObjectInputFilter.Config.rejectUndecidedClass(filter);
+                    filter = ObjectInputFilter.rejectUndecidedClass(filter);
                 }
                 // Return the filter, unless a stream-specific filter is set later
                 // The filter may be null if no filters are configured
@@ -296,7 +296,7 @@ public class SerialFactoryExample {
                 // Called from OIS.setObjectInputFilter with a previously set filter.
                 // The curr filter already incorporates the thread filter and rejection of undecided status
                 // Prepend the stream-specific filter or the current filter if no stream-specific filter
-                currFilter = (next == null) ? curr : ObjectInputFilter.Config.rejectUndecidedClass(ObjectInputFilter.Config.merge(next, curr));
+                currFilter = (next == null) ? curr : ObjectInputFilter.rejectUndecidedClass(ObjectInputFilter.merge(next, curr));
                 return currFilter;
             }
         }
@@ -311,27 +311,35 @@ public class SerialFactoryExample {
      */
     public static final class SimpleFilterInThread implements BinaryOperator<ObjectInputFilter> {
 
-        private final ThreadLocal<ObjectInputFilter> filterThreadLocal = new InheritableThreadLocal<>();
+        // ThreadLocal to hold the serial filter to be applied
+        private final ThreadLocal<ObjectInputFilter> filterThreadLocal = new ThreadLocal<>();
 
         // Construct a FilterInThread deserialization filter factory.
         public SimpleFilterInThread() {}
 
-        // Returns a composite filter of the static JVM-wide filter, a thread-specific filter,
-        // and the stream-specific filter.
+        /**
+         * The filter factory, which is invoked every time a new ObjectInputStream
+         * is created.  If a per-stream filter is already set then it returns a
+         * filter that combines the results of invoking each filter.
+         *
+         * @param curr the current filter on the stream
+         * @param next a per stream filter
+         * @return the selected filter
+         */
         public ObjectInputFilter apply(ObjectInputFilter curr, ObjectInputFilter next) {
             if (curr == null) {
-                // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no previous filter
+                // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no current filter
                 var filter = filterThreadLocal.get();
                 if (filter != null) {
                     // Prepend a filter to assert that all classes have been Allowed or Rejected
-                    filter = ObjectInputFilter.Config.rejectUndecidedClass(filter);
+                    filter = ObjectInputFilter.rejectUndecidedClass(filter);
                 }
                 if (next != null) {
-                    // Prepend the `next` filter to the thread filter, if any
+                    // Prepend the next filter to the thread filter, if any
                     // Initially this is the static JVM-wide filter passed from the OIS constructor
                     // Append the filter to reject all UNDECIDED results
-                    filter = ObjectInputFilter.Config.merge(next, filter);
-                    filter = ObjectInputFilter.Config.rejectUndecidedClass(filter);
+                    filter = ObjectInputFilter.merge(next, filter);
+                    filter = ObjectInputFilter.rejectUndecidedClass(filter);
                 }
                 return filter;
             } else {
@@ -340,15 +348,20 @@ public class SerialFactoryExample {
                 // and rejection of undecided classes
                 // If there is a stream-specific filter prepend it and a filter to recheck for undecided
                 if (next != null) {
-                    next = ObjectInputFilter.Config.merge(next, curr);
-                    next = ObjectInputFilter.Config.rejectUndecidedClass(next);
+                    next = ObjectInputFilter.merge(next, curr);
+                    next = ObjectInputFilter.rejectUndecidedClass(next);
                     return next;
                 }
                 return curr;
             }
         }
 
-        // Applies the filter to the thread and invokes the runnable.
+        /**
+         * Apply the filter and invoke the runnable.
+         *
+         * @param filter the serial filter to apply to every deserialization in the thread
+         * @param runnable a Runnable to invoke
+         */
         public void doWithSerialFilter(ObjectInputFilter filter, Runnable runnable) {
             var prevFilter = filterThreadLocal.get();
             try {
