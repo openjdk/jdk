@@ -1414,8 +1414,9 @@ static size_t get_num_regions_adjust_for_plab_waste(size_t byte_count) {
 }
 
 bool G1Policy::proactive_collection_required(uint alloc_region_count) {
-  if (!Universe::is_fully_initialized()) {
-    // Don't attempt any proactive GC's before initialization is complete.
+  if (!G1AllowProactiveGC || !Universe::is_fully_initialized()) {
+    // Don't attempt any proactive GC's if the feature is disabled,
+    // or before initialization is complete.
     return false;
   }
 
