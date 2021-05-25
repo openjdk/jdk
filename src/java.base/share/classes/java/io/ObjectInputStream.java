@@ -67,6 +67,23 @@ import sun.security.action.GetIntegerAction;
  * practices for defensive use of serial filters.
  * </strong></p>
  *
+ * <p>The key to disabling deserialization attacks is to prevent instances of
+ * arbitrary classes from being deserialized, thereby preventing the direct or
+ * indirect execution of their methods.
+ * {@link ObjectInputFilter} describes how to use filters and
+ * {@link ObjectInputFilter.Config} describes how to configure the filter and filter factory.
+ * Each stream has an optional deserialization filter
+ * to check the classes and resource limits during deserialization.
+ * The JVM-wide filter factory ensures that a filter can be set on every {@link ObjectInputStream}
+ * and every object read from the stream can be checked.
+ * The {@linkplain #ObjectInputStream() ObjectInputStream constructors} invoke the filter factory
+ * to select the initial filter and it is updated by {@link #setObjectInputFilter}.
+ * <p>
+ * If an ObjectInputStream has a filter, the {@link ObjectInputFilter} can check that
+ * the classes, array lengths, number of references in the stream, depth, and
+ * number of bytes consumed from the input stream are allowed and
+ * if not, can terminate deserialization.
+ *
  * <p>ObjectOutputStream and ObjectInputStream can provide an application with
  * persistent storage for graphs of objects when used with a FileOutputStream
  * and FileInputStream respectively.  ObjectInputStream is used to recover
@@ -188,22 +205,6 @@ import sun.security.action.GetIntegerAction;
  * the case that the fields of that class are accessible (public, package, or
  * protected) or that there are get and set methods that can be used to restore
  * the state.
- * <p>
- * The key to disabling deserialization attacks is to prevent instances of
- * arbitrary classes from being deserialized, thereby preventing the direct or
- * indirect execution of their methods.  Each stream has an optional deserialization filter
- * to check the classes and resource limits during deserialization.
- * The JVM-wide filter factory ensures that a filter can be set on every {@link ObjectInputStream}
- * and every object read from the stream can be checked.
- * The {@linkplain #ObjectInputStream() ObjectInputStream constructors} invoke the filter factory
- * to select the initial filter and it is updated by {@link #setObjectInputFilter}.
- * {@link ObjectInputFilter} describes how to use filters and
- * {@link ObjectInputFilter.Config} describes how to configure the filter and filter factory.
- * <p>
- * If an ObjectInputStream has a filter, the {@link ObjectInputFilter} can check that
- * the classes, array lengths, number of references in the stream, depth, and
- * number of bytes consumed from the input stream are allowed and
- * if not, can terminate deserialization.
  *
  * <p>Any exception that occurs while deserializing an object will be caught by
  * the ObjectInputStream and abort the reading process.
@@ -365,7 +366,7 @@ public class ObjectInputStream
      * This constructor will block until the corresponding ObjectOutputStream
      * has written and flushed the header.
      *
-     * <p>The deserialization filter is initialized to the filter returned
+     * <p>The constructor initializes the deserialization filter to the filter returned
      * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
      * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
      *
@@ -402,7 +403,7 @@ public class ObjectInputStream
      * ObjectInputStream to not have to allocate private data just used by this
      * implementation of ObjectInputStream.
      *
-     * <p>The deserialization filter is initialized to the filter returned
+     * <p>The constructor initializes the deserialization filter to the filter returned
      * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
      * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
      *

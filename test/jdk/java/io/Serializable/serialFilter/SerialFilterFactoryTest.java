@@ -212,102 +212,22 @@ public class SerialFilterFactoryTest {
         }
     }
 
-    @Test
-    void testAndThen() {
-        Status[] cases = Status.values();
-        FilterInfo info = new SerialInfo(Object.class);
-        for (Status st1 : cases) {
-            for (Status st2 : cases) {
-                ObjectInputFilter f = Config.merge(getFilter(st1), getFilter(st2));
-                Status r = f.checkInput(info);
-                Assert.assertEquals(evalAndThen(st1, st2), r, "eval andThen");
-            }
-        }
-    }
-
-    /**
-     * Return REJECTED if either is REJECTED; otherwise return ALLOWED if either is ALLOWED, else UNDECIDED.
-     * @param status a status
-     * @param otherStatus another status
-     * @return REJECTED if either is REJECTED; otherwise return ALLOWED if either is ALLOWED, else UNDECIDED
-     */
-    private Status evalAndThen(Status status, Status otherStatus) {
-        if (REJECTED.equals(status) || REJECTED.equals(otherStatus))
-            return REJECTED;
-
-        if (ALLOWED.equals(status)  || ALLOWED.equals(otherStatus))
-            return ALLOWED;
-
-        return UNDECIDED;
-    }
-
-    /**
-     * Return a predicate mapping Class<?> to a boolean that returns true if the argument is Integer.class.
-     * @return a predicate mapping Class<?> to a boolean that returns true if the argument is Integer.class
-     */
-    static Predicate<Class<?>> isInteger() {
-        return (cl) -> cl.equals(Integer.class);
-    }
-
-    @DataProvider(name = "AllowPredicateCases")
-    static Object[][] allowPredicateCases() {
-        return new Object[][]{
-                { Integer.class, isInteger(), Status.ALLOWED},
-                { Double.class, isInteger(), Status.UNDECIDED},
-        };
-    }
-
-    @Test(dataProvider = "AllowPredicateCases")
-    void testAllowPredicates(Class<?> clazz,
-                        Predicate<Class<?>> predicate, Status expected) {
-        ObjectInputFilter.FilterInfo info = new SerialInfo(clazz);
-        Assert.assertEquals(Config.allowFilter(predicate, Status.UNDECIDED).checkInput(info), expected, "Predicate result");
-    }
-
-    @DataProvider(name = "RejectPredicateCases")
-    static Object[][] rejectPredicateCases() {
-        return new Object[][]{
-                { Integer.class, isInteger(), REJECTED},
-                { Double.class, isInteger(), Status.UNDECIDED},
-        };
-    }
-
-    @Test(dataProvider = "RejectPredicateCases")
-    void testRejectPredicates(Class<?> clazz,
-                              Predicate<Class<?>> predicate, Status expected) {
-        ObjectInputFilter.FilterInfo info = new SerialInfo(clazz);
-        Assert.assertEquals(Config.rejectFilter(predicate, Status.UNDECIDED).checkInput(info), expected, "Predicate result");
-    }
-
-
-    @Test
-    static void testRejectUndecided() {
-        FilterInfo info = new SerialInfo(Object.class); // an info structure, unused
-
-        ObjectInputFilter undecided = getFilter(UNDECIDED);
-        Assert.assertEquals(Config.rejectUndecidedClass(undecided).checkInput(info), REJECTED, "undecided -> rejected");
-        ObjectInputFilter allowed = getFilter(ALLOWED);
-        Assert.assertEquals(Config.rejectUndecidedClass(allowed).checkInput(info), ALLOWED, "allowed -> rejected");
-        ObjectInputFilter rejected = getFilter(REJECTED);
-        Assert.assertEquals(Config.rejectUndecidedClass(rejected).checkInput(info), REJECTED, "rejected -> rejected");
-    }
-
-    @Test
-    static void testMaxLimits() {
-        FilterInfo info = new SerialInfo(null); // an info structure, serialClass == null
-        Assert.assertEquals(Config.allowMaxLimits().checkInput(info), ALLOWED, "allowMaxLimit");
-
-        info = new SerialInfo(Object.class); // an info structure, serialClass != null
-        Assert.assertEquals(Config.allowMaxLimits().checkInput(info), UNDECIDED, "allowMaxLimit");
-    }
-
     // Test that if the property jdk-serialFilterFactory is set, then initial factory has the same classname
     @Test
-    static void testPropertyFilterFactory() {
+    void testPropertyFilterFactory() {
         if (jdkSerialFilterFactoryProp != null) {
             Assert.assertEquals(jdkSerialFilterFactory.getClass().getName(), jdkSerialFilterFactoryProp,
                     "jdk.serialFilterFactory property classname mismatch");
         }
+    }
+
+    // Test that setting the filter factory after any deserialization (any testCase)
+    // throws IllegalStateException with the specific message
+    @Test(dependsOnMethods="testCase")
+    void testSetFactoryAfterDeserialization() throws IOException {
+        BinaryOperator<ObjectInputFilter> factory = Config.getSerialFilterFactory();
+        IllegalStateException ise = Assert.expectThrows(IllegalStateException.class, () -> Config.setSerialFilterFactory(factory));
+        Assert.assertEquals(ise.getMessage(), "FilterFactory can not be set after any deserialization");
     }
 
     /**
@@ -440,62 +360,5 @@ public class SerialFilterFactoryTest {
         public String toString() {
             return this.getClass().getName() + "::" + s;
         }
-    }
-
-    /**
-     * FilterInfo instance with a specific class.
-     */
-    static class SerialInfo implements ObjectInputFilter.FilterInfo {
-        private final Class<?> clazz;
-
-        SerialInfo(Class<?> clazz) {
-            this.clazz = clazz;
-        }
-
-        @Override
-        public Class<?> serialClass() {
-            return clazz;
-        }
-
-        @Override
-        public long arrayLength() {
-            return 0;
-        }
-
-        @Override
-        public long depth() {
-            return 0;
-        }
-
-        @Override
-        public long references() {
-            return 0;
-        }
-
-        @Override
-        public long streamBytes() {
-            return 0;
-        }
-
-        @Override
-        public String toString() {
-            return showFilterInfo(this);
-        }
-    }
-
-
-    /**
-     * Return a string describing a FilterInfo instance.
-     * @param info a FilterInfo instance
-     * @return a String describing the FilterInfo instance
-     */
-    static String showFilterInfo(ObjectInputFilter.FilterInfo info) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("serialClass: " + info.serialClass());
-        sb.append(", arrayLength: " + info.arrayLength());
-        sb.append(", depth: " + info.depth());
-        sb.append(", references: " + info.references());
-        sb.append(", streamBytes: " + info.streamBytes());
-        return sb.toString();
     }
 }

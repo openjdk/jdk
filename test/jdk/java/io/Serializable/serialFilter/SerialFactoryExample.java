@@ -330,15 +330,21 @@ public class SerialFactoryExample {
                     // Prepend the `next` filter to the thread filter, if any
                     // Initially this is the static JVM-wide filter passed from the OIS constructor
                     // Append the filter to reject all UNDECIDED results
-                    filter = ObjectInputFilter.Config.rejectUndecidedClass(ObjectInputFilter.Config.merge(next, filter));
+                    filter = ObjectInputFilter.Config.merge(next, filter);
+                    filter = ObjectInputFilter.Config.rejectUndecidedClass(filter);
                 }
                 return filter;
             } else {
                 // Called from OIS.setObjectInputFilter with a current filter and a stream-specific filter.
                 // The curr filter already incorporates the thread filter and static JVM-wide filter
                 // and rejection of undecided classes
-                // Use the current filter or prepend the stream-specific filter and recheck for undecided
-                return (next == null) ? curr : ObjectInputFilter.Config.rejectUndecidedClass(ObjectInputFilter.Config.merge(next, curr));
+                // If there is a stream-specific filter prepend it and a filter to recheck for undecided
+                if (next != null) {
+                    next = ObjectInputFilter.Config.merge(next, curr);
+                    next = ObjectInputFilter.Config.rejectUndecidedClass(next);
+                    return next;
+                }
+                return curr;
             }
         }
 
