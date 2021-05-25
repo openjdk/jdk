@@ -1590,7 +1590,7 @@ inline JavaThread* JavaThread::current() {
 }
 
 inline WorkerThread* Thread::as_Worker_thread() const {
-  assert(is_Worker_thread(), "Dubious cast to WorkerThread*?");
+  assert(is_Worker_thread(), "incorrect cast to WorkerThread");
   return (WorkerThread*)this;
 }
 
