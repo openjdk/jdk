@@ -455,6 +455,13 @@ Thread::~Thread() {
   CHECK_UNHANDLED_OOPS_ONLY(if (CheckUnhandledOops) delete unhandled_oops();)
 }
 
+// Cast to worker thread
+// Not in hpp/inline.hpp, because WorkerThread is defined in its own header.
+const WorkerThread* Thread::as_Worker_thread() const {
+  assert(is_Worker_thread(), "incorrect cast to const WorkerThread");
+  return static_cast<const WorkerThread*>(this);
+}
+
 #ifdef ASSERT
 // A JavaThread is considered dangling if it not handshake-safe with respect to
 // the current thread, it is not on a ThreadsList, or not at safepoint.
