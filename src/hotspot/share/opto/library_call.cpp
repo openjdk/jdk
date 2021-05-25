@@ -57,6 +57,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
+
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   vmIntrinsicID id = m->intrinsic_id();
@@ -2802,37 +2806,83 @@ bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* func
 
 #ifdef JFR_HAVE_INTRINSICS
 
-/*
-* oop -> myklass
-* myklass->trace_id |= USED
-* return myklass->trace_id & ~0x3
-*/
+/**
+ * if oop->klass != null
+ *   // normal class
+ *   epoch = _epoch_state ? 2 : 1
+ *   if oop->klass->trace_id & ((epoch << META_SHIFT) | epoch)) != epoch {
+ *     ... // enter slow path when the klass is first recorded or the epoch of JFR shifts
+ *   }
+ *   id = oop->klass->trace_id >> TRACE_ID_SHIFT // normal class path
+ * else
+ *   // primitive class
+ *   if oop->array_klass != null
+ *     id = (oop->array_klass->trace_id >> TRACE_ID_SHIFT) + 1 // primitive class path
+ *   else
+ *     id = LAST_TYPE_ID + 1 // void class path
+ *   if (!signaled)
+ *     signaled = true
+ */
 bool LibraryCallKit::inline_native_classID() {
-  Node* cls = null_check(argument(0), T_OBJECT);
-  Node* kls = load_klass_from_mirror(cls, false, NULL, 0);
-  kls = null_check(kls, T_OBJECT);
+  Node* cls = argument(0);
 
-  ByteSize offset = KLASS_TRACE_ID_OFFSET;
-  Node* insp = basic_plus_adr(kls, in_bytes(offset));
-  Node* tvalue = make_load(NULL, insp, TypeLong::LONG, T_LONG, MemNode::unordered);
+  IdealKit ideal(this);
+#define __ ideal.
+  IdealVariable result(ideal); __ declarations_done();
+  Node* kls = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(),
+                                                 basic_plus_adr(cls, java_lang_Class::klass_offset()),
+                                                 TypeRawPtr::BOTTOM, TypeKlassPtr::OBJECT_OR_NULL));
 
-  Node* clsused = longcon(0x01l); // set the class bit
-  Node* orl = _gvn.transform(new OrLNode(tvalue, clsused));
-  const TypePtr *adr_type = _gvn.type(insp)->isa_ptr();
-  store_to_memory(control(), insp, orl, T_LONG, adr_type, MemNode::unordered);
 
-#ifdef TRACE_ID_META_BITS
-  Node* mbits = longcon(~TRACE_ID_META_BITS);
-  tvalue = _gvn.transform(new AndLNode(tvalue, mbits));
-#endif
-#ifdef TRACE_ID_SHIFT
-  Node* cbits = intcon(TRACE_ID_SHIFT);
-  tvalue = _gvn.transform(new URShiftLNode(tvalue, cbits));
-#endif
+  __ if_then(kls, BoolTest::ne, null()); {
+    Node* kls_trace_id_addr = basic_plus_adr(kls, in_bytes(KLASS_TRACE_ID_OFFSET));
+    Node* kls_trace_id_raw = ideal.load(ideal.ctrl(), kls_trace_id_addr,TypeLong::LONG, T_LONG, Compile::AliasIdxRaw);
 
-  set_result(tvalue);
+    Node* epoch_address = makecon(TypeRawPtr::make(Jfr::epoch_address()));
+    Node* epoch = ideal.load(ideal.ctrl(), epoch_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
+    epoch = _gvn.transform(new LShiftLNode(longcon(1), epoch));
+    Node* mask = _gvn.transform(new LShiftLNode(epoch, intcon(META_SHIFT)));
+    mask = _gvn.transform(new OrLNode(mask, epoch));
+    Node* kls_trace_id_raw_and_mask = _gvn.transform(new AndLNode(kls_trace_id_raw, mask));
+
+    float unlikely  = PROB_UNLIKELY(0.999);
+    __ if_then(kls_trace_id_raw_and_mask, BoolTest::ne, epoch, unlikely); {
+      sync_kit(ideal);
+      make_runtime_call(RC_LEAF,
+                        OptoRuntime::get_class_id_intrinsic_Type(),
+                        CAST_FROM_FN_PTR(address, Jfr::get_class_id_intrinsic),
+                        "get_class_id_intrinsic",
+                        TypePtr::BOTTOM,
+                        kls);
+      ideal.sync_kit(this);
+    } __ end_if();
+
+    ideal.set(result,  _gvn.transform(new URShiftLNode(kls_trace_id_raw, ideal.ConI(TRACE_ID_SHIFT))));
+  } __ else_(); {
+    Node* array_kls = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(),
+                                                   basic_plus_adr(cls, java_lang_Class::array_klass_offset()),
+                                                   TypeRawPtr::BOTTOM, TypeKlassPtr::OBJECT_OR_NULL));
+    __ if_then(array_kls, BoolTest::ne, null()); {
+      Node* array_kls_trace_id_addr = basic_plus_adr(array_kls, in_bytes(KLASS_TRACE_ID_OFFSET));
+      Node* array_kls_trace_id_raw = ideal.load(ideal.ctrl(), array_kls_trace_id_addr, TypeLong::LONG, T_LONG, Compile::AliasIdxRaw);
+      Node* array_kls_trace_id = _gvn.transform(new URShiftLNode(array_kls_trace_id_raw, ideal.ConI(TRACE_ID_SHIFT)));
+      ideal.set(result, _gvn.transform(new AddLNode(array_kls_trace_id, longcon(1))));
+    } __ else_(); {
+      // void class case
+      ideal.set(result, _gvn.transform(longcon(LAST_TYPE_ID + 1)));
+    } __ end_if();
+
+    Node* signaled_flag_address = makecon(TypeRawPtr::make(Jfr::signal_address()));
+    Node* signaled = ideal.load(ideal.ctrl(), signaled_flag_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw, true, MemNode::acquire);
+    __ if_then(signaled, BoolTest::ne, ideal.ConI(1)); {
+      ideal.store(ideal.ctrl(), signaled_flag_address, ideal.ConI(1), T_BOOLEAN, Compile::AliasIdxRaw, MemNode::release, true);
+    } __ end_if();
+  } __ end_if();
+
+  final_sync(ideal);
+  set_result(ideal.value(result));
+#undef __
   return true;
-
 }
 
 bool LibraryCallKit::inline_native_getEventWriter() {

@@ -164,7 +164,7 @@ static jobject sAccessibilityClass = NULL;
     return NSMakeRect(point.x, point.y, size.width, size.height);
 }
 
-- (nullable id)accessibilityParent
+- (id _Nullable)accessibilityParent
 {
     return [self accessibilityParentAttribute];
 }
