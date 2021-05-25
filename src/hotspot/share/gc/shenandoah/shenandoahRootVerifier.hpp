@@ -64,8 +64,8 @@ public:
   void oops_do(OopClosure* cl);
 
   // Used to seed ShenandoahVerifier, do not honor root type filter
-  void roots_do(OopClosure* cl);
-  void strong_roots_do(OopClosure* cl);
+  void roots_do(OopIterateClosure* cl);
+  void strong_roots_do(OopIterateClosure* cl);
 
   static RootTypes combine(RootTypes t1, RootTypes t2);
 private:
