@@ -66,7 +66,8 @@ inline HeapWord* G1Allocator::attempt_allocation_using_new_region(size_t word_si
   size_t temp;
   HeapWord* result = mutator_alloc_region(node_index)->attempt_allocation_using_new_region(word_size, word_size, &temp);
   assert(result != NULL || mutator_alloc_region(node_index)->get() == NULL,
-         "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region(node_index)->get()));
+         "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT,
+         p2i(mutator_alloc_region(node_index)->get()));
   return result;
 }
 
