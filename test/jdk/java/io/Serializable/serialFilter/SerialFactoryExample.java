@@ -263,7 +263,7 @@ public class SerialFactoryExample {
          */
         public ObjectInputFilter apply(ObjectInputFilter curr, ObjectInputFilter next) {
             if (curr == null) {
-                // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no previous filter
+                // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no current filter
                 // no current filter, prepend next to threadFilter, both may be null or non-null
 
                 // Assemble the filters in sequence, most recently added first
@@ -273,7 +273,7 @@ public class SerialFactoryExample {
                     filter = ObjectInputFilter.merge(f, filter);
                 }
                 if (next != null) {
-                    // Prepend a filter to assert that all classes have been Allowed or Rejected
+                    // Prepend a filter to reject all UNDECIDED results
                     if (filter != null) {
                         filter = ObjectInputFilter.rejectUndecidedClass(filter);
                     }

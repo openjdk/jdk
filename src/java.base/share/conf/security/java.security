@@ -979,8 +979,20 @@ jdk.xml.dsig.secureValidationPolicy=\
     noDuplicateIds,\
     noRetrievalMethodLoops
 
+
 #
-# Serialization system-wide filter
+# Deserialization system-wide filter factory
+#
+# A filter factory class name is used to configure the system-wide filter factory.
+# The class must be public, must have a public zero-argument constructor, implement the
+# java.util.stream.BinaryOperator<ObjectInputFilter> interface, provide its implementation and
+# be accessible via the application class loader.
+# See java.io.ObjectInputFilter for more information.
+#
+#jdk.serialFilterFactory=<classname>
+
+#
+# Deserialization system-wide filter
 #
 # A filter, if configured, is used by java.io.ObjectInputStream during
 # deserialization to check the contents of the stream.

@@ -63,36 +63,38 @@ import static java.lang.System.Logger.Level.INFO;
  * construct and apply an appropriate filter.
  *
  * <h2>Deserialization Filtering Factory and Filters</h2>
- * The parts of deserialization filtering are the filters, composite filters, and the filter factory.
- * Each filter performs checks on classes and resource limits and decides whether to
- * reject, allow, or undecided the class or resource.
+ * The parts of deserialization filtering are the filters, composite filters, and filter factory.
+ * Each filter performs checks on classes and resource limits to determine the status as
+ * rejected, allowed, or undecided.
  * Filters can be composed of other filters and merge or combine their results.
  * The filter factory is responsible for establishing and updating the filter
  * for each {@link ObjectInputStream}.
  *
- * <p>For simple cases, a static JVM-wide filter can be set for the entire application.
- * It can be set either with a system property on the command line or by
+ * <p>For simple cases, a static JVM-wide filter can be set for the entire application,
+ * without setting a filter factory.
+ * The JVM-wide filter can be set either with a system property on the command line or by
  * calling {@linkplain Config#setSerialFilter(ObjectInputFilter) Config.setSerialFilter}.
- * In this simple case, the {@linkplain Config#getSerialFilterFactory() JVM-wide filter factory}
- * is the builtin filter factory; it provides the {@linkplain Config#getSerialFilter static JVM-wide filter}
+ * No custom filter factory needs to be specified, defaulting to the builtin filter factory.
+ * The builtin filter factory provides the {@linkplain Config#getSerialFilter static JVM-wide filter}
  * for each {@linkplain ObjectInputStream ObjectInputStream}.
- * For example, a filter that allows example classes, allows classes in the
- * {@code java.base} module, and rejects all other classes:
+ *
+ * <p>For example, a filter that allows example classes, allows classes in the
+ * {@code java.base} module, and rejects all other classes can be set:
  *
  * <pre>{@code As a command line property:
  *     % java -Djdk.serialFilter="example.*;java.base/*;!*" ...}</pre>
- * Or
- * <pre>{@code Programmatically:
+ *
+ * <pre>{@code Or programmatically:
  *     var filter = ObjectInputFilter.Config.createFilter("example.*;java.base/*;!*")
  *     ObjectInputFilter.Config.setSerialFilter(filter);}</pre>
  *
- * <p>In an application with multiple execution contexts, the
- * {@linkplain Config#setSerialFilterFactory(BinaryOperator) filter factory} can better
+ * <p>In an application with multiple execution contexts, the application can provide a
+ * {@linkplain Config#setSerialFilterFactory(BinaryOperator) filter factory} to
  * protect individual contexts by providing a custom filter for each. When the stream
- * is constructed, the filter factory can identify the execution context from the available
+ * is constructed, the filter factory is called to identify the execution context from the available
  * information, including the current thread-local state, hierarchy of callers, library, module,
- * and class loader. At that point, a policy for creating or selecting filters can choose a specific filter
- * or composition of filters based on the context.
+ * and class loader. At that point, the filter factory policy for creating or selecting filters
+ * can choose a specific filter or composition of filters based on the context.
  * The JVM-wide deserialization filter factory ensures that a context-specific deserialization
  * filter can be set on every {@link ObjectInputStream} and every object read from the
  * stream can be checked.
@@ -107,8 +109,7 @@ import static java.lang.System.Logger.Level.INFO;
  * the first parameter is {@code null} and the second parameter is the
  * {@linkplain ObjectInputFilter.Config#getSerialFilter() static JVM-wide filter}.
  * When invoked from {@link ObjectInputStream#setObjectInputFilter ObjectInputStream.setObjectInputFilter},
- * the first parameter is the filter currently set on the stream (which may have been set in the constructor,
- * or by a previous invocation of {@code ObjectInputStream.setObjectInputFilter},
+ * the first parameter is the filter currently set on the stream (which was set in the constructor),
  * and the second parameter is the filter given to {@code ObjectInputStream.setObjectInputFilter}.
  * The current and new filter may each be {@code null} and the factory may return {@code null}.
  * Note that the filter factory implementation can also use any contextual information
@@ -120,8 +121,6 @@ import static java.lang.System.Logger.Level.INFO;
  * <li>The application specific filter factory set via {@link Config#setSerialFilterFactory(BinaryOperator)}
  *     or the system property {@code jdk.serialFilterFactory} or
  *     the security property {@code jdk.serialFilterFactory}.
- *     The filter factory is invoked for each new {@link ObjectInputStream} and
- *     when a filter is set for a stream.
  * <li>Otherwise, a builtin deserialization filter factory
  *     provides the {@linkplain Config#getSerialFilter static JVM-wide filter} when invoked from the
  *     {@linkplain ObjectInputStream#ObjectInputStream(InputStream) ObjectInputStream constructors}
@@ -132,9 +131,10 @@ import static java.lang.System.Logger.Level.INFO;
  *
  * <h2>Filters</h2>
  * Filters can be created from a {@linkplain Config#createFilter(String) pattern string},
- * or to {@linkplain #allowFilter(Predicate, Status) allow} or
- * {@linkplain #rejectFilter(Predicate, Status) reject} classes based on a
- * {@linkplain Predicate predicate of a class}.
+ * or based on a {@linkplain Predicate predicate of a class} to
+ * {@linkplain #allowFilter(Predicate, Status) allow} or
+ * {@linkplain #rejectFilter(Predicate, Status) reject} classes.
+ *.
  *
  * <p>The filter's {@link #checkInput checkInput(FilterInfo)} method is invoked
  * zero or more times while {@linkplain ObjectInputStream#readObject() reading objects}.
@@ -186,7 +186,7 @@ import static java.lang.System.Logger.Level.INFO;
  * <h2>Example to filter every deserialization in a thread</h2>
  *
  * This class shows how an application provided filter factory can combine filters
- * to filter every deserialization operation that takes place in a thread.
+ * to check every deserialization operation that takes place in a thread.
  * It defines a thread-local variable to hold the thread-specific filter, and constructs a filter factory
  * that composes that filter with the static JVM-wide filter and the stream-specific filter.
  * The {@code doWithSerialFilter} method does the setup of the thread-specific filter
@@ -204,10 +204,10 @@ import static java.lang.System.Logger.Level.INFO;
  *     // and the stream-specific filter.
  *     public ObjectInputFilter apply(ObjectInputFilter curr, ObjectInputFilter next) {
  *         if (curr == null) {
- *             // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no previous filter
+ *             // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no current filter
  *             var filter = filterThreadLocal.get();
  *             if (filter != null) {
- *                 // Prepend a filter to assert that all classes have been Allowed or Rejected
+ *                 // Prepend a filter to reject all UNDECIDED results
  *                 filter = ObjectInputFilter.Config.rejectUndecidedClass(filter);
  *             }
  *             if (next != null) {
@@ -673,7 +673,8 @@ public interface ObjectInputFilter {
                     configLog.log(System.Logger.Level.ERROR,
                             "Error configuring filter factory", ex);
                     // Do not continue if configuration not initialized
-                    throw new ExceptionInInitializerError(ex);
+                    throw new ExceptionInInitializerError(
+                            "FilterFactory configuration: jdk.serialFilterFactory: " + ex.getMessage());
                 }
             } else {
                 factory = new BuiltinFilterFactory();

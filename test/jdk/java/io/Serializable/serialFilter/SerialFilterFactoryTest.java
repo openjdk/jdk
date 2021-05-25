@@ -37,6 +37,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
+import java.io.SerializablePermission;
+import java.security.AccessControlException;
+import java.security.Permission;
 import java.util.function.BinaryOperator;
 import java.util.function.Predicate;
 
@@ -51,6 +54,13 @@ import static java.io.ObjectInputFilter.Status.UNDECIDED;
  * @run testng/othervm -Djdk.serialFilter="*" SerialFilterFactoryTest
  * @run testng/othervm -Djdk.serialFilterFactory=SerialFilterFactoryTest$PropertyFilterFactory SerialFilterFactoryTest
  * @run testng/othervm -Djdk.serialFilterFactory=SerialFilterFactoryTest$NotMyFilterFactory SerialFilterFactoryTest
+ * @run testng/othervm/policy=security.policy
+ *        -Djava.security.properties=${test.src}/java.security-extra-factory
+ *        -Djava.security.debug=properties SerialFilterFactoryTest
+ * @run testng/othervm/fail  -Djdk.serialFilterFactory=ForcedError_NoSuchClass SerialFilterFactoryTest
+ * @run testng/othervm/policy=security.policy SerialFilterFactoryTest
+ * @run testng/othervm/policy=security.policy.without.globalFilter SerialFilterFactoryTest
+
  *
  * @summary Test Context-specific Deserialization Filters
  */
@@ -115,6 +125,24 @@ public class SerialFilterFactoryTest {
         return !(ObjectInputFilter.Config.getSerialFilterFactory() instanceof NotMyFilterFactory);
     }
 
+    /**
+     * Returns true if serialFilter actions are ok, either no SM or SM has serialFilter Permission
+     */
+    private static boolean hasFilterPerm() {
+        boolean hasSerialPerm = true;
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            try {
+                Permission p = new SerializablePermission("serialFilter");
+                sm.checkPermission(p);
+                hasSerialPerm = true;
+            } catch (AccessControlException ace2) {
+                hasSerialPerm = false;      // SM and serialFilter not allowed
+            }
+        }
+        return hasSerialPerm;
+    }
+
     @DataProvider(name="FilterCases")
     static Object[][] filterCases() {
         if (isValidFilterFactory()) {
@@ -131,7 +159,7 @@ public class SerialFilterFactoryTest {
 
     // Setting the filter factory to null is not allowed.
     @Test(expectedExceptions=NullPointerException.class)
-    static void testNull() {
+    void testNull() {
         Config.setSerialFilterFactory(null);
     }
 
@@ -142,7 +170,11 @@ public class SerialFilterFactoryTest {
      * Try to set it again, the second should throw.
      */
     @Test
-    static void testSecondSetShouldThrow() {
+    void testSecondSetShouldThrow() {
+        if (System.getSecurityManager() != null) {
+            // Skip test when running with SM
+            return;
+        }
         var currFF = Config.getSerialFilterFactory();
         if (currFF.getClass().getClassLoader() == null) {
             try {
@@ -173,12 +205,22 @@ public class SerialFilterFactoryTest {
      * @throws ClassNotFoundException for class not found (should not occur)
      */
     @Test(dataProvider="FilterCases")
-    static void testCase(MyFilterFactory dynFilterFactory, Validator dynFilter, Validator streamFilter)
+    void testCase(MyFilterFactory dynFilterFactory, Validator dynFilter, Validator streamFilter)
                 throws IOException, ClassNotFoundException {
 
         // Set the Filter Factory and System-wide filter
-        final ObjectInputFilter configFilter = setupFilter(dynFilter);
-        final MyFilterFactory factory = setupFilterFactory(dynFilterFactory);
+        ObjectInputFilter configFilter;
+        MyFilterFactory factory;
+        try {
+            configFilter = setupFilter(dynFilter);
+            factory = setupFilterFactory(dynFilterFactory);
+            Assert.assertTrue(hasFilterPerm(),
+                    "setSerialFilterFactory and setFilterFactory succeeded without serialFilter permission");
+        } catch (AccessControlException ace) {
+            Assert.assertFalse(hasFilterPerm(),
+                    "setSerialFilterFactory failed even with serialFilter permission");
+            return;         // test complete
+        }
         factory.reset();
 
         InputStream is = new ByteArrayInputStream(simpleStream);
@@ -202,6 +244,9 @@ public class SerialFilterFactoryTest {
             // Check the OIS filter after the factory has updated it.
             currFilter = ois.getObjectInputFilter();
             Assert.assertEquals(currFilter, streamFilter, "getObjectInputFilter should be set");
+
+            // Verify that it can not be set again
+            Assert.assertThrows(IllegalStateException.class, () -> ois.setObjectInputFilter(streamFilter));
         }
         if (currFilter instanceof Validator validator) {
             validator.reset();
@@ -225,9 +270,12 @@ public class SerialFilterFactoryTest {
     // throws IllegalStateException with the specific message
     @Test(dependsOnMethods="testCase")
     void testSetFactoryAfterDeserialization() throws IOException {
-        BinaryOperator<ObjectInputFilter> factory = Config.getSerialFilterFactory();
-        IllegalStateException ise = Assert.expectThrows(IllegalStateException.class, () -> Config.setSerialFilterFactory(factory));
-        Assert.assertEquals(ise.getMessage(), "FilterFactory can not be set after any deserialization");
+        if (hasFilterPerm()) {
+            // Only test if is allowed by SM.
+            BinaryOperator<ObjectInputFilter> factory = Config.getSerialFilterFactory();
+            IllegalStateException ise = Assert.expectThrows(IllegalStateException.class, () -> Config.setSerialFilterFactory(factory));
+            Assert.assertEquals(ise.getMessage(), "FilterFactory can not be set after any deserialization");
+        }
     }
 
     /**

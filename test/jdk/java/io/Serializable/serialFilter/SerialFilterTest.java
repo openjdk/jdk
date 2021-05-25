@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import org.testng.annotations.DataProvider;
  * @run testng/othervm -Djdk.serialFilterTrace=true SerialFilterTest
  * @run testng/othervm -Djdk.serialSetFilterAfterRead=true -Djdk.serialFilterTrace=true SerialFilterTest
  *
- * @summary Test ObjectInputFilters
+ * @summary Test ObjectInputFilters using Builtin Filter Factory
  */
 @Test
 public class SerialFilterTest implements Serializable {
@@ -281,36 +281,37 @@ public class SerialFilterTest implements Serializable {
         Validator validator1 = new Validator();
         Validator validator2 = new Validator();
 
-        try {
-            byte[] bytes = writeObjects("text1");    // an object
+        Validator[] filterCases = {
+                validator1,     // setting filter to a non-null filter
+                null,           // setting stream-specific filter to null
+        };
 
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-                 ObjectInputStream ois = new ObjectInputStream(bais)) {
-                // Check the initial filter is the global filter; may be null
-                ObjectInputFilter global = ObjectInputFilter.Config.getSerialFilter();
-                ObjectInputFilter initial = ois.getObjectInputFilter();
-                Assert.assertEquals(global, initial, "initial filter should be the global filter");
+        for (Validator validator : filterCases) {
+            try {
+                byte[] bytes = writeObjects("text1");    // an object
 
-                // Check if it can be set to null
-                ois.setObjectInputFilter(null);
-                ObjectInputFilter filter = ois.getObjectInputFilter();
-                Assert.assertNull(filter, "set to null should be null");
+                try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes); ObjectInputStream ois = new ObjectInputStream(bais)) {
+                    // Check the initial filter is the global filter; may be null
+                    ObjectInputFilter global = ObjectInputFilter.Config.getSerialFilter();
+                    ObjectInputFilter initial = ois.getObjectInputFilter();
+                    Assert.assertEquals(global, initial, "initial filter should be the global filter");
 
-                ois.setObjectInputFilter(validator1);
-                Object o = ois.readObject();
-                try {
-                    ois.setObjectInputFilter(validator2);
-                    Assert.fail("Should not be able to set filter twice");
-                } catch (IllegalStateException ise) {
-                    // success, the exception was expected
+                    ois.setObjectInputFilter(validator);
+                    Object o = ois.readObject();
+                    try {
+                        ois.setObjectInputFilter(validator2);
+                        Assert.fail("Should not be able to set filter twice");
+                    } catch (IllegalStateException ise) {
+                        // success, the exception was expected
+                    }
+                } catch (EOFException eof) {
+                    Assert.fail("Should not reach end-of-file", eof);
+                } catch (ClassNotFoundException cnf) {
+                    Assert.fail("Deserializing", cnf);
                 }
-            } catch (EOFException eof) {
-                Assert.fail("Should not reach end-of-file", eof);
-            } catch (ClassNotFoundException cnf) {
-                Assert.fail("Deserializing", cnf);
+            } catch (IOException ex) {
+                Assert.fail("Unexpected IOException", ex);
             }
-        } catch (IOException ex) {
-            Assert.fail("Unexpected IOException", ex);
         }
     }
 

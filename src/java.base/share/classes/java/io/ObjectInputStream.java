@@ -1340,8 +1340,9 @@ public class ObjectInputStream
         if (streamFilterSet) {
             throw new IllegalStateException("filter can not be replaced");
         }
+        streamFilterSet = true;
         // Delegate to serialFilterFactory to compute stream filter
-        ObjectInputFilter next =  Config.getSerialFilterFactory()
+        ObjectInputFilter next = Config.getSerialFilterFactory()
                 .apply(serialFilter, filter);
         if (serialFilter != null && next == null) {
             throw new IllegalStateException("filter can not be replaced with null filter");
