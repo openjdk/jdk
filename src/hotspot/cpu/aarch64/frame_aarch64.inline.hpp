@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,7 @@
 
 #include "code/codeCache.hpp"
 #include "code/vmreg.inline.hpp"
+#include "pauth_aarch64.hpp"
 
 // Inline functions for AArch64 frames:
 
@@ -45,6 +46,7 @@ inline frame::frame() {
 static int spin;
 
 inline void frame::init(intptr_t* sp, intptr_t* fp, address pc) {
+  assert(pauth_ptr_is_raw(pc), "cannot be signed");
   intptr_t a = intptr_t(sp);
   intptr_t b = intptr_t(fp);
   _sp = sp;
@@ -69,6 +71,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) {
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc) {
+  assert(pauth_ptr_is_raw(pc), "cannot be signed");
   intptr_t a = intptr_t(sp);
   intptr_t b = intptr_t(fp);
   _sp = sp;

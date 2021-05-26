@@ -31,7 +31,6 @@
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
-#include "pauth_aarch64.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -440,11 +439,7 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   }
 #endif // COMPILER2_OR_JVMCI
 
-  address sender_pc = this->sender_pc();
-  // Interpreter should never sign the return address.
-  assert(pauth_ptr_is_raw(sender_pc), "cannot be signed");
-
-  return frame(sender_sp, unextended_sp, link(), sender_pc);
+  return frame(sender_sp, unextended_sp, link(), sender_pc());
 }
 
 
@@ -461,8 +456,6 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
 
   // the return_address is always the word on the stack
   address sender_pc = (address) *(l_sender_sp-1);
-  // C1/C2 compiled code should never sign the return address.
-  assert(pauth_ptr_is_raw(sender_pc), "cannot be signed");
 
   intptr_t** saved_fp_addr = (intptr_t**) (l_sender_sp - frame::sender_sp_offset);
 
