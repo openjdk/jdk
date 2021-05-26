@@ -131,21 +131,18 @@ class PrintPattern {
                 node = loop;
             } else if (node instanceof Pattern.Loop) {
                 return;  // stop here, body.next -> loop
-            } else if (node instanceof Pattern.Curly) {
-                Pattern.Curly c = (Pattern.Curly)node;
+            } else if (node instanceof Pattern.Curly c) {
                 str = "Curly " + c.type + " " + toStringRange(c.cmin, c.cmax);
                 print(node, str, depth);
                 walk(c.atom, depth);
                 print("/Curly", depth);
-            } else if (node instanceof Pattern.GroupCurly) {
-                Pattern.GroupCurly gc = (Pattern.GroupCurly)node;
+            } else if (node instanceof Pattern.GroupCurly gc) {
                 str = "GroupCurly " + gc.groupIndex / 2 +
                       ", " + gc.type + " " + toStringRange(gc.cmin, gc.cmax);
                 print(node, str, depth);
                 walk(gc.atom, depth);
                 print("/GroupCurly", depth);
-            } else if (node instanceof Pattern.GroupHead) {
-                Pattern.GroupHead head = (Pattern.GroupHead)node;
+            } else if (node instanceof Pattern.GroupHead head) {
                 Pattern.GroupTail tail = head.tail;
                 print(head, "Group.head " + (tail.groupIndex / 2), depth);
                 walk(head.next, depth);
@@ -157,8 +154,7 @@ class PrintPattern {
                 print(node, "Ques " + ((Pattern.Ques)node).type, depth);
                 walk(((Pattern.Ques)node).atom, depth);
                 print("/Ques", depth);
-            } else if (node instanceof Pattern.Branch) {
-                Pattern.Branch b = (Pattern.Branch)node;
+            } else if (node instanceof Pattern.Branch b) {
                 print(b, name, depth);
                 int i = 0;
                 while (true) {
@@ -186,8 +182,7 @@ class PrintPattern {
                 str = name + "  \"" +
                       toStringCPS(((Pattern.SliceNode)node).buffer) + "\"";
                 print(node, str, depth);
-            } else if (node instanceof Pattern.CharPropertyGreedy) {
-                Pattern.CharPropertyGreedy gcp = (Pattern.CharPropertyGreedy)node;
+            } else if (node instanceof Pattern.CharPropertyGreedy gcp) {
                 String pstr = pmap.get(gcp.predicate);
                 if (pstr == null)
                     pstr = gcp.predicate.toString();

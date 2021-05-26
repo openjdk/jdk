@@ -874,21 +874,19 @@ instruct reduce_min4I(iRegINoSp dst, iRegIorL2I isrc, vecX vsrc, vecX tmp, rFlag
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_max2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecX tmp, rFlagsReg cr)
+instruct reduce_max2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecD tmp, rFlagsReg cr)
 %{
   predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (MaxReductionV isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
-  format %{ "dup   $tmp, T2D, $vsrc\n\t"
-            "smaxv $tmp, T4S, $tmp\n\t"
+  format %{ "smaxp $tmp, T2S, $vsrc, $vsrc\n\t"
             "umov  $dst, $tmp, S, 0\n\t"
             "cmpw  $dst, $isrc\n\t"
             "cselw $dst, $dst, $isrc GT\t# max reduction2I"
   %}
   ins_encode %{
-    __ dup(as_FloatRegister($tmp$$reg), __ T2D, as_FloatRegister($vsrc$$reg));
-    __ smaxv(as_FloatRegister($tmp$$reg), __ T4S, as_FloatRegister($tmp$$reg));
+    __ smaxp(as_FloatRegister($tmp$$reg), __ T2S, as_FloatRegister($vsrc$$reg), as_FloatRegister($vsrc$$reg));
     __ umov(as_Register($dst$$reg), as_FloatRegister($tmp$$reg), __ S, 0);
     __ cmpw(as_Register($dst$$reg), as_Register($isrc$$reg));
     __ cselw(as_Register($dst$$reg), as_Register($dst$$reg), as_Register($isrc$$reg), Assembler::GT);
@@ -896,21 +894,19 @@ instruct reduce_max2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecX tmp, rFlag
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_min2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecX tmp, rFlagsReg cr)
+instruct reduce_min2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecD tmp, rFlagsReg cr)
 %{
   predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (MinReductionV isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
-  format %{ "dup   $tmp, T2D, $vsrc\n\t"
-            "sminv $tmp, T4S, $tmp\n\t"
+  format %{ "sminp $tmp, T2S, $vsrc, $vsrc\n\t"
             "umov  $dst, $tmp, S, 0\n\t"
             "cmpw  $dst, $isrc\n\t"
             "cselw $dst, $dst, $isrc LT\t# min reduction2I"
   %}
   ins_encode %{
-    __ dup(as_FloatRegister($tmp$$reg), __ T2D, as_FloatRegister($vsrc$$reg));
-    __ sminv(as_FloatRegister($tmp$$reg), __ T4S, as_FloatRegister($tmp$$reg));
+    __ sminp(as_FloatRegister($tmp$$reg), __ T2S, as_FloatRegister($vsrc$$reg), as_FloatRegister($vsrc$$reg));
     __ umov(as_Register($dst$$reg), as_FloatRegister($tmp$$reg), __ S, 0);
     __ cmpw(as_Register($dst$$reg), as_Register($isrc$$reg));
     __ cselw(as_Register($dst$$reg), as_Register($dst$$reg), as_Register($isrc$$reg), Assembler::LT);
@@ -4053,22 +4049,21 @@ instruct replicate2D(vecX dst, vRegD src)
 
 // ====================REDUCTION ARITHMETIC====================================
 
-instruct reduce_add2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp, iRegINoSp tmp2)
+instruct reduce_add2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecD vtmp, iRegINoSp itmp)
 %{
   predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (AddReductionVI isrc vsrc));
   ins_cost(INSN_COST);
-  effect(TEMP tmp, TEMP tmp2);
-  format %{ "umov  $tmp, $vsrc, S, 0\n\t"
-            "umov  $tmp2, $vsrc, S, 1\n\t"
-            "addw  $tmp, $isrc, $tmp\n\t"
-            "addw  $dst, $tmp, $tmp2\t# add reduction2I"
+  effect(TEMP vtmp, TEMP itmp);
+  format %{ "addpv  $vtmp, T2S, $vsrc, $vsrc\n\t"
+            "umov  $itmp, $vtmp, S, 0\n\t"
+            "addw  $dst, $itmp, $isrc\t# add reduction2I"
   %}
   ins_encode %{
-    __ umov($tmp$$Register, as_FloatRegister($vsrc$$reg), __ S, 0);
-    __ umov($tmp2$$Register, as_FloatRegister($vsrc$$reg), __ S, 1);
-    __ addw($tmp$$Register, $isrc$$Register, $tmp$$Register);
-    __ addw($dst$$Register, $tmp$$Register, $tmp2$$Register);
+    __ addpv(as_FloatRegister($vtmp$$reg), __ T2S,
+             as_FloatRegister($vsrc$$reg), as_FloatRegister($vsrc$$reg));
+    __ umov($itmp$$Register, as_FloatRegister($vtmp$$reg), __ S, 0);
+    __ addw($dst$$Register, $itmp$$Register, $isrc$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}

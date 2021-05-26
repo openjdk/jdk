@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm MacSameTest
- * @run main/othervm MacSameTest sm
+ * @run main/othervm -Djava.security.manager=allow MacSameTest sm
  * @key randomness
  */
 

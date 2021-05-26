@@ -49,8 +49,8 @@ final class VarForm {
     final @Stable MemberName[] memberName_table;
 
     VarForm(Class<?> implClass, Class<?> receiver, Class<?> value, Class<?>... intermediate) {
-        this.methodType_table = new MethodType[VarHandle.AccessType.values().length];
-        this.memberName_table = new MemberName[VarHandle.AccessMode.values().length];
+        this.methodType_table = new MethodType[VarHandle.AccessType.COUNT];
+        this.memberName_table = new MemberName[VarHandle.AccessMode.COUNT];
         this.implClass = implClass;
         if (receiver == null) {
             initMethodTypes(value, intermediate);
@@ -64,7 +64,7 @@ final class VarForm {
 
     // Used by IndirectVarHandle
     VarForm(Class<?> value, Class<?>[] coordinates) {
-        this.methodType_table = new MethodType[VarHandle.AccessType.values().length];
+        this.methodType_table = new MethodType[VarHandle.AccessType.COUNT];
         this.memberName_table = null;
         this.implClass = null;
         initMethodTypes(value, coordinates);

@@ -104,9 +104,6 @@ public:
     void remove_lower();
     void add_constant(int value);
     Bound *copy();
-
-  private:
-    void init();
   };
 
 

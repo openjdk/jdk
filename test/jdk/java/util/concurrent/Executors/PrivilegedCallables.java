@@ -25,7 +25,7 @@
  * @test
  * @bug 6552961 6558429
  * @summary Test privilegedCallable, privilegedCallableUsingCurrentClassLoader
- * @run main/othervm PrivilegedCallables
+ * @run main/othervm -Djava.security.manager=allow PrivilegedCallables
  * @author Martin Buchholz
  */
 

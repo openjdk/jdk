@@ -25,6 +25,7 @@
  * @test
  * @bug 4506596 6258510 6498158
  * @summary Tests PropertyEditor for value of type Boolean with security manager
+ * @run main/othervm -Djava.security.manager=allow TestBooleanClass
  * @author Sergey Malenkov
  * @modules java.compiler
  *          java.desktop

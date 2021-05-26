@@ -65,7 +65,7 @@ import jdk.internal.module.Modules;
  *          and call setAccessible(false) followed by setAccessible(true);
  * @modules java.base/jdk.internal.module
  * @run main/othervm --add-modules=ALL-SYSTEM FieldSetAccessibleTest UNSECURE
- * @run main/othervm --add-modules=ALL-SYSTEM FieldSetAccessibleTest SECURE
+ * @run main/othervm --add-modules=ALL-SYSTEM -Djava.security.manager=allow FieldSetAccessibleTest SECURE
  *
  * @author danielfuchs
  */
@@ -286,7 +286,11 @@ public class FieldSetAccessibleTest {
          * Filter deployment modules
          */
         static Set<String> systemModules() {
-            Set<String> mods = Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws");
+            Set<String> mods = Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws",
+                // All JVMCI packages other than jdk.vm.ci.services are dynamically
+                // exported to jdk.internal.vm.compiler
+                "jdk.internal.vm.compiler"
+            );
             return ModuleFinder.ofSystem().findAll().stream()
                                .map(mref -> mref.descriptor().name())
                                .filter(mn -> !mods.contains(mn))
