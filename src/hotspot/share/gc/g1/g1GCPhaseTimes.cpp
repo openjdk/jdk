@@ -73,12 +73,12 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergeER] = new WorkerDataArray<double>("MergeER", "Eager Reclaim (ms):", max_gc_threads);
 
   _gc_par_phases[MergeRS] = new WorkerDataArray<double>("MergeRS", "Remembered Sets (ms):", max_gc_threads);
-  for (uint i = 0; i < MergeRSContainersLast; i++) {
+  for (uint i = 0; i < MergeRSContainersSentinel; i++) {
     _gc_par_phases[MergeRS]->create_thread_work_items(GCMergeRSWorkItemsStrings[i], i);
   }
 
   _gc_par_phases[OptMergeRS] = new WorkerDataArray<double>("OptMergeRS", "Optional Remembered Sets (ms):", max_gc_threads);
-  for (uint i = 0; i < MergeRSContainersLast; i++) {
+  for (uint i = 0; i < MergeRSContainersSentinel; i++) {
     _gc_par_phases[OptMergeRS]->create_thread_work_items(GCMergeRSWorkItemsStrings[i], i);
   }
 

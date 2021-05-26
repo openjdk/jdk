@@ -154,18 +154,6 @@
           "The threshold that defines (>=) a hot card.")                    \
           range(0, max_jubyte)                                              \
                                                                             \
-  product(intx, G1RSetRegionEntries, 0,                                     \
-          "Max number of regions for which we keep bitmaps."                \
-          "Will be set ergonomically by default.")                          \
-          range(0, max_jint/wordSize)                                       \
-          constraint(G1RSetRegionEntriesConstraintFunc,AfterErgo)           \
-                                                                            \
-  product(intx, G1RSetSparseRegionEntries, 0,                               \
-          "Max number of entries per region in a sparse table."             \
-          "Will be set ergonomically by default.")                          \
-          range(0, max_jint/wordSize)                                       \
-          constraint(G1RSetSparseRegionEntriesConstraintFunc,AfterErgo)     \
-                                                                            \
   develop(uint, G1RemSetArrayOfCardsEntriesBase, 4,                         \
           "Maximum number of entries per region in the Array of Cards "     \
           "card set container per MB of a heap region.")                    \

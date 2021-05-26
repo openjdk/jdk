@@ -32,10 +32,7 @@
 #include "heapRegionRemSet.hpp"
 #include "ci/ciUtilities.hpp"
 
-const char* G1CardSetFreeMemoryTask::_state_names[] = { "CalculateUsed",
-                                                        "ReturnToVM",
-                                                        "ReturnToOS",
-                                                        "Cleanup" };
+constexpr const char* G1CardSetFreeMemoryTask::_state_names[];
 
 const char* G1CardSetFreeMemoryTask::get_state_name(State value) const {
   return _state_names[static_cast<std::underlying_type_t<State>>(value)];
@@ -147,23 +144,34 @@ bool G1CardSetFreeMemoryTask::free_excess_card_set_memory() {
       }
       case State::Cleanup: {
         cleanup_return_infos();
-        next_state = State::CalculateUsed;
+        next_state = State::Inactive;
         break;
       }
+      default:
+        log_error(gc, task)("Should not try to free excess card set memory in %s state", get_state_name(_state));
+        ShouldNotReachHere();
+        break;
     }
 
-    log_trace(gc, task)("Card Set Free Memory: State change from %s to %s",
-                        get_state_name(_state),
-                        get_state_name(next_state));
-
-    _state = next_state;
-  } while (_state != State::CalculateUsed && !deadline_exceeded(end));
+    set_state(next_state);
+  } while (_state != State::Inactive && !deadline_exceeded(end));
 
   log_trace(gc, task)("Card Set Free Memory: Step took %1.3fms, done %s",
                       TimeHelper::counter_to_millis(os::elapsed_counter() - start),
                       bool_to_str(_state == State::CalculateUsed));
 
-  return _state != State::CalculateUsed;
+  return is_active();
+}
+
+void G1CardSetFreeMemoryTask::set_state(State new_state) {
+  log_trace(gc, task)("Card Set Free Memory: State change from %s to %s",
+                      get_state_name(_state),
+                      get_state_name(new_state));
+  _state = new_state;
+}
+
+bool G1CardSetFreeMemoryTask::is_active() const {
+  return _state != State::Inactive;
 }
 
 jlong G1CardSetFreeMemoryTask::reschedule_delay_ms() const {
@@ -177,12 +185,7 @@ void G1CardSetFreeMemoryTask::execute() {
   SuspendibleThreadSetJoiner sts;
 
   if (free_excess_card_set_memory()) {
-    // While joining the STS, we might have been interrupted by a GC that already
-    // enqueued this task again. So we need to check again whether we are already
-    // in the queue before rescheduling ourselves.
-    if (!is_enqueued()) {
-      schedule(reschedule_delay_ms());
-    }
+    schedule(reschedule_delay_ms());
   }
 }
 
@@ -192,4 +195,9 @@ void G1CardSetFreeMemoryTask::notify_new_stats(G1CardSetMemoryStats* young_gen_s
 
   _total_used = *young_gen_stats;
   _total_used.add(*collection_set_candidate_stats);
+
+  if (!is_active()) {
+    set_state(State::CalculateUsed);
+    G1CollectedHeap::heap()->service_thread()->schedule_task(this, 0);
+  }
 }

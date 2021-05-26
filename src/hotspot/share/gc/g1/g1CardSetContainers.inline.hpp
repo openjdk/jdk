@@ -28,12 +28,6 @@
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 
-inline G1CardSetInlinePtr::G1CardSetInlinePtr(uint card_idx, uint bits_per_card) :
-  _value_addr(nullptr),
-  _value((CardSetPtr)G1CardSet::CardSetInlinePtr) {
-  _value = merge(_value, card_idx, 0, bits_per_card);
-}
-
 inline G1CardSetInlinePtr::CardSetPtr G1CardSetInlinePtr::merge(CardSetPtr orig_value, uint card_in_region, uint idx, uint bits_per_card) {
   assert((idx & (SizeFieldMask >> SizeFieldPos)) == idx, "Index %u too large to fit into size field", idx);
   assert(card_in_region < ((uint)1 << bits_per_card), "Card %u too large to fit into card value field", card_in_region);

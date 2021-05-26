@@ -2579,9 +2579,6 @@ void G1CollectedHeap::gc_epilogue(bool full) {
 
   _free_card_set_memory_task->notify_new_stats(&_young_gen_card_set_stats,
                                                &_collection_set_candidates_card_set_stats);
-  if (!_free_card_set_memory_task->is_enqueued()) {
-    _service_thread->schedule_task(_free_card_set_memory_task, 0);
-  }
 }
 
 uint G1CollectedHeap::uncommit_regions(uint region_limit) {

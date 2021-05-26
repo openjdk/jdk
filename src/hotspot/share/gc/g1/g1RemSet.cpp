@@ -1110,7 +1110,7 @@ public:
 class G1MergeHeapRootsTask : public AbstractGangTask {
 
   class G1MergeCardSetStats {
-    size_t _merged[G1GCPhaseTimes::MergeRSContainersLast];
+    size_t _merged[G1GCPhaseTimes::MergeRSContainersSentinel];
 
   public:
     G1MergeCardSetStats() {
@@ -1131,7 +1131,11 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
     size_t merged(uint i) const { return _merged[i]; }
   };
 
-  // Visitor for remembered sets, dropping entries onto the card table.
+  // Visitor for remembered sets. Several methods of it are called by a region's
+  // card set iterator to drop card set remembered set entries onto the card.
+  // table. This is in addition to being the HeapRegionClosure to iterate over
+  // all region's remembered sets.
+  //
   // We add a small prefetching cache in front of the actual work as dropping
   // onto the card table is basically random memory access. This improves
   // performance of this operation significantly.
@@ -1428,7 +1432,7 @@ public:
       G1FlushHumongousCandidateRemSets cl(_scan_state);
       g1h->heap_region_iterate(&cl);
 
-      for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersLast; i++) {
+      for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
         p->record_or_add_thread_work_item(merge_remset_phase, worker_id, cl.merged(i), i);
       }
     }
@@ -1443,7 +1447,7 @@ public:
         stats = cl.stats();
       }
 
-      for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersLast; i++) {
+      for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
         p->record_or_add_thread_work_item(merge_remset_phase, worker_id, stats.merged(i), i);
       }
     }

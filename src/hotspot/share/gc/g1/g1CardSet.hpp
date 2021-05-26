@@ -167,19 +167,18 @@ class G1CardSet : public CHeapObj<mtGCCardSet> {
 public:
   // Two lower bits are used to encode the card storage types
   static const uintptr_t CardSetPtrHeaderSize = 2;
-  /*
-   * CardSetPtr represents the card storage type of a given region. It encodes
-   * a type in the LSBs, in addition to having a few significant values.
-   *
-   * Possible encodings:
-   *
-   * 0...00000 free               (should never happen)
-   * 1...11111 full
-   * X...XXX00 inline-ptr-cards   (64 bit)
-   * X...XXX01 array of cards
-   * X...XXX10 bitmap
-   * X...XXX11 howl (64 bit)
-   */
+
+  // CardSetPtr represents the card storage type of a given region. It encodes
+  // a type in the LSBs, in addition to having a few significant values.
+  //
+  // Possible encodings:
+  //
+  // 0...00000 free               (should never happen)
+  // 1...11111 full
+  // X...XXX00 inline-ptr-cards   (64 bit)
+  // X...XXX01 array of cards
+  // X...XXX10 bitmap
+  // X...XXX11 howl (64 bit)
   typedef void* CardSetPtr;
   // Coarsening happens in the order below:
   // CardSetInlinePtr -> CardSetArrayOfCards -> CardSetHowl -> Full

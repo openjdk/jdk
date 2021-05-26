@@ -31,8 +31,6 @@
 #define G1_GC_CONSTRAINTS(f)                          \
                                                       \
   /* G1 Remembered Sets Constraints */                \
-  f(intx,   G1RSetRegionEntriesConstraintFunc)        \
-  f(intx,   G1RSetSparseRegionEntriesConstraintFunc)  \
   f(uint,   G1RemSetArrayOfCardsEntriesConstraintFunc)\
   f(uint,   G1RemSetHowlMaxNumBucketsConstraintFunc)  \
   f(uint,   G1RemSetHowlNumBucketsConstraintFunc)     \

@@ -47,12 +47,10 @@ public class VMDeprecatedOptions {
         {"InitialRAMFraction",        "64"},
         {"TLABStats",                 "false"},
         {"AllowRedefinitionToAddDeleteMethods", "true"},
-        {"G1RSetRegionEntries",       "1024"},
 
         // deprecated alias flags (see also aliased_jvm_flags):
         {"DefaultMaxRAMFraction", "4"},
-        {"CreateMinidumpOnCrash", "false"},
-        {"G1RSetSparseRegionEntries", "128"}
+        {"CreateMinidumpOnCrash", "false"}
     };
 
     static String getDeprecationString(String optionName) {

@@ -37,13 +37,19 @@ class G1CardSetBuffer;
 class G1CardSetFreeMemoryTask : public G1ServiceTask {
 
   enum class State : uint {
+    Inactive,
     CalculateUsed,
     ReturnToVM,
     ReturnToOS,
     Cleanup
   };
 
-  static const char* _state_names[];
+  static constexpr const char* _state_names[] = { "Invalid",
+                                                  "CalculateUsed",
+                                                  "ReturnToVM",
+                                                  "ReturnToOS",
+                                                  "Cleanup" };
+
   const char* get_state_name(State value) const;
 
   State _state;
@@ -69,6 +75,10 @@ class G1CardSetFreeMemoryTask : public G1ServiceTask {
   // Free excess card set memory, main method. Returns true if there is more work
   // to do.
   bool free_excess_card_set_memory();
+
+  void set_state(State new_state);
+  // Returns whether we are currently processing a recent request.
+  bool is_active() const;
 
   // The delay used to reschedule this task if not all work has been completed.
   jlong reschedule_delay_ms() const;

@@ -50,11 +50,6 @@ void G1CardSetConfiguration::initialize_globals() {
   const int LOG_M = 20;
   uint region_size_log_mb = (uint)MAX2(HeapRegion::LogOfHRGrainBytes - LOG_M, 0);
 
-  if (!FLAG_IS_DEFAULT(G1RSetSparseRegionEntries) && FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
-    // Only if only G1RSetSparseRegionEntries is set, use it (capping its value). Otherwise
-    // G1RemSetArrayOfCardsEntries just overrides it.
-    FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MIN2((uint)G1RSetSparseRegionEntries, 65536u));
-  }
   if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
     FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(num_cards_in_inline_ptr(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift) * 2,
                                                     G1RemSetArrayOfCardsEntriesBase * (1u << (region_size_log_mb + 1))));
@@ -268,6 +263,10 @@ public:
     _table(mm, initial_log_table_size) {
   }
 
+  ~G1CardSetHashTable() {
+    reset();
+  }
+
   G1CardSetHashTableValue* get_or_add(uint region_idx, bool* should_grow) {
     G1CardSetHashTableLookUp lookup(region_idx);
     G1CardSetHashTableFound found;
@@ -449,7 +448,7 @@ class G1ReleaseCardsets : public StackObj {
         return;
       }
 
-      CardSetPtr old_value = Atomic::cmpxchg(card_set_addr, cur_card_set, G1CardSet::FullCardSet); // Memory order?
+      CardSetPtr old_value = Atomic::cmpxchg(card_set_addr, cur_card_set, G1CardSet::FullCardSet);
 
       if (old_value == cur_card_set) {
         _card_set->release_and_maybe_free_card_set(cur_card_set);
@@ -475,18 +474,17 @@ G1AddCardResult G1CardSet::add_to_howl(CardSetPtr parent_card_set,
                                                 uint card_region,
                                                 uint card_in_region,
                                                 bool increment_total) {
-  G1CardSetHowl* howling_array = card_set_ptr<G1CardSetHowl>(parent_card_set);
+  G1CardSetHowl* howl = card_set_ptr<G1CardSetHowl>(parent_card_set);
 
   G1AddCardResult add_result;
-  CardSetPtr to_transfer;
+  CardSetPtr to_transfer = nullptr;
   CardSetPtr card_set;
 
   uint bucket = _config->howl_bucket_index(card_in_region);
-  volatile CardSetPtr* bucket_entry = howling_array->get_card_set_addr(bucket);
+  volatile CardSetPtr* bucket_entry = howl->get_card_set_addr(bucket);
 
   while (true) {
-    to_transfer = nullptr;
-    if (Atomic::load(&howling_array->_num_entries) >= _config->cards_in_howl_threshold()) {
+    if (Atomic::load(&howl->_num_entries) >= _config->cards_in_howl_threshold()) {
       return Overflow;
     }
 
@@ -510,7 +508,7 @@ G1AddCardResult G1CardSet::add_to_howl(CardSetPtr parent_card_set,
   }
 
   if (increment_total && add_result == Added) {
-    Atomic::inc(&howling_array->_num_entries, memory_order_relaxed);
+    Atomic::inc(&howl->_num_entries, memory_order_relaxed);
   }
 
   if (to_transfer != nullptr) {
@@ -548,7 +546,6 @@ G1CardSet::CardSetPtr G1CardSet::create_coarsened_array_of_cards(uint card_in_re
   }
   return new_card_set;
 }
-
 
 bool G1CardSet::coarsen_card_set(volatile CardSetPtr* card_set_addr,
                                  CardSetPtr cur_card_set,

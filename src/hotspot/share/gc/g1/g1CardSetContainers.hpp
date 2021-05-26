@@ -66,8 +66,6 @@ class G1CardSetInlinePtr : public StackObj {
 public:
   G1CardSetInlinePtr() : _value_addr(nullptr), _value((CardSetPtr)G1CardSet::CardSetInlinePtr) { }
 
-  G1CardSetInlinePtr(uint const card_idx, uint const bits_per_card);
-
   G1CardSetInlinePtr(CardSetPtr value) : _value_addr(nullptr), _value(value) {
     assert(((uintptr_t)_value & G1CardSet::CardSetInlinePtr) == G1CardSet::CardSetInlinePtr, "Value " PTR_FORMAT " is not a valid G1CardSetInPtr.", p2i(_value));
   }
@@ -82,10 +80,6 @@ public:
 
   template <class FOUND>
   void iterate(FOUND& found, uint const bits_per_card);
-
-  uint card_at(uint const idx, uint const bits_per_card) {
-    return card_at(*this, idx, bits_per_card);
-  }
 
   operator CardSetPtr () { return _value; }
 
@@ -172,11 +166,6 @@ public:
 
   size_t num_entries() const { return _num_entries & EntryMask; }
   size_t max_entries() const { return _size; }
-
-  uint card_at(uint const idx) {
-    assert(idx < num_entries(), "Tried to exist card at %u beyond card entries", idx);
-    return _data[idx];
-  }
 
   static size_t header_size_in_bytes() { return header_size_in_bytes_internal<G1CardSetArray>(); }
 
