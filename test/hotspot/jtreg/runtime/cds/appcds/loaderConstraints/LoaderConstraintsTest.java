@@ -110,8 +110,7 @@ public class LoaderConstraintsTest  {
     public static void main(String... args) throws Exception {
         appJar = ClassFileInstaller.writeJar("loader_constraints.jar", appClasses);
         doTest();
-        if (!Platform.isWindows() && Platform.is64bit()) {
-            // custom loaders are not supported on Windows or 32-bit systems yet.
+        if (Platform.areCustomLoadersSupportedForCDS()) {
             loaderJar = ClassFileInstaller.writeJar("custom_app_loader.jar", loaderClasses);
             doTestCustomLoader();
         }
