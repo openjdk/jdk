@@ -152,10 +152,6 @@ class oopDesc;
 #define UINTX_FORMAT_W(width) "%" #width PRIuPTR
 
 // Convert pointer to intptr_t, for use in printing pointers.
-inline intptr_t p2i(const void* p) {
-  return (intptr_t) p;
-}
-
 inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;
 }
