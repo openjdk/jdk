@@ -1059,9 +1059,9 @@ void G1RemSet::prepare_for_scan_heap_roots() {
   _scan_state->prepare();
 }
 
-// Small ring buffer used for prefetching cards for read/write from the card
+// Small ring buffer used for prefetching cards for write from the card
 // table during GC.
-template <class T, bool for_write>
+template <class T>
 class G1MergeHeapRootsPrefetchCache {
 public:
   static const uint CacheSize = G1MergeHeapRootsPrefetchCacheSize;
@@ -1094,11 +1094,7 @@ public:
   }
 
   T* push(T* elem) {
-    if (for_write) {
-      Prefetch::write(elem, 0);
-    } else {
-      Prefetch::read(elem, 0);
-    }
+    Prefetch::write(elem, 0);
     T* result = _cache[_cur_cache_idx];
     _cache[_cur_cache_idx++] = elem;
     _cur_cache_idx &= (CacheSize - 1);
@@ -1151,14 +1147,14 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
     // recalculation as our remembered set containers are per region.
     size_t _region_base_idx;
 
-    class G1MergeCardSetCache : public G1MergeHeapRootsPrefetchCache<G1CardTable::CardValue, true> {
+    class G1MergeCardSetCache : public G1MergeHeapRootsPrefetchCache<G1CardTable::CardValue> {
       G1MergeCardSetClosure* const _merge_card_cl;
 
     public:
       G1MergeCardSetCache(G1MergeCardSetClosure* const merge_card_cl) :
         // Initially set dummy card value to Dirty to avoid any actual mark work if we
         // try to process it.
-        G1MergeHeapRootsPrefetchCache<G1CardTable::CardValue, true>(G1CardTable::dirty_card_val()),
+        G1MergeHeapRootsPrefetchCache<G1CardTable::CardValue>(G1CardTable::dirty_card_val()),
         _merge_card_cl(merge_card_cl) { }
 
       ~G1MergeCardSetCache() {
@@ -1306,30 +1302,12 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
 
   // Visitor for the log buffer entries to merge them into the card table.
   class G1MergeLogBufferCardsClosure : public G1CardTableEntryClosure {
-    friend class G1MergeLogBufferCardsCache;
 
     G1RemSetScanState* _scan_state;
     G1CardTable* _ct;
 
     size_t _cards_dirty;
     size_t _cards_skipped;
-
-    class G1MergeLogBufferCardsCache : public G1MergeHeapRootsPrefetchCache<G1CardTable::CardValue, false> {
-      G1MergeLogBufferCardsClosure* const _merge_log_buffer_cl;
-
-    public:
-      G1MergeLogBufferCardsCache(G1MergeLogBufferCardsClosure* const merge_log_buffer_cl) :
-        // Initially set dummy card value to Clean to avoid any actual work if we
-        // try to process it.
-        G1MergeHeapRootsPrefetchCache<G1CardTable::CardValue, false>(G1CardTable::clean_card_val()),
-        _merge_log_buffer_cl(merge_log_buffer_cl) { }
-
-      ~G1MergeLogBufferCardsCache() {
-        for (uint i = 0; i < CacheSize; i++) {
-          _merge_log_buffer_cl->process_card(push(&_dummy_card));
-        }
-      }
-    } _merge_log_buffer_cache;
 
     void process_card(CardValue* card_ptr) {
       if (*card_ptr == G1CardTable::dirty_card_val()) {
@@ -1345,8 +1323,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
       _scan_state(scan_state),
       _ct(g1h->card_table()),
       _cards_dirty(0),
-      _cards_skipped(0),
-      _merge_log_buffer_cache(this)
+      _cards_skipped(0)
     {}
 
     void do_card_ptr(CardValue* card_ptr, uint worker_id) {
@@ -1363,8 +1340,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
       // This code may count duplicate entries in the log buffers (even if rare) multiple
       // times.
       if (_scan_state->contains_cards_to_process(region_idx)) {
-        CardValue* to_process = _merge_log_buffer_cache.push(card_ptr);
-        process_card(to_process);
+        process_card(card_ptr);
       } else {
         // We may have had dirty cards in the (initial) collection set (or the
         // young regions which are always in the initial collection set). We do
