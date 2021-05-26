@@ -63,7 +63,7 @@ package sun.text.resources.ext;
 
 import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_in_ID extends ParallelListResourceBundle {
+public class FormatData_id_ID extends ParallelListResourceBundle {
     protected final Object[][] getContents() {
         return new Object[][] {
             { "TimePatterns",

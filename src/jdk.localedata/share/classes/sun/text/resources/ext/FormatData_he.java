@@ -78,7 +78,7 @@ package sun.text.resources.ext;
 
 import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_iw extends ParallelListResourceBundle {
+public class FormatData_he extends ParallelListResourceBundle {
     /**
      * Overrides ParallelListResourceBundle
      */

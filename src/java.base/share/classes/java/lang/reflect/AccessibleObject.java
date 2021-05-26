@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,6 +497,7 @@ public class AccessibleObject implements AnnotatedElement {
     /**
      * Constructor: only used by the Java Virtual Machine.
      */
+    @Deprecated(since="17")
     protected AccessibleObject() {}
 
     // Indicates whether language-level access checks are overridden
@@ -520,12 +521,16 @@ public class AccessibleObject implements AnnotatedElement {
      * <p> Note that any annotation returned by this method is a
      * declaration annotation.
      *
+     * @implSpec
+     * The default implementation throws {@link
+     * UnsupportedOperationException}; subclasses should override this method.
+     *
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        throw new AssertionError("All subclasses should override this method");
+        throw new UnsupportedOperationException("All subclasses should override this method");
     }
 
     /**
@@ -545,12 +550,16 @@ public class AccessibleObject implements AnnotatedElement {
      * <p> Note that any annotations returned by this method are
      * declaration annotations.
      *
+     * @implSpec
+     * The default implementation throws {@link
+     * UnsupportedOperationException}; subclasses should override this method.
+     *
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
     @Override
     public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
-        throw new AssertionError("All subclasses should override this method");
+        throw new UnsupportedOperationException("All subclasses should override this method");
     }
 
     /**
@@ -606,11 +615,15 @@ public class AccessibleObject implements AnnotatedElement {
      * <p> Note that any annotations returned by this method are
      * declaration annotations.
      *
+     * @implSpec
+     * The default implementation throws {@link
+     * UnsupportedOperationException}; subclasses should override this method.
+     *
      * @since 1.5
      */
     @Override
     public Annotation[] getDeclaredAnnotations()  {
-        throw new AssertionError("All subclasses should override this method");
+        throw new UnsupportedOperationException("All subclasses should override this method");
     }
 
     // Shared access checking logic.

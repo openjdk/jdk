@@ -63,7 +63,7 @@ package sun.text.resources.ext;
 
 import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_in extends ParallelListResourceBundle {
+public class FormatData_id extends ParallelListResourceBundle {
     protected final Object[][] getContents() {
         return new Object[][] {
             { "MonthNames",

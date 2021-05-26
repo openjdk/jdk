@@ -31,5 +31,5 @@
 @interface ToolbarAccessibility : CommonComponentAccessibility {
 
 };
-- (NSString * _Nonnull)accessibilityRole;
+- (NSAccessibilityRole _Nonnull)accessibilityRole;
 @end

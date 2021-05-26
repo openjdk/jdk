@@ -348,6 +348,7 @@ public class Main {
 
         // add implicit options
         javacOpts.add("-proc:none");
+        javacOpts.add("-Xdiags:verbose");
 
         return javacOpts;
     }

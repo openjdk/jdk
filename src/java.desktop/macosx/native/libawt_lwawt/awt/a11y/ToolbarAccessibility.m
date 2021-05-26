@@ -30,8 +30,8 @@
  */
 @implementation ToolbarAccessibility
 
-- (NSString * _Nonnull)accessibilityRole
+- (NSAccessibilityRole _Nonnull)accessibilityRole
 {
-    return [self accessibilityRoleAttribute];
+    return NSAccessibilityToolbarRole;
 }
 @end

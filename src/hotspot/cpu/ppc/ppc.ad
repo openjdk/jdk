@@ -10335,6 +10335,38 @@ instruct castLL(iRegLdst dst) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct castFF(regF dst) %{
+  match(Set dst (CastFF dst));
+  format %{ " -- \t// castFF of $dst" %}
+  size(0);
+  ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_default);
+%}
+
+instruct castDD(regD dst) %{
+  match(Set dst (CastDD dst));
+  format %{ " -- \t// castDD of $dst" %}
+  size(0);
+  ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_default);
+%}
+
+instruct castVV8(iRegLdst dst) %{
+  match(Set dst (CastVV dst));
+  format %{ " -- \t// castVV of $dst" %}
+  size(0);
+  ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_default);
+%}
+
+instruct castVV16(vecX dst) %{
+  match(Set dst (CastVV dst));
+  format %{ " -- \t// castVV of $dst" %}
+  size(0);
+  ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_default);
+%}
+
 instruct checkCastPP(iRegPdst dst) %{
   match(Set dst (CheckCastPP dst));
   format %{ " -- \t// checkcastPP of $dst" %}
