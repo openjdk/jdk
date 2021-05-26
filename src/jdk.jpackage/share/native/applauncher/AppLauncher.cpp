@@ -118,6 +118,7 @@ Jvm* AppLauncher::createJvmLauncher() const {
         .setPath(findJvmLib(cfgFile, defaultRuntimePath, jvmLibNames))
         .addArgument(launcherPath)
         .addArgument(_T("-Djava.library.path=")
+            + SysInfo::getLibPath() + FileUtils::pathSeparator
             + appDirPath + FileUtils::pathSeparator
             + FileUtils::dirname(launcherPath));
 

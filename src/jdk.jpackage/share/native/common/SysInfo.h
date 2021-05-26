@@ -87,6 +87,11 @@ namespace SysInfo {
      * Returns 'true' if environment variable with the given name is set.
      */
     bool isEnvVariableSet(const tstring& name);
+
+    /*
+     * Returns value of the appropriate environment variable for library path
+     */
+    tstring getLibPath();
 }
 
 #endif // SYSINFO_H
