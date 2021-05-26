@@ -32,7 +32,6 @@ import java.security.AccessController;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
-import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
@@ -324,7 +323,6 @@ public class AccessibleObject implements AnnotatedElement {
         if (isClassPublic && declaringModule.isExported(pn, callerModule)) {
             // member is public
             if (Modifier.isPublic(modifiers)) {
-                logIfExportedForIllegalAccess(caller, declaringClass);
                 return true;
             }
 
@@ -332,14 +330,12 @@ public class AccessibleObject implements AnnotatedElement {
             if (Modifier.isProtected(modifiers)
                 && Modifier.isStatic(modifiers)
                 && isSubclassOf(caller, declaringClass)) {
-                logIfExportedForIllegalAccess(caller, declaringClass);
                 return true;
             }
         }
 
         // package is open to caller
         if (declaringModule.isOpen(pn, callerModule)) {
-            logIfOpenedForIllegalAccess(caller, declaringClass);
             return true;
         }
 
@@ -371,30 +367,6 @@ public class AccessibleObject implements AnnotatedElement {
             queryClass = queryClass.getSuperclass();
         }
         return false;
-    }
-
-    private void logIfOpenedForIllegalAccess(Class<?> caller, Class<?> declaringClass) {
-        Module callerModule = caller.getModule();
-        Module targetModule = declaringClass.getModule();
-        // callerModule is null during early startup
-        if (callerModule != null && !callerModule.isNamed() && targetModule.isNamed()) {
-            IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
-            if (logger != null) {
-                logger.logIfOpenedForIllegalAccess(caller, declaringClass, this::toShortString);
-            }
-        }
-    }
-
-    private void logIfExportedForIllegalAccess(Class<?> caller, Class<?> declaringClass) {
-        Module callerModule = caller.getModule();
-        Module targetModule = declaringClass.getModule();
-        // callerModule is null during early startup
-        if (callerModule != null && !callerModule.isNamed() && targetModule.isNamed()) {
-            IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
-            if (logger != null) {
-                logger.logIfExportedForIllegalAccess(caller, declaringClass, this::toShortString);
-            }
-        }
     }
 
     /**
@@ -742,9 +714,6 @@ public class AccessibleObject implements AnnotatedElement {
             // access denied
             return false;
         }
-
-        // access okay
-        logIfExportedForIllegalAccess(caller, memberClass);
 
         // Success: Update the cache.
         Object cache = (targetClass != null
