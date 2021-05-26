@@ -79,8 +79,6 @@ import static java.io.ObjectInputFilter.Status.UNDECIDED;
 @Test
 public class SerialFactoryExample {
 
-    private static final Class<? extends Exception> NO_EXCEPTION = null;
-
     @DataProvider(name = "Examples")
     static Object[][] examples() {
         return new Object[][]{
@@ -134,7 +132,7 @@ public class SerialFactoryExample {
         } catch (UncheckedIOException uioe) {
             IOException ioe = uioe.getCause();
             Assert.assertEquals(ioe.getClass(), InvalidClassException.class, "Wrong exception");
-            Assert.assertTrue(expected.equals(REJECTED), "Exception should not have occurred");
+            Assert.assertEquals(REJECTED, expected, "Exception should not have occurred");
         }
     }
 
@@ -252,7 +250,7 @@ public class SerialFactoryExample {
          * This last step ensures that the collective group of filters covers every possible case,
          * any classes that are not ALLOWED will be REJECTED.
          * <p>
-         * The method mayy be called a second time from {@code ObjectInputStream.setObjectInputFilter(next)}
+         * The method may be called a second time from {@code ObjectInputStream.setObjectInputFilter(next)}
          * to add a stream-specific filter.  The stream-specific filter is prepended to the
          * composite filter created above when called from the constructor.
          * <p>
@@ -300,6 +298,7 @@ public class SerialFactoryExample {
                 return currFilter;
             }
         }
+
         public String toString() {
             return Objects.toString(currFilter, "none");
         }
@@ -331,7 +330,7 @@ public class SerialFactoryExample {
                 // Called from the OIS constructor or perhaps OIS.setObjectInputFilter with no current filter
                 var filter = filterThreadLocal.get();
                 if (filter != null) {
-                    // Prepend a filter to assert that all classes have been Allowed or Rejected
+                    // Prepend a filter to reject all UNDECIDED results
                     filter = ObjectInputFilter.rejectUndecidedClass(filter);
                 }
                 if (next != null) {
@@ -357,7 +356,7 @@ public class SerialFactoryExample {
         }
 
         /**
-         * Apply the filter and invoke the runnable.
+         * Applies the filter to the thread and invokes the runnable.
          *
          * @param filter the serial filter to apply to every deserialization in the thread
          * @param runnable a Runnable to invoke
@@ -608,8 +607,7 @@ public class SerialFactoryExample {
              */
             public ObjectInputFilter.Status checkInput(FilterInfo info) {
                 Class<?> clazz = info.serialClass();
-                Status status = (clazz != null && predicate.test(clazz)) ? ifTrueStatus : ifFalseStatus;
-                return status;
+                return (clazz != null && predicate.test(clazz)) ? ifTrueStatus : ifFalseStatus;
             }
 
             public String toString() {

@@ -77,7 +77,7 @@ import sun.security.action.GetIntegerAction;
  * The JVM-wide filter factory ensures that a filter can be set on every {@link ObjectInputStream}
  * and every object read from the stream can be checked.
  * The {@linkplain #ObjectInputStream() ObjectInputStream constructors} invoke the filter factory
- * to select the initial filter and it is updated by {@link #setObjectInputFilter}.
+ * to select the initial filter which may be updated or replaced by {@link #setObjectInputFilter}.
  * <p>
  * If an ObjectInputStream has a filter, the {@link ObjectInputFilter} can check that
  * the classes, array lengths, number of references in the stream, depth, and
@@ -1253,15 +1253,20 @@ public class ObjectInputStream
 
     /**
      * Set the deserialization filter for the stream.
-     * The filter can be set and only set once before reading any objects from the stream;
+     *
+     * The deserialization filter is set to the filter returned by invoking the
+     * {@linkplain Config#getSerialFilterFactory() JVM-wide filter factory}
+     * with the {@linkplain #getObjectInputFilter() current filter} and the {@code filter} parameter.
+     * The current filter was set in the
+     * {@linkplain #ObjectInputStream() ObjectInputStream constructors} by invoking the
+     * {@linkplain Config#getSerialFilterFactory() JVM-wide filter factory} and may be {@code null}.
+     * {@linkplain #setObjectInputFilter(ObjectInputFilter)} This method} can be called
+     * once and only once before reading any objects from the stream;
      * for example, by calling {@link #readObject} or {@link #readUnshared}.
      *
-     * <p>The deserialization filter is set to the filter returned
-     * by invoking the {@linkplain Config#getSerialFilterFactory() JVM-wide filter factory}
-     * with the current filter and the {@code filter} parameter.
-     * If there is a non-null filter for the stream, one was set in the constructor, and the filter factory
-     * must return a non-null filter. It is not permitted to remove filtering once established.
-     * See the {@linkplain ObjectInputFilter filter models} for examples of composition and delegation.
+     * <p>It is not permitted to replace a {@code non-null} filter with a {@code null} filter.
+     * If the {@linkplain #getObjectInputFilter() current filter} is {@code non-null},
+     * the value returned from the filter factory must be {@code non-null}.
      *
      * <p>The filter's {@link ObjectInputFilter#checkInput checkInput} method is called
      * for each class and reference in the stream.
@@ -1330,7 +1335,6 @@ public class ObjectInputStream
     public final void setObjectInputFilter(ObjectInputFilter filter) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            // TBD double checks, here and in the default serialFilterFactory
             sm.checkPermission(ObjectStreamConstants.SERIAL_FILTER_PERMISSION);
         }
         if (totalObjectRefs > 0 && !Caches.SET_FILTER_AFTER_READ) {
@@ -1338,7 +1342,7 @@ public class ObjectInputStream
                     "filter can not be set after an object has been read");
         }
         if (streamFilterSet) {
-            throw new IllegalStateException("filter can not be replaced");
+            throw new IllegalStateException("filter can not be set more than once");
         }
         streamFilterSet = true;
         // Delegate to serialFilterFactory to compute stream filter
