@@ -90,6 +90,8 @@ namespace SysInfo {
 
     tstring_array getJavaSearchPaths();
 
+    tstring getLibPath();
+
 }
 
 #endif // SYSINFO_H

@@ -61,7 +61,7 @@ private:
  * Returns path to a java runtime conforming to the giver release file.
  */
 tstring findRuntime(const tstring& releasePath,
-        const tstring& versionSpec, const tstring_array places);
+        const tstring& versionSpec, const tstring_array places) {
     tstring bestPath;
     tstring bestVersion;
 
@@ -79,10 +79,13 @@ LOG_TRACE(tstrings::any() << "looking in " << place);
 LOG_TRACE(tstrings::any() << "looking at " << path);
             ReleaseFile candidate = ReleaseFile::load(path);
             if (candidate.satisfies(required, versionSpec)) {
-                bestPath = FileUtils::dirname(path);
-                bestVersion = candidate.getVersion();
+                tstring version = candidate.getVersion();
 LOG_TRACE(tstrings::any() << "satisfied with: " << bestPath <<
         " - version: " << bestVersion);
+                if (candidate.greaterThan(version, bestVersion)) {
+                    bestPath = FileUtils::dirname(path);
+                    bestVersion = version;
+                }
             } else {
                 LOG_TRACE(tstrings::any() << "not satisfing: " << path);
             }
@@ -102,13 +105,6 @@ tstring findJvmLib(const CfgFile& cfgFile,
             _T("") : CfgFile::asString(*runtimePathProp));
 LOG_TRACE(tstrings::any() << "runtimePath: " << runtimePath);
 
-
-    const CfgFile::Properties::const_iterator installDirProp = appOptions.find(
-            PropertyName::runtimeInstallDir);
-    tstring installDir ((installDirProp == appOptions.end()) ?
-            _T("") : CfgFile::asString(*installDirProp));
-LOG_TRACE(tstrings::any() << "installDir: " << installDir);
-
     const CfgFile::Properties::const_iterator releasePathProp = appOptions.find(
             PropertyName::runtimeRelease);
     tstring releasePath ((releasePathProp == appOptions.end()) ?
@@ -121,19 +117,17 @@ LOG_TRACE(tstrings::any() << "releasePath: " << releasePath);
             _T("") : CfgFile::asString(*versionProp));
 LOG_TRACE(tstrings::any() << "version: " << version);
 
-    const CfgFile::Properties::const_iterator searchpath = appOptions.find(
+    const CfgFile::Properties::const_iterator searchpathProp = appOptions.find(
                 PropertyName::runtimeSearchPath);
 
     tstring_array places;
-    if (searchpath != appOptions.end()) {
-        tstring_array::const_iterator it = searchpath->second.begin();
-        const tstring_array::const_iterator end = searchpath->second.end();
-        for (; it != end; ++it) {
-            places.push_back(*it);
-        };
+    if (searchpathProp != appOptions.end()) {
+        tstring searchpath = CfgFile::asString(*searchpathProp);
+        places = tstrings::split(searchpath, _T(","));
     } else {
         places = SysInfo::getJavaSearchPaths();
     }
+
 
 
     if (FileUtils::isFileExists(
@@ -209,6 +203,7 @@ Jvm* AppLauncher::createJvmLauncher() const {
         .setPath(findJvmLib(cfgFile, defaultRuntimePath, jvmLibNames))
         .addArgument(launcherPath)
         .addArgument(_T("-Djava.library.path=")
+            + SysInfo::getLibPath() + FileUtils::pathSeparator
             + appDirPath + FileUtils::pathSeparator
             + FileUtils::dirname(launcherPath));
 

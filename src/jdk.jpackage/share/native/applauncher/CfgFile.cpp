@@ -278,7 +278,6 @@ namespace {
     JP_PROPERTY(javaOptions, "java-options"); \
     JP_PROPERTY(runtimeRelease, "runtime.release"); \
     JP_PROPERTY(runtimeVersion, "runtime.version"); \
-    JP_PROPERTY(runtimeInstallDir, "runtime.install"); \
     JP_PROPERTY(runtimeSearchPath, "runtime.searchpath"); \
 
 namespace PropertyName {

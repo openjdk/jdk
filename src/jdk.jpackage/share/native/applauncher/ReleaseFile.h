@@ -64,6 +64,8 @@ public:
 
     bool satisfies(ReleaseFile other, const tstring& versionSpec);
 
+    bool greaterThan(const tstring& v1, const tstring& v2);
+
     static ReleaseFile load(const tstring& path);
 
 private:

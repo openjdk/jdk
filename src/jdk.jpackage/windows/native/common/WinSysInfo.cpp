@@ -216,5 +216,9 @@ tstring_array getJavaSearchPaths() {
     return result;
 }
 
+tstring getLibPath() {
+    return getEnvVariable(_T("PATH"));
+}
+
     
 } // end of namespace SysInfo

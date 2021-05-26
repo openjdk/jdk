@@ -83,6 +83,30 @@ bool versionMatch(const tstring& versionSpec, tstring& version) {
     return true;
 }
 
+bool ReleaseFile::greaterThan(const tstring& v1, const tstring& v2) {
+    tstring_array vers1 = tstrings::split(v1, _T("."));
+    tstring_array vers2 = tstrings::split(v2, _T("."));
+
+    tstring_array::const_iterator it1 = vers1.begin();
+    const tstring_array::const_iterator end1 = vers1.end();
+
+    tstring_array::const_iterator it2 = vers2.begin();
+    const tstring_array::const_iterator end2 = vers2.end();
+
+    for (; it1 != end1; ++it1) {
+        int num1 = stoi(*it1);
+        const tstring num2str = (it2 != end2) ? *it2++ : _T("0");
+        int num2 = stoi(num2str);
+        if (num1 > num2) {
+            return true;
+        }
+        if (num1 < num2) {
+            return false;
+        }
+    }
+    return false;
+}
+
 bool ReleaseFile::satisfies(ReleaseFile required, const tstring& versionSpec) {
     // We need to insure version satisfies the versionSpec
     if (versionMatch(versionSpec, getVersion())) {

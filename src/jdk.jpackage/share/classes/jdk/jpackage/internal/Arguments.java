@@ -705,7 +705,7 @@ public class Arguments {
 
             SplitRuntime spr =
                     StandardBundlerParam.SPLIT_RUNTIME.fetchFrom(localParams);
-            if (spr != null) {
+            if (spr != null && spr.getName() != null) {
                 localParams = new HashMap<>(params);
                 // here we have created a runtime in tempRoot/runtime
                 if (deployParams.isTargetAppImage()) {

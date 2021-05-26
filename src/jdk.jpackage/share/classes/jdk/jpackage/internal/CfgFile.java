@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import java.util.Optional;
 import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_DATA;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.JAVA_OPTIONS;
@@ -93,8 +94,9 @@ final class CfgFile {
             content.add(Map.entry("runtime.release",
                     "$APPDIR" + File.separator + RELEASE_FILE_NAME));
             String installDir = splitRuntime.getInstallDir();
+            String searchpath = runtimeSearchPath(installDir);
             if (installDir != null) {
-                content.add(Map.entry("runtime.install", installDir));
+                content.add(Map.entry("runtime.searchpath", searchpath));
             }
         }
 
@@ -151,6 +153,44 @@ final class CfgFile {
                 appCfgLayout.appDirectory().resolve(appCfgLayout.appModsDirectory().getFileName()));
         return appCfgLayout;
     }
+
+    private String runtimeSearchPath(String installDir) {
+        if (Platform.isWindows()) {
+            Path pf = ("x86".equals(System.getProperty("os.arch")) ?
+                   getWinSystemDir("ProgramFiles(x86)","\\Program Files (x86)") :
+                   getWinSystemDir("ProgramFiles", "\\Program Files"));
+            if (installDir != null) {
+                return pf.resolve(installDir).toString() + "," +
+                        pf.resolve("Java").toString();
+            } else {
+                return pf.resolve("Java").toString();
+            }
+        } else if (Platform.isMac()) {
+            return installDir + "," +
+                    "/Library/Internet Plug-ins/JavaAppletPlugin.plugin" + ","
+                    + "/Library/Java/JavaVirtualMachines";
+        } else {
+            return installDir + "," + "/usr/jdk" ;
+        }
+    }
+
+    static Path getWinSystemDir(String envVar, String knownDir) {
+        return Optional.ofNullable(getEnvVariableAsPath(envVar))
+                .orElseGet(() -> Optional.ofNullable(getEnvVariableAsPath(
+                "SystemDrive")).orElseGet(() -> Path.of("C:")).resolve(knownDir));
+    }
+    private static Path getEnvVariableAsPath(String envVar) {
+        String path = System.getenv(envVar);
+        if (path != null) {
+            try {
+                return Path.of(path);
+            } catch (Exception ex) {
+                Log.verbose(ex);
+            }
+        }
+        return null;
+    }
+
 
     private String launcherName;
     private String version;
