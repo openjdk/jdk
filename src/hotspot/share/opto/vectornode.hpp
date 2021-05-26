@@ -850,19 +850,19 @@ class VectorCmpMaskedNode : public TypeNode {
 
 class VectorMaskGenNode : public TypeNode {
  public:
-  VectorMaskGenNode(Node* length, const Type* ty, const Type* ety): TypeNode(ty, 2), _elemType(ety) {
+  VectorMaskGenNode(Node* length, const Type* ty, BasicType ety): TypeNode(ty, 2), _elemType(ety) {
     init_req(1, length);
   }
 
   virtual int Opcode() const;
-  const Type* get_elem_type()  { return _elemType;}
+  BasicType get_elem_type()  { return _elemType;}
   virtual  uint  size_of() const { return sizeof(VectorMaskGenNode); }
   virtual uint  ideal_reg() const {
     return Op_RegVectMask;
   }
 
   private:
-   const Type* _elemType;
+   BasicType _elemType;
 };
 
 //=========================Promote_Scalar_to_Vector============================

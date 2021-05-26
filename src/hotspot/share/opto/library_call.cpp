@@ -5224,9 +5224,8 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   if (scale->bottom_type()->is_int()->is_con()) {
     int scale_val = scale->bottom_type()->is_int()->get_con();
     BasicType prim_types[] = {T_BYTE, T_SHORT, T_INT, T_LONG};
-    BasicType vec_basictype = prim_types[scale_val];
-    const Type* vec_type = Type::get_const_basic_type(vec_basictype);
-    int vec_len = ArrayOperationPartailInlineSize / type2aelembytes(vec_basictype);
+    BasicType elem_bt = prim_types[scale_val];
+    int vec_len = ArrayOperationPartailInlineSize / type2aelembytes(elem_bt);
 
     // Enable partial in-lining if compare size is less than
     // ArrayOperationPartailInlineSize(default 32 bytes).
@@ -5234,15 +5233,15 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
     // for all integral types (byte/short/char/int), else for default
     // value inlining is enabled for subword types (byte/short/char).
     if (ArrayOperationPartailInlineSize > 32) {
-      enable_pi = NULL != vec_type->isa_int();
+      enable_pi = is_subword_type(elem_bt) || elem_bt == T_INT;
     } else if (ArrayOperationPartailInlineSize) {
-      enable_pi = is_subword_type(vec_basictype);
+      enable_pi = is_subword_type(elem_bt);
     }
 
     if (enable_pi &&
-        Matcher::match_rule_supported_vector(Op_VectorMaskGen , vec_len, vec_basictype) &&
-        Matcher::match_rule_supported_vector(Op_LoadVectorMasked , vec_len, vec_basictype) &&
-        Matcher::match_rule_supported_vector(Op_VectorCmpMasked, vec_len, vec_basictype)) {
+        Matcher::match_rule_supported_vector(Op_VectorMaskGen , vec_len, elem_bt) &&
+        Matcher::match_rule_supported_vector(Op_LoadVectorMasked , vec_len, elem_bt) &&
+        Matcher::match_rule_supported_vector(Op_VectorCmpMasked, vec_len, elem_bt)) {
 
       Node* length_in_bytes = _gvn.transform(new LShiftINode(length, scale));
       Node* pi_size = intcon(ArrayOperationPartailInlineSize);
@@ -5251,8 +5250,8 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
       fast_path = generate_guard(cmp_res, NULL, PROB_MAX);
 
-      const TypeVect* vt = TypeVect::make(vec_basictype, vec_len);
-      Node* mask_gen = _gvn.transform(new VectorMaskGenNode(ConvI2L(length), TypeVect::VECTMASK, vec_type));
+      const TypeVect* vt = TypeVect::make(elem_bt, vec_len);
+      Node* mask_gen = _gvn.transform(new VectorMaskGenNode(ConvI2L(length), TypeVect::VECTMASK, elem_bt));
 
       const TypePtr* ptr_type_a = obja_adr->Value(&_gvn)->isa_ptr();
       const TypePtr* ptr_type_b = objb_adr->Value(&_gvn)->isa_ptr();

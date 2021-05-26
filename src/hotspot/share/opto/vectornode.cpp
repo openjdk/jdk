@@ -724,7 +724,7 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* mask_len = in(3)->in(1);
   const TypeLong* ty = phase->type(mask_len)->isa_long();
   if (ty && ty->is_con()) {
-    BasicType mask_bt = ((VectorMaskGenNode*)in(3))->get_elem_type()->array_element_basic_type();
+    BasicType mask_bt = ((VectorMaskGenNode*)in(3))->get_elem_type();
     uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
     if ( load_sz == 32 || load_sz == 64) {
       assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected load size");
@@ -741,7 +741,7 @@ Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* mask_len = in(4)->in(1);
   const TypeLong* ty = phase->type(mask_len)->isa_long();
   if (ty && ty->is_con()) {
-    BasicType mask_bt = ((VectorMaskGenNode*)in(4))->get_elem_type()->array_element_basic_type();
+    BasicType mask_bt = ((VectorMaskGenNode*)in(4))->get_elem_type();
     uint load_sz      = type2aelembytes(mask_bt) * ty->get_con();
     if ( load_sz == 32 || load_sz == 64) {
       assert(load_sz == 32 || MaxVectorSize > 32, "Unexpected store size");
