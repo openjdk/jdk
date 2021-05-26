@@ -159,7 +159,8 @@ final class GHASH implements Cloneable, GCM {
         return new GHASH(this);
     }
 
-    private static void processBlock(byte[] data, int ofs, long[] st, long[] subH) {
+    private static void processBlock(byte[] data, int ofs, long[] st,
+        long[] subH) {
         st[0] ^= (long)asLongView.get(data, ofs);
         st[1] ^= (long)asLongView.get(data, ofs + 8);
         blockMult(st, subH);
@@ -241,7 +242,8 @@ final class GHASH implements Cloneable, GCM {
         return inLen;
     }
 
-    private static void ghashRangeCheck(byte[] in, int inOfs, int inLen, long[] st, long[] subH) {
+    private static void ghashRangeCheck(byte[] in, int inOfs, int inLen,
+        long[] st, long[] subH) {
         if (inLen < 0) {
             throw new RuntimeException("invalid input length: " + inLen);
         }
@@ -273,7 +275,8 @@ final class GHASH implements Cloneable, GCM {
      * throw exceptions or allocate arrays as it will breaking intrinsics
      */
     @IntrinsicCandidate
-    private static void processBlocks(byte[] data, int inOfs, int blocks, long[] st, long[] subH) {
+    private static void processBlocks(byte[] data, int inOfs, int blocks,
+        long[] st, long[] subH) {
         int offset = inOfs;
         while (blocks > 0) {
             processBlock(data, offset, st, subH);
@@ -287,13 +290,15 @@ final class GHASH implements Cloneable, GCM {
         byte[] data = new byte[Math.min(MAX_LEN, inLen)];
         while (inLen > MAX_LEN) {
             ct.get(data, 0, MAX_LEN);
-            processBlocks(data, 0, MAX_LEN / AES_BLOCK_SIZE, state, subkeyHtbl);
+            processBlocks(data, 0, MAX_LEN / AES_BLOCK_SIZE, state,
+                subkeyHtbl);
             inLen -= MAX_LEN;
         }
         if (inLen >= AES_BLOCK_SIZE) {
             int len = inLen - (inLen % AES_BLOCK_SIZE);
             ct.get(data, 0, len);
-            processBlocks(data, 0, len / AES_BLOCK_SIZE, state, subkeyHtbl);
+            processBlocks(data, 0, len / AES_BLOCK_SIZE, state,
+                subkeyHtbl);
         }
     }
 

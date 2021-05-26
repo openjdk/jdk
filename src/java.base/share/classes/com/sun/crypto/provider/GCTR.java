@@ -254,18 +254,15 @@ final class GCTR extends CounterMode implements GCM {
         int lastBlockSize = inLen % blockSize;
         int completeBlkLen = inLen - lastBlockSize;
         // process the complete blocks first
-        try {
-            update(in, inOfs, completeBlkLen, out, outOfs);
-            if (lastBlockSize != 0) {
-                // do the last partial block
-                checkBlock();
-                embeddedCipher.encryptBlock(counter, 0, block, 0);
-                for (int n = 0; n < lastBlockSize; n++) {
-                    out[outOfs + completeBlkLen + n] = (byte) ((in[inOfs + completeBlkLen + n] ^ block[n]));
-                }
+        update(in, inOfs, completeBlkLen, out, outOfs);
+        if (lastBlockSize != 0) {
+            // do the last partial block
+            checkBlock();
+            embeddedCipher.encryptBlock(counter, 0, block, 0);
+            for (int n = 0; n < lastBlockSize; n++) {
+                out[outOfs + completeBlkLen + n] =
+                    (byte) ((in[inOfs + completeBlkLen + n] ^ block[n]));
             }
-        } finally {
-            reset();
         }
         return inLen;
     }
@@ -291,18 +288,14 @@ final class GCTR extends CounterMode implements GCM {
 
         int len = src.remaining();
         int lastBlockSize = len % blockSize;
-        try {
-            update(src, dst);
-            if (lastBlockSize != 0) {
-                checkBlock();
-                // do the last partial block
-                embeddedCipher.encryptBlock(counter, 0, block, 0);
-                for (int n = 0; n < lastBlockSize; n++) {
-                    dst.put((byte) (src.get() ^ block[n]));
-                }
+        update(src, dst);
+        if (lastBlockSize != 0) {
+            checkBlock();
+            // do the last partial block
+            embeddedCipher.encryptBlock(counter, 0, block, 0);
+            for (int n = 0; n < lastBlockSize; n++) {
+                dst.put((byte) (src.get() ^ block[n]));
             }
-        } finally {
-            reset();
         }
         return len;
     }
