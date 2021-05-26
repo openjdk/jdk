@@ -2171,6 +2171,7 @@ public class ObjectStreamClass implements Serializable {
                     case 'L', '[' -> unsafe.getReference(obj, readKeys[i]);
                     default       -> throw new InternalError();
                 };
+            }
         }
 
         /**
