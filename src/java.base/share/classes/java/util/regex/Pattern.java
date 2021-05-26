@@ -3083,8 +3083,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         if (saveTCNCount < topClosureNodes.size())
             topClosureNodes.subList(saveTCNCount, topClosureNodes.size()).clear();
 
-        if (node instanceof Ques) {
-            Ques ques = (Ques) node;
+        if (node instanceof Ques ques) {
             if (ques.type == Qtype.POSSESSIVE) {
                 root = node;
                 return node;
@@ -3098,8 +3097,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             }
             root = tail;
             return head;
-        } else if (node instanceof Curly) {
-            Curly curly = (Curly) node;
+        } else if (node instanceof Curly curly) {
             if (curly.type == Qtype.POSSESSIVE) {
                 root = node;
                 return node;

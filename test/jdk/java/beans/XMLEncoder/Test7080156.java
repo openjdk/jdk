@@ -25,6 +25,7 @@
  * @test
  * @bug 7080156 7094245
  * @summary Tests beans with public arrays
+ * @run main/othervm -Djava.security.manager=allow Test7080156
  * @author Sergey Malenkov
  */
 

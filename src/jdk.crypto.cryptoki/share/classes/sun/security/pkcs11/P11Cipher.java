@@ -38,6 +38,7 @@ import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
 
 /**
  * Cipher implementation class. This class currently supports

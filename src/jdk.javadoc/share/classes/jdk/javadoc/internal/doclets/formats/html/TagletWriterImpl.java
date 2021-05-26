@@ -67,7 +67,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
@@ -288,7 +287,6 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @Override
-    @SuppressWarnings("preview")
     public Content paramTagOutput(Element element, ParamTree paramTag, String paramName) {
         ContentBuilder body = new ContentBuilder();
         CommentHelper ch = utils.getCommentHelper(element);
@@ -320,16 +318,16 @@ public class TagletWriterImpl extends TagletWriter {
             links.add(htmlWriter.seeTagToContent(holder, dt, context.within(dt)));
         }
         if (utils.isVariableElement(holder) && ((VariableElement)holder).getConstantValue() != null &&
-                htmlWriter instanceof ClassWriterImpl) {
+                htmlWriter instanceof ClassWriterImpl writer) {
             //Automatically add link to constant values page for constant fields.
             DocPath constantsPath =
                     htmlWriter.pathToRoot.resolve(DocPaths.CONSTANT_VALUES);
             String whichConstant =
-                    ((ClassWriterImpl) htmlWriter).getTypeElement().getQualifiedName() + "." +
+                    writer.getTypeElement().getQualifiedName() + "." +
                     utils.getSimpleName(holder);
             DocLink link = constantsPath.fragment(whichConstant);
             links.add(htmlWriter.links.createLink(link,
-                    Text.of(resources.getText("doclet.Constants_Summary"))));
+                    contents.getContent("doclet.Constants_Summary")));
         }
         if (utils.isClass(holder) && utils.isSerializable((TypeElement)holder)) {
             //Automatically add link to serialized form page for serializable classes.
@@ -338,7 +336,7 @@ public class TagletWriterImpl extends TagletWriter {
                 DocPath serialPath = htmlWriter.pathToRoot.resolve(DocPaths.SERIALIZED_FORM);
                 DocLink link = serialPath.fragment(utils.getFullyQualifiedName(holder));
                 links.add(htmlWriter.links.createLink(link,
-                        Text.of(resources.getText("doclet.Serialized_Form"))));
+                        contents.getContent("doclet.Serialized_Form")));
             }
         }
         if (links.isEmpty()) {
@@ -462,7 +460,6 @@ public class TagletWriterImpl extends TagletWriter {
         return htmlWriter.getCurrentPageElement();
     }
 
-    @SuppressWarnings("preview")
     private Content createAnchorAndSearchIndex(Element element, String tagText, String desc, DocTree tree) {
         Content result = null;
         if (context.isFirstSentence && context.inSummary || context.inTags.contains(DocTree.Kind.INDEX)) {
@@ -506,8 +503,7 @@ public class TagletWriterImpl extends TagletWriter {
 
                     @Override
                     public String visitUnknown(Element e, Void p) {
-                        if (e instanceof DocletElement) {
-                            DocletElement de = (DocletElement) e;
+                        if (e instanceof DocletElement de) {
                             return switch (de.getSubKind()) {
                                 case OVERVIEW -> resources.getText("doclet.Overview");
                                 case DOCFILE -> getHolderName(de);

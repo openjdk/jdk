@@ -724,11 +724,6 @@ final class CompilerToVM {
     native Object getFlagValue(String name);
 
     /**
-     * Gets the host class for {@code type}.
-     */
-    native HotSpotResolvedObjectTypeImpl getHostClass(HotSpotResolvedObjectTypeImpl type);
-
-    /**
      * @see ResolvedJavaType#getInterfaces()
      */
     native HotSpotResolvedObjectTypeImpl[] getInterfaces(HotSpotResolvedObjectTypeImpl type);
@@ -739,7 +734,7 @@ final class CompilerToVM {
     native HotSpotResolvedJavaType getComponentType(HotSpotResolvedObjectTypeImpl type);
 
     /**
-     * Get the array class for {@code type}. This can't be done symbolically since anonymous types
+     * Get the array class for {@code type}. This can't be done symbolically since hidden classes
      * can't be looked up by name.
      */
     native HotSpotResolvedObjectTypeImpl getArrayType(HotSpotResolvedJavaType type);

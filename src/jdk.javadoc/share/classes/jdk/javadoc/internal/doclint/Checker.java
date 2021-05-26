@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -591,14 +591,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     void warnIfEmpty(TagStackItem tsi, DocTree endTree) {
-        if (tsi.tag != null && tsi.tree instanceof StartElementTree) {
+        if (tsi.tag != null && tsi.tree instanceof StartElementTree startTree) {
             if (tsi.tag.flags.contains(HtmlTag.Flag.EXPECT_CONTENT)
                     && !tsi.flags.contains(Flag.HAS_TEXT)
                     && !tsi.flags.contains(Flag.HAS_ELEMENT)
                     && !tsi.flags.contains(Flag.HAS_INLINE_TAG)
                     && !(tsi.tag.elemKind == ElemKind.HTML4)) {
-                DocTree tree = (endTree != null) ? endTree : tsi.tree;
-                Name treeName = ((StartElementTree) tsi.tree).getName();
+                DocTree tree = (endTree != null) ? endTree : startTree;
+                Name treeName = startTree.getName();
                 env.messages.warning(HTML, tree, "dc.tag.empty", treeName);
             }
         }

@@ -34,6 +34,7 @@ import java.text.ParseException;
 import java.text.RuleBasedCollator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -54,6 +55,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
@@ -91,6 +93,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
+import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
@@ -488,7 +491,6 @@ public class Utils {
         return configuration.workArounds.definesSerializableFields( aclass);
     }
 
-    @SuppressWarnings("preview")
     public String modifiersToString(Element e, boolean trailingSpace) {
         SortedSet<Modifier> modifiers = new TreeSet<>(e.getModifiers());
         modifiers.remove(NATIVE);
@@ -1736,11 +1738,11 @@ public class Utils {
 
         private Collator createCollator(Locale locale) {
             Collator baseCollator = Collator.getInstance(locale);
-            if (baseCollator instanceof RuleBasedCollator) {
+            if (baseCollator instanceof RuleBasedCollator rbc) {
                 // Extend collator to sort signatures with additional args and var-args in a well-defined order:
                 // () < (int) < (int, int) < (int...)
                 try {
-                    return new RuleBasedCollator(((RuleBasedCollator) baseCollator).getRules()
+                    return new RuleBasedCollator(rbc.getRules()
                             + "& ')' < ',' < '.','['");
                 } catch (ParseException e) {
                     throw new RuntimeException(e);
@@ -2332,8 +2334,8 @@ public class Utils {
         protected String defaultAction(TypeMirror e, Object val) {
             if (val == null)
                 return null;
-            else if (val instanceof String)
-                return sourceForm((String) val);
+            else if (val instanceof String s)
+                return sourceForm(s);
             return val.toString(); // covers int, short
         }
 
@@ -2631,10 +2633,10 @@ public class Utils {
 
     public List<? extends DocTree> getBlockTags(Element element, Taglet taglet) {
         return getBlockTags(element, t -> {
-            if (taglet instanceof BaseTaglet) {
-                return ((BaseTaglet) taglet).accepts(t);
-            } else if (t instanceof UnknownBlockTagTree) {
-                return ((UnknownBlockTagTree) t).getTagName().equals(taglet.getName());
+            if (taglet instanceof BaseTaglet baseTaglet) {
+                return baseTaglet.accepts(t);
+            } else if (t instanceof BlockTagTree blockTagTree) {
+                return blockTagTree.getTagName().equals(taglet.getName());
             } else {
                 return false;
             }
@@ -2988,29 +2990,12 @@ public class Utils {
      * @param e the Element to check.
      * @return the set of preview language features used to declare the given element
      */
-    @SuppressWarnings("preview")
     public Set<DeclarationPreviewLanguageFeatures> previewLanguageFeaturesUsed(Element e) {
-        Set<DeclarationPreviewLanguageFeatures> result = new HashSet<>();
-
-        if ((e.getKind().isClass() || e.getKind().isInterface()) &&
-            e.getModifiers().contains(Modifier.SEALED)) {
-            List<? extends TypeMirror> permits = ((TypeElement) e).getPermittedSubclasses();
-            boolean hasLinkablePermits = permits.stream()
-                                                .anyMatch(t -> isLinkable(asTypeElement(t)));
-            if (hasLinkablePermits) {
-                result.add(DeclarationPreviewLanguageFeatures.SEALED_PERMITS);
-            } else {
-                result.add(DeclarationPreviewLanguageFeatures.SEALED);
-            }
-        }
-
-        return result;
+        return new HashSet<>();
     }
 
     public enum DeclarationPreviewLanguageFeatures {
-
-        SEALED(List.of("sealed")),
-        SEALED_PERMITS(List.of("sealed", "permits"));
+        NONE(List.of(""));
         public final List<String> features;
 
         DeclarationPreviewLanguageFeatures(List<String> features) {
@@ -3018,7 +3003,6 @@ public class Utils {
         }
     }
 
-    @SuppressWarnings("preview")
     public PreviewSummary declaredUsingPreviewAPIs(Element el) {
         List<TypeElement> usedInDeclaration = new ArrayList<>();
         usedInDeclaration.addAll(annotations2Classes(el));

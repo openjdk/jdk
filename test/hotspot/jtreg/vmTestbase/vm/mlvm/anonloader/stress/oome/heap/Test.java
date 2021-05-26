@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@
 
 package vm.mlvm.anonloader.stress.oome.heap;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.util.List;
 import java.io.IOException;
 
@@ -50,10 +52,9 @@ import vm.mlvm.share.MlvmOOMTest;
 import vm.mlvm.share.MlvmTestExecutor;
 import vm.mlvm.share.Env;
 import vm.share.FileUtils;
-import vm.share.UnsafeAccess;
 
 /**
- * This test loads a class using Unsafe.defineAnonymousClass, creates instances
+ * This test loads a class using defineHiddenClass, creates instances
  * of that class and stores them, expecting Heap OOME.
  *
  */
@@ -76,8 +77,10 @@ public class Test extends MlvmOOMTest {
         }
         try {
             while (true) {
-                list.add(UnsafeAccess.unsafe.defineAnonymousClass(AnonkTestee01.class,
-                    classBytes, null).newInstance());
+                Lookup lookup = MethodHandles.lookup();
+                Lookup ank_lookup = MethodHandles.privateLookupIn(AnonkTestee01.class, lookup);
+                Class<?> c = ank_lookup.defineHiddenClass(classBytes, true).lookupClass();
+                list.add(c.newInstance());
             }
         } catch (InstantiationException | IllegalAccessException e) {
             Env.throwAsUncheckedException(e);

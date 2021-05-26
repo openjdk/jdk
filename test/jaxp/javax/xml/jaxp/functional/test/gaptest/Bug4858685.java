@@ -47,7 +47,7 @@ import org.w3c.dom.NodeList;
  * @test
  * @bug 4858685 4894410
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.gaptest.Bug4858685
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.gaptest.Bug4858685
  * @run testng/othervm test.gaptest.Bug4858685
  * @summary test transforming text node
  */

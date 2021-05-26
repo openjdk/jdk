@@ -185,7 +185,6 @@ public class Preview {
      */
     public boolean isPreview(Feature feature) {
         return switch (feature) {
-            case SEALED_CLASSES -> true;
             case CASE_NULL -> true;
             case PATTERN_SWITCH -> true;
 
@@ -228,9 +227,7 @@ public class Preview {
      * @return true iff sym has been declared using a preview language feature
      */
     public boolean declaredUsingPreviewFeature(Symbol sym) {
-        return ((sym.flags() & RECORD) != 0 && isPreview(Feature.RECORDS)) ||
-               ((sym.flags() & SEALED) != 0 && isPreview(Feature.SEALED_CLASSES)) ||
-               ((sym.flags() & NON_SEALED) != 0 && isPreview(Feature.SEALED_CLASSES));
+        return false;
     }
 
     /**

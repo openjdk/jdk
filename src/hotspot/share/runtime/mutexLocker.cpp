@@ -59,8 +59,8 @@ Mutex*   AdapterHandlerLibrary_lock   = NULL;
 Mutex*   SignatureHandlerLibrary_lock = NULL;
 Mutex*   VtableStubs_lock             = NULL;
 Mutex*   SymbolArena_lock             = NULL;
-Monitor* StringDedupQueue_lock        = NULL;
-Mutex*   StringDedupTable_lock        = NULL;
+Monitor* StringDedup_lock             = NULL;
+Mutex*   StringDedupIntern_lock       = NULL;
 Monitor* CodeCache_lock               = NULL;
 Monitor* CodeSweeper_lock             = NULL;
 Mutex*   MethodData_lock              = NULL;
@@ -154,6 +154,7 @@ Mutex*   DumpTimeTable_lock           = NULL;
 Mutex*   CDSLambda_lock               = NULL;
 Mutex*   DumpRegion_lock              = NULL;
 Mutex*   ClassListFile_lock           = NULL;
+Mutex*   LambdaFormInvokers_lock      = NULL;
 #endif // INCLUDE_CDS
 Mutex*   Bootclasspath_lock           = NULL;
 
@@ -223,18 +224,13 @@ void mutex_init() {
     def(Uncommit_lock              , PaddedMutex  , leaf + 1 ,   true,  _safepoint_check_never);
     def(RootRegionScan_lock        , PaddedMonitor, leaf     ,   true,  _safepoint_check_never);
 
-    def(StringDedupQueue_lock      , PaddedMonitor, leaf,        true,  _safepoint_check_never);
-    def(StringDedupTable_lock      , PaddedMutex  , leaf,        true,  _safepoint_check_never);
-
     def(MarkStackFreeList_lock     , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
     def(MarkStackChunkList_lock    , PaddedMutex  , leaf     ,   true,  _safepoint_check_never);
 
     def(MonitoringSupport_lock     , PaddedMutex  , native   ,   true,  _safepoint_check_never);      // used for serviceability monitoring support
   }
-  if (UseShenandoahGC) {
-    def(StringDedupQueue_lock      , PaddedMonitor, leaf,        true,  _safepoint_check_never);
-    def(StringDedupTable_lock      , PaddedMutex  , leaf + 1,    true,  _safepoint_check_never);
-  }
+  def(StringDedup_lock             , PaddedMonitor, leaf,        true,  _safepoint_check_never);
+  def(StringDedupIntern_lock       , PaddedMutex  , leaf,        true,  _safepoint_check_never);
   def(ParGCRareEvent_lock          , PaddedMutex  , leaf,        true,  _safepoint_check_always);
   def(CodeCache_lock               , PaddedMonitor, special,     true,  _safepoint_check_never);
   def(CodeSweeper_lock             , PaddedMonitor, special-2,   true,  _safepoint_check_never);
@@ -349,6 +345,7 @@ void mutex_init() {
   def(CDSLambda_lock               , PaddedMutex  , leaf,        true,  _safepoint_check_never);
   def(DumpRegion_lock              , PaddedMutex  , leaf,        true,  _safepoint_check_never);
   def(ClassListFile_lock           , PaddedMutex  , leaf,        true,  _safepoint_check_never);
+  def(LambdaFormInvokers_lock      , PaddedMutex  , nonleaf+2,   false, _safepoint_check_always);
 #endif // INCLUDE_CDS
   def(Bootclasspath_lock           , PaddedMutex  , leaf,        false, _safepoint_check_never);
 

@@ -1498,6 +1498,21 @@ const TypeFunc *OptoRuntime::register_finalizer_Type() {
   return TypeFunc::make(domain,range);
 }
 
+#if INCLUDE_JFR
+const TypeFunc *OptoRuntime::get_class_id_intrinsic_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::KLASS;
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms + 1, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(0);
+
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms + 0, fields);
+
+  return TypeFunc::make(domain,range);
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Dtrace support.  entry and exit probes have the same signature

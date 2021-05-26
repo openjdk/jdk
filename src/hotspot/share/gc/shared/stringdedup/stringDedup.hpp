@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,108 +25,186 @@
 #ifndef SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUP_HPP
 #define SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUP_HPP
 
-//
 // String Deduplication
 //
-// String deduplication aims to reduce the heap live-set by deduplicating identical
-// instances of String so that they share the same backing character array.
+// String deduplication aims to reduce the heap live-set by modifying equal
+// instances of java.lang.String so they share the same backing byte array
+// (the String's value).
 //
-// The deduplication process is divided in two main parts, 1) finding the objects to
-// deduplicate, and 2) deduplicating those objects. The first part is done as part of
-// a normal GC cycle when objects are marked or evacuated. At this time a check is
-// applied on each object to check if it is a candidate for deduplication. If so, the
-// object is placed on the deduplication queue for later processing. The second part,
-// processing the objects on the deduplication queue, is a concurrent phase which
-// starts right after the stop-the-wold marking/evacuation phase. This phase is
-// executed by the deduplication thread, which pulls deduplication candidates of the
-// deduplication queue and tries to deduplicate them.
+// The deduplication process is divided in two main parts, 1) finding the
+// objects to deduplicate, and 2) deduplicating those objects.
 //
-// A deduplication hashtable is used to keep track of all unique character arrays
-// used by String objects. When deduplicating, a lookup is made in this table to see
-// if there is already an identical character array somewhere on the heap. If so, the
-// String object is adjusted to point to that character array, releasing the reference
-// to the original array allowing it to eventually be garbage collected. If the lookup
-// fails the character array is instead inserted into the hashtable so that this array
-// can be shared at some point in the future.
+// The first part is done as part of a normal GC cycle when objects are
+// marked or evacuated. At this time a check is applied on each object to
+// determine whether it is a candidate for deduplication.  Candidates are
+// added to the set of deduplication requests for later processing.
 //
-// Candidate selection criteria is GC specific.
+// The second part, processing the deduplication requests, is a concurrent
+// phase.  This phase is executed by the deduplication thread, which takes
+// candidates from the set of requests and tries to deduplicate them.
 //
-// Interned strings are a bit special. They are explicitly deduplicated just before
-// being inserted into the StringTable (to avoid counteracting C2 optimizations done
-// on string literals), then they also become deduplication candidates if they reach
-// the deduplication age threshold or are evacuated to an old heap region. The second
-// attempt to deduplicate such strings will be in vain, but we have no fast way of
-// filtering them out. This has not shown to be a problem, as the number of interned
-// strings is usually dwarfed by the number of normal (non-interned) strings.
+// A deduplication table is used to keep track of unique byte arrays used by
+// String objects.  When deduplicating, a lookup is made in this table to
+// see if there is already an equivalent byte array that was used by some
+// other String.  If so, the String object is adjusted to point to that byte
+// array, and the original array is released, allowing it to eventually be
+// garbage collected.  If the lookup fails the byte array is instead
+// inserted into the table so it can potentially be shared with other
+// Strings in the future.
+//
+// The set of requests uses entries from a pair of weak OopStorage objects.
+// One is used for requests, the other is being processed.  When processing
+// completes, the roles of the storage objects are exchanged.  The GC adds
+// entries referring to discovered candidates, allocating new OopStorage
+// entries for the requests.  The deduplication processing thread does a
+// concurrent iteration over the processing storage, deduplicating the
+// Strings and releasing the OopStorage entries.  Two storage objects are
+// used so there isn't any conflict between adding and removing entries by
+// different threads.
+//
+// The deduplication table uses entries from another weak OopStorage to hold
+// the byte arrays.  This permits reclamation of arrays that become unused.
+// This is separate from the request storage objects because dead count
+// tracking is used by the table implementation as part of resizing
+// decisions and for deciding when to cleanup dead entries in the table.
+// The usage pattern for the table is also very different from that of the
+// request storages.  The request/processing storages are used in a way that
+// supports bulk allocation and release of entries.
+//
+// Candidate selection criteria is GC specific.  This class provides some
+// helper functions that may be of use when implementing candidate
+// selection.
+//
+// Strings interned in the StringTable require special handling.  Once a
+// String has been added to the StringTable, its byte array must not change.
+// Doing so would counteract C2 optimizations on string literals.  But an
+// interned string might later become a deduplication candidate through the
+// normal GC discovery mechanism.  To prevent such modifications, the
+// deduplication_forbidden flag of a String is set before interning it.  A
+// String with that flag set may have its byte array added to the
+// deduplication table, but will not have its byte array replaced by a
+// different but equivalent array from the table.
+//
+// A GC must opt-in to support string deduplication. This primarily involves
+// making deduplication requests. As the GC is processing objects it must
+// determine which are candidates for deduplication, and add those objects
+// to StringDedup::Requests objects. Typically, each GC marking/evacuation
+// thread has its own Requests object. Once liveness analysis is complete,
+// but before weak reference processing, the GC should flush or delete all
+// of its Requests objects.
 //
 // For additional information on string deduplication, please see JEP 192,
 // http://openjdk.java.net/jeps/192
-//
 
-#include "gc/shared/stringdedup/stringDedupQueue.hpp"
-#include "gc/shared/stringdedup/stringDedupStat.hpp"
-#include "gc/shared/stringdedup/stringDedupTable.hpp"
-#include "memory/allocation.hpp"
-#include "runtime/thread.hpp"
+#include "memory/allStatic.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
+class Klass;
 class ThreadClosure;
 
-//
-// Main interface for interacting with string deduplication.
-//
+// The StringDedup class provides the API for the deduplication mechanism.
+// StringDedup::Requests and the StringDedup functions for candidate testing
+// are all that a GC needs to use to support the string deduplication
+// feature.  Other functions in the StringDedup class are called where
+// needed, without requiring GC-specific code.
 class StringDedup : public AllStatic {
-private:
-  // Single state for checking if string deduplication is enabled.
+  class Config;
+  class Processor;
+  class Stat;
+  class StorageUse;
+  class Table;
+
+  static bool _initialized;
   static bool _enabled;
 
-public:
-  // Returns true if string deduplication is enabled.
-  static bool is_enabled() {
-    return _enabled;
-  }
+  static Processor* _processor;
+  static Stat _cur_stat;
+  static Stat _total_stat;
 
-  // Stop the deduplication thread.
+  static const Klass* _string_klass_or_null;
+  static uint _enabled_age_threshold;
+  static uint _enabled_age_limit;
+
+public:
+  class Requests;
+
+  // Initialize and check command line arguments.
+  // Returns true if configuration is valid, false otherwise.
+  static bool ergo_initialize();
+
+  // Initialize deduplication if enabled by command line arguments.
+  static void initialize();
+
+  // Returns true if string deduplication is enabled.
+  static bool is_enabled() { return _enabled; }
+
+  // Stop the deduplication processor thread.
+  // precondition: is_enabled()
   static void stop();
 
-  // Immediately deduplicates the given String object, bypassing the
-  // the deduplication queue.
-  static void deduplicate(oop java_string);
-
-  static void parallel_unlink(StringDedupUnlinkOrOopsDoClosure* unlink, uint worker_id);
-
+  // Visit the deduplication processor thread.
+  // precondition: is_enabled()
   static void threads_do(ThreadClosure* tc);
 
+  // Notify that a String is being added to the StringTable.
+  // precondition: is_enabled()
+  // precondition: java_string is a Java String object.
+  static void notify_intern(oop java_string);
+
+  // precondition: at safepoint
   static void verify();
 
-  // GC support
-  static void gc_prologue(bool resize_and_rehash_table);
-  static void gc_epilogue();
+  // Some predicates for use in testing whether an object is a candidate for
+  // deduplication.  These functions combine an implicit is_enabled check
+  // with another check in a single comparison.
 
-protected:
-  // Initialize string deduplication.
-  // Q: String Dedup Queue implementation
-  // S: String Dedup Stat implementation
-  template <typename Q, typename S>
-  static void initialize_impl();
+  // Return true if k is String klass and deduplication is enabled.
+  static bool is_enabled_string(const Klass* k) {
+    return k == _string_klass_or_null;
+  }
+
+  // Return true if age == StringDeduplicationAgeThreshold and
+  // deduplication is enabled.
+  static bool is_threshold_age(uint age) {
+    // Threshold is from option if enabled, or an impossible value (exceeds
+    // markWord::max_age) if disabled.
+    return age == _enabled_age_threshold;
+  }
+
+  // Return true if age < StringDeduplicationAgeThreshold and
+  // deduplication is enabled.
+  static bool is_below_threshold_age(uint age) {
+    // Limit is from option if enabled, or 0 if disabled.
+    return age < _enabled_age_limit;
+  }
 };
 
+// GC requests for String deduplication.
 //
-// This closure encapsulates the closures needed when scanning
-// the deduplication queue and table during the unlink_or_oops_do() operation.
-//
-class StringDedupUnlinkOrOopsDoClosure : public StackObj {
-  AlwaysTrueClosure   _always_true;
-  DoNothingClosure    _do_nothing;
-  BoolObjectClosure*  _is_alive;
-  OopClosure*         _keep_alive;
+// Each marking thread should have it's own Requests object.  When marking
+// is completed the Requests object must be flushed (either explicitly or by
+// the destructor).
+class StringDedup::Requests {
+  StorageUse* _storage_for_requests;
+  oop** _buffer;
+  size_t _index;
+  bool _refill_failed;
+
+  bool refill_buffer();
 
 public:
-  StringDedupUnlinkOrOopsDoClosure(BoolObjectClosure* is_alive,
-                                   OopClosure* keep_alive);
+  Requests();
+  ~Requests();                  // Calls flush().
 
-  bool is_alive(oop o) { return _is_alive->do_object_b(o); }
+  // Request deduplication of java_string.
+  // prerequisite: StringDedup::is_enabled()
+  // prerequisite: java_string is a Java String
+  void add(oop java_string);
 
-  void keep_alive(oop* p) { _keep_alive->do_oop(p); }
+  // Flush any buffered deduplication requests and release resources
+  // used by this object.
+  void flush();
 };
 
 #endif // SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUP_HPP
