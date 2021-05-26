@@ -52,7 +52,11 @@ tstring_array getCommandArgs(CommandArgProgramNameMode progNameMode) {
 }
 
 tstring getLibPath() {
-    return getEnvVariable(_T("LD_LIBRARY_PATH"));
+    char *value = ::getenv("LD_LIBRARY_PATH");
+    if (value) {
+        return tstring(value);
+    }
+    return _T("");
 }
 
 } // end of namespace SysInfo

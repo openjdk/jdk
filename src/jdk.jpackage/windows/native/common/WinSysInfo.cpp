@@ -206,7 +206,12 @@ bool isEnvVariableSet(const tstring& name) {
 }
 
 tstring getLibPath() {
-    return getEnvVariable(_T("PATH"));
+    bool errorOccured = false;
+    const tstring reply = getEnvVariableImpl(_T("PATH"), &errorOccured);
+    if (errorOccured) {
+        return _T("");
+    }
+    return reply;
 }
 
 } // end of namespace SysInfo
