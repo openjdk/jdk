@@ -83,19 +83,8 @@ void ShenandoahHeapRegionCounters::update() {
             Atomic::cmpxchg(&_last_sample_millis, last, current) == last) {
 
       ShenandoahHeap* heap = ShenandoahHeap::heap();
-      jlong status = 0;
 
-      if (heap->is_concurrent_young_mark_in_progress()) status |= 1 << 0;
-      if (heap->is_concurrent_old_mark_in_progress())   status |= 1 << 1;
-      if (heap->is_evacuation_in_progress())            status |= 1 << 2;
-      if (heap->is_update_refs_in_progress())           status |= 1 << 3;
-      if (heap->is_degenerated_gc_in_progress())        status |= 1 << 4;
-      if (heap->is_full_gc_in_progress())               status |= 1 << 5;
-      if (heap->active_generation() != NULL) {
-        status |= (heap->active_generation()->generation_mode() << 6);
-      }
-
-      _status->set_value(status);
+      _status->set_value(encode_heap_status(heap));
 
       _timestamp->set_value(os::elapsed_counter());
 
@@ -122,4 +111,61 @@ void ShenandoahHeapRegionCounters::update() {
       }
     }
   }
+}
+
+static int encode_phase(ShenandoahHeap* heap) {
+  if (heap->is_evacuation_in_progress()) {
+    return 2;
+  }
+  if (heap->is_update_refs_in_progress()) {
+    return 3;
+  }
+  if (heap->is_concurrent_mark_in_progress()) {
+    return 1;
+  }
+  assert(heap->is_idle(), "What is it doing?");
+  return 0;
+}
+
+static int get_generation_shift(ShenandoahGeneration* generation) {
+  switch (generation->generation_mode()) {
+    case GLOBAL: return 0;
+    case OLD:    return 2;
+    case YOUNG:  return 4;
+    default:
+      ShouldNotReachHere();
+      return -1;
+  }
+}
+
+jlong ShenandoahHeapRegionCounters::encode_heap_status(ShenandoahHeap* heap) {
+
+  if (heap->is_idle()) {
+    return 0;
+  }
+
+  jlong status = 0;
+  if (!heap->mode()->is_generational()) {
+    status = encode_phase(heap);
+  } else {
+    int phase = encode_phase(heap);
+    ShenandoahGeneration* generation = heap->active_generation();
+    assert(generation != NULL, "Expected active generation in this mode.");
+    int shift = get_generation_shift(generation);
+    status |= ((phase & 0x3) << shift);
+    if (heap->is_concurrent_old_mark_in_progress()) {
+      status |= (1 << 2);
+    }
+    log_develop_trace(gc)("%s, phase=%u, old_mark=%s, status=%zu",
+      generation->name(), phase, BOOL_TO_STR(heap->is_concurrent_old_mark_in_progress()), status);
+  }
+
+  if (heap->is_degenerated_gc_in_progress()) {
+    status |= (1 << 6);
+  }
+  if (heap->is_full_gc_in_progress()) {
+    status |= (1 << 7);
+  }
+
+  return status;
 }

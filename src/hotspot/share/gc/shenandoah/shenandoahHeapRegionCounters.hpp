@@ -37,9 +37,14 @@
  *
  * variables:
  * - sun.gc.shenandoah.regions.status       current GC status:
- *     - bit 0 set when marking in progress
- *     - bit 1 set when evacuation in progress
- *     - bit 2 set when update refs in progress
+ *   | global | old   | young | mode |
+ *   |  0..1  | 2..3  | 4..5  | 6..7 |
+ *
+ *   For each generation:
+ *   0 = idle, 1 = marking, 2 = evacuating, 3 = updating refs
+ *
+ *   For mode:
+ *   0 = concurrent, 1 = degenerated, 2 = full
  *
  * two variable counters per region, with $max_regions (see above) counters:
  * - sun.gc.shenandoah.regions.region.$i.data
@@ -85,6 +90,9 @@ public:
   ShenandoahHeapRegionCounters();
   ~ShenandoahHeapRegionCounters();
   void update();
+
+private:
+  static jlong encode_heap_status(ShenandoahHeap* heap) ;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCOUNTERS_HPP
