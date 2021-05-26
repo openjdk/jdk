@@ -26,7 +26,7 @@
 #import "SplitpaneAccessibility.h"
 
 /*
- * Implementation of the accessibility peer for the ScrollBar role
+ * Implementation of the accessibility peer for the Splitpane role
  */
 @implementation SplitpaneAccessibility
 
