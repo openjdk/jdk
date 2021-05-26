@@ -134,6 +134,37 @@ public class SerialFilterFunctionTest {
         Assert.assertEquals(ObjectInputFilter.rejectUndecidedClass(allowed).checkInput(info), ALLOWED, "allowed -> rejected");
         ObjectInputFilter rejected = getFilter(REJECTED);
         Assert.assertEquals(ObjectInputFilter.rejectUndecidedClass(rejected).checkInput(info), REJECTED, "rejected -> rejected");
+
+        // Specific cases of Classes the result in allowed, rejected, and undecided status
+        ObjectInputFilter numberFilter = ObjectInputFilter.Config.createFilter("java.lang.Integer;!java.lang.Double");
+        Object[] testObjs = {
+                Integer.valueOf(1),         // Integer is allowed -> allowed
+                new Integer[1],             // Integer is allowed -> allowed
+                new Integer[0][0][0],       // Integer is allowed -> allowed
+                Long.valueOf(2),            // Long is undecided -> rejected
+                new Long[1],                // Long is undecided -> rejected
+                new Long[0][0][0],          // Long is undecided -> rejected
+                Double.valueOf(2.0d),       // Double is rejected -> rejected
+                new Double[1],              // Double is rejected -> rejected
+                new Double[0][0][0],        // Double is rejected -> rejected
+                new int[1],                 // int is primitive undecided -> undecided
+                new int[1][1][1],           // int is primitive undecided -> undecided
+                };
+
+        for (Object obj : testObjs) {
+            Class<?> clazz = obj.getClass();
+            info = new SerialInfo(clazz);
+            Status rawSt = numberFilter.checkInput(info);
+            Status st = ObjectInputFilter.rejectUndecidedClass(numberFilter).checkInput(info);
+            if (UNDECIDED.equals(rawSt)) {
+                while (clazz.isArray())
+                    clazz = clazz.getComponentType();
+                Status expected = (clazz.isPrimitive()) ? UNDECIDED : REJECTED;
+                Assert.assertEquals(st, expected, "Wrong status for class: " + obj.getClass());
+            } else {
+                Assert.assertEquals(rawSt, st, "raw filter and rejectUndecided filter disagree");
+            }
+        }
     }
 
     /**

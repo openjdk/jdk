@@ -29,6 +29,7 @@ import java.io.InvalidClassException;
 import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Constructor;
@@ -60,6 +61,7 @@ import org.testng.annotations.DataProvider;
 @Test
 public class SerialFilterTest implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = -6999613679881262446L;
 
     /**
@@ -774,6 +776,7 @@ public class SerialFilterTest implements Serializable {
      * the ObjectInputFilter to check that it has the expected length.
      */
     static class ReadResolveToArray implements Serializable, ObjectInputFilter {
+        @Serial
         private static final long serialVersionUID = 123456789L;
 
         @SuppressWarnings("serial") /* Incorrect declarations are being tested */
@@ -785,6 +788,7 @@ public class SerialFilterTest implements Serializable {
             this.length = length;
         }
 
+        @Serial
         Object readResolve() {
             return array;
         }
@@ -845,21 +849,27 @@ public class SerialFilterTest implements Serializable {
 
     // Deeper superclass hierarchy
     static class A implements Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
     };
     static class B extends A {
+        @Serial
         private static final long serialVersionUID = 2L;
     }
     static class C extends B {
+        @Serial
         private static final long serialVersionUID = 3L;
     }
     static class D extends C {
+        @Serial
         private static final long serialVersionUID = 4L;
     }
     static class E extends D {
+        @Serial
         private static final long serialVersionUID = 5L;
     }
     static class F extends E {
+        @Serial
         private static final long serialVersionUID = 6L;
     }
 

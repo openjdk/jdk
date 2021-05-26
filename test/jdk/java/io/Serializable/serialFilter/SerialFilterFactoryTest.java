@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputFilter;
 import java.io.ObjectInputFilter.Config;
-import java.io.ObjectInputFilter.FilterInfo;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
@@ -41,12 +40,6 @@ import java.io.SerializablePermission;
 import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.function.BinaryOperator;
-import java.util.function.Predicate;
-
-import static java.io.ObjectInputFilter.Status;
-import static java.io.ObjectInputFilter.Status.ALLOWED;
-import static java.io.ObjectInputFilter.Status.REJECTED;
-import static java.io.ObjectInputFilter.Status.UNDECIDED;
 
 /* @test
  * @build SerialFilterFactoryTest
@@ -113,7 +106,7 @@ public class SerialFilterFactoryTest {
         if (configFilter == serialFilter || configFilter instanceof Validator)
             return configFilter;        // if already set or a type we can use, no change
 
-        if (configFilter == null && serialFilter != null) {
+        if (configFilter == null) {
             Config.setSerialFilter(serialFilter);
             return serialFilter;        // none set already, set it
         }
@@ -269,7 +262,7 @@ public class SerialFilterFactoryTest {
     // Test that setting the filter factory after any deserialization (any testCase)
     // throws IllegalStateException with the specific message
     @Test(dependsOnMethods="testCase")
-    void testSetFactoryAfterDeserialization() throws IOException {
+    void testSetFactoryAfterDeserialization() {
         if (hasFilterPerm()) {
             // Only test if is allowed by SM.
             BinaryOperator<ObjectInputFilter> factory = Config.getSerialFilterFactory();
@@ -278,13 +271,27 @@ public class SerialFilterFactoryTest {
         }
     }
 
-    /**
-     * Returns an ObjectInputFilter that returns the requested Status.
-     * @param status a Status, may be null
-     * @return  an ObjectInputFilter that returns the requested Status
-     */
-    private static ObjectInputFilter getFilter(ObjectInputFilter.Status status) {
-        return (info) -> status;
+
+    // Test that OIS.setObjectInputFilter does not allow a null filter to replace
+    // a non-null filter.  And does allow a null filter to replace a null filter
+    @Test
+    void testDisableFailFilter() throws IOException {
+        if (hasFilterPerm()) {
+            // Only test if is allowed by SM.
+            ObjectInputFilter curr = null;
+            try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(simpleStream))) {
+                curr = ois.getObjectInputFilter();
+                // Try to set the filter to null
+                ois.setObjectInputFilter(null);
+                if (curr != null) {
+                    Assert.fail("setting filter to null after a non-null filter should throw");
+                }
+            } catch (IllegalStateException ise) {
+                if (curr == null) {
+                    Assert.fail("setting filter to null after a null filter should not throw");
+                }
+            }
+        }
     }
 
     /**
