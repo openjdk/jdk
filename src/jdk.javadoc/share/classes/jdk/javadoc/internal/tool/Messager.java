@@ -37,8 +37,13 @@ import java.util.ResourceBundle;
 import java.util.Set;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.NestingKind;
 import javax.tools.Diagnostic;
 import javax.tools.Diagnostic.Kind;
+import javax.tools.FileObject;
+import javax.tools.ForwardingFileObject;
+import javax.tools.ForwardingJavaFileObject;
 import javax.tools.JavaFileObject;
 
 import jdk.javadoc.doclet.Reporter;
@@ -251,6 +256,51 @@ public class Messager extends Log implements Reporter {
         DiagnosticSource ds = getDiagnosticSource(element);
         DiagnosticPosition dp = getDiagnosticPosition(element);
         report(dt, flags, ds, dp, message);
+    }
+
+    @Override // Reporter
+    public void print(Kind kind, FileObject file, int start, int pos, int end, String message) throws IllegalArgumentException {
+        DiagnosticType dt = getDiagnosticType(kind);
+        Set<DiagnosticFlag> flags = getDiagnosticFlags(kind);
+        // Although not required to do so, it is the case that any file object returned from the
+        // javac impl of JavaFileManager will return an object that implements JavaFileObject.
+        // See PathFileObject, which provides the primary impls of (Java)FileObject.
+        JavaFileObject fo = file instanceof JavaFileObject _fo ? _fo : new WrappingJavaFileObject(file);
+        DiagnosticSource ds = new DiagnosticSource(fo, this);
+        DiagnosticPosition dp = createDiagnosticPosition(null, start, pos, end);
+        report(dt, flags, ds, dp, message);
+    }
+
+    private class WrappingJavaFileObject
+            extends ForwardingFileObject<FileObject> implements JavaFileObject {
+
+        WrappingJavaFileObject(FileObject fo) {
+            super(fo);
+            assert !(fo instanceof JavaFileObject);
+        }
+
+        @Override
+        public Kind getKind() {
+            String name = fileObject.getName();
+            return name.endsWith(Kind.HTML.extension)
+                    ? JavaFileObject.Kind.HTML
+                    : JavaFileObject.Kind.OTHER;
+        }
+
+        @Override
+        public boolean isNameCompatible(String simpleName, Kind kind) {
+            return false;
+        }
+
+        @Override
+        public NestingKind getNestingKind() {
+            return null;
+        }
+
+        @Override
+        public Modifier getAccessLevel() {
+            return null;
+        }
     }
 
     /**

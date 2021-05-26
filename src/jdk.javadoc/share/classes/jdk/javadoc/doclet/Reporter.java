@@ -98,12 +98,8 @@ public interface Reporter {
      * @param pos     the position
      * @param end     the end of the enclosing range
      * @param message the message to be printed
-     * @throws IllegalArgumentException if any of the positions are negative,
-     *              or beyond the end of the file's content,
-     *              or if the following relation is not true:  {@code start <= pos <= end}
      */
-    void print(Diagnostic.Kind kind, FileObject file, int start, int pos, int end, String message)
-            throws IllegalArgumentException;
+    void print(Diagnostic.Kind kind, FileObject file, int start, int pos, int end, String message);
 
 
     /**
