@@ -39,6 +39,7 @@
 #include "memory/memRegion.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/arguments.hpp"
@@ -731,6 +732,9 @@ void ArchiveBuilder::make_klasses_shareable() {
   for (int i = 0; i < klasses()->length(); i++) {
     Klass* k = klasses()->at(i);
     k->remove_java_mirror();
+    Klass* requested_k = to_requested(k);
+    narrowKlass nk = CompressedKlassPointers::encode_not_null(requested_k, _requested_static_archive_bottom);
+    k->set_prototype_header(markWord::prototype() LP64_ONLY(.set_narrow_klass(nk)));
     if (k->is_objArray_klass()) {
       // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
       // on their array classes.
@@ -776,6 +780,9 @@ void ArchiveBuilder::relocate_klass_ptr(oop o) {
   Klass* k = get_relocated_klass(o->klass());
   Klass* requested_k = to_requested(k);
   narrowKlass nk = CompressedKlassPointers::encode_not_null(requested_k, _requested_static_archive_bottom);
+#ifdef _LP64
+  o->set_mark(o->mark().set_narrow_klass(nk));
+#endif
   o->set_narrow_klass(nk);
 }
 

@@ -76,8 +76,7 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
     return;
   }
 
-  oop forwardee = obj->forwardee();
-  if (forwardee == NULL) {
+  if (!obj->is_forwarded()) {
     // Not forwarded, return current reference.
     assert(obj->mark() == markWord::prototype_for_klass(obj->klass()) || // Correct mark
            obj->mark_must_be_preserved() || // Will be restored by PreservedMarksSet
@@ -88,6 +87,7 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
   }
 
   // Forwarded, just update.
+  oop forwardee = obj->forwardee();
   assert(G1CollectedHeap::heap()->is_in_reserved(forwardee), "should be in object space");
   RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
 }

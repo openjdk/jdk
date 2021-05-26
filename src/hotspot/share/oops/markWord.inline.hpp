@@ -70,8 +70,7 @@ inline bool markWord::must_be_preserved_for_promotion_failure(KlassProxy klass) 
 
 inline markWord markWord::prototype_for_klass(const Klass* klass) {
   markWord prototype_header = klass->prototype_header();
-  assert(prototype_header == prototype() || prototype_header.has_bias_pattern(), "corrupt prototype header");
-
+  assert(prototype_header == prototype() LP64_ONLY(.set_klass(klass)) || prototype_header.has_bias_pattern(), "corrupt prototype header;");
   return prototype_header;
 }
 

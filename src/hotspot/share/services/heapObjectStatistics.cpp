@@ -148,9 +148,11 @@ void HeapObjectStatistics::visit_object(oop obj) {
     increase_counter(_num_locked);
   }
 #ifdef ASSERT
+#ifdef _LP64
   if (!mark.has_displaced_mark_helper()) {
-    assert((mark.value() & 0xffffffff00000000) == 0, "upper 32 mark bits must be free");
+    assert(mark.narrow_klass() == CompressedKlassPointers::encode(obj->klass_or_null()), "upper 32 mark bits must be narrow klass: mark: " INTPTR_FORMAT ", compressed-klass: " INTPTR_FORMAT, (intptr_t)mark.narrow_klass(), (intptr_t)CompressedKlassPointers::encode(obj->klass_or_null()));
   }
+#endif
 #endif
   increase_counter(_lds, obj->size());
 }

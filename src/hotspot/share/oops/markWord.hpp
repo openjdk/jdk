@@ -132,6 +132,9 @@ class markWord {
   static const int max_hash_bits                  = BitsPerWord - age_bits - lock_bits - biased_lock_bits;
   static const int hash_bits                      = max_hash_bits > 25 ? 25 : max_hash_bits;
   static const int epoch_bits                     = 2;
+#ifdef _LP64
+  static const int klass_bits                     = 32;
+#endif
 
   // The biased locking code currently requires that the age bits be
   // contiguous to the lock bits.
@@ -140,6 +143,9 @@ class markWord {
   static const int age_shift                      = lock_bits + biased_lock_bits;
   static const int hash_shift                     = age_shift + age_bits;
   static const int epoch_shift                    = hash_shift;
+#ifdef _LP64
+  static const int klass_shift                    = hash_shift + hash_bits;
+#endif
 
   static const uintptr_t lock_mask                = right_n_bits(lock_bits);
   static const uintptr_t lock_mask_in_place       = lock_mask << lock_shift;
@@ -153,6 +159,11 @@ class markWord {
 
   static const uintptr_t hash_mask                = right_n_bits(hash_bits);
   static const uintptr_t hash_mask_in_place       = hash_mask << hash_shift;
+
+#ifdef _LP64
+  static const uintptr_t klass_mask               = right_n_bits(klass_bits);
+  static const uintptr_t klass_mask_in_place      = klass_mask << klass_shift;
+#endif
 
   // Alignment of JavaThread pointers encoded in object header required by biased locking
   static const size_t biased_lock_alignment       = 2 << (epoch_shift + epoch_bits);
@@ -335,6 +346,13 @@ class markWord {
   bool has_no_hash() const {
     return hash() == no_hash;
   }
+
+#ifdef _LP64
+  narrowKlass narrow_klass() const;
+  Klass* klass() const;
+  markWord set_klass(const Klass* klass) const;
+  markWord set_narrow_klass(const narrowKlass klass) const;
+#endif
 
   // Prototype mark for initialization
   static markWord prototype() {

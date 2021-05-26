@@ -105,7 +105,12 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
   if (cast_from_oop<HeapWord*>(object) != _compaction_top) {
     object->forward_to(cast_to_oop(_compaction_top));
   } else {
-    if (object->forwardee() != NULL) {
+    // TODO: This seems to be checking if mark-word looks like a forwarding pointer, and fix it if
+    // it doesn't. That is because compaction code (G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj))
+    // used to do the same check. However, it is more reliable to first check the lower bits (is_forwarded())
+    // instead before accepting the forwardee. The code in G1FullCompactTask has been changed accordingly,
+    // which should make this block superfluous.
+    if ((cast_from_oop<uintptr_t>(object->forwardee()) & 0x00000000ffffffff) != 0) {
       // Object should not move but mark-word is used so it looks like the
       // object is forwarded. Need to clear the mark and it's no problem
       // since it will be restored by preserved marks. There is an exception
@@ -122,7 +127,7 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
              "should have correct prototype obj: " PTR_FORMAT " mark: " PTR_FORMAT " prototype: " PTR_FORMAT,
              p2i(object), object->mark().value(), markWord::prototype_for_klass(object->klass()).value());
     }
-    assert(object->forwardee() == NULL, "should be forwarded to NULL");
+    assert((cast_from_oop<uintptr_t>(object->forwardee()) & 0x00000000ffffffff) == 0, "should be forwarded to NULL");
   }
 
   // Update compaction values.

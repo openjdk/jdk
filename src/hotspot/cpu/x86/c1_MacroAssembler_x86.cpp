@@ -157,16 +157,10 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
 
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
-  assert_different_registers(obj, klass, len);
   Register tmp_encode_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
-  if (UseBiasedLocking && !len->is_valid()) {
-    assert_different_registers(obj, klass, len, t1, t2);
-    movptr(t1, Address(klass, Klass::prototype_header_offset()));
-    movptr(Address(obj, oopDesc::mark_offset_in_bytes()), t1);
-  } else {
-    // This assumes that all prototype bits fit in an int32_t
-    movptr(Address(obj, oopDesc::mark_offset_in_bytes ()), (int32_t)(intptr_t)markWord::prototype().value());
-  }
+  assert_different_registers(obj, klass, len, t1, t2);
+  movptr(t1, Address(klass, Klass::prototype_header_offset()));
+  movptr(Address(obj, oopDesc::mark_offset_in_bytes()), t1);
 #ifdef _LP64
   if (UseCompressedClassPointers) { // Take care not to kill klass
     movptr(t1, klass);

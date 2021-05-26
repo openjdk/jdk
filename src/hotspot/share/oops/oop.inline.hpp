@@ -74,7 +74,14 @@ markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memo
 }
 
 void oopDesc::init_mark() {
-  set_mark(markWord::prototype_for_klass(klass()));
+  markWord header = markWord::prototype();
+#ifdef _LP64
+  assert(UseCompressedClassPointers, "expect compressed klass pointers");
+  narrowKlass nklass = _metadata._compressed_klass;
+  assert(nklass != 0, "expect klass");
+  header = header.set_narrow_klass(nklass);
+#endif
+  set_mark(header);
 }
 
 Klass* oopDesc::klass() const {
