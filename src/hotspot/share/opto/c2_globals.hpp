@@ -82,8 +82,9 @@
           "actual size could be less depending on elements type")           \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, UsePartialInlineSize, -1, DIAGNOSTIC,                       \
-          "Partial inline size used for array copy acceleration.")          \
+  product(intx, ArrayOperationPartailInlineSize, -1, DIAGNOSTIC,            \
+          "Partial inline size used for small array operations"             \
+          "(e.g. copy,cmp) acceleration.")                                  \
           range(-1, 64)                                                     \
                                                                             \
   product(bool, AlignVector, true,                                          \

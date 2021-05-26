@@ -5215,68 +5215,68 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   Node* obja_adr = make_unsafe_address(obja, aoffset);
   Node* objb_adr = make_unsafe_address(objb, boffset);
 
-  assert(scale->bottom_type()->isa_int() &&
-         scale->bottom_type()->is_int()->is_con(),
-         "non-constant scale value");
+  bool enable_pi = false;
+  Node* fast_path = top();
+  Node* fastcomp_result = top();
+  Node* init_mem = map()->memory();
 
-  int scale_val = scale->bottom_type()->is_int()->get_con();
-  BasicType prim_types[] = {T_BYTE, T_SHORT, T_INT, T_LONG};
-  BasicType vec_basictype = prim_types[scale_val];
-  const Type* vec_type = Type::get_const_basic_type(vec_basictype);
-  int vec_len = UsePartialInlineSize / type2aelembytes(vec_basictype);
+  assert(scale->bottom_type()->isa_int(), "scale must be integer");
+  if (scale->bottom_type()->is_int()->is_con()) {
+    int scale_val = scale->bottom_type()->is_int()->get_con();
+    BasicType prim_types[] = {T_BYTE, T_SHORT, T_INT, T_LONG};
+    BasicType vec_basictype = prim_types[scale_val];
+    const Type* vec_type = Type::get_const_basic_type(vec_basictype);
+    int vec_len = ArrayOperationPartailInlineSize / type2aelembytes(vec_basictype);
 
-  Node* length_in_bytes = _gvn.transform(new LShiftINode(length, scale));
-  Node* length_cmp = _gvn.transform(new CmpINode(length_in_bytes, intcon(UsePartialInlineSize)));
-  Node* cmp_res = _gvn.transform(new BoolNode(length_cmp, BoolTest::le));
+    // Enable partial in-lining if compare size is less than
+    // ArrayOperationPartailInlineSize(default 32 bytes).
+    // If ArrayOperationPartailInlineSize > 32 inlining is enabled
+    // for all integral types (byte/short/char/int), else for default
+    // value inlining is enabled for subword types (byte/short/char).
+    if (ArrayOperationPartailInlineSize > 32) {
+      enable_pi = NULL != vec_type->isa_int();
+    } else if (ArrayOperationPartailInlineSize) {
+      enable_pi = is_subword_type(vec_basictype);
+    }
 
-  // Enable partial in-lining if compare size is less than UsePartialInlineSize(default 32 bytes).
-  bool enable_pi = (UsePartialInlineSize > 32) ? (NULL != vec_type->isa_int())
-                                               : is_subword_type(vec_basictype);
-  if (enable_pi && Type::cmp(TypeInt::ZERO, cmp_res->bottom_type()) &&
-      (Matcher::match_rule_supported_vector(Op_VectorMaskGen , vec_len, vec_basictype) &&
-       Matcher::match_rule_supported_vector(Op_LoadVectorMasked , vec_len, vec_basictype) &&
-       Matcher::match_rule_supported_vector(Op_VectorCmpMasked, vec_len, vec_basictype))) {
+    if (enable_pi &&
+        Matcher::match_rule_supported_vector(Op_VectorMaskGen , vec_len, vec_basictype) &&
+        Matcher::match_rule_supported_vector(Op_LoadVectorMasked , vec_len, vec_basictype) &&
+        Matcher::match_rule_supported_vector(Op_VectorCmpMasked, vec_len, vec_basictype)) {
 
-    Node* fast_path = NULL;
-    Node* slow_path = NULL;
-    bool gen_slow_path = Type::cmp(TypeInt::ONE, cmp_res->bottom_type());
-    if (gen_slow_path) {
+      Node* length_in_bytes = _gvn.transform(new LShiftINode(length, scale));
+      Node* pi_size = intcon(ArrayOperationPartailInlineSize);
+      Node* length_cmp = _gvn.transform(new CmpINode(length_in_bytes, pi_size));
+      Node* cmp_res = _gvn.transform(new BoolNode(length_cmp, BoolTest::le));
+
       fast_path = generate_guard(cmp_res, NULL, PROB_MAX);
-      slow_path = control();
-    } else {
-      fast_path = slow_path = control();
+
+      const TypeVect* vt = TypeVect::make(vec_basictype, vec_len);
+      Node* mask_gen = _gvn.transform(new VectorMaskGenNode(ConvI2L(length), TypeVect::VECTMASK, vec_type));
+
+      const TypePtr* ptr_type_a = obja_adr->Value(&_gvn)->isa_ptr();
+      const TypePtr* ptr_type_b = objb_adr->Value(&_gvn)->isa_ptr();
+
+      int alias_idx = C->get_alias_index(top_a);
+      Node* mm = memory(alias_idx);
+      Node* masked_load1 = _gvn.transform(new LoadVectorMaskedNode(fast_path, mm, obja_adr,
+                                                                   ptr_type_a, vt, mask_gen));
+      alias_idx = C->get_alias_index(top_b);
+      mm = memory(alias_idx);
+      Node* masked_load2 = _gvn.transform(new LoadVectorMaskedNode(fast_path, mm, objb_adr,
+                                                                   ptr_type_b, vt, mask_gen));
+
+      fastcomp_result = _gvn.transform(new VectorCmpMaskedNode(masked_load1, masked_load2,
+                                                               mask_gen, TypeInt::INT));
+      C->set_max_vector_size(MAX2((uint)ArrayOperationPartailInlineSize, C->max_vector_size()));
     }
-    assert(fast_path && slow_path, "");
+  }
 
-    const TypeVect* vt = TypeVect::make(vec_basictype, vec_len);
-    Node* mask_gen = _gvn.transform(new VectorMaskGenNode(ConvI2L(length), TypeVect::VECTMASK, vec_type));
-
-    const TypePtr* ptr_type_a = obja_adr->Value(&_gvn)->isa_ptr();
-    const TypePtr* ptr_type_b = objb_adr->Value(&_gvn)->isa_ptr();
-
-    int alias_idx = C->get_alias_index(top_a);
-    Node* mm = memory(alias_idx);
-    Node* masked_load1 = _gvn.transform(new LoadVectorMaskedNode(fast_path, mm, obja_adr,
-                                                                 ptr_type_a, vt, mask_gen));
-    alias_idx = C->get_alias_index(top_b);
-    mm = memory(alias_idx);
-    Node* masked_load2 = _gvn.transform(new LoadVectorMaskedNode(fast_path, mm, objb_adr,
-                                                                 ptr_type_b, vt, mask_gen));
-
-    Node* fastcomp_result = _gvn.transform(new VectorCmpMaskedNode(masked_load1, masked_load2,
-                                                                   mask_gen, TypeInt::INT));
-    if (!gen_slow_path) {
-      set_result(fastcomp_result);
-      C->set_max_vector_size(UsePartialInlineSize);
-      clear_upper_avx();
-      return true;
-    }
-
-    Node* init_mem = map()->memory();
+  if (!stopped()) {
     Node* call = make_runtime_call(RC_LEAF,
-                             OptoRuntime::vectorizedMismatch_Type(),
-                             stubAddr, stubName, TypePtr::BOTTOM,
-                             obja_adr, objb_adr, length, scale);
+                                   OptoRuntime::vectorizedMismatch_Type(),
+                                   stubAddr, stubName, TypePtr::BOTTOM,
+                                   obja_adr, objb_adr, length, scale);
 
     Node* call_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
     Node* call_mem = map()->memory();
@@ -5295,19 +5295,14 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
     mem_phi->init_req(1, init_mem);
     mem_phi->init_req(2, call_mem);
 
-    C->set_max_vector_size(UsePartialInlineSize);
     set_all_memory(_gvn.transform(mem_phi));
-    set_result(((RegionNode*)exit_block), ((PhiNode*)result));
-    clear_upper_avx();
+    set_control(exit_block);
+    set_result(result);
   } else {
-    Node* call = make_runtime_call(RC_LEAF,
-                             OptoRuntime::vectorizedMismatch_Type(),
-                             stubAddr, stubName, TypePtr::BOTTOM,
-                             obja_adr, objb_adr, length, scale);
-
-    Node* call_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-    set_result(call_result);
+    set_control(fast_path);
+    set_result(fastcomp_result);
   }
+  clear_upper_avx();
   return true;
 }
 

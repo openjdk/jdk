@@ -1668,6 +1668,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_ClearArray:
     case Op_VectorMaskGen:
+    case Op_VectorCmpMasked:
     case Op_LoadVectorMasked:
     case Op_StoreVectorMasked:
       if (!is_LP64 || !VM_Version::supports_avx512bw()) {

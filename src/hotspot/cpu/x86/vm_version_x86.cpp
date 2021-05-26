@@ -1406,12 +1406,12 @@ void VM_Version::get_processor_features() {
     }
 #ifdef COMPILER2
     if (UseAVX > 2) {
-      if (FLAG_IS_DEFAULT(UsePartialInlineSize) ||
-          (!FLAG_IS_DEFAULT(UsePartialInlineSize) &&
-           UsePartialInlineSize != 0 &&
-           UsePartialInlineSize != 32 &&
-           UsePartialInlineSize != 16 &&
-           UsePartialInlineSize != 64)) {
+      if (FLAG_IS_DEFAULT(ArrayOperationPartailInlineSize) ||
+          (!FLAG_IS_DEFAULT(ArrayOperationPartailInlineSize) &&
+           ArrayOperationPartailInlineSize != 0 &&
+           ArrayOperationPartailInlineSize != 16 &&
+           ArrayOperationPartailInlineSize != 32 &&
+           ArrayOperationPartailInlineSize != 64)) {
         int inline_size = 0;
         if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
           inline_size = 64;
@@ -1420,18 +1420,18 @@ void VM_Version::get_processor_features() {
         } else if (MaxVectorSize >= 16) {
           inline_size = 16;
         }
-        if(!FLAG_IS_DEFAULT(UsePartialInlineSize)) {
-          warning("Setting UsePartialInlineSize as %d", inline_size);
+        if(!FLAG_IS_DEFAULT(ArrayOperationPartailInlineSize)) {
+          warning("Setting ArrayOperationPartailInlineSize as %d", inline_size);
         }
-        UsePartialInlineSize = inline_size;
+        ArrayOperationPartailInlineSize = inline_size;
       }
 
-      if (UsePartialInlineSize > MaxVectorSize) {
-        UsePartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
-        if (UsePartialInlineSize) {
-          warning("Setting UsePartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
+      if (ArrayOperationPartailInlineSize > MaxVectorSize) {
+        ArrayOperationPartailInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
+        if (ArrayOperationPartailInlineSize) {
+          warning("Setting ArrayOperationPartailInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
         } else {
-          warning("Setting UsePartialInlineSize as " INTX_FORMAT, UsePartialInlineSize);
+          warning("Setting ArrayOperationPartailInlineSize as " INTX_FORMAT, ArrayOperationPartailInlineSize);
         }
       }
     }
