@@ -4555,6 +4555,7 @@ public class JavacParser implements Parser {
 
         if (createNewLevel) {
             mostInnerType = to(F.at(token.pos).TypeArray(mostInnerType));
+            origEndPos = getEndPos(mostInnerType);
         }
 
         JCExpression mostInnerTypeToReturn = mostInnerType;
