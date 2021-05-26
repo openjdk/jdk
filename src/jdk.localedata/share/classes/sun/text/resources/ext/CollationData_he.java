@@ -45,7 +45,7 @@ package sun.text.resources.ext;
 
 import java.util.ListResourceBundle;
 
-public class CollationData_iw extends ListResourceBundle {
+public class CollationData_he extends ListResourceBundle {
 
     protected final Object[][] getContents() {
         return new Object[][] {

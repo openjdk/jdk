@@ -407,10 +407,10 @@ public class Contents {
 
             if (o == null) {
                 c.add("{" + m.group(1) + "}");
-            } else if (o instanceof String) {
-                c.add((String) o);
-            } else if (o instanceof Content) {
-                c.add((Content) o);
+            } else if (o instanceof String str) {
+                c.add(str);
+            } else if (o instanceof Content con) {
+                c.add(con);
             }
 
             start = m.end();

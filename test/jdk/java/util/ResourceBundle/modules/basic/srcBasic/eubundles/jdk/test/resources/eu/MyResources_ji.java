@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,17 @@
  * questions.
  */
 
-module m {
-    exports p;
+package jdk.test.resources.eu;
+
+import java.util.ListResourceBundle;
+
+public class MyResources_ji extends ListResourceBundle {
+    @Override
+    public Object[][] getContents() {
+        return new Object[][] {
+            // returned value is compared with Locale.toLanguageTag()
+            // which always returns NEW code
+            { "key", "yi: message" }
+        };
+    }
 }

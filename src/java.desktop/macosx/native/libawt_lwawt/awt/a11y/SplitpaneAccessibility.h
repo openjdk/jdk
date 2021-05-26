@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,22 +23,13 @@
  * questions.
  */
 
-package java.lang;
+#import "JavaComponentAccessibility.h"
+#import "GroupAccessibility.h"
 
-public class Helper {
-    private Helper() { }
+#import <AppKit/AppKit.h>
 
-    /**
-     * Exports a package to a module.
-     */
-    public static void export(String pn, Module other) {
-        Helper.class.getModule().addExports(pn, other);
-    }
+@interface SplitpaneAccessibility : GroupAccessibility {
 
-    /**
-     * Opens a package to a module.
-     */
-    public static void open(String pn, Module other) {
-        Helper.class.getModule().addOpens(pn, other);
-    }
-}
+};
+- (NSAccessibilityRole _Nonnull)accessibilityRole;
+@end

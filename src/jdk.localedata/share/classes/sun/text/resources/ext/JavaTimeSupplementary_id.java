@@ -69,7 +69,7 @@ package sun.text.resources.ext;
 
 import sun.util.resources.OpenListResourceBundle;
 
-public class JavaTimeSupplementary_in extends OpenListResourceBundle {
+public class JavaTimeSupplementary_id extends OpenListResourceBundle {
     @Override
     protected final Object[][] getContents() {
         final String[] sharedQuarterAbbreviations = {
