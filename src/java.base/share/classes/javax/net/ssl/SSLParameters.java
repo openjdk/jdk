@@ -664,7 +664,7 @@ public class SSLParameters {
      *
      *     SSLParameters p = sslSocket.getSSLParameters();
      *     p.setApplicationProtocols(new String[] {
-     *             "h2", "http/1.1", rfc7301Grease8F, HUK_UN_I});
+     *             "h2", "http/1.1", rfc7301Grease8A, HUK_UN_I});
      *     sslSocket.setSSLParameters(p);
      * </pre></blockquote>
      *
