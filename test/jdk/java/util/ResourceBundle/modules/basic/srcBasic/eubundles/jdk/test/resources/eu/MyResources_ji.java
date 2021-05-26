@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,15 @@
 
 package jdk.test.resources.eu;
 
-import java.util.Locale;
-import jdk.test.resources.spi.MyResourcesProvider;
+import java.util.ListResourceBundle;
 
-/**
- *
- */
-public class MyResourcesEU extends MyResourcesProvider {
-    public MyResourcesEU() {
-        super("java.class", "eu",
-              Locale.GERMAN, Locale.FRENCH, new Locale("es"), new Locale("yi"));
+public class MyResources_ji extends ListResourceBundle {
+    @Override
+    public Object[][] getContents() {
+        return new Object[][] {
+            // returned value is compared with Locale.toLanguageTag()
+            // which always returns NEW code
+            { "key", "yi: message" }
+        };
     }
 }

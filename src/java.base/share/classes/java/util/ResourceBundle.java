@@ -72,6 +72,8 @@ import jdk.internal.reflect.Reflection;
 import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.LocaleObjectCache;
+import sun.util.resources.Bundles;
+
 import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
 
 
@@ -3098,6 +3100,12 @@ public abstract class ResourceBundle {
          * nor {@code "java.properties"}, an
          * {@code IllegalArgumentException} is thrown.</li>
          *
+         * <li>If the {@code locale}'s language is one of the
+         * <a href="./Locale.html#legacy_language_codes">Legacy language
+         * codes</a>, either old or new, then repeat the loading process
+         * if needed, with the bundle name with the other language.
+         * For example, "iw" for "he" and vice versa.
+         *
          * </ul>
          *
          * @param baseName
@@ -3152,6 +3160,21 @@ public abstract class ResourceBundle {
              * that is visible to the given loader and accessible to the given caller.
              */
             String bundleName = toBundleName(baseName, locale);
+            var bundle = newBundle0(bundleName, format, loader, reload);
+            if (bundle == null) {
+                // Try loading legacy ISO language's other bundles
+                var otherBundleName = Bundles.toOtherBundleName(baseName, bundleName, locale);
+                if (!bundleName.equals(otherBundleName)) {
+                    bundle = newBundle0(otherBundleName, format, loader, reload);
+                }
+            }
+
+            return bundle;
+        }
+
+        private ResourceBundle newBundle0(String bundleName, String format,
+                    ClassLoader loader, boolean reload)
+                    throws IllegalAccessException, InstantiationException, IOException {
             ResourceBundle bundle = null;
             if (format.equals("java.class")) {
                 try {
