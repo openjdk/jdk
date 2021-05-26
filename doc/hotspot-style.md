@@ -140,8 +140,8 @@ files.
 
 * All .inline.hpp files should include their corresponding .hpp file
 as the first include line. Externally used declarations should be put
-in the .hpp file, and not in the the .inline.hpp file. This rule exists
-to resolve problems with circular dependencies between.inline.hpp files.
+in the .hpp file, and not in the .inline.hpp file. This rule exists to
+resolve problems with circular dependencies between .inline.hpp files.
 
 * All .cpp files include precompiled.hpp as the first include line.
 
