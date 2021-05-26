@@ -420,7 +420,7 @@ public class TransPatterns extends TreeTranslator {
                         currentValue = temp;
                         JCExpression test = (JCExpression) this.<JCTree>translate(p);
                         c.stats = translate(c.stats);
-                        JCContinue continueSwitch = make.Continue(null);
+                        JCContinue continueSwitch = make.at(clearedPatterns.head.pos()).Continue(null);
                         continueSwitch.target = tree;
                         c.stats = c.stats.prepend(make.If(makeUnary(Tag.NOT, test).setType(syms.booleanType),
                                                            make.Block(0, List.of(make.Exec(make.Assign(make.Ident(index),
@@ -468,7 +468,7 @@ public class TransPatterns extends TreeTranslator {
                     previousCompletesNormally = c.completesNormally;
                 } else {
                     previousCompletesNormally = false;
-                    JCBreak brk = make.Break(null);
+                    JCBreak brk = make.at(TreeInfo.endPos(c.stats.last())).Break(null);
                     brk.target = tree;
                     c.stats = c.stats.append(brk);
                 }

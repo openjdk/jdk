@@ -3636,7 +3636,7 @@ public class Lower extends TreeTranslator {
 
         for (JCCase c : convertedCases) {
             if (c.caseKind == JCCase.RULE && c.completesNormally) {
-                JCBreak b = make_at(c.pos()).Break(null);
+                JCBreak b = make.at(TreeInfo.endPos(c.stats.last())).Break(null);
                 b.target = tree;
                 c.stats = c.stats.append(b);
             }
