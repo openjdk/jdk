@@ -736,9 +736,13 @@ void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multipl
     } else {
       st.print("%s%d", file_name, _file_count);
     }
-    _output = new (ResourceObj::C_HEAP, mtCompiler) fileStream(st.as_string(), "w");
+    const char* format_file_name = make_log_name(st.as_string(), NULL);
+    _output = new (ResourceObj::C_HEAP, mtCompiler) fileStream(format_file_name, "w");
+    FREE_C_HEAP_ARRAY(char, format_file_name);
   } else {
-    _output = new (ResourceObj::C_HEAP, mtCompiler) fileStream(file_name, append ? "a" : "w");
+    const char* format_file_name = make_log_name(file_name, NULL);
+    _output = new (ResourceObj::C_HEAP, mtCompiler) fileStream(format_file_name, append ? "a" : "w");
+    FREE_C_HEAP_ARRAY(char, format_file_name);
   }
   if (use_multiple_files) {
     assert(!append, "append should only be used for debugging with a single file");
