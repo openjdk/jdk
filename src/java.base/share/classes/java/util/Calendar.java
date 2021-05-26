@@ -1477,7 +1477,6 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
             if (zone == null) {
                 zone = defaultTimeZone(locale);
             }
-            Calendar cal;
             if (type == null) {
                 type = locale.getUnicodeLocaleType("ca");
             }
@@ -1489,23 +1488,24 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
                     type = "gregory";
                 }
             }
-            switch (type) {
-                case "gregory" -> cal = new GregorianCalendar(zone, locale, true);
+            final Calendar cal = switch (type) {
+                case "gregory" -> new GregorianCalendar(zone, locale, true);
                 case "iso8601" -> {
                     GregorianCalendar gcal = new GregorianCalendar(zone, locale, true);
                     // make gcal a proleptic Gregorian
                     gcal.setGregorianChange(new Date(Long.MIN_VALUE));
                     // and week definition to be compatible with ISO 8601
                     setWeekDefinition(MONDAY, 4);
-                    cal = gcal;
+                    yield gcal;
                 }
                 case "buddhist" -> {
-                    cal = new BuddhistCalendar(zone, locale);
-                    cal.clear();
+                    var buddhistCalendar = new BuddhistCalendar(zone, locale);
+                    buddhistCalendar.clear();
+                    yield buddhistCalendar;
                 }
-                case "japanese" -> cal = new JapaneseImperialCalendar(zone, locale, true);
+                case "japanese" -> new JapaneseImperialCalendar(zone, locale, true);
                 default -> throw new IllegalArgumentException("unknown calendar type: " + type);
-            }
+            };
             cal.setLenient(lenient);
             if (firstDayOfWeek != 0) {
                 cal.setFirstDayOfWeek(firstDayOfWeek);
