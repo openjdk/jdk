@@ -127,7 +127,7 @@ public class HttpHandlers {
      * @return a handler
      * @throws IllegalArgumentException if statusCode is not a positive 3-digit
      *                                  integer, as per rfc2616, section 6.1.1
-     * @throws NullPointerException     if headers or body is null
+     * @throws NullPointerException     if headers or body are null
      * @since 18
      */
     public static HttpHandler of(int statusCode, Headers headers, byte[] body) {
@@ -150,25 +150,5 @@ public class HttpHandlers {
                 }
             }
         };
-    }
-
-    /**
-     * Returns an {@code HttpHandler} that sends a response comprising the given
-     * {@code statusCode} and {@code body}.
-     *
-     * <p>The handler is created as if by an invocation of
-     * {@link #of(int, Headers, byte[])} with the given {@code statusCode} and
-     * {@code body} bytes and an empty {@code Headers} instance.
-     *
-     * @param statusCode a response status code
-     * @param body a byte[] response body
-     * @return a handler
-     * @throws IllegalArgumentException if statusCode is not a positive 3-digit
-     *                                  integer, as per rfc2616, section 6.1.1
-     * @throws NullPointerException     if body is null
-     * @since 18
-     */
-    public static HttpHandler of(int statusCode, byte[] body) {
-        return of(statusCode, new Headers(), body);
     }
 }
