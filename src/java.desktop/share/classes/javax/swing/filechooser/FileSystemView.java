@@ -278,10 +278,9 @@ public abstract class FileSystemView {
     * @param width width of the icon in user coordinate system.
     * @param height height of the icon in user coordinate system.
     * @return an icon as it would be displayed by a native file chooser
-    * or null if invalid parameters are passed such as reference to a
-    * non-existent file.
-    * @throws IllegalArgumentException if invalid parameter such
-    * as negative size or null file reference is passed.
+    * or null for a non-existent or inaccessible file.
+    * @throws IllegalArgumentException if an invalid parameter such
+    * as a negative size or a null file reference is passed.
     * @see JFileChooser#getIcon
     * @see AbstractMultiResolutionImage
     * @see FileSystemView#getSystemIcon(File)
