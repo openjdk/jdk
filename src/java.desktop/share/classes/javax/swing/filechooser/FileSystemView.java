@@ -291,8 +291,8 @@ public abstract class FileSystemView {
             throw new IllegalArgumentException("Icon size can not be below 1");
         }
 
-        if (f == null){
-            throw new IllegalArgumentException("File reference should be specified");
+        if (f == null) {
+            throw new IllegalArgumentException("The file reference should not be null");
         }
 
         if(!f.exists()) {

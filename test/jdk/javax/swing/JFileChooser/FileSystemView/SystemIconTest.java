@@ -28,6 +28,7 @@
  * sun.awt.shell.ShellFolder
  * @run main SystemIconTest
  */
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.image.MultiResolutionImage;
@@ -55,18 +56,15 @@ public class SystemIconTest {
     }
 
     static void negativeTests() {
-        ImageIcon icon;
-        boolean gotException = false;
+        Icon icon;
         try {
-            icon = (ImageIcon) fsv.getSystemIcon(new File("."), -1, 16);
-        } catch (IllegalArgumentException iae) {
-            gotException = true;
-        }
-        if (!gotException) {
+            icon = fsv.getSystemIcon(new File("."), -1, 16);
             throw new RuntimeException("Negative size icon should throw invalid argument exception");
+        } catch (IllegalArgumentException iae) {
+            // Expected
         }
 
-        icon = (ImageIcon) fsv.getSystemIcon(new File("thereisdefinitelynosuchfile.why"),
+        icon = fsv.getSystemIcon(new File("thereisdefinitelynosuchfile.why"),
                 16, 16);
         if (icon != null) {
             throw new RuntimeException("Icons for files with invalid names should be null");
