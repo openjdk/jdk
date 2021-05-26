@@ -180,11 +180,11 @@ public class ToolProviderPositiveTest {
 
     @Test
     public void testlastOneWinsPort() throws Exception {
-        simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-p", "0", "-p", "65535")
+        simpleserver(JAVA, "-cp", CLASS_PATH, TOOL_PROVIDER_CLS_NAME, "-p", "-999", "-p", "0")
                 .resultChecker(r -> {
                     assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:65535\n" +
-                                    "http://" + LOCALHOST_ADDR + ":65535/ ...");
+                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
+                    assertContains(r.output, "http://" + LOCALHOST_ADDR);
                 });
     }
 
@@ -216,7 +216,7 @@ public class ToolProviderPositiveTest {
         var t = new Thread("read-server-output") {
             @Override
             public void run() {
-                try {
+                try (in; out) {
                     in.transferTo(out);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);

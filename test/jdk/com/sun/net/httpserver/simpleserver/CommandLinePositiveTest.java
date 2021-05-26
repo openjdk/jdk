@@ -175,11 +175,11 @@ public class CommandLinePositiveTest {
 
     @Test
     public void testlastOneWinsPort() throws Exception {
-        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "0", "-p", "65535")
+        simpleserver(JAVA, "-m", "jdk.httpserver", "-p", "-999", "-p", "0")
                 .resultChecker(r -> {
                     assertContains(r.output,
-                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:65535\n" +
-                                    "http://" + LOCALHOST_ADDR + ":65535/ ...");
+                            "Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0:");
+                    assertContains(r.output, "http://" + LOCALHOST_ADDR);
                 });
     }
 
@@ -211,7 +211,7 @@ public class CommandLinePositiveTest {
         var t = new Thread("read-server-output") {
             @Override
             public void run() {
-                try {
+                try (in; out) {
                     in.transferTo(out);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
