@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8232097
+ * @bug 8232097 8267353
  * @summary Basic sanity for creation of SCTP channels
  * @modules jdk.sctp
  * @run main/othervm SctpSanity 1
@@ -44,8 +44,27 @@ import static java.lang.System.out;
  * the system-level support is not configured.
  */
 public class SctpSanity {
+    static boolean isSCTPSupported() {
+        try {
+            SctpChannel c = SctpChannel.open();
+            c.close();
+            return true;
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        } catch (UnsupportedOperationException e) {
+            out.println(e);
+        }
+
+        return false;
+    }
 
     public static void main(String... args) throws IOException {
+        if (!isSCTPSupported()) {
+            out.println("SCTP protocol is not supported");
+            out.println("Test cannot be run");
+            return;
+        }
+
         switch (Integer.valueOf(args[0])) {
             case 1: testSctpChannel();        break;
             case 2: testSctpServerChannel();  break;
