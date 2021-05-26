@@ -87,8 +87,8 @@ inline bool G1CardSetInlinePtr::contains(uint card_idx, uint bits_per_card) {
   return false;
 }
 
-template <class FOUND>
-inline void G1CardSetInlinePtr::iterate(FOUND& found, uint bits_per_card) {
+template <class CardVisitor>
+inline void G1CardSetInlinePtr::iterate(CardVisitor& found, uint bits_per_card) {
   uint const num_elems = num_cards_in(_value);
   uintptr_t const card_mask = (1 << bits_per_card) - 1;
 
@@ -207,8 +207,8 @@ inline bool G1CardSetArray::contains(uint card_idx) {
   return false;
 }
 
-template <class FOUND>
-void G1CardSetArray::iterate(FOUND& found) {
+template <class CardVisitor>
+void G1CardSetArray::iterate(CardVisitor& found) {
   EntryCountType num_entries = Atomic::load_acquire(&_num_entries) & EntryMask;
   for (EntryCountType idx = 0; idx < num_entries; idx++) {
     found(_data[idx]);
@@ -236,8 +236,8 @@ inline G1AddCardResult G1CardSetBitMap::add(uint card_idx, size_t threshold, siz
   return Found;
 }
 
-template <class FOUND>
-inline void G1CardSetBitMap::iterate(FOUND& found, size_t size_in_bits, uint offset) {
+template <class CardVisitor>
+inline void G1CardSetBitMap::iterate(CardVisitor& found, size_t size_in_bits, uint offset) {
   BitMapView bm(_bits, size_in_bits);
   BitMap::idx_t idx = bm.get_next_one_offset(0);
   while (idx != size_in_bits) {
@@ -285,22 +285,22 @@ inline bool G1CardSetHowl::contains(uint card_idx, G1CardSetConfiguration* confi
   return false;
 }
 
-template <class FOUND>
-inline void G1CardSetHowl::iterate(FOUND& found, G1CardSetConfiguration* config) {
+template <class CardOrRangeVisitor>
+inline void G1CardSetHowl::iterate(CardOrRangeVisitor& found, G1CardSetConfiguration* config) {
   for (uint i = 0; i < config->num_buckets_in_howl(); ++i) {
     iterate_cardset(_buckets[i], i, found, config);
   }
 }
 
-template <class FOUND>
-inline void G1CardSetHowl::iterate(FOUND& found, uint num_card_sets) {
+template <class CardSetPtrVisitor>
+inline void G1CardSetHowl::iterate(CardSetPtrVisitor& found, uint num_card_sets) {
   for (uint i = 0; i < num_card_sets; ++i) {
     found(&_buckets[i]);
   }
 }
 
-template <class FOUND>
-inline void G1CardSetHowl::iterate_cardset(CardSetPtr const card_set, uint index, FOUND& found, G1CardSetConfiguration* config) {
+template <class CardOrRangeVisitor>
+inline void G1CardSetHowl::iterate_cardset(CardSetPtr const card_set, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config) {
   switch (G1CardSet::card_set_type(card_set)) {
     case G1CardSet::CardSetInlinePtr: {
       if (found.start_iterate(G1GCPhaseTimes::MergeRSHowlInline)) {

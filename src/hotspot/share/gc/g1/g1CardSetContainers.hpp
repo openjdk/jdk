@@ -78,8 +78,8 @@ public:
 
   bool contains(uint const card_idx, uint const bits_per_card);
 
-  template <class FOUND>
-  void iterate(FOUND& found, uint const bits_per_card);
+  template <class CardVisitor>
+  void iterate(CardVisitor& found, uint const bits_per_card);
 
   operator CardSetPtr () { return _value; }
 
@@ -161,8 +161,8 @@ public:
 
   bool contains(uint card_idx);
 
-  template <class FOUND>
-  void iterate(FOUND& found);
+  template <class CardVisitor>
+  void iterate(CardVisitor& found);
 
   size_t num_entries() const { return _num_entries & EntryMask; }
   size_t max_entries() const { return _size; }
@@ -197,8 +197,8 @@ public:
 
   uint num_bits_set() const { return (uint)_num_bits_set; }
 
-  template <class FOUND>
-  void iterate(FOUND& found, size_t const size_in_bits, uint offset);
+  template <class CardVisitor>
+  void iterate(CardVisitor& found, size_t const size_in_bits, uint offset);
 
   uint next(uint const idx, size_t const size_in_bits) {
     BitMapView bm(_bits, size_in_bits);
@@ -224,6 +224,11 @@ private:
     return offset_of(Derived, _buckets);
   }
 
+  // Iterates over the given CardSetPtr with at index in this Howl card set,
+  // applying a CardOrRangeVisitor on it.
+  template <class CardOrRangeVisitor>
+  void iterate_cardset(CardSetPtr const card_set, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config);
+
 public:
   G1CardSetHowl(EntryCountType card_in_region, G1CardSetConfiguration* config);
 
@@ -233,14 +238,18 @@ public:
 
   bool contains(uint card_idx, G1CardSetConfiguration* config);
 
-  template <class FOUND>
-  void iterate(FOUND& found, G1CardSetConfiguration* config);
+  // Iterates over all CardSetPtrs in this Howl card set, applying a CardOrRangeVisitor
+  // on it.
+  template <class CardOrRangeVisitor>
+  void iterate(CardOrRangeVisitor& found, G1CardSetConfiguration* config);
 
-  template <class FOUND>
-  void iterate(FOUND& found, uint num_card_sets);
-
-  template <class FOUND>
-  void iterate_cardset(CardSetPtr const card_set, uint index, FOUND& found, G1CardSetConfiguration* config);
+  // Iterates over all CardSetPtrs in this Howl card set. Calls
+  //
+  //   void operator ()(CardSetPtr* card_set_addr);
+  //
+  // on all of them.
+  template <class CardSetPtrVisitor>
+  void iterate(CardSetPtrVisitor& found, uint num_card_sets);
 
   static EntryCountType num_buckets(size_t size_in_bits, size_t num_cards_in_array, size_t max_buckets);
 

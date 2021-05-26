@@ -251,11 +251,31 @@ private:
   G1CardSetHashTableValue* get_or_add_card_set(uint card_region, bool* should_grow_table);
   CardSetPtr get_card_set(uint card_region);
 
-  template <class FOUND>
-  void iterate_cards_during_transfer(CardSetPtr const card_set, FOUND& found);
+  // Iterate over cards of a card set container during transfer of the cards from
+  // one container to another. Executes
+  //
+  //     void operator ()(uint card_idx)
+  //
+  // on the given class.
+  template <class CardVisitor>
+  void iterate_cards_during_transfer(CardSetPtr const card_set, CardVisitor& found);
 
-  template <class FOUND>
-  void iterate_cards_or_ranges_in_container(CardSetPtr const card_set, FOUND& found);
+  // Iterate over the container, calling a method on every card or card range contained
+  // in the card container.
+  // For every container, first calls
+  //
+  //   void start_iterate(uint tag, uint region_idx);
+  //
+  // Then for every card or card range it calls
+  //
+  //   void do_card(uint card_idx);
+  //   void do_card_range(uint card_idx, uint length);
+  //
+  // where card_idx is the card index within that region_idx passed before in
+  // start_iterate().
+  //
+  template <class CardOrRangeVisitor>
+  void iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& found);
 
   uint card_set_type_to_mem_object_type(uintptr_t type) const;
   uint8_t* allocate_mem_object(uintptr_t type);
@@ -317,7 +337,8 @@ public:
 
   void iterate_cards(G1CardSetCardIterator& iter);
 
-  // Iterate all cards for card set merging.
+  // Iterate all cards for card set merging. Must be a CardOrRangeVisitor as
+  // explained above.
   template <class Closure>
   void iterate_for_merge(Closure& cl);
 };

@@ -41,8 +41,8 @@ inline G1CardSet::CardSetPtr G1CardSet::make_card_set_ptr(void* value, uintptr_t
   return (CardSetPtr)((uintptr_t)value | type);
 }
 
-template <class FOUND>
-inline void G1CardSet::iterate_cards_or_ranges_in_container(CardSetPtr const card_set, FOUND& found) {
+template <class CardOrRangeVisitor>
+inline void G1CardSet::iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& found) {
   switch (card_set_type(card_set)) {
     case CardSetInlinePtr: {
       if (found.start_iterate(G1GCPhaseTimes::MergeRSMergedInline)) {
@@ -100,6 +100,7 @@ public:
     _iter.do_card_range(card_idx, length);
   }
 };
+
 template <typename Closure, template <typename> class CardOrRanges>
 class G1CardSetMergeCardIterator : public G1CardSet::G1CardSetPtrIterator {
   G1CardSet* _card_set;

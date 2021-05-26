@@ -609,7 +609,7 @@ public:
   G1TransferCard(G1CardSet* card_set, uint region_idx) : _card_set(card_set), _region_idx(region_idx) { }
 
   void operator ()(uint card_idx) {
-    G1AddCardResult add_result = _card_set->add_card(_region_idx, card_idx, false);
+    _card_set->add_card(_region_idx, card_idx, false);
   }
 };
 
@@ -809,8 +809,8 @@ void G1CardSet::print_info(outputStream* st, uint card_region, uint card_in_regi
   }
 }
 
-template <class FOUND>
-void G1CardSet::iterate_cards_during_transfer(CardSetPtr const card_set, FOUND& found) {
+template <class CardVisitor>
+void G1CardSet::iterate_cards_during_transfer(CardSetPtr const card_set, CardVisitor& found) {
   uint type = card_set_type(card_set);
   assert(type == CardSetInlinePtr || type == CardSetArrayOfCards,
          "invalid card set type %d to transfer from",
