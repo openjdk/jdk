@@ -180,6 +180,7 @@ class Linux {
 
  private:
   static void numa_init();
+  static bool numa_syscall_check();
   static void expand_stack_to(address bottom);
 
   typedef int (*sched_getcpu_func_t)(void);
