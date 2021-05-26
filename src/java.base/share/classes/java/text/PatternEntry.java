@@ -141,7 +141,7 @@ class PatternEntry {
             default -> throw new IllegalStateException("Unexpected value: " + strength);
         };
         toAddTo.append(c);
-        
+
         if (showWhiteSpace)
             toAddTo.append(' ');
         appendQuoted(chars,toAddTo);
