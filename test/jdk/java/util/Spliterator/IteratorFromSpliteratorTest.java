@@ -57,6 +57,10 @@ public class IteratorFromSpliteratorTest {
             while (j++ < input.size() && iterator.hasNext()) {
                 result.add(iterator.next());
             }
+            // While SpliteratorTraversingAndSplittingTest tests some scenarios with Spliterators.iterator
+            // it always wraps the resulting iterator into spliterator again, and this limits the use patterns.
+            // In particular, calling hasNext() right before forEachRemaining() is not tested.
+            // Here we cover such a scenario.
             assertEquals(iterator.hasNext(), result.size() < input.size());
             iterator.forEachRemaining(result::add);
             iterator.forEachRemaining(x -> fail("Should not be called"));
