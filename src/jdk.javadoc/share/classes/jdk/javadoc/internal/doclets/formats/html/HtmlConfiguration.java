@@ -132,7 +132,8 @@ public class HtmlConfiguration extends BaseConfiguration {
     /**
      * The collection of new API items, if any, to be displayed on the new-list page,
      * or null if the page should not be generated.
-     * The page is only generated when documenting the JDK platform API.
+     * The page is only generated if the {@code --since} option is used with release
+     * names matching {@code @since} tags in the documented code.
      */
     protected NewAPIBuilder newAPIPageBuilder;
 

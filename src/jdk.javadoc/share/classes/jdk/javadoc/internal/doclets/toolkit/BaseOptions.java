@@ -251,14 +251,14 @@ public abstract class BaseOptions {
 
     /**
      * Argument for command line option {@code --since}.
+     * Specifies a list of release names for which to document API changes.
      */
-    // A list containing release names
     private List<String> since = List.of();
 
     /**
      * Argument for command line option {@code --since-label}.
+     * Specifies custom text to use as heading of New API page.
      */
-    // Custom text to use in heading of New API page
     private String sinceLabel;
 
     /**

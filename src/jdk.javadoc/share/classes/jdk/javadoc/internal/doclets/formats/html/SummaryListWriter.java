@@ -279,6 +279,12 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
     protected void addExtraIndexLink(L list, Content target) {
     }
 
+    /**
+     * Returns the caption for the table with the given {@code headingKey}.
+     *
+     * @param headingKey the key for the table heading
+     * @return the table caption
+     */
     protected Content getTableCaption(String headingKey) {
         return contents.getContent(headingKey);
     }
