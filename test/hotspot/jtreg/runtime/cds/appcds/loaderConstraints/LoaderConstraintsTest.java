@@ -25,7 +25,7 @@
  * @test
  * @requires vm.cds
  * @summary Test class loader constraint checks for archived classes
- * @bug 8267347
+ * @bug 8267347 8267754
  * @library /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
@@ -110,8 +110,8 @@ public class LoaderConstraintsTest  {
     public static void main(String... args) throws Exception {
         appJar = ClassFileInstaller.writeJar("loader_constraints.jar", appClasses);
         doTest();
-        if (!Platform.isWindows()) {
-            // custom loaders are not supported on Windows yet.
+        if (!Platform.isWindows() && Platform.is64bit()) {
+            // custom loaders are not supported on Windows or 32-bit systems yet.
             loaderJar = ClassFileInstaller.writeJar("custom_app_loader.jar", loaderClasses);
             doTestCustomLoader();
         }
