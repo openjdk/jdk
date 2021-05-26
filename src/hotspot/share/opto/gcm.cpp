@@ -540,7 +540,6 @@ static Block* memory_early_block(Node* load, Block* early, const PhaseCFG* cfg) 
   return early;
 }
 
-#ifdef ASSERT
 // This function is used by insert_anti_dependences to find unrelated loads
 // stores(but aliases into same) in non-null, null blocks.
 // and for the same reasons it doesn't requires an anti-dependence edge.
@@ -560,7 +559,6 @@ bool PhaseCFG::unrelated_load_in_store_null_block(Node* store, Node* load) {
   }
   return false;
 }
-#endif
 
 //--------------------------insert_anti_dependences---------------------------
 // A load may need to witness memory that nearby stores can overwrite.
@@ -781,7 +779,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
       // will find him on the non_early_stores list and stick him
       // with a precedence edge.
       // (But, don't bother if LCA is already raised all the way.)
-      if (LCA != early) {
+      if (LCA != early && !unrelated_load_in_store_null_block(store, load)) {
         store_block->set_raise_LCA_mark(load_index);
         must_raise_LCA = true;
         non_early_stores.push(store);
@@ -833,7 +831,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
         // add anti_dependence from store to load in its own block
         assert(store != load->find_exact_control(load->in(0)), "dependence cycle found");
         if (verify) {
-          assert(store->find_edge(load) != -1 || unrelated_load_in_store_null_block(store, load), "missing precedence edge");
+          assert(store->find_edge(load) != -1, "missing precedence edge");
         } else {
           store->add_prec(load);
         }
