@@ -749,7 +749,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 }
 
                 // Process the remainder in the buffer
-                if (bLen > 0) {
+                if (bLen - resultLen > 0) {
                     // Copy the remainder of the buffer into the extra block
                     byte[] block = new byte[blockSize];
                     int over = buffer.remaining();
