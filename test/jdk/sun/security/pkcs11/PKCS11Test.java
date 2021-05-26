@@ -690,7 +690,8 @@ public abstract class PKCS11Test {
                 "/usr/lib/arm-linux-gnueabihf/nss/" });
         osMap.put("Linux-aarch64-64", new String[] {
                 "/usr/lib/aarch64-linux-gnu/",
-                "/usr/lib/aarch64-linux-gnu/nss/" });
+                "/usr/lib/aarch64-linux-gnu/nss/",
+                "/usr/lib64/" });
         return osMap;
     }
 
