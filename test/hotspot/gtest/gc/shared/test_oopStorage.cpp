@@ -41,13 +41,6 @@
 #include "utilities/quickSort.hpp"
 #include "unittest.hpp"
 
-// --- FIXME: Disable some tests on 32bit Windows, because SafeFetch
-//     (which is used by allocation_status) doesn't currently provide
-//     protection in the context where gtests are run; see JDK-8185734.
-#ifdef _WIN32
-#define DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
-#endif
-
 // Access storage internals.
 class OopStorage::TestAccess : public AllStatic {
 public:
@@ -495,6 +488,33 @@ typedef OopStorageTestBlockRelease<false> OopStorageTestBlockReleaseUnsorted;
 
 TEST_VM_F(OopStorageTestBlockReleaseSorted, block_release) {}
 TEST_VM_F(OopStorageTestBlockReleaseUnsorted, block_release) {}
+
+TEST_VM_F(OopStorageTest, bulk_allocation) {
+  static const size_t max_entries = 1000;
+  static const size_t zero = 0;
+  oop* entries[max_entries] = {};
+
+  AllocationList& allocation_list = TestAccess::allocation_list(_storage);
+
+  EXPECT_EQ(0u, empty_block_count(_storage));
+  size_t allocated = _storage.allocate(entries, max_entries);
+  ASSERT_NE(allocated, zero);
+  // ASSERT_LE would ODR-use the OopStorage constant.
+  size_t bulk_allocate_limit = OopStorage::bulk_allocate_limit;
+  ASSERT_LE(allocated, bulk_allocate_limit);
+  ASSERT_LE(allocated, max_entries);
+  for (size_t i = 0; i < allocated; ++i) {
+    EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, _storage.allocation_status(entries[i]));
+  }
+  for (size_t i = allocated; i < max_entries; ++i) {
+    EXPECT_EQ(NULL, entries[i]);
+  }
+  _storage.release(entries, allocated);
+  EXPECT_EQ(0u, _storage.allocation_count());
+  for (size_t i = 0; i < allocated; ++i) {
+    EXPECT_EQ(OopStorage::UNALLOCATED_ENTRY, _storage.allocation_status(entries[i]));
+  }
+}
 
 #ifndef DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
 TEST_VM_F(OopStorageTest, invalid_pointer) {
@@ -1029,9 +1049,7 @@ TEST_VM_F(OopStorageTestWithAllocation, allocation_status) {
 
   EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, _storage.allocation_status(retained));
   EXPECT_EQ(OopStorage::UNALLOCATED_ENTRY, _storage.allocation_status(released));
-#ifndef DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
   EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(garbage));
-#endif
 
   for (size_t i = 0; i < _max_entries; ++i) {
     if ((_entries[i] != retained) && (_entries[i] != released)) {
@@ -1045,10 +1063,8 @@ TEST_VM_F(OopStorageTestWithAllocation, allocation_status) {
     while (_storage.delete_empty_blocks()) {}
   }
   EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, _storage.allocation_status(retained));
-#ifndef DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
   EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(released));
   EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(garbage));
-#endif // DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
 }
 
 TEST_VM_F(OopStorageTest, usage_info) {

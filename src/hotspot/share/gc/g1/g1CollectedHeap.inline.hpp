@@ -35,6 +35,7 @@
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "runtime/atomic.hpp"
 
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
   return _policy->phase_times();
@@ -188,6 +189,18 @@ void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
+bool G1CollectedHeap::evacuation_failed() const {
+  return num_regions_failed_evacuation() > 0;
+}
+
+uint G1CollectedHeap::num_regions_failed_evacuation() const {
+  return Atomic::load(&_num_regions_failed_evacuation);
+}
+
+void G1CollectedHeap::notify_region_failed_evacuation() {
+  Atomic::inc(&_num_regions_failed_evacuation, memory_order_relaxed);
+}
+
 #ifndef PRODUCT
 // Support for G1EvacuationFailureALot
 
@@ -297,10 +310,6 @@ inline void G1CollectedHeap::set_humongous_reclaim_candidate(uint region, bool v
 inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
   assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
   return _humongous_reclaim_candidates.is_candidate(region);
-}
-
-inline void G1CollectedHeap::set_has_humongous_reclaim_candidate(bool value) {
-  _has_humongous_reclaim_candidates = value;
 }
 
 inline void G1CollectedHeap::set_humongous_is_live(oop obj) {

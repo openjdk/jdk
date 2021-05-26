@@ -194,20 +194,13 @@ static u4 get_primitive_flags() {
   return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
 }
 
-static bool is_unsafe_anonymous(const Klass* klass) {
-  assert(klass != NULL, "invariant");
-  assert(!klass->is_objArray_klass(), "invariant");
-  return klass->is_instance_klass() && InstanceKlass::cast(klass)->is_unsafe_anonymous();
-}
-
 static ClassLoaderData* get_cld(const Klass* klass) {
   assert(klass != NULL, "invariant");
   if (klass->is_objArray_klass()) {
     klass = ObjArrayKlass::cast(klass)->bottom_klass();
   }
   if (klass->is_non_strong_hidden()) return NULL;
-  return is_unsafe_anonymous(klass) ?
-    InstanceKlass::cast(klass)->unsafe_anonymous_host()->class_loader_data() : klass->class_loader_data();
+  return klass->class_loader_data();
 }
 
 template <typename T>
@@ -331,29 +324,12 @@ static bool is_classloader_klass_allowed(const Klass* k) {
 }
 
 static void do_classloaders() {
-  Stack<const Klass*, mtTracing> mark_stack;
-  mark_stack.push(vmClasses::ClassLoader_klass()->subklass());
-
-  while (!mark_stack.is_empty()) {
-    const Klass* const current = mark_stack.pop();
-    assert(current != NULL, "null element in stack!");
-    if (is_classloader_klass_allowed(current)) {
-      do_loader_klass(current);
-    }
-
-    // subclass (depth)
-    const Klass* next_klass = current->subklass();
-    if (next_klass != NULL) {
-      mark_stack.push(next_klass);
-    }
-
-    // siblings (breadth)
-    next_klass = current->next_sibling();
-    if (next_klass != NULL) {
-      mark_stack.push(next_klass);
+  for (ClassHierarchyIterator iter(vmClasses::ClassLoader_klass()); !iter.done(); iter.next()) {
+    Klass* subk = iter.klass();
+    if (is_classloader_klass_allowed(subk)) {
+      do_loader_klass(subk);
     }
   }
-  assert(mark_stack.is_empty(), "invariant");
 }
 
 static int primitives_count = 9;
@@ -887,12 +863,11 @@ class MethodIteratorHost {
   bool operator()(KlassPtr klass) {
     if (_method_used_predicate(klass)) {
       const InstanceKlass* ik = InstanceKlass::cast(klass);
-      const int len = ik->methods()->length();
-      Filter filter(ik->previous_versions() != NULL ? len : 0);
       while (ik != NULL) {
+        const int len = ik->methods()->length();
         for (int i = 0; i < len; ++i) {
           MethodPtr method = ik->methods()->at(i);
-          if (_method_flag_predicate(method) && filter(i)) {
+          if (_method_flag_predicate(method)) {
             _method_cb(method);
           }
         }

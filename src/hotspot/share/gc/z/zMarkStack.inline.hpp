@@ -156,6 +156,11 @@ inline T* ZStackList<T>::pop() {
   }
 }
 
+template <typename T>
+inline void ZStackList<T>::clear() {
+  _head = encode_versioned_pointer(NULL, 0);
+}
+
 inline bool ZMarkStripe::is_empty() const {
   return _published.is_empty() && _overflowed.is_empty();
 }
@@ -217,6 +222,17 @@ inline void ZMarkThreadLocalStacks::install(ZMarkStripeSet* stripes,
   ZMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
   assert(*stackp == NULL, "Should be empty");
   *stackp = stack;
+}
+
+inline ZMarkStack* ZMarkThreadLocalStacks::steal(ZMarkStripeSet* stripes,
+                                                 ZMarkStripe* stripe) {
+  ZMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
+  ZMarkStack* const stack = *stackp;
+  if (stack != NULL) {
+    *stackp = NULL;
+  }
+
+  return stack;
 }
 
 inline bool ZMarkThreadLocalStacks::push(ZMarkStackAllocator* allocator,

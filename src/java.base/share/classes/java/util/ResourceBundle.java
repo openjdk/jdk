@@ -62,7 +62,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.jar.JarEntry;
 import java.util.spi.ResourceBundleControlProvider;
 import java.util.spi.ResourceBundleProvider;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.BootLoader;
@@ -73,6 +72,8 @@ import jdk.internal.reflect.Reflection;
 import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.LocaleObjectCache;
+import sun.util.resources.Bundles;
+
 import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
 
 
@@ -1514,13 +1515,10 @@ public abstract class ResourceBundle {
 
     private static class ResourceBundleControlProviderHolder {
         private static final PrivilegedAction<List<ResourceBundleControlProvider>> pa =
-            () -> {
-                return Collections.unmodifiableList(
-                    ServiceLoader.load(ResourceBundleControlProvider.class,
-                                       ClassLoader.getSystemClassLoader()).stream()
-                        .map(ServiceLoader.Provider::get)
-                        .collect(Collectors.toList()));
-            };
+            () -> ServiceLoader.load(ResourceBundleControlProvider.class,
+                                   ClassLoader.getSystemClassLoader()).stream()
+                             .map(ServiceLoader.Provider::get)
+                             .toList();
 
         private static final List<ResourceBundleControlProvider> CONTROL_PROVIDERS =
             AccessController.doPrivileged(pa);
@@ -3102,6 +3100,12 @@ public abstract class ResourceBundle {
          * nor {@code "java.properties"}, an
          * {@code IllegalArgumentException} is thrown.</li>
          *
+         * <li>If the {@code locale}'s language is one of the
+         * <a href="./Locale.html#legacy_language_codes">Legacy language
+         * codes</a>, either old or new, then repeat the loading process
+         * if needed, with the bundle name with the other language.
+         * For example, "iw" for "he" and vice versa.
+         *
          * </ul>
          *
          * @param baseName
@@ -3156,6 +3160,21 @@ public abstract class ResourceBundle {
              * that is visible to the given loader and accessible to the given caller.
              */
             String bundleName = toBundleName(baseName, locale);
+            var bundle = newBundle0(bundleName, format, loader, reload);
+            if (bundle == null) {
+                // Try loading legacy ISO language's other bundles
+                var otherBundleName = Bundles.toOtherBundleName(baseName, bundleName, locale);
+                if (!bundleName.equals(otherBundleName)) {
+                    bundle = newBundle0(otherBundleName, format, loader, reload);
+                }
+            }
+
+            return bundle;
+        }
+
+        private ResourceBundle newBundle0(String bundleName, String format,
+                    ClassLoader loader, boolean reload)
+                    throws IllegalAccessException, InstantiationException, IOException {
             ResourceBundle bundle = null;
             if (format.equals("java.class")) {
                 try {
@@ -3195,7 +3214,7 @@ public abstract class ResourceBundle {
                         } catch (InvocationTargetException e) {
                             uncheckedThrow(e);
                         } catch (PrivilegedActionException e) {
-                            assert e.getException() instanceof NoSuchMethodException;
+                            assert e.getCause() instanceof NoSuchMethodException;
                             throw new InstantiationException("public no-arg constructor " +
                                 "does not exist in " + bundleClass.getName());
                         }
@@ -3230,7 +3249,7 @@ public abstract class ResourceBundle {
                             }
                         });
                 } catch (PrivilegedActionException e) {
-                    throw (IOException) e.getException();
+                    throw (IOException) e.getCause();
                 }
                 if (stream != null) {
                     try {

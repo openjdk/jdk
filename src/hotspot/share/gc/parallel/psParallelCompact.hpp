@@ -27,10 +27,11 @@
 
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/objectStartArray.hpp"
-#include "gc/parallel/parMarkBitMap.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
+#include "gc/parallel/parMarkBitMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
@@ -675,7 +676,8 @@ inline size_t
 ParallelCompactData::region_offset(const HeapWord* addr) const
 {
   assert(addr >= _region_start, "bad addr");
-  assert(addr <= _region_end, "bad addr");
+  // would mistakenly return 0 for _region_end
+  assert(addr < _region_end, "bad addr");
   return (size_t(addr) & RegionAddrOffsetMask) >> LogHeapWordSize;
 }
 
@@ -734,7 +736,7 @@ ParallelCompactData::region_align_up(HeapWord* addr) const
 inline bool
 ParallelCompactData::is_region_aligned(HeapWord* addr) const
 {
-  return region_offset(addr) == 0;
+  return (size_t(addr) & RegionAddrOffsetMask) == 0;
 }
 
 inline size_t
@@ -1388,5 +1390,7 @@ class FillClosure: public ParMarkBitMapClosure {
  private:
   ObjectStartArray* const _start_array;
 };
+
+void steal_marking_work(TaskTerminator& terminator, uint worker_id);
 
 #endif // SHARE_GC_PARALLEL_PSPARALLELCOMPACT_HPP

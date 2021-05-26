@@ -537,7 +537,7 @@
           "in a comma separated string. Sub-systems are: "                  \
           "threads, heap, symbol_table, string_table, codecache, "          \
           "dictionary, classloader_data_graph, metaspace, jni_handles, "    \
-          "codecache_oops")                                                 \
+          "codecache_oops, resolved_method_table, stringdedup")             \
                                                                             \
   product(bool, GCParallelVerificationEnabled, true, DIAGNOSTIC,            \
           "Enable parallel memory system verification")                     \
@@ -671,7 +671,11 @@
           "Par compact uses a variable scale based on the density of the "  \
           "generation and treats this as the maximum value when the heap "  \
           "is either completely full or completely empty.  Par compact "    \
-          "also has a smaller default value; see arguments.cpp.")           \
+          "also has a smaller default value; see arguments.cpp. "           \
+          "G1 full gc treats this as an allowed garbage threshold to skip " \
+          "compaction of heap regions, i.e. if a heap region has less "     \
+          "garbage than this value, then the region will not be compacted"  \
+          "during G1 full GC.")                                             \
           range(0, 100)                                                     \
                                                                             \
   product(uint, MarkSweepAlwaysCompactCount,     4,                         \

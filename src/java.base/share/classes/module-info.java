@@ -113,6 +113,7 @@ module java.base {
     exports java.util.concurrent.locks;
     exports java.util.function;
     exports java.util.jar;
+    exports java.util.random;
     exports java.util.regex;
     exports java.util.spi;
     exports java.util.stream;
@@ -217,7 +218,8 @@ module java.base {
         jdk.management.agent,
         jdk.internal.jvmstat;
     exports jdk.internal.platform to
-        jdk.management;
+        jdk.management,
+        jdk.jfr;
     exports jdk.internal.ref to
         java.desktop,
         jdk.incubator.foreign;
@@ -248,6 +250,8 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
         jdk.jfr;
+    exports jdk.internal.util.random to
+        jdk.random;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;
@@ -356,7 +360,6 @@ module java.base {
     exports jdk.internal.invoke to
         jdk.incubator.foreign;
 
-
     // the service types defined by the APIs in this module
 
     uses java.lang.System.LoggerFinder;
@@ -377,6 +380,7 @@ module java.base {
     uses java.time.chrono.AbstractChronology;
     uses java.time.chrono.Chronology;
     uses java.time.zone.ZoneRulesProvider;
+    uses java.util.random.RandomGenerator;
     uses java.util.spi.CalendarDataProvider;
     uses java.util.spi.CalendarNameProvider;
     uses java.util.spi.CurrencyNameProvider;
@@ -400,4 +404,10 @@ module java.base {
 
     provides java.nio.file.spi.FileSystemProvider with
         jdk.internal.jrtfs.JrtFileSystemProvider;
+
+    provides java.util.random.RandomGenerator with
+        java.security.SecureRandom,
+        java.util.Random,
+        java.util.SplittableRandom;
+
 }

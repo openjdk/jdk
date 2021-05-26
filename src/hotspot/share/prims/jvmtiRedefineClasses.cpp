@@ -23,14 +23,14 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/klassFactory.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -41,7 +41,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metadataFactory.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/annotations.hpp"
@@ -191,7 +190,7 @@ bool VM_RedefineClasses::doit_prologue() {
     }
 
     oop mirror = JNIHandles::resolve_non_null(_class_defs[i].klass);
-    // classes for primitives, arrays, hidden and vm unsafe anonymous classes
+    // classes for primitives, arrays, and hidden classes
     // cannot be redefined.
     if (!is_modifiable_class(mirror)) {
       _res = JVMTI_ERROR_UNMODIFIABLE_CLASS;
@@ -236,7 +235,7 @@ bool VM_RedefineClasses::doit_prologue() {
 }
 
 void VM_RedefineClasses::doit() {
-  Thread *thread = Thread::current();
+  Thread* current = Thread::current();
 
 #if INCLUDE_CDS
   if (UseSharedSpaces) {
@@ -255,11 +254,11 @@ void VM_RedefineClasses::doit() {
   // Mark methods seen on stack and everywhere else so old methods are not
   // cleaned up if they're on the stack.
   MetadataOnStackMark md_on_stack(/*walk_all_metadata*/true, /*redefinition_walk*/true);
-  HandleMark hm(thread);   // make sure any handles created are deleted
-                           // before the stack walk again.
+  HandleMark hm(current);   // make sure any handles created are deleted
+                            // before the stack walk again.
 
   for (int i = 0; i < _class_count; i++) {
-    redefine_single_class(_class_defs[i].klass, _scratch_classes[i], thread);
+    redefine_single_class(current, _class_defs[i].klass, _scratch_classes[i]);
   }
 
   // Flush all compiled code that depends on the classes redefined.
@@ -269,7 +268,7 @@ void VM_RedefineClasses::doit() {
   // that reference methods of the evolved classes.
   // Have to do this after all classes are redefined and all methods that
   // are redefined are marked as old.
-  AdjustAndCleanMetadata adjust_and_clean_metadata(thread);
+  AdjustAndCleanMetadata adjust_and_clean_metadata(current);
   ClassLoaderDataGraph::classes_do(&adjust_and_clean_metadata);
 
   // JSR-292 support
@@ -288,7 +287,7 @@ void VM_RedefineClasses::doit() {
   if (log_is_enabled(Trace, redefine, class, obsolete, metadata)) {
 #endif
     log_trace(redefine, class, obsolete, metadata)("calling check_class");
-    CheckClass check_class(thread);
+    CheckClass check_class(current);
     ClassLoaderDataGraph::classes_do(&check_class);
 #ifdef PRODUCT
   }
@@ -334,9 +333,8 @@ bool VM_RedefineClasses::is_modifiable_class(oop klass_mirror) {
     return false;
   }
 
-  // Cannot redefine or retransform a hidden or an unsafe anonymous class.
-  if (InstanceKlass::cast(k)->is_hidden() ||
-      InstanceKlass::cast(k)->is_unsafe_anonymous()) {
+  // Cannot redefine or retransform a hidden class.
+  if (InstanceKlass::cast(k)->is_hidden()) {
     return false;
   }
   return true;
@@ -1367,7 +1365,6 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     // constant pools
     HandleMark hm(current);
     InstanceKlass* the_class = get_ik(_class_defs[i].klass);
-    Symbol*  the_class_sym = the_class->name();
 
     log_debug(redefine, class, load)
       ("loading name=%s kind=%d (avail_mem=" UINT64_FORMAT "K)",
@@ -1378,23 +1375,23 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
                        "__VM_RedefineClasses__",
                        ClassFileStream::verify);
 
-    // Parse the stream.
-    Handle the_class_loader(current, the_class->class_loader());
-    Handle protection_domain(current, the_class->protection_domain());
     // Set redefined class handle in JvmtiThreadState class.
     // This redefined class is sent to agent event handler for class file
     // load hook event.
     state->set_class_being_redefined(the_class, _class_load_kind);
 
-    Thread* THREAD = current;  // for exception processing
+    JavaThread* THREAD = current; // For exception macros.
     ExceptionMark em(THREAD);
+    Handle protection_domain(THREAD, the_class->protection_domain());
     ClassLoadInfo cl_info(protection_domain);
-    InstanceKlass* scratch_class = SystemDictionary::parse_stream(
-                                                      the_class_sym,
-                                                      the_class_loader,
-                                                      &st,
+    // Parse and create a class from the bytes, but this class isn't added
+    // to the dictionary, so do not call resolve_from_stream.
+    InstanceKlass* scratch_class = KlassFactory::create_from_stream(&st,
+                                                      the_class->name(),
+                                                      the_class->class_loader_data(),
                                                       cl_info,
                                                       THREAD);
+
     // Clear class_being_redefined just to be sure.
     state->clear_class_being_redefined();
 
@@ -1407,7 +1404,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
 
     if (HAS_PENDING_EXCEPTION) {
       Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
-      log_info(redefine, class, load, exceptions)("parse_stream exception: '%s'", ex_name->as_C_string());
+      log_info(redefine, class, load, exceptions)("create_from_stream exception: '%s'", ex_name->as_C_string());
       CLEAR_PENDING_EXCEPTION;
 
       if (ex_name == vmSymbols::java_lang_UnsupportedClassVersionError()) {
@@ -2111,7 +2108,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods(InstanceKlass* scratch_class
     return true;
   }
 
-  Thread* THREAD = Thread::current();  // For exception processing
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   ExceptionMark em(THREAD);
 
   // rewrite constant pool references in the methods:
@@ -2941,7 +2938,6 @@ bool VM_RedefineClasses::skip_type_annotation_target(
 
     case 0x10:
     // kind: type in extends clause of class or interface declaration
-    //       (including the direct superclass of an unsafe anonymous class declaration),
     //       or in implements clause of interface declaration
     // location: ClassFile
 
@@ -3785,14 +3781,14 @@ void VM_RedefineClasses::AdjustAndCleanMetadata::do_klass(Klass* k) {
   }
 }
 
-void VM_RedefineClasses::update_jmethod_ids(Thread* thread) {
+void VM_RedefineClasses::update_jmethod_ids() {
   for (int j = 0; j < _matching_methods_length; ++j) {
     Method* old_method = _matching_old_methods[j];
     jmethodID jmid = old_method->find_jmethod_id_or_null();
     if (jmid != NULL) {
       // There is a jmethodID, change it to point to the new method
-      methodHandle new_method_h(thread, _matching_new_methods[j]);
-      Method::change_method_associated_with_jmethod_id(jmid, new_method_h());
+      Method* new_method = _matching_new_methods[j];
+      Method::change_method_associated_with_jmethod_id(jmid, new_method);
       assert(Method::resolve_jmethod_id(jmid) == _matching_new_methods[j],
              "should be replaced");
     }
@@ -4204,10 +4200,10 @@ void VM_RedefineClasses::swap_annotations(InstanceKlass* the_class,
 //      a helper method to be specified. The interesting parameters
 //      that we would like to pass to the helper method are saved in
 //      static global fields in the VM operation.
-void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
-       InstanceKlass* scratch_class, TRAPS) {
+void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclass,
+                                               InstanceKlass* scratch_class) {
 
-  HandleMark hm(THREAD);   // make sure handles from this call are freed
+  HandleMark hm(current);   // make sure handles from this call are freed
 
   if (log_is_enabled(Info, redefine, class, timer)) {
     _timer_rsc_phase1.start();
@@ -4229,7 +4225,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   _new_methods = scratch_class->methods();
   _the_class = the_class;
   compute_added_deleted_matching_methods();
-  update_jmethod_ids(THREAD);
+  update_jmethod_ids();
 
   _any_class_has_resolved_methods = the_class->has_resolved_methods() || _any_class_has_resolved_methods;
 
@@ -4370,9 +4366,8 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   // compare_and_normalize_class_versions has already checked:
   //  - classloaders unchanged, signatures unchanged
   //  - all instanceKlasses for redefined classes reused & contents updated
-  the_class->vtable().initialize_vtable(false, THREAD);
-  the_class->itable().initialize_itable(false, THREAD);
-  assert(!HAS_PENDING_EXCEPTION || (THREAD->pending_exception()->is_a(vmClasses::ThreadDeath_klass())), "redefine exception");
+  the_class->vtable().initialize_vtable();
+  the_class->itable().initialize_itable();
 
   // Leave arrays of jmethodIDs and itable index cache unchanged
 
@@ -4409,17 +4404,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
     scratch_class->enclosing_method_method_index());
   scratch_class->set_enclosing_method_indices(old_class_idx, old_method_idx);
 
-  // Replace fingerprint data
-  the_class->set_has_passed_fingerprint_check(scratch_class->has_passed_fingerprint_check());
-  the_class->store_fingerprint(scratch_class->get_stored_fingerprint());
-
   the_class->set_has_been_redefined();
-
-  if (!the_class->should_be_initialized()) {
-    // Class was already initialized, so AOT has only seen the original version.
-    // We need to let AOT look at it again.
-    AOTLoader::load_for_klass(the_class, THREAD);
-  }
 
   // keep track of previous versions of this class
   the_class->add_previous_version(scratch_class, emcp_method_count);
@@ -4435,7 +4420,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
     the_class->oop_map_cache()->flush_obsolete_entries();
   }
 
-  increment_class_counter((InstanceKlass *)the_class);
+  increment_class_counter(the_class);
 
   if (EventClassRedefinition::is_enabled()) {
     EventClassRedefinition event;
@@ -4446,13 +4431,13 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   }
 
   {
-    ResourceMark rm(THREAD);
+    ResourceMark rm(current);
     // increment the classRedefinedCount field in the_class and in any
     // direct and indirect subclasses of the_class
     log_info(redefine, class, load)
       ("redefined name=%s, count=%d (avail_mem=" UINT64_FORMAT "K)",
        the_class->external_name(), java_lang_Class::classRedefinedCount(the_class->java_mirror()), os::available_memory() >> 10);
-    Events::log_redefinition(THREAD, "redefined class name=%s, count=%d",
+    Events::log_redefinition(current, "redefined class name=%s, count=%d",
                              the_class->external_name(),
                              java_lang_Class::classRedefinedCount(the_class->java_mirror()));
 
@@ -4464,24 +4449,20 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
 
 // Increment the classRedefinedCount field in the specific InstanceKlass
 // and in all direct and indirect subclasses.
-void VM_RedefineClasses::increment_class_counter(InstanceKlass *ik) {
-  oop class_mirror = ik->java_mirror();
-  Klass* class_oop = java_lang_Class::as_Klass(class_mirror);
-  int new_count = java_lang_Class::classRedefinedCount(class_mirror) + 1;
-  java_lang_Class::set_classRedefinedCount(class_mirror, new_count);
+void VM_RedefineClasses::increment_class_counter(InstanceKlass* ik) {
+  for (ClassHierarchyIterator iter(ik); !iter.done(); iter.next()) {
+    // Only update instanceKlasses
+    Klass* sub = iter.klass();
+    if (sub->is_instance_klass()) {
+      oop class_mirror = InstanceKlass::cast(sub)->java_mirror();
+      Klass* class_oop = java_lang_Class::as_Klass(class_mirror);
+      int new_count = java_lang_Class::classRedefinedCount(class_mirror) + 1;
+      java_lang_Class::set_classRedefinedCount(class_mirror, new_count);
 
-  if (class_oop != _the_class) {
-    // _the_class count is printed at end of redefine_single_class()
-    log_debug(redefine, class, subclass)("updated count in subclass=%s to %d", ik->external_name(), new_count);
-  }
-
-  for (Klass *subk = ik->subklass(); subk != NULL;
-       subk = subk->next_sibling()) {
-    if (subk->is_instance_klass()) {
-      // Only update instanceKlasses
-      InstanceKlass *subik = InstanceKlass::cast(subk);
-      // recursively do subclasses of the current subclass
-      increment_class_counter(subik);
+      if (class_oop != _the_class) {
+        // _the_class count is printed at end of redefine_single_class()
+        log_debug(redefine, class, subclass)("updated count in subclass=%s to %d", ik->external_name(), new_count);
+      }
     }
   }
 }

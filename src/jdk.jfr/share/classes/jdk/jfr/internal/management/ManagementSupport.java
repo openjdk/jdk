@@ -174,6 +174,13 @@ public final class ManagementSupport {
             AccessControlContext acc,
             Path directory,
             List<Configuration> confs) throws IOException {
-        return new EventDirectoryStream(acc, directory, FileAccess.UNPRIVILEGED, null, confs);
+        return new EventDirectoryStream(
+            acc,
+            directory,
+            FileAccess.UNPRIVILEGED,
+            null,
+            confs,
+            false
+        );
     }
 }

@@ -1,5 +1,6 @@
 /*
 * Copyright (c) 2016, Intel Corporation.
+* Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
 * Intel Math Library (LIBM) Source Code
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -189,7 +190,6 @@ void MacroAssembler::fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   Label B1_3, B1_5, start;
 
   assert_different_registers(tmp1, tmp2, eax, ecx, edx);
-  jmp(start);
   address L_tbl = (address)_L_tbl;
   address log2 = (address)_log2;
   address coeff = (address)_coeff;
@@ -485,7 +485,6 @@ void MacroAssembler::fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   Label L_2TAG_PACKET_10_0_2, start;
 
   assert_different_registers(tmp, eax, ecx, edx);
-  jmp(start);
   address static_const_table = (address)_static_const_table_log;
 
   bind(start);

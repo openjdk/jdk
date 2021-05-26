@@ -87,7 +87,7 @@ enum WXMode {
 const bool ExecMem = true;
 
 // Typedef for structured exception handling support
-typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread);
+typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread);
 
 class MallocTracker;
 
@@ -159,7 +159,8 @@ class os: AllStatic {
   static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
-  static char*  pd_reserve_memory_special(size_t size, size_t alignment,
+  static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
+
                                           char* addr, bool executable);
   static bool   pd_release_memory_special(char* addr, size_t bytes);
 
@@ -224,6 +225,16 @@ class os: AllStatic {
   static char*      local_time_string(char *buf, size_t buflen);
   static struct tm* localtime_pd     (const time_t* clock, struct tm*  res);
   static struct tm* gmtime_pd        (const time_t* clock, struct tm*  res);
+
+  // "YYYY-MM-DDThh:mm:ss.mmm+zzzz" incl. terminating zero
+  static const size_t iso8601_timestamp_size = 29;
+
+  // Fill in buffer with an ISO-8601 string corresponding to the given javaTimeMillis value
+  // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
+  // Returns buffer, or NULL if it failed.
+  static char* iso8601_time(jlong milliseconds_since_19700101, char* buffer,
+                            size_t buffer_length, bool utc = false);
+
   // Fill in buffer with current local time as an ISO-8601 string.
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
   // Returns buffer, or NULL if it failed.
@@ -418,7 +429,7 @@ class os: AllStatic {
 
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
-  static char*  reserve_memory_special(size_t size, size_t alignment,
+  static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
                                        char* addr, bool executable);
   static bool   release_memory_special(char* addr, size_t bytes);
   static void   large_page_init();
@@ -809,7 +820,7 @@ class os: AllStatic {
   static void init_random(unsigned int initval);    // initialize random sequence
 
   // Structured OS Exception support
-  static void os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread);
+  static void os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread);
 
   // On Posix compatible OS it will simply check core dump limits while on Windows
   // it will check if dump file can be created. Check or prepare a core dump to be

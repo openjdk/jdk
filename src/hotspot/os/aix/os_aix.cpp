@@ -42,7 +42,6 @@
 #include "libodm_aix.hpp"
 #include "loadlib_aix.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "misc_aix.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_aix.inline.hpp"
@@ -930,7 +929,6 @@ void os::free_thread(OSThread* osthread) {
 // time support
 
 // Time since start-up in seconds to a fine granularity.
-// Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
   return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
 }
@@ -1576,10 +1574,10 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // We must prevent anyone from attaching too close to the
   // BRK because that may cause malloc OOM.
   if (requested_addr != NULL && is_close_to_brk((address)requested_addr)) {
-    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment. "
-      "Will attach anywhere.", p2i(requested_addr));
-    // Act like the OS refused to attach there.
-    requested_addr = NULL;
+    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
+    // Since we treat an attach to the wrong address as an error later anyway,
+    // we return NULL here
+    return NULL;
   }
 
   // For old AS/400's (V5R4 and older) we should not even be here - System V shared memory is not
@@ -1705,10 +1703,10 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   // We must prevent anyone from attaching too close to the
   // BRK because that may cause malloc OOM.
   if (requested_addr != NULL && is_close_to_brk((address)requested_addr)) {
-    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment. "
-      "Will attach anywhere.", p2i(requested_addr));
-    // Act like the OS refused to attach there.
-    requested_addr = NULL;
+    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
+    // Since we treat an attach to the wrong address as an error later anyway,
+    // we return NULL here
+    return NULL;
   }
 
   // In 64K mode, we lie and claim the global page size (os::vm_page_size()) is 64K
@@ -1750,6 +1748,11 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   if (addr == MAP_FAILED) {
     trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) failed (%d)", p2i(requested_addr), size, errno);
     return NULL;
+  } else if (requested_addr != NULL && addr != requested_addr) {
+    trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) succeeded, but at a different address than requested (" PTR_FORMAT "), will unmap",
+               p2i(requested_addr), size, p2i(addr));
+    ::munmap(addr, extra_size);
+    return NULL;
   }
 
   // Handle alignment.
@@ -1765,16 +1768,8 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   }
   addr = addr_aligned;
 
-  if (addr) {
-    trcVerbose("mmap-allocated " PTR_FORMAT " .. " PTR_FORMAT " (" UINTX_FORMAT " bytes)",
-      p2i(addr), p2i(addr + bytes), bytes);
-  } else {
-    if (requested_addr != NULL) {
-      trcVerbose("failed to mmap-allocate " UINTX_FORMAT " bytes at wish address " PTR_FORMAT ".", bytes, p2i(requested_addr));
-    } else {
-      trcVerbose("failed to mmap-allocate " UINTX_FORMAT " bytes at any address.", bytes);
-    }
-  }
+  trcVerbose("mmap-allocated " PTR_FORMAT " .. " PTR_FORMAT " (" UINTX_FORMAT " bytes)",
+    p2i(addr), p2i(addr + bytes), bytes);
 
   // bookkeeping
   vmembk_add(addr, size, 4*K, VMEM_MAPPED);
@@ -1991,6 +1986,7 @@ bool os::pd_release_memory(char* addr, size_t size) {
   // Dynamically do different things for mmap/shmat.
   vmembk_t* const vmi = vmembk_find(addr);
   guarantee0(vmi);
+  vmi->assert_is_valid_subrange(addr, size);
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
   size = align_up(size, os::vm_page_size());
@@ -2004,7 +2000,6 @@ bool os::pd_release_memory(char* addr, size_t size) {
     // - If user only wants to release a partial range, uncommit (disclaim) that
     //   range. That way, at least, we do not use memory anymore (bust still page
     //   table space).
-    vmi->assert_is_valid_subrange(addr, size);
     if (addr == vmi->addr && size == vmi->size) {
       rc = release_shmated_memory(addr, size);
       remove_bookkeeping = true;
@@ -2012,12 +2007,30 @@ bool os::pd_release_memory(char* addr, size_t size) {
       rc = uncommit_shmated_memory(addr, size);
     }
   } else {
-    // User may unmap partial regions but region has to be fully contained.
-#ifdef ASSERT
-    vmi->assert_is_valid_subrange(addr, size);
-#endif
+    // In mmap-mode:
+    //  - If the user wants to release the full range, we do that and remove the mapping.
+    //  - If the user wants to release part of the range, we release that part, but need
+    //    to adjust bookkeeping.
+    assert(is_aligned(size, 4 * K), "Sanity");
     rc = release_mmaped_memory(addr, size);
-    remove_bookkeeping = true;
+    if (addr == vmi->addr && size == vmi->size) {
+      remove_bookkeeping = true;
+    } else {
+      if (addr == vmi->addr && size < vmi->size) {
+        // Chopped from head
+        vmi->addr += size;
+        vmi->size -= size;
+      } else if (addr + size == vmi->addr + vmi->size) {
+        // Chopped from tail
+        vmi->size -= size;
+      } else {
+        // releasing a mapping in the middle of the original mapping:
+        // For now we forbid this, since this is an invalid scenario
+        // (the bookkeeping is easy enough to fix if needed but there
+        //  is no use case for it; any occurrence is likely an error.
+        ShouldNotReachHere();
+      }
+    }
   }
 
   // update bookkeeping
@@ -2128,7 +2141,7 @@ void os::large_page_init() {
   return; // Nothing to do. See query_multipage_support and friends.
 }
 
-char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, char* req_addr, bool exec) {
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
   fatal("os::reserve_memory_special should not be called on AIX.");
   return NULL;
 }
@@ -2529,7 +2542,7 @@ bool os::find(address addr, outputStream* st) {
 // on, e.g., Win32.
 void
 os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method,
-                         JavaCallArguments* args, Thread* thread) {
+                         JavaCallArguments* args, JavaThread* thread) {
   f(value, method, args, thread);
 }
 

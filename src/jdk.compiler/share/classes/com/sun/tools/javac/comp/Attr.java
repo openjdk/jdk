@@ -27,7 +27,6 @@ package com.sun.tools.javac.comp;
 
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.ElementKind;
 import javax.tools.JavaFileObject;
@@ -168,9 +167,7 @@ public class Attr extends JCTree.Visitor {
         allowLambda = Feature.LAMBDA.allowedInSource(source);
         allowDefaultMethods = Feature.DEFAULT_METHODS.allowedInSource(source);
         allowStaticInterfaceMethods = Feature.STATIC_INTERFACE_METHODS.allowedInSource(source);
-        allowReifiableTypesInInstanceof =
-                Feature.REIFIABLE_TYPES_INSTANCEOF.allowedInSource(source) &&
-                (!preview.isPreview(Feature.REIFIABLE_TYPES_INSTANCEOF) || preview.isEnabled());
+        allowReifiableTypesInInstanceof = Feature.REIFIABLE_TYPES_INSTANCEOF.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
@@ -430,8 +427,8 @@ public class Attr extends JCTree.Visitor {
         } catch (BreakAttr b) {
             return b.env;
         } catch (AssertionError ae) {
-            if (ae.getCause() instanceof BreakAttr) {
-                return ((BreakAttr)(ae.getCause())).env;
+            if (ae.getCause() instanceof BreakAttr breakAttr) {
+                return breakAttr.env;
             } else {
                 throw ae;
             }
@@ -1536,6 +1533,15 @@ public class Attr extends JCTree.Visitor {
                     elemtype = iterableParams.isEmpty()
                         ? syms.objectType
                         : types.wildUpperBound(iterableParams.head);
+
+                    // Check the return type of the method iterator().
+                    // This is the bare minimum we need to verify to make sure code generation doesn't crash.
+                    Symbol iterSymbol = rs.resolveInternalMethod(tree.pos(),
+                            loopEnv, exprType, names.iterator, List.nil(), List.nil());
+                    if (types.asSuper(iterSymbol.type.getReturnType(), syms.iteratorType.tsym) == null) {
+                        log.error(tree.pos(),
+                                Errors.ForeachNotApplicableToType(exprType, Fragments.TypeReqArrayOrIterable));
+                    }
                 }
             }
             if (tree.var.isImplicitlyTyped()) {
@@ -1968,7 +1974,7 @@ public class Attr extends JCTree.Visitor {
         }
         //where
             boolean primitiveOrBoxed(Type t) {
-                return (!t.hasTag(TYPEVAR) && types.unboxedTypeOrType(t).isPrimitive());
+                return (!t.hasTag(TYPEVAR) && !t.isErroneous() && types.unboxedTypeOrType(t).isPrimitive());
             }
 
             TreeTranslator removeClassParams = new TreeTranslator() {
@@ -2062,7 +2068,7 @@ public class Attr extends JCTree.Visitor {
                         .collect(List.collector()));
         }
 
-    final static TypeTag[] primitiveTags = new TypeTag[]{
+    static final TypeTag[] primitiveTags = new TypeTag[]{
         BYTE,
         CHAR,
         SHORT,
@@ -3988,9 +3994,6 @@ public class Attr extends JCTree.Visitor {
         if (!clazztype.isErroneous() && !types.isReifiable(clazztype)) {
             boolean valid = false;
             if (allowReifiableTypesInInstanceof) {
-                if (preview.isPreview(Feature.REIFIABLE_TYPES_INSTANCEOF)) {
-                    preview.warnPreview(tree.expr.pos(), Feature.REIFIABLE_TYPES_INSTANCEOF);
-                }
                 Warner warner = new Warner();
                 if (!types.isCastable(exprtype, clazztype, warner)) {
                     chk.basicHandler.report(tree.expr.pos(),
@@ -5089,7 +5092,8 @@ public class Attr extends JCTree.Visitor {
         chk.checkNonCyclic(null, c.type);
 
         Type st = types.supertype(c.type);
-        if ((c.flags_field & Flags.COMPOUND) == 0) {
+        if ((c.flags_field & Flags.COMPOUND) == 0 &&
+            (c.flags_field & Flags.SUPER_OWNER_ATTRIBUTED) == 0) {
             // First, attribute superclass.
             if (st.hasTag(CLASS))
                 attribClass((ClassSymbol)st.tsym);
@@ -5097,6 +5101,8 @@ public class Attr extends JCTree.Visitor {
             // Next attribute owner, if it is a class.
             if (c.owner.kind == TYP && c.owner.type.hasTag(CLASS))
                 attribClass((ClassSymbol)c.owner);
+
+            c.flags_field |= Flags.SUPER_OWNER_ATTRIBUTED;
         }
 
         // The previous operations might have attributed the current class
@@ -5188,16 +5194,18 @@ public class Attr extends JCTree.Visitor {
                     log.error(TreeInfo.diagnosticPositionFor(c, env.tree), Errors.LocalClassesCantExtendSealed(c.isAnonymous() ? Fragments.Anonymous : Fragments.Local));
                 }
 
-                for (ClassSymbol supertypeSym : sealedSupers) {
-                    if (!supertypeSym.permitted.contains(c.type.tsym)) {
-                        log.error(TreeInfo.diagnosticPositionFor(c.type.tsym, env.tree), Errors.CantInheritFromSealed(supertypeSym));
+                if (!c.type.isCompound()) {
+                    for (ClassSymbol supertypeSym : sealedSupers) {
+                        if (!supertypeSym.permitted.contains(c.type.tsym)) {
+                            log.error(TreeInfo.diagnosticPositionFor(c.type.tsym, env.tree), Errors.CantInheritFromSealed(supertypeSym));
+                        }
                     }
-                }
-                if (!c.isNonSealed() && !c.isFinal() && !c.isSealed()) {
-                    log.error(TreeInfo.diagnosticPositionFor(c, env.tree),
-                            c.isInterface() ?
-                                    Errors.NonSealedOrSealedExpected :
-                                    Errors.NonSealedSealedOrFinalExpected);
+                    if (!c.isNonSealed() && !c.isFinal() && !c.isSealed()) {
+                        log.error(TreeInfo.diagnosticPositionFor(c, env.tree),
+                                c.isInterface() ?
+                                        Errors.NonSealedOrSealedExpected :
+                                        Errors.NonSealedSealedOrFinalExpected);
+                    }
                 }
             }
 
@@ -5489,8 +5497,7 @@ public class Attr extends JCTree.Visitor {
         public void visitMethodDef(JCMethodDecl tree) {
             if (tree.recvparam != null &&
                     !tree.recvparam.vartype.type.isErroneous()) {
-                checkForDeclarationAnnotations(tree.recvparam.mods.annotations,
-                        tree.recvparam.vartype.type.tsym);
+                checkForDeclarationAnnotations(tree.recvparam.mods.annotations, tree.recvparam.sym);
             }
             if (tree.restype != null && tree.restype.type != null) {
                 validateAnnotatedType(tree.restype, tree.restype.type);

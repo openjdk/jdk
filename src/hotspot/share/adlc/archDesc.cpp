@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ ArchDesc::ArchDesc()
     _internalMatch(cmpstr,hashstr, Form::arena),
     _chainRules(cmpstr,hashstr, Form::arena),
     _cisc_spill_operand(NULL),
-    _needs_clone_jvms(false) {
+    _needs_deep_clone_jvms(false) {
 
       // Initialize the opcode to MatchList table with NULLs
       for( int i=0; i<_last_opcode; ++i ) {
@@ -945,8 +945,8 @@ const char *ArchDesc::getIdealType(const char *idealOp) {
     }
   }
 
-  if (strncmp(idealOp, "RegVMask", 8) == 0) {
-    return "Type::BOTTOM";
+  if (strncmp(idealOp, "RegVectMask", 8) == 0) {
+    return "TypeVect::VECTMASK";
   }
 
   // !!!!!

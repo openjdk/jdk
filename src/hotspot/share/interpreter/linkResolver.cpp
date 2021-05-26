@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/archiveUtils.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/resolutionErrors.hpp"
@@ -40,7 +41,6 @@
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/archiveUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.inline.hpp"
@@ -149,8 +149,7 @@ CallInfo::CallInfo(Method* resolved_method, Klass* resolved_klass, TRAPS) {
     kind = CallInfo::vtable_call;
   } else if (!resolved_klass->is_interface()) {
     // A default or miranda method.  Compute the vtable index.
-    index = LinkResolver::vtable_index_of_interface_method(resolved_klass,
-                           _resolved_method);
+    index = LinkResolver::vtable_index_of_interface_method(resolved_klass, _resolved_method);
     assert(index >= 0 , "we should have valid vtable index at this point");
 
     kind = CallInfo::vtable_call;
@@ -405,31 +404,9 @@ Method* LinkResolver::lookup_instance_method_in_klasses(Klass* klass,
   return result;
 }
 
-int LinkResolver::vtable_index_of_interface_method(Klass* klass,
-                                                   const methodHandle& resolved_method) {
-
-  int vtable_index = Method::invalid_vtable_index;
-  Symbol* name = resolved_method->name();
-  Symbol* signature = resolved_method->signature();
+int LinkResolver::vtable_index_of_interface_method(Klass* klass, const methodHandle& resolved_method) {
   InstanceKlass* ik = InstanceKlass::cast(klass);
-
-  // First check in default method array
-  if (!resolved_method->is_abstract() && ik->default_methods() != NULL) {
-    int index = InstanceKlass::find_method_index(ik->default_methods(),
-                                                 name, signature,
-                                                 Klass::OverpassLookupMode::find,
-                                                 Klass::StaticLookupMode::find,
-                                                 Klass::PrivateLookupMode::find);
-    if (index >= 0 ) {
-      vtable_index = ik->default_vtable_indices()->at(index);
-    }
-  }
-  if (vtable_index == Method::invalid_vtable_index) {
-    // get vtable_index for miranda methods
-    klassVtable vt = ik->vtable();
-    vtable_index = vt.index_of_miranda(name, signature);
-  }
-  return vtable_index;
+  return ik->vtable_index_of_interface_method(resolved_method());
 }
 
 Method* LinkResolver::lookup_method_in_interfaces(const LinkInfo& cp_info) {
@@ -462,7 +439,7 @@ Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
       // Do not erase last argument type (MemberName) if it is a static linkTo method.
       bool keep_last_arg = MethodHandles::is_signature_polymorphic_static(iid);
       TempNewSymbol basic_signature =
-        MethodHandles::lookup_basic_type_signature(full_signature, keep_last_arg, CHECK_NULL);
+        MethodHandles::lookup_basic_type_signature(full_signature, keep_last_arg);
       log_info(methodhandles)("lookup_polymorphic_method %s %s => basic %s",
                               name->as_C_string(),
                               full_signature->as_C_string(),
@@ -519,7 +496,7 @@ Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
         ResourceMark rm(THREAD);
 
         TempNewSymbol basic_signature =
-          MethodHandles::lookup_basic_type_signature(full_signature, CHECK_NULL);
+          MethodHandles::lookup_basic_type_signature(full_signature);
         int actual_size_of_params = result->size_of_parameters();
         int expected_size_of_params = ArgumentSizeComputer(basic_signature).size();
         // +1 for MethodHandle.this, +1 for trailing MethodType
@@ -1177,10 +1154,7 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
   // a direct superinterface, not an indirect superinterface
   Klass* current_klass = link_info.current_klass();
   if (current_klass != NULL && resolved_klass->is_interface()) {
-    InstanceKlass* ck = InstanceKlass::cast(current_klass);
-    InstanceKlass *klass_to_check = !ck->is_unsafe_anonymous() ?
-                                    ck :
-                                    ck->unsafe_anonymous_host();
+    InstanceKlass* klass_to_check = InstanceKlass::cast(current_klass);
     // Disable verification for the dynamically-generated reflection bytecodes.
     bool is_reflect = klass_to_check->is_subclass_of(
                         vmClasses::reflect_MagicAccessorImpl_klass());
@@ -1270,7 +1244,6 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
     // The verifier also checks that the receiver is a subtype of the sender, if the sender is
     // a class.  If the sender is an interface, the check has to be performed at runtime.
     InstanceKlass* sender = InstanceKlass::cast(current_klass);
-    sender = sender->is_unsafe_anonymous() ? sender->unsafe_anonymous_host() : sender;
     if (sender->is_interface() && recv.not_null()) {
       Klass* receiver_klass = recv->klass();
       if (!receiver_klass->is_subtype_of(sender)) {

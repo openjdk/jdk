@@ -31,6 +31,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.*;
 import java.security.interfaces.*;
+import java.util.Arrays;
 
 import sun.security.util.*;
 
@@ -192,20 +193,44 @@ public final class RSAPrivateCrtKeyImpl
         this.keyParams = keyParams;
 
         try {
-            // generate the key encoding
-            DerOutputStream out = new DerOutputStream();
+            byte[][] nbytes = new byte[8][];
+            nbytes[0] = n.toByteArray();
+            nbytes[1] = e.toByteArray();
+            nbytes[2] = d.toByteArray();
+            nbytes[3] = p.toByteArray();
+            nbytes[4] = q.toByteArray();
+            nbytes[5] = pe.toByteArray();
+            nbytes[6] = qe.toByteArray();
+            nbytes[7] = coeff.toByteArray();
+
+            // Initiate with a big enough size so there's no need to
+            // reallocate memory later and thus can be cleaned up
+            // reliably.
+            DerOutputStream out = new DerOutputStream(
+                    nbytes[0].length + nbytes[1].length +
+                    nbytes[2].length + nbytes[3].length +
+                    nbytes[4].length + nbytes[5].length +
+                    nbytes[6].length + nbytes[7].length +
+                    100); // Enough for version(3) and 8 tag+length(3 or 4)
             out.putInteger(0); // version must be 0
-            out.putInteger(n);
-            out.putInteger(e);
-            out.putInteger(d);
-            out.putInteger(p);
-            out.putInteger(q);
-            out.putInteger(pe);
-            out.putInteger(qe);
-            out.putInteger(coeff);
-            DerValue val =
-                new DerValue(DerValue.tag_Sequence, out.toByteArray());
+            out.putInteger(nbytes[0]);
+            out.putInteger(nbytes[1]);
+            out.putInteger(nbytes[2]);
+            out.putInteger(nbytes[3]);
+            out.putInteger(nbytes[4]);
+            out.putInteger(nbytes[5]);
+            out.putInteger(nbytes[6]);
+            out.putInteger(nbytes[7]);
+            // Private values from [2] on.
+            Arrays.fill(nbytes[2], (byte)0);
+            Arrays.fill(nbytes[3], (byte)0);
+            Arrays.fill(nbytes[4], (byte)0);
+            Arrays.fill(nbytes[5], (byte)0);
+            Arrays.fill(nbytes[6], (byte)0);
+            Arrays.fill(nbytes[7], (byte)0);
+            DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
             key = val.toByteArray();
+            val.clear();
         } catch (IOException exc) {
             // should never occur
             throw new InvalidKeyException(exc);
@@ -285,29 +310,33 @@ public final class RSAPrivateCrtKeyImpl
     // e, d, p, q, pe, qe, and coeff, and return the parsed components.
     private static BigInteger[] parseASN1(byte[] raw) throws IOException {
         DerValue derValue = new DerValue(raw);
-        if (derValue.tag != DerValue.tag_Sequence) {
-            throw new IOException("Not a SEQUENCE");
-        }
-        int version = derValue.data.getInteger();
-        if (version != 0) {
-            throw new IOException("Version must be 0");
-        }
+        try {
+            if (derValue.tag != DerValue.tag_Sequence) {
+                throw new IOException("Not a SEQUENCE");
+            }
+            int version = derValue.data.getInteger();
+            if (version != 0) {
+                throw new IOException("Version must be 0");
+            }
 
-        BigInteger[] result = new BigInteger[8]; // n, e, d, p, q, pe, qe, coeff
-        /*
-         * Some implementations do not correctly encode ASN.1 INTEGER values
-         * in 2's complement format, resulting in a negative integer when
-         * decoded. Correct the error by converting it to a positive integer.
-         *
-         * See CR 6255949
-         */
-        for (int i = 0; i < result.length; i++) {
-            result[i] = derValue.data.getPositiveBigInteger();
+            BigInteger[] result = new BigInteger[8]; // n, e, d, p, q, pe, qe, coeff
+            /*
+             * Some implementations do not correctly encode ASN.1 INTEGER values
+             * in 2's complement format, resulting in a negative integer when
+             * decoded. Correct the error by converting it to a positive integer.
+             *
+             * See CR 6255949
+             */
+            for (int i = 0; i < result.length; i++) {
+                result[i] = derValue.data.getPositiveBigInteger();
+            }
+            if (derValue.data.available() != 0) {
+                throw new IOException("Extra data available");
+            }
+            return result;
+        } finally {
+            derValue.clear();
         }
-        if (derValue.data.available() != 0) {
-            throw new IOException("Extra data available");
-        }
-        return result;
     }
 
     private void parseKeyBits() throws InvalidKeyException {

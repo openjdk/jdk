@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1638,6 +1638,16 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
         Node* sfpt = sfpt2->clone();
         sfpt->set_req(0, iffalse);
         outer_le->set_req(0, sfpt);
+
+        Node* polladdr = sfpt->in(TypeFunc::Parms);
+        if (polladdr != nullptr && polladdr->is_Load()) {
+          // Polling load should be pinned outside inner loop.
+          Node* new_polladdr = polladdr->clone();
+          new_polladdr->set_req(0, iffalse);
+          _igvn.register_new_node_with_optimizer(new_polladdr, polladdr);
+          set_ctrl(new_polladdr, iffalse);
+          sfpt->set_req(TypeFunc::Parms, new_polladdr);
+        }
         // When this code runs, loop bodies have not yet been populated.
         const bool body_populated = false;
         register_control(sfpt, outer_ilt, iffalse, body_populated);
@@ -1807,7 +1817,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
           for (DUIterator_Fast jmax, j = be->fast_outs(jmax); j < jmax; j++) {
             Node* n = be->fast_out(j);
             if (n->is_Load()) {
-              assert(n->in(0) == be, "should be on the backedge");
+              assert(n->in(0) == be || n->find_prec_edge(be) > 0, "should be on the backedge");
               do {
                 n = n->raw_out(0);
               } while (!n->is_Phi());
@@ -4981,52 +4991,64 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
   }
 #endif
 
-  // if this is a load, check for anti-dependent stores
-  // We use a conservative algorithm to identify potential interfering
-  // instructions and for rescheduling the load.  The users of the memory
-  // input of this load are examined.  Any use which is not a load and is
-  // dominated by early is considered a potentially interfering store.
-  // This can produce false positives.
   if (n->is_Load() && LCA != early) {
-    int load_alias_idx = C->get_alias_index(n->adr_type());
-    if (C->alias_type(load_alias_idx)->is_rewritable()) {
-      Unique_Node_List worklist;
+    LCA = get_late_ctrl_with_anti_dep(n->as_Load(), early, LCA);
+  }
 
-      Node* mem = n->in(MemNode::Memory);
-      for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
-        Node* s = mem->fast_out(i);
-        worklist.push(s);
-      }
-      for (uint i = 0; i < worklist.size() && LCA != early; i++) {
-        Node* s = worklist.at(i);
-        if (s->is_Load() || s->Opcode() == Op_SafePoint ||
-            (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0) ||
-            s->is_Phi()) {
-          continue;
-        } else if (s->is_MergeMem()) {
-          for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
-            Node* s1 = s->fast_out(i);
-            worklist.push(s1);
-          }
-        } else {
-          Node* sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
-          assert(sctrl != NULL || !s->is_reachable_from_root(), "must have control");
-          if (sctrl != NULL && !sctrl->is_top() && is_dominator(early, sctrl)) {
-            const TypePtr* adr_type = s->adr_type();
-            if (s->is_ArrayCopy()) {
-              // Copy to known instance needs destination type to test for aliasing
-              const TypePtr* dest_type = s->as_ArrayCopy()->_dest_type;
-              if (dest_type != TypeOopPtr::BOTTOM) {
-                adr_type = dest_type;
-              }
+  assert(LCA == find_non_split_ctrl(LCA), "unexpected late control");
+  return LCA;
+}
+
+// if this is a load, check for anti-dependent stores
+// We use a conservative algorithm to identify potential interfering
+// instructions and for rescheduling the load.  The users of the memory
+// input of this load are examined.  Any use which is not a load and is
+// dominated by early is considered a potentially interfering store.
+// This can produce false positives.
+Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node* LCA) {
+  int load_alias_idx = C->get_alias_index(n->adr_type());
+  if (C->alias_type(load_alias_idx)->is_rewritable()) {
+    Unique_Node_List worklist;
+
+    Node* mem = n->in(MemNode::Memory);
+    for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+      Node* s = mem->fast_out(i);
+      worklist.push(s);
+    }
+    for (uint i = 0; i < worklist.size() && LCA != early; i++) {
+      Node* s = worklist.at(i);
+      if (s->is_Load() || s->Opcode() == Op_SafePoint ||
+          (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0) ||
+          s->is_Phi()) {
+        continue;
+      } else if (s->is_MergeMem()) {
+        for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
+          Node* s1 = s->fast_out(i);
+          worklist.push(s1);
+        }
+      } else {
+        Node* sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
+        assert(sctrl != NULL || !s->is_reachable_from_root(), "must have control");
+        if (sctrl != NULL && !sctrl->is_top() && is_dominator(early, sctrl)) {
+          const TypePtr* adr_type = s->adr_type();
+          if (s->is_ArrayCopy()) {
+            // Copy to known instance needs destination type to test for aliasing
+            const TypePtr* dest_type = s->as_ArrayCopy()->_dest_type;
+            if (dest_type != TypeOopPtr::BOTTOM) {
+              adr_type = dest_type;
             }
-            if (C->can_alias(adr_type, load_alias_idx)) {
-              LCA = dom_lca_for_get_late_ctrl(LCA, sctrl, n);
-            } else if (s->is_CFG()) {
-              for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
-                Node* s1 = s->fast_out(i);
-                if (_igvn.type(s1) == Type::MEMORY) {
-                  worklist.push(s1);
+          }
+          if (C->can_alias(adr_type, load_alias_idx)) {
+            LCA = dom_lca_for_get_late_ctrl(LCA, sctrl, n);
+          } else if (s->is_CFG() && s->is_Multi()) {
+            // Look for the memory use of s (that is the use of its memory projection)
+            for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
+              Node* s1 = s->fast_out(i);
+              assert(s1->is_Proj(), "projection expected");
+              if (_igvn.type(s1) == Type::MEMORY) {
+                for (DUIterator_Fast jmax, j = s1->fast_outs(jmax); j < jmax; j++) {
+                  Node* s2 = s1->fast_out(j);
+                  worklist.push(s2);
                 }
               }
             }
@@ -5052,8 +5074,6 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
       }
     }
   }
-
-  assert(LCA == find_non_split_ctrl(LCA), "unexpected late control");
   return LCA;
 }
 
@@ -5081,23 +5101,24 @@ bool PhaseIdealLoop::is_dominator(Node *d, Node *n) {
 // does not need to be cleared between calls to get_late_ctrl().
 // Algorithm trades a larger constant factor for better asymptotic behavior
 //
-Node *PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal( Node *n1, Node *n2, Node *tag ) {
+Node *PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal(Node *n1, Node *n2, Node *tag_node) {
   uint d1 = dom_depth(n1);
   uint d2 = dom_depth(n2);
+  jlong tag = tag_node->_idx | (((jlong)_dom_lca_tags_round) << 32);
 
   do {
     if (d1 > d2) {
       // current lca is deeper than n2
-      _dom_lca_tags.map(n1->_idx, tag);
+      _dom_lca_tags.at_put_grow(n1->_idx, tag);
       n1 =      idom(n1);
       d1 = dom_depth(n1);
     } else if (d1 < d2) {
       // n2 is deeper than current lca
-      Node *memo = _dom_lca_tags[n2->_idx];
-      if( memo == tag ) {
+      jlong memo = _dom_lca_tags.at_grow(n2->_idx, 0);
+      if (memo == tag) {
         return n1;    // Return the current LCA
       }
-      _dom_lca_tags.map(n2->_idx, tag);
+      _dom_lca_tags.at_put_grow(n2->_idx, tag);
       n2 =      idom(n2);
       d2 = dom_depth(n2);
     } else {
@@ -5106,19 +5127,19 @@ Node *PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal( Node *n1, Node *n2, No
       // to be searched more carefully.
 
       // Scan up all the n1's with equal depth, looking for n2.
-      _dom_lca_tags.map(n1->_idx, tag);
+      _dom_lca_tags.at_put_grow(n1->_idx, tag);
       Node *t1 = idom(n1);
       while (dom_depth(t1) == d1) {
         if (t1 == n2)  return n2;
-        _dom_lca_tags.map(t1->_idx, tag);
+        _dom_lca_tags.at_put_grow(t1->_idx, tag);
         t1 = idom(t1);
       }
       // Scan up all the n2's with equal depth, looking for n1.
-      _dom_lca_tags.map(n2->_idx, tag);
+      _dom_lca_tags.at_put_grow(n2->_idx, tag);
       Node *t2 = idom(n2);
       while (dom_depth(t2) == d2) {
         if (t2 == n1)  return n1;
-        _dom_lca_tags.map(t2->_idx, tag);
+        _dom_lca_tags.at_put_grow(t2->_idx, tag);
         t2 = idom(t2);
       }
       // Move up to a new dominator-depth value as well as up the dom-tree.
@@ -5137,25 +5158,11 @@ Node *PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal( Node *n1, Node *n2, No
 // be of fixed size.
 void PhaseIdealLoop::init_dom_lca_tags() {
   uint limit = C->unique() + 1;
-  _dom_lca_tags.map( limit, NULL );
+  _dom_lca_tags.at_grow(limit, 0);
+  _dom_lca_tags_round = 0;
 #ifdef ASSERT
-  for( uint i = 0; i < limit; ++i ) {
-    assert(_dom_lca_tags[i] == NULL, "Must be distinct from each node pointer");
-  }
-#endif // ASSERT
-}
-
-//------------------------------clear_dom_lca_tags------------------------------
-// Tag could be a node's integer index, 32bits instead of 64bits in some cases
-// Intended use does not involve any growth for the array, so it could
-// be of fixed size.
-void PhaseIdealLoop::clear_dom_lca_tags() {
-  uint limit = C->unique() + 1;
-  _dom_lca_tags.map( limit, NULL );
-  _dom_lca_tags.clear();
-#ifdef ASSERT
-  for( uint i = 0; i < limit; ++i ) {
-    assert(_dom_lca_tags[i] == NULL, "Must be distinct from each node pointer");
+  for (uint i = 0; i < limit; ++i) {
+    assert(_dom_lca_tags.at(i) == 0, "Must be distinct from each node pointer");
   }
 #endif // ASSERT
 }

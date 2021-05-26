@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/vmClasses.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -33,6 +32,7 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/access.inline.hpp"
@@ -76,17 +76,11 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _old_gen_is_full(false),
     _partial_objarray_chunk_size(ParGCArrayScanChunk),
     _partial_array_stepper(n_workers),
-    _string_klass_or_null(G1StringDedup::is_enabled()
-                          ? vmClasses::String_klass()
-                          : nullptr),
+    _string_dedup_requests(),
     _num_optional_regions(optional_cset_length),
     _numa(g1h->numa()),
     _obj_alloc_stat(NULL)
 {
-  // Verify klass comparison with _string_klass_or_null is sufficient
-  // to determine whether dedup is enabled and the object is a String.
-  assert(vmClasses::String_klass()->is_final(), "precondition");
-
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
   // We also add a few elements at the beginning and at the end in
@@ -517,20 +511,14 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       return obj;
     }
 
-    // StringDedup::is_enabled() and java_lang_String::is_instance_inline
-    // test of the obj, combined into a single comparison, using the klass
-    // already in hand and avoiding the null check in is_instance.
-    if (klass == _string_klass_or_null) {
-      const bool is_from_young = region_attr.is_young();
-      const bool is_to_young = dest_attr.is_young();
-      assert(is_from_young == from_region->is_young(),
-             "sanity");
-      assert(is_to_young == _g1h->heap_region_containing(obj)->is_young(),
-             "sanity");
-      G1StringDedup::enqueue_from_evacuation(is_from_young,
-                                             is_to_young,
-                                             _worker_id,
-                                             obj);
+    // Check for deduplicating young Strings.
+    if (G1StringDedup::is_candidate_from_evacuation(klass,
+                                                    region_attr,
+                                                    dest_attr,
+                                                    age)) {
+      // Record old; request adds a new weak reference, which reference
+      // processing expects to refer to a from-space object.
+      _string_dedup_requests.add(old);
     }
 
     G1ScanInYoungSetter x(&_scanner, dest_attr.is_young());
@@ -617,9 +605,9 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m) {
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
 
-    if (!r->evacuation_failed()) {
-      r->set_evacuation_failed(true);
-     _g1h->hr_printer()->evac_failure(r);
+    if (r->set_evacuation_failed()) {
+      _g1h->notify_region_failed_evacuation();
+      _g1h->hr_printer()->evac_failure(r);
     }
 
     _g1h->preserve_mark_during_evac_failure(_worker_id, old, m);

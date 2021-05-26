@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import jdk.internal.event.X509ValidationEvent;
 import jdk.internal.event.EventHelper;
 import sun.security.provider.certpath.PKIX.ValidatorParams;
-import sun.security.validator.Validator;
 import sun.security.x509.X509CertImpl;
 import sun.security.util.Debug;
 
@@ -178,7 +177,7 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
         // add standard checkers that we will be using
         certPathCheckers.add(untrustedChecker);
         certPathCheckers.add(new AlgorithmChecker(anchor, null, params.date(),
-                params.timestamp(), params.variant()));
+                params.variant()));
         certPathCheckers.add(new KeyChecker(certPathLen,
                                             params.targetCertConstraints()));
         certPathCheckers.add(new ConstraintsChecker(certPathLen));
@@ -195,19 +194,7 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
                                              rootNode);
         certPathCheckers.add(pc);
 
-        // the time that the certificate validity period should be
-        // checked against
-        Date timeToCheck = null;
-        // use timestamp if checking signed code that is timestamped, otherwise
-        // use date parameter from PKIXParameters
-        if ((params.variant() == Validator.VAR_CODE_SIGNING ||
-             params.variant() == Validator.VAR_PLUGIN_CODE_SIGNING) &&
-             params.timestamp() != null) {
-            timeToCheck = params.timestamp().getTimestamp();
-        } else {
-            timeToCheck = params.date();
-        }
-        BasicChecker bc = new BasicChecker(anchor, timeToCheck,
+        BasicChecker bc = new BasicChecker(anchor, params.date(),
                                            params.sigProvider(), false);
         certPathCheckers.add(bc);
 

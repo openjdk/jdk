@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,12 @@ abstract class AESWrapCipher extends CipherSpi {
                 "only be used for key wrapping and unwrapping");
         }
         AESCipher.checkKeySize(key, fixedKeySize);
-        cipher.init(decrypting, key.getAlgorithm(), key.getEncoded());
+        byte[] encoded = key.getEncoded();
+        try {
+            cipher.init(decrypting, key.getAlgorithm(), encoded);
+        } finally {
+            Arrays.fill(encoded, (byte)0);
+        }
     }
 
     /**
@@ -374,6 +379,7 @@ abstract class AESWrapCipher extends CipherSpi {
      */
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encoded = key.getEncoded();
+        Arrays.fill(encoded, (byte)0);
         if (!AESCrypt.isKeySizeValid(encoded.length)) {
             throw new InvalidKeyException("Invalid key length: " +
                                           encoded.length + " bytes");
@@ -404,38 +410,42 @@ abstract class AESWrapCipher extends CipherSpi {
             throw new InvalidKeyException("Cannot get an encoding of " +
                                           "the key to be wrapped");
         }
-        byte[] out = new byte[Math.addExact(keyVal.length, 8)];
+        try {
+            byte[] out = new byte[Math.addExact(keyVal.length, 8)];
 
-        if (keyVal.length == 8) {
-            System.arraycopy(IV, 0, out, 0, IV.length);
-            System.arraycopy(keyVal, 0, out, IV.length, 8);
-            cipher.encryptBlock(out, 0, out, 0);
-        } else {
-            if (keyVal.length % 8 != 0) {
-                throw new IllegalBlockSizeException("length of the " +
-                    "to be wrapped key should be multiples of 8 bytes");
-            }
-            System.arraycopy(IV, 0, out, 0, IV.length);
-            System.arraycopy(keyVal, 0, out, IV.length, keyVal.length);
-            int N = keyVal.length/8;
-            byte[] buffer = new byte[blksize];
-            for (int j = 0; j < 6; j++) {
-                for (int i = 1; i <= N; i++) {
-                    int T = i + j*N;
-                    System.arraycopy(out, 0, buffer, 0, IV.length);
-                    System.arraycopy(out, i*8, buffer, IV.length, 8);
-                    cipher.encryptBlock(buffer, 0, buffer, 0);
-                    for (int k = 1; T != 0; k++) {
-                        byte v = (byte) T;
-                        buffer[IV.length - k] ^= v;
-                        T >>>= 8;
+            if (keyVal.length == 8) {
+                System.arraycopy(IV, 0, out, 0, IV.length);
+                System.arraycopy(keyVal, 0, out, IV.length, 8);
+                cipher.encryptBlock(out, 0, out, 0);
+            } else {
+                if (keyVal.length % 8 != 0) {
+                    throw new IllegalBlockSizeException("length of the " +
+                            "to be wrapped key should be multiples of 8 bytes");
+                }
+                System.arraycopy(IV, 0, out, 0, IV.length);
+                System.arraycopy(keyVal, 0, out, IV.length, keyVal.length);
+                int N = keyVal.length / 8;
+                byte[] buffer = new byte[blksize];
+                for (int j = 0; j < 6; j++) {
+                    for (int i = 1; i <= N; i++) {
+                        int T = i + j * N;
+                        System.arraycopy(out, 0, buffer, 0, IV.length);
+                        System.arraycopy(out, i * 8, buffer, IV.length, 8);
+                        cipher.encryptBlock(buffer, 0, buffer, 0);
+                        for (int k = 1; T != 0; k++) {
+                            byte v = (byte) T;
+                            buffer[IV.length - k] ^= v;
+                            T >>>= 8;
+                        }
+                        System.arraycopy(buffer, 0, out, 0, IV.length);
+                        System.arraycopy(buffer, 8, out, 8 * i, 8);
                     }
-                    System.arraycopy(buffer, 0, out, 0, IV.length);
-                    System.arraycopy(buffer, 8, out, 8*i, 8);
                 }
             }
+            return out;
+        } finally {
+            Arrays.fill(keyVal, (byte)0);
         }
-        return out;
     }
 
     /**
@@ -474,38 +484,43 @@ abstract class AESWrapCipher extends CipherSpi {
         }
         byte[] out = new byte[wrappedKeyLen - 8];
         byte[] buffer = new byte[blksize];
-        if (wrappedKeyLen == 16) {
-            cipher.decryptBlock(wrappedKey, 0, buffer, 0);
-            for (int i = 0; i < IV.length; i++) {
-                if (IV[i] != buffer[i]) {
-                    throw new InvalidKeyException("Integrity check failed");
-                }
-            }
-            System.arraycopy(buffer, IV.length, out, 0, out.length);
-        } else {
-            System.arraycopy(wrappedKey, 0, buffer, 0, IV.length);
-            System.arraycopy(wrappedKey, IV.length, out, 0, out.length);
-            int N = out.length/8;
-            for (int j = 5; j >= 0; j--) {
-                for (int i = N; i > 0; i--) {
-                    int T = i + j*N;
-                    System.arraycopy(out, 8*(i-1), buffer, IV.length, 8);
-                    for (int k = 1; T != 0; k++) {
-                        byte v = (byte) T;
-                        buffer[IV.length - k] ^= v;
-                        T >>>= 8;
+        try {
+            if (wrappedKeyLen == 16) {
+                cipher.decryptBlock(wrappedKey, 0, buffer, 0);
+                for (int i = 0; i < IV.length; i++) {
+                    if (IV[i] != buffer[i]) {
+                        throw new InvalidKeyException("Integrity check failed");
                     }
-                    cipher.decryptBlock(buffer, 0, buffer, 0);
-                    System.arraycopy(buffer, IV.length, out, 8*(i-1), 8);
+                }
+                System.arraycopy(buffer, IV.length, out, 0, out.length);
+            } else {
+                System.arraycopy(wrappedKey, 0, buffer, 0, IV.length);
+                System.arraycopy(wrappedKey, IV.length, out, 0, out.length);
+                int N = out.length / 8;
+                for (int j = 5; j >= 0; j--) {
+                    for (int i = N; i > 0; i--) {
+                        int T = i + j * N;
+                        System.arraycopy(out, 8 * (i - 1), buffer, IV.length, 8);
+                        for (int k = 1; T != 0; k++) {
+                            byte v = (byte) T;
+                            buffer[IV.length - k] ^= v;
+                            T >>>= 8;
+                        }
+                        cipher.decryptBlock(buffer, 0, buffer, 0);
+                        System.arraycopy(buffer, IV.length, out, 8 * (i - 1), 8);
+                    }
+                }
+                for (int i = 0; i < IV.length; i++) {
+                    if (IV[i] != buffer[i]) {
+                        throw new InvalidKeyException("Integrity check failed");
+                    }
                 }
             }
-            for (int i = 0; i < IV.length; i++) {
-                if (IV[i] != buffer[i]) {
-                    throw new InvalidKeyException("Integrity check failed");
-                }
-            }
+            return ConstructKeys.constructKey(out, wrappedKeyAlgorithm,
+                    wrappedKeyType);
+        } finally {
+            Arrays.fill(out, (byte)0);
+            Arrays.fill(buffer, (byte)0);
         }
-        return ConstructKeys.constructKey(out, wrappedKeyAlgorithm,
-                                          wrappedKeyType);
     }
 }

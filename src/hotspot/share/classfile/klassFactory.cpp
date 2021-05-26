@@ -23,6 +23,7 @@
 */
 
 #include "precompiled.hpp"
+#include "cds/filemap.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -30,7 +31,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/klassFactory.hpp"
-#include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
@@ -54,7 +54,6 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
   assert(ik != NULL, "sanity");
   assert(ik->is_shared(), "expecting a shared class");
   if (JvmtiExport::should_post_class_file_load_hook()) {
-    assert(THREAD->is_Java_thread(), "must be JavaThread");
 
     // Post the CFLH
     JvmtiCachedClassFileData* cached_class_file = NULL;
@@ -119,7 +118,7 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
   assert(stream != NULL, "invariant");
 
   if (JvmtiExport::should_post_class_file_load_hook()) {
-    const JavaThread* jt = THREAD->as_Java_thread();
+    const JavaThread* jt = THREAD;
 
     Handle class_loader(THREAD, loader_data->class_loader());
 
@@ -171,7 +170,6 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
                                                 TRAPS) {
   assert(stream != NULL, "invariant");
   assert(loader_data != NULL, "invariant");
-  assert(THREAD->is_Java_thread(), "must be a JavaThread");
 
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
@@ -183,11 +181,8 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   // increment counter
   THREAD->statistical_info().incr_define_class_count();
 
-  assert(!(cl_info.is_hidden() && (cl_info.unsafe_anonymous_host() != NULL)),
-         "hidden class has an anonymous host");
-
-  // Skip this processing for VM hidden or anonymous classes
-  if (!cl_info.is_hidden() && (cl_info.unsafe_anonymous_host() == NULL)) {
+  // Skip this processing for VM hidden classes
+  if (!cl_info.is_hidden()) {
     stream = check_class_file_load_hook(stream,
                                         name,
                                         loader_data,

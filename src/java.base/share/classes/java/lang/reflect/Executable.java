@@ -47,11 +47,12 @@ import sun.reflect.generics.repository.ConstructorRepository;
  *
  * @since 1.8
  */
-public abstract class Executable extends AccessibleObject
-    implements Member, GenericDeclaration {
+public abstract sealed class Executable extends AccessibleObject
+    implements Member, GenericDeclaration permits Constructor, Method {
     /*
      * Only grant package-visibility to the constructor.
      */
+    @SuppressWarnings("deprecation")
     Executable() {}
 
     /**
@@ -566,17 +567,19 @@ public abstract class Executable extends AccessibleObject
         Annotation[][] result = parseParameterAnnotations(parameterAnnotations);
 
         if (result.length != numParameters &&
-            handleParameterNumberMismatch(result.length, numParameters)) {
-            Annotation[][] tmp = new Annotation[result.length+1][];
-            // Shift annotations down one to account for an implicit leading parameter
-            System.arraycopy(result, 0, tmp, 1, result.length);
-            tmp[0] = new Annotation[0];
+            handleParameterNumberMismatch(result.length, parameterTypes)) {
+            Annotation[][] tmp = new Annotation[numParameters][];
+            // Shift annotations down to account for any implicit leading parameters
+            System.arraycopy(result, 0, tmp, numParameters - result.length, result.length);
+            for (int i = 0; i < numParameters - result.length; i++) {
+                tmp[i] = new Annotation[0];
+            }
             result = tmp;
         }
         return result;
     }
 
-    abstract boolean handleParameterNumberMismatch(int resultLength, int numParameters);
+    abstract boolean handleParameterNumberMismatch(int resultLength, Class<?>[] parameterTypes);
 
     /**
      * {@inheritDoc}

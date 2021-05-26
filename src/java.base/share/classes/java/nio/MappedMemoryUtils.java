@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,10 @@ import java.io.UncheckedIOException;
         // considering the loop as dead code.
         Unsafe unsafe = Unsafe.getUnsafe();
         int ps = Bits.pageSize();
-        int count = Bits.pageCount(length);
+        long count = Bits.pageCount(length);
         long a = mappingAddress(address, offset);
         byte x = 0;
-        for (int i=0; i<count; i++) {
+        for (long i=0; i<count; i++) {
             // TODO consider changing to getByteOpaque thus avoiding
             // dead code elimination and the need to calculate a checksum
             x ^= unsafe.getByte(a);
@@ -106,7 +106,7 @@ import java.io.UncheckedIOException;
 
     // native methods
 
-    private static native boolean isLoaded0(long address, long length, int pageCount);
+    private static native boolean isLoaded0(long address, long length, long pageCount);
     private static native void load0(long address, long length);
     private static native void unload0(long address, long length);
     private static native void force0(FileDescriptor fd, long address, long length) throws IOException;

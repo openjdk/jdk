@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public class Package implements Comparable<Package> {
 
     @Override
     public boolean equals(Object o) {
-        return (o instanceof Package) && name.equals(((Package)o).name);
+        return (o instanceof Package pac) && name.equals(pac.name);
     }
 
     @Override
@@ -186,7 +186,7 @@ public class Package implements Comparable<Package> {
         saveArtifacts(b);
     }
 
-    static public Package load(Module module, String l) {
+    public static Package load(Module module, String l) {
         String name = l.substring(2);
         return new Package(module, name);
     }

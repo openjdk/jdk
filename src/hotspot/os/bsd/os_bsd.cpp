@@ -34,7 +34,6 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_bsd.inline.hpp"
 #include "os_posix.inline.hpp"
@@ -128,7 +127,7 @@ static jlong initial_time_count=0;
 
 static int clock_tics_per_sec = 100;
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__x86_64__)
 static const int processor_id_unassigned = -1;
 static const int processor_id_assigning = -2;
 static const int processor_id_map_size = 256;
@@ -238,7 +237,7 @@ void os::Bsd::initialize_system_info() {
     set_processor_count(1);   // fallback
   }
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__x86_64__)
   // initialize processor id map
   for (int i = 0; i < processor_id_map_size; i++) {
     processor_id_map[i] = processor_id_unassigned;
@@ -546,16 +545,6 @@ objc_registerThreadWithCollector_t objc_registerThreadWithCollectorFunction = NU
 static void *thread_native_entry(Thread *thread) {
 
   thread->record_stack_base_and_size();
-
-  // Try to randomize the cache line index of hot stack frames.
-  // This helps when threads of the same stack traces evict each other's
-  // cache lines. The threads can be either from the same JVM instance, or
-  // from different JVM instances. The benefit is especially true for
-  // processors with hyperthreading technology.
-  static int counter = 0;
-  int pid = os::current_process_id();
-  alloca(((pid ^ counter++) & 7) * 128);
-
   thread->initialize_thread_current();
 
   OSThread* osthread = thread->osthread();
@@ -765,9 +754,7 @@ void os::free_thread(OSThread* osthread) {
 // time support
 
 // Time since start-up in seconds to a fine granularity.
-// Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
-
   return ((double)os::elapsed_counter()) / os::elapsed_frequency();
 }
 
@@ -1789,7 +1776,7 @@ void os::large_page_init() {
 }
 
 
-char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, char* req_addr, bool exec) {
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
   fatal("os::reserve_memory_special should not be called on BSD.");
   return NULL;
 }
@@ -2126,8 +2113,8 @@ int os::active_processor_count() {
   return _processor_count;
 }
 
-#if defined(__APPLE__) && defined(__x86_64__)
 uint os::processor_id() {
+#if defined(__APPLE__) && defined(__x86_64__)
   // Get the initial APIC id and return the associated processor id. The initial APIC
   // id is limited to 8-bits, which means we can have at most 256 unique APIC ids. If
   // the system has more processors (or the initial APIC ids are discontiguous) the
@@ -2158,8 +2145,13 @@ uint os::processor_id() {
   assert(processor_id >= 0 && processor_id < os::processor_count(), "invalid processor id");
 
   return (uint)processor_id;
-}
+#else // defined(__APPLE__) && defined(__x86_64__)
+  // Return 0 until we find a good way to get the current processor id on
+  // the platform. Returning 0 is safe, since there is always at least one
+  // processor, but might not be optimal for performance in some cases.
+  return 0;
 #endif
+}
 
 void os::set_native_thread_name(const char *name) {
 #if defined(__APPLE__) && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5
@@ -2229,7 +2221,7 @@ bool os::find(address addr, outputStream* st) {
 // on, e.g., Win32.
 void os::os_exception_wrapper(java_call_t f, JavaValue* value,
                               const methodHandle& method, JavaCallArguments* args,
-                              Thread* thread) {
+                              JavaThread* thread) {
   f(value, method, args, thread);
 }
 

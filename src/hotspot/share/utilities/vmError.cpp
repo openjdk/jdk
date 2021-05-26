@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/metaspaceShared.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
@@ -32,7 +33,6 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/metaspace.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "memory/universe.hpp"
@@ -46,6 +46,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
@@ -241,7 +242,7 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
 
   // see if it's a valid frame
   if (fr.pc()) {
-    st->print_cr("Native frames: (J=compiled Java code, A=aot compiled Java code, j=interpreted, Vv=VM code, C=native code)");
+    st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
 
     int count = 0;
     while (count++ < StackPrintLimit) {
@@ -635,7 +636,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP("printing bug submit message")
 
-     if (should_report_bug(_id) && _verbose) {
+     if (should_submit_bug_report(_id) && _verbose) {
        print_bug_submit_message(st, _thread);
      }
 
@@ -1583,7 +1584,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     }
   }
 
-  static bool skip_bug_url = !should_report_bug(_id);
+  static bool skip_bug_url = !should_submit_bug_report(_id);
   if (!skip_bug_url) {
     skip_bug_url = true;
 
@@ -1769,8 +1770,8 @@ static void crash_with_sigfpe() {
 // crash with sigsegv at non-null address.
 static void crash_with_segfault() {
 
-  char* const crash_addr = (char*)VMError::segfault_address;
-  *crash_addr = 'X';
+  int* crash_addr = reinterpret_cast<int*>(VMError::segfault_address);
+  *crash_addr = 1;
 
 } // end: crash_with_segfault
 

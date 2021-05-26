@@ -496,21 +496,19 @@ REDUCE_MAX_MIN_INT(min, 8,  S, X, Min, s, LT)
 REDUCE_MAX_MIN_INT(min, 4,  I, X, Min, u, LT)
 dnl
 define(`REDUCE_MAX_MIN_2I', `
-instruct reduce_$1`'2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecX tmp, rFlagsReg cr)
+instruct reduce_$1`'2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecD tmp, rFlagsReg cr)
 %{
   predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst ($2ReductionV isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
-  format %{ "dup   $tmp, T2D, $vsrc\n\t"
-            "s$1v $tmp, T4S, $tmp\n\t"
+  format %{ "s$1p $tmp, T2S, $vsrc, $vsrc\n\t"
             "umov  $dst, $tmp, S, 0\n\t"
             "cmpw  $dst, $isrc\n\t"
             "cselw $dst, $dst, $isrc $3\t# $1 reduction2I"
   %}
   ins_encode %{
-    __ dup(as_FloatRegister($tmp$$reg), __ T2D, as_FloatRegister($vsrc$$reg));
-    __ s$1v(as_FloatRegister($tmp$$reg), __ T4S, as_FloatRegister($tmp$$reg));
+    __ s$1p(as_FloatRegister($tmp$$reg), __ T2S, as_FloatRegister($vsrc$$reg), as_FloatRegister($vsrc$$reg));
     __ umov(as_Register($dst$$reg), as_FloatRegister($tmp$$reg), __ S, 0);
     __ cmpw(as_Register($dst$$reg), as_Register($isrc$$reg));
     __ cselw(as_Register($dst$$reg), as_Register($dst$$reg), as_Register($isrc$$reg), Assembler::$3);
@@ -1036,6 +1034,32 @@ VECTOR_NOT(2, I, D, 8,  8B)
 VECTOR_NOT(4, I, X, 16, 16B)
 VECTOR_NOT(2, L, X, 16, 16B)
 undefine(MATCH_RULE)
+// ------------------------------ Vector and_not -------------------------------
+dnl
+define(`MATCH_RULE', `ifelse($1, I,
+`match(Set dst (AndV src1 (XorV src2 (ReplicateB m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateS m1))));
+  match(Set dst (AndV src1 (XorV src2 (ReplicateI m1))));',
+`match(Set dst (AndV src1 (XorV src2 (ReplicateL m1))));')')dnl
+dnl
+define(`VECTOR_AND_NOT', `
+instruct vand_not$1$2`'(vec$3 dst, vec$3 src1, vec$3 src2, imm$2_M1 m1)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == $4);
+  MATCH_RULE($2)
+  ins_cost(INSN_COST);
+  format %{ "bic  $dst, T$5, $src1, $src2\t# vector ($5)" %}
+  ins_encode %{
+    __ bic(as_FloatRegister($dst$$reg), __ T$5,
+           as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}')dnl
+dnl            $1 $2 $3 $4  $5
+VECTOR_AND_NOT(2, I, D, 8,  8B)
+VECTOR_AND_NOT(4, I, X, 16, 16B)
+VECTOR_AND_NOT(2, L, X, 16, 16B)
+undefine(MATCH_RULE)
 dnl
 // ------------------------------ Vector max/min -------------------------------
 dnl
@@ -1090,7 +1114,7 @@ instruct v$1`'2L`'(vecX dst, vecX src1, vecX src2)
   %}
   ins_pipe(vdop128);
 %}')dnl
-dnl                $1   $2   $3    $4
+dnl                 $1   $2   $3    $4
 VECTOR_MAX_MIN_LONG(max, Max, src1, src2)
 VECTOR_MAX_MIN_LONG(min, Min, src2, src1)
 dnl
@@ -1231,6 +1255,27 @@ instruct storemask2L(vecD dst, vecX src, immI_8 size)
   %}
   ins_pipe(pipe_slow);
 %}
+
+// vector mask cast
+dnl
+define(`VECTOR_MASK_CAST', `
+instruct vmaskcast$1`'(vec$1 dst)
+%{
+  predicate(n->bottom_type()->is_vect()->length_in_bytes() == $2 &&
+            n->in(1)->bottom_type()->is_vect()->length_in_bytes() == $2 &&
+            n->bottom_type()->is_vect()->length() == n->in(1)->bottom_type()->is_vect()->length());
+  match(Set dst (VectorMaskCast dst));
+  ins_cost(0);
+  format %{ "vmaskcast $dst\t# empty" %}
+  ins_encode %{
+    // empty
+  %}
+  ins_pipe(pipe_class_empty);
+%}')dnl
+dnl              $1 $2
+VECTOR_MASK_CAST(D, 8)
+VECTOR_MASK_CAST(X, 16)
+dnl
 
 //-------------------------------- LOAD_IOTA_INDICES----------------------------------
 dnl
@@ -1415,11 +1460,12 @@ instruct anytrue_in_mask$1B`'(iRegINoSp dst, vec$2 src1, vec$2 src2, vec$2 tmp, 
   match(Set dst (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
   effect(TEMP tmp, KILL cr);
-  format %{ "addv  $tmp, T$1B, $src1\t# src1 and src2 are the same\n\t"
+  format %{ "addv  $tmp, T$1B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
             "cmp   $dst, 0\n\t"
-            "cset  $dst" %}
+            "cset  $dst\t# anytrue $1B" %}
   ins_encode %{
+    // No need to use src2.
     __ addv(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
     __ cmpw($dst$$Register, zr);
@@ -1438,19 +1484,15 @@ instruct alltrue_in_mask$1B`'(iRegINoSp dst, vec$2 src1, vec$2 src2, vec$2 tmp, 
   match(Set dst (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
   effect(TEMP tmp, KILL cr);
-  format %{ "andr  $tmp, T$1B, $src1, $src2\t# src2 is maskAllTrue\n\t"
-            "notr  $tmp, T$1B, $tmp\n\t"
-            "addv  $tmp, T$1B, $tmp\n\t"
+  format %{ "uminv $tmp, T$1B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0\n\t"
-            "cset  $dst" %}
+            "cmp   $dst, 0xff\n\t"
+            "cset  $dst\t# alltrue $1B" %}
   ins_encode %{
-    __ andr(as_FloatRegister($tmp$$reg), __ T$1B,
-            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
-    __ notr(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($tmp$$reg));
-    __ addv(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($tmp$$reg));
+    // No need to use src2.
+    __ uminv(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
-    __ cmpw($dst$$Register, zr);
+    __ cmpw($dst$$Register, 0xff);
     __ csetw($dst$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -1559,27 +1601,22 @@ dnl
 // ====================REDUCTION ARITHMETIC====================================
 dnl
 define(`REDUCE_ADD_INT', `
-instruct reduce_add$1$2`'(iRegINoSp dst, iRegIorL2I isrc, vec$3 vsrc, ifelse($1, 2, iRegINoSp tmp, vecX vtmp), iRegINoSp ifelse($1, 2, tmp2, itmp))
+instruct reduce_add$1$2`'(iRegINoSp dst, iRegIorL2I isrc, vec$3 vsrc, vec$3 vtmp, iRegINoSp itmp)
 %{
   predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (AddReductionVI isrc vsrc));
   ins_cost(INSN_COST);
-  effect(TEMP ifelse($1, 2, tmp, vtmp), TEMP ifelse($1, 2, tmp2, itmp));
-  format %{ ifelse($1, 2, `"umov  $tmp, $vsrc, S, 0\n\t"
-            "umov  $tmp2, $vsrc, S, 1\n\t"
-            "addw  $tmp, $isrc, $tmp\n\t"
-            "addw  $dst, $tmp, $tmp2\t# add reduction2I"',`"addv  $vtmp, T4S, $vsrc\n\t"
+  effect(TEMP vtmp, TEMP itmp);
+  format %{ ifelse($1, 2, `"addpv  $vtmp, T2S, $vsrc, $vsrc\n\t"',`"addv  $vtmp, T4S, $vsrc\n\t"')
             "umov  $itmp, $vtmp, S, 0\n\t"
-            "addw  $dst, $itmp, $isrc\t# add reduction4I"')
+            "addw  $dst, $itmp, $isrc\t# add reduction$1I"
   %}
   ins_encode %{
-    ifelse($1, 2, `__ umov($tmp$$Register, as_FloatRegister($vsrc$$reg), __ S, 0);
-    __ umov($tmp2$$Register, as_FloatRegister($vsrc$$reg), __ S, 1);
-    __ addw($tmp$$Register, $isrc$$Register, $tmp$$Register);
-    __ addw($dst$$Register, $tmp$$Register, $tmp2$$Register);', `__ addv(as_FloatRegister($vtmp$$reg), __ T4S,
-            as_FloatRegister($vsrc$$reg));
+    ifelse($1, 2, `__ addpv(as_FloatRegister($vtmp$$reg), __ T2S,
+             as_FloatRegister($vsrc$$reg), as_FloatRegister($vsrc$$reg));', `__ addv(as_FloatRegister($vtmp$$reg), __ T4S,
+            as_FloatRegister($vsrc$$reg));')
     __ umov($itmp$$Register, as_FloatRegister($vtmp$$reg), __ S, 0);
-    __ addw($dst$$Register, $itmp$$Register, $isrc$$Register);')
+    __ addw($dst$$Register, $itmp$$Register, $isrc$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}')dnl
@@ -1874,7 +1911,7 @@ instruct vsqrt$2$3`'(vec$4 dst, vec$4 src)
   %}
   ins_pipe(v`'ifelse($2$3, 2F, unop, sqrt)_fp`'ifelse($4, D, 64, 128));
 %}')dnl
-dnl  $1      $2  $3 $4 $5
+dnl   $1     $2  $3 $4 $5
 VSQRT(fsqrt, 2,  F, D, S)
 VSQRT(fsqrt, 4,  F, X, S)
 VSQRT(fsqrt, 2,  D, X, D)
@@ -1915,7 +1952,7 @@ instruct v$3$5$6`'(vec$7 dst, vec$7 src1, vec$7 src2)
 %}')dnl
 
 // --------------------------------- AND --------------------------------------
-dnl     $1    $2    $3   $4   $5  $6 $7
+dnl      $1   $2    $3   $4   $5  $6 $7
 VLOGICAL(and, andr, and, And, 8,  B, D)
 VLOGICAL(and, andr, and, And, 16, B, X)
 
