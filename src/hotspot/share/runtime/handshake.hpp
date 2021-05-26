@@ -77,6 +77,7 @@ class HandshakeState {
   friend ThreadSelfSuspensionHandshake;
   friend SuspendThreadHandshake;
   friend JavaThread;
+
   // This a back reference to the JavaThread,
   // the target for all operation in the queue.
   JavaThread* _handshakee;
@@ -87,6 +88,9 @@ class HandshakeState {
   Monitor _lock;
   // Set to the thread executing the handshake operation.
   Thread* _active_handshaker;
+
+  // Caller of suspension.  Only the caller can resume the thread.
+  JavaThread* _caller;
 
   bool claim_handshake();
   bool possibly_can_process_handshake();
@@ -165,18 +169,29 @@ class HandshakeState {
   bool _async_suspend_handshake;
 
   // Called from the suspend handshake.
-  bool suspend_with_handshake();
+  bool suspend_with_handshake(JavaThread* caller);
+
   // Called from the async handshake (the trap)
   // to stop a thread from continuing execution when suspended.
   void do_self_suspend();
 
-  bool is_suspended()                       { return Atomic::load(&_suspended); }
+  bool is_suspended() const                 { return Atomic::load(&_suspended); }
   void set_suspended(bool to)               { return Atomic::store(&_suspended, to); }
   bool has_async_suspend_handshake()        { return _async_suspend_handshake; }
   void set_async_suspend_handshake(bool to) { _async_suspend_handshake = to; }
 
+  void set_caller_thread(JavaThread* caller){ return Atomic::store(&_caller, caller); }
+  JavaThread* caller_thread() const         { return Atomic::load(&_caller); }
+
+  // "blocked" is short for saying "suspended by caller"
+  bool is_blocked() const                   { return caller_thread() != nullptr; }
+  bool is_suspended_or_blocked() const      { return is_suspended() || is_blocked(); }
+
   bool suspend();
   bool resume();
+
+  bool block_suspend(JavaThread* caller);
+  bool continue_resume(JavaThread* caller);
 };
 
 #endif // SHARE_RUNTIME_HANDSHAKE_HPP

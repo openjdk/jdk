@@ -1134,9 +1134,15 @@ class JavaThread: public Thread {
   }
 
   // Suspend/resume support for JavaThread
-  bool java_suspend(); // higher-level suspension logic called by the public APIs
-  bool java_resume();  // higher-level resume logic called by the public APIs
+  // higher-level suspension/resume logic called by the public APIs
+  bool java_suspend();
+  bool java_resume();
   bool is_suspended()     { return _handshake.is_suspended(); }
+
+  // lower-level blocking logic called by the JVM.  The caller suspends this
+  // thread, does something, and then releases it.
+  bool block_suspend(JavaThread* caller);
+  bool continue_resume(JavaThread* caller);
 
   // Check for async exception in addition to safepoint.
   static void check_special_condition_for_native_trans(JavaThread *thread);

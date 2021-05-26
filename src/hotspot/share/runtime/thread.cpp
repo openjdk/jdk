@@ -1794,6 +1794,25 @@ bool JavaThread::java_resume() {
   return this->handshake_state()->resume();
 }
 
+bool JavaThread::block_suspend(JavaThread* caller) {
+  ThreadsListHandle tlh;
+  if (!tlh.includes(this)) {
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on ThreadsList, no suspension", p2i(this));
+    return false;
+  }
+  return this->handshake_state()->block_suspend(caller);
+}
+
+bool JavaThread::continue_resume(JavaThread* caller) {
+  ThreadsListHandle tlh;
+  if (!tlh.includes(this)) {
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on ThreadsList, nothing to resume", p2i(this));
+    return false;
+  }
+  return this->handshake_state()->continue_resume(caller);
+}
+
+
 // Wait for another thread to perform object reallocation and relocking on behalf of
 // this thread.
 // Raw thread state transition to _thread_blocked and back again to the original

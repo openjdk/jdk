@@ -406,6 +406,7 @@ HandshakeState::HandshakeState(JavaThread* target) :
   _queue(),
   _lock(Monitor::leaf, "HandshakeState", Mutex::_allow_vm_block_flag, Monitor::_safepoint_check_never),
   _active_handshaker(),
+  _caller(nullptr),
   _suspended(false),
   _async_suspend_handshake(false)
 {
@@ -613,7 +614,7 @@ void HandshakeState::do_self_suspend() {
   assert(_lock.owned_by_self(), "Lock must be held");
   assert(!_handshakee->has_last_Java_frame() || _handshakee->frame_anchor()->walkable(), "should have walkable stack");
   JavaThreadState jts = _handshakee->thread_state();
-  while (is_suspended()) {
+  while (is_suspended_or_blocked()) {
     _handshakee->set_thread_state(_thread_blocked);
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended", p2i(_handshakee));
     _lock.wait_without_safepoint_check();
@@ -635,30 +636,45 @@ class ThreadSelfSuspensionHandshake : public AsyncHandshakeClosure {
   }
 };
 
-bool HandshakeState::suspend_with_handshake() {
-  if (_handshakee->is_exiting() ||
-     _handshakee->threadObj() == NULL) {
+bool HandshakeState::suspend_with_handshake(JavaThread* caller) {
+  if (_handshakee->is_exiting()) {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(_handshakee));
     return false;
   }
+  bool should_block = caller != nullptr;
+  bool should_suspend = caller == nullptr;
+
   if (has_async_suspend_handshake()) {
-    if (is_suspended()) {
-      // Target is already suspended.
-      log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspended", p2i(_handshakee));
+    if ((is_suspended() && should_suspend) || (is_blocked() && should_block)) {
+      log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspended or blocked", p2i(_handshakee));
       return false;
-    } else {
+    } else if (should_suspend) {
       // Target is going to wake up and leave suspension.
       // Let's just stop the thread from doing that.
       log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " re-suspended", p2i(_handshakee));
       set_suspended(true);
       return true;
+    } else {
+      assert(should_block, "should block");
+      // Target is going to wake up and leave blocking.
+      // Let's just stop the thread from doing that.
+      log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " re-blocked", p2i(_handshakee));
+      set_caller_thread(caller);
+      return true;
     }
   }
-  // no suspend request
-  assert(!is_suspended(), "cannot be suspended without a suspend request");
+
   // Thread is safe, so it must execute the request, thus we can count it as suspended
-  // from this point.
-  set_suspended(true);
+  // or blocked from this point.
+  if (should_suspend) {
+    // no suspend request
+    assert(!is_suspended(), "cannot be suspended without a request");
+    set_suspended(true);
+  } else {
+    assert(!is_blocked(), "cannot be blocked without a request");
+    set_caller_thread(caller);
+  }
+
   set_async_suspend_handshake(true);
   log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended, arming ThreadSuspension", p2i(_handshakee));
   ThreadSelfSuspensionHandshake* ts = new ThreadSelfSuspensionHandshake();
@@ -668,18 +684,19 @@ bool HandshakeState::suspend_with_handshake() {
 
 // This is the closure that synchronously honors the suspend request.
 class SuspendThreadHandshake : public HandshakeClosure {
-  bool _did_suspend;
+  JavaThread* _caller;
+  bool        _did_suspend;
 public:
-  SuspendThreadHandshake() : HandshakeClosure("SuspendThread"), _did_suspend(false) {}
+  SuspendThreadHandshake(JavaThread* caller) : HandshakeClosure("SuspendThread"), _caller(caller), _did_suspend(false) {}
   void do_thread(Thread* thr) {
     JavaThread* target = thr->as_Java_thread();
-    _did_suspend = target->handshake_state()->suspend_with_handshake();
+    _did_suspend = target->handshake_state()->suspend_with_handshake(_caller);
   }
   bool did_suspend() { return _did_suspend; }
 };
 
 bool HandshakeState::suspend() {
-  SuspendThreadHandshake st;
+  SuspendThreadHandshake st(nullptr);
   Handshake::execute(&st, _handshakee);
   return st.did_suspend();
 }
@@ -695,6 +712,36 @@ bool HandshakeState::resume() {
   }
   // Resume the thread.
   set_suspended(false);
+  _lock.notify();
+  return true;
+}
+
+// One thread blocks execution of another thread until it resumes it.  This is similar to
+// suspend, and much of the code is shared but it's a separate state from being suspended.
+// The commonality is that the thread is self-suspended and that thread waits for both
+// conditions to clear.
+bool HandshakeState::block_suspend(JavaThread* caller) {
+  assert(caller == JavaThread::current(), "caller must be current thread");
+
+  SuspendThreadHandshake st(caller);
+  Handshake::execute(&st, _handshakee);
+  bool suspended = st.did_suspend();
+  return suspended;
+}
+
+bool HandshakeState::continue_resume(JavaThread* caller) {
+  assert(caller == JavaThread::current(), "caller must be current thread");
+
+  // If caller is non-null only resume blocked thread if it's the caller
+  if (!is_blocked() || caller_thread() != caller) {
+    return false;
+  }
+  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  assert(is_blocked() && caller_thread() == caller,
+         "this is the only thread that can continue this thread");
+
+  // Resume the thread.
+  set_caller_thread(nullptr); // !is_blocked()
   _lock.notify();
   return true;
 }
