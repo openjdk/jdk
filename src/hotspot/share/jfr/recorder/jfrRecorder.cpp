@@ -32,6 +32,7 @@
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
+#include "jfr/recorder/context/jfrContextRepository.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
@@ -281,6 +282,9 @@ bool JfrRecorder::create_components() {
   if (!create_stacktrace_repository()) {
     return false;
   }
+  if (!create_context_repository()) {
+    return false;
+  }
   if (!create_os_interface()) {
     return false;
   }
@@ -302,6 +306,7 @@ static JfrStorage* _storage = NULL;
 static JfrCheckpointManager* _checkpoint_manager = NULL;
 static JfrRepository* _repository = NULL;
 static JfrStackTraceRepository* _stack_trace_repository;
+static JfrContextRepository* _context_repository;
 static JfrStringPool* _stringpool = NULL;
 static JfrOSInterface* _os_interface = NULL;
 static JfrThreadSampling* _thread_sampling = NULL;
@@ -353,6 +358,12 @@ bool JfrRecorder::create_stacktrace_repository() {
   return _stack_trace_repository != NULL && _stack_trace_repository->initialize();
 }
 
+bool JfrRecorder::create_context_repository() {
+  assert(_context_repository == NULL, "invariant");
+  _context_repository = JfrContextRepository::create();
+  return _context_repository != NULL && _context_repository->initialize();
+}
+
 bool JfrRecorder::create_stringpool() {
   assert(_stringpool == NULL, "invariant");
   assert(_repository != NULL, "invariant");
@@ -391,6 +402,10 @@ void JfrRecorder::destroy_components() {
   if (_stack_trace_repository != NULL) {
     JfrStackTraceRepository::destroy();
     _stack_trace_repository = NULL;
+  }
+  if (_context_repository != NULL) {
+    JfrContextRepository::destroy();
+    _context_repository = NULL;
   }
   if (_stringpool != NULL) {
     JfrStringPool::destroy();

@@ -264,6 +264,11 @@ final class EventHandlerCreator {
         // stack: [BW], [BW]
         visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, EventWriterMethod.PUT_STACK_TRACE.asASM());
         // stack: [BW]
+        // write context
+        mv.visitInsn(Opcodes.DUP);
+        // stack: [BW], [BW]
+        visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, EventWriterMethod.PUT_CONTEXT.asASM());
+        // stack: [BW]
         // write custom fields
         while (fieldIndex < fields.size()) {
             mv.visitInsn(Opcodes.DUP);

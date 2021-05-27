@@ -65,6 +65,8 @@ jstring JNICALL jfr_get_pid(JNIEnv* env, jobject jvm);
 
 jlong JNICALL jfr_stacktrace_id(JNIEnv* env, jobject jvm, jint skip);
 
+jlong JNICALL jfr_context_id(JNIEnv* env, jobject jvm, jint skip);
+
 jlong JNICALL jfr_elapsed_frequency(JNIEnv* env, jobject jvm);
 
 void JNICALL jfr_subscribe_log_level(JNIEnv* env, jobject jvm, jobject log_tag, jint id);
@@ -92,6 +94,8 @@ void JNICALL jfr_set_sample_threads(JNIEnv* env, jobject jvm, jboolean sampleThr
 void JNICALL jfr_set_stack_depth(JNIEnv* env, jobject jvm, jint depth);
 
 void JNICALL jfr_set_stacktrace_enabled(JNIEnv* env, jobject jvm, jlong event_type_id, jboolean enabled);
+
+void JNICALL jfr_set_context_enabled(JNIEnv* env, jobject jvm, jlong event_type_id, jboolean enabled);
 
 void JNICALL jfr_set_thread_buffer_size(JNIEnv* env, jobject jvm, jlong size);
 

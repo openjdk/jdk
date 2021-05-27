@@ -23,17 +23,35 @@
  * questions.
  */
 
-package jdk.jfr.events;
+package jdk.jfr;
 
-import jdk.jfr.Enabled;
-import jdk.jfr.Event;
-import jdk.jfr.Registered;
-import jdk.jfr.StackTrace;
-import jdk.jfr.Context;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@Registered(false)
-@Enabled(false)
-@StackTrace(false)
-@Context(false)
-abstract class AbstractJDKEvent extends Event {
+/**
+ * Event annotation, determines whether an event by default has a stack trace
+ * or not.
+ *
+ * @since 17
+ */
+@MetadataDefinition
+@Target({ ElementType.TYPE })
+@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Context {
+    /**
+     * Settings name {@code "context"} to be used for enabling event stack traces.
+     */
+    public static final String NAME = "context";
+
+    /**
+     * Returns if the stack trace from the {@code Event#commit()} method should be recorded.
+     *
+     * @return {@code true} if the stack trace should be recorded, {@code false}
+     *         otherwise
+     */
+    boolean value() default true;
 }

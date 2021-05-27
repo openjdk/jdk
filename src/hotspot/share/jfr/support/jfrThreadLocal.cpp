@@ -195,6 +195,13 @@ JfrStackFrame* JfrThreadLocal::install_stackframes() const {
   return _stackframes;
 }
 
+JfrContextEntry* JfrThreadLocal::install_contextentries() const {
+  assert(_contextentries == NULL, "invariant");
+  //FIXME: properly set the number of contextentries
+  _contextentries = NEW_C_HEAP_ARRAY(JfrContextEntry, 64, mtTracing);
+  return _contextentries;
+}
+
 ByteSize JfrThreadLocal::trace_id_offset() {
   return in_ByteSize(offset_of(JfrThreadLocal, _trace_id));
 }

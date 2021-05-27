@@ -47,6 +47,7 @@ class ObjectSample : public JfrCHeapObj {
   ObjectSample* _next;
   ObjectSample* _previous;
   JfrBlobHandle _stacktrace;
+  JfrBlobHandle _context;
   JfrBlobHandle _thread;
   JfrBlobHandle _type_set;
   WeakHandle    _object;
@@ -61,6 +62,7 @@ class ObjectSample : public JfrCHeapObj {
 
   void release_references() {
     _stacktrace.~JfrBlobHandle();
+    _context.~JfrBlobHandle();
     _thread.~JfrBlobHandle();
     _type_set.~JfrBlobHandle();
   }
@@ -71,6 +73,7 @@ class ObjectSample : public JfrCHeapObj {
   ObjectSample() : _next(NULL),
                    _previous(NULL),
                    _stacktrace(),
+                   _context(),
                    _thread(),
                    _type_set(),
                    _allocation_time(),
@@ -197,6 +200,22 @@ class ObjectSample : public JfrCHeapObj {
   void set_stacktrace(const JfrBlobHandle& ref) {
     if (_stacktrace != ref) {
       _stacktrace = ref;
+    }
+  }
+
+  const JfrBlobHandle& context() const {
+    return _context;
+  }
+
+  bool has_context() const {
+    return _context.valid();
+  }
+
+  // JfrBlobHandle assignment operator
+  // maintains proper reference counting
+  void set_context(const JfrBlobHandle& ref) {
+    if (_context != ref) {
+      _context = ref;
     }
   }
 

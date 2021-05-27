@@ -42,10 +42,12 @@ import jdk.jfr.Period;
 import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
 import jdk.jfr.StackTrace;
+import jdk.jfr.Context;
 import jdk.jfr.Threshold;
 import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.internal.EventInstrumentation.SettingInfo;
 import jdk.jfr.internal.settings.CutoffSetting;
+import jdk.jfr.internal.settings.ContextSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
@@ -68,6 +70,7 @@ public final class EventControl {
     private static final Type TYPE_ENABLED = TypeLibrary.createType(EnabledSetting.class);
     private static final Type TYPE_THRESHOLD = TypeLibrary.createType(ThresholdSetting.class);
     private static final Type TYPE_STACK_TRACE = TypeLibrary.createType(StackTraceSetting.class);
+    private static final Type TYPE_CONTEXT = TypeLibrary.createType(ContextSetting.class);
     private static final Type TYPE_PERIOD = TypeLibrary.createType(PeriodSetting.class);
     private static final Type TYPE_CUTOFF = TypeLibrary.createType(CutoffSetting.class);
     private static final Type TYPE_THROTTLE = TypeLibrary.createType(ThrottleSetting.class);
@@ -83,6 +86,9 @@ public final class EventControl {
         }
         if (eventType.hasStackTrace()) {
             addControl(StackTrace.NAME, defineStackTrace(eventType));
+        }
+        if (eventType.hasContext()) {
+            addControl(Context.NAME, defineContext(eventType));
         }
         if (eventType.hasPeriod()) {
             addControl(Period.NAME, definePeriod(eventType));
@@ -245,6 +251,16 @@ public final class EventControl {
         }
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_STACK_TRACE, StackTrace.NAME, def, Collections.emptyList()));
         return new Control(new StackTraceSetting(type, def), def);
+    }
+
+    private static Control defineContext(PlatformEventType type) {
+        Context context = type.getAnnotation(Context.class);
+        String def = "true";
+        if (context != null) {
+            def = Boolean.toString(context.value());
+        }
+        type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_CONTEXT, Context.NAME, def, Collections.emptyList()));
+        return new Control(new ContextSetting(type, def), def);
     }
 
     private static Control defineCutoff(PlatformEventType type) {

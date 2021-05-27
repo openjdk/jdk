@@ -85,6 +85,7 @@ package jdk.jfr;
  */
 @Enabled(true)
 @StackTrace(true)
+@Context(true)
 @Registered(true)
 public abstract class Event extends jdk.internal.event.Event {
     /**

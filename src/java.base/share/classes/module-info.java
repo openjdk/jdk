@@ -144,6 +144,7 @@ module java.base {
     exports jdk.internal.javac to
         java.compiler,
         jdk.compiler,
+        jdk.jfr,
         jdk.jshell;
     exports jdk.internal.access to
         java.desktop,

@@ -61,6 +61,10 @@ bool jfr_has_stacktrace_enabled(JfrEventId id) {
   return JfrEventSetting::has_stacktrace(id);
 }
 
+bool jfr_has_context_enabled(JfrEventId id) {
+  return JfrEventSetting::has_context(id);
+}
+
 void jfr_conditional_flush(JfrEventId id, size_t size, Thread* thread) {
   if (thread->jfr_thread_local()->has_native_buffer()) {
     JfrStorage::BufferPtr buffer = thread->jfr_thread_local()->native_buffer();

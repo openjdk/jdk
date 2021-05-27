@@ -47,6 +47,12 @@ void JfrEventSetting::set_stacktrace(jlong id, bool enabled) {
   setting(event_id).stacktrace = enabled;
 }
 
+void JfrEventSetting::set_context(jlong id, bool enabled) {
+  JfrEventId event_id = (JfrEventId)id;
+  assert(bounds_check_event(event_id), "invariant");
+  setting(event_id).context = enabled;
+}
+
 void JfrEventSetting::set_enabled(jlong id, bool enabled) {
   JfrEventId event_id = (JfrEventId)id;
   assert(bounds_check_event(event_id), "invariant");

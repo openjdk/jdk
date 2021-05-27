@@ -41,7 +41,9 @@ class JfrEventSetting : AllStatic {
   static void set_enabled(jlong event_id, bool enabled);
   static bool is_enabled(JfrEventId event_id);
   static void set_stacktrace(jlong event_id, bool enabled);
+  static void set_context(jlong event_id, bool enabled);
   static bool has_stacktrace(JfrEventId event_id);
+  static bool has_context(JfrEventId event_id);
   static bool set_threshold(jlong event_id, jlong threshold_ticks);
   static jlong threshold(JfrEventId event_id);
   static bool set_cutoff(jlong event_id, jlong cutoff_ticks);

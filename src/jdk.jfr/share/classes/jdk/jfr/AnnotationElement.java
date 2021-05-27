@@ -387,6 +387,9 @@ public final class AnnotationElement {
         if (annotationType == StackTrace.class) {
             return true;
         }
+        if (annotationType == Context.class) {
+            return true;
+        }
         if (annotationType == Period.class) {
             return true;
         }

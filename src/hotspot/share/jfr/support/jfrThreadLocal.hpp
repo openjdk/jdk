@@ -31,6 +31,7 @@
 class JavaThread;
 class JfrBuffer;
 class JfrStackFrame;
+class JfrContextEntry;
 class Thread;
 
 class JfrThreadLocal {
@@ -42,14 +43,17 @@ class JfrThreadLocal {
   JfrBuffer* _load_barrier_buffer_epoch_0;
   JfrBuffer* _load_barrier_buffer_epoch_1;
   mutable JfrStackFrame* _stackframes;
+  mutable JfrContextEntry* _contextentries;
   mutable traceid _trace_id;
   JfrBlobHandle _thread;
   u8 _data_lost;
   traceid _stack_trace_id;
+  traceid _context_id;
   jlong _user_time;
   jlong _cpu_time;
   jlong _wallclock_time;
   unsigned int _stack_trace_hash;
+  unsigned int _context_hash;
   mutable u4 _stackdepth;
   volatile jint _entering_suspend_flag;
   bool _excluded;
@@ -59,6 +63,7 @@ class JfrThreadLocal {
   JfrBuffer* install_native_buffer() const;
   JfrBuffer* install_java_buffer() const;
   JfrStackFrame* install_stackframes() const;
+  JfrContextEntry* install_contextentries() const;
   void release(Thread* t);
   static void release(JfrThreadLocal* tl, Thread* t);
 
@@ -117,6 +122,14 @@ class JfrThreadLocal {
     _stackframes = frames;
   }
 
+  JfrContextEntry* contextentries() const {
+    return _contextentries != NULL ? _contextentries : install_contextentries();
+  }
+
+  void set_contextentries(JfrContextEntry* contextentries) {
+    _contextentries = contextentries;
+  }
+
   u4 stackdepth() const;
 
   void set_stackdepth(u4 depth) {
@@ -155,6 +168,28 @@ class JfrThreadLocal {
 
   unsigned int cached_stack_trace_hash() const {
     return _stack_trace_hash;
+  }
+
+  void set_cached_context_id(traceid id, unsigned int hash = 0) {
+    _context_id = id;
+    _context_hash = hash;
+  }
+
+  bool has_cached_context() const {
+    return _context_id != max_julong;
+  }
+
+  void clear_cached_context() {
+    _context_id = max_julong;
+    _context_hash = 0;
+  }
+
+  traceid cached_context_id() const {
+    return _context_id;
+  }
+
+  unsigned int cached_context_hash() const {
+    return _context_hash;
   }
 
   void set_trace_block() {

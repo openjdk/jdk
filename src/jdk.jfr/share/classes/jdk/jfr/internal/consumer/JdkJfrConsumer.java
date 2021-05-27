@@ -34,6 +34,7 @@ import jdk.jfr.EventType;
 import jdk.jfr.consumer.MetadataEvent;
 import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedClassLoader;
+import jdk.jfr.consumer.RecordedContext;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordedMethod;
@@ -84,6 +85,8 @@ public abstract class JdkJfrConsumer {
     public abstract RecordedClassLoader newRecordedClassLoader(ObjectContext objectContext, long id, Object[] values);
 
     public abstract RecordedStackTrace newRecordedStackTrace(ObjectContext objectContext, Object[] values);
+
+    public abstract RecordedContext newRecordedContext(ObjectContext objectContext, Object[] values);
 
     public abstract RecordedThreadGroup newRecordedThreadGroup(ObjectContext objectContext, Object[] values);
 

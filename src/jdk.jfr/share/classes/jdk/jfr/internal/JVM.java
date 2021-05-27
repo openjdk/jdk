@@ -163,6 +163,16 @@ public final class JVM {
     public native long getStackTraceId(int skipCount);
 
     /**
+     * Return unique identifier for context.
+     *
+     * Requires that JFR has been started with {@link #createNativeJFR()}
+     *
+     * @param skipCount number of frames to skip
+     * @return a unique context identifier
+     */
+    public native long getContextId(int skipCount);
+
+    /**
      * Return identifier for thread
      *
      * @param t thread
@@ -341,6 +351,15 @@ public final class JVM {
      * @param enabled if stack traces should be enabled
      */
     public native void setStackTraceEnabled(long eventTypeId, boolean enabled);
+
+    /**
+     * Turn on context for an event
+     *
+     * @param eventTypeId the event id
+     *
+     * @param enabled if contexts should be enabled
+     */
+    public native void setContextEnabled(long eventTypeId, boolean enabled);
 
     /**
      * Set thread buffer size.

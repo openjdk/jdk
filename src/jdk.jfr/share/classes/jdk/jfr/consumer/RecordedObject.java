@@ -102,6 +102,11 @@ public class RecordedObject {
             }
 
             @Override
+            public RecordedContext newRecordedContext(ObjectContext objectContext, Object[] values) {
+                return new RecordedContext(objectContext, values);
+            }
+
+            @Override
             public RecordedThreadGroup newRecordedThreadGroup(ObjectContext objectContext, Object[] values) {
                 return new RecordedThreadGroup(objectContext, values);
             }

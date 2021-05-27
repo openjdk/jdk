@@ -332,10 +332,17 @@ static void write_stacktrace_blob(const ObjectSample* sample, JfrCheckpointWrite
   }
 }
 
+static void write_context_blob(const ObjectSample* sample, JfrCheckpointWriter& writer, bool reset) {
+  if (sample->has_context()) {
+    write_blob(sample->context(), writer, reset);
+  }
+}
+
 static void write_blobs(const ObjectSample* sample, JfrCheckpointWriter& writer, bool reset) {
   assert(sample != NULL, "invariant");
   write_stacktrace_blob(sample, writer, reset);
   write_thread_blob(sample, writer, reset);
+  write_context_blob(sample, writer, reset);
   write_type_set_blob(sample, writer, reset);
 }
 

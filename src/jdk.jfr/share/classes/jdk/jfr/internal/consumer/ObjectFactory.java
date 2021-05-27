@@ -27,6 +27,7 @@ package jdk.jfr.internal.consumer;
 
 import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedClassLoader;
+import jdk.jfr.consumer.RecordedContext;
 import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordedMethod;
 import jdk.jfr.consumer.RecordedStackTrace;
@@ -61,6 +62,9 @@ public abstract class ObjectFactory<T> {
         case TYPE_PREFIX_VERSION_1 + "StackTrace":
         case TYPE_PREFIX_VERSION_2 + "StackTrace":
             return createStackTraceFactory(type, timeConverter);
+        case TYPE_PREFIX_VERSION_1 + "Context":
+        case TYPE_PREFIX_VERSION_2 + "Context":
+            return createContextFactory(type, timeConverter);
         case TYPE_PREFIX_VERSION_1 + "ClassLoader":
         case TYPE_PREFIX_VERSION_2 + "ClassLoader":
             return createClassLoaderFactory(type, timeConverter);
@@ -93,6 +97,15 @@ public abstract class ObjectFactory<T> {
             @Override
             RecordedStackTrace createTyped(ObjectContext objectContext, long id, Object[] values) {
                 return PRIVATE_ACCESS.newRecordedStackTrace(objectContext, values);
+            }
+        };
+    }
+
+    private static ObjectFactory<RecordedContext> createContextFactory(Type type, TimeConverter timeConverter) {
+        return new ObjectFactory<RecordedContext>(type, timeConverter) {
+            @Override
+            RecordedContext createTyped(ObjectContext objectContext, long id, Object[] values) {
+                return PRIVATE_ACCESS.newRecordedContext(objectContext, values);
             }
         };
     }

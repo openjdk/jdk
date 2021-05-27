@@ -31,6 +31,7 @@ class JfrCheckpointManager;
 class JfrChunkWriter;
 class JfrRepository;
 class JfrStackTraceRepository;
+class JfrContextRepository;
 class JfrStorage;
 class JfrStringPool;
 
@@ -40,6 +41,7 @@ class JfrRecorderService : public StackObj {
   JfrChunkWriter& _chunkwriter;
   JfrRepository& _repository;
   JfrStackTraceRepository& _stack_trace_repository;
+  JfrContextRepository& _context_repository;
   JfrStorage& _storage;
   JfrStringPool& _string_pool;
 

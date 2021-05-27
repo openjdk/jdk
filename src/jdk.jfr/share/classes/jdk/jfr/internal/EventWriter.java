@@ -178,6 +178,14 @@ public final class EventWriter {
         }
     }
 
+    public void putContext() {
+        if (eventType.getContextEnabled()) {
+            putLong(jvm.getContextId(eventType.getContextOffset()));
+        } else {
+            putLong(0L);
+        }
+    }
+
     private void reserveEventSizeField() {
         this.largeSize = eventType.isLargeSize();
         if (largeSize) {

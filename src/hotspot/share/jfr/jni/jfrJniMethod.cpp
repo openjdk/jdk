@@ -132,6 +132,10 @@ NO_TRANSITION(void, jfr_set_stacktrace_enabled(JNIEnv* env, jobject jvm, jlong e
   JfrEventSetting::set_stacktrace(event_type_id, JNI_TRUE == enabled);
 NO_TRANSITION_END
 
+NO_TRANSITION(void, jfr_set_context_enabled(JNIEnv* env, jobject jvm, jlong event_type_id, jboolean enabled))
+  JfrEventSetting::set_context(event_type_id, JNI_TRUE == enabled);
+NO_TRANSITION_END
+
 NO_TRANSITION(void, jfr_set_global_buffer_count(JNIEnv* env, jobject jvm, jlong count))
   JfrOptionSet::set_num_global_buffers(count);
 NO_TRANSITION_END
@@ -252,6 +256,11 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_stacktrace_id(JNIEnv* env, jobject jvm, jint skip))
   return JfrStackTraceRepository::record(thread, skip);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jlong, jfr_context_id(JNIEnv* env, jobject jvm, jint skip))
+  Unimplemented();
+  return 0;
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_log(JNIEnv* env, jobject jvm, jint tag_set, jint level, jstring message))

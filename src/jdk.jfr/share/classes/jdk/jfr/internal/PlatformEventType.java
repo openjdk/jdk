@@ -44,11 +44,13 @@ public final class PlatformEventType extends Type {
     private final List<SettingDescriptor> settings = new ArrayList<>(5);
     private final boolean dynamicSettings;
     private final int stackTraceOffset;
+    private final int contextOffset;
 
     // default values
     private boolean largeSize = false;
     private boolean enabled = false;
     private boolean stackTraceEnabled = true;
+    private boolean contextEnabled = true;
     private long thresholdTicks = 0;
     private long period = 0;
     private boolean hasHook;
@@ -56,6 +58,7 @@ public final class PlatformEventType extends Type {
     private boolean beginChunk;
     private boolean endChunk;
     private boolean hasStackTrace = true;
+    private boolean hasContext = true;
     private boolean hasDuration = true;
     private boolean hasPeriod = true;
     private boolean hasCutoff = false;
@@ -74,6 +77,7 @@ public final class PlatformEventType extends Type {
         this.isMethodSampling = isJVM && (name.equals(Type.EVENT_NAME_PREFIX + "ExecutionSample") || name.equals(Type.EVENT_NAME_PREFIX + "NativeMethodSample"));
         this.isJDK = isJDK;
         this.stackTraceOffset = stackTraceOffset(name, isJDK);
+        this.contextOffset = contextOffset(name, isJDK);
     }
 
     private static boolean isExceptionEvent(String name) {
@@ -109,6 +113,10 @@ public final class PlatformEventType extends Type {
         return 4;
     }
 
+    private static int contextOffset(String name, boolean isJDK) {
+        return stackTraceOffset(name, isJDK) + 1;
+    }
+
     public void add(SettingDescriptor settingDescriptor) {
         Objects.requireNonNull(settingDescriptor);
         settings.add(settingDescriptor);
@@ -133,6 +141,10 @@ public final class PlatformEventType extends Type {
 
     public void setHasStackTrace(boolean hasStackTrace) {
         this.hasStackTrace = hasStackTrace;
+    }
+
+    public void setHasContext(boolean hasContext) {
+        this.hasContext = hasContext;
     }
 
     public void setHasDuration(boolean hasDuration) {
@@ -166,6 +178,10 @@ public final class PlatformEventType extends Type {
 
     public boolean hasStackTrace() {
         return this.hasStackTrace;
+    }
+
+    public boolean hasContext() {
+        return this.hasContext;
     }
 
     public boolean hasDuration() {
@@ -230,6 +246,13 @@ public final class PlatformEventType extends Type {
         }
     }
 
+    public void setContextEnabled(boolean contextEnabled) {
+        this.contextEnabled = contextEnabled;
+        if (isJVM) {
+            JVM.getJVM().setContextEnabled(getId(), contextEnabled);
+        }
+    }
+
     public void setThreshold(long thresholdNanos) {
         this.thresholdTicks = Utils.nanosToTicks(thresholdNanos);
         if (isJVM) {
@@ -243,6 +266,10 @@ public final class PlatformEventType extends Type {
 
     public boolean getStackTraceEnabled() {
         return stackTraceEnabled;
+    }
+
+    public boolean getContextEnabled() {
+        return contextEnabled;
     }
 
     public long getThresholdTicks() {
@@ -318,6 +345,10 @@ public final class PlatformEventType extends Type {
 
     public int getStackTraceOffset() {
         return stackTraceOffset;
+    }
+
+    public int getContextOffset() {
+        return contextOffset;
     }
 
     public boolean isLargeSize() {

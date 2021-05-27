@@ -25,4 +25,4 @@
 
 DISABLED_WARNINGS_java += exports
 COPY := .xsd .xml .dtd
-JAVAC_FLAGS := -XDstringConcat=inline
+JAVAC_FLAGS := -XDstringConcat=inline --enable-preview

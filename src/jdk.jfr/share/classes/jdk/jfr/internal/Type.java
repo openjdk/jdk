@@ -69,6 +69,7 @@ public class Type implements Comparable<Type> {
     static final Type STRING = createKnownType(String.class);
     static final Type THREAD = createKnownType(Thread.class);
     static final Type STACK_TRACE = createKnownType(TYPES_PREFIX + "StackTrace", null);
+    static final Type CONTEXT = createKnownType(TYPES_PREFIX + "Context", null);
 
     private static Type createKnownType(Class<?> clazz) {
         return createKnownType(clazz.getName(), clazz);

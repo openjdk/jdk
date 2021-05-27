@@ -99,7 +99,7 @@ import static jdk.internal.javac.PreviewFeature.Feature.SCOPE_LOCALS;
  * @since 99
  */
 @jdk.internal.javac.PreviewFeature(feature=SCOPE_LOCALS)
-public final class ScopeLocal<T> {
+public class ScopeLocal<T> {
     private final @Stable Class<? super T> type;
     private final @Stable int hash;
 

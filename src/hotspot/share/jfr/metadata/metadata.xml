@@ -26,7 +26,7 @@
 
 <Metadata>
 
-  <Event name="ThreadStart" category="Java Application" label="Java Thread Start" thread="true" startTime="false" stackTrace="true">
+  <Event name="ThreadStart" category="Java Application" label="Java Thread Start" thread="true" startTime="false" stackTrace="true" context="true">
     <Field type="Thread" name="thread" label="New Java Thread" />
     <Field type="Thread" name="parentThread" label="Parent Java Thread" />
   </Event>
@@ -35,24 +35,24 @@
     <Field type="Thread" name="thread" label="Java Thread" />
   </Event>
 
-  <Event name="ThreadSleep" category="Java Application" label="Java Thread Sleep" thread="true" stackTrace="true">
+  <Event name="ThreadSleep" category="Java Application" label="Java Thread Sleep" thread="true" stackTrace="true" context="true">
     <Field type="long" contentType="millis" name="time" label="Sleep Time" />
   </Event>
 
-  <Event name="ThreadPark" category="Java Application" label="Java Thread Park" thread="true" stackTrace="true">
+  <Event name="ThreadPark" category="Java Application" label="Java Thread Park" thread="true" stackTrace="true" context="true">
     <Field type="Class" name="parkedClass" label="Class Parked On" />
     <Field type="long" contentType="nanos" name="timeout" label="Park Timeout" />
     <Field type="long" contentType="epochmillis" name="until" label="Park Until" />
     <Field type="ulong" contentType="address" name="address" label="Address of Object Parked" relation="JavaMonitorAddress" />
   </Event>
 
-  <Event name="JavaMonitorEnter" category="Java Application" label="Java Monitor Blocked" thread="true" stackTrace="true">
+  <Event name="JavaMonitorEnter" category="Java Application" label="Java Monitor Blocked" thread="true" stackTrace="true" context="true">
     <Field type="Class" name="monitorClass" label="Monitor Class" />
     <Field type="Thread" name="previousOwner" label="Previous Monitor Owner" />
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" />
   </Event>
 
-  <Event name="JavaMonitorWait" category="Java Application" label="Java Monitor Wait" description="Waiting on a Java monitor" thread="true" stackTrace="true">
+  <Event name="JavaMonitorWait" category="Java Application" label="Java Monitor Wait" description="Waiting on a Java monitor" thread="true" stackTrace="true" context="true">
     <Field type="Class" name="monitorClass" label="Monitor Class" description="Class of object waited on" />
     <Field type="Thread" name="notifier" label="Notifier Thread" description="Notifying Thread" />
     <Field type="long" contentType="millis" name="timeout" label="Timeout" description="Maximum wait time" />
@@ -60,64 +60,64 @@
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" description="Address of object waited on" relation="JavaMonitorAddress" />
   </Event>
 
-  <Event name="JavaMonitorInflate" category="Java Application" label="Java Monitor Inflated" thread="true" stackTrace="true">
+  <Event name="JavaMonitorInflate" category="Java Application" label="Java Monitor Inflated" thread="true" stackTrace="true" context="true">
     <Field type="Class" name="monitorClass" label="Monitor Class" />
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" />
     <Field type="InflateCause" name="cause" label="Monitor Inflation Cause" description="Cause of inflation" />
   </Event>
 
-  <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
+  <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" context="true" startTime="false" experimental="true">
     <Field type="Class" name="valueBasedClass" label="Value Based Class" />
   </Event>
 
   <Event name="BiasedLockRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Revocation" description="Revoked bias of object" thread="true"
-    stackTrace="true">
+    stackTrace="true" context="true">
     <Field type="Class" name="lockClass" label="Lock Class" description="Class of object whose biased lock was revoked" />
     <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
     <Field type="Thread" name="previousOwner" label="Previous Owner" description="Thread owning the bias before revocation" />
   </Event>
 
   <Event name="BiasedLockSelfRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Self Revocation" description="Revoked bias of object biased towards own thread"
-    thread="true" stackTrace="true">
+    thread="true" stackTrace="true" context="true">
     <Field type="Class" name="lockClass" label="Lock Class" description="Class of object whose biased lock was revoked" />
   </Event>
 
   <Event name="BiasedLockClassRevocation" category="Java Virtual Machine, Runtime" label="Biased Lock Class Revocation" description="Revoked biases for all instances of a class"
-    thread="true" stackTrace="true">
+    thread="true" stackTrace="true" context="true">
     <Field type="Class" name="revokedClass" label="Revoked Class" description="Class whose biased locks were revoked" />
     <Field type="boolean" name="disableBiasing" label="Disable Further Biasing" description="Whether further biasing for instances of this class will be allowed" />
     <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
   </Event>
 
   <Event name="ReservedStackActivation" category="Java Virtual Machine, Runtime" label="Reserved Stack Activation"
-    description="Activation of Reserved Stack Area caused by stack overflow with ReservedStackAccess annotated method in call stack" thread="true" stackTrace="true"
+    description="Activation of Reserved Stack Area caused by stack overflow with ReservedStackAccess annotated method in call stack" thread="true" stackTrace="true" context="true"
     startTime="false">
     <Field type="Method" name="method" label="Java Method" />
   </Event>
 
-  <Event name="ClassLoad" category="Java Virtual Machine, Class Loading" label="Class Load" thread="true" stackTrace="true">
+  <Event name="ClassLoad" category="Java Virtual Machine, Class Loading" label="Class Load" thread="true" stackTrace="true" context="true">
     <Field type="Class" name="loadedClass" label="Loaded Class" />
     <Field type="ClassLoader" name="definingClassLoader" label="Defining Class Loader" />
     <Field type="ClassLoader" name="initiatingClassLoader" label="Initiating Class Loader" />
   </Event>
 
-  <Event name="ClassDefine" category="Java Virtual Machine, Class Loading" label="Class Define" thread="true" stackTrace="true" startTime="false">
+  <Event name="ClassDefine" category="Java Virtual Machine, Class Loading" label="Class Define" thread="true" stackTrace="true" context="true" startTime="false">
     <Field type="Class" name="definedClass" label="Defined Class" />
     <Field type="ClassLoader" name="definingClassLoader" label="Defining Class Loader" />
   </Event>
 
-  <Event name="ClassRedefinition" category="Java Virtual Machine, Class Loading" label="Class Redefinition" thread="false" stackTrace="false" startTime="false">
+  <Event name="ClassRedefinition" category="Java Virtual Machine, Class Loading" label="Class Redefinition" thread="false" stackTrace="false" context="false" startTime="false">
     <Field type="Class" name="redefinedClass" label="Redefined Class" />
     <Field type="int" name="classModificationCount" label="Class Modification Count" description="The number of times the class has changed"/>
     <Field type="ulong" name="redefinitionId" label="Class Redefinition Id" relation="ClassRedefinitionId"/>
   </Event>
 
-  <Event name="RedefineClasses" category="Java Virtual Machine, Class Loading" label="Redefine Classes" thread="true" stackTrace="true">
+  <Event name="RedefineClasses" category="Java Virtual Machine, Class Loading" label="Redefine Classes" thread="true" stackTrace="true" context="true">
     <Field type="int" name="classCount" label="Class Count" />
     <Field type="ulong" name="redefinitionId" label="Class Redefinition Id" relation="ClassRedefinitionId" />
   </Event>
 
-  <Event name="RetransformClasses" category="Java Virtual Machine, Class Loading" label="Retransform Classes" thread="true" stackTrace="true">
+  <Event name="RetransformClasses" category="Java Virtual Machine, Class Loading" label="Retransform Classes" thread="true" stackTrace="true" context="true">
     <Field type="int" name="classCount" label="Class Count"/>
     <Field type="ulong" name="redefinitionId" label="Class Redefinition Id" relation="ClassRedefinitionId" />
   </Event>
@@ -220,7 +220,7 @@
   </Event>
 
   <Event name="MetaspaceAllocationFailure" category="Java Virtual Machine, GC, Metaspace" label="Metaspace Allocation Failure" startTime="false"
-    stackTrace="true">
+    stackTrace="true" context="true">
     <Field type="ClassLoader" name="classLoader" label="Class Loader" />
     <Field type="boolean" name="hiddenClassLoader" label="Hidden Class Loader" />
     <Field type="ulong" contentType="bytes" name="size" label="Size" />
@@ -228,7 +228,7 @@
     <Field type="MetaspaceObjectType" name="metaspaceObjectType" label="Metaspace Object Type" />
   </Event>
 
-  <Event name="MetaspaceOOM" category="Java Virtual Machine, GC, Metaspace" label="Metaspace Out of Memory" startTime="false" stackTrace="true">
+  <Event name="MetaspaceOOM" category="Java Virtual Machine, GC, Metaspace" label="Metaspace Out of Memory" startTime="false" stackTrace="true" context="true">
     <Field type="ClassLoader" name="classLoader" label="Class Loader" />
     <Field type="boolean" name="hiddenClassLoader" label="Hidden Class Loader" />
     <Field type="ulong" contentType="bytes" name="size" label="Size" />
@@ -391,7 +391,7 @@
 
   <Event name="PromoteObjectInNewPLAB" category="Java Virtual Machine, GC, Detailed" label="Promotion in new PLAB"
     description="Object survived scavenge and was copied to a new Promotion Local Allocation Buffer (PLAB). Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects."
-    thread="true" stackTrace="false" startTime="false">
+    thread="true" stackTrace="false" context="false" startTime="false">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" description="Identifier signifying GC during which the object was promoted" />
     <Field type="Class" name="objectClass" label="Object Class" description="Class of promoted object" />
     <Field type="ulong" contentType="bytes" name="objectSize" label="Object Size" description="Size of promoted object" />
@@ -403,7 +403,7 @@
 
   <Event name="PromoteObjectOutsidePLAB" category="Java Virtual Machine, GC, Detailed" label="Promotion outside PLAB"
     description="Object survived scavenge and was copied directly to the heap. Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects."
-    thread="true" stackTrace="false" startTime="false">
+    thread="true" stackTrace="false" context="false" startTime="false">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" description="Identifier signifying GC during which the object was promoted" />
     <Field type="Class" name="objectClass" label="Object Class" description="Class of promoted object" />
     <Field type="ulong" contentType="bytes" name="objectSize" label="Object Size" description="Size of promoted object" />
@@ -469,7 +469,7 @@
     <Field type="string" name="name" label="Name" />
   </Event>
 
-  <Event name="AllocationRequiringGC" category="Java Virtual Machine, GC, Detailed" label="Allocation Requiring GC" thread="true" stackTrace="true"
+  <Event name="AllocationRequiringGC" category="Java Virtual Machine, GC, Detailed" label="Allocation Requiring GC" thread="true" stackTrace="true" context="true"
     startTime="false">
     <Field type="uint" name="gcId" label="Pending GC Identifier" relation="GcId" />
     <Field type="ulong" contentType="bytes" name="size" label="Allocation Size" />
@@ -546,7 +546,7 @@
     <Field type="int" name="fullCount" label="Full Count" />
   </Event>
 
-  <Event name="Deoptimization" category="Java Virtual Machine, Compiler" label="Deoptimization" thread="true" stackTrace="true" startTime="false">
+  <Event name="Deoptimization" category="Java Virtual Machine, Compiler" label="Deoptimization" thread="true" stackTrace="true" context="true" startTime="false">
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="CompilerType" name="compiler" label="Compiler" />
     <Field type="Method" name="method" label="Method" />
@@ -596,31 +596,31 @@
       relation="SafepointId" />
   </Event>
 
-  <Event name="Shutdown" category="Java Virtual Machine, Runtime" label="JVM Shutdown" description="JVM shutting down" thread="true" stackTrace="true"
+  <Event name="Shutdown" category="Java Virtual Machine, Runtime" label="JVM Shutdown" description="JVM shutting down" thread="true" stackTrace="true" context="true"
     startTime="false">
     <Field type="string" name="reason" label="Reason" description="Reason for JVM shutdown" />
   </Event>
 
   <Event name="ObjectAllocationInNewTLAB" category="Java Application" label="Allocation in new TLAB" description="Allocation in new Thread Local Allocation Buffer"
-    thread="true" stackTrace="true" startTime="false">
+    thread="true" stackTrace="true" context="true" startTime="false">
     <Field type="Class" name="objectClass" label="Object Class" description="Class of allocated object" />
     <Field type="ulong" contentType="bytes" name="allocationSize" label="Allocation Size" />
     <Field type="ulong" contentType="bytes" name="tlabSize" label="TLAB Size" />
   </Event>
 
   <Event name="ObjectAllocationOutsideTLAB" category="Java Application" label="Allocation outside TLAB" description="Allocation outside Thread Local Allocation Buffers"
-    thread="true" stackTrace="true" startTime="false">
+    thread="true" stackTrace="true" context="true" startTime="false">
     <Field type="Class" name="objectClass" label="Object Class" description="Class of allocated object" />
     <Field type="ulong" contentType="bytes" name="allocationSize" label="Allocation Size" />
   </Event>
 
-  <Event name="ObjectAllocationSample" category="Java Application" label="Object Allocation Sample" thread="true" stackTrace="true" startTime="false" throttle="true">
+  <Event name="ObjectAllocationSample" category="Java Application" label="Object Allocation Sample" thread="true" stackTrace="true" context="true" startTime="false" throttle="true">
     <Field type="Class" name="objectClass" label="Object Class" description="Class of allocated object" />
     <Field type="long" contentType="bytes" name="weight" label="Sample Weight"
       description="The relative weight of the sample. Aggregating the weights for a large number of samples, for a particular class, thread or stack trace, gives a statistically accurate representation of the allocation pressure" />
   </Event>
 
-  <Event name="OldObjectSample" category="Java Virtual Machine, Profiling" label="Old Object Sample" description="A potential memory leak" stackTrace="true" thread="true"
+  <Event name="OldObjectSample" category="Java Virtual Machine, Profiling" label="Old Object Sample" description="A potential memory leak" stackTrace="true" context="true" thread="true"
     startTime="false" cutoff="true">
     <Field type="Ticks" name="allocationTime" label="Allocation Time" />
     <Field type="Tickspan" name="objectAge" label="Object Age" />
@@ -1009,7 +1009,7 @@
     <Field type="ulong" contentType="bytes" name="size" label="Size" />
   </Event>
 
-  <Event name="ZPageAllocation" category="Java Virtual Machine, GC, Detailed" label="ZGC Page Allocation" description="Allocation of a ZPage" thread="true" stackTrace="true">
+  <Event name="ZPageAllocation" category="Java Virtual Machine, GC, Detailed" label="ZGC Page Allocation" description="Allocation of a ZPage" thread="true" stackTrace="true" context="true">
      <Field type="ZPageTypeType" name="type" label="Type" />
      <Field type="ulong" contentType="bytes" name="size" label="Size" />
      <Field type="ulong" contentType="bytes" name="flushed" label="Flushed" />
@@ -1083,14 +1083,14 @@
     <Field type="ulong" contentType="bytes" name="size" label="Size Written" />
   </Event>
 
-  <Event name="HeapDump" category="Java Virtual Machine, Diagnostics" label="Heap Dump" stackTrace="true" thread="true">
+  <Event name="HeapDump" category="Java Virtual Machine, Diagnostics" label="Heap Dump" stackTrace="true" context="true" thread="true">
     <Field type="string" name="destination" label="Destination" />
     <Field type="long" name="size" label="Size" />
     <Field type="boolean" name="gcBeforeDump" label="GC Before Dump" />
     <Field type="boolean" name="onOutOfMemoryError" label="On Out of Memory Error" />
   </Event>
 
-  <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">
+  <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true" context="true">
     <Field type="uint" name="lockCount" label="Lock Count" description="The number of Java threads in a critical section when the GC locker is started" />
     <Field type="uint" name="stallCount" label="Stall Count" description="The number of Java threads stalled by the GC locker" />
   </Event>
@@ -1167,6 +1167,15 @@
 
   <Type name="ThreadState" label="Java Thread State">
     <Field type="string" name="name" label="Name" />
+  </Type>
+
+  <Type name="Context" label="Java Thread Context">
+    <Field type="ContextEntry" array="true" struct="true" name="contextentires" label="Context Entries" />
+  </Type>
+
+  <Type name="ContextEntry" label="Java Thread Context Entry">
+    <Field type="string" name="key" label="key" />
+    <Field type="string" name="value" label="value" />
   </Type>
 
   <Type name="GCName" label="GC Name">
@@ -1330,6 +1339,7 @@
   <XmlType name="char" javaType="char" parameterType="char" fieldType="char"/>
   <XmlType name="string" javaType="java.lang.String" parameterType="const char*" fieldType="const char*"/>
   <XmlType name="StackTrace" javaType="jdk.types.StackTrace" parameterType="u8" fieldType="u8"/>
+  <XmlType name="Context" javaType="jdk.types.Context" parameterType="u8" fieldType="u8"/>
 
   <XmlContentType name="bytes" annotation="jdk.jfr.DataAmount(BYTES)" />
   <XmlContentType name="tickstamp" annotation="jdk.jfr.Timestamp(TICKS)" />

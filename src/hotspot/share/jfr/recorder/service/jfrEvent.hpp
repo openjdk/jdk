@@ -28,6 +28,7 @@
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/recorder/context/jfrContextRepository.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfr/writers/jfrNativeEventWriter.hpp"
@@ -118,6 +119,10 @@ class JfrEvent {
     return JfrEventSetting::has_stacktrace(T::eventId);
   }
 
+  static bool is_context_enabled() {
+    return JfrEventSetting::has_context(T::eventId);
+  }
+
   static bool is_large() {
     return JfrEventSetting::is_large(T::eventId);
   }
@@ -144,6 +149,10 @@ class JfrEvent {
 
   static bool has_stacktrace() {
     return T::hasStackTrace;
+  }
+
+  static bool has_context() {
+    return T::hasContext;
   }
 
   bool is_started() const {
@@ -228,6 +237,17 @@ class JfrEvent {
           writer.write(tl->cached_stack_trace_id());
         } else {
           writer.write(JfrStackTraceRepository::record(event_thread));
+        }
+      } else {
+        writer.write<traceid>(0);
+      }
+    }
+    if (T::hasContext) {
+      if (is_context_enabled()) {
+        if (tl->has_cached_context()) {
+          writer.write(tl->cached_context_id());
+        } else {
+          writer.write(JfrContextRepository::record(event_thread));
         }
       } else {
         writer.write<traceid>(0);

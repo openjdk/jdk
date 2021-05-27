@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,34 @@
  * questions.
  */
 
-package jdk.jfr.events;
+package jdk.jfr.consumer;
 
-import jdk.jfr.Enabled;
-import jdk.jfr.Event;
-import jdk.jfr.Registered;
-import jdk.jfr.StackTrace;
-import jdk.jfr.Context;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-@Registered(false)
-@Enabled(false)
-@StackTrace(false)
-@Context(false)
-abstract class AbstractJDKEvent extends Event {
+import jdk.jfr.internal.consumer.ObjectContext;
+
+/**
+ * A recorded context.
+ *
+ * @since 17
+ */
+public final class RecordedContextEntry extends RecordedObject {
+    // package private
+    RecordedContextEntry(ObjectContext objectContext, Object[] values) {
+        super(objectContext, values);
+    }
+
+    /**
+     */
+    public String getKey() {
+        return getTyped("key", String.class, "");
+    }
+
+    /**
+     */
+    public String getValue() {
+        return getTyped("value", String.class, "");
+    }
 }

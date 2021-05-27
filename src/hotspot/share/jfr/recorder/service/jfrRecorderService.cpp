@@ -296,6 +296,38 @@ static u4 write_stacktrace(JfrStackTraceRepository& stack_trace_repo, JfrChunkWr
   return invoke(wst);
 }
 
+class ContextRepository : public StackObj {
+ private:
+  JfrContextRepository& _repo;
+  JfrChunkWriter& _cw;
+  size_t _elements;
+  bool _clear;
+
+ public:
+  ContextRepository(JfrContextRepository& repo, JfrChunkWriter& cw, bool clear) :
+    _repo(repo), _cw(cw), _elements(0), _clear(clear) {}
+  bool process() {
+    _elements = _repo.write(_cw, _clear);
+    return true;
+  }
+  size_t elements() const { return _elements; }
+  void reset() { _elements = 0; }
+};
+
+typedef WriteCheckpointEvent<ContextRepository> WriteContext;
+
+static u4 flush_context(JfrContextRepository& stack_trace_repo, JfrChunkWriter& chunkwriter) {
+  ContextRepository str(stack_trace_repo, chunkwriter, false);
+  WriteContext wst(chunkwriter, str, TYPE_CONTEXT);
+  return invoke(wst);
+}
+
+static u4 write_context(JfrContextRepository& stack_trace_repo, JfrChunkWriter& chunkwriter, bool clear) {
+  ContextRepository str(stack_trace_repo, chunkwriter, clear);
+  WriteContext wst(chunkwriter, str, TYPE_CONTEXT);
+  return invoke(wst);
+}
+
 typedef Content<JfrStorage, &JfrStorage::write> Storage;
 typedef WriteContent<Storage> WriteStorage;
 
@@ -380,6 +412,7 @@ JfrRecorderService::JfrRecorderService() :
   _chunkwriter(JfrRepository::chunkwriter()),
   _repository(JfrRepository::instance()),
   _stack_trace_repository(JfrStackTraceRepository::instance()),
+  _context_repository(JfrContextRepository::instance()),
   _storage(JfrStorage::instance()),
   _string_pool(JfrStringPool::instance()) {}
 
@@ -548,6 +581,9 @@ void JfrRecorderService::pre_safepoint_write() {
   if (_stack_trace_repository.is_modified()) {
     write_stacktrace(_stack_trace_repository, _chunkwriter, false);
   }
+  if (_context_repository.is_modified()) {
+    write_context(_context_repository, _chunkwriter, false);
+  }
 }
 
 void JfrRecorderService::invoke_safepoint_write() {
@@ -561,6 +597,7 @@ void JfrRecorderService::safepoint_write() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   _checkpoint_manager.begin_epoch_shift();
   JfrStackTraceRepository::clear_leak_profiler();
+  JfrContextRepository::clear_leak_profiler();
   if (_string_pool.is_modified()) {
     write_stringpool(_string_pool, _chunkwriter);
   }
@@ -568,6 +605,7 @@ void JfrRecorderService::safepoint_write() {
   _storage.write_at_safepoint();
   _chunkwriter.set_time_stamp();
   write_stacktrace(_stack_trace_repository, _chunkwriter, true);
+  write_context(_context_repository, _chunkwriter, true);
   _checkpoint_manager.end_epoch_shift();
 }
 
@@ -624,6 +662,9 @@ size_t JfrRecorderService::flush() {
   }
   if (_stack_trace_repository.is_modified()) {
     total_elements += flush_stacktrace(_stack_trace_repository, _chunkwriter);
+  }
+  if (_context_repository.is_modified()) {
+    total_elements += flush_context(_context_repository, _chunkwriter);
   }
   return flush_typeset(_checkpoint_manager, _chunkwriter) + total_elements;
 }

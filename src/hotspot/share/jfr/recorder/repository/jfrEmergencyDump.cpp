@@ -486,6 +486,10 @@ static bool prepare_for_emergency_dump(Thread* thread) {
   if (JfrStacktrace_lock->owned_by_self()) {
     JfrStacktrace_lock->unlock();
   }
+
+  if (JfrContext_lock->owned_by_self()) {
+    JfrContext_lock->unlock();
+  }
   return true;
 }
 

@@ -104,6 +104,28 @@ public abstract class EventSettings {
     }
 
     /**
+     * Enables stack traces for the event that is associated with this event setting.
+     * <p>
+     * Equivalent to invoking the {@code with("context", "true")} method.
+     *
+     * @return event settings object for further configuration, not {@code null}
+     */
+    public final EventSettings withContext() {
+        return with(Context.NAME, "true");
+    }
+
+    /**
+     * Disables stack traces for the event that is associated with this event setting.
+     * <p>
+     * Equivalent to invoking the {@code with("context", "false")} method.
+     *
+     * @return event settings object for further configuration, not {@code null}
+     */
+    public final EventSettings withoutContext() {
+        return with(Context.NAME, "false");
+    }
+
+    /**
      * Specifies that a threshold is not used.
      * <p>
      * This is a convenience method, equivalent to invoking the

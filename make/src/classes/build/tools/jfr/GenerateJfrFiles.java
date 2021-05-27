@@ -169,6 +169,7 @@ public class GenerateJfrFiles {
         String category = "";
         boolean thread;
         boolean stackTrace;
+        boolean context;
         boolean startTime;
         String period = "";
         boolean cutoff;
@@ -192,6 +193,7 @@ public class GenerateJfrFiles {
             pos.writeUTF(category);
             pos.writeBoolean(thread);
             pos.writeBoolean(stackTrace);
+            pos.writeBoolean(context);
             pos.writeBoolean(startTime);
             pos.writeUTF(period);
             pos.writeBoolean(cutoff);
@@ -489,6 +491,7 @@ public class GenerateJfrFiles {
                 currentType.experimental = getBoolean(attributes, "experimental", false);
                 currentType.thread = getBoolean(attributes, "thread", false);
                 currentType.stackTrace = getBoolean(attributes, "stackTrace", false);
+                currentType.context = getBoolean(attributes, "context", false);
                 currentType.startTime = getBoolean(attributes, "startTime", true);
                 currentType.period = getString(attributes, "period");
                 currentType.cutoff = getBoolean(attributes, "cutoff", false);
@@ -617,9 +620,10 @@ public class GenerateJfrFiles {
             out.write("  jlong  threshold_ticks;");
             out.write("  jlong  cutoff_ticks;");
             out.write("  u1     stacktrace;");
+            out.write("  u1     context;");
             out.write("  u1     enabled;");
             out.write("  u1     large;");
-            out.write("  u1     pad[5]; // Because GCC on linux ia32 at least tries to pack this.");
+            out.write("  u1     pad[4]; // Because GCC on linux ia32 at least tries to pack this.");
             out.write("};");
             out.write("");
             out.write("union JfrNativeSettings {");
@@ -822,6 +826,7 @@ public class GenerateJfrFiles {
         if (!empty) {
             out.write("  static const bool hasThread = " + event.thread + ";");
             out.write("  static const bool hasStackTrace = " + event.stackTrace + ";");
+            out.write("  static const bool hasContext = " + event.context + ";");
             out.write("  static const bool isInstant = " + !event.startTime + ";");
             out.write("  static const bool hasCutoff = " + event.cutoff + ";");
             out.write("  static const bool hasThrottle = " + event.throttle + ";");

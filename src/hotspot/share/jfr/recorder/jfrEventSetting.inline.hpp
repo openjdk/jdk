@@ -39,6 +39,10 @@ inline bool JfrEventSetting::has_stacktrace(JfrEventId event_id) {
   return 0 != setting(event_id).stacktrace;
 }
 
+inline bool JfrEventSetting::has_context(JfrEventId event_id) {
+  return 0 != setting(event_id).context;
+}
+
 inline jlong JfrEventSetting::threshold(JfrEventId event_id) {
   return setting(event_id).threshold_ticks;
 }
