@@ -41,7 +41,7 @@
  *       has been reached, jvmti agent suspend thread and calls NotifyFramePop;
  *     - expects FRAME_POP event is sent 1000 time.
  *     2)
- *     - changes callbacks for choosen event;
+ *     - changes callbacks for chosen event;
  *     - debuggee starts recurisve method with depth=1000 and when defined depth
  *       has been reached, jvmti agent suspend thread and calls NotifyFramePop;
  *     - checks that altered callback works and FRAME_POP event is sent 1000 time.

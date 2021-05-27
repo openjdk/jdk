@@ -76,7 +76,7 @@
  *     4448603: JDI spec: ArrayReference.setValues(List) has discrepancy
  *     Evaluation:
  *     There is indeed an inconsistency.  The safer of the two options should be
- *     choosen: ignore tail elements in Lists that are too long. This is also what
+ *     chosen: ignore tail elements in Lists that are too long. This is also what
  *     the reference implementation does.
  *     4419982: JDI: two StackFrame methods return incorrect values for double
  *

@@ -31,7 +31,7 @@
  * VM Testbase readme:
  * DESCRIPTION
  *         Test covers bug 6426321. Test stress event queue forcing loading of 3000 classes in debuggee.
- *         Debugger in loop sends commad to debuggee to load class and waits READY answer.
+ *         Debugger in loop sends command to debuggee to load class and waits READY answer.
  *         Test passes if no hangs or any other errors occur in debuggee (if debuggee successfully sends answers for all commands).
  *         (number of classes to load can be changed through parameter -classesToLoad (for example -classesToLoad 1000)).
  *

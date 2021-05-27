@@ -948,7 +948,7 @@ const char* const VM_Version_Ext::_feature_ecx_id[] = {
 
 const char* const VM_Version_Ext::_feature_extended_ecx_id[] = {
   "LAHF/SAHF instruction support",
-  "Core multi-processor leagacy mode",
+  "Core multi-processor legacy mode",
   "",
   "",
   "",

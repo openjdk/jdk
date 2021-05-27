@@ -32,7 +32,7 @@
 # include "semaphore_posix.hpp"
 
 #else
-// OS X doesn't support unamed POSIX semaphores, so the implementation in os_posix.cpp can't be used.
+// OS X doesn't support unnamed POSIX semaphores, so the implementation in os_posix.cpp can't be used.
 # include "memory/allocation.hpp"
 # include <mach/semaphore.h>
 

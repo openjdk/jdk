@@ -37,7 +37,7 @@ import sun.util.logging.PlatformLogger;
 public class  XMSelection {
 
     /*
-     * A method for a subsytem to express its interest in a certain
+     * A method for a subsystem to express its interest in a certain
      * manager selection.
      *
      * If owner changes, the ownerChanged of the XMSelectionListener
