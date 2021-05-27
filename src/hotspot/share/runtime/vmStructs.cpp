@@ -51,6 +51,7 @@
 #include "gc/shared/vmStructs_gc.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/heap.hpp"
@@ -1336,6 +1337,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
       declare_type(NonJavaThread, Thread)                                 \
         declare_type(NamedThread, NonJavaThread)                          \
         declare_type(WatcherThread, NonJavaThread)                        \
+        declare_type(AsyncLogWriter, NonJavaThread)                       \
       declare_type(JavaThread, Thread)                                    \
         declare_type(JvmtiAgentThread, JavaThread)                        \
         declare_type(MonitorDeflationThread, JavaThread)                  \
