@@ -455,7 +455,8 @@ static Block* raise_LCA_above_use(Block* LCA, Node* use, Node* def, const PhaseC
 // which are marked with the given index.  Return the LCA (in the dom tree)
 // of all marked blocks.  If there are none marked, return the original
 // LCA.
-static Block* raise_LCA_above_marks(Block* LCA, node_idx_t mark, Block* early, const PhaseCFG* cfg) {
+static Block* raise_LCA_above_marks(Block* LCA, node_idx_t mark, Block* early, const PhaseCFG* cfg,
+                                     Block_List* visited_list) {
   Block_List worklist;
   worklist.push(LCA);
   while (worklist.size() > 0) {
@@ -483,6 +484,7 @@ static Block* raise_LCA_above_marks(Block* LCA, node_idx_t mark, Block* early, c
       }
     }
     mid->set_raise_LCA_visited(mark);
+    visited_list->push(mid);
   }
   return LCA;
 }
@@ -540,6 +542,7 @@ static Block* memory_early_block(Node* load, Block* early, const PhaseCFG* cfg) 
   return early;
 }
 
+#ifdef ASSERT
 // This function is used by insert_anti_dependences to find unrelated loads
 // stores(but aliases into same) in non-null, null blocks.
 // and for the same reasons it doesn't requires an anti-dependence edge.
@@ -559,6 +562,20 @@ bool PhaseCFG::unrelated_load_in_store_null_block(Node* store, Node* load) {
   }
   return false;
 }
+#endif
+
+class Raise_LCA_visited_List : public StackObj {
+  Block_List* _reset_list;
+ public:
+  Raise_LCA_visited_List(Block_List* reset_list) :
+    _reset_list(reset_list) {}
+  ~Raise_LCA_visited_List() {
+    while (_reset_list->size() > 0) {
+      Block* reset_block = _reset_list->pop();
+      reset_block->set_raise_LCA_visited(0);
+    }
+  }
+};
 
 //--------------------------insert_anti_dependences---------------------------
 // A load may need to witness memory that nearby stores can overwrite.
@@ -628,6 +645,12 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   Node_List worklist_store(area);   // possible-def to explore
   Node_List worklist_visited(area); // visited mergemem nodes
   Node_List non_early_stores(area); // all relevant stores outside of early
+
+  // Cases falling under unrelated_load_in_store_null_block can make
+  // raise_LCA_above_marks in inconsistent state, so always reset the
+  // visited blocks after use.
+  Block_List raise_LCA_visited_list;
+  Raise_LCA_visited_List reset_LCA_visited(&raise_LCA_visited_list);
   bool must_raise_LCA = false;
 
   // 'load' uses some memory state; look for users of the same state.
@@ -779,7 +802,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
       // will find him on the non_early_stores list and stick him
       // with a precedence edge.
       // (But, don't bother if LCA is already raised all the way.)
-      if (LCA != early && !unrelated_load_in_store_null_block(store, load)) {
+      if (LCA != early) {
         store_block->set_raise_LCA_mark(load_index);
         must_raise_LCA = true;
         non_early_stores.push(store);
@@ -817,7 +840,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // preventing the load from sinking past any block containing
   // a store that may invalidate the memory state required by 'load'.
   if (must_raise_LCA)
-    LCA = raise_LCA_above_marks(LCA, load->_idx, early, this);
+    LCA = raise_LCA_above_marks(LCA, load->_idx, early, this, &raise_LCA_visited_list);
   if (LCA == early)  return LCA;
 
   // Insert anti-dependence edges from 'load' to each store
@@ -831,7 +854,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
         // add anti_dependence from store to load in its own block
         assert(store != load->find_exact_control(load->in(0)), "dependence cycle found");
         if (verify) {
-          assert(store->find_edge(load) != -1, "missing precedence edge");
+          assert(store->find_edge(load) != -1 || unrelated_load_in_store_null_block(store, load), "missing precedence edge");
         } else {
           store->add_prec(load);
         }
