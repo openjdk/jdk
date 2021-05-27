@@ -28,7 +28,6 @@ package java.lang.invoke;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
@@ -262,13 +261,6 @@ public class MethodHandles {
             // M2 != M1, set previous lookup class to M1 and drop MODULE access
             newPreviousClass = callerClass;
             newModes &= ~Lookup.MODULE;
-
-            if (!callerModule.isNamed() && targetModule.isNamed()) {
-                IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
-                if (logger != null) {
-                    logger.logIfOpenedForIllegalAccess(caller, targetClass);
-                }
-            }
         }
         return Lookup.newLookup(targetClass, newPreviousClass, newModes);
     }

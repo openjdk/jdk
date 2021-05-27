@@ -45,7 +45,7 @@ import java.util.function.BiFunction;
 /* package */ class IndirectVarHandle extends VarHandle {
 
     @Stable
-    private final MethodHandle[] handleMap = new MethodHandle[AccessMode.values().length];
+    private final MethodHandle[] handleMap = new MethodHandle[AccessMode.COUNT];
     private final VarHandle directTarget; // cache, for performance reasons
     private final VarHandle target;
     private final BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory;

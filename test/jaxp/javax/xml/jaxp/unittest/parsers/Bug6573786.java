@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6573786
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug6573786
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug6573786
  * @run testng/othervm parsers.Bug6573786
  * @summary Test parser error messages are formatted.
  */

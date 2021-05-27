@@ -2346,6 +2346,9 @@ void os::print_memory_info(outputStream* st) {
   st->print("(" UINT64_FORMAT "k free)",
             ((jlong)si.freeswap * si.mem_unit) >> 10);
   st->cr();
+  st->print("Page Sizes: ");
+  _page_sizes.print_on(st);
+  st->cr();
 }
 
 // Print the first "model name" line and the first "flags" line
@@ -3504,6 +3507,25 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
     // Mapping succeeded, sanity check passed.
     munmap(p, page_size);
     return true;
+  } else {
+      log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) failed sanity check, "
+                         "checking if smaller large page sizes are usable",
+                         byte_size_in_exact_unit(page_size),
+                         exact_unit_for_byte_size(page_size));
+      for (size_t page_size_ = _page_sizes.next_smaller(page_size);
+          page_size_ != (size_t)os::vm_page_size();
+          page_size_ = _page_sizes.next_smaller(page_size_)) {
+        flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size_);
+        p = mmap(NULL, page_size_, PROT_READ|PROT_WRITE, flags, -1, 0);
+        if (p != MAP_FAILED) {
+          // Mapping succeeded, sanity check passed.
+          munmap(p, page_size_);
+          log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) passed sanity check",
+                             byte_size_in_exact_unit(page_size_),
+                             exact_unit_for_byte_size(page_size_));
+          return true;
+        }
+      }
   }
 
   if (warn) {
@@ -3578,35 +3600,20 @@ static void set_coredump_filter(CoredumpFilterBit bit) {
 
 static size_t _large_page_size = 0;
 
-size_t os::Linux::find_default_large_page_size() {
-  if (_default_large_page_size != 0) {
-    return _default_large_page_size;
-  }
-  size_t large_page_size = 0;
+static size_t scan_default_large_page_size() {
+  size_t default_large_page_size = 0;
 
   // large_page_size on Linux is used to round up heap size. x86 uses either
   // 2M or 4M page, depending on whether PAE (Physical Address Extensions)
   // mode is enabled. AMD64/EM64T uses 2M page in 64bit mode. IA64 can use
-  // page as large as 256M.
+  // page as large as 1G.
   //
   // Here we try to figure out page size by parsing /proc/meminfo and looking
   // for a line with the following format:
   //    Hugepagesize:     2048 kB
   //
   // If we can't determine the value (e.g. /proc is not mounted, or the text
-  // format has been changed), we'll use the largest page size supported by
-  // the processor.
-
-#ifndef ZERO
-  large_page_size =
-    AARCH64_ONLY(2 * M)
-    AMD64_ONLY(2 * M)
-    ARM32_ONLY(2 * M)
-    IA32_ONLY(4 * M)
-    IA64_ONLY(256 * M)
-    PPC_ONLY(4 * M)
-    S390_ONLY(1 * M);
-#endif // ZERO
+  // format has been changed), we'll set largest page size to 0
 
   FILE *fp = fopen("/proc/meminfo", "r");
   if (fp) {
@@ -3615,7 +3622,7 @@ size_t os::Linux::find_default_large_page_size() {
       char buf[16];
       if (fscanf(fp, "Hugepagesize: %d", &x) == 1) {
         if (x && fgets(buf, sizeof(buf), fp) && strcmp(buf, " kB\n") == 0) {
-          large_page_size = x * K;
+          default_large_page_size = x * K;
           break;
         }
       } else {
@@ -3628,21 +3635,17 @@ size_t os::Linux::find_default_large_page_size() {
     }
     fclose(fp);
   }
-  return large_page_size;
+
+  return default_large_page_size;
 }
 
-size_t os::Linux::find_large_page_size(size_t large_page_size) {
-  if (_default_large_page_size == 0) {
-    _default_large_page_size = Linux::find_default_large_page_size();
-  }
-  // We need to scan /sys/kernel/mm/hugepages
+static os::PageSizes scan_multiple_page_support() {
+  // Scan /sys/kernel/mm/hugepages
   // to discover the available page sizes
   const char* sys_hugepages = "/sys/kernel/mm/hugepages";
+  os::PageSizes page_sizes;
 
   DIR *dir = opendir(sys_hugepages);
-  if (dir == NULL) {
-    return _default_large_page_size;
-  }
 
   struct dirent *entry;
   size_t page_size;
@@ -3650,41 +3653,30 @@ size_t os::Linux::find_large_page_size(size_t large_page_size) {
     if (entry->d_type == DT_DIR &&
         sscanf(entry->d_name, "hugepages-%zukB", &page_size) == 1) {
       // The kernel is using kB, hotspot uses bytes
-      if (large_page_size == page_size * K) {
-        closedir(dir);
-        return large_page_size;
-      }
+      // Add each found Large Page Size to page_sizes
+      page_sizes.add(page_size * K);
     }
   }
   closedir(dir);
-  return _default_large_page_size;
-}
 
-size_t os::Linux::setup_large_page_size() {
-  _default_large_page_size = Linux::find_default_large_page_size();
-
-  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != _default_large_page_size ) {
-    _large_page_size = find_large_page_size(LargePageSizeInBytes);
-    if (_large_page_size == _default_large_page_size) {
-      warning("Setting LargePageSizeInBytes=" SIZE_FORMAT " has no effect on this OS. Using the default large page size "
-              SIZE_FORMAT "%s.",
-              LargePageSizeInBytes,
-              byte_size_in_proper_unit(_large_page_size), proper_unit_for_byte_size(_large_page_size));
-    }
-  } else {
-    _large_page_size = _default_large_page_size;
+  LogTarget(Debug, pagesize) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print("Large Page sizes: ");
+    page_sizes.print_on(&ls);
   }
 
-  const size_t default_page_size = (size_t)Linux::page_size();
-  if (_large_page_size > default_page_size) {
-    _page_sizes.add(_large_page_size);
-  }
-
-  return _large_page_size;
+  return page_sizes;
 }
 
 size_t os::Linux::default_large_page_size() {
   return _default_large_page_size;
+}
+
+void warn_no_large_pages_configured() {
+  if (!FLAG_IS_DEFAULT(UseLargePages)) {
+    log_warning(pagesize)("UseLargePages disabled, no large pages configured and available on the system.");
+  }
 }
 
 bool os::Linux::setup_large_page_type(size_t page_size) {
@@ -3729,13 +3721,13 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
     UseSHM = false;
   }
 
-  if (!FLAG_IS_DEFAULT(UseLargePages)) {
-    log_warning(pagesize)("UseLargePages disabled, no large pages configured and available on the system.");
-  }
+  warn_no_large_pages_configured();
   return false;
 }
 
 void os::large_page_init() {
+  // 1) Handle the case where we do not want to use huge pages and hence
+  //    there is no need to scan the OS for related info
   if (!UseLargePages &&
       !UseTransparentHugePages &&
       !UseHugeTLBFS &&
@@ -3753,8 +3745,73 @@ void os::large_page_init() {
     return;
   }
 
-  size_t large_page_size = Linux::setup_large_page_size();
-  UseLargePages          = Linux::setup_large_page_type(large_page_size);
+  // 2) Scan OS info
+  size_t default_large_page_size = scan_default_large_page_size();
+  os::Linux::_default_large_page_size = default_large_page_size;
+  if (default_large_page_size == 0) {
+    // No large pages configured, return.
+    warn_no_large_pages_configured();
+    UseLargePages = false;
+    UseTransparentHugePages = false;
+    UseHugeTLBFS = false;
+    UseSHM = false;
+    return;
+  }
+  os::PageSizes all_large_pages = scan_multiple_page_support();
+
+  // 3) Consistency check and post-processing
+
+  // It is unclear if /sys/kernel/mm/hugepages/ and /proc/meminfo could disagree. Manually
+  // re-add the default page size to the list of page sizes to be sure.
+  all_large_pages.add(default_large_page_size);
+
+  // Check LargePageSizeInBytes matches an available page size and if so set _large_page_size
+  // using LargePageSizeInBytes as the maximum allowed large page size. If LargePageSizeInBytes
+  // doesn't match an available page size set _large_page_size to default_large_page_size
+  // and use it as the maximum.
+ if (FLAG_IS_DEFAULT(LargePageSizeInBytes) ||
+      LargePageSizeInBytes == 0 ||
+      LargePageSizeInBytes == default_large_page_size) {
+    _large_page_size = default_large_page_size;
+    log_info(pagesize)("Using the default large page size: " SIZE_FORMAT "%s",
+                       byte_size_in_exact_unit(_large_page_size),
+                       exact_unit_for_byte_size(_large_page_size));
+  } else {
+    if (all_large_pages.contains(LargePageSizeInBytes)) {
+      _large_page_size = LargePageSizeInBytes;
+      log_info(pagesize)("Overriding default large page size (" SIZE_FORMAT "%s) "
+                         "using LargePageSizeInBytes: " SIZE_FORMAT "%s",
+                         byte_size_in_exact_unit(default_large_page_size),
+                         exact_unit_for_byte_size(default_large_page_size),
+                         byte_size_in_exact_unit(_large_page_size),
+                         exact_unit_for_byte_size(_large_page_size));
+    } else {
+      _large_page_size = default_large_page_size;
+      log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (" SIZE_FORMAT "%s) "
+                         "using the default large page size: " SIZE_FORMAT "%s",
+                         byte_size_in_exact_unit(LargePageSizeInBytes),
+                         exact_unit_for_byte_size(LargePageSizeInBytes),
+                         byte_size_in_exact_unit(_large_page_size),
+                         exact_unit_for_byte_size(_large_page_size));
+    }
+  }
+
+  // Populate _page_sizes with large page sizes less than or equal to
+  // _large_page_size.
+  for (size_t page_size = _large_page_size; page_size != 0;
+         page_size = all_large_pages.next_smaller(page_size)) {
+    _page_sizes.add(page_size);
+  }
+
+  LogTarget(Info, pagesize) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print("Usable page sizes: ");
+    _page_sizes.print_on(&ls);
+  }
+
+  // Now determine the type of large pages to use:
+  UseLargePages = os::Linux::setup_large_page_type(_large_page_size);
 
   set_coredump_filter(LARGEPAGES_BIT);
 }
@@ -3965,6 +4022,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
   assert(is_aligned(req_addr, page_size), "Must be");
   assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
   assert(_page_sizes.contains(page_size), "Must be a valid page size");
+  assert(page_size > (size_t)os::vm_page_size(), "Must be a large page size");
   assert(bytes >= page_size, "Shouldn't allocate large pages for small sizes");
 
   // We only end up here when at least 1 large page can be used.

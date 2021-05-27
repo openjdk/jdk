@@ -722,18 +722,17 @@ ClassPathEntry* ClassLoader::create_class_path_entry(JavaThread* current,
                                                      const char *path, const struct stat* st,
                                                      bool is_boot_append,
                                                      bool from_class_path_attr) {
-  JavaThread* thread = current->as_Java_thread();
   ClassPathEntry* new_entry = NULL;
   if ((st->st_mode & S_IFMT) == S_IFREG) {
-    ResourceMark rm(thread);
+    ResourceMark rm(current);
     // Regular file, should be a zip file
     // Canonicalized filename
-    const char* canonical_path = get_canonical_path(path, thread);
+    const char* canonical_path = get_canonical_path(path, current);
     if (canonical_path == NULL) {
       return NULL;
     }
     char* error_msg = NULL;
-    jzfile* zip = open_zip_file(canonical_path, &error_msg, thread);
+    jzfile* zip = open_zip_file(canonical_path, &error_msg, current);
     if (zip != NULL && error_msg == NULL) {
       new_entry = new ClassPathZipEntry(zip, path, is_boot_append, from_class_path_attr);
     } else {

@@ -201,6 +201,12 @@ public class EventNames {
     public final static String DirectBufferStatistics = PREFIX + "DirectBufferStatistics";
     public final static String Deserialization = PREFIX + "Deserialization";
 
+    // Containers
+    public static final String ContainerConfiguration = PREFIX + "ContainerConfiguration";
+    public static final String ContainerCPUUsage = PREFIX + "ContainerCPUUsage";
+    public static final String ContainerCPUThrottling = PREFIX + "ContainerCPUThrottling";
+    public static final String ContainerMemoryUsage = PREFIX + "ContainerMemoryUsage";
+    public static final String ContainerIOUsage = PREFIX + "ContainerIOUsage";
 
     // Flight Recorder
     public final static String DumpReason = PREFIX + "DumpReason";
