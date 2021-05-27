@@ -28,29 +28,18 @@
  * @summary Class redefinition with a different class file version
  * @library /test/lib
  * @compile TestClassOld.jasm TestClassNew.jasm
- * @run main/othervm -Djdk.attach.allowAttachSelf test.ClassVersionAfterRedefine
+ * @run main RedefineClassHelper
+ * @run main/othervm -javaagent:redefineagent.jar ClassVersionAfterRedefine
  */
 
-package test;
-
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.lang.instrument.ClassDefinition;
-import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
-import java.util.jar.Attributes;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
 
-import com.sun.tools.attach.VirtualMachine;
 import static jdk.test.lib.Asserts.assertTrue;
 
 public class ClassVersionAfterRedefine extends ClassLoader {
 
     private static String myName = ClassVersionAfterRedefine.class.getName();
-    private static Instrumentation instrumentation;
 
     private static byte[] getBytecodes(String name) throws Exception {
         InputStream is = ClassVersionAfterRedefine.class.getResourceAsStream(name + ".class");
@@ -88,36 +77,9 @@ public class ClassVersionAfterRedefine extends ClassLoader {
         }
     }
 
-    public static void agentmain(String args, Instrumentation inst) {
-        System.out.println("Loading Java Agent.");
-        instrumentation = inst;
-    }
-
-    private static void loadInstrumentationAgent(String myName, byte[] buf) throws Exception {
-        // Create agent jar file on the fly
-        Manifest m = new Manifest();
-        m.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-        m.getMainAttributes().put(new Attributes.Name("Agent-Class"), myName);
-        m.getMainAttributes().put(new Attributes.Name("Can-Redefine-Classes"), "true");
-        File jarFile = File.createTempFile("agent", ".jar");
-        jarFile.deleteOnExit();
-        JarOutputStream jar = new JarOutputStream(new FileOutputStream(jarFile), m);
-        jar.putNextEntry(new JarEntry(myName.replace('.', '/') + ".class"));
-        jar.write(buf);
-        jar.close();
-        String pid = Long.valueOf(ProcessHandle.current().pid()).toString();
-        System.out.println("Our pid is = " + pid);
-        VirtualMachine vm = VirtualMachine.attach(pid);
-        System.out.println(jarFile.getAbsolutePath());
-        vm.loadAgent(jarFile.getAbsolutePath());
-    }
-
     public static void main(String[] s) throws Exception {
 
-        byte[] buf = getBytecodes(myName.substring(myName.lastIndexOf(".") + 1));
-        loadInstrumentationAgent(myName, buf);
-
-        buf = getBytecodes("TestClassOld");
+        byte[] buf = getBytecodes("TestClassOld");
         // Poor man's renaming of class "TestClassOld" to "TestClassXXX"
         replaceAllStrings(buf, "TestClassOld", "TestClassXXX");
         ClassVersionAfterRedefine cvar = new ClassVersionAfterRedefine();
@@ -131,7 +93,8 @@ public class ClassVersionAfterRedefine extends ClassLoader {
         // Rename class "TestClassNew" to "TestClassXXX" so we can use it for
         // redefining the original version of "TestClassXXX" (i.e. "TestClassOld").
         replaceAllStrings(buf, "TestClassNew", "TestClassXXX");
-        instrumentation.redefineClasses(new ClassDefinition(old, buf));
+        // Now redine the original version of "TestClassXXX" (i.e. "TestClassOld").
+        RedefineClassHelper.redefineClass(old, buf);
         result = foo.invoke(null);
         assertTrue("java.lang.String".equals(result));
         System.out.println(old.getSimpleName() + ".foo() = " + result);

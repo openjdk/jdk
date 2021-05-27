@@ -1852,13 +1852,12 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
     return JVMTI_ERROR_INTERNAL;
   }
 
-  // Copy class version from scratch_cp to merge_cp
-  merge_cp->set_minor_version(scratch_cp->minor_version());
-  merge_cp->set_major_version(scratch_cp->major_version());
-
-  // Save fields from the old_cp.
-  merge_cp->copy_fields(old_cp(), true /* skip_version */);
-  scratch_cp->copy_fields(old_cp(), true /* skip_version */);
+  // Set dynamic constants attribute from the original CP.
+  if (old_cp->has_dynamic_constant()) {
+    scratch_cp->set_has_dynamic_constant();
+  }
+  // Copy attributes from scratch_cp to merge_cp
+  merge_cp->copy_fields(scratch_cp());
 
   log_info(redefine, class, constantpool)("merge_cp_len=%d, index_map_len=%d", merge_cp_length, _index_map_count);
 

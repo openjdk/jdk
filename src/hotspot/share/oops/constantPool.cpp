@@ -67,20 +67,14 @@ ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, T
   return new (loader_data, size, MetaspaceObj::ConstantPoolType, THREAD) ConstantPool(tags);
 }
 
-void ConstantPool::copy_fields(const ConstantPool* orig, bool skip_version) {
+void ConstantPool::copy_fields(const ConstantPool* orig) {
   // Preserve dynamic constant information from the original pool
   if (orig->has_dynamic_constant()) {
     set_has_dynamic_constant();
   }
 
-  if (!skip_version) {
-    // Copy class version.
-    // We don't do this for redefined classes (skip_version == true)
-    // because the class file version of the new class might be different
-    // from the original class.
-    set_major_version(orig->major_version());
-    set_minor_version(orig->minor_version());
-  }
+  set_major_version(orig->major_version());
+  set_minor_version(orig->minor_version());
 
   set_source_file_name_index(orig->source_file_name_index());
   set_generic_signature_index(orig->generic_signature_index());
