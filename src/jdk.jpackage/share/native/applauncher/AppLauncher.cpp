@@ -112,15 +112,14 @@ Jvm* AppLauncher::createJvmLauncher() const {
             PropertyName::arguments, args);
     }
 
+    tstring ret = SysInfo::addLibPath(appDirPath);
+    LOG_TRACE(tstrings::any() << "addLibPath(" << appDirPath << ") returns: " << ret);
+
     std::unique_ptr<Jvm> jvm(new Jvm());
 
     (*jvm)
         .setPath(findJvmLib(cfgFile, defaultRuntimePath, jvmLibNames))
-        .addArgument(launcherPath)
-        .addArgument(_T("-Djava.library.path=")
-            + SysInfo::getLibPath() + FileUtils::pathSeparator
-            + appDirPath + FileUtils::pathSeparator
-            + FileUtils::dirname(launcherPath));
+        .addArgument(launcherPath);
 
     if (initJvmFromCmdlineOnly) {
         tstring_array::const_iterator argIt = args.begin();

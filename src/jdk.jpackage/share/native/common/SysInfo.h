@@ -89,9 +89,9 @@ namespace SysInfo {
     bool isEnvVariableSet(const tstring& name);
 
     /*
-     * Returns value of the appropriate environment variable for library path
+     * sets value of the appropriate environment variable to include path
      */
-    tstring getLibPath();
+    tstring addLibPath(tstring path);
 }
 
 #endif // SYSINFO_H
