@@ -31,7 +31,7 @@
 #include "code/debugInfoRec.hpp"
 #include "code/dependencies.hpp"
 #include "code/exceptionHandlerTable.hpp"
-#include "compiler/compilerThread.hpp"
+#include "compiler/compilerThread.inline.hpp"
 #include "oops/methodData.hpp"
 #include "runtime/thread.hpp"
 

@@ -37,6 +37,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/align.hpp"
 
 // frequently used constants
@@ -436,7 +437,7 @@ MonitorValue* CodeInstaller::get_monitor_value(JVMCIObject value, GrowableArray<
 
 void CodeInstaller::initialize_dependencies(JVMCIObject compiled_code, OopRecorder* oop_recorder, JVMCI_TRAPS) {
   JavaThread* thread = JavaThread::current();
-  CompilerThread* compilerThread = thread->is_Compiler_thread() ? thread->as_CompilerThread() : NULL;
+  CompilerThread* compilerThread = thread->is_Compiler_thread() ? thread->as_Compiler_thread() : NULL;
   _oop_recorder = oop_recorder;
   _dependencies = new Dependencies(&_arena, _oop_recorder, compilerThread != NULL ? compilerThread->log() : NULL);
   JVMCIObjectArray assumptions = jvmci_env()->get_HotSpotCompiledCode_assumptions(compiled_code);

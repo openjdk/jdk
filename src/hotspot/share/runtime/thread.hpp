@@ -1424,7 +1424,7 @@ class JavaThread: public Thread {
   // operation.  You may not want that either.
   static JavaThread* active();
 
-  inline CompilerThread* as_CompilerThread();
+  inline CompilerThread* as_Compiler_thread();
 
  protected:
   virtual void pre_run();

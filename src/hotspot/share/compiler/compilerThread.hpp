@@ -109,15 +109,6 @@ class CompilerThread : public JavaThread {
   static void thread_entry(JavaThread* thread, TRAPS);
 };
 
-inline CompilerThread* JavaThread::as_CompilerThread() {
-  assert(is_Compiler_thread(), "just checking");
-  return (CompilerThread*)this;
-}
-
-inline CompilerThread* CompilerThread::current() {
-  return JavaThread::current()->as_CompilerThread();
-}
-
 // Dedicated thread to sweep the code cache
 class CodeCacheSweeperThread : public JavaThread {
   CompiledMethod*       _scanned_compiled_method; // nmethod being scanned by the sweeper

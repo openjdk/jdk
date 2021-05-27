@@ -34,6 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/events.hpp"
 
 JVMCIRuntime* JVMCI::_compiler_runtime = NULL;
@@ -156,7 +157,7 @@ void JVMCI::ensure_box_caches_initialized(TRAPS) {
 
 JavaThread* JVMCI::compilation_tick(JavaThread* thread) {
   if (thread->is_Compiler_thread()) {
-    CompileTask *task = thread->as_CompilerThread()->task();
+    CompileTask *task = thread->as_Compiler_thread()->task();
     if (task != NULL) {
       JVMCICompileState *state = task->blocking_jvmci_compile_state();
       if (state != NULL) {
