@@ -264,7 +264,7 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Sco
      * except that the operation which adds new resources to the global scope does nothing: as the scope can never
      * become not-alive, there is nothing to track.
      */
-    public static ResourceScopeImpl GLOBAL = new ImplicitScopeImpl( null) {
+    public static final ResourceScopeImpl GLOBAL = new ImplicitScopeImpl( null) {
         @Override
         void addInternal(ResourceList.ResourceCleanup resource) {
             // do nothing

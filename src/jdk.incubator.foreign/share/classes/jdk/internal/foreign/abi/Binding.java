@@ -294,7 +294,7 @@ public abstract class Binding {
          * Dummy binding context. Throws exceptions when attempting to access scope, return a throwing allocator, and has
          * an idempotent {@link #close()}.
          */
-        public static Context DUMMY = new Context(null, null) {
+        public static final Context DUMMY = new Context(null, null) {
             @Override
             public SegmentAllocator allocator() {
                 return SharedUtils.THROWING_ALLOCATOR;

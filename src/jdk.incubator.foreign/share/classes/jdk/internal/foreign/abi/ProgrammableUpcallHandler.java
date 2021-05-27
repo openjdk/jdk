@@ -301,9 +301,9 @@ public class ProgrammableUpcallHandler {
     // used for transporting data into native code
     private static record CallRegs(VMStorage[] argRegs, VMStorage[] retRegs) {}
 
-    public static native long allocateOptimizedUpcallStub(MethodHandle mh, ABIDescriptor abi, CallRegs conv);
-    public static native long allocateUpcallStub(MethodHandle mh, ABIDescriptor abi, BufferLayout layout);
-    public static native boolean supportsOptimizedUpcalls();
+    static native long allocateOptimizedUpcallStub(MethodHandle mh, ABIDescriptor abi, CallRegs conv);
+    static native long allocateUpcallStub(MethodHandle mh, ABIDescriptor abi, BufferLayout layout);
+    static native boolean supportsOptimizedUpcalls();
 
     private static native void registerNatives();
     static {
