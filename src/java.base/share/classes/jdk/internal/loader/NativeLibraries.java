@@ -475,13 +475,15 @@ public final class NativeLibraries {
         private int counter = 0;
 
         public void increment() {
-            if (++counter < 0) // overflow
+            if (counter == Integer.MAX_VALUE) {
+                // prevent overflow
                 throw new Error("Maximum lock count exceeded");
+            }
+            ++counter;
         }
 
         public void decrement() {
-            if (--counter < 0) // underflow
-                throw new Error("Lock count is below zero");
+            --counter;
         }
 
         public int getCounter() {
@@ -494,13 +496,13 @@ public final class NativeLibraries {
             new ConcurrentHashMap<>();
 
     private static void acquireNativeLibraryLock(String libraryName) {
-        nativeLibraryLockMap.compute(libraryName, (name, lock) -> {
-            if (lock == null) {
-                lock = new CountedLock();
+        nativeLibraryLockMap.compute(libraryName, (name, currentLock) -> {
+            if (currentLock == null) {
+                currentLock = new CountedLock();
             }
             // safe as compute lambda is executed atomically
-            lock.increment();
-            return lock;
+            currentLock.increment();
+            return currentLock;
         }).lock();
     }
 
