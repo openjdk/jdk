@@ -25,7 +25,6 @@
  * @test
  * @bug 8182043
  * @summary Access to Windows Large Icons
- * sun.awt.shell.ShellFolder
  * @run main SystemIconTest
  */
 import javax.swing.Icon;
