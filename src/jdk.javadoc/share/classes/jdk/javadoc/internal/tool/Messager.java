@@ -432,7 +432,7 @@ public class Messager extends Log implements Reporter {
     }
 
     /**
-     * Prints the error and warning counts, if any, to. the diagnostic writer
+     * Prints the error and warning counts, if any, to the diagnostic writer.
      */
     public void printErrorWarningCounts() {
         printCount(nerrors, "main.error", "main.errors");

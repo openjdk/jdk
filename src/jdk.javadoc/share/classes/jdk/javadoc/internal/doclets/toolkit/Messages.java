@@ -89,7 +89,7 @@ public class Messages {
      *
      * @param path a path identifying the position to be included with the message
      * @param key  the name of a resource containing the message to be printed
-     * @param args optional arguments to be replaced in the message.
+     * @param args optional arguments to be replaced in the message
      */
     public void error(DocTreePath path, String key, Object... args) {
         report(ERROR, path, resources.getText(key, args));
@@ -103,7 +103,7 @@ public class Messages {
      * @param pos   the position to be associated with the end
      * @param end   the end of a range of characters to be associated with the end
      * @param key   the name of a resource containing the message to be printed
-     * @param args  optional arguments to be replaced in the message.
+     * @param args  optional arguments to be replaced in the message
      */
     public void error(FileObject fo, int start, int pos, int end, String key, Object... args) {
         report(ERROR, fo, start, pos, end, resources.getText(key, args));

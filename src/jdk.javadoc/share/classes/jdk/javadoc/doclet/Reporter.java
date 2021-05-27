@@ -36,9 +36,10 @@ import com.sun.source.util.DocTreePath;
 /**
  * Interface for reporting diagnostics and other messages.
  *
- * <p>Diagnostics consist of a diagnostic {@link Diagnostic.Kind kind} and a message,
- * and may additionally be associated with an {@link Element element} or a
- * {@link DocTreePath tree node} in a documentation comment.
+ * <p>Diagnostics consist of a {@link Diagnostic.Kind diagnostic kind} and a message,
+ * and may additionally be associated with an {@link Element element},
+ * a {@link DocTreePath tree node} in a documentation comment,
+ * or at an arbitrary position in a given {@link FileObject file}.
  * Other messages may be written directly to one of two streams that are informally
  * for use by "standard output" and "diagnostic output", where "standard output"
  * means the output that is the expected result of executing some operation,
@@ -66,7 +67,7 @@ public interface Reporter {
      * Prints a diagnostic message.
      *
      * @param kind    the kind of diagnostic
-     * @param message message to print
+     * @param message the message to be printed
      */
     void print(Diagnostic.Kind kind, String message);
 
@@ -91,6 +92,7 @@ public interface Reporter {
     /**
      * Prints a diagnostic message related to a position within a range of characters in a file.
      * The positions are all 0-based character offsets from the beginning of content of the file.
+     * The positions should satisfy the relation {@code start <= pos <= end}.
      *
      * @param kind    the kind of diagnostic
      * @param file    the file
@@ -98,6 +100,8 @@ public interface Reporter {
      * @param pos     the position
      * @param end     the end of the enclosing range
      * @param message the message to be printed
+     *
+     * @since 17
      */
     void print(Diagnostic.Kind kind, FileObject file, int start, int pos, int end, String message);
 
