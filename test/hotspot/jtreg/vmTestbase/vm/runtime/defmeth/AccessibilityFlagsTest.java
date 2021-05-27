@@ -50,7 +50,7 @@ import static vm.runtime.defmeth.shared.ExecutionMode.*;
 
 /*
  * Test allowed combinations of access flags on methods in interfaces.
- * Based on assertions from JVMS8.
+ * Based on assertions from JVMS.
  */
 public class AccessibilityFlagsTest extends DefMethTest {
     public static void main(String[] args) {

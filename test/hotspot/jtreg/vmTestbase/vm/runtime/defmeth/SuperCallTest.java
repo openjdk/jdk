@@ -61,7 +61,6 @@ import static vm.runtime.defmeth.shared.ExecutionMode.*;
  * where the interface is a direct supertype of the current class (the current class
  * must directly implement <interface-name>).
  *
- * 0.6.3 JVMS draft for JDK8 updated.
  * Invokespecial on any superinterface method will run interface method
  * resolution, and then the selected method will be set to the resolved method.
  * super defaults no longer check for lack of shadowing, other languages
@@ -683,7 +682,7 @@ public class SuperCallTest extends DefMethTest {
      * Test validity of invokespecial on indirect superinterface's method,
      * this test should receive a verification error.
      *
-     * (JVMS draft 0.7.0) JVMS 4.9.2 Structural Constraints
+     * JVMS-4.9.2 Structural Constraints
      * Each invokespecial instruction must name an instance initialization
      * method (2.9), or must reference a method in the current class or interface,
      * a method in a superclass of the current class or interface, or a method
