@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 JNIEXPORT jint JNICALL
 Java_nsk_jvmti_InterruptThread_intrpthrd003_check (JNIEnv *env, jobject oobj,
-        jint ind, jthread thr) {
+        jlong ind, jthread thr) {
 
     intrpthrd_err = jvmti->InterruptThread(thr);
     if (intrpthrd_err == JVMTI_ERROR_MUST_POSSESS_CAPABILITY &&
@@ -103,7 +103,7 @@ Java_nsk_jvmti_InterruptThread_intrpthrd003_check (JNIEnv *env, jobject oobj,
             break;
 
         default:
-            printf("(thr#%d) error expected: JVMTI_ERROR_NONE or JVMTI_ERROR_THREAD_NOT_ALIVE,", ind);
+            printf("(thr#%ld) error expected: JVMTI_ERROR_NONE or JVMTI_ERROR_THREAD_NOT_ALIVE,", ind);
             printf(" got: %s (%d)\n", TranslateError(intrpthrd_err), intrpthrd_err);
             result = STATUS_FAILED;
             break;

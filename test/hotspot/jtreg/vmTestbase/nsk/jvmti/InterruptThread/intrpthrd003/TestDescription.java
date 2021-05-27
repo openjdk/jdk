@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 /*
  * @test
  *
+ * @bug 8167108 8266130
  * @summary converted from VM Testbase nsk/jvmti/InterruptThread/intrpthrd003.
  * VM Testbase keywords: [quick, jpda, jvmti, noras]
  * VM Testbase readme:
@@ -41,10 +42,10 @@
  * COMMENTS
  *     Derived from nsk/jvmti/InterruptThread/intrpthrd002.
  *
+ * @requires vm.jvmti
  * @library /vmTestbase
  *          /test/lib
  * @run main/othervm/native
- *      -Xlog:thread+smr=debug
  *      -agentlib:intrpthrd003
  *      nsk.jvmti.InterruptThread.intrpthrd003
  */
