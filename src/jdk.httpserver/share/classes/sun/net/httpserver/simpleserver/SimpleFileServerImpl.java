@@ -156,13 +156,8 @@ final class SimpleFileServerImpl {
                     """, root, addr, port);
     }
 
-    // TODO: WHICH OUTPUT DO WE WANT TO SHOW, AND WHEN?
     private static void showUsage() {
         out.println(getMessage("usage")); }
-
-    private static void showSummary() {
-        out.println(getMessage("usage.summary"));
-    }
 
     private static void showHelp() {
         out.println(getMessage("usage"));
@@ -193,20 +188,13 @@ final class SimpleFileServerImpl {
         }
     }
 
-    // TODO: WHICH STATUS CODES DO WE WANT TO RETURN?
     enum Result {
         /** Completed with no errors */
         OK(0),
-        /** Completed with reported errors */
-        ERROR(1),
         /** Bad command-line arguments */
-        CMDERR(2),
+        CMDERR(1),
         /** System error or resource exhaustion */
-        SYSERR(3),
-        /** Terminated abnormally */
-        ABNORMAL(4),
-        /** IO exception */
-        IOEX(5);
+        SYSERR(2);
 
         Result(int statusCode) {
             this.statusCode = statusCode;
