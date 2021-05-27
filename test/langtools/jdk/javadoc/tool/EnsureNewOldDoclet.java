@@ -109,8 +109,8 @@ public class EnsureNewOldDoclet extends TestRunner {
         setArgs("-classpath", ".", // insulates us from ambient classpath
                   testSrc.toString());
         Task.Result tr = task.run(Task.Expect.SUCCESS);
-        List<String> out = tr.getOutputLines(Task.OutputKind.STDOUT);
-        checkOutput(testName, out, NEW_HEADER);
+        List<String> err = tr.getOutputLines(Task.OutputKind.STDERR);
+        checkOutput(testName, err, NEW_HEADER);
     }
 
     // input: new doclet and new taglet
@@ -128,8 +128,8 @@ public class EnsureNewOldDoclet extends TestRunner {
         Task.Result tr = task.run(Task.Expect.SUCCESS);
         List<String> out = tr.getOutputLines(Task.OutputKind.STDOUT);
         List<String> err = tr.getOutputLines(Task.OutputKind.STDERR);
-        checkOutput(testName, out, NEW_HEADER);
-        checkOutput(testName, out, NEW_TAGLET_MARKER);
+        checkOutput(testName, err, NEW_HEADER);
+        checkOutput(testName, err, NEW_TAGLET_MARKER);
     }
 
     void setArgs(String... args) {

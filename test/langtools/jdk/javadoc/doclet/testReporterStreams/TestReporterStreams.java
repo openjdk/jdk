@@ -31,6 +31,7 @@
   * @run main TestReporterStreams
   */
 
+ import java.io.File;
  import java.io.IOException;
  import java.nio.file.Path;
  import java.util.Collections;
@@ -38,8 +39,17 @@
  import java.util.Set;
 
  import javax.lang.model.SourceVersion;
+ import javax.lang.model.element.Element;
  import javax.tools.Diagnostic;
+ import javax.tools.JavaFileObject;
 
+ import com.sun.source.doctree.DocCommentTree;
+ import com.sun.source.doctree.SinceTree;
+ import com.sun.source.tree.CompilationUnitTree;
+ import com.sun.source.util.DocSourcePositions;
+ import com.sun.source.util.DocTreePath;
+ import com.sun.source.util.DocTrees;
+ import com.sun.source.util.TreePath;
  import javadoc.tester.JavadocTester;
  import jdk.javadoc.doclet.Doclet;
  import jdk.javadoc.doclet.DocletEnvironment;
@@ -54,6 +64,15 @@
      }
 
      ToolBox tb = new ToolBox();
+
+     TestReporterStreams() throws IOException {
+         tb.writeJavaFiles(Path.of("."), """
+                    /**
+                     * Comment.
+                     * @since 0
+                     */
+                    public class C { }""");
+     }
 
      /**
       * Tests the entry point used by the DocumentationTool API and JavadocTester, in which
@@ -74,22 +93,62 @@
      }
 
      void test(Path base, boolean useStdStreams, Output stdOut, Output stdErr) throws IOException {
-         Path src = base.resolve("src");
-         tb.writeJavaFiles(src, "public class C { }");
-
          String testClasses = System.getProperty("test.classes");
 
          setOutputDirectoryCheck(DirectoryCheck.NONE);
          setUseStandardStreams(useStdStreams);
          javadoc("-docletpath", testClasses,
                  "-doclet", MyDoclet.class.getName(),
-                 src.resolve("C.java").toString()
+                 "C.java" // avoid using a directory, to avoid path separator issues in expected output
          );
-         checkExit(Exit.OK);
+         checkExit(Exit.ERROR);
          checkOutput(stdOut, true,
                  "Writing to the standard writer");
          checkOutput(stdErr, true,
                  "Writing to the diagnostic writer");
+         checkOutput(stdErr, true,
+                 """
+                     error: This is a ERROR with no position
+                     C.java:5: error: This is a ERROR for an element
+                     public class C { }
+                            ^
+                     C.java:2: error: This is a ERROR for a doc tree path
+                      * Comment.
+                        ^
+                     C.java:3: error: This is a ERROR for a file position
+                      * @since 0
+                               ^
+                     warning: This is a WARNING with no position
+                     C.java:5: warning: This is a WARNING for an element
+                     public class C { }
+                            ^
+                     C.java:2: warning: This is a WARNING for a doc tree path
+                      * Comment.
+                        ^
+                     C.java:3: warning: This is a WARNING for a file position
+                      * @since 0
+                               ^
+                     warning: This is a MANDATORY_WARNING with no position
+                     C.java:5: warning: This is a MANDATORY_WARNING for an element
+                     public class C { }
+                            ^
+                     C.java:2: warning: This is a MANDATORY_WARNING for a doc tree path
+                      * Comment.
+                        ^
+                     C.java:3: warning: This is a MANDATORY_WARNING for a file position
+                      * @since 0
+                               ^
+                     Note: This is a NOTE with no position
+                     C.java:5: Note: This is a NOTE for an element
+                     public class C { }
+                            ^
+                     C.java:2: Note: This is a NOTE for a doc tree path
+                      * Comment.
+                        ^
+                     C.java:3: Note: This is a NOTE for a file position
+                      * @since 0
+                               ^
+                     """);
      }
 
      public static class MyDoclet implements Doclet {
@@ -119,10 +178,42 @@
 
          @Override
          public boolean run(DocletEnvironment environment) {
+             // Write directly to the given streams
              reporter.getStandardWriter().println("Writing to the standard writer");
              reporter.getDiagnosticWriter().println("Writing to the diagnostic writer");
+
              // the following is little more than a null check for the locale
              reporter.print(Diagnostic.Kind.NOTE, "The locale is " + locale.getDisplayName());
+
+             // Write different kinds of diagnostics using the different overloads
+             // for printing diagnostics
+             Set<? extends Element> specElems = environment.getSpecifiedElements();
+             Element e = specElems.iterator().next();
+
+             DocTrees trees = environment.getDocTrees();
+             TreePath tp = trees.getPath(e);
+             DocCommentTree dct = trees.getDocCommentTree(e);
+             DocTreePath dtp = new DocTreePath(tp, dct);
+
+             CompilationUnitTree cut = tp.getCompilationUnit();
+             JavaFileObject fo = cut.getSourceFile();
+             SinceTree st = (SinceTree) dct.getBlockTags().get(0);
+             DocSourcePositions sp = trees.getSourcePositions();
+             int start = (int) sp.getStartPosition(cut, dct, st);
+             int pos = (int) sp.getStartPosition(cut, dct, st.getBody().get(0));
+             int end = (int) sp.getEndPosition(cut, dct, st);
+
+             for (Diagnostic.Kind k : Diagnostic.Kind.values()) {
+                 if (k == Diagnostic.Kind.OTHER) {
+                     continue;
+                 }
+
+                 reporter.print(k, "This is a " + k + " with no position");
+                 reporter.print(k, e, "This is a " + k + " for an element");
+                 reporter.print(k, dtp, "This is a " + k + " for a doc tree path");
+                 reporter.print(k, fo, start, pos, end, "This is a " + k + " for a file position");
+             }
+
              return true;
          }
      }

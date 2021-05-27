@@ -139,13 +139,15 @@ public class Messages {
 
     /**
      * Reports an informational notice to the doclet's reporter.
+     * The message is written directly to the reporter's diagnostic stream.
      *
      * @param key the name of a resource containing the message to be printed
      * @param args optional arguments to be replaced in the message.
      */
     public void notice(String key, Object... args) {
         if (!configuration.getOptions().quiet()) {
-            report(NOTE, resources.getText(key, args));
+            // Note: we do not use report(NOTE, ...) which would prefix the output with "Note:"
+            reporter.getDiagnosticWriter().println(resources.getText(key, args));
         }
     }
 
