@@ -568,6 +568,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
   case _thread_in_vm_trans:
     {
       frame fr;
+
       // param isInJava == false - indicate we aren't in Java code
       if (!thread->pd_get_top_frame_for_signal_handler(&fr, ucontext, false)) {
         trace->num_frames = ticks_unknown_not_Java;  // -3 unknown frame
