@@ -107,8 +107,8 @@ public class StandardDoclet implements Doclet {
      * {@return the locale for this doclet}
      *
      * @see #init(Locale, Reporter)
-	 *
-	 * @since 17
+     *
+     * @since 17
      */
     public Locale getLocale() {
         return htmlDoclet.getConfiguration().getLocale();
@@ -118,8 +118,8 @@ public class StandardDoclet implements Doclet {
      * {@return the reporter for this doclet}
      *
      * @see #init(Locale, Reporter)
-	 *
-	 * @since 17
+     *
+     * @since 17
      */
     public Reporter getReporter() {
         return htmlDoclet.getConfiguration().getReporter();
