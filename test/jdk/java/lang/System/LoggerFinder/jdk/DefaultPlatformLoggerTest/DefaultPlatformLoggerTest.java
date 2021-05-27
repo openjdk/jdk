@@ -51,7 +51,7 @@ import sun.util.logging.internal.LoggingProviderImpl;
  * @bug     8140364
  * @summary Tests all PlatformLogger methods with the default LoggerFinder JUL backend.
  * @modules java.base/sun.util.logging java.logging/sun.util.logging.internal
- * @run  main/othervm DefaultPlatformLoggerTest
+ * @run  main/othervm -Djava.security.manager=allow DefaultPlatformLoggerTest
  * @author danielfuchs
  */
 public class DefaultPlatformLoggerTest {
