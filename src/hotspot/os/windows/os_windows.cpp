@@ -1457,25 +1457,26 @@ static int _print_module(const char* fname, address base_address,
 }
 
 static errno_t convert_to_UTF16(char const* source_str, UINT source_encoding, LPWSTR* dest_utf16_str) {
-  const int flag_source_str_is_null_terminated = -1;
-  const int flag_estimate_chars_count = 0;
-  int utf16_chars_count_estimated = MultiByteToWideChar(source_encoding,
-                                                        MB_ERR_INVALID_CHARS,
-                                                        source_str, flag_source_str_is_null_terminated,
-                                                        NULL, flag_estimate_chars_count);
-  if (utf16_chars_count_estimated == 0) {
+  const int len_estimated = MultiByteToWideChar(source_encoding,
+                                                MB_ERR_INVALID_CHARS,
+                                                source_str,
+                                                -1, // source is null-terminated
+                                                NULL,
+                                                0); // estimate characters count
+  if (len_estimated == 0) {
     // Probably source_str contains characters that cannot be represented in the source_encoding given.
     *dest_utf16_str = NULL;
     return EINVAL;
   }
 
-  *dest_utf16_str = NEW_C_HEAP_ARRAY(WCHAR, utf16_chars_count_estimated, mtInternal);
+  *dest_utf16_str = NEW_C_HEAP_ARRAY(WCHAR, len_estimated, mtInternal);
 
-  int utf16_chars_count_real = MultiByteToWideChar(source_encoding,
-                                                   MB_ERR_INVALID_CHARS,
-                                                   source_str, flag_source_str_is_null_terminated,
-                                                   *dest_utf16_str, utf16_chars_count_estimated);
-  assert(utf16_chars_count_real == utf16_chars_count_estimated, "length already checked above");
+  const int len_real = MultiByteToWideChar(source_encoding,
+                                           MB_ERR_INVALID_CHARS,
+                                           source_str,
+                                           -1, // source is null-terminated
+                                           *dest_utf16_str, len_estimated);
+  assert(len_real == len_estimated, "length already checked above");
 
   return ERROR_SUCCESS;
 }
@@ -1493,24 +1494,26 @@ static errno_t convert_UTF8_to_UTF16(char const* utf8_str, LPWSTR* utf16_str) {
 // Unless the platform encoding is UTF-8, not all characters in the source string can be represented in the dest string.
 // The function succeeds in this case anyway and just replaces these with a certain character.
 static errno_t convert_UTF16_to_platform(LPWSTR source_utf16_str, char*& dest_str) {
-  const int flag_source_str_is_null_terminated = -1;
-  const int flag_estimate_chars_count = 0;
-  int chars_count_estimated = WideCharToMultiByte(CP_ACP,
-                                                  0,
-                                                  source_utf16_str, flag_source_str_is_null_terminated,
-                                                  NULL, flag_estimate_chars_count, NULL, NULL);
-  if (chars_count_estimated == 0) {
+  const int len_estimated = WideCharToMultiByte(CP_ACP,
+                                                0,
+                                                source_utf16_str,
+                                                -1, // source is null-terminated
+                                                NULL,
+                                                0, // estimate characters count
+                                                NULL, NULL);
+  if (len_estimated == 0) {
     dest_str = NULL;
     return EINVAL;
   }
 
-  dest_str = NEW_C_HEAP_ARRAY(CHAR, chars_count_estimated, mtInternal);
+  dest_str = NEW_C_HEAP_ARRAY(CHAR, len_estimated, mtInternal);
 
-  int chars_count_real = WideCharToMultiByte(CP_ACP,
-                                             0,
-                                             source_utf16_str, flag_source_str_is_null_terminated,
-                                             dest_str, chars_count_estimated, NULL, NULL);
-  assert(chars_count_real == chars_count_estimated, "length already checked above");
+  const int len_real = WideCharToMultiByte(CP_ACP,
+                                           0,
+                                           source_utf16_str,
+                                           -1, // source is null-terminated
+                                           dest_str, len_estimated, NULL, NULL);
+  assert(len_real == len_estimated, "length already checked above");
 
   return ERROR_SUCCESS;
 }
