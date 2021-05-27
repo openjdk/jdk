@@ -439,7 +439,9 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   }
 #endif // COMPILER2_OR_JVMCI
 
-  return frame(sender_sp, unextended_sp, link(), sender_pc());
+  // Use the raw version of pc - the interpreter should not have signed it.
+
+  return frame(sender_sp, unextended_sp, link(), sender_pc_raw());
 }
 
 
@@ -503,12 +505,7 @@ frame frame::sender_raw(RegisterMap* map) const {
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
 
-  // Native code may or may not have signed the return address when saving it
-  // to the stack. In addition, we do not know which key was used to sign it.
-  // Therefore, all we can do is strip it.
-  address sender_pc = pauth_strip_pointer(this->sender_pc());
-
-  return frame(sender_sp(), link(), sender_pc);
+  return frame(sender_sp(), link(), sender_pc());
 }
 
 frame frame::sender(RegisterMap* map) const {
