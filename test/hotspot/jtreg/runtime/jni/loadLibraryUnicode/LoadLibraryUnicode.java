@@ -35,17 +35,12 @@ public class LoadLibraryUnicode {
 
     private static final String NON_LATIN_PATH_NAME = "ka-\u1889-omega-\u03c9";
 
+    private static String toPlatformLibraryName(String name) {
+        return (Platform.isWindows() ? "" : "lib") + name + "." + Platform.sharedLibraryExt();
+    }
+
     public static void verifySystemLoad() throws Exception {
-        String osDependentLibraryFileName = null;
-        if (Platform.isLinux()) {
-            osDependentLibraryFileName = "libLoadLibraryUnicode.so";
-        } else if (Platform.isOSX()) {
-            osDependentLibraryFileName = "libLoadLibraryUnicode.dylib";
-        } else if (Platform.isWindows()) {
-            osDependentLibraryFileName = "LoadLibraryUnicode.dll";
-        } else {
-            throw new Error("Unsupported OS");
-        }
+        final String osDependentLibraryFileName = toPlatformLibraryName("LoadLibraryUnicode");
 
         String testNativePath = LoadLibraryUnicodeTest.getSystemProperty("test.nativepath");
         Path origLibraryPath = Paths.get(testNativePath).resolve(osDependentLibraryFileName);
