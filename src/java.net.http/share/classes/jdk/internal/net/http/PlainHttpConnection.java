@@ -296,7 +296,7 @@ class PlainHttpConnection extends HttpConnection {
     private int getSoReceiveBufferSize() {
         try {
             return chan.getOption(StandardSocketOptions.SO_RCVBUF);
-        } catch(IOException x) {
+        } catch (IOException x) {
             if (debug.on())
                 debug.log("Failed to get initial receive buffer size on %s", chan);
         }
@@ -306,7 +306,7 @@ class PlainHttpConnection extends HttpConnection {
     private int getSoSendBufferSize() {
         try {
             return chan.getOption(StandardSocketOptions.SO_SNDBUF);
-        } catch(IOException x) {
+        } catch (IOException x) {
             if (debug.on())
                 debug.log("Failed to get initial receive buffer size on %s", chan);
         }
@@ -319,7 +319,7 @@ class PlainHttpConnection extends HttpConnection {
                 chan.setOption(StandardSocketOptions.SO_RCVBUF, bufsize);
                 return true;
             }
-        } catch(IOException x) {
+        } catch (IOException x) {
             if (debug.on())
                 debug.log("Failed to set receive buffer size to %d on %s",
                           bufsize, chan);
@@ -333,7 +333,7 @@ class PlainHttpConnection extends HttpConnection {
                 chan.setOption(StandardSocketOptions.SO_SNDBUF, bufsize);
                 return true;
             }
-        } catch(IOException x) {
+        } catch (IOException x) {
             if (debug.on())
                 debug.log("Failed to set send buffer size to %d on %s",
                         bufsize, chan);
