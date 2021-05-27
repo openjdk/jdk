@@ -1228,7 +1228,7 @@ public:
   virtual void remove_java_mirror();
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
-  bool has_old_class_version() const;
+  bool can_be_verified_at_dumptime() const;
 
   jint compute_modifier_flags() const;
 
@@ -1406,7 +1406,6 @@ class ClassHierarchyIterator : public StackObj {
 
  public:
   ClassHierarchyIterator(InstanceKlass* root) : _root(root), _current(root), _visit_subclasses(true) {
-    assert(!root->is_interface(), "no subclasses");
     assert(_root == _current, "required"); // initial state
   }
 

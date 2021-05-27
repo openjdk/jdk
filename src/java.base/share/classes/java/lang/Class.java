@@ -4503,9 +4503,8 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @jls 8.1 Class Declarations
      * @jls 9.1 Interface Declarations
-     * @since 15
+     * @since 17
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES, reflective=true)
     @CallerSensitive
     public Class<?>[] getPermittedSubclasses() {
         Class<?>[] subClasses;
@@ -4553,14 +4552,13 @@ public final class Class<T> implements java.io.Serializable,
      * subclasses; {@link #getPermittedSubclasses()} returns a non-null but
      * possibly empty value for a sealed class or interface.
      *
-     * @return {@code true} if and only if this {@code Class} object represents a sealed class or interface.
+     * @return {@code true} if and only if this {@code Class} object represents
+     * a sealed class or interface.
      *
      * @jls 8.1 Class Declarations
      * @jls 9.1 Interface Declarations
-     * @since 15
+     * @since 17
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES, reflective=true)
-    @SuppressWarnings("preview")
     public boolean isSealed() {
         if (isArray() || isPrimitive()) {
             return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,6 +22,8 @@ package com.sun.org.apache.xerces.internal.jaxp;
 
 import com.sun.org.apache.xerces.internal.parsers.DOMParser;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.XMLConstants;
@@ -29,6 +31,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.validation.Schema;
+import jdk.xml.internal.JdkProperty;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
@@ -36,6 +39,7 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
+ * @LastModified: May 2021
  */
 public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     /** These are DocumentBuilderFactory attributes not DOM attributes */
@@ -48,6 +52,10 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
      * State of the secure processing feature, initially <code>false</code>
      */
     private boolean fSecureProcess = true;
+
+    // used to verify attributes
+    XMLSecurityManager fSecurityManager = new XMLSecurityManager(true);
+    XMLSecurityPropertyManager fSecurityPropertyMgr = new XMLSecurityPropertyManager();
 
     /**
      * Creates a new instance of a {@link javax.xml.parsers.DocumentBuilder}
@@ -104,6 +112,20 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
             attributes = new HashMap<>();
         }
 
+        //check if the property is managed by security manager
+        String pName;
+        if ((pName = fSecurityManager.find(name)) != null) {
+            // as the qName is deprecated, let the manager decide whether the
+            // value shall be changed
+            fSecurityManager.setLimit(name, JdkProperty.State.APIPROPERTY, value);
+            attributes.put(pName, fSecurityManager.getLimitAsString(pName));
+            // no need to create a DocumentBuilderImpl
+            return;
+        } else if ((pName = fSecurityPropertyMgr.find(name)) != null) {
+            attributes.put(pName, value);
+            return;
+        }
+
         attributes.put(name, value);
 
         // Test the attribute name by possibly throwing an exception
@@ -122,6 +144,15 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     public Object getAttribute(String name)
         throws IllegalArgumentException
     {
+
+        //check if the property is managed by security manager
+        String pName;
+        if ((pName = fSecurityManager.find(name)) != null) {
+            return attributes.get(pName);
+        } else if ((pName = fSecurityPropertyMgr.find(name)) != null) {
+            return attributes.get(pName);
+        }
+
         // See if it's in the attributes Map
         if (attributes != null) {
             Object val = attributes.get(name);

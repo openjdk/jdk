@@ -290,7 +290,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         }
     }
 
-    private class MLSxParser implements FtpDirParser {
+    private static class MLSxParser implements FtpDirParser {
         public FtpDirEntry parseLine(String line) {
             String name = null;
             int i = line.lastIndexOf(';');
@@ -1763,7 +1763,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         return this;
     }
 
-    private class FtpFileIterator implements Iterator<FtpDirEntry>, Closeable {
+    private static class FtpFileIterator implements Iterator<FtpDirEntry>, Closeable {
 
         private BufferedReader in = null;
         private FtpDirEntry nextFile = null;

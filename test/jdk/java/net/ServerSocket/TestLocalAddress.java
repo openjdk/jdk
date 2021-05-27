@@ -45,7 +45,7 @@ import static org.testng.Assert.*;
  * @test
  * @bug 8224730
  * @summary Check local address access with a security manager
- * @run testng/othervm TestLocalAddress
+ * @run testng/othervm -Djava.security.manager=allow TestLocalAddress
  */
 
 public class TestLocalAddress {

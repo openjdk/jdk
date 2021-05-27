@@ -122,11 +122,11 @@ class StringTableConfig : public StackObj {
     return 0;
   }
   // We use default allocation/deallocation but counted
-  static void* allocate_node(size_t size, Value const& value) {
+  static void* allocate_node(void* context, size_t size, Value const& value) {
     StringTable::item_added();
     return AllocateHeap(size, mtSymbol);
   }
-  static void free_node(void* memory, Value const& value) {
+  static void free_node(void* context, void* memory, Value const& value) {
     value.release(StringTable::_oop_storage);
     FreeHeap(memory);
     StringTable::item_removed();

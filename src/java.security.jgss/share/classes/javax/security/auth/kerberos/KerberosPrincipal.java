@@ -106,7 +106,7 @@ public final class KerberosPrincipal
      *
      * <p>If the input name does not contain a realm, the default realm
      * is used. The default realm can be specified either in a Kerberos
-     * configuration file or via the {@systemProperty java.security.krb5.realm}
+     * configuration file or via the {@code java.security.krb5.realm}
      * system property. For more information, see the
      * {@extLink security_guide_jgss_tutorial Kerberos Requirements}.
      *
@@ -155,7 +155,7 @@ public final class KerberosPrincipal
      *
      * <p>If the input name does not contain a realm, the default realm
      * is used. The default realm can be specified either in a Kerberos
-     * configuration file or via the {@systemProperty java.security.krb5.realm}
+     * configuration file or via the {@code java.security.krb5.realm}
      * system property. For more information, see the
      * {@extLink security_guide_jgss_tutorial Kerberos Requirements}.
      *

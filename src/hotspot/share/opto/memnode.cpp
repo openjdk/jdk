@@ -1754,7 +1754,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // try to optimize our memory input
     Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, this, phase);
     if (opt_mem != mem) {
-      set_req(MemNode::Memory, opt_mem);
+      set_req_X(MemNode::Memory, opt_mem, phase);
       if (phase->type( opt_mem ) == Type::TOP) return NULL;
       return this;
     }
@@ -1829,7 +1829,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // just return a prior value, which is done by Identity calls.
     if (can_see_stored_value(prev_mem, phase)) {
       // Make ready for step (d):
-      set_req(MemNode::Memory, prev_mem);
+      set_req_X(MemNode::Memory, prev_mem, phase);
       return this;
     }
   }

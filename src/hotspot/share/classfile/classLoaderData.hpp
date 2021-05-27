@@ -325,6 +325,10 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   const char* loader_name_and_id() const;
   Symbol* name_and_id() const { return _name_and_id; }
 
+  unsigned identity_hash() const {
+    return (unsigned)((uintptr_t)this >> 3);
+  }
+
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 };
 

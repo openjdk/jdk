@@ -2429,8 +2429,15 @@ public final class Main {
             newPass = destKeyPass;
             pp = new PasswordProtection(destKeyPass);
         } else if (objs.snd != null) {
-            newPass = P12KEYSTORE.equalsIgnoreCase(storetype) ?
-                    storePass : objs.snd;
+            if (P12KEYSTORE.equalsIgnoreCase(storetype)) {
+                if (isPasswordlessKeyStore) {
+                    newPass = objs.snd;
+                } else {
+                    newPass = storePass;
+                }
+            } else {
+                newPass = objs.snd;
+            }
             pp = new PasswordProtection(newPass);
         }
 
@@ -2442,7 +2449,7 @@ public final class Main {
             keyStore.setEntry(newAlias, entry, pp);
             // Place the check so that only successful imports are blocked.
             // For example, we don't block a failed SecretEntry import.
-            if (P12KEYSTORE.equalsIgnoreCase(storetype)) {
+            if (P12KEYSTORE.equalsIgnoreCase(storetype) && !isPasswordlessKeyStore) {
                 if (newPass != null && !Arrays.equals(newPass, storePass)) {
                     throw new Exception(rb.getString(
                             "The.destination.pkcs12.keystore.has.different.storepass.and.keypass.Please.retry.with.destkeypass.specified."));

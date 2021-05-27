@@ -574,6 +574,6 @@ public class ProtectionDomain {
     /**
      * Used for storing ProtectionDomains as keys in a Map.
      */
-    final class Key {}
+    static final class Key {}
 
 }

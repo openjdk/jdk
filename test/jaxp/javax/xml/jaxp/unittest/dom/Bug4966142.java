@@ -36,7 +36,7 @@ import org.w3c.dom.TypeInfo;
  * @test
  * @bug 4966142
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.Bug4966142
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug4966142
  * @run testng/othervm dom.Bug4966142
  * @summary Test TypeInfo.isDerivedFrom(...) works instead of throws UnsupportedOperationException when the TypeInfo instance refers to a simple type.
  */

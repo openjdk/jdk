@@ -53,6 +53,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -3416,8 +3417,12 @@ void Threads::destroy_vm() {
     // to prevent this. The GC vm_operations will not be able to
     // queue until after the vm thread is dead. After this point,
     // we'll never emerge out of the safepoint before the VM exits.
+    // Assert that the thread is terminated so that acquiring the
+    // Heap_lock doesn't cause the terminated thread to participate in
+    // the safepoint protocol.
 
-    MutexLocker ml(Heap_lock, Mutex::_no_safepoint_check_flag);
+    assert(thread->is_terminated(), "must be terminated here");
+    MutexLocker ml(Heap_lock);
 
     VMThread::wait_for_vm_thread_exit();
     assert(SafepointSynchronize::is_at_safepoint(), "VM thread should exit at Safepoint");
@@ -3764,6 +3769,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
     StringDedup::threads_do(&cl);
   }
   cl.do_thread(WatcherThread::watcher_thread());
+  cl.do_thread(AsyncLogWriter::instance());
 
   st->flush();
 }
@@ -3817,6 +3823,7 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   st->print_cr("Other Threads:");
   print_on_error(VMThread::vm_thread(), st, current, buf, buflen, &found_current);
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
+  print_on_error(AsyncLogWriter::instance(), st, current, buf, buflen, &found_current);
 
   if (Universe::heap() != NULL) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);

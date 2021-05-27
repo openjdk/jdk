@@ -115,6 +115,7 @@ public class LogGeneratedClassesTest extends LUtils {
     public void testNotLogging() {
         TestResult tr = doExec(JAVA_CMD.getAbsolutePath(),
                                "-cp", ".",
+                               "-Djava.security.manager=allow",
                                "com.example.TestLambda");
         tr.assertZero("Should still return 0");
     }
@@ -124,6 +125,7 @@ public class LogGeneratedClassesTest extends LUtils {
         assertTrue(Files.exists(Paths.get("dump")));
         TestResult tr = doExec(JAVA_CMD.getAbsolutePath(),
                                "-cp", ".",
+                               "-Djava.security.manager=allow",
                                "-Djdk.internal.lambda.dumpProxyClasses=dump",
                                "com.example.TestLambda");
         // 2 our own class files. We don't care about the others
@@ -141,6 +143,7 @@ public class LogGeneratedClassesTest extends LUtils {
         assertFalse(Files.exists(Paths.get("notExist")));
         TestResult tr = doExec(JAVA_CMD.getAbsolutePath(),
                                "-cp", ".",
+                               "-Djava.security.manager=allow",
                                "-Djdk.internal.lambda.dumpProxyClasses=notExist",
                                "com.example.TestLambda");
         assertEquals(tr.testOutput.stream()
@@ -157,6 +160,7 @@ public class LogGeneratedClassesTest extends LUtils {
         assertTrue(Files.isRegularFile(Paths.get("file")));
         TestResult tr = doExec(JAVA_CMD.getAbsolutePath(),
                                "-cp", ".",
+                               "-Djava.security.manager=allow",
                                "-Djdk.internal.lambda.dumpProxyClasses=file",
                                "com.example.TestLambda");
         assertEquals(tr.testOutput.stream()
@@ -216,6 +220,7 @@ public class LogGeneratedClassesTest extends LUtils {
 
             TestResult tr = doExec(JAVA_CMD.getAbsolutePath(),
                                    "-cp", ".",
+                                   "-Djava.security.manager=allow",
                                    "-Djdk.internal.lambda.dumpProxyClasses=readOnly",
                                    "com.example.TestLambda");
             assertEquals(tr.testOutput.stream()
@@ -235,6 +240,7 @@ public class LogGeneratedClassesTest extends LUtils {
         assertTrue(Files.exists(Paths.get("dumpLong")));
         TestResult tr = doExec(JAVA_CMD.getAbsolutePath(),
                                "-cp", ".",
+                                "-Djava.security.manager=allow",
                                "-Djdk.internal.lambda.dumpProxyClasses=dumpLong",
                                longFQCN);
         assertEquals(tr.testOutput.stream()
