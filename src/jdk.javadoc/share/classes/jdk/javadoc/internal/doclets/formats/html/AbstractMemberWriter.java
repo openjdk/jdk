@@ -295,20 +295,6 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     }
 
     /**
-     * Returns {@code true} if the given element is inherited
-     * by the class that is being documented.
-     *
-     * @param ped the element being checked
-     *
-     * @return {@code true} if inherited
-     */
-    protected boolean isInherited(Element ped){
-        return (!utils.isPrivate(ped) &&
-                (!utils.isPackagePrivate(ped) ||
-                    ped.getEnclosingElement().equals(ped.getEnclosingElement())));
-    }
-
-    /**
      * Adds use information to the documentation tree.
      *
      * @param members     list of program elements for which the use information will be added

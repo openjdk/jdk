@@ -567,7 +567,7 @@ public class ElementsTable {
             if (!isMandated(mdle, rd) && onlyTransitive == rd.isTransitive()) {
                 if (!haveModuleSources(dep)) {
                     if (!warnedNoSources.contains(dep)) {
-                        messager.printWarning(dep, "main.module_source_not_found", dep.getQualifiedName());
+                        messager.printWarningUsingKey(dep, "main.module_source_not_found", dep.getQualifiedName());
                         warnedNoSources.add(dep);
                     }
                 }
@@ -977,7 +977,6 @@ public class ElementsTable {
         return (xclasses || toolEnv.getFileKind(te) == SOURCE) && isSelected(te);
     }
 
-    @SuppressWarnings("preview")
     SimpleElementVisitor14<Boolean, Void> visibleElementVisitor = null;
     /**
      * Returns true if the element is selected, by applying
@@ -989,7 +988,6 @@ public class ElementsTable {
      * @param e the element to be checked
      * @return true if the element is visible
      */
-    @SuppressWarnings("preview")
     public boolean isSelected(Element e) {
         if (toolEnv.isSynthetic((Symbol) e)) {
             return false;
@@ -1029,7 +1027,6 @@ public class ElementsTable {
         return visibleElementVisitor.visit(e);
     }
 
-    @SuppressWarnings("preview")
     private class IncludedVisitor extends SimpleElementVisitor14<Boolean, Void> {
         private final Set<Element> includedCache;
 
@@ -1162,8 +1159,7 @@ public class ElementsTable {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof ModulePackage) {
-                ModulePackage that = (ModulePackage)obj;
+            if (obj instanceof ModulePackage that) {
                 return this.toString().equals(that.toString());
             }
             return false;

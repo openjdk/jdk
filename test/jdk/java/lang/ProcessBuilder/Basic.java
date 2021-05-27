@@ -32,8 +32,8 @@
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
  * @library /test/lib
- * @run main/othervm/timeout=300 Basic
- * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=fork Basic
+ * @run main/othervm/timeout=300 -Djava.security.manager=allow Basic
+ * @run main/othervm/timeout=300 -Djava.security.manager=allow -Djdk.lang.Process.launchMechanism=fork Basic
  * @author Martin Buchholz
  */
 
@@ -42,7 +42,7 @@
  * @modules java.base/java.lang:open
  * @requires (os.family == "linux")
  * @library /test/lib
- * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=posix_spawn Basic
+ * @run main/othervm/timeout=300 -Djava.security.manager=allow -Djdk.lang.Process.launchMechanism=posix_spawn Basic
  */
 
 import java.lang.ProcessBuilder.Redirect;

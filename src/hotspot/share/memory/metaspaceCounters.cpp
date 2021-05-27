@@ -25,13 +25,14 @@
 #include "precompiled.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceCounters.hpp"
+#include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/exceptions.hpp"
 
-class MetaspacePerfCounters: public CHeapObj<mtMetaspace> {
+class MetaspacePerfCounters {
   friend class VMStructs;
   PerfVariable*      _capacity;
   PerfVariable*      _used;
@@ -48,88 +49,40 @@ class MetaspacePerfCounters: public CHeapObj<mtMetaspace> {
   }
 
  public:
-  MetaspacePerfCounters(const char* ns, size_t min_capacity, size_t curr_capacity, size_t max_capacity, size_t used) {
+  MetaspacePerfCounters() : _capacity(NULL), _used(NULL), _max_capacity(NULL) {}
+
+  void initialize(const char* ns) {
+    assert(_capacity == NULL, "Only initialize once");
     EXCEPTION_MARK;
     ResourceMark rm;
 
-    create_constant(ns, "minCapacity", min_capacity, THREAD);
-    _capacity = create_variable(ns, "capacity", curr_capacity, THREAD);
-    _max_capacity = create_variable(ns, "maxCapacity", max_capacity, THREAD);
-    _used = create_variable(ns, "used", used, THREAD);
+    create_constant(ns, "minCapacity", 0, THREAD); // min_capacity makes little sense in the context of metaspace
+    _capacity = create_variable(ns, "capacity", 0, THREAD);
+    _max_capacity = create_variable(ns, "maxCapacity", 0, THREAD);
+    _used = create_variable(ns, "used", 0, THREAD);
   }
 
-  void update(size_t capacity, size_t max_capacity, size_t used) {
-    _capacity->set_value(capacity);
-    _max_capacity->set_value(max_capacity);
-    _used->set_value(used);
+  void update(const MetaspaceStats& stats) {
+    _capacity->set_value(stats.committed());
+    _max_capacity->set_value(stats.reserved());
+    _used->set_value(stats.used());
   }
 };
 
-MetaspacePerfCounters* MetaspaceCounters::_perf_counters = NULL;
-
-size_t MetaspaceCounters::used() {
-  return MetaspaceUtils::used_bytes();
-}
-
-size_t MetaspaceCounters::capacity() {
-  return MetaspaceUtils::committed_bytes();
-}
-
-size_t MetaspaceCounters::max_capacity() {
-  return MetaspaceUtils::reserved_bytes();
-}
+static MetaspacePerfCounters g_meta_space_perf_counters; // class + nonclass
+static MetaspacePerfCounters g_class_space_perf_counters;
 
 void MetaspaceCounters::initialize_performance_counters() {
   if (UsePerfData) {
-    assert(_perf_counters == NULL, "Should only be initialized once");
-
-    size_t min_capacity = 0;
-    _perf_counters = new MetaspacePerfCounters("metaspace", min_capacity,
-                                               capacity(), max_capacity(), used());
+    g_meta_space_perf_counters.initialize("metaspace");
+    g_class_space_perf_counters.initialize("compressedclassspace");
+    update_performance_counters();
   }
 }
 
 void MetaspaceCounters::update_performance_counters() {
   if (UsePerfData) {
-    assert(_perf_counters != NULL, "Should be initialized");
-
-    _perf_counters->update(capacity(), max_capacity(), used());
-  }
-}
-
-MetaspacePerfCounters* CompressedClassSpaceCounters::_perf_counters = NULL;
-
-size_t CompressedClassSpaceCounters::used() {
-  return MetaspaceUtils::used_bytes(Metaspace::ClassType);
-}
-
-size_t CompressedClassSpaceCounters::capacity() {
-  return MetaspaceUtils::committed_bytes(Metaspace::ClassType);
-}
-
-size_t CompressedClassSpaceCounters::max_capacity() {
-  return MetaspaceUtils::reserved_bytes(Metaspace::ClassType);
-}
-
-void CompressedClassSpaceCounters::update_performance_counters() {
-  if (UsePerfData && UseCompressedClassPointers) {
-    assert(_perf_counters != NULL, "Should be initialized");
-
-    _perf_counters->update(capacity(), max_capacity(), used());
-  }
-}
-
-void CompressedClassSpaceCounters::initialize_performance_counters() {
-  if (UsePerfData) {
-    assert(_perf_counters == NULL, "Should only be initialized once");
-    const char* ns = "compressedclassspace";
-
-    if (UseCompressedClassPointers) {
-      size_t min_capacity = 0;
-      _perf_counters = new MetaspacePerfCounters(ns, min_capacity, capacity(),
-                                                 max_capacity(), used());
-    } else {
-      _perf_counters = new MetaspacePerfCounters(ns, 0, 0, 0, 0);
-    }
+    g_meta_space_perf_counters.update(MetaspaceUtils::get_combined_statistics());
+    g_class_space_perf_counters.update(MetaspaceUtils::get_statistics(Metaspace::ClassType));
   }
 }

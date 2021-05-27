@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6600882
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.Bug6600882Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamWriterTest.Bug6600882Test
  * @run testng/othervm stream.XMLStreamWriterTest.Bug6600882Test
  * @summary Test toString(), hashCode() of XMLStreamWriter .
  */

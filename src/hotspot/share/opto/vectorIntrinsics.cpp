@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,6 +352,9 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   if (!arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskNotUsed)) {
     return false;
   }
+  if (!arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed)) {
+    return false;
+  }
   if (!arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)) {
     return false;
   }
@@ -369,7 +372,8 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
     res = gvn().transform(VectorNode::make(Op_MulI, res, bcast_step, num_elem, elem_bt));
   } else if (step_val->get_con() > 1) {
     Node* cnt = gvn().makecon(TypeInt::make(log2i_exact(step_val->get_con())));
-    res = gvn().transform(VectorNode::make(Op_LShiftVB, res, cnt, vt));
+    Node* shift_cnt = vector_shift_count(cnt, Op_LShiftI, elem_bt, num_elem);
+    res = gvn().transform(VectorNode::make(Op_LShiftVB, res, shift_cnt, vt));
   }
 
   if (!start_val->is_con() || start_val->get_con() != 0) {
@@ -400,6 +404,60 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   // Wrap it up in VectorBox to keep object type information.
   res = box_vector(res, shuffle_box_type, elem_bt, num_elem);
   set_result(res);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
+  return true;
+}
+
+// <E, M>
+// int maskReductionCoerced(int oper, Class<? extends M> maskClass, Class<?> elemClass,
+//                          int length, M m, VectorMaskOp<M> defaultImpl)
+bool LibraryCallKit::inline_vector_mask_operation() {
+  const TypeInt*     oper       = gvn().type(argument(0))->isa_int();
+  const TypeInstPtr* mask_klass = gvn().type(argument(1))->isa_instptr();
+  const TypeInstPtr* elem_klass = gvn().type(argument(2))->isa_instptr();
+  const TypeInt*     vlen       = gvn().type(argument(3))->isa_int();
+  Node*              mask       = argument(4);
+
+  if (mask_klass == NULL || elem_klass == NULL || mask->is_top() || vlen == NULL) {
+    return false; // dead code
+  }
+
+  if (!is_klass_initialized(mask_klass)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** klass argument not initialized");
+    }
+    return false;
+  }
+
+  int num_elem = vlen->get_con();
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  BasicType elem_bt = elem_type->basic_type();
+
+  if (!arch_supports_vector(Op_LoadVector, num_elem, T_BOOLEAN, VecMaskNotUsed)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s",
+                    Op_LoadVector, num_elem, type2name(T_BOOLEAN));
+    }
+    return false; // not supported
+  }
+
+  int mopc = VectorSupport::vop2ideal(oper->get_con(), elem_bt);
+  if (!arch_supports_vector(mopc, num_elem, elem_bt, VecMaskNotUsed)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s",
+                    mopc, num_elem, type2name(elem_bt));
+    }
+    return false; // not supported
+  }
+
+  const Type* elem_ty = Type::get_const_basic_type(elem_bt);
+  ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  const TypeInstPtr* mask_box_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
+  Node* mask_vec = unbox_vector(mask, mask_box_type, elem_bt, num_elem, true);
+  Node* store_mask = gvn().transform(VectorStoreMaskNode::make(gvn(), mask_vec, elem_bt, num_elem));
+  Node* maskoper = gvn().transform(VectorMaskOpNode::make(store_mask, TypeInt::INT, mopc));
+  set_result(maskoper);
+
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;
 }
@@ -1381,9 +1439,10 @@ bool LibraryCallKit::inline_vector_convert() {
     return false; // should be primitive type
   }
   BasicType elem_bt_to = elem_type_to->basic_type();
-  if (is_mask && elem_bt_from != elem_bt_to) {
-    return false; // type mismatch
+  if (is_mask && (type2aelembytes(elem_bt_from) != type2aelembytes(elem_bt_to))) {
+    return false; // elem size mismatch
   }
+
   int num_elem_from = vlen_from->get_con();
   int num_elem_to = vlen_to->get_con();
 

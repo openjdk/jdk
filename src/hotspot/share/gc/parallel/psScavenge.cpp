@@ -179,54 +179,46 @@ public:
 class PSEvacuateFollowersClosure: public VoidClosure {
  private:
   PSPromotionManager* _promotion_manager;
+  TaskTerminator* _terminator;
+  uint _worker_id;
+
  public:
-  PSEvacuateFollowersClosure(PSPromotionManager* pm) : _promotion_manager(pm) {}
+  PSEvacuateFollowersClosure(PSPromotionManager* pm, TaskTerminator* terminator, uint worker_id)
+    : _promotion_manager(pm), _terminator(terminator), _worker_id(worker_id) {}
 
   virtual void do_void() {
-    assert(_promotion_manager != NULL, "Sanity");
+    assert(_promotion_manager != nullptr, "Sanity");
     _promotion_manager->drain_stacks(true);
     guarantee(_promotion_manager->stacks_empty(),
               "stacks should be empty at this point");
-  }
-};
 
-class PSRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
-  virtual void execute(ProcessTask& process_task, uint ergo_workers);
-};
-
-class PSRefProcTask : public AbstractGangTask {
-  typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
-  TaskTerminator _terminator;
-  ProcessTask& _task;
-  uint _active_workers;
-
-public:
-  PSRefProcTask(ProcessTask& task, uint active_workers)
-    : AbstractGangTask("PSRefProcTask"),
-      _terminator(active_workers, PSPromotionManager::stack_array_depth()),
-      _task(task),
-      _active_workers(active_workers) {
-  }
-
-  virtual void work(uint worker_id) {
-    PSPromotionManager* promotion_manager =
-      PSPromotionManager::gc_thread_promotion_manager(worker_id);
-    assert(promotion_manager != NULL, "sanity check");
-    PSKeepAliveClosure keep_alive(promotion_manager);
-    PSEvacuateFollowersClosure evac_followers(promotion_manager);
-    PSIsAliveClosure is_alive;
-    _task.work(worker_id, is_alive, keep_alive, evac_followers);
-
-    if (_task.marks_oops_alive() && _active_workers > 1) {
-      steal_work(_terminator, worker_id);
+    if (_terminator != nullptr) {
+      steal_work(*_terminator, _worker_id);
     }
   }
 };
 
-void PSRefProcTaskExecutor::execute(ProcessTask& process_task, uint ergo_workers) {
-  PSRefProcTask task(process_task, ergo_workers);
-  ParallelScavengeHeap::heap()->workers().run_task(&task);
-}
+class ParallelScavengeRefProcProxyTask : public RefProcProxyTask {
+  TaskTerminator _terminator;
+
+public:
+  ParallelScavengeRefProcProxyTask(uint max_workers)
+    : RefProcProxyTask("ParallelScavengeRefProcProxyTask", max_workers),
+      _terminator(max_workers, ParCompactionManager::oop_task_queues()) {}
+
+  void work(uint worker_id) override {
+    assert(worker_id < _max_workers, "sanity");
+    PSPromotionManager* promotion_manager = (_tm == RefProcThreadModel::Single) ? PSPromotionManager::vm_thread_promotion_manager() : PSPromotionManager::gc_thread_promotion_manager(worker_id);
+    PSIsAliveClosure is_alive;
+    PSKeepAliveClosure keep_alive(promotion_manager);;
+    PSEvacuateFollowersClosure complete_gc(promotion_manager, (_marks_oops_alive && _tm == RefProcThreadModel::Multi) ? &_terminator : nullptr, worker_id);;
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
+  }
+
+  void prepare_run_task_hook() override {
+    _terminator.reset_for_reuse(_queue_count);
+  }
+};
 
 // This method contains all heap specific policy for invoking scavenge.
 // PSScavenge::invoke_no_policy() will do nothing but attempt to
@@ -496,19 +488,11 @@ bool PSScavenge::invoke_no_policy() {
 
       reference_processor()->setup_policy(false); // not always_clear
       reference_processor()->set_active_mt_degree(active_workers);
-      PSKeepAliveClosure keep_alive(promotion_manager);
-      PSEvacuateFollowersClosure evac_followers(promotion_manager);
       ReferenceProcessorStats stats;
       ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->max_num_queues());
-      if (reference_processor()->processing_is_mt()) {
-        PSRefProcTaskExecutor task_executor;
-        stats = reference_processor()->process_discovered_references(
-          &_is_alive_closure, &keep_alive, &evac_followers, &task_executor,
-          &pt);
-      } else {
-        stats = reference_processor()->process_discovered_references(
-          &_is_alive_closure, &keep_alive, &evac_followers, NULL, &pt);
-      }
+
+      ParallelScavengeRefProcProxyTask task(reference_processor()->max_num_queues());
+      stats = reference_processor()->process_discovered_references(task, pt);
 
       _gc_tracer.report_gc_reference_stats(stats);
       pt.print_all_references();

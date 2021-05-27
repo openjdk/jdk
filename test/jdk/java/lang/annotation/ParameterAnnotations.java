@@ -27,7 +27,7 @@
  * @summary Check properties of Annotations returned from
  * getParameterAnnotations, including freedom from security
  * exceptions.
- * @run main/othervm ParameterAnnotations
+ * @run main/othervm -Djava.security.manager=allow ParameterAnnotations
  * @author Martin Buchholz
  */
 
