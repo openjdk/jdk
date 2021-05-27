@@ -468,7 +468,15 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     final <P_IN> long exactOutputSizeIfKnown(Spliterator<P_IN> spliterator) {
         int flags = getStreamAndOpFlags();
         long size = StreamOpFlag.SIZED.isKnown(flags) ? spliterator.getExactSizeIfKnown() : -1;
+        // Currently, we have no stateless SIZE_ADJUSTING intermediate operations,
+        // so we can simply ignore SIZE_ADJUSTING in parallel more, as adjustments
+        // are already accounted in the input spliterator.
+        //
+        // If we ever have SIZE_ADJUSTING intermediate operation,
+        // we would need step back until depth == 0, then call exactOutputSize() for
+        // the subsequent stages.
         if (size != -1 && StreamOpFlag.SIZE_ADJUSTING.isKnown(flags) && !isParallel()) {
+            // Skip the source stage as it's never SIZE_ADJUSTING
             for (AbstractPipeline<?, ?, ?> stage = sourceStage.nextStage; stage != null; stage = stage.nextStage) {
                 size = stage.exactOutputSize(size);
             }

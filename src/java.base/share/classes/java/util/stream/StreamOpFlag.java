@@ -331,6 +331,9 @@ enum StreamOpFlag {
      * Characteristic value signifying that an operation may adjust the
      * total size of the stream.
      * <p>
+     * The flag, if present, is only valid when SIZED is present;
+     * and is only valid for sequential streams.
+     * <p>
      * An intermediate operation can preserve or inject this value.
      */
     // 13, 0x04000000
