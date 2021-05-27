@@ -145,6 +145,7 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
   DCmdArgument<char*> _repository_path;
   DCmdArgument<char*> _dump_path;
   DCmdArgument<jlong> _stack_depth;
+  DCmdArgument<jlong> _context_size;
   DCmdArgument<jlong> _global_buffer_count;
   DCmdArgument<MemorySizeArgument> _global_buffer_size;
   DCmdArgument<MemorySizeArgument> _thread_buffer_size;

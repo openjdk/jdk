@@ -55,6 +55,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _wallclock_time(os::javaTimeNanos()),
   _stack_trace_hash(0),
   _stackdepth(0),
+  _contextsize(0),
   _entering_suspend_flag(0),
   _excluded(false),
   _dead(false) {
@@ -197,8 +198,7 @@ JfrStackFrame* JfrThreadLocal::install_stackframes() const {
 
 JfrContextEntry* JfrThreadLocal::install_contextentries() const {
   assert(_contextentries == NULL, "invariant");
-  //FIXME: properly set the number of contextentries
-  _contextentries = NEW_C_HEAP_ARRAY(JfrContextEntry, 64, mtTracing);
+  _contextentries = NEW_C_HEAP_ARRAY(JfrContextEntry, contextsize(), mtTracing);
   return _contextentries;
 }
 
@@ -224,4 +224,8 @@ void JfrThreadLocal::include(Thread* t) {
 
 u4 JfrThreadLocal::stackdepth() const {
   return _stackdepth != 0 ? _stackdepth : (u4)JfrOptionSet::stackdepth();
+}
+
+u4 JfrThreadLocal::contextsize() const {
+  return _contextsize != 0 ? _contextsize : (u4)JfrOptionSet::contextsize();
 }

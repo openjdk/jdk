@@ -38,6 +38,9 @@ const int64_t invalid_time = -1;
 const u4 STACK_DEPTH_DEFAULT = 64;
 const u4 MIN_STACK_DEPTH = 1;
 const u4 MAX_STACK_DEPTH = 2048;
+const u4 CONTEXT_SIZE_DEFAULT = 16;
+const u4 MIN_CONTEXT_SIZE = 1;
+const u4 MAX_CONTEXT_SIZE = 128;
 
 enum ReservedEvent {
   EVENT_METADATA = 0,

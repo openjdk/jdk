@@ -46,6 +46,7 @@ public final class Options {
     private static final long DEFAULT_MEMORY_SIZE = DEFAULT_GLOBAL_BUFFER_COUNT * DEFAULT_GLOBAL_BUFFER_SIZE;
     private static long DEFAULT_THREAD_BUFFER_SIZE;
     private static final int DEFAULT_STACK_DEPTH = 64;
+    private static final int DEFAULT_CONTEXT_SIZE = 16;
     private static final boolean DEFAULT_SAMPLE_THREADS = true;
     private static final long DEFAULT_MAX_CHUNK_SIZE = 12 * 1024 * 1024;
     private static final SafePath DEFAULT_DUMP_PATH = SecuritySupport.USER_HOME;
@@ -55,6 +56,7 @@ public final class Options {
     private static long globalBufferCount;
     private static long threadBufferSize;
     private static int stackDepth;
+    private static int contextSize;
     private static boolean sampleThreads;
     private static long maxChunkSize;
     private static SafePath dumpPath;
@@ -130,6 +132,15 @@ public final class Options {
         return stackDepth;
     }
 
+    public static synchronized void setContextSize(Integer size) {
+        jvm.setContextSize(size);
+        contextSize = size;
+    }
+
+    public static synchronized int getContextSize() {
+        return contextSize;
+    }
+
     public static synchronized void setSampleThreads(Boolean sample) {
         jvm.setSampleThreads(sample);
         sampleThreads = sample;
@@ -147,6 +158,7 @@ public final class Options {
         setDumpPath(DEFAULT_DUMP_PATH);
         setSampleThreads(DEFAULT_SAMPLE_THREADS);
         setStackDepth(DEFAULT_STACK_DEPTH);
+        setContextSize(DEFAULT_CONTEXT_SIZE);
         setThreadBufferSize(DEFAULT_THREAD_BUFFER_SIZE);
     }
 

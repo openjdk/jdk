@@ -48,6 +48,7 @@ final class DCmdConfigure extends AbstractDCmd {
      * @param repositoryPath the path
      * @param dumpPath path to dump to on fatal error (oom)
      * @param stackDepth depth of stack traces
+     * @param contextSize size of context
      * @param globalBufferCount number of global buffers
      * @param globalBufferSize size of global buffers
      * @param threadBufferSize size of thread buffer for events
@@ -65,6 +66,7 @@ final class DCmdConfigure extends AbstractDCmd {
             String repositoryPath,
             String dumpPath,
             Integer stackDepth,
+            Integer contextSize,
             Long globalBufferCount,
             Long globalBufferSize,
             Long threadBufferSize,
@@ -77,6 +79,7 @@ final class DCmdConfigure extends AbstractDCmd {
             Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing DCmdConfigure: repositorypath=" + repositoryPath +
                     ", dumppath=" + dumpPath +
                     ", stackdepth=" + stackDepth +
+                    ", contextsize=" + contextSize +
                     ", globalbuffercount=" + globalBufferCount +
                     ", globalbuffersize=" + globalBufferSize +
                     ", thread_buffer_size=" + threadBufferSize +
@@ -119,6 +122,15 @@ final class DCmdConfigure extends AbstractDCmd {
             Logger.log(LogTag.JFR, LogLevel.INFO, "Stack depth set to " + stackDepth);
             if (verbose) {
                 printStackDepth();
+            }
+            updated = true;
+        }
+
+        if (contextSize != null)  {
+            Options.setContextSize(contextSize);
+            Logger.log(LogTag.JFR, LogLevel.INFO, "Context size set to " + contextSize);
+            if (verbose) {
+                printContextSize();
             }
             updated = true;
         }
@@ -184,6 +196,7 @@ final class DCmdConfigure extends AbstractDCmd {
             println();
             printRepositoryPath();
             printStackDepth();
+            printContextSize();
             printGlobalBufferCount();
             printGlobalBufferSize();
             printThreadBufferSize();
@@ -212,6 +225,10 @@ final class DCmdConfigure extends AbstractDCmd {
 
     private void printStackDepth() {
         println("Stack depth: " +  Options.getStackDepth());
+    }
+
+    private void printContextSize() {
+        println("Context size: " +  Options.getContextSize());
     }
 
     private void printGlobalBufferCount() {

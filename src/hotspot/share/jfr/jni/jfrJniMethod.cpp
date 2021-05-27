@@ -128,6 +128,10 @@ NO_TRANSITION(void, jfr_set_stack_depth(JNIEnv* env, jobject jvm, jint depth))
   JfrOptionSet::set_stackdepth((jlong)depth);
 NO_TRANSITION_END
 
+NO_TRANSITION(void, jfr_set_context_size(JNIEnv* env, jobject jvm, jint size))
+  JfrOptionSet::set_contextsize((jlong)size);
+NO_TRANSITION_END
+
 NO_TRANSITION(void, jfr_set_stacktrace_enabled(JNIEnv* env, jobject jvm, jlong event_type_id, jboolean enabled))
   JfrEventSetting::set_stacktrace(event_type_id, JNI_TRUE == enabled);
 NO_TRANSITION_END

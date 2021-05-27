@@ -93,6 +93,8 @@ void JNICALL jfr_set_sample_threads(JNIEnv* env, jobject jvm, jboolean sampleThr
 
 void JNICALL jfr_set_stack_depth(JNIEnv* env, jobject jvm, jint depth);
 
+void JNICALL jfr_set_context_size(JNIEnv* env, jobject jvm, jint size);
+
 void JNICALL jfr_set_stacktrace_enabled(JNIEnv* env, jobject jvm, jlong event_type_id, jboolean enabled);
 
 void JNICALL jfr_set_context_enabled(JNIEnv* env, jobject jvm, jlong event_type_id, jboolean enabled);

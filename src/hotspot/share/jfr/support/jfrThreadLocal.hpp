@@ -55,6 +55,7 @@ class JfrThreadLocal {
   unsigned int _stack_trace_hash;
   unsigned int _context_hash;
   mutable u4 _stackdepth;
+  mutable u4 _contextsize;
   volatile jint _entering_suspend_flag;
   bool _excluded;
   bool _dead;
@@ -134,6 +135,12 @@ class JfrThreadLocal {
 
   void set_stackdepth(u4 depth) {
     _stackdepth = depth;
+  }
+
+  u4 contextsize() const;
+
+  void set_contextsize(u4 size) {
+    _contextsize = size;
   }
 
   traceid thread_id() const {

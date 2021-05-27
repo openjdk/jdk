@@ -344,6 +344,16 @@ public final class JVM {
     public native void setStackDepth(int depth) throws IllegalArgumentException, IllegalStateException;
 
     /**
+     * Set context size.
+     *
+     * @param size
+     *
+     * @throws IllegalArgumentException if not within a valid range
+     * @throws IllegalStateException if size can't be changed
+     */
+    public native void setContextSize(int size) throws IllegalArgumentException, IllegalStateException;
+
+    /**
      * Turn on stack trace for an event
      *
      * @param eventTypeId the event id

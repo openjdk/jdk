@@ -606,6 +606,7 @@ JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* out
   _repository_path("repositorypath", "Path to repository,.e.g \\\"My Repository\\\"", "STRING", false, NULL),
   _dump_path("dumppath", "Path to dump,.e.g \\\"My Dump path\\\"", "STRING", false, NULL),
   _stack_depth("stackdepth", "Stack Depth", "JULONG", false, "64"),
+  _context_size("contextsize", "Context Size", "JULONG", false, "16"),
   _global_buffer_count("globalbuffercount", "Number of global buffers,", "JULONG", false, "20"),
   _global_buffer_size("globalbuffersize", "Size of a global buffers,", "MEMORY SIZE", false, "512k"),
   _thread_buffer_size("thread_buffer_size", "Size of a thread buffer", "MEMORY SIZE", false, "8k"),
@@ -616,6 +617,7 @@ JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* out
   _dcmdparser.add_dcmd_option(&_repository_path);
   _dcmdparser.add_dcmd_option(&_dump_path);
   _dcmdparser.add_dcmd_option(&_stack_depth);
+  _dcmdparser.add_dcmd_option(&_context_size);
   _dcmdparser.add_dcmd_option(&_global_buffer_count);
   _dcmdparser.add_dcmd_option(&_global_buffer_size);
   _dcmdparser.add_dcmd_option(&_thread_buffer_size);
@@ -667,6 +669,11 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
     stack_depth = JfrJavaSupport::new_java_lang_Integer((jint)_stack_depth.value(), CHECK);
   }
 
+  jobject context_size = NULL;
+  if (_context_size.is_set()) {
+    context_size = JfrJavaSupport::new_java_lang_Integer((jint)_context_size.value(), CHECK);
+  }
+
   jobject global_buffer_count = NULL;
   if (_global_buffer_count.is_set()) {
     global_buffer_count = JfrJavaSupport::new_java_lang_Long(_global_buffer_count.value(), CHECK);
@@ -711,6 +718,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   execute_args.push_jobject(repository_path);
   execute_args.push_jobject(dump_path);
   execute_args.push_jobject(stack_depth);
+  execute_args.push_jobject(context_size);
   execute_args.push_jobject(global_buffer_count);
   execute_args.push_jobject(global_buffer_size);
   execute_args.push_jobject(thread_buffer_size);
