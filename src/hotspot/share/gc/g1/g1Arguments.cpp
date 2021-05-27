@@ -49,7 +49,15 @@ void G1Arguments::initialize_alignments() {
   // size, but the heap size should be aligned with the region size. To get
   // around this we use the unaligned values for the heap.
   HeapRegion::setup_heap_region_size(MaxHeapSize);
+
+  // The remembered set needs the heap regions set up.
   HeapRegionRemSet::setup_remset_size();
+  // Needs remembered set initialization as the ergonomics are based
+  // on it.
+  if (FLAG_IS_DEFAULT(G1EagerReclaimRemSetThreshold)) {
+      guarantee(G1RSetSparseRegionEntries > 0, "");
+    FLAG_SET_ERGO(G1EagerReclaimRemSetThreshold, G1RSetSparseRegionEntries);
+  }
 
   SpaceAlignment = HeapRegion::GrainBytes;
   HeapAlignment = calculate_heap_alignment(SpaceAlignment);
