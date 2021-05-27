@@ -47,7 +47,11 @@ else #with SPEC
 
   idea:
 	$(ECHO) "SUPPORT=$(SUPPORT_OUTPUTDIR)" > $(OUT)
-	$(ECHO) "MODULES=\"$(foreach mod, $(SEL_MODULES), module='$(mod)' moduleSrcDirs='$(call FindModuleSrcDirs,$(mod))' moduleDependencies='$(call FindTransitiveDepsForModule,$(mod))' #)\"" >> $(OUT)
+	$(ECHO) "MODULES=\"$(foreach mod, $(SEL_MODULES), \
+	          module='$(mod)' \
+	          moduleSrcDirs='$(call FindModuleSrcDirs,$(mod))' \
+	          moduleDependencies='$(call FindTransitiveDepsForModule,$(mod))' \
+	        #)\"" >> $(OUT)
 	$(ECHO) "MODULE_NAMES=\"$(strip $(foreach mod, $(SEL_MODULES), $(mod)))\"" >> $(OUT)
 	$(ECHO) "SEL_MODULES=\"$(SEL_MODULES)\"" >> $(OUT)
 	$(ECHO) "BOOT_JDK=\"$(BOOT_JDK)\"" >> $(OUT)
