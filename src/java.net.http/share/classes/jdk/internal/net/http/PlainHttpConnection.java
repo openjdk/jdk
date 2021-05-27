@@ -210,7 +210,7 @@ class PlainHttpConnection extends HttpConnection {
      * On some platforms, a ConnectEvent may be raised and a ConnectionException
      * may occur with the message "Connection timed out: no further information"
      * before our actual connection timeout has expired. In this case, this
-     * method will be called with a {@code connect} state of {@code ConnectState.RETRY)
+     * method will be called with a {@code connect} state of {@code ConnectState.RETRY)}
      * and we will retry once again.
      * @param connect indicates whether the connection was successful or should be retried
      * @param failed the failure if the connection failed
