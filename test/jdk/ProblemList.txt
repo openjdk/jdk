@@ -635,12 +635,6 @@ java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java 7146541 linux-al
 
 java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       7191877 generic-all
 
-java/rmi/activation/Activatable/extLoadedImpl/ext.sh            8062724 generic-all
-
-java/rmi/activation/ActivationGroup/downloadActivationGroup/DownloadActivationGroup.java 8169569 windows-all
-
-java/rmi/activation/rmidViaInheritedChannel/InheritedChannelNotServerSocket.java 8170562 generic-all
-
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 
 java/rmi/Naming/DefaultRegistryPort.java                        8005619 windows-all
