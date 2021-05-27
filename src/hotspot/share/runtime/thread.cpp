@@ -3416,8 +3416,12 @@ void Threads::destroy_vm() {
     // to prevent this. The GC vm_operations will not be able to
     // queue until after the vm thread is dead. After this point,
     // we'll never emerge out of the safepoint before the VM exits.
+    // Assert that the thread is terminated so that acquiring the
+    // Heap_lock doesn't cause the terminated thread to participate in
+    // the safepoint protocol.
 
-    MutexLocker ml(Heap_lock, Mutex::_no_safepoint_check_flag);
+    assert(thread->is_terminated(), "must be terminated here");
+    MutexLocker ml(Heap_lock);
 
     VMThread::wait_for_vm_thread_exit();
     assert(SafepointSynchronize::is_at_safepoint(), "VM thread should exit at Safepoint");

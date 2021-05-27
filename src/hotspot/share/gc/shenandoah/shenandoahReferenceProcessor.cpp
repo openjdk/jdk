@@ -540,7 +540,7 @@ void ShenandoahReferenceProcessor::enqueue_references(bool concurrent) {
     enqueue_references_locked();
   } else {
     // Heap_lock protects external pending list
-    MonitorLocker ml(Heap_lock, Mutex::_no_safepoint_check_flag);
+    MonitorLocker ml(Heap_lock);
 
     enqueue_references_locked();
 
