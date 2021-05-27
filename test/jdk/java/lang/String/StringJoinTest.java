@@ -115,10 +115,12 @@ public class StringJoinTest {
     }
 
     public void testIgnoreDelimiterCoderJoin() {
-        // Ensure that joining a String with a UTF-16 delimiter
-        // produce a String with a latin-1 coder if the delimiter is
-        // not emitted
+        // 8267529: Ensure that joining zero or one latin-1 Strings with a UTF-16
+        // delimiter produce a String with a latin-1 coder, since the delimiter
+        // is not added.
+        assertEquals("", new StringJoiner("\u2013").toString());
         assertEquals("foo", new StringJoiner("\u2013").add("foo").toString());
+        assertEquals("", String.join("\u2013"));
         assertEquals("foo", String.join("\u2013", "foo"));
     }
 }
