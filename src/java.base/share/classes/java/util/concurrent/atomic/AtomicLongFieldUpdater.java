@@ -655,6 +655,6 @@ public abstract class AtomicLongFieldUpdater<T> {
      */
     static boolean isSamePackage(Class<?> class1, Class<?> class2) {
         return class1.getClassLoader() == class2.getClassLoader()
-               && class1.getPackageName().equals(class2.getPackageName());
+               && class1.getPackageName() == class2.getPackageName();
     }
 }

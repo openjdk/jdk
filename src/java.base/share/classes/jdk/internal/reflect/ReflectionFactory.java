@@ -682,7 +682,7 @@ public class ReflectionFactory {
         }
 
         return cl1.getClassLoader() == cl2.getClassLoader() &&
-                cl1.getPackageName().equals(cl2.getPackageName());
+                cl1.getPackageName() == cl2.getPackageName();
     }
 
 }

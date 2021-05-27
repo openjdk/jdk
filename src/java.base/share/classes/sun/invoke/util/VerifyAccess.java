@@ -374,7 +374,7 @@ public class VerifyAccess {
             return true;
         if (class1.getClassLoader() != class2.getClassLoader())
             return false;
-        return class1.getPackageName().equals(class2.getPackageName());
+        return class1.getPackageName() == class2.getPackageName();
     }
 
     /**
