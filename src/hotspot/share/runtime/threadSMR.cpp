@@ -36,9 +36,9 @@
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/resourceHash.hpp"
 #include "utilities/vmError.hpp"
 
 // The '_cnt', '_max' and '_times" fields are enabled via
@@ -192,27 +192,28 @@ class ThreadScanHashtable : public CHeapObj<mtThread> {
     return (unsigned int)(((uint32_t)(uintptr_t)s1) * 2654435761u);
   }
 
-  int _table_size;
-  KVHashtable<void *, bool, mtThread, &ThreadScanHashtable::ptr_hash,
-                            &ThreadScanHashtable::ptr_equals> _ptrs;
+  // ResourceHashtable SIZE is specified at compile time so we
+  // use 1031 which is the first prime after 1024.
+  typedef ResourceHashtable<void *, int, &ThreadScanHashtable::ptr_hash,
+                            &ThreadScanHashtable::ptr_equals, 1031,
+                            ResourceObj::C_HEAP, mtThread> PtrTable;
+  PtrTable * _ptrs;
 
  public:
-  ThreadScanHashtable(int table_size) : _table_size(table_size), _ptrs(table_size) {
-      log_trace(thread, smr)("tid=" UINTX_FORMAT ": allocate ThreadScanHashtable(%d) at " INTPTR_FORMAT, os::current_thread_id(), _table_size, p2i(this));
+  // ResourceHashtable is passed to various functions and populated in
+  // different places so we allocate it using C_HEAP to make it immune
+  // from any ResourceMarks that happen to be in the code paths.
+  ThreadScanHashtable() : _ptrs(new (ResourceObj::C_HEAP, mtThread) PtrTable()) {}
+
+  ~ThreadScanHashtable() { delete _ptrs; }
+
+  bool has_entry(void *pointer) {
+    int *val_ptr = _ptrs->get(pointer);
+    return val_ptr != NULL && *val_ptr == 1;
   }
 
-  ~ThreadScanHashtable() {
-      log_trace(thread, smr)("tid=" UINTX_FORMAT ": deallocate ThreadScanHashtable(%d) at " INTPTR_FORMAT, os::current_thread_id(), _table_size, p2i(this));
-  }
-
-  bool add_if_absent(void* pointer) {
-    bool created;
-    _ptrs.add_if_absent(pointer, true, &created);
-    return created;
-  }
-
-  bool has_entry(void* pointer) {
-    return (_ptrs.lookup(pointer) != NULL);
+  void add_entry(void *pointer) {
+    _ptrs->put(pointer, 1);
   }
 };
 
@@ -229,10 +230,12 @@ class AddThreadHazardPointerThreadClosure : public ThreadClosure {
   AddThreadHazardPointerThreadClosure(ThreadScanHashtable *table) : _table(table) {}
 
   virtual void do_thread(Thread *thread) {
-    // The same JavaThread might be on more than one ThreadsList or
-    // more than one thread might be using the same ThreadsList. In
-    // either case, we only need a single entry for a JavaThread.
-    (void)_table->add_if_absent((void*)thread);
+    if (!_table->has_entry((void*)thread)) {
+      // The same JavaThread might be on more than one ThreadsList or
+      // more than one thread might be using the same ThreadsList. In
+      // either case, we only need a single entry for a JavaThread.
+      _table->add_entry((void*)thread);
+    }
   }
 };
 
@@ -321,7 +324,9 @@ class ScanHazardPtrGatherThreadsListClosure : public ThreadClosure {
     // published), then the only side effect is that we might keep a
     // to-be-deleted ThreadsList alive a little longer.
     hazard_ptr = Thread::untag_hazard_ptr(hazard_ptr);
-    (void)_table->add_if_absent((void*)hazard_ptr);
+    if (!_table->has_entry((void*)hazard_ptr)) {
+      _table->add_entry((void*)hazard_ptr);
+    }
   }
 };
 
@@ -840,14 +845,6 @@ bool ThreadsSMRSupport::delete_notify() {
   return (Atomic::load_acquire(&_delete_notify) != 0);
 }
 
-// Hash table size should be first power of two higher than twice the
-// length of the ThreadsList
-static int hash_table_size() {
-  ThreadsList* threads = ThreadsSMRSupport::get_java_thread_list();
-  int hash_table_size = MIN2((int)threads->length(), 32) << 1;
-  return round_up_power_of_2(hash_table_size);
-}
-
 // Safely free a ThreadsList after a Threads::add() or Threads::remove().
 // The specified ThreadsList may not get deleted during this call if it
 // is still in-use (referenced by a hazard ptr). Other ThreadsLists
@@ -872,7 +869,7 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
   }
 
   // Gather a hash table of the current hazard ptrs:
-  ThreadScanHashtable *scan_table = new ThreadScanHashtable(hash_table_size());
+  ThreadScanHashtable *scan_table = new ThreadScanHashtable();
   ScanHazardPtrGatherThreadsListClosure scan_cl(scan_table);
   threads_do(&scan_cl);
   OrderAccess::acquire(); // Must order reads of hazard ptr before reads of
@@ -928,7 +925,7 @@ bool ThreadsSMRSupport::is_a_protected_JavaThread(JavaThread *thread) {
 
   // Gather a hash table of the JavaThreads indirectly referenced by
   // hazard ptrs.
-  ThreadScanHashtable *scan_table = new ThreadScanHashtable(hash_table_size());
+  ThreadScanHashtable *scan_table = new ThreadScanHashtable();
   ScanHazardPtrGatherProtectedThreadsClosure scan_cl(scan_table);
   threads_do(&scan_cl);
   OrderAccess::acquire(); // Must order reads of hazard ptr before reads of
