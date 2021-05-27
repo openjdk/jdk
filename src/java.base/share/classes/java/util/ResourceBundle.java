@@ -3157,7 +3157,6 @@ public abstract class ResourceBundle {
          * @see java.util.spi.ResourceBundleProvider#getBundle(String, Locale)
          * @revised 9
          */
-        @SuppressWarnings("removal")
         public ResourceBundle newBundle(String baseName, Locale locale, String format,
                                         ClassLoader loader, boolean reload)
                     throws IllegalAccessException, InstantiationException, IOException {
@@ -3178,6 +3177,7 @@ public abstract class ResourceBundle {
             return bundle;
         }
 
+        @SuppressWarnings("removal")
         private ResourceBundle newBundle0(String bundleName, String format,
                     ClassLoader loader, boolean reload)
                     throws IllegalAccessException, InstantiationException, IOException {
