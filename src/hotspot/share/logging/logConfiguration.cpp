@@ -262,6 +262,9 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   }
 
   if (!enabled && idx > 1) {
+    // User may disable a logOuput like this:
+    // LogConfiguration::parse_log_arguments(filename, "all=off", "", "", &stream);
+    // Just be conservative. Flush them all before deleting idx.
     AsyncLogWriter::flush();
     // Output is unused and should be removed, unless it is stdout/stderr (idx < 2)
     delete_output(idx);

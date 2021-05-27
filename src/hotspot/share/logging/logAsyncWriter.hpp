@@ -114,7 +114,7 @@ typedef KVHashtable<LogFileOutput*, uint32_t, mtLogging> AsyncLogMap;
 // ASYNC LOGGING SUPPORT
 //
 // Summary:
-// Async Logging is working on the basis of singleton AsyncLogWriter, which manages an immediate buffer and a flushing thread.
+// Async Logging is working on the basis of singleton AsyncLogWriter, which manages an intermediate buffer and a flushing thread.
 //
 // Interface:
 //
