@@ -28,6 +28,7 @@
  */
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -110,5 +111,13 @@ public class StringJoinTest {
     @Test(expectedExceptions = {NullPointerException.class})
     public void testJoinNullDelimiter() {
         String.join(null, JIM, JOHN);
+    }
+
+    public void testIgnoreDelimiterCoderJoin() {
+        // Ensure that joining a String with a UTF-16 delimiter
+        // produce a String with a latin-1 coder if the delimiter is
+        // not emitted
+        assertEquals("foo", new StringJoiner("\u2013").add("foo").toString());
+        assertEquals("foo", String.join("\u2013", "foo"));
     }
 }
