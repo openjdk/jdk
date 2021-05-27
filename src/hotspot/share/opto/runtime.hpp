@@ -130,7 +130,7 @@ class OptoRuntime : public AllStatic {
 
  private:
   // define stubs
-  static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char *name, int is_fancy_jump, bool pass_tls, bool save_arguments, bool return_pc);
+  static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char* name, int is_fancy_jump, bool pass_tls, bool return_pc);
 
   // References to generated stubs
   static address _new_instance_Java;
@@ -303,6 +303,8 @@ private:
   static const TypeFunc* osr_end_Type();
 
   static const TypeFunc* register_finalizer_Type();
+
+  JFR_ONLY(static const TypeFunc* get_class_id_intrinsic_Type();)
 
   // Dtrace support
   static const TypeFunc* dtrace_method_entry_exit_Type();

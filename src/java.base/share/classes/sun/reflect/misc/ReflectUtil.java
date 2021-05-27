@@ -312,12 +312,4 @@ public final class ReflectUtil {
         return false;
     }
 
-    /**
-     * Checks if {@code Class cls} is a VM-anonymous class
-     * as defined by {@link jdk.internal.misc.Unsafe#defineAnonymousClass}
-     * (not to be confused with a Java Language anonymous inner class).
-     */
-    public static boolean isVMAnonymousClass(Class<?> cls) {
-        return cls.getName().indexOf('/') > -1;
-    }
 }

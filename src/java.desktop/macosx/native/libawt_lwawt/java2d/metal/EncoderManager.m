@@ -424,6 +424,12 @@ const SurfaceRasterFlags defaultRasterFlags = { JNI_FALSE, JNI_TRUE };
         rpd.stencilAttachment.loadAction = MTLLoadActionLoad;
         rpd.stencilAttachment.storeAction = MTLStoreActionStore;
         rpd.stencilAttachment.texture = _mtlc.clip.stencilTextureRef;
+    } else if (_mtlc.clip.stencilMaskGenerationInProgress == YES) {
+        rpd.stencilAttachment.texture = _mtlc.clip.dstOps->pStencilTexture;
+        rpd.stencilAttachment.clearStencil = 0;
+        rpd.stencilAttachment.loadAction = _mtlc.clip.stencilMaskGenerationStarted? MTLLoadActionLoad : MTLLoadActionClear;
+        _mtlc.clip.stencilMaskGenerationStarted = YES;
+        rpd.stencilAttachment.storeAction = MTLStoreActionStore;
     }
 
     // J2dTraceLn1(J2D_TRACE_VERBOSE, "created render encoder to draw on

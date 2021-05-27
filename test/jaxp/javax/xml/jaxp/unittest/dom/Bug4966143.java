@@ -36,7 +36,7 @@ import org.w3c.dom.TypeInfo;
  * @test
  * @bug 4966143
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.Bug4966143
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug4966143
  * @run testng/othervm dom.Bug4966143
  * @summary Test isDerivedFrom(...) returns true only if the parameter is DERIVATION_EXTENSION,
  * in case TypeInfo instance refers to a complex type derived from another complex type by extension.

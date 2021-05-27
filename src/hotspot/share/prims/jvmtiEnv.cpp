@@ -216,7 +216,7 @@ JvmtiEnv::GetAllModules(jint* module_count_ptr, jobject** modules_ptr) {
 // module_ptr - pre-checked for NULL
 jvmtiError
 JvmtiEnv::GetNamedModule(jobject class_loader, const char* package_name, jobject* module_ptr) {
-  JavaThread* THREAD = JavaThread::current(); // pass to macros
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   ResourceMark rm(THREAD);
   Handle h_loader (THREAD, JNIHandles::resolve(class_loader));
   // Check that loader is a subclass of java.lang.ClassLoader.
@@ -233,7 +233,7 @@ JvmtiEnv::GetNamedModule(jobject class_loader, const char* package_name, jobject
 // to_module - pre-checked for NULL
 jvmtiError
 JvmtiEnv::AddModuleReads(jobject module, jobject to_module) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
   // check module
   Handle h_module(THREAD, JNIHandles::resolve(module));
@@ -254,7 +254,7 @@ JvmtiEnv::AddModuleReads(jobject module, jobject to_module) {
 // to_module - pre-checked for NULL
 jvmtiError
 JvmtiEnv::AddModuleExports(jobject module, const char* pkg_name, jobject to_module) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   Handle h_pkg = java_lang_String::create_from_str(pkg_name, THREAD);
 
   // check module
@@ -276,7 +276,7 @@ JvmtiEnv::AddModuleExports(jobject module, const char* pkg_name, jobject to_modu
 // to_module - pre-checked for NULL
 jvmtiError
 JvmtiEnv::AddModuleOpens(jobject module, const char* pkg_name, jobject to_module) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   Handle h_pkg = java_lang_String::create_from_str(pkg_name, THREAD);
 
   // check module
@@ -297,7 +297,7 @@ JvmtiEnv::AddModuleOpens(jobject module, const char* pkg_name, jobject to_module
 // service - pre-checked for NULL
 jvmtiError
 JvmtiEnv::AddModuleUses(jobject module, jclass service) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
   // check module
   Handle h_module(THREAD, JNIHandles::resolve(module));
@@ -319,7 +319,7 @@ JvmtiEnv::AddModuleUses(jobject module, jclass service) {
 // impl_class - pre-checked for NULL
 jvmtiError
 JvmtiEnv::AddModuleProvides(jobject module, jclass service, jclass impl_class) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
   // check module
   Handle h_module(THREAD, JNIHandles::resolve(module));
@@ -345,10 +345,10 @@ JvmtiEnv::AddModuleProvides(jobject module, jclass service, jclass impl_class) {
 // is_modifiable_class_ptr - pre-checked for NULL
 jvmtiError
 JvmtiEnv::IsModifiableModule(jobject module, jboolean* is_modifiable_module_ptr) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* current = JavaThread::current();
 
   // check module
-  Handle h_module(THREAD, JNIHandles::resolve(module));
+  Handle h_module(current, JNIHandles::resolve(module));
   if (!java_lang_Module::is_instance(h_module())) {
     return JVMTI_ERROR_INVALID_MODULE;
   }
@@ -690,7 +690,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     // The phase is checked by the wrapper that called this function,
     // but this thread could be racing with the thread that is
     // terminating the VM so we check one more time.
-    JavaThread* THREAD = JavaThread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     HandleMark hm(THREAD);
 
     // create the zip entry (which will open the zip file and hence
@@ -876,7 +876,7 @@ JvmtiEnv::GetThreadState(jthread thread, jint* thread_state_ptr) {
     // We have a JavaThread* so add more state bits.
     JavaThreadState jts = java_thread->thread_state();
 
-    if (java_thread->is_being_ext_suspended()) {
+    if (java_thread->is_suspended()) {
       state |= JVMTI_THREAD_STATE_SUSPENDED;
     }
     if (jts == _thread_in_native) {
@@ -942,24 +942,18 @@ jvmtiError
 JvmtiEnv::SuspendThread(JavaThread* java_thread) {
   // don't allow hidden thread suspend request.
   if (java_thread->is_hidden_from_external_view()) {
-    return (JVMTI_ERROR_NONE);
+    return JVMTI_ERROR_NONE;
   }
-
-  {
-    MutexLocker ml(java_thread->SR_lock(), Mutex::_no_safepoint_check_flag);
-    if (java_thread->is_external_suspend()) {
-      // don't allow nested external suspend requests.
-      return (JVMTI_ERROR_THREAD_SUSPENDED);
-    }
-    if (java_thread->is_exiting()) { // thread is in the process of exiting
-      return (JVMTI_ERROR_THREAD_NOT_ALIVE);
-    }
-    java_thread->set_external_suspend();
+  if (java_thread->is_suspended()) {
+    return JVMTI_ERROR_THREAD_SUSPENDED;
   }
-
   if (!JvmtiSuspendControl::suspend(java_thread)) {
-    // the thread was in the process of exiting
-    return (JVMTI_ERROR_THREAD_NOT_ALIVE);
+    // Either the thread is already suspended or
+    // it was in the process of exiting.
+    if (java_thread->is_exiting()) {
+      return JVMTI_ERROR_THREAD_NOT_ALIVE;
+    }
+    return JVMTI_ERROR_THREAD_SUSPENDED;
   }
   return JVMTI_ERROR_NONE;
 } /* end SuspendThread */
@@ -970,8 +964,10 @@ JvmtiEnv::SuspendThread(JavaThread* java_thread) {
 // results - pre-checked for NULL
 jvmtiError
 JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvmtiError* results) {
+  int self_index = -1;
   int needSafepoint = 0;  // > 0 if we need a safepoint
-  ThreadsListHandle tlh;
+  JavaThread* current = JavaThread::current();
+  ThreadsListHandle tlh(current);
   for (int i = 0; i < request_count; i++) {
     JavaThread *java_thread = NULL;
     jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), request_list[i], &java_thread, NULL);
@@ -984,38 +980,38 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
       results[i] = JVMTI_ERROR_NONE;  // indicate successful suspend
       continue;
     }
-
-    {
-      MutexLocker ml(java_thread->SR_lock(), Mutex::_no_safepoint_check_flag);
-      if (java_thread->is_external_suspend()) {
-        // don't allow nested external suspend requests.
-        results[i] = JVMTI_ERROR_THREAD_SUSPENDED;
-        continue;
-      }
-      if (java_thread->is_exiting()) { // thread is in the process of exiting
-        results[i] = JVMTI_ERROR_THREAD_NOT_ALIVE;
-        continue;
-      }
-      java_thread->set_external_suspend();
+    if (java_thread->is_suspended()) {
+      results[i] = JVMTI_ERROR_THREAD_SUSPENDED;
+      continue;
     }
-    if (java_thread->thread_state() == _thread_in_native) {
-      // We need to try and suspend native threads here. Threads in
-      // other states will self-suspend on their next transition.
-      if (!JvmtiSuspendControl::suspend(java_thread)) {
-        // The thread was in the process of exiting. Force another
-        // safepoint to make sure that this thread transitions.
-        needSafepoint++;
+    if (java_thread == current) {
+      self_index = i;
+      continue;
+    }
+    if (!JvmtiSuspendControl::suspend(java_thread)) {
+      // Either the thread is already suspended or
+      // it was in the process of exiting.
+      if (java_thread->is_exiting()) {
         results[i] = JVMTI_ERROR_THREAD_NOT_ALIVE;
         continue;
       }
-    } else {
-      needSafepoint++;
+      results[i] = JVMTI_ERROR_THREAD_SUSPENDED;
+      continue;
     }
     results[i] = JVMTI_ERROR_NONE;  // indicate successful suspend
   }
-  if (needSafepoint > 0) {
-    VM_ThreadsSuspendJVMTI tsj;
-    VMThread::execute(&tsj);
+  if (self_index >= 0) {
+    if (!JvmtiSuspendControl::suspend(current)) {
+      // Either the thread is already suspended or
+      // it was in the process of exiting.
+      if (current->is_exiting()) {
+        results[self_index] = JVMTI_ERROR_THREAD_NOT_ALIVE;
+      } else {
+        results[self_index] = JVMTI_ERROR_THREAD_SUSPENDED;
+      }
+    } else {
+      results[self_index] = JVMTI_ERROR_NONE;  // indicate successful suspend
+    }
   }
   // per-thread suspend results returned via results parameter
   return JVMTI_ERROR_NONE;
@@ -1030,11 +1026,9 @@ JvmtiEnv::ResumeThread(JavaThread* java_thread) {
   if (java_thread->is_hidden_from_external_view()) {
     return JVMTI_ERROR_NONE;
   }
-
-  if (!java_thread->is_being_ext_suspended()) {
+  if (!java_thread->is_suspended()) {
     return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
   }
-
   if (!JvmtiSuspendControl::resume(java_thread)) {
     return JVMTI_ERROR_INTERNAL;
   }
@@ -1060,7 +1054,7 @@ JvmtiEnv::ResumeThreadList(jint request_count, const jthread* request_list, jvmt
       results[i] = JVMTI_ERROR_NONE;  // indicate successful resume
       continue;
     }
-    if (!java_thread->is_being_ext_suspended()) {
+    if (!java_thread->is_suspended()) {
       results[i] = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
       continue;
     }

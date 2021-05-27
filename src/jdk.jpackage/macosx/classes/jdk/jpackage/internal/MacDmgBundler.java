@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         data.put("DEPLOY_VOLUME_PATH", volumePath.toString());
         data.put("DEPLOY_APPLICATION_NAME", APP_NAME.fetchFrom(params));
 
-        data.put("DEPLOY_INSTALL_LOCATION", getInstallDir(params));
+        data.put("DEPLOY_INSTALL_LOCATION", getInstallDir(params, true));
 
         createResource(DEFAULT_DMG_SETUP_SCRIPT, params)
                 .setCategory(I18N.getString("resource.dmg-setup-script"))
@@ -325,7 +325,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 "-fs", "HFS+",
                 "-format", "UDRW");
         try {
-            IOUtils.exec(pb);
+            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
         } catch (IOException ex) {
             Log.verbose(ex); // Log exception
 
@@ -346,7 +346,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 "-volname", APP_NAME.fetchFrom(params),
                 "-ov", protoDMG.toAbsolutePath().toString(),
                 "-fs", "HFS+");
-            IOUtils.exec(pb);
+            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
         }
 
         // mount temp image
@@ -463,7 +463,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                                 "-force",
                                 hdiUtilVerbosityFlag,
                                 mountedRoot.toAbsolutePath().toString());
-                        IOUtils.exec(pb);
+                        IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
                     }
                 }
             }
@@ -495,7 +495,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                         hdiUtilVerbosityFlag,
                         "-format", "UDZO",
                         "-o", finalDMG.toAbsolutePath().toString());
-                IOUtils.exec(pb);
+                IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
             } finally {
                 Files.deleteIfExists(protoDMG2);
             }

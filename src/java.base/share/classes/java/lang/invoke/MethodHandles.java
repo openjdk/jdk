@@ -28,7 +28,6 @@ package java.lang.invoke;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
@@ -59,7 +58,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
@@ -263,13 +261,6 @@ public class MethodHandles {
             // M2 != M1, set previous lookup class to M1 and drop MODULE access
             newPreviousClass = callerClass;
             newModes &= ~Lookup.MODULE;
-
-            if (!callerModule.isNamed() && targetModule.isNamed()) {
-                IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
-                if (logger != null) {
-                    logger.logIfOpenedForIllegalAccess(caller, targetClass);
-                }
-            }
         }
         return Lookup.newLookup(targetClass, newPreviousClass, newModes);
     }
@@ -3644,9 +3635,8 @@ return mh1;
 
         MemberName resolveOrFail(byte refKind, Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
-            Objects.requireNonNull(name);
             Objects.requireNonNull(type);
-            checkMethodName(refKind, name);  // NPE check on name
+            checkMethodName(refKind, name);  // implicit null-check of name
             return IMPL_NAMES.resolveOrFail(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(), allowedModes,
                                             NoSuchMethodException.class);
         }
@@ -3669,6 +3659,19 @@ return mh1;
             return IMPL_NAMES.resolveOrNull(refKind, member, lookupClassOrNull(), allowedModes);
         }
 
+        MemberName resolveOrNull(byte refKind, Class<?> refc, String name, MethodType type) {
+            // do this before attempting to resolve
+            if (!isClassAccessible(refc)) {
+                return null;
+            }
+            Objects.requireNonNull(type);
+            // implicit null-check of name
+            if (name.startsWith("<") && refKind != REF_newInvokeSpecial) {
+                return null;
+            }
+            return IMPL_NAMES.resolveOrNull(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(), allowedModes);
+        }
+
         void checkSymbolicClass(Class<?> refc) throws IllegalAccessException {
             if (!isClassAccessible(refc)) {
                 throw new MemberName(refc).makeAccessException("symbolic reference class is not accessible", this);
@@ -3686,7 +3689,6 @@ return mh1;
             if (name.startsWith("<") && refKind != REF_newInvokeSpecial)
                 throw new NoSuchMethodException("illegal method name: "+name);
         }
-
 
         /**
          * Find my trustable caller class if m is a caller sensitive method.
@@ -6638,8 +6640,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                 iterationVariableTypes.add(in == null ? st.type().returnType() : in.type().returnType());
             }
         }
-        final List<Class<?>> commonPrefix = iterationVariableTypes.stream().filter(t -> t != void.class).
-                collect(Collectors.toList());
+        final List<Class<?>> commonPrefix = iterationVariableTypes.stream().filter(t -> t != void.class).toList();
 
         // Step 1B: determine loop parameters (A...).
         final List<Class<?>> commonSuffix = buildCommonSuffix(init, step, pred, fini, commonPrefix.size());
@@ -6768,11 +6769,11 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             int pc = h.type().parameterCount();
             int tpsize = targetParams.size();
             return pc < tpsize ? dropArguments0(h, pc, targetParams.subList(pc, tpsize)) : h;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     private static List<MethodHandle> fixArities(List<MethodHandle> hs) {
-        return hs.stream().map(MethodHandle::asFixedArity).collect(Collectors.toList());
+        return hs.stream().map(MethodHandle::asFixedArity).toList();
     }
 
     /**
