@@ -745,9 +745,9 @@ class JavaThread: public Thread {
   // elided card-marks for performance along the fast-path.
   MemRegion     _deferred_card_mark;
 
-  ObjectMonitor* _current_pending_monitor;              // ObjectMonitor this thread is waiting to lock
+  ObjectMonitor* volatile _current_pending_monitor;     // ObjectMonitor this thread is waiting to lock
   bool           _current_pending_monitor_is_from_java; // locking is from Java code
-  ObjectMonitor* _current_waiting_monitor;              // ObjectMonitor on which this thread called Object.wait()
+  ObjectMonitor* volatile _current_waiting_monitor;     // ObjectMonitor on which this thread called Object.wait()
  public:
   volatile intptr_t _Stalled;
 
