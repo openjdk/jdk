@@ -83,7 +83,8 @@ void TestReserveMemorySpecial_test() {
   // Instead try reserving after the first reservation.
   expected_location = result + large_allocation_size;
   actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
-  EXPECT_TRUE(actual_location == NULL || actual_location == expected_location) << "Reservation must either fail or be at requested location";
+  EXPECT_TRUE(actual_location != NULL) << "Unexpected reservation failure, can’t verify correct location";
+  EXPECT_TRUE(actual_location == expected_location) << "Reservation must be at requested location";
   MemoryReleaser m2(actual_location, os::large_page_size());
 
   // Now try to do a reservation with a larger alignment.
