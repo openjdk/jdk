@@ -116,9 +116,9 @@ public:
   }
 };
 
-template <class Closure>
-inline void G1CardSet::iterate_for_merge(Closure& cl) {
-  G1CardSetMergeCardIterator<Closure, G1ContainerCardsOrRanges> cl2(this, cl);
+template <class CardOrRangeVisitor>
+inline void G1CardSet::iterate_for_merge(CardOrRangeVisitor& cl) {
+  G1CardSetMergeCardIterator<CardOrRangeVisitor, G1ContainerCardsOrRanges> cl2(this, cl);
   iterate_containers(&cl2, true /* at_safepoint */);
 }
 

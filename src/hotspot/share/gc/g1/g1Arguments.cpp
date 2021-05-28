@@ -25,6 +25,8 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1Arguments.hpp"
+#include "gc/g1/g1CardSet.hpp"
+#include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -55,7 +57,7 @@ void G1Arguments::initialize_alignments() {
 
   // We need to initialize card set configuration as soon as heap region size is
   // known as it depends on it and is used really early.
-  G1CardSetConfiguration::initialize_globals();
+  initialize_card_set_configuration();
 }
 
 size_t G1Arguments::conservative_max_heap_alignment() {
@@ -113,6 +115,40 @@ void G1Arguments::initialize_mark_stack_size() {
   }
 
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (uint)(MarkStackSize / K), (uint)(MarkStackSizeMax / K));
+}
+
+
+void G1Arguments::initialize_card_set_configuration() {
+  assert(HeapRegion::LogOfHRGrainBytes != 0, "not initialized");
+  // Array of Cards card set container globals.
+  const int LOG_M = 20;
+  uint region_size_log_mb = (uint)MAX2(HeapRegion::LogOfHRGrainBytes - LOG_M, 0);
+
+  if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
+    uint num_cards_in_inline_ptr = G1CardSetConfiguration::num_cards_in_inline_ptr(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift);
+    FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(num_cards_in_inline_ptr * 2,
+                                                    G1RemSetArrayOfCardsEntriesBase * (1u << (region_size_log_mb + 1))));
+  }
+
+  // Round to next 8 byte boundary for array to maximize space usage.
+  size_t const cur_size = G1CardSetArray::size_in_bytes(G1RemSetArrayOfCardsEntries);
+  FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries,
+                G1RemSetArrayOfCardsEntries + (uint)(align_up(cur_size, G1CardSetAllocOptions::BufferAlignment) - cur_size) / sizeof(G1CardSetArray::EntryDataType));
+
+  // Howl card set container globals.
+  if (FLAG_IS_DEFAULT(G1RemSetHowlNumBuckets)) {
+    FLAG_SET_ERGO(G1RemSetHowlNumBuckets, G1CardSetHowl::num_buckets(HeapRegion::CardsPerRegion,
+                                                                     G1RemSetArrayOfCardsEntries,
+                                                                     G1RemSetHowlMaxNumBuckets));
+  }
+
+  if (FLAG_IS_DEFAULT(G1RemSetHowlMaxNumBuckets)) {
+    FLAG_SET_ERGO(G1RemSetHowlMaxNumBuckets, MAX2(G1RemSetHowlMaxNumBuckets, G1RemSetHowlNumBuckets));
+  } else if (G1RemSetHowlMaxNumBuckets < G1RemSetHowlNumBuckets) {
+    FormatBuffer<> buf("Maximum Howl card set container bucket size %u smaller than requested bucket size %u",
+                       G1RemSetHowlMaxNumBuckets, G1RemSetHowlNumBuckets);
+    vm_exit_during_initialization(buf);
+  }
 }
 
 void G1Arguments::initialize() {

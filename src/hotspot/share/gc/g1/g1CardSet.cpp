@@ -44,38 +44,6 @@
 
 G1CardSet::CardSetPtr G1CardSet::FullCardSet = (G1CardSet::CardSetPtr)-1;
 
-void G1CardSetConfiguration::initialize_globals() {
-  assert(HeapRegion::LogOfHRGrainBytes != 0, "not initialized");
-  // Array of Cards card set container globals.
-  const int LOG_M = 20;
-  uint region_size_log_mb = (uint)MAX2(HeapRegion::LogOfHRGrainBytes - LOG_M, 0);
-
-  if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
-    FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(num_cards_in_inline_ptr(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift) * 2,
-                                                    G1RemSetArrayOfCardsEntriesBase * (1u << (region_size_log_mb + 1))));
-  }
-
-  // Round to next 8 byte boundary for array to maximize space usage.
-  size_t const cur_size = G1CardSetArray::size_in_bytes(G1RemSetArrayOfCardsEntries);
-  FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries,
-                G1RemSetArrayOfCardsEntries + (uint)(align_up(cur_size, G1CardSetAllocOptions::BufferAlignment) - cur_size) / sizeof(G1CardSetArray::EntryDataType));
-
-  // Howl card set container globals.
-  if (FLAG_IS_DEFAULT(G1RemSetHowlNumBuckets)) {
-    FLAG_SET_ERGO(G1RemSetHowlNumBuckets, G1CardSetHowl::num_buckets(HeapRegion::CardsPerRegion,
-                                                                     G1RemSetArrayOfCardsEntries,
-                                                                     G1RemSetHowlMaxNumBuckets));
-  }
-
-  if (FLAG_IS_DEFAULT(G1RemSetHowlMaxNumBuckets)) {
-    FLAG_SET_ERGO(G1RemSetHowlMaxNumBuckets, MAX2(G1RemSetHowlMaxNumBuckets, G1RemSetHowlNumBuckets));
-  } else if (G1RemSetHowlMaxNumBuckets < G1RemSetHowlNumBuckets) {
-    FormatBuffer<> buf("Maximum Howl card set container bucket size %u smaller than requested bucket size %u",
-                       G1RemSetHowlMaxNumBuckets, G1RemSetHowlNumBuckets);
-    vm_exit_during_initialization(buf);
-  }
-}
-
 G1CardSetConfiguration::G1CardSetConfiguration() :
   _inline_ptr_bits_per_card(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift) {
 

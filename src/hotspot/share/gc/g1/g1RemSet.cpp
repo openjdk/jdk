@@ -1216,7 +1216,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
       _scan_state->set_chunk_region_dirty(_region_base_idx);
     }
 
-    // Helper to put the remembered set cards for these regions onto the card
+    // Helper to merge the cards in the card set for the given region onto the card
     // table.
     //
     // Called directly for humongous starts regions because we should not add
@@ -1230,12 +1230,12 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
     // pass) or the "dirty" list will be merged with the "all" list later otherwise.
     // (And there is no problem either way if the region does not contain dirty
     // cards).
-    void dump_rem_set_for_region(HeapRegion* r) {
+    void merge_card_set_for_region(HeapRegion* r) {
       assert(r->in_collection_set() || r->is_starts_humongous(), "must be");
 
       HeapRegionRemSet* rem_set = r->rem_set();
       if (!rem_set->is_empty()) {
-        rem_set->iterate_prts(*this);
+        rem_set->iterate_for_merge(*this);
       }
     }
 
@@ -1243,7 +1243,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
       assert(r->in_collection_set(), "must be");
 
       _scan_state->add_all_dirty_region(r->hrm_index());
-      dump_rem_set_for_region(r);
+      merge_card_set_for_region(r);
 
       return false;
     }
@@ -1275,7 +1275,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
       G1MergeCardSetStats stats;
       {
         G1MergeCardSetClosure cl(_scan_state);
-        cl.dump_rem_set_for_region(r);
+        cl.merge_card_set_for_region(r);
         stats = cl.stats();
       }
 

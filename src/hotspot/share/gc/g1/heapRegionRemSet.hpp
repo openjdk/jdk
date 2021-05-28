@@ -69,14 +69,11 @@ public:
     return (strong_code_roots_list_length() == 0) && _card_set.occupied() <= occ;
   }
 
-  // For each PRT in the card (remembered) set call one of the following methods
-  // of the given closure:
-  //
-  // set_full_region_dirty(uint region_idx) - pass the region index for coarse PRTs
-  // set_bitmap_dirty(uint region_idx, BitMap* bitmap) - pass the region index and bitmap for fine PRTs
-  // set_cards_dirty(uint region_idx, elem_t* cards, uint num_cards) - pass region index and cards for sparse PRTs
-  template <class Closure>
-  inline void iterate_prts(Closure& cl);
+  // Iterate the card based remembered set for merging them into the card table.
+  // The passed closure must be a CardOrRangeVisitor; we use a template parameter
+  // to pass it in to facilitate inlining as much as possible.
+  template <class CardOrRangeVisitor>
+  inline void iterate_for_merge(CardOrRangeVisitor& cl);
 
   size_t occupied() {
     return _card_set.occupied();

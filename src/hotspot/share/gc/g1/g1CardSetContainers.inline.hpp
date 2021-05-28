@@ -346,5 +346,4 @@ inline G1CardSetHowl::EntryCountType G1CardSetHowl::num_buckets(size_t size_in_b
   return (EntryCountType)num_arrays;
 }
 
-
 #endif // SHARE_GC_G1_G1CARDSETCONTAINERS_INLINE_HPP

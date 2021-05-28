@@ -847,6 +847,7 @@ public:
 
   // The g1 remembered set of the heap.
   G1RemSet* _rem_set;
+  // Global card set configuration
   G1CardSetConfiguration _card_set_config;
 
   void post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states,

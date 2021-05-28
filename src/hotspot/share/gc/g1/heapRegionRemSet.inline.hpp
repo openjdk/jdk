@@ -53,8 +53,8 @@ void HeapRegionRemSet::set_state_complete() {
 }
 
 
-template <class Closure>
-inline void HeapRegionRemSet::iterate_prts(Closure& cl) {
+template <class CardOrRangeVisitor>
+inline void HeapRegionRemSet::iterate_for_merge(CardOrRangeVisitor& cl) {
   _card_set.iterate_for_merge(cl);
 }
 

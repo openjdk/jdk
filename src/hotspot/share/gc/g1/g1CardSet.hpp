@@ -60,7 +60,7 @@ class G1CardSetConfiguration {
 
   void log_configuration();
 public:
-  // Updates and verifies consistency card set (container) globals.
+  // Updates and verifies consistency of card set (container) globals.
   static void initialize_globals();
 
   // Initialize card set configuration from globals.
@@ -339,8 +339,8 @@ public:
 
   // Iterate all cards for card set merging. Must be a CardOrRangeVisitor as
   // explained above.
-  template <class Closure>
-  void iterate_for_merge(Closure& cl);
+  template <class CardOrRangeVisitor>
+  void iterate_for_merge(CardOrRangeVisitor& cl);
 };
 
 class G1CardSetHashTableValue {
