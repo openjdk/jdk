@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
+#include "jni_tools.h"
 #include "agent_common.h"
 #include "JVMTITools.h"
 
@@ -103,7 +104,7 @@ Java_nsk_jvmti_InterruptThread_intrpthrd003_check (JNIEnv *env, jobject oobj,
             break;
 
         default:
-            printf("(thr#%ld) error expected: JVMTI_ERROR_NONE or JVMTI_ERROR_THREAD_NOT_ALIVE,", ind);
+            printf("(thr#%" LL "d) error expected: JVMTI_ERROR_NONE or JVMTI_ERROR_THREAD_NOT_ALIVE,", ind);
             printf(" got: %s (%d)\n", TranslateError(intrpthrd_err), intrpthrd_err);
             result = STATUS_FAILED;
             break;
