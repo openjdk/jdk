@@ -35,6 +35,21 @@ import jdk.internal.javac.PreviewFeature;
  * Inside your method, call super.visitXYZ to visit descendant
  * nodes.
  *
+ * <p>Here is an example to count the number of identifier nodes in a tree:
+ * <pre>
+ *   class CountIdentifiers extends TreeScanner&lt;Integer,Void&gt; {
+ *      {@literal @}Override
+ *      public Integer visitIdentifier(IdentifierTree node, Void p) {
+ *          return 1;
+ *      }
+ *      {@literal @}Override
+ *      public Integer reduce(Integer r1, Integer r2) {
+ *          return (r1 == null ? 0 : r1) + (r2 == null ? 0 : r2);
+ *      }
+ *   }
+ * </pre>
+ *
+ * @implSpec
  * <p>The default implementation of the visitXYZ methods will determine
  * a result as follows:
  * <ul>
@@ -50,20 +65,6 @@ import jdk.internal.javac.PreviewFeature;
  * method is such that the result of the visitXYZ method will be the result of
  * the last child scanned.
  * </ul>
- *
- * <p>Here is an example to count the number of identifier nodes in a tree:
- * <pre>
- *   class CountIdentifiers extends TreeScanner&lt;Integer,Void&gt; {
- *      {@literal @}Override
- *      public Integer visitIdentifier(IdentifierTree node, Void p) {
- *          return 1;
- *      }
- *      {@literal @}Override
- *      public Integer reduce(Integer r1, Integer r2) {
- *          return (r1 == null ? 0 : r1) + (r2 == null ? 0 : r2);
- *      }
- *   }
- * </pre>
  *
  * @param <R> the return type of this visitor's methods.  Use {@link
  *            Void} for visitors that do not need to return results.
