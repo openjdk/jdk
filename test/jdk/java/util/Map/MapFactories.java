@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -482,6 +482,22 @@ public class MapFactories {
         Map.Entry<Integer,String> e = Map.entry(0, null);
     }
 
+    @Test(expectedExceptions=UnsupportedOperationException.class)
+    public void entrySetValueDisallowed() {
+        Map.entry("a", "b").setValue("x");
+    }
+
+    @Test(expectedExceptions=UnsupportedOperationException.class)
+    public void entryCopySetValueDisallowed() {
+        var e = new AbstractMap.SimpleEntry<>("a", "b");
+        Map.Entry.copyOf(e).setValue("x");
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void entryCopyNullDisallowed() {
+        Map.Entry.copyOf(null);
+    }
+
     @Test
     public void entryBasicTests() {
         Map.Entry<String,String> kvh1 = Map.entry("xyzzy", "plugh");
@@ -494,6 +510,23 @@ public class MapFactories {
         assertFalse(sie.equals(kvh2));
         assertEquals(sie.hashCode(), kvh1.hashCode());
         assertEquals(sie.toString(), kvh1.toString());
+    }
+
+    @Test
+    public void entryCopyTests() {
+        Map.Entry<String,String> orig = new AbstractMap.SimpleImmutableEntry<>("xyzzy", "plugh");
+        Map.Entry<String,String> copy1 = Map.Entry.copyOf(orig);
+        Map.Entry<String,String> copy2 = Map.Entry.copyOf(copy1);
+
+        assertEquals(orig, copy1);
+        assertEquals(copy1, orig);
+        assertEquals(orig, copy2);
+        assertEquals(copy2, orig);
+        assertEquals(copy1, copy2);
+        assertEquals(copy2, copy1);
+
+        assertNotSame(orig, copy1);
+        assertSame(copy1, copy2);
     }
 
     // compile-time test of wildcards

@@ -396,18 +396,24 @@ public interface Map<K, V> {
      * A map entry (key-value pair). The entry may be unmodifiable, or
      * the value may be modified, if the optional {@code setValue} method
      * is implemented. The entry may be independent of any map or it
-     * may represent one entry of a view of a map, as described below.
+     * may represent one entry of an entry-set view of a map.
      * <p>
-     * The {@code Map.entrySet} method returns a collection-view of the map,
-     * whose elements are of this class. These {@code Map.Entry} objects
-     * themselves views of the entries of the map, and they are valid
-     * <i>only</i> for the duration of the iteration over the entry set view.
-     * The behavior of such a map entry is undefined if the backing map has been
-     * modified after the entry was returned by the iterator, except through
-     * the {@code setValue} operation on the map entry.
-     * <p>
-     * A map entry from a map's entry set can be "disconnected" from the map
-     * through use of the {@link #copyOf copyOf} method.
+     * The {@link #entrySet Map.entrySet} method returns a view of the map.
+     * This view is a Set whose elements are instances of this interface.
+     * These Map.Entry objects are themselves views of the entries
+     * of the map. If supported by the backing Map, a change to an entry's
+     * value via the {@link Map.Entry#setValue setValue} will be visible
+     * in the backing Map. This connection to the backing Map is valid
+     * <i>only</i> for the duration of iteration over the entry-set view.
+     * The behavior of such a Map.Entry is undefined if the backing map
+     * has been modified after the entry was returned by the iterator, except
+     * through the {@code setValue} operation on the entry. In particular,
+     * a change to the value of a mapping in the backing Map might or might
+     * not be visible in the corresponding Entry element of the entry-set view.
+     *
+     * @apiNote
+     * An Entry from a map's entry set can be disconnected from the backing map
+     * through use of the {@link Map.Entry#copyOf copyOf} method.
      *
      * @see Map#entrySet()
      * @since 1.2
@@ -570,27 +576,29 @@ public interface Map<K, V> {
         /**
          * Returns a copy of the given map entry. The returned entry is not associated with
          * any map. The returned entry has the same characteristics as the entry returned
-         * by the {@link Map.entry} method.
+         * by the {@link Map#entry Map.entry} method.
          *
          * @apiNote
-         * An entry obtained from a map's entry set is a view of an entry of that map. The
-         * {@code copyOf} method may be used to create an entry object, containing the same
-         * key and value, that is independent of any map.
+         * An entry obtained from a Map's entry set is a view of an entry of that Map. This
+         * method may be used to create an entry object, containing the same key and value,
+         * that is independent of any map.
          *
          * @implNote
-         * If the given entry was obtained from a call to {@code copyOf},
+         * If the given entry was obtained from a call to {@code copyOf} or {@code Map.entry},
          * calling copyOf will generally not create another copy.
          *
+         * @param <K> the type of the key
+         * @param <V> the type of the value
          * @param e the entry to be copied
          * @return a map entry equal to the given entry
          * @throws NullPointerException if e is null or if the key or value is null
-         * @since 14
+         * @since 17
          */
+        @SuppressWarnings("unchecked")
         public static <K, V> Map.Entry<K, V> copyOf(Map.Entry<? extends K, ? extends V> e) {
+            Objects.requireNonNull(e);
             if (e instanceof KeyValueHolder) {
-                @SuppressWarnings("unchecked")
-                Map.Entry<K, V> r = (Map.Entry<K, V>)e;
-                return r;
+                return (Map.Entry<K, V>) e;
             } else {
                 return Map.entry(e.getKey(), e.getValue());
             }

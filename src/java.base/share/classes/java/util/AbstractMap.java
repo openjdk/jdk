@@ -728,18 +728,21 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     }
 
     /**
-     * An Entry maintaining an immutable key and value.  This class
+     * An unmodifiable Entry maintaining a key and a value.  This class
      * does not support the {@code setValue} method. Instances of
      * this class are not associated with any map's entry set view.
      *
      * @apiNote
-     * An instance of this <i>class</i> is immutable (strictly speaking,
-     * unmodifiable). However, holding a reference of this <i>type</i>
-     * does not guarantee unmodifiability, as a subclass may allow
-     * modification.
+     * Instances of this class are not necessarily immutable, as the key
+     * and value may be mutable. An instance of <i>this specific class</i>
+     * is <i>unmodifiable,</i> because the key and value references cannot be
+     * changed. A reference of this <i>type</i> may not be unmodifiable,
+     * as a subclass may be modifiable or provide the appearance of modifiability.
      * <p>
      * This class may be convenient in methods that return thread-safe snapshots of
-     * key-value mappings.
+     * key-value mappings. For alternatives, see the
+     * {@link Map#entry Map.entry} and {@link Map.Entry#copyOf Entry.copyOf}
+     * methods.
      *
      * @since 1.6
      */
