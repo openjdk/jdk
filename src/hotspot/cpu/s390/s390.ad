@@ -5260,6 +5260,30 @@ instruct castLL(iRegL dst) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+instruct castFF(regF dst) %{
+  match(Set dst (CastFF dst));
+  size(0);
+  format %{ "# castFF of $dst" %}
+  ins_encode(/*empty*/);
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct castDD(regD dst) %{
+  match(Set dst (CastDD dst));
+  size(0);
+  format %{ "# castDD of $dst" %}
+  ins_encode(/*empty*/);
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct castVV(iRegL dst) %{
+  match(Set dst (CastVV dst));
+  size(0);
+  format %{ "# castVV of $dst" %}
+  ins_encode(/*empty*/);
+  ins_pipe(pipe_class_dummy);
+%}
+
 //----------Conditional_store--------------------------------------------------
 // Conditional-store of the updated heap-top.
 // Used during allocation of the shared heap.

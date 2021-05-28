@@ -594,14 +594,6 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
   return op == match_op ? HandshakeState::_succeeded : HandshakeState::_processed;
 }
 
-void HandshakeState::lock() {
-  _lock.lock_without_safepoint_check();
-}
-
-void HandshakeState::unlock() {
-  _lock.unlock();
-}
-
 void HandshakeState::do_self_suspend() {
   assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(_lock.owned_by_self(), "Lock must be held");

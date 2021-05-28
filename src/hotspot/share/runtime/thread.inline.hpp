@@ -31,6 +31,7 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/nonJavaThread.hpp"
 
 #if defined(__APPLE__) && defined(AARCH64)
 #include "runtime/os.hpp"
@@ -62,6 +63,11 @@ inline ThreadsList* Thread::get_threads_hazard_ptr() const {
 
 inline void Thread::set_threads_hazard_ptr(ThreadsList* new_list) {
   Atomic::release_store_fence(&_threads_hazard_ptr, new_list);
+}
+
+inline const WorkerThread* Thread::as_Worker_thread() const {
+  assert(is_Worker_thread(), "incorrect cast to const WorkerThread");
+  return static_cast<const WorkerThread*>(this);
 }
 
 #if defined(__APPLE__) && defined(AARCH64)
