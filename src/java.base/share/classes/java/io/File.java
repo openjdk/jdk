@@ -2196,8 +2196,8 @@ public class File
     /**
      * Compares two abstract pathnames lexicographically.  The ordering
      * defined by this method depends upon the underlying system.  On UNIX
-     * systems, alphabetic case is significant in comparing pathnames; on Microsoft Windows
-     * systems it is not.
+     * systems, alphabetic case is significant in comparing pathnames; on
+     * Microsoft Windows systems it is not.
      *
      * @param   pathname  The abstract pathname to be compared to this abstract
      *                    pathname
@@ -2221,14 +2221,18 @@ public class File
      * abstract pathname.  Whether or not two abstract
      * pathnames are equal depends upon the underlying operating system.
      * On UNIX systems, alphabetic case is significant in comparing pathnames;
-     * on Microsoft Windows systems it is not.  This method does not
-     * access the file and the file is not required to exist.
+     * on Microsoft Windows systems it is not.
+     *
+     * @implNote The abstract pathname equality test is equivalent to
+     *           {@code compareTo((File)obj) == 0}.  This method does not
+     *           access the file system and the file is not required to exist.
      *
      * @param   obj   The object to be compared with this abstract pathname
      *
      * @return  {@code true} if and only if the objects are the same;
      *          {@code false} otherwise
      *
+     * @see #compareTo(File)
      * @see java.nio.file.Files#isSameFile(Path,Path)
      * @see java.nio.file.Path#equals(Object)
      */
