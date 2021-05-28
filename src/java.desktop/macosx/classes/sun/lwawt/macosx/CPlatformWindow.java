@@ -128,7 +128,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public static final String WINDOW_TITLE_VISIBLE = "apple.awt.windowTitleVisible";
 
     // This system property is used in javafx as well
-    public static String MAC_OS_TABBED_WINDOW = AccessController.doPrivileged(
+    public static final String MAC_OS_TABBED_WINDOW = AccessController.doPrivileged(
             new GetPropertyAction("jdk.allowMacOSTabbedWindows"));
 
     // Yeah, I know. But it's easier to deal with ints from JNI
