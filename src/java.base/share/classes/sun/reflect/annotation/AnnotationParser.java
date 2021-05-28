@@ -113,16 +113,14 @@ public class AnnotationParser {
                 ConstantPool constPool,
                 Class<?> container,
                 Class<? extends Annotation>[] selectAnnotationClasses) {
-        Map<Class<? extends Annotation>, Annotation> result =
-            new LinkedHashMap<Class<? extends Annotation>, Annotation>();
+        Map<Class<? extends Annotation>, Annotation> result = new LinkedHashMap<>();
         ByteBuffer buf = ByteBuffer.wrap(rawAnnotations);
         int numAnnotations = buf.getShort() & 0xFFFF;
         for (int i = 0; i < numAnnotations; i++) {
             Annotation a = parseAnnotation2(buf, constPool, container, false, selectAnnotationClasses);
             if (a != null) {
                 Class<? extends Annotation> klass = a.annotationType();
-                if (AnnotationType.getInstance(klass).retention() == RetentionPolicy.RUNTIME &&
-                    result.put(klass, a) != null) {
+                if (result.put(klass, a) != null) {
                         throw new AnnotationFormatError(
                             "Duplicate annotation for class: "+klass+": " + a);
             }
