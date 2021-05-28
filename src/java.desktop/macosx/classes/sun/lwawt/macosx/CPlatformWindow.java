@@ -126,6 +126,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public static final String WINDOW_FULL_CONTENT = "apple.awt.fullWindowContent";
     public static final String WINDOW_TRANSPARENT_TITLE_BAR = "apple.awt.transparentTitleBar";
     public static final String WINDOW_TITLE_VISIBLE = "apple.awt.windowTitleVisible";
+
+    // This system property is used in javafx as well
+    public static final String MAC_OS_TABBED_WINDOW = System.getProperty("jdk.allowMacOSTabbedWindows");
     public static boolean allowMacOSAutomaticWindowTabbing;
 
     // Yeah, I know. But it's easier to deal with ints from JNI
@@ -195,7 +198,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         AccessController.doPrivileged(
                 (PrivilegedAction<Object>) () -> {
                     allowMacOSAutomaticWindowTabbing = Boolean.parseBoolean(
-                            System.getProperty("jdk.allowMacOSTabbedWindows"));
+                            MAC_OS_TABBED_WINDOW);
                     return null;
                 });
         nativeSetAllowAutomaticTabbingProperty(allowMacOSAutomaticWindowTabbing);
