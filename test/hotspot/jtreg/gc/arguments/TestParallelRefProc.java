@@ -37,7 +37,6 @@ import java.util.Arrays;
 import java.util.ArrayList;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 import jtreg.SkippedException;
 import sun.hotspot.gc.GC;
@@ -48,15 +47,15 @@ public class TestParallelRefProc {
         boolean noneGCSupported = true;
         if (GC.Serial.isSupported()) {
             noneGCSupported = false;
-            testFlag(new String[] { "-XX:+UseSerialGC" }, false);
+            testFlag(new String[] { "-XX:+UseSerialGC" }, true);
         }
         if (GC.Parallel.isSupported()) {
             noneGCSupported = false;
-            testFlag(new String[] { "-XX:+UseParallelGC" }, false);
+            testFlag(new String[] { "-XX:+UseParallelGC" }, true);
         }
         if (GC.G1.isSupported()) {
             noneGCSupported = false;
-            testFlag(new String[] { "-XX:+UseG1GC", "-XX:ParallelGCThreads=1" }, false);
+            testFlag(new String[] { "-XX:+UseG1GC", "-XX:ParallelGCThreads=1" }, true);
             testFlag(new String[] { "-XX:+UseG1GC", "-XX:ParallelGCThreads=2" }, true);
             testFlag(new String[] { "-XX:+UseG1GC", "-XX:-ParallelRefProcEnabled", "-XX:ParallelGCThreads=2" }, false);
         }
