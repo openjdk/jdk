@@ -229,19 +229,14 @@ Handle ThreadService::get_current_contended_monitor(JavaThread* thread) {
   // inflated again and to be associated with a completely different
   // ObjectMonitor by the time this object reference is processed
   // by the caller.
-
-  // Using 'volatile' to prevent the compiler from generating code that
-  // reloads 'wait_obj' from memory when used below.
-  ObjectMonitor* volatile wait_obj = thread->current_waiting_monitor();
+  ObjectMonitor *wait_obj = thread->current_waiting_monitor();
 
   oop obj = NULL;
   if (wait_obj != NULL) {
     // thread is doing an Object.wait() call
     obj = wait_obj->object();
   } else {
-    // Using 'volatile' to prevent the compiler from generating code that
-    // reloads 'enter_obj' from memory when used below.
-    ObjectMonitor* volatile enter_obj = thread->current_pending_monitor();
+    ObjectMonitor *enter_obj = thread->current_pending_monitor();
     if (enter_obj != NULL) {
       // thread is trying to enter() an ObjectMonitor.
       obj = enter_obj->object();
