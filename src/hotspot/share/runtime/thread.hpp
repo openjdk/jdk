@@ -753,8 +753,9 @@ class JavaThread: public Thread {
 
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
-    // Using atomic load to prevent compilers from reloading (ThreadService::get_current_contended_monitor).
-    // In case of concurrent modification, reloading pointer after NULL check must be prevented.
+    // Use Atomic::load() to prevent data race between concurrent modification and
+    // concurrent readers, e.g. ThreadService::get_current_contended_monitor().
+    // Especially, reloading pointer from thread after NULL check must be prevented.
     return Atomic::load(&_current_pending_monitor);
   }
   void set_current_pending_monitor(ObjectMonitor* monitor) {
@@ -767,7 +768,7 @@ class JavaThread: public Thread {
     return _current_pending_monitor_is_from_java;
   }
   ObjectMonitor* current_waiting_monitor() {
-    // Using atomic load as in current_pending_monitor.
+    // See the comment in current_pending_monitor() above.
     return Atomic::load(&_current_waiting_monitor);
   }
   void set_current_waiting_monitor(ObjectMonitor* monitor) {
