@@ -106,11 +106,6 @@ class WorkerThread: public NamedThread {
   WorkerThread() : _id(0)               { }
   virtual bool is_Worker_thread() const { return true; }
 
-  virtual WorkerThread* as_Worker_thread() const {
-    assert(is_Worker_thread(), "Dubious cast to WorkerThread*?");
-    return (WorkerThread*) this;
-  }
-
   void set_id(uint work_id)             { _id = work_id; }
   uint id() const                       { return _id; }
 };

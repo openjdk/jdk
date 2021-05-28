@@ -2961,8 +2961,24 @@ void* os::Linux::libnuma_v2_dlsym(void* handle, const char* name) {
   return dlvsym(handle, name, "libnuma_1.2");
 }
 
+// Check numa dependent syscalls
+static bool numa_syscall_check() {
+  // NUMA APIs depend on several syscalls. E.g., get_mempolicy is required for numa_get_membind and
+  // numa_get_interleave_mask. But these dependent syscalls can be unsupported for various reasons.
+  // Especially in dockers, get_mempolicy is not allowed with the default configuration. So it's necessary
+  // to check whether the syscalls are available. Currently, only get_mempolicy is checked since checking
+  // others like mbind would cause unexpected side effects.
+  int dummy = 0;
+  if (syscall(SYS_get_mempolicy, &dummy, NULL, 0, (void*)&dummy, 3) == -1) {
+    return false;
+  }
+
+  return true;
+}
+
 bool os::Linux::libnuma_init() {
-  if (sched_getcpu() != -1) { // Requires sched_getcpu() support
+  // Requires sched_getcpu() and numa dependent syscalls support
+  if ((sched_getcpu() != -1) && numa_syscall_check()) {
     void *handle = dlopen("libnuma.so.1", RTLD_LAZY);
     if (handle != NULL) {
       set_numa_node_to_cpus(CAST_TO_FN_PTR(numa_node_to_cpus_func_t,
