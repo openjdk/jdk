@@ -95,8 +95,7 @@ uint G1FullCollector::calc_active_workers() {
   uint active_worker_limit = WorkerPolicy::calc_active_workers(max_worker_count, current_active_workers, 0);
 
   // Finally consider the amount of used regions.
-  uint regions_per_worker = (uint) (HeapSizePerGCThread / G1HeapRegionSize);
-  uint used_worker_limit = MAX2((heap->num_used_regions() / regions_per_worker), 1u);
+  uint used_worker_limit = MAX2(heap->num_used_regions(), 1u);
 
   // Update active workers to the lower of the limits.
   uint worker_count = MIN3(heap_waste_worker_limit, active_worker_limit, used_worker_limit);
