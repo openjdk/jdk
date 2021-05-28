@@ -90,7 +90,7 @@ void TestReserveMemorySpecial_test() {
   const size_t alignment = os::large_page_size() * 2;
   const size_t new_large_size = alignment * 4;
   char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), NULL, false);
-  EXPECT_TRUE(aligned_request != NULL) << "Should not fail this reservation if the first two were ok.";
+  EXPECT_TRUE(aligned_request != NULL) << "Unexpected reservation failure, can’t verify correct alignment";
   EXPECT_TRUE(is_aligned(aligned_request, alignment)) << "Returned address must be aligned";
   MemoryReleaser m3(aligned_request, new_large_size);
 }
