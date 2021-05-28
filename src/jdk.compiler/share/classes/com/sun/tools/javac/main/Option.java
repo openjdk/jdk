@@ -1154,6 +1154,11 @@ public enum Option {
             }
             process(helper, option, operand);
         } else {
+            if ((this == HELP || this == X || this == HELP_LINT || this == VERSION || this == FULLVERSION)
+                    && (helper.get(this) != null)) {
+                // avoid processing the info options repeatedly
+                return;
+            }
             process(helper, arg);
         }
     }
