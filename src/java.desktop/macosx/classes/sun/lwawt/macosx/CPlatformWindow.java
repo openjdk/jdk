@@ -46,7 +46,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -69,6 +68,7 @@ import sun.lwawt.LWToolkit;
 import sun.lwawt.LWWindowPeer;
 import sun.lwawt.LWWindowPeer.PeerType;
 import sun.lwawt.PlatformWindow;
+import sun.security.action.GetPropertyAction;
 import sun.util.logging.PlatformLogger;
 
 public class CPlatformWindow extends CFRetainedResource implements PlatformWindow {
@@ -128,8 +128,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public static final String WINDOW_TITLE_VISIBLE = "apple.awt.windowTitleVisible";
 
     // This system property is used in javafx as well
-    public static final String MAC_OS_TABBED_WINDOW = System.getProperty("jdk.allowMacOSTabbedWindows");
-    public static boolean allowMacOSAutomaticWindowTabbing;
+    public static String MAC_OS_TABBED_WINDOW = AccessController.doPrivileged(
+            new GetPropertyAction("jdk.allowMacOSTabbedWindows"));
 
     // Yeah, I know. But it's easier to deal with ints from JNI
     static final int MODELESS = 0;
@@ -195,13 +195,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     static {
-        AccessController.doPrivileged(
-                (PrivilegedAction<Object>) () -> {
-                    allowMacOSAutomaticWindowTabbing = Boolean.parseBoolean(
-                            MAC_OS_TABBED_WINDOW);
-                    return null;
-                });
-        nativeSetAllowAutomaticTabbingProperty(allowMacOSAutomaticWindowTabbing);
+        nativeSetAllowAutomaticTabbingProperty(Boolean.parseBoolean(MAC_OS_TABBED_WINDOW));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
