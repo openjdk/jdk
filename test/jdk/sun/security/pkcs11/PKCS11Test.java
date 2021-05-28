@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,12 @@
  * questions.
  */
 
-
 // common infrastructure for SunPKCS11 tests
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -109,7 +106,7 @@ public abstract class PKCS11Test {
     static double nss3_version = -1;
     static Provider pkcs11 = newPKCS11Provider();
 
-    protected static Provider newPKCS11Provider() {
+    public static Provider newPKCS11Provider() {
         ServiceLoader sl = ServiceLoader.load(java.security.Provider.class);
         Iterator<Provider> iter = sl.iterator();
         Provider p = null;
@@ -539,23 +536,18 @@ public abstract class PKCS11Test {
         nss_library = "nss3";
     }
 
-    // Run NSS testing on the static PKCS11 test Provider
-    public static void testNSS(PKCS11Test test) throws Exception {
-        testNSS(test, null);
-    }
-
     // Run NSS testing on a Provider p configured with test nss config
-    public static void testNSS(PKCS11Test test, Provider p) throws Exception {
+    public static void testNSS(PKCS11Test test) throws Exception {
         String nssConfig = getNssConfig();
         if (nssConfig == null) {
             // issue loading libraries
             return;
         }
-        p = getSunPKCS11(nssConfig);
+        Provider p = getSunPKCS11(nssConfig);
         test.premain(p);
     }
 
-    protected static String getNssConfig() throws Exception {
+    public static String getNssConfig() throws Exception {
         String libdir = getNSSLibDir();
         if (libdir == null) {
             return null;

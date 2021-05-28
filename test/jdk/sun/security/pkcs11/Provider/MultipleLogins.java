@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,33 +28,33 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.security.AuthProvider;
 import java.security.KeyStore;
 import java.security.Provider;
 import java.security.Security;
+import java.util.Iterator;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 
 import jdk.test.lib.util.ForceGC;
 
-public class MultipleLogins extends PKCS11Test {
-
+public class MultipleLogins {
     private static final String KS_TYPE = "PKCS11";
-    private static char[] password;
     private static final int NUM_PROVIDERS = 20;
     private static final SunPKCS11[] providers = new SunPKCS11[NUM_PROVIDERS];
 
 
     public static void main(String[] args) throws Exception {
         for (int i =0; i < NUM_PROVIDERS; i++) {
-            providers[i] = (SunPKCS11)PKCS11Test.newPKCS11Provider();
             String nssConfig = PKCS11Test.getNssConfig();
             if (nssConfig == null) {
                 throw new RuntimeException("issue setting up config");
             }
-            providers[i] = (SunPKCS11)PKCS11Test.getSunPKCS11(nssConfig, providers[i]);
+            providers[i] =
+                    (SunPKCS11)PKCS11Test.newPKCS11Provider()
+                    .configure(nssConfig);
             Security.addProvider(providers[i]);
             test(providers[i]);
         }
@@ -88,9 +88,6 @@ public class MultipleLogins extends PKCS11Test {
         }
     }
 
-    public void main(Provider p) throws Exception {
-    }
-
     private static void test(SunPKCS11 p) throws Exception {
         KeyStore ks = KeyStore.getInstance(KS_TYPE, p);
 
@@ -117,7 +114,7 @@ public class MultipleLogins extends PKCS11Test {
             }
         }
     }
-
+    
     public static class PasswordCallbackHandler implements CallbackHandler {
         public void handle(Callback[] callbacks)
                 throws IOException, UnsupportedCallbackException {
@@ -125,7 +122,7 @@ public class MultipleLogins extends PKCS11Test {
                 throw new UnsupportedCallbackException(callbacks[0]);
             }
             PasswordCallback pc = (PasswordCallback)callbacks[0];
-            pc.setPassword(MultipleLogins.password);
+            pc.setPassword(null);
         }
     }
 }

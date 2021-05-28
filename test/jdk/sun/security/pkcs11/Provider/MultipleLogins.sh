@@ -105,7 +105,6 @@ ${CP} ${TESTSRC}${FS}..${FS}nss${FS}db${FS}key3.db ${TESTCLASSES}
 ${CHMOD} +w ${TESTCLASSES}${FS}key3.db
 
 # compile test
-
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         -classpath ${TESTCLASSPATH} \
         -d ${TESTCLASSES} \
@@ -116,7 +115,6 @@ ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         ${TESTSRC}${FS}..${FS}PKCS11Test.java
 
 # run test
-
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
         -classpath ${TESTCLASSPATH} \
         --add-modules jdk.crypto.cryptoki \
@@ -128,7 +126,7 @@ ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
         -Dtest.src=${TESTSRC} \
         -Dtest.classes=${TESTCLASSES} \
         -Djava.security.debug=${DEBUG} \
-        MultipleLogins sm Login.policy
+        MultipleLogins
 
 # save error status
 status=$?
