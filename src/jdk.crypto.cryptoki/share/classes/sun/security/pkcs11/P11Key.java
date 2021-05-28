@@ -239,7 +239,7 @@ abstract class P11Key implements Key, Length {
             throw new NotSerializableException
                 ("Cannot serialize sensitive and unextractable keys");
         }
-        return new KeyRep(type, getAlgorithm(), format, getEncoded());
+        return new KeyRep(type, getAlgorithm(), format, getEncodedInternal());
     }
 
     public String toString() {

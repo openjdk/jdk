@@ -70,8 +70,8 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
 
   oop obj = CompressedOops::decode_not_null(heap_oop);
   assert(Universe::heap()->is_in(obj), "should be in heap");
-  if (!_collector->is_compacted(obj)) {
-    // We never forward objects in non-compacted regions so there is no need to
+  if (!_collector->is_compacting(obj)) {
+    // We never forward objects in non-compacting regions so there is no need to
     // process them further.
     return;
   }

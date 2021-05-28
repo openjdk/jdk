@@ -150,7 +150,7 @@ void WorkerDataArray<T>::print_summary_on(outputStream* out, bool print_sum) con
   if (_is_serial) {
     out->print("%s:", title());
   } else {
-    out->print("%-25s", title());
+    out->print("%-30s", title());
   }
 
   uint start = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  */
 import java.rmi.MarshalledObject;
 import java.rmi.RemoteException;
-import java.rmi.activation.ActivationException;
 import java.rmi.server.ServerCloneException;
 
 public class Chaining {
@@ -68,9 +67,6 @@ public class Chaining {
         test(new RemoteException(), null, null);
         test(new RemoteException(foo), foo, null);
         test(new RemoteException(foo, t), fooMsg, t);
-        test(new ActivationException(), null, null);
-        test(new ActivationException(foo), foo, null);
-        test(new ActivationException(foo, t), fooMsg, t);
         test(new ServerCloneException(foo), foo, null);
         test(new ServerCloneException(foo, t), fooMsg, t);
     }

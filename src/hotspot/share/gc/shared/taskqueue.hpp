@@ -465,6 +465,8 @@ public:
   GenericTaskQueueSet(uint n);
   ~GenericTaskQueueSet();
 
+  // Set the i'th queue to the provided queue.
+  // Does not transfer ownership of the queue to this queue set.
   void register_queue(uint i, T* q);
 
   T* queue(uint n);

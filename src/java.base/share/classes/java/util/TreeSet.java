@@ -299,9 +299,8 @@ public class TreeSet<E> extends AbstractSet<E>
         // Use linear-time version if applicable
         if (m.size()==0 && c.size() > 0 &&
             c instanceof SortedSet &&
-            m instanceof TreeMap) {
+                m instanceof TreeMap<E, Object> map) {
             SortedSet<? extends E> set = (SortedSet<? extends E>) c;
-            TreeMap<E,Object> map = (TreeMap<E, Object>) m;
             if (Objects.equals(set.comparator(), map.comparator())) {
                 map.addAllForTreeSet(set, PRESENT);
                 return true;

@@ -34,7 +34,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/relocator.hpp"
@@ -907,18 +906,12 @@ void GenerateOopMap::monitor_push(CellTypeState cts) {
 // Interpretation handling methods
 //
 
-void GenerateOopMap::do_interpretation(Thread* thread)
+void GenerateOopMap::do_interpretation()
 {
+  // "i" is just for debugging, so we can detect cases where this loop is
+  // iterated more than once.
   int i = 0;
   do {
-    if (i != 0 && thread->is_Java_thread()) {
-      JavaThread* jt = thread->as_Java_thread();
-      if (jt->thread_state() == _thread_in_vm) {
-        // Since this JavaThread has looped at least once and is _thread_in_vm,
-        // we honor any pending blocking request.
-        ThreadBlockInVM tbivm(jt);
-      }
-    }
 #ifndef PRODUCT
     if (TraceNewOopMapGeneration) {
       tty->print("\n\nIteration #%d of do_interpretation loop, method:\n", i);
@@ -2078,7 +2071,7 @@ GenerateOopMap::GenerateOopMap(const methodHandle& method) {
 #endif
 }
 
-void GenerateOopMap::compute_map(TRAPS) {
+bool GenerateOopMap::compute_map(Thread* current) {
 #ifndef PRODUCT
   if (TimeOopMap2) {
     method()->print_short_name(tty);
@@ -2124,7 +2117,7 @@ void GenerateOopMap::compute_map(TRAPS) {
   if (method()->code_size() == 0 || _max_locals + method()->max_stack() == 0) {
     fill_stackmap_prolog(0);
     fill_stackmap_epilog();
-    return;
+    return true;
   }
   // Step 1: Compute all jump targets and their return value
   if (!_got_error)
@@ -2136,25 +2129,20 @@ void GenerateOopMap::compute_map(TRAPS) {
 
   // Step 3: Calculate stack maps
   if (!_got_error)
-    do_interpretation(THREAD);
+    do_interpretation();
 
   // Step 4:Return results
   if (!_got_error && report_results())
      report_result();
 
-  if (_got_error) {
-    THROW_HANDLE(_exception);
-  }
+  return !_got_error;
 }
 
 // Error handling methods
-// These methods create an exception for the current thread which is thrown
-// at the bottom of the call stack, when it returns to compute_map().  The
-// _got_error flag controls execution.  NOT TODO: The VM exception propagation
-// mechanism using TRAPS/CHECKs could be used here instead but it would need
-// to be added as a parameter to every function and checked for every call.
-// The tons of extra code it would generate didn't seem worth the change.
 //
+// If we compute from a suitable JavaThread then we create an exception for the GenerateOopMap
+// calling code to retrieve (via exception()) and throw if desired (in most cases errors are ignored).
+// Otherwise it is considered a fatal error to hit malformed bytecode.
 void GenerateOopMap::error_work(const char *format, va_list ap) {
   _got_error = true;
   char msg_buffer[512];
@@ -2162,12 +2150,12 @@ void GenerateOopMap::error_work(const char *format, va_list ap) {
   // Append method name
   char msg_buffer2[512];
   os::snprintf(msg_buffer2, sizeof(msg_buffer2), "%s in method %s", msg_buffer, method()->name()->as_C_string());
-  if (Thread::current()->can_call_java()) {
-    _exception = Exceptions::new_exception(Thread::current(),
-                  vmSymbols::java_lang_LinkageError(), msg_buffer2);
+  Thread* current = Thread::current();
+  if (current->can_call_java()) {
+    _exception = Exceptions::new_exception(current->as_Java_thread(),
+                                           vmSymbols::java_lang_LinkageError(),
+                                           msg_buffer2);
   } else {
-    // We cannot instantiate an exception object from a compiler thread.
-    // Exit the VM with a useful error message.
     fatal("%s", msg_buffer2);
   }
 }
@@ -2444,7 +2432,7 @@ class RelocCallback : public RelocatorListener {
 // Returns true if expanding was succesful. Otherwise, reports an error and
 // returns false.
 void GenerateOopMap::expand_current_instr(int bci, int ilen, int newIlen, u_char inst_buffer[]) {
-  Thread *THREAD = Thread::current();  // Could really have TRAPS argument.
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   RelocCallback rcb(this);
   Relocator rc(_method, &rcb);
   methodHandle m= rc.insert_space_at(bci, newIlen, inst_buffer, THREAD);
@@ -2553,7 +2541,9 @@ int ResolveOopMapConflicts::_nof_relocations  = 0;
 #endif
 
 methodHandle ResolveOopMapConflicts::do_potential_rewrite(TRAPS) {
-  compute_map(CHECK_(methodHandle()));
+  if (!compute_map(THREAD)) {
+    THROW_HANDLE_(exception(), methodHandle());
+  }
 
 #ifndef PRODUCT
   // Tracking and statistics

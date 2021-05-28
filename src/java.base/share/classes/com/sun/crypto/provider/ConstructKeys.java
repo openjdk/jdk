@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package com.sun.crypto.provider;
+
+import jdk.internal.access.SharedSecrets;
 
 import java.security.Key;
 import java.security.PublicKey;
@@ -113,12 +115,11 @@ final class ConstructKeys {
         throws InvalidKeyException, NoSuchAlgorithmException
     {
         PrivateKey key = null;
-
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encodedKey);
         try {
             KeyFactory keyFactory =
                 KeyFactory.getInstance(encodedKeyAlgorithm,
                     SunJCE.getInstance());
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encodedKey);
             return keyFactory.generatePrivate(keySpec);
         } catch (NoSuchAlgorithmException nsae) {
             // Try to see whether there is another
@@ -126,8 +127,6 @@ final class ConstructKeys {
             try {
                 KeyFactory keyFactory =
                     KeyFactory.getInstance(encodedKeyAlgorithm);
-                PKCS8EncodedKeySpec keySpec =
-                    new PKCS8EncodedKeySpec(encodedKey);
                 key = keyFactory.generatePrivate(keySpec);
             } catch (NoSuchAlgorithmException nsae2) {
                 throw new NoSuchAlgorithmException("No installed providers " +
@@ -145,6 +144,8 @@ final class ConstructKeys {
                 new InvalidKeyException("Cannot construct private key");
             ike.initCause(ikse);
             throw ike;
+        } finally {
+            SharedSecrets.getJavaSecuritySpecAccess().clearEncodedKeySpec(keySpec);
         }
 
         return key;

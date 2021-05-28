@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ public class Diagram {
     private InputGraph graph;
     private int curId;
     private String nodeText;
+    private String shortNodeText;
     private final Font font;
     private final Font slotFont;
     private final Font boldFont;
@@ -63,6 +64,7 @@ public class Diagram {
         figures = new ArrayList<>();
         blocks = new LinkedHashMap<>(8);
         this.nodeText = "";
+        this.shortNodeText = "";
         this.font = new Font("Arial", Font.PLAIN, 12);
         this.slotFont = new Font("Arial", Font.PLAIN, 10);
         this.boldFont = this.font.deriveFont(Font.BOLD);
@@ -77,6 +79,10 @@ public class Diagram {
         return nodeText;
     }
 
+    public String getShortNodeText() {
+        return shortNodeText;
+    }
+
     public void updateBlocks() {
         blocks.clear();
         for (InputBlock b : graph.getBlocks()) {
@@ -86,7 +92,7 @@ public class Diagram {
     }
 
     public Diagram getNext() {
-        return Diagram.createDiagram(graph.getNext(), nodeText);
+        return Diagram.createDiagram(graph.getNext(), nodeText, shortNodeText);
     }
 
     public Collection<Block> getBlocks() {
@@ -94,7 +100,7 @@ public class Diagram {
     }
 
     public Diagram getPrev() {
-        return Diagram.createDiagram(graph.getPrev(), nodeText);
+        return Diagram.createDiagram(graph.getPrev(), nodeText, shortNodeText);
     }
 
     public List<Figure> getFigures() {
@@ -130,7 +136,8 @@ public class Diagram {
         return map;
     }
 
-    public static Diagram createDiagram(InputGraph graph, String nodeText) {
+    public static Diagram createDiagram(InputGraph graph, String nodeText,
+                                        String shortNodeText) {
         if (graph == null) {
             return null;
         }
@@ -138,6 +145,7 @@ public class Diagram {
         Diagram d = new Diagram();
         d.graph = graph;
         d.nodeText = nodeText;
+        d.shortNodeText = shortNodeText;
 
         d.updateBlocks();
 

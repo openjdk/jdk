@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,12 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/defaultStream.hpp"
 
@@ -284,12 +285,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
   return true;
 }
 
-int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
-  if (_stream == NULL) {
-    // An error has occurred with this output, avoid writing to it.
-    return 0;
-  }
-
+int LogFileOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
   _rotation_semaphore.wait();
   int written = LogFileStreamOutput::write(decorations, msg);
   if (written > 0) {
@@ -304,9 +300,30 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
   return written;
 }
 
+int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
+  if (_stream == NULL) {
+    // An error has occurred with this output, avoid writing to it.
+    return 0;
+  }
+
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, decorations, msg);
+    return 0;
+  }
+
+  return write_blocking(decorations, msg);
+}
+
 int LogFileOutput::write(LogMessageBuffer::Iterator msg_iterator) {
   if (_stream == NULL) {
     // An error has occurred with this output, avoid writing to it.
+    return 0;
+  }
+
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, msg_iterator);
     return 0;
   }
 
@@ -461,7 +478,8 @@ void LogFileOutput::describe(outputStream *out) {
   LogOutput::describe(out);
   out->print(" ");
 
-  out->print("filecount=%u,filesize=" SIZE_FORMAT "%s", _file_count,
+  out->print("filecount=%u,filesize=" SIZE_FORMAT "%s,async=%s", _file_count,
              byte_size_in_proper_unit(_rotate_size),
-             proper_unit_for_byte_size(_rotate_size));
+             proper_unit_for_byte_size(_rotate_size),
+             LogConfiguration::is_async_mode() ? "true" : "false");
 }

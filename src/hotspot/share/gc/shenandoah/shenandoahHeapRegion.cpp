@@ -543,10 +543,10 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   }
 
   // Make sure region size is at least one large page, if enabled.
-  // Otherwise, uncommitting one region may falsely uncommit the adjacent
-  // regions too.
-  // Also see shenandoahArguments.cpp, where it handles UseLargePages.
-  if (UseLargePages && ShenandoahUncommit) {
+  // The heap sizes would be rounded by heap initialization code by
+  // page size, so we need to round up the region size too, to cover
+  // the heap exactly.
+  if (UseLargePages) {
     region_size = MAX2(region_size, os::large_page_size());
   }
 
@@ -575,7 +575,7 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   RegionSizeBytesMask = RegionSizeBytes - 1;
 
   guarantee(RegionCount == 0, "we should only set it once");
-  RegionCount = max_heap_size / RegionSizeBytes;
+  RegionCount = align_up(max_heap_size, RegionSizeBytes) / RegionSizeBytes;
   guarantee(RegionCount >= MIN_NUM_REGIONS, "Should have at least minimum regions");
 
   guarantee(HumongousThresholdWords == 0, "we should only set it once");

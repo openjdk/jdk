@@ -450,7 +450,6 @@ public class ClassBuilder extends AbstractBuilder {
      * @param elem the record element
      */
 
-    @SuppressWarnings("preview")
     private void setRecordDocumentation(TypeElement elem) {
         CommentUtils cmtUtils = configuration.cmtUtils;
         Set<Name> componentNames = elem.getRecordComponents().stream()

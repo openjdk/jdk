@@ -187,25 +187,30 @@ public class RandomTestCoverage {
                     coverFactory(factory);
                     coverOf(factory.name());
                  });
-        RandomGeneratorFactory.all(StreamableGenerator.class)
+        RandomGeneratorFactory.all()
+                .filter(f -> f.isStreamable())
                 .forEach(factory -> {
-                    coverStreamable(factory.create());
+                    coverStreamable((StreamableGenerator)factory.create());
                 });
-        RandomGeneratorFactory.all(SplittableGenerator.class)
+        RandomGeneratorFactory.all()
+                .filter(f -> f.isSplittable())
                 .forEach(factory -> {
-                    coverSplittable(factory.create());
+                    coverSplittable((SplittableGenerator)factory.create());
                 });
-        RandomGeneratorFactory.all(JumpableGenerator.class)
+        RandomGeneratorFactory.all()
+                .filter(f -> f.isJumpable())
                 .forEach(factory -> {
-                    coverJumpable(factory.create());
+                    coverJumpable((JumpableGenerator)factory.create());
                 });
-        RandomGeneratorFactory.all(LeapableGenerator.class)
+        RandomGeneratorFactory.all()
+                .filter(f -> f.isLeapable())
                 .forEach(factory -> {
-                    coverLeapable(factory.create());
+                    coverLeapable((LeapableGenerator)factory.create());
                 });
-        RandomGeneratorFactory.all(ArbitrarilyJumpableGenerator.class)
+        RandomGeneratorFactory.all()
+                .filter(f -> f.isArbitrarilyJumpable())
                 .forEach(factory -> {
-                    coverArbitrarilyJumpable(factory.create());
+                    coverArbitrarilyJumpable((ArbitrarilyJumpableGenerator)factory.create());
                 });
 
         coverRandomGenerator(new SecureRandom());

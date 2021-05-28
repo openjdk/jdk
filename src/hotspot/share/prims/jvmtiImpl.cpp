@@ -243,8 +243,17 @@ void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
 
     for (int i = methods->length() - 1; i >= 0; i--) {
       Method* method = methods->at(i);
-      // Only set breakpoints in running EMCP methods.
-      if (method->is_running_emcp() &&
+      // Only set breakpoints in EMCP methods.
+      // EMCP methods are old but not obsolete. Equivalent
+      // Modulo Constant Pool means the method is equivalent except
+      // the constant pool and instructions that access the constant
+      // pool might be different.
+      // If a breakpoint is set in a redefined method, its EMCP methods
+      // must have a breakpoint also.
+      // None of the methods are deleted until none are running.
+      // This code could set a breakpoint in a method that
+      // is never reached, but this won't be noticeable to the programmer.
+      if (!method->is_obsolete() &&
           method->name() == m_name &&
           method->signature() == m_signature) {
         ResourceMark rm;
@@ -765,46 +774,12 @@ VM_GetReceiver::VM_GetReceiver(
 //
 
 bool JvmtiSuspendControl::suspend(JavaThread *java_thread) {
-  // external suspend should have caught suspending a thread twice
-
-  // Immediate suspension required for JPDA back-end so JVMTI agent threads do
-  // not deadlock due to later suspension on transitions while holding
-  // raw monitors.  Passing true causes the immediate suspension.
-  // java_suspend() will catch threads in the process of exiting
-  // and will ignore them.
-  java_thread->java_suspend();
-
-  // It would be nice to have the following assertion in all the time,
-  // but it is possible for a racing resume request to have resumed
-  // this thread right after we suspended it. Temporarily enable this
-  // assertion if you are chasing a different kind of bug.
-  //
-  // assert(java_lang_Thread::thread(java_thread->threadObj()) == NULL ||
-  //   java_thread->is_being_ext_suspended(), "thread is not suspended");
-
-  if (java_lang_Thread::thread(java_thread->threadObj()) == NULL) {
-    // check again because we can get delayed in java_suspend():
-    // the thread is in process of exiting.
-    return false;
-  }
-
-  return true;
+  return java_thread->java_suspend();
 }
 
 bool JvmtiSuspendControl::resume(JavaThread *java_thread) {
-  // external suspend should have caught resuming a thread twice
-  assert(java_thread->is_being_ext_suspended(), "thread should be suspended");
-
-  // resume thread
-  {
-    // must always grab Threads_lock, see JVM_SuspendThread
-    MutexLocker ml(Threads_lock);
-    java_thread->java_resume();
-  }
-
-  return true;
+  return java_thread->java_resume();
 }
-
 
 void JvmtiSuspendControl::print() {
 #ifndef PRODUCT
@@ -817,7 +792,7 @@ void JvmtiSuspendControl::print() {
 #else
     const char *name   = "";
 #endif /*JVMTI_TRACE */
-    log_stream.print("%s(%c ", name, thread->is_being_ext_suspended() ? 'S' : '_');
+    log_stream.print("%s(%c ", name, thread->is_suspended() ? 'S' : '_');
     if (!thread->has_last_Java_frame()) {
       log_stream.print("no stack");
     }

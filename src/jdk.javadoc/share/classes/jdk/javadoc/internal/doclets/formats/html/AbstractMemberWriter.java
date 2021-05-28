@@ -192,7 +192,13 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         HtmlTree code = new HtmlTree(TagName.CODE);
         addModifier(member, code);
         if (type == null) {
-            code.add(utils.isClass(member) ? "class" : "interface");
+            code.add(switch (member.getKind()) {
+                case ENUM -> "enum";
+                case INTERFACE -> "interface";
+                case ANNOTATION_TYPE -> "@interface";
+                case RECORD -> "record";
+                default -> "class";
+            });
             code.add(Entity.NO_BREAK_SPACE);
         } else {
             List<? extends TypeParameterElement> list = utils.isExecutableElement(member)
@@ -243,6 +249,9 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         if (utils.isStatic(member)) {
             code.add("static ");
         }
+        if (!utils.isEnum(member) && utils.isFinal(member)) {
+            code.add("final ");
+        }
     }
 
     /**
@@ -283,20 +292,6 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
 
     protected String name(Element member) {
         return utils.getSimpleName(member);
-    }
-
-    /**
-     * Returns {@code true} if the given element is inherited
-     * by the class that is being documented.
-     *
-     * @param ped the element being checked
-     *
-     * @return {@code true} if inherited
-     */
-    protected boolean isInherited(Element ped){
-        return (!utils.isPrivate(ped) &&
-                (!utils.isPackagePrivate(ped) ||
-                    ped.getEnclosingElement().equals(ped.getEnclosingElement())));
     }
 
     /**
