@@ -114,7 +114,7 @@ public class MultipleLogins {
             }
         }
     }
-    
+
     public static class PasswordCallbackHandler implements CallbackHandler {
         public void handle(Callback[] callbacks)
                 throws IOException, UnsupportedCallbackException {
