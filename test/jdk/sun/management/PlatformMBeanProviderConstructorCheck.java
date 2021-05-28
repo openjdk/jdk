@@ -33,6 +33,7 @@ import java.util.List;
  * @summary Check permission for PlatformMBeanProvider Constructor
  * @modules java.management/sun.management.spi
  * @author  Shanliang Jiang
+ * @run main/othervm -Djava.security.manager=allow PlatformMBeanProviderConstructorCheck
  */
 public class PlatformMBeanProviderConstructorCheck {
     public static void main(String[] args) throws Exception {

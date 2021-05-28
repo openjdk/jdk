@@ -192,10 +192,8 @@ class ThreadScanHashtable : public CHeapObj<mtThread> {
     return (unsigned int)(((uint32_t)(uintptr_t)s1) * 2654435761u);
   }
 
-  int _table_size;
-  // ResourceHashtable SIZE is specified at compile time so our
-  // dynamic _table_size is unused for now; 1031 is the first prime
-  // after 1024.
+  // ResourceHashtable SIZE is specified at compile time so we
+  // use 1031 which is the first prime after 1024.
   typedef ResourceHashtable<void *, int, &ThreadScanHashtable::ptr_hash,
                             &ThreadScanHashtable::ptr_equals, 1031,
                             ResourceObj::C_HEAP, mtThread> PtrTable;
@@ -205,7 +203,7 @@ class ThreadScanHashtable : public CHeapObj<mtThread> {
   // ResourceHashtable is passed to various functions and populated in
   // different places so we allocate it using C_HEAP to make it immune
   // from any ResourceMarks that happen to be in the code paths.
-  ThreadScanHashtable(int table_size) : _table_size(table_size), _ptrs(new (ResourceObj::C_HEAP, mtThread) PtrTable()) {}
+  ThreadScanHashtable() : _ptrs(new (ResourceObj::C_HEAP, mtThread) PtrTable()) {}
 
   ~ThreadScanHashtable() { delete _ptrs; }
 
@@ -870,12 +868,8 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
     }
   }
 
-  // Hash table size should be first power of two higher than twice the length of the ThreadsList
-  int hash_table_size = MIN2((int)get_java_thread_list()->length(), 32) << 1;
-  hash_table_size = round_up_power_of_2(hash_table_size);
-
   // Gather a hash table of the current hazard ptrs:
-  ThreadScanHashtable *scan_table = new ThreadScanHashtable(hash_table_size);
+  ThreadScanHashtable *scan_table = new ThreadScanHashtable();
   ScanHazardPtrGatherThreadsListClosure scan_cl(scan_table);
   threads_do(&scan_cl);
   OrderAccess::acquire(); // Must order reads of hazard ptr before reads of
@@ -929,14 +923,9 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
 bool ThreadsSMRSupport::is_a_protected_JavaThread(JavaThread *thread) {
   assert_locked_or_safepoint(Threads_lock);
 
-  // Hash table size should be first power of two higher than twice
-  // the length of the Threads list.
-  int hash_table_size = MIN2((int)get_java_thread_list()->length(), 32) << 1;
-  hash_table_size = round_up_power_of_2(hash_table_size);
-
   // Gather a hash table of the JavaThreads indirectly referenced by
   // hazard ptrs.
-  ThreadScanHashtable *scan_table = new ThreadScanHashtable(hash_table_size);
+  ThreadScanHashtable *scan_table = new ThreadScanHashtable();
   ScanHazardPtrGatherProtectedThreadsClosure scan_cl(scan_table);
   threads_do(&scan_cl);
   OrderAccess::acquire(); // Must order reads of hazard ptr before reads of

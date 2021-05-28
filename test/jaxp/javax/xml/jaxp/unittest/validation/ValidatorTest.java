@@ -50,7 +50,7 @@ import org.xml.sax.ErrorHandler;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.ValidatorTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.ValidatorTest
  * @run testng/othervm validation.ValidatorTest
  * @summary Test Validator.validate(Source, Result).
  */
