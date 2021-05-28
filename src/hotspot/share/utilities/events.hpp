@@ -468,6 +468,8 @@ class EventMarkWithLogFunction : public EventMarkBase {
 
 // These end up in the default log.
 typedef EventMarkWithLogFunction<Events::log> EventMark;
+
+// These end up in the vm_operation log.
 typedef EventMarkWithLogFunction<Events::log_vm_operation> EventMarkVMOperation;
 
 #endif // SHARE_UTILITIES_EVENTS_HPP
