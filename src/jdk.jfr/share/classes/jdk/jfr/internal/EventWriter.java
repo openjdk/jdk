@@ -41,6 +41,13 @@ public final class EventWriter {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static final JVM jvm = JVM.getJVM();
 
+    private static final int[] VARINT_LENGTHS = new int[65];
+    static {
+        for (int i = 0; i <= 64; i++) {
+            VARINT_LENGTHS[i] = (63 - i) / 7;
+        }
+    }
+
     // The JVM needs access to these values. Don't remove
     private final long threadID;
     private long startPosition;
@@ -321,55 +328,12 @@ public final class EventWriter {
     }
 
     private void putUncheckedLong(long v) {
-        if ((v & ~0x7FL) == 0L) {
-            putUncheckedByte((byte) v); // 0-6
-            return;
+        int length = VARINT_LENGTHS[Long.numberOfLeadingZeros(v)];
+        for (int i = 0; i < length; i++) {
+            putUncheckedByte(((byte) ((v & 0x7F) | 0x80)));
+            v >>>= 7;
         }
-        putUncheckedByte((byte) (v | 0x80L)); // 0-6
-        v >>>= 7;
-        if ((v & ~0x7FL) == 0L) {
-            putUncheckedByte((byte) v); // 7-13
-            return;
-        }
-        putUncheckedByte((byte) (v | 0x80L)); // 7-13
-        v >>>= 7;
-        if ((v & ~0x7FL) == 0L) {
-            putUncheckedByte((byte) v); // 14-20
-            return;
-        }
-        putUncheckedByte((byte) (v | 0x80L)); // 14-20
-        v >>>= 7;
-        if ((v & ~0x7FL) == 0L) {
-            putUncheckedByte((byte) v); // 21-27
-            return;
-        }
-        putUncheckedByte((byte) (v | 0x80L)); // 21-27
-        v >>>= 7;
-        if ((v & ~0x7FL) == 0L) {
-            putUncheckedByte((byte) v); // 28-34
-            return;
-        }
-        putUncheckedByte((byte) (v | 0x80L)); // 28-34
-        v >>>= 7;
-        if ((v & ~0x7FL) == 0L) {
-            putUncheckedByte((byte) v); // 35-41
-            return;
-        }
-        putUncheckedByte((byte) (v | 0x80L)); // 35-41
-        v >>>= 7;
-        if ((v & ~0x7FL) == 0L) {
-            putUncheckedByte((byte) v); // 42-48
-            return;
-        }
-        putUncheckedByte((byte) (v | 0x80L)); // 42-48
-        v >>>= 7;
-
-        if ((v & ~0x7FL) == 0L) {
-            putUncheckedByte((byte) v); // 49-55
-            return;
-        }
-        putUncheckedByte((byte) (v | 0x80L)); // 49-55
-        putUncheckedByte((byte) (v >>> 7)); // 56-63, last byte as is.
+        putUncheckedByte((byte) v);
     }
 
     private void putUncheckedByte(byte i) {
