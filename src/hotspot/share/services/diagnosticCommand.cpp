@@ -469,7 +469,7 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
   _gzip("-gz", "If specified, the heap dump is written in gzipped format "
                "using the given compression level. 1 (recommended) is the fastest, "
                "9 the strongest compression.", "INT", false, "1"),
-  _rewrite("-rewrite", "If specified and the dump file exists, the file will be rewritten",
+  _rewrite("-rewrite", "If specified, the dump file will be rewritten if it exists",
            "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_argument(&_filename);
