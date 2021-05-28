@@ -239,7 +239,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Use intrinsics for java.util.Base64")                            \
                                                                             \
   product(size_t, LargePageSizeInBytes, 0,                                  \
-          "Large page size (0 to let VM choose the page size)")             \
+          "Maximum large page size used (0 will use the default large "     \
+          "page size for the environment as the maximum)")                  \
           range(0, max_uintx)                                               \
                                                                             \
   product(size_t, LargePageHeapSizeThreshold, 128*M,                        \
@@ -711,7 +712,7 @@ const intx ObjectAlignmentInBytes = 8;
           "at one time (minimum is 1024).")                      \
           range(1024, max_jint)                                             \
                                                                             \
-  product(intx, MonitorUsedDeflationThreshold, 90, EXPERIMENTAL,            \
+  product(intx, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,              \
           "Percentage of used monitors before triggering deflation (0 is "  \
           "off). The check is performed on GuaranteedSafepointInterval "    \
           "or AsyncDeflationInterval.")                                     \

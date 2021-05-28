@@ -88,7 +88,8 @@ public class UseCustomSocketFactory {
 
         for (int i = 0; i < protocol.length; i++) {
             JavaVM serverVM = new JavaVM("EchoImpl",
-                                         "-Djava.security.policy=" +
+                                         "-Djava.security.manager=allow" +
+                                         " -Djava.security.policy=" +
                                          TestParams.defaultPolicy +
                                          " -Drmi.registry.port=" +
                                          registryPort +

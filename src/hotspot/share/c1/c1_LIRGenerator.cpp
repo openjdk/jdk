@@ -3055,33 +3055,6 @@ void LIRGenerator::do_IfOp(IfOp* x) {
 }
 
 #ifdef JFR_HAVE_INTRINSICS
-void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
-  CodeEmitInfo* info = state_for(x);
-  CodeEmitInfo* info2 = new CodeEmitInfo(info); // Clone for the second null check
-
-  assert(info != NULL, "must have info");
-  LIRItem arg(x->argument_at(0), this);
-
-  arg.load_item();
-  LIR_Opr klass = new_register(T_METADATA);
-  __ move(new LIR_Address(arg.result(), java_lang_Class::klass_offset(), T_ADDRESS), klass, info);
-  LIR_Opr id = new_register(T_LONG);
-  ByteSize offset = KLASS_TRACE_ID_OFFSET;
-  LIR_Address* trace_id_addr = new LIR_Address(klass, in_bytes(offset), T_LONG);
-
-  __ move(trace_id_addr, id);
-  __ logical_or(id, LIR_OprFact::longConst(0x01l), id);
-  __ store(id, trace_id_addr);
-
-#ifdef TRACE_ID_META_BITS
-  __ logical_and(id, LIR_OprFact::longConst(~TRACE_ID_META_BITS), id);
-#endif
-#ifdef TRACE_ID_SHIFT
-  __ unsigned_shift_right(id, TRACE_ID_SHIFT, id);
-#endif
-
-  __ move(id, rlock_result(x));
-}
 
 void LIRGenerator::do_getEventWriter(Intrinsic* x) {
   LabelObj* L_end = new LabelObj();
@@ -3131,9 +3104,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   }
 
 #ifdef JFR_HAVE_INTRINSICS
-  case vmIntrinsics::_getClassId:
-    do_ClassIDIntrinsic(x);
-    break;
   case vmIntrinsics::_getEventWriter:
     do_getEventWriter(x);
     break;

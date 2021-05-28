@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,12 +65,16 @@ inline traceid set_used_and_get(const T* type) {
   return TRACE_ID(type);
 }
 
-inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass) {
-  assert(klass != NULL, "invariant");
-  if (should_tag(klass)) {
+inline void JfrTraceIdLoadBarrier::load_barrier(const Klass* klass) {
     SET_USED_THIS_EPOCH(klass);
     enqueue(klass);
     JfrTraceIdEpoch::set_changed_tag_state();
+}
+
+inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass) {
+  assert(klass != NULL, "invariant");
+  if (should_tag(klass)) {
+    load_barrier(klass);
   }
   assert(USED_THIS_EPOCH(klass), "invariant");
   return TRACE_ID(klass);

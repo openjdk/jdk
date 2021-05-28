@@ -408,8 +408,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(ThreadLocalAllocBuffer,      _reserve_for_allocation_prefetch,              int)                                   \
      static_field(ThreadLocalAllocBuffer,      _target_refills,                               unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _number_of_refills,                            unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,      _fast_refill_waste,                            unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,      _slow_refill_waste,                            unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste,                                 unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _gc_waste,                                     unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _slow_allocations,                             unsigned)                              \
   nonstatic_field(VirtualSpace,                _low_boundary,                                 char*)                                 \
@@ -575,6 +574,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
      static_field(StubRoutines,                _crc32c_table_addr,                            address)                               \
      static_field(StubRoutines,                _updateBytesCRC32C,                            address)                               \
+     static_field(StubRoutines,                _updateBytesAdler32,                           address)                               \
      static_field(StubRoutines,                _multiplyToLen,                                address)                               \
      static_field(StubRoutines,                _squareToLen,                                  address)                               \
      static_field(StubRoutines,                _bigIntegerRightShiftWorker,                   address)                               \

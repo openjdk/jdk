@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8267262
  * @summary Tests for Filter static factory methods
  * @run testng/othervm FilterTest
  */
@@ -47,6 +48,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeTest;
 import static org.testng.Assert.*;
@@ -54,6 +56,8 @@ import static org.testng.Assert.*;
 public class FilterTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
+    static final Class<IOException> IOE = IOException.class;
+
     static final InetAddress LOOPBACK_ADDR = InetAddress.getLoopbackAddress();
     static final boolean ENABLE_LOGGING = true;
     static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
@@ -72,17 +76,54 @@ public class FilterTest {
     public void testNull() {
         expectThrows(NPE, () -> Filter.beforeHandler(null, e -> e.getResponseHeaders().set("X-Foo", "Bar")));
         expectThrows(NPE, () -> Filter.beforeHandler("Some description", null));
-        expectThrows(NPE, () -> Filter.afterHandler(null, HttpExchange::getResponseCode));
+
         expectThrows(NPE, () -> Filter.afterHandler("Some description", null));
+        expectThrows(NPE, () -> Filter.afterHandler(null, HttpExchange::getResponseCode));
     }
 
     @Test
     public void testDescription() {
         var desc = "Some description";
+
         var beforeFilter = Filter.beforeHandler(desc, HttpExchange::getRequestBody);
-        var afterFilter = Filter.afterHandler(desc, HttpExchange::getResponseCode);
         assertEquals(desc, beforeFilter.description());
+
+        var afterFilter = Filter.afterHandler(desc, HttpExchange::getResponseCode);
         assertEquals(desc, afterFilter.description());
+    }
+
+    @DataProvider
+    public static Object[][] throwingFilters() {
+        return new Object[][] {
+            {Filter.beforeHandler("before RE", e -> { throw new RuntimeException(); }), IOE},
+            {Filter.beforeHandler("before AE", e -> { throw new AssertionError();   }), IOE},
+
+            {Filter.afterHandler( "after RE",  e -> { throw new RuntimeException(); }), null},
+            {Filter.afterHandler( "after AE",  e -> { throw new AssertionError();   }), null},
+        };
+    }
+
+    @Test(dataProvider = "throwingFilters")
+    public void testException(Filter filter, Class<Exception> exception)
+            throws Exception
+    {
+        var handler = new EchoHandler();
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10);
+        server.createContext("/", handler).getFilters().add(filter);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            if (exception != null) {
+                expectThrows(exception, () -> client.send(request, HttpResponse.BodyHandlers.ofString()));
+            } else {
+                var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                assertEquals(response.statusCode(), 200);
+                assertEquals(response.body(), "hello world");
+            }
+        } finally {
+            server.stop(0);
+        }
     }
 
     @Test

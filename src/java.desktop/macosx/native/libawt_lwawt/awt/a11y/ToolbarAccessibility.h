@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,13 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.util.links;
+#import "JavaComponentAccessibility.h"
+#import "CommonComponentAccessibility.h"
 
-/**
- *  Stores output of a link.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- */
-public interface LinkOutput {
+#import <AppKit/AppKit.h>
 
-    /**
-     * Append the given object to the output.
-     *
-     * @param o the object to append.
-     */
-    void append(Object o);
+@interface ToolbarAccessibility : CommonComponentAccessibility {
 
-    /**
-     * Insert the given object into the output sequence.
-     *
-     * @param offset the offset.
-     * @param o the object to be inserted.
-     */
-    void insert(int offset, Object o);
-}
+};
+- (NSAccessibilityRole _Nonnull)accessibilityRole;
+@end

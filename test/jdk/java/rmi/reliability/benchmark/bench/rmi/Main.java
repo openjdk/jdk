@@ -242,6 +242,7 @@ public class Main {
                         clientProcessStr.add(classpath);
                     }
                     clientProcessStr.add("-Djava.security.policy=" + TEST_SRC_PATH + "policy.all");
+                    clientProcessStr.add("-Djava.security.manager=allow");
                     clientProcessStr.add("-Dtest.src=" + TEST_SRC_PATH);
                     clientProcessStr.add("bench.rmi.Main"); //Client mode
                     if (verbose) {

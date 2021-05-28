@@ -48,7 +48,7 @@ import org.xml.sax.InputSource;
  * @test
  * @bug 8158084 8162438 8162442 8166220
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true catalog.CatalogSupport4
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.CatalogSupport4
  * @run testng/othervm catalog.CatalogSupport4
  * @summary verifies the overriding over of the USE_CATALOG feature. Extending
  * CatalogSupport tests, the USE_CATALOG is turned off system-wide, however,

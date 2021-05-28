@@ -885,10 +885,9 @@ public final class Locale implements Cloneable, Serializable {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof LocaleKey)) {
+            if (!(obj instanceof LocaleKey other)) {
                 return false;
             }
-            LocaleKey other = (LocaleKey)obj;
             if (hash != other.hash || !base.equals(other.base)) {
                 return false;
             }
@@ -3341,12 +3340,9 @@ public final class Locale implements Cloneable, Serializable {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof LanguageRange)) {
-                return false;
-            }
-            LanguageRange other = (LanguageRange)obj;
-            return range.equals(other.range)
-                   && weight == other.weight;
+            return obj instanceof LanguageRange other
+                    && range.equals(other.range)
+                    && weight == other.weight;
         }
 
         /**

@@ -407,6 +407,7 @@ private:
   static size_t _nterminateflush;
   static size_t _ntrycomplete;
   static size_t _ncontinue;
+  static size_t _mark_stack_usage;
 
 public:
   static void set_at_mark_start(size_t nstripes);
@@ -414,6 +415,7 @@ public:
                               size_t nterminateflush,
                               size_t ntrycomplete,
                               size_t ncontinue);
+  static void set_at_mark_free(size_t mark_stack_usage);
 
   static void print();
 };

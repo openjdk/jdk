@@ -25,7 +25,7 @@
  * @bug 4850423
  * @summary login facilities for hardware tokens
  * @library /test/lib ..
- * @run testng/othervm Login
+ * @run testng/othervm -Djava.security.manager=allow Login
  */
 
 import org.testng.annotations.BeforeClass;
