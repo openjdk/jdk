@@ -112,8 +112,7 @@ Jvm* AppLauncher::createJvmLauncher() const {
             PropertyName::arguments, args);
     }
 
-    tstring ret = SysInfo::addLibPath(appDirPath);
-    LOG_TRACE(tstrings::any() << "addLibPath(" << appDirPath << ") returns: " << ret);
+    SysInfo::addLibPath(appDirPath);
 
     std::unique_ptr<Jvm> jvm(new Jvm());
 

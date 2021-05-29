@@ -29,6 +29,7 @@
 #include "WinSysInfo.h"
 #include "FileUtils.h"
 #include "WinErrorHandling.h"
+#include "Log.h"
 
 #pragma comment(lib, "Shell32")
 
@@ -122,6 +123,10 @@ void setEnvVariable(const tstring& name, const tstring& value)
                 << name << ", " << value
                 << ") failed", SetEnvironmentVariable));
     }
+
+    if (0 != _tputenv_s(name.c_str(), value.c_str())) {
+        JP_THROW(tstrings::any() << "_tputenv_s(" << name << ", " << value << ") failed: " << lastCRTError());
+    } 
 }
 
 tstring getCurrentModulePath()
