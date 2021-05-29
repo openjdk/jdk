@@ -29,7 +29,6 @@
 #include "WinSysInfo.h"
 #include "FileUtils.h"
 #include "WinErrorHandling.h"
-#include "Log.h"
 
 #pragma comment(lib, "Shell32")
 
