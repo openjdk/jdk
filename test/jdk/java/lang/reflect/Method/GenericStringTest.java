@@ -179,10 +179,10 @@ interface TestInterface1 {
     default <A> A bar(){return null;}
 
     @ExpectedString(
-   "public default strictfp double TestInterface1.quux()")
+   "public default double TestInterface1.quux()")
     @ExpectedGenericString(
-    "public default strictfp double TestInterface1.quux()")
-    strictfp default double quux(){return 1.0;}
+    "public default double TestInterface1.quux()")
+    default double quux(){return 1.0;}
 }
 
 @Retention(RetentionPolicy.RUNTIME)
