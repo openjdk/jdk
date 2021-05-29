@@ -46,7 +46,6 @@
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compileTask.hpp"
-#include "compiler/compilerThread.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/linkResolver.hpp"

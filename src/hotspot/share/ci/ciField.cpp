@@ -29,7 +29,6 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
-#include "compiler/compilerThread.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "oops/klass.inline.hpp"

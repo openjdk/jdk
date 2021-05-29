@@ -36,7 +36,6 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compilerOracle.hpp"
-#include "compiler/compilerThread.inline.hpp"
 #include "compiler/directivesParser.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -66,7 +65,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/debug.hpp"
@@ -941,7 +939,7 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
 
       new_thread->set_threadObj(JNIHandles::resolve_non_null(thread_handle));
       if (type == compiler_t) {
-        new_thread->as_Compiler_thread()->set_compiler(comp);
+        CompilerThread::cast(new_thread)->set_compiler(comp);
       }
       Threads::add(new_thread);
       Thread::start(new_thread);

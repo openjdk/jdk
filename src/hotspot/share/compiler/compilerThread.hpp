@@ -56,7 +56,14 @@ class CompilerThread : public JavaThread {
 
  public:
 
-  static CompilerThread* current();
+  static CompilerThread* current() {
+    return CompilerThread::cast(JavaThread::current());
+  }
+
+  static CompilerThread* cast(Thread* t) {
+    assert(t->is_Compiler_thread(), "incorrect cast to CompilerThread");
+    return static_cast<CompilerThread*>(t);
+  }
 
   CompilerThread(CompileQueue* queue, CompilerCounters* counters);
   ~CompilerThread();
