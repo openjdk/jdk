@@ -353,7 +353,7 @@ public:
   // Returns whether a collection should be done proactively, taking into
   // account the current number of free regions and the expected survival
   // rates in each section of the heap.
-  bool proactive_collection_required(uint region_count);
+  bool preventive_collection_required(uint region_count);
 
 private:
 

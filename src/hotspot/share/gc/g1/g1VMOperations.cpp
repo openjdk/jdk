@@ -120,8 +120,8 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
 }
 
 bool VM_G1CollectForAllocation::should_try_allocation_before_gc() {
-  // Don't allocate before a proactive GC.
-  return _gc_cause != GCCause::_g1_proactive_collection;
+  // Don't allocate before a preventive GC.
+  return _gc_cause != GCCause::_g1_preventive_collection;
 }
 
 void VM_G1CollectForAllocation::doit() {

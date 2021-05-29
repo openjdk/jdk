@@ -423,7 +423,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
   HeapWord* result = NULL;
   for (uint try_count = 1, gclocker_retry_count = 0; /* we'll return */; try_count += 1) {
     bool should_try_gc;
-    bool proactive_collection_required = false;
+    bool preventive_collection_required = false;
     uint gc_count_before;
 
     {
@@ -437,8 +437,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
         return result;
       }
 
-      proactive_collection_required = policy()->proactive_collection_required(1);
-      if (!proactive_collection_required) {
+      preventive_collection_required = policy()->preventive_collection_required(1);
+      if (!preventive_collection_required) {
         // We've already attempted a lock-free allocation above, so we don't want to
         // do it again. Let's jump straight to replacing the active region.
         result = _allocator->attempt_allocation_using_new_region(word_size);
@@ -468,7 +468,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
     }
 
     if (should_try_gc) {
-      GCCause::Cause gc_cause = proactive_collection_required ? GCCause::_g1_proactive_collection
+      GCCause::Cause gc_cause = preventive_collection_required ? GCCause::_g1_preventive_collection
                                                               : GCCause::_g1_inc_collection_pause;
       bool succeeded;
       result = do_collection_pause(word_size, gc_count_before, &succeeded, gc_cause);
@@ -865,7 +865,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
   HeapWord* result = NULL;
   for (uint try_count = 1, gclocker_retry_count = 0; /* we'll return */; try_count += 1) {
     bool should_try_gc;
-    bool proactive_collection_required = false;
+    bool preventive_collection_required = false;
     uint gc_count_before;
 
 
@@ -873,8 +873,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
       MutexLocker x(Heap_lock);
 
       size_t size_in_regions = humongous_obj_size_in_regions(word_size);
-      proactive_collection_required = policy()->proactive_collection_required((uint)size_in_regions);
-      if (!proactive_collection_required) {
+      preventive_collection_required = policy()->preventive_collection_required((uint)size_in_regions);
+      if (!preventive_collection_required) {
         // Given that humongous objects are not allocated in young
         // regions, we'll first try to do the allocation without doing a
         // collection hoping that there's enough space in the heap.
@@ -895,7 +895,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
     }
 
     if (should_try_gc) {
-      GCCause::Cause gc_cause = proactive_collection_required ? GCCause::_g1_proactive_collection
+      GCCause::Cause gc_cause = preventive_collection_required ? GCCause::_g1_preventive_collection
                                                               : GCCause::_g1_humongous_allocation;
       bool succeeded;
       result = do_collection_pause(word_size, gc_count_before, &succeeded, gc_cause);

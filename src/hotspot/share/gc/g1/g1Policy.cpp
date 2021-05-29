@@ -1413,9 +1413,9 @@ static size_t get_num_regions_adjust_for_plab_waste(size_t byte_count) {
   return (byte_count_adjusted + HeapRegion::GrainBytes - 1) / HeapRegion::GrainBytes;
 }
 
-bool G1Policy::proactive_collection_required(uint alloc_region_count) {
-  if (!G1AllowProactiveGC || !Universe::is_fully_initialized()) {
-    // Don't attempt any proactive GC's if the feature is disabled,
+bool G1Policy::preventive_collection_required(uint alloc_region_count) {
+  if (!G1AllowPreventiveGC || !Universe::is_fully_initialized()) {
+    // Don't attempt any preventive GC's if the feature is disabled,
     // or before initialization is complete.
     return false;
   }
@@ -1432,7 +1432,7 @@ bool G1Policy::proactive_collection_required(uint alloc_region_count) {
                                 get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old));
 
   if (required_regions > _g1h->num_free_regions() - alloc_region_count) {
-    log_debug(gc, ergo, cset)("Proactive GC, insufficient free regions. Predicted need %u. Curr Eden %u (Pred %u). Curr Survivor %u (Pred %u). Curr Old %u (Pred %u) Free %u Alloc %u",
+    log_debug(gc, ergo, cset)("Preventive GC, insufficient free regions. Predicted need %u. Curr Eden %u (Pred %u). Curr Survivor %u (Pred %u). Curr Old %u (Pred %u) Free %u Alloc %u",
             required_regions,
             eden_count,
             (uint)get_num_regions_adjust_for_plab_waste(eden_surv_bytes_pred),

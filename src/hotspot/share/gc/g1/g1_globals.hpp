@@ -304,7 +304,7 @@
           "disables this check.")                                           \
           range(0.0, (double)max_uintx)                                     \
                                                                             \
-  product(bool, G1AllowProactiveGC, true, DIAGNOSTIC,                       \
+  product(bool, G1AllowPreventiveGC, true, DIAGNOSTIC,                       \
           "Allows collections to be triggered proactively based on the      \
            number of free regions and the expected survival rates in each   \
            section of the heap.")
