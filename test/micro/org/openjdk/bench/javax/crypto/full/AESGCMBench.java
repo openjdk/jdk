@@ -82,8 +82,6 @@ public class AESGCMBench extends CryptoBase {
         encryptCipher.init(Cipher.ENCRYPT_MODE, ks, gcm_spec);
         encryptCipher.updateAAD(aad);
         decryptCipher = makeCipher(prov, algorithm);
-        decryptCipher.init(Cipher.DECRYPT_MODE, ks, encryptCipher.getParameters().getParameterSpec(GCMParameterSpec.class));
-        decryptCipher.updateAAD(aad);
         data = fillRandom(new byte[dataSize]);
         encryptedData = encryptCipher.doFinal(data);
     }
