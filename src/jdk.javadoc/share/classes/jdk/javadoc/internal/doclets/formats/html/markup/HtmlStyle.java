@@ -770,7 +770,7 @@ public enum HtmlStyle {
     packageUsePage,
 
     /**
-     * The class of the {@code body} element for the page listing any deprecated items.
+     * The class of the {@code body} element for the page listing any preview items.
      */
     previewListPage,
 

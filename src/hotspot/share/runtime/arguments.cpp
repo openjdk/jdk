@@ -2745,6 +2745,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       } else if (strcmp(tail, ":disable") == 0) {
         LogConfiguration::disable_logging();
         ret = true;
+      } else if (strcmp(tail, ":async") == 0) {
+        LogConfiguration::set_async_mode(true);
+        ret = true;
       } else if (*tail == '\0') {
         ret = LogConfiguration::parse_command_line_arguments();
         assert(ret, "-Xlog without arguments should never fail to parse");

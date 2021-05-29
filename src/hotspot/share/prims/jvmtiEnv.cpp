@@ -3191,31 +3191,7 @@ JvmtiEnv::RawMonitorEnter(JvmtiRawMonitor * rmonitor) {
     // in thread.cpp.
     JvmtiPendingMonitors::enter(rmonitor);
   } else {
-    Thread* thread = Thread::current();
-    if (thread->is_Java_thread()) {
-      JavaThread* current_thread = thread->as_Java_thread();
-
-      /* Transition to thread_blocked without entering vm state          */
-      /* This is really evil. Normally you can't undo _thread_blocked    */
-      /* transitions like this because it would cause us to miss a       */
-      /* safepoint but since the thread was already in _thread_in_native */
-      /* the thread is not leaving a safepoint safe state and it will    */
-      /* block when it tries to return from native. We can't safepoint   */
-      /* block in here because we could deadlock the vmthread. Blech.    */
-
-      JavaThreadState state = current_thread->thread_state();
-      assert(state == _thread_in_native, "Must be _thread_in_native");
-      // frame should already be walkable since we are in native
-      assert(!current_thread->has_last_Java_frame() ||
-             current_thread->frame_anchor()->walkable(), "Must be walkable");
-      current_thread->set_thread_state(_thread_blocked);
-
-      rmonitor->raw_enter(current_thread);
-      // restore state, still at a safepoint safe state
-      current_thread->set_thread_state(state);
-    } else {
-      rmonitor->raw_enter(thread);
-    }
+    rmonitor->raw_enter(Thread::current());
   }
   return JVMTI_ERROR_NONE;
 } /* end RawMonitorEnter */

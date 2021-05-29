@@ -1673,8 +1673,8 @@ public class ObjectStreamClass implements Serializable {
      * otherwise.
      */
     private static boolean packageEquals(Class<?> cl1, Class<?> cl2) {
-        return (cl1.getClassLoader() == cl2.getClassLoader() &&
-                cl1.getPackageName().equals(cl2.getPackageName()));
+        return cl1.getClassLoader() == cl2.getClassLoader() &&
+                cl1.getPackageName() == cl2.getPackageName();
     }
 
     /**
