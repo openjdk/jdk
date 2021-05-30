@@ -257,7 +257,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = updateFunction.applyAsInt(prev);
-            if (weakCompareAndSetVolatile(prev, next))
+            if (compareAndSet(prev, next))
                 return prev;
             haveNext = (prev == (prev = get()));
         }
@@ -279,7 +279,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = updateFunction.applyAsInt(prev);
-            if (weakCompareAndSetVolatile(prev, next))
+            if (compareAndSet(prev, next))
                 return next;
             haveNext = (prev == (prev = get()));
         }
@@ -306,7 +306,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = accumulatorFunction.applyAsInt(prev, x);
-            if (weakCompareAndSetVolatile(prev, next))
+            if (compareAndSet(prev, next))
                 return prev;
             haveNext = (prev == (prev = get()));
         }
@@ -333,7 +333,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = accumulatorFunction.applyAsInt(prev, x);
-            if (weakCompareAndSetVolatile(prev, next))
+            if (compareAndSet(prev, next))
                 return next;
             haveNext = (prev == (prev = get()));
         }
