@@ -117,7 +117,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 - (id)accessibilityValueAttribute;
 @end
 
-@interface TableAccessibility : JavaComponentAccessibility {
+@interface TableLegacyAccessibility : JavaComponentAccessibility {
 
 }
 - (NSArray *)initializeAttributeNamesWithEnv:(JNIEnv *)env;
@@ -370,7 +370,7 @@ static NSObject *sAttributeNamesLOCK = nil;
     if ([javaRole isEqualToString:@"pagetablist"]) {
         newChild = [TabGroupLegacyAccessibility alloc];
     } else if ([javaRole isEqualToString:@"table"]) {
-        newChild = [TableAccessibility alloc];
+        newChild = [TableLegacyAccessibility alloc];
     } else {
         NSString *nsRole = [sRoles objectForKey:javaRole];
         if ([nsRole isEqualToString:NSAccessibilityStaticTextRole] ||
@@ -1846,7 +1846,7 @@ JNI_COCOA_EXIT(env);
 #define JAVA_AX_ROWS (1)
 #define JAVA_AX_COLS (2)
 
-@implementation TableAccessibility
+@implementation TableLegacyAccessibility
 
 - (NSArray *)initializeAttributeNamesWithEnv:(JNIEnv *)env
 {

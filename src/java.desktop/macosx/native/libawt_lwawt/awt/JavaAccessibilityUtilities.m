@@ -501,7 +501,7 @@ void initializeRoles()
     [sRoles setObject:NSAccessibilitySplitGroupRole forKey:@"splitpane"];
     [sRoles setObject:NSAccessibilityValueIndicatorRole forKey:@"statusbar"];
     [sRoles setObject:NSAccessibilityGroupRole forKey:@"swingcomponent"];
-    [sRoles setObject:NSAccessibilityGridRole forKey:@"table"];
+    [sRoles setObject:NSAccessibilityTableRole forKey:@"table"];
     [sRoles setObject:NSAccessibilityTextFieldRole forKey:@"text"];
     [sRoles setObject:NSAccessibilityTextAreaRole forKey:@"textarea"]; // supports top/bottom of document notifications: CAccessability.getAccessibleRole()
     [sRoles setObject:NSAccessibilityCheckBoxRole forKey:@"togglebutton"];
