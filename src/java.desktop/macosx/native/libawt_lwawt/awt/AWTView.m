@@ -28,7 +28,6 @@
 #import "AWTView.h"
 #import "AWTWindow.h"
 #import "a11y/CommonComponentAccessibility.h"
-#import "JavaTextAccessibility.h"
 #import "JavaAccessibilityUtilities.h"
 #import "GeomUtilities.h"
 #import "ThreadUtilities.h"
@@ -668,17 +667,24 @@ static BOOL shouldUsePressAndHold() {
 // --- Services menu support for lightweights ---
 
 // finds the focused accessible element, and if it is a text element, obtains the text from it
-- (NSString *)accessibleSelectedText
+- (NSString *)accessibilitySelectedText
 {
     id focused = [self accessibilityFocusedUIElement];
-    if (![focused isKindOfClass:[JavaTextAccessibility class]]) return nil;
-    return [(JavaTextAccessibility *)focused accessibilitySelectedTextAttribute];
+    if (![focused respondsToSelector:@selector(accessibilitySelectedText)]) return nil;
+    return [focused accessibilitySelectedText];
+}
+
+- (void)setAccessibilitySelectedText:(NSString *)accessibilitySelectedText {
+    id focused = [self accessibilityFocusedUIElement];
+    if ([focused respondsToSelector:@selector(setAccessibilitySelectedText)]) {
+    [focused setAccessibilitySelectedText:accessibilitySelectedText];
+}
 }
 
 // same as above, but converts to RTFD
 - (NSData *)accessibleSelectedTextAsRTFD
 {
-    NSString *selectedText = [self accessibleSelectedText];
+    NSString *selectedText = [self accessibilitySelectedText];
     NSAttributedString *styledText = [[NSAttributedString alloc] initWithString:selectedText];
     NSData *rtfdData = [styledText RTFDFromRange:NSMakeRange(0, [styledText length])
                               documentAttributes:
@@ -691,8 +697,8 @@ static BOOL shouldUsePressAndHold() {
 - (BOOL)replaceAccessibleTextSelection:(NSString *)text
 {
     id focused = [self accessibilityFocusedUIElement];
-    if (![focused isKindOfClass:[JavaTextAccessibility class]]) return NO;
-    [(JavaTextAccessibility *)focused accessibilitySetSelectedTextAttribute:text];
+    if (![focused respondsToSelector:@selector(setAccessibilitySelectedText)]) return NO;
+    [focused setAccessibilitySelectedText:text];
     return YES;
 }
 
@@ -702,7 +708,7 @@ static BOOL shouldUsePressAndHold() {
     if ([[self window] firstResponder] != self) return nil; // let AWT components handle themselves
 
     if ([sendType isEqual:NSStringPboardType] || [returnType isEqual:NSStringPboardType]) {
-        NSString *selectedText = [self accessibleSelectedText];
+        NSString *selectedText = [self accessibilitySelectedText];
         if (selectedText) return self;
     }
 
@@ -715,7 +721,7 @@ static BOOL shouldUsePressAndHold() {
     if ([types containsObject:NSStringPboardType])
     {
         [pboard declareTypes:[NSArray arrayWithObject:NSStringPboardType] owner:nil];
-        return [pboard setString:[self accessibleSelectedText] forType:NSStringPboardType];
+        return [pboard setString:[self accessibilitySelectedText] forType:NSStringPboardType];
     }
 
     if ([types containsObject:NSRTFDPboardType])

@@ -112,7 +112,7 @@ static jobject sAccessibilityClass = NULL;
     /*
      * Here we should keep all the mapping between the accessibility roles and implementing classes
      */
-    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:37];
+    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:41];
 
     [rolesMap setObject:@"ButtonAccessibility" forKey:@"pushbutton"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"icon"];
@@ -133,6 +133,10 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"ToolbarAccessibility" forKey:@"toolbar"];
     [rolesMap setObject:@"SplitpaneAccessibility" forKey:@"splitpane"];
     [rolesMap setObject:@"StatusbarAccessibility" forKey:@"statusbar"];
+    [rolesMap setObject:@"NavigableTextAccessibility" forKey:@"textarea"];
+    [rolesMap setObject:@"NavigableTextAccessibility" forKey:@"text"];
+    [rolesMap setObject:@"NavigableTextAccessibility" forKey:@"passwordtext"];
+    [rolesMap setObject:@"NavigableTextAccessibility" forKey:@"dateeditor"];
 
     /*
      * All the components below should be ignored by the accessibility subsystem,
