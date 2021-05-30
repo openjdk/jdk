@@ -100,6 +100,13 @@ Java_java_lang_Class_registerNatives(JNIEnv *env, jclass cls)
                             sizeof(methods)/sizeof(JNINativeMethod));
 }
 
+JNIEXPORT jboolean JNICALL
+Java_sun_reflect_annotation_AnnotationParser_preserveAllAnnotations(JNIEnv *env, jclass unused)
+{
+  jboolean t = JVM_GetPreserveAllAnnotations(env, unused);
+  return t;
+}
+
 JNIEXPORT jclass JNICALL
 Java_java_lang_Class_forName0(JNIEnv *env, jclass this, jstring classname,
                               jboolean initialize, jobject loader, jclass caller)

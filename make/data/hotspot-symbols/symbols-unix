@@ -71,6 +71,7 @@ JVM_GetArrayLength
 JVM_GetCallerClass
 JVM_GetClassAccessFlags
 JVM_GetClassAnnotations
+JVM_GetPreserveAllAnnotations
 JVM_GetClassConstantPool
 JVM_GetClassContext
 JVM_GetClassCPEntriesCount

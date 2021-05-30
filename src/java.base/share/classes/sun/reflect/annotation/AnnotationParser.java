@@ -108,6 +108,9 @@ public class AnnotationParser {
         }
     }
 
+    private static native boolean preserveAllAnnotations();
+    private static final boolean preserveAllAnnotations = preserveAllAnnotations();
+
     private static Map<Class<? extends Annotation>, Annotation> parseAnnotations2(
                 byte[] rawAnnotations,
                 ConstantPool constPool,
@@ -120,7 +123,9 @@ public class AnnotationParser {
             Annotation a = parseAnnotation2(buf, constPool, container, false, selectAnnotationClasses);
             if (a != null) {
                 Class<? extends Annotation> klass = a.annotationType();
-                if (result.put(klass, a) != null) {
+                if (
+                    (preserveAllAnnotations || AnnotationType.getInstance(klass).retention() == RetentionPolicy.RUNTIME) &&
+                    result.put(klass, a) != null) {
                         throw new AnnotationFormatError(
                             "Duplicate annotation for class: "+klass+": " + a);
             }

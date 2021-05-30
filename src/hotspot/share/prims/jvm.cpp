@@ -1502,6 +1502,9 @@ JVM_ENTRY(jbyteArray, JVM_GetClassAnnotations(JNIEnv *env, jclass cls))
   return NULL;
 JVM_END
 
+JVM_ENTRY(jboolean, JVM_GetPreserveAllAnnotations(JNIEnv *env, jclass cls))
+  return PreserveAllAnnotations;
+JVM_END
 
 static bool jvm_get_field_common(jobject field, fieldDescriptor& fd) {
   // some of this code was adapted from from jni_FromReflectedField
