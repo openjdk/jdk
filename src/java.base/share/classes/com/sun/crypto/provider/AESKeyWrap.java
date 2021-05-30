@@ -41,7 +41,7 @@ import static com.sun.crypto.provider.KWUtil.*;
 class AESKeyWrap extends FeedbackCipher {
 
     // default integrity check value (icv) if iv is not supplied
-    private static final byte[] ICV1 = {
+    private static final byte[] ICV1 = { // SEMI_BLKSIZE long
         (byte) 0xA6, (byte) 0xA6, (byte) 0xA6, (byte) 0xA6,
         (byte) 0xA6, (byte) 0xA6, (byte) 0xA6, (byte) 0xA6
     };
@@ -96,7 +96,7 @@ class AESKeyWrap extends FeedbackCipher {
         if (key == null) {
             throw new InvalidKeyException("Invalid null key");
         }
-        if (iv != null && iv.length != ICV1.length) {
+        if (iv != null && iv.length != SEMI_BLKSIZE) {
             throw new InvalidAlgorithmParameterException("Invalid IV");
         }
         embeddedCipher.init(decrypting, algorithm, key);
@@ -149,13 +149,11 @@ class AESKeyWrap extends FeedbackCipher {
     int encryptFinal(byte[] pt, int dummy1, int ptLen, byte[] dummy2,
             int dummy3) throws IllegalBlockSizeException {
         // adjust the min value since pt contains the first semi-block
-        if (ptLen < (BLKSIZE + SEMI_BLKSIZE) || (ptLen % SEMI_BLKSIZE) != 0) {
+        if (ptLen < MIN_INPUTLEN || (ptLen % SEMI_BLKSIZE) != 0) {
             throw new IllegalBlockSizeException("data should" +
-                " be at least 16 bytes and multiples of 8");
+                    " be at least 16 bytes and multiples of 8");
         }
-
-        W(iv, pt, ptLen, embeddedCipher);
-        return ptLen;
+        return W(iv, pt, ptLen, embeddedCipher);
     }
 
     /**
@@ -182,13 +180,12 @@ class AESKeyWrap extends FeedbackCipher {
     @Override
     int decryptFinal(byte[] ct, int dummy1, int ctLen, byte[] dummy2,
             int dummy3) throws IllegalBlockSizeException {
-        if (ctLen < (BLKSIZE + SEMI_BLKSIZE) || (ctLen % SEMI_BLKSIZE) != 0) {
+        if (ctLen < MIN_INPUTLEN || (ctLen % SEMI_BLKSIZE) != 0) {
             throw new IllegalBlockSizeException
-                ("data should be at least 24 bytes and multiples of 8");
+                    ("data should be at least 24 bytes and multiples of 8");
         }
-        byte[] ivOut = new byte[ICV1.length];
-        W_INV(ct, ctLen, ivOut, embeddedCipher);
-        ctLen -= SEMI_BLKSIZE;
+        byte[] ivOut = new byte[SEMI_BLKSIZE];
+        ctLen = W_INV(ct, ctLen, ivOut, embeddedCipher);
 
         // check against icv and fail if not match
         if (!MessageDigest.isEqual(ivOut, this.iv)) {

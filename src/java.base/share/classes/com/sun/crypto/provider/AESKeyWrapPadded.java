@@ -42,7 +42,7 @@ import static com.sun.crypto.provider.KWUtil.*;
 class AESKeyWrapPadded extends FeedbackCipher {
 
     // default integrity check value (icv) if iv is not supplied
-    private static final byte[] ICV2 = {
+    private static final byte[] ICV2 = { // SEMI_BLKSIZE/2 long
         (byte) 0xA6, (byte) 0x59, (byte) 0x59, (byte) 0xA6,
     };
 
@@ -202,7 +202,7 @@ class AESKeyWrapPadded extends FeedbackCipher {
         } else {
             byte[] ivAndLen = new byte[SEMI_BLKSIZE];
             setIvAndLen(ivAndLen, iv, actualLen);
-            W(ivAndLen, pt, ptLen, embeddedCipher);
+            ptLen = W(ivAndLen, pt, ptLen, embeddedCipher);
         }
         return ptLen;
     }
@@ -238,10 +238,10 @@ class AESKeyWrapPadded extends FeedbackCipher {
             embeddedCipher.decryptBlock(ct, 0, ct, 0);
             System.arraycopy(ct, 0, ivAndLen, 0, SEMI_BLKSIZE);
             System.arraycopy(ct, SEMI_BLKSIZE, ct, 0, SEMI_BLKSIZE);
+            ctLen -= SEMI_BLKSIZE;
         } else {
-            W_INV(ct, ctLen, ivAndLen, embeddedCipher);
+            ctLen = W_INV(ct, ctLen, ivAndLen, embeddedCipher);
         }
-        ctLen -= SEMI_BLKSIZE;
 
         int outLen = validateIV(ivAndLen, this.iv);
         // check padding bytes

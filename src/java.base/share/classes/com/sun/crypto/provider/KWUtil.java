@@ -40,6 +40,7 @@ class KWUtil {
 
     static final int BLKSIZE = 16;
     static final int SEMI_BLKSIZE = BLKSIZE >> 1;
+    static final int MIN_INPUTLEN = BLKSIZE + SEMI_BLKSIZE;
 
     /*
      * The wrapping function W as defined in section 6.1 of NIST SP 800-38F as
@@ -49,13 +50,17 @@ class KWUtil {
      * @param in input bytes
      * @param inLen length of the to-be-processed bytes
      * @param cipher the initialized cipher object used
+     * @return the processed output length, i.e. same as {@code inLen}.
      */
-    static final void W(byte[] firstSemiblk, byte[] in, int inLen,
+    static final int W(byte[] icvIn, byte[] in, int inLen,
             SymmetricCipher cipher) {
-        // overwrite the first block of in with the iv semiblock
-        System.arraycopy(firstSemiblk, 0, in, 0, SEMI_BLKSIZE);
+        assert((inLen >= MIN_INPUTLEN) && ((inLen % SEMI_BLKSIZE) == 0)) :
+                ("Invalid data length for W: " + inLen);
+        assert(icvIn.length == SEMI_BLKSIZE) : "Invalid ICV buffer size";
 
-        // assert (inLen % SEMI_BLKSIZE == 0) {
+        // overwrite the first block of in with the icv semiblock
+        System.arraycopy(icvIn, 0, in, 0, SEMI_BLKSIZE);
+
         int n = inLen / SEMI_BLKSIZE - 1;
 
         byte[] buffer = new byte[BLKSIZE];
@@ -76,6 +81,8 @@ class KWUtil {
                         SEMI_BLKSIZE);
             }
         }
+        // for W, output length is same as input length
+        return inLen;
     }
 
     /*
@@ -88,12 +95,14 @@ class KWUtil {
      * @param inLen length of the to-be-processed bytes
      * @param ivOut buffer for holding the recovered ICV semiblock
      * @param cipher the initialized cipher object used
+     * @return the recovered data length, i.e. {@code (inLen - icvOut.length)}
      */
-    static final void W_INV(byte[] in, int inLen, byte[] ivOut,
+    static final int W_INV(byte[] in, int inLen, byte[] icvOut,
             SymmetricCipher cipher) {
-        int outLen = inLen - SEMI_BLKSIZE;
-        // assert inLen?
-        // assert (ivOut.length == SEMI_BLKSIZE)
+
+        assert((inLen >= MIN_INPUTLEN) && ((inLen % SEMI_BLKSIZE) == 0)) :
+                ("Invalid data length for W_INV: " + inLen);
+        assert(icvOut.length == SEMI_BLKSIZE) : "Invalid ICV buffer size";
 
         byte[] buffer = new byte[BLKSIZE];
         System.arraycopy(in, 0, buffer, 0, SEMI_BLKSIZE);
@@ -114,6 +123,7 @@ class KWUtil {
                 System.arraycopy(buffer, SEMI_BLKSIZE, in, idx, SEMI_BLKSIZE);
             }
         }
-        System.arraycopy(buffer, 0, ivOut, 0, SEMI_BLKSIZE);
+        System.arraycopy(buffer, 0, icvOut, 0, SEMI_BLKSIZE);
+        return inLen - SEMI_BLKSIZE;
     }
 }
