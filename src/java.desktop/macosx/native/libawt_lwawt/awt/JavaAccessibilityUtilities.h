@@ -48,6 +48,7 @@ BOOL isVertical(JNIEnv *env, jobject axContext, jobject component);
 BOOL isHorizontal(JNIEnv *env, jobject axContext, jobject component);
 BOOL isShowing(JNIEnv *env, jobject axContext, jobject component);
 BOOL isSelectable(JNIEnv *env, jobject axContext, jobject component);
+BOOL isExpanded(JNIEnv *env, jobject axContext, jobject component);
 NSPoint getAxComponentLocationOnScreen(JNIEnv *env, jobject axComponent, jobject component);
 jint getAxTextCharCount(JNIEnv *env, jobject axText, jobject component);
 

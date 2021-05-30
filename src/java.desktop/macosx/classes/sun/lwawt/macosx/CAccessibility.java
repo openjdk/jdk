@@ -32,6 +32,7 @@ import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.KeyEvent;
+import java.awt.EventQueue;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
@@ -39,6 +40,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.Arrays;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleAction;
@@ -58,6 +60,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JTextArea;
 import javax.swing.JList;
+import javax.swing.JTree;
 import javax.swing.KeyStroke;
 
 import sun.awt.AWTAccessor;
@@ -117,19 +120,14 @@ class CAccessibility implements PropertyChangeListener {
     private native void focusChanged();
 
     static <T> T invokeAndWait(final Callable<T> callable, final Component c) {
-        if (c != null) {
-            try {
-                return LWCToolkit.invokeAndWait(callable, c);
-            } catch (final Exception e) { e.printStackTrace(); }
-        }
-        return null;
+        return invokeAndWait(callable, c, null);
     }
 
     static <T> T invokeAndWait(final Callable<T> callable, final Component c, final T defValue) {
         T value = null;
         if (c != null) {
             try {
-                value = LWCToolkit.invokeAndWait(callable, c);
+                value = EventQueue.isDispatchThread() ? callable.call() : LWCToolkit.invokeAndWait(callable, c);
             } catch (final Exception e) { e.printStackTrace(); }
         }
 
@@ -725,6 +723,32 @@ class CAccessibility implements PropertyChangeListener {
         }, c);
     }
 
+    // This method is called from the native
+    // Each child takes up three entries in the array: one for itself, one for its role, and one for the recursion level
+    private static Object[] getChildrenAndRolesRecursive(final Accessible a, final Component c, final int whichChildren, final boolean allowIgnored, final int level) {
+        if (a == null) return null;
+        return invokeAndWait(new Callable<Object[]>() {
+            public Object[] call() throws Exception {
+                ArrayList<Object> currentLevelChildren = new ArrayList<Object>();
+                currentLevelChildren.addAll(Arrays.asList(getChildrenAndRoles(a, c, JAVA_AX_ALL_CHILDREN, allowIgnored)));
+                ArrayList<Object> allChildren = new ArrayList<Object>();
+                for (int i = 0; i < currentLevelChildren.size(); i += 2) {
+                    if ((((Accessible) currentLevelChildren.get(i)).getAccessibleContext().getAccessibleStateSet().contains(AccessibleState.SELECTED) && (whichChildren == JAVA_AX_SELECTED_CHILDREN)) ||
+                            (((Accessible) currentLevelChildren.get(i)).getAccessibleContext().getAccessibleStateSet().contains(AccessibleState.VISIBLE) && (whichChildren == JAVA_AX_VISIBLE_CHILDREN)) ||
+                            (whichChildren == JAVA_AX_ALL_CHILDREN)) {
+                        allChildren.add(currentLevelChildren.get(i));
+                        allChildren.add(currentLevelChildren.get(i + 1));
+                        allChildren.add(String.valueOf(level));
+                    }
+                    if (getAccessibleStateSet(((Accessible) currentLevelChildren.get(i)).getAccessibleContext(), c).contains(AccessibleState.EXPANDED)) {
+                        allChildren.addAll(Arrays.asList(getChildrenAndRolesRecursive(((Accessible) currentLevelChildren.get(i)), c, whichChildren, allowIgnored, level + 1)));
+                    }
+                }
+                return allChildren.toArray();
+            }
+        }, c);
+    }
+
     private static final int JAVA_AX_ROWS = 1;
     private static final int JAVA_AX_COLS = 2;
 
@@ -862,5 +886,19 @@ class CAccessibility implements PropertyChangeListener {
                 return 0L;
             }
         }, (Component)ax);
+    }
+
+    private static boolean isTreeRootVisible(Accessible a, Component c) {
+        if (a == null) return false;
+
+        return invokeAndWait(new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                Accessible sa = CAccessible.getSwingAccessible(a);
+                if (sa instanceof JTree) {
+                    return ((JTree) sa).isRootVisible();
+                }
+                return false;
+            }
+        }, c);
     }
 }

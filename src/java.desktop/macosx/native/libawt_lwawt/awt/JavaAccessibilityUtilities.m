@@ -200,6 +200,20 @@ BOOL isSelectable(JNIEnv *env, jobject axContext, jobject component)
     return selectable;
 }
 
+BOOL isExpanded(JNIEnv *env, jobject axContext, jobject component)
+{
+    GET_ACCESSIBLESTATE_CLASS_RETURN(NO);
+    DECLARE_STATIC_FIELD_RETURN(jm_EXPANDED,
+                                    sjc_AccessibleState,
+                                    "EXPANDED",
+                                    "Ljavax/accessibility/AccessibleState;", NO );
+    jobject axExpandedState = (*env)->GetStaticObjectField(env, sjc_AccessibleState, jm_EXPANDED);
+    CHECK_EXCEPTION_NULL_RETURN(axExpandedState, NO);
+    BOOL expanded = containsAxState(env, axContext, axExpandedState, component);
+    (*env)->DeleteLocalRef(env, axExpandedState);
+    return expanded;
+}
+
 NSPoint getAxComponentLocationOnScreen(JNIEnv *env, jobject axComponent, jobject component)
 {
     GET_CACCESSIBILITY_CLASS_RETURN(NSZeroPoint);
@@ -493,7 +507,7 @@ void initializeRoles()
     [sRoles setObject:NSAccessibilityCheckBoxRole forKey:@"togglebutton"];
     [sRoles setObject:NSAccessibilityToolbarRole forKey:@"toolbar"];
     [sRoles setObject:JavaAccessibilityIgnore forKey:@"tooltip"];
-    [sRoles setObject:NSAccessibilityBrowserRole forKey:@"tree"];
+    [sRoles setObject:NSAccessibilityOutlineRole forKey:@"tree"];
     [sRoles setObject:NSAccessibilityUnknownRole forKey:@"unknown"];
     [sRoles setObject:JavaAccessibilityIgnore forKey:@"viewport"];
     [sRoles setObject:JavaAccessibilityIgnore forKey:@"window"];
