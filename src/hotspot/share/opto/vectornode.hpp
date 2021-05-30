@@ -800,6 +800,8 @@ class StoreVectorNode : public StoreNode {
                                                      idx == MemNode::ValueIn + 1; }
 };
 
+//------------------------------StoreVectorMaskedNode--------------------------------
+// Store Vector to memory under the influence of a predicate register(mask).
 class StoreVectorMaskedNode : public StoreVectorNode {
  public:
   StoreVectorMaskedNode(Node* c, Node* mem, Node* dst, Node* src, const TypePtr* at, Node* mask)
@@ -818,6 +820,8 @@ class StoreVectorMaskedNode : public StoreVectorNode {
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
+//------------------------------LoadVectorMaskedNode--------------------------------
+// Load Vector from memory under the influence of a predicate register(mask).
 class LoadVectorMaskedNode : public LoadVectorNode {
  public:
   LoadVectorMaskedNode(Node* c, Node* mem, Node* src, const TypePtr* at, const TypeVect* vt, Node* mask)
@@ -836,6 +840,9 @@ class LoadVectorMaskedNode : public LoadVectorNode {
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
+
+//------------------------------VectorCmpMaskedNode--------------------------------
+// Vector Comparison under the influence of a predicate register(mask).
 class VectorCmpMaskedNode : public TypeNode {
   public:
    VectorCmpMaskedNode(Node* src1, Node* src2, Node* mask, const Type* ty): TypeNode(ty, 4)  {
