@@ -272,7 +272,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = updateFunction.applyAsLong(prev);
-            if (compareAndSet(prev, next))
+            if (weakCompareAndSetVolatile(prev, next))
                 return prev;
             haveNext = (prev == (prev = get()));
         }
@@ -294,7 +294,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = updateFunction.applyAsLong(prev);
-            if (compareAndSet(prev, next))
+            if (weakCompareAndSetVolatile(prev, next))
                 return next;
             haveNext = (prev == (prev = get()));
         }
@@ -321,7 +321,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = accumulatorFunction.applyAsLong(prev, x);
-            if (compareAndSet(prev, next))
+            if (weakCompareAndSetVolatile(prev, next))
                 return prev;
             haveNext = (prev == (prev = get()));
         }
@@ -348,7 +348,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = accumulatorFunction.applyAsLong(prev, x);
-            if (compareAndSet(prev, next))
+            if (weakCompareAndSetVolatile(prev, next))
                 return next;
             haveNext = (prev == (prev = get()));
         }

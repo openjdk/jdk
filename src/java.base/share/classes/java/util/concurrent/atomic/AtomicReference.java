@@ -186,7 +186,7 @@ public class AtomicReference<V> implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = updateFunction.apply(prev);
-            if (compareAndSet(prev, next))
+            if (weakCompareAndSetVolatile(prev, next))
                 return prev;
             haveNext = (prev == (prev = get()));
         }
@@ -208,7 +208,7 @@ public class AtomicReference<V> implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = updateFunction.apply(prev);
-            if (compareAndSet(prev, next))
+            if (weakCompareAndSetVolatile(prev, next))
                 return next;
             haveNext = (prev == (prev = get()));
         }
@@ -235,7 +235,7 @@ public class AtomicReference<V> implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = accumulatorFunction.apply(prev, x);
-            if (compareAndSet(prev, next))
+            if (weakCompareAndSetVolatile(prev, next))
                 return prev;
             haveNext = (prev == (prev = get()));
         }
@@ -262,7 +262,7 @@ public class AtomicReference<V> implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = accumulatorFunction.apply(prev, x);
-            if (compareAndSet(prev, next))
+            if (weakCompareAndSetVolatile(prev, next))
                 return next;
             haveNext = (prev == (prev = get()));
         }

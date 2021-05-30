@@ -208,7 +208,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = updateFunction.apply(prev);
-            if (compareAndSet(i, prev, next))
+            if (weakCompareAndSetVolatile(i, prev, next))
                 return prev;
             haveNext = (prev == (prev = get(i)));
         }
@@ -232,7 +232,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = updateFunction.apply(prev);
-            if (compareAndSet(i, prev, next))
+            if (weakCompareAndSetVolatile(i, prev, next))
                 return next;
             haveNext = (prev == (prev = get(i)));
         }
@@ -261,7 +261,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = accumulatorFunction.apply(prev, x);
-            if (compareAndSet(i, prev, next))
+            if (weakCompareAndSetVolatile(i, prev, next))
                 return prev;
             haveNext = (prev == (prev = get(i)));
         }
@@ -290,7 +290,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
         for (boolean haveNext = false;;) {
             if (!haveNext)
                 next = accumulatorFunction.apply(prev, x);
-            if (compareAndSet(i, prev, next))
+            if (weakCompareAndSetVolatile(i, prev, next))
                 return next;
             haveNext = (prev == (prev = get(i)));
         }
