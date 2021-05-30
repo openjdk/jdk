@@ -65,6 +65,7 @@ static jclass sjc_CAccessible = NULL;
     GET_CLASS_RETURN(sjc_CAccessible, "sun/lwawt/macosx/CAccessible", ret);
 
 static NSMutableDictionary * _Nullable rolesMap;
+static NSMutableDictionary * _Nullable rowRolesMapForParent;
 NSString *const IgnoreClassName = @"IgnoreAccessibility";
 static jobject sAccessibilityClass = NULL;
 
@@ -112,7 +113,7 @@ static jobject sAccessibilityClass = NULL;
     /*
      * Here we should keep all the mapping between the accessibility roles and implementing classes
      */
-    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:43];
+    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:44];
 
     [rolesMap setObject:@"ButtonAccessibility" forKey:@"pushbutton"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"icon"];
@@ -139,6 +140,7 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"NavigableTextAccessibility" forKey:@"dateeditor"];
     [rolesMap setObject:@"ComboBoxAccessibility" forKey:@"combobox"];
     [rolesMap setObject:@"TabGroupAccessibility" forKey:@"pagetablist"];
+    [rolesMap setObject:@"ListAccessibility" forKey:@"list"];
 
     /*
      * All the components below should be ignored by the accessibility subsystem,
@@ -163,6 +165,10 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:IgnoreClassName forKey:@"tooltip"];
     [rolesMap setObject:IgnoreClassName forKey:@"viewport"];
     [rolesMap setObject:IgnoreClassName forKey:@"window"];
+
+    rowRolesMapForParent = [[NSMutableDictionary alloc] initWithCapacity:1];
+
+    [rowRolesMapForParent setObject:@"ListRowAccessibility" forKey:@"ListAccessibility"];
 
     /*
      * Initialize CAccessibility instance
@@ -214,6 +220,19 @@ static jobject sAccessibilityClass = NULL;
         return [NSClassFromString(className) alloc];
     }
     return [CommonComponentAccessibility alloc];
+}
+
++ (CommonComponentAccessibility *) getComponentAccessibility:(NSString *)role andParent:(CommonComponentAccessibility *)parent
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    if (rolesMap == nil) {
+        [self initializeRolesMap];
+    }
+    NSString *className = [rowRolesMapForParent objectForKey:[[parent class] className]];
+    if (className == nil) {
+        return [CommonComponentAccessibility getComponentAccessibility:role];
+    }
+    return [NSClassFromString(className) alloc];
 }
 
 - (id)initWithParent:(NSObject *)parent withEnv:(JNIEnv *)env withAccessible:(jobject)accessible withIndex:(jint)index withView:(NSView *)view withJavaRole:(NSString *)javaRole
@@ -436,22 +455,28 @@ static jobject sAccessibilityClass = NULL;
 {
     return [self createWithParent:nil accessible:jaccessible role:javaRole index:index withEnv:env withView:view];
 }
-
 + (CommonComponentAccessibility *) createWithParent:(CommonComponentAccessibility *)parent accessible:(jobject)jaccessible role:(NSString *)javaRole index:(jint)index withEnv:(JNIEnv *)env withView:(NSView *)view
+{
+    return [CommonComponentAccessibility createWithParent:parent accessible:jaccessible role:javaRole index:index withEnv:env withView:view isWrapped:NO];
+}
+
++ (CommonComponentAccessibility *) createWithParent:(CommonComponentAccessibility *)parent accessible:(jobject)jaccessible role:(NSString *)javaRole index:(jint)index withEnv:(JNIEnv *)env withView:(NSView *)view isWrapped:(BOOL)wrapped
 {
     GET_CACCESSIBLE_CLASS_RETURN(NULL);
     DECLARE_FIELD_RETURN(jf_ptr, sjc_CAccessible, "ptr", "J", NULL);
     // try to fetch the jCAX from Java, and return autoreleased
     jobject jCAX = [CommonComponentAccessibility getCAccessible:jaccessible withEnv:env];
     if (jCAX == NULL) return nil;
-    CommonComponentAccessibility *value = (CommonComponentAccessibility *) jlong_to_ptr((*env)->GetLongField(env, jCAX, jf_ptr));
-    if (value != nil) {
-        (*env)->DeleteLocalRef(env, jCAX);
-        return [[value retain] autorelease];
+    if (!wrapped) { // If wrapped is true, then you don't need to get an existing instance, you need to create a new one
+        CommonComponentAccessibility *value = (CommonComponentAccessibility *) jlong_to_ptr((*env)->GetLongField(env, jCAX, jf_ptr));
+        if (value != nil) {
+            (*env)->DeleteLocalRef(env, jCAX);
+            return [[value retain] autorelease];
+        }
     }
 
     // otherwise, create a new instance
-    CommonComponentAccessibility *newChild = [CommonComponentAccessibility getComponentAccessibility:javaRole];;
+    CommonComponentAccessibility *newChild = [CommonComponentAccessibility getComponentAccessibility:javaRole andParent:parent];
 
     // must init freshly -alloc'd object
     [newChild initWithParent:parent withEnv:env withAccessible:jCAX withIndex:index withView:view withJavaRole:javaRole]; // must init new instance
@@ -467,7 +492,11 @@ static jobject sAccessibilityClass = NULL;
     // must hard retain pointer poked into Java object
     [newChild retain];
     (*env)->SetLongField(env, jCAX, jf_ptr, ptr_to_jlong(newChild));
-    (*env)->DeleteLocalRef(env, jCAX);
+
+    // the link is removed in the wrapper
+    if (!wrapped) {
+        (*env)->DeleteLocalRef(env, jCAX);
+    }
 
     // return autoreleased instance
     return [newChild autorelease];
@@ -545,7 +574,7 @@ static jobject sAccessibilityClass = NULL;
     NSArray *children = [CommonComponentAccessibility childrenOfParent:self
                                                     withEnv:env
                                                     withChildrenCode:childCode
-                                                    allowIgnored:NO];
+                                                    allowIgnored:[[self accessibilityRole] isEqualToString:NSAccessibilityListRole]];
 
     NSArray *value = nil;
     if ([children count] > 0) {

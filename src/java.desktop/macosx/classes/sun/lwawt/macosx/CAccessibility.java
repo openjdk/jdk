@@ -57,6 +57,7 @@ import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JTextArea;
+import javax.swing.JList;
 import javax.swing.KeyStroke;
 
 import sun.awt.AWTAccessor;
@@ -551,6 +552,10 @@ class CAccessibility implements PropertyChangeListener {
                 if (pac == null) return;
                 AccessibleSelection as = pac.getAccessibleSelection();
                 if (as == null) return;
+                if (parent instanceof JList) {
+                    ((JList) parent).setSelectedIndex(i);
+                    return;
+                }
                 as.addAccessibleSelection(i);
             }
         }, c);
