@@ -62,3 +62,4 @@ void JavaAccessibilityRaiseUnimplementedAttributeException(const char *functionN
 void JavaAccessibilityRaiseIllegalParameterTypeException(const char *functionName, id element, NSString *attribute, id parameter);
 BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component);
 NSNumber* JavaNumberToNSNumber(JNIEnv *env, jobject jnumber);
+NSValue *javaIntArrayToNSRangeValue(JNIEnv* env, jintArray array);
