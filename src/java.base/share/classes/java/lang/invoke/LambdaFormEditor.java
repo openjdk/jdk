@@ -38,6 +38,7 @@ import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import static java.lang.invoke.MethodHandleImpl.NF_loop;
+import static java.lang.invoke.MethodHandleImpl.makeIntrinsic;
 
 /** Transforms on LFs.
  *  A lambda-form editor can derive new LFs from its base LF.
@@ -619,7 +620,7 @@ class LambdaFormEditor {
         // adjust the arguments
         MethodHandle aload = MethodHandles.arrayElementGetter(erasedArrayType);
         for (int i = 0; i < arrayLength; i++) {
-            Name loadArgument = new Name(new NamedFunction(aload, Intrinsic.ARRAY_LOAD), spreadParam, i);
+            Name loadArgument = new Name(new NamedFunction(makeIntrinsic(aload, Intrinsic.ARRAY_LOAD)), spreadParam, i);
             buf.insertExpression(exprPos + i, loadArgument);
             buf.replaceParameterByCopy(pos + i, exprPos + i);
         }

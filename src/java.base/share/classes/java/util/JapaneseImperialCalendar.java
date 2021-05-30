@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -886,7 +886,7 @@ class JapaneseImperialCalendar extends Calendar {
                 } else if (nfd >= (month1 + monthLength)) {
                     nfd = month1 + monthLength - 1;
                 }
-                set(DAY_OF_MONTH, (int)(nfd - month1) + 1);
+                set(DAY_OF_MONTH, getCalendarDate(nfd).getDayOfMonth());
                 return;
             }
 
@@ -1458,7 +1458,7 @@ class JapaneseImperialCalendar extends Calendar {
                     CalendarDate d = gcal.newCalendarDate(TimeZone.NO_TIMEZONE);
                     d.setDate(date.getNormalizedYear(), date.getMonth(), 1);
                     int dayOfWeek = gcal.getDayOfWeek(d);
-                    int monthLength = gcal.getMonthLength(d);
+                    int monthLength = actualMonthLength();
                     dayOfWeek -= getFirstDayOfWeek();
                     if (dayOfWeek < 0) {
                         dayOfWeek += 7;
@@ -2239,7 +2239,7 @@ class JapaneseImperialCalendar extends Calendar {
     private int actualMonthLength() {
         int length = jcal.getMonthLength(jdate);
         int eraIndex = getTransitionEraIndex(jdate);
-        if (eraIndex == -1) {
+        if (eraIndex != -1) {
             long transitionFixedDate = sinceFixedDates[eraIndex];
             CalendarDate d = eras[eraIndex].getSinceDate();
             if (transitionFixedDate <= cachedFixedDate) {
