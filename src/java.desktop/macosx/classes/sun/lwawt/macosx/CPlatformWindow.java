@@ -127,7 +127,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public static final String WINDOW_TRANSPARENT_TITLE_BAR = "apple.awt.transparentTitleBar";
     public static final String WINDOW_TITLE_VISIBLE = "apple.awt.windowTitleVisible";
 
-    // This system property is used in javafx as well
+    // This system property is named as jdk.* because it is not specific to AWT
+    // and it is also used in JavaFX
     public static final String MAC_OS_TABBED_WINDOW = AccessController.doPrivileged(
             new GetPropertyAction("jdk.allowMacOSTabbedWindows"));
 
