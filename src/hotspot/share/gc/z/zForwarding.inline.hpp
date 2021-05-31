@@ -165,14 +165,14 @@ inline void ZForwarding::object_iterate_forwarded(Function function) {
 template <typename Function>
 void ZForwarding::oops_do_in_forwarded(Function function) {
   object_iterate_forwarded([&](oop to_obj) {
-    z_basic_oop_iterate(to_obj, function);
+    ZIterator::basic_oop_iterate_safe(to_obj, function);
   });
 }
 
 template <typename Function>
 void ZForwarding::oops_do_in_forwarded_via_table(Function function) {
   object_iterate_forwarded_via_table([&](oop to_obj) {
-    z_basic_oop_iterate(to_obj, function);
+    ZIterator::basic_oop_iterate_safe(to_obj, function);
   });
 }
 

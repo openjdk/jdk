@@ -24,8 +24,36 @@
 #ifndef SHARE_GC_Z_ZITERATOR_INLINE_HPP
 #define SHARE_GC_Z_ZITERATOR_INLINE_HPP
 
+#include "gc/z/zIterator.hpp"
+
 #include "memory/iterator.inline.hpp"
+#include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+
+inline bool ZIterator::is_invisible_root(oop obj) {
+  return obj->klass()->is_objArray_klass() && obj->mark_acquire().is_marked();
+}
+
+// This iterator skips invisible roots
+template <typename OopClosureT>
+void ZIterator::oop_iterate_safe(oop obj, OopClosureT* cl) {
+  // Skip invisible roots
+  if (!is_invisible_root(obj)) {
+    obj->oop_iterate(cl);
+  }
+}
+
+template <typename OopClosureT>
+void ZIterator::oop_iterate(oop obj, OopClosureT* cl) {
+  assert(!is_invisible_root(obj), "not safe");
+  obj->oop_iterate(cl);
+}
+
+template <typename OopClosureT>
+void ZIterator::oop_iterate_range(objArrayOop obj, OopClosureT* cl, int start, int end) {
+  assert(!is_invisible_root(obj), "not safe");
+  obj->oop_iterate_range(cl, start, end);
+}
 
 template <typename Function>
 class ZBasicOopIterateClosure : public BasicOopIterateClosure {
@@ -45,23 +73,26 @@ public:
   }
 };
 
+// This function skips invisible roots
 template <typename Function>
-void z_basic_oop_iterate(oop obj, Function function) {
+void ZIterator::basic_oop_iterate_safe(oop obj, Function function) {
   ZBasicOopIterateClosure<Function> cl(function);
-  obj->oop_iterate(&cl);
+  oop_iterate_safe(obj, &cl);
 }
 
 template <typename Function>
-class ZObjectClosure : public ObjectClosure {
-private:
-  Function _function;
+void ZIterator::basic_oop_iterate(oop obj, Function function) {
+  ZBasicOopIterateClosure<Function> cl(function);
+  oop_iterate(obj, &cl);
+}
 
-public:
-  ZObjectClosure(Function function) : _function(function) {}
+template <typename Function>
+ZObjectClosure<Function>::ZObjectClosure(Function function) :
+    _function(function) {}
 
-  virtual void do_object(oop obj) {
-    _function(obj);
-  }
-};
+template <typename Function>
+void ZObjectClosure<Function>::do_object(oop obj) {
+  _function(obj);
+}
 
 #endif // SHARE_GC_Z_ZITERATOR_INLINE_HPP

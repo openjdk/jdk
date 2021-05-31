@@ -40,7 +40,7 @@ ZRemember::ZRemember(ZPageTable* page_table, ZPageAllocator* page_allocator) :
 
 void ZRemember::remember_fields(zaddress addr) const {
   assert(ZHeap::heap()->is_old(addr), "Should already have been checked");
-  z_basic_oop_iterate(to_oop(addr), [&](volatile zpointer* p) {
+  ZIterator::basic_oop_iterate_safe(to_oop(addr), [&](volatile zpointer* p) {
     remember(p);
   });
 }

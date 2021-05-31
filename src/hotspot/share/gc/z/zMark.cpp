@@ -321,10 +321,10 @@ void ZMark::follow_object(oop obj, bool finalizable) {
     if (ZHeap::heap()->is_old(to_zaddress(obj))) {
       if (finalizable) {
         ZMarkBarrierOldGenOopClosure<true /* finalizable */, false /* young */> cl;
-        obj->oop_iterate(&cl);
+        ZIterator::oop_iterate(obj, &cl);
       } else {
         ZMarkBarrierOldGenOopClosure<false /* finalizable */, false /* young */> cl;
-        obj->oop_iterate(&cl);
+        ZIterator::oop_iterate(obj, &cl);
       }
     } else {
       fatal("Catch me!");
@@ -332,7 +332,7 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   } else {
     // Young gen must help out with major marking
     ZMarkBarrierOldGenOopClosure<false /* finalizable */, true /* young */> cl;
-    obj->oop_iterate(&cl);
+    ZIterator::oop_iterate(obj, &cl);
   }
 }
 

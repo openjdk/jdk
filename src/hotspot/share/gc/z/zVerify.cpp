@@ -453,7 +453,7 @@ public:
     if (ZHeap::heap()->is_old(addr)) {
       if (check_object(addr)) {
         ZVerifyOldOopClosure cl(_verify_weaks);
-        obj->oop_iterate(&cl);
+        ZIterator::oop_iterate_safe(obj, &cl);
       }
     } else {
 

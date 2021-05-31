@@ -626,7 +626,7 @@ private:
   }
 
   void update_remset_promoted_filter_and_remap(zaddress to_addr) const {
-    z_basic_oop_iterate(to_oop(to_addr), update_remset_promoted_filter_and_remap_per_field);
+    ZIterator::basic_oop_iterate(to_oop(to_addr), update_remset_promoted_filter_and_remap_per_field);
   }
 
   void update_remset_promoted(zaddress to_addr) const {
@@ -887,7 +887,7 @@ public:
 
     for (ZPage* page; _iter.next(&page);) {
       page->object_iterate([&](oop obj) {
-        z_basic_oop_iterate(obj, remap_and_maybe_add_remset);
+        ZIterator::basic_oop_iterate_safe(obj, remap_and_maybe_add_remset);
       });
 
       SuspendibleThreadSet::yield();

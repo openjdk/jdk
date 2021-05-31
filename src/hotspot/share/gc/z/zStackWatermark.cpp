@@ -175,8 +175,7 @@ void ZStackWatermark::process_head(void* context) {
   oop* invisible_root = ZThreadLocalData::invisible_root(_jt);
   if (invisible_root != NULL) {
     zaddress_unsafe* uncolored_root = ZUncoloredRoot::cast(invisible_root);
-    const size_t initialized = ZThreadLocalData::invisible_root_initialized(_jt);
-    ZUncoloredRoot::process_invisible(uncolored_root, color, initialized);
+    ZUncoloredRoot::process_invisible(uncolored_root, color);
   }
 }
 

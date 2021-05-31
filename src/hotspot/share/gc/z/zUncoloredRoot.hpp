@@ -43,7 +43,7 @@ private:
 
   static void mark_invisible_object(zaddress addr);
 
-  static void process_invisible_object(zaddress addr, size_t initialized);
+  static void process_invisible_object(zaddress addr);
 
 public:
   static void mark_object(zaddress addr);
@@ -54,7 +54,7 @@ public:
   static void mark_young(zaddress_unsafe* p, uintptr_t color);
   static void process(zaddress_unsafe* p, uintptr_t color);
   static void process_no_keepalive(zaddress_unsafe* p, uintptr_t color);
-  static void process_invisible(zaddress_unsafe* p, uintptr_t color, size_t initialized);
+  static void process_invisible(zaddress_unsafe* p, uintptr_t color);
 
   static zaddress_unsafe* cast(oop* p);
 

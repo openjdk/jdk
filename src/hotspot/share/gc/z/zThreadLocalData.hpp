@@ -43,7 +43,6 @@ private:
   ZStoreBarrierBuffer*   _store_barrier_buffer;
   ZMarkThreadLocalStacks _mark_stacks[2];
   oop*                   _invisible_root;
-  size_t                 _invisible_root_initialized;
 
   ZThreadLocalData() :
       _address_load_good_mask(0),
@@ -54,8 +53,7 @@ private:
       _address_uncolor_mask(0),
       _store_barrier_buffer(new ZStoreBarrierBuffer()),
       _mark_stacks(),
-      _invisible_root(NULL),
-      _invisible_root_initialized(0) {}
+      _invisible_root(NULL) {}
 
   ~ZThreadLocalData() {
     delete _store_barrier_buffer;
@@ -106,24 +104,18 @@ public:
     return data(thread)->_store_barrier_buffer;
   }
 
-  static void set_invisible_root(Thread* thread, oop* root, size_t initialized) {
+  static void set_invisible_root(Thread* thread, oop* root) {
     assert(data(thread)->_invisible_root == NULL, "Already set");
     data(thread)->_invisible_root = root;
-    data(thread)->_invisible_root_initialized = initialized;
   }
 
   static void clear_invisible_root(Thread* thread) {
     assert(data(thread)->_invisible_root != NULL, "Should be set");
     data(thread)->_invisible_root = NULL;
-    data(thread)->_invisible_root_initialized = 0;
   }
 
   static oop* invisible_root(Thread* thread) {
     return data(thread)->_invisible_root;
-  }
-
-  static size_t invisible_root_initialized(Thread* thread) {
-    return data(thread)->_invisible_root_initialized;
   }
 
   static ByteSize address_load_bad_mask_offset() {

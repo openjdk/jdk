@@ -100,14 +100,9 @@ inline void ZUncoloredRoot::mark_invisible_object(zaddress addr) {
   ZHeap::heap()->mark_object<ZMark::AnyThread, ZMark::DontFollow, ZMark::Strong, ZMark::Publish>(addr);
 }
 
-inline void ZUncoloredRoot::process_invisible_object(zaddress addr, size_t initialized) {
+inline void ZUncoloredRoot::process_invisible_object(zaddress addr) {
   if (matches_mark_phase(addr)) {
     mark_invisible_object(addr);
-
-    if (initialized > 0) {
-      zaddress payload = addr + arrayOopDesc::header_size(T_OBJECT) * wordSize;
-      ZHeap::heap()->mark_follow_invisible_root(payload, initialized);
-    }
   }
 }
 
@@ -134,12 +129,8 @@ inline void ZUncoloredRoot::process_no_keepalive(zaddress_unsafe* p, uintptr_t c
   barrier(do_nothing, p, color);
 }
 
-inline void ZUncoloredRoot::process_invisible(zaddress_unsafe* p, uintptr_t color, size_t initialized) {
-  auto function = [initialized](zaddress addr) -> void {
-    process_invisible_object(addr, initialized);
-  };
-
-  barrier(function, p, color);
+inline void ZUncoloredRoot::process_invisible(zaddress_unsafe* p, uintptr_t color) {
+  barrier(process_invisible_object, p, color);
 }
 
 inline zaddress_unsafe* ZUncoloredRoot::cast(oop* p) {

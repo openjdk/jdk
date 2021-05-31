@@ -393,7 +393,7 @@ void ZHeapIterator::push_roots(const ZHeapIteratorContext& context) {
 template <bool VisitReferents>
 void ZHeapIterator::follow_object(const ZHeapIteratorContext& context, oop obj) {
   ZHeapIteratorOopClosure<VisitReferents> cl(context, obj);
-  obj->oop_iterate(&cl);
+  ZIterator::oop_iterate(obj, &cl);
 }
 
 void ZHeapIterator::follow_array(const ZHeapIteratorContext& context, oop obj) {
@@ -419,7 +419,7 @@ void ZHeapIterator::follow_array_chunk(const ZHeapIteratorContext& context, cons
 
   // Follow array chunk
   ZHeapIteratorOopClosure<false /* VisitReferents */> cl(context, obj);
-  obj->oop_iterate_range(&cl, start, end);
+  ZIterator::oop_iterate_range(obj, &cl, start, end);
 }
 
 template <bool VisitWeaks>

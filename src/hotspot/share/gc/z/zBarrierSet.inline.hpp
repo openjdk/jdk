@@ -30,6 +30,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zNMethod.hpp"
+#include "gc/z/zIterator.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -428,14 +429,14 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(o
 
   // Fix the oops
   ZLoadBarrierOopClosure cl;
-  src->oop_iterate(&cl);
+  ZIterator::oop_iterate(src, &cl);
 
   // Clone the object
   Raw::clone_in_heap(src, dst, size);
 
   // Color store good before handing out
   ZColorStoreGoodOopClosure cl_sg;
-  dst->oop_iterate(&cl_sg);
+  ZIterator::oop_iterate(dst, &cl_sg);
 }
 
 //
