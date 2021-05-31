@@ -434,11 +434,12 @@ class EventMarkBase : public StackObj {
   EventLogFunction _log_function;
   StringLogMessage _buffer;
 
+  NONCOPYABLE(EventMarkBase);
+
  protected:
   void log_start(const char* format, va_list argp) ATTRIBUTE_PRINTF(2, 0);
   void log_end();
 
- public:
   EventMarkBase(EventLogFunction log_function);
 };
 
