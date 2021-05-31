@@ -51,8 +51,8 @@ extern Mutex*   AdapterHandlerLibrary_lock;      // a lock on the AdapterHandler
 extern Mutex*   SignatureHandlerLibrary_lock;    // a lock on the SignatureHandlerLibrary
 extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
 extern Mutex*   SymbolArena_lock;                // a lock on the symbol table arena
-extern Monitor* StringDedupQueue_lock;           // a lock on the string deduplication queue
-extern Mutex*   StringDedupTable_lock;           // a lock on the string deduplication table
+extern Monitor* StringDedup_lock;                // a lock on the string deduplication facility
+extern Mutex*   StringDedupIntern_lock;          // a lock on StringTable notification of StringDedup
 extern Monitor* CodeCache_lock;                  // a lock on the CodeCache, rank is special
 extern Monitor* CodeSweeper_lock;                // a lock used by the sweeper only for wait notify
 extern Mutex*   MethodData_lock;                 // a lock on installation of method data
@@ -66,7 +66,6 @@ extern Mutex*   NonJavaThreadsListSync_lock;     // a lock for NonJavaThreads li
 extern Monitor* CGC_lock;                        // used for coordination between
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
-extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc
 extern Monitor* G1OldGCCount_lock;               // in support of "concurrent" full gc
 extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card
                                                  // queue shared by
@@ -133,6 +132,7 @@ extern Mutex*   DumpTimeTable_lock;              // SystemDictionaryShared::find
 extern Mutex*   CDSLambda_lock;                  // SystemDictionaryShared::get_shared_lambda_proxy_class
 extern Mutex*   DumpRegion_lock;                 // Symbol::operator new(size_t sz, int len)
 extern Mutex*   ClassListFile_lock;              // ClassListWriter()
+extern Mutex*   LambdaFormInvokers_lock;         // Protecting LambdaFormInvokers::_lambdaform_lines
 #endif // INCLUDE_CDS
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table

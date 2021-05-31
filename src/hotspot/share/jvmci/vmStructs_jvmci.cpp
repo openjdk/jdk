@@ -29,7 +29,6 @@
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
-#include "jvmci/vmStructs_compiler_runtime.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -174,6 +173,7 @@
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
+  nonstatic_field(JavaThread,                  _stack_overflow_state._stack_overflow_limit,   address)                               \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
@@ -188,6 +188,7 @@
   nonstatic_field(JavaThread,                  _jvmci_reserved_oop0,                          oop)                                   \
   nonstatic_field(JavaThread,                  _should_post_on_exceptions_flag,               int)                                   \
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
+  nonstatic_field(JavaThread,                  _poll_data,                                    SafepointMechanism::ThreadData)        \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
                                                                                                                                      \
   static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
@@ -233,7 +234,6 @@
   JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
   nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
-  AOT_ONLY(nonstatic_field(MethodCounters,     _method,                                       Method*))                              \
                                                                                                                                      \
   nonstatic_field(MethodData,                  _size,                                         int)                                   \
   nonstatic_field(MethodData,                  _method,                                       Method*)                               \
@@ -334,7 +334,6 @@
                                                                                                                                      \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                   _allocated_bytes,                                 jlong)                                 \
-  nonstatic_field(Thread,                   _poll_data,                                       SafepointMechanism::ThreadData)        \
                                                                                                                                      \
   nonstatic_field(ThreadLocalAllocBuffer,   _start,                                           HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,   _top,                                             HeapWord*)                             \
@@ -343,7 +342,6 @@
   nonstatic_field(ThreadLocalAllocBuffer,   _desired_size,                                    size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,   _refill_waste_limit,                              size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,   _number_of_refills,                               unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,   _fast_refill_waste,                               unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,   _slow_allocations,                                unsigned)                              \
                                                                                                                                      \
   nonstatic_field(SafepointMechanism::ThreadData, _polling_word,                              volatile uintptr_t)                    \
@@ -586,7 +584,6 @@
   /* InstanceKlass _misc_flags */                                         \
   /*********************************/                                     \
                                                                           \
-  declare_constant(InstanceKlass::_misc_is_unsafe_anonymous)              \
   declare_constant(InstanceKlass::_misc_has_nonstatic_concrete_methods)   \
   declare_constant(InstanceKlass::_misc_declares_nonstatic_concrete_methods) \
                                                                           \
@@ -868,9 +865,6 @@ VMLongConstantEntry JVMCIVMStructs::localHotSpotVMLongConstants[] = {
 
 VMAddressEntry JVMCIVMStructs::localHotSpotVMAddresses[] = {
   VM_ADDRESSES(GENERATE_VM_ADDRESS_ENTRY,
-               GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
-               GENERATE_VM_FUNCTION_ENTRY)
-  VM_ADDRESSES_COMPILER_RUNTIME(GENERATE_VM_ADDRESS_ENTRY,
                GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
                GENERATE_VM_FUNCTION_ENTRY)
   VM_ADDRESSES_OS(GENERATE_VM_ADDRESS_ENTRY,

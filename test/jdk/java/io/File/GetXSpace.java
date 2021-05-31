@@ -27,6 +27,7 @@
  * @requires (os.family == "linux" | os.family == "mac" |
  *            os.family == "windows")
  * @summary Basic functionality of File.get-X-Space methods.
+ * @run main/othervm -Djava.security.manager=allow GetXSpace
  */
 
 import java.io.BufferedReader;

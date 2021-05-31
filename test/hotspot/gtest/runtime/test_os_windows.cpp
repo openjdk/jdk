@@ -64,7 +64,7 @@ void TestReserveMemorySpecial_test() {
   FLAG_SET_CMDLINE(UseNUMAInterleaving, false);
 
   const size_t large_allocation_size = os::large_page_size() * 4;
-  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), NULL, false);
+  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), NULL, false);
   if (result != NULL) {
       // failed to allocate memory, skipping the test
       return;
@@ -75,7 +75,7 @@ void TestReserveMemorySpecial_test() {
   // we managed to get it once.
   const size_t expected_allocation_size = os::large_page_size();
   char* expected_location = result + os::large_page_size();
-  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), expected_location, false);
+  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
   if (actual_location != NULL) {
       // failed to allocate memory, skipping the test
       return;

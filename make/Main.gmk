@@ -662,18 +662,6 @@ $(eval $(call SetupTarget, test-image-libtest-jtreg-native, \
     DEPS := build-test-libtest-jtreg-native, \
 ))
 
-$(eval $(call SetupTarget, build-test-hotspot-jtreg-graal, \
-    MAKEFILE := test/JtregGraalUnit, \
-    TARGET := build-test-hotspot-jtreg-graal, \
-    DEPS := exploded-image, \
-))
-
-$(eval $(call SetupTarget, test-image-hotspot-jtreg-graal, \
-    MAKEFILE := test/JtregGraalUnit, \
-    TARGET := test-image-hotspot-jtreg-graal, \
-    DEPS := build-test-hotspot-jtreg-graal, \
-))
-
 ifneq ($(GTEST_FRAMEWORK_SRC), )
   $(eval $(call SetupTarget, test-image-hotspot-gtest, \
       MAKEFILE := hotspot/test/GtestImage, \
@@ -876,18 +864,6 @@ else
   # in javadoc. The X11 wrappers need the java.base include files to have been
   # copied and processed.
   java.desktop-gensrc-src: java.base-gensrc java.base-copy
-
-  # The annotation processing for jdk.internal.vm.compiler
-  # and jdk.internal.vm.compiler.management needs classes from the current JDK.
-  jdk.internal.vm.compiler-gensrc-src: $(addsuffix -java, \
-      $(call FindTransitiveDepsForModule, jdk.internal.vm.compiler))
-  jdk.internal.vm.compiler.management-gensrc-src: $(addsuffix -java, \
-      $(call FindTransitiveDepsForModule, jdk.internal.vm.compiler.management))
-
-  # For these modules, the gensrc step is generating a module-info.java.extra
-  # file to be processed by the gensrc-moduleinfo target.
-  jdk.internal.vm.compiler-gensrc-moduleinfo: jdk.internal.vm.compiler-gensrc-src
-  jdk.internal.vm.compiler.management-gensrc-moduleinfo: jdk.internal.vm.compiler.management-gensrc-src
 
   jdk.jdeps-gendata: java
 
@@ -1175,10 +1151,6 @@ else
   test-image: test-image-hotspot-jtreg-native
   ifneq ($(GTEST_FRAMEWORK_SRC), )
     test-image: test-image-hotspot-gtest
-  endif
-
-  ifeq ($(INCLUDE_GRAAL), true)
-    test-image: test-image-hotspot-jtreg-graal
   endif
 endif
 

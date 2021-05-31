@@ -161,8 +161,7 @@ public class Check {
         deferredLintHandler = DeferredLintHandler.instance(context);
 
         allowRecords = Feature.RECORDS.allowedInSource(source);
-        allowSealed = (!preview.isPreview(Feature.SEALED_CLASSES) || preview.isEnabled()) &&
-                Feature.SEALED_CLASSES.allowedInSource(source);
+        allowSealed = Feature.SEALED_CLASSES.allowedInSource(source);
     }
 
     /** Character for synthetic names
@@ -317,12 +316,12 @@ public class Check {
     Type typeTagError(DiagnosticPosition pos, JCDiagnostic required, Object found) {
         // this error used to be raised by the parser,
         // but has been delayed to this point:
-        if (found instanceof Type && ((Type)found).hasTag(VOID)) {
+        if (found instanceof Type type && type.hasTag(VOID)) {
             log.error(pos, Errors.IllegalStartOfType);
             return syms.errType;
         }
         log.error(pos, Errors.TypeFoundReq(found, required));
-        return types.createErrorType(found instanceof Type ? (Type)found : syms.errType);
+        return types.createErrorType(found instanceof Type type ? type : syms.errType);
     }
 
     /** Report an error that symbol cannot be referenced before super
@@ -1337,8 +1336,7 @@ public class Check {
             @Override
             public void visitVarDef(JCVariableDecl tree) {
                 if ((tree.mods.flags & ENUM) != 0) {
-                    if (tree.init instanceof JCNewClass &&
-                        ((JCNewClass) tree.init).def != null) {
+                    if (tree.init instanceof JCNewClass newClass && newClass.def != null) {
                         specialized = true;
                     }
                 }
@@ -2248,7 +2246,7 @@ public class Check {
 
     class CycleChecker extends TreeScanner {
 
-        List<Symbol> seenClasses = List.nil();
+        Set<Symbol> seenClasses = new HashSet<>();
         boolean errorFound = false;
         boolean partialCheck = false;
 
@@ -2267,7 +2265,7 @@ public class Check {
                 } else if (sym.kind == TYP) {
                     checkClass(pos, sym, List.nil());
                 }
-            } else {
+            } else if (sym == null || sym.kind != PCK) {
                 //not completed yet
                 partialCheck = true;
             }
@@ -2316,7 +2314,7 @@ public class Check {
                 noteCyclic(pos, (ClassSymbol)c);
             } else if (!c.type.isErroneous()) {
                 try {
-                    seenClasses = seenClasses.prepend(c);
+                    seenClasses.add(c);
                     if (c.type.hasTag(CLASS)) {
                         if (supertypes.nonEmpty()) {
                             scan(supertypes);
@@ -2339,7 +2337,7 @@ public class Check {
                         }
                     }
                 } finally {
-                    seenClasses = seenClasses.tail;
+                    seenClasses.remove(c);
                 }
             }
         }
@@ -3168,11 +3166,10 @@ public class Check {
         } else {
             containerTargets = new HashSet<>();
             for (Attribute app : containerTarget.values) {
-                if (!(app instanceof Attribute.Enum)) {
+                if (!(app instanceof Attribute.Enum attributeEnum)) {
                     continue; // recovery
                 }
-                Attribute.Enum e = (Attribute.Enum)app;
-                containerTargets.add(e.value.name);
+                containerTargets.add(attributeEnum.value.name);
             }
         }
 
@@ -3183,11 +3180,10 @@ public class Check {
         } else {
             containedTargets = new HashSet<>();
             for (Attribute app : containedTarget.values) {
-                if (!(app instanceof Attribute.Enum)) {
+                if (!(app instanceof Attribute.Enum attributeEnum)) {
                     continue; // recovery
                 }
-                Attribute.Enum e = (Attribute.Enum)app;
-                containedTargets.add(e.value.name);
+                containedTargets.add(attributeEnum.value.name);
             }
         }
 
@@ -3311,11 +3307,10 @@ public class Check {
             targets = new Name[arr.values.length];
             for (int i=0; i<arr.values.length; ++i) {
                 Attribute app = arr.values[i];
-                if (!(app instanceof Attribute.Enum)) {
+                if (!(app instanceof Attribute.Enum attributeEnum)) {
                     return new Name[0];
                 }
-                Attribute.Enum e = (Attribute.Enum) app;
-                targets[i] = e.value.name;
+                targets[i] = attributeEnum.value.name;
             }
         }
         return targets;
@@ -3343,12 +3338,11 @@ public class Check {
             targets = new Name[arr.values.length];
             for (int i=0; i<arr.values.length; ++i) {
                 Attribute app = arr.values[i];
-                if (!(app instanceof Attribute.Enum)) {
+                if (!(app instanceof Attribute.Enum attributeEnum)) {
                     // recovery
                     return Optional.empty();
                 }
-                Attribute.Enum e = (Attribute.Enum) app;
-                targets[i] = e.value.name;
+                targets[i] = attributeEnum.value.name;
             }
         }
         for (Name target : targets) {
@@ -3412,8 +3406,7 @@ public class Check {
         Attribute.Compound atTarget = s.getAnnotationTypeMetadata().getTarget();
         if (atTarget == null) return null; // ok, is applicable
         Attribute atValue = atTarget.member(names.value);
-        if (!(atValue instanceof Attribute.Array)) return null; // error recovery
-        return (Attribute.Array) atValue;
+        return (atValue instanceof Attribute.Array attributeArray) ? attributeArray : null;
     }
 
     public final Name[] dfltTargetMeta;

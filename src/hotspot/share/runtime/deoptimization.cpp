@@ -218,7 +218,7 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, CompiledMet
   if (objects != NULL) {
     if (exec_mode == Deoptimization::Unpack_none) {
       assert(thread->thread_state() == _thread_in_vm, "assumption");
-      Thread* THREAD = thread;
+      JavaThread* THREAD = thread; // For exception macros.
       // Clear pending OOM if reallocation fails and return true indicating allocation failure
       realloc_failures = Deoptimization::realloc_objects(thread, &deoptee, &map, objects, CHECK_AND_CLEAR_(true));
       deoptimized_objects = true;
@@ -898,9 +898,7 @@ void Deoptimization::deoptimize_all_marked(nmethod* nmethod_only) {
 Deoptimization::DeoptAction Deoptimization::_unloaded_action
   = Deoptimization::Action_reinterpret;
 
-
-
-#if COMPILER2_OR_JVMCI || INCLUDE_AOT
+#if COMPILER2_OR_JVMCI
 template<typename CacheType>
 class BoxCacheBase : public CHeapObj<mtCompiler> {
 protected:
@@ -1028,9 +1026,7 @@ oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMa
    }
    return NULL;
 }
-#endif // COMPILER2_OR_JVMCI || INCLUDE_AOT
 
-#if COMPILER2_OR_JVMCI
 bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS) {
   Handle pending_exception(THREAD, thread->pending_exception());
   const char* exception_file = thread->exception_file();
@@ -1047,7 +1043,6 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
     oop obj = NULL;
 
     if (k->is_instance_klass()) {
-#if COMPILER2_OR_JVMCI || INCLUDE_AOT
       if (sv->is_auto_box()) {
         AutoBoxObjectValue* abv = (AutoBoxObjectValue*) sv;
         obj = get_cached_box(abv, fr, reg_map, THREAD);
@@ -1056,7 +1051,7 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
           abv->set_cached(true);
         }
       }
-#endif // COMPILER2_OR_JVMCI || INCLUDE_AOT
+
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (obj == NULL) {
 #ifdef COMPILER2
@@ -1398,12 +1393,11 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     if (obj.is_null()) {
       continue;
     }
-#if COMPILER2_OR_JVMCI || INCLUDE_AOT
+
     // Don't reassign fields of boxes that came from a cache. Caches may be in CDS.
     if (sv->is_auto_box() && ((AutoBoxObjectValue*) sv)->is_cached()) {
       continue;
     }
-#endif // COMPILER2_OR_JVMCI || INCLUDE_AOT
 #ifdef COMPILER2
     if (EnableVectorSupport && VectorSupport::is_vector(k)) {
       assert(sv->field_size() == 1, "%s not a vector", k->name()->as_C_string());
@@ -1808,7 +1802,7 @@ JRT_END
 MethodData*
 Deoptimization::get_method_data(JavaThread* thread, const methodHandle& m,
                                 bool create_if_missing) {
-  Thread* THREAD = thread;
+  JavaThread* THREAD = thread; // For exception macros.
   MethodData* mdo = m()->method_data();
   if (mdo == NULL && create_if_missing && !HAS_PENDING_EXCEPTION) {
     // Build an MDO.  Ignore errors like OutOfMemory;
@@ -1846,7 +1840,7 @@ void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool
       // to the runtime the stack is no longer guarded. Reguard the
       // stack otherwise if we return to the uncommon trap blob and the
       // stack bang causes a stack overflow we crash.
-      JavaThread* jt = THREAD->as_Java_thread();
+      JavaThread* jt = THREAD;
       bool guard_pages_enabled = jt->stack_overflow_state()->reguard_stack_if_needed();
       assert(guard_pages_enabled, "stack banging in uncommon trap blob may cause crash");
     }
@@ -1976,7 +1970,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     int             trap_bci    = trap_scope->bci();
 #if INCLUDE_JVMCI
     jlong           speculation = current->pending_failed_speculation();
-    if (nm->is_compiled_by_jvmci() && nm->is_nmethod()) { // Exclude AOTed methods
+    if (nm->is_compiled_by_jvmci()) {
       nm->as_nmethod()->update_speculation(current);
     } else {
       assert(speculation == 0, "There should not be a speculation for methods compiled by non-JVMCI compilers");

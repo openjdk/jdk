@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,8 +229,8 @@ public class JRTIndex {
     }
 
     public boolean isInJRT(FileObject fo) {
-        if (fo instanceof PathFileObject) {
-            Path path = ((PathFileObject) fo).getPath();
+        if (fo instanceof PathFileObject pathFileObject) {
+            Path path = pathFileObject.getPath();
             return (path.getFileSystem() == jrtfs);
         } else {
             return false;

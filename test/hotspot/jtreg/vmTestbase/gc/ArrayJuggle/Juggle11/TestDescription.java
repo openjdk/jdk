@@ -31,6 +31,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle01.Juggle01 -gp charArr -ms medium
+ * @run main/othervm -Xlog:gc=debug:gc.log -Djava.security.manager=allow gc.ArrayJuggle.Juggle01.Juggle01 -gp charArr -ms medium
  */
 

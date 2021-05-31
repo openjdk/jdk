@@ -87,8 +87,8 @@ public:
     ShenandoahReferenceProcessor* rp = heap->ref_processor();
     assert(rp != NULL, "need reference processor");
     _cm->mark_loop(worker_id, _terminator, rp,
-                   true, // cancellable
-                   ShenandoahStringDedup::is_enabled()); // perform string dedup
+                   true /*cancellable*/,
+                   ShenandoahStringDedup::is_enabled() ? ENQUEUE_DEDUP : NO_DEDUP);
   }
 };
 
@@ -144,16 +144,14 @@ public:
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
       assert(!heap->has_forwarded_objects(), "Not expected");
 
-      ShenandoahMarkRefsClosure mark_cl(q, rp);
+      ShenandoahMarkRefsClosure<NO_DEDUP> mark_cl(q, rp);
       ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set,
                                                ShenandoahIUBarrier ? &mark_cl : NULL);
       Threads::threads_do(&tc);
     }
-
     _cm->mark_loop(worker_id, _terminator, rp,
-                   false, // not cancellable
-                   _dedup_string);
-
+                   false /*not cancellable*/,
+                   _dedup_string ? ENQUEUE_DEDUP : NO_DEDUP);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
   }
 };
@@ -191,7 +189,9 @@ ShenandoahMarkConcurrentRootsTask::ShenandoahMarkConcurrentRootsTask(ShenandoahO
 void ShenandoahMarkConcurrentRootsTask::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahMarkRefsClosure cl(q, _rp);
+  // Cannot enable string deduplication during root scanning. Otherwise,
+  // may result lock inversion between stack watermark and string dedup queue lock.
+  ShenandoahMarkRefsClosure<NO_DEDUP> cl(q, _rp);
   _root_scanner.roots_do(&cl, worker_id);
 }
 

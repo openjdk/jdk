@@ -55,7 +55,7 @@ void Mutex::check_safepoint_state(Thread* thread) {
            name());
 
     // Also check NoSafepointVerifier, and thread state is _thread_in_vm
-    thread->check_for_valid_safepoint_state();
+    thread->as_Java_thread()->check_for_valid_safepoint_state();
   } else {
     // If initialized with safepoint_check_never, a NonJavaThread should never ask to safepoint check either.
     assert(_safepoint_check_required != _safepoint_check_never,
@@ -258,25 +258,19 @@ bool Monitor::wait(int64_t timeout) {
 
 Mutex::~Mutex() {
   assert_owner(NULL);
-}
-
-// Only Threads_lock and Heap_lock may be safepoint_check_sometimes.
-bool is_sometimes_ok(const char* name) {
-  return (strcmp(name, "Threads_lock") == 0 || strcmp(name, "Heap_lock") == 0);
+  os::free(const_cast<char*>(_name));
 }
 
 Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
-             SafepointCheckRequired safepoint_check_required) : _owner(NULL), _name(name) {
+             SafepointCheckRequired safepoint_check_required) : _owner(NULL) {
   assert(os::mutex_init_done(), "Too early!");
   assert(name != NULL, "Mutex requires a name");
+  _name = os::strdup(name, mtInternal);
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
   _rank            = Rank;
   _safepoint_check_required = safepoint_check_required;
   _skip_rank_check = false;
-
-  assert(_safepoint_check_required != _safepoint_check_sometimes || is_sometimes_ok(name),
-         "Lock has _safepoint_check_sometimes %s", name);
 
   assert(_rank > special || _safepoint_check_required == _safepoint_check_never,
          "Special locks or below should never safepoint");
@@ -304,7 +298,6 @@ void Mutex::print_on_error(outputStream* st) const {
 const char* print_safepoint_check(Mutex::SafepointCheckRequired safepoint_check) {
   switch (safepoint_check) {
   case Mutex::_safepoint_check_never:     return "safepoint_check_never";
-  case Mutex::_safepoint_check_sometimes: return "safepoint_check_sometimes";
   case Mutex::_safepoint_check_always:    return "safepoint_check_always";
   default: return "";
   }
@@ -417,23 +410,6 @@ bool Mutex::contains(Mutex* locks, Mutex* lock) {
   return false;
 }
 
-// NSV implied with locking allow_vm_block or !safepoint_check locks.
-void Mutex::no_safepoint_verifier(Thread* thread, bool enable) {
-  // The tty_lock is special because it is released for the safepoint by
-  // the safepoint mechanism.
-  if (this == tty_lock) {
-    return;
-  }
-
-  if (_allow_vm_block) {
-    if (enable) {
-      thread->_no_safepoint_count++;
-    } else {
-      thread->_no_safepoint_count--;
-    }
-  }
-}
-
 // Called immediately after lock acquisition or release as a diagnostic
 // to track the lock-set of the thread.
 // Rather like an EventListener for _owner (:>).
@@ -461,7 +437,11 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
     new_owner->_owned_locks = this;
 
     // NSV implied with locking allow_vm_block flag.
-    no_safepoint_verifier(new_owner, true);
+    // The tty_lock is special because it is released for the safepoint by
+    // the safepoint mechanism.
+    if (new_owner->is_Java_thread() && _allow_vm_block && this != tty_lock) {
+      new_owner->as_Java_thread()->inc_no_safepoint_count();
+    }
 
   } else {
     // the thread is releasing this lock
@@ -496,7 +476,9 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
     _next = NULL;
 
     // ~NSV implied with locking allow_vm_block flag.
-    no_safepoint_verifier(old_owner, false);
+    if (old_owner->is_Java_thread() && _allow_vm_block && this != tty_lock) {
+      old_owner->as_Java_thread()->dec_no_safepoint_count();
+    }
   }
 }
 #endif // ASSERT

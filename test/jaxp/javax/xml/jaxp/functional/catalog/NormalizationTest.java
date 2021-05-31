@@ -39,7 +39,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.NormalizationTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.NormalizationTest
  * @run testng/othervm catalog.NormalizationTest
  * @summary Before matching identifiers and URI references, it has to normalize
  *          the passed identifiers and URI references. And then the catalog

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * VM Testbase keywords: [feature_mlvm]
  * VM Testbase readme:
  * DESCRIPTION
- *     Try to find a class loaded using Unsafe.defineAnonymousClass through the VM system dictionary
+ *     Try to find a class loaded as a hidden class through the VM system dictionary
  *     (using Class.forName()). It is an error when the class can be found in this way.
  *
  * @library /vmTestbase
@@ -45,10 +45,12 @@
 
 package vm.mlvm.anonloader.func.findByName;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
+
 import vm.mlvm.anonloader.share.AnonkTestee01;
 import vm.mlvm.share.MlvmTest;
 import vm.share.FileUtils;
-import vm.share.UnsafeAccess;
 
 public class Test extends MlvmTest {
     private static final Class<?> PARENT = AnonkTestee01.class;
@@ -56,9 +58,10 @@ public class Test extends MlvmTest {
     public boolean run() throws Exception {
         try {
             byte[] classBytes = FileUtils.readClass(PARENT.getName());
-            Class<?> c = UnsafeAccess.unsafe.defineAnonymousClass(PARENT,
-                    classBytes, null);
-            getLog().display("Anonymous class name: " + c.getName());
+            Lookup lookup = MethodHandles.lookup();
+            Lookup ank_lookup = MethodHandles.privateLookupIn(PARENT, lookup);
+            Class<?> c = ank_lookup.defineHiddenClass(classBytes, true).lookupClass();
+            getLog().display("Hidden class name: " + c.getName());
             Class.forName(c.getName()).newInstance();
             return false;
         } catch ( ClassNotFoundException e ) {
