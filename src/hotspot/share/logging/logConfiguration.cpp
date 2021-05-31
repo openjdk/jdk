@@ -253,8 +253,34 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
     on_level[level]++;
   }
 
+  // MT-Safety
+  // ConfigurationLock can only guarantee that only one thread is executing reconfiguration. This function still must
+  // be MT-safe because logsites in other threads may be executing in parallel.
+  //
+  // Reconfiguration: Unified logging allows users to dynamically change tags and decorators of a log output.
+  //
+  // A synchronization 'wait_until_no_readers()' is imposed inside of 'ts->set_output_level(output, level)' above
+  // if setting has changed. It guarantees that all logs either synchronous writing or enqueuing to the async buffer
+  // see the new tags and decorators. It's worth noting that the synchronization happens even level doesn't change.
+  //
+  // LogDecorator is a set of decorators represented in a uint. sizeof(uinit) is not greater than a machine word,
+  // so store of it is atomic on the mainstream processors. I.e. readers see either its older value or new value.
+  // ts->update_decorators(decorators) above is a union operation of the existing decorators at different levels.
+  // It's safe to do output->set_decorators(decorators) because decorators is a subset of relevant Tagsets' decorators.
+  // After updating output's decorators, it's still safe to shrink all decorators of tagsets.
+  //
+  // There are 2 harzards in async logging. A flush operation guarantees to all pending messages in buffer are written
+  // before returning. Therefore, the hardards won't appear. It's a nop if async logging is not set.
+  // 1. asynclog buffer may be holding some log messages with previous decorators.
+  // 2. asynclog buffer may be holding some log messages targeting to the output 'idx'. It has been disabled by new setting,
+  // eg. all=off and is about to be purged in delete_output(idx).
+  //
+  AsyncLogWriter::flush();
+
   // It is now safe to set the new decorators for the actual output
   output->set_decorators(decorators);
+
+  OrderAccess::storestore();
 
   // Update the decorators on all tagsets to get rid of unused decorators
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
@@ -262,10 +288,6 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   }
 
   if (!enabled && idx > 1) {
-    // User may disable a logOuput like this:
-    // LogConfiguration::parse_log_arguments(filename, "all=off", "", "", &stream);
-    // Just be conservative. Flush them all before deleting idx.
-    AsyncLogWriter::flush();
     // Output is unused and should be removed, unless it is stdout/stderr (idx < 2)
     delete_output(idx);
     return;
