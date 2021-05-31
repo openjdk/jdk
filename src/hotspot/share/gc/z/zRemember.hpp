@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZREMEMBER_HPP
 
 #include "gc/z/zAddress.hpp"
-#include "oops/oopsHierarchy.hpp"
 
 class OopClosure;
 class ZForwarding;
@@ -46,7 +45,7 @@ public:
   ZRemember(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   void remember(volatile zpointer* p) const;
-  void remember_fields(oop obj) const;
+  void remember_fields(zaddress obj) const;
 
   // Global flip of the current active set of remset bitmaps
   void flip() const;

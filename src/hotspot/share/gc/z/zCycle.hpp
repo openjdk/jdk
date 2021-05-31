@@ -162,6 +162,7 @@ public:
   void relocate();
 
   ZPage* promote(ZPage* page);
+  ZPage* promote_in_place_relocation(ZPage* page);
 };
 
 class ZMajorCycle : public ZCycle {

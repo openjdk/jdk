@@ -213,6 +213,10 @@ void ZRelocate::add_remset(volatile zpointer* p) {
   ZHeap::heap()->remember(p);
 }
 
+void ZRelocate::add_remset_for_fields(volatile zaddress addr) {
+  ZHeap::heap()->remember_fields(addr);
+}
+
 static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_addr, ZForwardingCursor* cursor) {
   assert(ZHeap::heap()->is_object_live(from_addr), "Should be live");
 
@@ -442,37 +446,52 @@ private:
   ZForwarding*     _forwarding;
   ZPage*           _target;
 
-  bool relocate_object(zaddress from_addr) const {
+  zaddress relocate_object_inner(zaddress from_addr) const {
     ZForwardingCursor cursor;
 
     // Lookup forwarding
-    if (!is_null(forwarding_find(_forwarding, from_addr, &cursor))) {
-      // Already relocated
-      return true;
+    {
+      const zaddress to_addr = forwarding_find(_forwarding, from_addr, &cursor);
+      if (!is_null(to_addr)) {
+        // Already relocated
+        return to_addr;
+      }
     }
 
     // Allocate object
     const size_t size = ZUtils::object_size(from_addr);
-    const zaddress to_addr = _allocator->alloc_object(_target, size);
-    if (is_null(to_addr)) {
+    const zaddress allocated_addr = _allocator->alloc_object(_target, size);
+    if (is_null(allocated_addr)) {
       // Allocation failed
-      return false;
+      return zaddress::null;
     }
 
     // Copy object. Use conjoint copying if we are relocating
     // in-place and the new object overlapps with the old object.
-    if (_forwarding->in_place() && to_addr + size > from_addr) {
-      ZUtils::object_copy_conjoint(from_addr, to_addr, size);
+    if (_forwarding->in_place() && allocated_addr + size > from_addr) {
+      ZUtils::object_copy_conjoint(from_addr, allocated_addr, size);
     } else {
-      ZUtils::object_copy_disjoint(from_addr, to_addr, size);
+      ZUtils::object_copy_disjoint(from_addr, allocated_addr, size);
     }
 
     // Insert forwarding
-    if (forwarding_insert(_forwarding, from_addr, to_addr, &cursor) != to_addr) {
+    const zaddress to_addr = forwarding_insert(_forwarding, from_addr, allocated_addr, &cursor);
+    if (to_addr != allocated_addr) {
       // Already relocated, undo allocation
       _allocator->undo_alloc_object(_target, to_addr, size);
     }
 
+    return to_addr;
+  }
+
+  bool relocate_object(zaddress from_addr) const {
+    zaddress to_addr = relocate_object_inner(from_addr);
+
+    if (is_null(to_addr)) {
+      return false;
+    }
+
+    ZRelocate::add_remset_for_fields(to_addr);
     return true;
   }
 
@@ -515,25 +534,14 @@ public:
       return;
     }
 
-    // TODO: Why is this needed?
-    // Clear current bits
-    // _forwarding->page()->clear_current_remembered();
-
     // Relocate objects
     _forwarding->object_iterate(this);
 
     // Deal with in-place relocation
     if (_forwarding->in_place()) {
-      if (_forwarding->generation_id() == ZGenerationId::young) {
-        _target = ZHeap::heap()->minor_cycle()->promote(_target);
-      }
-
       // We are done with the from_space copy of the page
       _forwarding->clear_in_place_relocation();
     }
-
-    // Rebuild remset
-    _forwarding->oops_do_in_forwarded(ZRelocate::add_remset);
 
     // Verify
     if (ZVerifyForwarding) {
@@ -668,6 +676,8 @@ void ZRelocate::promote_pages(const ZArray<ZPage*>* pages) {
     ZHeap::heap()->minor_cycle()->promote(page);
 
     page->log_msg(" (in-place promoted)");
+    // FIXME: Why can't this be the normal object_iterate
+    //        now that we don't mess with the original page?
     page->object_iterate_unconditional([&](oop obj) {
       z_basic_oop_iterate(obj, ZRelocate::add_remset);
     });

@@ -105,6 +105,8 @@ public:
   void reset_for_in_place_relocation();
   void reset_to_old();
 
+  void finalize_reset_for_in_place_relocation();
+
   ZPage* retype(uint8_t type);
   ZPage* split(size_t split_of_size);
   ZPage* split(uint8_t type, size_t split_of_size);

@@ -322,15 +322,22 @@ inline void ZHeap::mark_minor_object(zaddress addr) {
 }
 
 inline void ZHeap::remember(volatile zpointer* p) {
+  _young_generation.remember(p);
+}
+
+inline void ZHeap::remember_filtered(volatile zpointer* p) {
   if (is_old(to_zaddress(uintptr_t(p)))) {
-    // Set remset bit for each remembered p
-    _young_generation.remember(p);
+    remember(p);
   }
 }
 
-inline void ZHeap::remember_fields(oop obj) {
-  if (is_old(to_zaddress(obj))) {
-    _young_generation.remember_fields(obj);
+inline void ZHeap::remember_fields(zaddress addr) {
+  _young_generation.remember_fields(addr);
+}
+
+inline void ZHeap::remember_fields_filtered(zaddress addr) {
+  if (is_old(addr)) {
+    remember_fields(addr);
   }
 }
 

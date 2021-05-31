@@ -68,7 +68,7 @@ public:
   void remember(volatile zpointer* p);
   void mark_and_remember(volatile zpointer* p);
 
-  void remember_fields(oop obj);
+  void remember_fields(zaddress addr);
 
   void scan_remembered();
   void flip_remembered_set();

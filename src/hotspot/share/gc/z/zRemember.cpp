@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zIterator.inline.hpp"
@@ -36,9 +37,9 @@ ZRemember::ZRemember(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     _page_allocator(page_allocator) {
 }
 
-void ZRemember::remember_fields(oop obj) const {
-  assert(ZHeap::heap()->is_old(to_zaddress(obj)), "Should already have been checked");
-  z_basic_oop_iterate(obj, [&](volatile zpointer* p) {
+void ZRemember::remember_fields(zaddress addr) const {
+  assert(ZHeap::heap()->is_old(addr), "Should already have been checked");
+  z_basic_oop_iterate(to_oop(addr), [&](volatile zpointer* p) {
     remember(p);
   });
 }

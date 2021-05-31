@@ -110,7 +110,9 @@ public:
 
   // Remembering
   void remember(volatile zpointer* p);
-  void remember_fields(oop obj);
+  void remember_filtered(volatile zpointer* p);
+  void remember_fields(zaddress addr);
+  void remember_fields_filtered(zaddress addr);
 
   // Page allocation
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags, ZCycle* cycle);

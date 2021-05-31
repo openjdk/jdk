@@ -297,7 +297,7 @@ zaddress ZBarrier::mark_finalizable_slow_path(zaddress addr) {
 }
 
 void ZBarrier::remember(volatile zpointer* p) {
-  ZHeap::heap()->remember(p);
+  ZHeap::heap()->remember_filtered(p);
 }
 
 void ZBarrier::keep_alive_and_remember(volatile zpointer* p, zaddress addr) {

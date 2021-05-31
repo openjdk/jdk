@@ -133,7 +133,7 @@ void ZStoreBarrierBuffer::on_new_phase_remember(int i) {
       ZHeap::heap()->young_generation()->mark_and_remember(p);
     }
   } else {
-    ZHeap::heap()->remember(p);
+    ZHeap::heap()->remember_filtered(p);
   }
 }
 

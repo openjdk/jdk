@@ -419,6 +419,17 @@ ZPage* ZMinorCycle::promote(ZPage* page) {
   return new_page;
 }
 
+ZPage* ZMinorCycle::promote_in_place_relocation(ZPage* page) {
+  page->log_msg(" (promoted in-place from)");
+
+  ZPage* new_page = new ZPage(*page);
+  new_page->reset_for_in_place_relocation();
+  // Replace previous young gen page with new old gen page
+  _page_table->replace(page, new_page);
+  _relocation_set.register_promoted_page(page);
+  return new_page;
+}
+
 ZMajorCycle::ZMajorCycle(ZPageTable* page_table, ZPageAllocator* page_allocator) :
   ZCycle(ZCycleId::_major, page_table, page_allocator),
   _reference_processor(&_workers),

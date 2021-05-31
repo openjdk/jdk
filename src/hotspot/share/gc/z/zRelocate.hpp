@@ -75,6 +75,7 @@ public:
   void start();
 
   static void add_remset(volatile zpointer* p);
+  static void add_remset_for_fields(volatile zaddress addr);
 
   zaddress relocate_object(ZForwarding* forwarding, zaddress_unsafe from_addr);
   zaddress forward_object(ZForwarding* forwarding, zaddress_unsafe from_addr);

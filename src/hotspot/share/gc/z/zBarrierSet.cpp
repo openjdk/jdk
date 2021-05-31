@@ -103,7 +103,7 @@ void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
   // no remset entries will be tracked for this object, by the barrier. Therefore we
   // explicitly remember such objects here. In most cases this is a no-op as the object
   // that escapes the runtime is very likely to be young.
-  ZHeap::heap()->remember_fields(new_obj);
+  ZHeap::heap()->remember_fields_filtered(to_zaddress(new_obj));
 }
 
 void ZBarrierSet::print_on(outputStream* st) const {

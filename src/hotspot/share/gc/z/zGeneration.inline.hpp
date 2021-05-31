@@ -77,7 +77,7 @@ inline bool ZYoungGeneration::is_remembered(volatile zpointer* p) {
   return _remember.is_remembered(p);
 }
 
-inline void ZYoungGeneration::remember_fields(oop obj) {
-  _remember.remember_fields(obj);
+inline void ZYoungGeneration::remember_fields(zaddress addr) {
+  _remember.remember_fields(addr);
 }
 #endif // SHARE_GC_Z_ZGENERATION_INLINE_HPP

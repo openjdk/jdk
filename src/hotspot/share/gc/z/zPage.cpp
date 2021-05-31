@@ -105,16 +105,21 @@ void ZPage::reset_to_old() {
 }
 
 void ZPage::reset_for_in_place_relocation() {
-  // Keep _generation_id
+  _generation_id = ZGenerationId::old;
   reset_seqnum(_generation_id);
 
   _top = start();
-  // TODO: Is it correct to leave _last_used here?
+  // FIXME: Is it correct to set clear _last_used here?
+  _last_used = 0;
 
   // keep _livemap intact as it is being iterated over
-  if (is_old()) {
-    _remember_set.reset();
-  }
+
+  _remember_set.reset();
+}
+
+void ZPage::finalize_reset_for_in_place_relocation() {
+  // Now we're done iterating over the livemaps
+  _livemap.reset();
 }
 
 ZPage* ZPage::retype(uint8_t type) {

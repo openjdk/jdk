@@ -296,7 +296,7 @@ void ZReferenceProcessor::work() {
   auto store_in_list = [&](zpointer* p, zpointer ptr) {
     *p = ptr;
     if (p != start) {
-      ZHeap::heap()->remember(p);
+      ZHeap::heap()->remember_filtered(p);
     }
   };
 

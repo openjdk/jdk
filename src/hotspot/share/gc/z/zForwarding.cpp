@@ -71,6 +71,8 @@ void ZForwarding::clear_in_place_relocation() {
   assert(_in_place, "Must be an in-place relocated page");
   // Leave _in_place intact - it's needed later
 
+  _page->finalize_reset_for_in_place_relocation();
+
   Atomic::store(&_in_place_thread, (Thread*)nullptr);
 
   log_info(gc)("In-place clear before top: " PTR_FORMAT " after top: " PTR_FORMAT, untype(_in_place_old_top), untype(_page->top()));
@@ -128,7 +130,12 @@ ZPage* ZForwarding::claim_page_for_in_place_relocation() {
     }
 
     set_in_place_relocation();
-    _page->reset_for_in_place_relocation();
+
+    if (_page->is_young()) {
+      _page = ZHeap::heap()->minor_cycle()->promote_in_place_relocation(_page);
+    } else {
+      _page->reset_for_in_place_relocation();
+    }
 
     return _page;
   }
