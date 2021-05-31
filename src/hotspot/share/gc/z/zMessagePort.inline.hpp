@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZMESSAGEPORT_INLINE_HPP
 
 #include "gc/z/zMessagePort.hpp"
+
 #include "gc/z/zFuture.inline.hpp"
 #include "gc/z/zList.inline.hpp"
 #include "runtime/mutexLocker.hpp"

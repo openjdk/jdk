@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHARED_GCTRACETIME_INLINE_HPP
 #define SHARE_GC_SHARED_GCTRACETIME_INLINE_HPP
 
-#include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.hpp"
+
+#include "gc/shared/gcTimer.hpp"
 #include "logging/log.hpp"
 #include "runtime/os.hpp"
 #include "utilities/ticks.hpp"

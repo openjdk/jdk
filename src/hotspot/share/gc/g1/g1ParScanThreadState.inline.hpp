@@ -25,9 +25,10 @@
 #ifndef SHARE_GC_G1_G1PARSCANTHREADSTATE_INLINE_HPP
 #define SHARE_GC_G1_G1PARSCANTHREADSTATE_INLINE_HPP
 
+#include "gc/g1/g1ParScanThreadState.hpp"
+
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1OopStarChunkedList.inline.hpp"
-#include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"

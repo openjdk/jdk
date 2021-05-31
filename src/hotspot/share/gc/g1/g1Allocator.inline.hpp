@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1ALLOCATOR_INLINE_HPP
 
 #include "gc/g1/g1Allocator.hpp"
+
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/shared/plab.inline.hpp"
 #include "memory/universe.hpp"
