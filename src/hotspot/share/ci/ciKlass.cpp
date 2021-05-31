@@ -75,12 +75,16 @@ bool ciKlass::is_subtype_of(ciKlass* that) {
     return true;
   }
 
-  VM_ENTRY_MARK;
-  Klass* this_klass = get_Klass();
-  Klass* that_klass = that->get_Klass();
-  bool result = this_klass->is_subtype_of(that_klass);
+  bool is_subtype;
+  GUARDED_VM_ENTRY(is_subtype = get_Klass()->is_subtype_of(that->get_Klass());)
 
-  return result;
+#ifdef ASSERT
+  if (that->is_instance_klass() && !that->is_interface()) {
+    assert(!is_subtype || that->as_instance_klass()->has_subklass(), "inconsistent");
+  }
+#endif // ASSERT
+
+  return is_subtype;
 }
 
 // ------------------------------------------------------------------
@@ -89,7 +93,21 @@ bool ciKlass::is_subclass_of(ciKlass* that) {
   assert(this->is_loaded(), "must be loaded: %s", this->name()->as_quoted_ascii());
   assert(that->is_loaded(), "must be loaded: %s", that->name()->as_quoted_ascii());
 
-  GUARDED_VM_ENTRY(return get_Klass()->is_subclass_of(that->get_Klass());)
+  // Check to see if the klasses are identical.
+  if (this == that) {
+    return true;
+  }
+
+  bool is_subclass;
+  GUARDED_VM_ENTRY(is_subclass = get_Klass()->is_subclass_of(that->get_Klass());)
+
+#ifdef ASSERT
+  if (that->is_instance_klass() && !that->is_interface()) {
+    assert(!is_subclass || that->as_instance_klass()->has_subklass(), "inconsistent");
+  }
+#endif // ASSERT
+
+  return is_subclass;
 }
 
 // ------------------------------------------------------------------
@@ -151,9 +169,11 @@ ciKlass::least_common_ancestor(ciKlass* that) {
   // Many times the LCA will be either this_klass or that_klass.
   // Treat these as special cases.
   if (lca == that_klass) {
+    assert(this->is_subtype_of(that), "sanity");
     return that;
   }
   if (this_klass == lca) {
+    assert(that->is_subtype_of(this), "sanity");
     return this;
   }
 
@@ -161,6 +181,7 @@ ciKlass::least_common_ancestor(ciKlass* that) {
   ciKlass* result =
     CURRENT_THREAD_ENV->get_klass(lca);
 
+  assert(this->is_subtype_of(result) && that->is_subtype_of(result), "sanity");
   return result;
 }
 
