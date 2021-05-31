@@ -65,7 +65,7 @@ class Disassembler : public AbstractDisassembler {
   // No output at all if stream is NULL. Can be overridden
   // with -Verbose flag, in which case output goes to tty.
   static bool load_library(outputStream* st = NULL);
-  static void* dll_load(char* buf, int offset, char* ebuf, int ebuflen, outputStream* st);
+  static void* dll_load(char* buf, int offset, size_t buflen, char* ebuf, int ebuflen, outputStream* st);
 
   // Check if the two addresses are on the same page.
   static bool is_same_page(address a1, address a2) {
