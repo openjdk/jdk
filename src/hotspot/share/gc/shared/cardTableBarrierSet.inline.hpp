@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_CARDTABLEBARRIERSET_INLINE_HPP
 
 #include "gc/shared/cardTableBarrierSet.hpp"
+
 #include "gc/shared/cardTable.hpp"
 #include "runtime/atomic.hpp"
 

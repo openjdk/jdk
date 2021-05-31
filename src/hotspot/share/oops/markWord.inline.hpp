@@ -25,8 +25,9 @@
 #ifndef SHARE_OOPS_MARKWORD_INLINE_HPP
 #define SHARE_OOPS_MARKWORD_INLINE_HPP
 
-#include "oops/klass.hpp"
 #include "oops/markWord.hpp"
+
+#include "oops/klass.hpp"
 #include "runtime/globals.hpp"
 
 // Should this header be preserved during GC?

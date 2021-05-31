@@ -24,10 +24,11 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahClosures.hpp"
+
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
-#include "gc/shenandoah/shenandoahClosures.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"

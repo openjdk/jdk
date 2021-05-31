@@ -25,6 +25,8 @@
 #ifndef SHARE_GC_PARALLEL_PSCLOSURE_INLINE_HPP
 #define SHARE_GC_PARALLEL_PSCLOSURE_INLINE_HPP
 
+// No psClosure.hpp
+
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "memory/iterator.hpp"
