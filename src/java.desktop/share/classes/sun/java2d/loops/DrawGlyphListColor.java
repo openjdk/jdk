@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2021 JetBrains s.r.o.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,71 +30,66 @@ import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.pipe.Region;
 
+import java.awt.*;
+
 /**
- *   DrawGlyphList - loops for SolidTextRenderer pipe.
- *   1) draw solid color text onto destination surface
- *   2) must accept output area [x, y, dx, dy]
- *      from within the surface description data for clip rect
+ *   Draws color glyphs onto destination surface
  */
-public class DrawGlyphList extends GraphicsPrimitive {
+public class DrawGlyphListColor extends GraphicsPrimitive {
 
-    public static final String methodSignature = "DrawGlyphList(...)".toString();
+    public final static String methodSignature =
+            "DrawGlyphListColor(...)".toString();
 
-    public static final int primTypeID = makePrimTypeID();
+    public final static int primTypeID = makePrimTypeID();
 
-    public static DrawGlyphList locate(SurfaceType srctype,
-                                   CompositeType comptype,
-                                   SurfaceType dsttype)
+    public static DrawGlyphListColor locate(SurfaceType srctype,
+                                            CompositeType comptype,
+                                            SurfaceType dsttype)
     {
-        return (DrawGlyphList)
+        return (DrawGlyphListColor)
             GraphicsPrimitiveMgr.locate(primTypeID,
                                         srctype, comptype, dsttype);
     }
 
-    protected DrawGlyphList(SurfaceType srctype,
-                         CompositeType comptype,
-                         SurfaceType dsttype)
+    protected DrawGlyphListColor(SurfaceType srctype,
+                                 CompositeType comptype,
+                                 SurfaceType dsttype)
     {
         super(methodSignature, primTypeID, srctype, comptype, dsttype);
     }
 
-    public DrawGlyphList(long pNativePrim,
-                         SurfaceType srctype,
-                         CompositeType comptype,
-                         SurfaceType dsttype)
-    {
-        super(pNativePrim, methodSignature, primTypeID, srctype, comptype, dsttype);
+
+    public void DrawGlyphListColor(SunGraphics2D sg2d, SurfaceData dest,
+                                   GlyphList srcData,
+                                   int fromGlyph, int toGlyph) {
+        // actual implementation is in the 'General' subclass
     }
-
-
-    public native void DrawGlyphList(SunGraphics2D sg2d, SurfaceData dest,
-                                     GlyphList srcData,
-                                     int fromGlyph, int toGlyph);
 
     // This instance is used only for lookup.
     static {
         GraphicsPrimitiveMgr.registerGeneral(
-                                new DrawGlyphList(null, null, null));
+                                new DrawGlyphListColor(null, null, null));
     }
 
-    protected GraphicsPrimitive makePrimitive(SurfaceType srctype,
-                                              CompositeType comptype,
-                                              SurfaceType dsttype) {
+    public GraphicsPrimitive makePrimitive(SurfaceType srctype,
+                                           CompositeType comptype,
+                                           SurfaceType dsttype) {
         return new General(srctype, comptype, dsttype);
     }
 
-    private static class General extends DrawGlyphList {
-        MaskFill maskop;
+    private static class General extends DrawGlyphListColor {
+        private final Blit blit;
 
         public General(SurfaceType srctype,
                        CompositeType comptype,
                        SurfaceType dsttype)
         {
             super(srctype, comptype, dsttype);
-            maskop = MaskFill.locate(srctype, comptype, dsttype);
+            blit = Blit.locate(SurfaceType.IntArgbPre,
+                    CompositeType.SrcOverNoEa, dsttype);
         }
 
-        public void DrawGlyphList(SunGraphics2D sg2d, SurfaceData dest,
+        public void DrawGlyphListColor(SunGraphics2D sg2d, SurfaceData dest,
                                   GlyphList gl, int fromGlyph, int toGlyph) {
 
             Region clip = sg2d.getCompClip();
@@ -105,40 +100,34 @@ public class DrawGlyphList extends GraphicsPrimitive {
             for (int i = fromGlyph; i < toGlyph; i++) {
                 gl.setGlyphIndex(i);
                 int[] metrics = gl.getMetrics();
-                int gx1 = metrics[0];
-                int gy1 = metrics[1];
+                int x = metrics[0];
+                int y = metrics[1];
                 int w = metrics[2];
-                int gx2 = gx1 + w;
-                int gy2 = gy1 + metrics[3];
-                int off = 0;
-                if (gx1 < cx1) {
-                    off = cx1 - gx1;
-                    gx1 = cx1;
-                }
-                if (gy1 < cy1) {
-                    off += (cy1 - gy1) * w;
-                    gy1 = cy1;
-                }
+                int h = metrics[3];
+                int gx1 = x;
+                int gy1 = y;
+                int gx2 = x + w;
+                int gy2 = y + h;
+                if (gx1 < cx1) gx1 = cx1;
+                if (gy1 < cy1) gy1 = cy1;
                 if (gx2 > cx2) gx2 = cx2;
                 if (gy2 > cy2) gy2 = cy2;
                 if (gx2 > gx1 && gy2 > gy1) {
-                    byte[] alpha = gl.getGrayBits();
-                    maskop.MaskFill(sg2d, dest, sg2d.composite,
-                                    gx1, gy1, gx2 - gx1, gy2 - gy1,
-                                    alpha, off, w);
+                    blit.Blit(gl.getColorGlyphData(), dest, AlphaComposite.SrcOver, clip,
+                            gx1 - x, gy1 - y, gx1, gy1, gx2 - gx1, gy2 - gy1);
                 }
             }
         }
     }
 
     public GraphicsPrimitive traceWrap() {
-        return new TraceDrawGlyphList(this);
+        return new TraceDrawGlyphListColor(this);
     }
 
-    private static class TraceDrawGlyphList extends DrawGlyphList {
-        DrawGlyphList target;
+    private static class TraceDrawGlyphListColor extends DrawGlyphListColor {
+        DrawGlyphListColor target;
 
-        public TraceDrawGlyphList(DrawGlyphList target) {
+        public TraceDrawGlyphListColor(DrawGlyphListColor target) {
             super(target.getSourceType(),
                   target.getCompositeType(),
                   target.getDestType());
@@ -149,11 +138,11 @@ public class DrawGlyphList extends GraphicsPrimitive {
             return this;
         }
 
-        public void DrawGlyphList(SunGraphics2D sg2d, SurfaceData dest,
+        public void DrawGlyphListColor(SunGraphics2D sg2d, SurfaceData dest,
                                   GlyphList glyphs, int fromGlyph, int toGlyph)
         {
             tracePrimitive(target);
-            target.DrawGlyphList(sg2d, dest, glyphs, fromGlyph, toGlyph);
+            target.DrawGlyphListColor(sg2d, dest, glyphs, fromGlyph, toGlyph);
         }
     }
 }
