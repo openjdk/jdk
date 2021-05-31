@@ -121,6 +121,25 @@ OVERVIEW
         - StressTest
         - SuperCallTest
 
+    Additionally, each test enumerates test configurations and run every test case with them.
+    Test configuration consists of 4 parameters:
+
+        majorVer - major version of class files for generated concrete classes
+            values: MIN_MAJOR_VER (49) ... MAX_MAJOR_VER (61)
+
+        methodFlags - additional access flags for methods in generated classes
+            values: no additional flags, ACC_SYNCHRONIZED
+
+        invocationType - how methods in test hiearchies are invoked during testing
+            DIRECT           - invoke* bytecodes
+            REFLECTION       - Reflection API
+            INDY             - invokedynamic bytecode
+            INVOKE_EXACT     - MethodHandle.invokeExact()
+            INVOKE_GENERIC   - MethodHandle.invoke()
+            INVOKE_WITH_ARGS - MethodHandle.invokeWithArguments()
+
+        redefine - whether to preload and redefine classes before running individual tests
+            values: false, true
 
 STRESS TESTING
 
