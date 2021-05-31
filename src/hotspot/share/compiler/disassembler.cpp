@@ -755,8 +755,8 @@ address decode_env::decode_instructions(address start, address end, address orig
 // Each method will create a decode_env before decoding.
 // You can call the decode_env methods directly if you already have one.
 
-void* Disassembler::dll_load(char* buf, int offset, char* ebuf, int ebuflen, outputStream* st) {
-  if (offset + strlen(hsdis_library_name) + strlen(os::dll_file_extension()) < JVM_MAXPATHLEN) {
+void* Disassembler::dll_load(char* buf, int offset, size_t buflen, char* ebuf, size_t ebuflen, outputStream* st) {
+  if (offset + strlen(hsdis_library_name) + strlen(os::dll_file_extension()) < buflen) {
     strcpy(&buf[offset], hsdis_library_name);
     strcat(&buf[offset], os::dll_file_extension());
     if (Verbose) st->print_cr("Trying to load: %s", buf);
@@ -815,10 +815,10 @@ bool Disassembler::load_library(outputStream* st) {
   // 4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
   if (jvm_offset >= 0) {
     // 1. <home>/lib/<vm>/libhsdis-<arch>.so
-    _library = dll_load(buf, jvm_offset, ebuf, sizeof ebuf, st);
+    _library = dll_load(buf, jvm_offset, sizeof buf, ebuf, sizeof ebuf, st);
     if (_library == NULL && lib_offset >= 0) {
       // 2. <home>/lib/<vm>/hsdis-<arch>.so
-      _library = dll_load(buf, lib_offset, ebuf, sizeof ebuf, st);
+      _library = dll_load(buf, lib_offset, sizeof buf, ebuf, sizeof ebuf, st);
     }
     if (_library == NULL && lib_offset > 0) {
       // 3. <home>/lib/hsdis-<arch>.so
@@ -826,12 +826,12 @@ bool Disassembler::load_library(outputStream* st) {
       const char* p = strrchr(buf, *os::file_separator());
       if (p != NULL) {
         lib_offset = p - buf + 1;
-        _library = dll_load(buf, lib_offset, ebuf, sizeof ebuf, st);
+        _library = dll_load(buf, lib_offset, sizeof buf, ebuf, sizeof ebuf, st);
       }
     }
   }
   if (_library == NULL) {
-    _library = dll_load(buf, 0, ebuf, sizeof ebuf, st);
+    _library = dll_load(buf, 0, sizeof buf, ebuf, sizeof ebuf, st);
   }
 
   // load the decoder function to use.
