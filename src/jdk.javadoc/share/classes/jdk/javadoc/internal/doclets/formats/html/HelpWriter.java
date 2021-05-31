@@ -77,7 +77,7 @@ public class HelpWriter extends HtmlDocletWriter {
         // yes, INDEX is correct in the following line
         overviewLink = links.createLink(DocPaths.INDEX, resources.getText("doclet.Overview"));
         allPackagesLink = links.createLink(DocPaths.ALLPACKAGES_INDEX, resources.getText("doclet.All_Packages"));
-        allClassesLink = links.createLink(DocPaths.ALLCLASSES_INDEX, resources.getText("doclet.All_Classes"));
+        allClassesLink = links.createLink(DocPaths.ALLCLASSES_INDEX, resources.getText("doclet.All_Classes_And_Interfaces"));
         DocPath dp = options.splitIndex()
                 ? DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1))
                 : DocPaths.INDEX_ALL;
