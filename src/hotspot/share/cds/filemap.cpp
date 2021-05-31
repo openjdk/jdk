@@ -2049,8 +2049,10 @@ void FileMapInfo::fixup_mapped_heap_regions() {
                                                   num_open_archive_heap_ranges);
 
     // Populate the open archive regions' G1BlockOffsetTableParts. That ensures
-    // fast G1BlockOffsetTablePart::block_start operations for a given address
-    // within the open archive regions during G1RemSet::refine_card_concurrently.
+    // fast G1BlockOffsetTablePart::block_start operations for any given address
+    // within the open archive regions when trying to find start of an object
+    // (e.g. during card table scanning).
+    //
     // This is only needed for open archive regions, but not the closed archive
     // regions, because objects in closed archive regions are 'immutable'.
     G1CollectedHeap::heap()->populate_archive_regions_bot_part(open_archive_heap_ranges,
