@@ -37,10 +37,10 @@ import jdk.test.lib.Asserts;
 public class TestScenarios {
     public static void main(String[] args) {
         Scenario sDefault = new Scenario(0);
-        Scenario s1 = new Scenario(1, "-XX:SuspendRetryCount=51");
-        Scenario s2 = new Scenario(2, "-XX:SuspendRetryCount=52");
-        Scenario s3 = new Scenario(3, "-XX:SuspendRetryCount=53");
-        Scenario s3dup = new Scenario(3, "-XX:SuspendRetryCount=53");
+        Scenario s1 = new Scenario(1, "-XX:TLABRefillWasteFraction=51");
+        Scenario s2 = new Scenario(2, "-XX:TLABRefillWasteFraction=52");
+        Scenario s3 = new Scenario(3, "-XX:TLABRefillWasteFraction=53");
+        Scenario s3dup = new Scenario(3, "-XX:TLABRefillWasteFraction=53");
         try {
             new TestFramework().addScenarios(sDefault, s1, s2, s3).start();
             Asserts.fail("Should not reach");
@@ -74,20 +74,20 @@ public class TestScenarios {
     }
 
     @Test
-    @IR(applyIf = {"SuspendRetryCount", "50"}, counts = {IRNode.CALL, "1"})
+    @IR(applyIf = {"TLABRefillWasteFraction", "64"}, counts = {IRNode.CALL, "1"})
     public void failDefault() {
     }
 
     @Test
-    @IR(applyIf = {"SuspendRetryCount", "51"}, counts = {IRNode.CALL, "1"})
-    @IR(applyIf = {"SuspendRetryCount", "53"}, counts = {IRNode.CALL, "1"})
+    @IR(applyIf = {"TLABRefillWasteFraction", "51"}, counts = {IRNode.CALL, "1"})
+    @IR(applyIf = {"TLABRefillWasteFraction", "53"}, counts = {IRNode.CALL, "1"})
     public void failS3() {
     }
 }
 
 class ScenarioTest {
     @Test
-    @IR(applyIf = {"SuspendRetryCount", "54"}, counts = {IRNode.CALL, "1"})
+    @IR(applyIf = {"TLABRefillWasteFraction", "54"}, counts = {IRNode.CALL, "1"})
     public void doesNotFail() {
     }
 }

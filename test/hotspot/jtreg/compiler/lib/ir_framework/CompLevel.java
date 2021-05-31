@@ -67,7 +67,7 @@ public enum CompLevel {
      *      <li><p>{@link DontCompile @DontCompile}: Prevents any compilation of the associated helper method.</li>
      *  </ul>
      */
-    ANY(-2),
+    ANY(-1),
     /**
      *  Compilation level 1: C1 compilation without any profile information.
      */

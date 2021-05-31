@@ -673,29 +673,29 @@ class BadIRAnnotations {
     }
 
     @Test
-    @IR(applyIf = {"SuspendRetryCount", "50"})
+    @IR(applyIf = {"TLABRefillWasteFraction", "50"})
     public void mustSpecifyAtLeastOneConstraint3() {
     }
 
     @FailCount(3)
     @Test
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount", "50"}, applyIfNot = {"UseTLAB", "true"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "50", "UseTLAB", "true"},
-        applyIfOr = {"SuspendRetryCount", "50", "UseTLAB", "true"})
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount", "50"}, applyIfNot = {"SuspendRetryCount", "50"},
-        applyIfAnd = {"SuspendRetryCount", "50", "UseTLAB", "true"},
-        applyIfOr = {"SuspendRetryCount", "50", "UseTLAB", "true"})
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"}, applyIfNot = {"UseTLAB", "true"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"},
+        applyIfOr = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"}, applyIfNot = {"TLABRefillWasteFraction", "50"},
+        applyIfAnd = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"},
+        applyIfOr = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
     public void onlyOneApply() {}
 
     @FailCount(3)
     @Test
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount", "50", "UseTLAB", "true"})
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount", "51", "UseTLAB"})
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "51", "UseTLAB"})
     public void applyIfTooManyFlags() {}
 
     @FailCount(2)
     @Test
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount"})
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction"})
     @IR(failOn = IRNode.CALL, applyIf = {"Bla"})
     public void applyIfMissingValue() {}
 
@@ -716,22 +716,22 @@ class BadIRAnnotations {
 
     @FailCount(5)
     @Test
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount", "! 34"})
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount", "!== 34"})
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount", "<<= 34"})
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount", "=<34"})
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount", "<"})
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "!== 34"})
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<<= 34"})
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<"})
     public void applyIfFaultyComparator() {}
 
     @FailCount(3)
     @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"SuspendRetryCount", "50", "UseTLAB", "true"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"SuspendRetryCount", "50", "UseTLAB"})
+    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
+    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "50", "UseTLAB"})
     public void applyIfNotTooManyFlags() {}
 
     @FailCount(2)
     @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"SuspendRetryCount"})
+    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction"})
     @IR(failOn = IRNode.CALL, applyIfNot = {"Bla"})
     public void applyIfNotMissingValue() {}
 
@@ -752,31 +752,31 @@ class BadIRAnnotations {
 
     @FailCount(5)
     @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"SuspendRetryCount", "! 34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"SuspendRetryCount", "!== 34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"SuspendRetryCount", "<<= 34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"SuspendRetryCount", "=<34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"SuspendRetryCount", "<"})
+    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "!== 34"})
+    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "<<= 34"})
+    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "<"})
     public void applyIfNotFaultyComparator() {}
 
 
     @FailCount(2)
     @Test
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "50"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "51", "UseTLAB"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "50"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "51", "UseTLAB"})
     public void applyIfAndNotEnoughFlags() {}
 
     @FailCount(5)
     @Test
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "51", "UseTLAB"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "51", "UseTLAB"})
     @IR(failOn = IRNode.CALL, applyIfAnd = {"Bla"})
     public void applyIfAndMissingValue() {}
 
     @FailCount(3)
     @Test
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"PrintIdealGraphFilee", "true", "SuspendRetryCount", "< 34"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "!= 50", "Bla", "bla", "Bla2", "bla2"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"PrintIdealGraphFilee", "true", "TLABRefillWasteFraction", "< 34"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "!= 50", "Bla", "bla", "Bla2", "bla2"})
     public void applyIfAndUnknownFlag() {}
 
     @FailCount(18)
@@ -794,35 +794,35 @@ class BadIRAnnotations {
 
     @FailCount(20)
     @Test
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "! 34"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "! 34", "SuspendRetryCount", "! 34"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "!== 34"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "!== 34", "SuspendRetryCount", "=== 34"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "<<= 34"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "<<= 34", "SuspendRetryCount", ">>= 34"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "=<34"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "=<34", "SuspendRetryCount", "=<34"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "<"})
-    @IR(failOn = IRNode.CALL, applyIfAnd = {"SuspendRetryCount", "<", "SuspendRetryCount", "!="})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "! 34", "TLABRefillWasteFraction", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "!== 34"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "!== 34", "TLABRefillWasteFraction", "=== 34"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "<<= 34"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "<<= 34", "TLABRefillWasteFraction", ">>= 34"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "=<34", "TLABRefillWasteFraction", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "<"})
+    @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "<", "TLABRefillWasteFraction", "!="})
     public void applyIfAndFaultyComparator() {}
 
     @FailCount(2)
     @Test
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "50"})
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "51", "UseTLAB"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "50"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "51", "UseTLAB"})
     public void applyIfOrNotEnoughFlags() {}
 
     @FailCount(5)
     @Test
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount"})
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "51", "UseTLAB"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "51", "UseTLAB"})
     @IR(failOn = IRNode.CALL, applyIfOr = {"Bla"})
     public void applyIfOrMissingValue() {}
 
     @FailCount(3)
     @Test
-    @IR(failOn = IRNode.CALL, applyIfOr = {"PrintIdealGraphFilee", "true", "SuspendRetryCount", "< 34"})
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "!= 50", "Bla", "bla", "Bla2", "bla2"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"PrintIdealGraphFilee", "true", "TLABRefillWasteFraction", "< 34"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "!= 50", "Bla", "bla", "Bla2", "bla2"})
     public void applyIfOrUnknownFlag() {}
 
     @FailCount(18)
@@ -840,25 +840,25 @@ class BadIRAnnotations {
 
     @FailCount(20)
     @Test
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "! 34"})
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "! 34", "SuspendRetryCount", "! 34"})
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "!== 34"})
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "!== 34", "SuspendRetryCount", "=== 34"})
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "<<= 34"})
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "<<= 34", "SuspendRetryCount", ">>= 34"})
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "=<34"})
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "=<34", "SuspendRetryCount", "=<34"})
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "<"})
-    @IR(failOn = IRNode.CALL, applyIfOr = {"SuspendRetryCount", "<", "SuspendRetryCount", "!="})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "! 34", "TLABRefillWasteFraction", "! 34"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "!== 34"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "!== 34", "TLABRefillWasteFraction", "=== 34"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "<<= 34"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "<<= 34", "TLABRefillWasteFraction", ">>= 34"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "=<34", "TLABRefillWasteFraction", "=<34"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "<"})
+    @IR(failOn = IRNode.CALL, applyIfOr = {"TLABRefillWasteFraction", "<", "TLABRefillWasteFraction", "!="})
     public void applyIfOrFaultyComparator() {}
 
 
     @Test
     @FailCount(3)
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount", "true"})
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount", "SomeString"})
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount", "48"}) // valid
-    @IR(failOn = IRNode.CALL, applyIf = {"SuspendRetryCount", "48.5"})
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "true"})
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "SomeString"})
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "48"}) // valid
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "48.5"})
     public void wrongFlagValueLongFlag() {}
 
     @Test

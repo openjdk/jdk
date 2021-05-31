@@ -34,7 +34,7 @@ public enum Compiler {
     /**
      * Selecting both the C1 and C2 compiler. This must be in sync with hotspot/share/compiler/compilerDefinitions.hpp.
      */
-    ANY(-2),
+    ANY(-1),
     /**
      * The C1 compiler.
      */
