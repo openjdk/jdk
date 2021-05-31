@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import jdk.internal.net.http.common.BufferSupplier;
@@ -163,7 +165,7 @@ final class SocketTube implements FlowTube {
      */
     private static class SocketFlowTask implements RestartableTask {
         final Runnable task;
-        private final Object monitor = new Object();
+        private final Lock lock = new ReentrantLock();
         SocketFlowTask(Runnable task) {
             this.task = task;
         }
@@ -171,8 +173,11 @@ final class SocketTube implements FlowTube {
         public final void run(DeferredCompleter taskCompleter) {
             try {
                 // non contentious synchronized for visibility.
-                synchronized(monitor) {
+                lock.lock();
+                try {
                     task.run();
+                } finally {
+                    lock.unlock();
                 }
             } finally {
                 taskCompleter.complete();
