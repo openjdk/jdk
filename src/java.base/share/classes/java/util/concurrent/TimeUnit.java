@@ -184,11 +184,11 @@ public enum TimeUnit {
      */
     public long convert(long sourceDuration, TimeUnit sourceUnit) {
         switch (this) {
-            case NANOSECONDS:  return sourceUnit.toNanos(sourceDuration);
-            case MICROSECONDS: return sourceUnit.toMicros(sourceDuration);
-            case MILLISECONDS: return sourceUnit.toMillis(sourceDuration);
-            case SECONDS:      return sourceUnit.toSeconds(sourceDuration);
-            default: return cvt(sourceDuration, scale, sourceUnit.scale);
+        case NANOSECONDS:  return sourceUnit.toNanos(sourceDuration);
+        case MICROSECONDS: return sourceUnit.toMicros(sourceDuration);
+        case MILLISECONDS: return sourceUnit.toMillis(sourceDuration);
+        case SECONDS:      return sourceUnit.toSeconds(sourceDuration);
+        default: return cvt(sourceDuration, scale, sourceUnit.scale);
         }
     }
 
@@ -401,7 +401,7 @@ public enum TimeUnit {
      * @throws InterruptedException if interrupted while waiting
      */
     public void timedWait(Object obj, long timeout)
-        throws InterruptedException {
+            throws InterruptedException {
         if (timeout > 0) {
             long ms = toMillis(timeout);
             int ns = excessNanos(timeout, ms);
@@ -421,7 +421,7 @@ public enum TimeUnit {
      * @throws InterruptedException if interrupted while waiting
      */
     public void timedJoin(Thread thread, long timeout)
-        throws InterruptedException {
+            throws InterruptedException {
         if (timeout > 0) {
             long ms = toMillis(timeout);
             int ns = excessNanos(timeout, ms);
@@ -455,14 +455,14 @@ public enum TimeUnit {
      */
     public ChronoUnit toChronoUnit() {
         switch (this) {
-            case NANOSECONDS:  return ChronoUnit.NANOS;
-            case MICROSECONDS: return ChronoUnit.MICROS;
-            case MILLISECONDS: return ChronoUnit.MILLIS;
-            case SECONDS:      return ChronoUnit.SECONDS;
-            case MINUTES:      return ChronoUnit.MINUTES;
-            case HOURS:        return ChronoUnit.HOURS;
-            case DAYS:         return ChronoUnit.DAYS;
-            default: throw new AssertionError();
+        case NANOSECONDS:  return ChronoUnit.NANOS;
+        case MICROSECONDS: return ChronoUnit.MICROS;
+        case MILLISECONDS: return ChronoUnit.MILLIS;
+        case SECONDS:      return ChronoUnit.SECONDS;
+        case MINUTES:      return ChronoUnit.MINUTES;
+        case HOURS:        return ChronoUnit.HOURS;
+        case DAYS:         return ChronoUnit.DAYS;
+        default: throw new AssertionError();
         }
     }
 
@@ -478,16 +478,16 @@ public enum TimeUnit {
      */
     public static TimeUnit of(ChronoUnit chronoUnit) {
         switch (Objects.requireNonNull(chronoUnit, "chronoUnit")) {
-            case NANOS:   return TimeUnit.NANOSECONDS;
-            case MICROS:  return TimeUnit.MICROSECONDS;
-            case MILLIS:  return TimeUnit.MILLISECONDS;
-            case SECONDS: return TimeUnit.SECONDS;
-            case MINUTES: return TimeUnit.MINUTES;
-            case HOURS:   return TimeUnit.HOURS;
-            case DAYS:    return TimeUnit.DAYS;
-            default:
-                throw new IllegalArgumentException(
-                    "No TimeUnit equivalent for " + chronoUnit);
+        case NANOS:   return TimeUnit.NANOSECONDS;
+        case MICROS:  return TimeUnit.MICROSECONDS;
+        case MILLIS:  return TimeUnit.MILLISECONDS;
+        case SECONDS: return TimeUnit.SECONDS;
+        case MINUTES: return TimeUnit.MINUTES;
+        case HOURS:   return TimeUnit.HOURS;
+        case DAYS:    return TimeUnit.DAYS;
+        default:
+            throw new IllegalArgumentException(
+                "No TimeUnit equivalent for " + chronoUnit);
         }
     }
 

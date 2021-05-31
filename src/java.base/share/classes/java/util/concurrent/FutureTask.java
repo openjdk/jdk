@@ -163,7 +163,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
 
     public boolean cancel(boolean mayInterruptIfRunning) {
         if (!(state == NEW && STATE.compareAndSet
-            (this, NEW, mayInterruptIfRunning ? INTERRUPTING : CANCELLED)))
+              (this, NEW, mayInterruptIfRunning ? INTERRUPTING : CANCELLED)))
             return false;
         try {    // in case call to interrupt throws exception
             if (mayInterruptIfRunning) {
@@ -495,22 +495,22 @@ public class FutureTask<V> implements RunnableFuture<V> {
     public String toString() {
         final String status;
         switch (state) {
-            case NORMAL:
-                status = "[Completed normally]";
-                break;
-            case EXCEPTIONAL:
-                status = "[Completed exceptionally: " + outcome + "]";
-                break;
-            case CANCELLED:
-            case INTERRUPTING:
-            case INTERRUPTED:
-                status = "[Cancelled]";
-                break;
-            default:
-                final Callable<?> callable = this.callable;
-                status = (callable == null)
-                    ? "[Not completed]"
-                    : "[Not completed, task = " + callable + "]";
+        case NORMAL:
+            status = "[Completed normally]";
+            break;
+        case EXCEPTIONAL:
+            status = "[Completed exceptionally: " + outcome + "]";
+            break;
+        case CANCELLED:
+        case INTERRUPTING:
+        case INTERRUPTED:
+            status = "[Cancelled]";
+            break;
+        default:
+            final Callable<?> callable = this.callable;
+            status = (callable == null)
+                ? "[Not completed]"
+                : "[Not completed, task = " + callable + "]";
         }
         return super.toString() + status;
     }
