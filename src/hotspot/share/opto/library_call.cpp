@@ -5184,7 +5184,7 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
 
 //-------------inline_vectorizedMismatch------------------------------
 bool LibraryCallKit::inline_vectorizedMismatch() {
-  assert(UseVectorizedMismatchIntrinsic, "not implementated on this platform");
+  assert(UseVectorizedMismatchIntrinsic, "not implemented on this platform");
 
   address stubAddr = StubRoutines::vectorizedMismatch();
   if (stubAddr == NULL) {
@@ -5206,7 +5206,8 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   const TypeAryPtr* top_a = a_type->isa_aryptr();
   const TypeAryPtr* top_b = b_type->isa_aryptr();
   if (top_a == NULL || top_a->klass() == NULL ||
-      top_b == NULL || top_b->klass() == NULL) {
+      top_b == NULL || top_b->klass() == NULL ||
+      scale == top()) {
     // failed array check
     return false;
   }
@@ -5221,20 +5222,22 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   Node* init_mem = map()->memory();
 
   assert(scale->bottom_type()->isa_int(), "scale must be integer");
-  if (scale->bottom_type()->is_int()->is_con()) {
-    int scale_val = scale->bottom_type()->is_int()->get_con();
+  int scale_val = scale->bottom_type()->is_int()->is_con() ?
+                  scale->bottom_type()->is_int()->get_con() :
+                  -1;
+  if (scale_val >= 0 && scale_val < 4) {
     BasicType prim_types[] = {T_BYTE, T_SHORT, T_INT, T_LONG};
     BasicType elem_bt = prim_types[scale_val];
     int vec_len = ArrayOperationPartailInlineSize / type2aelembytes(elem_bt);
 
     // Enable partial in-lining if compare size is less than
     // ArrayOperationPartailInlineSize(default 32 bytes).
-    // If ArrayOperationPartailInlineSize > 32 inlining is enabled
+    // If ArrayOperationPartailInlineSize > 32 in-lining is enabled
     // for all integral types (byte/short/char/int), else for default
-    // value inlining is enabled for subword types (byte/short/char).
+    // value in-lining is enabled for sub-word types (byte/short/char).
     if (ArrayOperationPartailInlineSize > 32) {
       enable_pi = is_subword_type(elem_bt) || elem_bt == T_INT;
-    } else if (ArrayOperationPartailInlineSize) {
+    } else if (ArrayOperationPartailInlineSize > 0) {
       enable_pi = is_subword_type(elem_bt);
     }
 
@@ -5248,6 +5251,11 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
       Node* length_cmp = _gvn.transform(new CmpINode(length_in_bytes, pi_size));
       Node* cmp_res = _gvn.transform(new BoolNode(length_cmp, BoolTest::le));
 
+      // When the cmp_res is evaluated to false then fast_path will be NULL
+      // and only slow path exist (i.e. implicit control), so all the nodes control
+      // dependent on fast path will be sweeped out during GVN. When cmp_res is
+      // evaluated to true fast_path is chosen and slow_path (control()) is NULL and
+      // thus before exit control is explicitly set to fast_path.
       fast_path = generate_guard(cmp_res, NULL, PROB_MAX);
 
       const TypeVect* vt = TypeVect::make(elem_bt, vec_len);
@@ -5271,37 +5279,40 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
     }
   }
 
-  if (!stopped()) {
-    Node* call = make_runtime_call(RC_LEAF,
-                                   OptoRuntime::vectorizedMismatch_Type(),
-                                   stubAddr, stubName, TypePtr::BOTTOM,
-                                   obja_adr, objb_adr, length, scale);
-
-    Node* call_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-    Node* call_mem = map()->memory();
-
-    Node* exit_block = new RegionNode(3);
-    exit_block->init_req(1, fast_path);
-    exit_block->init_req(2, control());
-    exit_block = _gvn.transform(exit_block);
-
-    Node* result = new PhiNode(exit_block, TypeInt::INT);
-    result->init_req(1, fastcomp_result);
-    result->init_req(2, call_result);
-    result = _gvn.transform(result);
-
-    Node* mem_phi = new PhiNode(exit_block, Type::MEMORY, TypePtr::BOTTOM);
-    mem_phi->init_req(1, init_mem);
-    mem_phi->init_req(2, call_mem);
-
-    set_all_memory(_gvn.transform(mem_phi));
-    set_control(exit_block);
-    set_result(result);
-  } else {
+  if (stopped()) {
+    // Slow path is dead.
     set_control(fast_path);
     set_result(fastcomp_result);
+    clear_upper_avx();
+    return true;
   }
-  clear_upper_avx();
+
+  // Proceed with expanding slow path.
+  Node* call = make_runtime_call(RC_LEAF,
+                                 OptoRuntime::vectorizedMismatch_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 obja_adr, objb_adr, length, scale);
+
+  Node* call_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  Node* call_mem = map()->memory();
+
+  Node* exit_block = new RegionNode(3);
+  exit_block->init_req(1, fast_path);
+  exit_block->init_req(2, control());
+  exit_block = _gvn.transform(exit_block);
+
+  Node* result = new PhiNode(exit_block, TypeInt::INT);
+  result->init_req(1, fastcomp_result);
+  result->init_req(2, call_result);
+  result = _gvn.transform(result);
+
+  Node* mem_phi = new PhiNode(exit_block, Type::MEMORY, TypePtr::BOTTOM);
+  mem_phi->init_req(1, init_mem);
+  mem_phi->init_req(2, call_mem);
+
+  set_all_memory(_gvn.transform(mem_phi));
+  set_control(exit_block);
+  set_result(result);
   return true;
 }
 
