@@ -93,9 +93,6 @@ public:
   template <typename Function>
   void iterate(ZGenerationId generation_id, Function function);
 
-  template <typename Function>
-  void iterate_unconditional(Function function);
-
   size_t find_base_bit(size_t index);
   size_t find_base_bit(size_t start, size_t end);
 };

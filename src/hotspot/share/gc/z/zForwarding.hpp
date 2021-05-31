@@ -84,8 +84,7 @@ public:
 
   // Visit from-objects
   template <typename Function>
-  void object_iterate_f(Function function);
-  void object_iterate(ObjectClosure *cl);
+  void object_iterate(Function function);
 
   // Visit to-objects
   template <typename Function>

@@ -92,20 +92,16 @@ inline size_t ZForwarding::object_alignment_shift() const {
 }
 
 template <typename Function>
-inline void ZForwarding::object_iterate_f(Function function) {
+inline void ZForwarding::object_iterate(Function function) {
   ZObjectClosure<Function> cl(function);
-  object_iterate(&cl);
-}
-
-inline void ZForwarding::object_iterate(ObjectClosure *cl) {
-  return _page->object_iterate(cl);
+  _page->object_iterate(function);
 }
 
 template <typename Function>
 inline void ZForwarding::object_iterate_forwarded_via_livemap(Function function) {
   assert(!in_place(), "Not allowed to use livemap iteration");
 
-  object_iterate_f([&](oop obj) {
+  object_iterate([&](oop obj) {
     // Find to-object
     zaddress_unsafe from_addr = to_zaddress_unsafe(obj);
     zaddress to_addr = this->find(from_addr);

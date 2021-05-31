@@ -127,10 +127,8 @@ public:
   uint32_t live_objects() const;
   size_t live_bytes() const;
 
-  void object_iterate(ObjectClosure* cl);
-
   template <typename Function>
-  void object_iterate_unconditional(Function function);
+  void object_iterate(Function function);
 
   void remember(volatile zpointer* p);
   BitMap* remset_bitmap();

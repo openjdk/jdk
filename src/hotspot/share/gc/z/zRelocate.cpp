@@ -440,13 +440,13 @@ public:
 };
 
 template <typename Allocator>
-class ZRelocateClosure : public ObjectClosure {
+class ZRelocateWork : public StackObj {
 private:
   Allocator* const _allocator;
   ZForwarding*     _forwarding;
   ZPage*           _target;
 
-  zaddress relocate_object_inner(zaddress from_addr) const {
+  zaddress try_relocate_object_inner(zaddress from_addr) const {
     ZForwardingCursor cursor;
 
     // Lookup forwarding
@@ -484,8 +484,8 @@ private:
     return to_addr;
   }
 
-  bool relocate_object(zaddress from_addr) const {
-    zaddress to_addr = relocate_object_inner(from_addr);
+  bool try_relocate_object(zaddress from_addr) const {
+    zaddress to_addr = try_relocate_object_inner(from_addr);
 
     if (is_null(to_addr)) {
       return false;
@@ -495,11 +495,11 @@ private:
     return true;
   }
 
-  virtual void do_object(oop obj) {
+  void relocate_object(oop obj) {
     const zaddress addr = to_zaddress(obj);
     assert(ZHeap::heap()->is_object_live(addr), "Should be live");
 
-    while (!relocate_object(addr)) {
+    while (!try_relocate_object(addr)) {
       // Allocate a new target page, or if that fails, use the page being
       // relocated as the new target, which will cause it to be relocated
       // in-place.
@@ -516,12 +516,12 @@ private:
   }
 
 public:
-  ZRelocateClosure(Allocator* allocator) :
+  ZRelocateWork(Allocator* allocator) :
       _allocator(allocator),
       _forwarding(NULL),
       _target(NULL) {}
 
-  ~ZRelocateClosure() {
+  ~ZRelocateWork() {
     _allocator->free_target_page(_target);
   }
 
@@ -535,7 +535,7 @@ public:
     }
 
     // Relocate objects
-    _forwarding->object_iterate(this);
+    _forwarding->object_iterate([&](oop obj) { relocate_object(obj); });
 
     // Deal with in-place relocation
     if (_forwarding->in_place()) {
@@ -616,8 +616,8 @@ public:
   }
 
   virtual void work() {
-    ZRelocateClosure<ZRelocateSmallAllocator> small(&_small_allocator);
-    ZRelocateClosure<ZRelocateMediumAllocator> medium(&_medium_allocator);
+    ZRelocateWork<ZRelocateSmallAllocator> small(&_small_allocator);
+    ZRelocateWork<ZRelocateMediumAllocator> medium(&_medium_allocator);
 
     bool synchronized = false;
 
@@ -655,7 +655,7 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
 
 // FIXME: Temporary here because of accessBackend.inline.hpp circular dependencies
 template <typename Function>
-inline void ZPage::object_iterate_unconditional(Function function) {
+inline void ZPage::object_iterate(Function function) {
   auto do_bit = [&](BitMap::idx_t index) -> bool {
     const oop obj = object_from_bit_index(index);
 
@@ -665,7 +665,7 @@ inline void ZPage::object_iterate_unconditional(Function function) {
     return true;
   };
 
-  _livemap.iterate_unconditional(do_bit);
+  _livemap.iterate(generation_id(), do_bit);
 }
 
 void ZRelocate::promote_pages(const ZArray<ZPage*>* pages) {
@@ -676,9 +676,7 @@ void ZRelocate::promote_pages(const ZArray<ZPage*>* pages) {
     ZHeap::heap()->minor_cycle()->promote(page);
 
     page->log_msg(" (in-place promoted)");
-    // FIXME: Why can't this be the normal object_iterate
-    //        now that we don't mess with the original page?
-    page->object_iterate_unconditional([&](oop obj) {
+    page->object_iterate([&](oop obj) {
       z_basic_oop_iterate(obj, ZRelocate::add_remset);
     });
 

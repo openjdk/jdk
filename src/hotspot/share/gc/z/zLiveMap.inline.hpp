@@ -154,25 +154,21 @@ inline void ZLiveMap::iterate_segment(BitMap::idx_t segment, Function function) 
 
 template <typename Function>
 inline void ZLiveMap::iterate(ZGenerationId generation_id, Function function) {
-  if (is_marked(generation_id)) {
-    auto live_only = [&](BitMap::idx_t index) -> bool {
-      if ((index & 1) == 0) {
-        return function(index);
-      }
-      // Don't visit the finalizable bits
-      return true;
-    };
-    iterate_unconditional(live_only);
+  if (!is_marked(generation_id)) {
+    return;
   }
-}
 
-template <typename Function>
-inline void ZLiveMap::iterate_unconditional(Function function) {
-  assert(_seqnum != 0, "Catch me!");
+  auto live_only = [&](BitMap::idx_t index) -> bool {
+    if ((index & 1) == 0) {
+      return function(index);
+    }
+    // Don't visit the finalizable bits
+    return true;
+  };
 
   for (BitMap::idx_t segment = first_live_segment(); segment < nsegments; segment = next_live_segment(segment)) {
     // For each live segment
-    iterate_segment(segment, function);
+    iterate_segment(segment, live_only);
   }
 }
 
