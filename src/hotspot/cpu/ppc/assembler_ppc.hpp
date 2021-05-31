@@ -2594,7 +2594,7 @@ class Assembler : public AbstractAssembler {
          int load_const_optimized(Register d, long a,  Register tmp = noreg,
                                   bool return_simm16_rest = false, bool fixed_size = false);
   inline int load_const_optimized(Register d, void* a, Register tmp = noreg,
-				  bool return_simm16_rest = false, bool fixed_size = false) {
+                                  bool return_simm16_rest = false, bool fixed_size = false) {
     return load_const_optimized(d, (long)(unsigned long)a, tmp, return_simm16_rest, fixed_size);
   }
 
