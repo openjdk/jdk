@@ -344,10 +344,33 @@ void Assembler::load_const(Register d, long x, Register tmp) {
   }
 }
 
+// Generate prefixed or non-prefixed addi, or addis based on the immediate value
+// Emit a nop if a prefixed addi is going to cross a 64-byte boundary.
+// (See Section 1.6 of Power ISA Version 3.1)
+void Assembler::paddi_or_addi(Register d, Register s, long si34) {
+  if (is_simm16(si34)) {
+    addi_r0ok(d, s, (int)si34);
+  } else if (is_simm32(si34) && (si34 & 0xffff) == 0) {
+    addis_r0ok(d, s, (int)si34 >> 16);
+  } else {
+    if (is_aligned(reinterpret_cast<uintptr_t>(pc()) + BytesPerInstWord, 64) ||
+        code_section()->scratch_emit()) {
+      // Always emit a nop if the target is a scratch buffer, otherwise fill_buffer() may raise
+      // an assertion failure because the size of actually generated code can be larger than that
+      // in scratch_emit phase. A difference of code buffer addresses for the two phases can result
+      // in different number of nops for alignment. By emitting a nop before every paddi, we avoid
+      // buffer overrun in acrual code generation phase.
+      nop();
+    }
+    paddi_r0ok(d, s, si34);
+  }
+}
+
 // Load a 64 bit constant, optimized, not identifyable.
 // Tmp can be used to increase ILP. Set return_simm16_rest=true to get a
 // 16 bit immediate offset.
-int Assembler::load_const_optimized(Register d, long x, Register tmp, bool return_simm16_rest) {
+int Assembler::load_const_optimized(Register d, long x, Register tmp,
+                                    bool return_simm16_rest, bool fixed_size) {
   // Avoid accidentally trying to use R0 for indexed addressing.
   assert_different_registers(d, tmp);
 
@@ -369,46 +392,85 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp, bool retur
     xd = 0;
   }
 
+  // pli can require a nop for alignement depending on the code address, so we don't use pli
+  // when the caller expects the number of generated code is always the same.
+  bool use_pli = (PowerArchitecturePPC64 >= 10 && !fixed_size);
+
   if (d == R0) { // Can't use addi.
     if (is_simm(x, 32)) { // opt 2: simm32
-      lis(d, x >> 16);
-      if (xd) ori(d, d, (unsigned short)xd);
-    } else {
-      // 64-bit value: x = xa xb xc xd
-      xa = (x >> 48) & 0xffff;
-      xb = (x >> 32) & 0xffff;
       xc = (x >> 16) & 0xffff;
-      bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
-      if (tmp == noreg || (xc == 0 && xd == 0)) {
-        if (xa_loaded) {
-          lis(d, xa);
-          if (xb) { ori(d, d, (unsigned short)xb); }
+      bool xc_loaded = (xd & 0x8000) ? (xc != -1) : (xc != 0);
+      if (xc_loaded) {
+        if (xd && use_pli) {
+          pli_or_li(d, x);
         } else {
-          li(d, xb);
+          lis(d, x >> 16);
         }
-        sldi(d, d, 32);
-        if (xc) { oris(d, d, (unsigned short)xc); }
-        if (xd) { ori( d, d, (unsigned short)xd); }
+      }
+      if (xd && !use_pli) ori(d, d, (unsigned short)xd);
+    } else {
+      if (use_pli) {
+        // 64-bit value: x = xA xB
+        int32_t xA, xB; // Two 32-bit chunks of const.
+        xA = (x >> 32) & 0xffffffff;
+        xB = x & 0xffffffff;    // Lower 32-bit chunk.
+        bool xA_loaded = (xB & 0x80000000) ? (xA != -1) : (xA != 0);
+        if (tmp == noreg || xB == 0) {
+          if (xA_loaded) {
+            pli_or_li(d, xA);
+            xc = (x >> 16) & 0xffff;
+            sldi(d, d, 32);
+            if (xc) { oris(d, d, (unsigned short)xc); }
+            if (xd) { ori( d, d, (unsigned short)xd); }
+          } else if (xB) {
+            pli_or_li(d, xB);
+          }
+        } else {
+          if (xA_loaded) {
+            pli_or_li(tmp, xA);
+            pli_or_li(d, xB);
+            insrdi(d, tmp, 32, 0);
+          } else {
+            pli_or_li(d, xB);
+          }
+        }
       } else {
-        // Exploit instruction level parallelism if we have a tmp register.
-        bool xc_loaded = (xd & 0x8000) ? (xc != -1) : (xc != 0);
-        if (xa_loaded) {
-          lis(tmp, xa);
-        }
-        if (xc_loaded) {
-          lis(d, xc);
-        }
-        if (xa_loaded) {
-          if (xb) { ori(tmp, tmp, (unsigned short)xb); }
+        // 64-bit value: x = xa xb xc xd
+        xa = (x >> 48) & 0xffff;
+        xb = (x >> 32) & 0xffff;
+        xc = (x >> 16) & 0xffff;
+        bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
+        if (tmp == noreg || (xc == 0 && xd == 0)) {
+          if (xa_loaded) {
+            lis(d, xa);
+            if (xb) { ori(d, d, (unsigned short)xb); }
+          } else {
+            li(d, xb);
+          }
+          sldi(d, d, 32);
+          if (xc) { oris(d, d, (unsigned short)xc); }
+          if (xd) { ori( d, d, (unsigned short)xd); }
         } else {
-          li(tmp, xb);
+          // Exploit instruction level parallelism if we have a tmp register.
+          bool xc_loaded = (xd & 0x8000) ? (xc != -1) : (xc != 0);
+          if (xa_loaded) {
+            lis(tmp, xa);
+          }
+          if (xc_loaded) {
+            lis(d, xc);
+          }
+          if (xa_loaded) {
+            if (xb) { ori(tmp, tmp, (unsigned short)xb); }
+          } else {
+            li(tmp, xb);
+          }
+          if (xc_loaded) {
+            if (xd) { ori(d, d, (unsigned short)xd); }
+          } else {
+            li(d, xd);
+          }
+          insrdi(d, tmp, 32, 0);
         }
-        if (xc_loaded) {
-          if (xd) { ori(d, d, (unsigned short)xd); }
-        } else {
-          li(d, xd);
-        }
-        insrdi(d, tmp, 32, 0);
       }
     }
     return retval;
@@ -418,54 +480,93 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp, bool retur
   rem = (rem >> 16) + ((unsigned short)xc >> 15); // Compensation for sign extend.
 
   if (rem == 0) { // opt 2: simm32
-    lis(d, xc);
+    if (use_pli) {
+      pli_or_li(d, x);
+      return retval;
+    } else {
+      lis(d, xc);
+    }
   } else { // High 32 bits needed.
 
     if (tmp != noreg  && (int)x != 0) { // opt 3: We have a temp reg.
       // No carry propagation between xc and higher chunks here (use logical instructions).
-      xa = (x >> 48) & 0xffff;
-      xb = (x >> 32) & 0xffff; // No sign compensation, we use lis+ori or li to allow usage of R0.
-      bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
-      bool return_xd = false;
+      if (use_pli) {
+        // 64-bit value: x = xA xB
+        int32_t xA, xB; // Two 32-bit chunks of const.
+        xA = (x >> 32) & 0xffffffff;
+        xB = x & 0xffffffff;    // Lower 32-bit chunk.
+        bool xA_loaded = (xB & 0x80000000) ? (xA != -1) : (xA != 0);
+        if (xA_loaded) {
+          pli_or_li(tmp, xA);
+          pli_or_li(d, xB);
+          insrdi(d, tmp, 32, 0);
+        } else {
+          pli_or_li(d, xB);
+        }
+        return retval;
+      } else {
+        xa = (x >> 48) & 0xffff;
+        xb = (x >> 32) & 0xffff; // No sign compensation, we use lis+ori or li to allow usage of R0.
+        bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
+        bool return_xd = false;
 
-      if (xa_loaded) { lis(tmp, xa); }
-      if (xc) { lis(d, xc); }
-      if (xa_loaded) {
-        if (xb) { ori(tmp, tmp, (unsigned short)xb); } // No addi, we support tmp == R0.
-      } else {
-        li(tmp, xb);
+        if (xa_loaded) { lis(tmp, xa); }
+        if (xc) { lis(d, xc); }
+        if (xa_loaded) {
+          if (xb) { ori(tmp, tmp, (unsigned short)xb); } // No addi, we support tmp == R0.
+        } else {
+          li(tmp, xb);
+        }
+        if (xc) {
+          if (xd) { addi(d, d, xd); }
+        } else {
+          li(d, xd);
+        }
+        insrdi(d, tmp, 32, 0);
+        return retval;
       }
-      if (xc) {
-        if (xd) { addi(d, d, xd); }
+    }
+
+    if (use_pli) {
+      int32_t xA, xB; // Two 32-bit chunks of const.
+      xA = (x >> 32) & 0xffffffff;
+      xB = x & 0xffffffff;    // Lower 32-bit chunk.
+      bool xA_loaded = (xB & 0x80000000) ? (xA != -1) : (xA != 0);
+      if (xA_loaded) {
+        pli_or_li(d, xA);
+        xc = (x >> 16) & 0xffff;
+        sldi(d, d, 32);
+        if (xc) { oris(d, d, (unsigned short)xc); }
+        if (xd) { ori( d, d, (unsigned short)xd); }
       } else {
-        li(d, xd);
+        pli_or_li(d, xB);
       }
-      insrdi(d, tmp, 32, 0);
       return retval;
-    }
-
-    xb = rem & 0xFFFF; // Next 16-bit chunk.
-    rem = (rem >> 16) + ((unsigned short)xb >> 15); // Compensation for sign extend.
-
-    xa = rem & 0xFFFF; // Highest 16-bit chunk.
-
-    // opt 4: avoid adding 0
-    if (xa) { // Highest 16-bit needed?
-      lis(d, xa);
-      if (xb) { addi(d, d, xb); }
     } else {
-      li(d, xb);
+      xb = rem & 0xFFFF; // Next 16-bit chunk.
+      rem = (rem >> 16) + ((unsigned short)xb >> 15); // Compensation for sign extend.
+
+      xa = rem & 0xFFFF; // Highest 16-bit chunk.
+
+      // opt 4: avoid adding 0
+      if (xa) { // Highest 16-bit needed?
+        lis(d, xa);
+        if (xb) { addi(d, d, xb); }
+      } else {
+        li(d, xb);
+      }
+      sldi(d, d, 32);
+      if (xc) { addis(d, d, xc); }
     }
-    sldi(d, d, 32);
-    if (xc) { addis(d, d, xc); }
   }
 
-  if (xd) { addi(d, d, xd); }
+  if (xd && !use_pli) { addi(d, d, xd); }
   return retval;
 }
 
 // We emit only one addition to s to optimize latency.
-int Assembler::add_const_optimized(Register d, Register s, long x, Register tmp, bool return_simm16_rest) {
+int Assembler::add_const_optimized(Register d, Register s, long x, Register tmp,
+                                   bool return_simm16_rest, bool fixed_size) {
   assert(s != R0 && s != tmp, "unsupported");
   long rem = x;
 
@@ -494,6 +595,18 @@ int Assembler::add_const_optimized(Register d, Register s, long x, Register tmp,
     }
   }
 
+  // Case 3: Can use paddi. (However, paddi can require a nop for alignement depending
+  //                         on the code address, so we don't use paddi when the caller
+  //                         expects the number of generated code is always the same.
+  if (PowerArchitecturePPC64 >= 10 && !fixed_size) {
+    long xd = x & 0x3FFFFFFFFL; // Lowest 34-bit chunk.
+    rem = (x >> 34) + (xd >> 33);
+    if (rem == 0) {
+      paddi_or_addi(d, s, xd);
+      return 0;
+    }
+  }
+
   // Other cases: load & add.
   Register tmp1 = tmp,
            tmp2 = noreg;
@@ -502,7 +615,7 @@ int Assembler::add_const_optimized(Register d, Register s, long x, Register tmp,
     tmp1 = d;
     tmp2 = tmp;
   }
-  int simm16_rest = load_const_optimized(tmp1, x, tmp2, return_simm16_rest);
+  int simm16_rest = load_const_optimized(tmp1, x, tmp2, return_simm16_rest, fixed_size);
   add(d, tmp1, s);
   return simm16_rest;
 }

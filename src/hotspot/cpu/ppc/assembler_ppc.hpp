@@ -815,6 +815,8 @@ class Assembler : public AbstractAssembler {
     // Masks for each instructions
     PADDI_PREFIX_OPCODE_MASK  = PREFIX_OPCODE_TYPEx0_MASK,
     PADDI_SUFFIX_OPCODE_MASK  = ADDI_OPCODE_MASK,
+    PLD_PREFIX_OPCODE_MASK    = PREFIX_OPCODE_TYPEx0_MASK,
+    PLD_SUFFIX_OPCODE_MASK    = (63u << OPCODE_SHIFT),
   };
 
   enum opcdeos {
@@ -823,6 +825,12 @@ class Assembler : public AbstractAssembler {
     // Prefixed addi/li
     PADDI_PREFIX_OPCODE   = PREFIX_PRIMARY_OPCODE | (2u << PRE_TYPE_SHIFT),
     PADDI_SUFFIX_OPCODE   = ADDI_OPCODE,
+    PLFS_PREFIX_OPCODE    = PREFIX_PRIMARY_OPCODE | (2u << PRE_TYPE_SHIFT),
+    PLFS_SUFFIX_OPCODE    = (48u << OPCODE_SHIFT),
+    PLFD_PREFIX_OPCODE    = PREFIX_PRIMARY_OPCODE | (2u << PRE_TYPE_SHIFT),
+    PLFD_SUFFIX_OPCODE    = (50u << OPCODE_SHIFT),
+    PLD_PREFIX_OPCODE     = PREFIX_PRIMARY_OPCODE,
+    PLD_SUFFIX_OPCODE     = (57u << OPCODE_SHIFT),
   };
 
   // Trap instructions TO bits
@@ -1303,6 +1311,10 @@ class Assembler : public AbstractAssembler {
     return (short)((int *)a)[instruction_number];
   }
 
+  static int get_imm18(address a, int instruction_number) {
+    return (((int *)a)[instruction_number] << 14) >> 14;
+  }
+
   static inline int hi16_signed(  int x) { return (int)(int16_t)(x >> 16); }
   static inline int lo16_unsigned(int x) { return x & 0xffff; }
 
@@ -1496,6 +1508,12 @@ class Assembler : public AbstractAssembler {
   }
   static bool is_ld(int x) {
      return LD_OPCODE == (x & LD_OPCODE_MASK);
+  }
+  static bool is_pld_prefix(int x) {
+     return PLD_PREFIX_OPCODE == (x & PLD_PREFIX_OPCODE_MASK);
+  }
+  static bool is_pld_suffix(int x) {
+     return PLD_SUFFIX_OPCODE == (x & PLD_SUFFIX_OPCODE_MASK);
   }
   static bool is_std(int x) {
      return STD_OPCODE == (x & STD_OPCODE_MASK);
@@ -1731,6 +1749,15 @@ class Assembler : public AbstractAssembler {
   // For convenience. Load pointer into d from b+s1.
   inline void ld_ptr(Register d, int b, Register s1);
   inline void ld_ptr(Register d, ByteSize b, Register s1);
+
+  // Prefixed load
+  inline void pld( Register d, long si34, Register s1, bool r);
+  inline void pld( Register d, long si34, Register s1);
+  inline void pld( Register d, long si34);
+  inline void plfs(FloatRegister d, long si34, Register s1, bool r);
+  inline void plfs(FloatRegister d, long si34, Register s1);
+  inline void plfd(FloatRegister d, long si34, Register s1, bool r);
+  inline void plfd(FloatRegister d, long si34, Register s1);
 
   //  PPC 1, section 3.3.3 Fixed-Point Store Instructions
   inline void stwx( Register d, Register s1, Register s2);
@@ -2564,15 +2591,19 @@ class Assembler : public AbstractAssembler {
   // Tmp can be used to increase ILP. Set return_simm16_rest = true to get a
   // 16 bit immediate offset. This is useful if the offset can be encoded in
   // a succeeding instruction.
-         int load_const_optimized(Register d, long a,  Register tmp = noreg, bool return_simm16_rest = false);
-  inline int load_const_optimized(Register d, void* a, Register tmp = noreg, bool return_simm16_rest = false) {
-    return load_const_optimized(d, (long)(unsigned long)a, tmp, return_simm16_rest);
+         int load_const_optimized(Register d, long a,  Register tmp = noreg,
+                                  bool return_simm16_rest = false, bool fixed_size = false);
+  inline int load_const_optimized(Register d, void* a, Register tmp = noreg,
+				  bool return_simm16_rest = false, bool fixed_size = false) {
+    return load_const_optimized(d, (long)(unsigned long)a, tmp, return_simm16_rest, fixed_size);
   }
 
   // If return_simm16_rest, the return value needs to get added afterwards.
-         int add_const_optimized(Register d, Register s, long x, Register tmp = R0, bool return_simm16_rest = false);
-  inline int add_const_optimized(Register d, Register s, void* a, Register tmp = R0, bool return_simm16_rest = false) {
-    return add_const_optimized(d, s, (long)(unsigned long)a, tmp, return_simm16_rest);
+         int add_const_optimized(Register d, Register s, long x, Register tmp = R0,
+                                 bool return_simm16_rest = false, bool fixed_size = false);
+  inline int add_const_optimized(Register d, Register s, void* a, Register tmp = R0,
+                                 bool return_simm16_rest = false, bool fixed_size = false) {
+    return add_const_optimized(d, s, (long)(unsigned long)a, tmp, return_simm16_rest, fixed_size);
   }
 
   // If return_simm16_rest, the return value needs to get added afterwards.
@@ -2583,6 +2614,14 @@ class Assembler : public AbstractAssembler {
     return sub_const_optimized(d, s, (long)(unsigned long)a, tmp, return_simm16_rest);
   }
 
+ private:
+  // Helper function used in load_const_optimized() and add_const_optimized()
+  void paddi_or_addi(Register d, Register s, long si34);
+  void pli_or_li(    Register d, long si34) {
+    paddi_or_addi(d, R0, si34);
+  }
+
+ public:
   // Creation
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
 #ifdef CHECK_DELAY

@@ -1174,6 +1174,22 @@ int loadConL34Node::compute_padding(int current_offset) const {
   return compute_prefix_padding(current_offset);
 }
 
+int loadConLNode::compute_padding(int current_offset) const {
+  return compute_prefix_padding(current_offset);
+}
+
+int loadConPNode::compute_padding(int current_offset) const {
+  return compute_prefix_padding(current_offset);
+}
+
+int loadConFNode::compute_padding(int current_offset) const {
+  return compute_prefix_padding(current_offset);
+}
+
+int loadConDNode::compute_padding(int current_offset) const {
+  return compute_prefix_padding(current_offset);
+}
+
 int addI_reg_imm32Node::compute_padding(int current_offset) const {
   return compute_prefix_padding(current_offset);
 }
@@ -2621,22 +2637,28 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     int toc_offset = 0;
 
-    address const_toc_addr;
-    // Create a non-oop constant, no relocation needed.
-    // If it is an IC, it has a virtual_call_Relocation.
-    const_toc_addr = __ long_constant((jlong)$src$$constant);
-    if (const_toc_addr == NULL) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
+    if (!ra_->C->output()->in_scratch_emit_size()) {
+      address const_toc_addr;
+      // Create a non-oop constant, no relocation needed.
+      // If it is an IC, it has a virtual_call_Relocation.
+      const_toc_addr = __ long_constant((jlong)$src$$constant);
+      if (const_toc_addr == NULL) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
+      }
+
+      // Get the constant's TOC offset.
+      toc_offset = __ offset_to_method_toc(const_toc_addr);
+
+      // Keep the current instruction offset in mind.
+      ((loadConLNode*)this)->_cbuf_insts_offset = __ offset();
     }
 
-    // Get the constant's TOC offset.
-    toc_offset = __ offset_to_method_toc(const_toc_addr);
-
-    // Keep the current instruction offset in mind.
-    ((loadConLNode*)this)->_cbuf_insts_offset = __ offset();
-
-    __ ld($dst$$Register, toc_offset, $toc$$Register);
+    if(Assembler::is_simm16(toc_offset) || PowerArchitecturePPC64 <= 9) {
+      __ ld($dst$$Register, toc_offset, $toc$$Register);
+    } else {
+      __ pld($dst$$Register, toc_offset, $toc$$Register);
+    }
   %}
 
   enc_class enc_load_long_constL_hi(iRegLdst dst, iRegLdst toc, immL src) %{
@@ -2681,7 +2703,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
   loadConLNodesTuple nodes;
 
   const bool large_constant_pool = true; // TODO: PPC port C->cfg()->_consts_size > 4000;
-  if (large_constant_pool) {
+  if (large_constant_pool && PowerArchitecturePPC64 <= 9) {
     // Create new nodes.
     loadConL_hiNode *m1 = new loadConL_hiNode();
     loadConL_loNode *m2 = new loadConL_loNode();
@@ -2759,7 +2781,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
   loadConLReplicatedNodesTuple nodes;
 
   const bool large_constant_pool = true; // TODO: PPC port C->cfg()->_consts_size > 4000;
-  if (large_constant_pool) {
+  if (large_constant_pool && PowerArchitecturePPC64 <= 9) {
     // Create new nodes.
     loadConL_hiNode *m1 = new  loadConL_hiNode();
     loadConL_loNode *m2 = new  loadConL_loNode();
@@ -2817,6 +2839,8 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
 
     // inputs for new nodes
     m2->add_req(NULL, toc);
+    m3->add_req(NULL, m2);
+    m4->add_req(NULL, m3);
 
     // operands for new nodes
     m2->_opnds[0] = new  iRegLdstOper(); // dst
@@ -2865,8 +2889,9 @@ encode %{
                                 ra_->get_reg_second(this), ra_->get_reg_first(this));
 
     // Push new nodes.
+    if (loadConLNodes._small)    nodes->push(loadConLNodes._small);
     if (loadConLNodes._large_hi) nodes->push(loadConLNodes._large_hi);
-    if (loadConLNodes._last)     nodes->push(loadConLNodes._last);
+    if (loadConLNodes._large_lo) nodes->push(loadConLNodes._large_lo);
 
     // some asserts
     assert(nodes->length() >= 1, "must have created at least 1 node");
@@ -2878,31 +2903,37 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     int toc_offset = 0;
 
-    intptr_t val = $src$$constant;
-    relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
-    address const_toc_addr;
-    if (constant_reloc == relocInfo::oop_type) {
-      // Create an oop constant and a corresponding relocation.
-      AddressLiteral a = __ allocate_oop_address((jobject)val);
-      const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-      __ relocate(a.rspec());
-    } else if (constant_reloc == relocInfo::metadata_type) {
-      AddressLiteral a = __ constant_metadata_address((Metadata *)val);
-      const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-      __ relocate(a.rspec());
+    if (!ra_->C->output()->in_scratch_emit_size()) {
+      intptr_t val = $src$$constant;
+      relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
+      address const_toc_addr;
+      if (constant_reloc == relocInfo::oop_type) {
+        // Create an oop constant and a corresponding relocation.
+        AddressLiteral a = __ allocate_oop_address((jobject)val);
+        const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
+        __ relocate(a.rspec());
+      } else if (constant_reloc == relocInfo::metadata_type) {
+        AddressLiteral a = __ constant_metadata_address((Metadata *)val);
+        const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
+        __ relocate(a.rspec());
+      } else {
+        // Create a non-oop constant, no relocation needed.
+        const_toc_addr = __ long_constant((jlong)$src$$constant);
+      }
+
+      if (const_toc_addr == NULL) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
+      }
+      // Get the constant's TOC offset.
+      toc_offset = __ offset_to_method_toc(const_toc_addr);
+    }
+
+    if(Assembler::is_simm16(toc_offset) || PowerArchitecturePPC64 <= 9) {
+      __ ld($dst$$Register, toc_offset, $toc$$Register);
     } else {
-      // Create a non-oop constant, no relocation needed.
-      const_toc_addr = __ long_constant((jlong)$src$$constant);
+      __ pld($dst$$Register, toc_offset, $toc$$Register);
     }
-
-    if (const_toc_addr == NULL) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
-    // Get the constant's TOC offset.
-    toc_offset = __ offset_to_method_toc(const_toc_addr);
-
-    __ ld($dst$$Register, toc_offset, $toc$$Register);
   %}
 
   enc_class enc_load_long_constP_hi(iRegLdst dst, immP src, iRegLdst toc) %{
@@ -2944,7 +2975,7 @@ encode %{
   // expand.
   enc_class postalloc_expand_load_ptr_constant(iRegPdst dst, immP src, iRegLdst toc) %{
     const bool large_constant_pool = true; // TODO: PPC port C->cfg()->_consts_size > 4000;
-    if (large_constant_pool) {
+    if (large_constant_pool && PowerArchitecturePPC64 <= 9) {
       // Create new nodes.
       loadConP_hiNode *m1 = new loadConP_hiNode();
       loadConP_loNode *m2 = new loadConP_loNode();
@@ -2997,7 +3028,7 @@ encode %{
     bool large_constant_pool = true; // TODO: PPC port C->cfg()->_consts_size > 4000;
 
     MachNode *m2;
-    if (large_constant_pool) {
+    if (large_constant_pool && PowerArchitecturePPC64 <= 9) {
       m2 = new loadConFCompNode();
     } else {
       m2 = new loadConFNode();
@@ -3021,7 +3052,7 @@ encode %{
     bool large_constant_pool = true; // TODO: PPC port C->cfg()->_consts_size > 4000;
 
     MachNode *m2;
-    if (large_constant_pool) {
+    if (large_constant_pool && PowerArchitecturePPC64 <= 9) {
       m2 = new loadConDCompNode();
     } else {
       m2 = new loadConDNode();
@@ -3404,8 +3435,9 @@ encode %{
                                 ra_->get_reg_second(this), ra_->get_reg_first(this));
 
     // Push new nodes.
+    if (loadConLNodes._small)    nodes->push(loadConLNodes._small);
     if (loadConLNodes._large_hi) nodes->push(loadConLNodes._large_hi);
-    if (loadConLNodes._last)     nodes->push(loadConLNodes._last);
+    if (loadConLNodes._large_lo) nodes->push(loadConLNodes._large_lo);
 
     assert(nodes->length() >= 1, "must have created at least 1 node");
     assert(loadConLNodes._last->bottom_type()->isa_long(), "must be long");
@@ -3424,6 +3456,7 @@ encode %{
                                 ra_->get_reg_second(this), ra_->get_reg_first(this));
 
     // Push new nodes.
+    if (loadConLNodes._small)    { nodes->push(loadConLNodes._small); }
     if (loadConLNodes._large_hi) { nodes->push(loadConLNodes._large_hi); }
     if (loadConLNodes._large_lo) { nodes->push(loadConLNodes._large_lo); }
     if (loadConLNodes._moved)    { nodes->push(loadConLNodes._moved); }
@@ -3634,8 +3667,9 @@ encode %{
     assert(Matcher::inline_cache_reg() == OptoReg::Name(R19_num), "ic reg should be R19");
 
     // Push new nodes.
+    if (loadConLNodes_IC._small)    nodes->push(loadConLNodes_IC._small);
     if (loadConLNodes_IC._large_hi) nodes->push(loadConLNodes_IC._large_hi);
-    if (loadConLNodes_IC._last)     nodes->push(loadConLNodes_IC._last);
+    if (loadConLNodes_IC._large_lo) nodes->push(loadConLNodes_IC._large_lo);
     nodes->push(call);
   %}
 
@@ -3825,13 +3859,16 @@ encode %{
     ra_->set1(mtctr->_idx, OptoReg::Name(SR_CTR_num));
 
     // Insert the new nodes.
+    if (loadConLNodes_Entry._small)    nodes->push(loadConLNodes_Entry._small);
     if (loadConLNodes_Entry._large_hi) nodes->push(loadConLNodes_Entry._large_hi);
-    if (loadConLNodes_Entry._last)     nodes->push(loadConLNodes_Entry._last);
+    if (loadConLNodes_Entry._large_lo) nodes->push(loadConLNodes_Entry._large_lo);
 #if !defined(ABI_ELFv2)
+    if (loadConLNodes_Env._small)      nodes->push(loadConLNodes_Env._small);
     if (loadConLNodes_Env._large_hi)   nodes->push(loadConLNodes_Env._large_hi);
-    if (loadConLNodes_Env._last)       nodes->push(loadConLNodes_Env._last);
+    if (loadConLNodes_Env._large_lo)   nodes->push(loadConLNodes_Env._large_lo);
+    if (loadConLNodes_Toc._small)      nodes->push(loadConLNodes_Toc._small);
     if (loadConLNodes_Toc._large_hi)   nodes->push(loadConLNodes_Toc._large_hi);
-    if (loadConLNodes_Toc._last)       nodes->push(loadConLNodes_Toc._last);
+    if (loadConLNodes_Toc._large_lo)   nodes->push(loadConLNodes_Toc._large_lo);
 #endif
     nodes->push(mtctr);
     nodes->push(call);
@@ -4256,6 +4293,17 @@ operand immL() %{
   interface(CONST_INTER);
 %}
 
+// Operand to avoid match of loadConL.
+// This operand can be used to avoid matching of an instruct
+// with chain rule.
+operand immL_NM() %{
+  match(ConL);
+  predicate(false);
+  op_cost(40);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immLmax30() %{
   predicate((n->get_long() <= 30));
   match(ConL);
@@ -4378,6 +4426,17 @@ operand immF() %{
   interface(CONST_INTER);
 %}
 
+// Operand to avoid match of loadConF.
+// This operand can be used to avoid matching of an instruct
+// with chain rule.
+operand immF_NM() %{
+  match(ConF);
+  predicate(false);
+  op_cost(40);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Float Immediate: +0.0f.
 operand immF_0() %{
   predicate(jint_cast(n->getf()) == 0);
@@ -4391,6 +4450,17 @@ operand immF_0() %{
 // Double Immediate
 operand immD() %{
   match(ConD);
+  op_cost(40);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Operand to avoid match of loadConD.
+// This operand can be used to avoid matching of an instruct
+// with chain rule.
+operand immD_NM() %{
+  match(ConD);
+  predicate(false);
   op_cost(40);
   format %{ %}
   interface(CONST_INTER);
@@ -5964,8 +6034,15 @@ instruct loadConLhighest16_Ex(iRegLdst dst, immLhighest16 src) %{
 %}
 
 // Expand node for constant pool load: small offset.
-instruct loadConL(iRegLdst dst, immL src, iRegLdst toc) %{
-  effect(DEF dst, USE src, USE toc);
+// The match rule is needed to generate alignment_required() and compute_padding(),
+// however this node should never match. The use of predicate is not
+// possible since ADLC forbids predicates for chain rules. The higher
+// costs do not prevent matching in this case. For that reason the
+// operand immL_NM with predicate(false) is used.
+// On Power 10 and up, this instruction is also used for larger offset upto signed 32-bit.
+instruct loadConL(iRegLdst dst, immL_NM src, iRegLdst toc) %{
+  match(Set dst src);
+  effect(TEMP toc);
   ins_cost(MEMORY_REF_COST);
 
   ins_num_consts(1);
@@ -5974,9 +6051,10 @@ instruct loadConL(iRegLdst dst, immL src, iRegLdst toc) %{
   ins_field_cbuf_insts_offset(int);
 
   format %{ "LD      $dst, offset, $toc \t// load long $src from TOC" %}
-  size(4);
+  size(8);
   ins_encode( enc_load_long_constL(dst, src, toc) );
   ins_pipe(pipe_class_memory);
+  ins_alignment(2);
 %}
 
 // Expand node for constant pool load: large offset.
@@ -6246,6 +6324,7 @@ instruct loadConP0or1(iRegPdst dst, immP_0or1 src) %{
 // possible since ADLC forbids predicates for chain rules. The higher
 // costs do not prevent matching in this case. For that reason the
 // operand immP_NM with predicate(false) is used.
+// On Power 10 and up, this instruction is also used for larger offset upto signed 32-bit.
 instruct loadConP(iRegPdst dst, immP_NM src, iRegLdst toc) %{
   match(Set dst src);
   effect(TEMP toc);
@@ -6253,9 +6332,10 @@ instruct loadConP(iRegPdst dst, immP_NM src, iRegLdst toc) %{
   ins_num_consts(1);
 
   format %{ "LD      $dst, offset, $toc \t// load ptr $src from TOC" %}
-  size(4);
+  size(8);
   ins_encode( enc_load_long_constP(dst, src, toc) );
   ins_pipe(pipe_class_memory);
+  ins_alignment(2);
 %}
 
 // Expand node for constant pool load: large offset.
@@ -6309,23 +6389,36 @@ instruct loadConP_Ex(iRegPdst dst, immP src) %{
 %}
 
 // Expand node for constant pool load: small offset.
-instruct loadConF(regF dst, immF src, iRegLdst toc) %{
-  effect(DEF dst, USE src, USE toc);
+// The match rule is needed to generate alignment_required() and compute_padding(),
+// however this node should never match. The use of predicate is not
+// possible since ADLC forbids predicates for chain rules. The higher
+// costs do not prevent matching in this case. For that reason the
+// operand immF_NM with predicate(false) is used.
+// On Power 10 and up, this instruction is also used for larger offset upto signed 32-bit.
+instruct loadConF(regF dst, immF_NM src, iRegLdst toc) %{
+  match(Set dst src);
+  effect(TEMP toc);
   ins_cost(MEMORY_REF_COST);
 
   ins_num_consts(1);
 
   format %{ "LFS     $dst, offset, $toc \t// load float $src from TOC" %}
-  size(4);
+  size(8);
   ins_encode %{
     address float_address = __ float_constant($src$$constant);
     if (float_address == NULL) {
       ciEnv::current()->record_out_of_memory_failure();
       return;
     }
-    __ lfs($dst$$FloatRegister, __ offset_to_method_toc(float_address), $toc$$Register);
+    int offset = __ offset_to_method_toc(float_address);
+    if (Assembler::is_simm16(offset) || PowerArchitecturePPC64 <= 9) {
+      __ lfs($dst$$FloatRegister, offset, $toc$$Register);
+    } else {
+      __ plfs($dst$$FloatRegister, offset, $toc$$Register);
+    }
   %}
   ins_pipe(pipe_class_memory);
+  ins_alignment(2);
 %}
 
 // Expand node for constant pool load: large offset.
@@ -6371,14 +6464,21 @@ instruct loadConF_Ex(regF dst, immF src) %{
 %}
 
 // Expand node for constant pool load: small offset.
-instruct loadConD(regD dst, immD src, iRegLdst toc) %{
-  effect(DEF dst, USE src, USE toc);
+// The match rule is needed to generate alignment_required() and compute_padding(),
+// however this node should never match. The use of predicate is not
+// possible since ADLC forbids predicates for chain rules. The higher
+// costs do not prevent matching in this case. For that reason the
+// operand immD_NM with predicate(false) is used.
+// On Power 10 and up, this instruction is also used for larger offset upto signed 32-bit.
+instruct loadConD(regD dst, immD_NM src, iRegLdst toc) %{
+  match(Set dst src);
+  effect(TEMP toc);
   ins_cost(MEMORY_REF_COST);
 
   ins_num_consts(1);
 
   format %{ "LFD     $dst, offset, $toc \t// load double $src from TOC" %}
-  size(4);
+  size(8);
   ins_encode %{
     address float_address = __ double_constant($src$$constant);
     if (float_address == NULL) {
@@ -6386,9 +6486,14 @@ instruct loadConD(regD dst, immD src, iRegLdst toc) %{
       return;
     }
     int offset =  __ offset_to_method_toc(float_address);
-    __ lfd($dst$$FloatRegister, offset, $toc$$Register);
+    if (Assembler::is_simm16(offset) || PowerArchitecturePPC64 <= 9) {
+      __ lfd($dst$$FloatRegister, offset, $toc$$Register);
+    } else {
+      __ plfd($dst$$FloatRegister, offset, $toc$$Register);
+    }
   %}
   ins_pipe(pipe_class_memory);
+  ins_alignment(2);
 %}
 
 // Expand node for constant pool load: large offset.

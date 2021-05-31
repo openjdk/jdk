@@ -385,6 +385,42 @@ inline void Assembler::stdbrx( Register d, Register s1, Register s2) { emit_int3
 inline void Assembler::st_ptr(Register d, int b, Register s1) { std(d, b, s1); }
 inline void Assembler::st_ptr(Register d, ByteSize b, Register s1) { std(d, in_bytes(b), s1); }
 
+// Prefixed instructions, introduced by POWER10
+inline void Assembler::plfs( FloatRegister d, long si34, Register s1, bool r) {
+  emit_int32(PLFS_PREFIX_OPCODE | r_eo(r) | d0_eo(si34));
+  emit_int32(PLFS_SUFFIX_OPCODE | frt(d)  | ra0mem(s1) | d1_eo(si34));
+}
+
+inline void Assembler::plfs( FloatRegister d, long si34, Register s1) {
+  emit_int32(PLFS_PREFIX_OPCODE | r_eo(0) | d0_eo(si34));
+  emit_int32(PLFS_SUFFIX_OPCODE | frt(d)  | ra0mem(s1) | d1_eo(si34));
+}
+
+inline void Assembler::plfd( FloatRegister d, long si34, Register s1, bool r) {
+  emit_int32(PLFD_PREFIX_OPCODE | r_eo(r) | d0_eo(si34));
+  emit_int32(PLFD_SUFFIX_OPCODE | frt(d)  | ra0mem(s1) | d1_eo(si34));
+}
+
+inline void Assembler::plfd( FloatRegister d, long si34, Register s1) {
+  emit_int32(PLFD_PREFIX_OPCODE | r_eo(0) | d0_eo(si34));
+  emit_int32(PLFD_SUFFIX_OPCODE | frt(d)  | ra0mem(s1) | d1_eo(si34));
+}
+
+inline void Assembler::pld( Register d, long si34, Register s1, bool r) {
+  emit_int32(PLD_PREFIX_OPCODE  | r_eo(r) | d0_eo(si34));
+  emit_int32(PLD_SUFFIX_OPCODE  | rt(d)   | ra0mem(s1) | d1_eo(si34));
+}
+
+inline void Assembler::pld( Register d, long si34, Register s1) {
+  emit_int32(PLD_PREFIX_OPCODE  | r_eo(0) | d0_eo(si34));
+  emit_int32(PLD_SUFFIX_OPCODE  | rt(d)   | ra0mem(s1) | d1_eo(si34));
+}
+
+inline void Assembler::pld( Register d, long si34) {
+  emit_int32(PLD_PREFIX_OPCODE  | r_eo(1) | d0_eo(si34));
+  emit_int32(PLD_SUFFIX_OPCODE  | rt(d)   | d1_eo(si34));
+}
+
 // PPC 1, section 3.3.13 Move To/From System Register Instructions
 inline void Assembler::mtlr( Register s1)         { emit_int32(MTLR_OPCODE  | rs(s1)); }
 inline void Assembler::mflr( Register d )         { emit_int32(MFLR_OPCODE  | rt(d)); }

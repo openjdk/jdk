@@ -283,6 +283,17 @@ bool MacroAssembler::is_load_const_from_method_toc_at(address a) {
   const address inst1_addr = a;
   const int inst1 = *(int *)inst1_addr;
 
+   if (PowerArchitecturePPC64 >= 10) {
+     const address inst2_addr = inst1_addr + BytesPerInstWord;
+     const int inst2 = *(int *)inst2_addr;
+
+     // The relocation points to the pld.  Currently, CallDynamicJavaDirectSched_ExNode and
+     // CallLeaf(NoFP)Direct_ExNode are the only nodes that require relocation and use pld
+     if (is_pld_prefix(inst1) && is_pld_suffix(inst2)) {
+       return true;
+     }
+   }
+
    // The relocation points to the ld or the addis.
    return (is_ld(inst1)) ||
           (is_addis(inst1) && inv_ra_field(inst1) != 0);
@@ -296,6 +307,8 @@ int MacroAssembler::get_offset_of_load_const_from_method_toc_at(address a) {
 
   if (is_ld(inst1)) {
     return inv_d1_field(inst1);
+  } else if (PowerArchitecturePPC64 >= 10 && is_pld_prefix(inst1)) {
+    return (get_imm18(inst1_addr, 0) << 16) + (get_imm(inst1_addr, 1) & 0xffff);
   } else if (is_addis(inst1)) {
     const int dst = inv_rt_field(inst1);
 
@@ -3239,7 +3252,7 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
     sldi(shifted_src, src, CompressedKlassPointers::shift());
   }
   if (CompressedKlassPointers::base() != 0) {
-    add_const_optimized(dst, shifted_src, CompressedKlassPointers::base(), R0);
+    add_const_optimized(dst, shifted_src, CompressedKlassPointers::base(), R0, false, true);
   }
 }
 
