@@ -55,7 +55,6 @@ void G1Arguments::initialize_alignments() {
   // Needs remembered set initialization as the ergonomics are based
   // on it.
   if (FLAG_IS_DEFAULT(G1EagerReclaimRemSetThreshold)) {
-      guarantee(G1RSetSparseRegionEntries > 0, "");
     FLAG_SET_ERGO(G1EagerReclaimRemSetThreshold, G1RSetSparseRegionEntries);
   }
 
