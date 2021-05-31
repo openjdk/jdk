@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.util.spi;
 
 import jdk.internal.access.JavaUtilResourceBundleAccess;
 import jdk.internal.access.SharedSecrets;
+import sun.util.resources.Bundles;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -187,6 +188,17 @@ public abstract class AbstractResourceBundleProvider implements ResourceBundlePr
     public ResourceBundle getBundle(String baseName, Locale locale) {
         Module module = this.getClass().getModule();
         String bundleName = toBundleName(baseName, locale);
+        var bundle = getBundle0(module, bundleName);
+        if (bundle == null) {
+            var otherBundleName = Bundles.toOtherBundleName(baseName, bundleName, locale);
+            if (!bundleName.equals(otherBundleName)) {
+                bundle = getBundle0(module, Bundles.toOtherBundleName(baseName, bundleName, locale));
+            }
+        }
+        return bundle;
+    }
+
+    private ResourceBundle getBundle0(Module module, String bundleName) {
         ResourceBundle bundle = null;
 
         for (String format : formats) {

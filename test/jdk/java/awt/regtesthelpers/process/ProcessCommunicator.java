@@ -152,6 +152,7 @@ public class ProcessCommunicator {
     {
         StringBuilder commandBuilder = new StringBuilder();
         commandBuilder.append(javaPath).append(" ");
+        commandBuilder.append("-Djava.security.manager=allow ");
         commandBuilder.append("-cp ").append(System.getProperty("test.classes", ".")).append(File.pathSeparatorChar);
 
         if (classPathArguments.trim().length() > 0) {

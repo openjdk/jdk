@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8072945 8247957
+ * @bug 8072945 8247957 8266856
  * @summary test tags and attributes specific to the output HTML version
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
@@ -151,7 +151,7 @@ public class HtmlVersionTagsAttrsTest {
      * <div class="desc">Desc</div>
      * </template>
      * <p>Test current time is <time>10:00</time> at night</p>
-     * <p>Test <wbr>WBR</wbr> text</p>
+     * <p>Test<wbr>text</p>
      */
     public void SupportedTags_html5() { }
 

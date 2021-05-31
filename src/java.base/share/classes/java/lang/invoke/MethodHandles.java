@@ -28,7 +28,6 @@ package java.lang.invoke;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
@@ -59,7 +58,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
@@ -263,13 +261,6 @@ public class MethodHandles {
             // M2 != M1, set previous lookup class to M1 and drop MODULE access
             newPreviousClass = callerClass;
             newModes &= ~Lookup.MODULE;
-
-            if (!callerModule.isNamed() && targetModule.isNamed()) {
-                IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
-                if (logger != null) {
-                    logger.logIfOpenedForIllegalAccess(caller, targetClass);
-                }
-            }
         }
         return Lookup.newLookup(targetClass, newPreviousClass, newModes);
     }
@@ -1891,7 +1882,7 @@ public class MethodHandles {
              *
              * <p> By default, a hidden class or interface may be unloaded
              * even if the class loader that is marked as its defining loader is
-             * <a href="../ref/package.html#reachability">reachable</a>.
+             * <a href="../ref/package-summary.html#reachability">reachable</a>.
 
              *
              * @jls 12.7 Unloading of Classes and Interfaces
@@ -2031,7 +2022,7 @@ public class MethodHandles {
          *
          * By default, however, a hidden class or interface may be unloaded even if
          * the class loader that is marked as its defining loader is
-         * <a href="../ref/package.html#reachability">reachable</a>.
+         * <a href="../ref/package-summary.html#reachability">reachable</a>.
          * This behavior is useful when a hidden class or interface serves multiple
          * classes defined by arbitrary class loaders.  In other cases, a hidden
          * class or interface may be linked to a single class (or a small number of classes)
@@ -3644,9 +3635,8 @@ return mh1;
 
         MemberName resolveOrFail(byte refKind, Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
-            Objects.requireNonNull(name);
             Objects.requireNonNull(type);
-            checkMethodName(refKind, name);  // NPE check on name
+            checkMethodName(refKind, name);  // implicit null-check of name
             return IMPL_NAMES.resolveOrFail(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(), allowedModes,
                                             NoSuchMethodException.class);
         }
@@ -3669,6 +3659,19 @@ return mh1;
             return IMPL_NAMES.resolveOrNull(refKind, member, lookupClassOrNull(), allowedModes);
         }
 
+        MemberName resolveOrNull(byte refKind, Class<?> refc, String name, MethodType type) {
+            // do this before attempting to resolve
+            if (!isClassAccessible(refc)) {
+                return null;
+            }
+            Objects.requireNonNull(type);
+            // implicit null-check of name
+            if (name.startsWith("<") && refKind != REF_newInvokeSpecial) {
+                return null;
+            }
+            return IMPL_NAMES.resolveOrNull(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(), allowedModes);
+        }
+
         void checkSymbolicClass(Class<?> refc) throws IllegalAccessException {
             if (!isClassAccessible(refc)) {
                 throw new MemberName(refc).makeAccessException("symbolic reference class is not accessible", this);
@@ -3686,7 +3689,6 @@ return mh1;
             if (name.startsWith("<") && refKind != REF_newInvokeSpecial)
                 throw new NoSuchMethodException("illegal method name: "+name);
         }
-
 
         /**
          * Find my trustable caller class if m is a caller sensitive method.
@@ -6638,8 +6640,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                 iterationVariableTypes.add(in == null ? st.type().returnType() : in.type().returnType());
             }
         }
-        final List<Class<?>> commonPrefix = iterationVariableTypes.stream().filter(t -> t != void.class).
-                collect(Collectors.toList());
+        final List<Class<?>> commonPrefix = iterationVariableTypes.stream().filter(t -> t != void.class).toList();
 
         // Step 1B: determine loop parameters (A...).
         final List<Class<?>> commonSuffix = buildCommonSuffix(init, step, pred, fini, commonPrefix.size());
@@ -6768,11 +6769,11 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             int pc = h.type().parameterCount();
             int tpsize = targetParams.size();
             return pc < tpsize ? dropArguments0(h, pc, targetParams.subList(pc, tpsize)) : h;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     private static List<MethodHandle> fixArities(List<MethodHandle> hs) {
-        return hs.stream().map(MethodHandle::asFixedArity).collect(Collectors.toList());
+        return hs.stream().map(MethodHandle::asFixedArity).toList();
     }
 
     /**
@@ -7748,6 +7749,92 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             throw misMatchedTypes("cleanup parameters after (Throwable,result) and target parameter list prefix",
                     cleanup.type(), target.type());
         }
+    }
+
+    /**
+     * Creates a table switch method handle, which can be used to switch over a set of target
+     * method handles, based on a given target index, called selector.
+     * <p>
+     * For a selector value of {@code n}, where {@code n} falls in the range {@code [0, N)},
+     * and where {@code N} is the number of target method handles, the table switch method
+     * handle will invoke the n-th target method handle from the list of target method handles.
+     * <p>
+     * For a selector value that does not fall in the range {@code [0, N)}, the table switch
+     * method handle will invoke the given fallback method handle.
+     * <p>
+     * All method handles passed to this method must have the same type, with the additional
+     * requirement that the leading parameter be of type {@code int}. The leading parameter
+     * represents the selector.
+     * <p>
+     * Any trailing parameters present in the type will appear on the returned table switch
+     * method handle as well. Any arguments assigned to these parameters will be forwarded,
+     * together with the selector value, to the selected method handle when invoking it.
+     *
+     * @apiNote Example:
+     * The cases each drop the {@code selector} value they are given, and take an additional
+     * {@code String} argument, which is concatenated (using {@link String#concat(String)})
+     * to a specific constant label string for each case:
+     * <blockquote><pre>{@code
+     * MethodHandles.Lookup lookup = MethodHandles.lookup();
+     * MethodHandle caseMh = lookup.findVirtual(String.class, "concat",
+     *         MethodType.methodType(String.class, String.class));
+     * caseMh = MethodHandles.dropArguments(caseMh, 0, int.class);
+     *
+     * MethodHandle caseDefault = MethodHandles.insertArguments(caseMh, 1, "default: ");
+     * MethodHandle case0 = MethodHandles.insertArguments(caseMh, 1, "case 0: ");
+     * MethodHandle case1 = MethodHandles.insertArguments(caseMh, 1, "case 1: ");
+     *
+     * MethodHandle mhSwitch = MethodHandles.tableSwitch(
+     *     caseDefault,
+     *     case0,
+     *     case1
+     * );
+     *
+     * assertEquals("default: data", (String) mhSwitch.invokeExact(-1, "data"));
+     * assertEquals("case 0: data", (String) mhSwitch.invokeExact(0, "data"));
+     * assertEquals("case 1: data", (String) mhSwitch.invokeExact(1, "data"));
+     * assertEquals("default: data", (String) mhSwitch.invokeExact(2, "data"));
+     * }</pre></blockquote>
+     *
+     * @param fallback the fallback method handle that is called when the selector is not
+     *                 within the range {@code [0, N)}.
+     * @param targets array of target method handles.
+     * @return the table switch method handle.
+     * @throws NullPointerException if {@code fallback}, the {@code targets} array, or any
+     *                              any of the elements of the {@code targets} array are
+     *                              {@code null}.
+     * @throws IllegalArgumentException if the {@code targets} array is empty, if the leading
+     *                                  parameter of the fallback handle or any of the target
+     *                                  handles is not {@code int}, or if the types of
+     *                                  the fallback handle and all of target handles are
+     *                                  not the same.
+     */
+    public static MethodHandle tableSwitch(MethodHandle fallback, MethodHandle... targets) {
+        Objects.requireNonNull(fallback);
+        Objects.requireNonNull(targets);
+        targets = targets.clone();
+        MethodType type = tableSwitchChecks(fallback, targets);
+        return MethodHandleImpl.makeTableSwitch(type, fallback, targets);
+    }
+
+    private static MethodType tableSwitchChecks(MethodHandle defaultCase, MethodHandle[] caseActions) {
+        if (caseActions.length == 0)
+            throw new IllegalArgumentException("Not enough cases: " + Arrays.toString(caseActions));
+
+        MethodType expectedType = defaultCase.type();
+
+        if (!(expectedType.parameterCount() >= 1) || expectedType.parameterType(0) != int.class)
+            throw new IllegalArgumentException(
+                "Case actions must have int as leading parameter: " + Arrays.toString(caseActions));
+
+        for (MethodHandle mh : caseActions) {
+            Objects.requireNonNull(mh);
+            if (mh.type() != expectedType)
+                throw new IllegalArgumentException(
+                    "Case actions must have the same type: " + Arrays.toString(caseActions));
+        }
+
+        return expectedType;
     }
 
 }

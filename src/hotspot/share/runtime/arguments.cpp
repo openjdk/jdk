@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -32,13 +33,13 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -47,7 +48,7 @@
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vm_version.hpp"
@@ -521,7 +522,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "SuspendRetryCount",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "SuspendRetryDelay",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "AlwaysLockClassLoader",        JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "BiasedLockingStartupDelay",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
@@ -538,6 +541,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
+  { "AssertOnSuspendWaitFailure",   JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "TraceSuspendWaitFailures",     JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::undefined() },
 #endif
@@ -1325,7 +1330,6 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
     log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
   }
   if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
-      strcmp(key, "jdk.module.illegalAccess") == 0 ||
       strcmp(key, "jdk.module.validation") == 0 ||
       strcmp(key, "java.system.class.loader") == 0) {
     MetaspaceShared::disable_full_module_graph();
@@ -2056,8 +2060,7 @@ bool Arguments::parse_uintx(const char* value,
 }
 
 bool Arguments::create_module_property(const char* prop_name, const char* prop_value, PropertyInternal internal) {
-  assert(is_internal_module_property(prop_name) ||
-         strcmp(prop_name, "jdk.module.illegalAccess") == 0, "unknown module property: '%s'", prop_name);
+  assert(is_internal_module_property(prop_name), "unknown module property: '%s'", prop_name);
   size_t prop_len = strlen(prop_name) + strlen(prop_value) + 2;
   char* property = AllocateHeap(prop_len, mtArguments);
   int ret = jio_snprintf(property, prop_len, "%s=%s", prop_name, prop_value);
@@ -2422,10 +2425,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return res;
       }
     } else if (match_option(option, "--illegal-access=", &tail)) {
-      warning("Option --illegal-access is deprecated and will be removed in a future release.");
-      if (!create_module_property("jdk.module.illegalAccess", tail, ExternalProperty)) {
-        return JNI_ENOMEM;
-      }
+      char version[256];
+      JDK_Version::jdk(17).to_string(version, sizeof(version));
+      warning("Ignoring option %s; support was removed in %s", option->optionString, version);
     // -agentlib and -agentpath
     } else if (match_option(option, "-agentlib:", &tail) ||
           (is_absolute_path = match_option(option, "-agentpath:", &tail))) {
@@ -2742,6 +2744,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         vm_exit(0);
       } else if (strcmp(tail, ":disable") == 0) {
         LogConfiguration::disable_logging();
+        ret = true;
+      } else if (strcmp(tail, ":async") == 0) {
+        LogConfiguration::set_async_mode(true);
         ret = true;
       } else if (*tail == '\0') {
         ret = LogConfiguration::parse_command_line_arguments();
@@ -3114,30 +3119,25 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
       log_info(cds)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
     }
   }
-  if (ArchiveClassesAtExit == NULL) {
-    FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, false);
+
+  // RecordDynamicDumpInfo is not compatible with ArchiveClassesAtExit
+  if (ArchiveClassesAtExit != NULL && RecordDynamicDumpInfo) {
+    log_info(cds)("RecordDynamicDumpInfo is for jcmd only, could not set with -XX:ArchiveClassesAtExit.");
+    return JNI_ERR;
   }
+
+  if (ArchiveClassesAtExit == NULL && !RecordDynamicDumpInfo) {
+    FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, false);
+  } else {
+    FLAG_SET_DEFAULT(DynamicDumpSharedSpaces, true);
+  }
+
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
   if (UseSharedSpaces && !DumpSharedSpaces && check_unsupported_cds_runtime_properties()) {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
-#endif
-
-#if !INCLUDE_AOT
-  UNSUPPORTED_OPTION(UseAOT);
-  UNSUPPORTED_OPTION(PrintAOT);
-  UNSUPPORTED_OPTION(UseAOTStrictLoading);
-  UNSUPPORTED_OPTION_NULL(AOTLibrary);
-
-  UNSUPPORTED_OPTION_INIT(Tier3AOTInvocationThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier3AOTMinInvocationThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier3AOTCompileThreshold, 0);
-  UNSUPPORTED_OPTION_INIT(Tier3AOTBackEdgeThreshold, 0);
-#ifndef PRODUCT
-  UNSUPPORTED_OPTION(PrintAOTStatistics);
-#endif
 #endif
 
 #ifndef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -3497,6 +3497,11 @@ bool Arguments::init_shared_archive_paths() {
     }
     check_unsupported_dumping_properties();
     SharedDynamicArchivePath = os::strdup_check_oom(ArchiveClassesAtExit, mtArguments);
+  } else {
+    if (SharedDynamicArchivePath != nullptr) {
+      os::free(SharedDynamicArchivePath);
+      SharedDynamicArchivePath = nullptr;
+    }
   }
   if (SharedArchiveFile == NULL) {
     SharedArchivePath = get_default_shared_archive_path();
@@ -3993,6 +3998,10 @@ jint Arguments::apply_ergo() {
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();
+
+  if (!StringDedup::ergo_initialize()) {
+    return JNI_EINVAL;
+  }
 
   // Set compiler flags after GC is selected and GC specific
   // flags (LoopStripMiningIter) are set.

@@ -674,7 +674,8 @@ public class JmodTask {
         Set<String> findPackages(Path dir) {
             try {
                 return Files.find(dir, Integer.MAX_VALUE,
-                                  ((path, attrs) -> attrs.isRegularFile()))
+                                  ((path, attrs) -> attrs.isRegularFile()),
+                                  FileVisitOption.FOLLOW_LINKS)
                         .map(dir::relativize)
                         .filter(path -> isResource(path.toString()))
                         .map(path -> toPackageName(path))

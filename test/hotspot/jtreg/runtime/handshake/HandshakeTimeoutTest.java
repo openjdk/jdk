@@ -30,6 +30,7 @@ import sun.hotspot.WhiteBox;
 
 /*
  * @test HandshakeTimeoutTest
+ * @bug 8262454 8267651
  * @summary Test handshake timeout.
  * @requires vm.debug
  * @library /testlibrary /test/lib
@@ -61,6 +62,7 @@ public class HandshakeTimeoutTest {
                     "-XX:CICompilerCount=2",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:HandshakeTimeout=50",
+                    "-XX:-CreateCoredumpOnCrash",
                     useJVMCICompilerStr,
                     "HandshakeTimeoutTest$Test");
 

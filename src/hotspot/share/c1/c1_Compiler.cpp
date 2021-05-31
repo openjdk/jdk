@@ -150,6 +150,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_getClass:
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_isPrimitive:
+  case vmIntrinsics::_getModifiers:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_dsqrt:
@@ -222,12 +223,10 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
   case vmIntrinsics::_getEventWriter:
-#if defined(_LP64) || !defined(TRACE_ID_SHIFT)
-  case vmIntrinsics::_getClassId:
 #endif
-#endif
-    break;
   case vmIntrinsics::_getObjectSize:
+    break;
+  case vmIntrinsics::_blackhole:
     break;
   default:
     return false; // Intrinsics not on the previous list are not available.

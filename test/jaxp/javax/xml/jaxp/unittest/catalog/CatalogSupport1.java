@@ -50,7 +50,7 @@ import org.xml.sax.InputSource;
  * @test
  * @bug 8158084 8162438 8162442 8166220
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true catalog.CatalogSupport1
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.CatalogSupport1
  * @run testng/othervm catalog.CatalogSupport1
  * @summary extends CatalogSupport, verifies that the catalog file can be set
  * using the System property.

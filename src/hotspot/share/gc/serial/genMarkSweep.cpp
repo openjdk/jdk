@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/serial/genMarkSweep.hpp"
+#include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
@@ -198,9 +200,8 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
     ref_processor()->setup_policy(clear_all_softrefs);
     ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->max_num_queues());
-    const ReferenceProcessorStats& stats =
-      ref_processor()->process_discovered_references(
-        &is_alive, &keep_alive, &follow_stack_closure, NULL, &pt);
+    SerialGCRefProcProxyTask task(is_alive, keep_alive, follow_stack_closure);
+    const ReferenceProcessorStats& stats = ref_processor()->process_discovered_references(task, pt);
     pt.print_all_references();
     gc_tracer()->report_gc_reference_stats(stats);
   }

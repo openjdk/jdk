@@ -1871,9 +1871,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
 
   // invoke-special-super
   if (bc_raw == Bytecodes::_invokespecial && !target->is_object_initializer()) {
-    ciInstanceKlass* sender_klass =
-          calling_klass->is_unsafe_anonymous() ? calling_klass->unsafe_anonymous_host() :
-                                                 calling_klass;
+    ciInstanceKlass* sender_klass = calling_klass;
     if (sender_klass->is_interface()) {
       int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
       Value receiver = state()->stack_at(index);
@@ -2026,23 +2024,22 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       // by dynamic class loading.  Be sure to test the "static" receiver
       // dest_method here, as opposed to the actual receiver, which may
       // falsely lead us to believe that the receiver is final or private.
-      dependency_recorder()->assert_unique_concrete_method(actual_recv, cha_monomorphic_target);
+      dependency_recorder()->assert_unique_concrete_method(actual_recv, cha_monomorphic_target, callee_holder, target);
     }
     code = Bytecodes::_invokespecial;
   }
 
   // check if we could do inlining
-  if (!PatchALot && Inline && target->is_loaded() &&
-      (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))
-      && !patch_for_appendix) {
+  if (!PatchALot && Inline && target->is_loaded() && callee_holder->is_linked() && !patch_for_appendix) {
     // callee is known => check if we have static binding
-    if (code == Bytecodes::_invokestatic  ||
+    if ((code == Bytecodes::_invokestatic && callee_holder->is_initialized()) || // invokestatic involves an initialization barrier on resolved klass
         code == Bytecodes::_invokespecial ||
         (code == Bytecodes::_invokevirtual && target->is_final_method()) ||
         code == Bytecodes::_invokedynamic) {
-      ciMethod* inline_target = (cha_monomorphic_target != NULL) ? cha_monomorphic_target : target;
       // static binding => check if callee is ok
-      bool success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), false, code, better_receiver);
+      ciMethod* inline_target = (cha_monomorphic_target != NULL) ? cha_monomorphic_target : target;
+      bool holder_known = (cha_monomorphic_target != NULL) || (exact_target != NULL);
+      bool success = try_inline(inline_target, holder_known, false /* ignore_return */, code, better_receiver);
 
       CHECK_BAILOUT();
       clear_inline_bailout();
@@ -3419,7 +3416,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
 
   // handle intrinsics
   if (callee->intrinsic_id() != vmIntrinsics::_none &&
-      (CheckIntrinsics ? callee->intrinsic_candidate() : true)) {
+      callee->check_intrinsic_candidate()) {
     if (try_inline_intrinsics(callee, ignore_return)) {
       print_inlining(callee, "intrinsic");
       if (callee->has_reserved_stack_access()) {
@@ -3760,7 +3757,9 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
       !InlineMethodsWithExceptionHandlers) INLINE_BAILOUT("callee has exception handlers");
   if (callee->is_synchronized() &&
       !InlineSynchronizedMethods         ) INLINE_BAILOUT("callee is synchronized");
-  if (!callee->holder()->is_initialized()) INLINE_BAILOUT("callee's klass not initialized yet");
+  if (!callee->holder()->is_linked())      INLINE_BAILOUT("callee's klass not linked yet");
+  if (bc == Bytecodes::_invokestatic &&
+      !callee->holder()->is_initialized()) INLINE_BAILOUT("callee's klass not initialized yet");
   if (!callee->has_balanced_monitors())    INLINE_BAILOUT("callee's monitors do not match");
 
   // Proper inlining of methods with jsrs requires a little more work.
@@ -3841,6 +3840,8 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
     // printing
     print_inlining(callee, "inline", /*success*/ true);
   }
+
+  assert(bc != Bytecodes::_invokestatic || callee->holder()->is_initialized(), "required");
 
   // NOTE: Bailouts from this point on, which occur at the
   // GraphBuilder level, do not cause bailout just of the inlining but
