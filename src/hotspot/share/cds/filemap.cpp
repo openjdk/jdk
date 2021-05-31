@@ -2047,6 +2047,14 @@ void FileMapInfo::fixup_mapped_heap_regions() {
     assert(open_archive_heap_ranges != NULL, "NULL open_archive_heap_ranges array with non-zero count");
     G1CollectedHeap::heap()->fill_archive_regions(open_archive_heap_ranges,
                                                   num_open_archive_heap_ranges);
+
+    // Populate the open archive regions' G1BlockOffsetTableParts. That ensures
+    // fast G1BlockOffsetTablePart::block_start operations for a given address
+    // within the open archive regions during G1RemSet::refine_card_concurrently.
+    // This is only needed for open archive regions, but not the closed archive
+    // regions, because objects in closed archive regions are 'immutable'.
+    G1CollectedHeap::heap()->populate_archive_regions_bot_part(open_archive_heap_ranges,
+                                                               num_open_archive_heap_ranges);
   }
 }
 
