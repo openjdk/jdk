@@ -305,6 +305,7 @@
     void ** _cells;
     int _poolCellWidth;
     int _poolCellHeight;
+    uint64_t _maxPoolMemory;
 }
 
 @synthesize device;
@@ -320,6 +321,12 @@
     _cells = (void **)malloc(cellsCount * sizeof(void*));
     memset(_cells, 0, cellsCount * sizeof(void*));
     self.device = dev;
+    _maxPoolMemory = self.device.recommendedMaxWorkingSetSize/2;
+
+    if (_maxPoolMemory < MAX_POOL_MEMORY) {
+        _maxPoolMemory = MAX_POOL_MEMORY;
+    }
+
     return self;
 }
 
@@ -345,9 +352,9 @@
         // 1. clean pool if necessary
         const int requestedPixels = width*height;
         const int requestedBytes = requestedPixels*4;
-        if (_memoryTotalAllocated + requestedBytes > MAX_POOL_MEMORY) {
+        if (_memoryTotalAllocated + requestedBytes > _maxPoolMemory) {
             [self cleanIfNecessary:0]; // release all free textures
-        } else if (_memoryTotalAllocated + requestedBytes > MAX_POOL_MEMORY/2) {
+        } else if (_memoryTotalAllocated + requestedBytes > _maxPoolMemory/2) {
             [self cleanIfNecessary:MAX_POOL_ITEM_LIFETIME_SEC]; // release only old free textures
         }
 
