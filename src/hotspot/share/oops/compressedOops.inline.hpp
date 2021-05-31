@@ -25,8 +25,9 @@
 #ifndef SHARE_OOPS_COMPRESSEDOOPS_INLINE_HPP
 #define SHARE_OOPS_COMPRESSEDOOPS_INLINE_HPP
 
-#include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
+
+#include "memory/universe.hpp"
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"

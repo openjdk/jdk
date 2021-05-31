@@ -77,6 +77,7 @@ public class X11TextRenderer extends GlyphListPipe {
             Region clip = sg2d.getCompClip();
             long xgc = x11sd.getRenderGC(clip, SunGraphics2D.COMP_ISCOPY,
                                          null, sg2d.pixel);
+            gl.startGlyphIteration();
             doDrawGlyphList(x11sd.getNativeOps(), xgc, clip, gl);
         } finally {
             SunToolkit.awtUnlock();

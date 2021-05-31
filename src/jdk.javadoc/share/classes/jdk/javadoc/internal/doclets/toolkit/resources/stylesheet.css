@@ -281,7 +281,7 @@ dl.notes > dt {
     color:#4E4E4E;
 }
 dl.notes > dd {
-    margin:5px 0 10px 0;
+    margin:5px 10px 10px 0;
     font-size:14px;
     font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
 }

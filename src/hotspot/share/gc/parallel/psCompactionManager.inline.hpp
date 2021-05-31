@@ -25,10 +25,11 @@
 #ifndef SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP
 #define SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP
 
+#include "gc/parallel/psCompactionManager.hpp"
+
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/parallel/parMarkBitMap.hpp"
-#include "gc/parallel/psCompactionManager.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/access.inline.hpp"
