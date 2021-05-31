@@ -79,38 +79,37 @@ import sun.security.util.SecurityConstants;
  * permitted.
  * <p>
  * Environments using a security manager will typically set the security
- * manager at startup. In the JDK implementation, this is done by setting
- * the system property {@systemProperty java.security.manager} on the command
- * line to the class name of the security manager. It can also be set to the
- * empty String ("") or the special token "{@code default}" to use the
+ * manager at startup. In the JDK implementation, this is done by setting the
+ * system property {@systemProperty java.security.manager} on the command line
+ * to the class name of the security manager. It can also be set to the empty
+ * String ("") or the special token "{@code default}" to use the
  * default {@code java.lang.SecurityManager}. If a class name is specified,
  * it must be {@code java.lang.SecurityManager} or a public subclass and have
  * a public no-arg constructor. The class is loaded by the
  * {@linkplain ClassLoader#getSystemClassLoader() built-in system class loader}
- * if it is not {@code java.lang.SecurityManager}.
+ * if it is not {@code java.lang.SecurityManager}. If the
+ * {@code java.security.manager} system property is not set, the default value
+ * is {@code null}, which means a security manager will not be set at startup.
  * <p>
  * The Java run-time may also allow, but is not required to allow, the security
  * manager to be set dynamically by invoking the
  * {@link System#setSecurityManager(SecurityManager) setSecurityManager} method.
- * In the JDK implementation, the default value of the
- * {@code java.security.manager} system property, if not set, is
- * the special token "{@code disallow}". If the Java virtual machine is
- * started with the {@code java.security.manager} system property
- * not set or set to "{@code disallow}" then a security manager will not be
- * set at startup and cannot be set dynamically (the
+ * In the JDK implementation, if the Java virtual machine is started with
+ * the {@code java.security.manager} system property set to the special token
+ * "{@code disallow}" then a security manager will not be set at startup and
+ * cannot be set dynamically (the
  * {@link System#setSecurityManager(SecurityManager) setSecurityManager}
  * method will throw an {@code UnsupportedOperationException}). If the
- * {@code java.security.manager} system property is set to the
+ * {@code java.security.manager} system property is not set or is set to the
  * special token "{@code allow}", then a security manager will not be set at
  * startup but can be set dynamically. Finally, if the
- * {@code java.security.manager} system property is set to the
- * class name of the security manager, or to the empty String ("") or the
- * special token "{@code default}", then a security manager is set at startup
- * (as described previously) and can also be subsequently replaced (or
- * disabled) dynamically (subject to the policy of the currently installed
- * security manager). The following table illustrates the behavior of the JDK
- * implementation for the different settings of the
- * {@code java.security.manager} system property:
+ * {@code java.security.manager} system property is set to the class name of
+ * the security manager, or to the empty String ("") or the special token
+ * "{@code default}", then a security manager is set at startup (as described
+ * previously) and can also be subsequently replaced (or disabled) dynamically
+ * (subject to the policy of the currently installed security manager). The
+ * following table illustrates the behavior of the JDK implementation for the
+ * different settings of the {@code java.security.manager} system property:
  * <table class="striped">
  * <caption style="display:none">property value,
  *  the SecurityManager set at startup,
@@ -168,6 +167,8 @@ import sun.security.util.SecurityConstants;
  *
  * </tbody>
  * </table>
+ * <p> A future release of the JDK may change the default value of the
+ * {@code java.security.manager} system property to "{@code disallow}".
  * <p>
  * The current security manager is returned by the
  * {@link System#getSecurityManager() getSecurityManager} method.

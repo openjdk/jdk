@@ -234,7 +234,14 @@ public class LoggerFinderLoaderTest {
                         }
                     }
                 } else if ("QUIET".equals(errorPolicy.toUpperCase(Locale.ROOT))) {
-                    if (!ErrorStream.errorStream.peek().isEmpty()) {
+                    String warning = ErrorStream.errorStream.peek();
+                    String smDeprecationWarning
+                            = "WARNING: java.lang.System::setSecurityManager is deprecated and will be removed in a future release."
+                            + System.getProperty("line.separator");
+                    if (warning.startsWith(smDeprecationWarning)) {
+                        warning = warning.substring(smDeprecationWarning.length());
+                    }
+                    if (!warning.isEmpty()) {
                         throw new RuntimeException("Unexpected error message found: "
                                 + ErrorStream.errorStream.peek());
                     }

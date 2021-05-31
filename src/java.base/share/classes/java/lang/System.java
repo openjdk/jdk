@@ -340,16 +340,10 @@ public final class System {
      * security manager has been established, then no action is taken and
      * the method simply returns.
      *
-     * @implNote In the JDK implementation, the default value of the
-     * {@code java.security.manager} system property, if not set, is
-     * the special token "{@code disallow}". If the Java virtual machine is
-     * started with the {@code java.security.manager} system property
-     * set to the special token "{@code allow}", then a security manager can
-     * be set dynamically. If the Java virtual machine is started with the
-     * system property {@code java.security.manager} not set or set
-     * to "{@code disallow}" then a security manager cannot be set
-     * dynamically (the {@code setSecurityManager} method will throw an
-     * {@code UnsupportedOperationException}).
+     * @implNote In the JDK implementation, if the Java virtual machine is
+     * started with the system property {@code java.security.manager} set to
+     * the special token "{@code disallow}" then the {@code setSecurityManager}
+     * method cannot be used to set a security manager.
      *
      * @param  sm the security manager or {@code null}
      * @throws SecurityException
@@ -371,23 +365,9 @@ public final class System {
     @Deprecated(since="17", forRemoval=true)
     public static void setSecurityManager(@SuppressWarnings("removal") SecurityManager sm) {
         if (allowSecurityManager()) {
-            if (security == null) {
-                // ensure image reader is initialized
-                Object.class.getResource("java/lang/ANY");
-                // ensure the default file system is initialized
-                DefaultFileSystemProvider.theFileSystem();
-            }
-            if (sm != null) {
-                try {
-                    // pre-populates the SecurityManager.packageAccess cache
-                    // to avoid recursive permission checking issues with custom
-                    // SecurityManager implementations
-                    sm.checkPackageAccess("java.lang");
-                } catch (Exception e) {
-                    // no-op
-                }
-            }
-            setSecurityManager0(sm);
+            System.err.println("WARNING: java.lang.System::setSecurityManager" +
+                    " is deprecated and will be removed in a future release.");
+            setSecurityManagerDirect(sm);
         } else {
             // security manager not allowed
             if (sm != null) {
@@ -395,6 +375,27 @@ public final class System {
                     "Runtime configured to disallow security manager");
             }
         }
+    }
+
+    private static void setSecurityManagerDirect(
+            @SuppressWarnings("removal") SecurityManager sm) {
+        if (security == null) {
+            // ensure image reader is initialized
+            Object.class.getResource("java/lang/ANY");
+            // ensure the default file system is initialized
+            DefaultFileSystemProvider.theFileSystem();
+        }
+        if (sm != null) {
+            try {
+                // pre-populates the SecurityManager.packageAccess cache
+                // to avoid recursive permission checking issues with custom
+                // SecurityManager implementations
+                sm.checkPackageAccess("java.lang");
+            } catch (Exception e) {
+                // no-op
+            }
+        }
+        setSecurityManager0(sm);
     }
 
     @SuppressWarnings("removal")
@@ -2149,6 +2150,7 @@ public final class System {
         Unsafe.getUnsafe().ensureClassInitialized(StringConcatFactory.class);
 
         String smProp = System.getProperty("java.security.manager");
+        boolean needWarning = false;
         if (smProp != null) {
             switch (smProp) {
                 case "disallow":
@@ -2159,8 +2161,9 @@ public final class System {
                     break;
                 case "":
                 case "default":
-                    setSecurityManager(new SecurityManager());
+                    setSecurityManagerDirect(new SecurityManager());
                     allowSecurityManager = MAYBE;
+                    needWarning = true;
                     break;
                 default:
                     try {
@@ -2178,17 +2181,18 @@ public final class System {
                         // custom security manager may be in non-exported package
                         ctor.setAccessible(true);
                         SecurityManager sm = (SecurityManager) ctor.newInstance();
-                        setSecurityManager(sm);
+                        setSecurityManagerDirect(sm);
+                        needWarning = true;
                     } catch (Exception e) {
                         throw new InternalError("Could not create SecurityManager", e);
                     }
                     allowSecurityManager = MAYBE;
             }
         } else {
-            allowSecurityManager = NEVER;
+            allowSecurityManager = MAYBE;
         }
 
-        if (allowSecurityManager != NEVER) {
+        if (needWarning) {
             System.err.println("WARNING: The Security Manager is deprecated" +
                     " and will be removed in a future release.");
         }
