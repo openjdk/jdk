@@ -1696,6 +1696,8 @@ public class Attr extends JCTree.Visitor {
                             preview.checkSourceLevel(expr.pos(), Feature.CASE_NULL);
                             if (hasNullPattern) {
                                 log.error(c.pos(), Errors.DuplicateCaseLabel);
+                            } else if (hasTotalPattern) {
+                                log.error(c.pos(), Errors.PatternDominated);
                             }
                             hasNullPattern = true;
                             attribExpr(expr, switchEnv, seltype);

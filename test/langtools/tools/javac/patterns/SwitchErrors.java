@@ -177,4 +177,10 @@ public class SwitchErrors {
             case String s: break;
         }
     }
+    void nullAfterTotal(Object o) {
+        switch (o) {
+            case Object obj: break;
+            case null: break;
+        }
+    }
 }
