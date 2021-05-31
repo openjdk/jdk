@@ -269,7 +269,7 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   // It's safe to do output->set_decorators(decorators) because decorators is a subset of relevant Tagsets' decorators.
   // After updating output's decorators, it's still safe to shrink all decorators of tagsets.
   //
-  // There are 2 harzards in async logging. A flush operation guarantees to all pending messages in buffer are written
+  // There are 2 hazards in async logging. A flush operation guarantees to all pending messages in buffer are written
   // before returning. Therefore, the hardards won't appear. It's a nop if async logging is not set.
   // 1. asynclog buffer may be holding some log messages with previous decorators.
   // 2. asynclog buffer may be holding some log messages targeting to the output 'idx'. It has been disabled by new setting,

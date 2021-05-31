@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,7 @@ class ConcurrentLogsite : public TestRunnable {
   }
 };
 
-// dynamically change decorators while loggings are emitting.
+// Dynamically change decorators while loggings are emitting.
 TEST_VM_F(LogConfigurationTest, reconfigure_decorators_MT) {
   const int nrOfThreads = 2;
   ConcurrentLogsite logsites[nrOfThreads] = {0, 1};
@@ -264,6 +264,7 @@ TEST_VM_F(LogConfigurationTest, reconfigure_decorators_MT) {
     if (elapsed > testDurationMillis) {
       break;
     }
+
     // Take turn logging with different decorators, either None or All.
     set_log_config(TestLogFileName, "logging=debug", "none");
     set_log_config(TestLogFileName, "logging=debug", _all_decorators);
