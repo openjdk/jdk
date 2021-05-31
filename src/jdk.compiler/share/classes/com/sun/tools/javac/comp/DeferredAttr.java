@@ -306,8 +306,21 @@ public class DeferredAttr extends JCTree.Visitor {
             return e != null ? e.speculativeTree : stuckTree;
         }
 
-        DeferredTypeCompleter completer() {
-            return basicCompleter;
+        public Type complete(ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
+            switch (deferredAttrContext.mode) {
+                case SPECULATIVE:
+                    //Note: if a symbol is imported twice we might do two identical
+                    //speculative rounds...
+                    Assert.check(mode == null || mode == AttrMode.SPECULATIVE);
+                    JCTree speculativeTree = attribSpeculative(tree, env, resultInfo);
+                    speculativeCache.put(speculativeTree, resultInfo);
+                    return speculativeTree.type;
+                case CHECK:
+                    Assert.check(mode != null);
+                    return attr.attribTree(tree, env, resultInfo);
+            }
+            Assert.error();
+            return null;
         }
 
         /**
@@ -327,65 +340,29 @@ public class DeferredAttr extends JCTree.Visitor {
             } else {
                 deferredStuckPolicy = new CheckStuckPolicy(resultInfo, this);
             }
-            return check(resultInfo, deferredStuckPolicy, completer());
+            return check(resultInfo, deferredStuckPolicy);
         }
 
-        private Type check(ResultInfo resultInfo, DeferredStuckPolicy deferredStuckPolicy,
-                DeferredTypeCompleter deferredTypeCompleter) {
+        private Type check(ResultInfo resultInfo, DeferredStuckPolicy deferredStuckPolicy) {
             DeferredAttrContext deferredAttrContext =
                     resultInfo.checkContext.deferredAttrContext();
             Assert.check(deferredAttrContext != emptyDeferredAttrContext);
             if (deferredStuckPolicy.isStuck()) {
-                notPertinentToApplicability.add(deferredAttrContext.msym);
                 deferredAttrContext.addDeferredAttrNode(this, resultInfo, deferredStuckPolicy);
+                if (deferredAttrContext.mode == AttrMode.SPECULATIVE) {
+                    notPertinentToApplicability.add(deferredAttrContext.msym);
+                    mode = AttrMode.SPECULATIVE;
+                }
                 return Type.noType;
             } else {
                 try {
-                    return deferredTypeCompleter.complete(this, resultInfo, deferredAttrContext);
+                    return complete(resultInfo, deferredAttrContext);
                 } finally {
                     mode = deferredAttrContext.mode;
                 }
             }
         }
     }
-
-    /**
-     * A completer for deferred types. Defines an entry point for type-checking
-     * a deferred type.
-     */
-    interface DeferredTypeCompleter {
-        /**
-         * Entry point for type-checking a deferred type. Depending on the
-         * circumstances, type-checking could amount to full attribution
-         * or partial structural check (aka potential applicability).
-         */
-        Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext);
-    }
-
-
-    /**
-     * A basic completer for deferred types. This completer type-checks a deferred type
-     * using attribution; depending on the attribution mode, this could be either standard
-     * or speculative attribution.
-     */
-    DeferredTypeCompleter basicCompleter = new DeferredTypeCompleter() {
-        public Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
-            switch (deferredAttrContext.mode) {
-                case SPECULATIVE:
-                    //Note: if a symbol is imported twice we might do two identical
-                    //speculative rounds...
-                    Assert.check(dt.mode == null || dt.mode == AttrMode.SPECULATIVE);
-                    JCTree speculativeTree = attribSpeculative(dt.tree, dt.env, resultInfo);
-                    dt.speculativeCache.put(speculativeTree, resultInfo);
-                    return speculativeTree.type;
-                case CHECK:
-                    Assert.check(dt.mode != null);
-                    return attr.attribTree(dt.tree, dt.env, resultInfo);
-            }
-            Assert.error();
-            return null;
-        }
-    };
 
     /**
      * Policy for detecting stuck expressions. Different criteria might cause
@@ -781,7 +758,7 @@ public class DeferredAttr extends JCTree.Visitor {
             switch (deferredAttrContext.mode) {
                 case SPECULATIVE:
                     if (deferredStuckPolicy.isStuck()) {
-                        dt.check(resultInfo, dummyStuckPolicy, new StructuralStuckChecker());
+                        new StructuralStuckChecker().check(dt, resultInfo, deferredAttrContext);
                         return true;
                     } else {
                         Assert.error("Cannot get here");
@@ -813,7 +790,7 @@ public class DeferredAttr extends JCTree.Visitor {
                                 "attribution shouldn't be happening here");
                         ResultInfo instResultInfo =
                                 resultInfo.dup(deferredAttrContext.inferenceContext.asInstType(resultInfo.pt));
-                        dt.check(instResultInfo, dummyStuckPolicy, basicCompleter);
+                        dt.check(instResultInfo, dummyStuckPolicy);
                         return true;
                     }
                 default:
@@ -824,19 +801,18 @@ public class DeferredAttr extends JCTree.Visitor {
         /**
          * Structural checker for stuck expressions
          */
-        class StructuralStuckChecker extends TreeScanner implements DeferredTypeCompleter {
+        class StructuralStuckChecker extends TreeScanner {
 
             ResultInfo resultInfo;
             InferenceContext inferenceContext;
             Env<AttrContext> env;
 
-            public Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
+            public void check(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
                 this.resultInfo = resultInfo;
                 this.inferenceContext = deferredAttrContext.inferenceContext;
                 this.env = dt.env;
                 dt.tree.accept(this);
                 dt.speculativeCache.put(stuckTree, resultInfo);
-                return Type.noType;
             }
 
             @Override

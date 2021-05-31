@@ -31,6 +31,6 @@
 @interface GroupAccessibility : CommonComponentAccessibility <NSAccessibilityGroup> {
 
 };
-
+- (NSAccessibilityRole _Nonnull)accessibilityRole;
 - (NSArray * _Nullable)accessibilityChildren;
 @end

@@ -202,7 +202,14 @@ class ThreadInVMfromNative : public ThreadStateTransition {
     trans_from_native(_thread_in_vm);
   }
   ~ThreadInVMfromNative() {
-    trans(_thread_in_vm, _thread_in_native);
+    assert(_thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
+    // We cannot assert !_thread->owns_locks() since we have valid cases where
+    // we call known native code using this wrapper holding locks.
+    _thread->check_possible_safepoint();
+    // Once we are in native vm expects stack to be walkable
+    _thread->frame_anchor()->make_walkable(_thread);
+    OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
+    _thread->set_thread_state(_thread_in_native);
   }
 };
 
@@ -226,47 +233,61 @@ class ThreadToNativeFromVM : public ThreadStateTransition {
   }
 };
 
+// Perform a transition to _thread_blocked and take a call-back to be executed before
+// SafepointMechanism::process_if_requested when returning to the VM. This allows us
+// to perform an "undo" action if we might block processing a safepoint/handshake operation
+// (such as thread suspension).
+template <typename PRE_PROC>
+class ThreadBlockInVMPreprocess : public ThreadStateTransition {
+ private:
+  PRE_PROC& _pr;
+ public:
+  ThreadBlockInVMPreprocess(JavaThread* thread, PRE_PROC& pr) : ThreadStateTransition(thread), _pr(pr) {
+    assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
+    thread->check_possible_safepoint();
+    // Once we are blocked vm expects stack to be walkable
+    thread->frame_anchor()->make_walkable(thread);
+    OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
+    thread->set_thread_state(_thread_blocked);
+  }
+  ~ThreadBlockInVMPreprocess() {
+    assert(_thread->thread_state() == _thread_blocked, "coming from wrong thread state");
+    // Change to transition state and ensure it is seen by the VM thread.
+    _thread->set_thread_state_fence(_thread_blocked_trans);
+
+    if (SafepointMechanism::should_process(_thread)) {
+      _pr(_thread);
+      SafepointMechanism::process_if_requested(_thread);
+    }
+
+    _thread->set_thread_state(_thread_in_vm);
+  }
+};
+
+class InFlightMutexRelease {
+ private:
+  Mutex** _in_flight_mutex_addr;
+ public:
+  InFlightMutexRelease(Mutex** in_flight_mutex_addr) : _in_flight_mutex_addr(in_flight_mutex_addr) {}
+  void operator()(JavaThread* current) {
+    if (_in_flight_mutex_addr != NULL && *_in_flight_mutex_addr != NULL) {
+      (*_in_flight_mutex_addr)->release_for_safepoint();
+      *_in_flight_mutex_addr = NULL;
+    }
+  }
+};
 
 // Parameter in_flight_mutex_addr is only used by class Mutex to avoid certain deadlock
 // scenarios while making transitions that might block for a safepoint or handshake.
 // It's the address of a pointer to the mutex we are trying to acquire. This will be used to
 // access and release said mutex when transitioning back from blocked to vm (destructor) in
 // case we need to stop for a safepoint or handshake.
-class ThreadBlockInVM : public ThreadStateTransition {
- private:
-  Mutex** _in_flight_mutex_addr;
-
+class ThreadBlockInVM {
+  InFlightMutexRelease _ifmr;
+  ThreadBlockInVMPreprocess<InFlightMutexRelease> _tbivmpp;
  public:
   ThreadBlockInVM(JavaThread* thread, Mutex** in_flight_mutex_addr = NULL)
-  : ThreadStateTransition(thread), _in_flight_mutex_addr(in_flight_mutex_addr) {
-    assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
-    thread->check_possible_safepoint();
-    // Once we are blocked vm expects stack to be walkable
-    thread->frame_anchor()->make_walkable(thread);
-    thread->set_thread_state(_thread_blocked);
-  }
-  ~ThreadBlockInVM() {
-    assert(_thread->thread_state() == _thread_blocked, "coming from wrong thread state");
-    // Change to transition state and ensure it is seen by the VM thread.
-    _thread->set_thread_state_fence(_thread_blocked_trans);
-
-    if (SafepointMechanism::should_process(_thread)) {
-      if (_in_flight_mutex_addr != NULL) {
-        release_mutex();
-      }
-      SafepointMechanism::process_if_requested(_thread);
-    }
-
-    _thread->set_thread_state(_thread_in_vm);
-  }
-
-  void release_mutex() {
-    Mutex* in_flight_mutex = *_in_flight_mutex_addr;
-    if (in_flight_mutex != NULL) {
-      in_flight_mutex->release_for_safepoint();
-      *_in_flight_mutex_addr = NULL;
-    }
-  }
+    : _ifmr(in_flight_mutex_addr), _tbivmpp(thread, _ifmr) {}
 };
 
 // Debug class instantiated in JRT_ENTRY macro.

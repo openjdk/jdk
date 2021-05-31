@@ -129,7 +129,7 @@ public final class ReflectUtil {
         }
 
         String pkg = clazz.getPackageName();
-        if (pkg != null && !pkg.isEmpty()) {
+        if (!pkg.isEmpty()) {
             s.checkPackageAccess(pkg);
         }
 

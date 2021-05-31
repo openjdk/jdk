@@ -46,7 +46,7 @@ import org.w3c.dom.NodeList;
  * @test
  * @bug 6794483 8080908
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.xinclude.Bug6794483Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.xinclude.Bug6794483Test
  * @run testng/othervm parsers.xinclude.Bug6794483Test
  * @summary Test JAXP parser can resolve the included content properly if the
  * included xml contains an empty tag that ends with "/>", refer to XERCESJ-1134.
