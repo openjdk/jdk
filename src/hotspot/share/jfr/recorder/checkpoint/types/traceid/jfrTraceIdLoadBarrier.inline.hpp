@@ -25,12 +25,13 @@
 #ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDBARRIER_INLINE_HPP
 #define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDBARRIER_INLINE_HPP
 
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdLoadBarrier.hpp"
+
 #include "classfile/classLoaderData.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdBits.inline.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
-#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdLoadBarrier.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdMacros.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"

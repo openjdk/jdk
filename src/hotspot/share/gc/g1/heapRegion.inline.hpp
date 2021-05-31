@@ -25,11 +25,12 @@
 #ifndef SHARE_GC_G1_HEAPREGION_INLINE_HPP
 #define SHARE_GC_G1_HEAPREGION_INLINE_HPP
 
+#include "gc/g1/heapRegion.hpp"
+
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1Predictions.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/prefetch.inline.hpp"
