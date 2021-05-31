@@ -1741,9 +1741,11 @@ public class Attr extends JCTree.Visitor {
                             log.error(pat.pos(), Errors.DuplicateDefaultLabel);
                         } else if (hasTotalPattern) {
                             log.error(pat.pos(), Errors.TotalPatternAndDefault);
-                        } else {
-                            hasDefault = true;
+                        } else if (matchBindings.bindingsWhenTrue.nonEmpty()) {
+                            //there was a pattern, and the execution flows into a default:
+                            log.error(pat.pos(), Errors.FlowsThroughFromPattern);
                         }
+                        hasDefault = true;
                         matchBindings = MatchBindingsComputer.EMPTY;
                     } else {
                         if (prevCompletedNormally) {
@@ -1775,6 +1777,7 @@ public class Attr extends JCTree.Visitor {
                         }
                     }
                     currentBindings = matchBindingsComputer.switchCase(pat, currentBindings, matchBindings);
+                    prevCompletedNormally = true;
                 }
                 Env<AttrContext> caseEnv =
                         bindingEnv(switchEnv, c, currentBindings.bindingsWhenTrue);

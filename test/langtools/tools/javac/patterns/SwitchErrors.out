@@ -22,6 +22,10 @@ SwitchErrors.java:135:18: compiler.err.prob.found.req: (compiler.misc.inconverti
 SwitchErrors.java:141:18: compiler.err.instanceof.reifiable.not.safe: java.util.List, java.util.List<java.lang.Integer>
 SwitchErrors.java:147:18: compiler.err.cant.resolve.location: kindname.class, Undefined, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
 SwitchErrors.java:154:18: compiler.err.type.found.req: int, (compiler.misc.type.req.class.array)
+SwitchErrors.java:160:28: compiler.err.flows.through.from.pattern
+SwitchErrors.java:166:18: compiler.err.flows.through.from.pattern
+SwitchErrors.java:171:27: compiler.err.flows.through.to.pattern
+SwitchErrors.java:177:18: compiler.err.flows.through.to.pattern
 SwitchErrors.java:32:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:38:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:44:9: compiler.err.not.exhaustive.statement
@@ -34,4 +38,4 @@ SwitchErrors.java:120:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:127:9: compiler.err.not.exhaustive.statement
 - compiler.note.preview.filename: SwitchErrors.java, DEFAULT
 - compiler.note.preview.recompile
-34 errors
+38 errors

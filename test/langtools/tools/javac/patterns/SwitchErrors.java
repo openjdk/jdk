@@ -155,4 +155,26 @@ public class SwitchErrors {
             default: break;
         }
     }
+    void patternAndDefault1(Object o) {
+        switch (o) {
+            case String s, default: break;
+        }
+    }
+    void patternAndDefault2(Object o) {
+        switch (o) {
+            case String s:
+            case default: break;
+        }
+    }
+    void patternAndDefault3(Object o) {
+        switch (o) {
+            case default, String s: break;
+        }
+    }
+    void patternAndDefault4(Object o) {
+        switch (o) {
+            case default:
+            case String s: break;
+        }
+    }
 }
