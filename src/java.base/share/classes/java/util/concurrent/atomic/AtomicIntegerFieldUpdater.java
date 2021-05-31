@@ -40,7 +40,6 @@ import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Objects;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntUnaryOperator;
 import jdk.internal.misc.Unsafe;
@@ -456,7 +455,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
          */
         private static boolean isSamePackage(Class<?> class1, Class<?> class2) {
             return class1.getClassLoader() == class2.getClassLoader()
-                   && Objects.equals(class1.getPackageName(), class2.getPackageName());
+                   && class1.getPackageName() == class2.getPackageName();
         }
 
         /**

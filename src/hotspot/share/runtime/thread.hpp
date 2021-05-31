@@ -103,6 +103,7 @@ class JavaThread;
 //         - GangWorker
 //     - WatcherThread
 //     - JfrThreadSampler
+//     - LogAsyncWriter
 //
 // All Thread subclasses must be either JavaThread or NonJavaThread.
 // This means !t->is_Java_thread() iff t is a NonJavaThread, or t is
@@ -355,7 +356,7 @@ class Thread: public ThreadShadow {
   virtual bool is_active_Java_thread() const         { return false; }
 
   // Casts
-  virtual WorkerThread* as_Worker_thread() const     { return NULL; }
+  inline const WorkerThread* as_Worker_thread() const;
   inline JavaThread* as_Java_thread();
   inline const JavaThread* as_Java_thread() const;
 

@@ -187,15 +187,11 @@ public final class PropertyPermission extends BasicPermission {
      */
     @Override
     public boolean implies(Permission p) {
-        if (!(p instanceof PropertyPermission))
-            return false;
-
-        PropertyPermission that = (PropertyPermission) p;
-
         // we get the effective mask. i.e., the "and" of this and that.
         // They must be equal to that.mask for implies to return true.
-
-        return ((this.mask & that.mask) == that.mask) && super.implies(that);
+        return p instanceof PropertyPermission that
+                && ((this.mask & that.mask) == that.mask)
+                && super.implies(that);
     }
 
     /**
@@ -211,13 +207,9 @@ public final class PropertyPermission extends BasicPermission {
         if (obj == this)
             return true;
 
-        if (! (obj instanceof PropertyPermission))
-            return false;
-
-        PropertyPermission that = (PropertyPermission) obj;
-
-        return (this.mask == that.mask) &&
-            (this.getName().equals(that.getName()));
+        return obj instanceof PropertyPermission that
+                && this.mask == that.mask
+                && this.getName().equals(that.getName());
     }
 
     /**
@@ -471,14 +463,13 @@ final class PropertyPermissionCollection extends PermissionCollection
      */
     @Override
     public void add(Permission permission) {
-        if (! (permission instanceof PropertyPermission))
+        if (! (permission instanceof PropertyPermission pp))
             throw new IllegalArgumentException("invalid permission: "+
                                                permission);
         if (isReadOnly())
             throw new SecurityException(
                 "attempt to add a Permission to a readonly PermissionCollection");
 
-        PropertyPermission pp = (PropertyPermission) permission;
         String propName = pp.getName();
 
         // Add permission to map if it is absent, or replace with new
@@ -523,10 +514,9 @@ final class PropertyPermissionCollection extends PermissionCollection
      */
     @Override
     public boolean implies(Permission permission) {
-        if (! (permission instanceof PropertyPermission))
+        if (! (permission instanceof PropertyPermission pp))
             return false;
 
-        PropertyPermission pp = (PropertyPermission) permission;
         PropertyPermission x;
 
         int desired = pp.getMask();

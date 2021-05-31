@@ -73,7 +73,6 @@ class JvmtiRawMonitor;
 // operation is only done by either VMThread/Handshaker on behalf of the
 // JavaThread or by the target JavaThread itself.
 class HandshakeState {
-  friend JvmtiRawMonitor;
   friend ThreadSelfSuspensionHandshake;
   friend SuspendThreadHandshake;
   friend JavaThread;
@@ -102,9 +101,6 @@ class HandshakeState {
   bool have_non_self_executable_operation();
   HandshakeOperation* pop_for_self();
   HandshakeOperation* pop();
-
-  void lock();
-  void unlock();
 
  public:
   HandshakeState(JavaThread* thread);
