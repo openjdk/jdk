@@ -44,7 +44,7 @@ import java.util.function.Predicate;
 
 import static java.io.ObjectInputFilter.Status.*;
 import static java.lang.System.Logger.Level.TRACE;
-import static java.lang.System.Logger.Level.INFO;
+import static java.lang.System.Logger.Level.DEBUG;
 
 /**
  * Filter classes, array lengths, and graph metrics during deserialization.
@@ -100,8 +100,8 @@ import static java.lang.System.Logger.Level.INFO;
  * stream can be checked.
  *
  * <h2>Invoking the Filter Factory</h2>
- * <p>The JVM-wide filter factory is a function invoked when each {@link ObjectInputStream}
- * {@linkplain ObjectInputStream#ObjectInputStream() is constructed} and when the
+ * <p>The JVM-wide filter factory is a function invoked when each {@link ObjectInputStream} is
+ * {@linkplain ObjectInputStream#ObjectInputStream() constructed} and when the
  * {@linkplain ObjectInputStream#setObjectInputFilter(ObjectInputFilter) stream-specific filter is set}.
  * The parameters are the current filter and a requested filter and it
  * returns the filter to be used for the stream. When invoked from the
@@ -134,7 +134,6 @@ import static java.lang.System.Logger.Level.INFO;
  * or based on a {@linkplain Predicate predicate of a class} to
  * {@linkplain #allowFilter(Predicate, Status) allow} or
  * {@linkplain #rejectFilter(Predicate, Status) reject} classes.
- *.
  *
  * <p>The filter's {@link #checkInput checkInput(FilterInfo)} method is invoked
  * zero or more times while {@linkplain ObjectInputStream#readObject() reading objects}.
@@ -167,7 +166,7 @@ import static java.lang.System.Logger.Level.INFO;
  * classes may be sufficient to manage the risk of deserializing unexpected classes.
  * <p>For an application composed from multiple modules or libraries, the structure
  * of the application can be used to identify the classes to be allowed or rejected
- * by each {@linkplain ObjectInputStream} in each context of the application.
+ * by each {@link ObjectInputStream} in each context of the application.
  * The deserialization filter factory is invoked when each stream is constructed and
  * can examine the thread or program to determine a context-specific filter to be applied.
  * Some possible examples:
@@ -315,7 +314,7 @@ public interface ObjectInputFilter {
      *                                          || cl.getClassLoader() == null, Status.UNDECIDED);
      * </code></pre>
      *
-     * @param predicate a predicate to test a non-null Class, non-null
+     * @param predicate a predicate to test a non-null Class
      * @param otherStatus a Status to use if the predicate is {@code false}
      * @return a filter that returns {@code ALLOWED} if the predicate
      *          on the class is {@code true}
@@ -348,7 +347,7 @@ public interface ObjectInputFilter {
      *          cl.getClassLoader() == ClassLoader.ClassLoader.getSystemClassLoader(), Status.UNDECIDED);
      * </code></pre>
      *
-     * @param predicate a predicate to test a non-null Class, non-null
+     * @param predicate a predicate to test a non-null Class
      * @param otherStatus a Status to use if the predicate is {@code false}
      * @return returns a filter that returns {@code REJECTED} if the predicate
      *          on the class is {@code true}
@@ -377,7 +376,7 @@ public interface ObjectInputFilter {
      *     <li>Otherwise, return {@code UNDECIDED}</li>
      * </ul>
      *
-     * @param filter a filter, non-null
+     * @param filter a filter
      * @param anotherFilter a filter to be merged with the filter, may be {@code null}
      * @return an {@link ObjectInputFilter} that merges the status of the filter and another filter
      * @since 17
@@ -392,7 +391,7 @@ public interface ObjectInputFilter {
      * for classes, with some special cases, and otherwise returns the status.
      * The filter returned checks that classes not {@code ALLOWED} by the filter
      * are {@code REJECTED}.  Either the class is not {@code ALLOWED} or
-     * if the class is an array and the base component type is not allowed,
+     * the class is an array and the base component type is not {@code ALLOWED},
      * otherwise the result is {@code UNDECIDED}.
      * <p>
      * Object deserialization accepts a class if the filter returns {@code UNDECIDED}.
@@ -417,7 +416,7 @@ public interface ObjectInputFilter {
      *     <li>Otherwise, return {@code REJECTED}.</li>
      * </ul>
      *
-     * @param filter a filter, non-null
+     * @param filter a filter
      * @return an {@link ObjectInputFilter} that maps an {@link Status#UNDECIDED}
      *      status to {@link Status#REJECTED} for classes, otherwise returns the
      *      filter status
@@ -527,20 +526,32 @@ public interface ObjectInputFilter {
      * System.setProperty} <em>does not set the filter</em>.
      * The syntax for the property value is the same as for the
      * {@link #createFilter(String) createFilter} method.
+     *
+     * <p> If only `jdk.serialFilter` is set and not `jdk.serialFilterFactory` the builtin
+     * filter factory, compatible with previous versions, is set and can not be replaced,
+     * see below to override the builtin filter factory.
      * <p>
      * If the Java virtual machine is started with the system property
-     * {@systemProperty jdk.serialFilterFactory}, its value names the class to configure the
-     * JVM-wide deserialization filter factory.
+     * {@systemProperty jdk.serialFilterFactory} or the {@link java.security.Security} property
+     * of the same name, its value names the class to configure the JVM-wide deserialization
+     * filter factory or the special value `OVERRIDE`.
      * If the system property is not defined, and the {@link java.security.Security} property
      * {@code jdk.serialFilterFactory} is defined then it is used to configure the filter factory.
-     * The class must be public, must have a public zero-argument constructor, implement the
+     *
+     * If the value is `OVERRIDE`, the filter factory can be set by the application before
+     * the first deserialization using {@link Config#setSerialFilterFactory(BinaryOperator)};
+     * If it remains unset, the filter factory is a builtin filter factory compatible
+     * with previous versions.
+     *
+     * <p>If not `OVERRIDE`, the class must be public, must have a public zero-argument constructor, implement the
      * {@link BinaryOperator {@literal BinaryOperator<ObjectInputFilter>}} interface, provide its implementation and
      * be accessible via the {@linkplain ClassLoader#getSystemClassLoader() application class loader}.
      * The filter factory configured using the system or security property during initialization
      * can NOT be replaced with {@link #setSerialFilterFactory(BinaryOperator) Config.setSerialFilterFactory}.
      * This ensures that a filter factory set on the command line is not overridden accidentally
      * or intentionally by the application.
-     * Setting the {@code jdk.serialFilterFactory} with {@link System#setProperty(String, String)
+     *
+     * <p>Setting the {@code jdk.serialFilterFactory} with {@link System#setProperty(String, String)
      * System.setProperty} <em>does not set the filter factory</em>.
      * The syntax for the system property value and security property value is the
      * fully qualified class name of the deserialization filter factory.
@@ -581,11 +592,13 @@ public interface ObjectInputFilter {
         private static volatile BinaryOperator<ObjectInputFilter> serialFilterFactory;
 
         /**
-         * Boolean to indicate that the filter factory has been used by an ObjectInputStream
-         * constructor and cannot be changed thereafter.
+         * Boolean to indicate that the filter factory can not be set or replaced.
+         * - an ObjectInputStream has already been created using the current filter factory
+         * - has been set on the command line
+         * - jdk.serialFilter is set and jdk.serialFilterFactory is unset, the builtin can not be replaced
          * @see Config#setSerialFilterFactory(BinaryOperator)
          */
-        private static final AtomicBoolean filterFactoryUsed = new AtomicBoolean(false);
+        private static final AtomicBoolean filterFactoryNoReplace = new AtomicBoolean(false);
 
         /**
          * Debug: Logger
@@ -634,7 +647,7 @@ public interface ObjectInputFilter {
             // Initialize the static filter if the jdk.serialFilter is present
             ObjectInputFilter filter = null;
             if (filterString != null) {
-                configLog.log(INFO,
+                configLog.log(DEBUG,
                         "Creating deserialization filter from {0}", filterString);
                 try {
                     filter = createFilter(filterString);
@@ -647,28 +660,38 @@ public interface ObjectInputFilter {
 
             // Initialize the filter factory if the jdk.serialFilterFactory is defined
             // otherwise use the builtin filter factory.
-            BinaryOperator<ObjectInputFilter> factory;
-            if (factoryClassName != null) {
-                configLog.log(INFO,
+            if (factoryClassName == null || "OVERRIDE".equals(factoryClassName)) {
+                serialFilterFactory = new BuiltinFilterFactory();
+                if (serialFilter != null && factoryClassName == null) {
+                    // Ensure backward compatibility, unless factory is explicitly allowed to override
+                    // Do not allow factory to be overridden by Config.setSerialFilterFactory
+                    filterFactoryNoReplace.set(true);
+                }
+
+            } else {
+                configLog.log(DEBUG,
                         "Creating deserialization filter factory for {0}", factoryClassName);
                 try {
                     // Load using the system class loader, the named class may be an application class.
                     // The static initialization of the class or constructor may create a race
                     // if either calls Config.setSerialFilterFactory; the command line configured
                     // Class should not be overridden.
-                    Class<?> factoryClass= Class.forName(factoryClassName, true,
+                    Class<?> factoryClass = Class.forName(factoryClassName, true,
                             ClassLoader.getSystemClassLoader());
                     @SuppressWarnings("unchecked")
                     BinaryOperator<ObjectInputFilter> f =
                             (BinaryOperator<ObjectInputFilter>)
                             factoryClass.getConstructor().newInstance(new Object[0]);
                     if (serialFilterFactory != null) {
+                        // Init cycle if Config.setSerialFilterFactory called from class initialization
                         configLog.log(System.Logger.Level.ERROR,
                                 "FilterFactory provided on the command line can not be overridden");
                         // Do not continue if configuration not initialized
-                        throw new ExceptionInInitializerError("FilterFactory provided on the command line can not be overridden");
+                        throw new ExceptionInInitializerError(
+                                "FilterFactory provided on the command line can not be overridden");
                     }
-                    factory = f;
+                    serialFilterFactory = f;
+                    filterFactoryNoReplace.set(true);
                 } catch (RuntimeException | ClassNotFoundException | NoSuchMethodException |
                         IllegalAccessException | InstantiationException | InvocationTargetException ex) {
                     configLog.log(System.Logger.Level.ERROR,
@@ -677,11 +700,7 @@ public interface ObjectInputFilter {
                     throw new ExceptionInInitializerError(
                             "FilterFactory configuration: jdk.serialFilterFactory: " + ex.getMessage());
                 }
-            } else {
-                factory = new BuiltinFilterFactory();
             }
-            serialFilterFactory = factory;
-
             // Setup shared secrets for RegistryImpl to use.
             SharedSecrets.setJavaObjectInputFilterAccess(Config::createFilter2);
         }
@@ -716,7 +735,7 @@ public interface ObjectInputFilter {
          * @param filter the deserialization filter to set as the JVM-wide filter; not null
          * @throws SecurityException if there is security manager and the
          *       {@code SerializablePermission("serialFilter")} is not granted
-         * @throws IllegalStateException if the filter has already been set {@code non-null}
+         * @throws IllegalStateException if the filter has already been set
          */
         public static void setSerialFilter(ObjectInputFilter filter) {
             Objects.requireNonNull(filter, "filter");
@@ -774,7 +793,7 @@ public interface ObjectInputFilter {
          */
         /* package-private */
         static BinaryOperator<ObjectInputFilter> getSerialFilterFactorySingleton() {
-            filterFactoryUsed.set(true);
+            filterFactoryNoReplace.set(true);
             return getSerialFilterFactory();
         }
 
@@ -815,21 +834,11 @@ public interface ObjectInputFilter {
             if (sm != null) {
                 sm.checkPermission(ObjectStreamConstants.SERIAL_FILTER_PERMISSION);
             }
-            if (filterFactoryUsed.getAndSet(true)) {
-                throw new IllegalStateException("FilterFactory can not be set after any deserialization");
+            if (filterFactoryNoReplace.getAndSet(true)) {
+                throw new IllegalStateException("Cannot replace filter factory: " +
+                        serialFilterFactory.getClass().getName());
             }
-            synchronized (serialFilterLock) {
-                if (serialFilterFactory instanceof BuiltinFilterFactory) {
-                    // The factory can be set only if it has been initialized to the builtin.
-                    serialFilterFactory = filterFactory;
-                    return;
-                }
-            }
-            // Either the serialFilterFactory has already been set by setSerialFilterFactory
-            // or it is {@code null}, because the Config static initialization has not completed.
-            // In either case, the serialFilterFactory can not be set.
-            throw new IllegalStateException("Serial filter factory can not replace: " +
-                    serialFilterFactory.getClass().getName());
+            serialFilterFactory = filterFactory;
         }
 
         /**
@@ -1225,7 +1234,8 @@ public interface ObjectInputFilter {
              */
             public ObjectInputFilter.Status checkInput(FilterInfo info) {
                 Class<?> clazz = info.serialClass();
-                Status status = (clazz != null && predicate.test(clazz)) ? ifTrueStatus : ifFalseStatus;
+                Status status = (clazz == null) ? UNDECIDED
+                        : (predicate.test(clazz)) ? ifTrueStatus : ifFalseStatus;
                 traceFilter("PredicateFilter {0}, filter: {1}", status, this);
                 return status;
             }

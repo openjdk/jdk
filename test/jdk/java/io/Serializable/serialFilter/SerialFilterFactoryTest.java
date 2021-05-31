@@ -44,7 +44,7 @@ import java.util.function.BinaryOperator;
 /* @test
  * @build SerialFilterFactoryTest
  * @run testng/othervm  SerialFilterFactoryTest
- * @run testng/othervm -Djdk.serialFilter="*" SerialFilterFactoryTest
+ * @run testng/othervm -Djdk.serialFilter="*" -Djdk.serialFilterFactory=OVERRIDE SerialFilterFactoryTest
  * @run testng/othervm -Djdk.serialFilterFactory=SerialFilterFactoryTest$PropertyFilterFactory SerialFilterFactoryTest
  * @run testng/othervm -Djdk.serialFilterFactory=SerialFilterFactoryTest$NotMyFilterFactory SerialFilterFactoryTest
  * @run testng/othervm/policy=security.policy
@@ -253,7 +253,7 @@ public class SerialFilterFactoryTest {
     // Test that if the property jdk-serialFilterFactory is set, then initial factory has the same classname
     @Test
     void testPropertyFilterFactory() {
-        if (jdkSerialFilterFactoryProp != null) {
+        if (jdkSerialFilterFactoryProp != null && !jdkSerialFilterFactoryProp.equals("OVERRIDE")) {
             Assert.assertEquals(jdkSerialFilterFactory.getClass().getName(), jdkSerialFilterFactoryProp,
                     "jdk.serialFilterFactory property classname mismatch");
         }
@@ -267,7 +267,7 @@ public class SerialFilterFactoryTest {
             // Only test if is allowed by SM.
             BinaryOperator<ObjectInputFilter> factory = Config.getSerialFilterFactory();
             IllegalStateException ise = Assert.expectThrows(IllegalStateException.class, () -> Config.setSerialFilterFactory(factory));
-            Assert.assertEquals(ise.getMessage(), "FilterFactory can not be set after any deserialization");
+            Assert.assertTrue(ise.getMessage().startsWith("Cannot replace filter factory: "));
         }
     }
 
@@ -328,14 +328,6 @@ public class SerialFilterFactoryTest {
 
         public ObjectInputFilter next() {
             return next;
-        }
-
-        public void current(ObjectInputFilter current) {
-            this.current = current;
-        }
-
-        public void next(ObjectInputFilter next) {
-            this. next = next;
         }
 
         public String toString() {

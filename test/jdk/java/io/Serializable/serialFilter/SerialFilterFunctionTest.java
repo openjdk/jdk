@@ -36,7 +36,7 @@ import static java.io.ObjectInputFilter.Status.REJECTED;
 import static java.io.ObjectInputFilter.Status.UNDECIDED;
 
 /* @test
- * @run testng SerialFilterFunctionTest
+ * @run testng/othervm -Djdk.serialFilterTrace=true SerialFilterFunctionTest
  * @summary ObjectInputFilter.Config Function Tests
  */
 @Test
@@ -86,20 +86,21 @@ public class SerialFilterFunctionTest {
     @DataProvider(name = "AllowPredicateCases")
     static Object[][] allowPredicateCases() {
         return new Object[][]{
-                { Integer.class, isInteger(), Status.ALLOWED},
-                { Double.class, isInteger(), Status.UNDECIDED},
-                { Double.class, isInteger(), null},         // NPE
-                { Double.class, null, Status.UNDECIDED},    // NPE
+                { Integer.class, isInteger(), REJECTED, ALLOWED},
+                { Double.class, isInteger(), REJECTED, REJECTED},
+                { null, isInteger(), REJECTED, UNDECIDED},      // no class -> UNDECIDED
+                { Double.class, isInteger(), null, null},       // NPE
+                { Double.class, null, REJECTED, null},          // NPE
         };
     }
 
     @Test(dataProvider = "AllowPredicateCases")
-    void testAllowPredicates(Class<?> clazz, Predicate<Class<?>> predicate, Status expected) {
+    void testAllowPredicates(Class<?> clazz, Predicate<Class<?>> predicate, Status otherStatus, Status expected) {
         ObjectInputFilter.FilterInfo info = new SerialInfo(clazz);
         if (predicate == null || expected == null) {
             Assert.assertThrows(NullPointerException.class, () -> ObjectInputFilter.allowFilter(predicate, expected));
         } else {
-            Assert.assertEquals(ObjectInputFilter.allowFilter(predicate, Status.UNDECIDED).checkInput(info),
+            Assert.assertEquals(ObjectInputFilter.allowFilter(predicate, otherStatus).checkInput(info),
                     expected, "Predicate result");
         }
     }
@@ -107,20 +108,22 @@ public class SerialFilterFunctionTest {
     @DataProvider(name = "RejectPredicateCases")
     static Object[][] rejectPredicateCases() {
         return new Object[][]{
-                { Integer.class, isInteger(), REJECTED},
-                { Double.class, isInteger(), Status.UNDECIDED},
-                { Double.class, isInteger(), null},         // NPE
-                { Double.class, null, Status.UNDECIDED},    // NPE
+                { Integer.class, isInteger(), REJECTED, REJECTED},
+                { Double.class, isInteger(), ALLOWED, ALLOWED},
+                { null, isInteger(), REJECTED, UNDECIDED},      // no class -> UNDECIDED
+                { Double.class, isInteger(), null, null},         // NPE
+                { Double.class, null, UNDECIDED, null},    // NPE
         };
     }
 
     @Test(dataProvider = "RejectPredicateCases")
-    void testRejectPredicates(Class<?> clazz, Predicate<Class<?>> predicate, Status expected) {
+    void testRejectPredicates(Class<?> clazz, Predicate<Class<?>> predicate, Status otherStatus, Status expected) {
         ObjectInputFilter.FilterInfo info = new SerialInfo(clazz);
         if (predicate == null || expected == null) {
             Assert.assertThrows(NullPointerException.class, () -> ObjectInputFilter.allowFilter(predicate, expected));
         } else {
-            Assert.assertEquals(ObjectInputFilter.rejectFilter(predicate, Status.UNDECIDED).checkInput(info), expected, "Predicate result");
+            Assert.assertEquals(ObjectInputFilter.rejectFilter(predicate, otherStatus)
+                    .checkInput(info), expected, "Predicate result");
         }
     }
 
