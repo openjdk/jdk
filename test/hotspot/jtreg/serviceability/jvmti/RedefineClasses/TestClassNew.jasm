@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,25 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZNUMA_HPP
-#define SHARE_GC_Z_ZNUMA_HPP
+super public final class TestClassNew version 49:0 {
 
-#include "memory/allocation.hpp"
+    public Method "<init>":"()V" stack 1 locals 1 {
+        aload_0;
+        invokespecial    Method java/lang/Object."<init>":"()V";
+        return;
+    }
 
-class ZNUMA : public AllStatic {
-private:
-  static bool _enabled;
+    public static Method foo:"()Ljava/lang/String;" stack 1 locals 1 {
+        ldc            class  java/lang/String;
+        invokevirtual  Method java/lang/Class.getName:"()Ljava/lang/String;";
+        areturn;
+    }
 
-  static void pd_initialize();
+    public static Method main:"([Ljava/lang/String;)V" stack 2 locals 2 {
+        getstatic      Field  java/lang/System.out:"Ljava/io/PrintStream;";
+        invokestatic   Method TestClassNew.foo:"()Ljava/lang/String;";
+        invokevirtual  Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+        return;
+    }
 
-public:
-  static void initialize();
-  static bool is_enabled();
-
-  static uint32_t count();
-  static uint32_t id();
-
-  static uint32_t memory_id(uintptr_t addr);
-
-  static const char* to_string();
-};
-
-#endif // SHARE_GC_Z_ZNUMA_HPP
+}
