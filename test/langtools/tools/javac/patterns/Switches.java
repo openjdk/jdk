@@ -167,16 +167,16 @@ public class Switches {
     int testStringWithConstant(String str) {
         switch (str) {
             case "A": return 1;
-            case String s:  return s.length();
             case null: return -1;
+            case String s:  return s.length();
         }
     }
 
     int testStringWithConstantExpression(String str) {
         return switch (str) {
             case "A" -> 1;
-            case String s -> s.length();
             case null -> -1;
+            case String s -> s.length();
         };
     }
 

@@ -1689,6 +1689,7 @@ public class Attr extends JCTree.Visitor {
                     wasError = true;
                 }
                 MatchBindings currentBindings = prevBindings;
+                boolean wasTotalPattern = hasTotalPattern;
                 for (JCCaseLabel pat : c.labels) {
                     if (pat.isExpression()) {
                         JCExpression expr = (JCExpression) pat;
@@ -1696,7 +1697,7 @@ public class Attr extends JCTree.Visitor {
                             preview.checkSourceLevel(expr.pos(), Feature.CASE_NULL);
                             if (hasNullPattern) {
                                 log.error(c.pos(), Errors.DuplicateCaseLabel);
-                            } else if (hasTotalPattern) {
+                            } else if (wasTotalPattern) {
                                 log.error(c.pos(), Errors.PatternDominated);
                             }
                             hasNullPattern = true;
@@ -1779,7 +1780,7 @@ public class Attr extends JCTree.Visitor {
                         }
                     }
                     currentBindings = matchBindingsComputer.switchCase(pat, currentBindings, matchBindings);
-                    prevCompletedNormally = true;
+                    prevCompletedNormally = !TreeInfo.isNull(pat);
                 }
                 Env<AttrContext> caseEnv =
                         bindingEnv(switchEnv, c, currentBindings.bindingsWhenTrue);
