@@ -39,7 +39,7 @@ Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
   if (dom != NULL) {
     return dom;
   }
-  if (_carry_dependency) {
+  if (_dependency != RegularDependency) {
     return this;
   }
   return phase->type(in(1))->higher_equal_speculative(_type) ? in(1) : this;
@@ -82,31 +82,31 @@ Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 bool ConstraintCastNode::cmp(const Node &n) const {
-  return TypeNode::cmp(n) && ((ConstraintCastNode&)n)._carry_dependency == _carry_dependency;
+  return TypeNode::cmp(n) && ((ConstraintCastNode&)n)._dependency == _dependency;
 }
 
 uint ConstraintCastNode::size_of() const {
   return sizeof(*this);
 }
 
-Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node *n, const Type *t, bool carry_dependency) {
+Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node *n, const Type *t, DependencyType dependency) {
   switch(opcode) {
   case Op_CastII: {
-    Node* cast = new CastIINode(n, t, carry_dependency);
+    Node* cast = new CastIINode(n, t, dependency);
     cast->set_req(0, c);
     return cast;
   }
   case Op_CastLL: {
-    Node* cast = new CastLLNode(n, t, carry_dependency);
+    Node* cast = new CastLLNode(n, t, dependency);
     cast->set_req(0, c);
     return cast;
   }
   case Op_CastPP: {
-    Node* cast = new CastPPNode(n, t, carry_dependency);
+    Node* cast = new CastPPNode(n, t, dependency);
     cast->set_req(0, c);
     return cast;
   }
-  case Op_CheckCastPP: return new CheckCastPPNode(c, n, t, carry_dependency);
+  case Op_CheckCastPP: return new CheckCastPPNode(c, n, t, dependency);
   default:
     fatal("Bad opcode %d", opcode);
   }
@@ -116,10 +116,10 @@ Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node *n, const Type *t,
 Node* ConstraintCastNode::make(Node* c, Node *n, const Type *t, BasicType bt) {
   switch(bt) {
   case T_INT: {
-    return make_cast(Op_CastII, c, n, t, false);
+    return make_cast(Op_CastII, c, n, t, RegularDependency);
   }
   case T_LONG: {
-    return make_cast(Op_CastLL, c, n, t, false);
+    return make_cast(Op_CastLL, c, n, t, RegularDependency);
   }
   default:
     fatal("Bad basic type %s", type2name(bt));
@@ -128,6 +128,9 @@ Node* ConstraintCastNode::make(Node* c, Node *n, const Type *t, BasicType bt) {
 }
 
 TypeNode* ConstraintCastNode::dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const {
+  if (_dependency == VeryStrongDependency) {
+    return NULL;
+  }
   Node* val = in(1);
   Node* ctl = in(0);
   int opc = Opcode();
@@ -168,8 +171,8 @@ TypeNode* ConstraintCastNode::dominating_cast(PhaseGVN* gvn, PhaseTransform* pt)
 #ifndef PRODUCT
 void ConstraintCastNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
-  if (_carry_dependency) {
-    st->print(" carry dependency");
+  if (_dependency != RegularDependency) {
+    st->print(" %s dependency", _dependency == StrongDependency ? "strong" : "very strong");
   }
 }
 #endif
@@ -179,7 +182,7 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
 
   // Try to improve the type of the CastII if we recognize a CmpI/If
   // pattern.
-  if (_carry_dependency) {
+  if (_dependency != RegularDependency) {
     if (in(0) != NULL && in(0)->in(0) != NULL && in(0)->in(0)->is_If()) {
       assert(in(0)->is_IfFalse() || in(0)->is_IfTrue(), "should be If proj");
       Node* proj = in(0);
@@ -240,8 +243,8 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
   return res;
 }
 
-static Node* find_or_make_CastII(PhaseIterGVN* igvn, Node* parent, Node* control, const TypeInt* type, bool carry_dependency) {
-  Node* n = new CastIINode(parent, type, carry_dependency);
+static Node* find_or_make_CastII(PhaseIterGVN* igvn, Node* parent, Node* control, const TypeInt* type, ConstraintCastNode::DependencyType dependency) {
+  Node* n = new CastIINode(parent, type, dependency);
   n->set_req(0, control);
   Node* existing = igvn->hash_find_insert(n);
   if (existing != NULL) {
@@ -274,8 +277,8 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* x = z->in(1);
     Node* y = z->in(2);
 
-    Node* cx = find_or_make_CastII(igvn, x, in(0), rx->is_int(), _carry_dependency);
-    Node* cy = find_or_make_CastII(igvn, y, in(0), ry->is_int(), _carry_dependency);
+    Node* cx = find_or_make_CastII(igvn, x, in(0), rx->is_int(), _dependency);
+    Node* cy = find_or_make_CastII(igvn, y, in(0), ry->is_int(), _dependency);
     switch (op) {
       case Op_AddI:  return new AddINode(cx, cy);
       case Op_SubI:  return new SubINode(cx, cy);
@@ -362,7 +365,7 @@ Node* CheckCastPPNode::Identity(PhaseGVN* phase) {
   if (dom != NULL) {
     return dom;
   }
-  if (_carry_dependency) {
+  if (_dependency != RegularDependency) {
     return this;
   }
   const Type* t = phase->type(in(1));

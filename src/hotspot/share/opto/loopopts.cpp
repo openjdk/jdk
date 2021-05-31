@@ -1503,7 +1503,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
           assert(!n_loop->is_member(get_loop(x_ctrl)), "should have moved out of loop");
           register_new_node(x, x_ctrl);
 
-          if (x->in(0) == NULL && !x->is_DecodeNarrowPtr()) {
+          if (x->in(0) == NULL && !x->is_DecodeNarrowPtr() && (!x->is_AddP() || !x->in(AddPNode::Address)->is_AddP())) {
             assert(!x->is_Load(), "load should be pinned");
             // Use a cast node to pin clone out of loop
             Node* cast = NULL;
@@ -1512,23 +1512,32 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
               if (in != NULL && n_loop->is_member(get_loop(get_ctrl(in)))) {
                 const Type* in_t = _igvn.type(in);
                 if (in_t->isa_int()) {
-                  cast = new CastIINode(in, in_t, true);
+                  cast = new CastIINode(in, in_t, ConstraintCastNode::VeryStrongDependency);
                 } else if (in_t->isa_long()) {
-                  cast = new CastLLNode(in, in_t, true);
+                  cast = new CastLLNode(in, in_t, ConstraintCastNode::VeryStrongDependency);
                 } else if (in_t->isa_ptr()) {
-                  cast = new CastPPNode(in, in_t, true);
+                  cast = new CastPPNode(in, in_t, ConstraintCastNode::VeryStrongDependency);
                 } else if (in_t->isa_float()) {
-                  cast = new CastFFNode(in, in_t, true);
+                  cast = new CastFFNode(in, in_t, ConstraintCastNode::VeryStrongDependency);
                 } else if (in_t->isa_double()) {
-                  cast = new CastDDNode(in, in_t, true);
+                  cast = new CastDDNode(in, in_t, ConstraintCastNode::VeryStrongDependency);
                 } else if (in_t->isa_vect()) {
-                  cast = new CastVVNode(in, in_t, true);
+                  cast = new CastVVNode(in, in_t, ConstraintCastNode::VeryStrongDependency);
                 }
               }
               if (cast != NULL) {
                 cast->set_req(0, x_ctrl);
                 register_new_node(cast, x_ctrl);
                 x->replace_edge(in, cast);
+                if (x->is_AddP() && k == AddPNode::Base) {
+                  for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
+                    Node* u = x->fast_out(i);
+                    if (u->is_AddP()) {
+                      _igvn.replace_input_of(u, AddPNode::Base, cast);
+                      assert(u->find_out_with(Op_AddP) == NULL, "more than 2 chained AddP nodes?");
+                    }
+                  }
+                }
                 break;
               }
             }
