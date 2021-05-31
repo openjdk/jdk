@@ -220,7 +220,7 @@
           range(ReferenceProcessor::DiscoveryPolicyMin,                     \
                 ReferenceProcessor::DiscoveryPolicyMax)                     \
                                                                             \
-  product(bool, ParallelRefProcEnabled, true,                               \
+  product(bool, ParallelRefProcEnabled, false,                              \
           "Enable parallel reference processing whenever possible")         \
                                                                             \
   product(bool, ParallelRefProcBalancingEnabled, true,                      \

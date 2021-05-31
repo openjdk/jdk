@@ -47,7 +47,7 @@ public class TestParallelRefProc {
         boolean noneGCSupported = true;
         if (GC.Serial.isSupported()) {
             noneGCSupported = false;
-            testFlag(new String[] { "-XX:+UseSerialGC" }, true);
+            testFlag(new String[] { "-XX:+UseSerialGC" }, false);
         }
         if (GC.Parallel.isSupported()) {
             noneGCSupported = false;
@@ -55,7 +55,7 @@ public class TestParallelRefProc {
         }
         if (GC.G1.isSupported()) {
             noneGCSupported = false;
-            testFlag(new String[] { "-XX:+UseG1GC", "-XX:ParallelGCThreads=1" }, true);
+            testFlag(new String[] { "-XX:+UseG1GC", "-XX:ParallelGCThreads=1" }, false);
             testFlag(new String[] { "-XX:+UseG1GC", "-XX:ParallelGCThreads=2" }, true);
             testFlag(new String[] { "-XX:+UseG1GC", "-XX:-ParallelRefProcEnabled", "-XX:ParallelGCThreads=2" }, false);
         }
