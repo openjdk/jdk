@@ -46,6 +46,7 @@ typedef GenericTaskQueueSet<ObjArrayTaskQueue, mtGC> ObjArrayTaskQueueSet;
 
 class G1CMBitMap;
 class G1FullCollector;
+class TaskTerminator;
 
 class G1FullGCMarker : public CHeapObj<mtGC> {
   G1FullCollector*   _collector;
