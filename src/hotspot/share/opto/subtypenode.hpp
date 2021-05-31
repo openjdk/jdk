@@ -53,7 +53,7 @@ public:
 #ifdef ASSERT
 private:
   bool verify(PhaseGVN* phase);
-  bool verify_helper(PhaseGVN* phase, Node* subklass);
+  bool verify_helper(PhaseGVN* phase, Node* subklass, const Type* cached_t);
 
   static bool is_oop(PhaseGVN* phase, Node* n);
 #endif // ASSERT

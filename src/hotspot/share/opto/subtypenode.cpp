@@ -172,7 +172,7 @@ static Node* record_for_cleanup(Node* n, PhaseGVN* phase) {
   }
   return n;
 }
-bool SubTypeCheckNode::verify_helper(PhaseGVN* phase, Node* subklass) {
+bool SubTypeCheckNode::verify_helper(PhaseGVN* phase, Node* subklass, const Type* cached_t) {
   Node* cmp = phase->transform(new CmpPNode(subklass, in(SuperKlass)));
   record_for_cleanup(cmp, phase);
 
@@ -180,6 +180,7 @@ bool SubTypeCheckNode::verify_helper(PhaseGVN* phase, Node* subklass) {
   const Type* t = Value(phase);
 
   if (t == cmp_t ||
+      t != cached_t || // previous observations don't hold anymore
       (cmp_t != TypeInt::CC_GT && cmp_t != TypeInt::CC_EQ)) {
     return true;
   } else {
@@ -215,9 +216,10 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
       subklass = obj_or_subklass;
     }
 
+    const Type* cached_t = Value(phase); // cache the type to validate consistency
     switch (C->static_subtype_check(superk, subk)) {
       case Compile::SSC_easy_test: {
-        return verify_helper(phase, subklass);
+        return verify_helper(phase, subklass, cached_t);
       }
       case Compile::SSC_full_test: {
         Node* p1 = phase->transform(new AddPNode(superklass, superklass, phase->MakeConX(in_bytes(Klass::super_check_offset_offset()))));
@@ -234,7 +236,7 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
           Node* p2 = phase->transform(new AddPNode(subklass, subklass, chk_off_X));
           Node* nkls = phase->transform(LoadKlassNode::make(*phase, NULL, C->immutable_memory(), p2, phase->type(p2)->is_ptr(), TypeKlassPtr::OBJECT_OR_NULL));
 
-          return verify_helper(phase, nkls);
+          return verify_helper(phase, nkls, cached_t);
         }
         break;
       }
