@@ -1471,7 +1471,7 @@ void Assembler::vaesenclast(XMMRegister dst, XMMRegister nds, XMMRegister src, i
 
 void Assembler::andb(Address dst, Register src) {
   InstructionMark im(this);
-  prefix(dst, src);
+  prefix(dst, src, true);
   emit_int8(0x20);
   emit_operand(src, dst);
 }
@@ -4123,9 +4123,10 @@ void Assembler::pmovmskb(Register dst, XMMRegister src) {
   emit_int16((unsigned char)0xD7, (0xC0 | encode));
 }
 
-void Assembler::vpmovmskb(Register dst, XMMRegister src) {
-  assert(VM_Version::supports_avx2(), "");
-  InstructionAttr attributes(AVX_256bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+void Assembler::vpmovmskb(Register dst, XMMRegister src, int vec_enc) {
+  assert((VM_Version::supports_avx() && vec_enc == AVX_128bit) ||
+         (VM_Version::supports_avx2() && vec_enc  == AVX_256bit), "");
+  InstructionAttr attributes(vec_enc, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int16((unsigned char)0xD7, (0xC0 | encode));
 }
@@ -8030,6 +8031,18 @@ void Assembler::vbroadcastsd(XMMRegister dst, Address src, int vector_len) {
   emit_operand(dst, src);
 }
 
+void Assembler::vbroadcastf128(XMMRegister dst, Address src, int vector_len) {
+  assert(VM_Version::supports_avx(), "");
+  assert(vector_len == AVX_256bit, "");
+  assert(dst != xnoreg, "sanity");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_T4, /* input_size_in_bits */ EVEX_32bit);
+  // swap src<->dst for encoding
+  vex_prefix(src, 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8(0x1A);
+  emit_operand(dst, src);
+}
 
 // gpr source broadcast forms
 

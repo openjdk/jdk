@@ -25,10 +25,13 @@
 #ifndef SHARE_VM_GC_G1_HEAPREGIONREMSET_INLINE_HPP
 #define SHARE_VM_GC_G1_HEAPREGIONREMSET_INLINE_HPP
 
+#include "gc/g1/heapRegionRemSet.hpp"
+
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1FromCardCache.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 void HeapRegionRemSet::set_state_empty() {
   guarantee(SafepointSynchronize::is_at_safepoint() || !is_tracked(),

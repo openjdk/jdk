@@ -1134,21 +1134,26 @@ static bool merge_point_safe(Node* region) {
 }
 
 
-//------------------------------place_near_use---------------------------------
-// Place some computation next to use but not inside inner loops.
-// For inner loop uses move it to the preheader area.
-Node *PhaseIdealLoop::place_near_use(Node *useblock) const {
-  IdealLoopTree *u_loop = get_loop( useblock );
-  if (u_loop->_irreducible) {
-    return useblock;
+//------------------------------place_outside_loop---------------------------------
+// Place some computation outside of this loop on the path to the use passed as argument
+Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) const {
+  Node* head = loop->_head;
+  assert(!loop->is_member(get_loop(useblock)), "must be outside loop");
+  if (head->is_Loop() && head->as_Loop()->is_strip_mined()) {
+    loop = loop->_parent;
+    assert(loop->_head->is_OuterStripMinedLoop(), "malformed strip mined loop");
   }
-  if (u_loop->_child) {
-    if (useblock == u_loop->_head && u_loop->_head->is_OuterStripMinedLoop()) {
-      return u_loop->_head->in(LoopNode::EntryControl);
+
+  // Pick control right outside the loop
+  for (;;) {
+    Node* dom = idom(useblock);
+    if (loop->is_member(get_loop(dom))) {
+      break;
     }
-    return useblock;
+    useblock = dom;
   }
-  return u_loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
+  assert(find_non_split_ctrl(useblock) == useblock, "should be non split control");
+  return useblock;
 }
 
 
@@ -1402,128 +1407,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
     }
   }
 
-  // See if a shared loop-varying computation has no loop-varying uses.
-  // Happens if something is only used for JVM state in uncommon trap exits,
-  // like various versions of induction variable+offset.  Clone the
-  // computation per usage to allow it to sink out of the loop.
-  if (has_ctrl(n) && !n->in(0)) {// n not dead and has no control edge (can float about)
-    Node *n_ctrl = get_ctrl(n);
-    IdealLoopTree *n_loop = get_loop(n_ctrl);
-    if( n_loop != _ltree_root ) {
-      DUIterator_Fast imax, i = n->fast_outs(imax);
-      for (; i < imax; i++) {
-        Node* u = n->fast_out(i);
-        if( !has_ctrl(u) )     break; // Found control user
-        IdealLoopTree *u_loop = get_loop(get_ctrl(u));
-        if( u_loop == n_loop ) break; // Found loop-varying use
-        if( n_loop->is_member( u_loop ) ) break; // Found use in inner loop
-        if( u->Opcode() == Op_Opaque1 ) break; // Found loop limit, bugfix for 4677003
-      }
-      bool did_break = (i < imax);  // Did we break out of the previous loop?
-      if (!did_break && n->outcnt() > 1) { // All uses in outer loops!
-        Node *late_load_ctrl = NULL;
-        if (n->is_Load()) {
-          // If n is a load, get and save the result from get_late_ctrl(),
-          // to be later used in calculating the control for n's clones.
-          clear_dom_lca_tags();
-          late_load_ctrl = get_late_ctrl(n, n_ctrl);
-        }
-        // If n is a load, and the late control is the same as the current
-        // control, then the cloning of n is a pointless exercise, because
-        // GVN will ensure that we end up where we started.
-        if (!n->is_Load() || (late_load_ctrl != n_ctrl && is_safe_load_ctrl(late_load_ctrl))) {
-          Node* outer_loop_clone = NULL;
-          for (DUIterator_Last jmin, j = n->last_outs(jmin); j >= jmin; ) {
-            Node *u = n->last_out(j); // Clone private computation per use
-            _igvn.rehash_node_delayed(u);
-            Node *x = n->clone(); // Clone computation
-            Node *x_ctrl = NULL;
-            if( u->is_Phi() ) {
-              // Replace all uses of normal nodes.  Replace Phi uses
-              // individually, so the separate Nodes can sink down
-              // different paths.
-              uint k = 1;
-              while( u->in(k) != n ) k++;
-              u->set_req( k, x );
-              // x goes next to Phi input path
-              x_ctrl = u->in(0)->in(k);
-              --j;
-            } else {              // Normal use
-              // Replace all uses
-              for( uint k = 0; k < u->req(); k++ ) {
-                if( u->in(k) == n ) {
-                  u->set_req( k, x );
-                  --j;
-                }
-              }
-              x_ctrl = get_ctrl(u);
-            }
-
-            // Find control for 'x' next to use but not inside inner loops.
-            // For inner loop uses get the preheader area.
-            x_ctrl = place_near_use(x_ctrl);
-
-            if (n->is_Load()) {
-              // For loads, add a control edge to a CFG node outside of the loop
-              // to force them to not combine and return back inside the loop
-              // during GVN optimization (4641526).
-              //
-              // Because we are setting the actual control input, factor in
-              // the result from get_late_ctrl() so we respect any
-              // anti-dependences. (6233005).
-              x_ctrl = dom_lca(late_load_ctrl, x_ctrl);
-
-              // Don't allow the control input to be a CFG splitting node.
-              // Such nodes should only have ProjNodes as outs, e.g. IfNode
-              // should only have IfTrueNode and IfFalseNode (4985384).
-              x_ctrl = find_non_split_ctrl(x_ctrl);
-
-              IdealLoopTree* x_loop = get_loop(x_ctrl);
-              Node* x_head = x_loop->_head;
-              if (x_head->is_Loop() && (x_head->is_OuterStripMinedLoop() || x_head->as_Loop()->is_strip_mined())) {
-                if (is_dominator(n_ctrl, x_head) && n_ctrl != x_head) {
-                  // Anti dependence analysis is sometimes too
-                  // conservative: a store in the outer strip mined loop
-                  // can prevent a load from floating out of the outer
-                  // strip mined loop but the load may not be referenced
-                  // from the safepoint: loop strip mining verification
-                  // code reports a problem in that case. Make sure the
-                  // load is not moved in the outer strip mined loop in
-                  // that case.
-                  x_ctrl = x_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
-                } else if (x_head->is_OuterStripMinedLoop()) {
-                  // Do not add duplicate LoadNodes to the outer strip mined loop
-                  if (outer_loop_clone != NULL) {
-                    _igvn.replace_node(x, outer_loop_clone);
-                    continue;
-                  }
-                  outer_loop_clone = x;
-                }
-              }
-              assert(dom_depth(n_ctrl) <= dom_depth(x_ctrl), "n is later than its clone");
-
-              x->set_req(0, x_ctrl);
-            }
-            register_new_node(x, x_ctrl);
-
-            // Some institutional knowledge is needed here: 'x' is
-            // yanked because if the optimizer runs GVN on it all the
-            // cloned x's will common up and undo this optimization and
-            // be forced back in the loop.
-            // I tried setting control edges on the x's to force them to
-            // not combine, but the matching gets worried when it tries
-            // to fold a StoreP and an AddP together (as part of an
-            // address expression) and the AddP and StoreP have
-            // different controls.
-            if (!x->is_Load() && !x->is_DecodeNarrowPtr()) {
-              _igvn._worklist.yank(x);
-            }
-          }
-          _igvn.remove_dead_node(n);
-        }
-      }
-    }
-  }
+  try_sink_out_of_loop(n);
 
   try_move_store_after_loop(n);
 
@@ -1536,9 +1420,199 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
   }
 }
 
-bool PhaseIdealLoop::is_safe_load_ctrl(Node* ctrl) {
-  if (ctrl->is_Proj() && ctrl->in(0)->is_Call() && ctrl->has_out_with(Op_Catch)) {
-    return false;
+// See if a shared loop-varying computation has no loop-varying uses.
+// Happens if something is only used for JVM state in uncommon trap exits,
+// like various versions of induction variable+offset.  Clone the
+// computation per usage to allow it to sink out of the loop.
+void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
+  if (has_ctrl(n) &&
+      !n->is_Phi() &&
+      !n->is_Bool() &&
+      !n->is_Proj() &&
+      !n->is_MergeMem() &&
+      !n->is_CMove() &&
+      n->Opcode() != Op_Opaque4) {
+    Node *n_ctrl = get_ctrl(n);
+    IdealLoopTree *n_loop = get_loop(n_ctrl);
+    if (n_loop != _ltree_root && n->outcnt() > 1) {
+      // Compute early control: needed for anti-dependence analysis. It's also possible that as a result of
+      // previous transformations in this loop opts round, the node can be hoisted now: early control will tell us.
+      Node* early_ctrl = compute_early_ctrl(n, n_ctrl);
+      if (n_loop->is_member(get_loop(early_ctrl)) && // check that this one can't be hoisted now
+          ctrl_of_all_uses_out_of_loop(n, early_ctrl, n_loop)) { // All uses in outer loops!
+        assert(!n->is_Store() && !n->is_LoadStore(), "no node with a side effect");
+        Node* outer_loop_clone = NULL;
+        for (DUIterator_Last jmin, j = n->last_outs(jmin); j >= jmin;) {
+          Node* u = n->last_out(j); // Clone private computation per use
+          _igvn.rehash_node_delayed(u);
+          Node* x = n->clone(); // Clone computation
+          Node* x_ctrl = NULL;
+          if (u->is_Phi()) {
+            // Replace all uses of normal nodes.  Replace Phi uses
+            // individually, so the separate Nodes can sink down
+            // different paths.
+            uint k = 1;
+            while (u->in(k) != n) k++;
+            u->set_req(k, x);
+            // x goes next to Phi input path
+            x_ctrl = u->in(0)->in(k);
+            // Find control for 'x' next to use but not inside inner loops.
+            x_ctrl = place_outside_loop(x_ctrl, n_loop);
+            --j;
+          } else {              // Normal use
+            if (has_ctrl(u)) {
+              x_ctrl = get_ctrl(u);
+            } else {
+              x_ctrl = u->in(0);
+            }
+            // Find control for 'x' next to use but not inside inner loops.
+            x_ctrl = place_outside_loop(x_ctrl, n_loop);
+            // Replace all uses
+            if (u->is_ConstraintCast() && u->bottom_type()->higher_equal(_igvn.type(n)) && u->in(0) == x_ctrl) {
+              // If we're sinking a chain of data nodes, we might have inserted a cast to pin the use which is not necessary
+              // anymore now that we're going to pin n as well
+              _igvn.replace_node(u, x);
+              --j;
+            } else {
+              int nb = u->replace_edge(n, x, &_igvn);
+              j -= nb;
+            }
+          }
+
+          if (n->is_Load()) {
+            // For loads, add a control edge to a CFG node outside of the loop
+            // to force them to not combine and return back inside the loop
+            // during GVN optimization (4641526).
+            assert(x_ctrl == get_late_ctrl_with_anti_dep(x->as_Load(), early_ctrl, x_ctrl), "anti-dependences were already checked");
+
+            IdealLoopTree* x_loop = get_loop(x_ctrl);
+            Node* x_head = x_loop->_head;
+            if (x_head->is_Loop() && x_head->is_OuterStripMinedLoop()) {
+              // Do not add duplicate LoadNodes to the outer strip mined loop
+              if (outer_loop_clone != NULL) {
+                _igvn.replace_node(x, outer_loop_clone);
+                continue;
+              }
+              outer_loop_clone = x;
+            }
+            x->set_req(0, x_ctrl);
+          } else if (n->in(0) != NULL){
+            x->set_req(0, x_ctrl);
+          }
+          assert(dom_depth(n_ctrl) <= dom_depth(x_ctrl), "n is later than its clone");
+          assert(!n_loop->is_member(get_loop(x_ctrl)), "should have moved out of loop");
+          register_new_node(x, x_ctrl);
+
+          if (x->in(0) == NULL && !x->is_DecodeNarrowPtr()) {
+            assert(!x->is_Load(), "load should be pinned");
+            // Use a cast node to pin clone out of loop
+            Node* cast = NULL;
+            for (uint k = 0; k < x->req(); k++) {
+              Node* in = x->in(k);
+              if (in != NULL && n_loop->is_member(get_loop(get_ctrl(in)))) {
+                const Type* in_t = _igvn.type(in);
+                if (in_t->isa_int()) {
+                  cast = new CastIINode(in, in_t, true);
+                } else if (in_t->isa_long()) {
+                  cast = new CastLLNode(in, in_t, true);
+                } else if (in_t->isa_ptr()) {
+                  cast = new CastPPNode(in, in_t, true);
+                } else if (in_t->isa_float()) {
+                  cast = new CastFFNode(in, in_t, true);
+                } else if (in_t->isa_double()) {
+                  cast = new CastDDNode(in, in_t, true);
+                } else if (in_t->isa_vect()) {
+                  cast = new CastVVNode(in, in_t, true);
+                }
+              }
+              if (cast != NULL) {
+                cast->set_req(0, x_ctrl);
+                register_new_node(cast, x_ctrl);
+                x->replace_edge(in, cast);
+                break;
+              }
+            }
+            assert(cast != NULL, "must have added a cast to pin the node");
+          }
+        }
+        _igvn.remove_dead_node(n);
+      }
+      _dom_lca_tags_round = 0;
+    }
+  }
+}
+
+Node* PhaseIdealLoop::compute_early_ctrl(Node* n, Node* n_ctrl) {
+  Node* early_ctrl = NULL;
+  ResourceMark rm;
+  Unique_Node_List wq;
+  wq.push(n);
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* m = wq.at(i);
+    Node* c = NULL;
+    if (m->is_CFG()) {
+      c = m;
+    } else if (m->pinned()) {
+      c = m->in(0);
+    } else {
+      for (uint j = 0; j < m->req(); j++) {
+        Node* in = m->in(j);
+        if (in == NULL) {
+          continue;
+        }
+        wq.push(in);
+      }
+    }
+    if (c != NULL) {
+      assert(is_dominator(c, n_ctrl), "");
+      if (early_ctrl == NULL) {
+        early_ctrl = c;
+      } else if (is_dominator(early_ctrl, c)) {
+        early_ctrl = c;
+      }
+    }
+  }
+  assert(is_dominator(early_ctrl, n_ctrl), "early control must dominate current control");
+  return early_ctrl;
+}
+
+bool PhaseIdealLoop::ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop) {
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* u = n->fast_out(i);
+    if (u->Opcode() == Op_Opaque1) {
+      return false;  // Found loop limit, bugfix for 4677003
+    }
+    // We can't reuse tags in PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal() so make sure calls to
+    // get_late_ctrl_with_anti_dep() use their own tag
+    _dom_lca_tags_round++;
+    assert(_dom_lca_tags_round != 0, "shouldn't wrap around");
+
+    if (u->is_Phi()) {
+      for (uint j = 1; j < u->req(); ++j) {
+        if (u->in(j) == n && !ctrl_of_use_out_of_loop(n, n_ctrl, n_loop, u->in(0)->in(j))) {
+          return false;
+        }
+      }
+    } else {
+      Node* ctrl = has_ctrl(u) ? get_ctrl(u) : u->in(0);
+      if (!ctrl_of_use_out_of_loop(n, n_ctrl, n_loop, ctrl)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop, Node* ctrl) {
+  if (n->is_Load()) {
+    ctrl = get_late_ctrl_with_anti_dep(n->as_Load(), n_ctrl, ctrl);
+  }
+  IdealLoopTree *u_loop = get_loop(ctrl);
+  if (u_loop == n_loop) {
+    return false; // Found loop-varying use
+  }
+  if (n_loop->is_member(u_loop)) {
+    return false; // Found use in inner loop
   }
   return true;
 }

@@ -51,6 +51,7 @@
 #include "gc/shared/vmStructs_gc.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/heap.hpp"
@@ -408,8 +409,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(ThreadLocalAllocBuffer,      _reserve_for_allocation_prefetch,              int)                                   \
      static_field(ThreadLocalAllocBuffer,      _target_refills,                               unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _number_of_refills,                            unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,      _fast_refill_waste,                            unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,      _slow_refill_waste,                            unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste,                                 unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _gc_waste,                                     unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _slow_allocations,                             unsigned)                              \
   nonstatic_field(VirtualSpace,                _low_boundary,                                 char*)                                 \
@@ -575,6 +575,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
      static_field(StubRoutines,                _crc32c_table_addr,                            address)                               \
      static_field(StubRoutines,                _updateBytesCRC32C,                            address)                               \
+     static_field(StubRoutines,                _updateBytesAdler32,                           address)                               \
      static_field(StubRoutines,                _multiplyToLen,                                address)                               \
      static_field(StubRoutines,                _squareToLen,                                  address)                               \
      static_field(StubRoutines,                _bigIntegerRightShiftWorker,                   address)                               \
@@ -739,9 +740,9 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _vm_result_2,                                  Metadata*)                             \
-  nonstatic_field(JavaThread,                  _current_pending_monitor,                      ObjectMonitor*)                        \
+  volatile_nonstatic_field(JavaThread,         _current_pending_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(JavaThread,                  _current_pending_monitor_is_from_java,         bool)                                  \
-  nonstatic_field(JavaThread,                  _current_waiting_monitor,                      ObjectMonitor*)                        \
+  volatile_nonstatic_field(JavaThread,         _current_waiting_monitor,                      ObjectMonitor*)                        \
   volatile_nonstatic_field(JavaThread,         _suspend_flags,                                uint32_t)                              \
   nonstatic_field(JavaThread,                  _async_exception_condition,                    JavaThread::AsyncExceptionCondition)   \
   nonstatic_field(JavaThread,                  _pending_async_exception,                      oop)                                   \
@@ -1336,6 +1337,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
       declare_type(NonJavaThread, Thread)                                 \
         declare_type(NamedThread, NonJavaThread)                          \
         declare_type(WatcherThread, NonJavaThread)                        \
+        declare_type(AsyncLogWriter, NonJavaThread)                       \
       declare_type(JavaThread, Thread)                                    \
         declare_type(JvmtiAgentThread, JavaThread)                        \
         declare_type(MonitorDeflationThread, JavaThread)                  \

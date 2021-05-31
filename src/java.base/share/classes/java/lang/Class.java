@@ -3043,7 +3043,7 @@ public final class Class<T> implements java.io.Serializable,
 
         if (ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
             String pkg = this.getPackageName();
-            if (pkg != null && !pkg.isEmpty()) {
+            if (!pkg.isEmpty()) {
                 // skip the package access check on a proxy class in default proxy package
                 if (!Proxy.isProxyClass(this) || ReflectUtil.isNonPublicProxyClass(this)) {
                     sm.checkPackageAccess(pkg);
@@ -3077,7 +3077,7 @@ public final class Class<T> implements java.io.Serializable,
                 if (Proxy.isProxyClass(c))
                     throw new InternalError("a permitted subclass should not be a proxy class: " + c);
                 String pkg = c.getPackageName();
-                if (pkg != null && !pkg.isEmpty()) {
+                if (!pkg.isEmpty()) {
                     packages.add(pkg);
                 }
             }
@@ -3094,7 +3094,7 @@ public final class Class<T> implements java.io.Serializable,
     private String resolveName(String name) {
         if (!name.startsWith("/")) {
             String baseName = getPackageName();
-            if (baseName != null && !baseName.isEmpty()) {
+            if (!baseName.isEmpty()) {
                 int len = baseName.length() + 1 + name.length();
                 StringBuilder sb = new StringBuilder(len);
                 name = sb.append(baseName.replace('.', '/'))
@@ -4475,9 +4475,8 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @jls 8.1 Class Declarations
      * @jls 9.1 Interface Declarations
-     * @since 15
+     * @since 17
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES, reflective=true)
     @CallerSensitive
     public Class<?>[] getPermittedSubclasses() {
         Class<?>[] subClasses;
@@ -4524,14 +4523,13 @@ public final class Class<T> implements java.io.Serializable,
      * subclasses; {@link #getPermittedSubclasses()} returns a non-null but
      * possibly empty value for a sealed class or interface.
      *
-     * @return {@code true} if and only if this {@code Class} object represents a sealed class or interface.
+     * @return {@code true} if and only if this {@code Class} object represents
+     * a sealed class or interface.
      *
      * @jls 8.1 Class Declarations
      * @jls 9.1 Interface Declarations
-     * @since 15
+     * @since 17
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES, reflective=true)
-    @SuppressWarnings("preview")
     public boolean isSealed() {
         if (isArray() || isPrimitive()) {
             return false;

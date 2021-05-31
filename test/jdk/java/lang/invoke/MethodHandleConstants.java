@@ -32,6 +32,7 @@
  *      --expand-properties --classpath ${test.classes}
  *      --java test.java.lang.invoke.MethodHandleConstants --check-output
  * @run main/othervm
+ *      -Djava.security.manager=allow
  *      indify.Indify
  *      --expand-properties --classpath ${test.classes}
  *      --java test.java.lang.invoke.MethodHandleConstants --security-manager

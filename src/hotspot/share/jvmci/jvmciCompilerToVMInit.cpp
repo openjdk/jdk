@@ -231,6 +231,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   X86_ONLY(do_intx_flag(UseAVX))                                           \
   do_bool_flag(UseBiasedLocking)                                           \
   do_bool_flag(UseCRC32Intrinsics)                                         \
+  do_bool_flag(UseAdler32Intrinsics)                                       \
   do_bool_flag(UseCompressedClassPointers)                                 \
   do_bool_flag(UseCompressedOops)                                          \
   X86_ONLY(do_bool_flag(UseCountLeadingZerosInstruction))                  \

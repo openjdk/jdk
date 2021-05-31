@@ -27,7 +27,6 @@ package sun.invoke.util;
 
 import java.lang.reflect.Modifier;
 import static java.lang.reflect.Modifier.*;
-import java.util.Objects;
 import jdk.internal.reflect.Reflection;
 
 /**
@@ -375,7 +374,7 @@ public class VerifyAccess {
             return true;
         if (class1.getClassLoader() != class2.getClassLoader())
             return false;
-        return Objects.equals(class1.getPackageName(), class2.getPackageName());
+        return class1.getPackageName() == class2.getPackageName();
     }
 
     /**

@@ -40,6 +40,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import jdk.internal.util.Preconditions;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -1636,6 +1637,10 @@ public abstract class VarHandle implements Constable {
         COMPARE_AND_EXCHANGE(Object.class),
         GET_AND_UPDATE(Object.class);
 
+        static final int COUNT = GET_AND_UPDATE.ordinal() + 1;
+        static {
+            assert (COUNT == values().length);
+        }
         final Class<?> returnType;
         final boolean isMonomorphicInReturnType;
 
@@ -1890,18 +1895,10 @@ public abstract class VarHandle implements Constable {
         GET_AND_BITWISE_XOR_ACQUIRE("getAndBitwiseXorAcquire", AccessType.GET_AND_UPDATE),
         ;
 
-        static final Map<String, AccessMode> methodNameToAccessMode;
+        static final int COUNT = GET_AND_BITWISE_XOR_ACQUIRE.ordinal() + 1;
         static {
-            AccessMode[] values = AccessMode.values();
-            // Initial capacity of # values divided by the load factor is sufficient
-            // to avoid resizes for the smallest table size (64)
-            int initialCapacity = (int)(values.length / 0.75f) + 1;
-            methodNameToAccessMode = new HashMap<>(initialCapacity);
-            for (AccessMode am : values) {
-                methodNameToAccessMode.put(am.methodName, am);
-            }
+            assert (COUNT == values().length);
         }
-
         final String methodName;
         final AccessType at;
 
@@ -1934,9 +1931,40 @@ public abstract class VarHandle implements Constable {
          * @see #methodName()
          */
         public static AccessMode valueFromMethodName(String methodName) {
-            AccessMode am = methodNameToAccessMode.get(methodName);
-            if (am != null) return am;
-            throw new IllegalArgumentException("No AccessMode value for method name " + methodName);
+            return switch (methodName) {
+                case "get" -> GET;
+                case "set" -> SET;
+                case "getVolatile" -> GET_VOLATILE;
+                case "setVolatile" -> SET_VOLATILE;
+                case "getAcquire" -> GET_ACQUIRE;
+                case "setRelease" -> SET_RELEASE;
+                case "getOpaque" -> GET_OPAQUE;
+                case "setOpaque" -> SET_OPAQUE;
+                case "compareAndSet" -> COMPARE_AND_SET;
+                case "compareAndExchange" -> COMPARE_AND_EXCHANGE;
+                case "compareAndExchangeAcquire" -> COMPARE_AND_EXCHANGE_ACQUIRE;
+                case "compareAndExchangeRelease" -> COMPARE_AND_EXCHANGE_RELEASE;
+                case "weakCompareAndSet" -> WEAK_COMPARE_AND_SET;
+                case "weakCompareAndSetPlain" -> WEAK_COMPARE_AND_SET_PLAIN;
+                case "weakCompareAndSetAcquire" -> WEAK_COMPARE_AND_SET_ACQUIRE;
+                case "weakCompareAndSetRelease" -> WEAK_COMPARE_AND_SET_RELEASE;
+                case "getAndSet" -> GET_AND_SET;
+                case "getAndSetAcquire" -> GET_AND_SET_ACQUIRE;
+                case "getAndSetRelease" -> GET_AND_SET_RELEASE;
+                case "getAndAdd" -> GET_AND_ADD;
+                case "getAndAddAcquire" -> GET_AND_ADD_ACQUIRE;
+                case "getAndAddRelease" -> GET_AND_ADD_RELEASE;
+                case "getAndBitwiseOr" -> GET_AND_BITWISE_OR;
+                case "getAndBitwiseOrRelease" -> GET_AND_BITWISE_OR_RELEASE;
+                case "getAndBitwiseOrAcquire" -> GET_AND_BITWISE_OR_ACQUIRE;
+                case "getAndBitwiseAnd" -> GET_AND_BITWISE_AND;
+                case "getAndBitwiseAndRelease" -> GET_AND_BITWISE_AND_RELEASE;
+                case "getAndBitwiseAndAcquire" -> GET_AND_BITWISE_AND_ACQUIRE;
+                case "getAndBitwiseXor" -> GET_AND_BITWISE_XOR;
+                case "getAndBitwiseXorRelease" -> GET_AND_BITWISE_XOR_RELEASE;
+                case "getAndBitwiseXorAcquire" -> GET_AND_BITWISE_XOR_ACQUIRE;
+                default -> throw new IllegalArgumentException("No AccessMode value for method name " + methodName);
+            };
         }
     }
 
@@ -2007,6 +2035,19 @@ public abstract class VarHandle implements Constable {
      */
     public final MethodType accessModeType(AccessMode accessMode) {
         return accessModeType(accessMode.at.ordinal());
+    }
+
+    @ForceInline
+    final void checkExactAccessMode(VarHandle.AccessDescriptor ad) {
+        if (exact && accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
+            throwWrongMethodTypeException(ad);
+        }
+    }
+
+    @DontInline
+    private final void throwWrongMethodTypeException(VarHandle.AccessDescriptor ad) {
+        throw new WrongMethodTypeException("expected " + accessModeType(ad.type) + " but found "
+                + ad.symbolicMethodTypeExact);
     }
 
     @ForceInline
@@ -2093,12 +2134,10 @@ public abstract class VarHandle implements Constable {
 
     static class TypesAndInvokers {
         final @Stable
-        MethodType[] methodType_table =
-                new MethodType[VarHandle.AccessType.values().length];
+        MethodType[] methodType_table = new MethodType[VarHandle.AccessType.COUNT];
 
         final @Stable
-        MethodHandle[] methodHandle_table =
-                new MethodHandle[AccessMode.values().length];
+        MethodHandle[] methodHandle_table = new MethodHandle[AccessMode.COUNT];
     }
 
     @ForceInline

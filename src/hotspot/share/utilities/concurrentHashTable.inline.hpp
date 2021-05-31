@@ -25,11 +25,12 @@
 #ifndef SHARE_UTILITIES_CONCURRENTHASHTABLE_INLINE_HPP
 #define SHARE_UTILITIES_CONCURRENTHASHTABLE_INLINE_HPP
 
+#include "utilities/concurrentHashTable.hpp"
+
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "utilities/concurrentHashTable.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"

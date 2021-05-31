@@ -2030,17 +2030,16 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 
   // check if we could do inlining
-  if (!PatchALot && Inline && target->is_loaded() &&
-      (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))
-      && !patch_for_appendix) {
+  if (!PatchALot && Inline && target->is_loaded() && callee_holder->is_linked() && !patch_for_appendix) {
     // callee is known => check if we have static binding
-    if (code == Bytecodes::_invokestatic  ||
+    if ((code == Bytecodes::_invokestatic && callee_holder->is_initialized()) || // invokestatic involves an initialization barrier on resolved klass
         code == Bytecodes::_invokespecial ||
         (code == Bytecodes::_invokevirtual && target->is_final_method()) ||
         code == Bytecodes::_invokedynamic) {
-      ciMethod* inline_target = (cha_monomorphic_target != NULL) ? cha_monomorphic_target : target;
       // static binding => check if callee is ok
-      bool success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), false, code, better_receiver);
+      ciMethod* inline_target = (cha_monomorphic_target != NULL) ? cha_monomorphic_target : target;
+      bool holder_known = (cha_monomorphic_target != NULL) || (exact_target != NULL);
+      bool success = try_inline(inline_target, holder_known, false /* ignore_return */, code, better_receiver);
 
       CHECK_BAILOUT();
       clear_inline_bailout();
@@ -3758,7 +3757,9 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
       !InlineMethodsWithExceptionHandlers) INLINE_BAILOUT("callee has exception handlers");
   if (callee->is_synchronized() &&
       !InlineSynchronizedMethods         ) INLINE_BAILOUT("callee is synchronized");
-  if (!callee->holder()->is_initialized()) INLINE_BAILOUT("callee's klass not initialized yet");
+  if (!callee->holder()->is_linked())      INLINE_BAILOUT("callee's klass not linked yet");
+  if (bc == Bytecodes::_invokestatic &&
+      !callee->holder()->is_initialized()) INLINE_BAILOUT("callee's klass not initialized yet");
   if (!callee->has_balanced_monitors())    INLINE_BAILOUT("callee's monitors do not match");
 
   // Proper inlining of methods with jsrs requires a little more work.
@@ -3839,6 +3840,8 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
     // printing
     print_inlining(callee, "inline", /*success*/ true);
   }
+
+  assert(bc != Bytecodes::_invokestatic || callee->holder()->is_initialized(), "required");
 
   // NOTE: Bailouts from this point on, which occur at the
   // GraphBuilder level, do not cause bailout just of the inlining but

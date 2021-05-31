@@ -695,31 +695,43 @@ final class Byte512Vector extends ByteVector {
             return (Byte512Vector) super.toVectorTemplate();  // specialize
         }
 
-        @Override
+        /**
+         * Helper function for lane-wise mask conversions.
+         * This function kicks in after intrinsic failure.
+         */
         @ForceInline
-        public <E> VectorMask<E> cast(VectorSpecies<E> s) {
-            AbstractSpecies<E> species = (AbstractSpecies<E>) s;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorMask length and species length differ");
+        private final <E>
+        VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
+            assert(length() == dsp.laneCount());
             boolean[] maskArray = toArray();
             // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte512Vector.Byte512Mask(maskArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short512Vector.Short512Mask(maskArray).check(species);
-            case LaneType.SK_INT:
-                return new Int512Vector.Int512Mask(maskArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long512Vector.Long512Mask(maskArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float512Vector.Float512Mask(maskArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double512Vector.Double512Mask(maskArray).check(species);
-            }
+            return switch (dsp.laneType.switchKey) {
+                     case LaneType.SK_BYTE   -> new Byte512Vector.Byte512Mask(maskArray).check(dsp);
+                     case LaneType.SK_SHORT  -> new Short512Vector.Short512Mask(maskArray).check(dsp);
+                     case LaneType.SK_INT    -> new Int512Vector.Int512Mask(maskArray).check(dsp);
+                     case LaneType.SK_LONG   -> new Long512Vector.Long512Mask(maskArray).check(dsp);
+                     case LaneType.SK_FLOAT  -> new Float512Vector.Float512Mask(maskArray).check(dsp);
+                     case LaneType.SK_DOUBLE -> new Double512Vector.Double512Mask(maskArray).check(dsp);
+                     default                 -> throw new AssertionError(dsp);
+            };
+        }
 
-            // Should not reach here.
-            throw new AssertionError(species);
+        @Override
+        @ForceInline
+        public <E> VectorMask<E> cast(VectorSpecies<E> dsp) {
+            AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
+            if (length() != species.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
+            if (VSIZE == species.vectorBitSize()) {
+                Class<?> dtype = species.elementType();
+                Class<?> dmtype = species.maskType();
+                return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
+                    this.getClass(), ETYPE, VLENGTH,
+                    dmtype, dtype, VLENGTH,
+                    this, species,
+                    Byte512Mask::defaultMaskCast);
+            }
+            return this.defaultMaskCast(species);
         }
 
         // Unary operations
