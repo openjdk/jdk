@@ -172,12 +172,15 @@ final class SocketTube implements FlowTube {
         @Override
         public final void run(DeferredCompleter taskCompleter) {
             try {
-                // non contentious synchronized for visibility.
-                lock.lock();
+                // The logics of the sequential scheduler should ensure that
+                // the restartable task is running in only one thread at
+                // a given time: there should never be contention.
+                boolean locked = lock.tryLock();
+                assert locked : "contention detected in SequentialScheduler";
                 try {
                     task.run();
                 } finally {
-                    lock.unlock();
+                    if (locked) lock.unlock();
                 }
             } finally {
                 taskCompleter.complete();
