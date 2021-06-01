@@ -156,6 +156,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         if (newZoom > DiagramScene.ZOOM_MIN_FACTOR) {
             setZoomFactor(newZoom);
             validate();
+            getScrollPane().getViewport().validate();
             getScrollPane().getViewport().setViewPosition(new Point((int) (viewPosition.x / DiagramScene.ZOOM_INCREMENT), (int) (viewPosition.y / DiagramScene.ZOOM_INCREMENT)));
         }
     }
@@ -169,6 +170,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         if (newZoom < DiagramScene.ZOOM_MAX_FACTOR) {
             setZoomFactor(newZoom);
             validate();
+            getScrollPane().getViewport().validate();
             getScrollPane().getViewport().setViewPosition(new Point((int) (viewPosition.x * DiagramScene.ZOOM_INCREMENT), (int) (viewPosition.y * DiagramScene.ZOOM_INCREMENT)));
         }
     }
