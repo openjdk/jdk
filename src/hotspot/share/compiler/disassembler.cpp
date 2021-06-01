@@ -755,7 +755,7 @@ address decode_env::decode_instructions(address start, address end, address orig
 // Each method will create a decode_env before decoding.
 // You can call the decode_env methods directly if you already have one.
 
-void* Disassembler::dll_load(char* buf, int offset, int buflen, char* ebuf, int ebuflen, outputStream* st) {
+void* Disassembler::dll_load(char* buf, int buflen, int offset, char* ebuf, int ebuflen, outputStream* st) {
   int sz = buflen - offset;
   int written = jio_snprintf(&buf[offset], sz, "%s%s", hsdis_library_name, os::dll_file_extension());
   if (written < sz) { // written successfully, not truncated.
