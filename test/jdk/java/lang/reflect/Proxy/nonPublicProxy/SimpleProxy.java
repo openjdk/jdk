@@ -31,7 +31,7 @@ import java.util.Arrays;
  * @summary Test making a proxy instance that implements a non-public
  *          interface with and without security manager installed
  * @build p.Foo p.Bar
- * @run main SimpleProxy
+ * @run main/othervm -Djava.security.manager=allow SimpleProxy
  */
 public class SimpleProxy {
     public static void main(String[] args) throws Exception {

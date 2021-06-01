@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,39 +52,29 @@ public class Printer implements Visitor {
 
     static private String printAcc(int acc) {
         List<String> flags = new ArrayList<>();
-
         if ((acc & ACC_STATIC) != 0) {
             flags.add("static");
         }
-
         if ((acc & ACC_PUBLIC) != 0) {
             flags.add("public");
         }
-
         if ((acc & ACC_PRIVATE) != 0) {
             flags.add("private");
         }
-
         if ((acc & ACC_PROTECTED) != 0) {
             flags.add("protected");
         }
-
         if ((acc & ACC_PUBLIC) == 0 &&
-                (acc & ACC_PRIVATE) == 0 &&
-                (acc & ACC_PROTECTED) == 0) {
+            (acc & ACC_PRIVATE) == 0 &&
+            (acc & ACC_PROTECTED) == 0) {
             flags.add("package");
         }
-
-        if ((acc & ACC_STRICT) != 0) {
-            flags.add("strictfp");
-        }
-
         if ((acc & ACC_SYNCHRONIZED) != 0) {
             flags.add("synchronized");
         }
-
         return Util.intersperse(" ", flags.toArray(new String[0]));
     }
+
     static public String print(Clazz clz) {
         Printer p = new Printer();
         clz.visit(p);

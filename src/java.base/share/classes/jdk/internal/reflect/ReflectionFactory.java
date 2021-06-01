@@ -33,16 +33,14 @@ import java.io.OptionalDataException;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.security.PrivilegedAction;
-import java.util.Objects;
 import java.util.Properties;
-
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -684,7 +682,7 @@ public class ReflectionFactory {
         }
 
         return cl1.getClassLoader() == cl2.getClassLoader() &&
-                Objects.equals(cl1.getPackageName(), cl2.getPackageName());
+                cl1.getPackageName() == cl2.getPackageName();
     }
 
 }

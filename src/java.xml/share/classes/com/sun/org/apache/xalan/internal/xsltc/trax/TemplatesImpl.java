@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,7 +23,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
-import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.Translet;
@@ -60,6 +59,7 @@ import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.URIResolver;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.SecuritySupport;
 
 
@@ -68,7 +68,7 @@ import jdk.xml.internal.SecuritySupport;
  * @author G. Todd Millerj
  * @author Jochen Cordes <Jochen.Cordes@t-online.de>
  * @author Santiago Pericas-Geertsen
- * @LastModified: May 2020
+ * @LastModified: May 2021
  */
 public final class TemplatesImpl implements Templates, Serializable {
     static final long serialVersionUID = 673094361519270707L;
@@ -149,7 +149,7 @@ public final class TemplatesImpl implements Templates, Serializable {
     /**
      * protocols allowed for external references set by the stylesheet processing instruction, Import and Include element.
      */
-    private transient String _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+    private transient String _accessExternalStylesheet = JdkConstants.EXTERNAL_ACCESS_DEFAULT;
 
     /**
      * @serialField _name String The Name of the main class

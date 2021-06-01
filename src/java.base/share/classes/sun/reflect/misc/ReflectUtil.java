@@ -124,12 +124,8 @@ public final class ReflectUtil {
      * NOTE: should only be called if a SecurityManager is installed
      */
     private static void privateCheckPackageAccess(SecurityManager s, Class<?> clazz) {
-        while (clazz.isArray()) {
-            clazz = clazz.getComponentType();
-        }
-
         String pkg = clazz.getPackageName();
-        if (pkg != null && !pkg.isEmpty()) {
+        if (!pkg.isEmpty()) {
             s.checkPackageAccess(pkg);
         }
 

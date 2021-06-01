@@ -295,6 +295,9 @@ public class Table extends Content {
         if (tabMap != null && element == null) {
             throw new NullPointerException();
         }
+        if (contents.size() != columnStyles.size()) {
+            throw new IllegalArgumentException("row content size does not match number of columns");
+        }
 
         Content row = new ContentBuilder();
 
@@ -323,11 +326,9 @@ public class Table extends Content {
         }
         int colIndex = 0;
         for (Content c : contents) {
-            HtmlStyle cellStyle = (columnStyles == null || colIndex > columnStyles.size())
-                    ? null
-                    : columnStyles.get(colIndex);
-            // Replace empty content with HtmlTree.EMPTY to make sure the cell isn't dropped
-            HtmlTree cell = HtmlTree.DIV(cellStyle, !c.isEmpty() ? c : HtmlTree.EMPTY);
+            HtmlStyle cellStyle = columnStyles.get(colIndex);
+            // Replace invalid content with HtmlTree.EMPTY to make sure the cell isn't dropped
+            HtmlTree cell = HtmlTree.DIV(cellStyle, c.isValid() ? c : HtmlTree.EMPTY);
             if (rowStyle != null) {
                 cell.addStyle(rowStyle);
             }

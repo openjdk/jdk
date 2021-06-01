@@ -25,7 +25,7 @@
 /**
  * @test
  * @bug 8012453 8016046
- * @run main/othervm ExecCommand
+ * @run main/othervm -Djava.security.manager=allow ExecCommand
  * @summary workaround for legacy applications with Runtime.getRuntime().exec(String command)
  */
 

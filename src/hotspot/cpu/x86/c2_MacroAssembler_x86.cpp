@@ -3782,7 +3782,7 @@ void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister
   assert(VM_Version::supports_avx(), "");
   vpxor(xtmp, xtmp, xtmp, vec_enc);
   vpsubb(xtmp, xtmp, mask, vec_enc);
-  vpmovmskb(tmp, xtmp);
+  vpmovmskb(tmp, xtmp, vec_enc);
   switch(opc) {
     case Op_VectorMaskTrueCount:
       popcntq(dst, tmp);

@@ -867,9 +867,9 @@ private:
 
   // Support for faster execution of get_late_ctrl()/dom_lca()
   // when a node has many uses and dominator depth is deep.
-  Node_Array _dom_lca_tags;
+  GrowableArray<jlong> _dom_lca_tags;
+  uint _dom_lca_tags_round;
   void   init_dom_lca_tags();
-  void   clear_dom_lca_tags();
 
   // Helper for debugging bad dominance relationships
   bool verify_dominance(Node* n, Node* use, Node* LCA, Node* early);
@@ -1063,7 +1063,6 @@ private:
     _igvn(igvn),
     _verify_me(nullptr),
     _verify_only(false),
-    _dom_lca_tags(arena()),  // Thread::resource_area
     _nodes_required(UINT_MAX) {
     assert(mode != LoopOptsVerify, "wrong constructor to verify IdealLoop");
     build_and_optimize(mode);
@@ -1077,7 +1076,6 @@ private:
     _igvn(igvn),
     _verify_me(verify_me),
     _verify_only(verify_me == nullptr),
-    _dom_lca_tags(arena()),  // Thread::resource_area
     _nodes_required(UINT_MAX) {
     build_and_optimize(LoopOptsVerify);
   }
@@ -1485,7 +1483,7 @@ private:
   void handle_use( Node *use, Node *def, small_cache *cache, Node *region_dom, Node *new_false, Node *new_true, Node *old_false, Node *old_true );
   bool split_up( Node *n, Node *blk1, Node *blk2 );
   void sink_use( Node *use, Node *post_loop );
-  Node *place_near_use( Node *useblock ) const;
+  Node* place_outside_loop(Node* useblock, IdealLoopTree* loop) const;
   Node* try_move_store_before_loop(Node* n, Node *n_ctrl);
   void try_move_store_after_loop(Node* n);
   bool identical_backtoback_ifs(Node *n);
@@ -1613,7 +1611,15 @@ public:
 
   LoopNode* create_inner_head(IdealLoopTree* loop, LongCountedLoopNode* head, LongCountedLoopEndNode* exit_test);
 
-  bool is_safe_load_ctrl(Node* ctrl);
+  Node* get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node* LCA);
+
+  bool ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop, Node* ctrl);
+
+  bool ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop);
+
+  Node* compute_early_ctrl(Node* n, Node* n_ctrl);
+
+  void try_sink_out_of_loop(Node* n);
 };
 
 

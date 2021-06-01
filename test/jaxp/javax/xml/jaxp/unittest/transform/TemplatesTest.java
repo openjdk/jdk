@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.TemplatesTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.TemplatesTest
  * @run testng/othervm transform.TemplatesTest
  * @summary This class contains tests for Templates.
  */

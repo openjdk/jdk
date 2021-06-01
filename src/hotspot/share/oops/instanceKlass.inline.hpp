@@ -25,11 +25,12 @@
 #ifndef SHARE_OOPS_INSTANCEKLASS_INLINE_HPP
 #define SHARE_OOPS_INSTANCEKLASS_INLINE_HPP
 
+#include "oops/instanceKlass.hpp"
+
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"

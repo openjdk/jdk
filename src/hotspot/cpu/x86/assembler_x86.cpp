@@ -1471,7 +1471,7 @@ void Assembler::vaesenclast(XMMRegister dst, XMMRegister nds, XMMRegister src, i
 
 void Assembler::andb(Address dst, Register src) {
   InstructionMark im(this);
-  prefix(dst, src);
+  prefix(dst, src, true);
   emit_int8(0x20);
   emit_operand(src, dst);
 }
@@ -4123,9 +4123,10 @@ void Assembler::pmovmskb(Register dst, XMMRegister src) {
   emit_int16((unsigned char)0xD7, (0xC0 | encode));
 }
 
-void Assembler::vpmovmskb(Register dst, XMMRegister src) {
-  assert(VM_Version::supports_avx2(), "");
-  InstructionAttr attributes(AVX_256bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+void Assembler::vpmovmskb(Register dst, XMMRegister src, int vec_enc) {
+  assert((VM_Version::supports_avx() && vec_enc == AVX_128bit) ||
+         (VM_Version::supports_avx2() && vec_enc  == AVX_256bit), "");
+  InstructionAttr attributes(vec_enc, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int16((unsigned char)0xD7, (0xC0 | encode));
 }
