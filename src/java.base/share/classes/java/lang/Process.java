@@ -102,12 +102,12 @@ public abstract class Process {
 
     // Readers and Writers created for this process; so repeated calls return the same object
     // All updates must be done while synchronized on this Process.
-    private BufferedWriter outputWriter = null;
-    private Charset outputCharset = null;
-    private BufferedReader inputReader = null;
-    private Charset inputCharset = null;
-    private BufferedReader errorReader = null;
-    private Charset errorCharset = null;
+    private BufferedWriter outputWriter;
+    private Charset outputCharset;
+    private BufferedReader inputReader;
+    private Charset inputCharset;
+    private BufferedReader errorReader;
+    private Charset errorCharset;
 
     /**
      * Default constructor for Process.
@@ -126,9 +126,9 @@ public abstract class Process {
      * <a href="ProcessBuilder.html#redirect-input">null output stream</a>.
      *
      * @apiNote
-     * Use {@link #getOutputStream} and {@link #outputWriter} with extreme care.
-     * Output to the {@code BufferedWriter} may be held in the buffer until
-     * {@linkplain BufferedWriter#flush flush} is called.
+     * When writing to both {@link #getOutputStream()} and either {@link #outputWriter()}
+     * or {@link #outputWriter(Charset)}, {@link BufferedWriter#flush BufferedWriter.flush}
+     * should be called before writes to the {@code OutputStream}.
      *
      * @implNote
      * Implementation note: It is a good idea for the returned
@@ -202,9 +202,9 @@ public abstract class Process {
      * to read characters, lines, or stream lines from standard output.
      *
      * <p>This method delegates to {@link #inputReader(Charset)} using the
-     * {@link Charset} named by the {@code native.encoding}
-     * system property or the {@link Charset#defaultCharset()} if the
-     * {@code native.encoding} is not supported.
+     * {@link Charset} named by the {@code native.encoding} system property.
+     * If the {@code native.encoding} is not a valid charset name or not supported
+     * the {@link Charset#defaultCharset()} is used.
      *
      * @return a {@link BufferedReader BufferedReader} using the
      *          {@code native.encoding} if supported, otherwise, the
@@ -232,6 +232,10 @@ public abstract class Process {
      * then the {@code InputStreamReader} will be reading from a
      * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
+     * <p>The first call to this method creates the {@link BufferedReader BufferedReader},
+     * if called again with the same {@code charset} the same {@code BufferedReader} is returned.
+     * It is an error to call this method again with a different {@code charset}.
+     *
      * <p>Otherwise, if the standard error of the process has been redirected using
      * {@link ProcessBuilder#redirectErrorStream(boolean)
      * ProcessBuilder.redirectErrorStream} then the input reader returned by
@@ -239,24 +243,18 @@ public abstract class Process {
      * of the process.
      *
      * @apiNote
-     * Using both {@link #getInputStream} and {@link #inputReader} has
+     * Using both {@link #getInputStream} and {@link #inputReader(Charset)} has
      * unpredictable behavior since the buffered reader reads ahead from the
      * input stream.
      *
      * <p>When the process has terminated, and the standard input has not been redirected,
-     * the bytes available from the underlying stream is on a best effort basis and
+     * reading of the bytes available from the underlying stream is on a best effort basis and
      * may be unpredictable.
-     *
-     * @implNote
-     * This is equivalent to:
-     * {@code
-     *     return new BufferedReader(new InputStreamReader(getInputStream(), charset));
-     * }
      *
      * @param charset the {@code Charset} used to decode bytes to characters
      * @return a {@code BufferedReader} for the standard output of the process using the {@code charset}
      * @throws NullPointerException if the {@code charset} is {@code null}
-     * @throws IllegalArgumentException if called more than once with different charset arguments
+     * @throws IllegalStateException if called more than once with different charset arguments
      * @since 17
      */
     public final BufferedReader inputReader(Charset charset) {
@@ -267,7 +265,7 @@ public abstract class Process {
                 inputReader = new BufferedReader(new InputStreamReader(getInputStream(), charset));
             } else {
                 if (!inputCharset.equals(charset))
-                    throw new IllegalArgumentException("BufferedReader was created with charset: " + inputCharset);
+                    throw new IllegalStateException("BufferedReader was created with charset: " + inputCharset);
             }
             return inputReader;
         }
@@ -279,9 +277,9 @@ public abstract class Process {
      * to read characters, lines, or stream lines from standard error.
      *
      * <p>This method delegates to {@link #errorReader(Charset)} using the
-     * {@link Charset} named by the {@code native.encoding}
-     * system property or the {@link Charset#defaultCharset()} if the
-     * {@code native.encoding} is not supported.
+     * {@link Charset} named by the {@code native.encoding} system property.
+     * If the {@code native.encoding} is not a valid charset name or not supported
+     * the {@link Charset#defaultCharset()} is used.
      *
      * @return a {@link BufferedReader BufferedReader} using the
      *          {@code native.encoding} if supported, otherwise, the
@@ -304,6 +302,10 @@ public abstract class Process {
      * sequences are replaced with the charset's default replacement.
      * The {@code BufferedReader} reads and buffers characters from the InputStreamReader.
      *
+     * <p>The first call to this method creates the {@link BufferedReader BufferedReader},
+     * if called again with the same {@code charset} the same {@code BufferedReader} is returned.
+     * It is an error to call this method again with a different {@code charset}.
+     *
      * <p>If the standard error of the process has been redirected using
      * {@link ProcessBuilder#redirectError(Redirect) ProcessBuilder.redirectError} or
      * {@link ProcessBuilder#redirectErrorStream(boolean) ProcessBuilder.redirectErrorStream}
@@ -311,24 +313,18 @@ public abstract class Process {
      * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
      * @apiNote
-     * Using both {@link #getErrorStream} and {@link #errorReader} has
+     * Using both {@link #getErrorStream} and {@link #errorReader(Charset)} has
      * unpredictable behavior since the buffered reader reads ahead from the
      * error stream.
      *
      * <p>When the process has terminated, and the standard error has not been redirected,
-     * the bytes available from the underlying stream is on a best effort basis and
+     * reading of the bytes available from the underlying stream is on a best effort basis and
      * may be unpredictable.
-     *
-     * @implNote
-     * This is equivalent to:
-     * {@code
-     *     return new BufferedReader(new InputStreamReader(getErrorStream(), charset));
-     * }
      *
      * @param charset the {@code Charset} used to decode bytes to characters
      * @return a {@code BufferedReader} for the standard error of the process using the {@code charset}
      * @throws NullPointerException if the {@code charset} is {@code null}
-     * @throws IllegalArgumentException if called more than once with different charset arguments
+     * @throws IllegalStateException if called more than once with different charset arguments
      * @since 17
      */
     public final BufferedReader errorReader(Charset charset) {
@@ -339,7 +335,7 @@ public abstract class Process {
                 errorReader = new BufferedReader(new InputStreamReader(getErrorStream(), charset));
             } else {
                 if (!errorCharset.equals(charset))
-                    throw new IllegalArgumentException("BufferedReader was created with charset: " + errorCharset);
+                    throw new IllegalStateException("BufferedReader was created with charset: " + errorCharset);
             }
             return errorReader;
         }
@@ -351,26 +347,10 @@ public abstract class Process {
      * Writes text to a character-output stream, buffering characters so as to provide
      * for the efficient writing of single characters, arrays, and strings.
      *
-     * <p>Characters written encoded to bytes using {@link OutputStreamWriter}
-     * and the {@link Charset} named by the {@code native.encoding} system property
-     * piped into the standard input of the process represented by this {@code Process} object.
-     * If the {@code Charset} is not supported, the {@link Charset#defaultCharset()} is used.
-     * Call the {@link BufferedWriter#flush()} method to flush buffered output to the process.
-     *
-     * <p>If the standard input of the process has been redirected using
-     * {@link ProcessBuilder#redirectInput(Redirect)
-     * ProcessBuilder.redirectInput} then this method will return a
-     * <a href="ProcessBuilder.html#redirect-input">null output writer</a>.
-     *
-     * @apiNote
-     * A {@linkplain BufferedWriter} writes characters, arrays of characters, and strings.
-     * Wrapping the {@link BufferedWriter} with a {@link PrintWriter} provides
-     * efficient buffering and formatting of primitives and objects as well as support
-     * for auto-flush on line endings.
-     * <p>
-     * Use {@link #getOutputStream} and {@link #outputWriter} with extreme care.
-     * Output to the {@code BufferedWriter} may be held in the buffer until
-     * {@linkplain BufferedWriter#flush flush} is called.
+     * <p>This method delegates to {@link #outputWriter(Charset)} using the
+     * {@link Charset} named by the {@code native.encoding} system property.
+     * If the {@code native.encoding} is not a valid charset name or not supported
+     * the {@link Charset#defaultCharset()} is used.
      *
      * @return a {@code BufferedWriter} to the standard input of the process using the charset
      *          for the {@code native.encoding} system property
@@ -387,26 +367,30 @@ public abstract class Process {
      * for the efficient writing of single characters, arrays, and strings.
      *
      * <p>Characters written by the writer are encoded to bytes using {@link OutputStreamWriter}
-     * and the {@link Charset}
-     * piped into the standard input of the process represented by this {@code Process} object.
+     * and the {@link Charset} are written to the standard input of the process represented
+     * by this {@code Process}.
      * Malformed-input and unmappable-character sequences are replaced with the charset's
      * default replacement.
-     * Call the {@link BufferedWriter#flush()} method to flush buffered output to the process.
+     *
+     * <p>The first call to this method creates the {@link BufferedWriter BufferedWriter},
+     * if called again with the same {@code charset} the same {@code BufferedWriter} is returned.
+     * It is an error to call this method again with a different {@code charset}.
      *
      * <p>If the standard input of the process has been redirected using
      * {@link ProcessBuilder#redirectInput(Redirect)
      * ProcessBuilder.redirectInput} then this method will return a
-     * <a href="ProcessBuilder.html#redirect-input">null output writer</a>.
+     * <a href="ProcessBuilder.html#redirect-input">null output stream</a>.
      *
      * @apiNote
      * A {@linkplain BufferedWriter} writes characters, arrays of characters, and strings.
      * Wrapping the {@link BufferedWriter} with a {@link PrintWriter} provides
      * efficient buffering and formatting of primitives and objects as well as support
      * for auto-flush on line endings.
+     * Call the {@link BufferedWriter#flush()} method to flush buffered output to the process.
      * <p>
-     * Use {@link #getOutputStream} and {@link #outputWriter} with extreme care.
-     * Output to the {@code BufferedWriter} may be held in the buffer until
-     * {@linkplain BufferedWriter#flush flush} is called.
+     * When writing to both {@link #getOutputStream()} and either {@link #outputWriter()}
+     * or {@link #outputWriter(Charset)}, {@linkplain BufferedWriter#flush BufferedWriter.flush}
+     * should be called before writes to the {@code OutputStream}.
      *
      * @param charset the {@code Charset} to encode characters to bytes
      * @return a {@code BufferedWriter} to the standard input of the process using the {@code charset}
