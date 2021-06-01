@@ -232,36 +232,28 @@ public final class FileTime
             long secs = 0L;
             int nanos = 0;
             switch (unit) {
-                case DAYS:
-                    secs = scale(value, SECONDS_PER_DAY,
-                                 Long.MAX_VALUE/SECONDS_PER_DAY);
-                    break;
-                case HOURS:
-                    secs = scale(value, SECONDS_PER_HOUR,
-                                 Long.MAX_VALUE/SECONDS_PER_HOUR);
-                    break;
-                case MINUTES:
-                    secs = scale(value, SECONDS_PER_MINUTE,
-                                 Long.MAX_VALUE/SECONDS_PER_MINUTE);
-                    break;
-                case SECONDS:
-                    secs = value;
-                    break;
-                case MILLISECONDS:
+                case DAYS    -> secs = scale(value, SECONDS_PER_DAY,
+                        Long.MAX_VALUE / SECONDS_PER_DAY);
+                case HOURS   -> secs = scale(value, SECONDS_PER_HOUR,
+                        Long.MAX_VALUE / SECONDS_PER_HOUR);
+                case MINUTES -> secs = scale(value, SECONDS_PER_MINUTE,
+                        Long.MAX_VALUE / SECONDS_PER_MINUTE);
+                case SECONDS -> secs = value;
+                case MILLISECONDS -> {
                     secs = Math.floorDiv(value, MILLIS_PER_SECOND);
-                    nanos = (int)Math.floorMod(value, MILLIS_PER_SECOND)
+                    nanos = (int) Math.floorMod(value, MILLIS_PER_SECOND)
                             * NANOS_PER_MILLI;
-                    break;
-                case MICROSECONDS:
+                }
+                case MICROSECONDS -> {
                     secs = Math.floorDiv(value, MICROS_PER_SECOND);
-                    nanos = (int)Math.floorMod(value, MICROS_PER_SECOND)
+                    nanos = (int) Math.floorMod(value, MICROS_PER_SECOND)
                             * NANOS_PER_MICRO;
-                    break;
-                case NANOSECONDS:
+                }
+                case NANOSECONDS  -> {
                     secs = Math.floorDiv(value, NANOS_PER_SECOND);
-                    nanos = (int)Math.floorMod(value, NANOS_PER_SECOND);
-                    break;
-                default : throw new AssertionError("Unit not handled");
+                    nanos = (int) Math.floorMod(value, NANOS_PER_SECOND);
+                }
+                default -> throw new AssertionError("Unit not handled");
             }
             if (secs <= MIN_SECOND)
                 instant = Instant.MIN;

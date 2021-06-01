@@ -2803,7 +2803,7 @@ public final class Files {
             do {
                 FileVisitResult result;
                 switch (ev.type()) {
-                    case ENTRY :
+                    case ENTRY -> {
                         IOException ioe = ev.ioeException();
                         if (ioe == null) {
                             assert ev.attributes() != null;
@@ -2811,29 +2811,25 @@ public final class Files {
                         } else {
                             result = visitor.visitFileFailed(ev.file(), ioe);
                         }
-                        break;
-
-                    case START_DIRECTORY :
+                    }
+                    case START_DIRECTORY -> {
                         result = visitor.preVisitDirectory(ev.file(), ev.attributes());
 
                         // if SKIP_SIBLINGS and SKIP_SUBTREE is returned then
                         // there shouldn't be any more events for the current
                         // directory.
                         if (result == FileVisitResult.SKIP_SUBTREE ||
-                            result == FileVisitResult.SKIP_SIBLINGS)
+                                result == FileVisitResult.SKIP_SIBLINGS)
                             walker.pop();
-                        break;
-
-                    case END_DIRECTORY :
+                    }
+                    case END_DIRECTORY -> {
                         result = visitor.postVisitDirectory(ev.file(), ev.ioeException());
 
                         // SKIP_SIBLINGS is a no-op for postVisitDirectory
                         if (result == FileVisitResult.SKIP_SIBLINGS)
                             result = FileVisitResult.CONTINUE;
-                        break;
-
-                    default :
-                        throw new AssertionError("Should not get here");
+                    }
+                    default -> throw new AssertionError("Should not get here");
                 }
 
                 if (Objects.requireNonNull(result) != FileVisitResult.CONTINUE) {
