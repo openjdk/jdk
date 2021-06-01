@@ -78,11 +78,10 @@ bool ciKlass::is_subtype_of(ciKlass* that) {
   bool is_subtype;
   GUARDED_VM_ENTRY(is_subtype = get_Klass()->is_subtype_of(that->get_Klass());)
 
-#ifdef ASSERT
-  if (that->is_instance_klass() && !that->is_interface()) {
-    assert(!is_subtype || that->as_instance_klass()->has_subklass(), "inconsistent");
-  }
-#endif // ASSERT
+  // Ensure consistency with ciInstanceKlass::has_subklass().
+  assert(!that->is_instance_klass() || // array klasses are irrelevant
+          that->is_interface()      || // has_subklass is always false for interfaces
+         !is_subtype || that->as_instance_klass()->has_subklass(), "inconsistent");
 
   return is_subtype;
 }
@@ -101,11 +100,10 @@ bool ciKlass::is_subclass_of(ciKlass* that) {
   bool is_subclass;
   GUARDED_VM_ENTRY(is_subclass = get_Klass()->is_subclass_of(that->get_Klass());)
 
-#ifdef ASSERT
-  if (that->is_instance_klass() && !that->is_interface()) {
-    assert(!is_subclass || that->as_instance_klass()->has_subklass(), "inconsistent");
-  }
-#endif // ASSERT
+  // Ensure consistency with ciInstanceKlass::has_subklass().
+  assert(!that->is_instance_klass() || // array klasses are irrelevant
+          that->is_interface()      || // has_subklass is always false for interfaces
+         !is_subclass || that->as_instance_klass()->has_subklass(), "inconsistent");
 
   return is_subclass;
 }
