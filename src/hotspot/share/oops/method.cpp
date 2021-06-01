@@ -229,7 +229,7 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
   if (log_is_enabled(Debug, exceptions)) {
     ResourceMark rm(THREAD);
     log_debug(exceptions)("Looking for catch handler for exception of type \"%s\" in method \"%s\"",
-                          ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh()->name()->as_C_string());
+                          ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh->name()->as_C_string());
   }
   // exception table holds quadruple entries of the form (beg_bci, end_bci, handler_bci, klass_index)
   // access exception table
@@ -258,7 +258,7 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
         } else if (log_is_enabled(Info, exceptions)) {
           ResourceMark rm(THREAD);
           log_info(exceptions)("Found catch-all handler for exception of type \"%s\" in method \"%s\" at BCI: %d",
-                               ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh()->name()->as_C_string(), handler_bci);
+                               ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh->name()->as_C_string(), handler_bci);
         }
         return handler_bci;
       } else if (ex_klass == NULL) {
@@ -296,7 +296,7 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
           } else if (log_is_enabled(Info, exceptions)) {
             ResourceMark rm(THREAD);
             log_info(exceptions)("Found matching handler for exception of type \"%s\" in method \"%s\" at BCI: %d",
-                                 ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh()->name()->as_C_string(), handler_bci);
+                                 ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh->name()->as_C_string(), handler_bci);
           }
           return handler_bci;
         }
@@ -307,7 +307,7 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
   if (log_is_enabled(Debug, exceptions)) {
     ResourceMark rm(THREAD);
     log_debug(exceptions)("No catch handler found for exception of type \"%s\" in method \"%s\"",
-                          ex_klass->external_name(), mh()->name()->as_C_string());
+                          ex_klass->external_name(), mh->name()->as_C_string());
   }
 
   return -1;
