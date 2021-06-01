@@ -367,7 +367,7 @@ public final class System {
         if (allowSecurityManager()) {
             System.err.println("WARNING: java.lang.System::setSecurityManager" +
                     " is deprecated and will be removed in a future release.");
-            setSecurityManagerDirect(sm);
+            implSetSecurityManager(sm);
         } else {
             // security manager not allowed
             if (sm != null) {
@@ -377,8 +377,7 @@ public final class System {
         }
     }
 
-    private static void setSecurityManagerDirect(
-            @SuppressWarnings("removal") SecurityManager sm) {
+    private static void implSetSecurityManager(@SuppressWarnings("removal") SecurityManager sm) {
         if (security == null) {
             // ensure image reader is initialized
             Object.class.getResource("java/lang/ANY");
@@ -2161,7 +2160,7 @@ public final class System {
                     break;
                 case "":
                 case "default":
-                    setSecurityManagerDirect(new SecurityManager());
+                    implSetSecurityManager(new SecurityManager());
                     allowSecurityManager = MAYBE;
                     needWarning = true;
                     break;
@@ -2181,7 +2180,7 @@ public final class System {
                         // custom security manager may be in non-exported package
                         ctor.setAccessible(true);
                         SecurityManager sm = (SecurityManager) ctor.newInstance();
-                        setSecurityManagerDirect(sm);
+                        implSetSecurityManager(sm);
                         needWarning = true;
                     } catch (Exception e) {
                         throw new InternalError("Could not create SecurityManager", e);
