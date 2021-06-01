@@ -468,7 +468,9 @@ class Http2Connection  {
         Function<String, CompletableFuture<Void>> checkAlpnCF = (alpn) -> {
             CompletableFuture<Void> cf = new MinimalFuture<>();
             SSLEngine engine = aconn.getEngine();
-            assert Objects.equals(alpn, engine.getApplicationProtocol());
+            String engineAlpn = engine.getApplicationProtocol();
+            assert Objects.equals(alpn, engineAlpn)
+                    : "alpn: %s, engine: %s".formatted(alpn, engineAlpn);
 
             DEBUG_LOGGER.log("checkSSLConfig: alpn: %s", alpn );
 
