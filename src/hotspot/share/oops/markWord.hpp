@@ -239,8 +239,7 @@ class markWord {
   static markWord INFLATING() { return zero(); }    // inflate-in-progress
 
   // Should this header be preserved during GC?
-  template <typename KlassProxy>
-  inline bool must_be_preserved(KlassProxy klass) const;
+  inline bool must_be_preserved(const oopDesc* obj) const;
 
   // Should this header (including its age bits) be preserved in the
   // case of a promotion failure during scavenge?
@@ -259,8 +258,7 @@ class markWord {
   // observation is that promotion failures are quite rare and
   // reducing the number of mark words preserved during them isn't a
   // high priority.
-  template <typename KlassProxy>
-  inline bool must_be_preserved_for_promotion_failure(KlassProxy klass) const;
+  inline bool must_be_preserved_for_promotion_failure(const oopDesc* obj) const;
 
   // WARNING: The following routines are used EXCLUSIVELY by
   // synchronization functions. They are not really gc safe.

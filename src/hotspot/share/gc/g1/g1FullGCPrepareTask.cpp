@@ -84,7 +84,7 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
         // lack BOT information for performance reasons.
         // Recreate BOT information of high live ratio young regions here to keep expected
         // performance during scanning their card tables in the collection pauses later.
-        update_bot(hr);
+        hr->update_bot();
       }
       log_trace(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
                             hr->hrm_index(), _collector->live_words(hr->hrm_index()));
@@ -144,22 +144,6 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::should_compact(HeapRegion*
   size_t live_words_threshold = _collector->scope()->region_compaction_threshold();
   // High live ratio region will not be compacted.
   return live_words <= live_words_threshold;
-}
-
-void G1FullGCPrepareTask::G1CalculatePointersClosure::update_bot(HeapRegion* hr) {
-  HeapWord* const limit = hr->top();
-  HeapWord* next_addr = hr->bottom();
-  HeapWord* threshold = hr->initialize_threshold();
-  HeapWord* prev_addr;
-  while (next_addr < limit) {
-    prev_addr = next_addr;
-    next_addr = _bitmap->get_next_marked_addr(next_addr + 1, limit);
-
-    if (next_addr > threshold) {
-      threshold = hr->cross_threshold(prev_addr, next_addr);
-    }
-  }
-  assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(HeapRegion* hr) {
