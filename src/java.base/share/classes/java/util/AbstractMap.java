@@ -735,9 +735,9 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @apiNote
      * Instances of this class are not necessarily immutable, as the key
      * and value may be mutable. An instance of <i>this specific class</i>
-     * is <i>unmodifiable,</i> because the key and value references cannot be
+     * is unmodifiable, because the key and value references cannot be
      * changed. A reference of this <i>type</i> may not be unmodifiable,
-     * as a subclass may be modifiable or provide the appearance of modifiability.
+     * as a subclass may be modifiable or may provide the appearance of modifiability.
      * <p>
      * This class may be convenient in methods that return thread-safe snapshots of
      * key-value mappings. For alternatives, see the

@@ -393,27 +393,29 @@ public interface Map<K, V> {
     Set<Map.Entry<K, V>> entrySet();
 
     /**
-     * A map entry (key-value pair). The entry may be unmodifiable, or
-     * the value may be modified, if the optional {@code setValue} method
-     * is implemented. The entry may be independent of any map or it
-     * may represent one entry of an entry-set view of a map.
+     * A map entry (key-value pair). The entry may be unmodifiable, or the
+     * value may be modifiable if the optional {@code setValue} method is
+     * implemented. The entry may be independent of any map, or it may represent
+     * an entry of the entry-set view of a map.
      * <p>
-     * The {@link #entrySet Map.entrySet} method returns a view of the map.
-     * This view is a Set whose elements are instances of this interface.
-     * These Map.Entry objects are themselves views of the entries
-     * of the map. If supported by the backing Map, a change to an entry's
-     * value via the {@link Map.Entry#setValue setValue} will be visible
-     * in the backing Map. This connection to the backing Map is valid
+     * Instances of the {@code Map.Entry} interface may be obtained by iterating
+     * the entry-set view of a map. These instances maintain a connection to the
+     * original, backing map. This connection to the backing map is valid
      * <i>only</i> for the duration of iteration over the entry-set view.
-     * The behavior of such a Map.Entry is undefined if the backing map
-     * has been modified after the entry was returned by the iterator, except
-     * through the {@code setValue} operation on the entry. In particular,
-     * a change to the value of a mapping in the backing Map might or might
-     * not be visible in the corresponding Entry element of the entry-set view.
+     * During iteration of the entry-set view, if supported by the backing map,
+     * a change to a {@code Map.Entry}'s value via the
+     * {@link Map.Entry#setValue setValue} method will be visible in the backing map.
+     * <p>
+     * The behavior of such a {@code Map.Entry} instance is undefined outside of
+     * iteration of the map's entry-set view. It is also undefined if the backing
+     * map has been modified after the {@code Map.Entry} was returned by the
+     * iterator, except through the {@code Map.Entry.setValue} method. In particular,
+     * a change to the value of a mapping in the backing map might or might not be
+     * visible in the corresponding {@code Map.Entry} element of the entry-set view.
      *
      * @apiNote
-     * An Entry from a map's entry set can be disconnected from the backing map
-     * through use of the {@link Map.Entry#copyOf copyOf} method.
+     * A {@code Map.Entry} obtained from a map's entry-set view can be disconnected
+     * from the backing map through use of the {@link Map.Entry#copyOf copyOf} method.
      *
      * @see Map#entrySet()
      * @since 1.2
@@ -574,24 +576,24 @@ public interface Map<K, V> {
         }
 
         /**
-         * Returns a copy of the given map entry. The returned entry is not associated with
-         * any map. The returned entry has the same characteristics as the entry returned
-         * by the {@link Map#entry Map.entry} method.
+         * Returns a copy of the given {@code Map.Entry}. The returned instance is not
+         * associated with any map. The returned instance has the same characteristics
+         * as instances returned by the {@link Map#entry Map.entry} method.
          *
          * @apiNote
-         * An entry obtained from a Map's entry set is a view of an entry of that Map. This
-         * method may be used to create an entry object, containing the same key and value,
-         * that is independent of any map.
+         * An instance obtained from a map's entry-set view has a connection to that map.
+         * The {@code copyOf}  method may be used to create a {@code Map.Entry} instance,
+         * containing the same key and value, that is independent of any map.
          *
          * @implNote
          * If the given entry was obtained from a call to {@code copyOf} or {@code Map.entry},
-         * calling copyOf will generally not create another copy.
+         * calling {@code copyOf} will generally not create another copy.
          *
          * @param <K> the type of the key
          * @param <V> the type of the value
          * @param e the entry to be copied
          * @return a map entry equal to the given entry
-         * @throws NullPointerException if e is null or if the key or value is null
+         * @throws NullPointerException if e is null or if either of its key or value is null
          * @since 17
          */
         @SuppressWarnings("unchecked")
