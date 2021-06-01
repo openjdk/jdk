@@ -253,9 +253,7 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
       int handler_bci = table.handler_pc(i);
       int klass_index = table.catch_type_index(i);
       if (klass_index == 0) {
-        if (log_is_enabled(Debug, exceptions)) {
-          log_debug(exceptions)("    - found catch-all handler at BCI: %d", handler_bci);
-        } else if (log_is_enabled(Info, exceptions)) {
+        if (log_is_enabled(Info, exceptions)) {
           ResourceMark rm(THREAD);
           log_info(exceptions)("Found catch-all handler for exception of type \"%s\" in method \"%s\" at BCI: %d",
                                ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh->name()->as_C_string(), handler_bci);
@@ -263,9 +261,7 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
         return handler_bci;
       } else if (ex_klass == NULL) {
         // Is this even possible?
-        if (log_is_enabled(Debug, exceptions)) {
-          log_debug(exceptions)("    - NULL exception class is implicitly caught by handler at BCI: %d", handler_bci);
-        } else if (log_is_enabled(Info, exceptions)) {
+        if (log_is_enabled(Info, exceptions)) {
           ResourceMark rm(THREAD);
           log_info(exceptions)("NULL exception class is implicitly caught by handler in method \"%s\" at BCI: %d",
                                mh()->name()->as_C_string(), handler_bci);
@@ -282,7 +278,7 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
         // fails or some other exception occurs, return handler_bci
         Klass* k = pool->klass_at(klass_index, THREAD);
         if (HAS_PENDING_EXCEPTION) {
-        if (log_is_enabled(Debug, exceptions)) {
+          if (log_is_enabled(Debug, exceptions)) {
             ResourceMark rm(THREAD);
             log_debug(exceptions)("    - exception \"%s\" occurred resolving catch type",
                                  PENDING_EXCEPTION->klass()->external_name());
@@ -291,9 +287,7 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
         }
         assert(k != NULL, "klass not loaded");
         if (ex_klass->is_subtype_of(k)) {
-          if (log_is_enabled(Debug, exceptions)) {
-            log_debug(exceptions)("    - found matching handler at BCI: %d", handler_bci);
-          } else if (log_is_enabled(Info, exceptions)) {
+          if (log_is_enabled(Info, exceptions)) {
             ResourceMark rm(THREAD);
             log_info(exceptions)("Found matching handler for exception of type \"%s\" in method \"%s\" at BCI: %d",
                                  ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh->name()->as_C_string(), handler_bci);
