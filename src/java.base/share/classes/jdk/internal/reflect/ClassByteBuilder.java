@@ -39,14 +39,15 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static java.lang.invoke.MethodType.*;
 
 public class ClassByteBuilder extends ClassWriter {
-    private static final String METHOD_ACCESSOR_CLS = "jdk/internal/reflect/MHMethodAccessor";
-    private static final String FIELD_ACCESSOR_CLS = "jdk/internal/reflect/MHFieldAccessor";
+    private static final int CLASSFILE_VERSION = V17;
     private static final String OBJECT_CLS = "java/lang/Object";
     private static final String MHS_CLS = "java/lang/invoke/MethodHandles";
     private static final String MH_CLS = "java/lang/invoke/MethodHandle";
     private static final String VH_CLS = "java/lang/invoke/VarHandle";
     private static final String CLASS_DATA_BSM_DESCR =
             "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;";
+    private static final String[] METHOD_ACCESSOR_INTF = new String[] { "jdk/internal/reflect/MHMethodAccessor" };
+    private static final String[] FIELD_ACCESSOR_INTF = new String[] {  "jdk/internal/reflect/MHFieldAccessor" };
     private static final String[] THROWS_THROWABLE = new String[] { "java/lang/Throwable" };
 
     private final String classname;
@@ -65,7 +66,7 @@ public class ClassByteBuilder extends ClassWriter {
     }
 
     public byte[] buildFieldAccessor(Field field) {
-        visit(V16, ACC_FINAL, classname, null, OBJECT_CLS, new String[] { FIELD_ACCESSOR_CLS });
+        visit(CLASSFILE_VERSION, ACC_FINAL, classname, null, OBJECT_CLS, FIELD_ACCESSOR_INTF);
         addConstructor();
 
         Class<?> type = field.getType().isPrimitive() ? field.getType() : Object.class;
@@ -77,7 +78,7 @@ public class ClassByteBuilder extends ClassWriter {
     }
 
     public byte[] buildMethodAccessor(Method method, MethodType mtype, boolean hasCallerParameter) {
-        visit(V16, ACC_FINAL, classname, null, OBJECT_CLS, new String[] { METHOD_ACCESSOR_CLS });
+        visit(CLASSFILE_VERSION, ACC_FINAL, classname, null, OBJECT_CLS, METHOD_ACCESSOR_INTF);
         addConstructor();
 
         boolean isStatic = Modifier.isStatic(method.getModifiers());
@@ -93,7 +94,7 @@ public class ClassByteBuilder extends ClassWriter {
     }
 
     public byte[] buildConstructorAccessor(Constructor<?> ctor, MethodType mtype) {
-        visit(V16, ACC_FINAL, classname, null, OBJECT_CLS, new String[] { METHOD_ACCESSOR_CLS });
+        visit(CLASSFILE_VERSION, ACC_FINAL, classname, null, OBJECT_CLS, METHOD_ACCESSOR_INTF);
         addConstructor();
 
         int paramCount = ctor.getParameterCount();

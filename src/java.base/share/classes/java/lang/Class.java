@@ -73,6 +73,7 @@ import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.module.Resources;
 import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
@@ -376,6 +377,7 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     // Caller-sensitive adapter method for reflective invocation
+    @CallerSensitiveAdapter
     private static Class<?> forName(String className, Class<?> caller)
             throws ClassNotFoundException {
         return forName0(className, true, ClassLoader.getClassLoader(caller), caller);
@@ -465,6 +467,7 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     // Caller-sensitive adapter method for reflective invocation
+    @CallerSensitiveAdapter
     private static Class<?> forName(String name, boolean initialize, ClassLoader loader, Class<?> caller)
             throws ClassNotFoundException
     {
@@ -547,6 +550,7 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     // Caller-sensitive adapter method for reflective invocation
+    @CallerSensitiveAdapter
     private static Class<?> forName(Module module, String name, Class<?> caller) {
         Objects.requireNonNull(module);
         Objects.requireNonNull(name);

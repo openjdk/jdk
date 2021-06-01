@@ -33,6 +33,7 @@ import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.ValueConversions;
@@ -124,6 +125,7 @@ public class MethodHandles {
      * non-caller-sensitive.  This method is only invoked by reflection
      * and method handle.
      */
+    @CallerSensitiveAdapter
     private static Lookup lookup(Class<?> caller) {
         if (caller.getClassLoader() == null) {
             throw newIllegalArgumentException("illegal lookupClass: "+caller);

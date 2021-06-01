@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 import com.sun.tools.classfile.*;
+
+import static com.sun.tools.classfile.AccessFlags.ACC_PRIVATE;
 import static com.sun.tools.classfile.ConstantPool.*;
 import java.io.File;
 import java.io.IOException;
@@ -73,9 +75,8 @@ public class CheckCSMs {
                "javax/sql/rowset/serial/SerialJavaObject#getFields ()[Ljava/lang/reflect/Field;"
         );
 
-    // These non-static non-final methods must not have alternate implementation
-    // that takes an additional caller class parameter.  It's currently invoked
-    // by method handle if present.
+    // These non-static non-final methods must not have @CallerSensitiveAdapter
+    // methods that takes an additional caller class parameter.
     private static Set<String> UNSUPPORTED_VIRTUAL_METHODS =
         Set.of("java/io/ObjectStreamField#getType (Ljava/lang/Class;)Ljava/lang/Class;",
                "java/lang/Thread#getContextClassLoader (Ljava/lang/Class;)Ljava/lang/ClassLoader;",
@@ -161,10 +162,10 @@ public class CheckCSMs {
                         }
                     }
 
-                    // find the alternate implementation for CSM with the caller parameter
+                    // find the adapter implementation for CSM with the caller parameter
                     if (!csmWithCallerParameter.containsKey(cf.getName())) {
                         Set<String> methods = Arrays.stream(cf.methods)
-                                                    .filter(m0 -> csmWithCallerParameter(cf, m0))
+                                                    .filter(m0 -> csmWithCallerParameter(cf, m, m0))
                                                     .map(m0 -> methodSignature(cf, m0))
                                                     .collect(Collectors.toSet());
                         csmWithCallerParameter.put(cf.getName(), methods);
@@ -186,12 +187,36 @@ public class CheckCSMs {
         }
     }
 
-    private static boolean csmWithCallerParameter(ClassFile cf, Method m) {
+    private static boolean csmWithCallerParameter(ClassFile cf, Method csm, Method m) {
         ConstantPool cp = cf.constant_pool;
         try {
+            int csmParamCount = csm.descriptor.getParameterCount(cp);
             int paramCount = m.descriptor.getParameterCount(cp);
+            // an adapter method must have the same name and return type and a trailing Class parameter
+            if (!(csm.getName(cp).equals(m.getName(cp)) &&
+                    paramCount == (csmParamCount+1) &&
+                    m.descriptor.getReturnType(cp).equals(csm.descriptor.getReturnType(cp)))) {
+                return false;
+            }
+            // the descriptor of the adapter method must have the parameters
+            // of the caller-sensitive method and an additional Class parameter
+            String csmDesc = csm.descriptor.getParameterTypes(cp);
             String desc = m.descriptor.getParameterTypes(cp);
-            if (paramCount > 0 && desc.startsWith("(java.lang.Class")) {
+            int index = desc.indexOf(", java.lang.Class)");
+            if (index == -1) {
+                index = desc.indexOf("java.lang.Class)");
+                if (index == -1) return false;
+            }
+            String s = desc.substring(0, index) + ")";
+            if (s.equals(csmDesc)) {
+                if (!m.access_flags.is(ACC_PRIVATE)) {
+                    throw new RuntimeException(methodSignature(cf, m) + " adapter method for " +
+                            methodSignature(cf, csm) + " must be private");
+                }
+                if (!isCallerSensitiveAdapter(m, cp)) {
+                    throw new RuntimeException(methodSignature(cf, m) + " adapter method for " +
+                            methodSignature(cf, csm) + " must be annotated with @CallerSensitiveAdapter");
+                }
                 return true;
             }
         } catch (ConstantPoolException|Descriptor.InvalidDescriptor e) {
@@ -202,6 +227,8 @@ public class CheckCSMs {
 
     private static final String CALLER_SENSITIVE_ANNOTATION
         = "Ljdk/internal/reflect/CallerSensitive;";
+    private static final String CALLER_SENSITIVE_ADAPTER_ANNOTATION
+        = "Ljdk/internal/reflect/CallerSensitiveAdapter;";
 
     private static boolean isCallerSensitive(Method m, ConstantPool cp)
         throws ConstantPoolException
@@ -213,6 +240,23 @@ public class CheckCSMs {
                 Annotation ann = attr.annotations[i];
                 String annType = cp.getUTF8Value(ann.type_index);
                 if (CALLER_SENSITIVE_ANNOTATION.equals(annType)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean isCallerSensitiveAdapter(Method m, ConstantPool cp)
+            throws ConstantPoolException
+    {
+        RuntimeAnnotations_attribute attr =
+                (RuntimeAnnotations_attribute)m.attributes.get(Attribute.RuntimeInvisibleAnnotations);
+        if (attr != null) {
+            for (int i = 0; i < attr.annotations.length; i++) {
+                Annotation ann = attr.annotations[i];
+                String annType = cp.getUTF8Value(ann.type_index);
+                if (CALLER_SENSITIVE_ADAPTER_ANNOTATION.equals(annType)) {
                     return true;
                 }
             }

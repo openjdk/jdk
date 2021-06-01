@@ -28,6 +28,7 @@ package java.lang.reflect;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.MethodAccessor;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
@@ -586,6 +587,7 @@ public final class Method extends Executable {
      * will get an invoker class, a hidden nestmate of the original caller class,
      * that becomes the caller class invoking Method::invoke.
      */
+    @CallerSensitiveAdapter
     private Object invoke(Object obj, Object[] args, Class<?> caller)
             throws IllegalAccessException, InvocationTargetException
     {
