@@ -25,9 +25,10 @@
 #ifndef SHARE_GC_G1_HEAPREGIONMANAGER_INLINE_HPP
 #define SHARE_GC_G1_HEAPREGIONMANAGER_INLINE_HPP
 
+#include "gc/g1/heapRegionManager.hpp"
+
 #include "gc/g1/g1CommittedRegionMap.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 
 inline bool HeapRegionManager::is_available(uint region) const {

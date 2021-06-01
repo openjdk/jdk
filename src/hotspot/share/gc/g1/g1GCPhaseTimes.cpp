@@ -487,8 +487,8 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   }
   debug_phase(_gc_par_phases[RedirtyCards], 1);
   debug_phase(_gc_par_phases[FreeCollectionSet], 1);
-  trace_phase(_gc_par_phases[YoungFreeCSet], true, 2);
-  trace_phase(_gc_par_phases[NonYoungFreeCSet], true, 2);
+  trace_phase(_gc_par_phases[YoungFreeCSet], true, 1);
+  trace_phase(_gc_par_phases[NonYoungFreeCSet], true, 1);
 
   trace_time("Serial Free Collection Set", _recorded_serial_free_cset_time_ms);
 

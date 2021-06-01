@@ -26,6 +26,7 @@
  * @bug 8182489
  * @summary test history with multiline snippets
  * @modules
+ *     jdk.jshell/jdk.internal.jshell.tool:open
  *     jdk.jshell/jdk.internal.jshell.tool.resources:open
  *     jdk.jshell/jdk.jshell:open
  * @build UITesting

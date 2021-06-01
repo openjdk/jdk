@@ -21,24 +21,43 @@
  * questions.
  */
 
+/*
+ * @test
+ *
+ * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /vmTestbase /test/lib
+ *
+ * @comment build retransform.jar in current dir
+ * @run driver vm.runtime.defmeth.shared.BuildJar
+ *
+ * @run driver jdk.test.lib.FileInstaller . .
+ *
+ * @run main/othervm/native
+ *      -agentlib:redefineClasses
+ *      -javaagent:retransform.jar
+ *      vm.runtime.defmeth.StressTest
+ */
 package vm.runtime.defmeth;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+
 import nsk.share.TestFailure;
 import nsk.share.test.StressOptions;
 import nsk.share.test.Stresser;
 import vm.runtime.defmeth.shared.Constants;
 import vm.runtime.defmeth.shared.DefMethTest;
 import vm.runtime.defmeth.shared.ExecutionMode;
-import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.share.options.Option;
 import vm.share.options.OptionSupport;
 import vm.share.options.Options;
 import jdk.test.lib.Utils;
+
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static vm.runtime.defmeth.shared.DefMethTest.MAX_MAJOR_VER;
+import static vm.runtime.defmeth.shared.DefMethTest.MIN_MAJOR_VER;
 
 /*
  * Stress test for default methods implementation.
@@ -57,11 +76,8 @@ public class StressTest implements Runnable {
     @Option(name="seed", default_value="0", description="force deterministic behavior")
     private long seed;
 
-    @Option(name="redefine", default_value="false", description="use scenarios w/ class redefinition")
-    private boolean doRedefine;
-
-    @Option(name="ver", default_value="49", description="minimum class file version to be used in the tests")
-    private int minMajorVer;
+    @Option(name="noredefine", default_value="false", description="skip scenarios w/ class redefinition")
+    private boolean noRedefine;
 
     @Option(name="ignoreTestFailures", default_value="false", description="ignore failures of the executed tests")
     private boolean ignoreTestFailures;
@@ -140,23 +156,18 @@ public class StressTest implements Runnable {
     }
 
     private void configureTests() {
-        int[] majorVerValues = new int[52 - minMajorVer + 1];
+        int[] majorVerValues = new int[MAX_MAJOR_VER - MIN_MAJOR_VER + 1];
         for (int i = 0; i< majorVerValues.length; i++) {
-            majorVerValues[i] = minMajorVer + i;
+            majorVerValues[i] = MIN_MAJOR_VER + i;
         }
 
-        int[] flagsValues = new int[] {
-            0,
-            ACC_STRICT,
-            ACC_SYNCHRONIZED,
-            ACC_STRICT | ACC_SYNCHRONIZED
-        };
+        int[] flagsValues = new int[] {0, ACC_SYNCHRONIZED};
 
         boolean[] doRedefineValues;
-        if (doRedefine) {
-            doRedefineValues = new boolean[] { true, false};
-        } else {
+        if (noRedefine) {
             doRedefineValues = new boolean[] { false };
+        } else {
+            doRedefineValues = new boolean[] { false, true };
         }
 
         // Upper limit for test count
@@ -188,7 +199,7 @@ public class StressTest implements Runnable {
                             }
 
                             try {
-                                DefMethTest test = testClass.newInstance();
+                                DefMethTest test = testClass.getDeclaredConstructor().newInstance();
 
                                 OptionSupport.setup(test, new String[] {
                                         "-execMode", mode.toString(),
@@ -199,7 +210,7 @@ public class StressTest implements Runnable {
                                         "-failfast"});
 
                                 testlist.add(test);
-                            } catch (InstantiationException | IllegalAccessException ex) {
+                            } catch (ReflectiveOperationException ex) {
                                 throw new TestFailure(ex);
                             }
                         }
