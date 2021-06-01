@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHARED_PLAB_INLINE_HPP
 #define SHARE_GC_SHARED_PLAB_INLINE_HPP
 
-#include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/plab.hpp"
+
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
 

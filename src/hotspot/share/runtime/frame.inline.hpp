@@ -25,10 +25,11 @@
 #ifndef SHARE_RUNTIME_FRAME_INLINE_HPP
 #define SHARE_RUNTIME_FRAME_INLINE_HPP
 
+#include "runtime/frame.hpp"
+
 #include "code/compiledMethod.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/method.hpp"
-#include "runtime/frame.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
