@@ -226,11 +226,10 @@ void Method::print_external_name(outputStream *os, Klass* klass, Symbol* method_
 }
 
 int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_klass, int throw_bci, TRAPS) {
-  bool do_logging = log_is_enabled(Info, exceptions);
-  if (do_logging) {
+  if (log_is_enabled(Debug, exceptions)) {
     ResourceMark rm(THREAD);
-    log_info(exceptions)("Looking for catch handler for exception of type \"%s\" in method \"%s\"",
-                          ex_klass->external_name(), mh()->name()->as_C_string());
+    log_debug(exceptions)("Looking for catch handler for exception of type \"%s\" in method \"%s\"",
+                          ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh()->name()->as_C_string());
   }
   // exception table holds quadruple entries of the form (beg_bci, end_bci, handler_bci, klass_index)
   // access exception table
@@ -244,24 +243,38 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
     int beg_bci = table.start_pc(i);
     int end_bci = table.end_pc(i);
     assert(beg_bci <= end_bci, "inconsistent exception table");
-    log_info(exceptions)("  - checking exception table entry for BCI %d to %d",
+    log_debug(exceptions)("  - checking exception table entry for BCI %d to %d",
                          beg_bci, end_bci);
 
     if (beg_bci <= throw_bci && throw_bci < end_bci) {
       // exception handler bci range covers throw_bci => investigate further
-      log_info(exceptions)("    - entry covers throw point BCI %d", throw_bci);
+      log_debug(exceptions)("    - entry covers throw point BCI %d", throw_bci);
 
       int handler_bci = table.handler_pc(i);
       int klass_index = table.catch_type_index(i);
       if (klass_index == 0) {
-        log_info(exceptions)("    - found catch-all handler at BCI: %d", handler_bci);
+        if (log_is_enabled(Debug, exceptions)) {
+          log_debug(exceptions)("    - found catch-all handler at BCI: %d", handler_bci);
+        } else if (log_is_enabled(Info, exceptions)) {
+          ResourceMark rm(THREAD);
+          log_info(exceptions)("Found catch-all handler for exception of type \"%s\" in method \"%s\" at BCI: %d",
+                               ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh()->name()->as_C_string(), handler_bci);
+        }
         return handler_bci;
       } else if (ex_klass == NULL) {
+        // Is this even possible?
+        if (log_is_enabled(Debug, exceptions)) {
+          log_debug(exceptions)("    - NULL exception class is implicitly caught by handler at BCI: %d", handler_bci);
+        } else if (log_is_enabled(Info, exceptions)) {
+          ResourceMark rm(THREAD);
+          log_info(exceptions)("NULL exception class is implicitly caught by handler in method \"%s\" at BCI: %d",
+                               mh()->name()->as_C_string(), handler_bci);
+        }
         return handler_bci;
       } else {
-        if (do_logging) {
+        if (log_is_enabled(Debug, exceptions)) {
           ResourceMark rm(THREAD);
-          log_info(exceptions)("     - resolving catch type \"%s\"",
+          log_debug(exceptions)("    - resolving catch type \"%s\"",
                                pool->klass_name_at(klass_index)->as_C_string());
         }
         // we know the exception class => get the constraint class
@@ -269,25 +282,31 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
         // fails or some other exception occurs, return handler_bci
         Klass* k = pool->klass_at(klass_index, THREAD);
         if (HAS_PENDING_EXCEPTION) {
-          if (do_logging) {
+        if (log_is_enabled(Debug, exceptions)) {
             ResourceMark rm(THREAD);
-            log_info(exceptions)("    - exception \"%s\" occurred resolving catch type",
+            log_debug(exceptions)("    - exception \"%s\" occurred resolving catch type",
                                  PENDING_EXCEPTION->klass()->external_name());
           }
           return handler_bci;
         }
         assert(k != NULL, "klass not loaded");
         if (ex_klass->is_subtype_of(k)) {
-          log_info(exceptions)("    - found matching handler at BCI: %d", handler_bci);
+          if (log_is_enabled(Debug, exceptions)) {
+            log_debug(exceptions)("    - found matching handler at BCI: %d", handler_bci);
+          } else if (log_is_enabled(Info, exceptions)) {
+            ResourceMark rm(THREAD);
+            log_info(exceptions)("Found matching handler for exception of type \"%s\" in method \"%s\" at BCI: %d",
+                                 ex_klass == NULL ? "NULL" : ex_klass->external_name(), mh()->name()->as_C_string(), handler_bci);
+          }
           return handler_bci;
         }
       }
     }
   }
 
-  if (do_logging) {
+  if (log_is_enabled(Debug, exceptions)) {
     ResourceMark rm(THREAD);
-    log_info(exceptions)("No catch handler found for exception of type \"%s\" in method \"%s\"",
+    log_debug(exceptions)("No catch handler found for exception of type \"%s\" in method \"%s\"",
                           ex_klass->external_name(), mh()->name()->as_C_string());
   }
 
