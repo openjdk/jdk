@@ -233,12 +233,13 @@ public final class FileTime
             int nanos = 0;
             switch (unit) {
                 case DAYS    -> secs = scale(value, SECONDS_PER_DAY,
-                        Long.MAX_VALUE / SECONDS_PER_DAY);
+                                             Long.MAX_VALUE / SECONDS_PER_DAY);
                 case HOURS   -> secs = scale(value, SECONDS_PER_HOUR,
-                        Long.MAX_VALUE / SECONDS_PER_HOUR);
+                                             Long.MAX_VALUE / SECONDS_PER_HOUR);
                 case MINUTES -> secs = scale(value, SECONDS_PER_MINUTE,
-                        Long.MAX_VALUE / SECONDS_PER_MINUTE);
+                                             Long.MAX_VALUE / SECONDS_PER_MINUTE);
                 case SECONDS -> secs = value;
+
                 case MILLISECONDS -> {
                     secs = Math.floorDiv(value, MILLIS_PER_SECOND);
                     nanos = (int) Math.floorMod(value, MILLIS_PER_SECOND)
