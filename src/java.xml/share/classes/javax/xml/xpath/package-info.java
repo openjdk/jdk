@@ -273,7 +273,7 @@
  * </ul>
  *
  * <p>
- * Of the subtypes of Number, only {@code Double, Integer} and {@code Long} are supported.
+ * Of the subtypes of {@code Number}, only {@code Double, Integer} and {@code Long} are supported.
  *
  * <a id="XPath.Datatypes.Enum"></a>
  * <h2>3.3 Enum types</h2>
