@@ -49,7 +49,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-static const ZStatCounter       ZCounterAllocationRate("Memory", "Allocation Rate", ZStatUnitBytesPerSecond);
+static const ZStatCounter       ZCounterMutatorAllocationRate("Memory", "Allocation Rate", ZStatUnitBytesPerSecond);
 static const ZStatCounter       ZCounterPageCacheFlush("Memory", "Page Cache Flush", ZStatUnitBytesPerSecond);
 static const ZStatCriticalPhase ZCriticalPhaseAllocationStall("Allocation Stall");
 
@@ -679,8 +679,8 @@ retry:
     // Note that there are two allocation rate counters, which have
     // different purposes and are sampled at different frequencies.
     const size_t bytes = page->size();
-    ZStatInc(ZCounterAllocationRate, bytes);
-    ZStatInc(ZStatAllocRate::counter(), bytes);
+    ZStatInc(ZCounterMutatorAllocationRate, bytes);
+    ZStatInc(ZStatMutatorAllocRate::counter(), bytes);
   }
 
   // Send event

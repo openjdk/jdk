@@ -32,8 +32,7 @@
 #include "gc/z/zRuntimeWorkers.hpp"
 #include "memory/metaspace.hpp"
 
-class ZDirectorMajor;
-class ZDirectorMinor;
+class ZDirector;
 class ZDriverMajor;
 class ZDriverMinor;
 class ZStat;
@@ -46,15 +45,11 @@ private:
   ZBarrierSet       _barrier_set;
   ZInitialize       _initialize;
   ZHeap             _heap;
-  ZDirectorMinor*   _director_minor;
-  ZDirectorMajor*   _director_major;
+  ZDirector*        _director;
   ZDriverMinor*     _driver_minor;
   ZDriverMajor*     _driver_major;
   ZStat*            _stat;
   ZRuntimeWorkers   _runtime_workers;
-
-
-
 
   virtual HeapWord* allocate_new_tlab(size_t min_size,
                                       size_t requested_size,
@@ -118,6 +113,8 @@ public:
 
   virtual WorkGang* safepoint_workers();
 
+  ZDriverMinor* driver_minor() const;
+  ZDriverMajor* driver_major() const;
   virtual void gc_threads_do(ThreadClosure* tc) const;
 
   virtual VirtualSpaceSummary create_heap_space_summary();

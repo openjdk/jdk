@@ -186,6 +186,11 @@ ZDriverMinor::ZDriverMinor() :
   create_and_start();
 }
 
+bool ZDriverMinor::is_active() {
+  ZLocker<ZConditionLock> locker(&_lock);
+  return _active;
+}
+
 void ZDriverMinor::active() {
   ZLocker<ZConditionLock> locker(&_lock);
   while (_blocked) {
@@ -236,11 +241,7 @@ void ZDriverMinor::collect(GCCause::Cause cause) {
   case GCCause::_wb_young_gc:
   case GCCause::_scavenge_alot:
   case GCCause::_z_minor_timer:
-  case GCCause::_z_minor_warmup:
   case GCCause::_z_minor_allocation_rate:
-  case GCCause::_z_minor_allocation_stall:
-  case GCCause::_z_minor_proactive:
-  case GCCause::_z_minor_high_usage:
   case GCCause::_z_minor_inside_major:
     // Start asynchronous GC
     _port.send_async(cause);
@@ -526,9 +527,26 @@ public:
 
 ZDriverMajor::ZDriverMajor(ZDriverMinor* minor) :
     _port(),
+    _lock(),
+    _active(false),
     _minor(minor) {
   set_name("ZDriverMajor");
   create_and_start();
+}
+
+bool ZDriverMajor::is_active() {
+  ZLocker<ZConditionLock> locker(&_lock);
+  return _active;
+}
+
+void ZDriverMajor::active() {
+  ZLocker<ZConditionLock> locker(&_lock);
+  _active = true;
+}
+
+void ZDriverMajor::inactive() {
+  ZLocker<ZConditionLock> locker(&_lock);
+  _active = false;
 }
 
 void ZDriverMajor::minor_block() {
@@ -772,6 +790,14 @@ void ZDriverMajor::gc(GCCause::Cause cause) {
   minor_block();
 }
 
+bool ZDriverMajor::should_minor_before_major() {
+  if (!ScavengeBeforeFullGC) {
+    return false;
+  }
+
+  return ZHeap::heap()->major_cycle()->workers()->boost();
+}
+
 void ZDriverMajor::run_service() {
   // Main loop
   while (!should_terminate()) {
@@ -783,7 +809,9 @@ void ZDriverMajor::run_service() {
 
     ZBreakpoint::at_before_gc();
 
-    if (ScavengeBeforeFullGC) {
+    active();
+
+    if (should_minor_before_major()) {
       _minor->collect(GCCause::_z_minor_before_major);
     }
 
@@ -796,6 +824,8 @@ void ZDriverMajor::run_service() {
     _port.ack();
 
     minor_unblock();
+
+    inactive();
 
     // Check for out of memory condition
     check_out_of_memory();

@@ -65,18 +65,26 @@ public:
   void start();
   void await();
 
+  bool is_active();
+
   void collect(GCCause::Cause cause);
 };
 
 class ZDriverMajor : public ConcurrentGCThread {
 private:
   ZDriverPort         _port;
+  ZConditionLock      _lock;
+  bool                _active;
   ZDriverMinor* const _minor;
 
+  bool should_minor_before_major();
   void minor_block();
   void minor_unblock();
   void minor_start();
   void minor_await();
+
+  void active();
+  void inactive();
 
   template <typename T> bool pause();
 
@@ -102,6 +110,8 @@ protected:
 
 public:
   ZDriverMajor(ZDriverMinor* minor);
+
+  bool is_active();
 
   void collect(GCCause::Cause cause);
 };

@@ -117,20 +117,8 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _z_minor_timer:
       return "Minor Timer";
 
-    case _z_minor_warmup:
-      return "Minor Warmup";
-
     case _z_minor_allocation_rate:
       return "Minor Allocation Rate";
-
-    case _z_minor_allocation_stall:
-      return "Minor Allocation Stall";
-
-    case _z_minor_proactive:
-      return "Minor Proactive";
-
-    case _z_minor_high_usage:
-      return "Minor High Usage";
 
     case _z_minor_before_major:
       return "Minor Before Major";

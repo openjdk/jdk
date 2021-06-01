@@ -25,20 +25,22 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDirector.hpp"
+#include "gc/z/zDriver.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeuristics.hpp"
 #include "gc/z/zStat.hpp"
 #include "logging/log.hpp"
 
-const double ZDirectorMinor::one_in_1000 = 3.290527;
+const double ZDirector::one_in_1000 = 3.290527;
 
-ZDirectorMinor::ZDirectorMinor() :
-    _metronome(ZStatAllocRate::sample_hz) {
-  set_name("ZDirectorMinor");
+ZDirector::ZDirector() :
+    _relocation_headroom(ZHeuristics::relocation_headroom()),
+    _metronome(ZStatMutatorAllocRate::sample_hz) {
+  set_name("ZDirector");
   create_and_start();
 }
 
-bool ZDirectorMinor::rule_timer() const {
+bool ZDirector::rule_minor_timer() const {
   if (ZCollectionIntervalMinor <= 0) {
     // Rule disabled
     return false;
@@ -48,95 +50,24 @@ bool ZDirectorMinor::rule_timer() const {
   const double time_since_last_gc = ZHeap::heap()->minor_cycle()->stat_cycle()->time_since_last();
   const double time_until_gc = ZCollectionIntervalMinor - time_since_last_gc;
 
-  log_debug(gc, director)("Rule: Timer, Interval: %.3fs, TimeUntilGC: %.3fs",
+  log_debug(gc, director)("Rule Minor: Timer, Interval: %.3fs, TimeUntilGC: %.3fs",
                           ZCollectionIntervalMinor, time_until_gc);
 
   return time_until_gc <= 0;
 }
 
-GCCause::Cause ZDirectorMinor::make_gc_decision() const {
-  // Rule 0: Timer
-  if (rule_timer()) {
-    return GCCause::_z_minor_timer;
-  }
-
-  // No GC
-  return GCCause::_no_gc;
-}
-
-void ZDirectorMinor::run_service() {
-  // Main loop
-  while (_metronome.wait_for_tick()) {
-    const GCCause::Cause cause = make_gc_decision();
-    if (cause != GCCause::_no_gc) {
-      ZCollectedHeap::heap()->collect(cause);
-    }
-  }
-}
-
-void ZDirectorMinor::stop_service() {
-  _metronome.stop();
-}
-
-// ====================================================0
-
-const double ZDirectorMajor::one_in_1000 = 3.290527;
-
-ZDirectorMajor::ZDirectorMajor() :
-    _relocation_headroom(ZHeuristics::relocation_headroom()),
-    _metronome(ZStatAllocRate::sample_hz) {
-  set_name("ZDirectorMajor");
-  create_and_start();
-}
-
-void ZDirectorMajor::sample_allocation_rate() const {
-  // Sample allocation rate. This is needed by rule_allocation_rate()
+void ZDirector::sample_mutator_allocation_rate() const {
+  // Sample allocation rate. This is needed by rule_minor_allocation_rate()
   // below to estimate the time we have until we run out of memory.
-  const double bytes_per_second = ZStatAllocRate::sample_and_reset();
+  const double bytes_per_second = ZStatMutatorAllocRate::sample_and_reset();
 
-  log_debug(gc, alloc)("Allocation Rate: %.3fMB/s, Avg: %.3f(+/-%.3f)MB/s",
+  log_debug(gc, alloc)("Mutator Allocation Rate: %.3fMB/s, Avg: %.3f(+/-%.3f)MB/s",
                        bytes_per_second / M,
-                       ZStatAllocRate::avg() / M,
-                       ZStatAllocRate::avg_sd() / M);
+                       ZStatMutatorAllocRate::avg() / M,
+                       ZStatMutatorAllocRate::avg_sd() / M);
 }
 
-bool ZDirectorMajor::rule_timer() const {
-  if (ZCollectionIntervalMajor <= 0) {
-    // Rule disabled
-    return false;
-  }
-
-  // Perform GC if timer has expired.
-  const double time_since_last_gc = ZHeap::heap()->major_cycle()->stat_cycle()->time_since_last();
-  const double time_until_gc = ZCollectionIntervalMajor - time_since_last_gc;
-
-  log_debug(gc, director)("Rule: Timer, Interval: %.3fs, TimeUntilGC: %.3fs",
-                          ZCollectionIntervalMajor, time_until_gc);
-
-  return time_until_gc <= 0;
-}
-
-bool ZDirectorMajor::rule_warmup() const {
-  if (ZHeap::heap()->major_cycle()->stat_cycle()->is_warm()) {
-    // Rule disabled
-    return false;
-  }
-
-  // Perform GC if heap usage passes 10/20/30% and no other GC has been
-  // performed yet. This allows us to get some early samples of the GC
-  // duration, which is needed by the other rules.
-  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
-  const size_t used = ZHeap::heap()->used();
-  const double used_threshold_percent = (ZHeap::heap()->major_cycle()->stat_cycle()->nwarmup_cycles() + 1) * 0.1;
-  const size_t used_threshold = soft_max_capacity * used_threshold_percent;
-
-  log_debug(gc, director)("Rule: Warmup %.0f%%, Used: " SIZE_FORMAT "MB, UsedThreshold: " SIZE_FORMAT "MB",
-                          used_threshold_percent * 100, used / M, used_threshold / M);
-
-  return used >= used_threshold;
-}
-
-bool ZDirectorMajor::rule_allocation_rate() const {
+bool ZDirector::rule_minor_allocation_rate() const {
   if (!ZHeap::heap()->major_cycle()->stat_cycle()->is_normalized_duration_trustable()) {
     // Rule disabled
     return false;
@@ -161,27 +92,63 @@ bool ZDirectorMajor::rule_allocation_rate() const {
   // phase changes in the allocate rate. We then add ~3.3 sigma to account for
   // the allocation rate variance, which means the probability is 1 in 1000
   // that a sample is outside of the confidence interval.
-  const double max_alloc_rate = (ZStatAllocRate::avg() * ZAllocationSpikeTolerance) + (ZStatAllocRate::avg_sd() * one_in_1000);
+  const double max_alloc_rate = (ZStatMutatorAllocRate::avg() * ZAllocationSpikeTolerance) + (ZStatMutatorAllocRate::avg_sd() * one_in_1000);
   const double time_until_oom = free / (max_alloc_rate + 1.0); // Plus 1.0B/s to avoid division by zero
 
   // Calculate max duration of a GC cycle. The duration of GC is a moving
   // average, we add ~3.3 sigma to account for the GC duration variance.
-  const AbsSeq& duration_of_gc = ZHeap::heap()->major_cycle()->stat_cycle()->normalized_duration();
+  const AbsSeq& duration_of_gc = ZHeap::heap()->minor_cycle()->stat_cycle()->normalized_duration();
   const double max_duration_of_gc = duration_of_gc.davg() + (duration_of_gc.dsd() * one_in_1000);
 
   // Calculate time until GC given the time until OOM and max duration of GC.
   // We also deduct the sample interval, so that we don't overshoot the target
   // time and end up starting the GC too late in the next interval.
-  const double sample_interval = 1.0 / ZStatAllocRate::sample_hz;
+  const double sample_interval = 1.0 / ZStatMutatorAllocRate::sample_hz;
   const double time_until_gc = time_until_oom - max_duration_of_gc - sample_interval;
 
-  log_debug(gc, director)("Rule: Allocation Rate, MaxAllocRate: %.3fMB/s, Free: " SIZE_FORMAT "MB, MaxDurationOfGC: %.3fs, TimeUntilGC: %.3fs",
+  log_debug(gc, director)("Rule Minor: Allocation Rate, MaxAllocRate: %.3fMB/s, Free: " SIZE_FORMAT "MB, MaxDurationOfGC: %.3fs, TimeUntilGC: %.3fs",
                           max_alloc_rate / M, free / M, max_duration_of_gc, time_until_gc);
 
   return time_until_gc <= 0;
 }
 
-bool ZDirectorMajor::rule_proactive() const {
+bool ZDirector::rule_major_timer() const {
+  if (ZCollectionIntervalMajor <= 0) {
+    // Rule disabled
+    return false;
+  }
+
+  // Perform GC if timer has expired.
+  const double time_since_last_gc = ZHeap::heap()->major_cycle()->stat_cycle()->time_since_last();
+  const double time_until_gc = ZCollectionIntervalMajor - time_since_last_gc;
+
+  log_debug(gc, director)("Rule Major: Timer, Interval: %.3fs, TimeUntilGC: %.3fs",
+                          ZCollectionIntervalMajor, time_until_gc);
+
+  return time_until_gc <= 0;
+}
+
+bool ZDirector::rule_major_warmup() const {
+  if (ZHeap::heap()->major_cycle()->stat_cycle()->is_warm()) {
+    // Rule disabled
+    return false;
+  }
+
+  // Perform GC if heap usage passes 10/20/30% and no other GC has been
+  // performed yet. This allows us to get some early samples of the GC
+  // duration, which is needed by the other rules.
+  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
+  const size_t used = ZHeap::heap()->used();
+  const double used_threshold_percent = (ZHeap::heap()->major_cycle()->stat_cycle()->nwarmup_cycles() + 1) * 0.1;
+  const size_t used_threshold = soft_max_capacity * used_threshold_percent;
+
+  log_debug(gc, director)("Rule Major: Warmup %.0f%%, Used: " SIZE_FORMAT "MB, UsedThreshold: " SIZE_FORMAT "MB",
+                          used_threshold_percent * 100, used / M, used_threshold / M);
+
+  return used >= used_threshold;
+}
+
+bool ZDirector::rule_major_proactive() const {
   if (!ZProactive || !ZHeap::heap()->major_cycle()->stat_cycle()->is_warm()) {
     // Rule disabled
     return false;
@@ -201,12 +168,10 @@ bool ZDirectorMajor::rule_proactive() const {
   const size_t used_threshold = used_after_last_gc + used_increase_threshold;
   const size_t used = ZHeap::heap()->used();
   const double time_since_last_gc = ZHeap::heap()->major_cycle()->stat_cycle()->time_since_last();
-  const double time_since_last_gc_threshold = 5 * 60; // 5 minutes
-  if (used < used_threshold && time_since_last_gc < time_since_last_gc_threshold) {
+  if (used < used_threshold) {
     // Don't even consider doing a proactive GC
-    log_debug(gc, director)("Rule: Proactive, UsedUntilEnabled: " SIZE_FORMAT "MB, TimeUntilEnabled: %.3fs",
-                            (used_threshold - used) / M,
-                            time_since_last_gc_threshold - time_since_last_gc);
+    log_debug(gc, director)("Rule Major: Proactive, UsedUntilEnabled: " SIZE_FORMAT "MB",
+                            (used_threshold - used) / M);
     return false;
   }
 
@@ -217,13 +182,13 @@ bool ZDirectorMajor::rule_proactive() const {
   const double acceptable_gc_interval = max_duration_of_gc * ((assumed_throughput_drop_during_gc / acceptable_throughput_drop) - 1.0);
   const double time_until_gc = acceptable_gc_interval - time_since_last_gc;
 
-  log_debug(gc, director)("Rule: Proactive, AcceptableGCInterval: %.3fs, TimeSinceLastGC: %.3fs, TimeUntilGC: %.3fs",
+  log_debug(gc, director)("Rule Major: Proactive, AcceptableGCInterval: %.3fs, TimeSinceLastGC: %.3fs, TimeUntilGC: %.3fs",
                           acceptable_gc_interval, time_since_last_gc, time_until_gc);
 
   return time_until_gc <= 0;
 }
 
-bool ZDirectorMajor::rule_high_usage() const {
+bool ZDirector::rule_major_high_usage() const {
   // Perform GC if the amount of free memory is 5% or less. This is a preventive
   // meassure in the case where the application has a very low allocation rate,
   // such that the allocation rate rule doesn't trigger, but the amount of free
@@ -238,49 +203,87 @@ bool ZDirectorMajor::rule_high_usage() const {
   const size_t free = free_including_headroom - MIN2(free_including_headroom, _relocation_headroom);
   const double free_percent = percent_of(free, soft_max_capacity);
 
-  log_debug(gc, director)("Rule: High Usage, Free: " SIZE_FORMAT "MB(%.1f%%)",
+  log_debug(gc, director)("Rule Major: High Usage, Free: " SIZE_FORMAT "MB(%.1f%%)",
                           free / M, free_percent);
 
   return free_percent <= 5.0;
 }
 
-GCCause::Cause ZDirectorMajor::make_gc_decision() const {
-  // Rule 0: Timer
-  if (rule_timer()) {
-    return GCCause::_z_major_timer;
+GCCause::Cause ZDirector::make_minor_gc_decision() const {
+  if (ZCollectedHeap::heap()->driver_minor()->is_active()) {
+    log_debug(gc, director)("Minor Active: No minor decision");
+    return GCCause::_no_gc;
   }
 
-  // FIXME: Turned off for now
-#if 0
-  // Rule 1: Warmup
-  if (rule_warmup()) {
-    return GCCause::_z_major_warmup;
+  // Rule 0: Minor Timer
+  if (rule_minor_timer()) {
+    log_debug(gc, director)("Rule Minor: Timer, Triggered");
+    return GCCause::_z_minor_timer;
   }
 
-  // Rule 2: Allocation rate
-  if (rule_allocation_rate()) {
-    return GCCause::_z_major_allocation_rate;
+  // Rule 1: Allocation rate
+  if (rule_minor_allocation_rate()) {
+    log_debug(gc, director)("Rule Minor: Allocation Rate, Triggered");
+    return GCCause::_z_minor_allocation_rate;
   }
-
-  // Rule 3: Proactive
-  if (rule_proactive()) {
-    return GCCause::_z_major_proactive;
-  }
-
-  // Rule 4: High usage
-  if (rule_high_usage()) {
-    return GCCause::_z_major_high_usage;
-  }
-#endif
 
   // No GC
   return GCCause::_no_gc;
 }
 
-void ZDirectorMajor::run_service() {
+GCCause::Cause ZDirector::make_major_gc_decision() const {
+  if (ZCollectedHeap::heap()->driver_major()->is_active()) {
+    log_debug(gc, director)("Major Active: No major decision");
+    return GCCause::_no_gc;
+  }
+
+  // Rule 0: Major Timer
+  if (rule_major_timer()) {
+    log_debug(gc, director)("Rule Major: Timer, Triggered");
+    return GCCause::_z_major_timer;
+  }
+
+  // Rule 1: Warmup
+  if (rule_major_warmup()) {
+    log_debug(gc, director)("Rule Major: Warmup, Triggered");
+    return GCCause::_z_major_warmup;
+  }
+
+  //// Rule 2: Allocation rate
+  //if (rule_major_allocation_rate()) {
+  //  log_debug(gc, director)("Rule Major: Allocation Rate, Triggered");
+  //  return GCCause::_z_major_allocation_rate;
+  //}
+
+  // Rule 3: Proactive
+  if (rule_major_proactive()) {
+    log_debug(gc, director)("Rule Major: Proactive, Triggered");
+    return GCCause::_z_major_proactive;
+  }
+
+  // Rule 4: High usage
+  if (rule_major_high_usage()) {
+    log_debug(gc, director)("Rule Major: High Usage, Triggered");
+    return GCCause::_z_major_high_usage;
+  }
+
+  // No GC
+  return GCCause::_no_gc;
+}
+
+GCCause::Cause ZDirector::make_gc_decision() const {
+  // Check for major collections first as they include a minor collection
+  GCCause::Cause decision = make_major_gc_decision();
+  if (decision == GCCause::_no_gc) {
+    decision = make_minor_gc_decision();
+  }
+  return decision;
+}
+
+void ZDirector::run_service() {
   // Main loop
   while (_metronome.wait_for_tick()) {
-    sample_allocation_rate();
+    sample_mutator_allocation_rate();
 
     const GCCause::Cause cause = make_gc_decision();
     if (cause != GCCause::_no_gc) {
@@ -289,6 +292,6 @@ void ZDirectorMajor::run_service() {
   }
 }
 
-void ZDirectorMajor::stop_service() {
+void ZDirector::stop_service() {
   _metronome.stop();
 }

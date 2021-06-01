@@ -88,6 +88,10 @@ void ZWorkers::set_boost(bool boost) {
   _boost = boost;
 }
 
+bool ZWorkers::boost() const {
+  return _boost;
+}
+
 void ZWorkers::run(ZTask* task, uint nworkers) {
   log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), nworkers);
   _workers.update_active_workers(nworkers);

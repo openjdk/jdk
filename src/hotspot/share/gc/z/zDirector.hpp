@@ -28,37 +28,26 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/z/zMetronome.hpp"
 
-class ZDirectorMinor : public ConcurrentGCThread {
-private:
-  static const double one_in_1000;
-
-  ZMetronome   _metronome;
-
-  bool rule_timer() const;
-  GCCause::Cause make_gc_decision() const;
-
-protected:
-  virtual void run_service();
-  virtual void stop_service();
-
-public:
-  ZDirectorMinor();
-};
-
-class ZDirectorMajor : public ConcurrentGCThread {
+class ZDirector : public ConcurrentGCThread {
 private:
   static const double one_in_1000;
 
   const size_t _relocation_headroom;
   ZMetronome   _metronome;
 
-  void sample_allocation_rate() const;
+  // Minor collection rules
+  void sample_mutator_allocation_rate() const;
+  bool rule_minor_timer() const;
+  bool rule_minor_allocation_rate() const;
 
-  bool rule_timer() const;
-  bool rule_warmup() const;
-  bool rule_allocation_rate() const;
-  bool rule_proactive() const;
-  bool rule_high_usage() const;
+  // Major collection rules
+  bool rule_major_timer() const;
+  bool rule_major_warmup() const;
+  bool rule_major_proactive() const;
+  bool rule_major_high_usage() const;
+
+  GCCause::Cause make_minor_gc_decision() const;
+  GCCause::Cause make_major_gc_decision() const;
   GCCause::Cause make_gc_decision() const;
 
 protected:
@@ -66,7 +55,7 @@ protected:
   virtual void stop_service();
 
 public:
-  ZDirectorMajor();
+  ZDirector();
 };
 
 #endif // SHARE_GC_Z_ZDIRECTOR_HPP

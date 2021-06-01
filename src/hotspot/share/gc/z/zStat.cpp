@@ -833,17 +833,17 @@ void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment) {
 }
 
 //
-// Stat allocation rate
+// Stat mutator allocation rate
 //
-const ZStatUnsampledCounter ZStatAllocRate::_counter("Allocation Rate");
-TruncatedSeq                ZStatAllocRate::_rate(ZStatAllocRate::sample_window_sec * ZStatAllocRate::sample_hz);
-TruncatedSeq                ZStatAllocRate::_rate_avg(ZStatAllocRate::sample_window_sec * ZStatAllocRate::sample_hz);
+const ZStatUnsampledCounter ZStatMutatorAllocRate::_counter("Mutator Allocation Rate");
+TruncatedSeq                ZStatMutatorAllocRate::_rate(ZStatMutatorAllocRate::sample_window_sec * ZStatMutatorAllocRate::sample_hz);
+TruncatedSeq                ZStatMutatorAllocRate::_rate_avg(ZStatMutatorAllocRate::sample_window_sec * ZStatMutatorAllocRate::sample_hz);
 
-const ZStatUnsampledCounter& ZStatAllocRate::counter() {
+const ZStatUnsampledCounter& ZStatMutatorAllocRate::counter() {
   return _counter;
 }
 
-uint64_t ZStatAllocRate::sample_and_reset() {
+uint64_t ZStatMutatorAllocRate::sample_and_reset() {
   const ZStatCounterData bytes_per_sample = _counter.collect_and_reset();
   const uint64_t bytes_per_second = bytes_per_sample._counter * sample_hz;
 
@@ -853,11 +853,11 @@ uint64_t ZStatAllocRate::sample_and_reset() {
   return bytes_per_second;
 }
 
-double ZStatAllocRate::avg() {
+double ZStatMutatorAllocRate::avg() {
   return _rate.avg();
 }
 
-double ZStatAllocRate::avg_sd() {
+double ZStatMutatorAllocRate::avg_sd() {
   return _rate_avg.sd();
 }
 

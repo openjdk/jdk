@@ -52,8 +52,7 @@ ZCollectedHeap::ZCollectedHeap() :
     _barrier_set(),
     _initialize(&_barrier_set),
     _heap(),
-    _director_minor(new ZDirectorMinor()),
-    _director_major(new ZDirectorMajor()),
+    _director(new ZDirector()),
     _driver_minor(new ZDriverMinor()),
     _driver_major(new ZDriverMajor(_driver_minor)),
     _stat(new ZStat()),
@@ -290,9 +289,16 @@ WorkGang* ZCollectedHeap::safepoint_workers() {
   return _runtime_workers.workers();
 }
 
+ZDriverMinor* ZCollectedHeap::driver_minor() const {
+  return _driver_minor;
+}
+
+ZDriverMajor* ZCollectedHeap::driver_major() const {
+  return _driver_major;
+}
+
 void ZCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
-  tc->do_thread(_director_minor);
-  tc->do_thread(_director_major);
+  tc->do_thread(_director);
   tc->do_thread(_driver_major);
   tc->do_thread(_driver_minor);
   tc->do_thread(_stat);

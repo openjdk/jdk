@@ -349,9 +349,9 @@ void ZStatInc(const ZStatCounter& counter, uint64_t increment = 1);
 void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment = 1);
 
 //
-// Stat allocation rate
+// Stat mutator allocation rate
 //
-class ZStatAllocRate : public AllStatic {
+class ZStatMutatorAllocRate : public AllStatic {
 private:
   static const ZStatUnsampledCounter _counter;
   static TruncatedSeq                _rate;     // B/s

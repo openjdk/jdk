@@ -42,10 +42,10 @@
           "Maximum number of bytes allocated for mark stacks")              \
           range(32*M, 1024*G)                                               \
                                                                             \
-  product(double, ZCollectionIntervalMinor, 1,                              \
+  product(double, ZCollectionIntervalMinor, -1,                             \
           "Force Minor GC at a fixed time interval (in seconds)")           \
                                                                             \
-  product(double, ZCollectionIntervalMajor, 5,                              \
+  product(double, ZCollectionIntervalMajor, -1,                             \
           "Force GC at a fixed time interval (in seconds)")                 \
                                                                             \
   product(bool, ZProactive, true,                                           \
