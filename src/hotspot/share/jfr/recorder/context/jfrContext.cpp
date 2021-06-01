@@ -23,6 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "jfr/jni/jfrJavaCall.hpp"
+#include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
@@ -40,7 +43,7 @@ static void copy_entries(JfrContextEntry** lhs_entries, u4 length, const JfrCont
   }
 }
 
-JfrContextEntry::JfrContextEntry(const traceid& name, const traceid& value) :
+JfrContextEntry::JfrContextEntry(const jlong& name, const jlong& value) :
   _name(name), _value(value) {}
 
 JfrContext::JfrContext(JfrContextEntry* entries, u4 max_entries) :
@@ -107,9 +110,9 @@ bool JfrContext::equals(const JfrContext& rhs) const {
 }
 
 template <typename Writer>
-static void write_entry(Writer& w, traceid name, traceid value) {
-  w.write((traceid)name);
-  w.write((traceid)value);
+static void write_entry(Writer& w, jlong name, jlong value) {
+  w.write(name);
+  w.write(value);
 }
 
 void JfrContextEntry::write(JfrChunkWriter& cw) const {
@@ -120,9 +123,60 @@ void JfrContextEntry::write(JfrCheckpointWriter& cpw) const {
   write_entry(cpw, _name, _value);
 }
 
-bool JfrContext::record_safe(JavaThread* thread, int skip) {
-  assert(thread == Thread::current(), "Thread stack needs to be walkable");
-  //FIXME: save all recording context
+Symbol* JfrContext::_recordingContext_walkSnapshot_method;
+Symbol* JfrContext::_recordingContext_walkSnapshot_signature;
+Klass* JfrContext::_recordingContext_klass;
+
+bool JfrContext::initialize() {
+  JavaThread *thread = Thread::current()->as_Java_thread();
+  _recordingContext_klass = SystemDictionary::resolve_or_fail(SymbolTable::new_symbol("jdk/jfr/RecordingContext"), true, thread);
+  if (thread->has_pending_exception()) {
+    return false;
+  }
+  _recordingContext_walkSnapshot_method = SymbolTable::new_symbol("walkSnapshot");
+  _recordingContext_walkSnapshot_signature = SymbolTable::new_symbol("(J)V");
   return true;
 }
 
+class JfrContextSnapshotWalker : public StackObj {
+ private:
+  JfrContextEntry* _entries;
+  u4 _max_entries;
+  u4 *_nr_of_entries;
+ public:
+  JfrContextSnapshotWalker(JfrContextEntry *entries, u4 max_entries, u4 *n_of_entries) :
+      _entries(entries), _max_entries(max_entries), _nr_of_entries(n_of_entries) {
+    assert(_nr_of_entries != NULL, "invariant");
+    *_nr_of_entries = 0;
+  }
+
+  ~JfrContextSnapshotWalker() {}
+
+  void callback(jlong name, jlong value) {
+    if (*_nr_of_entries >= _max_entries) {
+      //FIXME: indicate somehow we couldn't capture all the context. See _reached_root.
+      return;
+    }
+    _entries[*_nr_of_entries++] = JfrContextEntry(name, value);
+  }
+};
+
+void JfrContext::walk_snapshot_callback(jlong callback, jlong name, jlong value) {
+  ((JfrContextSnapshotWalker*)callback)->callback(name, value);
+}
+
+bool JfrContext::record_safe(JavaThread* thread, int skip) {
+  assert(thread == Thread::current(), "Thread context needs to be accessible");
+  assert(_recordingContext_klass != NULL, "invariant");
+  assert(_recordingContext_walkSnapshot_method != NULL, "invariant");
+  assert(_recordingContext_walkSnapshot_signature != NULL, "invariant");
+  JfrContextSnapshotWalker sw(_entries, _max_entries, &_nr_of_entries);
+  JavaValue _(T_OBJECT);
+  JfrJavaArguments args(&_, _recordingContext_klass, _recordingContext_walkSnapshot_method, _recordingContext_walkSnapshot_signature);
+  args.push_long((jlong)&sw);
+  JfrJavaSupport::call_static(&args, thread);
+  if (thread->has_pending_exception()) {
+    return false;
+  }
+  return true;
+}

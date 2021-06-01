@@ -158,6 +158,8 @@ jboolean JNICALL jfr_set_handler(JNIEnv* env, jobject jvm, jobject clazz, jobjec
 
 jlong JNICALL jfr_get_type_id_from_string(JNIEnv* env, jobject jvm, jstring type);
 
+void JNICALL jfr_invoke_walk_snapshot_callback(JNIEnv* env, jobject jvm, jlong callback, jlong name, jlong value);
+
 #ifdef __cplusplus
 }
 #endif

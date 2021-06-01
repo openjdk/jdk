@@ -37,6 +37,7 @@ import java.util.Objects;
 
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Category;
+import jdk.jfr.Context;
 import jdk.jfr.Description;
 import jdk.jfr.Enabled;
 import jdk.jfr.Experimental;
@@ -56,6 +57,7 @@ public final class MetadataLoader {
     private final AnnotationElement ENABLED = new AnnotationElement(Enabled.class, false);
     private final AnnotationElement THRESHOLD = new AnnotationElement(Threshold.class, "0 ns");
     private final AnnotationElement STACK_TRACE = new AnnotationElement(StackTrace.class, true);
+    private final AnnotationElement CONTEXT = new AnnotationElement(Context.class, true);
     private final AnnotationElement TRANSITION_TO = new AnnotationElement(TransitionTo.class);
     private final AnnotationElement TRANSITION_FROM = new AnnotationElement(TransitionFrom.class);
     private final AnnotationElement EXPERIMENTAL = new AnnotationElement(Experimental.class);
@@ -77,6 +79,7 @@ public final class MetadataLoader {
         private final boolean thread;
         private final boolean startTime;
         private final boolean stackTrace;
+        private final boolean context;
         private final boolean cutoff;
         private final boolean throttle;
         private final boolean isEvent;
@@ -96,6 +99,7 @@ public final class MetadataLoader {
             category = dis.readUTF();
             thread = dis.readBoolean();
             stackTrace = dis.readBoolean();
+            context = dis.readBoolean();
             startTime = dis.readBoolean();
             period = dis.readUTF();
             cutoff = dis.readBoolean();
@@ -217,7 +221,7 @@ public final class MetadataLoader {
             Type type = lookup.get(te.name);
             if (te.isEvent) {
                 boolean periodic = !te.period.isEmpty();
-                TypeLibrary.addImplicitFields(type, periodic, te.startTime && !periodic, te.thread, te.stackTrace && !periodic, te.cutoff);
+                TypeLibrary.addImplicitFields(type, periodic, te.startTime && !periodic, te.thread, te.stackTrace && !periodic, te.context && !periodic, te.cutoff);
             }
             for (FieldElement f : te.fields) {
                 Type fieldType = Type.getKnownType(f.typeName);
@@ -298,6 +302,9 @@ public final class MetadataLoader {
                     }
                     if (t.stackTrace) {
                         aes.add(STACK_TRACE);
+                    }
+                    if (t.context) {
+                        aes.add(CONTEXT);
                     }
                 }
                 if (t.cutoff) {

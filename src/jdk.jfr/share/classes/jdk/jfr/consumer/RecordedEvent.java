@@ -61,6 +61,16 @@ public final class RecordedEvent extends RecordedObject {
     }
 
     /**
+     * Returns the context from when the event was committed, or {@code null} if
+     * the event lacks a context.
+     *
+     * @return context, or {@code null} if doesn't exist for the event
+     */
+    public RecordedContext getContext() {
+        return getTyped(EventInstrumentation.FIELD_CONTEXT, RecordedContext.class, null);
+    }
+
+    /**
      * Returns the thread from which the event was committed, or {@code null} if
      * the thread was not recorded.
      *

@@ -31,6 +31,8 @@ void ObjectSample::reset() {
   release();
   set_stack_trace_id(0);
   set_stack_trace_hash(0);
+  set_context_id(0);
+  set_context_hash(0);
   release_references();
 }
 

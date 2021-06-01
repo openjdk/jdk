@@ -101,7 +101,9 @@ final class EventHandlerCreator {
         List<FieldInfo> fieldInfos = new ArrayList<>();
         for (ValueDescriptor v : type.getFields()) {
             // Only value descriptors that are not fields on the event class.
-            if (v != TypeLibrary.STACK_TRACE_FIELD && v != TypeLibrary.THREAD_FIELD) {
+            if (v != TypeLibrary.STACK_TRACE_FIELD &&
+                v != TypeLibrary.CONTEXT_FIELD &&
+                v != TypeLibrary.THREAD_FIELD) {
                 String fieldName = PrivateAccess.getInstance().getFieldName(v);
                 String fieldDescriptor = ASMToolkit.getDescriptor(v.getTypeName());
                 Class<?> c = eventClass;

@@ -177,6 +177,24 @@ class RecordStackTrace {
   }
 };
 
+class RecordContext {
+ private:
+  JavaThread* _jt;
+  bool _enabled;
+ public:
+  RecordContext(JavaThread* jt) : _jt(jt),
+    _enabled(JfrEventSetting::has_context(EventOldObjectSample::eventId)) {
+    if (_enabled) {
+      JfrContextRepository::record_for_leak_profiler(jt);
+    }
+  }
+  ~RecordContext() {
+    if (_enabled) {
+      _jt->jfr_thread_local()->clear_cached_context();
+    }
+  }
+};
+
 void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) {
   assert(thread != NULL, "invariant");
   assert(is_created(), "invariant");
@@ -185,6 +203,7 @@ void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) 
     return;
   }
   RecordStackTrace rst(thread);
+  RecordContext rc(thread);
   // try enter critical section
   JfrTryLock tryLock(&_lock);
   if (!tryLock.acquired()) {
@@ -232,6 +251,12 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, Java
   if (stacktrace_hash != 0) {
     sample->set_stack_trace_id(tl->cached_stack_trace_id());
     sample->set_stack_trace_hash(stacktrace_hash);
+  }
+
+  const unsigned int context_hash = tl->cached_context_hash();
+  if (context_hash != 0) {
+    sample->set_context_id(tl->cached_context_id());
+    sample->set_context_hash(context_hash);
   }
 
   sample->set_span(allocated);

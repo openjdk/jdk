@@ -44,8 +44,8 @@ public final class RecordedContextEntry extends RecordedObject {
 
     /**
      */
-    public String getKey() {
-        return getTyped("key", String.class, "");
+    public String getName() {
+        return getTyped("name", String.class, "");
     }
 
     /**

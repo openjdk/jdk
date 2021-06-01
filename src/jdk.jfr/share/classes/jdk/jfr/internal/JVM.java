@@ -629,4 +629,13 @@ public final class JVM {
      * @return the id, or a negative value if it does not exists.
      */
     public native long getTypeId(String name);
+
+    /**
+     * 
+     *
+     * @param callback the native pointer to the callback object, passed by native
+     * @param name the name of the RecordingContext
+     * @param value the value of the RecordingContext
+     */
+    public native void invokeWalkSnapshotCallback(long callback, long name, long value);
 }

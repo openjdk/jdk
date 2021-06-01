@@ -48,23 +48,12 @@ public final class RecordedContext extends RecordedObject {
      * @return a list of Java stack frames, not {@code null}
      */
     @SuppressWarnings("unchecked")
-    public List<RecordedFrame> getContextEntries() {
-        Object[] array = getTyped("contexts", Object[].class, null);
+    public List<RecordedContextEntry> getContextEntries() {
+        Object[] array = getTyped("contextentries", Object[].class, null);
         if (array == null) {
             return new ArrayList<>(0);
         }
         List<?> list = Arrays.asList(array);
-        return (List<RecordedFrame>) list;
-    }
-
-    /**
-     * Returns {@code true} if the context is truncated due to its size,
-     * {@code false} otherwise.
-     *
-     * @return {@code true} if the context is truncated, {@code false}
-     *         otherwise
-     */
-    public boolean isTruncated() {
-        return getTyped("truncated", Boolean.class, true);
+        return (List<RecordedContextEntry>) list;
     }
 }

@@ -139,7 +139,9 @@ final class ASMToolkit {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
         for (FieldInfo v : fields) {
-            if (!v.fieldName.equals(EventInstrumentation.FIELD_EVENT_THREAD) && !v.fieldName.equals(EventInstrumentation.FIELD_STACK_TRACE)) {
+            if (!v.fieldName.equals(EventInstrumentation.FIELD_EVENT_THREAD) &&
+                !v.fieldName.equals(EventInstrumentation.FIELD_STACK_TRACE) &&
+                !v.fieldName.equals(EventInstrumentation.FIELD_CONTEXT)) {
                 sb.append(v.fieldDescriptor);
             }
         }

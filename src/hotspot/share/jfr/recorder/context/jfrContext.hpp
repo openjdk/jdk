@@ -38,11 +38,11 @@ class JfrContextEntry {
   friend class ObjectSampleCheckpoint;
  private:
   const InstanceKlass* _klass;
-  traceid _name;
-  traceid _value;
+  jlong _name;
+  jlong _value;
 
  public:
-  JfrContextEntry(const traceid& name, const traceid& value);
+  JfrContextEntry(const jlong& name, const jlong& value);
 
   bool equals(const JfrContextEntry& rhs) const;
   void write(JfrChunkWriter& cw) const;
@@ -66,6 +66,10 @@ class JfrContext : public JfrCHeapObj {
   bool _entries_ownership;
   mutable bool _written;
 
+  static Symbol* _recordingContext_walkSnapshot_method;
+  static Symbol* _recordingContext_walkSnapshot_signature;
+  static Klass* _recordingContext_klass;
+
   const JfrContext* next() const { return _next; }
 
   bool should_write() const { return !_written; }
@@ -86,6 +90,10 @@ class JfrContext : public JfrCHeapObj {
  public:
   unsigned int hash() const { return _hash; }
   traceid id() const { return _id; }
+
+  static bool initialize();
+
+  static void walk_snapshot_callback(jlong callback, jlong name, jlong value);
 };
 
 #endif // SHARE_JFR_RECORDER_CONTEXT_JFRCONTEXT_HPP

@@ -67,6 +67,9 @@ JfrContextRepository* JfrContextRepository::create() {
 }
 
 bool JfrContextRepository::initialize() {
+  if (!JfrContext::initialize()) {
+    return false;
+  }
   return true;
 }
 
@@ -148,7 +151,7 @@ traceid JfrContextRepository::record(Thread* thread, int skip /* 0 */) {
   }
   assert(contextentries != NULL, "invariant");
   assert(tl->contextentries() == contextentries, "invariant");
-  return instance().record_for(thread->as_Java_thread(), skip, contextentries, tl->stackdepth());
+  return instance().record_for(thread->as_Java_thread(), skip, contextentries, tl->contextsize());
 }
 
 traceid JfrContextRepository::record_for(JavaThread* thread, int skip, JfrContextEntry *contextentries, u4 max_contextentries) {
@@ -173,7 +176,7 @@ void JfrContextRepository::record_for_leak_profiler(JavaThread* thread, int skip
   JfrThreadLocal* const tl = thread->jfr_thread_local();
   assert(tl != NULL, "invariant");
   assert(!tl->has_cached_context(), "invariant");
-  JfrContext context(tl->contextentries(), tl->stackdepth());
+  JfrContext context(tl->contextentries(), tl->contextsize());
   context.record_safe(thread, skip);
   const unsigned int hash = context.hash();
   if (hash != 0) {

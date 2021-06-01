@@ -25,9 +25,13 @@
 
 package jdk.jfr;
 
+import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.StringPool;
 
 import static jdk.internal.javac.PreviewFeature.Feature.SCOPE_LOCALS;
 
@@ -40,6 +44,8 @@ import static jdk.internal.javac.PreviewFeature.Feature.SCOPE_LOCALS;
 @jdk.internal.javac.PreviewFeature(feature=SCOPE_LOCALS)
 public final class RecordingContext {
 
+    // final static StringPool stringPool = new StringPool();
+
     final String name;
     final ScopeLocal<Entry> local;
 
@@ -51,16 +57,12 @@ public final class RecordingContext {
     public final int hashCode() { return local.hashCode(); }
 
     private static class Entry {
-        public final String key;
+        public final String name;
         public final String value;
 
-        public Entry(String key, String value) {
-            this.key = key;
+        public Entry(String name, String value) {
+            this.name = name;
             this.value = value;
-        }
-
-        public static Entry valueOnly(String value) {
-            return new Entry(null, value);
         }
     }
 
@@ -69,7 +71,16 @@ public final class RecordingContext {
         final ScopeLocal.Snapshot snapshot;
 
         Snapshot(ScopeLocal.Snapshot snapshot) {
-            this.snapshot = snapshot;
+            this.snapshot = Objects.requireNonNull(snapshot);
+        }
+
+        public final void foreach(BiConsumer<String, String> consumer) {
+            snapshot.foreach((v) -> {
+                if (v instanceof Entry) {
+                    Entry entry = (Entry)v;
+                    consumer.accept(entry.name, entry.value);
+                }
+            });
         }
     }
 
@@ -140,7 +151,7 @@ public final class RecordingContext {
     }
 
     public String orElse(String other) {
-        return local.orElse(Entry.valueOnly(other)).value;
+        return local.orElse(new Entry(name, other)).value;
     }
 
     public <X extends Throwable> String orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
@@ -148,6 +159,21 @@ public final class RecordingContext {
     }
 
     public static Snapshot snapshot() {
-        return new Snapshot(ScopeLocal.snapshot());
+        var snapshot = ScopeLocal.snapshot();
+        if (snapshot == null) {
+            return null;
+        }
+        return new Snapshot(snapshot);
+    }
+
+    // Called by JVM
+    private static void walkSnapshot(long callback) {
+        var snapshot = snapshot();
+        if (snapshot == null) {
+            return;
+        }
+        snapshot.foreach((k, v) -> {
+            JVM.getJVM().invokeWalkSnapshotCallback(callback, StringPool.addStringWithoutPreCache(k), StringPool.addStringWithoutPreCache(v));
+        });
     }
 }

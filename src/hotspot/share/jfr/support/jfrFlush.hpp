@@ -45,6 +45,9 @@ bool jfr_is_event_enabled(JfrEventId id);
 bool jfr_has_stacktrace_enabled(JfrEventId id);
 bool jfr_save_stacktrace(Thread* t);
 void jfr_clear_stacktrace(Thread* t);
+bool jfr_has_context_enabled(JfrEventId id);
+bool jfr_save_context(Thread* t);
+void jfr_clear_context(Thread* t);
 
 template <typename Event>
 class JfrConditionalFlush {
@@ -72,6 +75,23 @@ class JfrConditionalFlushWithStacktrace : public JfrConditionalFlush<Event> {
   ~JfrConditionalFlushWithStacktrace() {
     if (_owner) {
       jfr_clear_stacktrace(_t);
+    }
+  }
+};
+
+template <typename Event>
+class JfrConditionalFlushWithContext : public JfrConditionalFlush<Event> {
+  Thread* _t;
+  bool _owner;
+ public:
+  JfrConditionalFlushWithContext(Thread* t) : JfrConditionalFlush<Event>(t), _t(t), _owner(false) {
+    if (this->_enabled && Event::has_context() && jfr_has_context_enabled(Event::eventId)) {
+      _owner = jfr_save_context(t);
+    }
+  }
+  ~JfrConditionalFlushWithContext() {
+    if (_owner) {
+      jfr_clear_context(_t);
     }
   }
 };

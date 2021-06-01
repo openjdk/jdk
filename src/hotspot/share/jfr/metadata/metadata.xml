@@ -1170,12 +1170,12 @@
   </Type>
 
   <Type name="Context" label="Java Thread Context">
-    <Field type="ContextEntry" array="true" struct="true" name="contextentires" label="Context Entries" />
+    <Field type="ContextEntry" array="true" struct="true" name="contextentries" label="Context Entries" />
   </Type>
 
   <Type name="ContextEntry" label="Java Thread Context Entry">
-    <Field type="string" name="key" label="key" />
-    <Field type="string" name="value" label="value" />
+    <Field type="string" name="name" label="Name" />
+    <Field type="string" name="value" label="Value" />
   </Type>
 
   <Type name="GCName" label="GC Name">

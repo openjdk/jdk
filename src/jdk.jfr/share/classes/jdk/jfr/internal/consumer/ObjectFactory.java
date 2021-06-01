@@ -62,7 +62,7 @@ public abstract class ObjectFactory<T> {
         case TYPE_PREFIX_VERSION_1 + "StackTrace":
         case TYPE_PREFIX_VERSION_2 + "StackTrace":
             return createStackTraceFactory(type, timeConverter);
-        case TYPE_PREFIX_VERSION_1 + "Context":
+        // case TYPE_PREFIX_VERSION_1 + "Context":
         case TYPE_PREFIX_VERSION_2 + "Context":
             return createContextFactory(type, timeConverter);
         case TYPE_PREFIX_VERSION_1 + "ClassLoader":

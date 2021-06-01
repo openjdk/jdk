@@ -96,6 +96,7 @@ public final class EventInstrumentation {
 
     public static final String FIELD_EVENT_THREAD = "eventThread";
     public static final String FIELD_STACK_TRACE = "stackTrace";
+    public static final String FIELD_CONTEXT = "context";
     public static final String FIELD_DURATION = "duration";
 
     static final String FIELD_EVENT_HANDLER = "eventHandler";

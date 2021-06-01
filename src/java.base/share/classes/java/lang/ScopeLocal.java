@@ -28,6 +28,7 @@ package java.lang;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -147,6 +148,14 @@ public class ScopeLocal<T> {
                 }
             }
             return NIL;
+        }
+
+        public final void foreach(Consumer consumer) {
+            for (Snapshot b = this; b != null; b = b.prev) {
+                for (SingleBinding binding = b.bindings; binding != null; binding = binding.prev) {
+                    consumer.accept(binding.get());
+                }
+            }
         }
     }
 

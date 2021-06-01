@@ -66,6 +66,7 @@ public final class TypeLibrary {
     static final ValueDescriptor DURATION_FIELD = createDurationField();
     static final ValueDescriptor THREAD_FIELD = createThreadField();
     static final ValueDescriptor STACK_TRACE_FIELD = createStackTraceField();
+    static final ValueDescriptor CONTEXT_FIELD = createContextField();
     static final ValueDescriptor START_TIME_FIELD = createStartTimeField();
 
     private TypeLibrary(List<Type> jvmTypes) {
@@ -88,6 +89,12 @@ public final class TypeLibrary {
         var annos = createStandardAnnotations("Stack Trace", "Stack Trace starting from the method the event was committed in");
         return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_STACK_TRACE, Type.STACK_TRACE, annos, 0, true,
                 EventInstrumentation.FIELD_STACK_TRACE);
+    }
+
+    private static ValueDescriptor createContextField() {
+        var annos = createStandardAnnotations("Context", "RecordingContext from the thread the event was committed in");
+        return PrivateAccess.getInstance().newValueDescriptor(EventInstrumentation.FIELD_CONTEXT, Type.CONTEXT, annos, 0, true,
+                EventInstrumentation.FIELD_CONTEXT);
     }
 
     private static ValueDescriptor createThreadField() {
@@ -250,7 +257,7 @@ public final class TypeLibrary {
         Type type = getType(clazz);
 
         if (eventType) {
-            addImplicitFields(type, true, true, true, true ,false);
+            addImplicitFields(type, true, true, true, true, true, false);
             addUserFields(clazz, type, dynamicFields);
             type.trimFields();
         }
@@ -312,7 +319,7 @@ public final class TypeLibrary {
     }
 
     // By convention all events have these fields.
-    static void addImplicitFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasCutoff) {
+    static void addImplicitFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasContext, boolean hasCutoff) {
         if (!implicitFieldTypes) {
             createAnnotationType(Timespan.class);
             createAnnotationType(Timestamp.class);
@@ -320,10 +327,10 @@ public final class TypeLibrary {
             defineType(long.class, null, false);
             implicitFieldTypes = true;
         }
-        addFields(type, requestable, hasDuration, hasThread, hasStackTrace, hasCutoff);
+        addFields(type, requestable, hasDuration, hasThread, hasStackTrace, hasContext, hasCutoff);
     }
 
-    private static void addFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasCutoff) {
+    private static void addFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasContext, boolean hasCutoff) {
         type.add(START_TIME_FIELD);
         if (hasDuration || hasCutoff) {
             type.add(DURATION_FIELD);
@@ -333,6 +340,9 @@ public final class TypeLibrary {
         }
         if (hasStackTrace) {
             type.add(STACK_TRACE_FIELD);
+        }
+        if (hasContext) {
+            type.add(CONTEXT_FIELD);
         }
     }
 

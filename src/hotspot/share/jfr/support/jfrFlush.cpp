@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
+#include "jfr/recorder/context/jfrContextRepository.hpp"
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrFlush.hpp"
@@ -85,4 +86,17 @@ bool jfr_save_stacktrace(Thread* thread) {
 
 void jfr_clear_stacktrace(Thread* thread) {
   thread->jfr_thread_local()->clear_cached_stack_trace();
+}
+
+bool jfr_save_context(Thread* thread) {
+  JfrThreadLocal* const tl = thread->jfr_thread_local();
+  if (tl->has_cached_context()) {
+    return false; // no ownership
+  }
+  tl->set_cached_context_id(JfrContextRepository::record(thread));
+  return true;
+}
+
+void jfr_clear_context(Thread* thread) {
+  thread->jfr_thread_local()->clear_cached_context();
 }

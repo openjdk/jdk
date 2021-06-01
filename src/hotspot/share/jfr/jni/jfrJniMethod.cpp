@@ -195,6 +195,11 @@ NO_TRANSITION(jlong, jfr_get_type_id_from_string(JNIEnv * env, jobject jvm, jstr
   env->ReleaseStringUTFChars(type, type_name);
   return id;
 NO_TRANSITION_END
+
+NO_TRANSITION(void, jfr_invoke_walk_snapshot_callback(JNIEnv * env, jobject jvm, jlong callback, jlong name, jlong value))
+  JfrContext::walk_snapshot_callback(callback, name, value);
+NO_TRANSITION_END
+
 /*
  * JVM_ENTRY_NO_ENV entries
  *
@@ -263,8 +268,7 @@ JVM_ENTRY_NO_ENV(jlong, jfr_stacktrace_id(JNIEnv* env, jobject jvm, jint skip))
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_context_id(JNIEnv* env, jobject jvm, jint skip))
-  Unimplemented();
-  return 0;
+  return JfrContextRepository::record(thread, skip);
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_log(JNIEnv* env, jobject jvm, jint tag_set, jint level, jstring message))

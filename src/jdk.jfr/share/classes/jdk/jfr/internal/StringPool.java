@@ -33,8 +33,12 @@ public final class StringPool {
     private static final long DO_NOT_POOL = -1;
     private static final SimpleStringIdPool sp = new SimpleStringIdPool();
 
-    static long addString(String s) {
-        return sp.addString(s);
+    public static long addString(String s) {
+        return sp.addString(s, true);
+    }
+
+    public static long addStringWithoutPreCache(String s) {
+        return sp.addString(s, false);
     }
 
     static void reset() {
@@ -70,12 +74,12 @@ public final class StringPool {
             }
         }
 
-        private long addString(String s) {
+        private long addString(String s, boolean doPreCache) {
             Long lsid = this.cache.get(s);
             if (lsid != null) {
                 return lsid.longValue();
             }
-            if (!preCache(s)) {
+            if (doPreCache && !preCache(s)) {
                 /* we should not pool this string */
                 return DO_NOT_POOL;
             }

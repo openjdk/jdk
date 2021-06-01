@@ -42,6 +42,8 @@ import jdk.jfr.Percentage;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedClassLoader;
+import jdk.jfr.consumer.RecordedContext;
+import jdk.jfr.consumer.RecordedContextEntry;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordedMethod;
@@ -223,6 +225,11 @@ public final class PrettyWriter extends EventPrintWriter {
             print(STACK_TRACE_FIELD + " = ");
             printStackTrace(event.getStackTrace());
         }
+        if (event.getContext() != null) {
+            printIndent();
+            print(CONTEXT_FIELD + " = ");
+            printContext(event.getContext());
+        }
         retract();
         printIndent();
         println("}");
@@ -252,6 +259,23 @@ public final class PrettyWriter extends EventPrintWriter {
         if (stackTrace.isTruncated() || i == getStackDepth()) {
             printIndent();
             println("...");
+        }
+        retract();
+        printIndent();
+        println("]");
+    }
+
+    private void printContext(RecordedContext context) {
+        println("[");
+        List<RecordedContextEntry> entries = context.getContextEntries();
+        indent();
+        int i = 0;
+        while (i < entries.size()) {
+            RecordedContextEntry entry = entries.get(i);
+            printIndent();
+            printValue(entry, null, "");
+            println();
+            i++;
         }
         retract();
         printIndent();
@@ -310,6 +334,10 @@ public final class PrettyWriter extends EventPrintWriter {
                     printJavaFrame((RecordedFrame) value, postFix);
                     return;
                 }
+            }
+            if (value instanceof RecordedContextEntry entry) {
+                printContextEntry((RecordedContextEntry) value, postFix);
+                return;
             }
             if (value instanceof RecordedMethod rm) {
                 println(formatMethod(rm));
@@ -450,6 +478,14 @@ public final class PrettyWriter extends EventPrintWriter {
         if (line >= 0) {
             print(" line: " + line);
         }
+        print(postFix);
+    }
+
+    private void printContextEntry(RecordedContextEntry e, String postFix) {
+        print(e.getName());
+        print(" -> ");
+        print(e.getValue());
+        print(", ");
         print(postFix);
     }
 
