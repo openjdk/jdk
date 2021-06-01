@@ -121,9 +121,7 @@ public:
   // root set.
   size_t mem_size() {
     return _card_set.mem_size()
-      // This correction is necessary because the above includes the second
-      // part.
-      + (sizeof(HeapRegionRemSet) - sizeof(G1CardSet))
+      + (sizeof(HeapRegionRemSet) - sizeof(G1CardSet)) // Avoid double-counting G1CardSet.
       + strong_code_roots_mem_size();
   }
 
