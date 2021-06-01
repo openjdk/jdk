@@ -2961,6 +2961,31 @@ void* os::Linux::libnuma_v2_dlsym(void* handle, const char* name) {
   return dlvsym(handle, name, "libnuma_1.2");
 }
 
+#ifndef SYS_get_mempolicy
+// ia64: 1260, i386: 275, x86_64: 239, s390x: 236, powerpc: 260
+  #ifdef __ia64__
+    #define SYS_get_mempolicy 1260
+  #else
+    #ifdef __i386__
+      #define SYS_get_mempolicy 275
+    #else
+      #ifdef __x86_64__
+        #define SYS_get_mempolicy 239
+      #else
+        #ifdef __s390x__
+          #define SYS_get_mempolicy 236
+        #else
+          #ifdef __powerpc__
+            #define SYS_get_mempolicy 260
+          #else
+            #error define get_mempolicy for the arch
+          #endif
+        #endif
+      #endif
+    #endif
+  #endif
+#endif
+
 // Check numa dependent syscalls
 static bool numa_syscall_check() {
   // NUMA APIs depend on several syscalls. E.g., get_mempolicy is required for numa_get_membind and
