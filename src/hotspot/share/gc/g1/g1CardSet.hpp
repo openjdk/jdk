@@ -147,6 +147,16 @@ public:
   void print_on(outputStream* out);
 };
 
+// Sparse set of card indexes comprising a remembered set on the Java heap. Card
+// size is assumed to be card table card size.
+//
+// Technically it is implemented using a ConcurrentHashTable that stores a card
+// set container for every region containing at least one card.
+//
+// There are in total five different containers, encoded in the ConcurrentHashTable
+// node as CardSetPtr. A CardSetPtr may cover the whole region or just a part of
+// it.
+// See its description below for more information.
 class G1CardSet : public CHeapObj<mtGCCardSet> {
   friend class G1CardSetTest;
   friend class G1CardSetMtTestTask;
@@ -164,17 +174,19 @@ public:
   // Two lower bits are used to encode the card storage types
   static const uintptr_t CardSetPtrHeaderSize = 2;
 
-  // CardSetPtr represents the card storage type of a given region. It encodes
+  // CardSetPtr represents the card storage type of a given covered area. It encodes
   // a type in the LSBs, in addition to having a few significant values.
   //
   // Possible encodings:
   //
-  // 0...00000 free               (should never happen)
-  // 1...11111 full
-  // X...XXX00 inline-ptr-cards   (64 bit)
-  // X...XXX01 array of cards
-  // X...XXX10 bitmap
-  // X...XXX11 howl (64 bit)
+  // 0...00000 free               (Empty, should never happen)
+  // 1...11111 full               All card indexes in the whole area this CardSetPtr covers are part of this container.
+  // X...XXX00 inline-ptr-cards   A handful of card indexes covered by this CardSetPtr are encoded within the CardSetPtr.
+  // X...XXX01 array of cards     The container is a contiguous array of card indexes.
+  // X...XXX10 bitmap             The container uses a bitmap to determine whether a given index is part of this set.
+  // X...XXX11 howl               This is a card set container containing an array of CardSetPtr, with each CardSetPtr
+  //                              limited to a sub-range of the original range. Currently only one level of this
+  //                              container is supported.
   typedef void* CardSetPtr;
   // Coarsening happens in the order below:
   // CardSetInlinePtr -> CardSetArrayOfCards -> CardSetHowl -> Full

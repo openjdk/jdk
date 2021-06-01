@@ -93,8 +93,9 @@ public:
 };
 
 
-// Common base class for card set container related objects managed on the heap. Depending
-// on the current use, one of the two overlapping elements are used:
+// Common base class for card set containers where the memory for the entries is
+// managed on the (C-)heap. Depending on the current use, one of the two overlapping
+// members are used:
 //
 // While such an object is assigned to a card set container, we utilize the
 // reference count for memory management.
@@ -110,6 +111,9 @@ public:
 //
 // When such an object is on a free list, we reuse the same field for linking
 // together those free objects.
+//
+// All but inline pointers are of this kind. For those, card entries are stored
+// directly in the CardSetPtr of the ConcurrentHashTable node.
 class G1CardSetContainer {
 private:
   union {
