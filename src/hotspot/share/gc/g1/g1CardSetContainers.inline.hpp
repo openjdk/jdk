@@ -332,7 +332,9 @@ inline G1CardSetHowl::EntryCountType G1CardSetHowl::num_buckets(size_t size_in_b
   size_t max_size_arrays_bytes = size_bitmap_bytes / 2;
   size_t size_array_bytes = num_cards_in_array * sizeof(G1CardSetArray::EntryDataType);
   size_t num_arrays = max_size_arrays_bytes / size_array_bytes;
-  num_arrays = MAX2((size_t)1, MIN2(num_arrays, max_num_buckets));
+  // We use shifts and masks for indexing the array. So round down to the next
+  // power of two to not use more than expected memory.
+  num_arrays = round_down_power_of_2(MAX2((size_t)1, MIN2(num_arrays, max_num_buckets)));
   return (EntryCountType)num_arrays;
 }
 
