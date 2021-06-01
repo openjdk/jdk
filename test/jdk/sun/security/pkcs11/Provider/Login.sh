@@ -124,6 +124,7 @@ ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
         -Dtest.src=${TESTSRC} \
         -Dtest.classes=${TESTCLASSES} \
         -Djava.security.debug=${DEBUG} \
+        -Djava.security.manager=allow \
         Login sm Login.policy
 
 # save error status

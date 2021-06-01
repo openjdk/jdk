@@ -278,15 +278,14 @@ public:
 // This class manages data structures and methods for doing liveness analysis in
 // G1's concurrent cycle.
 class G1ConcurrentMark : public CHeapObj<mtGC> {
-  friend class G1ConcurrentMarkThread;
-  friend class G1CMRefProcTaskProxy;
-  friend class G1CMRefProcTaskExecutor;
-  friend class G1CMKeepAliveAndDrainClosure;
-  friend class G1CMDrainMarkingStackClosure;
   friend class G1CMBitMapClosure;
   friend class G1CMConcurrentMarkingTask;
+  friend class G1CMDrainMarkingStackClosure;
+  friend class G1CMKeepAliveAndDrainClosure;
+  friend class G1CMRefProcProxyTask;
   friend class G1CMRemarkTask;
   friend class G1CMTask;
+  friend class G1ConcurrentMarkThread;
 
   G1ConcurrentMarkThread* _cm_thread;     // The thread doing the work
   G1CollectedHeap*        _g1h;           // The heap

@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_INLINE_HPP
 
-#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
+
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "oops/markWord.inline.hpp"
 #include "runtime/thread.hpp"
 

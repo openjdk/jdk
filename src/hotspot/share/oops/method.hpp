@@ -88,10 +88,9 @@ class Method : public Metadata {
     _dont_inline           = 1 << 2,
     _hidden                = 1 << 3,
     _has_injected_profile  = 1 << 4,
-    _running_emcp          = 1 << 5,
-    _intrinsic_candidate   = 1 << 6,
-    _reserved_stack_access = 1 << 7,
-    _scoped                = 1 << 8
+    _intrinsic_candidate   = 1 << 5,
+    _reserved_stack_access = 1 << 6,
+    _scoped                = 1 << 7
   };
   mutable u2 _flags;
 
@@ -666,7 +665,7 @@ public:
   }
   static int size(bool is_native);
   int size() const                               { return method_size(); }
-  void log_touched(TRAPS);
+  void log_touched(Thread* current);
   static void print_touched_methods(outputStream* out);
 
   // interpreter support
@@ -742,20 +741,6 @@ public:
   void set_is_obsolete()                            { _access_flags.set_is_obsolete(); }
   bool is_deleted() const                           { return access_flags().is_deleted(); }
   void set_is_deleted()                             { _access_flags.set_is_deleted(); }
-
-  bool is_running_emcp() const {
-    // EMCP methods are old but not obsolete or deleted. Equivalent
-    // Modulo Constant Pool means the method is equivalent except
-    // the constant pool and instructions that access the constant
-    // pool might be different.
-    // If a breakpoint is set in a redefined method, its EMCP methods that are
-    // still running must have a breakpoint also.
-    return (_flags & _running_emcp) != 0;
-  }
-
-  void set_running_emcp(bool x) {
-    _flags = x ? (_flags | _running_emcp) : (_flags & ~_running_emcp);
-  }
 
   bool on_stack() const                             { return access_flags().on_stack(); }
   void set_on_stack(const bool value);

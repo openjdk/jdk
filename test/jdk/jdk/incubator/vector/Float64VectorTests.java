@@ -4940,6 +4940,24 @@ public class Float64VectorTests extends AbstractVectorTest {
         }
     }
 
+    @Test(dataProvider = "maskProvider")
+    static void maskFirstTrueFloat64VectorTestsSmokeTest(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var vmask = SPECIES.loadMask(a, i);
+            int ftrue = vmask.firstTrue();
+            int j = i;
+            for (; j < i + SPECIES.length() ; j++) {
+                if (a[j]) break;
+            }
+            int expectedFtrue = j - i;
+
+            Assert.assertTrue(ftrue == expectedFtrue, "at index " + i +
+                ", firstTrue should be = " + expectedFtrue + ", but is = " + ftrue);
+        }
+    }
+
     @DataProvider
     public static Object[][] longMaskProvider() {
         return new Object[][]{

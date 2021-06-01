@@ -65,6 +65,11 @@ public class VectorSupport {
     public static final int VECTOR_OP_CAST        = 17;
     public static final int VECTOR_OP_REINTERPRET = 18;
 
+    // Mask manipulation operations
+    public static final int VECTOR_OP_MASK_TRUECOUNT = 19;
+    public static final int VECTOR_OP_MASK_FIRSTTRUE = 20;
+    public static final int VECTOR_OP_MASK_LASTTRUE  = 21;
+
     // See src/hotspot/share/opto/subnode.hpp
     //     struct BoolTest, and enclosed enum mask
     public static final int BT_eq = 0;  // 0000
@@ -456,6 +461,20 @@ public class VectorSupport {
         // TODO: move the fence generation into C2. Generate only when reboxing is taking place.
         U.loadFence();
         return v;
+    }
+
+    /* ============================================================================ */
+    public interface VectorMaskOp<M> {
+        int apply(M m);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <E, M>
+    int maskReductionCoerced(int oper, Class<? extends M> maskClass, Class<?> elemClass, int length, M m,
+               VectorMaskOp<M> defaultImpl) {
+       assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+       return defaultImpl.apply(m);
     }
 
     /* ============================================================================ */

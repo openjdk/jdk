@@ -25,6 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahHeap.hpp"
+
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
@@ -35,7 +37,6 @@
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"

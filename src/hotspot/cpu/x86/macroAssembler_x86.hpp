@@ -327,10 +327,6 @@ class MacroAssembler: public Assembler {
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
                        Register tmp1, Register tmp2);
 
-  // Resolves obj access. Result is placed in the same register.
-  // All other registers are preserved.
-  void resolve(DecoratorSet decorators, Register obj);
-
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
                      Register thread_tmp = noreg, DecoratorSet decorators = 0);
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
@@ -713,13 +709,11 @@ class MacroAssembler: public Assembler {
   void cmpklass(Address dst, Metadata* obj);
   void cmpklass(Register dst, Metadata* obj);
   void cmpoop(Address dst, jobject obj);
-  void cmpoop_raw(Address dst, jobject obj);
 #endif // _LP64
 
   void cmpoop(Register src1, Register src2);
   void cmpoop(Register src1, Address src2);
   void cmpoop(Register dst, jobject obj);
-  void cmpoop_raw(Register dst, jobject obj);
 
   // NOTE src2 must be the lval. This is NOT an mem-mem compare
   void cmpptr(Address src1, AddressLiteral src2);
@@ -1309,10 +1303,17 @@ public:
   void vpmovzxbw(XMMRegister dst, Address src, int vector_len);
   void vpmovzxbw(XMMRegister dst, XMMRegister src, int vector_len) { Assembler::vpmovzxbw(dst, src, vector_len); }
 
-  void vpmovmskb(Register dst, XMMRegister src);
+  void vpmovmskb(Register dst, XMMRegister src, int vector_len = Assembler::AVX_256bit);
 
   void vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void vpmulld(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+    Assembler::vpmulld(dst, nds, src, vector_len);
+  };
+  void vpmulld(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+    Assembler::vpmulld(dst, nds, src, vector_len);
+  }
+  void vpmulld(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg);
 
   void vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpsubb(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
@@ -1770,6 +1771,7 @@ public:
   void kernel_crc32_avx512_256B(Register crc, Register buf, Register len, Register key, Register pos,
                                 Register tmp1, Register tmp2, Label& L_barrett, Label& L_16B_reduction_loop,
                                 Label& L_get_last_two_xmms, Label& L_128_done, Label& L_cleanup);
+  void updateBytesAdler32(Register adler32, Register buf, Register length, XMMRegister shuf0, XMMRegister shuf1, ExternalAddress scale);
 #endif // _LP64
 
   // CRC32C code for java.util.zip.CRC32C::updateBytes() intrinsic

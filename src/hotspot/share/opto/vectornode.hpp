@@ -853,6 +853,45 @@ class VectorMaskGenNode : public TypeNode {
    const Type* _elemType;
 };
 
+class VectorMaskOpNode : public TypeNode {
+ public:
+  VectorMaskOpNode(Node* mask, const Type* ty, int mopc):
+    TypeNode(ty, 2), _mopc(mopc) {
+    assert(mask->Opcode() == Op_VectorStoreMask, "");
+    init_req(1, mask);
+  }
+
+  virtual int Opcode() const;
+  virtual  uint  size_of() const { return sizeof(VectorMaskOpNode); }
+  virtual uint  ideal_reg() const { return Op_RegI; }
+  int get_mask_Opcode() const { return _mopc;}
+  static Node* make(Node* mask, const Type* ty, int mopc);
+
+  private:
+    int _mopc;
+};
+
+class VectorMaskTrueCountNode : public VectorMaskOpNode {
+ public:
+  VectorMaskTrueCountNode(Node* mask, const Type* ty):
+    VectorMaskOpNode(mask, ty, Op_VectorMaskTrueCount) {}
+  virtual int Opcode() const;
+};
+
+class VectorMaskFirstTrueNode : public VectorMaskOpNode {
+ public:
+  VectorMaskFirstTrueNode(Node* mask, const Type* ty):
+    VectorMaskOpNode(mask, ty, Op_VectorMaskFirstTrue) {}
+  virtual int Opcode() const;
+};
+
+class VectorMaskLastTrueNode : public VectorMaskOpNode {
+ public:
+  VectorMaskLastTrueNode(Node* mask, const Type* ty):
+    VectorMaskOpNode(mask, ty, Op_VectorMaskLastTrue) {}
+  virtual int Opcode() const;
+};
+
 //=========================Promote_Scalar_to_Vector============================
 
 //------------------------------ReplicateBNode---------------------------------

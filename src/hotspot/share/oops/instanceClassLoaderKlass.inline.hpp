@@ -25,9 +25,10 @@
 #ifndef SHARE_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP
 #define SHARE_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP
 
+#include "oops/instanceClassLoaderKlass.hpp"
+
 #include "classfile/javaClasses.hpp"
 #include "memory/iterator.hpp"
-#include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"

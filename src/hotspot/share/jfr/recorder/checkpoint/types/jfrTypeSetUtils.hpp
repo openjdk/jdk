@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,9 +251,9 @@ class JfrSymbolId : public JfrCHeapObj {
     }
   }
 
-  traceid mark_hidden_or_anon_klass_name(const InstanceKlass* k, bool leakp);
-  bool is_hidden_or_anon_klass(const Klass* k);
-  uintptr_t hidden_or_anon_klass_name_hash(const InstanceKlass* ik);
+  traceid mark_hidden_klass_name(const InstanceKlass* k, bool leakp);
+  bool is_hidden_klass(const Klass* k);
+  uintptr_t hidden_klass_name_hash(const InstanceKlass* ik);
 
  public:
   JfrSymbolId();
@@ -315,7 +315,7 @@ class JfrArtifactSet : public JfrCHeapObj {
   traceid mark(const Klass* klass, bool leakp);
   traceid mark(const Symbol* symbol, bool leakp);
   traceid mark(uintptr_t hash, const char* const str, bool leakp);
-  traceid mark_hidden_or_anon_klass_name(const Klass* klass, bool leakp);
+  traceid mark_hidden_klass_name(const Klass* klass, bool leakp);
   traceid bootstrap_name(bool leakp);
 
   const JfrSymbolId::SymbolEntry* map_symbol(const Symbol* symbol) const;

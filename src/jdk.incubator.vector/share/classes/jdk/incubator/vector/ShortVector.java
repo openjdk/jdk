@@ -1970,14 +1970,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
     ShortVector sliceTemplate(int origin, Vector<Short> v1) {
         ShortVector that = (ShortVector) v1;
         that.check(this);
-        short[] a0 = this.vec();
-        short[] a1 = that.vec();
-        short[] res = new short[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Short> iota = iotaShuffle();
+        VectorMask<Short> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((short)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -1999,6 +1996,17 @@ public abstract class ShortVector extends AbstractVector<Short> {
     public abstract
     ShortVector slice(int origin);
 
+    /*package-private*/
+    final
+    @ForceInline
+    ShortVector sliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Short> iota = iotaShuffle();
+        VectorMask<Short> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((short)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -2013,21 +2021,12 @@ public abstract class ShortVector extends AbstractVector<Short> {
     unsliceTemplate(int origin, Vector<Short> w, int part) {
         ShortVector that = (ShortVector) w;
         that.check(this);
-        short[] slice = this.vec();
-        short[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Short> iota = iotaShuffle();
+        VectorMask<Short> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+                                                                  (broadcast((short)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return that.blend(this.rearrange(iota), blendMask);
     }
 
     /*package-private*/
@@ -2056,6 +2055,19 @@ public abstract class ShortVector extends AbstractVector<Short> {
     @Override
     public abstract
     ShortVector unslice(int origin);
+
+    /*package-private*/
+    final
+    @ForceInline
+    ShortVector
+    unsliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Short> iota = iotaShuffle();
+        VectorMask<Short> blendMask = iota.toVector().compare(VectorOperators.GE,
+                                                                  (broadcast((short)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
 
     private ArrayIndexOutOfBoundsException
     wrongPartForSlice(int part) {

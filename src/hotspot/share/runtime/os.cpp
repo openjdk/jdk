@@ -102,6 +102,14 @@ int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
 }
 
 // Fill in buffer with current local time as an ISO-8601 string.
+// E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
+// Returns buffer, or NULL if it failed.
+char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
+  const jlong now = javaTimeMillis();
+  return os::iso8601_time(now, buffer, buffer_length, utc);
+}
+
+// Fill in buffer with an ISO-8601 string corresponding to the given javaTimeMillis value
 // E.g., yyyy-mm-ddThh:mm:ss-zzzz.
 // Returns buffer, or NULL if it failed.
 // This would mostly be a call to
@@ -109,24 +117,18 @@ int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
 // except that on Windows the %z behaves badly, so we do it ourselves.
 // Also, people wanted milliseconds on there,
 // and strftime doesn't do milliseconds.
-char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
+char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t buffer_length, bool utc) {
   // Output will be of the form "YYYY-MM-DDThh:mm:ss.mmm+zzzz\0"
-  //                                      1         2
-  //                             12345678901234567890123456789
-  // format string: "%04d-%02d-%02dT%02d:%02d:%02d.%03d%c%02d%02d"
-  static const size_t needed_buffer = 29;
 
   // Sanity check the arguments
   if (buffer == NULL) {
     assert(false, "NULL buffer");
     return NULL;
   }
-  if (buffer_length < needed_buffer) {
+  if (buffer_length < os::iso8601_timestamp_size) {
     assert(false, "buffer_length too small");
     return NULL;
   }
-  // Get the current time
-  jlong milliseconds_since_19700101 = javaTimeMillis();
   const int milliseconds_per_microsecond = 1000;
   const time_t seconds_since_19700101 =
     milliseconds_since_19700101 / milliseconds_per_microsecond;
@@ -1888,12 +1890,12 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   pd_realign_memory(addr, bytes, alignment_hint);
 }
 
-char* os::reserve_memory_special(size_t size, size_t alignment,
+char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size,
                                  char* addr, bool executable) {
 
   assert(is_aligned(addr, alignment), "Unaligned request address");
 
-  char* result = pd_reserve_memory_special(size, alignment, addr, executable);
+  char* result = pd_reserve_memory_special(size, alignment, page_size, addr, executable);
   if (result != NULL) {
     // The memory is committed
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC);

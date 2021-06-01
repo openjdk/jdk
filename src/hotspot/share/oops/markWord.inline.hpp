@@ -25,20 +25,21 @@
 #ifndef SHARE_OOPS_MARKWORD_INLINE_HPP
 #define SHARE_OOPS_MARKWORD_INLINE_HPP
 
-#include "oops/klass.hpp"
 #include "oops/markWord.hpp"
+
+#include "oops/klass.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"
 
 // Should this header be preserved during GC?
-template <typename KlassProxy>
-inline bool markWord::must_be_preserved(KlassProxy klass) const {
+inline bool markWord::must_be_preserved(const oopDesc* obj) const {
   if (UseBiasedLocking) {
     if (has_bias_pattern()) {
       // Will reset bias at end of collection
       // Mark words of biased and currently locked objects are preserved separately
       return false;
     }
-    markWord prototype_header = prototype_for_klass(klass);
+    markWord prototype_header = prototype_for_klass(obj->klass());
     if (prototype_header.has_bias_pattern()) {
       // Individual instance which has its bias revoked; must return
       // true for correctness
@@ -49,8 +50,7 @@ inline bool markWord::must_be_preserved(KlassProxy klass) const {
 }
 
 // Should this header be preserved in the case of a promotion failure during scavenge?
-template <typename KlassProxy>
-inline bool markWord::must_be_preserved_for_promotion_failure(KlassProxy klass) const {
+inline bool markWord::must_be_preserved_for_promotion_failure(const oopDesc* obj) const {
   if (UseBiasedLocking) {
     // We don't explicitly save off the mark words of biased and
     // currently-locked objects during scavenges, so if during a
@@ -61,7 +61,7 @@ inline bool markWord::must_be_preserved_for_promotion_failure(KlassProxy klass) 
     // the scavengers to call new variants of
     // BiasedLocking::preserve_marks() / restore_marks() in the middle
     // of a scavenge when a promotion failure has first been detected.
-    if (has_bias_pattern() || prototype_for_klass(klass).has_bias_pattern()) {
+    if (has_bias_pattern() || prototype_for_klass(obj->klass()).has_bias_pattern()) {
       return true;
     }
   }

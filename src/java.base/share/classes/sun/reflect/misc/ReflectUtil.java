@@ -124,12 +124,8 @@ public final class ReflectUtil {
      * NOTE: should only be called if a SecurityManager is installed
      */
     private static void privateCheckPackageAccess(SecurityManager s, Class<?> clazz) {
-        while (clazz.isArray()) {
-            clazz = clazz.getComponentType();
-        }
-
         String pkg = clazz.getPackageName();
-        if (pkg != null && !pkg.isEmpty()) {
+        if (!pkg.isEmpty()) {
             s.checkPackageAccess(pkg);
         }
 
@@ -312,12 +308,4 @@ public final class ReflectUtil {
         return false;
     }
 
-    /**
-     * Checks if {@code Class cls} is a VM-anonymous class
-     * as defined by {@link jdk.internal.misc.Unsafe#defineAnonymousClass}
-     * (not to be confused with a Java Language anonymous inner class).
-     */
-    public static boolean isVMAnonymousClass(Class<?> cls) {
-        return cls.getName().indexOf('/') > -1;
-    }
 }

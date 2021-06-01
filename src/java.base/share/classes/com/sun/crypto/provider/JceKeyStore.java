@@ -293,7 +293,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                 }
 
             } catch (Exception e) {
-                throw new KeyStoreException(e.getMessage());
+                throw new KeyStoreException(e.getMessage(), e);
             }
         }
     }

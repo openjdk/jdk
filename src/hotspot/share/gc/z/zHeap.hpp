@@ -122,11 +122,12 @@ public:
   // Marking
   bool is_object_live(uintptr_t addr) const;
   bool is_object_strongly_live(uintptr_t addr) const;
-  template <bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
+  template <bool gc_thread, bool follow, bool finalizable, bool publish> void mark_object(uintptr_t addr);
   void mark_start();
   void mark(bool initial);
   void mark_flush_and_free(Thread* thread);
   bool mark_end();
+  void mark_free();
   void keep_alive(oop obj);
 
   // Relocation set

@@ -313,10 +313,9 @@ public class Log extends AbstractLog {
     /**
      * Construct a log with given I/O redirections.
      * @deprecated
-     * This constructor is provided to support the supported but now-deprecated javadoc entry point
-     *      com.sun.tools.javadoc.Main.execute(String programName,
-     *          PrintWriter errWriter, PrintWriter warnWriter, PrintWriter noticeWriter,
-     *          String defaultDocletClassName, String... args)
+     * This constructor is provided to support
+     *      jdk.javadoc.internal.tool.Messager.Messager(com.sun.tools.javac.util.Context,
+     *          java.lang.String, java.io.PrintWriter, java.io.PrintWriter)
      */
     @Deprecated
     protected Log(Context context, PrintWriter errWriter, PrintWriter warnWriter, PrintWriter noticeWriter) {
