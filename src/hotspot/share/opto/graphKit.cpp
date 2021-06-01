@@ -3982,6 +3982,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     Node* ccast = alloc->make_ideal_length(ary_type, &_gvn);
     if (ccast != length) {
       _gvn.set_type_bottom(ccast);
+      ccast = _gvn.transform(ccast);
       record_for_igvn(ccast);
       replace_in_map(length, ccast);
     }

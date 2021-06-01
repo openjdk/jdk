@@ -4444,15 +4444,10 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
     C->gvn_replace_by(callprojs.fallthrough_ioproj, alloc->in(TypeFunc::I_O));
     C->gvn_replace_by(init->proj_out(TypeFunc::Memory), alloc_mem);
 
-    // Replace InitializeNode's output_control uses' control to AllocateArrayNode's input control.
-    // CastIINode might created in GraphKit::new_array (in AllocateArrayNode::make_ideal_length) and later uses.
-    // CastIINode's input_control should still use InitializeNode's output_control after move allocation.
-    // Otherwise it breaks constraint assumption.
-    //
-    // Because alloc is tightly coupled, checking InitializeNode's control proj's output for
-    // for CastIINode. After finding CastIINode, actions include:
-    // 1. Replace CastIINode with AllocateArrayNode's length.
-    // 2. Create CastIINode again in arraycopy_move_allocation_here after control flow adjustion.
+    // The CastIINode created in GraphKit::new_array (in AllocateArrayNode::make_ideal_length) must stay below
+    // the allocation (i.e. is only valid if the allocation succeeds):
+    // 1) replace CastIINode with AllocateArrayNode's length here
+    // 2) Create CastIINode again once allocation has moved (see below) at the end of this method
     Node* init_control = init->proj_out(TypeFunc::Control);
     Node* alloc_length = alloc->Ideal_length();
 #ifdef ASSERT
@@ -4464,13 +4459,9 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
 #ifdef ASSERT
         if (prev_cast == NULL) {
           prev_cast = init_out;
+          assert(_gvn.hash_find(prev_cast) != NULL, "not found");
         } else {
-          // CastII must be same
-          CastIINode* prev = prev_cast->as_CastII();
-          CastIINode* cur = init_out->as_CastII();
-          assert(prev->has_range_check() == cur->has_range_check(), "not same");
-          assert(prev->type()->is_int()->_lo == cur->type()->is_int()->_lo, "not same");
-          assert(prev->type()->is_int()->_hi == cur->type()->is_int()->_hi, "not same");
+          assert(_gvn.hash_find(prev_cast) == _gvn.hash_find(init_out), "not equal CastIINode");
         }
 #endif
         C->gvn_replace_by(init_out, alloc_length);
@@ -4517,6 +4508,7 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
       Node* ccast = alloc->make_ideal_length(ary_type, &_gvn);
       if (ccast != length) {
         _gvn.set_type_bottom(ccast);
+        ccast = _gvn.transform(ccast);
         record_for_igvn(ccast);
         replace_in_map(length, ccast);
       }
