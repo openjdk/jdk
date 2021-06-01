@@ -231,9 +231,9 @@ public class popframe011 {
     public static void usage() {
         System.err.println("Usage: " + AGENT_LIB + " [-v][time_max]");
         System.err.println("where:");
-        System.err.println("    -v       ::= verbose mode");
-        System.err.println("    time_max ::= max looping time in seconds");
-        System.err.println("                 (default is " + DEF_TIME_MAX +
+        System.err.println("    -v        verbose mode");
+        System.err.println("    time_max  max looping time in seconds");
+        System.err.println("              (default is " + DEF_TIME_MAX +
                            " seconds)");
         System.exit(1);
     }

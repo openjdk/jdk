@@ -132,8 +132,8 @@ public class objmonusage006 {
     public static void usage() {
         System.err.println("Usage: " + AGENT_LIB + " [time_max]");
         System.err.println("where:");
-        System.err.println("    time_max ::= max looping time in seconds");
-        System.err.println("                 (default is " + DEF_TIME_MAX +
+        System.err.println("    time_max  max looping time in seconds");
+        System.err.println("              (default is " + DEF_TIME_MAX +
                            " seconds)");
         System.exit(1);
     }
