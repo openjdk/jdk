@@ -2223,9 +2223,9 @@ public class File
      * On UNIX systems, alphabetic case is significant in comparing pathnames;
      * on Microsoft Windows systems it is not.
      *
-     * @implNote The abstract pathname equality test is equivalent to
-     *           {@code compareTo((File)obj) == 0}.  This method does not
-     *           access the file system and the file is not required to exist.
+     * @apiNote This method only tests whether the abstract pathnames are equal;
+     *          it does not access the file system and the file is not required
+     *          to exist.
      *
      * @param   obj   The object to be compared with this abstract pathname
      *
@@ -2234,7 +2234,6 @@ public class File
      *
      * @see #compareTo(File)
      * @see java.nio.file.Files#isSameFile(Path,Path)
-     * @see java.nio.file.Path#equals(Object)
      */
     public boolean equals(Object obj) {
         if (obj instanceof File file) {
