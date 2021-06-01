@@ -26,6 +26,8 @@
 #ifndef SHARE_RUNTIME_INTERFACESUPPORT_INLINE_HPP
 #define SHARE_RUNTIME_INTERFACESUPPORT_INLINE_HPP
 
+// No interfaceSupport.hpp
+
 #include "gc/shared/gc_globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"

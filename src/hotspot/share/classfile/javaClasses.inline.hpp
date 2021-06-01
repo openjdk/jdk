@@ -26,6 +26,7 @@
 #define SHARE_CLASSFILE_JAVACLASSES_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
+
 #include "oops/access.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"

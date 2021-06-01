@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -583,7 +583,7 @@ public final class RequestPublishers {
         AggregateSubscription(List<BodyPublisher> bodies, Flow.Subscriber<? super ByteBuffer> subscriber) {
             this.bodies = new ConcurrentLinkedQueue<>(bodies);
             this.subscriber = subscriber;
-            this.scheduler = SequentialScheduler.synchronizedScheduler(this::run);
+            this.scheduler = SequentialScheduler.lockingScheduler(this::run);
         }
 
         @Override

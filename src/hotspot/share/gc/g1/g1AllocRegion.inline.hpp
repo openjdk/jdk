@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1ALLOCREGION_INLINE_HPP
 
 #include "gc/g1/g1AllocRegion.hpp"
+
 #include "gc/g1/heapRegion.inline.hpp"
 
 #define assert_alloc_region(p, message)                                  \

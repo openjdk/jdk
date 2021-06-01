@@ -157,8 +157,6 @@ class StubRoutines: AllStatic {
   static jint    _fpu_cntrl_wrd_24;
   static jint    _fpu_cntrl_wrd_trunc;
   static jint    _mxcsr_std;
-  static jint    _fpu_subnormal_bias1[3];
-  static jint    _fpu_subnormal_bias2[3];
 
   static BufferBlob* _code1;                               // code buffer for initial routines
   static BufferBlob* _code2;                               // code buffer for all other routines
@@ -329,8 +327,6 @@ class StubRoutines: AllStatic {
   static address addr_fpu_cntrl_wrd_24()                   { return (address)&_fpu_cntrl_wrd_24;   }
   static address addr_fpu_cntrl_wrd_trunc()                { return (address)&_fpu_cntrl_wrd_trunc; }
   static address addr_mxcsr_std()                          { return (address)&_mxcsr_std; }
-  static address addr_fpu_subnormal_bias1()                { return (address)&_fpu_subnormal_bias1; }
-  static address addr_fpu_subnormal_bias2()                { return (address)&_fpu_subnormal_bias2; }
 
 
   static address select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized);
