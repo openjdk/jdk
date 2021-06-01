@@ -397,34 +397,16 @@ void oopDesc::set_displaced_mark(markWord m) {
   mark().set_displaced_mark_helper(m);
 }
 
-// Supports deferred calling of obj->klass().
-class DeferredObjectToKlass {
-  const oopDesc* _obj;
-
-public:
-  DeferredObjectToKlass(const oopDesc* obj) : _obj(obj) {}
-
-  // Implicitly convertible to const Klass*.
-  operator const Klass*() const {
-    return _obj->klass();
-  }
-};
-
 bool oopDesc::mark_must_be_preserved() const {
   return mark_must_be_preserved(mark());
 }
 
 bool oopDesc::mark_must_be_preserved(markWord m) const {
-  // There's a circular dependency between oop.inline.hpp and
-  // markWord.inline.hpp because markWord::must_be_preserved wants to call
-  // oopDesc::klass(). This could be solved by calling klass() here. However,
-  // not all paths inside must_be_preserved calls klass(). Defer the call until
-  // the klass is actually needed.
-  return m.must_be_preserved(DeferredObjectToKlass(this));
+  return m.must_be_preserved(this);
 }
 
 bool oopDesc::mark_must_be_preserved_for_promotion_failure(markWord m) const {
-  return m.must_be_preserved_for_promotion_failure(DeferredObjectToKlass(this));
+  return m.must_be_preserved_for_promotion_failure(this);
 }
 
 #endif // SHARE_OOPS_OOP_INLINE_HPP
