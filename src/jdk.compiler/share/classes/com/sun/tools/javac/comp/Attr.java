@@ -4148,7 +4148,7 @@ public class Attr extends JCTree.Visitor {
         MatchBindings afterPattern = matchBindings;
         Env<AttrContext> bodyEnv = bindingEnv(env, matchBindings.bindingsWhenTrue);
         try {
-            attribExpr(tree.expr, env, syms.booleanType);
+            attribExpr(tree.expr, bodyEnv, syms.booleanType);
         } finally {
             bodyEnv.info.scope.leave();
         }

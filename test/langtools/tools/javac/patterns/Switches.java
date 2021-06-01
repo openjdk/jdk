@@ -48,6 +48,10 @@ public class Switches {
         runArrayTypeTest(this::testArrayTypeExpression);
         runEnumTest(this::testEnumExpression1);
         runEnumTest(this::testEnumExpression2);
+        runEnumTest(this::testEnumWithGuards1);
+        runEnumTest(this::testEnumWithGuards2);
+        runEnumTest(this::testEnumWithGuardsExpression1);
+        runEnumTest(this::testEnumWithGuardsExpression2);
         runStringWithConstant(this::testStringWithConstant);
         runStringWithConstant(this::testStringWithConstantExpression);
         npeTest(this::npeTestStatement);
@@ -193,6 +197,46 @@ public class Switches {
             case A -> "a";
             case B -> "b";
             case E x, null -> String.valueOf(x);
+        };
+    }
+
+    String testEnumWithGuards1(E e) {
+        switch (e) {
+            case A: return "a";
+            case B: return "b";
+            case E x && "A".equals(x.name()): return "broken";
+            case C: return String.valueOf(e);
+            case null, E x: return String.valueOf(x);
+        }
+    }
+
+    String testEnumWithGuardsExpression1(E e) {
+        return switch (e) {
+            case A -> "a";
+            case B -> "b";
+            case E x && "A".equals(x.name()) -> "broken";
+            case C -> String.valueOf(e);
+            case null, E x -> String.valueOf(x);
+        };
+    }
+
+    String testEnumWithGuards2(E e) {
+        switch (e) {
+            case A: return "a";
+            case B: return "b";
+            case E x && "C".equals(x.name()): return "C";
+            case C: return "broken";
+            case null, E x: return String.valueOf(x);
+        }
+    }
+
+    String testEnumWithGuardsExpression2(E e) {
+        return switch (e) {
+            case A -> "a";
+            case B -> "b";
+            case E x && "C".equals(x.name()) -> "C";
+            case C -> "broken";
+            case null, E x -> String.valueOf(x);
         };
     }
 
