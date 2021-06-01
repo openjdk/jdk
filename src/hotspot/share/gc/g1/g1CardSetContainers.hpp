@@ -92,34 +92,56 @@ public:
   }
 };
 
-class G1CardSetOnHeap {
-public:
-  // We utilise the reference count for memory management.
-  // The object is one of three states:
-  // 1: Live: The object is visible to other threads, thus can
-  //    safely be accessed by other threads (_ref_count >= 3).
-  // 2: Dead: The object is visible to only a single thread and may be
-  //    safely reclaimed (_ref_count == 1).
-  // 3: Reclaimed: The object's memory has been reclaimed ((_ref_count & 0x1) == 0).
-  // To maintain these constraints, live objects should have ((_ref_count & 0x1) == 1),
-  // which requires that we increment the reference counts by 2 starting at _ref_count = 3.
+
+// Common base class for card set container related objects managed on the heap. Depending
+// on the current use, one of the two overlapping elements are used:
+//
+// While such an object is assigned to a card set container, we utilize the
+// reference count for memory management.
+//
+// In this case the object is one of three states:
+// 1: Live: The object is visible to other threads, thus can
+//    safely be accessed by other threads (_ref_count >= 3).
+// 2: Dead: The object is visible to only a single thread and may be
+//    safely reclaimed (_ref_count == 1).
+// 3: Reclaimed: The object's memory has been reclaimed ((_ref_count & 0x1) == 0).
+// To maintain these constraints, live objects should have ((_ref_count & 0x1) == 1),
+// which requires that we increment the reference counts by 2 starting at _ref_count = 3.
+//
+// When such an object is on a free list, we reuse the same field for linking
+// together those free objects.
+class G1CardSetContainerOnHeap {
+private:
   union {
-    G1CardSetOnHeap* _next;
-    uint64_t _ref_count;
+    G1CardSetContainerOnHeap* _next;
+    uintptr_t _ref_count;
   };
 
-  G1CardSetOnHeap() : _ref_count(3) { }
+public:
+  G1CardSetContainerOnHeap() : _ref_count(3) { }
 
-  uint64_t refcount() const { return Atomic::load_acquire(&_ref_count); }
+  uintptr_t refcount() const { return Atomic::load_acquire(&_ref_count); }
 
   bool try_increment_refcount();
 
   // Decrement refcount potentially while racing increment, so we need
   // to check the value after attempting to decrement.
-  uint64_t decrement_refcount();
+  uintptr_t decrement_refcount();
+
+  G1CardSetContainerOnHeap* next() {
+    return _next;
+  }
+
+  G1CardSetContainerOnHeap** next_addr() {
+    return &_next;
+  }
+
+  void set_next(G1CardSetContainerOnHeap* next) {
+    _next = next;
+  }
 };
 
-class G1CardSetArray : public G1CardSetOnHeap {
+class G1CardSetArray : public G1CardSetContainerOnHeap {
 public:
   typedef uint16_t EntryDataType;
   typedef uint EntryCountType;
@@ -174,7 +196,7 @@ public:
   }
 };
 
-class G1CardSetBitMap : public G1CardSetOnHeap {
+class G1CardSetBitMap : public G1CardSetContainerOnHeap {
   size_t _num_bits_set;
   BitMap::bm_word_t _bits[1];
 
@@ -210,7 +232,7 @@ public:
   static size_t size_in_bytes(size_t size_in_bits) { return header_size_in_bytes() + BitMap::calc_size_in_words(size_in_bits) * BytesPerWord; }
 };
 
-class G1CardSetHowl : public G1CardSetOnHeap {
+class G1CardSetHowl : public G1CardSetContainerOnHeap {
 public:
   typedef uint EntryCountType;
   using CardSetPtr = G1CardSet::CardSetPtr;

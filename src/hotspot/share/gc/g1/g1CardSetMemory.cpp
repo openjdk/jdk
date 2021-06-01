@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 
 #include "gc/g1/g1CardSetMemory.inline.hpp"
+#include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/ostream.hpp"
@@ -119,7 +120,7 @@ G1CardSetAllocator<Elem>::G1CardSetAllocator(const char* name,
   _num_allocated_nodes(0),
   _num_available_nodes(0)
 {
-  assert(elem_size() >= sizeof(G1CardSetOnHeap), "Element instance size %u for allocator %s too small",
+  assert(elem_size() >= sizeof(G1CardSetContainerOnHeap), "Element instance size %u for allocator %s too small",
          elem_size(), name);
   assert(_free_buffer_list != nullptr, "precondition!");
 }
@@ -134,15 +135,15 @@ bool G1CardSetAllocator<Elem>::try_transfer_pending() {
   // Have the lock; perform the transfer.
 
   // Claim all the pending nodes.
-  G1CardSetMemoryObject* first = _pending_nodes_list.pop_all();
+  G1CardSetContainerOnHeap* first = _pending_nodes_list.pop_all();
 
   if (first != nullptr) {
     // Prepare to add the claimed nodes, and update _num_pending_nodes.
-    G1CardSetMemoryObject* last = first;
+    G1CardSetContainerOnHeap* last = first;
     Atomic::load_acquire(&_num_pending_nodes);
 
     uint count = 1;
-    for (G1CardSetMemoryObject* next = first->next(); next != nullptr; next = next->next()) {
+    for (G1CardSetContainerOnHeap* next = first->next(); next != nullptr; next = next->next()) {
       last = next;
       ++count;
     }
@@ -163,7 +164,7 @@ bool G1CardSetAllocator<Elem>::try_transfer_pending() {
 template <class Elem>
 void G1CardSetAllocator<Elem>::free(Elem* elem) {
   assert(elem != nullptr, "precondition");
-  assert(elem_size() >= sizeof(G1CardSetMemoryObject), "size mismatch");
+  assert(elem_size() >= sizeof(G1CardSetContainerOnHeap), "size mismatch");
   // Desired minimum transfer batch size.  There is relatively little
   // importance to the specific number.  It shouldn't be too big, else
   // we're wasting space when the release rate is low.  If the release
@@ -175,7 +176,7 @@ void G1CardSetAllocator<Elem>::free(Elem* elem) {
 
   uint pending_count = Atomic::add(&_num_pending_nodes, 1u, memory_order_relaxed);
 
-  G1CardSetMemoryObject* node =  reinterpret_cast<G1CardSetMemoryObject*>(reinterpret_cast<char*>(elem));
+  G1CardSetContainerOnHeap* node =  reinterpret_cast<G1CardSetContainerOnHeap*>(reinterpret_cast<char*>(elem));
 
   node->set_next(nullptr);
   assert(node->next() == nullptr, "precondition");
@@ -407,14 +408,14 @@ void G1CardSetFreePool::print_on(outputStream* out) {
 G1CardSetMemoryManager::G1CardSetMemoryManager(G1CardSetConfiguration* config,
                                                G1CardSetFreePool* free_list_pool) : _config(config) {
 
-  _allocators = NEW_C_HEAP_ARRAY(G1CardSetAllocator<G1CardSetMemoryObject>,
+  _allocators = NEW_C_HEAP_ARRAY(G1CardSetAllocator<G1CardSetContainerOnHeap>,
                                  _config->num_mem_object_types(),
                                  mtGC);
   G1CardSetAllocOptions* alloc_options = _config->mem_object_alloc_options();
   for (uint i = 0; i < num_mem_object_types(); i++) {
-    new (&_allocators[i]) G1CardSetAllocator<G1CardSetMemoryObject>(_config->mem_object_type_name_str(i),
-                                                                    alloc_options[i],
-                                                                    free_list_pool->free_list(i));
+    new (&_allocators[i]) G1CardSetAllocator<G1CardSetContainerOnHeap>(_config->mem_object_type_name_str(i),
+                                                                       alloc_options[i],
+                                                                       free_list_pool->free_list(i));
   }
   FREE_C_HEAP_ARRAY(size_t, alloc_options);
 }
@@ -428,12 +429,12 @@ G1CardSetMemoryManager::~G1CardSetMemoryManager() {
   for (uint i = 0; i < num_mem_object_types(); i++) {
     _allocators[i].~G1CardSetAllocator();
   }
-  FREE_C_HEAP_ARRAY(G1CardSetAllocator<G1CardSetMemoryObject>, _allocators);
+  FREE_C_HEAP_ARRAY(G1CardSetAllocator<G1CardSetContainerOnHeap>, _allocators);
 }
 
 void G1CardSetMemoryManager::free(uint type, void* value) {
   assert(type < num_mem_object_types(), "must be");
-  _allocators[type].free((G1CardSetMemoryObject*)value);
+  _allocators[type].free((G1CardSetContainerOnHeap*)value);
 }
 
 void G1CardSetMemoryManager::flush() {
@@ -455,7 +456,7 @@ size_t G1CardSetMemoryManager::mem_size() const {
     result += _allocators[i].mem_size();
   }
   return sizeof(*this) -
-    (sizeof(G1CardSetAllocator<G1CardSetMemoryObject>) * num_mem_object_types()) +
+    (sizeof(G1CardSetAllocator<G1CardSetContainerOnHeap>) * num_mem_object_types()) +
     result;
 }
 

@@ -97,7 +97,7 @@ void G1CardSetConfiguration::log_configuration() {
                           "InlinePtr #elems %u size %zu "
                           "Array Of Cards #elems %u size %zu "
                           "Howl #buckets %u coarsen threshold %u "
-                          "Howl Bitmap #elems %u %zu coarsen threshold %u",
+                          "Howl Bitmap #elems %u size %zu coarsen threshold %u",
                           num_cards_in_inline_ptr(), sizeof(void*),
                           num_cards_in_array(), G1CardSetArray::size_in_bytes(num_cards_in_array()),
                           num_buckets_in_howl(), cards_in_howl_threshold(),
@@ -352,7 +352,7 @@ void G1CardSet::free_mem_object(CardSetPtr card_set) {
   if (type == G1CardSet::CardSetArrayOfCards ||
       type == G1CardSet::CardSetBitMap ||
       type == G1CardSet::CardSetHowl) {
-    G1CardSetOnHeap* card_set = (G1CardSetOnHeap*)value;
+    G1CardSetContainerOnHeap* card_set = (G1CardSetContainerOnHeap*)value;
     assert((card_set->refcount() == 1), "must be");
   }
 #endif
@@ -373,7 +373,7 @@ G1CardSet::CardSetPtr G1CardSet::acquire_card_set(CardSetPtr volatile* card_set_
       return card_set;
     }
 
-    G1CardSetOnHeap* card_set_on_heap = (G1CardSetOnHeap*)strip_card_set_type(card_set);
+    G1CardSetContainerOnHeap* card_set_on_heap = (G1CardSetContainerOnHeap*)strip_card_set_type(card_set);
 
     if (card_set_on_heap->try_increment_refcount()) {
       assert(card_set_on_heap->refcount() >= 3, "Smallest value is 3");
@@ -388,7 +388,7 @@ bool G1CardSet::release_card_set(CardSetPtr card_set) {
     return false;
   }
 
-  G1CardSetOnHeap* card_set_on_heap = (G1CardSetOnHeap*)strip_card_set_type(card_set);
+  G1CardSetContainerOnHeap* card_set_on_heap = (G1CardSetContainerOnHeap*)strip_card_set_type(card_set);
   return card_set_on_heap->decrement_refcount() == 1;
 }
 

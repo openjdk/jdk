@@ -26,8 +26,16 @@
 #define SHARE_GC_G1_G1CARDSETMEMORY_INLINE_HPP
 
 #include "gc/g1/g1CardSetMemory.hpp"
-#include "utilities/globalCounter.inline.hpp"
+#include "gc/g1/g1CardSetContainers.hpp"
 #include "utilities/ostream.hpp"
+
+#include "gc/g1/g1CardSetContainers.inline.hpp"
+#include "utilities/globalCounter.inline.hpp"
+
+template <class Elem>
+G1CardSetContainerOnHeap* volatile* G1CardSetAllocator<Elem>::next_ptr(G1CardSetContainerOnHeap& node) {
+  return node.next_addr();
+}
 
 template <class Elem>
 G1CardSetBuffer* G1CardSetAllocator<Elem>::create_new_buffer(G1CardSetBuffer* const prev) {
@@ -71,7 +79,7 @@ Elem* G1CardSetAllocator<Elem>::allocate() {
     // Other solutions to the same problem are more complicated (ref counting, HP)
     GlobalCounter::CriticalSection cs(Thread::current());
 
-    G1CardSetMemoryObject* node = _free_nodes_list.pop();
+    G1CardSetContainerOnHeap* node = _free_nodes_list.pop();
     if (node != nullptr) {
       Elem* elem = reinterpret_cast<Elem*>(reinterpret_cast<char*>(node));
       Atomic::sub(&_num_free_nodes, 1u);

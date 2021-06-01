@@ -24,11 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
-#include "memory/universe.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/os.hpp"
@@ -55,7 +51,7 @@ G1ServiceThread::G1ServiceThread() :
 
 void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay_ms) {
   guarantee(!task->is_registered(), "Task already registered");
-  guarantee(!task->is_enqueued(), "Task already in queue");
+  guarantee(task->next() == NULL, "Task already in queue");
 
   // Make sure the service thread is still up and running, there is a race
   // during shutdown where the service thread has been stopped, but other
@@ -77,7 +73,7 @@ void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay_ms) {
 
 void G1ServiceThread::schedule(G1ServiceTask* task, jlong delay_ms) {
   guarantee(task->is_registered(), "Must be registered before scheduled");
-  guarantee(!task->is_enqueued(), "Task already in queue");
+  guarantee(task->next() == NULL, "Task already in queue");
 
   // Schedule task by setting the task time and adding it to queue.
   jlong delay = TimeHelper::millis_to_counter(delay_ms);
@@ -210,12 +206,8 @@ void G1ServiceTask::set_next(G1ServiceTask* next) {
   _next = next;
 }
 
-G1ServiceTask* G1ServiceTask::next() const {
+G1ServiceTask* G1ServiceTask::next() {
   return _next;
-}
-
-bool G1ServiceTask::is_enqueued() const {
-  return next() != nullptr;
 }
 
 G1ServiceTaskQueue::G1ServiceTaskQueue() : _sentinel() { }
@@ -240,8 +232,8 @@ bool G1ServiceTaskQueue::is_empty() {
 }
 
 void G1ServiceTaskQueue::add_ordered(G1ServiceTask* task) {
-  assert(task != nullptr, "not a valid task");
-  assert(!task->is_enqueued(), "already enqueued");
+  assert(task != NULL, "not a valid task");
+  assert(task->next() == NULL, "invariant");
   assert(task->time() != max_jlong, "invalid time for task");
 
   G1ServiceTask* current = &_sentinel;

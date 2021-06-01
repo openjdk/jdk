@@ -1454,23 +1454,25 @@ public:
 };
 
 void G1RemSet::print_merge_heap_roots_stats() {
-  Log(gc, remset) log;
-  LogStream ls(log.debug());
+  LogTarget(Debug, gc, remset) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
 
-  size_t num_visited_cards = _scan_state->num_visited_cards();
+    size_t num_visited_cards = _scan_state->num_visited_cards();
 
-  size_t total_dirty_region_cards = _scan_state->num_cards_in_dirty_regions();
+    size_t total_dirty_region_cards = _scan_state->num_cards_in_dirty_regions();
 
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  size_t total_old_region_cards =
-    (g1h->num_regions() - (g1h->num_free_regions() - g1h->collection_set()->cur_length())) * HeapRegion::CardsPerRegion;
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    size_t total_old_region_cards =
+      (g1h->num_regions() - (g1h->num_free_regions() - g1h->collection_set()->cur_length())) * HeapRegion::CardsPerRegion;
 
-  ls.print_cr("Visited cards " SIZE_FORMAT " Total dirty " SIZE_FORMAT " (%.2lf%%) Total old " SIZE_FORMAT " (%.2lf%%)",
-              num_visited_cards,
-              total_dirty_region_cards,
-              percent_of(num_visited_cards, total_dirty_region_cards),
-              total_old_region_cards,
-              percent_of(num_visited_cards, total_old_region_cards));
+    ls.print_cr("Visited cards " SIZE_FORMAT " Total dirty " SIZE_FORMAT " (%.2lf%%) Total old " SIZE_FORMAT " (%.2lf%%)",
+                num_visited_cards,
+                total_dirty_region_cards,
+                percent_of(num_visited_cards, total_dirty_region_cards),
+                total_old_region_cards,
+                percent_of(num_visited_cards, total_old_region_cards));
+  }
 }
 
 void G1RemSet::merge_heap_roots(bool initial_evacuation) {
@@ -1502,9 +1504,7 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
     workers->run_task(&cl, num_workers);
   }
 
-  if (log_is_enabled(Debug, gc, remset)) {
-    print_merge_heap_roots_stats();
-  }
+  print_merge_heap_roots_stats();
 }
 
 void G1RemSet::complete_evac_phase(bool has_more_than_one_evacuation_phase) {
@@ -1520,10 +1520,12 @@ G1AbstractSubTask* G1RemSet::create_cleanup_after_scan_heap_roots_task() {
 }
 
 void G1RemSet::print_coarsen_stats() {
-  Log(gc, remset) log;
-  LogStream ls(log.debug());
+  LogTarget(Debug, gc, remset) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
 
-  G1CardSet::print_coarsen_stats(&ls);
+    G1CardSet::print_coarsen_stats(&ls);
+  }
 }
 
 inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {

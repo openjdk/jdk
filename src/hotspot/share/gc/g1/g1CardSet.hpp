@@ -36,7 +36,6 @@ class G1CardSetBufferList;
 class G1CardSetHashTable;
 class G1CardSetHashTableValue;
 class G1CardSetMemoryManager;
-class G1CardSetOnHeap;
 class Mutex;
 
 // The result of an attempt to add a card to that card set.
@@ -60,8 +59,6 @@ class G1CardSetConfiguration {
 
   void log_configuration();
 public:
-  // Updates and verifies consistency of card set (container) globals.
-  static void initialize_globals();
 
   // Initialize card set configuration from globals.
   G1CardSetConfiguration();
@@ -74,7 +71,6 @@ public:
                          uint max_cards_in_cardset);
 
   // Inline pointer configuration
-  bool use_inline_ptr() const { return true; } // Unused for now
   uint inline_ptr_bits_per_card() const { return _inline_ptr_bits_per_card; }
   uint num_cards_in_inline_ptr() const;
   static uint num_cards_in_inline_ptr(uint bits_per_card);

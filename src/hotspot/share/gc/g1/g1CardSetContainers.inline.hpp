@@ -99,15 +99,15 @@ inline void G1CardSetInlinePtr::iterate(CardVisitor& found, uint bits_per_card) 
   }
 }
 
-inline bool G1CardSetOnHeap::try_increment_refcount() {
-  uint64_t old_value = refcount();
+inline bool G1CardSetContainerOnHeap::try_increment_refcount() {
+  uintptr_t old_value = refcount();
   while (true) {
     if (old_value < 3 || (old_value & 0x1) == 0) {  // reclaimed,  reference counts are odd numbers starting at 3
       return false; // dead, can't revive.
     }
 
-    uint64_t new_value = old_value + 2;
-    uint64_t ref_count = Atomic::cmpxchg(&_ref_count, old_value, new_value);
+    uintptr_t new_value = old_value + 2;
+    uintptr_t ref_count = Atomic::cmpxchg(&_ref_count, old_value, new_value);
     if (ref_count == old_value) {
       return true;
     }
@@ -115,24 +115,14 @@ inline bool G1CardSetOnHeap::try_increment_refcount() {
   }
 }
 
-inline uint64_t G1CardSetOnHeap::decrement_refcount() {
-  // There is no 64 bit Atomic::sub() for 32 bit platforms. Emulate using cmpxchg.
-  uint64_t old_value = refcount();
-  while (true) {
-    assert((old_value & 0x1) != 0, "precondition");
-    assert(old_value >= 3, "precondition");
-
-    uint64_t new_value = old_value - 2;
-    uint64_t ref_count = Atomic::cmpxchg(&_ref_count, old_value, new_value);
-    if (ref_count == old_value) {
-      return new_value;
-    }
-    old_value = ref_count;
-  }
+inline uintptr_t G1CardSetContainerOnHeap::decrement_refcount() {
+  uintptr_t old_value = refcount();
+  assert((old_value & 0x1) != 0 && old_value >= 3, "precondition");
+  return Atomic::sub(&_ref_count, 2u);
 }
 
 inline G1CardSetArray::G1CardSetArray(uint card_in_region, EntryCountType num_elems) :
-  G1CardSetOnHeap(),
+  G1CardSetContainerOnHeap(),
   _size(num_elems),
   _num_entries(1) {
   assert(_size > 0, "CardSetArray of size 0 not supported.");
@@ -216,7 +206,7 @@ void G1CardSetArray::iterate(CardVisitor& found) {
 }
 
 inline G1CardSetBitMap::G1CardSetBitMap(uint card_in_region, uint size_in_bits) :
-  G1CardSetOnHeap(), _num_bits_set(1) {
+  G1CardSetContainerOnHeap(), _num_bits_set(1) {
   assert(size_in_bits % (sizeof(_bits[0]) * BitsPerByte) == 0,
          "Size %u should be aligned to bitmap word size.", size_in_bits);
   BitMapView bm(_bits, size_in_bits);
@@ -247,7 +237,7 @@ inline void G1CardSetBitMap::iterate(CardVisitor& found, size_t size_in_bits, ui
 }
 
 inline G1CardSetHowl::G1CardSetHowl(EntryCountType card_in_region, G1CardSetConfiguration* config) :
-  G1CardSetOnHeap(),
+  G1CardSetContainerOnHeap(),
   _num_entries((config->num_cards_in_array() + 1)) /* Card Transfer will not increment _num_entries */ {
   EntryCountType num_buckets = config->num_buckets_in_howl();
   EntryCountType bucket = config->howl_bucket_index(card_in_region);

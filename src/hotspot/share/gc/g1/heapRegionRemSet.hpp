@@ -117,8 +117,8 @@ public:
 
   G1CardSetMemoryStats card_set_memory_stats() const { return _card_set_mm.memory_stats(); }
 
-  // The actual # of bytes this hr_remset takes up.
-  // Note also includes the strong code root set.
+  // The actual # of bytes this hr_remset takes up. Also includes the strong code
+  // root set.
   size_t mem_size() {
     return _card_set.mem_size()
       // This correction is necessary because the above includes the second
