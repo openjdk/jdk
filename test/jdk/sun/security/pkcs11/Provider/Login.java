@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,18 @@
  * questions.
  */
 
+/* @test
+ * @bug 4850423
+ * @summary login facilities for hardware tokens
+ * @library /test/lib ..
+ * @run testng/othervm -Djava.security.manager=allow Login
+ */
+
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
 import java.io.*;
-import java.util.*;
+import java.nio.file.Path;
 import java.security.*;
 import javax.security.auth.callback.*;
 
@@ -34,7 +44,17 @@ public class Login extends PKCS11Test {
     private static final String KS_TYPE = "PKCS11";
     private static char[] password;
 
-    public static void main(String[] args) throws Exception {
+    @BeforeClass
+    public void setUp() throws Exception {
+        copyNssCertKeyToClassesDir();
+        setCommonSystemProps();
+        System.setProperty("CUSTOM_P11_CONFIG",
+                Path.of(BASE).resolve("Login-nss.txt").toString());
+    }
+
+    @Test
+    public void testLogin() throws Exception {
+        String[] args = new String[]{ "sm", "Login.policy"};
         main(new Login(), args);
     }
 
@@ -45,14 +65,13 @@ public class Login extends PKCS11Test {
         KeyStore ks = KeyStore.getInstance(KS_TYPE, p);
 
         // check instance
-        if (ks.getProvider() instanceof java.security.AuthProvider) {
+        if (ks.getProvider() instanceof AuthProvider ap) {
             System.out.println("keystore provider instance of AuthProvider");
             System.out.println("test " + testnum++ + " passed");
         } else {
             throw new SecurityException("did not get AuthProvider KeyStore");
         }
 
-        AuthProvider ap = (AuthProvider)ks.getProvider();
         try {
 
             // test app-provided callback
@@ -107,10 +126,9 @@ public class Login extends PKCS11Test {
     public static class PasswordCallbackHandler implements CallbackHandler {
         public void handle(Callback[] callbacks)
                 throws IOException, UnsupportedCallbackException {
-            if (!(callbacks[0] instanceof PasswordCallback)) {
+            if (!(callbacks[0] instanceof PasswordCallback pc)) {
                 throw new UnsupportedCallbackException(callbacks[0]);
             }
-            PasswordCallback pc = (PasswordCallback)callbacks[0];
             pc.setPassword(Login.password);
         }
     }
