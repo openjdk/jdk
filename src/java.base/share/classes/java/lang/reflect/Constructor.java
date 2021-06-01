@@ -489,9 +489,6 @@ public final class Constructor<T> extends Executable {
         if (checkAccess)
             checkAccess(caller, clazz, clazz, modifiers);
 
-        if ((clazz.getModifiers() & Modifier.ENUM) != 0)
-            throw new IllegalArgumentException("Cannot reflectively create enum objects");
-
         ConstructorAccessor ca = constructorAccessor;   // read volatile
         if (ca == null) {
             ca = acquireConstructorAccessor();
@@ -531,6 +528,7 @@ public final class Constructor<T> extends Executable {
     // synchronization will probably make the implementation more
     // scalable.
     private ConstructorAccessor acquireConstructorAccessor() {
+
         // First check to see if one has been created yet, and take it
         // if so.
         ConstructorAccessor tmp = null;
@@ -539,6 +537,10 @@ public final class Constructor<T> extends Executable {
             constructorAccessor = tmp;
         } else {
             // Otherwise fabricate one and propagate it up to the root
+            // Ensure the declaring class is not an Enum class.
+            if ((clazz.getModifiers() & Modifier.ENUM) != 0)
+                throw new IllegalArgumentException("Cannot reflectively create enum objects");
+
             tmp = reflectionFactory.newConstructorAccessor(this);
             // set the constructor accessor only if it's not using native implementation
             if (VM.isJavaLangInvokeInited())
