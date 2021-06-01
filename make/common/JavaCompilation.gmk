@@ -263,8 +263,10 @@ define SetupJavaCompilationBody
     $$(error Invalid value for COMPILER in SetupJavaCompilation for $1: '$$($1_COMPILER)')
   endif
 
-  # Allow overriding on the command line
-  JAVA_WARNINGS_ARE_ERRORS ?= -Werror
+  # Allow overriding on the command line, but disable when `--disable-warnings-as-errors` is set
+  ifneq ($(WARNINGS_AS_ERRORS),false)
+    JAVA_WARNINGS_ARE_ERRORS ?= -Werror
+  endif
 
   # Tell javac to do exactly as told and no more
   PARANOIA_FLAGS := -implicit:none -Xprefer:source -XDignore.symbol.file=true -encoding ascii
