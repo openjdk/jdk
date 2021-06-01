@@ -125,7 +125,7 @@ void setEnvVariable(const tstring& name, const tstring& value)
 
     if (0 != _tputenv_s(name.c_str(), value.c_str())) {
         JP_THROW(tstrings::any() << "_tputenv_s(" << name << ", " << value << ") failed: " << lastCRTError());
-    } 
+    }
 }
 
 tstring getCurrentModulePath()
