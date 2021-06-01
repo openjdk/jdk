@@ -3791,14 +3791,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      */
     public int compareTo(BigInteger val) {
         if (signum == val.signum) {
-            switch (signum) {
-            case 1:
-                return compareMagnitude(val);
-            case -1:
-                return val.compareMagnitude(this);
-            default:
-                return 0;
-            }
+            return switch (signum) {
+                case 1  -> compareMagnitude(val);
+                case -1 -> val.compareMagnitude(this);
+                default -> 0;
+            };
         }
         return signum > val.signum ? 1 : -1;
     }

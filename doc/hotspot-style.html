@@ -94,6 +94,7 @@
 <li><p>All source files must have a globally unique basename. The build system depends on this uniqueness.</p></li>
 <li><p>Do not put non-trivial function implementations in .hpp files. If the implementation depends on other .hpp files, put it in a .cpp or a .inline.hpp file.</p></li>
 <li><p>.inline.hpp files should only be included in .cpp or .inline.hpp files.</p></li>
+<li><p>All .inline.hpp files should include their corresponding .hpp file as the first include line. Declarations needed by other files should be put in the .hpp file, and not in the .inline.hpp file. This rule exists to resolve problems with circular dependencies between .inline.hpp files.</p></li>
 <li><p>All .cpp files include precompiled.hpp as the first include line.</p></li>
 <li><p>precompiled.hpp is just a build time optimization, so don't rely on it to resolve include problems.</p></li>
 <li><p>Keep the include lines alphabetically sorted.</p></li>

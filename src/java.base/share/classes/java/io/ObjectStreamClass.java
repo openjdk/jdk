@@ -1493,39 +1493,26 @@ public class ObjectStreamClass implements Serializable {
         for (int i = 0; i < fields.length; i++) {
             ObjectStreamField f = fields[i];
             switch (f.getTypeCode()) {
-                case 'Z':
-                case 'B':
-                    f.setOffset(primDataSize++);
-                    break;
-
-                case 'C':
-                case 'S':
+                case 'Z', 'B' -> f.setOffset(primDataSize++);
+                case 'C', 'S' -> {
                     f.setOffset(primDataSize);
                     primDataSize += 2;
-                    break;
-
-                case 'I':
-                case 'F':
+                }
+                case 'I', 'F' -> {
                     f.setOffset(primDataSize);
                     primDataSize += 4;
-                    break;
-
-                case 'J':
-                case 'D':
+                }
+                case 'J', 'D' -> {
                     f.setOffset(primDataSize);
                     primDataSize += 8;
-                    break;
-
-                case '[':
-                case 'L':
+                }
+                case '[', 'L' -> {
                     f.setOffset(numObjFields++);
                     if (firstObjIndex == -1) {
                         firstObjIndex = i;
                     }
-                    break;
-
-                default:
-                    throw new InternalError();
+                }
+                default -> throw new InternalError();
             }
         }
         if (firstObjIndex != -1 &&
@@ -2124,40 +2111,15 @@ public class ObjectStreamClass implements Serializable {
                 long key = readKeys[i];
                 int off = offsets[i];
                 switch (typeCodes[i]) {
-                    case 'Z':
-                        Bits.putBoolean(buf, off, unsafe.getBoolean(obj, key));
-                        break;
-
-                    case 'B':
-                        buf[off] = unsafe.getByte(obj, key);
-                        break;
-
-                    case 'C':
-                        Bits.putChar(buf, off, unsafe.getChar(obj, key));
-                        break;
-
-                    case 'S':
-                        Bits.putShort(buf, off, unsafe.getShort(obj, key));
-                        break;
-
-                    case 'I':
-                        Bits.putInt(buf, off, unsafe.getInt(obj, key));
-                        break;
-
-                    case 'F':
-                        Bits.putFloat(buf, off, unsafe.getFloat(obj, key));
-                        break;
-
-                    case 'J':
-                        Bits.putLong(buf, off, unsafe.getLong(obj, key));
-                        break;
-
-                    case 'D':
-                        Bits.putDouble(buf, off, unsafe.getDouble(obj, key));
-                        break;
-
-                    default:
-                        throw new InternalError();
+                    case 'Z' -> Bits.putBoolean(buf, off, unsafe.getBoolean(obj, key));
+                    case 'B' -> buf[off] = unsafe.getByte(obj, key);
+                    case 'C' -> Bits.putChar(buf, off, unsafe.getChar(obj, key));
+                    case 'S' -> Bits.putShort(buf, off, unsafe.getShort(obj, key));
+                    case 'I' -> Bits.putInt(buf, off, unsafe.getInt(obj, key));
+                    case 'F' -> Bits.putFloat(buf, off, unsafe.getFloat(obj, key));
+                    case 'J' -> Bits.putLong(buf, off, unsafe.getLong(obj, key));
+                    case 'D' -> Bits.putDouble(buf, off, unsafe.getDouble(obj, key));
+                    default  -> throw new InternalError();
                 }
             }
         }
@@ -2178,40 +2140,15 @@ public class ObjectStreamClass implements Serializable {
                 }
                 int off = offsets[i];
                 switch (typeCodes[i]) {
-                    case 'Z':
-                        unsafe.putBoolean(obj, key, Bits.getBoolean(buf, off));
-                        break;
-
-                    case 'B':
-                        unsafe.putByte(obj, key, buf[off]);
-                        break;
-
-                    case 'C':
-                        unsafe.putChar(obj, key, Bits.getChar(buf, off));
-                        break;
-
-                    case 'S':
-                        unsafe.putShort(obj, key, Bits.getShort(buf, off));
-                        break;
-
-                    case 'I':
-                        unsafe.putInt(obj, key, Bits.getInt(buf, off));
-                        break;
-
-                    case 'F':
-                        unsafe.putFloat(obj, key, Bits.getFloat(buf, off));
-                        break;
-
-                    case 'J':
-                        unsafe.putLong(obj, key, Bits.getLong(buf, off));
-                        break;
-
-                    case 'D':
-                        unsafe.putDouble(obj, key, Bits.getDouble(buf, off));
-                        break;
-
-                    default:
-                        throw new InternalError();
+                    case 'Z' -> unsafe.putBoolean(obj, key, Bits.getBoolean(buf, off));
+                    case 'B' -> unsafe.putByte(obj, key, buf[off]);
+                    case 'C' -> unsafe.putChar(obj, key, Bits.getChar(buf, off));
+                    case 'S' -> unsafe.putShort(obj, key, Bits.getShort(buf, off));
+                    case 'I' -> unsafe.putInt(obj, key, Bits.getInt(buf, off));
+                    case 'F' -> unsafe.putFloat(obj, key, Bits.getFloat(buf, off));
+                    case 'J' -> unsafe.putLong(obj, key, Bits.getLong(buf, off));
+                    case 'D' -> unsafe.putDouble(obj, key, Bits.getDouble(buf, off));
+                    default  -> throw new InternalError();
                 }
             }
         }
@@ -2230,15 +2167,10 @@ public class ObjectStreamClass implements Serializable {
              * in array should be equal to Unsafe.INVALID_FIELD_OFFSET.
              */
             for (int i = numPrimFields; i < fields.length; i++) {
-                switch (typeCodes[i]) {
-                    case 'L':
-                    case '[':
-                        vals[offsets[i]] = unsafe.getReference(obj, readKeys[i]);
-                        break;
-
-                    default:
-                        throw new InternalError();
-                }
+                vals[offsets[i]] = switch (typeCodes[i]) {
+                    case 'L', '[' -> unsafe.getReference(obj, readKeys[i]);
+                    default       -> throw new InternalError();
+                };
             }
         }
 
@@ -2272,8 +2204,7 @@ public class ObjectStreamClass implements Serializable {
                     continue;           // discard value
                 }
                 switch (typeCodes[i]) {
-                    case 'L':
-                    case '[':
+                    case 'L', '[' -> {
                         Object val = vals[offsets[i]];
                         if (val != null &&
                             !types[i - numPrimFields].isInstance(val))
@@ -2289,10 +2220,8 @@ public class ObjectStreamClass implements Serializable {
                         }
                         if (!dryRun)
                             unsafe.putReference(obj, key, val);
-                        break;
-
-                    default:
-                        throw new InternalError();
+                    }
+                    default -> throw new InternalError();
                 }
             }
         }
