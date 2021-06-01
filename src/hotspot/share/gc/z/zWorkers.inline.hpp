@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZWORKERS_INLINE_HPP
 #define SHARE_GC_Z_ZWORKERS_INLINE_HPP
 
-#include "gc/shared/gc_globals.hpp"
 #include "gc/z/zWorkers.hpp"
+
+#include "gc/shared/gc_globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 inline uint ZWorkers::nparallel() const {

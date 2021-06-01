@@ -1477,7 +1477,6 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
             if (zone == null) {
                 zone = defaultTimeZone(locale);
             }
-            Calendar cal;
             if (type == null) {
                 type = locale.getUnicodeLocaleType("ca");
             }
@@ -1489,28 +1488,24 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
                     type = "gregory";
                 }
             }
-            switch (type) {
-            case "gregory":
-                cal = new GregorianCalendar(zone, locale, true);
-                break;
-            case "iso8601":
-                GregorianCalendar gcal = new GregorianCalendar(zone, locale, true);
-                // make gcal a proleptic Gregorian
-                gcal.setGregorianChange(new Date(Long.MIN_VALUE));
-                // and week definition to be compatible with ISO 8601
-                setWeekDefinition(MONDAY, 4);
-                cal = gcal;
-                break;
-            case "buddhist":
-                cal = new BuddhistCalendar(zone, locale);
-                cal.clear();
-                break;
-            case "japanese":
-                cal = new JapaneseImperialCalendar(zone, locale, true);
-                break;
-            default:
-                throw new IllegalArgumentException("unknown calendar type: " + type);
-            }
+            final Calendar cal = switch (type) {
+                case "gregory" -> new GregorianCalendar(zone, locale, true);
+                case "iso8601" -> {
+                    GregorianCalendar gcal = new GregorianCalendar(zone, locale, true);
+                    // make gcal a proleptic Gregorian
+                    gcal.setGregorianChange(new Date(Long.MIN_VALUE));
+                    // and week definition to be compatible with ISO 8601
+                    setWeekDefinition(MONDAY, 4);
+                    yield gcal;
+                }
+                case "buddhist" -> {
+                    var buddhistCalendar = new BuddhistCalendar(zone, locale);
+                    buddhistCalendar.clear();
+                    yield buddhistCalendar;
+                }
+                case "japanese" -> new JapaneseImperialCalendar(zone, locale, true);
+                default -> throw new IllegalArgumentException("unknown calendar type: " + type);
+            };
             cal.setLenient(lenient);
             if (firstDayOfWeek != 0) {
                 cal.setFirstDayOfWeek(firstDayOfWeek);
@@ -1705,17 +1700,12 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         if (aLocale.hasExtensions()) {
             String caltype = aLocale.getUnicodeLocaleType("ca");
             if (caltype != null) {
-                switch (caltype) {
-                case "buddhist":
-                cal = new BuddhistCalendar(zone, aLocale);
-                    break;
-                case "japanese":
-                    cal = new JapaneseImperialCalendar(zone, aLocale);
-                    break;
-                case "gregory":
-                    cal = new GregorianCalendar(zone, aLocale);
-                    break;
-                }
+                cal = switch (caltype) {
+                    case "buddhist" -> new BuddhistCalendar(zone, aLocale);
+                    case "japanese" -> new JapaneseImperialCalendar(zone, aLocale);
+                    case "gregory"  -> new GregorianCalendar(zone, aLocale);
+                    default         -> null;
+                };
             }
         }
         if (cal == null) {
@@ -2267,25 +2257,13 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
             return null;
         }
 
-        String[] strings = null;
-        switch (field) {
-        case ERA:
-            strings = symbols.getEras();
-            break;
-
-        case MONTH:
-            strings = (baseStyle == LONG) ? symbols.getMonths() : symbols.getShortMonths();
-            break;
-
-        case DAY_OF_WEEK:
-            strings = (baseStyle == LONG) ? symbols.getWeekdays() : symbols.getShortWeekdays();
-            break;
-
-        case AM_PM:
-            strings = symbols.getAmPmStrings();
-            break;
-        }
-        return strings;
+        return switch (field) {
+            case ERA         -> symbols.getEras();
+            case MONTH       -> (baseStyle == LONG) ? symbols.getMonths() : symbols.getShortMonths();
+            case DAY_OF_WEEK -> (baseStyle == LONG) ? symbols.getWeekdays() : symbols.getShortWeekdays();
+            case AM_PM       -> symbols.getAmPmStrings();
+            default -> null;
+        };
     }
 
     /**

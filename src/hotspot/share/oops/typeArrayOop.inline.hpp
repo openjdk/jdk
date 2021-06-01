@@ -25,10 +25,11 @@
 #ifndef SHARE_OOPS_TYPEARRAYOOP_INLINE_HPP
 #define SHARE_OOPS_TYPEARRAYOOP_INLINE_HPP
 
+#include "oops/typeArrayOop.hpp"
+
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/typeArrayOop.hpp"
 
 int typeArrayOopDesc::object_size() {
   TypeArrayKlass* tk = TypeArrayKlass::cast(klass());
