@@ -815,10 +815,10 @@ bool Disassembler::load_library(outputStream* st) {
   // 4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
   if (jvm_offset >= 0) {
     // 1. <home>/lib/<vm>/libhsdis-<arch>.so
-    _library = dll_load(buf, jvm_offset, sizeof buf, ebuf, sizeof ebuf, st);
+    _library = dll_load(buf, sizeof buf, jvm_offset, ebuf, sizeof ebuf, st);
     if (_library == NULL && lib_offset >= 0) {
       // 2. <home>/lib/<vm>/hsdis-<arch>.so
-      _library = dll_load(buf, lib_offset, sizeof buf, ebuf, sizeof ebuf, st);
+      _library = dll_load(buf, sizeof buf, lib_offset, ebuf, sizeof ebuf, st);
     }
     if (_library == NULL && lib_offset > 0) {
       // 3. <home>/lib/hsdis-<arch>.so
@@ -826,12 +826,12 @@ bool Disassembler::load_library(outputStream* st) {
       const char* p = strrchr(buf, *os::file_separator());
       if (p != NULL) {
         lib_offset = p - buf + 1;
-        _library = dll_load(buf, lib_offset, sizeof buf, ebuf, sizeof ebuf, st);
+        _library = dll_load(buf, sizeof buf, lib_offset, ebuf, sizeof ebuf, st);
       }
     }
   }
   if (_library == NULL) {
-    _library = dll_load(buf, 0, sizeof buf, ebuf, sizeof ebuf, st);
+    _library = dll_load(buf, sizeof buf, 0, ebuf, sizeof ebuf, st);
   }
 
   // load the decoder function to use.
