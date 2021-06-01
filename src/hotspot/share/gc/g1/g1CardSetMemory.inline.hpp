@@ -33,7 +33,7 @@
 #include "utilities/globalCounter.inline.hpp"
 
 template <class Elem>
-G1CardSetContainerOnHeap* volatile* G1CardSetAllocator<Elem>::next_ptr(G1CardSetContainerOnHeap& node) {
+G1CardSetContainer* volatile* G1CardSetAllocator<Elem>::next_ptr(G1CardSetContainer& node) {
   return node.next_addr();
 }
 
@@ -79,7 +79,7 @@ Elem* G1CardSetAllocator<Elem>::allocate() {
     // Other solutions to the same problem are more complicated (ref counting, HP)
     GlobalCounter::CriticalSection cs(Thread::current());
 
-    G1CardSetContainerOnHeap* node = _free_nodes_list.pop();
+    G1CardSetContainer* node = _free_nodes_list.pop();
     if (node != nullptr) {
       Elem* elem = reinterpret_cast<Elem*>(reinterpret_cast<char*>(node));
       Atomic::sub(&_num_free_nodes, 1u);

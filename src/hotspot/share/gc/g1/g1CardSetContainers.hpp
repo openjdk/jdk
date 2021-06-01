@@ -110,15 +110,15 @@ public:
 //
 // When such an object is on a free list, we reuse the same field for linking
 // together those free objects.
-class G1CardSetContainerOnHeap {
+class G1CardSetContainer {
 private:
   union {
-    G1CardSetContainerOnHeap* _next;
+    G1CardSetContainer* _next;
     uintptr_t _ref_count;
   };
 
 public:
-  G1CardSetContainerOnHeap() : _ref_count(3) { }
+  G1CardSetContainer() : _ref_count(3) { }
 
   uintptr_t refcount() const { return Atomic::load_acquire(&_ref_count); }
 
@@ -128,20 +128,20 @@ public:
   // to check the value after attempting to decrement.
   uintptr_t decrement_refcount();
 
-  G1CardSetContainerOnHeap* next() {
+  G1CardSetContainer* next() {
     return _next;
   }
 
-  G1CardSetContainerOnHeap** next_addr() {
+  G1CardSetContainer** next_addr() {
     return &_next;
   }
 
-  void set_next(G1CardSetContainerOnHeap* next) {
+  void set_next(G1CardSetContainer* next) {
     _next = next;
   }
 };
 
-class G1CardSetArray : public G1CardSetContainerOnHeap {
+class G1CardSetArray : public G1CardSetContainer {
 public:
   typedef uint16_t EntryDataType;
   typedef uint EntryCountType;
@@ -196,7 +196,7 @@ public:
   }
 };
 
-class G1CardSetBitMap : public G1CardSetContainerOnHeap {
+class G1CardSetBitMap : public G1CardSetContainer {
   size_t _num_bits_set;
   BitMap::bm_word_t _bits[1];
 
@@ -232,7 +232,7 @@ public:
   static size_t size_in_bytes(size_t size_in_bits) { return header_size_in_bytes() + BitMap::calc_size_in_words(size_in_bits) * BytesPerWord; }
 };
 
-class G1CardSetHowl : public G1CardSetContainerOnHeap {
+class G1CardSetHowl : public G1CardSetContainer {
 public:
   typedef uint EntryCountType;
   using CardSetPtr = G1CardSet::CardSetPtr;

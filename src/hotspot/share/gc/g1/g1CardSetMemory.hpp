@@ -160,15 +160,15 @@ public:
 // Some third party is responsible for giving back memory from the free list to
 // the operating system.
 //
-// Allocation and deallocation in the first phase on G1CardSetContainerOnHeap basis
+// Allocation and deallocation in the first phase on G1CardSetContainer basis
 // may occur by multiple threads at once.
 //
-// Allocation occurs from an internal free list of G1CardSetContainerOnHeaps first,
+// Allocation occurs from an internal free list of G1CardSetContainers first,
 // only then trying to bump-allocate from the current G1CardSetBuffer. If there is
 // none, this class allocates a new G1CardSetBuffer (allocated from the C heap,
 // asking the G1CardSetAllocOptions instance about sizes etc) and uses that one.
 //
-// The G1CardSetContainerOnHeaps free list is a linked list of G1CardSetContainerOnHeaps
+// The G1CardSetContainerOnHeaps free list is a linked list of G1CardSetContainers
 // within all G1CardSetBuffer instances allocated so far. It uses a separate
 // pending list and global synchronization to avoid the ABA problem when the
 // user frees a memory object.
@@ -196,11 +196,11 @@ class G1CardSetAllocator {
   G1CardSetBufferList* _free_buffer_list; // The global free buffer list to
                                           // preferentially get new buffers from.
 
-  // G1CardSetContainerOnHeap node management within the G1CardSetBuffers allocated
+  // G1CardSetContainer node management within the G1CardSetBuffers allocated
   // by this allocator.
 
-  static G1CardSetContainerOnHeap* volatile* next_ptr(G1CardSetContainerOnHeap& node);
-  typedef LockFreeStack<G1CardSetContainerOnHeap, &next_ptr> NodeStack;
+  static G1CardSetContainer* volatile* next_ptr(G1CardSetContainer& node);
+  typedef LockFreeStack<G1CardSetContainer, &next_ptr> NodeStack;
 
   volatile bool _transfer_lock;
   NodeStack _free_nodes_list;
@@ -354,7 +354,7 @@ public:
 class G1CardSetMemoryManager : public CHeapObj<mtGCCardSet> {
   G1CardSetConfiguration* _config;
 
-  G1CardSetAllocator<G1CardSetContainerOnHeap>* _allocators;
+  G1CardSetAllocator<G1CardSetContainer>* _allocators;
 
   uint num_mem_object_types() const;
 public:

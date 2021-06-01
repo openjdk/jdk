@@ -352,7 +352,7 @@ void G1CardSet::free_mem_object(CardSetPtr card_set) {
   if (type == G1CardSet::CardSetArrayOfCards ||
       type == G1CardSet::CardSetBitMap ||
       type == G1CardSet::CardSetHowl) {
-    G1CardSetContainerOnHeap* card_set = (G1CardSetContainerOnHeap*)value;
+    G1CardSetContainer* card_set = (G1CardSetContainer*)value;
     assert((card_set->refcount() == 1), "must be");
   }
 #endif
@@ -373,7 +373,7 @@ G1CardSet::CardSetPtr G1CardSet::acquire_card_set(CardSetPtr volatile* card_set_
       return card_set;
     }
 
-    G1CardSetContainerOnHeap* card_set_on_heap = (G1CardSetContainerOnHeap*)strip_card_set_type(card_set);
+    G1CardSetContainer* card_set_on_heap = (G1CardSetContainer*)strip_card_set_type(card_set);
 
     if (card_set_on_heap->try_increment_refcount()) {
       assert(card_set_on_heap->refcount() >= 3, "Smallest value is 3");
@@ -388,7 +388,7 @@ bool G1CardSet::release_card_set(CardSetPtr card_set) {
     return false;
   }
 
-  G1CardSetContainerOnHeap* card_set_on_heap = (G1CardSetContainerOnHeap*)strip_card_set_type(card_set);
+  G1CardSetContainer* card_set_on_heap = (G1CardSetContainer*)strip_card_set_type(card_set);
   return card_set_on_heap->decrement_refcount() == 1;
 }
 

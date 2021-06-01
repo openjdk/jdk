@@ -230,7 +230,7 @@ void G1Arguments::initialize() {
   initialize_verification_types();
 
   // Verify that the maximum parallelism isn't too high to eventually overflow
-  // the refcount in G1CardSetContainerOnHeap.
+  // the refcount in G1CardSetContainer.
   uint max_parallel_refinement_threads = G1ConcRefinementThreads + G1DirtyCardQueueSet::num_par_ids();
   uint const divisor = 3;  // Safe divisor; we increment by 2 for each claim, but there is a small initial value.
   if (max_parallel_refinement_threads > UINTPTR_MAX / divisor) {
