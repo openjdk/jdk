@@ -155,7 +155,7 @@ inline intptr_t* frame::unextended_sp() const     { return _unextended_sp; }
 
 inline address* frame::sender_pc_addr()      const { return (address*) addr_at( return_addr_offset); }
 inline address  frame::sender_pc_raw()       const { return *sender_pc_addr(); }
-inline address  frame::sender_pc()           const { return pauth_strip_pointer(sender_pc_raw());
+inline address  frame::sender_pc()           const { return pauth_strip_pointer(sender_pc_raw()); }
 
 inline intptr_t*    frame::sender_sp()        const { return            addr_at(   sender_sp_offset); }
 

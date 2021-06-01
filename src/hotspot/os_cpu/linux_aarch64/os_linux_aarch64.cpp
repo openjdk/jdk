@@ -34,7 +34,6 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "os_share_linux.hpp"
-#include "pauth_aarch64.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -141,8 +140,6 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   intptr_t* sp = os::Linux::ucontext_get_sp(uc);
   address pc = (address)(uc->uc_mcontext.regs[REG_LR]
                          - NativeInstruction::instruction_size);
-  // Compiled code should not have signed the return address.
-  assert(pauth_ptr_is_raw(pc), "cannot be signed");
   return frame(sp, fp, pc);
 }
 
