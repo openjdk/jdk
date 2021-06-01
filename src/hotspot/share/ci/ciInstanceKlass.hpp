@@ -152,6 +152,10 @@ public:
     return _has_finalizer; }
   bool                   has_subklass()   {
     assert(is_loaded(), "must be loaded");
+    // Ignore cached subklass_false case.
+    // It could be invalidated by concurrent class loading and
+    // can result in type paradoxes during compilation when
+    // a subclass is observed, but has_subklass() returns false.
     if (_has_subklass == subklass_true) {
       return true;
     }
