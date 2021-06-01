@@ -2962,23 +2962,27 @@ void* os::Linux::libnuma_v2_dlsym(void* handle, const char* name) {
 }
 
 #ifndef SYS_get_mempolicy
-// ia64: 1260, i386: 275, x86_64: 239, s390x: 236, powerpc: 260
-  #ifdef __ia64__
-    #define SYS_get_mempolicy 1260
+  #ifdef __NR_get_mempolicy
+    #define SYS_get_mempolicy __NR_get_mempolicy
   #else
-    #ifdef __i386__
-      #define SYS_get_mempolicy 275
+    // ia64: 1260, i386: 275, x86_64: 239, s390x: 236, powerpc: 260
+    #ifdef __ia64__
+      #define SYS_get_mempolicy 1260
     #else
-      #ifdef __x86_64__
-        #define SYS_get_mempolicy 239
+      #ifdef __i386__
+        #define SYS_get_mempolicy 275
       #else
-        #ifdef __s390x__
-          #define SYS_get_mempolicy 236
+        #ifdef __x86_64__
+          #define SYS_get_mempolicy 239
         #else
-          #ifdef __powerpc__
-            #define SYS_get_mempolicy 260
+          #ifdef __s390x__
+            #define SYS_get_mempolicy 236
           #else
-            #error define get_mempolicy for the arch
+            #ifdef __powerpc__
+              #define SYS_get_mempolicy 260
+            #else
+              #error define get_mempolicy for the arch
+            #endif
           #endif
         #endif
       #endif
