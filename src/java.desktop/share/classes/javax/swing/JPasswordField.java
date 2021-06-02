@@ -60,6 +60,14 @@ import javax.swing.text.Segment;
  * If an application needs the input methods support, please use the
  * inherited method, <code>enableInputMethods(true)</code>.
  * <p>
+ * <strong>Warning:</strong> The text entered in JPasswordField displays
+ * something that was typed and does not show the original characters. This
+ * doesn't prevent the password from appearing in the system memory. For
+ * handling confidential information such as the password text, refer to the
+ * relevant section at
+ * <a href="https://www.oracle.com/java/technologies/javase/seccodeguide.html">
+ * Secure Coding Guidelines</a>.
+ * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more
  * information see <a
  * href="package-summary.html#threading">Swing's Threading
