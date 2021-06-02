@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "cgroupSubsystem_linux.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "os_linux.inline.hpp"
+#include "osContainer_linux.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -383,11 +385,28 @@ static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, dou
     tdiff = udiff + kdiff;
   }
   *pkernelLoad = (kdiff / (double)tdiff);
+  user_load = (udiff / (double)tdiff);
+
+  if (OSContainer::is_containerized()) {
+    double scale = 1.0f;
+    int quota  = OSContainer::cpu_quota();
+    int period = OSContainer::cpu_period();
+    int share  = OSContainer::cpu_shares();
+    int processor_count = os::processor_count();
+    if (quota > -1 && period > 0) {
+      scale = (double)processor_count / ((double)quota / (double)period);
+    } else if (share > -1) {
+      scale = (double)processor_count / ((double)share / (double)PER_CPU_SHARES);
+    } else {
+      scale = (double)processor_count / (double)os::active_processor_count();
+    }
+    *pkernelLoad *= scale;
+    user_load *= scale;
+  }
+
   // BUG9044876, normalize return values to sane values
   *pkernelLoad = MAX2<double>(*pkernelLoad, 0.0);
   *pkernelLoad = MIN2<double>(*pkernelLoad, 1.0);
-
-  user_load = (udiff / (double)tdiff);
   user_load = MAX2<double>(user_load, 0.0);
   user_load = MIN2<double>(user_load, 1.0);
 
