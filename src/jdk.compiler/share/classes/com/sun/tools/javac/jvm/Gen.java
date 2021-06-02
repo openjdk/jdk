@@ -2220,8 +2220,7 @@ public class Gen extends JCTree.Visitor {
         // the conversion.
         if (!tree.clazz.type.isPrimitive() &&
            !types.isSameType(tree.expr.type, tree.clazz.type) &&
-           types.asSuper(tree.expr.type, tree.clazz.type.tsym) == null &&
-           tree.clazz.getTag() != TYPEINTERSECTION) {
+           types.asSuper(tree.expr.type, tree.clazz.type.tsym) == null) {
             code.emitop2(checkcast, checkDimension(tree.pos(), tree.clazz.type), PoolWriter::putClass);
         }
     }
