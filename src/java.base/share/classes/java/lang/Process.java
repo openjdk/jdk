@@ -227,14 +227,14 @@ public abstract class Process {
      * sequences are replaced with the charset's default replacement.
      * The {@code BufferedReader} reads and buffers characters from the InputStreamReader.
      *
+     * <p>The first call to this method creates the {@link BufferedReader BufferedReader},
+     * if called again with the same {@code charset} the same {@code BufferedReader} is returned.
+     * It is an error to call this method again with a different {@code charset}.
+     *
      * <p>If the standard output of the process has been redirected using
      * {@link ProcessBuilder#redirectOutput(Redirect) ProcessBuilder.redirectOutput}
      * then the {@code InputStreamReader} will be reading from a
      * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
-     *
-     * <p>The first call to this method creates the {@link BufferedReader BufferedReader},
-     * if called again with the same {@code charset} the same {@code BufferedReader} is returned.
-     * It is an error to call this method again with a different {@code charset}.
      *
      * <p>Otherwise, if the standard error of the process has been redirected using
      * {@link ProcessBuilder#redirectErrorStream(boolean)
@@ -378,7 +378,7 @@ public abstract class Process {
      *
      * <p>If the standard input of the process has been redirected using
      * {@link ProcessBuilder#redirectInput(Redirect)
-     * ProcessBuilder.redirectInput} then this method will return a
+     * ProcessBuilder.redirectInput} then the {@code OutputStreamWriter} writes to a
      * <a href="ProcessBuilder.html#redirect-input">null output stream</a>.
      *
      * @apiNote
