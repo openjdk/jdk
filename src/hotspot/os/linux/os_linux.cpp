@@ -2961,9 +2961,33 @@ void* os::Linux::libnuma_v2_dlsym(void* handle, const char* name) {
   return dlvsym(handle, name, "libnuma_1.2");
 }
 
-#if !defined(SYS_get_mempolicy) && defined(S390)
-// No SYS_get_mempolicy definition on SUSE Linux Enterprise Server 11.4 (s390x)
-#define SYS_get_mempolicy __NR_get_mempolicy
+#ifndef SYS_get_mempolicy
+  #ifdef __NR_get_mempolicy
+    #define SYS_get_mempolicy __NR_get_mempolicy
+  #else
+    // ia64: 1260, i386: 275, x86_64: 239, s390x: 236, powerpc: 260
+    #ifdef __ia64__
+      #define SYS_get_mempolicy 1260
+    #else
+      #ifdef __i386__
+        #define SYS_get_mempolicy 275
+      #else
+        #ifdef __x86_64__
+          #define SYS_get_mempolicy 239
+        #else
+          #ifdef __s390x__
+            #define SYS_get_mempolicy 236
+          #else
+            #ifdef __powerpc__
+              #define SYS_get_mempolicy 260
+            #else
+              #error define get_mempolicy for the arch
+            #endif
+          #endif
+        #endif
+      #endif
+    #endif
+  #endif
 #endif
 
 // Check numa dependent syscalls
