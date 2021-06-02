@@ -45,7 +45,7 @@ public class TestLayoutEquality {
 
     @Test(dataProvider = "layoutConstants")
     public void testReconstructedEquality(ValueLayout layout) {
-        ValueLayout newLayout = MemoryLayout.ofValueBits(layout.bitSize(), layout.order());
+        ValueLayout newLayout = MemoryLayout.valueLayout(layout.bitSize(), layout.order());
 
         // properties should be equal
         assertEquals(newLayout.bitSize(), layout.bitSize());
