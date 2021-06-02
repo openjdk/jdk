@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import static sun.security.util.SecurityProviderConstants.getAliases;
  * @since 1.6
  */
 
+@SuppressWarnings("removal")
 public final class SunMSCAPI extends Provider {
 
     private static final long serialVersionUID = 8622598936488630849L; //TODO

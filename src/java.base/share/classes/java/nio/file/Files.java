@@ -1651,6 +1651,7 @@ public final class Files {
             loadInstalledDetectors();
 
         // creates the default file type detector
+        @SuppressWarnings("removal")
         private static FileTypeDetector createDefaultFileTypeDetector() {
             return AccessController
                 .doPrivileged(new PrivilegedAction<>() {
@@ -1660,6 +1661,7 @@ public final class Files {
         }
 
         // loads all installed file type detectors
+        @SuppressWarnings("removal")
         private static List<FileTypeDetector> loadInstalledDetectors() {
             return AccessController
                 .doPrivileged(new PrivilegedAction<>() {

@@ -231,6 +231,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
     private Locale fLocale = null;
 
     /** Constructs a component manager suitable for Xerces' schema validator. */
+    @SuppressWarnings("removal")
     public XMLSchemaValidatorComponentManager(XSGrammarPoolContainer grammarContainer) {
         // setup components
         fEntityManager = new XMLEntityManager();

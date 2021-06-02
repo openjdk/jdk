@@ -878,7 +878,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 // 64 bits items (Aarch64 abi) even though java would only store
 // 32bits for a parameter. On 32bit it will simply be 32 bits
 // So this routine will do 32->32 on 32bit and 32->64 on 64bit
-static void move32_64(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
+void SharedRuntime::move32_64(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
@@ -979,7 +979,7 @@ static void object_move(MacroAssembler* masm,
 }
 
 // A float arg may have to do float reg int reg conversion
-static void float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
+void SharedRuntime::float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   assert(src.first()->is_stack() && dst.first()->is_stack() ||
          src.first()->is_reg() && dst.first()->is_reg(), "Unexpected error");
   if (src.first()->is_stack()) {
@@ -998,7 +998,7 @@ static void float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 }
 
 // A long move
-static void long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
+void SharedRuntime::long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
@@ -1022,7 +1022,7 @@ static void long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 
 
 // A double move
-static void double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
+void SharedRuntime::double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   assert(src.first()->is_stack() && dst.first()->is_stack() ||
          src.first()->is_reg() && dst.first()->is_reg(), "Unexpected error");
   if (src.first()->is_stack()) {

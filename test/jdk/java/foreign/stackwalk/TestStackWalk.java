@@ -33,7 +33,7 @@
  *   -XX:+UnlockDiagnosticVMOptions
  *   -XX:+WhiteBoxAPI
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
- *   -Dforeign.restricted=permit
+ *   --enable-native-access=ALL-UNNAMED
  *   -Xbatch
  *   TestStackWalk
  *
@@ -42,7 +42,7 @@
  *   -XX:+UnlockDiagnosticVMOptions
  *   -XX:+WhiteBoxAPI
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
- *   -Dforeign.restricted=permit
+ *   --enable-native-access=ALL-UNNAMED
  *   -Xbatch
  *   TestStackWalk
  */
@@ -57,6 +57,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.ref.Reference;
 
+import jdk.incubator.foreign.ResourceScope;
 import sun.hotspot.WhiteBox;
 
 import static java.lang.invoke.MethodHandles.lookup;
@@ -86,7 +87,8 @@ public class TestStackWalk {
     static boolean armed;
 
     public static void main(String[] args) throws Throwable {
-        try (MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid())) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemoryAddress stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), scope);
             MemoryAddress stubAddress = stub.address();
             armed = false;
             for (int i = 0; i < 20_000; i++) {
@@ -105,7 +107,8 @@ public class TestStackWalk {
 
     static void m() {
         if (armed) {
-            WB.verifyFrames(true);
+            WB.verifyFrames(/*log=*/true, /*updateRegisterMap=*/true);
+            WB.verifyFrames(/*log=*/true, /*updateRegisterMap=*/false); // triggers different code paths
         }
     }
 

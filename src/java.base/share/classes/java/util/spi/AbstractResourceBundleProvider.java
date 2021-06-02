@@ -225,6 +225,7 @@ public abstract class AbstractResourceBundleProvider implements ResourceBundlePr
     private static ResourceBundle loadResourceBundle(Module module, String bundleName)
     {
         PrivilegedAction<Class<?>> pa = () -> Class.forName(module, bundleName);
+        @SuppressWarnings("removal")
         Class<?> c = AccessController.doPrivileged(pa, null, GET_CLASSLOADER_PERMISSION);
         if (c != null && ResourceBundle.class.isAssignableFrom(c)) {
             @SuppressWarnings("unchecked")
@@ -254,7 +255,7 @@ public abstract class AbstractResourceBundleProvider implements ResourceBundlePr
                 throw new UncheckedIOException(e);
             }
         };
-        try (InputStream stream = AccessController.doPrivileged(pa)) {
+        try (@SuppressWarnings("removal") InputStream stream = AccessController.doPrivileged(pa)) {
             if (stream != null) {
                 return new PropertyResourceBundle(stream);
             } else {

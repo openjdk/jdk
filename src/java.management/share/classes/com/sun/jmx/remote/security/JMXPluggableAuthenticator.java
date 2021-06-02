@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,7 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
      * @exception SecurityException if the authentication mechanism cannot be
      *            initialized.
      */
+    @SuppressWarnings("removal")
     public JMXPluggableAuthenticator(Map<?, ?> env) {
 
         String loginConfigName = null;
@@ -155,6 +156,7 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
      * @exception SecurityException if the server cannot authenticate the user
      * with the provided credentials.
      */
+    @SuppressWarnings("removal")
     public Subject authenticate(Object credentials) {
         // Verify that credentials is of type String[].
         //

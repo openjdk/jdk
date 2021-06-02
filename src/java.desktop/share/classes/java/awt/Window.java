@@ -164,6 +164,7 @@ import sun.util.logging.PlatformLogger;
  * @see java.awt.BorderLayout
  * @since       1.0
  */
+@SuppressWarnings("removal")
 public class Window extends Container implements Accessible {
 
     /**

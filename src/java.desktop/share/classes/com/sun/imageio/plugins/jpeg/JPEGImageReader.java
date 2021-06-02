@@ -59,6 +59,7 @@ import java.util.NoSuchElementException;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
+@SuppressWarnings("removal")
 public class JPEGImageReader extends ImageReader {
 
     private boolean debug = false;

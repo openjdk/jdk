@@ -106,6 +106,7 @@ public final class SunPKCS11 extends AuthProvider {
         poller = null;
     }
 
+    @SuppressWarnings("removal")
     @Override
     public Provider configure(String configArg) throws InvalidParameterException {
         final String newConfigName = checkNull(configArg);
@@ -971,6 +972,7 @@ public final class SunPKCS11 extends AuthProvider {
     }
 
     // destroy the token. Called if we detect that it has been removed
+    @SuppressWarnings("removal")
     synchronized void uninitToken(Token token) {
         if (this.token != token) {
             // mismatch, our token must already be destroyed
@@ -1010,6 +1012,7 @@ public final class SunPKCS11 extends AuthProvider {
     // test if a token is present and initialize this provider for it if so.
     // does nothing if no token is found
     // called from constructor and by poller
+    @SuppressWarnings("removal")
     private void initToken(CK_SLOT_INFO slotInfo) throws PKCS11Exception {
         if (slotInfo == null) {
             slotInfo = p11.C_GetSlotInfo(slotID);
@@ -1337,6 +1340,7 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         // security check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (debug != null) {
@@ -1469,6 +1473,7 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         // security check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission
@@ -1556,6 +1561,7 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         // security check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission
@@ -1590,6 +1596,7 @@ public final class SunPKCS11 extends AuthProvider {
                     debug.println("getting default callback handler");
                 }
 
+                @SuppressWarnings("removal")
                 CallbackHandler myHandler = AccessController.doPrivileged
                     (new PrivilegedExceptionAction<CallbackHandler>() {
                     public CallbackHandler run() throws Exception {
