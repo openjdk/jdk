@@ -45,7 +45,7 @@ import static org.testng.Assert.fail;
 
 public class TestIllegalLink {
 
-    private static final MemoryAddress dummyTarget = MemoryAddress.ofLong(1);
+    private static final MemoryAddress DUMMY_TARGET = MemoryAddress.ofLong(1);
     private static final CLinker ABI = CLinker.getInstance();
 
     @Test(dataProvider = "types")
