@@ -56,35 +56,54 @@ bool ZForwarding::claim() {
   return Atomic::cmpxchg(&_claimed, false, true) == false;
 }
 
-void ZForwarding::set_in_place_relocation() {
-  log_info(gc, reloc)("In-place relocation for ZPage*: " PTR_FORMAT " [" PTR_FORMAT ", " PTR_FORMAT "]",
-                      p2i(_page), untype(_page->start()), untype(_page->end()));
+void ZForwarding::in_place_relocation_start() {
+  _page->log_msg("In-place reloc start");
+
   _in_place = true;
+  _in_place_from_old = _page->is_old();
 
   // Support for ZHeap::is_in checks of from-space objects
   // in a page that is in-place relocating
   Atomic::store(&_in_place_thread, Thread::current());
-  _in_place_old_top = _page->top();
+  _in_place_top_at_start = _page->top();
 }
 
-void ZForwarding::clear_in_place_relocation() {
+void ZForwarding::in_place_relocation_finish() {
   assert(_in_place, "Must be an in-place relocated page");
-  // Leave _in_place intact - it's needed later
 
-  _page->finalize_reset_for_in_place_relocation();
+  _page->log_msg(err_msg("In-place reloc finish - top at start: " PTR_FORMAT, untype(_in_place_top_at_start)));
 
+  if (_in_place_from_old) {
+    // The old to old relocation reused the ZPage
+
+    // It took ownership of clearing and updating the remset up to,
+    // and including, the last from object. Clear the rest.
+    in_place_relocation_clear_remset_up_to(_in_place_top_at_start - _page->start());
+
+    // Done with iterating over the "from-page" view, so can now drop the _livemap.
+    _page->finalize_reset_for_in_place_relocation_from_old();
+  }
+
+  // Disable relaxed ZHeap::is_in checks
   Atomic::store(&_in_place_thread, (Thread*)nullptr);
-
-  log_info(gc)("In-place clear before top: " PTR_FORMAT " after top: " PTR_FORMAT, untype(_in_place_old_top), untype(_page->top()));
-
-  _in_place_old_top = zoffset(0);
-
-  // TODO: Consider calling _livemap.reset() to complete the reset_in_place_relocation
 }
 
-bool ZForwarding::is_below_in_place_relocation_top(zoffset offset) const {
+bool ZForwarding::in_place_relocation_is_below_top_at_start(zoffset offset) const {
   // Only the relocating thread is allowed to know about the old relocation top.
-  return Atomic::load(&_in_place_thread) == Thread::current() && offset < _in_place_old_top;
+  return Atomic::load(&_in_place_thread) == Thread::current() && offset < _in_place_top_at_start;
+}
+
+void ZForwarding::in_place_relocation_clear_remset_up_to(uintptr_t local_offset) const {
+  const size_t size = local_offset - _in_place_clear_remset_watermark;
+  if (size > 0) {
+    _page->log_msg(err_msg("In-place clear  : " PTR_FORMAT, untype(_page->start() + local_offset)));
+    _page->clear_remset_range_non_par(_in_place_clear_remset_watermark, size);
+  }
+}
+
+void ZForwarding::in_place_relocation_set_clear_remset_watermark(uintptr_t local_offset) {
+  _page->log_msg(err_msg("In-place cleared: " PTR_FORMAT, untype(_page->start() + local_offset)));
+  _in_place_clear_remset_watermark = local_offset;
 }
 
 bool ZForwarding::retain_page() {
@@ -110,7 +129,7 @@ bool ZForwarding::retain_page() {
   }
 }
 
-ZPage* ZForwarding::claim_page_for_in_place_relocation() {
+void ZForwarding::in_place_relocation_claim_page() {
   for (;;) {
     const int32_t ref_count = Atomic::load(&_ref_count);
     assert(ref_count > 0, "Invalid state");
@@ -129,15 +148,8 @@ ZPage* ZForwarding::claim_page_for_in_place_relocation() {
       }
     }
 
-    set_in_place_relocation();
-
-    if (_page->is_young()) {
-      _page = ZHeap::heap()->minor_cycle()->promote_in_place_relocation(_page);
-    } else {
-      _page->reset_for_in_place_relocation();
-    }
-
-    return _page;
+    // Done
+    break;
   }
 }
 
@@ -203,13 +215,11 @@ ZPage* ZForwarding::detach_page() {
     }
   }
 
-  // Detach and return page
-  _detached_page = _page;
-  _page = NULL;
-  return _detached_page;
+  return _page;
 }
 
 ZPage* ZForwarding::page() {
+  assert(Atomic::load(&_ref_count) != 0, "The page has been released/detached");
   return _page;
 }
 
@@ -258,5 +268,5 @@ void ZForwarding::verify() const {
   }
 
   // Verify number of live objects and bytes
-  _page->verify_live(live_objects, live_bytes);
+  _page->verify_live(live_objects, live_bytes, _in_place);
 }

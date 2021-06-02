@@ -32,11 +32,25 @@ class OopClosure;
 class ZRememberSetIterator {
 private:
   BitMap* const _bitmap;
+  BitMap::idx_t _pos;
+  BitMap::idx_t _end;
+
+public:
+  ZRememberSetIterator(BitMap* bitmap);
+  ZRememberSetIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
+
+  bool next(size_t* index);
+};
+
+class ZRememberSetReverseIterator {
+private:
+  BitMap* const _bitmap;
   BitMap::idx_t _start;
   BitMap::idx_t _pos;
 
 public:
-  ZRememberSetIterator(BitMap* bitmap);
+  ZRememberSetReverseIterator(BitMap* bitmap);
+  ZRememberSetReverseIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
 
   void reset(BitMap::idx_t start, BitMap::idx_t end);
   void reset(BitMap::idx_t end);
@@ -51,11 +65,11 @@ struct ZRememberSetContaining {
 
 class ZRememberSetContainingIterator {
 private:
-  ZPage* const         _page;
-  ZRememberSetIterator _remset_iter;
+  ZPage* const                _page;
+  ZRememberSetReverseIterator _remset_iter;
 
-  zaddress_unsafe      _obj;
-  ZRememberSetIterator _obj_remset_iter;
+  zaddress_unsafe             _obj;
+  ZRememberSetReverseIterator _obj_remset_iter;
 
   size_t to_index(zaddress_unsafe addr);
   zaddress_unsafe to_addr(size_t index);
@@ -104,6 +118,8 @@ public:
 
   bool get(uintptr_t local_offset) const;
   bool set(uintptr_t local_offset);
+  void unset_non_par(uintptr_t local_offset);
+  void unset_range_non_par(uintptr_t local_offset, size_t size);
 
   template <typename Function>
   void oops_do_function(Function function, zoffset page_start);
@@ -112,9 +128,11 @@ public:
   void oops_do_current_function(Function function, zoffset page_start);
 
   void clear_current();
+  void clear_current(uintptr_t local_offset);
   void clear_previous();
 
-  ZRememberSetIterator iterator();
+  ZRememberSetReverseIterator iterator_reverse();
+  ZRememberSetIterator iterator_current_limited(uintptr_t local_offset, size_t size);
 };
 
 #endif // SHARE_GC_Z_ZREMEMBERSET_HPP

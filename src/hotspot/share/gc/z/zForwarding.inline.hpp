@@ -65,11 +65,12 @@ inline ZForwarding::ZForwarding(ZPage* page, size_t nentries) :
     _ref_lock(),
     _ref_count(1),
     _ref_abort(false),
-    _in_place(false),
     _remset_scanned(false),
-    _in_place_thread(NULL),
-    _in_place_old_top(),
-    _detached_page(NULL) {}
+    _in_place(false),
+    _in_place_from_old(false),
+    _in_place_clear_remset_watermark(0),
+    _in_place_top_at_start(),
+    _in_place_thread(NULL) {}
 
 inline uint8_t ZForwarding::type() const {
   return _page->type();
@@ -99,7 +100,7 @@ inline void ZForwarding::object_iterate(Function function) {
 
 template <typename Function>
 inline void ZForwarding::object_iterate_forwarded_via_livemap(Function function) {
-  assert(!in_place(), "Not allowed to use livemap iteration");
+  assert(!in_place_relocation(), "Not allowed to use livemap iteration");
 
   object_iterate([&](oop obj) {
     // Find to-object
@@ -133,7 +134,7 @@ inline void ZForwarding::object_iterate_forwarded_via_table(Function function) {
 
 template <typename Function>
 inline void ZForwarding::object_iterate_forwarded(Function function) {
-  if (in_place()) {
+  if (in_place_relocation()) {
     // The original objects are not available anymore, can't use the livemap
     object_iterate_forwarded_via_table(function);
   } else {
@@ -155,7 +156,8 @@ void ZForwarding::oops_do_in_forwarded_via_table(Function function) {
   });
 }
 
-inline bool ZForwarding::in_place() const {
+inline bool ZForwarding::in_place_relocation() const {
+  assert(Atomic::load(&_ref_count) != 0, "The page has been released/detached");
   return _in_place;
 }
 

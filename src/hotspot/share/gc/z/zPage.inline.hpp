@@ -32,6 +32,7 @@
 #include "gc/z/zPage.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
 #include "gc/z/zRememberSet.inline.hpp"
+#include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
@@ -200,7 +201,8 @@ inline bool ZPage::is_in(zaddress addr) const {
 }
 
 inline uintptr_t ZPage::local_offset(zoffset offset) const {
-  assert(is_in(offset), "Invalid offset " PTR_FORMAT " page [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+  assert(ZHeap::heap()->is_in_page_relaxed(this, ZOffset::address(offset)),
+         "Invalid offset " PTR_FORMAT " page [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
          untype(offset), untype(start()), untype(top()), untype(end()));
   return offset - start();
 }
@@ -286,12 +288,25 @@ inline void ZPage::remember(volatile zpointer* p) {
   _remember_set.set(l_offset);
 }
 
+inline void ZPage::clear_remset_non_par(uintptr_t l_offset) {
+  _remember_set.unset_non_par(l_offset);
+}
+
+inline void ZPage::clear_remset_range_non_par(uintptr_t l_offset, size_t size) {
+  _remember_set.unset_range_non_par(l_offset, size);
+}
+
 inline BitMap* ZPage::remset_bitmap() {
   return _remember_set.previous();
 }
 
-inline ZRememberSetIterator ZPage::remset_iterator() {
-  return _remember_set.iterator();
+inline ZRememberSetReverseIterator ZPage::remset_reverse_iterator() {
+  return _remember_set.iterator_reverse();
+}
+
+inline ZRememberSetIterator ZPage::remset_iterator_current_limited(uintptr_t l_offset, size_t size) {
+  // FIXME: Make it explicit that this is visiting the current() bitmaps
+  return _remember_set.iterator_current_limited(l_offset, size);
 }
 
 inline bool ZPage::is_remembered(volatile zpointer* p) {

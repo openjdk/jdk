@@ -102,10 +102,11 @@ public:
   void set_last_used();
 
   void reset(ZGenerationId generation_id);
-  void reset_for_in_place_relocation();
+  void reset_for_in_place_relocation_from_young();
+  void reset_for_in_place_relocation_from_old();
   void reset_to_old();
 
-  void finalize_reset_for_in_place_relocation();
+  void finalize_reset_for_in_place_relocation_from_old();
 
   ZPage* retype(uint8_t type);
   ZPage* split(size_t split_of_size);
@@ -131,8 +132,12 @@ public:
   void object_iterate(Function function);
 
   void remember(volatile zpointer* p);
+  void clear_remset_non_par(uintptr_t l_offset);
+  void clear_remset_range_non_par(uintptr_t l_offset, size_t size);
+
   BitMap* remset_bitmap();
-  ZRememberSetIterator remset_iterator();
+  ZRememberSetReverseIterator remset_reverse_iterator();
+  ZRememberSetIterator remset_iterator_current_limited(uintptr_t l_offset, size_t size);
 
   zaddress_unsafe find_base(volatile zpointer* p);
 
@@ -162,7 +167,7 @@ public:
 
   // Verification
   bool is_remembered(volatile zpointer* p);
-  void verify_live(uint32_t live_objects, size_t live_bytes) const;
+  void verify_live(uint32_t live_objects, size_t live_bytes, bool in_place) const;
 };
 
 class ZPageClosure {

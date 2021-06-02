@@ -468,7 +468,7 @@ private:
 
     // Copy object. Use conjoint copying if we are relocating
     // in-place and the new object overlapps with the old object.
-    if (_forwarding->in_place() && allocated_addr + size > from_addr) {
+    if (_forwarding->in_place_relocation() && allocated_addr + size > from_addr) {
       ZUtils::object_copy_conjoint(from_addr, allocated_addr, size);
     } else {
       ZUtils::object_copy_disjoint(from_addr, allocated_addr, size);
@@ -484,6 +484,74 @@ private:
     return to_addr;
   }
 
+  void update_remset_for_fields_from_old(zaddress from_addr, zaddress to_addr) const {
+    // Old-to-old relocation - move existing remset bits
+
+    // If this is called for an in-place relocated page, then this code has the
+    // responsibility to clear the old remset bits. Extra care is needed because:
+    //
+    // 1) The to-object copy can overlap with the from-object copy
+    // 2) Remset bits of old objects need to be cleared
+    //
+    // A watermark is used to keep track of how far the old remset bits have been removed.
+
+    const bool in_place = _forwarding->in_place_relocation();
+    ZPage* const from_page = _forwarding->page();
+    const uintptr_t from_local_offset = from_page->local_offset(from_addr);
+
+    if (in_place) {
+      // Make sure remset entries of dead objects are cleared
+      _forwarding->in_place_relocation_clear_remset_up_to(from_local_offset);
+    }
+
+    // Note: even with in-place relocation, the to_page could be another page
+    ZPage* const to_page = ZHeap::heap()->page(to_addr);
+
+    // Uses _relaxed version to handle that in-place relocation resets _top
+    assert(ZHeap::heap()->is_in_page_relaxed(from_page, from_addr), "Must be");
+    assert(to_page->is_in(to_addr), "Must be");
+
+
+    // Read the size from the to-object, since the from-object
+    // could have been overwritten during in-place relocation.
+    const size_t size = ZUtils::object_size(to_addr);
+
+    ZRememberSetIterator iter = from_page->remset_iterator_current_limited(from_local_offset, size);
+    for (size_t index; iter.next(&index);) {
+      const uintptr_t field_local_offset = index * oopSize;
+
+      if (in_place) {
+        // Need to forget the bit in the from-page. This is performed during
+        // in-place relocation, which will slide the objects in the current page.
+        from_page->clear_remset_non_par(field_local_offset);
+      }
+
+      // Add remset entry in the to-page
+      const uintptr_t offset = field_local_offset - from_local_offset;
+      const zaddress to_field = to_addr + offset;
+      log_info(gc, reloc)("Remember: " PTR_FORMAT, untype(to_field));
+      to_page->remember((volatile zpointer*)to_field);
+    }
+
+    if (in_place) {
+      // Record that the code above cleared all remset bits inside the from-object
+      _forwarding->in_place_relocation_set_clear_remset_watermark(from_local_offset + size);
+    }
+  }
+
+  void update_remset_for_fields_from_young(zaddress from_addr, zaddress to_addr) const {
+    // Promoted object - add remset entries for all fields
+    ZRelocate::add_remset_for_fields(to_addr);
+  }
+
+  void update_remset_for_fields(zaddress from_addr, zaddress to_addr) const {
+    if (_forwarding->page()->is_old()) {
+      update_remset_for_fields_from_old(from_addr, to_addr);
+    } else {
+      update_remset_for_fields_from_young(from_addr, to_addr);
+    }
+  }
+
   bool try_relocate_object(zaddress from_addr) const {
     zaddress to_addr = try_relocate_object_inner(from_addr);
 
@@ -491,8 +559,32 @@ private:
       return false;
     }
 
-    ZRelocate::add_remset_for_fields(to_addr);
+    update_remset_for_fields(from_addr, to_addr);
+
     return true;
+  }
+
+  ZPage* start_in_place_relocation() {
+    _forwarding->in_place_relocation_claim_page();
+    _forwarding->in_place_relocation_start();
+
+    ZPage* old_page = _forwarding->page();
+    ZPage* new_page;
+
+    if (old_page->is_young()) {
+      // Create new page
+      new_page = new ZPage(*old_page);
+      new_page->reset_for_in_place_relocation_from_young();
+
+      // Register the the promotion
+      ZHeap::heap()->minor_cycle()->promote(old_page, new_page);
+    } else {
+      // Use the same page
+      new_page = old_page;
+      new_page->reset_for_in_place_relocation_from_old();
+    }
+
+    return new_page;
   }
 
   void relocate_object(oop obj) {
@@ -508,10 +600,10 @@ private:
         continue;
       }
 
-      // Claim the page being relocated to block other threads from accessing
-      // it, or its forwarding table, until it has been released (relocation
-      // completed).
-      _target = _forwarding->claim_page_for_in_place_relocation();
+      // Start in-place relocation to block other threads from accessing
+      // the page, or its forwarding table, until it has been released
+      // (relocation completed).
+      _target = start_in_place_relocation();
     }
   }
 
@@ -537,21 +629,22 @@ public:
     // Relocate objects
     _forwarding->object_iterate([&](oop obj) { relocate_object(obj); });
 
-    // Deal with in-place relocation
-    if (_forwarding->in_place()) {
-      // We are done with the from_space copy of the page
-      _forwarding->clear_in_place_relocation();
-    }
-
     // Verify
     if (ZVerifyForwarding) {
       _forwarding->verify();
     }
 
+    // Deal with in-place relocation
+    const bool in_place = _forwarding->in_place_relocation();
+    if (in_place) {
+      // We are done with the from_space copy of the page
+      _forwarding->in_place_relocation_finish();
+    }
+
     // Release relocated page
     _forwarding->release_page();
 
-    if (_forwarding->in_place()) {
+    if (in_place) {
       // The relocated page has been relocated in-place and should not
       // be freed. Keep it as target page until it is full, and offer to
       // share it with other worker threads.
@@ -672,11 +765,14 @@ void ZRelocate::promote_pages(const ZArray<ZPage*>* pages) {
   SuspendibleThreadSetJoiner sts_joiner;
   // TODO: Make multi-threaded
   for (int i = 0; i < pages->length(); i++) {
-    ZPage* page = pages->at(i);
-    ZHeap::heap()->minor_cycle()->promote(page);
+    ZPage* old_page = pages->at(i);
+    ZPage* new_page = new ZPage(*old_page);
+    new_page->reset_to_old();
 
-    page->log_msg(" (in-place promoted)");
-    page->object_iterate([&](oop obj) {
+    ZHeap::heap()->minor_cycle()->promote(old_page, new_page);
+
+    old_page->log_msg(" (in-place promoted)");
+    old_page->object_iterate([&](oop obj) {
       z_basic_oop_iterate(obj, ZRelocate::add_remset);
     });
 

@@ -48,6 +48,17 @@ inline bool ZRememberSet::set(uintptr_t local_offset) {
   return current()->par_set_bit(index);
 }
 
+inline void ZRememberSet::unset_non_par(uintptr_t local_offset) {
+  const size_t index = local_offset / oopSize;
+  current()->clear_bit(index);
+}
+
+inline void ZRememberSet::unset_range_non_par(uintptr_t local_offset, size_t size) {
+  const size_t index = local_offset / oopSize;
+  const size_t size_in_bits = size / oopSize;
+  current()->clear_range(index, index + size_in_bits);
+}
+
 template <typename Function>
 void ZRememberSet::oops_do_function(Function function, zoffset page_start) {
   previous()->iterate_f([&](BitMap::idx_t index) {

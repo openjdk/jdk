@@ -46,19 +46,22 @@ private:
   const ZVirtualMemory   _virtual;
   const size_t           _object_alignment_shift;
   const AttachedArray    _entries;
-  ZPage*                 _page;
+  ZPage* const           _page;
   ZGenerationId          _generation_id;
   volatile bool          _claimed;
   mutable ZConditionLock _ref_lock;
   volatile int32_t       _ref_count;
   bool                   _ref_abort;
-  bool                   _in_place;
   bool                   _remset_scanned;
+
+  // In-place relocation support
+  bool                   _in_place;
+  bool                   _in_place_from_old;
+  uintptr_t              _in_place_clear_remset_watermark;
+  zoffset                _in_place_top_at_start;
 
   // Debugging
   volatile Thread*       _in_place_thread;
-  zoffset                _in_place_old_top;
-  ZPage*                 _detached_page;
 
   ZForwardingEntry* entries() const;
   ZForwardingEntry at(ZForwardingCursor* cursor) const;
@@ -98,19 +101,22 @@ public:
 
   bool claim();
 
-  void set_in_place_relocation();
-  void clear_in_place_relocation();
-  bool is_below_in_place_relocation_top(zoffset addr) const;
+  // In-place relocation support
+  bool in_place_relocation() const;
+  void in_place_relocation_claim_page();
+  void in_place_relocation_start();
+  void in_place_relocation_finish();
+  bool in_place_relocation_is_below_top_at_start(zoffset addr) const;
+  void in_place_relocation_clear_remset_up_to(uintptr_t local_offset) const;
+  void in_place_relocation_set_clear_remset_watermark(uintptr_t local_offset);
 
   bool retain_page();
-  ZPage* claim_page_for_in_place_relocation();
   void release_page();
   bool wait_page_released() const;
+
   ZPage* detach_page();
   ZPage* page();
   void abort_page();
-
-  bool in_place() const;
 
   zaddress find(zaddress_unsafe addr);
 

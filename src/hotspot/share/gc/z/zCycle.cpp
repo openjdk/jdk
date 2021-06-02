@@ -408,26 +408,9 @@ void ZMinorCycle::relocate() {
   stat_heap()->set_at_relocate_end(_page_allocator->stats(this), ZHeap::heap()->young_generation()->relocated());
 }
 
-ZPage* ZMinorCycle::promote(ZPage* page) {
-  page->log_msg(" (promoted from)");
-
-  ZPage* new_page = new ZPage(*page);
-  new_page->reset_to_old();
-  // Replace previous young gen page with new old gen page
-  _page_table->replace(page, new_page);
-  _relocation_set.register_promoted_page(page);
-  return new_page;
-}
-
-ZPage* ZMinorCycle::promote_in_place_relocation(ZPage* page) {
-  page->log_msg(" (promoted in-place from)");
-
-  ZPage* new_page = new ZPage(*page);
-  new_page->reset_for_in_place_relocation();
-  // Replace previous young gen page with new old gen page
-  _page_table->replace(page, new_page);
-  _relocation_set.register_promoted_page(page);
-  return new_page;
+void ZMinorCycle::promote(ZPage* old_page, ZPage* new_page) {
+  _page_table->replace(old_page, new_page);
+  _relocation_set.register_promoted_page(old_page);
 }
 
 ZMajorCycle::ZMajorCycle(ZPageTable* page_table, ZPageAllocator* page_allocator) :

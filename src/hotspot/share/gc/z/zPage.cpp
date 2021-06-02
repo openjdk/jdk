@@ -104,7 +104,15 @@ void ZPage::reset_to_old() {
   _remember_set.reset();
 }
 
-void ZPage::reset_for_in_place_relocation() {
+void ZPage::reset_for_in_place_relocation_from_young() {
+  assert(_generation_id == ZGenerationId::young, "Unexpected generation");
+
+  reset(ZGenerationId::old);
+}
+
+void ZPage::reset_for_in_place_relocation_from_old() {
+  assert(_generation_id == ZGenerationId::old, "Unexpected generation");
+
   _generation_id = ZGenerationId::old;
   reset_seqnum(_generation_id);
 
@@ -112,12 +120,15 @@ void ZPage::reset_for_in_place_relocation() {
   // FIXME: Is it correct to set clear _last_used here?
   _last_used = 0;
 
-  // keep _livemap intact as it is being iterated over
+  // Kept the same ZPage. The _livemap is being iterated
+  // over and needs to be kept intact.
 
-  _remember_set.reset();
+  // In-place relocation needs the current bits, and
+  // is therefore responsible for clearing them.
+  _remember_set.clear_previous();
 }
 
-void ZPage::finalize_reset_for_in_place_relocation() {
+void ZPage::finalize_reset_for_in_place_relocation_from_old() {
   // Now we're done iterating over the livemaps
   _livemap.reset();
 }
@@ -233,8 +244,11 @@ void ZPage::print() const {
   print_on(tty);
 }
 
-void ZPage::verify_live(uint32_t live_objects, size_t live_bytes) const {
-  assert_zpage_mark_state();
+void ZPage::verify_live(uint32_t live_objects, size_t live_bytes, bool in_place) const {
+  if (!in_place) {
+    // In-place relocation has changed the page to allocating
+    assert_zpage_mark_state();
+  }
   guarantee(live_objects == _livemap.live_objects(), "Invalid number of live objects");
   guarantee(live_bytes == _livemap.live_bytes(), "Invalid number of live bytes");
 }

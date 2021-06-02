@@ -149,20 +149,24 @@ bool ZHeap::is_in(uintptr_t addr) const {
     return false;
   }
 
-  if (page->is_in(o)) {
+  return is_in_page_relaxed(page, o);
+}
+
+bool ZHeap::is_in_page_relaxed(const ZPage* page, zaddress addr) const {
+  if (page->is_in(addr)) {
     return true;
   }
 
   // Could still be a from-object during an in-place relocation
   if (_major_cycle.phase() == ZPhase::Relocate) {
-    const ZForwarding* const forwarding = _major_cycle.forwarding(unsafe(o));
-    if (forwarding != NULL && forwarding->is_below_in_place_relocation_top(ZAddress::offset(o))) {
+    const ZForwarding* const forwarding = _major_cycle.forwarding(unsafe(addr));
+    if (forwarding != NULL && forwarding->in_place_relocation_is_below_top_at_start(ZAddress::offset(addr))) {
       return true;
     }
   }
   if (_minor_cycle.phase() == ZPhase::Relocate) {
-    const ZForwarding* const forwarding = _minor_cycle.forwarding(unsafe(o));
-    if (forwarding != NULL && forwarding->is_below_in_place_relocation_top(ZAddress::offset(o))) {
+    const ZForwarding* const forwarding = _minor_cycle.forwarding(unsafe(addr));
+    if (forwarding != NULL && forwarding->in_place_relocation_is_below_top_at_start(ZAddress::offset(addr))) {
       return true;
     }
   }

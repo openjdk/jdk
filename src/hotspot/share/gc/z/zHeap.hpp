@@ -88,6 +88,7 @@ public:
   size_t unsafe_max_tlab_alloc() const;
 
   bool is_in(uintptr_t addr) const;
+  bool is_in_page_relaxed(const ZPage* page, zaddress addr) const;
   uint32_t hash_oop(zaddress addr) const;
 
   bool is_young(zaddress addr) const;
