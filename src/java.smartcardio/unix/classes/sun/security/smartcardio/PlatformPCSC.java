@@ -40,12 +40,9 @@ import sun.security.util.Debug;
  * @since   1.6
  * @author  Andreas Sterbenz
  */
-@SuppressWarnings("removal")
 class PlatformPCSC {
 
     static final Debug debug = Debug.getInstance("pcsc");
-
-    static final Throwable initException;
 
     private final static String PROP_NAME = "sun.security.smartcardio.library";
 
@@ -57,23 +54,23 @@ class PlatformPCSC {
         // empty
     }
 
-    static {
-        initException = AccessController.doPrivileged(new PrivilegedAction<Throwable>() {
-            public Throwable run() {
-                try {
-                    System.loadLibrary("j2pcsc");
-                    String library = getLibraryName();
-                    if (debug != null) {
-                        debug.println("Using PC/SC library: " + library);
-                    }
-                    initialize(library);
-                    return null;
-                } catch (Throwable e) {
-                    return e;
+    @SuppressWarnings("removal")
+    static final Throwable initException
+            = AccessController.doPrivileged(new PrivilegedAction<Throwable>() {
+        public Throwable run() {
+            try {
+                System.loadLibrary("j2pcsc");
+                String library = getLibraryName();
+                if (debug != null) {
+                    debug.println("Using PC/SC library: " + library);
                 }
+                initialize(library);
+                return null;
+            } catch (Throwable e) {
+                return e;
             }
-        });
-    }
+        }
+    });
 
     // expand $LIBISA to the system specific directory name for libraries
     private static String expand(String lib) {

@@ -29,7 +29,6 @@ import java.security.PrivilegedAction;
 import java.util.logging.Level;
 
 // Bridge to java.util.logging.
-@SuppressWarnings("removal")
 public class Logger {
 
     /**
@@ -39,13 +38,11 @@ public class Logger {
      * public debug()/warn()/error()/trace() methods in this class --
      * to find the caller.
      */
-    private static final StackWalker WALKER;
-    static {
-        final PrivilegedAction<StackWalker> action =
-                () -> StackWalker.getInstance(StackWalker.Option
-                        .RETAIN_CLASS_REFERENCE);
-        WALKER = AccessController.doPrivileged(action);
-    }
+    @SuppressWarnings("removal")
+    private static final StackWalker WALKER = AccessController.doPrivileged(
+            (PrivilegedAction<StackWalker>)
+            () -> StackWalker.getInstance(
+                    StackWalker.Option.RETAIN_CLASS_REFERENCE));
 
     private final java.util.logging.Logger impl;
 

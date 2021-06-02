@@ -1012,7 +1012,6 @@ public final class SunPKCS11 extends AuthProvider {
     // test if a token is present and initialize this provider for it if so.
     // does nothing if no token is found
     // called from constructor and by poller
-    @SuppressWarnings("removal")
     private void initToken(CK_SLOT_INFO slotInfo) throws PKCS11Exception {
         if (slotInfo == null) {
             slotInfo = p11.C_GetSlotInfo(slotID);
@@ -1104,7 +1103,8 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         // register algorithms in provider
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
                 for (Map.Entry<Descriptor,Integer> entry
                         : supportedAlgs.entrySet()) {

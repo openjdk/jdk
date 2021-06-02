@@ -43,7 +43,6 @@ import sun.security.x509.X509CertImpl;
  * The purpose of this class is to determine the trust anchor certificates is in
  * the cacerts file.  This is used for PKIX CertPath checking.
  */
-@SuppressWarnings("removal")
 public class AnchorCertificates {
 
     private static final Debug debug = Debug.getInstance("certpath");
@@ -52,7 +51,8 @@ public class AnchorCertificates {
     private static Set<X500Principal> certIssuers = Collections.emptySet();
 
     static  {
-        AccessController.doPrivileged(new PrivilegedAction<>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Void run() {
                 File f = new File(FilePaths.cacerts());

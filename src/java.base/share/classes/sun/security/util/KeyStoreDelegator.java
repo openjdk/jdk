@@ -55,7 +55,6 @@ public class KeyStoreDelegator extends KeyStoreSpi {
     private KeyStoreSpi keystore; // the delegate
     private boolean compatModeEnabled = true;
 
-    @SuppressWarnings("removal")
     public KeyStoreDelegator(
         String primaryType,
         Class<? extends KeyStoreSpi> primaryKeyStore,
@@ -63,9 +62,10 @@ public class KeyStoreDelegator extends KeyStoreSpi {
         Class<? extends KeyStoreSpi> secondaryKeyStore) {
 
         // Check whether compatibility mode has been disabled
-        compatModeEnabled = "true".equalsIgnoreCase(
-            AccessController.doPrivileged((PrivilegedAction<String>) () ->
-                Security.getProperty(KEYSTORE_TYPE_COMPAT)));
+        @SuppressWarnings("removal")
+        var prop = AccessController.doPrivileged((PrivilegedAction<String>) () ->
+                        Security.getProperty(KEYSTORE_TYPE_COMPAT));
+        compatModeEnabled = "true".equalsIgnoreCase(prop);
 
         if (compatModeEnabled) {
             this.primaryType = primaryType;
