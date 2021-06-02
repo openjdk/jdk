@@ -164,8 +164,10 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         super.notifyStateChanged(previousState, state);
 
         Font font = this.figure.getDiagram().getFont();
+        int thickness = 1;
         if (state.isSelected()) {
             font = this.figure.getDiagram().getBoldFont();
+            thickness = 2;
         }
 
         Color borderColor = Color.BLACK;
@@ -174,7 +176,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
             innerBorderColor = borderColor = Color.BLUE;
         }
 
-        middleWidget.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(borderColor, 1), BorderFactory.createLineBorder(innerBorderColor, 1)));
+        middleWidget.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(borderColor, thickness), BorderFactory.createLineBorder(innerBorderColor, 1)));
         for (LabelWidget labelWidget : labelWidgets) {
             labelWidget.setFont(font);
         }
