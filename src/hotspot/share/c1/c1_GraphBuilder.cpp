@@ -1123,14 +1123,10 @@ void GraphBuilder::stack_op(Bytecodes::Code code) {
 void GraphBuilder::arithmetic_op(ValueType* type, Bytecodes::Code code, ValueStack* state_before) {
   Value y = pop(type);
   Value x = pop(type);
-  // NOTE: strictfp can be queried from current method since we don't
-  // inline methods with differing strictfp bits
-  Value res = new ArithmeticOp(code, x, y, method()->is_strict(), state_before);
+  Value res = new ArithmeticOp(code, x, y, state_before);
   // Note: currently single-precision floating-point rounding on Intel is handled at the LIRGenerator level
   res = append(res);
-  if (method()->is_strict()) {
-    res = round_fp(res);
-  }
+  res = round_fp(res);
   push(type, res);
 }
 
@@ -2125,11 +2121,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   append_split(result);
 
   if (result_type != voidType) {
-    if (method()->is_strict()) {
-      push(result_type, round_fp(result));
-    } else {
-      push(result_type, result);
-    }
+    push(result_type, round_fp(result));
   }
   if (profile_return() && result_type->is_object_kind()) {
     profile_return_type(result, target);
@@ -3763,19 +3755,6 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
 
   // Proper inlining of methods with jsrs requires a little more work.
   if (callee->has_jsrs()                 ) INLINE_BAILOUT("jsrs not handled properly by inliner yet");
-
-  if (strict_fp_requires_explicit_rounding &&
-      method()->is_strict() != callee->is_strict()) {
-#ifdef IA32
-    // If explicit rounding is required, do not inline strict code into non-strict code (or the reverse).
-    // When SSE2 is present, no special handling is needed.
-    if (UseSSE < 2) {
-      INLINE_BAILOUT("caller and callee have different strict fp requirements");
-    }
-#else
-    Unimplemented();
-#endif // IA32
-  }
 
   if (is_profiling() && !callee->ensure_method_data()) {
     INLINE_BAILOUT("mdo allocation failed");

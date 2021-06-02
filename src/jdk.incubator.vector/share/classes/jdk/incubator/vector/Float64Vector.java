@@ -606,6 +606,14 @@ final class Float64Vector extends FloatVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Float64Mask eq(VectorMask<Float> mask) {
+            Objects.requireNonNull(mask);
+            Float64Mask m = (Float64Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override

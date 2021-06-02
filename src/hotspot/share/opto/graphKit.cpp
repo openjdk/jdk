@@ -2319,23 +2319,6 @@ void GraphKit::record_profiled_return_for_speculation() {
   }
 }
 
-void GraphKit::round_double_result(ciMethod* dest_method) {
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-    // If a strict caller invokes a non-strict callee, round a double result.
-    // A non-strict method may return a double value which has an extended exponent,
-    // but this must not be visible in a caller which is strict.
-    BasicType result_type = dest_method->return_type()->basic_type();
-    assert(method() != NULL, "must have caller context");
-    if( result_type == T_DOUBLE && method()->is_strict() && !dest_method->is_strict() ) {
-      // Destination method's return value is on top of stack
-      // dstore_rounding() does gvn.transform
-      Node *result = pop_pair();
-      result = dstore_rounding(result);
-      push_pair(result);
-    }
-  }
-}
-
 void GraphKit::round_double_arguments(ciMethod* dest_method) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
     // (Note:  TypeFunc::make has a cache that makes this fast.)
@@ -2358,7 +2341,7 @@ void GraphKit::round_double_arguments(ciMethod* dest_method) {
 Node* GraphKit::precision_rounding(Node* n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
 #ifdef IA32
-    if (_method->flags().is_strict() && UseSSE == 0) {
+    if (UseSSE == 0) {
       return _gvn.transform(new RoundFloatNode(0, n));
     }
 #else
@@ -2372,7 +2355,7 @@ Node* GraphKit::precision_rounding(Node* n) {
 Node* GraphKit::dprecision_rounding(Node *n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
 #ifdef IA32
-    if (_method->flags().is_strict() && UseSSE < 2) {
+    if (UseSSE < 2) {
       return _gvn.transform(new RoundDoubleNode(0, n));
     }
 #else

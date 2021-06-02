@@ -707,9 +707,7 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
     case lir_add:
     case lir_sub:
     case lir_mul:
-    case lir_mul_strictfp:
     case lir_div:
-    case lir_div_strictfp:
     case lir_rem:
       assert(op->fpu_pop_count() < 2, "");
       arith_op(

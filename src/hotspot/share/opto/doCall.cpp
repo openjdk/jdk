@@ -114,8 +114,6 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // Special case the handling of certain common, profitable library
   // methods.  If these methods are replaced with specialized code,
   // then we return it as the inlined version of the call.
-  // We do this before the strict f.p. check below because the
-  // intrinsics handle strict f.p. correctly.
   CallGenerator* cg_intrinsic = NULL;
   if (allow_inline && allow_intrinsics) {
     CallGenerator* cg = find_intrinsic(callee, call_does_dispatch);
@@ -150,12 +148,6 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   if (callee->is_method_handle_intrinsic()) {
     CallGenerator* cg = CallGenerator::for_method_handle_call(jvms, caller, callee, allow_inline);
     return cg;
-  }
-
-  // If explicit rounding is required, do not inline strict into non-strict code (or the reverse).
-  if (Matcher::strict_fp_requires_explicit_rounding &&
-      caller->is_strict() != callee->is_strict()) {
-    allow_inline = false;
   }
 
   // Attempt to inline...
@@ -679,9 +671,6 @@ void Parse::do_call() {
       Node* cast = cast_not_null(receiver);
       // %%% assert(receiver == cast, "should already have cast the receiver");
     }
-
-    // Round double result after a call from strict to non-strict code
-    round_double_result(cg->method());
 
     ciType* rtype = cg->method()->return_type();
     ciType* ctype = declared_signature->return_type();
