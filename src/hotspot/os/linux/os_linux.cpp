@@ -2961,35 +2961,6 @@ void* os::Linux::libnuma_v2_dlsym(void* handle, const char* name) {
   return dlvsym(handle, name, "libnuma_1.2");
 }
 
-#ifndef SYS_get_mempolicy
-  #ifdef __NR_get_mempolicy
-    #define SYS_get_mempolicy __NR_get_mempolicy
-  #else
-    // ia64: 1260, i386: 275, x86_64: 239, s390x: 236, powerpc: 260
-    #ifdef __ia64__
-      #define SYS_get_mempolicy 1260
-    #else
-      #ifdef __i386__
-        #define SYS_get_mempolicy 275
-      #else
-        #ifdef __x86_64__
-          #define SYS_get_mempolicy 239
-        #else
-          #ifdef __s390x__
-            #define SYS_get_mempolicy 236
-          #else
-            #ifdef __powerpc__
-              #define SYS_get_mempolicy 260
-            #else
-              #error define get_mempolicy for the arch
-            #endif
-          #endif
-        #endif
-      #endif
-    #endif
-  #endif
-#endif
-
 // Check numa dependent syscalls
 static bool numa_syscall_check() {
   // NUMA APIs depend on several syscalls. E.g., get_mempolicy is required for numa_get_membind and
@@ -2997,10 +2968,12 @@ static bool numa_syscall_check() {
   // Especially in dockers, get_mempolicy is not allowed with the default configuration. So it's necessary
   // to check whether the syscalls are available. Currently, only get_mempolicy is checked since checking
   // others like mbind would cause unexpected side effects.
+#ifdef SYS_get_mempolicy
   int dummy = 0;
   if (syscall(SYS_get_mempolicy, &dummy, NULL, 0, (void*)&dummy, 3) == -1) {
     return false;
   }
+#endif
 
   return true;
 }
