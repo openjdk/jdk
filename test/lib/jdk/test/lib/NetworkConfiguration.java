@@ -117,6 +117,9 @@ public class NetworkConfiguration {
      */
     public static boolean isSameInterface(NetworkInterface ni1, NetworkInterface ni2) {
         if (Objects.equals(ni1, ni2)) return true;
+        // Objects equals has taken care of the case where
+        // ni1 == ni2 so either they are both non-null or only
+        // one of them is null - in which case they can't be equal.
         if (ni1 == null || ni2 == null) return false;
         if (ni1.getIndex() != ni2.getIndex()) return false;
         return Objects.equals(ni1.getName(), ni2.getName());
