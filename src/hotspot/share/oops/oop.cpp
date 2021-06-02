@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "memory/heapShared.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -38,7 +38,7 @@
 #include "utilities/macros.hpp"
 
 void oopDesc::print_on(outputStream* st) const {
-  klass()->oop_print_on(oop(this), st);
+  klass()->oop_print_on(const_cast<oopDesc*>(this), st);
 }
 
 void oopDesc::print_address_on(outputStream* st) const {
@@ -68,7 +68,7 @@ char* oopDesc::print_value_string() {
 }
 
 void oopDesc::print_value_on(outputStream* st) const {
-  oop obj = oop(this);
+  oop obj = const_cast<oopDesc*>(this);
   if (java_lang_String::is_instance(obj)) {
     java_lang_String::print(obj, st);
     print_address_on(st);
@@ -91,10 +91,10 @@ void oopDesc::verify(oopDesc* oop_desc) {
 
 intptr_t oopDesc::slow_identity_hash() {
   // slow case; we have to acquire the micro lock in order to locate the header
-  Thread* THREAD = Thread::current();
+  Thread* current = Thread::current();
   ResetNoHandleMark rnm; // Might be called from LEAF/QUICK ENTRY
-  HandleMark hm(THREAD);
-  Handle object(THREAD, this);
+  HandleMark hm(current);
+  Handle object(current, this);
   return ObjectSynchronizer::identity_hash_value_for(object);
 }
 
@@ -111,7 +111,7 @@ bool oopDesc::is_oop(oop obj, bool ignore_mark_word) {
   if (ignore_mark_word) {
     return true;
   }
-  if (obj->mark_raw().value() != 0) {
+  if (obj->mark().value() != 0) {
     return true;
   }
   return !SafepointSynchronize::is_at_safepoint();
@@ -143,13 +143,21 @@ bool oopDesc::has_klass_gap() {
   return UseCompressedClassPointers;
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
+void oopDesc::set_narrow_klass(narrowKlass nk) {
+  assert(DumpSharedSpaces, "Used by CDS only. Do not abuse!");
+  assert(UseCompressedClassPointers, "must be");
+  _metadata._compressed_klass = nk;
+}
+#endif
+
 void* oopDesc::load_klass_raw(oop obj) {
   if (UseCompressedClassPointers) {
-    narrowKlass narrow_klass = *(obj->compressed_klass_addr());
+    narrowKlass narrow_klass = obj->_metadata._compressed_klass;
     if (narrow_klass == 0) return NULL;
     return (void*)CompressedKlassPointers::decode_raw(narrow_klass);
   } else {
-    return *(void**)(obj->klass_addr());
+    return obj->_metadata._klass;
   }
 }
 
@@ -157,7 +165,7 @@ void* oopDesc::load_oop_raw(oop obj, int offset) {
   uintptr_t addr = (uintptr_t)(void*)obj + (uint)offset;
   if (UseCompressedOops) {
     narrowOop narrow_oop = *(narrowOop*)addr;
-    if (narrow_oop == 0) return NULL;
+    if (CompressedOops::is_null(narrow_oop)) return NULL;
     return (void*)CompressedOops::decode_raw(narrow_oop);
   } else {
     return *(void**)addr;
@@ -214,4 +222,7 @@ void oopDesc::verify_forwardee(oop forwardee) {
          "forwarding archive object");
 #endif
 }
+
+bool oopDesc::get_UseParallelGC() { return UseParallelGC; }
+bool oopDesc::get_UseG1GC()       { return UseG1GC;       }
 #endif

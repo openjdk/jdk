@@ -178,8 +178,8 @@ const char* ImageModuleData::package_to_module(const char* package_name) {
     // retrieve package location
     ImageLocation location;
     bool found = _image_file->find_location(path, location);
+    delete[] path;
     if (!found) {
-        delete[] path;
         return NULL;
     }
 
@@ -209,17 +209,6 @@ const char* ImageModuleData::package_to_module(const char* package_name) {
 ImageFileReaderTable::ImageFileReaderTable() : _count(0), _max(_growth) {
     _table = static_cast<ImageFileReader**>(calloc(_max, sizeof(ImageFileReader*)));
     assert(_table != NULL && "allocation failed");
-}
-
-ImageFileReaderTable::~ImageFileReaderTable() {
-    for (u4 i = 0; i < _count; i++) {
-        ImageFileReader* image = _table[i];
-
-        if (image != NULL) {
-            delete image;
-        }
-    }
-    free(_table);
 }
 
 // Add a new image entry to the table.
@@ -348,7 +337,8 @@ ImageFileReader* ImageFileReader::id_to_reader(u8 id) {
 }
 
 // Constructor intializes to a closed state.
-ImageFileReader::ImageFileReader(const char* name, bool big_endian) {
+ImageFileReader::ImageFileReader(const char* name, bool big_endian) :
+    _module_data(NULL) {
     // Copy the image file name.
      int len = (int) strlen(name) + 1;
     _name = new char[len];
@@ -368,6 +358,10 @@ ImageFileReader::~ImageFileReader() {
     if (_name) {
         delete[] _name;
         _name = NULL;
+    }
+
+    if (_module_data != NULL) {
+        delete _module_data;
     }
 }
 
@@ -419,9 +413,9 @@ bool ImageFileReader::open() {
     _string_bytes = _index_data + string_bytes_offset;
 
     // Initialize the module data
-    module_data = new ImageModuleData(this);
+    _module_data = new ImageModuleData(this);
     // Successful open (if memory allocation succeeded).
-    return module_data != NULL;
+    return _module_data != NULL;
 }
 
 // Close image file.
@@ -435,6 +429,11 @@ void ImageFileReader::close() {
     if (_fd != -1) {
         osSupport::close(_fd);
         _fd = -1;
+    }
+
+    if (_module_data != NULL) {
+        delete _module_data;
+        _module_data = NULL;
     }
 }
 
@@ -568,5 +567,5 @@ void ImageFileReader::get_resource(ImageLocation& location, u1* uncompressed_dat
 
 // Return the ImageModuleData for this image
 ImageModuleData * ImageFileReader::get_image_module_data() {
-        return module_data;
+    return _module_data;
 }

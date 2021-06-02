@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ class SocketAdaptor
         this.sc = sc;
     }
 
+    @SuppressWarnings("removal")
     static Socket create(SocketChannelImpl sc) {
         PrivilegedExceptionAction<Socket> pa = () -> new SocketAdaptor(sc);
         try {
@@ -70,6 +71,14 @@ class SocketAdaptor
         } catch (PrivilegedActionException pae) {
             throw new InternalError("Should not reach here", pae);
         }
+    }
+
+    private InetSocketAddress localAddress() {
+        return (InetSocketAddress) sc.localAddress();
+    }
+
+    private InetSocketAddress remoteAddress() {
+        return (InetSocketAddress) sc.remoteAddress();
     }
 
     @Override
@@ -106,7 +115,7 @@ class SocketAdaptor
 
     @Override
     public InetAddress getInetAddress() {
-        InetSocketAddress remote = sc.remoteAddress();
+        InetSocketAddress remote = remoteAddress();
         if (remote == null) {
             return null;
         } else {
@@ -117,7 +126,7 @@ class SocketAdaptor
     @Override
     public InetAddress getLocalAddress() {
         if (sc.isOpen()) {
-            InetSocketAddress local = sc.localAddress();
+            InetSocketAddress local = localAddress();
             if (local != null) {
                 return Net.getRevealedLocalAddress(local).getAddress();
             }
@@ -127,7 +136,7 @@ class SocketAdaptor
 
     @Override
     public int getPort() {
-        InetSocketAddress remote = sc.remoteAddress();
+        InetSocketAddress remote = remoteAddress();
         if (remote == null) {
             return 0;
         } else {
@@ -137,7 +146,7 @@ class SocketAdaptor
 
     @Override
     public int getLocalPort() {
-        InetSocketAddress local = sc.localAddress();
+        InetSocketAddress local = localAddress();
         if (local == null) {
             return -1;
         } else {
@@ -152,12 +161,7 @@ class SocketAdaptor
 
     @Override
     public SocketAddress getLocalSocketAddress() {
-        InetSocketAddress local = sc.localAddress();
-        if (local != null) {
-            return Net.getRevealedLocalAddress(local);
-        } else {
-            return null;
-        }
+        return Net.getRevealedLocalAddress(sc.localAddress());
     }
 
     @Override

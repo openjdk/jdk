@@ -170,6 +170,8 @@ public class Basic {
                         conceals = stringToSet(line);
                     } else if (line.contains("VM warning:")) {
                         continue;  // ignore server vm warning see#8196748
+                    } else if (line.contains("WARNING: JNI access from module not specified in --enable-native-access:")) {
+                        continue;
                     } else {
                         throw new AssertionError("Unknown value " + line);
                     }
@@ -494,9 +496,9 @@ public class Basic {
             "--file=" + modularJar.toString())
             .assertSuccess()
             .resultChecker(r -> {
-                // Expect "bar jar:file:/.../!module-info.class"
+                // Expect "bar jar:file:/...!/module-info.class"
                 // conceals jdk.test.foo, conceals jdk.test.foo.internal"
-                String uri = "jar:" + modularJar.toUri().toString() + "/!module-info.class";
+                String uri = "jar:" + modularJar.toUri().toString() + "!/module-info.class";
                 assertTrue(r.output.contains("bar " + uri),
                            "Expecting to find \"bar " + uri + "\"",
                            "in output, but did not: [" + r.output + "]");
@@ -848,10 +850,14 @@ public class Basic {
             jar(option,
                 "--file=" + modularJar.toString())
                 .assertSuccess()
-                .resultChecker(r ->
+                .resultChecker(r -> {
                     assertTrue(r.output.contains(FOO.moduleName + "@" + FOO.version),
                                "Expected to find ", FOO.moduleName + "@" + FOO.version,
-                               " in [", r.output, "]")
+                               " in [", r.output, "]");
+                    assertTrue(r.output.contains(modularJar.toUri().toString()),
+                               "Expected to find ", modularJar.toUri().toString(),
+                               " in [", r.output, "]");
+                    }
                 );
 
             jar(option,

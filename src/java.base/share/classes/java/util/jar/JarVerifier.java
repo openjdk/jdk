@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ class JarVerifier {
     /** makes code source singleton instances unique to us */
     private Object csdomain = new Object();
 
-    /** collect -DIGEST-MANIFEST values for blacklist */
+    /** collect -DIGEST-MANIFEST values for deny list */
     private List<Object> manifestDigests;
 
     public JarVerifier(byte rawBytes[]) {
@@ -551,10 +551,9 @@ class JarVerifier {
      * Match CodeSource to a CodeSigner[] in the signer cache.
      */
     private CodeSigner[] findMatchingSigners(CodeSource cs) {
-        if (cs instanceof VerifierCodeSource) {
-            VerifierCodeSource vcs = (VerifierCodeSource) cs;
+        if (cs instanceof VerifierCodeSource vcs) {
             if (vcs.isSameDomain(csdomain)) {
-                return ((VerifierCodeSource) cs).getPrivateSigners();
+                return vcs.getPrivateSigners();
             }
         }
 
@@ -617,8 +616,7 @@ class JarVerifier {
             if (obj == this) {
                 return true;
             }
-            if (obj instanceof VerifierCodeSource) {
-                VerifierCodeSource that = (VerifierCodeSource) obj;
+            if (obj instanceof VerifierCodeSource that) {
 
                 /*
                  * Only compare against other per-signer singletons constructed

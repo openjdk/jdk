@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,13 +154,6 @@ class Bundle {
 
     String getID() {
         return id;
-    }
-
-    String getJavaID() {
-        // Tweak ISO compatibility for bundle generation
-        return id.replaceFirst("^he", "iw")
-            .replaceFirst("^id", "in")
-            .replaceFirst("^yi", "ji");
     }
 
     boolean isRoot() {
@@ -375,6 +368,16 @@ class Bundle {
             }
         }
 
+        // rules
+        String rule = CLDRConverter.pluralRules.get(id);
+        if (rule != null) {
+            myMap.put("PluralRules", rule);
+        }
+        rule = CLDRConverter.dayPeriodRules.get(id);
+        if (rule != null) {
+            myMap.put("DayPeriodRules", rule);
+        }
+
         // Remove all duplicates
         if (Objects.nonNull(parentsMap)) {
             for (Iterator<String> it = myMap.keySet().iterator(); it.hasNext();) {
@@ -522,8 +525,6 @@ class Bundle {
                     if (pattern != null) {
                         // Perform date-time format pattern conversion which is
                         // applicable to both SimpleDateFormat and j.t.f.DateTimeFormatter.
-                        // For example, character 'B' is mapped with 'a', as 'B' is not
-                        // supported in either SimpleDateFormat or j.t.f.DateTimeFormatter
                         String transPattern = translateDateFormatLetters(calendarType, pattern, this::convertDateTimePatternLetter);
                         dateTimePatterns.add(i, transPattern);
                         // Additionally, perform SDF specific date-time format pattern conversion
@@ -653,17 +654,6 @@ class Bundle {
                 // as the best approximation
                 appendN('y', count, sb);
                 break;
-            case 'B':
-                // 'B' character (day period) is not supported by
-                // SimpleDateFormat and j.t.f.DateTimeFormatter,
-                // this is a workaround in which 'B' character
-                // appearing in CLDR date-time pattern is replaced
-                // with 'a' character and hence resolved with am/pm strings.
-                // This workaround is based on the the fallback mechanism
-                // specified in LDML spec for 'B' character, when a locale
-                // does not have data for day period ('B')
-                appendN('a', count, sb);
-                break;
             default:
                 appendN(cldrLetter, count, sb);
                 break;
@@ -718,6 +708,17 @@ class Bundle {
                 if (count == 4 || count == 5) {
                     sb.append("XXX");
                 }
+                break;
+
+            case 'B':
+                // 'B' character (day period) is not supported by SimpleDateFormat,
+                // this is a workaround in which 'B' character
+                // appearing in CLDR date-time pattern is replaced
+                // with 'a' character and hence resolved with am/pm strings.
+                // This workaround is based on the the fallback mechanism
+                // specified in LDML spec for 'B' character, when a locale
+                // does not have data for day period ('B')
+                appendN('a', count, sb);
                 break;
 
             default:

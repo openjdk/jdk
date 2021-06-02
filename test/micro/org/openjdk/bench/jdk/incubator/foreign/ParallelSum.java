@@ -25,6 +25,7 @@ package org.openjdk.bench.jdk.incubator.foreign;
 
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayouts;
+import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SequenceLayout;
 import sun.misc.Unsafe;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -38,21 +39,17 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Spliterator;
 import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.TimeUnit;
-import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
-import java.util.stream.StreamSupport;
 
 import static jdk.incubator.foreign.MemoryLayout.PathElement.sequenceElement;
 import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
@@ -62,17 +59,17 @@ import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(3)
+@Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign" })
 public class ParallelSum {
 
     final static int CARRIER_SIZE = 4;
     final static int ALLOC_SIZE = CARRIER_SIZE * 1024 * 1024 * 256;
     final static int ELEM_SIZE = ALLOC_SIZE / CARRIER_SIZE;
-    static final VarHandle VH_int = MemoryLayout.ofSequence(JAVA_INT).varHandle(int.class, sequenceElement());
+    static final VarHandle VH_int = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(int.class, sequenceElement());
 
-    final static SequenceLayout SEQUENCE_LAYOUT = MemoryLayout.ofSequence(ELEM_SIZE, MemoryLayouts.JAVA_INT);
+    final static MemoryLayout ELEM_LAYOUT = MemoryLayouts.JAVA_INT;
     final static int BULK_FACTOR = 512;
-    final static SequenceLayout SEQUENCE_LAYOUT_BULK = SEQUENCE_LAYOUT.reshape(-1, BULK_FACTOR);
+    final static SequenceLayout ELEM_LAYOUT_BULK = MemoryLayout.sequenceLayout(BULK_FACTOR, ELEM_LAYOUT);
 
     static final Unsafe unsafe = Utils.unsafe;
 
@@ -85,24 +82,23 @@ public class ParallelSum {
         for (int i = 0; i < ELEM_SIZE; i++) {
             unsafe.putInt(address + (i * CARRIER_SIZE), i);
         }
-        segment = MemorySegment.allocateNative(ALLOC_SIZE);
+        segment = MemorySegment.allocateNative(ALLOC_SIZE, CARRIER_SIZE, ResourceScope.newSharedScope());
         for (int i = 0; i < ELEM_SIZE; i++) {
-            VH_int.set(segment.baseAddress(), (long) i, i);
+            VH_int.set(segment, (long) i, i);
         }
     }
 
     @TearDown
     public void tearDown() throws Throwable {
         unsafe.freeMemory(address);
-        segment.close();
+        segment.scope().close();
     }
 
     @Benchmark
     public int segment_serial() {
         int res = 0;
-        MemoryAddress base = segment.baseAddress();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            res += (int)VH_int.get(base, (long) i);
+            res += (int)VH_int.get(segment, (long) i);
         }
         return res;
     }
@@ -118,73 +114,69 @@ public class ParallelSum {
 
     @Benchmark
     public int segment_parallel() {
-        return new SumSegment(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT), SEGMENT_TO_INT).invoke();
+        return new SumSegment(segment.spliterator(ELEM_LAYOUT), SEGMENT_TO_INT).invoke();
     }
 
     @Benchmark
     public int segment_parallel_bulk() {
-        return new SumSegment(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT_BULK), SEGMENT_TO_INT_BULK).invoke();
+        return new SumSegment(segment.spliterator(ELEM_LAYOUT_BULK), SEGMENT_TO_INT_BULK).invoke();
     }
 
     @Benchmark
     public int segment_stream_parallel() {
-        return StreamSupport.stream(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT), true)
-                .mapToInt(SEGMENT_TO_INT).sum();
+        return segment.elements(ELEM_LAYOUT).parallel().mapToInt(SEGMENT_TO_INT).sum();
     }
 
     @Benchmark
     public int segment_stream_parallel_bulk() {
-        return StreamSupport.stream(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT_BULK), true)
-                .mapToInt(SEGMENT_TO_INT_BULK).sum();
+        return segment.elements(ELEM_LAYOUT_BULK).parallel().mapToInt(SEGMENT_TO_INT_BULK).sum();
     }
 
     final static ToIntFunction<MemorySegment> SEGMENT_TO_INT = slice ->
-            (int) VH_int.get(slice.baseAddress(), 0L);
+            (int) VH_int.get(slice, 0L);
 
     final static ToIntFunction<MemorySegment> SEGMENT_TO_INT_BULK = slice -> {
         int res = 0;
-        MemoryAddress base = slice.baseAddress();
         for (int i = 0; i < BULK_FACTOR ; i++) {
-            res += (int)VH_int.get(base, (long) i);
+            res += (int)VH_int.get(slice, (long) i);
         }
         return res;
     };
 
     @Benchmark
     public Optional<MemorySegment> segment_stream_findany_serial() {
-        return StreamSupport.stream(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT), false)
+        return segment.elements(ELEM_LAYOUT)
                 .filter(FIND_SINGLE)
                 .findAny();
     }
 
     @Benchmark
     public Optional<MemorySegment> segment_stream_findany_parallel() {
-        return StreamSupport.stream(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT), true)
+        return segment.elements(ELEM_LAYOUT).parallel()
                 .filter(FIND_SINGLE)
                 .findAny();
     }
 
     @Benchmark
     public Optional<MemorySegment> segment_stream_findany_serial_bulk() {
-        return StreamSupport.stream(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT_BULK), false)
+        return segment.elements(ELEM_LAYOUT_BULK)
                 .filter(FIND_BULK)
                 .findAny();
     }
 
     @Benchmark
     public Optional<MemorySegment> segment_stream_findany_parallel_bulk() {
-        return StreamSupport.stream(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT_BULK), true)
+        return segment.elements(ELEM_LAYOUT_BULK).parallel()
                 .filter(FIND_BULK)
                 .findAny();
     }
 
     final static Predicate<MemorySegment> FIND_SINGLE = slice ->
-            (int)VH_int.get(slice.baseAddress(), 0L) == (ELEM_SIZE - 1);
+            (int)VH_int.get(slice, 0L) == (ELEM_SIZE - 1);
 
     final static Predicate<MemorySegment> FIND_BULK = slice -> {
-        MemoryAddress base = slice.baseAddress();
         for (int i = 0; i < BULK_FACTOR ; i++) {
-            if ((int)VH_int.get(base, (long)i) == (ELEM_SIZE - 1)) {
+            if ((int)VH_int.get(slice, (long)i) == (ELEM_SIZE - 1)) {
                 return true;
             }
         }
@@ -193,7 +185,7 @@ public class ParallelSum {
 
     @Benchmark
     public int unsafe_parallel() {
-        return new SumUnsafe(address, 0, ALLOC_SIZE).invoke();
+        return new SumUnsafe(address, 0, ALLOC_SIZE / CARRIER_SIZE).invoke();
     }
 
     static class SumUnsafe extends RecursiveTask<Integer> {
@@ -212,15 +204,19 @@ public class ParallelSum {
         @Override
         protected Integer compute() {
             if (length > SPLIT_THRESHOLD) {
-                SumUnsafe s1 = new SumUnsafe(address, start, length / 2);
-                SumUnsafe s2 = new SumUnsafe(address, length / 2, length / 2);
+                int rem = length % 2;
+                int split = length / 2;
+                int lobound = split;
+                int hibound = lobound + rem;
+                SumUnsafe s1 = new SumUnsafe(address, start, lobound);
+                SumUnsafe s2 = new SumUnsafe(address, start + lobound, hibound);
                 s1.fork();
                 s2.fork();
                 return s1.join() + s2.join();
             } else {
                 int res = 0;
-                for (int i = 0; i < length; i += CARRIER_SIZE) {
-                    res += unsafe.getInt(start + address + i);
+                for (int i = 0; i < length; i ++) {
+                    res += unsafe.getInt(address + (start + i) * CARRIER_SIZE);
                 }
                 return res;
             }

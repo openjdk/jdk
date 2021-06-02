@@ -25,18 +25,6 @@
  * Red Hat Author(s): Behdad Esfahbod
  */
 
-
-/* https://github.com/harfbuzz/harfbuzz/issues/1308
- * http://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
- * https://www.oracle.com/technetwork/articles/servers-storage-dev/standardheaderfiles-453865.html
- */
-#ifndef _POSIX_C_SOURCE
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-macros"
-#define _POSIX_C_SOURCE 200809L
-#pragma GCC diagnostic pop
-#endif
-
 #include "hb.hh"
 #include "hb-blob.hh"
 
@@ -46,10 +34,6 @@
 #endif /* HAVE_UNISTD_H */
 #include <sys/mman.h>
 #endif /* HAVE_SYS_MMAN_H */
-
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
 
 
 /**
@@ -71,7 +55,7 @@
  * @length: Length of @data in bytes.
  * @mode: Memory mode for @data.
  * @user_data: Data parameter to pass to @destroy.
- * @destroy: Callback to call when @data is not needed anymore.
+ * @destroy: (nullable): Callback to call when @data is not needed anymore.
  *
  * Creates a new "blob" object wrapping @data.  The @mode parameter is used
  * to negotiate ownership and lifecycle of @data.
@@ -129,7 +113,7 @@ _hb_blob_destroy (void *data)
  * @length: Length of sub-blob.
  *
  * Returns a blob that represents a range of bytes in @parent.  The new
- * blob is always created with %HB_MEMORY_MODE_READONLY, meaning that it
+ * blob is always created with #HB_MEMORY_MODE_READONLY, meaning that it
  * will never modify data in the parent blob.  The parent data is not
  * expected to be modified, and will result in undefined behavior if it
  * is.
@@ -155,7 +139,7 @@ hb_blob_create_sub_blob (hb_blob_t    *parent,
   hb_blob_make_immutable (parent);
 
   blob = hb_blob_create (parent->data + offset,
-                         MIN (length, parent->length - offset),
+                         hb_min (length, parent->length - offset),
                          HB_MEMORY_MODE_READONLY,
                          hb_blob_reference (parent),
                          _hb_blob_destroy);
@@ -169,7 +153,7 @@ hb_blob_create_sub_blob (hb_blob_t    *parent,
  *
  * Makes a writable copy of @blob.
  *
- * Return value: New blob, or nullptr if allocation failed.
+ * Return value: The new blob, or nullptr if allocation failed
  *
  * Since: 1.8.0
  **/
@@ -195,14 +179,14 @@ hb_blob_copy_writable_or_fail (hb_blob_t *blob)
  *
  * See TODO:link object types for more information.
  *
- * Return value: (transfer full): the empty blob.
+ * Return value: (transfer full): The empty blob.
  *
  * Since: 0.9.2
  **/
 hb_blob_t *
 hb_blob_get_empty ()
 {
-  return const_cast<hb_blob_t *> (&Null(hb_blob_t));
+  return const_cast<hb_blob_t *> (&Null (hb_blob_t));
 }
 
 /**
@@ -247,13 +231,15 @@ hb_blob_destroy (hb_blob_t *blob)
 
 /**
  * hb_blob_set_user_data: (skip)
- * @blob: a blob.
- * @key: key for data to set.
- * @data: data to set.
- * @destroy: callback to call when @data is not needed anymore.
- * @replace: whether to replace an existing data with the same key.
+ * @blob: An #hb_blob_t
+ * @key: The user-data key to set
+ * @data: A pointer to the user data to set
+ * @destroy: (nullable): A callback to call when @data is not needed anymore
+ * @replace: Whether to replace an existing data with the same key
  *
- * Return value:
+ * Attaches a user-data key/data pair to the specified blob.
+ *
+ * Return value: %true if success, %false otherwise
  *
  * Since: 0.9.2
  **/
@@ -269,12 +255,13 @@ hb_blob_set_user_data (hb_blob_t          *blob,
 
 /**
  * hb_blob_get_user_data: (skip)
- * @blob: a blob.
- * @key: key for data to get.
+ * @blob: a blob
+ * @key: The user-data key to query
  *
+ * Fetches the user data associated with the specified key,
+ * attached to the specified font-functions structure.
  *
- *
- * Return value: (transfer none):
+ * Return value: (transfer none): A pointer to the user data
  *
  * Since: 0.9.2
  **/
@@ -288,9 +275,9 @@ hb_blob_get_user_data (hb_blob_t          *blob,
 
 /**
  * hb_blob_make_immutable:
- * @blob: a blob.
+ * @blob: a blob
  *
- *
+ * Makes a blob immutable.
  *
  * Since: 0.9.2
  **/
@@ -307,9 +294,9 @@ hb_blob_make_immutable (hb_blob_t *blob)
  * hb_blob_is_immutable:
  * @blob: a blob.
  *
+ * Tests whether a blob is immutable.
  *
- *
- * Return value: TODO
+ * Return value: %true if @blob is immutable, %false otherwise
  *
  * Since: 0.9.2
  **/
@@ -324,9 +311,9 @@ hb_blob_is_immutable (hb_blob_t *blob)
  * hb_blob_get_length:
  * @blob: a blob.
  *
+ * Fetches the length of a blob's data.
  *
- *
- * Return value: the length of blob data in bytes.
+ * Return value: the length of @blob data in bytes.
  *
  * Since: 0.9.2
  **/
@@ -339,11 +326,11 @@ hb_blob_get_length (hb_blob_t *blob)
 /**
  * hb_blob_get_data:
  * @blob: a blob.
- * @length: (out):
+ * @length: (out): The length in bytes of the data retrieved
  *
+ * Fetches the data from a blob.
  *
- *
- * Returns: (transfer none) (array length=length):
+ * Returns: (transfer none) (array length=length): the byte data of @blob.
  *
  * Since: 0.9.2
  **/
@@ -375,16 +362,14 @@ hb_blob_get_data (hb_blob_t *blob, unsigned int *length)
 char *
 hb_blob_get_data_writable (hb_blob_t *blob, unsigned int *length)
 {
-  if (!blob->try_make_writable ()) {
-    if (length)
-      *length = 0;
-
+  if (hb_object_is_immutable (blob) ||
+     !blob->try_make_writable ())
+  {
+    if (length) *length = 0;
     return nullptr;
   }
 
-  if (length)
-    *length = blob->length;
-
+  if (length) *length = blob->length;
   return const_cast<char *> (blob->data);
 }
 
@@ -450,8 +435,8 @@ hb_blob_t::try_make_writable_inplace ()
 bool
 hb_blob_t::try_make_writable ()
 {
-  if (hb_object_is_immutable (this))
-    return false;
+  if (unlikely (!length))
+    mode = HB_MEMORY_MODE_WRITABLE;
 
   if (this->mode == HB_MEMORY_MODE_WRITABLE)
     return true;
@@ -487,7 +472,11 @@ hb_blob_t::try_make_writable ()
  * Mmap
  */
 
+#ifndef HB_NO_OPEN
 #ifdef HAVE_MMAP
+# if !defined(HB_NO_RESOURCE_FORK) && defined(__APPLE__)
+#  include <sys/paths.h>
+# endif
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <fcntl.h>
@@ -532,11 +521,47 @@ _hb_mapped_file_destroy (void *file_)
 }
 #endif
 
+#ifdef _PATH_RSRCFORKSPEC
+static int
+_open_resource_fork (const char *file_name, hb_mapped_file_t *file)
+{
+  size_t name_len = strlen (file_name);
+  size_t len = name_len + sizeof (_PATH_RSRCFORKSPEC);
+
+  char *rsrc_name = (char *) malloc (len);
+  if (unlikely (!rsrc_name)) return -1;
+
+  strncpy (rsrc_name, file_name, name_len);
+  strncpy (rsrc_name + name_len, _PATH_RSRCFORKSPEC,
+           sizeof (_PATH_RSRCFORKSPEC) - 1);
+
+  int fd = open (rsrc_name, O_RDONLY | O_BINARY, 0);
+  free (rsrc_name);
+
+  if (fd != -1)
+  {
+    struct stat st;
+    if (fstat (fd, &st) != -1)
+      file->length = (unsigned long) st.st_size;
+    else
+    {
+      close (fd);
+      fd = -1;
+    }
+  }
+
+  return fd;
+}
+#endif
+
 /**
  * hb_blob_create_from_file:
- * @file_name: font filename.
+ * @file_name: A font filename
  *
- * Returns: A hb_blob_t pointer with the content of the file
+ * Creates a new blob containing the data from the
+ * specified binary font file.
+ *
+ * Returns: An #hb_blob_t pointer with the content of the file
  *
  * Since: 1.7.7
  **/
@@ -556,6 +581,19 @@ hb_blob_create_from_file (const char *file_name)
   if (unlikely (fstat (fd, &st) == -1)) goto fail;
 
   file->length = (unsigned long) st.st_size;
+
+#ifdef _PATH_RSRCFORKSPEC
+  if (unlikely (file->length == 0))
+  {
+    int rfd = _open_resource_fork (file_name, file);
+    if (rfd != -1)
+    {
+      close (fd);
+      fd = rfd;
+    }
+  }
+#endif
+
   file->contents = (char *) mmap (nullptr, file->length, PROT_READ,
                                   MAP_PRIVATE | MAP_NORESERVE, fd, 0);
 
@@ -579,9 +617,9 @@ fail_without_close:
   HANDLE fd;
   unsigned int size = strlen (file_name) + 1;
   wchar_t * wchar_file_name = (wchar_t *) malloc (sizeof (wchar_t) * size);
-  if (unlikely (wchar_file_name == nullptr)) goto fail_without_close;
+  if (unlikely (!wchar_file_name)) goto fail_without_close;
   mbstowcs (wchar_file_name, file_name, size);
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY==WINAPI_FAMILY_PC_APP || WINAPI_FAMILY==WINAPI_FAMILY_PHONE_APP)
+#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
   {
     CREATEFILE2_EXTENDED_PARAMETERS ceparams = { 0 };
     ceparams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
@@ -602,7 +640,7 @@ fail_without_close:
 
   if (unlikely (fd == INVALID_HANDLE_VALUE)) goto fail_without_close;
 
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY==WINAPI_FAMILY_PC_APP || WINAPI_FAMILY==WINAPI_FAMILY_PHONE_APP)
+#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
   {
     LARGE_INTEGER length;
     GetFileSizeEx (fd, &length);
@@ -613,14 +651,14 @@ fail_without_close:
   file->length = (unsigned long) GetFileSize (fd, nullptr);
   file->mapping = CreateFileMapping (fd, nullptr, PAGE_READONLY, 0, 0, nullptr);
 #endif
-  if (unlikely (file->mapping == nullptr)) goto fail;
+  if (unlikely (!file->mapping)) goto fail;
 
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY==WINAPI_FAMILY_PC_APP || WINAPI_FAMILY==WINAPI_FAMILY_PHONE_APP)
+#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
   file->contents = (char *) MapViewOfFileFromApp (file->mapping, FILE_MAP_READ, 0, 0);
 #else
   file->contents = (char *) MapViewOfFile (file->mapping, FILE_MAP_READ, 0, 0, 0);
 #endif
-  if (unlikely (file->contents == nullptr)) goto fail;
+  if (unlikely (!file->contents)) goto fail;
 
   CloseHandle (fd);
   return hb_blob_create (file->contents, file->length,
@@ -638,10 +676,10 @@ fail_without_close:
      It's used as a fallback for systems without mmap or to read from pipes */
   unsigned long len = 0, allocated = BUFSIZ * 16;
   char *data = (char *) malloc (allocated);
-  if (unlikely (data == nullptr)) return hb_blob_get_empty ();
+  if (unlikely (!data)) return hb_blob_get_empty ();
 
   FILE *fp = fopen (file_name, "rb");
-  if (unlikely (fp == nullptr)) goto fread_fail_without_close;
+  if (unlikely (!fp)) goto fread_fail_without_close;
 
   while (!feof (fp))
   {
@@ -652,7 +690,7 @@ fail_without_close:
          can cover files like that but lets limit our fallback reader */
       if (unlikely (allocated > (2 << 28))) goto fread_fail;
       char *new_data = (char *) realloc (data, allocated);
-      if (unlikely (new_data == nullptr)) goto fread_fail;
+      if (unlikely (!new_data)) goto fread_fail;
       data = new_data;
     }
 
@@ -666,6 +704,7 @@ fail_without_close:
 
     len += addition;
   }
+        fclose (fp);
 
   return hb_blob_create (data, len, HB_MEMORY_MODE_WRITABLE, data,
                          (hb_destroy_func_t) free);
@@ -676,3 +715,4 @@ fread_fail_without_close:
   free (data);
   return hb_blob_get_empty ();
 }
+#endif /* !HB_NO_OPEN */

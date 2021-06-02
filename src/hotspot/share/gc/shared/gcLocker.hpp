@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,6 @@ class GCLocker: public AllStatic {
   // unlocking.
   static volatile jint _jni_lock_count;  // number of jni active instances.
   static volatile bool _needs_gc;        // heap is filling, we need a GC
-                                         // note: bool is typedef'd as jint
-  static volatile bool _doing_gc;        // unlock_critical() is doing a GC
   static uint _total_collections;        // value for _gc_locker collection
 
 #ifdef ASSERT
@@ -149,8 +147,6 @@ class GCLocker: public AllStatic {
   // is set, the slow path is always taken, till _needs_gc is cleared.
   inline static void lock_critical(JavaThread* thread);
   inline static void unlock_critical(JavaThread* thread);
-
-  static address needs_gc_address() { return (address) &_needs_gc; }
 };
 
 #endif // SHARE_GC_SHARED_GCLOCKER_HPP

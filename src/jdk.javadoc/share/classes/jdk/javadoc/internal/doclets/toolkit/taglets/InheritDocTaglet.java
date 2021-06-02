@@ -95,8 +95,8 @@ public class InheritDocTaglet extends BaseTaglet {
         DocFinder.Output inheritedDoc = DocFinder.search(configuration, input);
         if (inheritedDoc.isValidInheritDocTag) {
             if (!inheritedDoc.inlineTags.isEmpty()) {
-                replacement = writer.commentTagsToOutput(inheritedDoc.holderTag,
-                    inheritedDoc.holder, inheritedDoc.inlineTags, isFirstSentence);
+                replacement = writer.commentTagsToOutput(inheritedDoc.holder, inheritedDoc.holderTag,
+                    inheritedDoc.inlineTags, isFirstSentence);
                 ch.setOverrideElement(inheritedDoc.holder);
             }
 
@@ -111,7 +111,7 @@ public class InheritDocTaglet extends BaseTaglet {
     }
 
     @Override
-    public Content getTagletOutput(Element e, DocTree tag, TagletWriter tagletWriter) {
+    public Content getInlineTagOutput(Element e, DocTree tag, TagletWriter tagletWriter) {
         DocTree inheritTag = (tag.getKind() == DocTree.Kind.INHERIT_DOC) ? null : tag;
         return retrieveInheritedDocumentation(tagletWriter, e,
                 inheritTag, tagletWriter.isFirstSentence);

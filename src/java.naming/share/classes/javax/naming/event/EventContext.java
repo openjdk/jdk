@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ public interface EventContext extends Context {
      *<p>
      * The value of this constant is {@code 0}.
      */
-    public final static int OBJECT_SCOPE = 0;
+    public static final int OBJECT_SCOPE = 0;
 
     /**
      * Constant for expressing interest in events concerning objects
@@ -149,7 +149,7 @@ public interface EventContext extends Context {
      *<p>
      * The value of this constant is {@code 1}.
      */
-    public final static int ONELEVEL_SCOPE = 1;
+    public static final int ONELEVEL_SCOPE = 1;
 
     /**
      * Constant for expressing interest in events concerning objects
@@ -158,7 +158,7 @@ public interface EventContext extends Context {
      *<p>
      * The value of this constant is {@code 2}.
      */
-    public final static int SUBTREE_SCOPE = 2;
+    public static final int SUBTREE_SCOPE = 2;
 
 
     /**
@@ -193,7 +193,7 @@ public interface EventContext extends Context {
      * @param scope One of {@code OBJECT_SCOPE}, {@code ONELEVEL_SCOPE}, or
      * {@code SUBTREE_SCOPE}.
      * @param l  The nonnull listener.
-     * @exception NamingException If a problem was encountered while
+     * @throws NamingException If a problem was encountered while
      * adding the listener.
      * @see #removeNamingListener
      */
@@ -211,7 +211,7 @@ public interface EventContext extends Context {
      * @param scope One of {@code OBJECT_SCOPE}, {@code ONELEVEL_SCOPE}, or
      * {@code SUBTREE_SCOPE}.
      * @param l  The nonnull listener.
-     * @exception NamingException If a problem was encountered while
+     * @throws NamingException If a problem was encountered while
      * adding the listener.
      * @see #removeNamingListener
      */
@@ -231,7 +231,7 @@ public interface EventContext extends Context {
      * this {@code EventContext} instance, this method does not do anything.
      *
      * @param l  The nonnull listener.
-     * @exception NamingException If a problem was encountered while
+     * @throws NamingException If a problem was encountered while
      * removing the listener.
      * @see #addNamingListener
      */
@@ -242,7 +242,7 @@ public interface EventContext extends Context {
      * that does not exist.
      *
      * @return true if the target must exist; false if the target need not exist.
-     * @exception NamingException If the context's behavior in this regard cannot
+     * @throws NamingException If the context's behavior in this regard cannot
      * be determined.
      */
     boolean targetMustExist() throws NamingException;

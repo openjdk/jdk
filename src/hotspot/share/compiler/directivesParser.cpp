@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "compiler/directivesParser.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include <string.h>
 
 void DirectivesParser::push_tmp(CompilerDirectives* dir) {
@@ -319,6 +319,22 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
         strncpy(s, v->str.start, v->str.length + 1);
         s[v->str.length] = '\0';
         (set->*test)((void *)&s);
+
+        if (strncmp(option_key->name, "ControlIntrinsic", 16) == 0) {
+          ControlIntrinsicValidator validator(s, false/*disabled_all*/);
+
+          if (!validator.is_valid()) {
+            error(VALUE_ERROR, "Unrecognized intrinsic detected in ControlIntrinsic: %s", validator.what());
+            return false;
+          }
+        } else if (strncmp(option_key->name, "DisableIntrinsic", 16) == 0) {
+          ControlIntrinsicValidator validator(s, true/*disabled_all*/);
+
+          if (!validator.is_valid()) {
+            error(VALUE_ERROR, "Unrecognized intrinsic detected in DisableIntrinsic: %s", validator.what());
+            return false;
+          }
+        }
       }
       break;
 

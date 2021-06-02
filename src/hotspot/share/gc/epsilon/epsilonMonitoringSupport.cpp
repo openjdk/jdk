@@ -27,9 +27,9 @@
 #include "gc/epsilon/epsilonHeap.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "memory/allocation.hpp"
-#include "memory/allocation.inline.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/perfData.hpp"
 #include "services/memoryService.hpp"
 
 class EpsilonSpaceCounters: public CHeapObj<mtGC> {
@@ -111,7 +111,6 @@ void EpsilonMonitoringSupport::update_counters() {
     _heap_counters->update_all();
     _space_counters->update_all(capacity, used);
     MetaspaceCounters::update_performance_counters();
-    CompressedClassSpaceCounters::update_performance_counters();
   }
 }
 

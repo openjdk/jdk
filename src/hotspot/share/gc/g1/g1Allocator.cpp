@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/g1/heapRegionType.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "utilities/align.hpp"
 
 G1Allocator::G1Allocator(G1CollectedHeap* heap) :
@@ -281,22 +282,9 @@ HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
   return result;
 }
 
-uint G1PLABAllocator::calc_survivor_alignment_bytes() {
-  assert(SurvivorAlignmentInBytes >= ObjectAlignmentInBytes, "sanity");
-  if (SurvivorAlignmentInBytes == ObjectAlignmentInBytes) {
-    // No need to align objects in the survivors differently, return 0
-    // which means "survivor alignment is not used".
-    return 0;
-  } else {
-    assert(SurvivorAlignmentInBytes > 0, "sanity");
-    return SurvivorAlignmentInBytes;
-  }
-}
-
 G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   _g1h(G1CollectedHeap::heap()),
-  _allocator(allocator),
-  _survivor_alignment_bytes(calc_survivor_alignment_bytes()) {
+  _allocator(allocator) {
   for (region_type_t state = 0; state < G1HeapRegionAttr::Num; state++) {
     _direct_allocated[state] = 0;
     uint length = alloc_buffers_length(state);
@@ -411,15 +399,8 @@ size_t G1PLABAllocator::undo_waste() const {
   return result;
 }
 
-bool G1ArchiveAllocator::_archive_check_enabled = false;
-G1ArchiveRegionMap G1ArchiveAllocator::_archive_region_map;
-
 G1ArchiveAllocator* G1ArchiveAllocator::create_allocator(G1CollectedHeap* g1h, bool open) {
-  // Create the archive allocator, and also enable archive object checking
-  // in mark-sweep, since we will be creating archive regions.
-  G1ArchiveAllocator* result =  new G1ArchiveAllocator(g1h, open);
-  enable_archive_object_check();
-  return result;
+  return new G1ArchiveAllocator(g1h, open);
 }
 
 bool G1ArchiveAllocator::alloc_new_region() {
@@ -447,9 +428,6 @@ bool G1ArchiveAllocator::alloc_new_region() {
   _bottom = hr->bottom();
   _max = _bottom + HeapRegion::min_region_size_in_words();
 
-  // Tell mark-sweep that objects in this region are not to be marked.
-  set_range_archive(MemRegion(_bottom, HeapRegion::GrainWords), _open);
-
   // Since we've modified the old set, call update_sizes.
   _g1h->g1mm()->update_sizes();
   return true;
@@ -474,26 +452,29 @@ HeapWord* G1ArchiveAllocator::archive_mem_allocate(size_t word_size) {
          PTR_FORMAT " <= " PTR_FORMAT " <= " PTR_FORMAT,
          p2i(_bottom), p2i(old_top), p2i(_max));
 
-  // Allocate the next word_size words in the current allocation chunk.
-  // If allocation would cross the _max boundary, insert a filler and begin
-  // at the base of the next min_region_size'd chunk. Also advance to the next
-  // chunk if we don't yet cross the boundary, but the remainder would be too
-  // small to fill.
-  HeapWord* new_top = old_top + word_size;
-  size_t remainder = pointer_delta(_max, new_top);
-  if ((new_top > _max) ||
-      ((new_top < _max) && (remainder < CollectedHeap::min_fill_size()))) {
+  // Try to allocate word_size in the current allocation chunk. Two cases
+  // require special treatment:
+  // 1. no enough space for word_size
+  // 2. after allocating word_size, there's non-zero space left, but too small for the minimal filler
+  // In both cases, we retire the current chunk and move on to the next one.
+  size_t free_words = pointer_delta(_max, old_top);
+  if (free_words < word_size ||
+      ((free_words - word_size != 0) && (free_words - word_size < CollectedHeap::min_fill_size()))) {
+    // Retiring the current chunk
     if (old_top != _max) {
-      size_t fill_size = pointer_delta(_max, old_top);
+      // Non-zero space; need to insert the filler
+      size_t fill_size = free_words;
       CollectedHeap::fill_with_object(old_top, fill_size);
       _summary_bytes_used += fill_size * HeapWordSize;
     }
+    // Set the current chunk as "full"
     _allocation_region->set_top(_max);
-    old_top = _bottom = _max;
 
     // Check if we've just used up the last min_region_size'd chunk
     // in the current region, and if so, allocate a new one.
-    if (_bottom != _allocation_region->end()) {
+    if (_max != _allocation_region->end()) {
+      // Shift to the next chunk
+      old_top = _bottom = _max;
       _max = _bottom + HeapRegion::min_region_size_in_words();
     } else {
       if (!alloc_new_region()) {
@@ -502,6 +483,7 @@ HeapWord* G1ArchiveAllocator::archive_mem_allocate(size_t word_size) {
       old_top = _allocation_region->bottom();
     }
   }
+  assert(pointer_delta(_max, old_top) >= word_size, "enough space left");
   _allocation_region->set_top(old_top + word_size);
   _summary_bytes_used += word_size * HeapWordSize;
 

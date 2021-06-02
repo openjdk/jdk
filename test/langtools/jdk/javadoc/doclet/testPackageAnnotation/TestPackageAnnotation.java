@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug  8222091
+ * @bug  8222091 8245058
  * @summary  Javadoc does not handle package annotations correctly on package-info.java
  * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -44,6 +44,7 @@ public class TestPackageAnnotation extends JavadocTester {
     public void testPackageInfoAnnotationNoComment() {
         javadoc("-d", "out-annotation",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "-use",
                 "pkg1");
         checkExit(Exit.OK);
@@ -51,10 +52,11 @@ public class TestPackageAnnotation extends JavadocTester {
                 """
                     <main role="main">
                     <div class="header">
-                    <p>@Deprecated(since="1&lt;2&gt;3")
-                    </p>
-                    <h1 title="Package" class="title">Package&nbsp;pkg1</h1>
+                    <h1 title="Package pkg1" class="title">Package pkg1</h1>
                     </div>
+                    <hr>
+                    <div class="package-signature"><span class="annotations">@Deprecated(since="1&lt;2&gt;3")
+                    </span>package <span class="element-name">pkg1</span></div>
                     """);
     }
 
@@ -78,6 +80,7 @@ public class TestPackageAnnotation extends JavadocTester {
     public void testPackageInfoAndHtml() {
         javadoc("-d", "out-annotation-3",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "-use",
                 "pkg3");
         checkExit(Exit.OK);
@@ -85,10 +88,11 @@ public class TestPackageAnnotation extends JavadocTester {
                 """
                     <main role="main">
                     <div class="header">
-                    <p>@Deprecated(since="1&lt;2&gt;3")
-                    </p>
-                    <h1 title="Package" class="title">Package&nbsp;pkg3</h1>
+                    <h1 title="Package pkg3" class="title">Package pkg3</h1>
                     </div>
+                    <hr>
+                    <div class="package-signature"><span class="annotations">@Deprecated(since="1&lt;2&gt;3")
+                    </span>package <span class="element-name">pkg3</span></div>
                     """);
     }
 }

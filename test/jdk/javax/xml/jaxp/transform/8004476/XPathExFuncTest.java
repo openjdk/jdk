@@ -24,7 +24,7 @@
  * @test
  * @bug 8004476
  * @summary test XPath extension functions
- * @run main/othervm XPathExFuncTest
+ * @run main/othervm -Djava.security.manager=allow XPathExFuncTest
  */
 import java.io.FileInputStream;
 import java.io.InputStream;

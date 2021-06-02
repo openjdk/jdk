@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,9 @@
  *          option for testing the interaction with GC and shared strings.
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds.archived.java.heap
+ * @requires vm.jvmti
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver/timeout=480 GCSharedStringsDuringDump
  */
 
@@ -38,8 +39,10 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class GCSharedStringsDuringDump {
     public static String appClasses[] = {
@@ -62,7 +65,7 @@ public class GCSharedStringsDuringDump {
             "-Xlog:gc*=info,gc+region=trace,gc+alloc+region=debug" : "-showversion";
 
         String sharedArchiveCfgFile =
-            System.getProperty("user.dir") + File.separator + "GCSharedStringDuringDump_gen.txt";
+            CDSTestUtils.getOutputDir() + File.separator + "GCSharedStringDuringDump_gen.txt";
         try (FileOutputStream fos = new FileOutputStream(sharedArchiveCfgFile)) {
             PrintWriter out = new PrintWriter(new OutputStreamWriter(fos));
             out.println("VERSION: 1.0");
@@ -111,15 +114,13 @@ public class GCSharedStringsDuringDump {
                 extraArg,
                 "-Xlog:cds=info,class+path=info",
                 "-Xmx32m",
-                "-XX:+PrintSharedSpaces",
+                "-Xlog:cds=info",
                 "-XX:+UnlockDiagnosticVMOptions",
                 extraOption,
                 "-XX:+WhiteBoxAPI",
-                "-XX:SharedReadOnlySize=30m",
                 gcLog,
                 GCSharedStringsDuringDumpWb.class.getName())
               .assertNormalExit();
         }
     }
 }
-

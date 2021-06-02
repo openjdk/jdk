@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 #ifndef SHARE_OOPS_TYPEARRAYOOP_INLINE_HPP
 #define SHARE_OOPS_TYPEARRAYOOP_INLINE_HPP
 
+#include "oops/typeArrayOop.hpp"
+
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/arrayOop.inline.hpp"
-#include "oops/typeArrayOop.hpp"
+#include "oops/arrayOop.hpp"
 
 int typeArrayOopDesc::object_size() {
   TypeArrayKlass* tk = TypeArrayKlass::cast(klass());

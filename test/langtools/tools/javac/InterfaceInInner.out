@@ -1,2 +1,4 @@
-InterfaceInInner.java:12:13: compiler.err.static.declaration.not.allowed.in.inner.classes
+- compiler.warn.source.no.system.modules.path: 15
+InterfaceInInner.java:13:13: compiler.err.icls.cant.have.static.decl: foo
 1 error
+1 warning

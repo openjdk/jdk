@@ -50,12 +50,13 @@ import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
+import jdk.jfr.internal.settings.ThrottleSetting;
 
 // This class can't have a hard reference from PlatformEventType, since it
 // holds SettingControl instances that need to be released
 // when a class is unloaded (to avoid memory leaks).
 public final class EventControl {
-    final static class NamedControl {
+    static final class NamedControl {
         public final String name;
         public final Control control;
         NamedControl(String name, Control control) {
@@ -69,6 +70,7 @@ public final class EventControl {
     private static final Type TYPE_STACK_TRACE = TypeLibrary.createType(StackTraceSetting.class);
     private static final Type TYPE_PERIOD = TypeLibrary.createType(PeriodSetting.class);
     private static final Type TYPE_CUTOFF = TypeLibrary.createType(CutoffSetting.class);
+    private static final Type TYPE_THROTTLE = TypeLibrary.createType(ThrottleSetting.class);
 
     private final ArrayList<SettingInfo> settingInfos = new ArrayList<>();
     private final ArrayList<NamedControl> namedControls = new ArrayList<>(5);
@@ -76,7 +78,6 @@ public final class EventControl {
     private final String idName;
 
     EventControl(PlatformEventType eventType) {
-        addControl(Enabled.NAME, defineEnabled(eventType));
         if (eventType.hasDuration()) {
             addControl(Threshold.NAME, defineThreshold(eventType));
         }
@@ -89,14 +90,18 @@ public final class EventControl {
         if (eventType.hasCutoff()) {
             addControl(Cutoff.NAME, defineCutoff(eventType));
         }
+        if (eventType.hasThrottle()) {
+            addControl(Throttle.NAME, defineThrottle(eventType));
+        }
+        addControl(Enabled.NAME, defineEnabled(eventType));
 
-        ArrayList<AnnotationElement> aes = new ArrayList<>(eventType.getAnnotationElements());
+        List<AnnotationElement> aes = new ArrayList<>(eventType.getAnnotationElements());
         remove(eventType, aes, Threshold.class);
         remove(eventType, aes, Period.class);
         remove(eventType, aes, Enabled.class);
         remove(eventType, aes, StackTrace.class);
         remove(eventType, aes, Cutoff.class);
-        aes.trimToSize();
+        remove(eventType, aes, Throttle.class);
         eventType.setAnnotations(aes);
         this.type = eventType;
         this.idName = String.valueOf(eventType.getId());
@@ -252,6 +257,15 @@ public final class EventControl {
         return new Control(new CutoffSetting(type), def);
     }
 
+    private static Control defineThrottle(PlatformEventType type) {
+        Throttle throttle = type.getAnnotation(Throttle.class);
+        String def = Throttle.DEFAULT;
+        if (throttle != null) {
+            def = throttle.value();
+        }
+        type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THROTTLE, Throttle.NAME, def, Collections.emptyList()));
+        return new Control(new ThrottleSetting(type), def);
+    }
 
     private static Control definePeriod(PlatformEventType type) {
         Period period = type.getAnnotation(Period.class);

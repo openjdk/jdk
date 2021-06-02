@@ -42,6 +42,7 @@ import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static org.testng.Assert.assertEquals;
+import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
@@ -72,6 +73,9 @@ public class TlsContextTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setUp() throws Exception {
+        // Re-enable TLSv1 and TLSv1.1 since test depends on them
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
+
         server = SimpleSSLContext.getContext("TLS");
         final ExecutorService executor = Executors.newCachedThreadPool();
         https2Server = HttpTestServer.of(

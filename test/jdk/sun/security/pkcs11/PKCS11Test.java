@@ -35,6 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPairGenerator;
@@ -72,6 +73,8 @@ public abstract class PKCS11Test {
     // directory of the test source
     static final String BASE = System.getProperty("test.src", ".");
 
+    static final String TEST_CLASSES = System.getProperty("test.classes", ".");
+
     static final char SEP = File.separatorChar;
 
     private static final String DEFAULT_POLICY =
@@ -96,7 +99,7 @@ public abstract class PKCS11Test {
     // NSS version info
     public static enum ECCState { None, Basic, Extended };
     static double nss_version = -1;
-    static ECCState nss_ecc_status = ECCState.Extended;
+    static ECCState nss_ecc_status = ECCState.Basic;
 
     // The NSS library we need to search for in getNSSLibDir()
     // Default is "libsoftokn3.so", listed as "softokn3"
@@ -190,7 +193,7 @@ public abstract class PKCS11Test {
                     test.enableSM = true;
                 } else {
                     throw new RuntimeException("Unknown Command, use 'sm' as "
-                            + "first arguemtn to enable security manager");
+                            + "first argument to enable security manager");
                 }
             }
             if (test.enableSM) {
@@ -690,7 +693,8 @@ public abstract class PKCS11Test {
                 "/usr/lib/arm-linux-gnueabihf/nss/" });
         osMap.put("Linux-aarch64-64", new String[] {
                 "/usr/lib/aarch64-linux-gnu/",
-                "/usr/lib/aarch64-linux-gnu/nss/" });
+                "/usr/lib/aarch64-linux-gnu/nss/",
+                "/usr/lib64/" });
         return osMap;
     }
 
@@ -853,11 +857,36 @@ public abstract class PKCS11Test {
                         + "please check if JIB jar is present in classpath.");
             } else {
                 throw new RuntimeException("Fetch artifact failed: " + clazz
-                        + "\nPlease make sure the artifact is available.");
+                        + "\nPlease make sure the artifact is available.", e);
             }
         }
         Policy.setPolicy(null); // Clear the policy created by JIB if any
         return path;
+    }
+
+    protected void setCommonSystemProps() {
+        System.setProperty("java.security.debug", "true");
+        System.setProperty("NO_DEIMOS", "true");
+        System.setProperty("NO_DEFAULT", "true");
+        System.setProperty("CUSTOM_DB_DIR", TEST_CLASSES);
+    }
+
+    protected void copyNssCertKeyToClassesDir() throws IOException {
+        Path dbPath = Path.of(BASE).getParent().resolve("nss").resolve("db");
+        copyNssCertKeyToClassesDir(dbPath);
+    }
+
+    protected void copyNssCertKeyToClassesDir(Path dbPath) throws IOException {
+        Path destinationPath = Path.of(TEST_CLASSES);
+        String keyDbFile = "key3.db";
+        String certDbFile = "cert8.db";
+
+        Files.copy(dbPath.resolve(certDbFile),
+                destinationPath.resolve(certDbFile),
+                StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(dbPath.resolve(keyDbFile),
+                destinationPath.resolve(keyDbFile),
+                StandardCopyOption.REPLACE_EXISTING);
     }
 
     @Artifact(

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/debug.hpp"
 
 // Processor dependent initialization of C2 compiler for ppc.
@@ -37,12 +39,6 @@ void Compile::pd_compiler2_init() {
   if (PowerArchitecturePPC64 > 6) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       FLAG_SET_ERGO(UsePopCountInstruction, true);
-    }
-  }
-
-  if (PowerArchitecturePPC64 == 6) {
-    if (FLAG_IS_DEFAULT(InsertEndGroupPPC64)) {
-      FLAG_SET_ERGO(InsertEndGroupPPC64, true);
     }
   }
 

@@ -32,6 +32,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/monitorChunk.hpp"
@@ -176,7 +177,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
                                          bool is_top_frame,
                                          bool is_bottom_frame,
                                          int exec_mode) {
-  JavaThread* thread = (JavaThread*) Thread::current();
+  JavaThread* thread = JavaThread::current();
 
   bool realloc_failure_exception = thread->frames_to_pop_failed_realloc() > 0;
 
@@ -350,7 +351,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print("Reconstructed expression %d (OBJECT): ", i);
-          oop o = (oop)(address)(*addr);
+          oop o = cast_to_oop((address)(*addr));
           if (o == NULL) {
             tty->print_cr("NULL");
           } else {
@@ -388,7 +389,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print("Reconstructed local %d (OBJECT): ", i);
-          oop o = (oop)(address)(*addr);
+          oop o = cast_to_oop((address)(*addr));
           if (o == NULL) {
             tty->print_cr("NULL");
           } else {
@@ -567,8 +568,8 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
   //  in the above picture.
 
   // Find the skeletal interpreter frames to unpack into
-  JavaThread* THREAD = JavaThread::current();
-  RegisterMap map(THREAD, false);
+  JavaThread* current = JavaThread::current();
+  RegisterMap map(current, false);
   // Get the youngest frame we will unpack (last to be unpacked)
   frame me = unpack_frame.sender(&map);
   int index;
@@ -587,8 +588,8 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
     if (index == 0) {
       callee_parameters = callee_locals = 0;
     } else {
-      methodHandle caller(THREAD, elem->method());
-      methodHandle callee(THREAD, element(index - 1)->method());
+      methodHandle caller(current, elem->method());
+      methodHandle callee(current, element(index - 1)->method());
       Bytecode_invoke inv(caller, elem->bci());
       // invokedynamic instructions don't have a class but obviously don't have a MemberName appendix.
       // NOTE:  Use machinery here that avoids resolving of any kind.

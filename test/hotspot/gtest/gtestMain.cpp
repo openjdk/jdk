@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@
 
 #include "jni.h"
 #include "unittest.hpp"
+
+#include "runtime/thread.inline.hpp"
 
 // Default value for -new-thread option: true on AIX because we run into
 // problems when attempting to initialize the JVM on the primordial thread.
@@ -91,7 +93,18 @@ static int init_jvm(int argc, char **argv, bool disable_error_handling) {
   JavaVM* jvm;
   JNIEnv* env;
 
-  return JNI_CreateJavaVM(&jvm, (void**)&env, &args);
+  int ret = JNI_CreateJavaVM(&jvm, (void**)&env, &args);
+  if (ret == JNI_OK) {
+    // CreateJavaVM leaves WXExec context, while gtests
+    // calls internal functions assuming running in WXWwrite.
+    // Switch to WXWrite once for all test cases.
+    MACOS_AARCH64_ONLY(Thread::current()->enable_wx(WXWrite));
+  }
+  return ret;
+}
+
+static bool is_same_vm_test(const char* name) {
+  return is_suffix("_vm", name) && !is_suffix("_other_vm", name);
 }
 
 class JVMInitializerListener : public ::testing::EmptyTestEventListener {
@@ -110,7 +123,7 @@ class JVMInitializerListener : public ::testing::EmptyTestEventListener {
 
   virtual void OnTestStart(const ::testing::TestInfo& test_info) {
     const char* name = test_info.name();
-    if (!_is_initialized && is_suffix("_test_vm", name)) {
+    if (!_is_initialized && is_same_vm_test(name)) {
       // we want to have hs_err and core files when we execute regular tests
       int ret_val = init_jvm(_argc, _argv, false);
       if (ret_val != 0) {
@@ -205,8 +218,8 @@ static void runUnitTestsInner(int argc, char** argv) {
   if (::testing::internal::GTEST_FLAG(internal_run_death_test).length() > 0) {
     // when we execute death test, filter value equals to test name
     const char* test_name = ::testing::GTEST_FLAG(filter).c_str();
-    const char* const othervm_suffix = "_other_vm_test"; // TEST_OTHER_VM
-    const char* const vmassert_suffix = "_vm_assert_test"; // TEST_VM_ASSERT(_MSG)
+    const char* const othervm_suffix = "_other_vm"; // TEST_OTHER_VM
+    const char* const vmassert_suffix = "_vm_assert"; // TEST_VM_ASSERT(_MSG)
     if (is_suffix(othervm_suffix, test_name)) {
       is_othervm_test = true;
     } else if (is_suffix(vmassert_suffix, test_name)) {

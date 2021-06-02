@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZSAFEDELETE_INLINE_HPP
 #define SHARE_GC_Z_ZSAFEDELETE_INLINE_HPP
 
-#include "gc/z/zArray.inline.hpp"
 #include "gc/z/zSafeDelete.hpp"
+
+#include "gc/z/zArray.inline.hpp"
 #include "metaprogramming/isArray.hpp"
 #include "utilities/debug.hpp"
 
@@ -69,7 +70,7 @@ void ZSafeDeleteImpl<T>::disable_deferred_delete() {
     ZLocker<ZLock> locker(_lock);
     assert(_enabled > 0, "Invalid state");
     if (--_enabled == 0) {
-      deferred.transfer(&_deferred);
+      deferred.swap(&_deferred);
     }
   }
 

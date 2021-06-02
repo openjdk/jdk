@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -52,6 +51,7 @@ public final class RuntimeUtil {
         Log.getLog("sun.rmi.runtime", null, false);
 
     /** number of scheduler threads */
+    @SuppressWarnings("removal")
     private static final int schedulerThreads =         // default 1
         AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
             Integer.getInteger("sun.rmi.runtime.schedulerThreads", 1));
@@ -70,7 +70,8 @@ public final class RuntimeUtil {
         scheduler = new ScheduledThreadPoolExecutor(
             schedulerThreads,
             new ThreadFactory() {
-                private final AtomicInteger count = new AtomicInteger(0);
+                private final AtomicInteger count = new AtomicInteger();
+                @SuppressWarnings("removal")
                 public Thread newThread(Runnable runnable) {
                     try {
                         return AccessController.doPrivileged(
@@ -111,6 +112,7 @@ public final class RuntimeUtil {
     }
 
     private static RuntimeUtil getInstance() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(GET_INSTANCE_PERMISSION);

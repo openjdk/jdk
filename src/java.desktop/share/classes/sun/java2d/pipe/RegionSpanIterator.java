@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,17 +46,6 @@ public class RegionSpanIterator implements SpanIterator {
 
     // Is the associated Region rectangular?
     boolean isrect;
-
-/*
-    REMIND: For native implementation
-    long pData;     // Private storage of rect info
-
-    static {
-        initIDs();
-    }
-
-    public static native void initIDs();
-*/
 
     /**
      * Constructs an instance based on the given Region
@@ -197,14 +186,4 @@ public class RegionSpanIterator implements SpanIterator {
     public long getNativeIterator() {
         return 0;
     }
-
-    /*
-     * Cleans out all internal data structures.
-     * REMIND: Native implementation
-    public native void dispose();
-
-    protected void finalize() {
-        dispose();
-    }
-     */
 }

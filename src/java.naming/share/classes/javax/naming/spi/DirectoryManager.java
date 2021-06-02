@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class DirectoryManager extends NamingManager {
       * @param cpe
       *         The non-null exception that triggered this continuation.
       * @return A non-null {@code DirContext} object for continuing the operation.
-      * @exception NamingException If a naming exception occurred.
+      * @throws NamingException If a naming exception occurred.
       *
       * @see NamingManager#getContinuationContext(CannotProceedException)
       */
@@ -136,10 +136,10 @@ public class DirectoryManager extends NamingManager {
       * @return An object created using {@code refInfo} and {@code attrs}; or
       *         {@code refInfo} if an object cannot be created by
       *         a factory.
-      * @exception NamingException If a naming exception was encountered
+      * @throws NamingException If a naming exception was encountered
       *         while attempting to get a URL context, or if one of the
       *         factories accessed throws a NamingException.
-      * @exception Exception If one of the factories accessed throws an
+      * @throws Exception If one of the factories accessed throws an
       *         exception, or if an error was encountered while loading
       *         and instantiating the factory and object classes.
       *         A factory should only throw an exception if it does not want
@@ -289,7 +289,7 @@ public class DirectoryManager extends NamingManager {
       *  the object and attributes to be bound.
       *  If no state factory returns a non-null answer, the result will contain
       *  the object ({@code obj}) itself with the original attributes.
-      * @exception NamingException If a naming exception was encountered
+      * @throws NamingException If a naming exception was encountered
       *         while using the factories.
       *         A factory should only throw an exception if it does not want
       *         other factories to be used in an attempt to create an object.

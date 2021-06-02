@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ public class InstanceKlass extends Klass {
   private static int HIGH_OFFSET;
   private static int FIELD_SLOTS;
   private static short FIELDINFO_TAG_SIZE;
-  private static short FIELDINFO_TAG_MASK;
   private static short FIELDINFO_TAG_OFFSET;
 
   // ClassState constants
@@ -71,12 +70,10 @@ public class InstanceKlass extends Klass {
   private static int MISC_REWRITTEN;
   private static int MISC_HAS_NONSTATIC_FIELDS;
   private static int MISC_SHOULD_VERIFY_CLASS;
-  private static int MISC_IS_UNSAFE_ANONYMOUS;
   private static int MISC_IS_CONTENDED;
   private static int MISC_HAS_NONSTATIC_CONCRETE_METHODS;
   private static int MISC_DECLARES_NONSTATIC_CONCRETE_METHODS;
   private static int MISC_HAS_BEEN_REDEFINED;
-  private static int MISC_HAS_PASSED_FINGERPRINT_CHECK;
   private static int MISC_IS_SCRATCH_CLASS;
   private static int MISC_IS_SHARED_BOOT_CLASS;
   private static int MISC_IS_SHARED_PLATFORM_CLASS;
@@ -117,7 +114,6 @@ public class InstanceKlass extends Klass {
     HIGH_OFFSET                    = db.lookupIntConstant("FieldInfo::high_packed_offset").intValue();
     FIELD_SLOTS                    = db.lookupIntConstant("FieldInfo::field_slots").intValue();
     FIELDINFO_TAG_SIZE             = db.lookupIntConstant("FIELDINFO_TAG_SIZE").shortValue();
-    FIELDINFO_TAG_MASK             = db.lookupIntConstant("FIELDINFO_TAG_MASK").shortValue();
     FIELDINFO_TAG_OFFSET           = db.lookupIntConstant("FIELDINFO_TAG_OFFSET").shortValue();
 
     // read ClassState constants
@@ -131,12 +127,10 @@ public class InstanceKlass extends Klass {
     MISC_REWRITTEN                    = db.lookupIntConstant("InstanceKlass::_misc_rewritten").intValue();
     MISC_HAS_NONSTATIC_FIELDS         = db.lookupIntConstant("InstanceKlass::_misc_has_nonstatic_fields").intValue();
     MISC_SHOULD_VERIFY_CLASS          = db.lookupIntConstant("InstanceKlass::_misc_should_verify_class").intValue();
-    MISC_IS_UNSAFE_ANONYMOUS          = db.lookupIntConstant("InstanceKlass::_misc_is_unsafe_anonymous").intValue();
     MISC_IS_CONTENDED                 = db.lookupIntConstant("InstanceKlass::_misc_is_contended").intValue();
     MISC_HAS_NONSTATIC_CONCRETE_METHODS      = db.lookupIntConstant("InstanceKlass::_misc_has_nonstatic_concrete_methods").intValue();
     MISC_DECLARES_NONSTATIC_CONCRETE_METHODS = db.lookupIntConstant("InstanceKlass::_misc_declares_nonstatic_concrete_methods").intValue();
     MISC_HAS_BEEN_REDEFINED           = db.lookupIntConstant("InstanceKlass::_misc_has_been_redefined").intValue();
-    MISC_HAS_PASSED_FINGERPRINT_CHECK = db.lookupIntConstant("InstanceKlass::_misc_has_passed_fingerprint_check").intValue();
     MISC_IS_SCRATCH_CLASS             = db.lookupIntConstant("InstanceKlass::_misc_is_scratch_class").intValue();
     MISC_IS_SHARED_BOOT_CLASS         = db.lookupIntConstant("InstanceKlass::_misc_is_shared_boot_class").intValue();
     MISC_IS_SHARED_PLATFORM_CLASS     = db.lookupIntConstant("InstanceKlass::_misc_is_shared_platform_class").intValue();
@@ -287,36 +281,11 @@ public class InstanceKlass extends Klass {
     if (isInterface()) {
       size += wordLength;
     }
-    if (isUnsafeAnonymous()) {
-      size += wordLength;
-    }
-    if (hasStoredFingerprint()) {
-      size += 8; // uint64_t
-    }
     return alignSize(size);
   }
 
   private int getMiscFlags() {
     return (int) miscFlags.getValue(this);
-  }
-
-  public boolean isUnsafeAnonymous() {
-    return (getMiscFlags() & MISC_IS_UNSAFE_ANONYMOUS) != 0;
-  }
-
-  public static boolean shouldStoreFingerprint() {
-    VM vm = VM.getVM();
-    if (vm.getCommandLineBooleanFlag("EnableJVMCI") && !vm.getCommandLineBooleanFlag("UseJVMCICompiler")) {
-      return true;
-    }
-    if (vm.getCommandLineBooleanFlag("DumpSharedSpaces")) {
-      return true;
-    }
-    return false;
-  }
-
-  public boolean hasStoredFingerprint() {
-    return shouldStoreFingerprint() || isShared();
   }
 
   public static long getHeaderSize() { return headerSize; }
@@ -392,7 +361,7 @@ public class InstanceKlass extends Klass {
     U2Array fields = getFields();
     short lo = fields.at(index * FIELD_SLOTS + LOW_OFFSET);
     short hi = fields.at(index * FIELD_SLOTS + HIGH_OFFSET);
-    if ((lo & FIELDINFO_TAG_MASK) == FIELDINFO_TAG_OFFSET) {
+    if ((lo & FIELDINFO_TAG_OFFSET) == FIELDINFO_TAG_OFFSET) {
       return VM.getVM().buildIntFromShorts(lo, hi) >> FIELDINFO_TAG_SIZE;
     }
     throw new RuntimeException("should not reach here");

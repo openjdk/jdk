@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,11 @@
 
 #if defined(__linux__) || defined(_ALLBSD_SOURCE) || defined(_AIX)
 #include <sys/ioctl.h>
+#endif
+
+#if defined(__linux__)
+#include <linux/fs.h>
+#include <sys/stat.h>
 #endif
 
 #ifdef MACOSX
@@ -162,8 +167,17 @@ fileDescriptorClose(JNIEnv *env, jobject this)
             dup2(devnull, fd);
             close(devnull);
         }
-    } else if (close(fd) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "close failed");
+    } else {
+        int result;
+#if defined(_AIX)
+        /* AIX allows close to be restarted after EINTR */
+        RESTARTABLE(close(fd), result);
+#else
+        result = close(fd);
+#endif
+        if (result == -1 && errno != EINTR) {
+            JNU_ThrowIOExceptionWithLastError(env, "close failed");
+        }
     }
 }
 
@@ -234,9 +248,19 @@ jlong
 handleGetLength(FD fd)
 {
     struct stat64 sb;
-    if (fstat64(fd, &sb) == 0) {
-        return sb.st_size;
-    } else {
+    int result;
+    RESTARTABLE(fstat64(fd, &sb), result);
+    if (result < 0) {
         return -1;
     }
+#if defined(__linux__) && defined(BLKGETSIZE64)
+    if (S_ISBLK(sb.st_mode)) {
+        uint64_t size;
+        if(ioctl(fd, BLKGETSIZE64, &size) < 0) {
+            return -1;
+        }
+        return (jlong)size;
+    }
+#endif
+    return sb.st_size;
 }

@@ -58,6 +58,7 @@ class LogConfiguration : public AllStatic {
 
   static UpdateListenerFunction*    _listener_callbacks;
   static size_t                     _n_listener_callbacks;
+  static bool                       _async_mode;
 
   // Create a new output. Returns NULL if failed.
   static LogOutput* new_output(const char* name, const char* options, outputStream* errstream);
@@ -69,8 +70,8 @@ class LogConfiguration : public AllStatic {
   // Output should be completely disabled before it is deleted.
   static void delete_output(size_t idx);
 
-  // Disable all logging to the specified output and then delete it (unless it is stdout/stderr).
-  static void disable_output(size_t idx);
+  // Disable all logging to all outputs. All outputs except stdout/stderr will be deleted.
+  static void disable_outputs();
 
   // Get output index by name. Returns SIZE_MAX if output not found.
   static size_t find_output(const char* name);
@@ -123,6 +124,11 @@ class LogConfiguration : public AllStatic {
 
   // Rotates all LogOutput
   static void rotate_all_outputs();
+
+  static bool is_async_mode() { return _async_mode; }
+  static void set_async_mode(bool value) {
+    _async_mode = value;
+  }
 };
 
 #endif // SHARE_LOGGING_LOGCONFIGURATION_HPP

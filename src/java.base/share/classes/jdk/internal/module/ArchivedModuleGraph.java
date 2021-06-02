@@ -22,21 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.internal.module;
 
+import java.util.function.Function;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 
 /**
- * Used by ModuleBootstrap to obtain the archived system modules and finder.
+ * Used by ModuleBootstrap for archiving the configuration for the boot layer,
+ * and the system module finder.
  */
-final class ArchivedModuleGraph {
+class ArchivedModuleGraph {
     private static ArchivedModuleGraph archivedModuleGraph;
 
     private final boolean hasSplitPackages;
@@ -44,23 +41,17 @@ final class ArchivedModuleGraph {
     private final ModuleFinder finder;
     private final Configuration configuration;
     private final Function<String, ClassLoader> classLoaderFunction;
-    private final Map<String, Set<String>> concealedPackagesToOpen;
-    private final Map<String, Set<String>> exportedPackagesToOpen;
 
-    public ArchivedModuleGraph(boolean hasSplitPackages,
-                               boolean hasIncubatorModules,
-                               ModuleFinder finder,
-                               Configuration configuration,
-                               Function<String, ClassLoader> classLoaderFunction,
-                               Map<String, Set<String>> concealedPackagesToOpen,
-                               Map<String, Set<String>> exportedPackagesToOpen) {
+    private ArchivedModuleGraph(boolean hasSplitPackages,
+                                boolean hasIncubatorModules,
+                                ModuleFinder finder,
+                                Configuration configuration,
+                                Function<String, ClassLoader> classLoaderFunction) {
         this.hasSplitPackages = hasSplitPackages;
         this.hasIncubatorModules = hasIncubatorModules;
         this.finder = finder;
         this.configuration = configuration;
         this.classLoaderFunction = classLoaderFunction;
-        this.concealedPackagesToOpen = concealedPackagesToOpen;
-        this.exportedPackagesToOpen = exportedPackagesToOpen;
     }
 
     ModuleFinder finder() {
@@ -73,14 +64,6 @@ final class ArchivedModuleGraph {
 
     Function<String, ClassLoader> classLoaderFunction() {
         return classLoaderFunction;
-    }
-
-    Map<String, Set<String>> concealedPackagesToOpen() {
-        return concealedPackagesToOpen;
-    }
-
-    Map<String, Set<String>> exportedPackagesToOpen() {
-        return exportedPackagesToOpen;
     }
 
     boolean hasSplitPackages() {
@@ -107,11 +90,19 @@ final class ArchivedModuleGraph {
     /**
      * Archive the module graph for the given initial module.
      */
-    static void archive(ArchivedModuleGraph graph) {
-        archivedModuleGraph = graph;
+    static void archive(boolean hasSplitPackages,
+                        boolean hasIncubatorModules,
+                        ModuleFinder finder,
+                        Configuration configuration,
+                        Function<String, ClassLoader> classLoaderFunction) {
+        archivedModuleGraph = new ArchivedModuleGraph(hasSplitPackages,
+                                                      hasIncubatorModules,
+                                                      finder,
+                                                      configuration,
+                                                      classLoaderFunction);
     }
 
     static {
-        VM.initializeFromArchive(ArchivedModuleGraph.class);
+        CDS.initializeFromArchive(ArchivedModuleGraph.class);
     }
 }

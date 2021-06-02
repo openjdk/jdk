@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.internal.access;
 
 import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
+import jdk.internal.misc.ScopedMemoryAccess.Scope;
 import jdk.internal.misc.VM.BufferPool;
 
 import java.io.FileDescriptor;
@@ -86,6 +87,14 @@ public interface JavaNioAccess {
     MemorySegmentProxy bufferSegment(Buffer buffer);
 
     /**
+     * Used by I/O operations to make a buffer's resource scope non-closeable
+     * (for the duration of the I/O operation) by acquiring a new resource
+     * scope handle. Null is returned if the buffer has no scope, or
+     * acquiring is not required to guarantee safety.
+     */
+    Scope.Handle acquireScope(Buffer buffer, boolean async);
+
+    /**
      * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
      */
     void force(FileDescriptor fd, long address, boolean isSync, long offset, long size);
@@ -104,4 +113,19 @@ public interface JavaNioAccess {
      * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
      */
     boolean isLoaded(long address, boolean isSync, long size);
+
+    /**
+     * Used by {@code jdk.internal.foreign.NativeMemorySegmentImpl}.
+     */
+    void reserveMemory(long size, long cap);
+
+    /**
+     * Used by {@code jdk.internal.foreign.NativeMemorySegmentImpl}.
+     */
+    void unreserveMemory(long size, long cap);
+
+    /**
+     * Used by {@code jdk.internal.foreign.NativeMemorySegmentImpl}.
+     */
+    int pageSize();
 }

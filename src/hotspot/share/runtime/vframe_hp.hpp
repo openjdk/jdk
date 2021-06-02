@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@
 #include "runtime/vframe.hpp"
 
 class compiledVFrame: public javaVFrame {
+
+  friend class EscapeBarrier;
+
  public:
   // JVM state
   Method*                      method()             const;
@@ -37,6 +40,8 @@ class compiledVFrame: public javaVFrame {
   StackValueCollection*        expressions()        const;
   GrowableArray<MonitorInfo*>* monitors()           const;
   int                          vframe_id()          const { return _vframe_id; }
+  bool                         has_ea_local_in_scope() const;
+  bool                         arg_escape()         const; // at call with arg escape in parameter list
 
   void set_locals(StackValueCollection* values) const;
 
@@ -52,6 +57,11 @@ class compiledVFrame: public javaVFrame {
   }
 
   void update_deferred_value(BasicType type, int index, jvalue value);
+
+  // After object deoptimization, that is object reallocation and relocking, we
+  // create deferred updates for all objects in scope. No new update will be
+  // created if a deferred update already exists.
+  void create_deferred_updates_after_object_deoptimization();
 
  public:
   // Constructors
@@ -93,73 +103,6 @@ class compiledVFrame: public javaVFrame {
  public:
   void verify() const;
 #endif
-};
-
-// In order to implement set_locals for compiled vframes we must
-// store updated locals in a data structure that contains enough
-// information to recognize equality with a vframe and to store
-// any updated locals.
-
-class jvmtiDeferredLocalVariable;
-class jvmtiDeferredLocalVariableSet : public CHeapObj<mtCompiler> {
-  friend class compiledVFrame;
-
-private:
-
-  Method* _method;
-  int       _bci;
-  intptr_t* _id;
-  int _vframe_id;
-  GrowableArray<jvmtiDeferredLocalVariable*>* _locals;
-
-  void                              update_value(StackValueCollection* locals, BasicType type, int index, jvalue value);
-
-  void                              set_value_at(int idx, BasicType typ, jvalue val);
-
- public:
-  // JVM state
-  Method*                           method()         const  { return _method; }
-  int                               bci()            const  { return _bci; }
-  intptr_t*                         id()             const  { return _id; }
-  int                               vframe_id()      const  { return _vframe_id; }
-
-  void                              update_locals(StackValueCollection* locals);
-  void                              update_stack(StackValueCollection* locals);
-  void                              update_monitors(GrowableArray<MonitorInfo*>* monitors);
-
-  // Does the vframe match this jvmtiDeferredLocalVariableSet
-  bool                              matches(const vframe* vf);
-  // GC
-  void                              oops_do(OopClosure* f);
-
-  // constructor
-  jvmtiDeferredLocalVariableSet(Method* method, int bci, intptr_t* id, int vframe_id);
-
-  // destructor
-  ~jvmtiDeferredLocalVariableSet();
-
-
-};
-
-class jvmtiDeferredLocalVariable : public CHeapObj<mtCompiler> {
-  public:
-
-    jvmtiDeferredLocalVariable(int index, BasicType type, jvalue value);
-
-    BasicType type(void)                   { return _type; }
-    int index(void)                        { return _index; }
-    jvalue value(void)                     { return _value; }
-    // Only mutator is for value as only it can change
-    void set_value(jvalue value)           { _value = value; }
-    // For gc
-    oop* oop_addr(void)                    { return (oop*) &_value.l; }
-
-  private:
-
-    BasicType         _type;
-    jvalue            _value;
-    int               _index;
-
 };
 
 #endif // SHARE_RUNTIME_VFRAME_HP_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ static jbyteArray metadata_blob = NULL;
 static u8 metadata_id = 0;
 static u8 last_metadata_id = 0;
 
-static void write_metadata_blob(JfrChunkWriter& chunkwriter, Thread* thread) {
+static void write_metadata_blob(JfrChunkWriter& chunkwriter, JavaThread* thread) {
   assert(chunkwriter.is_valid(), "invariant");
   assert(thread != NULL, "invariant");
   assert(metadata_blob != NULL, "invariant");
@@ -56,7 +56,7 @@ void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
   if (last_metadata_id == metadata_id && chunkwriter.has_metadata()) {
     return;
   }
-  JavaThread* const jt = (JavaThread*)Thread::current();
+  JavaThread* const jt = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
   // can safepoint here
   ThreadInVMfromNative transition(jt);
@@ -76,8 +76,7 @@ void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
 }
 
 void JfrMetadataEvent::update(jbyteArray metadata) {
-  JavaThread* thread = (JavaThread*)Thread::current();
-  assert(thread->is_Java_thread(), "invariant");
+  JavaThread* thread = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
   if (metadata_blob != NULL) {
     JfrJavaSupport::destroy_global_jni_handle(metadata_blob);

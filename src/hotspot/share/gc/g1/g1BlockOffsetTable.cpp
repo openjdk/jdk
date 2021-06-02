@@ -60,7 +60,7 @@ void G1BlockOffsetTable::check_index(size_t index, const char* msg) const {
   assert((index) < (_reserved.word_size() >> BOTConstants::LogN_words),
          "%s - index: " SIZE_FORMAT ", _vs.committed_size: " SIZE_FORMAT,
          msg, (index), (_reserved.word_size() >> BOTConstants::LogN_words));
-  assert(G1CollectedHeap::heap()->is_in_exact(address_for_index_raw(index)),
+  assert(G1CollectedHeap::heap()->is_in(address_for_index_raw(index)),
          "Index " SIZE_FORMAT " corresponding to " PTR_FORMAT
          " (%u) is not in committed area.",
          (index),
@@ -80,6 +80,19 @@ G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRe
   _bot(array),
   _hr(hr)
 {
+}
+
+void G1BlockOffsetTablePart::update() {
+  HeapWord* next_addr = _hr->bottom();
+  HeapWord* const limit = _hr->top();
+
+  HeapWord* prev_addr;
+  while (next_addr < limit) {
+    prev_addr = next_addr;
+    next_addr  = prev_addr + block_size(prev_addr);
+    alloc_block(prev_addr, next_addr);
+  }
+  assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
 // The arguments follow the normal convention of denoting
@@ -227,7 +240,7 @@ HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_slow(HeapWord
   while (next_boundary < addr) {
     while (n <= next_boundary) {
       q = n;
-      oop obj = oop(q);
+      oop obj = cast_to_oop(q);
       if (obj->klass_or_null_acquire() == NULL) return q;
       n += block_size(q);
     }
@@ -327,7 +340,8 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, size_t* ind
 void G1BlockOffsetTablePart::verify() const {
   assert(_hr->bottom() < _hr->top(), "Only non-empty regions should be verified.");
   size_t start_card = _bot->index_for(_hr->bottom());
-  size_t end_card = _bot->index_for(_hr->top() - 1);
+  // Do not verify beyond the BOT allocation threshold.
+  size_t end_card = MIN2(_bot->index_for(_hr->top() - 1), _next_offset_index - 1);
 
   for (size_t current_card = start_card; current_card < end_card; current_card++) {
     u_char entry = _bot->offset_array(current_card);

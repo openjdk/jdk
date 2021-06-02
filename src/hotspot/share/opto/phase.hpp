@@ -59,6 +59,7 @@ public:
     Ideal_Loop,                       // Find idealized trip-counted loops
     Macro_Expand,                     // Expand macro nodes
     Peephole,                         // Apply peephole optimizations
+    Vector,
     Output,
     last_phase
   };
@@ -75,6 +76,10 @@ public:
         _t_incrInline_igvn,
         _t_incrInline_pru,
         _t_incrInline_inline,
+      _t_vector,
+        _t_vector_elimination,
+          _t_vector_igvn,
+          _t_vector_pru,
       _t_renumberLive,
       _t_idealLoop,
       _t_idealLoopVerify,
@@ -106,9 +111,11 @@ public:
     _t_peephole,
     _t_postalloc_expand,
     _t_output,
-       _t_instrSched,
-       _t_buildOopMaps,
-    _t_registerMethod,
+      _t_instrSched,
+      _t_shortenBranches,
+      _t_buildOopMaps,
+      _t_fillBuffer,
+      _t_registerMethod,
     _t_temporaryTimer1,
     _t_temporaryTimer2,
     max_phase_timers

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ import com.sun.jndi.ldap.LdapCtx;
  * @see SortControl
  * @author Vincent Ryan
  */
-final public class SortResponseControl extends BasicControl {
+public final class SortResponseControl extends BasicControl {
 
     /**
      * The server-side sort response control's assigned object identifier
@@ -109,7 +109,7 @@ final public class SortResponseControl extends BasicControl {
      * @param   value           The control's ASN.1 BER encoded value.
      *                          It is not cloned - any changes to value
      *                          will affect the contents of the control.
-     * @exception               IOException if an error is encountered
+     * @throws                  IOException if an error is encountered
      *                          while decoding the control's value.
      */
     public SortResponseControl(String id, boolean criticality, byte[] value)

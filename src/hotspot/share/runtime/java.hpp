@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,11 @@
 #define SHARE_RUNTIME_JAVA_HPP
 
 #include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class Handle;
+class JavaThread;
+class Symbol;
 
 // Execute code before all handles are released and thread is killed; prologue to vm_exit
 extern void before_exit(JavaThread * thread);
@@ -35,6 +40,7 @@ extern void vm_exit(int code);
 
 // Wrapper for ::exit()
 extern void vm_direct_exit(int code);
+extern void vm_direct_exit(int code, const char* message);
 
 // Shutdown the VM but do not exit the process
 extern void vm_shutdown();
@@ -65,6 +71,7 @@ class JDK_Version {
  private:
 
   static JDK_Version _current;
+  static const char* _java_version;
   static const char* _runtime_name;
   static const char* _runtime_version;
   static const char* _runtime_vendor_version;
@@ -130,32 +137,39 @@ class JDK_Version {
 
   void to_string(char* buffer, size_t buflen) const;
 
+  static const char* java_version() {
+    return _java_version;
+  }
+  static void set_java_version(const char* version) {
+    _java_version = os::strdup(version);
+  }
+
   static const char* runtime_name() {
     return _runtime_name;
   }
   static void set_runtime_name(const char* name) {
-    _runtime_name = name;
+    _runtime_name = os::strdup(name);
   }
 
   static const char* runtime_version() {
     return _runtime_version;
   }
   static void set_runtime_version(const char* version) {
-    _runtime_version = version;
+    _runtime_version = os::strdup(version);
   }
 
   static const char* runtime_vendor_version() {
     return _runtime_vendor_version;
   }
   static void set_runtime_vendor_version(const char* vendor_version) {
-    _runtime_vendor_version = vendor_version;
+    _runtime_vendor_version = os::strdup(vendor_version);
   }
 
   static const char* runtime_vendor_vm_bug_url() {
     return _runtime_vendor_vm_bug_url;
   }
   static void set_runtime_vendor_vm_bug_url(const char* vendor_vm_bug_url) {
-    _runtime_vendor_vm_bug_url = vendor_vm_bug_url;
+    _runtime_vendor_vm_bug_url = os::strdup(vendor_vm_bug_url);
   }
 
 };

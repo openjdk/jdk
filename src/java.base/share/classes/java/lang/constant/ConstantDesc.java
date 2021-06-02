@@ -57,8 +57,8 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
  * <p>Constants describing various common constants (such as {@link ClassDesc}
  * instances for platform types) can be found in {@link ConstantDescs}.
  *
- * <p>Implementations of {@linkplain ConstantDesc} must be
- * <a href="../doc-files/ValueBased.html">value-based</a> classes.
+ * <p>Implementations of {@linkplain ConstantDesc} should be immutable
+ * and their behavior should not rely on object identity.
  *
  * <p>Non-platform classes should not implement {@linkplain ConstantDesc} directly.
  * Instead, they should extend {@link DynamicConstantDesc} (as {@link EnumDesc}
@@ -68,15 +68,6 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
  * {@link Object#equals(Object)} method. There is no guarantee that any
  * particular entity will always be represented by the same descriptor instance.
  *
- * @apiNote In the future, if the Java language permits, {@linkplain ConstantDesc}
- * may become a {@code sealed} interface, which would prohibit subclassing except by
- * explicitly permitted types.  Clients can assume that the following
- * set of subtypes is exhaustive: {@link String}, {@link Integer},
- * {@link Long}, {@link Float}, {@link Double}, {@link ClassDesc},
- * {@link MethodTypeDesc}, {@link MethodHandleDesc}, and
- * {@link DynamicConstantDesc}; this list may be extended to reflect future
- * changes to the constant pool format as defined in JVMS 4.4.
- *
  * @see Constable
  * @see ConstantDescs
  *
@@ -84,7 +75,16 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
  *
  * @since 12
  */
-public interface ConstantDesc {
+public sealed interface ConstantDesc
+        permits ClassDesc,
+                MethodHandleDesc,
+                MethodTypeDesc,
+                Double,
+                DynamicConstantDesc,
+                Float,
+                Integer,
+                Long,
+                String {
     /**
      * Resolves this descriptor reflectively, emulating the resolution behavior
      * of JVMS 5.4.3 and the access control behavior of JVMS 5.4.4.  The resolution

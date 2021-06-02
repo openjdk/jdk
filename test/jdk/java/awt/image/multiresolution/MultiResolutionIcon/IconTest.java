@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+/*
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8147648 8163160
  * @summary [hidpi] multiresolution image: wrong resolution variant is used as
  * icon in the Unity panel
+ * @requires os.family == "linux"
  * @run main/manual/othervm -Dsun.java2d.uiScale=2 IconTest
  */
 import java.awt.Color;
@@ -33,7 +34,6 @@ import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BaseMultiResolutionImage;
@@ -58,6 +58,8 @@ public class IconTest {
     private static JButton testButton;
     private static JFrame f;
     private static CountDownLatch latch;
+
+    private static volatile boolean failed;
 
     private static BufferedImage generateImage(int scale, Color c) {
         int x = SZ * scale;
@@ -91,8 +93,10 @@ public class IconTest {
                 GridBagConstraints gbc = new GridBagConstraints();
                 String instructions
                         = "<html>INSTRUCTIONS:<br>"
-                        + "Check if test button icon and unity icon are both "
-                        + "blue with green border.<br><br>"
+                        + "Check if test button icon and unity icon<br>"
+                        + "(icon in a side dock, if present)<br>"
+                        + "are both blue with green border.<br><br>"
+                        + "NB: Icon in the top bar may be presented in grayscale.<br><br>"
                         + "If Icon color is blue press pass"
                         + " else press fail.<br><br></html>";
 
@@ -120,13 +124,10 @@ public class IconTest {
                 });
                 failButton = new JButton("Fail");
                 failButton.setActionCommand("Fail");
-                failButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        latch.countDown();
-                        f.dispose();
-                        throw new RuntimeException("Test Failed");
-                    }
+                failButton.addActionListener(e -> {
+                    failed = true;
+                    latch.countDown();
+                    f.dispose();
                 });
                 gbc.gridx = 1;
                 gbc.gridy = 0;
@@ -159,6 +160,10 @@ public class IconTest {
         latch = new CountDownLatch(1);
         createUI();
         latch.await();
+
+        if (failed) {
+            throw new RuntimeException("Test Failed");
+        }
     }
 }
 

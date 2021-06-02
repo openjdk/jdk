@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     private HotSpotConstantPool constantPool;
     private final JavaConstant mirror;
     private HotSpotResolvedObjectTypeImpl superClass;
+    private HotSpotResolvedJavaType componentType;
 
     /**
      * Managed exclusively by {@link HotSpotJDKReflection#getField}.
@@ -157,7 +158,14 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public ResolvedJavaType getComponentType() {
-        return runtime().compilerToVm.getComponentType(this);
+        if (componentType == null) {
+            if (isArray()) {
+                componentType = runtime().compilerToVm.getComponentType(this);
+            } else {
+                componentType = this;
+            }
+        }
+        return this.equals(componentType) ? null : componentType;
     }
 
     @Override
@@ -298,12 +306,12 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public HotSpotResolvedObjectTypeImpl getSupertype() {
-        if (isArray()) {
-            ResolvedJavaType componentType = getComponentType();
-            if (componentType.equals(getJavaLangObject()) || componentType.isPrimitive()) {
+        ResolvedJavaType component = getComponentType();
+        if (component != null) {
+            if (component.equals(getJavaLangObject()) || component.isPrimitive()) {
                 return getJavaLangObject();
             }
-            HotSpotResolvedObjectTypeImpl supertype = ((HotSpotResolvedObjectTypeImpl) componentType).getSupertype();
+            HotSpotResolvedObjectTypeImpl supertype = ((HotSpotResolvedObjectTypeImpl) component).getSupertype();
             return (HotSpotResolvedObjectTypeImpl) supertype.getArrayClass();
         }
         if (isInterface()) {
@@ -441,14 +449,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
-    public ResolvedJavaType getHostClass() {
-        if (isArray()) {
-            return null;
-        }
-        return compilerToVM().getHostClass(this);
-    }
-
-    @Override
     public boolean isJavaLangObject() {
         return getName().equals("Ljava/lang/Object;");
     }
@@ -470,6 +470,11 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         }
         if (!method.getDeclaringClass().isAssignableFrom(this)) {
             return null;
+        }
+        if (method.isConstructor()) {
+            // Constructor calls should have been checked in the verifier and method's
+            // declaring class is assignable from this (see above) so treat it as resolved.
+            return method;
         }
         HotSpotResolvedJavaMethodImpl hotSpotMethod = (HotSpotResolvedJavaMethodImpl) method;
         HotSpotResolvedObjectTypeImpl hotSpotCallerType = (HotSpotResolvedObjectTypeImpl) callerType;
@@ -1023,17 +1028,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return (getAccessFlags() & config().jvmAccIsCloneableFast) != 0;
     }
 
-    JavaConstant readFieldValue(HotSpotResolvedJavaField field, boolean isVolatile) {
-        return runtime().reflection.readFieldValue(this, field, isVolatile);
-    }
-
     private int getMiscFlags() {
         return UNSAFE.getInt(getMetaspaceKlass() + config().instanceKlassMiscFlagsOffset);
-    }
-
-    @Override
-    public boolean isUnsafeAnonymous() {
-        return (getMiscFlags() & config().instanceKlassMiscIsUnsafeAnonymous) != 0;
     }
 
 }

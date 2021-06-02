@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,24 +164,50 @@ public class ToolBox {
     }
 
     /**
-     * Filters a list of strings according to the given regular expression.
+     * Filters a list of strings according to the given regular expression,
+     * returning the strings that match the regular expression.
      * @param regex the regular expression
      * @param lines the strings to be filtered
      * @return the strings matching the regular expression
      */
     public List<String> grep(String regex, List<String> lines) {
-        return grep(Pattern.compile(regex), lines);
+        return grep(Pattern.compile(regex), lines, true);
     }
 
     /**
-     * Filters a list of strings according to the given regular expression.
+     * Filters a list of strings according to the given regular expression,
+     * returning the strings that match the regular expression.
      * @param pattern the regular expression
      * @param lines the strings to be filtered
      * @return the strings matching the regular expression
      */
     public List<String> grep(Pattern pattern, List<String> lines) {
+        return grep(pattern, lines, true);
+    }
+
+    /**
+     * Filters a list of strings according to the given regular expression,
+     * returning either the strings that match or the strings that do not match.
+     * @param regex the regular expression
+     * @param lines the strings to be filtered
+     * @param match if true, return the lines that match; otherwise if false, return the lines that do not match.
+     * @return the strings matching(or not matching) the regular expression
+     */
+    public List<String> grep(String regex, List<String> lines, boolean match) {
+        return grep(Pattern.compile(regex), lines, match);
+    }
+
+    /**
+     * Filters a list of strings according to the given regular expression,
+     * returning either the strings that match or the strings that do not match.
+     * @param pattern the regular expression
+     * @param lines the strings to be filtered
+     * @param match if true, return the lines that match; otherwise if false, return the lines that do not match.
+     * @return the strings matching(or not matching) the regular expression
+     */
+    public List<String> grep(Pattern pattern, List<String> lines, boolean match) {
         return lines.stream()
-                .filter(s -> pattern.matcher(s).find())
+                .filter(s -> pattern.matcher(s).find() == match)
                 .collect(Collectors.toList());
     }
 
@@ -676,12 +702,15 @@ public class ToolBox {
                 return "module-info.java";
 
             matcher = packagePattern.matcher(source);
-            if (matcher.find())
+            if (matcher.find()) {
                 packageName = matcher.group(1).replace(".", "/");
+                validateName(packageName);
+            }
 
             matcher = classPattern.matcher(source);
             if (matcher.find()) {
                 String className = matcher.group(1) + ".java";
+                validateName(className);
                 return (packageName == null) ? className : packageName + "/" + className;
             } else if (packageName != null) {
                 return packageName + "/package-info.java";
@@ -706,6 +735,24 @@ public class ToolBox {
         return JavaSource.getJavaFileNameFromSource(source);
     }
 
+    private static final Set<String> RESERVED_NAMES = Set.of(
+        "con", "prn", "aux", "nul",
+        "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8",  "com9",
+        "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8",  "lpt9"
+    );
+
+    /**Validate if a given name is a valid file name
+     * or path name on known platforms.
+     */
+    public static void validateName(String name) {
+        for (String part : name.split("\\.|/|\\\\")) {
+            if (RESERVED_NAMES.contains(part.toLowerCase(Locale.US))) {
+                throw new IllegalArgumentException("Name: " + name + " is" +
+                                                   "a reserved name on Windows, " +
+                                                   "and will not work!");
+            }
+        }
+    }
     /**
      * A memory file manager, for saving generated files in memory.
      * The file manager delegates to a separate file manager for listing and

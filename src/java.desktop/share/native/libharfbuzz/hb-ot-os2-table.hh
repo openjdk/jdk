@@ -30,6 +30,7 @@
 
 #include "hb-open-type.hh"
 #include "hb-ot-os2-unicode-ranges.hh"
+#include "hb-ot-cmap-table.hh"
 
 #include "hb-set.hh"
 
@@ -59,6 +60,10 @@ struct OS2V1Tail
 
 struct OS2V2Tail
 {
+  bool has_data () const { return sxHeight || sCapHeight; }
+
+  const OS2V2Tail * operator -> () const { return this; }
+
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
@@ -77,6 +82,23 @@ struct OS2V2Tail
 
 struct OS2V5Tail
 {
+  inline bool get_optical_size (unsigned int *lower, unsigned int *upper) const
+  {
+    unsigned int lower_optical_size = usLowerOpticalPointSize;
+    unsigned int upper_optical_size = usUpperOpticalPointSize;
+
+    /* Per https://docs.microsoft.com/en-us/typography/opentype/spec/os2#lps */
+    if (lower_optical_size < upper_optical_size &&
+        lower_optical_size >= 1 && lower_optical_size <= 0xFFFE &&
+        upper_optical_size >= 2 && upper_optical_size <= 0xFFFF)
+    {
+      *lower = lower_optical_size;
+      *upper = upper_optical_size;
+      return true;
+    }
+    return false;
+  }
+
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
@@ -94,7 +116,7 @@ struct OS2
 {
   static constexpr hb_tag_t tableTag = HB_OT_TAG_OS2;
 
-  bool has_data () const { return this != &Null (OS2); }
+  bool has_data () const { return usWeightClass || usWidthClass || usFirstCharIndex || usLastCharIndex; }
 
   const OS2V1Tail &v1 () const { return version >= 1 ? v1X : Null (OS2V1Tail); }
   const OS2V2Tail &v2 () const { return version >= 2 ? v2X : Null (OS2V2Tail); }
@@ -113,9 +135,9 @@ struct OS2
     OBLIQUE             = 1u<<9
   };
 
-  bool is_italic () const       { return fsSelection & ITALIC; }
-  bool is_oblique () const      { return fsSelection & OBLIQUE; }
-  bool is_typo_metrics () const { return fsSelection & USE_TYPO_METRICS; }
+  bool        is_italic () const { return fsSelection & ITALIC; }
+  bool       is_oblique () const { return fsSelection & OBLIQUE; }
+  bool use_typo_metrics () const { return fsSelection & USE_TYPO_METRICS; }
 
   enum width_class_t {
     FWIDTH_ULTRA_CONDENSED      = 1, /* 50% */
@@ -145,36 +167,48 @@ struct OS2
     }
   }
 
-  bool subset (hb_subset_plan_t *plan) const
+  bool subset (hb_subset_context_t *c) const
   {
-    hb_blob_t *os2_blob = hb_sanitize_context_t ().reference_table<OS2> (plan->source);
-    hb_blob_t *os2_prime_blob = hb_blob_create_sub_blob (os2_blob, 0, -1);
-    // TODO(grieger): move to hb_blob_copy_writable_or_fail
-    hb_blob_destroy (os2_blob);
+    TRACE_SUBSET (this);
+    OS2 *os2_prime = c->serializer->embed (this);
+    if (unlikely (!os2_prime)) return_trace (false);
 
-    OS2 *os2_prime = (OS2 *) hb_blob_get_data_writable (os2_prime_blob, nullptr);
-    if (unlikely (!os2_prime)) {
-      hb_blob_destroy (os2_prime_blob);
-      return false;
+    hb_set_t unicodes;
+    if (!c->plan->glyphs_requested->is_empty ())
+    {
+      hb_map_t unicode_glyphid_map;
+
+      OT::cmap::accelerator_t cmap;
+      cmap.init (c->plan->source);
+      cmap.collect_mapping (&unicodes, &unicode_glyphid_map);
+      cmap.fini ();
+
+      hb_set_set (&unicodes, c->plan->unicodes);
+
+      + unicode_glyphid_map.iter ()
+      | hb_filter (c->plan->glyphs_requested, hb_second)
+      | hb_map (hb_first)
+      | hb_sink (unicodes)
+      ;
     }
-
+    /* when --gids option is not used, no need to do collect_mapping that is
+       * iterating all codepoints in each subtable, which is not efficient */
     uint16_t min_cp, max_cp;
-    find_min_and_max_codepoint (plan->unicodes, &min_cp, &max_cp);
-    os2_prime->usFirstCharIndex.set (min_cp);
-    os2_prime->usLastCharIndex.set (max_cp);
+    find_min_and_max_codepoint (unicodes.is_empty () ? c->plan->unicodes : &unicodes, &min_cp, &max_cp);
+    os2_prime->usFirstCharIndex = min_cp;
+    os2_prime->usLastCharIndex = max_cp;
 
-    _update_unicode_ranges (plan->unicodes, os2_prime->ulUnicodeRange);
-    bool result = plan->add_table (HB_OT_TAG_OS2, os2_prime_blob);
+    _update_unicode_ranges (unicodes.is_empty () ? c->plan->unicodes : &unicodes, os2_prime->ulUnicodeRange);
 
-    hb_blob_destroy (os2_prime_blob);
-    return result;
+    return_trace (true);
   }
 
   void _update_unicode_ranges (const hb_set_t *codepoints,
                                HBUINT32 ulUnicodeRange[4]) const
   {
+    HBUINT32    newBits[4];
     for (unsigned int i = 0; i < 4; i++)
-      ulUnicodeRange[i].set (0);
+      newBits[i] = 0;
 
     hb_codepoint_t cp = HB_SET_VALUE_INVALID;
     while (codepoints->next (&cp)) {
@@ -184,39 +218,51 @@ struct OS2
         unsigned int block = bit / 32;
         unsigned int bit_in_block = bit % 32;
         unsigned int mask = 1 << bit_in_block;
-        ulUnicodeRange[block].set (ulUnicodeRange[block] | mask);
+        newBits[block] = newBits[block] | mask;
       }
       if (cp >= 0x10000 && cp <= 0x110000)
       {
         /* the spec says that bit 57 ("Non Plane 0") implies that there's
            at least one codepoint beyond the BMP; so I also include all
            the non-BMP codepoints here */
-        ulUnicodeRange[1].set (ulUnicodeRange[1] | (1 << 25));
+        newBits[1] = newBits[1] | (1 << 25);
       }
     }
+
+    for (unsigned int i = 0; i < 4; i++)
+      ulUnicodeRange[i] = ulUnicodeRange[i] & newBits[i]; // set bits only if set in the original
   }
 
   static void find_min_and_max_codepoint (const hb_set_t *codepoints,
-                                                 uint16_t *min_cp, /* OUT */
-                                                 uint16_t *max_cp  /* OUT */)
+                                          uint16_t *min_cp, /* OUT */
+                                          uint16_t *max_cp  /* OUT */)
   {
-    *min_cp = codepoints->get_min ();
-    *max_cp = codepoints->get_max ();
+    *min_cp = hb_min (0xFFFFu, codepoints->get_min ());
+    *max_cp = hb_min (0xFFFFu, codepoints->get_max ());
   }
 
-  enum font_page_t {
-    HEBREW_FONT_PAGE            = 0xB100, // Hebrew Windows 3.1 font page
-    SIMP_ARABIC_FONT_PAGE       = 0xB200, // Simplified Arabic Windows 3.1 font page
-    TRAD_ARABIC_FONT_PAGE       = 0xB300, // Traditional Arabic Windows 3.1 font page
-    OEM_ARABIC_FONT_PAGE        = 0xB400, // OEM Arabic Windows 3.1 font page
-    SIMP_FARSI_FONT_PAGE        = 0xBA00, // Simplified Farsi Windows 3.1 font page
-    TRAD_FARSI_FONT_PAGE        = 0xBB00, // Traditional Farsi Windows 3.1 font page
-    THAI_FONT_PAGE              = 0xDE00  // Thai Windows 3.1 font page
+  /* https://github.com/Microsoft/Font-Validator/blob/520aaae/OTFontFileVal/val_OS2.cs#L644-L681 */
+  enum font_page_t
+  {
+    FONT_PAGE_HEBREW            = 0xB100, /* Hebrew Windows 3.1 font page */
+    FONT_PAGE_SIMP_ARABIC       = 0xB200, /* Simplified Arabic Windows 3.1 font page */
+    FONT_PAGE_TRAD_ARABIC       = 0xB300, /* Traditional Arabic Windows 3.1 font page */
+    FONT_PAGE_OEM_ARABIC        = 0xB400, /* OEM Arabic Windows 3.1 font page */
+    FONT_PAGE_SIMP_FARSI        = 0xBA00, /* Simplified Farsi Windows 3.1 font page */
+    FONT_PAGE_TRAD_FARSI        = 0xBB00, /* Traditional Farsi Windows 3.1 font page */
+    FONT_PAGE_THAI              = 0xDE00  /* Thai Windows 3.1 font page */
   };
-
-  // https://github.com/Microsoft/Font-Validator/blob/520aaae/OTFontFileVal/val_OS2.cs#L644-L681
   font_page_t get_font_page () const
   { return (font_page_t) (version == 0 ? fsSelection & 0xFF00 : 0); }
+
+  unsigned get_size () const
+  {
+    unsigned result = min_size;
+    if (version >= 1) result += v1X.get_size ();
+    if (version >= 2) result += v2X.get_size ();
+    if (version >= 5) result += v5X.get_size ();
+    return result;
+  }
 
   bool sanitize (hb_sanitize_context_t *c) const
   {

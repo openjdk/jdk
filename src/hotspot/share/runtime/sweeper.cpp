@@ -158,8 +158,7 @@ public:
   NMethodMarkingClosure(CodeBlobClosure* cl) : HandshakeClosure("NMethodMarking"), _cl(cl) {}
   void do_thread(Thread* thread) {
     if (thread->is_Java_thread() && ! thread->is_Code_cache_sweeper_thread()) {
-      JavaThread* jt = (JavaThread*) thread;
-      jt->nmethods_do(_cl);
+      thread->as_Java_thread()->nmethods_do(_cl);
     }
   }
 };
@@ -274,7 +273,6 @@ void NMethodSweeper::handle_safepoint_request() {
     MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     ThreadBlockInVM tbivm(thread);
-    thread->java_suspend_self();
   }
 }
 

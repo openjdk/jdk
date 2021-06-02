@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,9 +399,15 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReturn(ReturnTree node, Void p) {
         try {
+            if (node.isInline()) {
+                print("{");
+            }
             printTagName(node);
             print(" ");
             print(node.getDescription());
+            if (node.isInline()) {
+                print("}");
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -494,8 +500,8 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
                 print(" ");
                 print(attrs, " ");
                 DocTree last = node.getAttributes().get(attrs.size() - 1);
-                if (node.isSelfClosing() && last instanceof AttributeTree
-                        && ((AttributeTree) last).getValueKind() == ValueKind.UNQUOTED)
+                if (node.isSelfClosing() && last instanceof AttributeTree attributeTree
+                        && attributeTree.getValueKind() == ValueKind.UNQUOTED)
                     print(" ");
             }
             if (node.isSelfClosing())

@@ -45,7 +45,7 @@ import java.util.function.BiFunction;
 /* package */ class IndirectVarHandle extends VarHandle {
 
     @Stable
-    private final MethodHandle[] handleMap = new MethodHandle[AccessMode.values().length];
+    private final MethodHandle[] handleMap = new MethodHandle[AccessMode.COUNT];
     private final VarHandle directTarget; // cache, for performance reasons
     private final VarHandle target;
     private final BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory;
@@ -53,7 +53,12 @@ import java.util.function.BiFunction;
     private final Class<?>[] coordinates;
 
     IndirectVarHandle(VarHandle target, Class<?> value, Class<?>[] coordinates, BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory) {
-        super(new VarForm(value, coordinates));
+        this(target, value, coordinates, handleFactory, new VarForm(value, coordinates), false);
+    }
+
+    private IndirectVarHandle(VarHandle target, Class<?> value, Class<?>[] coordinates,
+                      BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory, VarForm form, boolean exact) {
+        super(form, exact);
         this.handleFactory = handleFactory;
         this.target = target;
         this.directTarget = target.asDirect();
@@ -72,8 +77,8 @@ import java.util.function.BiFunction;
     }
 
     @Override
-    MethodType accessModeTypeUncached(AccessMode accessMode) {
-        return accessMode.at.accessModeType(directTarget.getClass(), value, coordinates);
+    MethodType accessModeTypeUncached(AccessType at) {
+        return at.accessModeType(null, value, coordinates);
     }
 
     @Override
@@ -88,6 +93,20 @@ import java.util.function.BiFunction;
 
     VarHandle target() {
         return target;
+    }
+
+    @Override
+    public VarHandle withInvokeExactBehavior() {
+        return hasInvokeExactBehavior()
+            ? this
+            : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, true);
+    }
+
+    @Override
+    public VarHandle withInvokeBehavior() {
+        return !hasInvokeExactBehavior()
+            ? this
+            : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, false);
     }
 
     @Override

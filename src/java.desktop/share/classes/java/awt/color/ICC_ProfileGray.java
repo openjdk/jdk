@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@
 
 package java.awt.color;
 
+import java.io.Serial;
+
 import sun.java2d.cmm.Profile;
 import sun.java2d.cmm.ProfileDeferralInfo;
 
@@ -48,9 +50,8 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * this kind of profile are monochrome input profiles, monochrome display
  * profiles, and monochrome output profiles.
  * <p>
- * The advantage of this class is that it provides a lookup table that Java
- * or native methods can use directly to optimize color conversion in some
- * cases.
+ * The advantage of this class is that it provides a lookup table that Java or
+ * native methods can use directly to optimize color conversion in some cases.
  * <p>
  * To transform from a GRAY device profile color space to the CIEXYZ Profile
  * Connection Space, the device gray component is transformed by a lookup
@@ -64,13 +65,13 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * The inverse transform is done by converting the PCS Y components to device
  * Gray via the inverse of the grayTRC.
  */
-public class ICC_ProfileGray
-extends ICC_Profile {
+public class ICC_ProfileGray extends ICC_Profile {
 
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.
      */
-    static final long serialVersionUID = -1124721290732002649L;
+    @Serial
+    private static final long serialVersionUID = -1124721290732002649L;
 
     /**
      * Constructs a new {@code ICC_ProfileGray} from a CMM ID.
@@ -116,10 +117,7 @@ extends ICC_Profile {
      *         single gamma value
      */
     public float getGamma() {
-    float theGamma;
-
-        theGamma = super.getGamma(ICC_Profile.icSigGrayTRCTag);
-        return theGamma;
+        return getGamma(ICC_Profile.icSigGrayTRCTag);
     }
 
     /**
@@ -141,10 +139,6 @@ extends ICC_Profile {
      *         table
      */
     public short[] getTRC() {
-    short[]    theTRC;
-
-        theTRC = super.getTRC(ICC_Profile.icSigGrayTRCTag);
-        return theTRC;
+        return getTRC(ICC_Profile.icSigGrayTRCTag);
     }
-
 }

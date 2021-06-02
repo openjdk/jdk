@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import sun.rmi.server.Util;
  *
  * @author Ann Wollrath
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"removal","deprecation"})
 final class DGCImpl implements DGC {
 
     /* dgc system log */
@@ -382,7 +382,7 @@ final class DGCImpl implements DGC {
         if (dgcFilter != null) {
             ObjectInputFilter.Status status = dgcFilter.checkInput(filterInfo);
             if (status != ObjectInputFilter.Status.UNDECIDED) {
-                // The DGC filter can override the built-in white-list
+                // The DGC filter can override the built-in allow-list
                 return status;
             }
         }

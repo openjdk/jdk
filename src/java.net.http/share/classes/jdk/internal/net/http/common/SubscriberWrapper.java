@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public abstract class SubscriberWrapper
     private final CompletableFuture<Void> cf;
     private final SequentialScheduler pushScheduler;
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
-    final AtomicLong upstreamWindow = new AtomicLong(0);
+    final AtomicLong upstreamWindow = new AtomicLong();
 
     /**
      * Wraps the given downstream subscriber. For each call to {@link
@@ -96,7 +96,7 @@ public abstract class SubscriberWrapper
                 errorCommon(t);
         });
         this.pushScheduler =
-                SequentialScheduler.synchronizedScheduler(new DownstreamPusher());
+                SequentialScheduler.lockingScheduler(new DownstreamPusher());
         this.downstreamSubscription = new SubscriptionBase(pushScheduler,
                                                            this::downstreamCompletion);
     }

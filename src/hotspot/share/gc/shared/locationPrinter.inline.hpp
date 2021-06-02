@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_LOCATIONPRINTER_INLINE_HPP
 
 #include "gc/shared/locationPrinter.hpp"
+
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 
@@ -33,7 +34,7 @@ template <typename CollectedHeapT>
 oop BlockLocationPrinter<CollectedHeapT>::base_oop_or_null(void* addr) {
   if (is_valid_obj(addr)) {
     // We were just given an oop directly.
-    return oop(addr);
+    return cast_to_oop(addr);
   }
 
   // Try to find addr using block_start.
@@ -42,7 +43,7 @@ oop BlockLocationPrinter<CollectedHeapT>::base_oop_or_null(void* addr) {
     if (!is_valid_obj(p)) {
       return NULL;
     }
-    return oop(p);
+    return cast_to_oop(p);
   }
 
   return NULL;
@@ -70,11 +71,12 @@ bool BlockLocationPrinter<CollectedHeapT>::print_location(outputStream* st, void
   // Compressed oop needs to be decoded first.
 #ifdef _LP64
   if (UseCompressedOops && ((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
-    narrowOop narrow_oop = (narrowOop)(uintptr_t)addr;
+    narrowOop narrow_oop = CompressedOops::narrow_oop_cast((uintptr_t)addr);
     oop o = CompressedOops::decode_raw(narrow_oop);
 
     if (is_valid_obj(o)) {
-      st->print(UINT32_FORMAT " is a compressed pointer to object: ", narrow_oop);
+      st->print(UINT32_FORMAT " is a compressed pointer to object: ",
+                CompressedOops::narrow_oop_value(narrow_oop));
       o->print_on(st);
       return true;
     }

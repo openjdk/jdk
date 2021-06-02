@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.javadoc.internal.doclets.toolkit.builders;
 
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -38,6 +37,7 @@ import javax.lang.model.util.ElementFilter;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
+import com.sun.source.doctree.SinceTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -45,6 +45,7 @@ import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 
@@ -165,15 +166,6 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * Returns true if there are members of the given kind, false otherwise.
-     * @param kind
-     * @return true if there are members of the given kind, false otherwise
-     */
-    public boolean hasMembers(VisibleMemberTable.Kind kind) {
-        return !getVisibleMembers(kind).isEmpty();
-    }
-
-    /**
      * Builds the summary for any optional members of an annotation type.
      *
      * @param summariesList the list of summaries to which the summary will be added
@@ -229,8 +221,8 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
      * @param summariesList the list of summaries to which the summary will be added
      */
     protected void buildNestedClassesSummary(Content summariesList) {
-        MemberSummaryWriter writer = memberSummaryWriters.get(INNER_CLASSES);
-        addSummary(writer, INNER_CLASSES, true, summariesList);
+        MemberSummaryWriter writer = memberSummaryWriters.get(NESTED_CLASSES);
+        addSummary(writer, NESTED_CLASSES, true, summariesList);
     }
 
     /**
@@ -324,8 +316,8 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 fullBody.addAll(cmtutils.makeFirstSentenceTree(text));
             }
             List<? extends DocTree> propertyTags = utils.getBlockTags(property,
-                    t -> (t instanceof UnknownBlockTagTree)
-                            && ((UnknownBlockTagTree) t).getTagName().equals("propertyDescription"));
+                    t -> (t instanceof UnknownBlockTagTree tree)
+                            && (tree.getTagName().equals("propertyDescription")));
             if (propertyTags.isEmpty()) {
                 List<? extends DocTree> comment = utils.getFullBody(property);
                 blockTags.addAll(cmtutils.makePropertyDescriptionTree(comment));
@@ -335,12 +327,12 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
         }
 
         // copy certain tags
-        List<? extends DocTree> tags = utils.getBlockTags(property, Kind.SINCE);
+        List<? extends SinceTree> tags = utils.getBlockTags(property, Kind.SINCE, SinceTree.class);
         blockTags.addAll(tags);
 
         List<? extends DocTree> bTags = utils.getBlockTags(property,
-                t -> (t instanceof UnknownBlockTagTree)
-                        && ((UnknownBlockTagTree) t).getTagName().equals("defaultValue"));
+                t -> (t instanceof UnknownBlockTagTree tree)
+                        && (tree.getTagName().equals("defaultValue")));
         blockTags.addAll(bTags);
 
         //add @see tags
@@ -407,10 +399,14 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             if (inheritedClass == typeElement) {
                 continue;
             }
+            if (utils.hasHiddenTag(inheritedClass)) {
+                continue;
+            }
 
-            List<Element> members = inheritedMembersFromMap.stream()
+            List<? extends Element> members = inheritedMembersFromMap.stream()
                     .filter(e -> utils.getEnclosingTypeElement(e) == inheritedClass)
-                    .collect(Collectors.toList());
+                    .toList();
+
             if (!members.isEmpty()) {
                 SortedSet<Element> inheritedMembers = new TreeSet<>(comparator);
                 inheritedMembers.addAll(members);
@@ -506,7 +502,10 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             if (null == propertyMethod || null == commentSource) {
                 return;
             }
-            DocCommentTree docTree = builder.utils.getDocCommentTree(propertyMethod);
+            Utils utils = builder.utils;
+            DocCommentTree docTree = utils.hasDocCommentTree(propertyMethod)
+                    ? utils.getDocCommentTree(propertyMethod)
+                    : null;
 
             /* The second condition is required for the property buckets. In
              * this case the comment is at the property method (not at the field)

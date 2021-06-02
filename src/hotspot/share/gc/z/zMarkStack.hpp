@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,12 +64,17 @@ public:
 
   void push(T* stack);
   T* pop();
+
+  void clear();
 };
 
-typedef ZStack<ZMarkStackEntry, ZMarkStackSlots>     ZMarkStack;
-typedef ZStackList<ZMarkStack>                       ZMarkStackList;
-typedef ZStack<ZMarkStack*, ZMarkStackMagazineSlots> ZMarkStackMagazine;
-typedef ZStackList<ZMarkStackMagazine>               ZMarkStackMagazineList;
+using ZMarkStack = ZStack<ZMarkStackEntry, ZMarkStackSlots>;
+using ZMarkStackList = ZStackList<ZMarkStack>;
+using ZMarkStackMagazine = ZStack<ZMarkStack*, ZMarkStackMagazineSlots>;
+using ZMarkStackMagazineList = ZStackList<ZMarkStackMagazine>;
+
+static_assert(sizeof(ZMarkStack) == ZMarkStackSize, "ZMarkStack size mismatch");
+static_assert(sizeof(ZMarkStackMagazine) <= ZMarkStackSize, "ZMarkStackMagazine size too large");
 
 class ZMarkStripe {
 private:
@@ -135,6 +140,9 @@ public:
   void install(ZMarkStripeSet* stripes,
                ZMarkStripe* stripe,
                ZMarkStack* stack);
+
+  ZMarkStack* steal(ZMarkStripeSet* stripes,
+                    ZMarkStripe* stripe);
 
   bool push(ZMarkStackAllocator* allocator,
             ZMarkStripeSet* stripes,

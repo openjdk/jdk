@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @run main/othervm WithSecurityManager allow
- * @run main/othervm WithSecurityManager deny
+ * @run main/othervm -Djava.security.manager=allow WithSecurityManager allow
+ * @run main/othervm -Djava.security.manager=allow WithSecurityManager deny
  */
 
 import java.net.URI;

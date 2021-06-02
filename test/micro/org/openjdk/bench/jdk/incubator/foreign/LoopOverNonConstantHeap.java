@@ -22,15 +22,17 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import jdk.incubator.foreign.MemoryAddress;
+import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
@@ -38,6 +40,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
 import java.lang.invoke.VarHandle;
+import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +53,7 @@ import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(3)
+@Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign" })
 public class LoopOverNonConstantHeap {
 
     static final Unsafe unsafe = Utils.unsafe;
@@ -60,25 +63,38 @@ public class LoopOverNonConstantHeap {
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
     static final int UNSAFE_BYTE_BASE = unsafe.arrayBaseOffset(byte[].class);
 
-    static final VarHandle VH_int = MemoryLayout.ofSequence(JAVA_INT).varHandle(int.class, sequenceElement());
+    static final VarHandle VH_int = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(int.class, sequenceElement());
     MemorySegment segment;
     byte[] base;
 
     ByteBuffer byteBuffer;
 
+    @Param(value = {"false", "true"})
+    boolean polluteProfile;
+
     @Setup
     public void setup() {
+        if (polluteProfile) {
+            MemorySegment intB = MemorySegment.ofArray(new byte[ALLOC_SIZE]);
+            MemorySegment intI = MemorySegment.ofArray(new int[ALLOC_SIZE]);
+            MemorySegment intD = MemorySegment.ofArray(new double[ALLOC_SIZE]);
+            MemorySegment intF = MemorySegment.ofArray(new float[ALLOC_SIZE]);
+            MemorySegment s = MemorySegment.allocateNative(ALLOC_SIZE, 1, ResourceScope.newConfinedScope(Cleaner.create()));
+            for (int i = 0; i < ALLOC_SIZE; i++) {
+                MemoryAccess.setByteAtOffset(intB, i, (byte)i);
+                MemoryAccess.setIntAtIndex(intI, i, i);
+                MemoryAccess.setDoubleAtIndex(intD, i, i);
+                MemoryAccess.setFloatAtIndex(intF, i, i);
+                MemoryAccess.setByteAtOffset(s, i, (byte) i);
+            }
+        }
+
         base = new byte[ALLOC_SIZE];
         for (int i = 0; i < ELEM_SIZE; i++) {
             unsafe.putInt(base, UNSAFE_BYTE_BASE + (i * CARRIER_SIZE) , i);
         }
         segment = MemorySegment.ofArray(base);
         byteBuffer = ByteBuffer.wrap(base).order(ByteOrder.nativeOrder());
-    }
-
-    @TearDown
-    public void tearDown() {
-        segment.close();
     }
 
     @Benchmark
@@ -90,7 +106,7 @@ public class LoopOverNonConstantHeap {
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public int segment_get() {
-        return (int) VH_int.get(segment.baseAddress(), 0L);
+        return (int) VH_int.get(segment, 0L);
     }
 
     @Benchmark
@@ -111,17 +127,25 @@ public class LoopOverNonConstantHeap {
     @Benchmark
     public int segment_loop() {
         int sum = 0;
-        MemoryAddress base = segment.baseAddress();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int.get(base, (long) i);
+            sum += (int) VH_int.get(segment, (long) i);
         }
         return sum;
     }
 
     @Benchmark
+    public int segment_loop_static() {
+        int res = 0;
+        for (int i = 0; i < ELEM_SIZE; i ++) {
+            res += MemoryAccess.getIntAtIndex(segment, i);
+        }
+        return res;
+    }
+
+    @Benchmark
     public int segment_loop_slice() {
         int sum = 0;
-        MemoryAddress base = segment.asSlice(0, segment.byteSize()).baseAddress();
+        MemorySegment base = segment.asSlice(0, segment.byteSize());
         for (int i = 0; i < ELEM_SIZE; i++) {
             sum += (int) VH_int.get(base, (long) i);
         }
@@ -131,7 +155,7 @@ public class LoopOverNonConstantHeap {
     @Benchmark
     public int segment_loop_readonly() {
         int sum = 0;
-        MemoryAddress base = segment.withAccessModes(MemorySegment.READ).baseAddress();
+        MemorySegment base = segment.asReadOnly();
         for (int i = 0; i < ELEM_SIZE; i++) {
             sum += (int) VH_int.get(base, (long) i);
         }

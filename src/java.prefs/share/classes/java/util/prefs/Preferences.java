@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ import java.lang.Double;
  * <ol>
  *
  * <li><p>If the system property
- * {@code java.util.prefs.PreferencesFactory} is defined, then it is
+ * {@systemProperty java.util.prefs.PreferencesFactory} is defined, then it is
  * taken to be the fully-qualified name of a class implementing the
  * {@code PreferencesFactory} interface.  The class is loaded and
  * instantiated; if this process fails then an unspecified error is
@@ -225,6 +225,7 @@ public abstract class Preferences {
 
     private static final PreferencesFactory factory = factory();
 
+    @SuppressWarnings("removal")
     private static PreferencesFactory factory() {
         // 1. Try user-specified system property
         String factoryName = AccessController.doPrivileged(
@@ -450,6 +451,7 @@ public abstract class Preferences {
      * @see    RuntimePermission
      */
     public static Preferences userRoot() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null)
             security.checkPermission(prefsPerm);
@@ -466,6 +468,7 @@ public abstract class Preferences {
      * @see    RuntimePermission
      */
     public static Preferences systemRoot() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null)
             security.checkPermission(prefsPerm);

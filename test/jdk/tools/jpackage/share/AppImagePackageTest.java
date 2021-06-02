@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,14 @@
  */
 
 import java.nio.file.Path;
+import java.nio.file.Files;
+import java.io.IOException;
+import java.util.List;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.Annotations.Test;
 
 /**
@@ -40,7 +45,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @library ../helpers
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile AppImagePackageTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppImagePackageTest
@@ -60,5 +65,40 @@ public class AppImagePackageTest {
             cmd.addArguments("--app-image", appImageCmd.outputBundle());
             cmd.removeArgumentWithValue("--input");
         }).addBundleDesktopIntegrationVerifier(false).run();
+    }
+
+    @Test
+    @Parameter("true")
+    @Parameter("false")
+    public static void testEmpty(boolean withIcon) throws IOException {
+        final String name = "EmptyAppImagePackageTest";
+        final String imageName = name + (TKit.isOSX() ? ".app" : "");
+        Path appImageDir = TKit.createTempDirectory(null).resolve(imageName);
+
+        Files.createDirectories(appImageDir.resolve("bin"));
+        Path libDir = Files.createDirectories(appImageDir.resolve("lib"));
+        TKit.createTextFile(libDir.resolve("README"),
+                List.of("This is some arbitrary text for the README file\n"));
+
+        new PackageTest()
+        .addInitializer(cmd -> {
+            cmd.addArguments("--app-image", appImageDir);
+            if (withIcon) {
+                cmd.addArguments("--icon", iconPath("icon"));
+            }
+            cmd.removeArgumentWithValue("--input");
+
+            // on mac, with --app-image and without --mac-package-identifier,
+            // will try to infer it from the image, so foreign image needs it.
+            if (TKit.isOSX()) {
+                cmd.addArguments("--mac-package-identifier", name);
+            }
+        }).run(Action.CREATE, Action.UNPACK);
+        // default: {CREATE, UNPACK, VERIFY}, but we can't verify foreign image
+    }
+
+    private static Path iconPath(String name) {
+        return TKit.TEST_SRC_ROOT.resolve(Path.of("resources", name
+                + TKit.ICON_SUFFIX));
     }
 }

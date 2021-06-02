@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8231827
  * @summary Basic pattern bindings scope test
- * @compile/fail/ref=DuplicateBindingTest.out -XDrawDiagnostics --enable-preview -source ${jdk.version} DuplicateBindingTest.java
+ * @compile/fail/ref=DuplicateBindingTest.out -XDrawDiagnostics DuplicateBindingTest.java
  */
 
 public class DuplicateBindingTest {
@@ -10,17 +10,17 @@ public class DuplicateBindingTest {
     int f;
 
     public static boolean main(String[] args) {
+        Object o1 = "";
+        Object o2 = "";
 
         if (args != null) {
             int s;
-            if (args[0] instanceof String s) { // NOT OK. Redef same scope.
+            if (o1 instanceof String s) { // NOT OK. Redef same scope.
             }
-            if (args[0] instanceof String f) { // OK to redef field.
+            if (o1 instanceof String f) { // OK to redef field.
             }
         }
 
-        Object o1 = "";
-        Object o2 = "";
 
         if (o1 instanceof String s && o2 instanceof String s) {} //error - already in scope on RHS (in scope due to LHS when true)
         if (o1 instanceof String s && !(o2 instanceof String s)) {} //error - already in scope on RHS (in scope due to LHS when true)

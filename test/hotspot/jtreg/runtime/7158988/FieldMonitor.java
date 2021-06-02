@@ -24,6 +24,7 @@
 /*
  * @test FieldMonitor.java
  * @bug 7158988
+ * @requires vm.jvmti
  * @summary verify jvm does not crash while debugging
  * @run compile TestPostFieldModification.java
  * @run main/othervm FieldMonitor

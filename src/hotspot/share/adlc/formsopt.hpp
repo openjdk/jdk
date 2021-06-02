@@ -334,10 +334,8 @@ private:
 
 public:
   // Public Data
-  bool  _direction;                // Direction of stack growth
   char *_sync_stack_slots;
   char *_inline_cache_reg;
-  char *_interpreter_method_oop_reg;
   char *_interpreter_frame_pointer_reg;
   char *_cisc_spilling_operand_name;
   char *_frame_pointer;
@@ -347,10 +345,7 @@ public:
   bool  _c_return_addr_loc;
   char *_return_addr;
   char *_c_return_addr;
-  char *_in_preserve_slots;
   char *_varargs_C_out_slots_killed;
-  char *_calling_convention;
-  char *_c_calling_convention;
   char *_return_value;
   char *_c_return_value;
 

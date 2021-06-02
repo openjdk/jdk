@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,16 @@
  *     /test/hotspot/jtreg/testlibrary/jvmti
  * @requires vm.cds
  * @requires !vm.graal.enabled
+ * @requires vm.jvmti
  * @build TransformUtil TransformerAgent ParallelLoad
  * @run driver ParallelLoadAndTransformTest
  */
+
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class ParallelLoadAndTransformTest {
 

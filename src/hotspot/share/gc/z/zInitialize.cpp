@@ -50,7 +50,8 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
   ZThreadLocalAllocBuffer::initialize();
   ZTracer::initialize();
   ZLargePages::initialize();
+  ZHeuristics::set_medium_page_size();
   ZBarrierSet::set_barrier_set(barrier_set);
 
-  initialize_os();
+  pd_initialize();
 }

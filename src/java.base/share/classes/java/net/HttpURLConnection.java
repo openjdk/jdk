@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,6 +388,7 @@ public abstract class HttpURLConnection extends URLConnection {
      * @see #getFollowRedirects()
      */
     public static void setFollowRedirects(boolean set) {
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             // seems to be the best check here...
@@ -475,6 +476,7 @@ public abstract class HttpURLConnection extends URLConnection {
         for (int i = 0; i < methods.length; i++) {
             if (methods[i].equals(method)) {
                 if (method.equals("TRACE")) {
+                    @SuppressWarnings("removal")
                     SecurityManager s = System.getSecurityManager();
                     if (s != null) {
                         s.checkPermission(new NetPermission("allowHttpTrace"));
@@ -511,7 +513,7 @@ public abstract class HttpURLConnection extends URLConnection {
      */
     public int getResponseCode() throws IOException {
         /*
-         * We're got the response code already
+         * We've got the response code already
          */
         if (responseCode != -1) {
             return responseCode;
@@ -530,7 +532,7 @@ public abstract class HttpURLConnection extends URLConnection {
         }
 
         /*
-         * If we can't a status-line then re-throw any exception
+         * If we can't find a status-line then re-throw any exception
          * that getInputStream threw.
          */
         String statusLine = getHeaderField(0);

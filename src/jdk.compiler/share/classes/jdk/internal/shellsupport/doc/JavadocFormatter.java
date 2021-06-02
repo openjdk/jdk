@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -58,8 +59,6 @@ import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
-import com.sun.tools.doclint.Entity;
-import com.sun.tools.doclint.HtmlTag;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.StringUtils;
@@ -125,9 +124,31 @@ public class JavadocFormatter {
         }
     }
 
+    enum HtmlTag {
+        HTML,
+        H1, H2, H3, H4, H5, H6,
+        BLOCKQUOTE, P, PRE,
+        IMG,
+        OL, UL, LI,
+        DL, DT, DD,
+        TABLE, TR, TD, TH;
+
+        private static final Map<String, HtmlTag> index = new HashMap<>();
+        static {
+            for (HtmlTag t: values()) {
+                index.put(StringUtils.toLowerCase(t.name()), t);
+            }
+        }
+
+        public static HtmlTag get(Name tagName) {
+            return index.get(StringUtils.toLowerCase(tagName.toString()));
+        }
+    }
+
     private class FormatJavadocScanner extends DocTreeScanner<Object, Object> {
         private final StringBuilder result;
         private final JavacTask task;
+        private final DocTrees trees;
         private int reflownTo;
         private int indent;
         private int limit = Math.min(lineLimit, MAX_LINE_LENGTH);
@@ -137,6 +158,7 @@ public class JavadocFormatter {
         public FormatJavadocScanner(StringBuilder result, JavacTask task) {
             this.result = result;
             this.task = task;
+            this.trees = DocTrees.instance(task);
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
@@ -152,20 +174,33 @@ public class JavadocFormatter {
                     if (current.matches(t)) {
                         if (!seenAny) {
                             seenAny = true;
-                            if (result.charAt(result.length() - 1) != '\n')
-                                result.append("\n");
-                            result.append("\n");
-                            result.append(escape(CODE_UNDERLINE))
-                                  .append(docSections.get(current))
-                                  .append(escape(CODE_RESET))
-                                  .append("\n");
+                            startSection(current);
                         }
 
                         scan(t, null);
                     }
                 }
+                if (current == Sections.RETURNS && !seenAny) {
+                    List<? extends DocTree> firstSentence = node.getFirstSentence();
+                    if (firstSentence.size() == 1
+                            && firstSentence.get(0).getKind() == DocTree.Kind.RETURN) {
+                        startSection(current);
+                        scan(firstSentence.get(0), true);
+                    }
+                }
             }
             return null;
+        }
+
+        private void startSection(Sections current) {
+            if (result.charAt(result.length() - 1) != '\n')
+                result.append("\n");
+            result.append("\n");
+            result.append(escape(CODE_UNDERLINE))
+                    .append(docSections.get(current))
+                    .append(escape(CODE_RESET))
+                    .append("\n");
+
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
@@ -228,13 +263,34 @@ public class JavadocFormatter {
             return scan(node.getBody(), p);
         }
 
+        /**
+         * {@inheritDoc}
+         * {@code @return} is a bimodal tag and can be used as either a block tag or an inline
+         * tag. If the parameter {@code p} is {@code null}, the node will be formatted according to
+         * the value of {@link ReturnTree#isInline()}. If the parameter is not {@code null}, the node will
+         * be formatted as a block tag.
+         * @param node  {@inheritDoc}
+         * @param p     not {@code null} to force the node to be formatted as a block tag
+         * @return
+         */
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Object visitReturn(ReturnTree node, Object p) {
-            reflownTo = result.length();
-            try {
-                return super.visitReturn(node, p);
-            } finally {
-                reflow(result, reflownTo, 0, limit);
+            if (node.isInline() && p == null) {
+                String MARKER = "{0}";
+                int p0 = inlineReturns.indexOf(MARKER);
+                result.append(inlineReturns, 0, p0);
+                try {
+                    return super.visitReturn(node, p);
+                } finally {
+                    result.append(inlineReturns.substring(p0 + MARKER.length()));
+                }
+            } else {
+                reflownTo = result.length();
+                try {
+                    return super.visitReturn(node, p);
+                } finally {
+                    reflow(result, reflownTo, 0, limit);
+                }
             }
         }
 
@@ -511,31 +567,10 @@ public class JavadocFormatter {
 
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Object visitEntity(EntityTree node, Object p) {
-            String name = node.getName().toString();
-            int code = -1;
-            String value = null;
-            if (name.startsWith("#")) {
-                try {
-                    int v = StringUtils.toLowerCase(name).startsWith("#x")
-                            ? Integer.parseInt(name.substring(2), 16)
-                            : Integer.parseInt(name.substring(1), 10);
-                    if (Entity.isValid(v)) {
-                        code = v;
-                    }
-                } catch (NumberFormatException ex) {
-                    //ignore
-                }
-            } else {
-                value = Entity.getValue(name);
-            }
-            if (code != (-1)) {
-                result.appendCodePoint(code);
-            } else if (value != null) {
-                result.append(value);
-            } else {
-                result.append(node.toString());
-            }
+            String value = trees.getCharacters(node);
+            result.append(value == null ? node.toString() : value);
             return super.visitEntity(node, p);
+
         }
 
         private DocTree lastNode;
@@ -558,6 +593,7 @@ public class JavadocFormatter {
         private void reflowTillNow() {
             while (result.length() > 0 && result.charAt(result.length() - 1) == ' ')
                 result.delete(result.length() - 1, result.length());
+            reflownTo = Math.min(reflownTo, result.length());
             reflow(result, reflownTo, indent, limit);
             reflownTo = result.length();
         }
@@ -568,6 +604,7 @@ public class JavadocFormatter {
     }
 
     private static final Map<Sections, String> docSections = new LinkedHashMap<>();
+    private static final String inlineReturns;
 
     static {
         ResourceBundle bundle =
@@ -576,6 +613,7 @@ public class JavadocFormatter {
         docSections.put(Sections.PARAMS, bundle.getString("CAP_Parameters"));
         docSections.put(Sections.RETURNS, bundle.getString("CAP_Returns"));
         docSections.put(Sections.THROWS, bundle.getString("CAP_Thrown_Exceptions"));
+        inlineReturns = bundle.getString("Inline_Returns");
     }
 
     private static String indentString(int indent) {

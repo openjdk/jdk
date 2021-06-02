@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,14 +47,6 @@ import sun.security.util.KeyUtil;
 import sun.security.util.SignatureUtil;
 
 enum SignatureScheme {
-    // EdDSA algorithms
-    ED25519                 (0x0807, "ed25519", "ed25519",
-                                    "ed25519",
-                                    ProtocolVersion.PROTOCOLS_OF_13),
-    ED448                   (0x0808, "ed448", "ed448",
-                                    "ed448",
-                                    ProtocolVersion.PROTOCOLS_OF_13),
-
     // ECDSA algorithms
     ECDSA_SECP256R1_SHA256  (0x0403, "ecdsa_secp256r1_sha256",
                                     "SHA256withECDSA",
@@ -71,6 +63,14 @@ enum SignatureScheme {
                                     "EC",
                                     NamedGroup.SECP521_R1,
                                     ProtocolVersion.PROTOCOLS_TO_13),
+
+    // EdDSA algorithms
+    ED25519                 (0x0807, "ed25519", "Ed25519",
+                                    "EdDSA",
+                                    ProtocolVersion.PROTOCOLS_12_13),
+    ED448                   (0x0808, "ed448", "Ed448",
+                                    "EdDSA",
+                                    ProtocolVersion.PROTOCOLS_12_13),
 
     // RSASSA-PSS algorithms with public key OID rsaEncryption
     //
@@ -275,16 +275,6 @@ enum SignatureScheme {
 
         boolean mediator = true;
 
-        // Disable EdDSA algorithms for TLS.  Remove this when support is added.
-        if (id == 0x0807 || id == 0x0808) {
-            mediator = false;
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.warning(
-                    "Signature algorithm, " + algorithm +
-                        ", not supported by JSSE");
-            }
-        }
-
         // An EC provider, for example the SunEC provider, may support
         // AlgorithmParameters but not KeyPairGenerator or Signature.
         //
@@ -374,8 +364,8 @@ enum SignatureScheme {
                constraints.permits(SIGNATURE_PRIMITIVE_SET,
                         this.algorithm, (signAlgParams != null ?
                                 signAlgParams.parameters : null)) &&
-               (namedGroup != null ?
-                        namedGroup.isPermitted(constraints) : true);
+                        (namedGroup == null ||
+                            namedGroup.isPermitted(constraints));
     }
 
     // Get local supported algorithm collection complying to algorithm
@@ -385,10 +375,19 @@ enum SignatureScheme {
             AlgorithmConstraints constraints,
             List<ProtocolVersion> activeProtocols) {
         List<SignatureScheme> supported = new LinkedList<>();
-        for (SignatureScheme ss: SignatureScheme.values()) {
-            if (!ss.isAvailable ||
-                    (!config.signatureSchemes.isEmpty() &&
-                        !config.signatureSchemes.contains(ss))) {
+
+        // If config.signatureSchemes is non-empty then it means that
+        // it was defined by a System property.  Per
+        // SSLConfiguration.getCustomizedSignatureScheme() the list will
+        // only contain schemes that are in the enum.
+        // Otherwise, use the enum constants (converted to a List).
+        List<SignatureScheme> schemesToCheck =
+                config.signatureSchemes.isEmpty() ?
+                    Arrays.asList(SignatureScheme.values()) :
+                    config.signatureSchemes;
+
+        for (SignatureScheme ss: schemesToCheck) {
+            if (!ss.isAvailable) {
                 if (SSLLogger.isOn &&
                         SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.finest(

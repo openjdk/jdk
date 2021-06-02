@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 /*
  * @test PlainRead
+ * @key cgroups
  * @requires os.family == "linux"
  * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI PlainRead
  */
 
@@ -45,7 +46,7 @@ public class PlainRead {
        oa.shouldNotMatch("^.*" + what + " *" + value + ".*$");
     }
 
-    static final String good_value = "(\\d+|-1|Unlimited)";
+    static final String good_value = "(\\d+|-1|-2|Unlimited)";
     static final String bad_value = "(failed)";
 
     static final String[] variables = {"Memory Limit is:", "CPU Shares is:", "CPU Quota is:", "CPU Period is:", "active_processor_count:"};

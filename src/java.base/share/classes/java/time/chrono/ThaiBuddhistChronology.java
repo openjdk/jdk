@@ -72,7 +72,6 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.ValueRange;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -330,7 +329,7 @@ public final class ThaiBuddhistChronology extends AbstractChronology implements 
 
     @Override
     public int prolepticYear(Era era, int yearOfEra) {
-        if (era instanceof ThaiBuddhistEra == false) {
+        if (!(era instanceof ThaiBuddhistEra)) {
             throw new ClassCastException("Era must be BuddhistEra");
         }
         return (era == ThaiBuddhistEra.BE ? yearOfEra : 1 - yearOfEra);

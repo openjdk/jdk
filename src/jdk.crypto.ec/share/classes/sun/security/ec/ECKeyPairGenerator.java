@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.InvalidParameterSpecException;
+import java.util.Arrays;
 import java.util.Optional;
 
 import sun.security.jca.JCAUtil;
@@ -95,7 +96,7 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
             ecSpec = ECUtil.getECParameterSpec(null, ecParams);
             if (ecSpec == null) {
                 throw new InvalidAlgorithmParameterException(
-                    "Unsupported curve: " + params);
+                    "Curve not supported: " + params);
             }
         } else if (params instanceof ECGenParameterSpec) {
             String name = ((ECGenParameterSpec) params).getName();
@@ -126,29 +127,13 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
             ecParams.init(ecSpec);
         } catch (InvalidParameterSpecException ex) {
             throw new InvalidAlgorithmParameterException(
-                "Unsupported curve: " + ecSpec.toString());
+                "Curve not supported: " + ecSpec.toString());
         }
 
         // Check if the java implementation supports this curve
-        if (ECOperations.forParameters(ecSpec).isPresent()) {
-            return;
-        }
-
-        // Check if the native library supported this curve, if available
-        if (SunEC.isNativeDisabled()) {
+        if (ECOperations.forParameters(ecSpec).isEmpty()) {
             throw new InvalidAlgorithmParameterException(
-                "Unsupported curve: " + ecSpec.toString());
-        }
-
-        byte[] encodedParams;
-        try {
-            encodedParams = ecParams.getEncoded();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-        if (!isCurveSupported(encodedParams)) {
-            throw new InvalidAlgorithmParameterException(
-                "Unsupported curve: " + ecParams.toString());
+                "Curve not supported: " + ecSpec.toString());
         }
     }
 
@@ -168,15 +153,8 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
         } catch (Exception ex) {
             throw new ProviderException(ex);
         }
-        if (SunEC.isNativeDisabled()) {
-            throw new ProviderException("Legacy SunEC curve disabled:  " +
-                    params.toString());
-        }
-        try {
-            return generateKeyPairNative(random);
-        } catch (Exception ex) {
-            throw new ProviderException(ex);
-        }
+        throw new ProviderException("Curve not supported:  " +
+            params.toString());
     }
 
     private byte[] generatePrivateScalar(SecureRandom random,
@@ -223,38 +201,13 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
         AffinePoint affPub = pub.asAffine();
 
         PrivateKey privateKey = new ECPrivateKeyImpl(privArr, ecParams);
+        Arrays.fill(privArr, (byte)0);
 
         ECPoint w = new ECPoint(affPub.getX().asBigInteger(),
             affPub.getY().asBigInteger());
         PublicKey publicKey = new ECPublicKeyImpl(w, ecParams);
 
         return Optional.of(new KeyPair(publicKey, privateKey));
-    }
-
-    private KeyPair generateKeyPairNative(SecureRandom random)
-        throws Exception {
-
-        ECParameterSpec ecParams = (ECParameterSpec) params;
-        byte[] encodedParams = ECUtil.encodeECParameterSpec(null, ecParams);
-
-        // seed is twice the key size (in bytes) plus 1
-        byte[] seed = new byte[(((keySize + 7) >> 3) + 1) * 2];
-        random.nextBytes(seed);
-        Object[] keyBytes = generateECKeyPair(keySize, encodedParams, seed);
-
-        // The 'params' object supplied above is equivalent to the native
-        // one so there is no need to fetch it.
-        // keyBytes[0] is the encoding of the native private key
-        BigInteger s = new BigInteger(1, (byte[]) keyBytes[0]);
-
-        PrivateKey privateKey = new ECPrivateKeyImpl(s, ecParams);
-
-        // keyBytes[1] is the encoding of the native public key
-        byte[] pubKey = (byte[]) keyBytes[1];
-        ECPoint w = ECUtil.decodePoint(pubKey, ecParams.getCurve());
-        PublicKey publicKey = new ECPublicKeyImpl(w, ecParams);
-
-        return new KeyPair(publicKey, privateKey);
     }
 
     private void checkKeySize(int keySize) throws InvalidParameterException {
@@ -268,24 +221,4 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
         }
         this.keySize = keySize;
     }
-
-    /**
-     * Checks whether the curve in the encoded parameters is supported by the
-     * native implementation. Some curve operations will be performed by the
-     * Java implementation, but not all of them. So native support is still
-     * required for all curves.
-     *
-     * @param encodedParams encoded parameters in the same form accepted
-     *    by generateECKeyPair
-     * @return true if and only if generateECKeyPair will succeed for
-     *    the supplied parameters
-     */
-    private static native boolean isCurveSupported(byte[] encodedParams);
-
-    /*
-     * Generates the keypair and returns a 2-element array of encoding bytes.
-     * The first one is for the private key, the second for the public key.
-     */
-    private static native Object[] generateECKeyPair(int keySize,
-        byte[] encodedParams, byte[] seed) throws GeneralSecurityException;
 }

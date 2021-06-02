@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1BLOCKOFFSETTABLE_INLINE_HPP
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
+
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "runtime/atomic.hpp"
@@ -142,7 +143,7 @@ inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_const(
   if (addr >= _hr->top()) return _hr->top();
   while (n <= addr) {
     q = n;
-    oop obj = oop(q);
+    oop obj = cast_to_oop(q);
     if (obj->klass_or_null_acquire() == NULL) {
       return q;
     }
@@ -155,7 +156,7 @@ inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr_const(
 
 inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr(HeapWord* q,
                                                                           const void* addr) {
-  if (oop(q)->klass_or_null_acquire() == NULL) {
+  if (cast_to_oop(q)->klass_or_null_acquire() == NULL) {
     return q;
   }
   HeapWord* n = q + block_size(q);

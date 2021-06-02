@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +24,9 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "utilities/constantTag.hpp"
@@ -100,13 +101,13 @@ static bool classname_matches_prefix(const Klass* k, const char* prefix) {
 
 // Returns true if k is of type jdk/internal/reflect/GeneratedMethodAccessorXXX.
 bool ReflectionAccessorImplKlassHelper::is_generated_method_accessor(const InstanceKlass* k) {
-  return k->super() == SystemDictionary::reflect_MethodAccessorImpl_klass() &&
+  return k->super() == vmClasses::reflect_MethodAccessorImpl_klass() &&
          classname_matches_prefix(k, "jdk.internal.reflect.GeneratedMethodAccessor");
 }
 
 // Returns true if k is of type jdk/internal/reflect/GeneratedConstructorAccessorXXX.
 bool ReflectionAccessorImplKlassHelper::is_generated_constructor_accessor(const InstanceKlass* k) {
-  return k->super() == SystemDictionary::reflect_ConstructorAccessorImpl_klass() &&
+  return k->super() == vmClasses::reflect_ConstructorAccessorImpl_klass() &&
          classname_matches_prefix(k, "jdk.internal.reflect.GeneratedConstructorAccessor");
 }
 
@@ -114,7 +115,7 @@ bool ReflectionAccessorImplKlassHelper::is_generated_constructor_accessor(const 
 bool ReflectionAccessorImplKlassHelper::is_generated_method_serialization_constructor_accessor(const InstanceKlass* k) {
   // GeneratedSerializationConstructorAccessor is not a direct subclass of ConstructorAccessorImpl
   const Klass* sk = k->super();
-  if (sk != NULL && sk->super() == SystemDictionary::reflect_ConstructorAccessorImpl_klass() &&
+  if (sk != NULL && sk->super() == vmClasses::reflect_ConstructorAccessorImpl_klass() &&
       classname_matches_prefix(k, "jdk.internal.reflect.GeneratedSerializationConstructorAccessor")) {
     return true;
   }

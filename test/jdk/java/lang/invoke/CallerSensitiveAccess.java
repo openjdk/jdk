@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 8196830 8235351
  * @modules java.base/jdk.internal.reflect
- * @run testng/othervm --illegal-access=deny CallerSensitiveAccess
+ * @run testng/othervm CallerSensitiveAccess
  * @summary Check Lookup findVirtual, findStatic and unreflect behavior with
  *          caller sensitive methods with focus on AccessibleObject.setAccessible
  */
@@ -115,6 +115,37 @@ public class CallerSensitiveAccess {
             expectedExceptions = IllegalAccessException.class)
     public void testLookupUnreflect(@NoInjection Method method, String desc) throws Exception {
         MethodHandles.publicLookup().unreflect(method);
+    }
+
+    /**
+     * Using a Lookup with no original access that can't lookup caller-sensitive
+     * method
+     */
+    @Test(dataProvider = "callerSensitiveMethods",
+            expectedExceptions = IllegalAccessException.class)
+    public void testLookupNoOriginalAccessFind(@NoInjection Method method, String desc) throws Exception {
+        Lookup lookup = MethodHandles.lookup().dropLookupMode(Lookup.ORIGINAL);
+        assertTrue(lookup.hasFullPrivilegeAccess());
+        Class<?> refc = method.getDeclaringClass();
+        String name = method.getName();
+        MethodType mt = MethodType.methodType(method.getReturnType(), method.getParameterTypes());
+        if (Modifier.isStatic(method.getModifiers())) {
+            lookup.findStatic(refc, name, mt);
+        } else {
+            lookup.findVirtual(refc, name, mt);
+        }
+    }
+
+    /**
+     * Using a Lookup with no original access that can't unreflect caller-sensitive
+     * method
+     */
+    @Test(dataProvider = "callerSensitiveMethods",
+            expectedExceptions = IllegalAccessException.class)
+    public void testLookupNoOriginalAccessUnreflect(@NoInjection Method method, String desc) throws Exception {
+        Lookup lookup = MethodHandles.lookup().dropLookupMode(Lookup.ORIGINAL);
+        assertTrue(lookup.hasFullPrivilegeAccess());
+        lookup.unreflect(method);
     }
 
     // -- Test method handles to setAccessible --

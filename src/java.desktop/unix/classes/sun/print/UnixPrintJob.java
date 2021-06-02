@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,6 +309,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @SuppressWarnings("removal")
     public void print(Doc doc, PrintRequestAttributeSet attributes)
         throws PrintException {
 
@@ -596,21 +597,12 @@ public class UnixPrintJob implements CancelablePrintJob {
                 }
             }
         } else if (instream != null) {
-            BufferedInputStream bin = new BufferedInputStream(instream);
-            BufferedOutputStream bout = new BufferedOutputStream(output);
-            byte[] buffer = new byte[1024];
-            int bread = 0;
-
-            try {
-                while ((bread = bin.read(buffer)) >= 0) {
-                    bout.write(buffer, 0, bread);
-                }
-                bin.close();
-                bout.flush();
-                bout.close();
+            try (BufferedInputStream bin = new BufferedInputStream(instream);
+                 BufferedOutputStream bout = new BufferedOutputStream(output)) {
+                bin.transferTo(bout);
             } catch (IOException e) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException (e);
+                throw new PrintException(e);
             }
         }
         notifyEvent(PrintJobEvent.DATA_TRANSFER_COMPLETE);
@@ -812,6 +804,7 @@ public class UnixPrintJob implements CancelablePrintJob {
                         throw new PrintException(e);
                     }
                     // check write access
+                    @SuppressWarnings("removal")
                     SecurityManager security = System.getSecurityManager();
                     if (security != null) {
                       try {

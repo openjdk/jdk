@@ -82,7 +82,7 @@ final class DCmdStart extends AbstractDCmd {
      * @throws DCmdException if recording could not be started
      */
     @SuppressWarnings("resource")
-    public String execute(String name, String[] settings, Long delay, Long duration, Boolean disk, String path, Long maxAge, Long maxSize, Long flush, Boolean dumpOnExit, Boolean pathToGcRoots) throws DCmdException {
+    public String[] execute(String name, String[] settings, Long delay, Long duration, Boolean disk, String path, Long maxAge, Long maxSize, Long flush, Boolean dumpOnExit, Boolean pathToGcRoots) throws DCmdException {
         if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
             Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing DCmdStart: name=" + name +
                     ", settings=" + Arrays.asList(settings) +
@@ -132,7 +132,7 @@ final class DCmdStart extends AbstractDCmd {
         }
 
         if (delay != null) {
-            if (delay < 1000L * 1000L * 1000) {
+            if (delay < 1000L * 1000L * 1000L) {
                 // to avoid typo, delay shorter than 1s makes no sense.
                 throw new DCmdException("Could not start recording, delay must be at least 1 second.");
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,9 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      */
     private static final int TRAILER_SIZE = 8;
 
+    // Represents the default "unknown" value for OS header, per RFC-1952
+    private static final byte OS_UNKNOWN = (byte) 255;
+
     /**
      * Creates a new output stream with the specified buffer size.
      *
@@ -87,7 +90,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
     public GZIPOutputStream(OutputStream out, int size, boolean syncFlush)
         throws IOException
     {
-        super(out, new Deflater(Deflater.DEFAULT_COMPRESSION, true),
+        super(out, out != null ? new Deflater(Deflater.DEFAULT_COMPRESSION, true) : null,
               size,
               syncFlush);
         usesDefaultDeflater = true;
@@ -189,7 +192,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
                       0,                        // Modification time MTIME (int)
                       0,                        // Modification time MTIME (int)
                       0,                        // Extra flags (XFLG)
-                      0                         // Operating system (OS)
+                      OS_UNKNOWN                // Operating system (OS)
                   });
     }
 

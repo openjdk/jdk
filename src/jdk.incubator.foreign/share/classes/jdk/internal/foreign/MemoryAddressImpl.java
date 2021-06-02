@@ -25,105 +25,89 @@
  */
 package jdk.internal.foreign;
 
-import jdk.internal.access.foreign.MemoryAddressProxy;
-import jdk.internal.misc.Unsafe;
-
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 
+import jdk.incubator.foreign.ResourceScope;
 import java.util.Objects;
 
 /**
  * This class provides an immutable implementation for the {@code MemoryAddress} interface. This class contains information
  * about the segment this address is associated with, as well as an offset into such segment.
  */
-public final class MemoryAddressImpl implements MemoryAddress, MemoryAddressProxy {
-
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+public final class MemoryAddressImpl implements MemoryAddress {
 
     private final AbstractMemorySegmentImpl segment;
     private final long offset;
 
-    public MemoryAddressImpl(long offset) {
-        this.segment = AbstractMemorySegmentImpl.NOTHING;
+    public MemoryAddressImpl(AbstractMemorySegmentImpl segment, long offset) {
+        this.segment = segment;
         this.offset = offset;
     }
 
-    public MemoryAddressImpl(AbstractMemorySegmentImpl segment, long offset) {
-        this.segment = Objects.requireNonNull(segment);
-        this.offset = offset;
+    Object base() {
+        return segment != null ? segment.base() : null;
+    }
+
+    long offset() {
+        return segment != null ?
+                segment.min() + offset : offset;
     }
 
     // MemoryAddress methods
 
     @Override
-    public long segmentOffset() {
-        if (segment() == null) {
-            throw new UnsupportedOperationException("Address does not have a segment");
+    public ResourceScope scope() {
+        return segment != null ?
+                segment.scope() : ResourceScope.globalScope();
+    }
+
+    @Override
+    public MemoryAddress addOffset(long offset) {
+        return new MemoryAddressImpl(segment, this.offset + offset);
+    }
+
+    @Override
+    public long segmentOffset(MemorySegment segment) {
+        Objects.requireNonNull(segment);
+        AbstractMemorySegmentImpl segmentImpl = (AbstractMemorySegmentImpl)segment;
+        if (segmentImpl.base() != base()) {
+            throw new IllegalArgumentException("Incompatible segment: " + segment);
         }
-        return offset;
+        return offset() - segmentImpl.min();
+    }
+
+    @Override
+    public boolean isNative() {
+        return base() == null;
     }
 
     @Override
     public long toRawLongValue() {
-        if (unsafeGetBase() != null) {
-            throw new UnsupportedOperationException("Not a native address");
+        if (segment != null) {
+            if (segment.base() != null) {
+                throw new UnsupportedOperationException("Not a native address");
+            }
+            segment.checkValidState();
         }
-        return unsafeGetOffset();
+        return offset();
     }
 
-    @Override
-    public MemorySegment segment() {
-        return segment != AbstractMemorySegmentImpl.NOTHING ?
-                segment : null;
-    }
-
-    @Override
-    public MemoryAddress addOffset(long bytes) {
-        return new MemoryAddressImpl(segment, offset + bytes);
-    }
-
-    @Override
-    public MemoryAddress rebase(MemorySegment segment) {
-        AbstractMemorySegmentImpl segmentImpl = (AbstractMemorySegmentImpl)segment;
-        if (segmentImpl.base() != this.segment.base()) {
-            throw new IllegalArgumentException("Invalid rebase target: " + segment);
-        }
-        return new MemoryAddressImpl((AbstractMemorySegmentImpl)segment,
-                unsafeGetOffset() - ((MemoryAddressImpl)segment.baseAddress()).unsafeGetOffset());
-    }
-
-    // MemoryAddressProxy methods
-
-    public void checkAccess(long offset, long length, boolean readOnly) {
-        segment.checkRange(MemoryAddressProxy.addOffsets(this.offset, offset, this), length, !readOnly);
-    }
-
-    public long unsafeGetOffset() {
-        return segment.min() + offset;
-    }
-
-    public Object unsafeGetBase() {
-        return segment.base();
-    }
-
-    @Override
-    public boolean isSmall() {
-        return segment.isSmall();
-    }
     // Object methods
 
     @Override
     public int hashCode() {
-        return Objects.hash(unsafeGetBase(), unsafeGetOffset());
+        return Objects.hash(base(), offset());
     }
 
     @Override
     public boolean equals(Object that) {
         if (that instanceof MemoryAddressImpl) {
             MemoryAddressImpl addr = (MemoryAddressImpl)that;
-            return Objects.equals(unsafeGetBase(), ((MemoryAddressImpl) that).unsafeGetBase()) &&
-                    unsafeGetOffset() == addr.unsafeGetOffset();
+            return Objects.equals(base(), addr.base()) &&
+                    offset() == addr.offset();
         } else {
             return false;
         }
@@ -131,6 +115,38 @@ public final class MemoryAddressImpl implements MemoryAddress, MemoryAddressProx
 
     @Override
     public String toString() {
-        return "MemoryAddress{ region: " + segment + " offset=0x" + Long.toHexString(offset) + " }";
+        return "MemoryAddress{ base: " + base() + " offset=0x" + Long.toHexString(offset()) + " }";
+    }
+
+    @Override
+    @CallerSensitive
+    public final MemorySegment asSegment(long bytesSize, ResourceScope scope) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass());
+        return asSegment(bytesSize, null, scope);
+    }
+
+    @Override
+    @CallerSensitive
+    public final MemorySegment asSegment(long bytesSize, Runnable cleanupAction, ResourceScope scope) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass());
+        Objects.requireNonNull(scope);
+        if (bytesSize <= 0) {
+            throw new IllegalArgumentException("Invalid size : " + bytesSize);
+        }
+        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(this, bytesSize,
+                cleanupAction,
+                (ResourceScopeImpl) scope);
+    }
+
+    public static MemorySegment ofLongUnchecked(long value) {
+        return ofLongUnchecked(value, Long.MAX_VALUE);
+    }
+
+    public static MemorySegment ofLongUnchecked(long value, long byteSize, ResourceScopeImpl resourceScope) {
+        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(MemoryAddress.ofLong(value), byteSize, null, resourceScope);
+    }
+
+    public static MemorySegment ofLongUnchecked(long value, long byteSize) {
+        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(MemoryAddress.ofLong(value), byteSize, null, ResourceScopeImpl.GLOBAL);
     }
 }

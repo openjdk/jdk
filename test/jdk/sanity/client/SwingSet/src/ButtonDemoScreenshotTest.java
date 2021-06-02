@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,15 @@
 import com.sun.swingset3.demos.button.ButtonDemo;
 import org.jtregext.GuiTestListener;
 import org.netbeans.jemmy.ClassReference;
-import org.netbeans.jemmy.ComponentChooser;
-import org.netbeans.jemmy.image.StrictImageComparator;
 import org.netbeans.jemmy.operators.JButtonOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
-import java.awt.Component;
-import java.awt.Robot;
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 
 import javax.swing.UIManager;
@@ -60,30 +59,37 @@ import static org.jemmy2ext.JemmyExt.*;
 public class ButtonDemoScreenshotTest {
 
     private static final int[] BUTTONS = {0, 1, 2, 3, 4, 5}; // "open browser" buttons (6, 7) open a browser, so ignore
-    private static StrictImageComparator sComparator = null;
-
-    @BeforeClass
-    public void init() {
-        sComparator = new StrictImageComparator();
-    }
 
     @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
     public void test(String lookAndFeel) throws Exception {
         UIManager.setLookAndFeel(lookAndFeel);
-        Robot rob = new Robot();
+
+        //capture some of the background
+        Dimension screeSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Point screenCenter = new Point(screeSize.width / 2, screeSize.height / 2);
+        Rectangle center = new Rectangle(
+                screenCenter.x - 50, screenCenter.y - 50,
+                100, 100);
+        BufferedImage background = getRobot().createScreenCapture(center);
 
         new ClassReference(ButtonDemo.class.getCanonicalName()).startApplication();
 
         JFrameOperator mainFrame = new JFrameOperator(DEMO_TITLE);
-        waitImageIsStill(rob, mainFrame);
+        mainFrame.waitComponentShowing(true);
+
+        //make sure the frame is already painted
+        waitChangedImage(() -> getRobot().createScreenCapture(center),
+                background, mainFrame.getTimeouts(), "background");
+        //make sure the frame is painted completely
+        waitStillImage(mainFrame, "frame");
 
         // Check all the buttons
         for (int i : BUTTONS) {
-            checkButton(mainFrame, i, rob);
+            checkButton(mainFrame, i);
         }
     }
 
-    private void checkButton(JFrameOperator jfo, int i, Robot rob) {
+    private void checkButton(JFrameOperator jfo, int i) throws InterruptedException {
         JButtonOperator button = new JButtonOperator(jfo, i);
 
         //additional instrumentation for JDK-8198920. To be removed after the bug is fixed
@@ -93,11 +99,8 @@ public class ButtonDemoScreenshotTest {
 
         button.moveMouse(button.getCenterX(), button.getCenterY());
 
-        BufferedImage initialButtonImage = capture(rob, button);
-        assertNotBlack(initialButtonImage);
-        save(initialButtonImage, "button" + i + ".png");
-
-        BufferedImage[] pressedImage = new BufferedImage[1];
+        BufferedImage notPressed, pressed = null;
+        notPressed = waitStillImage(button, "not-pressed-" + i);
 
         button.pressMouse();
         //additional instrumentation for JDK-8198920. To be removed after the bug is fixed
@@ -108,22 +111,15 @@ public class ButtonDemoScreenshotTest {
             //additional instrumentation for JDK-8198920. To be removed after the bug is fixed
             button.getOutput().printTrace("JDK-8198920: Button press confirmed by " + System.currentTimeMillis());
             //end of instrumentation for JDK-8198920
-            button.waitState(new ComponentChooser() {
-                public boolean checkComponent(Component c) {
-                    pressedImage[0] = capture(rob, button);
-                    assertNotBlack(pressedImage[0]);
-                    return !sComparator.compare(initialButtonImage, pressedImage[0]);
-                }
-
-                public String getDescription() {
-                    return "Button with new image";
-                }
-            });
+            waitChangedImage(() -> capture(button), notPressed,
+                    button.getTimeouts(), "after-press-" + i);
+            pressed = waitStillImage(button, "pressed-" + i);
         } finally {
-            if (pressedImage[0] != null) {
-                save(pressedImage[0], "button" + i + "_pressed.png");
-            }
             button.releaseMouse();
+            if(pressed != null) {
+                waitChangedImage(() -> capture(button), pressed,
+                        button.getTimeouts(), "released-" + i);
+            }
             //additional instrumentation for JDK-8198920. To be removed after the bug is fixed
             button.getOutput().printTrace("JDK-8198920: Button released at " + System.currentTimeMillis());
             try {

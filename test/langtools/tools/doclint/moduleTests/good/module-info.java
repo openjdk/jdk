@@ -26,7 +26,7 @@
  * @bug 8162576
  * @summary Missing doclint check missing for modules
  * @library ../..
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester module-info.java
  * @compile -Xdoclint:all -Werror -Xlint:-options module-info.java

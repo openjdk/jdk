@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,7 @@ private:
   void add_list_common_start(FreeRegionList* from_list);
   void add_list_common_end(FreeRegionList* from_list);
 
+  void verify_region_to_remove(HeapRegion* curr, HeapRegion* next) NOT_DEBUG_RETURN;
 protected:
   // See the comment for HeapRegionSetBase::clear()
   virtual void clear();
@@ -233,8 +234,6 @@ public:
   void remove_starting_at(HeapRegion* first, uint num_regions);
 
   virtual void verify();
-
-  uint num_of_regions_in_range(uint start, uint end) const;
 
   using HeapRegionSetBase::length;
   uint length(uint node_index) const;

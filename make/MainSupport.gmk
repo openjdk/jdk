@@ -150,9 +150,7 @@ define DeclareRecipeForModuleMakefile
   $2-$$($1_TARGET_SUFFIX):
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
 	    -f ModuleWrapper.gmk -I $$(TOPDIR)/make/common/modules  \
-	    $$(addprefix -I, $$(PHASE_MAKEDIRS) \
-	        $$(addsuffix /modules/$2, $$(PHASE_MAKEDIRS)) \
-	    ) \
+	    $$(patsubst %,-I%/modules/$2,$$(PHASE_MAKEDIRS)) \
 	    MODULE=$2 MAKEFILE_PREFIX=$$($1_FILE_PREFIX) $$($1_EXTRA_ARGS))
 
 endef
@@ -185,7 +183,6 @@ endef
 # Param 1: Name of list to add targets to
 # Named params:
 # TARGET_SUFFIX : Suffix of target to create for recipe
-# MAKE_SUBDIR : Subdir for this build phase
 # FILE_PREFIX : File prefix for this build phase
 # CHECK_MODULES : List of modules to try
 # MULTIPLE_MAKEFILES : Set to true to handle makefiles for the same module and

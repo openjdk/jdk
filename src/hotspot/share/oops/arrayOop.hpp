@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,12 @@ class arrayOopDesc : public oopDesc {
     return (int)hs;
   }
 
+  // Returns the address of the length "field".  See length_offset_in_bytes().
+  static int* length_addr_impl(void* obj_ptr) {
+    char* ptr = static_cast<char*>(obj_ptr);
+    return reinterpret_cast<int*>(ptr + length_offset_in_bytes());
+  }
+
   // Check whether an element of a typeArrayOop with the given type must be
   // aligned 0 mod 8.  The typeArrayOop itself must be aligned at least this
   // strongly.
@@ -84,8 +90,9 @@ class arrayOopDesc : public oopDesc {
 
   // Returns the address of the first element. The elements in the array will not
   // relocate from this address until a subsequent thread transition.
-  inline void* base(BasicType type) const;
-  inline void* base_raw(BasicType type) const; // GC barrier invariant
+  void* base(BasicType type) const {
+    return reinterpret_cast<void*>(cast_from_oop<intptr_t>(as_oop()) + base_offset_in_bytes(type));
+  }
 
   template <typename T>
   static T* obj_offset_to_raw(arrayOop obj, size_t offset_in_bytes, T* raw) {
@@ -102,16 +109,17 @@ class arrayOopDesc : public oopDesc {
   // Tells whether index is within bounds.
   bool is_within_bounds(int index) const        { return 0 <= index && index < length(); }
 
-  // Accessors for instance variable which is not a C++ declared nonstatic
-  // field.
-  int length() const {
-    return *(int*)(((intptr_t)this) + length_offset_in_bytes());
+  // Accessors for array length.  There's not a member variable for
+  // it; see length_offset_in_bytes().
+  int length() const { return *length_addr_impl(const_cast<arrayOopDesc*>(this)); }
+  void set_length(int length) { *length_addr_impl(this) = length; }
+
+  int* length_addr() {
+    return length_addr_impl(this);
   }
-  void set_length(int length) {
-    set_length((HeapWord*)this, length);
-  }
+
   static void set_length(HeapWord* mem, int length) {
-    *(int*)(((char*)mem) + length_offset_in_bytes()) = length;
+    *length_addr_impl(mem) = length;
   }
 
   // Should only be called with constants as argument

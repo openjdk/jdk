@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,18 +44,19 @@ public class TestMethodSignature extends JavadocTester {
     public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "pkg");
         checkExit(Exit.OK);
 
         checkOutput("pkg/C.html", true,
                 """
                     <div class="member-signature"><span class="annotations">@Generated("GeneratedConstructor")
-                    </span><span class="modifiers">public</span>&nbsp;<span class="member-name">C</span>()</div>""",
+                    </span><span class="modifiers">public</span>&nbsp;<span class="element-name">C</span>()</div>""",
 
                 """
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
-                    <span class="return-type">void</span>&nbsp;<span class="member-name">simpleMetho\
-                    d</span>&#8203;<span class="parameters">(int&nbsp;i,
+                    <span class="return-type">void</span>&nbsp;<span class="element-name">simpleMeth\
+                    od</span><wbr><span class="parameters">(int&nbsp;i,
                      java.lang.String&nbsp;s,
                      boolean&nbsp;b)</span></div>""",
 
@@ -64,27 +65,26 @@ public class TestMethodSignature extends JavadocTester {
                                date="a date",
                                comments="some comment about the method below")
                     </span><span class="modifiers">public static</span>&nbsp;<span class="return-typ\
-                    e">void</span>&nbsp;<span class="member-name">annotatedMethod</span>&#8203;<span\
-                     class="parameters">(int&nbsp;i,
+                    e">void</span>&nbsp;<span class="element-name">annotatedMethod</span><wbr><span \
+                    class="parameters">(int&nbsp;i,
                      java.lang.String&nbsp;s,
                      boolean&nbsp;b)</span></div>""",
 
                 """
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
-                    <span class="type-parameters-long">&lt;T1 extends java.lang.AutoCloseable,&#8203\
-                    ;
-                    T2 extends java.lang.AutoCloseable,&#8203;
-                    T3 extends java.lang.AutoCloseable,&#8203;
-                    T4 extends java.lang.AutoCloseable,&#8203;
-                    T5 extends java.lang.AutoCloseable,&#8203;
-                    T6 extends java.lang.AutoCloseable,&#8203;
-                    T7 extends java.lang.AutoCloseable,&#8203;
+                    <span class="type-parameters-long">&lt;T1 extends java.lang.AutoCloseable,<wbr>
+                    T2 extends java.lang.AutoCloseable,<wbr>
+                    T3 extends java.lang.AutoCloseable,<wbr>
+                    T4 extends java.lang.AutoCloseable,<wbr>
+                    T5 extends java.lang.AutoCloseable,<wbr>
+                    T6 extends java.lang.AutoCloseable,<wbr>
+                    T7 extends java.lang.AutoCloseable,<wbr>
                     T8 extends java.lang.AutoCloseable&gt;</span>
                     <span class="return-type"><a href="C.With8Types.html" title="class in pkg">C.Wit\
-                    h8Types</a>&lt;T1,&#8203;T2,&#8203;T3,&#8203;T4,&#8203;T5,&#8203;T6,&#8203;T7,&#\
-                    8203;T8&gt;</span>&nbsp;<span class="member-name">bigGenericMethod</span>&#8203;\
-                    <span class="parameters">(<a href="C.F0.html" title="interface in pkg">C.F0</a>&\
-                    lt;? extends T1&gt;&nbsp;t1,
+                    h8Types</a>&lt;T1,<wbr>T2,<wbr>T3,<wbr>T4,<wbr>T5,<wbr>T6,<wbr>T7,<wbr>T8&gt;</s\
+                    pan>&nbsp;<span class="element-name">bigGenericMethod</span><wbr><span class="pa\
+                    rameters">(<a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T1\
+                    &gt;&nbsp;t1,
                      <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T2&gt;&nbsp;t2,
                      <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T3&gt;&nbsp;t3,
                      <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T4&gt;&nbsp;t4,
@@ -100,19 +100,19 @@ public class TestMethodSignature extends JavadocTester {
                                date="a date",
                                comments="some comment about the method below")
                     </span><span class="modifiers">public static</span>&nbsp;<span class="type-param\
-                    eters-long">&lt;T1 extends java.lang.AutoCloseable,&#8203;
-                    T2 extends java.lang.AutoCloseable,&#8203;
-                    T3 extends java.lang.AutoCloseable,&#8203;
-                    T4 extends java.lang.AutoCloseable,&#8203;
-                    T5 extends java.lang.AutoCloseable,&#8203;
-                    T6 extends java.lang.AutoCloseable,&#8203;
-                    T7 extends java.lang.AutoCloseable,&#8203;
+                    eters-long">&lt;T1 extends java.lang.AutoCloseable,<wbr>
+                    T2 extends java.lang.AutoCloseable,<wbr>
+                    T3 extends java.lang.AutoCloseable,<wbr>
+                    T4 extends java.lang.AutoCloseable,<wbr>
+                    T5 extends java.lang.AutoCloseable,<wbr>
+                    T6 extends java.lang.AutoCloseable,<wbr>
+                    T7 extends java.lang.AutoCloseable,<wbr>
                     T8 extends java.lang.AutoCloseable&gt;</span>
                     <span class="return-type"><a href="C.With8Types.html" title="class in pkg">C.Wit\
-                    h8Types</a>&lt;T1,&#8203;T2,&#8203;T3,&#8203;T4,&#8203;T5,&#8203;T6,&#8203;T7,&#\
-                    8203;T8&gt;</span>&nbsp;<span class="member-name">bigGenericAnnotatedMethod</spa\
-                    n>&#8203;<span class="parameters">(<a href="C.F0.html" title="interface in pkg">\
-                    C.F0</a>&lt;? extends T1&gt;&nbsp;t1,
+                    h8Types</a>&lt;T1,<wbr>T2,<wbr>T3,<wbr>T4,<wbr>T5,<wbr>T6,<wbr>T7,<wbr>T8&gt;</s\
+                    pan>&nbsp;<span class="element-name">bigGenericAnnotatedMethod</span><wbr><span \
+                    class="parameters">(<a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? e\
+                    xtends T1&gt;&nbsp;t1,
                      <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T2&gt;&nbsp;t2,
                      <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T3&gt;&nbsp;t3,
                      <a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;? extends T4&gt;&nbsp;t4,

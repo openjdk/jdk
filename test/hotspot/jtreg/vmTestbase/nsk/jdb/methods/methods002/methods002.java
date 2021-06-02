@@ -49,9 +49,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.methods.methods002.methods002
- *        nsk.jdb.methods.methods002.methods002a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.methods.methods002.methods002
+ * @build nsk.jdb.methods.methods002.methods002a
+ * @run main/othervm
+ *      nsk.jdb.methods.methods002.methods002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

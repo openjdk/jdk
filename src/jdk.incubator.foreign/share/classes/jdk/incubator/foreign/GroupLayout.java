@@ -42,20 +42,23 @@ import java.util.stream.Collectors;
 /**
  * A group layout is used to combine together multiple <em>member layouts</em>. There are two ways in which member layouts
  * can be combined: if member layouts are laid out one after the other, the resulting group layout is said to be a <em>struct</em>
- * (see {@link MemoryLayout#ofStruct(MemoryLayout...)}); conversely, if all member layouts are laid out at the same starting offset,
- * the resulting group layout is said to be a <em>union</em> (see {@link MemoryLayout#ofUnion(MemoryLayout...)}).
- *
+ * (see {@link MemoryLayout#structLayout(MemoryLayout...)}); conversely, if all member layouts are laid out at the same starting offset,
+ * the resulting group layout is said to be a <em>union</em> (see {@link MemoryLayout#unionLayout(MemoryLayout...)}).
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code GroupLayout} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
+ * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown. </p>
  *
  * @implSpec
  * This class is immutable and thread-safe.
  */
-public final class GroupLayout extends AbstractLayout {
+public final class GroupLayout extends AbstractLayout implements MemoryLayout {
 
     /**
      * The group kind.
@@ -115,8 +118,8 @@ public final class GroupLayout extends AbstractLayout {
      * Returns the member layouts associated with this group.
      *
      * @apiNote the order in which member layouts are returned is the same order in which member layouts have
-     * been passed to one of the group layout factory methods (see {@link MemoryLayout#ofStruct(MemoryLayout...)},
-     * {@link MemoryLayout#ofUnion(MemoryLayout...)}).
+     * been passed to one of the group layout factory methods (see {@link MemoryLayout#structLayout(MemoryLayout...)},
+     * {@link MemoryLayout#unionLayout(MemoryLayout...)}).
      *
      * @return the member layouts associated with this group.
      */

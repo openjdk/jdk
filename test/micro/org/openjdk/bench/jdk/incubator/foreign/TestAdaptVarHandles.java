@@ -24,7 +24,6 @@
 
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayouts;
@@ -50,7 +49,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(3)
+@Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign" })
 public class TestAdaptVarHandles {
 
     static class IntBox {
@@ -86,7 +85,7 @@ public class TestAdaptVarHandles {
 
     static final VarHandle VH_box_int = MemoryHandles.filterValue(VH_int, INTBOX_TO_INT, INT_TO_INTBOX);
 
-    static final VarHandle VH_addr_int = MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT)
+    static final VarHandle VH_addr_int = MemoryLayout.sequenceLayout(MemoryLayouts.JAVA_INT)
             .varHandle(int.class, MemoryLayout.PathElement.sequenceElement());
 
     static final VarHandle VH_addr_box_int = MemoryHandles.filterValue(VH_addr_int, INTBOX_TO_INT, INT_TO_INTBOX);
@@ -144,9 +143,8 @@ public class TestAdaptVarHandles {
     @Benchmark
     public int segment_loop() throws Throwable {
         int sum = 0;
-        MemoryAddress baseAddress = segment.baseAddress();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int)VH_addr_int.get(baseAddress, (long)i);
+            sum += (int)VH_addr_int.get(segment, (long)i);
         }
         return sum;
     }
@@ -154,9 +152,8 @@ public class TestAdaptVarHandles {
     @Benchmark
     public int segment_box_loop() throws Throwable {
         int sum = 0;
-        MemoryAddress baseAddress = segment.baseAddress();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += ((IntBox)VH_addr_box_int.get(baseAddress, (long)i)).intValue();
+            sum += ((IntBox)VH_addr_box_int.get(segment, (long)i)).intValue();
         }
         return sum;
     }

@@ -27,6 +27,7 @@ package jdk.internal.platform;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,6 +39,7 @@ import java.util.stream.Stream;
 
 public final class CgroupUtil {
 
+    @SuppressWarnings("removal")
     public static Stream<String> readFilePrivileged(Path path) throws IOException {
         try {
             PrivilegedExceptionAction<Stream<String>> pea = () -> Files.lines(path);
@@ -45,6 +47,8 @@ public final class CgroupUtil {
         } catch (PrivilegedActionException e) {
             unwrapIOExceptionAndRethrow(e);
             throw new InternalError(e.getCause());
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
         }
     }
 
@@ -61,16 +65,19 @@ public final class CgroupUtil {
     static String readStringValue(CgroupSubsystemController controller, String param) throws IOException {
         PrivilegedExceptionAction<BufferedReader> pea = () ->
                 Files.newBufferedReader(Paths.get(controller.path(), param));
-        try (BufferedReader bufferedReader =
+        try (@SuppressWarnings("removal") BufferedReader bufferedReader =
                      AccessController.doPrivileged(pea)) {
             String line = bufferedReader.readLine();
             return line;
         } catch (PrivilegedActionException e) {
             unwrapIOExceptionAndRethrow(e);
             throw new InternalError(e.getCause());
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
         }
     }
 
+    @SuppressWarnings("removal")
     public static List<String> readAllLinesPrivileged(Path path) throws IOException {
         try {
             PrivilegedExceptionAction<List<String>> pea = () -> Files.readAllLines(path);
@@ -78,6 +85,8 @@ public final class CgroupUtil {
         } catch (PrivilegedActionException e) {
             unwrapIOExceptionAndRethrow(e);
             throw new InternalError(e.getCause());
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
         }
     }
 }

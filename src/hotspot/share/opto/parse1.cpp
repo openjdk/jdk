@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
-#include "runtime/arguments.hpp"
+#include "opto/type.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -435,6 +435,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     C->set_parsed_irreducible_loop(true);
   }
 #endif
+  C->set_has_loops(C->has_loops() || method()->has_loops());
 
   if (_expected_uses <= 0) {
     _prof_factor = 1;
@@ -481,9 +482,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   }
   // Accumulate total sum of decompilations, also.
   C->set_decompile_count(C->decompile_count() + md->decompile_count());
-
-  _count_invocations = C->do_count_invocations();
-  _method_data_update = C->do_method_data_update();
 
   if (log != NULL && method()->has_exception_handlers()) {
     log->elem("observe that='has_exception_handlers'");
@@ -817,7 +815,7 @@ JVMState* Compile::build_start_state(StartNode* start, const TypeFunc* tf) {
   int        arg_size = tf->domain()->cnt();
   int        max_size = MAX2(arg_size, (int)tf->range()->cnt());
   JVMState*  jvms     = new (this) JVMState(max_size - TypeFunc::Parms);
-  SafePointNode* map  = new SafePointNode(max_size, NULL);
+  SafePointNode* map  = new SafePointNode(max_size, jvms);
   record_for_igvn(map);
   assert(arg_size == TypeFunc::Parms + (is_osr_compilation() ? 1 : method()->arg_size()), "correct arg_size");
   Node_Notes* old_nn = default_node_notes();
@@ -841,7 +839,6 @@ JVMState* Compile::build_start_state(StartNode* start, const TypeFunc* tf) {
   }
   assert(jvms->argoff() == TypeFunc::Parms, "parser gets arguments here");
   set_default_node_notes(old_nn);
-  map->set_jvms(jvms);
   jvms->set_map(map);
   return jvms;
 }
@@ -1076,8 +1073,7 @@ void Parse::do_exits() {
       // The exiting JVM state is otherwise a copy of the calling JVMS.
       JVMState* caller = kit.jvms();
       JVMState* ex_jvms = caller->clone_shallow(C);
-      ex_jvms->set_map(kit.clone_map());
-      ex_jvms->map()->set_jvms(ex_jvms);
+      ex_jvms->bind_map(kit.clone_map());
       ex_jvms->set_bci(   InvocationEntryBci);
       kit.set_jvms(ex_jvms);
       if (do_synch) {
@@ -1096,8 +1092,7 @@ void Parse::do_exits() {
       ex_map = kit.make_exception_state(ex_oop);
       assert(ex_jvms->same_calls_as(ex_map->jvms()), "sanity");
       // Pop the last vestige of this method:
-      ex_map->set_jvms(caller->clone_shallow(C));
-      ex_map->jvms()->set_map(ex_map);
+      caller->clone_shallow(C)->bind_map(ex_map);
       _exits.push_exception_state(ex_map);
     }
     assert(_exits.map() == normal_map, "keep the same return state");
@@ -1198,6 +1193,42 @@ void Parse::do_method_entry() {
     make_dtrace_method_entry(method());
   }
 
+  // Narrow receiver type when it is too broad for the method being parsed.
+  ciInstanceKlass* callee_holder = method()->holder();
+  if (!method()->is_static()) {
+    const Type* holder_type = TypeInstPtr::make(TypePtr::BotPTR, callee_holder);
+
+    Node* receiver_obj = local(0);
+    const TypeInstPtr* receiver_type = _gvn.type(receiver_obj)->isa_instptr();
+
+    if (receiver_type != NULL && !receiver_type->higher_equal(holder_type)) {
+
+#ifdef ASSERT
+      // Perform dynamic receiver subtype check against callee holder class w/ a halt on failure.
+      Node* holder_klass = _gvn.makecon(TypeKlassPtr::make(callee_holder));
+      Node* not_subtype_ctrl = gen_subtype_check(receiver_obj, holder_klass);
+      assert(!stopped(), "not a subtype");
+
+      Node* halt = _gvn.transform(new HaltNode(not_subtype_ctrl, frameptr(), "failed receiver subtype check"));
+      C->root()->add_req(halt);
+#endif // ASSERT
+
+      // Receiver should always be a subtype of callee holder.
+      // But, since C2 type system doesn't properly track interfaces,
+      // the invariant on default methods can't be expressed in the type system.
+      // Example: for unrelated C <: I and D <: I, (C `meet` D) = Object </: I.
+      // (Downcasting interface receiver type to concrete class is fine, though it doesn't happen in practice.)
+      if (!callee_holder->is_interface()) {
+        assert(callee_holder->is_subtype_of(receiver_type->klass()), "sanity");
+        assert(!receiver_type->klass()->is_interface(), "interface receiver type");
+        receiver_type = receiver_type->join_speculative(holder_type)->is_instptr(); // keep speculative part
+        Node* casted_receiver_obj = _gvn.transform(new CheckCastPPNode(control(), receiver_obj, receiver_type));
+        set_local(0, casted_receiver_obj);
+      }
+
+    }
+  }
+
   // If the method is synchronized, we need to construct a lock node, attach
   // it to the Start node, and pin it there.
   if (method()->is_synchronized()) {
@@ -1211,7 +1242,7 @@ void Parse::do_method_entry() {
 
     // Setup Object Pointer
     Node *lock_obj = NULL;
-    if(method()->is_static()) {
+    if (method()->is_static()) {
       ciInstance* mirror = _method->holder()->java_mirror();
       const TypeInstPtr *t_lock = TypeInstPtr::make(mirror);
       lock_obj = makecon(t_lock);
@@ -1227,10 +1258,6 @@ void Parse::do_method_entry() {
   // Feed profiling data for parameters to the type system so it can
   // propagate it as speculative types
   record_profiled_parameters_for_speculation();
-
-  if (depth() == 1) {
-    increment_and_test_invocation_counter(Tier2CompileThreshold);
-  }
 }
 
 //------------------------------init_blocks------------------------------------
@@ -1599,6 +1626,11 @@ void Parse::merge_new_path(int target_bci) {
 // Merge the current mapping into the basic block starting at bci
 // The ex_oop must be pushed on the stack, unlike throw_to_exit.
 void Parse::merge_exception(int target_bci) {
+#ifdef ASSERT
+  if (target_bci < bci()) {
+    C->set_exception_backedge();
+  }
+#endif
   assert(sp() == 1, "must have only the throw exception on the stack");
   Block* target = successor_for_bci(target_bci);
   if (target == NULL) { handle_missing_successor(target_bci); return; }
@@ -2248,23 +2280,7 @@ void Parse::return_current(Node* value) {
 
 //------------------------------add_safepoint----------------------------------
 void Parse::add_safepoint() {
-  // See if we can avoid this safepoint.  No need for a SafePoint immediately
-  // after a Call (except Leaf Call) or another SafePoint.
-  Node *proj = control();
   uint parms = TypeFunc::Parms+1;
-  if( proj->is_Proj() ) {
-    Node *n0 = proj->in(0);
-    if( n0->is_Catch() ) {
-      n0 = n0->in(0)->in(0);
-      assert( n0->is_Call(), "expect a call here" );
-    }
-    if( n0->is_Call() ) {
-      if( n0->as_Call()->guaranteed_safepoint() )
-        return;
-    } else if( n0->is_SafePoint() && n0->req() >= parms ) {
-      return;
-    }
-  }
 
   // Clear out dead values from the debug info.
   kill_dead_locals();
@@ -2300,7 +2316,7 @@ void Parse::add_safepoint() {
   // Create a node for the polling address
   Node *polladr;
   Node *thread = _gvn.transform(new ThreadLocalNode());
-  Node *polling_page_load_addr = _gvn.transform(basic_plus_adr(top(), thread, in_bytes(Thread::polling_page_offset())));
+  Node *polling_page_load_addr = _gvn.transform(basic_plus_adr(top(), thread, in_bytes(JavaThread::polling_page_offset())));
   polladr = make_load(control(), polling_page_load_addr, TypeRawPtr::BOTTOM, T_ADDRESS, Compile::AliasIdxRaw, MemNode::unordered);
   sfpnt->init_req(TypeFunc::Parms+0, _gvn.transform(polladr));
 
@@ -2311,7 +2327,7 @@ void Parse::add_safepoint() {
 
   // Provide an edge from root to safepoint.  This makes the safepoint
   // appear useful until the parse has completed.
-  if( OptoRemoveUseless && transformed_sfpnt->is_SafePoint() ) {
+  if (transformed_sfpnt->is_SafePoint()) {
     assert(C->root() != NULL, "Expect parse is still valid");
     C->root()->add_prec(transformed_sfpnt);
   }

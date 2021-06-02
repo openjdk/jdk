@@ -34,9 +34,10 @@ import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayout.PathElement;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SequenceLayout;
 import jdk.incubator.foreign.ValueLayout;
-import jdk.incubator.foreign.MemoryAddress;
+
 import java.lang.invoke.VarHandle;
 import java.util.function.Function;
 
@@ -53,41 +54,41 @@ public class TestMemoryAccess {
 
     @Test(dataProvider = "elements")
     public void testPaddedAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, Checker checker) {
-        GroupLayout layout = MemoryLayout.ofStruct(MemoryLayout.ofPaddingBits(elemLayout.bitSize()), elemLayout.withName("elem"));
+        GroupLayout layout = MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem"));
         testAccessInternal(viewFactory, layout, layout.varHandle(carrier, PathElement.groupElement("elem")), checker);
     }
 
     @Test(dataProvider = "elements")
     public void testPaddedAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, Checker checker) {
-        SequenceLayout layout = MemoryLayout.ofSequence(2, elemLayout);
+        SequenceLayout layout = MemoryLayout.sequenceLayout(2, elemLayout);
         testAccessInternal(viewFactory, layout, layout.varHandle(carrier, PathElement.sequenceElement(1)), checker);
     }
 
     @Test(dataProvider = "arrayElements")
     public void testArrayAccess(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, ArrayChecker checker) {
-        SequenceLayout seq = MemoryLayout.ofSequence(10, elemLayout.withName("elem"));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(10, elemLayout.withName("elem"));
         testArrayAccessInternal(viewFactory, seq, seq.varHandle(carrier, PathElement.sequenceElement()), checker);
     }
 
     @Test(dataProvider = "arrayElements")
     public void testPaddedArrayAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, ArrayChecker checker) {
-        SequenceLayout seq = MemoryLayout.ofSequence(10, MemoryLayout.ofStruct(MemoryLayout.ofPaddingBits(elemLayout.bitSize()), elemLayout.withName("elem")));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem")));
         testArrayAccessInternal(viewFactory, seq, seq.varHandle(carrier, MemoryLayout.PathElement.sequenceElement(), MemoryLayout.PathElement.groupElement("elem")), checker);
     }
 
     @Test(dataProvider = "arrayElements")
     public void testPaddedArrayAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, ArrayChecker checker) {
-        SequenceLayout seq = MemoryLayout.ofSequence(10, MemoryLayout.ofSequence(2, elemLayout));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(10, MemoryLayout.sequenceLayout(2, elemLayout));
         testArrayAccessInternal(viewFactory, seq, seq.varHandle(carrier, PathElement.sequenceElement(), MemoryLayout.PathElement.sequenceElement(1)), checker);
     }
 
     private void testAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout layout, VarHandle handle, Checker checker) {
-        MemoryAddress outer_address;
-        try (MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(layout))) {
-            boolean isRO = !segment.hasAccessModes(MemorySegment.WRITE);
-            MemoryAddress addr = segment.baseAddress();
+        MemorySegment outer_segment;
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(layout, scope));
+            boolean isRO = segment.isReadOnly();
             try {
-                checker.check(handle, addr);
+                checker.check(handle, segment);
                 if (isRO) {
                     throw new AssertionError(); //not ok, memory should be immutable
                 }
@@ -98,15 +99,15 @@ public class TestMemoryAccess {
                 return;
             }
             try {
-                checker.check(handle, addr.addOffset(layout.byteSize()));
+                checker.check(handle, segment.asSlice(layout.byteSize()));
                 throw new AssertionError(); //not ok, out of bounds
             } catch (IndexOutOfBoundsException ex) {
                 //ok, should fail (out of bounds)
             }
-            outer_address = addr; //leak!
+            outer_segment = segment; //leak!
         }
         try {
-            checker.check(handle, outer_address);
+            checker.check(handle, outer_segment);
             throw new AssertionError(); //not ok, scope is closed
         } catch (IllegalStateException ex) {
             //ok, should fail (scope is closed)
@@ -114,13 +115,13 @@ public class TestMemoryAccess {
     }
 
     private void testArrayAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, ArrayChecker checker) {
-        MemoryAddress outer_address;
-        try (MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq))) {
-            boolean isRO = !segment.hasAccessModes(MemorySegment.WRITE);
-            MemoryAddress addr = segment.baseAddress();
+        MemorySegment outer_segment;
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, scope));
+            boolean isRO = segment.isReadOnly();
             try {
                 for (int i = 0; i < seq.elementCount().getAsLong(); i++) {
-                    checker.check(handle, addr, i);
+                    checker.check(handle, segment, i);
                 }
                 if (isRO) {
                     throw new AssertionError(); //not ok, memory should be immutable
@@ -132,15 +133,15 @@ public class TestMemoryAccess {
                 return;
             }
             try {
-                checker.check(handle, addr, seq.elementCount().getAsLong());
+                checker.check(handle, segment, seq.elementCount().getAsLong());
                 throw new AssertionError(); //not ok, out of bounds
             } catch (IndexOutOfBoundsException ex) {
                 //ok, should fail (out of bounds)
             }
-            outer_address = addr; //leak!
+            outer_segment = segment; //leak!
         }
         try {
-            checker.check(handle, outer_address, 0);
+            checker.check(handle, outer_segment, 0);
             throw new AssertionError(); //not ok, scope is closed
         } catch (IllegalStateException ex) {
             //ok, should fail (scope is closed)
@@ -149,16 +150,16 @@ public class TestMemoryAccess {
 
     @Test(dataProvider = "matrixElements")
     public void testMatrixAccess(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, MatrixChecker checker) {
-        SequenceLayout seq = MemoryLayout.ofSequence(20,
-                MemoryLayout.ofSequence(10, elemLayout.withName("elem")));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(20,
+                MemoryLayout.sequenceLayout(10, elemLayout.withName("elem")));
         testMatrixAccessInternal(viewFactory, seq, seq.varHandle(carrier,
                 PathElement.sequenceElement(), PathElement.sequenceElement()), checker);
     }
 
     @Test(dataProvider = "matrixElements")
     public void testPaddedMatrixAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, MatrixChecker checker) {
-        SequenceLayout seq = MemoryLayout.ofSequence(20,
-                MemoryLayout.ofSequence(10, MemoryLayout.ofStruct(MemoryLayout.ofPaddingBits(elemLayout.bitSize()), elemLayout.withName("elem"))));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(20,
+                MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem"))));
         testMatrixAccessInternal(viewFactory, seq,
                 seq.varHandle(carrier,
                         PathElement.sequenceElement(), PathElement.sequenceElement(), PathElement.groupElement("elem")),
@@ -167,8 +168,8 @@ public class TestMemoryAccess {
 
     @Test(dataProvider = "matrixElements")
     public void testPaddedMatrixAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, MatrixChecker checker) {
-        SequenceLayout seq = MemoryLayout.ofSequence(20,
-                MemoryLayout.ofSequence(10, MemoryLayout.ofSequence(2, elemLayout)));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(20,
+                MemoryLayout.sequenceLayout(10, MemoryLayout.sequenceLayout(2, elemLayout)));
         testMatrixAccessInternal(viewFactory, seq,
                 seq.varHandle(carrier,
                         PathElement.sequenceElement(), PathElement.sequenceElement(), PathElement.sequenceElement(1)),
@@ -183,14 +184,14 @@ public class TestMemoryAccess {
     }
 
     private void testMatrixAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, MatrixChecker checker) {
-        MemoryAddress outer_address;
-        try (MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq))) {
-            boolean isRO = !segment.hasAccessModes(MemorySegment.WRITE);
-            MemoryAddress addr = segment.baseAddress();
+        MemorySegment outer_segment;
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, scope));
+            boolean isRO = segment.isReadOnly();
             try {
                 for (int i = 0; i < seq.elementCount().getAsLong(); i++) {
                     for (int j = 0; j < ((SequenceLayout) seq.elementLayout()).elementCount().getAsLong(); j++) {
-                        checker.check(handle, addr, i, j);
+                        checker.check(handle, segment, i, j);
                     }
                 }
                 if (isRO) {
@@ -203,16 +204,16 @@ public class TestMemoryAccess {
                 return;
             }
             try {
-                checker.check(handle, addr, seq.elementCount().getAsLong(),
+                checker.check(handle, segment, seq.elementCount().getAsLong(),
                         ((SequenceLayout)seq.elementLayout()).elementCount().getAsLong());
                 throw new AssertionError(); //not ok, out of bounds
             } catch (IndexOutOfBoundsException ex) {
                 //ok, should fail (out of bounds)
             }
-            outer_address = addr; //leak!
+            outer_segment = segment; //leak!
         }
         try {
-            checker.check(handle, outer_address, 0, 0);
+            checker.check(handle, outer_segment, 0, 0);
             throw new AssertionError(); //not ok, scope is closed
         } catch (IllegalStateException ex) {
             //ok, should fail (scope is closed)
@@ -220,7 +221,7 @@ public class TestMemoryAccess {
     }
 
     static Function<MemorySegment, MemorySegment> ID = Function.identity();
-    static Function<MemorySegment, MemorySegment> IMMUTABLE = ms -> ms.withAccessModes(MemorySegment.READ | MemorySegment.CLOSE);
+    static Function<MemorySegment, MemorySegment> IMMUTABLE = MemorySegment::asReadOnly;
 
     @DataProvider(name = "elements")
     public Object[][] createData() {
@@ -261,41 +262,41 @@ public class TestMemoryAccess {
     }
 
     interface Checker {
-        void check(VarHandle handle, MemoryAddress addr);
+        void check(VarHandle handle, MemorySegment segment);
 
-        Checker BYTE = (handle, addr) -> {
-            handle.set(addr, (byte)42);
-            assertEquals(42, (byte)handle.get(addr));
+        Checker BYTE = (handle, segment) -> {
+            handle.set(segment, (byte)42);
+            assertEquals(42, (byte)handle.get(segment));
         };
 
-        Checker SHORT = (handle, addr) -> {
-            handle.set(addr, (short)42);
-            assertEquals(42, (short)handle.get(addr));
+        Checker SHORT = (handle, segment) -> {
+            handle.set(segment, (short)42);
+            assertEquals(42, (short)handle.get(segment));
         };
 
-        Checker CHAR = (handle, addr) -> {
-            handle.set(addr, (char)42);
-            assertEquals(42, (char)handle.get(addr));
+        Checker CHAR = (handle, segment) -> {
+            handle.set(segment, (char)42);
+            assertEquals(42, (char)handle.get(segment));
         };
 
-        Checker INT = (handle, addr) -> {
-            handle.set(addr, 42);
-            assertEquals(42, (int)handle.get(addr));
+        Checker INT = (handle, segment) -> {
+            handle.set(segment, 42);
+            assertEquals(42, (int)handle.get(segment));
         };
 
-        Checker LONG = (handle, addr) -> {
-            handle.set(addr, (long)42);
-            assertEquals(42, (long)handle.get(addr));
+        Checker LONG = (handle, segment) -> {
+            handle.set(segment, (long)42);
+            assertEquals(42, (long)handle.get(segment));
         };
 
-        Checker FLOAT = (handle, addr) -> {
-            handle.set(addr, (float)42);
-            assertEquals((float)42, (float)handle.get(addr));
+        Checker FLOAT = (handle, segment) -> {
+            handle.set(segment, (float)42);
+            assertEquals((float)42, (float)handle.get(segment));
         };
 
-        Checker DOUBLE = (handle, addr) -> {
-            handle.set(addr, (double)42);
-            assertEquals((double)42, (double)handle.get(addr));
+        Checker DOUBLE = (handle, segment) -> {
+            handle.set(segment, (double)42);
+            assertEquals((double)42, (double)handle.get(segment));
         };
     }
 
@@ -338,41 +339,41 @@ public class TestMemoryAccess {
     }
 
     interface ArrayChecker {
-        void check(VarHandle handle, MemoryAddress addr, long index);
+        void check(VarHandle handle, MemorySegment segment, long index);
 
-        ArrayChecker BYTE = (handle, addr, i) -> {
-            handle.set(addr, i, (byte)i);
-            assertEquals(i, (byte)handle.get(addr, i));
+        ArrayChecker BYTE = (handle, segment, i) -> {
+            handle.set(segment, i, (byte)i);
+            assertEquals(i, (byte)handle.get(segment, i));
         };
 
-        ArrayChecker SHORT = (handle, addr, i) -> {
-            handle.set(addr, i, (short)i);
-            assertEquals(i, (short)handle.get(addr, i));
+        ArrayChecker SHORT = (handle, segment, i) -> {
+            handle.set(segment, i, (short)i);
+            assertEquals(i, (short)handle.get(segment, i));
         };
 
-        ArrayChecker CHAR = (handle, addr, i) -> {
-            handle.set(addr, i, (char)i);
-            assertEquals(i, (char)handle.get(addr, i));
+        ArrayChecker CHAR = (handle, segment, i) -> {
+            handle.set(segment, i, (char)i);
+            assertEquals(i, (char)handle.get(segment, i));
         };
 
-        ArrayChecker INT = (handle, addr, i) -> {
-            handle.set(addr, i, (int)i);
-            assertEquals(i, (int)handle.get(addr, i));
+        ArrayChecker INT = (handle, segment, i) -> {
+            handle.set(segment, i, (int)i);
+            assertEquals(i, (int)handle.get(segment, i));
         };
 
-        ArrayChecker LONG = (handle, addr, i) -> {
-            handle.set(addr, i, (long)i);
-            assertEquals(i, (long)handle.get(addr, i));
+        ArrayChecker LONG = (handle, segment, i) -> {
+            handle.set(segment, i, (long)i);
+            assertEquals(i, (long)handle.get(segment, i));
         };
 
-        ArrayChecker FLOAT = (handle, addr, i) -> {
-            handle.set(addr, i, (float)i);
-            assertEquals((float)i, (float)handle.get(addr, i));
+        ArrayChecker FLOAT = (handle, segment, i) -> {
+            handle.set(segment, i, (float)i);
+            assertEquals((float)i, (float)handle.get(segment, i));
         };
 
-        ArrayChecker DOUBLE = (handle, addr, i) -> {
-            handle.set(addr, i, (double)i);
-            assertEquals((double)i, (double)handle.get(addr, i));
+        ArrayChecker DOUBLE = (handle, segment, i) -> {
+            handle.set(segment, i, (double)i);
+            assertEquals((double)i, (double)handle.get(segment, i));
         };
     }
 
@@ -415,41 +416,41 @@ public class TestMemoryAccess {
     }
 
     interface MatrixChecker {
-        void check(VarHandle handle, MemoryAddress addr, long row, long col);
+        void check(VarHandle handle, MemorySegment segment, long row, long col);
 
-        MatrixChecker BYTE = (handle, addr, r, c) -> {
-            handle.set(addr, r, c, (byte)(r + c));
-            assertEquals(r + c, (byte)handle.get(addr, r, c));
+        MatrixChecker BYTE = (handle, segment, r, c) -> {
+            handle.set(segment, r, c, (byte)(r + c));
+            assertEquals(r + c, (byte)handle.get(segment, r, c));
         };
 
-        MatrixChecker SHORT = (handle, addr, r, c) -> {
-            handle.set(addr, r, c, (short)(r + c));
-            assertEquals(r + c, (short)handle.get(addr, r, c));
+        MatrixChecker SHORT = (handle, segment, r, c) -> {
+            handle.set(segment, r, c, (short)(r + c));
+            assertEquals(r + c, (short)handle.get(segment, r, c));
         };
 
-        MatrixChecker CHAR = (handle, addr, r, c) -> {
-            handle.set(addr, r, c, (char)(r + c));
-            assertEquals(r + c, (char)handle.get(addr, r, c));
+        MatrixChecker CHAR = (handle, segment, r, c) -> {
+            handle.set(segment, r, c, (char)(r + c));
+            assertEquals(r + c, (char)handle.get(segment, r, c));
         };
 
-        MatrixChecker INT = (handle, addr, r, c) -> {
-            handle.set(addr, r, c, (int)(r + c));
-            assertEquals(r + c, (int)handle.get(addr, r, c));
+        MatrixChecker INT = (handle, segment, r, c) -> {
+            handle.set(segment, r, c, (int)(r + c));
+            assertEquals(r + c, (int)handle.get(segment, r, c));
         };
 
-        MatrixChecker LONG = (handle, addr, r, c) -> {
-            handle.set(addr, r, c, r + c);
-            assertEquals(r + c, (long)handle.get(addr, r, c));
+        MatrixChecker LONG = (handle, segment, r, c) -> {
+            handle.set(segment, r, c, r + c);
+            assertEquals(r + c, (long)handle.get(segment, r, c));
         };
 
-        MatrixChecker FLOAT = (handle, addr, r, c) -> {
-            handle.set(addr, r, c, (float)(r + c));
-            assertEquals((float)(r + c), (float)handle.get(addr, r, c));
+        MatrixChecker FLOAT = (handle, segment, r, c) -> {
+            handle.set(segment, r, c, (float)(r + c));
+            assertEquals((float)(r + c), (float)handle.get(segment, r, c));
         };
 
-        MatrixChecker DOUBLE = (handle, addr, r, c) -> {
-            handle.set(addr, r, c, (double)(r + c));
-            assertEquals((double)(r + c), (double)handle.get(addr, r, c));
+        MatrixChecker DOUBLE = (handle, segment, r, c) -> {
+            handle.set(segment, r, c, (double)(r + c));
+            assertEquals((double)(r + c), (double)handle.get(segment, r, c));
         };
     }
 

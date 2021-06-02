@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ import static jdk.internal.logger.SurrogateLogger.isFilteredFrame;
 
 public class LogRecord implements java.io.Serializable {
     private static final AtomicLong globalSequenceNumber
-        = new AtomicLong(0);
+        = new AtomicLong();
 
     /**
      * Logging message level
@@ -767,6 +767,7 @@ public class LogRecord implements java.io.Serializable {
     /*
      * CallerFinder is a stateful predicate.
      */
+    @SuppressWarnings("removal")
     static final class CallerFinder implements Predicate<StackWalker.StackFrame> {
         private static final StackWalker WALKER;
         static {

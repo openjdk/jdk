@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key cgroups
  * @summary Test JVM's memory resource awareness when running inside docker container
  * @requires docker.support
  * @library /test/lib
@@ -32,7 +33,7 @@
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @build AttemptOOM sun.hotspot.WhiteBox PrintContainerInfo CheckOperatingSystemMXBean
- * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run driver TestMemoryAwareness
  */
 import jdk.test.lib.containers.docker.Common;
@@ -153,18 +154,24 @@ public class TestMemoryAwareness {
         out.shouldHaveExitValue(0)
            .shouldContain("Checking OperatingSystemMXBean")
            .shouldContain("OperatingSystemMXBean.getTotalPhysicalMemorySize: " + expectedMemory)
-           .shouldMatch("OperatingSystemMXBean\\.getFreePhysicalMemorySize: [1-9][0-9]+")
            .shouldContain("OperatingSystemMXBean.getTotalMemorySize: " + expectedMemory)
            .shouldMatch("OperatingSystemMXBean\\.getFreeMemorySize: [1-9][0-9]+")
-           .shouldMatch("OperatingSystemMXBean\\.getFreeSwapSpaceSize: [1-9][0-9]+");
-        // in case of warnings like : "Your kernel does not support swap limit capabilities or the cgroup is not mounted. Memory limited without swap."
-        // the getTotalSwapSpaceSize returns the system values as the container setup isn't supported in that case.
+           .shouldMatch("OperatingSystemMXBean\\.getFreePhysicalMemorySize: [1-9][0-9]+");
+
+        // in case of warnings like : "Your kernel does not support swap limit capabilities
+        // or the cgroup is not mounted. Memory limited without swap."
+        // the getTotalSwapSpaceSize and getFreeSwapSpaceSize return the system
+        // values as the container setup isn't supported in that case.
         try {
             out.shouldContain("OperatingSystemMXBean.getTotalSwapSpaceSize: " + expectedSwap);
         } catch(RuntimeException ex) {
-            out.shouldMatch("OperatingSystemMXBean.getTotalSwapSpaceSize: [1-9][0-9]+");
-            out.shouldContain("Metrics.getMemoryLimit() == " + expectedMemory);
-            out.shouldContain("Metrics.getMemoryAndSwapLimit() == -1");
+            out.shouldMatch("OperatingSystemMXBean.getTotalSwapSpaceSize: [0-9]+");
+        }
+
+        try {
+            out.shouldMatch("OperatingSystemMXBean\\.getFreeSwapSpaceSize: [1-9][0-9]+");
+        } catch(RuntimeException ex) {
+            out.shouldMatch("OperatingSystemMXBean\\.getFreeSwapSpaceSize: 0");
         }
     }
 

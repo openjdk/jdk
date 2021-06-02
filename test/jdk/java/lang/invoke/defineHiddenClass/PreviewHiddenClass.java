@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class PreviewHiddenClass {
         // compile a class with --enable-preview
         Path sourceFile = SRC_DIR.resolve("HiddenInterface.java");
         String[] options = new String[] {
-                "--enable-preview", "-source", String.valueOf(Runtime.version().feature()) };
+                "--enable-preview", "-source", String.valueOf(Runtime.version().feature()), "-XDforcePreview" };
         if (!CompilerUtils.compile(sourceFile, CLASSES_DIR, options)) {
             throw new RuntimeException("Compilation of the test failed: " + sourceFile);
         }

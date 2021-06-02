@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
@@ -204,10 +204,10 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj,
 
   null_check_offset = offset();
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
-    load_klass(tmp1, obj);
-    ldr_u32(tmp1, Address(tmp1, Klass::access_flags_offset()));
-    tst(tmp1, JVM_ACC_IS_BOX_CLASS);
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    load_klass(tmp2, obj);
+    ldr_u32(tmp2, Address(tmp2, Klass::access_flags_offset()));
+    tst(tmp2, JVM_ACC_IS_VALUE_BASED_CLASS);
     b(slow_case, ne);
   }
 

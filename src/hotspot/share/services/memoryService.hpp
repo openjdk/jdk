@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
 #include "services/memoryUsage.hpp"
+#include "utilities/growableArray.hpp"
 
 // Forward declaration
 class MemoryPool;

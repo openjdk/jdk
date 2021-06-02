@@ -371,7 +371,12 @@ private:
 
 public:
     ImageFileReaderTable();
-    ~ImageFileReaderTable();
+// ~ImageFileReaderTable()
+// Bug 8166727
+//
+// WARNING: Should never close jimage files.
+//          Threads may still be running during shutdown.
+//
 
     // Return the number of entries.
     inline u4 count() { return _count; }
@@ -423,7 +428,7 @@ private:
     u4* _offsets_table;  // Location offset table
     u1* _location_bytes; // Location attributes
     u1* _string_bytes;   // String table
-    ImageModuleData *module_data;       // The ImageModuleData for this image
+    ImageModuleData *_module_data;       // The ImageModuleData for this image
 
     ImageFileReader(const char* name, bool big_endian);
     ~ImageFileReader();

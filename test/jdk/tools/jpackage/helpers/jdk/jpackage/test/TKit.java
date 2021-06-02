@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ final public class TKit {
     }).get();
 
     public static final Path SRC_ROOT = Functional.identity(() -> {
-        return TEST_SRC_ROOT.resolve("../../../../src/jdk.incubator.jpackage").normalize().toAbsolutePath();
+        return TEST_SRC_ROOT.resolve("../../../../src/jdk.jpackage").normalize().toAbsolutePath();
     }).get();
 
     public final static String ICON_SUFFIX = Functional.identity(() -> {
@@ -99,20 +99,6 @@ final public class TKit {
 
         throw throwUnknownPlatformError();
     }).get();
-
-    public static void run(String args[], ThrowingRunnable testBody) {
-        if (currentTest != null) {
-            throw new IllegalStateException(
-                    "Unexpeced nested or concurrent Test.run() call");
-        }
-
-        TestInstance test = new TestInstance(testBody);
-        ThrowingRunnable.toRunnable(() -> runTests(List.of(test))).run();
-        test.rethrowIfSkipped();
-        if (!test.passed()) {
-            throw new RuntimeException();
-        }
-    }
 
     static void withExtraLogStream(ThrowingRunnable action) {
         if (extraLogStream != null) {
@@ -698,7 +684,18 @@ final public class TKit {
         }
     }
 
-     public static void assertDirectoryExists(Path path) {
+    public static void assertPathNotEmptyDirectory(Path path) {
+        if (Files.isDirectory(path)) {
+            ThrowingRunnable.toRunnable(() -> {
+                try (var files = Files.list(path)) {
+                    TKit.assertFalse(files.findFirst().isEmpty(), String.format
+                            ("Check [%s] is not an empty directory", path));
+                }
+            }).run();
+         }
+    }
+
+    public static void assertDirectoryExists(Path path) {
         assertPathExists(path, true);
         assertTrue(path.toFile().isDirectory(), String.format(
                 "Check [%s] is a directory", path));

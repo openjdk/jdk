@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,8 @@ import java.util.*;
  * @summary Test proxy classes that implement non-public interface
  *
  * @build p.Foo
- * @run main/othervm NonPublicProxyClass grant
- * @run main/othervm NonPublicProxyClass deny
+ * @run main/othervm -Djava.security.manager=allow NonPublicProxyClass grant
+ * @run main/othervm -Djava.security.manager=allow NonPublicProxyClass deny
  * @run main/othervm NonPublicProxyClass
  */
 public class NonPublicProxyClass {

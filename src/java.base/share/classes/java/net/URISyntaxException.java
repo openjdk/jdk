@@ -41,7 +41,15 @@ public class URISyntaxException
     @java.io.Serial
     private static final long serialVersionUID = 2137979680897488891L;
 
+    /**
+     * The input string.
+     */
     private String input;
+
+    /**
+     * The index at which the parse error occurred,
+     * or {@code -1} if the index is not known.
+     */
     private int index;
 
     /**

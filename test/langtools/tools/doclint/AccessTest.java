@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8004832
  * @summary Add new doclint package
- * @modules jdk.compiler/com.sun.tools.doclint
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -ref AccessTest.protected.out AccessTest.java
  * @run main DocLintTester -Xmsgs -ref AccessTest.private.out AccessTest.java

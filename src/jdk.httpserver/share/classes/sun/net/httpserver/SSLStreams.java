@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,11 +430,16 @@ class SSLStreams {
             handshaking.lock();
             ByteBuffer tmp = allocate(BufType.APPLICATION);
             WrapperResult r;
+            Status st;
+            HandshakeStatus hs;
             do {
                 tmp.clear();
                 tmp.flip ();
                 r = wrapper.wrapAndSendX (tmp, true);
-            } while (r.result.getStatus() != Status.CLOSED);
+                hs = r.result.getHandshakeStatus();
+                st = r.result.getStatus();
+            } while (st != Status.CLOSED &&
+                        !(st == Status.OK && hs == HandshakeStatus.NOT_HANDSHAKING));
         } finally {
             handshaking.unlock();
         }
@@ -654,7 +659,9 @@ class SSLStreams {
                 r = wrapper.wrapAndSend (buf);
                 stat = r.result.getHandshakeStatus();
             }
-            assert r.result.getStatus() == Status.CLOSED;
+            assert r.result.getStatus() == Status.CLOSED
+                    : "status is: " + r.result.getStatus()
+                    + ", handshakeStatus is: " + stat;
         }
     }
 }

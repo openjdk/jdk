@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
 #define SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
 
-#include "classfile/classLoaderData.inline.hpp"
 #include "gc/serial/markSweep.hpp"
+
+#include "classfile/classLoaderData.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/markWord.inline.hpp"
 #include "oops/access.inline.hpp"
@@ -38,8 +39,8 @@
 inline void MarkSweep::mark_object(oop obj) {
   // some marks may contain information we need to preserve so we store them away
   // and overwrite the mark.  We'll restore it at the end of markSweep.
-  markWord mark = obj->mark_raw();
-  obj->set_mark_raw(markWord::prototype().set_marked());
+  markWord mark = obj->mark();
+  obj->set_mark(markWord::prototype().set_marked());
 
   if (obj->mark_must_be_preserved(mark)) {
     preserve_mark(obj, mark);
@@ -50,7 +51,7 @@ template <class T> inline void MarkSweep::mark_and_push(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
-    if (!obj->mark_raw().is_marked()) {
+    if (!obj->mark().is_marked()) {
       mark_object(obj);
       _marking_stack.push(obj);
     }
@@ -79,11 +80,11 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(Universe::heap()->is_in(obj), "should be in heap");
 
-    oop new_obj = oop(obj->mark_raw().decode_pointer());
+    oop new_obj = cast_to_oop(obj->mark().decode_pointer());
 
-    assert(new_obj != NULL ||                          // is forwarding ptr?
-           obj->mark_raw() == markWord::prototype() || // not gc marked?
-           (UseBiasedLocking && obj->mark_raw().has_bias_pattern()),
+    assert(new_obj != NULL ||                      // is forwarding ptr?
+           obj->mark() == markWord::prototype() || // not gc marked?
+           (UseBiasedLocking && obj->mark().has_bias_pattern()),
            // not gc marked?
            "should be forwarded");
 

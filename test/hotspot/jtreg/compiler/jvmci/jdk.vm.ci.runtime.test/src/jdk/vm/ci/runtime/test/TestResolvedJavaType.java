@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,13 +83,13 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 /**
  * Tests for {@link ResolvedJavaType}.
  */
-@SuppressWarnings("unchecked")
 public class TestResolvedJavaType extends TypeUniverse {
     private static final Class<? extends Annotation> SIGNATURE_POLYMORPHIC_CLASS = findPolymorphicSignatureClass();
 
     public TestResolvedJavaType() {
     }
 
+    @SuppressWarnings("unchecked")
     private static Class<? extends Annotation> findPolymorphicSignatureClass() {
         Class<? extends Annotation> signaturePolyAnnotation = null;
         try {
@@ -160,43 +160,6 @@ public class TestResolvedJavaType extends TypeUniverse {
             boolean actual = type.isArray();
             assertEquals(expected, actual);
         }
-    }
-
-    private static Class<?> anonClass() throws Exception {
-        ClassWriter cw = new ClassWriter(0);
-        cw.visit(Opcodes.V1_8, Opcodes.ACC_FINAL + Opcodes.ACC_SUPER, "Anon", null, "java/lang/Object", null);
-        FieldVisitor intField = cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "intField", "I", null, 0);
-        intField.visitEnd();
-        cw.visitEnd();
-        return unsafe.defineAnonymousClass(TypeUniverse.class, cw.toByteArray(), null);
-    }
-
-    @Test
-    public void getHostClassTest() throws Exception {
-        ResolvedJavaType type = metaAccess.lookupJavaType(anonClass());
-        ResolvedJavaType host = type.getHostClass();
-        assertNotNull(host);
-        for (Class<?> c : classes) {
-            type = metaAccess.lookupJavaType(c);
-            host = type.getHostClass();
-            assertNull(host);
-            if (type.equals(predicateType)) {
-                assertTrue(c.isHidden());
-            }
-        }
-
-        class LocalClass {}
-        Cloneable clone = new Cloneable() {};
-        assertNull(metaAccess.lookupJavaType(LocalClass.class).getHostClass());
-        assertNull(metaAccess.lookupJavaType(clone.getClass()).getHostClass());
-
-        Supplier<Runnable> lambda = () -> () -> System.out.println("run");
-        ResolvedJavaType lambdaType = metaAccess.lookupJavaType(lambda.getClass());
-        ResolvedJavaType nestedLambdaType = metaAccess.lookupJavaType(lambda.get().getClass());
-        assertNull(lambdaType.getHostClass());
-        assertTrue(lambda.getClass().isHidden());
-        assertNull(nestedLambdaType.getHostClass());
-        assertTrue(lambda.get().getClass().isHidden());
     }
 
     @Test
@@ -771,16 +734,35 @@ public class TestResolvedJavaType extends TypeUniverse {
                     for (Method decl : decls) {
                         ResolvedJavaMethod m = metaAccess.lookupJavaMethod(decl);
                         if (m.isPublic()) {
-                            ResolvedJavaMethod resolvedmethod = type.resolveMethod(m, context);
+                            ResolvedJavaMethod resolvedMethod = type.resolveMethod(m, context);
                             if (isSignaturePolymorphic(m)) {
                                 // Signature polymorphic methods must not be resolved
-                                assertNull(resolvedmethod);
+                                assertNull(resolvedMethod);
                             } else {
                                 ResolvedJavaMethod i = metaAccess.lookupJavaMethod(impl);
-                                assertEquals(m.toString(), i, resolvedmethod);
+                                assertEquals(m.toString(), i, resolvedMethod);
                             }
                         }
                     }
+                }
+                // For backwards compatibility treat constructors as resolvable even though they
+                // aren't virtually dispatched.
+                ResolvedJavaType declaringClass = metaAccess.lookupJavaType(c);
+                for (Constructor<?> m : c.getDeclaredConstructors()) {
+                    ResolvedJavaMethod decl = metaAccess.lookupJavaMethod(m);
+                    ResolvedJavaMethod impl = type.resolveMethod(decl, declaringClass);
+                    assertEquals(m.toString(), decl, impl);
+                }
+                for (Method m : c.getDeclaredMethods()) {
+                    if (isStatic(m.getModifiers())) {
+                        // resolveMethod really shouldn't be called with static methods and the
+                        // result is is somewhat inconsistent so just ignore them
+                        continue;
+                    }
+                    ResolvedJavaMethod decl = metaAccess.lookupJavaMethod(m);
+                    ResolvedJavaMethod impl = type.resolveMethod(decl, declaringClass);
+                    ResolvedJavaMethod expected = isSignaturePolymorphic(decl) ? null : decl;
+                    assertEquals(m.toString(), expected, impl);
                 }
             }
         }
@@ -1134,6 +1116,7 @@ public class TestResolvedJavaType extends TypeUniverse {
         "isLinked",
         "getJavaClass",
         "getObjectHub",
+        "getHostClass",
         "hasFinalizableSubclass",
         "hasFinalizer",
         "isLocal",

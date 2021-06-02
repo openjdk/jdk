@@ -176,5 +176,9 @@ public class BasicComboBoxEditor implements ComboBoxEditor,FocusListener {
     @SuppressWarnings("serial") // Same-version serialization only
     public static class UIResource extends BasicComboBoxEditor
     implements javax.swing.plaf.UIResource {
+        /**
+         * Constructs a {@code UIResource}.
+         */
+        public UIResource() {}
     }
 }

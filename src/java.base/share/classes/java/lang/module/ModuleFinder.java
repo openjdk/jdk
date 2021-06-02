@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,6 @@ import jdk.internal.module.SystemModuleFinders;
  * <p> A {@code ModuleFinder} is not required to be thread safe. </p>
  *
  * @since 9
- * @spec JPMS
  */
 
 public interface ModuleFinder {
@@ -149,6 +148,7 @@ public interface ModuleFinder {
      * @throws SecurityException
      *         If denied by the security manager
      */
+    @SuppressWarnings("removal")
     static ModuleFinder ofSystem() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {

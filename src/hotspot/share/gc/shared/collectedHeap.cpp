@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,42 +23,70 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/classLoaderData.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memAllocator.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
-#include "memory/metaspace.hpp"
+#include "logging/logStream.hpp"
+#include "memory/classLoaderMetaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/heapDumper.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/events.hpp"
 
 class ClassLoaderData;
 
 size_t CollectedHeap::_filler_array_max_size = 0;
+
+class GCMessage : public FormatBuffer<1024> {
+ public:
+  bool is_before;
+};
 
 template <>
 void EventLogBase<GCMessage>::print(outputStream* st, GCMessage& m) {
   st->print_cr("GC heap %s", m.is_before ? "before" : "after");
   st->print_raw(m);
 }
+
+class GCHeapLog : public EventLogBase<GCMessage> {
+ private:
+  void log_heap(CollectedHeap* heap, bool before);
+
+ public:
+  GCHeapLog() : EventLogBase<GCMessage>("GC Heap History", "gc") {}
+
+  void log_heap_before(CollectedHeap* heap) {
+    log_heap(heap, true);
+  }
+  void log_heap_after(CollectedHeap* heap) {
+    log_heap(heap, false);
+  }
+};
 
 void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
   if (!should_log()) {
@@ -100,37 +128,38 @@ GCHeapSummary CollectedHeap::create_heap_summary() {
 }
 
 MetaspaceSummary CollectedHeap::create_metaspace_summary() {
-  const MetaspaceSizes meta_space(
-      MetaspaceUtils::committed_bytes(),
-      MetaspaceUtils::used_bytes(),
-      MetaspaceUtils::reserved_bytes());
-  const MetaspaceSizes data_space(
-      MetaspaceUtils::committed_bytes(Metaspace::NonClassType),
-      MetaspaceUtils::used_bytes(Metaspace::NonClassType),
-      MetaspaceUtils::reserved_bytes(Metaspace::NonClassType));
-  const MetaspaceSizes class_space(
-      MetaspaceUtils::committed_bytes(Metaspace::ClassType),
-      MetaspaceUtils::used_bytes(Metaspace::ClassType),
-      MetaspaceUtils::reserved_bytes(Metaspace::ClassType));
-
   const MetaspaceChunkFreeListSummary& ms_chunk_free_list_summary =
     MetaspaceUtils::chunk_free_list_summary(Metaspace::NonClassType);
   const MetaspaceChunkFreeListSummary& class_chunk_free_list_summary =
     MetaspaceUtils::chunk_free_list_summary(Metaspace::ClassType);
-
-  return MetaspaceSummary(MetaspaceGC::capacity_until_GC(), meta_space, data_space, class_space,
+  return MetaspaceSummary(MetaspaceGC::capacity_until_GC(),
+                          MetaspaceUtils::get_combined_statistics(),
                           ms_chunk_free_list_summary, class_chunk_free_list_summary);
 }
 
 void CollectedHeap::print_heap_before_gc() {
-  Universe::print_heap_before_gc();
+  LogTarget(Debug, gc, heap) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("Heap before GC invocations=%u (full %u):", total_collections(), total_full_collections());
+    ResourceMark rm;
+    print_on(&ls);
+  }
+
   if (_gc_heap_log != NULL) {
     _gc_heap_log->log_heap_before(this);
   }
 }
 
 void CollectedHeap::print_heap_after_gc() {
-  Universe::print_heap_after_gc();
+  LogTarget(Debug, gc, heap) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("Heap after GC invocations=%u (full %u):", total_collections(), total_full_collections());
+    ResourceMark rm;
+    print_on(&ls);
+  }
+
   if (_gc_heap_log != NULL) {
     _gc_heap_log->log_heap_after(this);
   }
@@ -190,6 +219,8 @@ bool CollectedHeap::is_oop(oop object) const {
 
 
 CollectedHeap::CollectedHeap() :
+  _capacity_at_last_gc(0),
+  _used_at_last_gc(0),
   _is_gc_active(false),
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
@@ -331,6 +362,14 @@ MemoryUsage CollectedHeap::memory_usage() {
   return MemoryUsage(InitialHeapSize, used(), capacity(), max_capacity());
 }
 
+void CollectedHeap::set_gc_cause(GCCause::Cause v) {
+  if (UsePerfData) {
+    _gc_lastcause = _gc_cause;
+    _perf_gc_lastcause->set_value(GCCause::to_string(_gc_lastcause));
+    _perf_gc_cause->set_value(GCCause::to_string(v));
+  }
+  _gc_cause = v;
+}
 
 #ifndef PRODUCT
 void CollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr, size_t size) {
@@ -406,7 +445,7 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
     fill_with_array(start, words, zap);
   } else if (words > 0) {
     assert(words == min_fill_size(), "unaligned size");
-    ObjAllocator allocator(SystemDictionary::Object_klass(), words);
+    ObjAllocator allocator(vmClasses::Object_klass(), words);
     allocator.initialize(start);
   }
 }
@@ -531,6 +570,7 @@ void CollectedHeap::initialize_reserved_region(const ReservedHeapSpace& rs) {
 }
 
 void CollectedHeap::post_initialize() {
+  StringDedup::initialize();
   initialize_serviceability();
 }
 
@@ -582,11 +622,18 @@ void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
   ShouldNotReachHere();
 }
 
-void CollectedHeap::deduplicate_string(oop str) {
-  // Do nothing, unless overridden in subclass.
+bool CollectedHeap::is_archived_object(oop object) const {
+  return false;
 }
 
 uint32_t CollectedHeap::hash_oop(oop obj) const {
   const uintptr_t addr = cast_from_oop<uintptr_t>(obj);
   return static_cast<uint32_t>(addr >> LogMinObjAlignment);
+}
+
+// It's the caller's responsibility to ensure glitch-freedom
+// (if required).
+void CollectedHeap::update_capacity_and_used_at_gc() {
+  _capacity_at_last_gc = capacity();
+  _used_at_last_gc     = used();
 }

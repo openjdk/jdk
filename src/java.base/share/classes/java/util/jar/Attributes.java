@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
 
 import sun.nio.cs.UTF_8;
@@ -514,12 +514,8 @@ public class Attributes implements Map<Object,Object>, Cloneable {
             if (this == o) {
                 return true;
             }
-            if (o instanceof Name) {
-                Name other = (Name)o;
-                return other.name.equalsIgnoreCase(name);
-            } else {
-                return false;
-            }
+            return o instanceof Name other
+                    && other.name.equalsIgnoreCase(name);
         }
 
         /**
@@ -672,7 +668,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
 
         static {
 
-            VM.initializeFromArchive(Attributes.Name.class);
+            CDS.initializeFromArchive(Attributes.Name.class);
 
             if (KNOWN_NAMES == null) {
                 MANIFEST_VERSION = new Name("Manifest-Version");

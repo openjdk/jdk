@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/universe.hpp"
 #include "opto/addnode.hpp"
@@ -49,6 +50,7 @@
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 #include "opto/type.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -92,44 +94,6 @@ void PhaseMacroExpand::migrate_outs(Node *old, Node *target) {
     --i;
   }
   assert(old->outcnt() == 0, "all uses must be deleted");
-}
-
-void PhaseMacroExpand::copy_call_debug_info(CallNode *oldcall, CallNode * newcall) {
-  // Copy debug information and adjust JVMState information
-  uint old_dbg_start = oldcall->tf()->domain()->cnt();
-  uint new_dbg_start = newcall->tf()->domain()->cnt();
-  int jvms_adj  = new_dbg_start - old_dbg_start;
-  assert (new_dbg_start == newcall->req(), "argument count mismatch");
-
-  // SafePointScalarObject node could be referenced several times in debug info.
-  // Use Dict to record cloned nodes.
-  Dict* sosn_map = new Dict(cmpkey,hashkey);
-  for (uint i = old_dbg_start; i < oldcall->req(); i++) {
-    Node* old_in = oldcall->in(i);
-    // Clone old SafePointScalarObjectNodes, adjusting their field contents.
-    if (old_in != NULL && old_in->is_SafePointScalarObject()) {
-      SafePointScalarObjectNode* old_sosn = old_in->as_SafePointScalarObject();
-      uint old_unique = C->unique();
-      Node* new_in = old_sosn->clone(sosn_map);
-      if (old_unique != C->unique()) { // New node?
-        new_in->set_req(0, C->root()); // reset control edge
-        new_in = transform_later(new_in); // Register new node.
-      }
-      old_in = new_in;
-    }
-    newcall->add_req(old_in);
-  }
-
-  // JVMS may be shared so clone it before we modify it
-  newcall->set_jvms(oldcall->jvms() != NULL ? oldcall->jvms()->clone_deep(C) : NULL);
-  for (JVMState *jvms = newcall->jvms(); jvms != NULL; jvms = jvms->caller()) {
-    jvms->set_map(newcall);
-    jvms->set_locoff(jvms->locoff()+jvms_adj);
-    jvms->set_stkoff(jvms->stkoff()+jvms_adj);
-    jvms->set_monoff(jvms->monoff()+jvms_adj);
-    jvms->set_scloff(jvms->scloff()+jvms_adj);
-    jvms->set_endoff(jvms->endoff()+jvms_adj);
-  }
 }
 
 Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, Node* word, int mask, int bits, bool return_fast_path) {
@@ -177,74 +141,19 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
   // Slow-path call
  CallNode *call = leaf_name
    ? (CallNode*)new CallLeafNode      ( slow_call_type, slow_call, leaf_name, TypeRawPtr::BOTTOM )
-   : (CallNode*)new CallStaticJavaNode( slow_call_type, slow_call, OptoRuntime::stub_name(slow_call), oldcall->jvms()->bci(), TypeRawPtr::BOTTOM );
+   : (CallNode*)new CallStaticJavaNode( slow_call_type, slow_call, OptoRuntime::stub_name(slow_call), TypeRawPtr::BOTTOM );
 
   // Slow path call has no side-effects, uses few values
   copy_predefined_input_for_runtime_call(slow_path, oldcall, call );
   if (parm0 != NULL)  call->init_req(TypeFunc::Parms+0, parm0);
   if (parm1 != NULL)  call->init_req(TypeFunc::Parms+1, parm1);
   if (parm2 != NULL)  call->init_req(TypeFunc::Parms+2, parm2);
-  copy_call_debug_info(oldcall, call);
+  call->copy_call_debug_info(&_igvn, oldcall);
   call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
   _igvn.replace_node(oldcall, call);
   transform_later(call);
 
   return call;
-}
-
-void PhaseMacroExpand::extract_call_projections(CallNode *call) {
-  _fallthroughproj = NULL;
-  _fallthroughcatchproj = NULL;
-  _ioproj_fallthrough = NULL;
-  _ioproj_catchall = NULL;
-  _catchallcatchproj = NULL;
-  _memproj_fallthrough = NULL;
-  _memproj_catchall = NULL;
-  _resproj = NULL;
-  for (DUIterator_Fast imax, i = call->fast_outs(imax); i < imax; i++) {
-    ProjNode *pn = call->fast_out(i)->as_Proj();
-    switch (pn->_con) {
-      case TypeFunc::Control:
-      {
-        // For Control (fallthrough) and I_O (catch_all_index) we have CatchProj -> Catch -> Proj
-        _fallthroughproj = pn;
-        DUIterator_Fast jmax, j = pn->fast_outs(jmax);
-        const Node *cn = pn->fast_out(j);
-        if (cn->is_Catch()) {
-          ProjNode *cpn = NULL;
-          for (DUIterator_Fast kmax, k = cn->fast_outs(kmax); k < kmax; k++) {
-            cpn = cn->fast_out(k)->as_Proj();
-            assert(cpn->is_CatchProj(), "must be a CatchProjNode");
-            if (cpn->_con == CatchProjNode::fall_through_index)
-              _fallthroughcatchproj = cpn;
-            else {
-              assert(cpn->_con == CatchProjNode::catch_all_index, "must be correct index.");
-              _catchallcatchproj = cpn;
-            }
-          }
-        }
-        break;
-      }
-      case TypeFunc::I_O:
-        if (pn->_is_io_use)
-          _ioproj_catchall = pn;
-        else
-          _ioproj_fallthrough = pn;
-        break;
-      case TypeFunc::Memory:
-        if (pn->_is_io_use)
-          _memproj_catchall = pn;
-        else
-          _memproj_fallthrough = pn;
-        break;
-      case TypeFunc::Parms:
-        _resproj = pn;
-        break;
-      default:
-        assert(false, "unexpected projection from allocation node.");
-    }
-  }
-
 }
 
 void PhaseMacroExpand::eliminate_gc_barrier(Node* p2x) {
@@ -280,12 +189,18 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
       } else if (in->is_MemBar()) {
         ArrayCopyNode* ac = NULL;
         if (ArrayCopyNode::may_modify(tinst, in->as_MemBar(), phase, ac)) {
-          assert(ac != NULL && ac->is_clonebasic(), "Only basic clone is a non escaping clone");
-          return ac;
+          if (ac != NULL) {
+            assert(ac->is_clonebasic(), "Only basic clone is a non escaping clone");
+            return ac;
+          }
         }
         mem = in->in(TypeFunc::Memory);
       } else {
+#ifdef ASSERT
+        in->dump();
+        mem->dump();
         assert(false, "unexpected projection");
+#endif
       }
     } else if (mem->is_Store()) {
       const TypePtr* atype = mem->as_Store()->adr_type();
@@ -296,8 +211,9 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
         uint adr_iid = atype->is_oopptr()->instance_id();
         // Array elements references have the same alias_idx
         // but different offset and different instance_id.
-        if (adr_offset == offset && adr_iid == alloc->_idx)
+        if (adr_offset == offset && adr_iid == alloc->_idx) {
           return mem;
+        }
       } else {
         assert(adr_idx == Compile::AliasIdxRaw, "address must match or be raw");
       }
@@ -311,10 +227,11 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
         InitializeNode* init = alloc->as_Allocate()->initialization();
         // We are looking for stored value, return Initialize node
         // or memory edge from Allocate node.
-        if (init != NULL)
+        if (init != NULL) {
           return init;
-        else
+        } else {
           return alloc->in(TypeFunc::Memory); // It will produce zero value (see callers).
+        }
       }
       // Otherwise skip it (the call updated 'mem' value).
     } else if (mem->Opcode() == Op_SCMemProj) {
@@ -367,7 +284,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
     Node* base = ac->in(ArrayCopyNode::Src);
     Node* adr = _igvn.transform(new AddPNode(base, base, MakeConX(offset)));
     const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
-    MergeMemNode* mergemen = MergeMemNode::make(mem);
+    MergeMemNode* mergemen = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemen, adr, adr_type, type, bt);
   } else {
@@ -407,7 +324,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
           return NULL;
         }
       }
-      MergeMemNode* mergemen = MergeMemNode::make(mem);
+      MergeMemNode* mergemen = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemen, adr, adr_type, type, bt);
     }
@@ -484,6 +401,9 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         Node* n = val->in(MemNode::ValueIn);
         BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
         n = bs->step_over_gc_barrier(n);
+        if (is_subword_type(ft)) {
+          n = Compile::narrow_value(ft, n, phi_type, &_igvn, true);
+        }
         values.at_put(j, n);
       } else if(val->is_Proj() && val->in(0) == alloc) {
         values.at_put(j, _igvn.zerocon(ft));
@@ -506,10 +426,8 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         }
         values.at_put(j, res);
       } else {
-#ifdef ASSERT
-        val->dump();
+        DEBUG_ONLY( val->dump(); )
         assert(false, "unknown node on this path");
-#endif
         return NULL;  // unknown node on this path
       }
     }
@@ -586,6 +504,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
     } else if (mem->is_ArrayCopy()) {
       done = true;
     } else {
+      DEBUG_ONLY( mem->dump(); )
       assert(false, "unexpected node");
     }
   }
@@ -923,7 +842,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
     // to the allocated object with "sobj"
     int start = jvms->debug_start();
     int end   = jvms->debug_end();
-    sfpt->replace_edges_in_range(res, sobj, start, end);
+    sfpt->replace_edges_in_range(res, sobj, start, end, &_igvn);
     _igvn._worklist.push(sfpt);
     safepoints_done.append_if_missing(sfpt); // keep it for rollback
   }
@@ -998,12 +917,12 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
 
           // Set control to top. IGVN will remove the remaining projections
           ac->set_req(0, top());
-          ac->replace_edge(res, top());
+          ac->replace_edge(res, top(), &_igvn);
 
           // Disconnect src right away: it can help find new
           // opportunities for allocation elimination
           Node* src = ac->in(ArrayCopyNode::Src);
-          ac->replace_edge(src, top());
+          ac->replace_edge(src, top(), &_igvn);
           // src can be top at this point if src and dest of the
           // arraycopy were the same
           if (src->outcnt() == 0 && !src->is_top()) {
@@ -1023,21 +942,21 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
   //
   // Process other users of allocation's projections
   //
-  if (_resproj != NULL && _resproj->outcnt() != 0) {
+  if (_callprojs.resproj != NULL && _callprojs.resproj->outcnt() != 0) {
     // First disconnect stores captured by Initialize node.
     // If Initialize node is eliminated first in the following code,
     // it will kill such stores and DUIterator_Last will assert.
-    for (DUIterator_Fast jmax, j = _resproj->fast_outs(jmax);  j < jmax; j++) {
-      Node *use = _resproj->fast_out(j);
+    for (DUIterator_Fast jmax, j = _callprojs.resproj->fast_outs(jmax);  j < jmax; j++) {
+      Node* use = _callprojs.resproj->fast_out(j);
       if (use->is_AddP()) {
         // raw memory addresses used only by the initialization
         _igvn.replace_node(use, C->top());
         --j; --jmax;
       }
     }
-    for (DUIterator_Last jmin, j = _resproj->last_outs(jmin); j >= jmin; ) {
-      Node *use = _resproj->last_out(j);
-      uint oc1 = _resproj->outcnt();
+    for (DUIterator_Last jmin, j = _callprojs.resproj->last_outs(jmin); j >= jmin; ) {
+      Node* use = _callprojs.resproj->last_out(j);
+      uint oc1 = _callprojs.resproj->outcnt();
       if (use->is_Initialize()) {
         // Eliminate Initialize node.
         InitializeNode *init = use->as_Initialize();
@@ -1047,7 +966,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
           _igvn.replace_node(ctrl_proj, init->in(TypeFunc::Control));
 #ifdef ASSERT
           Node* tmp = init->in(TypeFunc::Control);
-          assert(tmp == _fallthroughcatchproj, "allocation control projection");
+          assert(tmp == _callprojs.fallthrough_catchproj, "allocation control projection");
 #endif
         }
         Node *mem_proj = init->proj_out_or_null(TypeFunc::Memory);
@@ -1055,9 +974,9 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
           Node *mem = init->in(TypeFunc::Memory);
 #ifdef ASSERT
           if (mem->is_MergeMem()) {
-            assert(mem->in(TypeFunc::Memory) == _memproj_fallthrough, "allocation memory projection");
+            assert(mem->in(TypeFunc::Memory) == _callprojs.fallthrough_memproj, "allocation memory projection");
           } else {
-            assert(mem == _memproj_fallthrough, "allocation memory projection");
+            assert(mem == _callprojs.fallthrough_memproj, "allocation memory projection");
           }
 #endif
           _igvn.replace_node(mem_proj, mem);
@@ -1065,35 +984,36 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
       } else  {
         assert(false, "only Initialize or AddP expected");
       }
-      j -= (oc1 - _resproj->outcnt());
+      j -= (oc1 - _callprojs.resproj->outcnt());
     }
   }
-  if (_fallthroughcatchproj != NULL) {
-    _igvn.replace_node(_fallthroughcatchproj, alloc->in(TypeFunc::Control));
+  if (_callprojs.fallthrough_catchproj != NULL) {
+    _igvn.replace_node(_callprojs.fallthrough_catchproj, alloc->in(TypeFunc::Control));
   }
-  if (_memproj_fallthrough != NULL) {
-    _igvn.replace_node(_memproj_fallthrough, alloc->in(TypeFunc::Memory));
+  if (_callprojs.fallthrough_memproj != NULL) {
+    _igvn.replace_node(_callprojs.fallthrough_memproj, alloc->in(TypeFunc::Memory));
   }
-  if (_memproj_catchall != NULL) {
-    _igvn.replace_node(_memproj_catchall, C->top());
+  if (_callprojs.catchall_memproj != NULL) {
+    _igvn.replace_node(_callprojs.catchall_memproj, C->top());
   }
-  if (_ioproj_fallthrough != NULL) {
-    _igvn.replace_node(_ioproj_fallthrough, alloc->in(TypeFunc::I_O));
+  if (_callprojs.fallthrough_ioproj != NULL) {
+    _igvn.replace_node(_callprojs.fallthrough_ioproj, alloc->in(TypeFunc::I_O));
   }
-  if (_ioproj_catchall != NULL) {
-    _igvn.replace_node(_ioproj_catchall, C->top());
+  if (_callprojs.catchall_ioproj != NULL) {
+    _igvn.replace_node(_callprojs.catchall_ioproj, C->top());
   }
-  if (_catchallcatchproj != NULL) {
-    _igvn.replace_node(_catchallcatchproj, C->top());
+  if (_callprojs.catchall_catchproj != NULL) {
+    _igvn.replace_node(_callprojs.catchall_catchproj, C->top());
   }
 }
 
 bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
-  // Don't do scalar replacement if the frame can be popped by JVMTI:
-  // if reallocation fails during deoptimization we'll pop all
+  // If reallocation fails during deoptimization we'll pop all
   // interpreter frames for this compiled frame and that won't play
   // nice with JVMTI popframe.
-  if (!EliminateAllocations || JvmtiExport::can_pop_frame() || !alloc->_is_non_escaping) {
+  // We avoid this issue by eager reallocation when the popframe request
+  // is received.
+  if (!EliminateAllocations || !alloc->_is_non_escaping) {
     return false;
   }
   Node* klass = alloc->in(AllocateNode::KlassNode);
@@ -1108,7 +1028,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     return false;
   }
 
-  extract_call_projections(alloc);
+  alloc->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
 
   GrowableArray <SafePointNode *> safepoints;
   if (!can_eliminate_allocation(alloc, safepoints)) {
@@ -1163,7 +1083,7 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
 
   assert(boxing->result_cast() == NULL, "unexpected boxing node result");
 
-  extract_call_projections(boxing);
+  boxing->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
 
   const TypeTuple* r = boxing->tf()->range();
   assert(r->cnt() > TypeFunc::Parms, "sanity");
@@ -1417,7 +1337,7 @@ void PhaseMacroExpand::expand_allocate_common(
 
       intx prefetch_lines = length != NULL ? AllocatePrefetchLines : AllocateInstancePrefetchLines;
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      Node* fast_oop = bs->obj_allocate(this, ctrl, mem, toobig_false, size_in_bytes, i_o, needgc_ctrl,
+      Node* fast_oop = bs->obj_allocate(this, mem, toobig_false, size_in_bytes, i_o, needgc_ctrl,
                                         fast_oop_ctrl, fast_oop_rawmem,
                                         prefetch_lines);
 
@@ -1458,7 +1378,6 @@ void PhaseMacroExpand::expand_allocate_common(
   // Generate slow-path call
   CallNode *call = new CallStaticJavaNode(slow_call_type, slow_call_address,
                                OptoRuntime::stub_name(slow_call_address),
-                               alloc->jvms()->bci(),
                                TypePtr::BOTTOM);
   call->init_req(TypeFunc::Control,   slow_region);
   call->init_req(TypeFunc::I_O,       top());    // does no i/o
@@ -1473,7 +1392,7 @@ void PhaseMacroExpand::expand_allocate_common(
 
   // Copy debug information and adjust JVMState information, then replace
   // allocate node with the call
-  copy_call_debug_info((CallNode *) alloc,  call);
+  call->copy_call_debug_info(&_igvn, alloc);
   if (expand_fast_path) {
     call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
   } else {
@@ -1494,24 +1413,24 @@ void PhaseMacroExpand::expand_allocate_common(
   //
   //  We are interested in the CatchProj nodes.
   //
-  extract_call_projections(call);
+  call->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
 
   // An allocate node has separate memory projections for the uses on
   // the control and i_o paths. Replace the control memory projection with
   // result_phi_rawmem (unless we are only generating a slow call when
   // both memory projections are combined)
-  if (expand_fast_path && _memproj_fallthrough != NULL) {
-    migrate_outs(_memproj_fallthrough, result_phi_rawmem);
+  if (expand_fast_path && _callprojs.fallthrough_memproj != NULL) {
+    migrate_outs(_callprojs.fallthrough_memproj, result_phi_rawmem);
   }
-  // Now change uses of _memproj_catchall to use _memproj_fallthrough and delete
-  // _memproj_catchall so we end up with a call that has only 1 memory projection.
-  if (_memproj_catchall != NULL ) {
-    if (_memproj_fallthrough == NULL) {
-      _memproj_fallthrough = new ProjNode(call, TypeFunc::Memory);
-      transform_later(_memproj_fallthrough);
+  // Now change uses of catchall_memproj to use fallthrough_memproj and delete
+  // catchall_memproj so we end up with a call that has only 1 memory projection.
+  if (_callprojs.catchall_memproj != NULL ) {
+    if (_callprojs.fallthrough_memproj == NULL) {
+      _callprojs.fallthrough_memproj = new ProjNode(call, TypeFunc::Memory);
+      transform_later(_callprojs.fallthrough_memproj);
     }
-    migrate_outs(_memproj_catchall, _memproj_fallthrough);
-    _igvn.remove_dead_node(_memproj_catchall);
+    migrate_outs(_callprojs.catchall_memproj, _callprojs.fallthrough_memproj);
+    _igvn.remove_dead_node(_callprojs.catchall_memproj);
   }
 
   // An allocate node has separate i_o projections for the uses on the control
@@ -1519,18 +1438,18 @@ void PhaseMacroExpand::expand_allocate_common(
   // otherwise incoming i_o become dead when only a slow call is generated
   // (it is different from memory projections where both projections are
   // combined in such case).
-  if (_ioproj_fallthrough != NULL) {
-    migrate_outs(_ioproj_fallthrough, result_phi_i_o);
+  if (_callprojs.fallthrough_ioproj != NULL) {
+    migrate_outs(_callprojs.fallthrough_ioproj, result_phi_i_o);
   }
-  // Now change uses of _ioproj_catchall to use _ioproj_fallthrough and delete
-  // _ioproj_catchall so we end up with a call that has only 1 i_o projection.
-  if (_ioproj_catchall != NULL ) {
-    if (_ioproj_fallthrough == NULL) {
-      _ioproj_fallthrough = new ProjNode(call, TypeFunc::I_O);
-      transform_later(_ioproj_fallthrough);
+  // Now change uses of catchall_ioproj to use fallthrough_ioproj and delete
+  // catchall_ioproj so we end up with a call that has only 1 i_o projection.
+  if (_callprojs.catchall_ioproj != NULL ) {
+    if (_callprojs.fallthrough_ioproj == NULL) {
+      _callprojs.fallthrough_ioproj = new ProjNode(call, TypeFunc::I_O);
+      transform_later(_callprojs.fallthrough_ioproj);
     }
-    migrate_outs(_ioproj_catchall, _ioproj_fallthrough);
-    _igvn.remove_dead_node(_ioproj_catchall);
+    migrate_outs(_callprojs.catchall_ioproj, _callprojs.fallthrough_ioproj);
+    _igvn.remove_dead_node(_callprojs.catchall_ioproj);
   }
 
   // if we generated only a slow call, we are done
@@ -1549,21 +1468,21 @@ void PhaseMacroExpand::expand_allocate_common(
     return;
   }
 
-  if (_fallthroughcatchproj != NULL) {
-    ctrl = _fallthroughcatchproj->clone();
+  if (_callprojs.fallthrough_catchproj != NULL) {
+    ctrl = _callprojs.fallthrough_catchproj->clone();
     transform_later(ctrl);
-    _igvn.replace_node(_fallthroughcatchproj, result_region);
+    _igvn.replace_node(_callprojs.fallthrough_catchproj, result_region);
   } else {
     ctrl = top();
   }
   Node *slow_result;
-  if (_resproj == NULL) {
+  if (_callprojs.resproj == NULL) {
     // no uses of the allocation result
     slow_result = top();
   } else {
-    slow_result = _resproj->clone();
+    slow_result = _callprojs.resproj->clone();
     transform_later(slow_result);
-    _igvn.replace_node(_resproj, result_phi_rawoop);
+    _igvn.replace_node(_callprojs.resproj, result_phi_rawoop);
   }
 
   // Plug slow-path into result merge point
@@ -1573,7 +1492,7 @@ void PhaseMacroExpand::expand_allocate_common(
     result_phi_rawoop->init_req(slow_result_path, slow_result);
     transform_later(result_phi_rawoop);
   }
-  result_phi_rawmem->init_req(slow_result_path, _memproj_fallthrough);
+  result_phi_rawmem->init_req(slow_result_path, _callprojs.fallthrough_memproj);
   transform_later(result_phi_rawmem);
   transform_later(result_phi_i_o);
   // This completes all paths into the result merge point
@@ -1585,45 +1504,45 @@ void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
   Node* mem  = alloc->in(TypeFunc::Memory);
   Node* i_o  = alloc->in(TypeFunc::I_O);
 
-  extract_call_projections(alloc);
-  if (_resproj != NULL) {
-    for (DUIterator_Fast imax, i = _resproj->fast_outs(imax); i < imax; i++) {
-      Node* use = _resproj->fast_out(i);
+  alloc->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
+  if (_callprojs.resproj != NULL) {
+    for (DUIterator_Fast imax, i = _callprojs.resproj->fast_outs(imax); i < imax; i++) {
+      Node* use = _callprojs.resproj->fast_out(i);
       use->isa_MemBar()->remove(&_igvn);
       --imax;
       --i; // back up iterator
     }
-    assert(_resproj->outcnt() == 0, "all uses must be deleted");
-    _igvn.remove_dead_node(_resproj);
+    assert(_callprojs.resproj->outcnt() == 0, "all uses must be deleted");
+    _igvn.remove_dead_node(_callprojs.resproj);
   }
-  if (_fallthroughcatchproj != NULL) {
-    migrate_outs(_fallthroughcatchproj, ctrl);
-    _igvn.remove_dead_node(_fallthroughcatchproj);
+  if (_callprojs.fallthrough_catchproj != NULL) {
+    migrate_outs(_callprojs.fallthrough_catchproj, ctrl);
+    _igvn.remove_dead_node(_callprojs.fallthrough_catchproj);
   }
-  if (_catchallcatchproj != NULL) {
-    _igvn.rehash_node_delayed(_catchallcatchproj);
-    _catchallcatchproj->set_req(0, top());
+  if (_callprojs.catchall_catchproj != NULL) {
+    _igvn.rehash_node_delayed(_callprojs.catchall_catchproj);
+    _callprojs.catchall_catchproj->set_req(0, top());
   }
-  if (_fallthroughproj != NULL) {
-    Node* catchnode = _fallthroughproj->unique_ctrl_out();
+  if (_callprojs.fallthrough_proj != NULL) {
+    Node* catchnode = _callprojs.fallthrough_proj->unique_ctrl_out();
     _igvn.remove_dead_node(catchnode);
-    _igvn.remove_dead_node(_fallthroughproj);
+    _igvn.remove_dead_node(_callprojs.fallthrough_proj);
   }
-  if (_memproj_fallthrough != NULL) {
-    migrate_outs(_memproj_fallthrough, mem);
-    _igvn.remove_dead_node(_memproj_fallthrough);
+  if (_callprojs.fallthrough_memproj != NULL) {
+    migrate_outs(_callprojs.fallthrough_memproj, mem);
+    _igvn.remove_dead_node(_callprojs.fallthrough_memproj);
   }
-  if (_ioproj_fallthrough != NULL) {
-    migrate_outs(_ioproj_fallthrough, i_o);
-    _igvn.remove_dead_node(_ioproj_fallthrough);
+  if (_callprojs.fallthrough_ioproj != NULL) {
+    migrate_outs(_callprojs.fallthrough_ioproj, i_o);
+    _igvn.remove_dead_node(_callprojs.fallthrough_ioproj);
   }
-  if (_memproj_catchall != NULL) {
-    _igvn.rehash_node_delayed(_memproj_catchall);
-    _memproj_catchall->set_req(0, top());
+  if (_callprojs.catchall_memproj != NULL) {
+    _igvn.rehash_node_delayed(_callprojs.catchall_memproj);
+    _callprojs.catchall_memproj->set_req(0, top());
   }
-  if (_ioproj_catchall != NULL) {
-    _igvn.rehash_node_delayed(_ioproj_catchall);
-    _ioproj_catchall->set_req(0, top());
+  if (_callprojs.catchall_ioproj != NULL) {
+    _igvn.rehash_node_delayed(_callprojs.catchall_ioproj);
+    _callprojs.catchall_ioproj->set_req(0, top());
   }
 #ifndef PRODUCT
   if (PrintEliminateAllocations) {
@@ -2182,16 +2101,16 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
   Node* ctrl = alock->in(TypeFunc::Control);
   guarantee(ctrl != NULL, "missing control projection, cannot replace_node() with NULL");
 
-  extract_call_projections(alock);
+  alock->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
   // There are 2 projections from the lock.  The lock node will
   // be deleted when its last use is subsumed below.
   assert(alock->outcnt() == 2 &&
-         _fallthroughproj != NULL &&
-         _memproj_fallthrough != NULL,
+         _callprojs.fallthrough_proj != NULL &&
+         _callprojs.fallthrough_memproj != NULL,
          "Unexpected projections from Lock/Unlock");
 
-  Node* fallthroughproj = _fallthroughproj;
-  Node* memproj_fallthrough = _memproj_fallthrough;
+  Node* fallthroughproj = _callprojs.fallthrough_proj;
+  Node* memproj_fallthrough = _callprojs.fallthrough_memproj;
 
   // The memory projection from a lock/unlock is RawMem
   // The input to a Lock is merged memory, so extract its RawMem input
@@ -2445,31 +2364,31 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
                                   OptoRuntime::complete_monitor_locking_Java(), NULL, slow_path,
                                   obj, box, NULL);
 
-  extract_call_projections(call);
+  call->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
 
   // Slow path can only throw asynchronous exceptions, which are always
   // de-opted.  So the compiler thinks the slow-call can never throw an
   // exception.  If it DOES throw an exception we would need the debug
   // info removed first (since if it throws there is no monitor).
-  assert ( _ioproj_fallthrough == NULL && _ioproj_catchall == NULL &&
-           _memproj_catchall == NULL && _catchallcatchproj == NULL, "Unexpected projection from Lock");
+  assert(_callprojs.fallthrough_ioproj == NULL && _callprojs.catchall_ioproj == NULL &&
+         _callprojs.catchall_memproj == NULL && _callprojs.catchall_catchproj == NULL, "Unexpected projection from Lock");
 
   // Capture slow path
   // disconnect fall-through projection from call and create a new one
   // hook up users of fall-through projection to region
-  Node *slow_ctrl = _fallthroughproj->clone();
+  Node *slow_ctrl = _callprojs.fallthrough_proj->clone();
   transform_later(slow_ctrl);
-  _igvn.hash_delete(_fallthroughproj);
-  _fallthroughproj->disconnect_inputs(NULL, C);
+  _igvn.hash_delete(_callprojs.fallthrough_proj);
+  _callprojs.fallthrough_proj->disconnect_inputs(C);
   region->init_req(1, slow_ctrl);
   // region inputs are now complete
   transform_later(region);
-  _igvn.replace_node(_fallthroughproj, region);
+  _igvn.replace_node(_callprojs.fallthrough_proj, region);
 
   Node *memproj = transform_later(new ProjNode(call, TypeFunc::Memory));
   mem_phi->init_req(1, memproj );
   transform_later(mem_phi);
-  _igvn.replace_node(_memproj_fallthrough, mem_phi);
+  _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
 }
 
 //------------------------------expand_unlock_node----------------------
@@ -2516,29 +2435,28 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
                                   CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C),
                                   "complete_monitor_unlocking_C", slow_path, obj, box, thread);
 
-  extract_call_projections(call);
-
-  assert ( _ioproj_fallthrough == NULL && _ioproj_catchall == NULL &&
-           _memproj_catchall == NULL && _catchallcatchproj == NULL, "Unexpected projection from Lock");
+  call->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
+  assert(_callprojs.fallthrough_ioproj == NULL && _callprojs.catchall_ioproj == NULL &&
+         _callprojs.catchall_memproj == NULL && _callprojs.catchall_catchproj == NULL, "Unexpected projection from Lock");
 
   // No exceptions for unlocking
   // Capture slow path
   // disconnect fall-through projection from call and create a new one
   // hook up users of fall-through projection to region
-  Node *slow_ctrl = _fallthroughproj->clone();
+  Node *slow_ctrl = _callprojs.fallthrough_proj->clone();
   transform_later(slow_ctrl);
-  _igvn.hash_delete(_fallthroughproj);
-  _fallthroughproj->disconnect_inputs(NULL, C);
+  _igvn.hash_delete(_callprojs.fallthrough_proj);
+  _callprojs.fallthrough_proj->disconnect_inputs(C);
   region->init_req(1, slow_ctrl);
   // region inputs are now complete
   transform_later(region);
-  _igvn.replace_node(_fallthroughproj, region);
+  _igvn.replace_node(_callprojs.fallthrough_proj, region);
 
   Node *memproj = transform_later(new ProjNode(call, TypeFunc::Memory) );
   mem_phi->init_req(1, memproj );
   mem_phi->init_req(2, mem);
   transform_later(mem_phi);
-  _igvn.replace_node(_memproj_fallthrough, mem_phi);
+  _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
 }
 
 void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
@@ -2597,10 +2515,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   bool progress = true;
   while (progress) {
     progress = false;
-    for (int i = C->macro_count(); i > 0; i--) {
-      Node * n = C->macro_node(i-1);
+    for (int i = C->macro_count(); i > 0; i = MIN2(i - 1, C->macro_count())) { // more than 1 element can be eliminated at once
+      Node* n = C->macro_node(i - 1);
       bool success = false;
-      debug_only(int old_macro_count = C->macro_count(););
+      DEBUG_ONLY(int old_macro_count = C->macro_count();)
       if (n->is_AbstractLock()) {
         success = eliminate_locking_node(n->as_AbstractLock());
       }
@@ -2613,10 +2531,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   progress = true;
   while (progress) {
     progress = false;
-    for (int i = C->macro_count(); i > 0; i--) {
-      Node * n = C->macro_node(i-1);
+    for (int i = C->macro_count(); i > 0; i = MIN2(i - 1, C->macro_count())) { // more than 1 element can be eliminated at once
+      Node* n = C->macro_node(i - 1);
       bool success = false;
-      debug_only(int old_macro_count = C->macro_count(););
+      DEBUG_ONLY(int old_macro_count = C->macro_count();)
       switch (n->class_id()) {
       case Node::Class_Allocate:
       case Node::Class_AllocateArray:
@@ -2664,7 +2582,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     for (int i = C->macro_count(); i > 0; i--) {
       Node* n = C->macro_node(i-1);
       bool success = false;
-      debug_only(int old_macro_count = C->macro_count(););
+      DEBUG_ONLY(int old_macro_count = C->macro_count();)
       if (n->Opcode() == Op_LoopLimit) {
         // Remove it from macro list and put on IGVN worklist to optimize.
         C->remove_macro_node(n);
@@ -2750,28 +2668,24 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       return true;
     }
 
-    debug_only(int old_macro_count = C->macro_count(););
+    DEBUG_ONLY(int old_macro_count = C->macro_count();)
     switch (n->class_id()) {
     case Node::Class_Lock:
       expand_lock_node(n->as_Lock());
-      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     case Node::Class_Unlock:
       expand_unlock_node(n->as_Unlock());
-      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     case Node::Class_ArrayCopy:
       expand_arraycopy_node(n->as_ArrayCopy());
-      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     case Node::Class_SubTypeCheck:
       expand_subtypecheck_node(n->as_SubTypeCheck());
-      assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
       break;
     default:
       assert(false, "unknown node type in macro list");
     }
-    assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
+    assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
     if (C->failing())  return true;
 
     // Clean up the graph so we're less likely to hit the maximum node

@@ -48,7 +48,7 @@ public final class ServicesCatalog {
     /**
      * Represents a service provider in the services catalog.
      */
-    public final class ServiceProvider {
+    public static final class ServiceProvider {
         private final Module module;
         private final String providerName;
 
@@ -169,6 +169,16 @@ public final class ServicesCatalog {
             if (previous != null) catalog = previous;
         }
         return catalog;
+    }
+
+    /**
+     * Associates the given ServicesCatalog with the given class loader.
+     */
+    public static void putServicesCatalog(ClassLoader loader, ServicesCatalog catalog) {
+        ServicesCatalog previous = CLV.putIfAbsent(loader, catalog);
+        if (previous != null) {
+            throw new InternalError();
+        }
     }
 
     // the ServicesCatalog registered to a class loader

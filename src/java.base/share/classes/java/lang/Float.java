@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.lang.constant.ConstantDesc;
 import java.util.Optional;
 
 import jdk.internal.math.FloatingDecimal;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * The {@code Float} class wraps a value of primitive type
@@ -45,11 +45,26 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * constants and methods useful when dealing with a
  * {@code float}.
  *
+ * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
+ *
+ * <h2><a id=equivalenceRelation>Floating-point Equality, Equivalence,
+ * and Comparison</a></h2>
+ *
+ * The class {@code java.lang.Double} has a <a
+ * href="Double.html#equivalenceRelation">discussion of equality,
+ * equivalence, and comparison of floating-point values</a> that is
+ * equality applicable to {@code float} values.
+ *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
  * @author  Joseph D. Darcy
  * @since 1.0
  */
+@jdk.internal.ValueBased
 public final class Float extends Number
         implements Comparable<Float>, Constable, ConstantDesc {
     /**
@@ -438,7 +453,7 @@ public final class Float extends Number
      * @return a {@code Float} instance representing {@code f}.
      * @since  1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static Float valueOf(float f) {
         return new Float(f);
     }
@@ -518,7 +533,7 @@ public final class Float extends Number
      * {@link #valueOf(float)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Float(float value) {
         this.value = value;
     }
@@ -534,7 +549,7 @@ public final class Float extends Number
      * static factory method {@link #valueOf(float)} method as follows:
      * {@code Float.valueOf((float)value)}.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Float(double value) {
         this.value = (float)value;
     }
@@ -555,7 +570,7 @@ public final class Float extends Number
      * {@code float} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Float} object.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Float(String s) throws NumberFormatException {
         value = parseFloat(s);
     }
@@ -650,7 +665,7 @@ public final class Float extends Number
      *
      * @return the {@code float} value represented by this object
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public float floatValue() {
         return value;
     }
@@ -704,33 +719,21 @@ public final class Float extends Number
      * returns the identical {@code int} value when applied to
      * each.
      *
-     * <p>Note that in most cases, for two instances of class
-     * {@code Float}, {@code f1} and {@code f2}, the value
-     * of {@code f1.equals(f2)} is {@code true} if and only if
-     *
-     * <blockquote><pre>
-     *   f1.floatValue() == f2.floatValue()
-     * </pre></blockquote>
-     *
-     * <p>also has the value {@code true}. However, there are two exceptions:
-     * <ul>
-     * <li>If {@code f1} and {@code f2} both represent
-     *     {@code Float.NaN}, then the {@code equals} method returns
-     *     {@code true}, even though {@code Float.NaN==Float.NaN}
-     *     has the value {@code false}.
-     * <li>If {@code f1} represents {@code +0.0f} while
-     *     {@code f2} represents {@code -0.0f}, or vice
-     *     versa, the {@code equal} test has the value
-     *     {@code false}, even though {@code 0.0f==-0.0f}
-     *     has the value {@code true}.
-     * </ul>
-     *
-     * This definition allows hash tables to operate properly.
+     * @apiNote
+     * This method is defined in terms of {@link
+     * #floatToIntBits(float)} rather than the {@code ==} operator on
+     * {@code float} values since the {@code ==} operator does
+     * <em>not</em> define an equivalence relation and to satisfy the
+     * {@linkplain Object#equals equals contract} an equivalence
+     * relation must be implemented; see <a
+     * href="Double.html#equivalenceRelation">this discussion</a> for
+     * details of floating-point equality and equivalence.
      *
      * @param obj the object to be compared
      * @return  {@code true} if the objects are the same;
      *          {@code false} otherwise.
      * @see java.lang.Float#floatToIntBits(float)
+     * @jls 15.21.1 Numerical Equality Operators == and !=
      */
     public boolean equals(Object obj) {
         return (obj instanceof Float)
@@ -768,7 +771,7 @@ public final class Float extends Number
      * @param   value   a floating-point number.
      * @return the bits that represent the floating-point number.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int floatToIntBits(float value) {
         if (!isNaN(value)) {
             return floatToRawIntBits(value);
@@ -811,7 +814,7 @@ public final class Float extends Number
      * @return the bits that represent the floating-point number.
      * @since 1.3
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native int floatToRawIntBits(float value);
 
     /**
@@ -873,28 +876,36 @@ public final class Float extends Number
      * @return  the {@code float} floating-point value with the same bit
      *          pattern.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static native float intBitsToFloat(int bits);
 
     /**
-     * Compares two {@code Float} objects numerically.  There are
-     * two ways in which comparisons performed by this method differ
-     * from those performed by the Java language numerical comparison
-     * operators ({@code <, <=, ==, >=, >}) when
-     * applied to primitive {@code float} values:
+     * Compares two {@code Float} objects numerically.
      *
-     * <ul><li>
-     *          {@code Float.NaN} is considered by this method to
-     *          be equal to itself and greater than all other
-     *          {@code float} values
-     *          (including {@code Float.POSITIVE_INFINITY}).
-     * <li>
-     *          {@code 0.0f} is considered by this method to be greater
-     *          than {@code -0.0f}.
+     * This method imposes a total order on {@code Float} objects
+     * with two differences compared to the incomplete order defined by
+     * the Java language numerical comparison operators ({@code <, <=,
+     * ==, >=, >}) on {@code float} values.
+     *
+     * <ul><li> A NaN is <em>unordered</em> with respect to other
+     *          values and unequal to itself under the comparison
+     *          operators.  This method chooses to define {@code
+     *          Float.NaN} to be equal to itself and greater than all
+     *          other {@code double} values (including {@code
+     *          Float.POSITIVE_INFINITY}).
+     *
+     *      <li> Positive zero and negative zero compare equal
+     *      numerically, but are distinct and distinguishable values.
+     *      This method chooses to define positive zero ({@code +0.0f}),
+     *      to be greater than negative zero ({@code -0.0f}).
      * </ul>
      *
      * This ensures that the <i>natural ordering</i> of {@code Float}
-     * objects imposed by this method is <i>consistent with equals</i>.
+     * objects imposed by this method is <i>consistent with
+     * equals</i>; see <a href="Double.html#equivalenceRelation">this
+     * discussion</a> for details of floating-point comparison and
+     * ordering.
+     *
      *
      * @param   anotherFloat   the {@code Float} to be compared.
      * @return  the value {@code 0} if {@code anotherFloat} is
@@ -905,8 +916,8 @@ public final class Float extends Number
      *          {@code Float} is numerically greater than
      *          {@code anotherFloat}.
      *
+     * @jls 15.20.1 Numerical Comparison Operators {@code <}, {@code <=}, {@code >}, and {@code >=}
      * @since   1.2
-     * @see Comparable#compareTo(Object)
      */
     public int compareTo(Float anotherFloat) {
         return Float.compare(value, anotherFloat.value);

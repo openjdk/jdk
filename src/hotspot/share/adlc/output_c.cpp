@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1150,10 +1150,9 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
       //
       // Check for equivalence
       //
-      // fprintf(fp, "phase->eqv( ");
-      // fprintf(fp, "inst%d->in(%d+%d) /* %s */, inst%d->in(%d+%d) /* %s */",
-      //         left_index,  left_op_base,  left_op_index,  left_op,
-      //         right_index, right_op_base, right_op_index, right_op );
+      // fprintf(fp, "(inst%d->_opnds[%d]->reg(ra_,inst%d%s)  /* %d.%s */ == /* %d.%s */ inst%d->_opnds[%d]->reg(ra_,inst%d%s)",
+      //         left_index, left_op_index, left_index, left_reg_index, left_index, left_op
+      //         right_index, right_op, right_index, right_op_index, right_index, right_reg_index);
       // fprintf(fp, ")");
       //
       switch( left_interface_type ) {
@@ -1793,7 +1792,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     if (node->is_ideal_call() != Form::invalid_type &&
         node->is_ideal_call() != Form::JAVA_LEAF) {
       fprintf(fp, "  // MachConstantBaseNode added in matcher.\n");
-      _needs_clone_jvms = true;
+      _needs_deep_clone_jvms = true;
     } else {
       fprintf(fp, "  add_req(C->mach_constant_base_node());\n");
     }
@@ -2266,6 +2265,7 @@ private:
   // and return the conversion function to build them from OptoReg
   const char* reg_conversion(const char* rep_var) {
     if (strcmp(rep_var,"$Register") == 0)      return "as_Register";
+    if (strcmp(rep_var,"$KRegister") == 0)     return "as_KRegister";
     if (strcmp(rep_var,"$FloatRegister") == 0) return "as_FloatRegister";
 #if defined(IA32) || defined(AMD64)
     if (strcmp(rep_var,"$XMMRegister") == 0)   return "as_XMMRegister";
@@ -3001,7 +3001,7 @@ void ArchDesc::define_oper_interface(FILE *fp, OperandForm &oper, FormDict &glob
       // Provide a non-NULL return for disp_as_type() that will allow adr_type()
       // to correctly compute the access type for alias analysis.
       //
-      // See BugId 4796752, operand indOffset32X in i486.ad
+      // See BugId 4796752, operand indOffset32X in x86_32.ad
       int idx = rep_var_to_constant_index(disp, oper, globals);
       fprintf(fp,"  virtual const TypePtr *disp_as_type() const { return _c%d; }\n", idx);
     }
@@ -3603,9 +3603,9 @@ char reg_save_policy(const char *calling_convention) {
   return callconv;
 }
 
-void ArchDesc::generate_needs_clone_jvms(FILE *fp_cpp) {
-  fprintf(fp_cpp, "bool Compile::needs_clone_jvms() { return %s; }\n\n",
-          _needs_clone_jvms ? "true" : "false");
+void ArchDesc::generate_needs_deep_clone_jvms(FILE *fp_cpp) {
+  fprintf(fp_cpp, "bool Compile::needs_deep_clone_jvms() { return %s; }\n\n",
+          _needs_deep_clone_jvms ? "true" : "false");
 }
 
 //---------------------------generate_assertion_checks-------------------
@@ -4143,9 +4143,6 @@ void ArchDesc::buildInstructMatchCheck(FILE *fp_cpp) const {
 // Output the methods to Matcher which specify frame behavior
 void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
   fprintf(fp_cpp,"\n\n");
-  // Stack Direction
-  fprintf(fp_cpp,"bool Matcher::stack_direction() const { return %s; }\n\n",
-          _frame->_direction ? "true" : "false");
   // Sync Stack Slots
   fprintf(fp_cpp,"int Compile::sync_stack_slots() const { return %s; }\n\n",
           _frame->_sync_stack_slots);
@@ -4162,29 +4159,15 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
     fprintf(fp_cpp," return OptoReg::stack2reg(%s); }\n\n",
             _frame->_return_addr);
   }
-  // Java Stack Slot Preservation
-  fprintf(fp_cpp,"uint Compile::in_preserve_stack_slots() ");
-  fprintf(fp_cpp,"{ return %s; }\n\n", _frame->_in_preserve_slots);
-  // Top Of Stack Slot Preservation, for both Java and C
-  fprintf(fp_cpp,"uint Compile::out_preserve_stack_slots() ");
-  fprintf(fp_cpp,"{ return SharedRuntime::out_preserve_stack_slots(); }\n\n");
   // varargs C out slots killed
   fprintf(fp_cpp,"uint Compile::varargs_C_out_slots_killed() const ");
   fprintf(fp_cpp,"{ return %s; }\n\n", _frame->_varargs_C_out_slots_killed);
-  // Java Argument Position
-  fprintf(fp_cpp,"void Matcher::calling_convention(BasicType *sig_bt, VMRegPair *regs, uint length, bool is_outgoing) {\n");
-  fprintf(fp_cpp,"%s\n", _frame->_calling_convention);
-  fprintf(fp_cpp,"}\n\n");
-  // Native Argument Position
-  fprintf(fp_cpp,"void Matcher::c_calling_convention(BasicType *sig_bt, VMRegPair *regs, uint length) {\n");
-  fprintf(fp_cpp,"%s\n", _frame->_c_calling_convention);
-  fprintf(fp_cpp,"}\n\n");
   // Java Return Value Location
-  fprintf(fp_cpp,"OptoRegPair Matcher::return_value(uint ideal_reg, bool is_outgoing) {\n");
+  fprintf(fp_cpp,"OptoRegPair Matcher::return_value(uint ideal_reg) {\n");
   fprintf(fp_cpp,"%s\n", _frame->_return_value);
   fprintf(fp_cpp,"}\n\n");
   // Native Return Value Location
-  fprintf(fp_cpp,"OptoRegPair Matcher::c_return_value(uint ideal_reg, bool is_outgoing) {\n");
+  fprintf(fp_cpp,"OptoRegPair Matcher::c_return_value(uint ideal_reg) {\n");
   fprintf(fp_cpp,"%s\n", _frame->_c_return_value);
   fprintf(fp_cpp,"}\n\n");
 
@@ -4195,14 +4178,7 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
   fprintf(fp_cpp,"int Matcher::inline_cache_reg_encode() {");
   fprintf(fp_cpp," return _regEncode[inline_cache_reg()]; }\n\n");
 
-  // Interpreter's Method Oop Register, mask definition, and encoding
-  fprintf(fp_cpp,"OptoReg::Name Matcher::interpreter_method_oop_reg() {");
-  fprintf(fp_cpp," return OptoReg::Name(%s_num); }\n\n",
-          _frame->_interpreter_method_oop_reg);
-  fprintf(fp_cpp,"int Matcher::interpreter_method_oop_reg_encode() {");
-  fprintf(fp_cpp," return _regEncode[interpreter_method_oop_reg()]; }\n\n");
-
-  // Interpreter's Frame Pointer Register, mask definition, and encoding
+  // Interpreter's Frame Pointer Register
   fprintf(fp_cpp,"OptoReg::Name Matcher::interpreter_frame_pointer_reg() {");
   if (_frame->_interpreter_frame_pointer_reg == NULL)
     fprintf(fp_cpp," return OptoReg::Bad; }\n\n");

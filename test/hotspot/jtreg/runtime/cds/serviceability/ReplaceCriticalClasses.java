@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @library /test/lib
  * @requires vm.cds
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run main/othervm/native ReplaceCriticalClasses
  */
 
@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import sun.hotspot.WhiteBox;
 
 public class ReplaceCriticalClasses {
@@ -47,14 +48,16 @@ public class ReplaceCriticalClasses {
 
     public void process(String args[]) throws Throwable {
         if (args.length == 0) {
+            // Add an extra class to provoke JDK-8262376. This will be ignored if this class doesn't exist
+            // in the JDK that's being tested (e.g., if the "jdk.localedata" module is somehow missing).
+            String extraClasses[] = {"sun/util/resources/cldr/provider/CLDRLocaleDataMetaInfo"};
+
             // Dump the shared archive in case it was not generated during the JDK build.
             // Put the archive at separate file to avoid clashes with concurrent tests.
             CDSOptions opts = new CDSOptions()
-                .setXShareMode("dump")
-                .setArchiveName(ReplaceCriticalClasses.class.getName() + ".jsa")
-                .setUseVersion(false)
-                .addSuffix("-showversion");
-            CDSTestUtils.run(opts).assertNormalExit("");
+                .setClassList(extraClasses)
+                .setArchiveName(ReplaceCriticalClasses.class.getName() + ".jsa");
+            CDSTestUtils.createArchiveAndCheck(opts);
 
             launchChildProcesses(getTests());
         } else if (args.length == 3 && args[0].equals("child")) {
@@ -80,6 +83,8 @@ public class ReplaceCriticalClasses {
             "-early -notshared java/lang/String",
             "-early -notshared java/lang/Cloneable",
             "-early -notshared java/io/Serializable",
+            "-early -notshared java/lang/Module",
+            "-early -notshared java/lang/ModuleLayer",
 
             // CDS should not be disabled -- these critical classes cannot be replaced because
             // JvmtiExport::early_class_hook_env() is false.
@@ -87,13 +92,8 @@ public class ReplaceCriticalClasses {
             "java/lang/String",
             "java/lang/Cloneable",
             "java/io/Serializable",
-
-            /* Try to replace classes that are used by the archived subgraph graphs.
-               The following test cases are in ReplaceCriticalClassesForSubgraphs.java.
-            "-early -notshared -subgraph java/lang/module/ResolvedModule jdk.internal.module.ArchivedModuleGraph",
-            "-early -notshared -subgraph java/lang/Long java.lang.Long$LongCache",
-            "-subgraph java/lang/Long java.lang.Long$LongCache",
-            */
+            "java/lang/Module",
+            "java/lang/ModuleLayer",
 
             // Replace classes that are loaded after JVMTI_PHASE_PRIMORDIAL. It's OK to replace
             // such
@@ -116,12 +116,13 @@ public class ReplaceCriticalClasses {
 
     static void launchChild(String args[]) throws Throwable {
         if (args.length < 1) {
-            throw new RuntimeException("Invalid test case. Should be <-early> <-subgraph> <-notshared> klassName subgraphKlass");
+            throw new RuntimeException("Invalid test case. Should be <-early> <-subgraph> <-notshared> <-nowhitebox> klassName subgraphKlass");
         }
         String klassName = null;
         String subgraphKlass = null;
         String early = "";
         boolean subgraph = false;
+        boolean whitebox = true;
         String shared = "-shared";
 
         for (int i=0; i<args.length-1; i++) {
@@ -130,6 +131,8 @@ public class ReplaceCriticalClasses {
                 early = "-early,";
             } else if (opt.equals("-subgraph")) {
                 subgraph = true;
+            } else if (opt.equals("-nowhitebox")) {
+                whitebox = false;
             } else if (opt.equals("-notshared")) {
                 shared = opt;
             } else {
@@ -166,14 +169,12 @@ public class ReplaceCriticalClasses {
             .addSuffix("-showversion",
                        "-Xlog:cds",
                        "-XX:+UnlockDiagnosticVMOptions",
-                       agent,
-                       "-XX:+WhiteBoxAPI",
-                       "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"));
-
-        if (subgraph) {
-            opts.addSuffix("-Xlog:cds,cds+heap");
+                       agent);
+        if (whitebox) {
+            opts.addSuffix("-XX:+WhiteBoxAPI",
+                           "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"));
         }
-
+        opts.addSuffix("-Xlog:cds,cds+heap");
         opts.addSuffix("ReplaceCriticalClasses",
                        "child",
                        shared,
@@ -191,6 +192,8 @@ public class ReplaceCriticalClasses {
                     if (expectShared) {
                         if (!out.getOutput().contains("UseSharedSpaces: Unable to map at required address in java heap")) {
                             out.shouldContain(subgraphInit);
+                            // If the subgraph is successfully initialized, the specified shared class must not be rewritten.
+                            out.shouldNotContain("Rewriting done.");
                         }
                     } else {
                       out.shouldNotContain(subgraphInit);
@@ -200,15 +203,19 @@ public class ReplaceCriticalClasses {
     }
 
     static void testInChild(boolean shouldBeShared, Class klass) {
-        WhiteBox wb = WhiteBox.getWhiteBox();
+        try {
+            WhiteBox wb = WhiteBox.getWhiteBox();
 
-        if (shouldBeShared && !wb.isSharedClass(klass)) {
-            throw new RuntimeException(klass + " should be shared but but actually is not.");
+            if (shouldBeShared && !wb.isSharedClass(klass)) {
+                throw new RuntimeException(klass + " should be shared but but actually is not.");
+            }
+            if (!shouldBeShared && wb.isSharedClass(klass)) {
+                throw new RuntimeException(klass + " should not be shared but actually is.");
+            }
+            System.out.println("wb.isSharedClass(" + klass + "): " + wb.isSharedClass(klass) + " == " + shouldBeShared);
+        } catch (UnsatisfiedLinkError e) {
+            System.out.println("WhiteBox is disabled -- because test has -nowhitebox");
         }
-        if (!shouldBeShared && wb.isSharedClass(klass)) {
-            throw new RuntimeException(klass + " should not be shared but actually is.");
-        }
-        System.out.println("wb.isSharedClass(klass): " + wb.isSharedClass(klass) + " == " + shouldBeShared);
 
         String strings[] = {
             // interned strings from j.l.Object

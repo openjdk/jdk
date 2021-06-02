@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,14 @@
  * @bug 8017231 8020977 8054221
  * @summary test  StringJoiner::merge
  * @modules java.base/jdk.internal.util
- * @requires os.maxMemory > 4G
- * @run testng/othervm -Xmx4g MergeTest
+ * @requires vm.bits == "64" & os.maxMemory > 4G
+ * @run testng/othervm -Xmx4g -XX:+CompactStrings MergeTest
  */
 
 import java.util.StringJoiner;
 import java.util.stream.Stream;
 import org.testng.annotations.Test;
-import static jdk.internal.util.ArraysSupport.MAX_ARRAY_LENGTH;
+import static jdk.internal.util.ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
@@ -172,7 +172,7 @@ public class MergeTest {
     }
 
     public void OOM() {
-        String maxString = "*".repeat(MAX_ARRAY_LENGTH);
+        String maxString = "*".repeat(SOFT_MAX_ARRAY_LENGTH);
 
         try {
             StringJoiner sj1 = new StringJoiner("", "", "");

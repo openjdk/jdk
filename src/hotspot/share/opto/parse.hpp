@@ -71,17 +71,14 @@ protected:
                             int caller_bci,
                             JVMState* jvms,
                             ciCallProfile& profile,
-                            WarmCallInfo* wci_result,
                             bool& should_delay);
   bool        should_inline(ciMethod* callee_method,
                             ciMethod* caller_method,
                             int caller_bci,
-                            ciCallProfile& profile,
-                            WarmCallInfo* wci_result);
+                            ciCallProfile& profile);
   bool        should_not_inline(ciMethod* callee_method,
                                 ciMethod* caller_method,
-                                JVMState* jvms,
-                                WarmCallInfo* wci_result);
+                                JVMState* jvms);
   bool        is_not_reached(ciMethod* callee_method,
                              ciMethod* caller_method,
                              int caller_bci,
@@ -112,7 +109,7 @@ public:
   // and may be accessed by find_subtree_from_root.
   // The call_method is the dest_method for a special or static invocation.
   // The call_method is an optimized virtual method candidate otherwise.
-  WarmCallInfo* ok_to_inline(ciMethod *call_method, JVMState* caller_jvms, ciCallProfile& profile, WarmCallInfo* wci, bool& should_delay);
+  bool ok_to_inline(ciMethod *call_method, JVMState* caller_jvms, ciCallProfile& profile, bool& should_delay);
 
   // Information about inlined method
   JVMState*   caller_jvms()       const { return _caller_jvms; }
@@ -330,8 +327,6 @@ class Parse : public GraphKit {
   bool          _wrote_volatile;     // Did we write a volatile field?
   bool          _wrote_stable;       // Did we write a @Stable field?
   bool          _wrote_fields;       // Did we write any field?
-  bool          _count_invocations;  // update and test invocation counter
-  bool          _method_data_update; // update method data oop
   Node*         _alloc_with_final;   // An allocation node with final field
 
   // Variables which track Java semantics during bytecode parsing:
@@ -377,8 +372,6 @@ class Parse : public GraphKit {
   void      set_wrote_stable(bool z)  { _wrote_stable = z; }
   bool         wrote_fields() const   { return _wrote_fields; }
   void     set_wrote_fields(bool z)   { _wrote_fields = z; }
-  bool          count_invocations() const  { return _count_invocations; }
-  bool          method_data_update() const { return _method_data_update; }
   Node*    alloc_with_final() const   { return _alloc_with_final; }
   void set_alloc_with_final(Node* n)  {
     assert((_alloc_with_final == NULL) || (_alloc_with_final == n), "different init objects?");
@@ -487,7 +480,7 @@ class Parse : public GraphKit {
 
   // Insert a compiler safepoint into the graph, if there is a back-branch.
   void maybe_add_safepoint(int target_bci) {
-    if (UseLoopSafepoints && target_bci <= bci()) {
+    if (target_bci <= bci()) {
       add_safepoint();
     }
   }
@@ -499,9 +492,6 @@ class Parse : public GraphKit {
 
   // Helper function to uncommon-trap or bailout for non-compilable call-sites
   bool can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass *klass);
-
-  // Helper function to setup for type-profile based inlining
-  bool prepare_type_profile_inline(ciInstanceKlass* prof_klass, ciMethod* prof_method);
 
   // Helper functions for type checking bytecodes:
   void  do_checkcast();
@@ -555,9 +545,9 @@ class Parse : public GraphKit {
   void    maybe_add_predicate_after_if(Block* path);
   IfNode* jump_if_fork_int(Node* a, Node* b, BoolTest::mask mask, float prob, float cnt);
   Node*   jump_if_join(Node* iffalse, Node* iftrue);
-  void    jump_if_true_fork(IfNode *ifNode, int dest_bci_if_true, int prof_table_index, bool unc);
-  void    jump_if_false_fork(IfNode *ifNode, int dest_bci_if_false, int prof_table_index, bool unc);
-  void    jump_if_always_fork(int dest_bci_if_true, int prof_table_index, bool unc);
+  void    jump_if_true_fork(IfNode *ifNode, int dest_bci_if_true, bool unc);
+  void    jump_if_false_fork(IfNode *ifNode, int dest_bci_if_false, bool unc);
+  void    jump_if_always_fork(int dest_bci_if_true, bool unc);
 
   friend class SwitchRange;
   void    do_tableswitch();
@@ -567,23 +557,6 @@ class Parse : public GraphKit {
   void    linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchRange*& hi);
 
   void decrement_age();
-  // helper functions for methodData style profiling
-  void test_counter_against_threshold(Node* cnt, int limit);
-  void increment_and_test_invocation_counter(int limit);
-  void test_for_osr_md_counter_at(ciMethodData* md, ciProfileData* data, ByteSize offset, int limit);
-  Node* method_data_addressing(ciMethodData* md, ciProfileData* data, ByteSize offset, Node* idx = NULL, uint stride = 0);
-  void increment_md_counter_at(ciMethodData* md, ciProfileData* data, ByteSize offset, Node* idx = NULL, uint stride = 0);
-  void set_md_flag_at(ciMethodData* md, ciProfileData* data, int flag_constant);
-
-  void profile_method_entry();
-  void profile_taken_branch(int target_bci, bool force_update = false);
-  void profile_not_taken_branch(bool force_update = false);
-  void profile_call(Node* receiver);
-  void profile_generic_call();
-  void profile_receiver_type(Node* receiver);
-  void profile_ret(int target_bci);
-  void profile_null_checkcast();
-  void profile_switch_case(int table_index);
 
   // helper function for call statistics
   void count_compiled_calls(bool at_method_entry, bool is_inline) PRODUCT_RETURN;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,11 +92,8 @@ public class Lower extends TreeTranslator {
     private DiagnosticPosition make_pos;
     private final ConstFold cfolder;
     private final Target target;
-    private final Source source;
     private final TypeEnvs typeEnvs;
     private final Name dollarAssertionsDisabled;
-    private final Name classDollar;
-    private final Name dollarCloseResource;
     private final Types types;
     private final boolean debugLower;
     private final boolean disableProtectedAccessors; // experimental
@@ -114,14 +111,9 @@ public class Lower extends TreeTranslator {
         make = TreeMaker.instance(context);
         cfolder = ConstFold.instance(context);
         target = Target.instance(context);
-        source = Source.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         dollarAssertionsDisabled = names.
             fromString(target.syntheticNameChar() + "assertionsDisabled");
-        classDollar = names.
-            fromString("class" + target.syntheticNameChar());
-        dollarCloseResource = names.
-            fromString(target.syntheticNameChar() + "closeResource");
 
         types = Types.instance(context);
         Options options = Options.instance(context);
@@ -378,11 +370,11 @@ public class Lower extends TreeTranslator {
     }
 
     ClassSymbol ownerToCopyFreeVarsFrom(ClassSymbol c) {
-        if (!c.isLocal()) {
+        if (!c.isDirectlyOrIndirectlyLocal()) {
             return null;
         }
         Symbol currentOwner = c.owner;
-        while (currentOwner.owner.kind.matches(KindSelector.TYP) && currentOwner.isLocal()) {
+        while (currentOwner.owner.kind.matches(KindSelector.TYP) && currentOwner.isDirectlyOrIndirectlyLocal()) {
             currentOwner = currentOwner.owner;
         }
         if (currentOwner.owner.kind.matches(KindSelector.VAL_MTH) && c.isSubClass(currentOwner, types)) {
@@ -1049,7 +1041,7 @@ public class Lower extends TreeTranslator {
         }
         if ((sym.flags() & PRIVATE) == 0 || sym.owner == currentClass) {
             return false;
-        } else if (sym.name == names.init && sym.owner.isLocal()) {
+        } else if (sym.name == names.init && sym.owner.isDirectlyOrIndirectlyLocal()) {
             // private constructor in local class: relax protection
             sym.flags_field &= ~PRIVATE;
             return false;
@@ -1221,7 +1213,7 @@ public class Lower extends TreeTranslator {
                 //sym is a local variable - check the lambda translation map to
                 //see if sym has been translated to something else in the current
                 //scope (by LambdaToMethod)
-                Symbol translatedSym = lambdaTranslationMap.get(sym);
+                Symbol translatedSym = lambdaTranslationMap.get(sym.baseSymbol());
                 if (translatedSym != null) {
                     tree = make.at(tree.pos).Ident(translatedSym);
                 }
@@ -1611,11 +1603,10 @@ public class Lower extends TreeTranslator {
         JCTree resource = resources.head;
         JCExpression resourceUse;
         boolean resourceNonNull;
-        if (resource instanceof JCVariableDecl) {
-            JCVariableDecl var = (JCVariableDecl) resource;
-            resourceUse = make.Ident(var.sym).setType(resource.type);
-            resourceNonNull = var.init != null && TreeInfo.skipParens(var.init).hasTag(NEWCLASS);
-            stats.add(var);
+        if (resource instanceof JCVariableDecl variableDecl) {
+            resourceUse = make.Ident(variableDecl.sym).setType(resource.type);
+            resourceNonNull = variableDecl.init != null && TreeInfo.skipParens(variableDecl.init).hasTag(NEWCLASS);
+            stats.add(variableDecl);
         } else {
             Assert.check(resource instanceof JCExpression);
             VarSymbol syntheticTwrVar =
@@ -2203,7 +2194,7 @@ public class Lower extends TreeTranslator {
         tree.extending = translate(tree.extending);
         tree.implementing = translate(tree.implementing);
 
-        if (currentClass.isLocal()) {
+        if (currentClass.isDirectlyOrIndirectlyLocal()) {
             ClassSymbol encl = currentClass.owner.enclClass();
             if (encl.trans_local == null) {
                 encl.trans_local = List.nil();
@@ -2654,7 +2645,7 @@ public class Lower extends TreeTranslator {
 
     private void visitMethodDefInternal(JCMethodDecl tree) {
         if (tree.name == names.init &&
-            (currentClass.isInner() || currentClass.isLocal())) {
+            (currentClass.isInner() || currentClass.isDirectlyOrIndirectlyLocal())) {
             // We are seeing a constructor of an inner class.
             MethodSymbol m = tree.sym;
 
@@ -2794,7 +2785,7 @@ public class Lower extends TreeTranslator {
 
         // If created class is local, add free variables after
         // explicit constructor arguments.
-        if (c.isLocal()) {
+        if (c.isDirectlyOrIndirectlyLocal()) {
             tree.args = tree.args.appendList(loadFreevars(tree.pos(), freevars(c)));
         }
 
@@ -2813,7 +2804,7 @@ public class Lower extends TreeTranslator {
             if (tree.encl != null) {
                 thisArg = attr.makeNullCheck(translate(tree.encl));
                 thisArg.type = tree.encl.type;
-            } else if (c.isLocal()) {
+            } else if (c.isDirectlyOrIndirectlyLocal()) {
                 // local class
                 thisArg = makeThis(tree.pos(), c.type.getEnclosingType().tsym);
             } else {
@@ -2827,7 +2818,14 @@ public class Lower extends TreeTranslator {
         // If we have an anonymous class, create its flat version, rather
         // than the class or interface following new.
         if (tree.def != null) {
-            translate(tree.def);
+            Map<Symbol, Symbol> prevLambdaTranslationMap = lambdaTranslationMap;
+            try {
+                lambdaTranslationMap = null;
+                translate(tree.def);
+            } finally {
+                lambdaTranslationMap = prevLambdaTranslationMap;
+            }
+
             tree.clazz = access(make_at(tree.clazz.pos()).Ident(tree.def.sym));
             tree.def = null;
         } else {
@@ -2989,7 +2987,7 @@ public class Lower extends TreeTranslator {
             // If we are calling a constructor of a local class, add
             // free variables after explicit constructor arguments.
             ClassSymbol c = (ClassSymbol)constructor.owner;
-            if (c.isLocal()) {
+            if (c.isDirectlyOrIndirectlyLocal()) {
                 tree.args = tree.args.appendList(loadFreevars(tree.pos(), freevars(c)));
             }
 
@@ -3017,7 +3015,7 @@ public class Lower extends TreeTranslator {
                         makeNullCheck(translate(((JCFieldAccess) tree.meth).selected));
                     tree.meth = make.Ident(constructor);
                     ((JCIdent) tree.meth).name = methName;
-                } else if (c.isLocal() || methName == names._this){
+                } else if (c.isDirectlyOrIndirectlyLocal() || methName == names._this){
                     // local class or this() call
                     thisArg = makeThis(tree.meth.pos(), c.type.getEnclosingType().tsym);
                 } else {
@@ -3878,7 +3876,9 @@ public class Lower extends TreeTranslator {
 
                 stmtList.append(switch2);
 
-                return make.Block(0L, stmtList.toList());
+                JCBlock res = make.Block(0L, stmtList.toList());
+                res.endpos = TreeInfo.endPos(tree);
+                return res;
             } else {
                 JCSwitchExpression switch2 = make.SwitchExpression(make.Ident(dollar_tmp), lb.toList());
 

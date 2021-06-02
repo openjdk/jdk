@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package java.sql;
 /**
  * The representation of a savepoint, which is a point within
  * the current transaction that can be referenced from the
- * <code>Connection.rollback</code> method. When a transaction
+ * {@code Connection.rollback} method. When a transaction
  * is rolled back to a savepoint all changes made after that
  * savepoint are undone.
  * <p>
@@ -42,18 +42,18 @@ public interface Savepoint {
 
     /**
      * Retrieves the generated ID for the savepoint that this
-     * <code>Savepoint</code> object represents.
+     * {@code Savepoint} object represents.
      * @return the numeric ID of this savepoint
-     * @exception SQLException if this is a named savepoint
+     * @throws SQLException if this is a named savepoint
      * @since 1.4
      */
     int getSavepointId() throws SQLException;
 
     /**
-     * Retrieves the name of the savepoint that this <code>Savepoint</code>
+     * Retrieves the name of the savepoint that this {@code Savepoint}
      * object represents.
      * @return the name of this savepoint
-     * @exception SQLException if this is an un-named savepoint
+     * @throws SQLException if this is an un-named savepoint
      * @since 1.4
      */
     String getSavepointName() throws SQLException;

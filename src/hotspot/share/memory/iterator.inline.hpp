@@ -25,9 +25,9 @@
 #ifndef SHARE_MEMORY_ITERATOR_INLINE_HPP
 #define SHARE_MEMORY_ITERATOR_INLINE_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "memory/iterator.hpp"
-#include "memory/universe.hpp"
+
+#include "classfile/classLoaderData.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"
@@ -51,22 +51,6 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_klass(Klass* k) {
   ClassLoaderData* cld = k->class_loader_data();
   ClaimMetadataVisitingOopIterateClosure::do_cld(cld);
 }
-
-#ifdef ASSERT
-// This verification is applied to all visited oops.
-// The closures can turn is off by overriding should_verify_oops().
-template <typename T>
-void OopIterateClosure::verify(T* p) {
-  if (should_verify_oops()) {
-    T heap_oop = RawAccess<>::oop_load(p);
-    if (!CompressedOops::is_null(heap_oop)) {
-      oop o = CompressedOops::decode_not_null(heap_oop);
-      assert(Universe::heap()->is_in(o),
-             "should be in closed *p " PTR_FORMAT " " PTR_FORMAT, p2i(p), p2i(o));
-    }
-  }
-}
-#endif
 
 // Implementation of the non-virtual do_oop dispatch.
 //
@@ -124,15 +108,8 @@ call_do_oop(void (Receiver::*)(T*), void (Base::*)(T*), OopClosureType* closure,
 }
 
 template <typename OopClosureType, typename T>
-inline void Devirtualizer::do_oop_no_verify(OopClosureType* closure, T* p) {
-  call_do_oop<T>(&OopClosureType::do_oop, &OopClosure::do_oop, closure, p);
-}
-
-template <typename OopClosureType, typename T>
 inline void Devirtualizer::do_oop(OopClosureType* closure, T* p) {
-  debug_only(closure->verify(p));
-
-  do_oop_no_verify(closure, p);
+  call_do_oop<T>(&OopClosureType::do_oop, &OopClosure::do_oop, closure, p);
 }
 
 // Implementation of the non-virtual do_metadata dispatch.
@@ -230,6 +207,8 @@ void Devirtualizer::do_cld(OopClosureType* closure, ClassLoaderData* cld) {
 template <typename OopClosureType>
 class OopOopIterateDispatch : public AllStatic {
 private:
+  typedef void (*FunctionType)(OopClosureType*, oop, Klass*);
+
   class Table {
   private:
     template <typename KlassType, typename T>
@@ -266,7 +245,7 @@ private:
     }
 
   public:
-    void (*_function[KLASS_ID_COUNT])(OopClosureType*, oop, Klass*);
+    FunctionType _function[KLASS_ID_COUNT];
 
     Table(){
       set_init_function<InstanceKlass>();
@@ -281,7 +260,7 @@ private:
   static Table _table;
 public:
 
-  static void (*function(Klass* klass))(OopClosureType*, oop, Klass*) {
+  static FunctionType function(Klass* klass) {
     return _table._function[klass->id()];
   }
 };
@@ -293,6 +272,8 @@ typename OopOopIterateDispatch<OopClosureType>::Table OopOopIterateDispatch<OopC
 template <typename OopClosureType>
 class OopOopIterateBoundedDispatch {
 private:
+  typedef void (*FunctionType)(OopClosureType*, oop, Klass*, MemRegion);
+
   class Table {
   private:
     template <typename KlassType, typename T>
@@ -326,7 +307,7 @@ private:
     }
 
   public:
-    void (*_function[KLASS_ID_COUNT])(OopClosureType*, oop, Klass*, MemRegion);
+    FunctionType _function[KLASS_ID_COUNT];
 
     Table(){
       set_init_function<InstanceKlass>();
@@ -341,7 +322,7 @@ private:
   static Table _table;
 public:
 
-  static void (*function(Klass* klass))(OopClosureType*, oop, Klass*, MemRegion) {
+  static FunctionType function(Klass* klass) {
     return _table._function[klass->id()];
   }
 };
@@ -353,6 +334,8 @@ typename OopOopIterateBoundedDispatch<OopClosureType>::Table OopOopIterateBounde
 template <typename OopClosureType>
 class OopOopIterateBackwardsDispatch {
 private:
+  typedef void (*FunctionType)(OopClosureType*, oop, Klass*);
+
   class Table {
   private:
     template <typename KlassType, typename T>
@@ -386,7 +369,7 @@ private:
     }
 
   public:
-    void (*_function[KLASS_ID_COUNT])(OopClosureType*, oop, Klass*);
+    FunctionType _function[KLASS_ID_COUNT];
 
     Table(){
       set_init_function<InstanceKlass>();
@@ -401,7 +384,7 @@ private:
   static Table _table;
 public:
 
-  static void (*function(Klass* klass))(OopClosureType*, oop, Klass*) {
+  static FunctionType function(Klass* klass) {
     return _table._function[klass->id()];
   }
 };

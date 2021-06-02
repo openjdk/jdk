@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_arm.inline.hpp"
 
@@ -283,7 +284,7 @@ int LIR_Assembler::emit_deopt_handler() {
 }
 
 
-void LIR_Assembler::return_op(LIR_Opr result) {
+void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   // Pop the frame before safepoint polling
   __ remove_frame(initial_frame_size_in_bytes());
   __ read_polling_page(Rtemp, relocInfo::poll_return_type);
@@ -847,7 +848,7 @@ void LIR_Assembler::emit_op3(LIR_Op3* op) {
       __ add_32(dest, left, AsmOperand(left, lsr, 31));
       __ asr_32(dest, dest, 1);
     } else if (c != (int) 0x80000000) {
-      int power = log2_intptr(c);
+      int power = log2i_exact(c);
       __ asr_32(Rtemp, left, 31);
       __ add_32(dest, left, AsmOperand(Rtemp, lsr, 32-power)); // dest = left + (left < 0 ? 2^power - 1 : 0);
       __ asr_32(dest, dest, power);                            // dest = dest >>> power;
@@ -1627,9 +1628,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     switch (code) {
       case lir_add: __ add_float(res, lreg, rreg); break;
       case lir_sub: __ sub_float(res, lreg, rreg); break;
-      case lir_mul_strictfp: // fall through
       case lir_mul: __ mul_float(res, lreg, rreg); break;
-      case lir_div_strictfp: // fall through
       case lir_div: __ div_float(res, lreg, rreg); break;
       default: ShouldNotReachHere();
     }
@@ -1642,9 +1641,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     switch (code) {
       case lir_add: __ add_double(res, lreg, rreg); break;
       case lir_sub: __ sub_double(res, lreg, rreg); break;
-      case lir_mul_strictfp: // fall through
       case lir_mul: __ mul_double(res, lreg, rreg); break;
-      case lir_div_strictfp: // fall through
       case lir_div: __ div_double(res, lreg, rreg); break;
       default: ShouldNotReachHere();
     }
@@ -1940,12 +1937,6 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall *op) {
   add_call_info(code_offset(), op->info());
 }
 
-
-/* vtable-dispatch is not enabled for arm platforms */
-void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
-  ShouldNotReachHere();
-}
-
 void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
   address stub = __ start_a_stub(call_stub_size());
@@ -2105,9 +2096,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   Register tmp2 = Rtemp;
 
   assert(src == R0 && src_pos == R1 && dst == R2 && dst_pos == R3, "code assumption");
-
-  __ resolve(ACCESS_READ, src);
-  __ resolve(ACCESS_WRITE, dst);
 
   CodeStub* stub = op->stub();
 
@@ -2448,7 +2436,6 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     __ b(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    __ resolve(ACCESS_READ | ACCESS_WRITE, obj);
     int null_check_offset = __ lock_object(hdr, obj, lock, tmp, *op->stub()->entry());
     if (op->info() != NULL) {
       add_debug_info_for_null_check(null_check_offset, op->info());

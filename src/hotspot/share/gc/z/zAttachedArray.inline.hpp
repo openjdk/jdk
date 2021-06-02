@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZATTACHEDARRAY_INLINE_HPP
 
 #include "gc/z/zAttachedArray.hpp"
+
 #include "memory/allocation.hpp"
 #include "utilities/align.hpp"
 
@@ -34,11 +35,33 @@ inline size_t ZAttachedArray<ObjectT, ArrayT>::object_size() {
 }
 
 template <typename ObjectT, typename ArrayT>
-inline void* ZAttachedArray<ObjectT, ArrayT>::alloc(size_t length) {
-  const size_t array_size = sizeof(ArrayT) * length;
-  char* const addr = AllocateHeap(object_size() + array_size, mtGC);
-  ::new (addr + object_size()) ArrayT[length];
+inline size_t ZAttachedArray<ObjectT, ArrayT>::array_size(size_t length) {
+  return sizeof(ArrayT) * length;
+}
+
+template <typename ObjectT, typename ArrayT>
+template <typename Allocator>
+inline void* ZAttachedArray<ObjectT, ArrayT>::alloc(Allocator* allocator, size_t length) {
+  // Allocate memory for object and array
+  const size_t size = object_size() + array_size(length);
+  void* const addr = allocator->alloc(size);
+
+  // Placement new array
+  void* const array_addr = reinterpret_cast<char*>(addr) + object_size();
+  ::new (array_addr) ArrayT[length];
+
+  // Return pointer to object
   return addr;
+}
+
+template <typename ObjectT, typename ArrayT>
+inline void* ZAttachedArray<ObjectT, ArrayT>::alloc(size_t length) {
+  struct Allocator {
+    void* alloc(size_t size) const {
+      return AllocateHeap(size, mtGC);
+    }
+  } allocator;
+  return alloc(&allocator, length);
 }
 
 template <typename ObjectT, typename ArrayT>

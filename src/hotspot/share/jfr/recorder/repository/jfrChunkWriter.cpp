@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 
 static const int64_t MAGIC_OFFSET = 0;
 static const int64_t MAGIC_LEN = 4;
@@ -103,8 +103,8 @@ class JfrChunkHeadWriter : public StackObj {
     _writer->be_write(PAD);
   }
 
-  void write_next_generation() {
-    _writer->be_write(_chunk->next_generation());
+  void write_next_generation(bool finalize) {
+    _writer->be_write(finalize ? COMPLETE : _chunk->next_generation());
     _writer->be_write(PAD);
   }
 
@@ -199,9 +199,9 @@ int64_t JfrChunkWriter::write_chunk_header_checkpoint(bool flushpoint) {
   const int64_t chunk_size_offset = reserve(sizeof(int64_t)); // size to be decided when we are done
   be_write(event_size_offset); // last checkpoint offset will be this checkpoint
   head.write_metadata();
-  head.write_time(false);
+  head.write_time(!flushpoint);
   head.write_cpu_frequency();
-  head.write_next_generation();
+  head.write_next_generation(!flushpoint);
   head.write_flags();
   assert(current_offset() - header_content_pos == HEADER_SIZE, "invariant");
   const u4 checkpoint_size = current_offset() - event_size_offset;
@@ -254,7 +254,7 @@ int64_t JfrChunkWriter::last_checkpoint_offset() const {
 
 int64_t JfrChunkWriter::current_chunk_start_nanos() const {
   assert(_chunk != NULL, "invariant");
-  return this->is_valid() ? _chunk->start_nanos() : invalid_time;
+  return _chunk->start_nanos();
 }
 
 void JfrChunkWriter::set_last_checkpoint_offset(int64_t offset) {

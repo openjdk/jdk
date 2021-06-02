@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -636,7 +636,6 @@ public final class Unsafe {
      * @see #getInt(Object, long)
      */
     @ForceInline
-    @SuppressWarnings("preview")
     public long objectFieldOffset(Field f) {
         if (f == null) {
             throw new NullPointerException();
@@ -646,7 +645,7 @@ public final class Unsafe {
             throw new UnsupportedOperationException("can't get field offset on a hidden class: " + f);
         }
         if (declaringClass.isRecord()) {
-            throw new UnsupportedOperationException("can't get field offset on a record (preview): " + f);
+            throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
         }
         return theInternalUnsafe.objectFieldOffset(f);
     }
@@ -669,7 +668,6 @@ public final class Unsafe {
      * @see #getInt(Object, long)
      */
     @ForceInline
-    @SuppressWarnings("preview")
     public long staticFieldOffset(Field f) {
         if (f == null) {
             throw new NullPointerException();
@@ -679,7 +677,7 @@ public final class Unsafe {
             throw new UnsupportedOperationException("can't get field offset on a hidden class: " + f);
         }
         if (declaringClass.isRecord()) {
-            throw new UnsupportedOperationException("can't get field offset on a record (preview): " + f);
+            throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
         }
         return theInternalUnsafe.staticFieldOffset(f);
     }
@@ -695,7 +693,6 @@ public final class Unsafe {
      * this class.
      */
     @ForceInline
-    @SuppressWarnings("preview")
     public Object staticFieldBase(Field f) {
         if (f == null) {
             throw new NullPointerException();
@@ -705,7 +702,7 @@ public final class Unsafe {
             throw new UnsupportedOperationException("can't get base address on a hidden class: " + f);
         }
         if (declaringClass.isRecord()) {
-            throw new UnsupportedOperationException("can't get base address on a record (preview): " + f);
+            throw new UnsupportedOperationException("can't get base address on a record class: " + f);
         }
         return theInternalUnsafe.staticFieldBase(f);
     }
@@ -856,32 +853,6 @@ public final class Unsafe {
 
 
     /// random trusted operations from JNI:
-
-    /**
-     * Defines a class but does not make it known to the class loader or system dictionary.
-     * <p>
-     * For each CP entry, the corresponding CP patch must either be null or have
-     * the a format that matches its tag:
-     * <ul>
-     * <li>Integer, Long, Float, Double: the corresponding wrapper object type from java.lang
-     * <li>Utf8: a string (must have suitable syntax if used as signature or name)
-     * <li>Class: any java.lang.Class object
-     * <li>String: any object (not just a java.lang.String)
-     * <li>InterfaceMethodRef: (NYI) a method handle to invoke on that call site's arguments
-     * </ul>
-     *
-     * @deprecated Use the {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)}
-     * method.
-     *
-     * @param hostClass context for linkage, access control, protection domain, and class loader
-     * @param data      bytes of a class file
-     * @param cpPatches where non-null entries exist, they replace corresponding CP entries in data
-     */
-    @ForceInline
-    @Deprecated(since = "15", forRemoval = false)
-    public Class<?> defineAnonymousClass(Class<?> hostClass, byte[] data, Object[] cpPatches) {
-        return theInternalUnsafe.defineAnonymousClass(hostClass, data, cpPatches);
-    }
 
     /**
      * Allocates an instance but does not run any constructor.

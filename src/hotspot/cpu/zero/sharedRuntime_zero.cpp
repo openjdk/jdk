@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_zero.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -51,8 +50,7 @@ static address zero_null_code_stub() {
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
-                                           int total_args_passed,
-                                           int is_outgoing) {
+                                           int total_args_passed) {
   return 0;
 }
 
@@ -118,16 +116,6 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
 RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const char* name) {
   return generate_empty_runtime_stub("resolve_blob");
-}
-
-size_t SharedRuntime::trampoline_size() {
-  ShouldNotCallThis();
-  return 0;
-}
-
-void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
-  ShouldNotCallThis();
-  return;
 }
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,

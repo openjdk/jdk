@@ -550,21 +550,6 @@ void FpuStackAllocator::handle_op1(LIR_Op1* op1) {
       break;
     }
 
-    case lir_neg: {
-      if (in->is_fpu_register() && !in->is_xmm_register()) {
-        assert(res->is_fpu_register() && !res->is_xmm_register(), "must be");
-        assert(in->is_last_use(), "old value gets destroyed");
-
-        insert_free_if_dead(res, in);
-        insert_exchange(in);
-        new_in = to_fpu_stack_top(in);
-
-        do_rename(in, res);
-        new_res = to_fpu_stack_top(res);
-      }
-      break;
-    }
-
     case lir_convert: {
       Bytecodes::Code bc = op1->as_OpConvert()->bytecode();
       switch (bc) {
@@ -693,17 +678,17 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
       break;
     }
 
-    case lir_mul_strictfp:
-    case lir_div_strictfp: {
-      assert(op2->tmp1_opr()->is_fpu_register(), "strict operations need temporary fpu stack slot");
-      insert_free_if_dead(op2->tmp1_opr());
-      assert(sim()->stack_size() <= 7, "at least one stack slot must be free");
+    case lir_mul:
+    case lir_div: {
+      if (res->is_double_fpu()) {
+        assert(op2->tmp1_opr()->is_fpu_register(), "strict operations need temporary fpu stack slot");
+        insert_free_if_dead(op2->tmp1_opr());
+        assert(sim()->stack_size() <= 7, "at least one stack slot must be free");
+      }
       // fall-through: continue with the normal handling of lir_mul and lir_div
     }
     case lir_add:
-    case lir_sub:
-    case lir_mul:
-    case lir_div: {
+    case lir_sub: {
       assert(left->is_fpu_register(), "must be");
       assert(res->is_fpu_register(), "must be");
       assert(left->is_equal(res), "must be");
@@ -772,7 +757,8 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
     }
 
     case lir_abs:
-    case lir_sqrt: {
+    case lir_sqrt:
+    case lir_neg: {
       // Right argument appears to be unused
       assert(right->is_illegal(), "must be");
       assert(left->is_fpu_register(), "must be");

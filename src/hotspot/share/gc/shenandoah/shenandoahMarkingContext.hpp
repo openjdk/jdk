@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,21 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP
 
-#include "gc/shared/markBitMap.hpp"
+#include "gc/shenandoah/shenandoahMarkBitMap.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
+
+class ShenandoahObjToScanQueueSet;
 
 /**
  * Encapsulate a marking bitmap with the top-at-mark-start and top-bitmaps array.
  */
 class ShenandoahMarkingContext : public CHeapObj<mtGC> {
 private:
-  MarkBitMap _mark_bit_map;
+  // Marking bitmap
+  ShenandoahMarkBitMap _mark_bit_map;
 
   HeapWord** const _top_bitmaps;
   HeapWord** const _top_at_mark_starts_base;
@@ -43,22 +47,30 @@ private:
 
   ShenandoahSharedFlag _is_complete;
 
+  // Marking task queues
+  ShenandoahObjToScanQueueSet* _task_queues;
+
 public:
-  ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions);
+  ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions, uint max_queues);
+  ~ShenandoahMarkingContext();
 
   /*
    * Marks the object. Returns true if the object has not been marked before and has
    * been marked by this thread. Returns false if the object has already been marked,
    * or if a competing thread succeeded in marking this object.
    */
-  inline bool mark(oop obj);
+  inline bool mark_strong(oop obj, bool& was_upgraded);
+  inline bool mark_weak(oop obj);
 
-  inline bool is_marked(oop obj) const;
+  // Simple versions of marking accessors, to be used outside of marking (e.g. no possible concurrent updates)
+  inline bool is_marked(oop) const;
+  inline bool is_marked_strong(oop obj) const;
+  inline bool is_marked_weak(oop obj) const;
+
+  inline HeapWord* get_next_marked_addr(HeapWord* addr, HeapWord* limit) const;
 
   inline bool allocated_after_mark_start(oop obj) const;
   inline bool allocated_after_mark_start(HeapWord* addr) const;
-
-  inline MarkBitMap* mark_bit_map();
 
   inline HeapWord* top_at_mark_start(ShenandoahHeapRegion* r) const;
   inline void capture_top_at_mark_start(ShenandoahHeapRegion* r);
@@ -75,6 +87,8 @@ public:
   void mark_complete();
   void mark_incomplete();
 
+  // Task queues
+  ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP

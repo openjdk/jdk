@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,17 +43,16 @@
  *
  * @comment create attach010Agent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach010.attach010Agent00
- * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach010.attach010Agent00
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller nsk.jvmti.AttachOnDemand.attach010.attach010Agent00
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach010Agent00.jar ${test.src}/attach010Agent00.mf
  *      nsk/jvmti/AttachOnDemand/attach010/attach010Agent00.class
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
  *      -ja attach010Agent00.jar
  */

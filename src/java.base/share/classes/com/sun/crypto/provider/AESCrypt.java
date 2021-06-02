@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * Rijndael --pronounced Reindaal-- is a symmetric cipher with a 128-bit
@@ -94,6 +94,9 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
         if (!MessageDigest.isEqual(key, lastKey)) {
             // re-generate session key 'sessionK' when cipher key changes
             makeSessionKey(key);
+            if (lastKey != null) {
+                Arrays.fill(lastKey, (byte)0);
+            }
             lastKey = key.clone();  // save cipher key
         }
 
@@ -356,7 +359,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
     }
 
     // Encryption operation. Possibly replaced with a compiler intrinsic.
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private void implEncryptBlock(byte[] in, int inOffset,
                                   byte[] out, int outOffset)
     {
@@ -435,7 +438,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
     }
 
     // Decrypt operation. Possibly replaced with a compiler intrinsic.
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private void implDecryptBlock(byte[] in, int inOffset,
                                   byte[] out, int outOffset)
     {
@@ -673,12 +676,23 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
         // and expand them into arrays of ints.
         int[] expandedKe = expandToSubKey(Ke, false); // decrypting==false
         int[] expandedKd = expandToSubKey(Kd, true);  // decrypting==true
-
+        Arrays.fill(tk, 0);
+        for (int[] ia: Ke) {
+            Arrays.fill(ia, 0);
+        }
+        for (int[] ia: Kd) {
+            Arrays.fill(ia, 0);
+        }
         ROUNDS_12 = (ROUNDS>=12);
         ROUNDS_14 = (ROUNDS==14);
         limit = ROUNDS*4;
 
         // store the expanded sub keys into 'sessionK'
+        if (sessionK != null) {
+            // erase the previous values in sessionK
+            Arrays.fill(sessionK[0], 0);
+            Arrays.fill(sessionK[1], 0);
+        }
         sessionK = new int[][] { expandedKe, expandedKd };
     }
 

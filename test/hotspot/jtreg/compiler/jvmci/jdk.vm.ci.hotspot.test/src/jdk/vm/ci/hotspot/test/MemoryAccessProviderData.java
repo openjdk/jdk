@@ -49,7 +49,8 @@ public class MemoryAccessProviderData {
     private static final TestClass TEST_OBJECT = new TestClass();
     private static final JavaConstant TEST_CONSTANT = CONSTANT_REFLECTION.forObject(TEST_OBJECT);
     private static final JavaConstant TEST_CLASS_CONSTANT = CONSTANT_REFLECTION.forObject(TestClass.class);
-    private static KindData[] PRIMITIVE_KIND_DATA = {
+
+    private static final KindData[] PRIMITIVE_KIND_DATA = {
         new KindData(JavaKind.Boolean, TEST_OBJECT),
         new KindData(JavaKind.Byte, TEST_OBJECT),
         new KindData(JavaKind.Char, TEST_OBJECT),
@@ -104,6 +105,28 @@ public class MemoryAccessProviderData {
             result.add(new Object[] {k.kind, TEST_CLASS_CONSTANT, (long) -1, true});
             result.add(new Object[] {k.kind, TEST_CLASS_CONSTANT, lastValidOffset + 1, true});
             result.add(new Object[] {k.kind, TEST_CLASS_CONSTANT, lastValidOffset + 100, true});
+        }
+        return result.toArray(new Object[result.size()][]);
+    }
+
+    @DataProvider(name = "outOfBoundsObjectArray")
+    public static Object[][] getOutOfBoundsObjectArrayReads() {
+        List<Object[]> result = new ArrayList<>();
+
+        for (int i = 0; i < 8; i++) {
+            Object[] objects = new Object[i];
+            for (int e = 0; e < i; e++) {
+                objects[e] = e;
+            }
+            long firstValidOffset = UNSAFE.ARRAY_OBJECT_BASE_OFFSET;
+            long endOfObjectOffset = UNSAFE.ARRAY_OBJECT_BASE_OFFSET + i * UNSAFE.ARRAY_OBJECT_INDEX_SCALE;
+            JavaConstant constant = CONSTANT_REFLECTION.forObject(objects);
+            result.add(new Object[] {JavaKind.Object, constant, firstValidOffset, i == 0});
+            result.add(new Object[] {JavaKind.Object, constant, (long) 0, true});
+            result.add(new Object[] {JavaKind.Object, constant, (long) -1, true});
+            result.add(new Object[] {JavaKind.Object, constant, endOfObjectOffset - UNSAFE.ARRAY_OBJECT_INDEX_SCALE, i == 0});
+            result.add(new Object[] {JavaKind.Object, constant, endOfObjectOffset, true});
+            result.add(new Object[] {JavaKind.Object, constant, endOfObjectOffset + 100, true});
         }
         return result.toArray(new Object[result.size()][]);
     }

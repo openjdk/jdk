@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ import java.math.*;
 import java.util.Objects;
 import java.util.Optional;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.LATIN1;
@@ -50,6 +50,12 @@ import static java.lang.String.UTF16;
  * long}, as well as other constants and methods useful when dealing
  * with a {@code long}.
  *
+ * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
+ *
  * <p>Implementation note: The implementations of the "bit twiddling"
  * methods (such as {@link #highestOneBit(long) highestOneBit} and
  * {@link #numberOfTrailingZeros(long) numberOfTrailingZeros}) are
@@ -62,6 +68,7 @@ import static java.lang.String.UTF16;
  * @author  Joseph D. Darcy
  * @since   1.0
  */
+@jdk.internal.ValueBased
 public final class Long extends Number
         implements Comparable<Long>, Constable, ConstantDesc {
     /**
@@ -293,10 +300,18 @@ public final class Long extends Number
      *  {@code Long.toHexString(n).toUpperCase()}
      * </blockquote>
      *
+     * @apiNote
+     * The {@link java.util.HexFormat} class provides formatting and parsing
+     * of byte arrays and primitives to return a string or adding to an {@link Appendable}.
+     * {@code HexFormat} formats and parses uppercase or lowercase hexadecimal characters,
+     * with leading zeros and for byte arrays includes for each byte
+     * a delimiter, prefix, and suffix.
+     *
      * @param   i   a {@code long} to be converted to a string.
      * @return  the string representation of the unsigned {@code long}
      *          value represented by the argument in hexadecimal
      *          (base&nbsp;16).
+     * @see java.util.HexFormat
      * @see #parseUnsignedLong(String, int)
      * @see #toUnsignedString(long, int)
      * @since   1.0.2
@@ -667,7 +682,7 @@ public final class Long extends Number
               throws NumberFormatException
     {
         if (s == null) {
-            throw new NumberFormatException("null");
+            throw new NumberFormatException("Cannot parse null string");
         }
 
         if (radix < Character.MIN_RADIX) {
@@ -878,7 +893,7 @@ public final class Long extends Number
     public static long parseUnsignedLong(String s, int radix)
                 throws NumberFormatException {
         if (s == null)  {
-            throw new NumberFormatException("null");
+            throw new NumberFormatException("Cannot parse null string");
         }
 
         int len = s.length();
@@ -1169,7 +1184,7 @@ public final class Long extends Number
             int size = -(-128) + 127 + 1;
 
             // Load and use the archived cache if it exists
-            VM.initializeFromArchive(LongCache.class);
+            CDS.initializeFromArchive(LongCache.class);
             if (archivedCache == null || archivedCache.length != size) {
                 Long[] c = new Long[size];
                 long value = -128;
@@ -1198,7 +1213,7 @@ public final class Long extends Number
      * @return a {@code Long} instance representing {@code l}.
      * @since  1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static Long valueOf(long l) {
         final int offset = 128;
         if (l >= -128 && l <= 127) { // will cache
@@ -1316,7 +1331,7 @@ public final class Long extends Number
      * {@link #valueOf(long)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Long(long value) {
         this.value = value;
     }
@@ -1339,7 +1354,7 @@ public final class Long extends Number
      * {@code long} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Long} object.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Long(String s) throws NumberFormatException {
         this.value = parseLong(s, 10);
     }
@@ -1375,7 +1390,7 @@ public final class Long extends Number
      * Returns the value of this {@code Long} as a
      * {@code long} value.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public long longValue() {
         return value;
     }
@@ -1668,24 +1683,13 @@ public final class Long extends Number
      * @since 1.8
      */
     public static long divideUnsigned(long dividend, long divisor) {
-        if (divisor < 0L) { // signed comparison
-            // Answer must be 0 or 1 depending on relative magnitude
-            // of dividend and divisor.
-            return (compareUnsigned(dividend, divisor)) < 0 ? 0L :1L;
+        /* See Hacker's Delight (2nd ed), section 9.3 */
+        if (divisor >= 0) {
+            final long q = (dividend >>> 1) / divisor << 1;
+            final long r = dividend - q * divisor;
+            return q + ((r | ~(r - divisor)) >>> (Long.SIZE - 1));
         }
-
-        if (dividend > 0) //  Both inputs non-negative
-            return dividend/divisor;
-        else {
-            /*
-             * For simple code, leveraging BigInteger.  Longer and faster
-             * code written directly in terms of operations on longs is
-             * possible; see "Hacker's Delight" for divide and remainder
-             * algorithms.
-             */
-            return toUnsignedBigInteger(dividend).
-                divide(toUnsignedBigInteger(divisor)).longValue();
-        }
+        return (dividend & ~(dividend - divisor)) >>> (Long.SIZE - 1);
     }
 
     /**
@@ -1701,15 +1705,33 @@ public final class Long extends Number
      * @since 1.8
      */
     public static long remainderUnsigned(long dividend, long divisor) {
-        if (dividend > 0 && divisor > 0) { // signed comparisons
-            return dividend % divisor;
-        } else {
-            if (compareUnsigned(dividend, divisor) < 0) // Avoid explicit check for 0 divisor
-                return dividend;
-            else
-                return toUnsignedBigInteger(dividend).
-                    remainder(toUnsignedBigInteger(divisor)).longValue();
+        /* See Hacker's Delight (2nd ed), section 9.3 */
+        if (divisor >= 0) {
+            final long q = (dividend >>> 1) / divisor << 1;
+            final long r = dividend - q * divisor;
+            /*
+             * Here, 0 <= r < 2 * divisor
+             * (1) When 0 <= r < divisor, the remainder is simply r.
+             * (2) Otherwise the remainder is r - divisor.
+             *
+             * In case (1), r - divisor < 0. Applying ~ produces a long with
+             * sign bit 0, so >> produces 0. The returned value is thus r.
+             *
+             * In case (2), a similar reasoning shows that >> produces -1,
+             * so the returned value is r - divisor.
+             */
+            return r - ((~(r - divisor) >> (Long.SIZE - 1)) & divisor);
         }
+        /*
+         * (1) When dividend >= 0, the remainder is dividend.
+         * (2) Otherwise
+         *      (2.1) When dividend < divisor, the remainder is dividend.
+         *      (2.2) Otherwise the remainder is dividend - divisor
+         *
+         * A reasoning similar to the above shows that the returned value
+         * is as expected.
+         */
+        return dividend - (((dividend & ~(dividend - divisor)) >> (Long.SIZE - 1)) & divisor);
     }
 
     // Bit Twiddling
@@ -1786,7 +1808,7 @@ public final class Long extends Number
      *     is equal to zero.
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int numberOfLeadingZeros(long i) {
         int x = (int)(i >>> 32);
         return x == 0 ? 32 + Integer.numberOfLeadingZeros((int)i)
@@ -1807,7 +1829,7 @@ public final class Long extends Number
      *     to zero.
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int numberOfTrailingZeros(long i) {
         int x = (int)i;
         return x == 0 ? 32 + Integer.numberOfTrailingZeros((int)(i >>> 32))
@@ -1824,7 +1846,7 @@ public final class Long extends Number
      *     representation of the specified {@code long} value.
      * @since 1.5
      */
-     @HotSpotIntrinsicCandidate
+     @IntrinsicCandidate
      public static int bitCount(long i) {
         // HD, Figure 5-2
         i = i - ((i >>> 1) & 0x5555555555555555L);
@@ -1926,7 +1948,7 @@ public final class Long extends Number
      *     {@code long} value.
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long reverseBytes(long i) {
         i = (i & 0x00ff00ff00ff00ffL) << 8 | (i >>> 8) & 0x00ff00ff00ff00ffL;
         return (i << 48) | ((i & 0xffff0000L) << 16) |

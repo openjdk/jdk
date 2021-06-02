@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 import sun.net.www.HeaderParser;
@@ -51,6 +53,7 @@ import sun.net.www.HeaderParser;
 //      policy in HttpURLConnection.  A failure on baz.foo.com shouldn't
 //      uncache foo.com!
 
+@SuppressWarnings("removal")
 public abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
 
     @java.io.Serial
@@ -125,8 +128,9 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * at the same time, then all but the first will block until
      * the first completes its authentication.
      */
-    private static HashMap<String,Thread> requests = new HashMap<>();
-
+    private static final HashMap<String,Thread> requests = new HashMap<>();
+    private static final ReentrantLock requestLock = new ReentrantLock();
+    private static final Condition requestFinished = requestLock.newCondition();
     /*
      * check if AuthenticationInfo is available in the cache.
      * If not, check if a request for this destination is in progress
@@ -142,8 +146,9 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
             // and we can revert to concurrent requests
             return cached;
         }
-        synchronized (requests) {
-            // check again after synchronizing, and if available
+        requestLock.lock();
+        try {
+            // check again after locking, and if available
             // just return the cached value.
             cached = cache.apply(key);
             if (cached != null) return cached;
@@ -164,10 +169,10 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
             // Otherwise, an other thread is currently performing authentication:
             // wait until it finishes.
             while (requests.containsKey(key)) {
-                try {
-                    requests.wait ();
-                } catch (InterruptedException e) {}
+                requestFinished.awaitUninterruptibly();
             }
+        } finally {
+            requestLock.unlock();
         }
         /* entry may be in cache now. */
         return cache.apply(key);
@@ -177,13 +182,16 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * so that other threads can continue.
      */
     private static void requestCompleted (String key) {
-        synchronized (requests) {
+        requestLock.lock();
+        try {
             Thread thread = requests.get(key);
             if (thread != null && thread == Thread.currentThread()) {
                 boolean waspresent = requests.remove(key) != null;
                 assert waspresent;
             }
-            requests.notifyAll();
+            requestFinished.signalAll();
+        } finally {
+            requestLock.unlock();
         }
     }
 
@@ -414,9 +422,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         if (!serializeAuth) {
             return;
         }
-        synchronized (requests) {
-            requestCompleted(key);
-        }
+        requestCompleted(key);
     }
 
     /**
@@ -500,6 +506,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     String s1, s2;  /* used for serialization of pw */
 
     @java.io.Serial
+    // should be safe to keep synchronized here
     private synchronized void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {
@@ -512,6 +519,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     }
 
     @java.io.Serial
+    // should be safe to keep synchronized here
     private synchronized void writeObject(java.io.ObjectOutputStream s)
         throws IOException
     {

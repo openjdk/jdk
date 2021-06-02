@@ -35,23 +35,23 @@ import java.util.Arrays;
  * The subclass of {@link SQLException} thrown when an error
  * occurs during a batch update operation.  In addition to the
  * information provided by {@link SQLException}, a
- * <code>BatchUpdateException</code> provides the update
+ * {@code BatchUpdateException} provides the update
  * counts for all commands that were executed successfully during the
  * batch update, that is, all commands that were executed before the error
  * occurred.  The order of elements in an array of update counts
  * corresponds to the order in which commands were added to the batch.
  * <P>
  * After a command in a batch update fails to execute properly
- * and a <code>BatchUpdateException</code> is thrown, the driver
+ * and a {@code BatchUpdateException} is thrown, the driver
  * may or may not continue to process the remaining commands in
  * the batch.  If the driver continues processing after a failure,
  * the array returned by the method
- * <code>BatchUpdateException.getUpdateCounts</code> will have
+ * {@code BatchUpdateException.getUpdateCounts} will have
  * an element for every command in the batch rather than only
  * elements for the commands that executed successfully before
  * the error.  In the case where the driver continues processing
  * commands, the array element for any command
- * that failed is <code>Statement.EXECUTE_FAILED</code>.
+ * that failed is {@code Statement.EXECUTE_FAILED}.
  * <P>
  * A JDBC driver implementation should use
  * the constructor {@code BatchUpdateException(String reason, String SQLState,
@@ -68,10 +68,10 @@ import java.util.Arrays;
 public class BatchUpdateException extends SQLException {
 
   /**
-   * Constructs a <code>BatchUpdateException</code> object initialized with a given
-   * <code>reason</code>, <code>SQLState</code>, <code>vendorCode</code> and
-   * <code>updateCounts</code>.
-   * The <code>cause</code> is not initialized, and may subsequently be
+   * Constructs a {@code BatchUpdateException} object initialized with a given
+   * {@code reason}, {@code SQLState}, {@code vendorCode} and
+   * {@code updateCounts}.
+   * The {@code cause} is not initialized, and may subsequently be
    * initialized by a call to the
    * {@link Throwable#initCause(java.lang.Throwable)} method.
    * <p>
@@ -84,12 +84,12 @@ public class BatchUpdateException extends SQLException {
    * @param SQLState an XOPEN or SQL:2003 code identifying the exception
    * @param vendorCode an exception code used by a particular
    * database vendor
-   * @param updateCounts an array of <code>int</code>, with each element
-   * indicating the update count, <code>Statement.SUCCESS_NO_INFO</code> or
-   * <code>Statement.EXECUTE_FAILED</code> for each SQL command in
+   * @param updateCounts an array of {@code int}, with each element
+   * indicating the update count, {@code Statement.SUCCESS_NO_INFO} or
+   * {@code Statement.EXECUTE_FAILED} for each SQL command in
    * the batch for JDBC drivers that continue processing
    * after a command failure; an update count or
-   * <code>Statement.SUCCESS_NO_INFO</code> for each SQL command in the batch
+   * {@code Statement.SUCCESS_NO_INFO} for each SQL command in the batch
    * prior to the failure for JDBC drivers that stop processing after a command
    * failure
    * @since 1.2
@@ -104,10 +104,10 @@ public class BatchUpdateException extends SQLException {
   }
 
   /**
-   * Constructs a <code>BatchUpdateException</code> object initialized with a given
-   * <code>reason</code>, <code>SQLState</code> and
-   * <code>updateCounts</code>.
-   * The <code>cause</code> is not initialized, and may subsequently be
+   * Constructs a {@code BatchUpdateException} object initialized with a given
+   * {@code reason}, {@code SQLState} and
+   * {@code updateCounts}.
+   * The {@code cause} is not initialized, and may subsequently be
    * initialized by a call to the
    * {@link Throwable#initCause(java.lang.Throwable)} method. The vendor code
    * is initialized to 0.
@@ -119,12 +119,12 @@ public class BatchUpdateException extends SQLException {
    * </p>
    * @param reason a description of the exception
    * @param SQLState an XOPEN or SQL:2003 code identifying the exception
-   * @param updateCounts an array of <code>int</code>, with each element
-   * indicating the update count, <code>Statement.SUCCESS_NO_INFO</code> or
-   * <code>Statement.EXECUTE_FAILED</code> for each SQL command in
+   * @param updateCounts an array of {@code int}, with each element
+   * indicating the update count, {@code Statement.SUCCESS_NO_INFO} or
+   * {@code Statement.EXECUTE_FAILED} for each SQL command in
    * the batch for JDBC drivers that continue processing
    * after a command failure; an update count or
-   * <code>Statement.SUCCESS_NO_INFO</code> for each SQL command in the batch
+   * {@code Statement.SUCCESS_NO_INFO} for each SQL command in the batch
    * prior to the failure for JDBC drivers that stop processing after a command
    * failure
    * @since 1.2
@@ -137,12 +137,12 @@ public class BatchUpdateException extends SQLException {
   }
 
   /**
-   * Constructs a <code>BatchUpdateException</code> object initialized with a given
-   * <code>reason</code> and <code>updateCounts</code>.
-   * The <code>cause</code> is not initialized, and may subsequently be
+   * Constructs a {@code BatchUpdateException} object initialized with a given
+   * {@code reason} and {@code updateCounts}.
+   * The {@code cause} is not initialized, and may subsequently be
    * initialized by a call to the
    * {@link Throwable#initCause(java.lang.Throwable)} method.  The
-   * <code>SQLState</code> is initialized to <code>null</code>
+   * {@code SQLState} is initialized to {@code null}
    * and the vendor code is initialized to 0.
    * <p>
    * <strong>Note:</strong> There is no validation of {@code updateCounts} for
@@ -151,12 +151,12 @@ public class BatchUpdateException extends SQLException {
    * int vendorCode, long []updateCounts,Throwable cause) }.
    * </p>
    * @param reason a description of the exception
-   * @param updateCounts an array of <code>int</code>, with each element
-   * indicating the update count, <code>Statement.SUCCESS_NO_INFO</code> or
-   * <code>Statement.EXECUTE_FAILED</code> for each SQL command in
+   * @param updateCounts an array of {@code int}, with each element
+   * indicating the update count, {@code Statement.SUCCESS_NO_INFO} or
+   * {@code Statement.EXECUTE_FAILED} for each SQL command in
    * the batch for JDBC drivers that continue processing
    * after a command failure; an update count or
-   * <code>Statement.SUCCESS_NO_INFO</code> for each SQL command in the batch
+   * {@code Statement.SUCCESS_NO_INFO} for each SQL command in the batch
    * prior to the failure for JDBC drivers that stop processing after a command
    * failure
    * @since 1.2
@@ -168,11 +168,11 @@ public class BatchUpdateException extends SQLException {
   }
 
   /**
-   * Constructs a <code>BatchUpdateException</code> object initialized with a given
-   * <code>updateCounts</code>.
+   * Constructs a {@code BatchUpdateException} object initialized with a given
+   * {@code updateCounts}.
    * initialized by a call to the
-   * {@link Throwable#initCause(java.lang.Throwable)} method. The  <code>reason</code>
-   * and <code>SQLState</code> are initialized to null and the vendor code
+   * {@link Throwable#initCause(java.lang.Throwable)} method. The  {@code reason}
+   * and {@code SQLState} are initialized to null and the vendor code
    * is initialized to 0.
    * <p>
    * <strong>Note:</strong> There is no validation of {@code updateCounts} for
@@ -180,12 +180,12 @@ public class BatchUpdateException extends SQLException {
    * {@code BatchUpdateException(String reason, String SQLState,
    * int vendorCode, long []updateCounts,Throwable cause) }.
    * </p>
-   * @param updateCounts an array of <code>int</code>, with each element
-   * indicating the update count, <code>Statement.SUCCESS_NO_INFO</code> or
-   * <code>Statement.EXECUTE_FAILED</code> for each SQL command in
+   * @param updateCounts an array of {@code int}, with each element
+   * indicating the update count, {@code Statement.SUCCESS_NO_INFO} or
+   * {@code Statement.EXECUTE_FAILED} for each SQL command in
    * the batch for JDBC drivers that continue processing
    * after a command failure; an update count or
-   * <code>Statement.SUCCESS_NO_INFO</code> for each SQL command in the batch
+   * {@code Statement.SUCCESS_NO_INFO} for each SQL command in the batch
    * prior to the failure for JDBC drivers that stop processing after a command
    * failure
    * @since 1.2
@@ -197,10 +197,10 @@ public class BatchUpdateException extends SQLException {
   }
 
   /**
-   * Constructs a <code>BatchUpdateException</code> object.
-   * The <code>reason</code>, <code>SQLState</code> and <code>updateCounts</code>
-   *  are initialized to <code>null</code> and the vendor code is initialized to 0.
-   * The <code>cause</code> is not initialized, and may subsequently be
+   * Constructs a {@code BatchUpdateException} object.
+   * The {@code reason}, {@code SQLState} and {@code updateCounts}
+   *  are initialized to {@code null} and the vendor code is initialized to 0.
+   * The {@code cause} is not initialized, and may subsequently be
    * initialized by a call to the
    * {@link Throwable#initCause(java.lang.Throwable)} method.
    *
@@ -213,16 +213,16 @@ public class BatchUpdateException extends SQLException {
   }
 
   /**
-   * Constructs a <code>BatchUpdateException</code> object initialized with
-   *  a given <code>cause</code>.
-   * The <code>SQLState</code> and <code>updateCounts</code>
+   * Constructs a {@code BatchUpdateException} object initialized with
+   *  a given {@code cause}.
+   * The {@code SQLState} and {@code updateCounts}
    * are initialized
-   * to <code>null</code> and the vendor code is initialized to 0.
-   * The <code>reason</code>  is initialized to <code>null</code> if
-   * <code>cause==null</code> or to <code>cause.toString()</code> if
-   *  <code>cause!=null</code>.
-   * @param cause the underlying reason for this <code>SQLException</code>
-   * (which is saved for later retrieval by the <code>getCause()</code> method);
+   * to {@code null} and the vendor code is initialized to 0.
+   * The {@code reason}  is initialized to {@code null} if
+   * {@code cause==null} or to {@code cause.toString()} if
+   *  {@code cause!=null}.
+   * @param cause the underlying reason for this {@code SQLException}
+   * (which is saved for later retrieval by the {@code getCause()} method);
    * may be null indicating the cause is non-existent or unknown.
    * @since 1.6
    * @see #BatchUpdateException(java.lang.String, java.lang.String, int, long[],
@@ -233,29 +233,29 @@ public class BatchUpdateException extends SQLException {
   }
 
   /**
-   * Constructs a <code>BatchUpdateException</code> object initialized with a
-   * given <code>cause</code> and <code>updateCounts</code>.
-   * The <code>SQLState</code> is initialized
-   * to <code>null</code> and the vendor code is initialized to 0.
-   * The <code>reason</code>  is initialized to <code>null</code> if
-   * <code>cause==null</code> or to <code>cause.toString()</code> if
-   * <code>cause!=null</code>.
+   * Constructs a {@code BatchUpdateException} object initialized with a
+   * given {@code cause} and {@code updateCounts}.
+   * The {@code SQLState} is initialized
+   * to {@code null} and the vendor code is initialized to 0.
+   * The {@code reason}  is initialized to {@code null} if
+   * {@code cause==null} or to {@code cause.toString()} if
+   * {@code cause!=null}.
    * <p>
    * <strong>Note:</strong> There is no validation of {@code updateCounts} for
    * overflow and because of this it is recommended that you use the constructor
    * {@code BatchUpdateException(String reason, String SQLState,
    * int vendorCode, long []updateCounts,Throwable cause) }.
    * </p>
-   * @param updateCounts an array of <code>int</code>, with each element
-   * indicating the update count, <code>Statement.SUCCESS_NO_INFO</code> or
-   * <code>Statement.EXECUTE_FAILED</code> for each SQL command in
+   * @param updateCounts an array of {@code int}, with each element
+   * indicating the update count, {@code Statement.SUCCESS_NO_INFO} or
+   * {@code Statement.EXECUTE_FAILED} for each SQL command in
    * the batch for JDBC drivers that continue processing
    * after a command failure; an update count or
-   * <code>Statement.SUCCESS_NO_INFO</code> for each SQL command in the batch
+   * {@code Statement.SUCCESS_NO_INFO} for each SQL command in the batch
    * prior to the failure for JDBC drivers that stop processing after a command
    * failure
-   * @param cause the underlying reason for this <code>SQLException</code>
-   * (which is saved for later retrieval by the <code>getCause()</code> method); may be null indicating
+   * @param cause the underlying reason for this {@code SQLException}
+   * (which is saved for later retrieval by the {@code getCause()} method); may be null indicating
    * the cause is non-existent or unknown.
    * @since 1.6
    * @see #BatchUpdateException(java.lang.String, java.lang.String, int, long[],
@@ -266,10 +266,10 @@ public class BatchUpdateException extends SQLException {
   }
 
   /**
-   * Constructs a <code>BatchUpdateException</code> object initialized with
-   * a given <code>reason</code>, <code>cause</code>
-   * and <code>updateCounts</code>. The <code>SQLState</code> is initialized
-   * to <code>null</code> and the vendor code is initialized to 0.
+   * Constructs a {@code BatchUpdateException} object initialized with
+   * a given {@code reason}, {@code cause}
+   * and {@code updateCounts}. The {@code SQLState} is initialized
+   * to {@code null} and the vendor code is initialized to 0.
    * <p>
    * <strong>Note:</strong> There is no validation of {@code updateCounts} for
    * overflow and because of this it is recommended that you use the constructor
@@ -277,15 +277,15 @@ public class BatchUpdateException extends SQLException {
    * int vendorCode, long []updateCounts,Throwable cause) }.
    * </p>
    * @param reason a description of the exception
-   * @param updateCounts an array of <code>int</code>, with each element
-   *indicating the update count, <code>Statement.SUCCESS_NO_INFO</code> or
-   * <code>Statement.EXECUTE_FAILED</code> for each SQL command in
+   * @param updateCounts an array of {@code int}, with each element
+   * indicating the update count, {@code Statement.SUCCESS_NO_INFO} or
+   * {@code Statement.EXECUTE_FAILED} for each SQL command in
    * the batch for JDBC drivers that continue processing
    * after a command failure; an update count or
-   * <code>Statement.SUCCESS_NO_INFO</code> for each SQL command in the batch
+   * {@code Statement.SUCCESS_NO_INFO} for each SQL command in the batch
    * prior to the failure for JDBC drivers that stop processing after a command
    * failure
-   * @param cause the underlying reason for this <code>SQLException</code> (which is saved for later retrieval by the <code>getCause()</code> method);
+   * @param cause the underlying reason for this {@code SQLException} (which is saved for later retrieval by the {@code getCause()} method);
    * may be null indicating
    * the cause is non-existent or unknown.
    * @since 1.6
@@ -297,18 +297,18 @@ public class BatchUpdateException extends SQLException {
   }
 
   /**
-   * Constructs a <code>BatchUpdateException</code> object initialized with
-   * a given <code>reason</code>, <code>SQLState</code>,<code>cause</code>, and
-   * <code>updateCounts</code>. The vendor code is initialized to 0.
+   * Constructs a {@code BatchUpdateException} object initialized with
+   * a given {@code reason}, {@code SQLState},{@code cause}, and
+   * {@code updateCounts}. The vendor code is initialized to 0.
    *
    * @param reason a description of the exception
    * @param SQLState an XOPEN or SQL:2003 code identifying the exception
-   * @param updateCounts an array of <code>int</code>, with each element
-   * indicating the update count, <code>Statement.SUCCESS_NO_INFO</code> or
-   * <code>Statement.EXECUTE_FAILED</code> for each SQL command in
+   * @param updateCounts an array of {@code int}, with each element
+   * indicating the update count, {@code Statement.SUCCESS_NO_INFO} or
+   * {@code Statement.EXECUTE_FAILED} for each SQL command in
    * the batch for JDBC drivers that continue processing
    * after a command failure; an update count or
-   * <code>Statement.SUCCESS_NO_INFO</code> for each SQL command in the batch
+   * {@code Statement.SUCCESS_NO_INFO} for each SQL command in the batch
    * prior to the failure for JDBC drivers that stop processing after a command
    * failure
    * <p>
@@ -317,8 +317,8 @@ public class BatchUpdateException extends SQLException {
    * {@code BatchUpdateException(String reason, String SQLState,
    * int vendorCode, long []updateCounts,Throwable cause) }.
    * </p>
-   * @param cause the underlying reason for this <code>SQLException</code>
-   * (which is saved for later retrieval by the <code>getCause()</code> method);
+   * @param cause the underlying reason for this {@code SQLException}
+   * (which is saved for later retrieval by the {@code getCause()} method);
    * may be null indicating
    * the cause is non-existent or unknown.
    * @since 1.6
@@ -331,20 +331,20 @@ public class BatchUpdateException extends SQLException {
   }
 
   /**
-   * Constructs a <code>BatchUpdateException</code> object initialized with
-   * a given <code>reason</code>, <code>SQLState</code>, <code>vendorCode</code>
-   * <code>cause</code> and <code>updateCounts</code>.
+   * Constructs a {@code BatchUpdateException} object initialized with
+   * a given {@code reason}, {@code SQLState}, {@code vendorCode}
+   * {@code cause} and {@code updateCounts}.
    *
    * @param reason a description of the error
    * @param SQLState an XOPEN or SQL:2003 code identifying the exception
    * @param vendorCode an exception code used by a particular
    * database vendor
-   * @param updateCounts an array of <code>int</code>, with each element
-   *indicating the update count, <code>Statement.SUCCESS_NO_INFO</code> or
-   * <code>Statement.EXECUTE_FAILED</code> for each SQL command in
+   * @param updateCounts an array of {@code int}, with each element
+   *indicating the update count, {@code Statement.SUCCESS_NO_INFO} or
+   * {@code Statement.EXECUTE_FAILED} for each SQL command in
    * the batch for JDBC drivers that continue processing
    * after a command failure; an update count or
-   * <code>Statement.SUCCESS_NO_INFO</code> for each SQL command in the batch
+   * {@code Statement.SUCCESS_NO_INFO} for each SQL command in the batch
    * prior to the failure for JDBC drivers that stop processing after a command
    * failure
    * <p>
@@ -353,7 +353,7 @@ public class BatchUpdateException extends SQLException {
    * {@code BatchUpdateException(String reason, String SQLState,
    * int vendorCode, long []updateCounts,Throwable cause) }.
    * </p>
-   * @param cause the underlying reason for this <code>SQLException</code> (which is saved for later retrieval by the <code>getCause()</code> method);
+   * @param cause the underlying reason for this {@code SQLException} (which is saved for later retrieval by the {@code getCause()} method);
    * may be null indicating
    * the cause is non-existent or unknown.
    * @since 1.6
@@ -376,23 +376,23 @@ public class BatchUpdateException extends SQLException {
    * the array returned by this method will have as many elements as
    * there are commands in the batch; otherwise, it will contain an
    * update count for each command that executed successfully before
-   * the <code>BatchUpdateException</code> was thrown.
+   * the {@code BatchUpdateException} was thrown.
    * <P>
    * The possible return values for this method were modified for
    * the Java 2 SDK, Standard Edition, version 1.3.  This was done to
    * accommodate the new option of continuing to process commands
-   * in a batch update after a <code>BatchUpdateException</code> object
+   * in a batch update after a {@code BatchUpdateException} object
    * has been thrown.
    *
-   * @return an array of <code>int</code> containing the update counts
+   * @return an array of {@code int} containing the update counts
    * for the updates that were executed successfully before this error
    * occurred.  Or, if the driver continues to process commands after an
    * error, one of the following for every command in the batch:
    * <OL>
    * <LI>an update count
-   *  <LI><code>Statement.SUCCESS_NO_INFO</code> to indicate that the command
+   *  <LI>{@code Statement.SUCCESS_NO_INFO} to indicate that the command
    *     executed successfully but the number of rows affected is unknown
-   *  <LI><code>Statement.EXECUTE_FAILED</code> to indicate that the command
+   *  <LI>{@code Statement.EXECUTE_FAILED} to indicate that the command
    *     failed to execute successfully
    * </OL>
    * @since 1.3
@@ -403,9 +403,9 @@ public class BatchUpdateException extends SQLException {
   }
 
   /**
-   * Constructs a <code>BatchUpdateException</code> object initialized with
-   * a given <code>reason</code>, <code>SQLState</code>, <code>vendorCode</code>
-   * <code>cause</code> and <code>updateCounts</code>.
+   * Constructs a {@code BatchUpdateException} object initialized with
+   * a given {@code reason}, {@code SQLState}, {@code vendorCode}
+   * {@code cause} and {@code updateCounts}.
    * <p>
    * This constructor should be used when the returned update count may exceed
    * {@link Integer#MAX_VALUE}.
@@ -414,16 +414,16 @@ public class BatchUpdateException extends SQLException {
    * @param SQLState an XOPEN or SQL:2003 code identifying the exception
    * @param vendorCode an exception code used by a particular
    * database vendor
-   * @param updateCounts an array of <code>long</code>, with each element
-   *indicating the update count, <code>Statement.SUCCESS_NO_INFO</code> or
-   * <code>Statement.EXECUTE_FAILED</code> for each SQL command in
+   * @param updateCounts an array of {@code long}, with each element
+   *indicating the update count, {@code Statement.SUCCESS_NO_INFO} or
+   * {@code Statement.EXECUTE_FAILED} for each SQL command in
    * the batch for JDBC drivers that continue processing
    * after a command failure; an update count or
-   * <code>Statement.SUCCESS_NO_INFO</code> for each SQL command in the batch
+   * {@code Statement.SUCCESS_NO_INFO} for each SQL command in the batch
    * prior to the failure for JDBC drivers that stop processing after a command
    * failure
-   * @param cause the underlying reason for this <code>SQLException</code>
-   * (which is saved for later retrieval by the <code>getCause()</code> method);
+   * @param cause the underlying reason for this {@code SQLException}
+   * (which is saved for later retrieval by the {@code getCause()} method);
    * may be null indicating the cause is non-existent or unknown.
    * @since 1.8
    */
@@ -443,20 +443,20 @@ public class BatchUpdateException extends SQLException {
    * the array returned by this method will have as many elements as
    * there are commands in the batch; otherwise, it will contain an
    * update count for each command that executed successfully before
-   * the <code>BatchUpdateException</code> was thrown.
+   * the {@code BatchUpdateException} was thrown.
    * <p>
    * This method should be used when {@code Statement.executeLargeBatch} is
    * invoked and the returned update count may exceed {@link Integer#MAX_VALUE}.
    *
-   * @return an array of <code>long</code> containing the update counts
+   * @return an array of {@code long} containing the update counts
    * for the updates that were executed successfully before this error
    * occurred.  Or, if the driver continues to process commands after an
    * error, one of the following for every command in the batch:
    * <OL>
    * <LI>an update count
-   *  <LI><code>Statement.SUCCESS_NO_INFO</code> to indicate that the command
+   *  <LI>{@code Statement.SUCCESS_NO_INFO} to indicate that the command
    *     executed successfully but the number of rows affected is unknown
-   *  <LI><code>Statement.EXECUTE_FAILED</code> to indicate that the command
+   *  <LI>{@code Statement.EXECUTE_FAILED} to indicate that the command
    *     failed to execute successfully
    * </OL>
    * @since 1.8

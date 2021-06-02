@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8025633 8025524 8081854 8187521 8182765
+ * @bug 8025633 8025524 8081854 8187521 8182765 8261976
  * @summary Test for valid name attribute in HTML anchors.
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -62,25 +62,25 @@ public class TestAnchorNames extends JavadocTester {
         // Test some section markers and links to these markers
         checkOutput("pkg1/RegClass.html", true,
                 """
-                    <span class="skip-nav" id="skip.navbar.top">""",
+                    <span class="skip-nav" id="skip-navbar-top">""",
                 """
-                    <a href="#skip.navbar.top" title="Skip navigation links">""",
+                    <a href="#skip-navbar-top" title="Skip navigation links">""",
                 """
-                    <section class="nested-class-summary" id="nested.class.summary">
+                    <section class="nested-class-summary" id="nested-class-summary">
                     <h2>Nested Class Summary</h2>""",
-                "<a href=\"#nested.class.summary\">",
+                "<a href=\"#nested-class-summary\">",
                 """
-                    <section class="method-summary" id="method.summary">
+                    <section class="method-summary" id="method-summary">
                     <h2>Method Summary</h2>""",
-                "<a href=\"#method.summary\">",
+                "<a href=\"#method-summary\">",
                 """
-                    <section class="field-details" id="field.detail">
+                    <section class="field-details" id="field-detail">
                     <h2>Field Details</h2>""",
-                "<a href=\"#field.detail\">",
+                "<a href=\"#field-detail\">",
                 """
-                    <section class="constructor-details" id="constructor.detail">
+                    <section class="constructor-details" id="constructor-detail">
                     <h2>Constructor Details</h2>""",
-                "<a href=\"#constructor.detail\">");
+                "<a href=\"#constructor-detail\">");
 
         // Test some members and link to these members
         checkOutput("pkg1/RegClass.html", true,
@@ -92,86 +92,86 @@ public class TestAnchorNames extends JavadocTester {
         // Test some fields
         checkOutput("pkg1/RegClass.html", true,
                 "<section class=\"detail\" id=\"_\">",
-                "<a href=\"#_\">",
+                "<a href=\"#_\" class=\"member-name-link\">",
                 "<section class=\"detail\" id=\"_$\">",
-                "<a href=\"#_$\">",
+                "<a href=\"#_$\" class=\"member-name-link\">",
                 "<section class=\"detail\" id=\"$_\">",
-                "<a href=\"#$_\">",
+                "<a href=\"#$_\" class=\"member-name-link\">",
                 """
                     <section class="detail" id="$field">""",
-                "<a href=\"#$field\">",
+                "<a href=\"#$field\" class=\"member-name-link\">",
                 """
                     <section class="detail" id="fieldInCla$$">""",
-                "<a href=\"#fieldInCla$$\">",
+                "<a href=\"#fieldInCla$$\" class=\"member-name-link\">",
                 """
                     <section class="detail" id="S_$$$$$INT">""",
-                "<a href=\"#S_$$$$$INT\">",
+                "<a href=\"#S_$$$$$INT\" class=\"member-name-link\">",
                 """
                     <section class="detail" id="method$$">""",
-                "<a href=\"#method$$\">");
+                "<a href=\"#method$$\" class=\"member-name-link\">");
 
         checkOutput("pkg1/DeprMemClass.html", true,
                 """
                     <section class="detail" id="_field_In_Class">""",
-                "<a href=\"#_field_In_Class\">");
+                "<a href=\"#_field_In_Class\" class=\"member-name-link\">");
 
         // Test constructor
         checkOutput("pkg1/RegClass.html", true,
                 """
                     <section class="detail" id="&lt;init&gt;(java.lang.String,int)">""",
                 """
-                    <a href="#%3Cinit%3E(java.lang.String,int)">""");
+                    <a href="#%3Cinit%3E(java.lang.String,int)" class="member-name-link">""");
 
         // Test some methods
         checkOutput("pkg1/RegClass.html", true,
                 """
                     <section class="detail" id="_methodInClass(java.lang.String)">""",
                 """
-                    <a href="#_methodInClass(java.lang.String)">""",
+                    <a href="#_methodInClass(java.lang.String)" class="member-name-link">""",
                 """
                     <section class="detail" id="method()">""",
-                "<a href=\"#method()\">",
+                "<a href=\"#method()\" class=\"member-name-link\">",
                 """
                     <section class="detail" id="foo(java.util.Map)">""",
-                "<a href=\"#foo(java.util.Map)\">",
+                "<a href=\"#foo(java.util.Map)\" class=\"member-name-link\">",
                 """
                     <section class="detail" id="methodInCla$s(java.lang.String[])">""",
                 """
-                    <a href="#methodInCla$s(java.lang.String%5B%5D)">""",
+                    <a href="#methodInCla$s(java.lang.String%5B%5D)" class="member-name-link">""",
                 """
                     <section class="detail" id="_methodInClas$(java.lang.String,int)">""",
                 """
-                    <a href="#_methodInClas$(java.lang.String,int)">""",
+                    <a href="#_methodInClas$(java.lang.String,int)" class="member-name-link">""",
                 """
                     <section class="detail" id="methodD(pkg1.RegClass.$A)">""",
                 """
-                    <a href="#methodD(pkg1.RegClass.$A)">""",
+                    <a href="#methodD(pkg1.RegClass.$A)" class="member-name-link">""",
                 """
                     <section class="detail" id="methodD(pkg1.RegClass.D[])">""",
                 """
-                    <a href="#methodD(pkg1.RegClass.D%5B%5D)">""");
+                    <a href="#methodD(pkg1.RegClass.D%5B%5D)" class="member-name-link">""");
 
         checkOutput("pkg1/DeprMemClass.html", true,
                 """
                     <section class="detail" id="$method_In_Class()">""",
-                "<a href=\"#$method_In_Class()\">");
+                "<a href=\"#$method_In_Class()\" class=\"member-name-link\">");
 
         // Test enum
         checkOutput("pkg1/RegClass.Te$t_Enum.html", true,
                 """
                     <section class="detail" id="$FLD2">""",
-                "<a href=\"#$FLD2\">");
+                "<a href=\"#$FLD2\" class=\"member-name-link\">");
 
         // Test nested class
         checkOutput("pkg1/RegClass._NestedClas$.html", true,
                 """
                     <section class="detail" id="&lt;init&gt;()">""",
-                "<a href=\"#%3Cinit%3E()\">");
+                "<a href=\"#%3Cinit%3E()\" class=\"member-name-link\">");
 
         // Test class use page
         checkOutput("pkg1/class-use/DeprMemClass.html", true,
                 """
-                    <a href="../RegClass.html#d____mc">""");
+                    <a href="../RegClass.html#d____mc" class="member-name-link">""");
 
         // Test deprecated list page
         checkOutput("deprecated-list.html", true,

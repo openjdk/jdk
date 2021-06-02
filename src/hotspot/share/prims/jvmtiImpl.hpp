@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 #ifndef SHARE_PRIMS_JVMTIIMPL_HPP
 #define SHARE_PRIMS_JVMTIIMPL_HPP
 
-#include "classfile/systemDictionary.hpp"
 #include "jvmtifiles/jvmti.h"
 #include "oops/objArrayOop.hpp"
 #include "prims/jvmtiEnvThreadState.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiTrace.hpp"
 #include "prims/jvmtiUtil.hpp"
+#include "runtime/escapeBarrier.hpp"
 #include "runtime/stackValueCollection.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/ostream.hpp"
@@ -321,6 +321,8 @@ class VM_GetOrSetLocal : public VM_Operation {
   javaVFrame* _jvf;
   bool        _set;
 
+  EscapeBarrier _eb;
+
   // It is possible to get the receiver out of a non-static native wrapper
   // frame.  Use VM_GetReceiver to do this.
   virtual bool getting_receiver() const { return false; }
@@ -347,6 +349,7 @@ public:
   jvalue value()         { return _value; }
   jvmtiError result()    { return _result; }
 
+  bool doit_prologue();
   void doit();
   bool allow_nested_vm_operations() const;
   const char* name() const                       { return "get/set locals"; }

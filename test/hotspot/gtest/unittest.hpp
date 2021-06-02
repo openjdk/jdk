@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,10 @@
 #undef F1
 #undef F2
 
+// A work around for GCC math header bug leaving isfinite() undefined,
+// see: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=14608
+#include "utilities/globalDefinitions.hpp"
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -70,12 +74,12 @@
 
 #define CONCAT(a, b) a ## b
 
-#define TEST(category, name) GTEST_TEST(category, CONCAT(name, _test))
+#define TEST(category, name) GTEST_TEST(category, name)
 
-#define TEST_VM(category, name) GTEST_TEST(category, CONCAT(name, _test_vm))
+#define TEST_VM(category, name) GTEST_TEST(category, CONCAT(name, _vm))
 
 #define TEST_VM_F(test_fixture, name)                               \
-  GTEST_TEST_(test_fixture, name ## _test_vm, test_fixture,         \
+  GTEST_TEST_(test_fixture, name ## _vm, test_fixture,              \
               ::testing::internal::GetTypeId<test_fixture>())
 
 #define TEST_OTHER_VM(category, name)                               \
@@ -131,7 +135,7 @@
   TEST(category, CONCAT(name, _vm_assert)) {                        \
     ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
                 ::testing::ExitedWithCode(1),                       \
-                "^assert failed: " msg);                             \
+                "assert failed: " msg);                             \
   }                                                                 \
                                                                     \
   void test_ ## category ## _ ## name ## _()

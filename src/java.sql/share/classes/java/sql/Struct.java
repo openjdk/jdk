@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,13 @@ package java.sql;
 
 /**
  * <p>The standard mapping in the Java programming language for an SQL
- * structured type. A <code>Struct</code> object contains a
+ * structured type. A {@code Struct} object contains a
  * value for each attribute of the SQL structured type that
  * it represents.
- * By default, an instance of<code>Struct</code> is valid as long as the
+ * By default, an instance of{@code Struct} is valid as long as the
  * application has a reference to it.
  * <p>
- * All methods on the <code>Struct</code> interface must be fully implemented if the
+ * All methods on the {@code Struct} interface must be fully implemented if the
  * JDBC driver supports the data type.
  * @since 1.2
  */
@@ -42,13 +42,13 @@ public interface Struct {
 
   /**
    * Retrieves the SQL type name of the SQL structured type
-   * that this <code>Struct</code> object represents.
+   * that this {@code Struct} object represents.
    *
    * @return the fully-qualified type name of the SQL structured
-   *          type for which this <code>Struct</code> object
+   *          type for which this {@code Struct} object
    *          is the generic representation
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -56,7 +56,7 @@ public interface Struct {
 
   /**
    * Produces the ordered values of the attributes of the SQL
-   * structured type that this <code>Struct</code> object represents.
+   * structured type that this {@code Struct} object represents.
    * As individual attributes are processed, this method uses the type map
    * associated with the
    * connection for customizations of the type mappings.
@@ -66,13 +66,13 @@ public interface Struct {
    * the driver uses the standard mapping.
    * <p>
    * Conceptually, this method calls the method
-   * <code>getObject</code> on each attribute
+   * {@code getObject} on each attribute
    * of the structured type and returns a Java array containing
    * the result.
    *
    * @return an array containing the ordered attribute values
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -80,7 +80,7 @@ public interface Struct {
 
   /**
    * Produces the ordered values of the attributes of the SQL
-   * structured type that this <code>Struct</code> object represents.
+   * structured type that this {@code Struct} object represents.
    *  As individual attributes are processed, this method uses the given type map
    * for customizations of the type mappings.
    * If there is no
@@ -90,14 +90,14 @@ public interface Struct {
    * uses the type map associated with the connection.
    * <p>
    * Conceptually, this method calls the method
-   * <code>getObject</code> on each attribute
+   * {@code getObject} on each attribute
    * of the structured type and returns a Java array containing
    * the result.
    *
    * @param map a mapping of SQL type names to Java classes
    * @return an array containing the ordered attribute values
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */

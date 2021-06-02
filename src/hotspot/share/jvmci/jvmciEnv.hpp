@@ -27,6 +27,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/thread.hpp"
 
 class CompileTask;
@@ -38,8 +39,8 @@ class JVMCIRuntime;
 class nmethodLocker;
 
 #define JVMCI_EXCEPTION_CONTEXT \
-  JavaThread* thread=JavaThread::current(); \
-  Thread* THREAD = thread;
+  JavaThread* thread = JavaThread::current(); \
+  JavaThread* THREAD = thread; // For exception macros.
 
 // Helper to log more context on a JNI exception
 #define JVMCI_EXCEPTION_CHECK(env, ...) \
@@ -94,6 +95,7 @@ class JVMCICompileState : public ResourceObj {
   friend class JVMCIVMStructs;
  private:
   CompileTask*     _task;
+  JVMCICompiler*   _compiler;
 
   // Cache JVMTI state. Defined as bytes so that reading them from Java
   // via Unsafe is well defined (the C++ type for bool is implementation
@@ -113,8 +115,13 @@ class JVMCICompileState : public ResourceObj {
   // with the mtJVMCI NMT flag.
   bool             _failure_reason_on_C_heap;
 
+  // A value indicating compilation activity during the compilation.
+  // If successive calls to this method return a different value, then
+  // some degree of JVMCI compilation occurred between the calls.
+  jint             _compilation_ticks;
+
  public:
-  JVMCICompileState(CompileTask* task);
+  JVMCICompileState(CompileTask* task, JVMCICompiler* compiler);
 
   CompileTask* task() { return _task; }
 
@@ -135,6 +142,9 @@ class JVMCICompileState : public ResourceObj {
     _failure_reason_on_C_heap = reason_on_C_heap;
     _retryable = retryable;
   }
+
+  jint compilation_ticks() const { return _compilation_ticks; }
+  void inc_compilation_ticks();
 };
 
 
@@ -284,7 +294,7 @@ public:
   JVMCIPrimitiveArray wrap(typeArrayOop obj) { assert(is_hotspot(), "must be"); return (JVMCIPrimitiveArray) wrap(JNIHandles::make_local(obj)); }
 
  public:
-  // Compiles a method with the JVMIC compiler.
+  // Compiles a method with the JVMCI compiler.
   // Caller must handle pending exception.
   JVMCIObject call_HotSpotJVMCIRuntime_compileMethod(JVMCIObject runtime, JVMCIObject method, int entry_bci,
                                                      jlong compile_state, int id);
@@ -297,9 +307,9 @@ public:
 
   JVMCIObject call_HotSpotJVMCIRuntime_callToString(JVMCIObject object, JVMCI_TRAPS);
 
-  JVMCIObject call_PrimitiveConstant_forTypeChar(jchar kind, jlong value, JVMCI_TRAPS);
-  JVMCIObject call_JavaConstant_forFloat(float value, JVMCI_TRAPS);
-  JVMCIObject call_JavaConstant_forDouble(double value, JVMCI_TRAPS);
+  JVMCIObject call_JavaConstant_forPrimitive(JVMCIObject kind, jlong value, JVMCI_TRAPS);
+
+  jboolean call_HotSpotJVMCIRuntime_isGCSupported(JVMCIObject runtime, jint gcIdentifier);
 
   BasicType kindToBasicType(JVMCIObject kind, JVMCI_TRAPS);
 

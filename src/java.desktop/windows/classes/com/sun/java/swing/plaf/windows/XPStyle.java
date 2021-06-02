@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ class XPStyle {
      * @return the singleton instance of this class or null if XP styles
      * are not active or if this is not Windows XP
      */
+    @SuppressWarnings("removal")
     static synchronized XPStyle getXP() {
         if (themeActive == null) {
             Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -593,8 +594,7 @@ class XPStyle {
             if (XPStyle.getXP() == null) {
                 return;
             }
-            if (ThemeReader.isGetThemeTransitionDurationDefined()
-                  && component instanceof JComponent
+            if (component instanceof JComponent
                   && SwingUtilities.getAncestorOfClass(CellRendererPane.class,
                                                        component) == null) {
                 AnimationController.paintSkin((JComponent) component, this,

@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "assembler_zero.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -64,12 +64,6 @@ void MacroAssembler::bang_stack_with_offset(int offset) {
 
 void MacroAssembler::advance(int bytes) {
   code_section()->set_end(code_section()->end() + bytes);
-}
-
-RegisterOrConstant MacroAssembler::delayed_value_impl(
-  intptr_t* delayed_value_addr, Register tmpl, int offset) {
-  ShouldNotCallThis();
-  return RegisterOrConstant();
 }
 
 void MacroAssembler::store_oop(jobject obj) {

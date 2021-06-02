@@ -53,9 +53,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.Method.Bytecodes.bytecodes001
- *        nsk.jdwp.Method.Bytecodes.bytecodes001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.Method.Bytecodes.bytecodes001a
+ * @run main/othervm
  *      nsk.jdwp.Method.Bytecodes.bytecodes001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

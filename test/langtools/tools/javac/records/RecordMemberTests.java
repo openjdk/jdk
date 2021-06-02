@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,11 +22,10 @@
  */
 
 /**
- * RecordMemberTests
- *
  * @test
- * @compile --enable-preview -source ${jdk.version} RecordMemberTests.java
- * @run testng/othervm --enable-preview RecordMemberTests
+ * @bug 8246774
+ * @summary test several assertions on record classes members
+ * @run testng RecordMemberTests
  */
 
 import java.lang.reflect.Constructor;

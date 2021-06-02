@@ -29,15 +29,13 @@
 
 #include "hb.hh"
 
-#include "hb-ot-shape-complex.hh"
+#include "hb-ot-shape-complex-syllabic.hh"
 
 
 /* buffer var allocations */
-#define indic_category() complex_var_u8_0() /* indic_category_t */
-#define indic_position() complex_var_u8_1() /* indic_position_t */
+#define indic_category() complex_var_u8_category() /* indic_category_t */
+#define indic_position() complex_var_u8_auxiliary() /* indic_position_t */
 
-
-#define INDIC_TABLE_ELEMENT_TYPE uint16_t
 
 /* Cateories used in the OpenType spec:
  * https://docs.microsoft.com/en-us/typography/script-development/devanagari
@@ -62,17 +60,26 @@ enum indic_category_t {
   OT_Coeng = 14, /* Khmer-style Virama. */
   OT_Repha = 15, /* Atomically-encoded logical or visual repha. */
   OT_Ra = 16,
-  OT_CM = 17,  /* Consonant-Medial; Unused by Indic shaper. */
+  OT_CM = 17,  /* Consonant-Medial. */
   OT_Symbol = 18, /* Avagraha, etc that take marks (SM,A,VD). */
-  OT_CS = 19
+  OT_CS = 19,
+
+  /* The following are used by Khmer & Myanmar shapers.  Defined
+   * here for them to share. */
+  OT_VAbv    = 26,
+  OT_VBlw    = 27,
+  OT_VPre    = 28,
+  OT_VPst    = 29,
 };
+
+#define MEDIAL_FLAGS (FLAG (OT_CM))
 
 /* Note:
  *
  * We treat Vowels and placeholders as if they were consonants.  This is safe because Vowels
  * cannot happen in a consonant syllable.  The plus side however is, we can call the
  * consonant syllable logic from the vowel syllable function and get it all right! */
-#define CONSONANT_FLAGS (FLAG (OT_C) | FLAG (OT_CS) | FLAG (OT_Ra) | FLAG (OT_V) | FLAG (OT_PLACEHOLDER) | FLAG (OT_DOTTEDCIRCLE))
+#define CONSONANT_FLAGS (FLAG (OT_C) | FLAG (OT_CS) | FLAG (OT_Ra) | MEDIAL_FLAGS | FLAG (OT_V) | FLAG (OT_PLACEHOLDER) | FLAG (OT_DOTTEDCIRCLE))
 #define JOINER_FLAGS (FLAG (OT_ZWJ) | FLAG (OT_ZWNJ))
 
 
@@ -156,6 +163,7 @@ enum indic_matra_category_t {
   INDIC_MATRA_CATEGORY_BOTTOM_AND_RIGHT                 = INDIC_MATRA_CATEGORY_RIGHT,
   INDIC_MATRA_CATEGORY_LEFT_AND_RIGHT                   = INDIC_MATRA_CATEGORY_RIGHT,
   INDIC_MATRA_CATEGORY_TOP_AND_BOTTOM                   = INDIC_MATRA_CATEGORY_BOTTOM,
+  INDIC_MATRA_CATEGORY_TOP_AND_BOTTOM_AND_LEFT          = INDIC_MATRA_CATEGORY_BOTTOM,
   INDIC_MATRA_CATEGORY_TOP_AND_BOTTOM_AND_RIGHT         = INDIC_MATRA_CATEGORY_RIGHT,
   INDIC_MATRA_CATEGORY_TOP_AND_LEFT                     = INDIC_MATRA_CATEGORY_TOP,
   INDIC_MATRA_CATEGORY_TOP_AND_LEFT_AND_RIGHT           = INDIC_MATRA_CATEGORY_RIGHT,
@@ -167,7 +175,7 @@ enum indic_matra_category_t {
 
 #define INDIC_COMBINE_CATEGORIES(S,M) \
   ( \
-    ASSERT_STATIC_EXPR_ZERO (S < 255 && M < 255) + \
+    static_assert_expr (S < 255 && M < 255) + \
     ( S | \
      ( \
       ( \
@@ -184,7 +192,7 @@ enum indic_matra_category_t {
     ) \
    )
 
-HB_INTERNAL INDIC_TABLE_ELEMENT_TYPE
+HB_INTERNAL uint16_t
 hb_indic_get_categories (hb_codepoint_t u);
 
 
@@ -276,7 +284,7 @@ matra_position_indic (hb_codepoint_t u, indic_position_t side)
     case POS_POST_C:    return MATRA_POS_RIGHT (u);
     case POS_ABOVE_C:   return MATRA_POS_TOP (u);
     case POS_BELOW_C:   return MATRA_POS_BOTTOM (u);
-  };
+  }
   return side;
 }
 
@@ -297,17 +305,12 @@ static const hb_codepoint_t ra_chars[] = {
   0x0D30u, /* Malayalam */      /* No Reph, Logical Repha */
 
   0x0DBBu, /* Sinhala */        /* Reph formed only with ZWJ */
-
-  0x179Au, /* Khmer */
 };
 
 static inline bool
 is_ra (hb_codepoint_t u)
 {
-  for (unsigned int i = 0; i < ARRAY_LENGTH (ra_chars); i++)
-    if (u == ra_chars[i])
-      return true;
-  return false;
+  return hb_array (ra_chars).lfind (u);
 }
 
 static inline void
@@ -315,7 +318,7 @@ set_indic_properties (hb_glyph_info_t &info)
 {
   hb_codepoint_t u = info.codepoint;
   unsigned int type = hb_indic_get_categories (u);
-  indic_category_t cat = (indic_category_t) (type & 0x7Fu);
+  indic_category_t cat = (indic_category_t) (type & 0xFFu);
   indic_position_t pos = (indic_position_t) (type >> 8);
 
 
@@ -357,11 +360,13 @@ set_indic_properties (hb_glyph_info_t &info)
   /* According to ScriptExtensions.txt, these Grantha marks may also be used in Tamil,
    * so the Indic shaper needs to know their categories. */
   else if (unlikely (u == 0x11301u || u == 0x11303u)) cat = OT_SM;
-  else if (unlikely (u == 0x1133cu)) cat = OT_N;
+  else if (unlikely (u == 0x1133Bu || u == 0x1133Cu)) cat = OT_N;
 
   else if (unlikely (u == 0x0AFBu)) cat = OT_N; /* https://github.com/harfbuzz/harfbuzz/issues/552 */
+  else if (unlikely (u == 0x0B55u)) cat = OT_N; /* https://github.com/harfbuzz/harfbuzz/issues/2849 */
 
   else if (unlikely (u == 0x0980u)) cat = OT_PLACEHOLDER; /* https://github.com/harfbuzz/harfbuzz/issues/538 */
+  else if (unlikely (u == 0x09FCu)) cat = OT_PLACEHOLDER; /* https://github.com/harfbuzz/harfbuzz/pull/1613 */
   else if (unlikely (u == 0x0C80u)) cat = OT_PLACEHOLDER; /* https://github.com/harfbuzz/harfbuzz/pull/623 */
   else if (unlikely (hb_in_range<hb_codepoint_t> (u, 0x2010u, 0x2011u)))
                                     cat = OT_PLACEHOLDER;
@@ -394,6 +399,32 @@ set_indic_properties (hb_glyph_info_t &info)
   info.indic_category() = cat;
   info.indic_position() = pos;
 }
+
+struct hb_indic_would_substitute_feature_t
+{
+  void init (const hb_ot_map_t *map, hb_tag_t feature_tag, bool zero_context_)
+  {
+    zero_context = zero_context_;
+    map->get_stage_lookups (0/*GSUB*/,
+                            map->get_feature_stage (0/*GSUB*/, feature_tag),
+                            &lookups, &count);
+  }
+
+  bool would_substitute (const hb_codepoint_t *glyphs,
+                         unsigned int          glyphs_count,
+                         hb_face_t            *face) const
+  {
+    for (unsigned int i = 0; i < count; i++)
+      if (hb_ot_layout_lookup_would_substitute (face, lookups[i].index, glyphs, glyphs_count, zero_context))
+        return true;
+    return false;
+  }
+
+  private:
+  const hb_ot_map_t::lookup_map_t *lookups;
+  unsigned int count;
+  bool zero_context;
+};
 
 
 #endif /* HB_OT_SHAPE_COMPLEX_INDIC_HH */

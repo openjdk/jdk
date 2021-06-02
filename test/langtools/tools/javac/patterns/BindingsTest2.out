@@ -46,9 +46,8 @@ BindingsTest2.java:212:13: compiler.err.cant.resolve.location: kindname.variable
 BindingsTest2.java:221:17: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, BindingsTest2, null)
 BindingsTest2.java:231:17: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, BindingsTest2, null)
 BindingsTest2.java:241:17: compiler.err.cant.resolve.location: kindname.variable, s, , , (compiler.misc.location: kindname.class, BindingsTest2, null)
+BindingsTest2.java:247:17: compiler.err.cant.assign.val.to.final.var: s
 BindingsTest2.java:135:17: compiler.err.unreachable.stmt
 BindingsTest2.java:160:17: compiler.err.unreachable.stmt
 BindingsTest2.java:185:17: compiler.err.unreachable.stmt
-- compiler.note.preview.filename: BindingsTest2.java
-- compiler.note.preview.recompile
-51 errors
+52 errors

@@ -160,6 +160,7 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
      *
      * @throws UnsupportedOperationException always
      */
+    @SuppressWarnings("deprecation")
     @Override
     public final boolean isEnqueued() {
         throw new UnsupportedOperationException("isEnqueued");

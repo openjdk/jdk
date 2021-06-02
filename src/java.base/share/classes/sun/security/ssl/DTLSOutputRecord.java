@@ -36,7 +36,7 @@ import sun.security.ssl.SSLCipher.SSLWriteCipher;
  */
 final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
 
-    private DTLSFragmenter fragmenter = null;
+    private DTLSFragmenter fragmenter;
 
     int                 writeEpoch;
 
@@ -44,7 +44,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
     Authenticator       prevWriteAuthenticator;
     SSLWriteCipher      prevWriteCipher;
 
-    private volatile boolean isCloseWaiting = false;
+    private volatile boolean isCloseWaiting;
 
     DTLSOutputRecord(HandshakeHash handshakeHash) {
         super(handshakeHash, SSLWriteCipher.nullDTlsWriteCipher());
@@ -271,7 +271,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
 
         if (SSLLogger.isOn && SSLLogger.isOn("record")) {
             SSLLogger.fine(
-                    "WRITE: " + protocolVersion + " " +
+                    "WRITE: " + protocolVersion.name + " " +
                     ContentType.APPLICATION_DATA.name +
                     ", length = " + destination.remaining());
         }
@@ -499,7 +499,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
 
             if (SSLLogger.isOn && SSLLogger.isOn("record")) {
                 SSLLogger.fine(
-                        "WRITE: " + protocolVersion + " " +
+                        "WRITE: " + protocolVersion.name + " " +
                         ContentType.nameOf(memo.contentType) +
                         ", length = " + dstBuf.remaining());
             }

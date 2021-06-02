@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,10 @@ public interface Clob {
    * designated by this {@code Clob} object.
    *
    * @return length of the {@code CLOB} in characters
-   * @exception SQLException if there is an error accessing the
-   *            length of the {@code CLOB} value
-   * @exception SQLFeatureNotSupportedException if the JDBC driver
-   *            does not support this method
+   * @throws SQLException if there is an error accessing the
+   *         length of the {@code CLOB} value
+   * @throws SQLFeatureNotSupportedException if the JDBC driver
+   *         does not support this method
    * @since 1.2
    */
   long length() throws SQLException;
@@ -85,11 +85,11 @@ public interface Clob {
    *        the value for length must be 0 or greater
    * @return a {@code String} that is the specified substring in
    *         the {@code CLOB} value designated by this {@code Clob} object
-   * @exception SQLException if there is an error accessing the
-   *            {@code CLOB} value; if pos is less than 1 or length is
-   *            less than 0
-   * @exception SQLFeatureNotSupportedException if the JDBC driver
-   *            does not support this method
+   * @throws SQLException if there is an error accessing the
+   *         {@code CLOB} value; if pos is less than 1 or length is
+   *         less than 0
+   * @throws SQLFeatureNotSupportedException if the JDBC driver
+   *         does not support this method
    * @since 1.2
    */
   String getSubString(long pos, int length) throws SQLException;
@@ -101,10 +101,10 @@ public interface Clob {
    *
    * @return a {@code java.io.Reader} object containing the
    *         {@code CLOB} data
-   * @exception SQLException if there is an error accessing the
-   *            {@code CLOB} value
-   * @exception SQLFeatureNotSupportedException if the JDBC driver
-   *            does not support this method
+   * @throws SQLException if there is an error accessing the
+   *         {@code CLOB} value
+   * @throws SQLFeatureNotSupportedException if the JDBC driver
+   *         does not support this method
    * @see #setCharacterStream
    * @since 1.2
    */
@@ -116,10 +116,10 @@ public interface Clob {
    *
    * @return a {@code java.io.InputStream} object containing the
    *         {@code CLOB} data
-   * @exception SQLException if there is an error accessing the
-   *            {@code CLOB} value
-   * @exception SQLFeatureNotSupportedException if the JDBC driver
-   *            does not support this method
+   * @throws SQLException if there is an error accessing the
+   *         {@code CLOB} value
+   * @throws SQLFeatureNotSupportedException if the JDBC driver
+   *         does not support this method
    * @see #setAsciiStream
    * @since 1.2
    */
@@ -136,10 +136,10 @@ public interface Clob {
    *        the first position is 1
    * @return the position at which the substring appears or -1 if it is not
    *         present; the first position is 1
-   * @exception SQLException if there is an error accessing the
-   *            {@code CLOB} value or if pos is less than 1
-   * @exception SQLFeatureNotSupportedException if the JDBC driver
-   *            does not support this method
+   * @throws SQLException if there is an error accessing the
+   *         {@code CLOB} value or if pos is less than 1
+   * @throws SQLFeatureNotSupportedException if the JDBC driver
+   *         does not support this method
    * @since 1.2
    */
   long position(String searchstr, long start) throws SQLException;
@@ -155,10 +155,10 @@ public interface Clob {
    *              position is 1
    * @return the position at which the {@code Clob} object appears
    *         or -1 if it is not present; the first position is 1
-   * @exception SQLException if there is an error accessing the
-   *            {@code CLOB} value or if start is less than 1
-   * @exception SQLFeatureNotSupportedException if the JDBC driver
-   *            does not support this method
+   * @throws SQLException if there is an error accessing the
+   *         {@code CLOB} value or if start is less than 1
+   * @throws SQLFeatureNotSupportedException if the JDBC driver
+   *         does not support this method
    * @since 1.2
    */
   long position(Clob searchstr, long start) throws SQLException;
@@ -186,11 +186,11 @@ public interface Clob {
      * @param str the string to be written to the {@code CLOB}
      *        value that this {@code Clob} designates
      * @return the number of characters written
-     * @exception SQLException if there is an error accessing the
-     *            {@code CLOB} value or if pos is less than 1
+     * @throws SQLException if there is an error accessing the
+     *         {@code CLOB} value or if pos is less than 1
      *
-     * @exception SQLFeatureNotSupportedException if the JDBC driver
-     *            does not support this method
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
      * @since 1.4
      */
     int setString(long pos, String str) throws SQLException;
@@ -219,11 +219,11 @@ public interface Clob {
      *        the characters to be written
      * @param len the number of characters to be written
      * @return the number of characters written
-     * @exception SQLException if there is an error accessing the
-     *            {@code CLOB} value or if pos is less than 1
+     * @throws SQLException if there is an error accessing the
+     *         {@code CLOB} value or if pos is less than 1
      *
-     * @exception SQLFeatureNotSupportedException if the JDBC driver
-     *            does not support this method
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
      * @since 1.4
      */
     int setString(long pos, String str, int offset, int len) throws SQLException;
@@ -247,10 +247,10 @@ public interface Clob {
      * @param pos the position at which to start writing to this
      *        {@code CLOB} object; The first position is 1
      * @return the stream to which ASCII encoded characters can be written
-     * @exception SQLException if there is an error accessing the
-     *            {@code CLOB} value or if pos is less than 1
-     * @exception SQLFeatureNotSupportedException if the JDBC driver
-     *            does not support this method
+     * @throws SQLException if there is an error accessing the
+     *         {@code CLOB} value or if pos is less than 1
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
      * @see #getAsciiStream
      *
      * @since 1.4
@@ -277,10 +277,10 @@ public interface Clob {
      *        {@code CLOB} value; The first position is 1
      *
      * @return a stream to which Unicode encoded characters can be written
-     * @exception SQLException if there is an error accessing the
-     *            {@code CLOB} value or if pos is less than 1
-     * @exception SQLFeatureNotSupportedException if the JDBC driver
-     *            does not support this method
+     * @throws SQLException if there is an error accessing the
+     *         {@code CLOB} value or if pos is less than 1
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
      * @see #getCharacterStream
      *
      * @since 1.4
@@ -300,11 +300,11 @@ public interface Clob {
      *
      * @param len the length, in characters, to which the {@code CLOB} value
      *        should be truncated
-     * @exception SQLException if there is an error accessing the
-     *            {@code CLOB} value or if len is less than 0
+     * @throws SQLException if there is an error accessing the
+     *         {@code CLOB} value or if len is less than 0
      *
-     * @exception SQLFeatureNotSupportedException if the JDBC driver
-     *            does not support this method
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
      * @since 1.4
      */
     void truncate(long len) throws SQLException;
@@ -322,8 +322,8 @@ public interface Clob {
      * @throws SQLException if an error occurs releasing
      *         the Clob's resources
      *
-     * @exception SQLFeatureNotSupportedException if the JDBC driver
-     *            does not support this method
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
      * @since 1.6
      */
     void free() throws SQLException;
@@ -344,8 +344,8 @@ public interface Clob {
      *         or if pos + length is greater than the number of
      *         characters in the {@code Clob}
      *
-     * @exception SQLFeatureNotSupportedException if the JDBC driver
-     *            does not support this method
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
      * @since 1.6
      */
     Reader getCharacterStream(long pos, long length) throws SQLException;

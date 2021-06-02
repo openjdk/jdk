@@ -1,5 +1,6 @@
 /*
 * Copyright (c) 2016, Intel Corporation.
+* Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
 * Intel Math Library (LIBM) Source Code
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -197,7 +198,6 @@ void MacroAssembler::fast_exp(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   Label L_2TAG_PACKET_12_0_2, B1_3, B1_5, start;
 
   assert_different_registers(tmp, eax, ecx, edx);
-  jmp(start);
   address cv = (address)_cv;
   address Shifter = (address)_shifter;
   address mmask = (address)_mmask;
@@ -486,14 +486,13 @@ void MacroAssembler::fast_exp(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   Label L_2TAG_PACKET_12_0_2, start;
 
   assert_different_registers(tmp, eax, ecx, edx);
-  jmp(start);
   address static_const_table = (address)_static_const_table;
 
   bind(start);
   subl(rsp, 120);
   movl(Address(rsp, 64), tmp);
   lea(tmp, ExternalAddress(static_const_table));
-  movdqu(xmm0, Address(rsp, 128));
+  movsd(xmm0, Address(rsp, 128));
   unpcklpd(xmm0, xmm0);
   movdqu(xmm1, Address(tmp, 64));          // 0x652b82feUL, 0x40571547UL, 0x652b82feUL, 0x40571547UL
   movdqu(xmm6, Address(tmp, 48));          // 0x00000000UL, 0x43380000UL, 0x00000000UL, 0x43380000UL
@@ -585,18 +584,18 @@ void MacroAssembler::fast_exp(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   pextrw(ecx, xmm0, 3);
   andl(ecx, 32752);
   cmpl(ecx, 32752);
-  jcc(Assembler::greaterEqual, L_2TAG_PACKET_3_0_2);
+  jcc(Assembler::aboveEqual, L_2TAG_PACKET_3_0_2);
   cmpl(ecx, 0);
   jcc(Assembler::equal, L_2TAG_PACKET_4_0_2);
   jmp(L_2TAG_PACKET_2_0_2);
   cmpl(ecx, INT_MIN);
-  jcc(Assembler::less, L_2TAG_PACKET_3_0_2);
+  jcc(Assembler::below, L_2TAG_PACKET_3_0_2);
   cmpl(ecx, -1064950997);
-  jcc(Assembler::less, L_2TAG_PACKET_2_0_2);
-  jcc(Assembler::greater, L_2TAG_PACKET_4_0_2);
+  jcc(Assembler::below, L_2TAG_PACKET_2_0_2);
+  jcc(Assembler::above, L_2TAG_PACKET_4_0_2);
   movl(edx, Address(rsp, 128));
   cmpl(edx, -17155601);
-  jcc(Assembler::less, L_2TAG_PACKET_2_0_2);
+  jcc(Assembler::below, L_2TAG_PACKET_2_0_2);
   jmp(L_2TAG_PACKET_4_0_2);
 
   bind(L_2TAG_PACKET_3_0_2);
@@ -614,10 +613,10 @@ void MacroAssembler::fast_exp(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
 
   bind(L_2TAG_PACKET_7_0_2);
   cmpl(eax, 2146435072);
-  jcc(Assembler::greaterEqual, L_2TAG_PACKET_8_0_2);
+  jcc(Assembler::aboveEqual, L_2TAG_PACKET_8_0_2);
   movl(eax, Address(rsp, 132));
   cmpl(eax, INT_MIN);
-  jcc(Assembler::greaterEqual, L_2TAG_PACKET_9_0_2);
+  jcc(Assembler::aboveEqual, L_2TAG_PACKET_9_0_2);
   movsd(xmm0, Address(tmp, 1208));         // 0xffffffffUL, 0x7fefffffUL
   mulsd(xmm0, xmm0);
   movl(edx, 14);

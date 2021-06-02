@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.print;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -156,9 +157,9 @@ import java.io.Serializable;
  * the primary IANA name but is guaranteed to be understood by this VM. For
  * common flavors, the pre-defined *HOST {@code DocFlavors} may be used.
  * <p>
- * See <a href="../../java/lang/package-summary.html#charenc">character
- * encodings</a> for more information on the character encodings supported on
- * the Java platform.
+ * See <a href="../../../java.base/java/lang/package-summary.html#charenc">
+ * character encodings</a> for more information on the character encodings
+ * supported on the Java platform.
  *
  * <hr>
  * <h2>Recommended DocFlavors</h2>
@@ -384,11 +385,13 @@ import java.io.Serializable;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("removal")
 public class DocFlavor implements Serializable, Cloneable {
 
     /**
      * Use serialVersionUID from JDK 1.4 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -4512080796965449721L;
 
     /**
@@ -563,6 +566,7 @@ public class DocFlavor implements Serializable, Cloneable {
      * @throws IOException if I/O errors occur while writing to the underlying
      *         stream
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
 
         s.defaultWriteObject();
@@ -582,6 +586,7 @@ public class DocFlavor implements Serializable, Cloneable {
      *             the {@code String} representing the canonical form of the
      *             mime type
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException {
 
@@ -601,6 +606,7 @@ public class DocFlavor implements Serializable, Cloneable {
         /**
          * Use serialVersionUID from JDK 1.4 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = -9065578006593857475L;
 
         /**
@@ -769,6 +775,7 @@ public class DocFlavor implements Serializable, Cloneable {
         /**
          * Use serialVersionUID from JDK 1.4 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = -7045842700749194127L;
 
         /**
@@ -950,6 +957,7 @@ public class DocFlavor implements Serializable, Cloneable {
         /**
          * Use serialVersionUID from JDK 1.4 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 2936725788144902062L;
 
         /**
@@ -1121,6 +1129,7 @@ public class DocFlavor implements Serializable, Cloneable {
         /**
          * Use serialVersionUID from JDK 1.4 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = -8720590903724405128L;
 
         /**
@@ -1168,6 +1177,7 @@ public class DocFlavor implements Serializable, Cloneable {
         /**
          * Use serialVersionUID from JDK 1.4 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 4414407504887034035L;
 
         /**
@@ -1213,6 +1223,7 @@ public class DocFlavor implements Serializable, Cloneable {
         /**
          * Use serialVersionUID from JDK 1.4 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 7100295812579351567L;
 
         /**
@@ -1261,6 +1272,7 @@ public class DocFlavor implements Serializable, Cloneable {
         /**
          * Use serialVersionUID from JDK 1.4 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 6181337766266637256L;
 
         /**

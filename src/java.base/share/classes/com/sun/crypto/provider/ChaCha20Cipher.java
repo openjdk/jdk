@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 import java.util.Objects;
 import javax.crypto.*;
 import javax.crypto.spec.ChaCha20ParameterSpec;
@@ -207,7 +208,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      */
     @Override
     protected byte[] engineGetIV() {
-        return nonce.clone();
+        return (nonce != null) ? nonce.clone() : null;
     }
 
     /**
@@ -226,11 +227,16 @@ abstract class ChaCha20Cipher extends CipherSpi {
     protected AlgorithmParameters engineGetParameters() {
         AlgorithmParameters params = null;
         if (mode == MODE_AEAD) {
+            // In a pre-initialized state or any state without a nonce value
+            // this call should cause a random nonce to be generated, but
+            // not attached to the object.
+            byte[] nonceData = (initialized || nonce != null) ? nonce :
+                    createRandomNonce(null);
             try {
                 // Place the 12-byte nonce into a DER-encoded OCTET_STRING
                 params = AlgorithmParameters.getInstance("ChaCha20-Poly1305");
                 params.init((new DerValue(
-                        DerValue.tag_OctetString, nonce).toByteArray()));
+                        DerValue.tag_OctetString, nonceData).toByteArray()));
             } catch (NoSuchAlgorithmException | IOException exc) {
                 throw new RuntimeException(exc);
             }
@@ -504,7 +510,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      *
      * @return a 12-byte array containing the random nonce.
      */
-    private byte[] createRandomNonce(SecureRandom random) {
+    private static byte[] createRandomNonce(SecureRandom random) {
         byte[] newNonce = new byte[12];
         SecureRandom rand = (random != null) ? random : new SecureRandom();
         rand.nextBytes(newNonce);
@@ -541,6 +547,9 @@ abstract class ChaCha20Cipher extends CipherSpi {
         // assigning them to the object.
         byte[] newKeyBytes = getEncodedKey(key);
         checkKeyAndNonce(newKeyBytes, newNonce);
+        if (this.keyBytes != null) {
+            Arrays.fill(this.keyBytes, (byte)0);
+        }
         this.keyBytes = newKeyBytes;
         nonce = newNonce;
 
@@ -607,6 +616,9 @@ abstract class ChaCha20Cipher extends CipherSpi {
         }
         byte[] encodedKey = key.getEncoded();
         if (encodedKey == null || encodedKey.length != 32) {
+            if (encodedKey != null) {
+                Arrays.fill(encodedKey, (byte)0);
+            }
             throw new InvalidKeyException("Key length must be 256 bits");
         }
         return encodedKey;
@@ -785,6 +797,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
     @Override
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encodedKey = getEncodedKey(key);
+        Arrays.fill(encodedKey, (byte)0);
         return encodedKey.length << 3;
     }
 

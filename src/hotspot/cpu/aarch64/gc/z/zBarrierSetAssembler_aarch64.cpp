@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,23 +314,20 @@ class ZSaveLiveRegisters {
 private:
   MacroAssembler* const _masm;
   RegSet                _gp_regs;
-  RegSet                _fp_regs;
+  FloatRegSet           _fp_regs;
 
 public:
   void initialize(ZLoadBarrierStubC2* stub) {
-    // Create mask of live registers
-    RegMask live = stub->live();
-
     // Record registers that needs to be saved/restored
-    while (live.is_NotEmpty()) {
-      const OptoReg::Name opto_reg = live.find_first_elem();
-      live.Remove(opto_reg);
+    RegMaskIterator rmi(stub->live());
+    while (rmi.has_next()) {
+      const OptoReg::Name opto_reg = rmi.next();
       if (OptoReg::is_reg(opto_reg)) {
         const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
         if (vm_reg->is_Register()) {
           _gp_regs += RegSet::of(vm_reg->as_Register());
         } else if (vm_reg->is_FloatRegister()) {
-          _fp_regs += RegSet::of((Register)vm_reg->as_FloatRegister());
+          _fp_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
         } else {
           fatal("Unknown register type");
         }
@@ -357,6 +354,10 @@ public:
   ~ZSaveLiveRegisters() {
     // Restore registers
     __ pop_fp(_fp_regs, sp);
+
+    // External runtime call may clobber ptrue reg
+    __ reinitialize_ptrue();
+
     __ pop(_gp_regs, sp);
   }
 };
@@ -431,11 +432,6 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
     ZSetupArguments setup_arguments(masm, stub);
     __ mov(rscratch1, stub->slow_path());
     __ blr(rscratch1);
-    if (UseSVE > 0) {
-      // Reinitialize the ptrue predicate register, in case the external runtime
-      // call clobbers ptrue reg, as we may return to SVE compiled code.
-      __ reinitialize_ptrue();
-    }
   }
   // Stub exit
   __ b(*stub->continuation());

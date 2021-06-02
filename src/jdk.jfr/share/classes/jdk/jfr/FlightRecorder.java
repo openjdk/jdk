@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Objects;
 
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.JVMSupport;
-import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.Options;
@@ -233,6 +232,7 @@ public final class FlightRecorder {
 
         Utils.ensureValidEventSubclass(eventClass);
         Utils.checkRegisterPermission();
+        @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
         RequestEngine.addHook(acc, EventType.getEventType(eventClass).getPlatformEventType(), hook);
     }

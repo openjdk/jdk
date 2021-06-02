@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZFUTURE_INLINE_HPP
 
 #include "gc/z/zFuture.hpp"
+
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/thread.hpp"
 
@@ -46,7 +47,7 @@ inline T ZFuture<T>::get() {
   // Wait for notification
   Thread* const thread = Thread::current();
   if (thread->is_Java_thread()) {
-    _sema.wait_with_safepoint_check((JavaThread*)thread);
+    _sema.wait_with_safepoint_check(thread->as_Java_thread());
   } else {
     _sema.wait();
   }

@@ -41,8 +41,8 @@ import static java.util.stream.Collectors.joining;
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for an
  * {@code invokedynamic} call site.
  *
- * <p>Concrete subtypes of {@linkplain DynamicCallSiteDesc} must be
- * <a href="../doc-files/ValueBased.html">value-based</a>.
+ * <p>Concrete subtypes of {@linkplain DynamicCallSiteDesc} should be immutable
+ * and their behavior should not rely on object identity.
  *
  * @since 12
  */
@@ -156,7 +156,7 @@ public class DynamicCallSiteDesc {
      *                      to the bootstrap, that would appear in the
      *                      {@code BootstrapMethods} attribute
      * @return the nominal descriptor
-     * @throws NullPointerException if any parameter is null
+     * @throws NullPointerException if the argument or its contents are {@code null}
      */
     public DynamicCallSiteDesc withArgs(ConstantDesc... bootstrapArgs) {
         return new DynamicCallSiteDesc(bootstrapMethod, invocationName, invocationType, bootstrapArgs);

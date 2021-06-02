@@ -38,7 +38,7 @@
  *                 - another thread wakes up waiting thread using notify() method
  *                 - another thread wakes up waiting thread using notifyAll() method
  *                 - another thread interrupts waiting thread using interrupt() method
- *         Test executes class nsk.share.jdi.EventTestTemplates$StressTestTemplate which uses JDI events testing
+ *         Test executes class nsk.share.jdi.StressTestTemplate which uses JDI events testing
  *         framework based on classes from package nsk.share.jdi.*.
  *         This framework uses following scenario:
  *                 - debugger VM forces debuggee VM to create number of objects which should generate events during test
@@ -54,17 +54,17 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.share.jdi.EventTestTemplates
+ * @build nsk.share.jdi.StressTestTemplate
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
- * @run main/othervm PropertyResolvingWrapper
- *      nsk.share.jdi.EventTestTemplates$StressTestTemplate
+ * @run main/othervm
+ *      nsk.share.jdi.StressTestTemplate
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  *      -eventTypes MONITOR_WAITED
  *      -debuggeeClassName nsk.share.jdi.MonitorEventsDebuggee
  *      -eventsNumber 100

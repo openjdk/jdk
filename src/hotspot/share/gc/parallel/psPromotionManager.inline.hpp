@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,15 @@
 #ifndef SHARE_GC_PARALLEL_PSPROMOTIONMANAGER_INLINE_HPP
 #define SHARE_GC_PARALLEL_PSPROMOTIONMANAGER_INLINE_HPP
 
+#include "gc/parallel/psPromotionManager.hpp"
+
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psPromotionLAB.inline.hpp"
-#include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
@@ -53,7 +55,7 @@ inline void PSPromotionManager::claim_or_forward_depth(T* p) {
   assert(should_scavenge(p, true), "revisiting object?");
   assert(ParallelScavengeHeap::heap()->is_in(p), "pointer outside heap");
   oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
-  Prefetch::write(obj->mark_addr_raw(), 0);
+  Prefetch::write(obj->mark_addr(), 0);
   push_depth(ScannerTask(p));
 }
 
@@ -97,9 +99,6 @@ class PSPushContentsClosure: public BasicOopIterateClosure {
 
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
-
-  // Don't use the oop verification code in the oop_oop_iterate framework.
-  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 //
@@ -141,7 +140,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
   // NOTE! We must be very careful with any methods that access the mark
   // in o. There may be multiple threads racing on it, and it may be forwarded
   // at any time. Do not use oop methods for accessing the mark!
-  markWord test_mark = o->mark_raw();
+  markWord test_mark = o->mark();
 
   // The same test as "o->is_forwarded()"
   if (!test_mark.is_marked()) {
@@ -155,12 +154,12 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
     if (!promote_immediately) {
       // Try allocating obj in to-space (unless too old)
       if (age < PSScavenge::tenuring_threshold()) {
-        new_obj = (oop) _young_lab.allocate(new_obj_size);
+        new_obj = cast_to_oop(_young_lab.allocate(new_obj_size));
         if (new_obj == NULL && !_young_gen_is_full) {
           // Do we allocate directly, or flush and refill?
           if (new_obj_size > (YoungPLABSize / 2)) {
             // Allocate this object directly
-            new_obj = (oop)young_space()->cas_allocate(new_obj_size);
+            new_obj = cast_to_oop(young_space()->cas_allocate(new_obj_size));
             promotion_trace_event(new_obj, o, new_obj_size, age, false, NULL);
           } else {
             // Flush and fill
@@ -170,7 +169,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
             if (lab_base != NULL) {
               _young_lab.initialize(MemRegion(lab_base, YoungPLABSize));
               // Try the young lab allocation again.
-              new_obj = (oop) _young_lab.allocate(new_obj_size);
+              new_obj = cast_to_oop(_young_lab.allocate(new_obj_size));
               promotion_trace_event(new_obj, o, new_obj_size, age, false, &_young_lab);
             } else {
               _young_gen_is_full = true;
@@ -188,7 +187,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
       }
 #endif  // #ifndef PRODUCT
 
-      new_obj = (oop) _old_lab.allocate(new_obj_size);
+      new_obj = cast_to_oop(_old_lab.allocate(new_obj_size));
       new_obj_is_tenured = true;
 
       if (new_obj == NULL) {
@@ -196,13 +195,13 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
           // Do we allocate directly, or flush and refill?
           if (new_obj_size > (OldPLABSize / 2)) {
             // Allocate this object directly
-            new_obj = (oop)old_gen()->cas_allocate(new_obj_size);
+            new_obj = cast_to_oop(old_gen()->allocate(new_obj_size));
             promotion_trace_event(new_obj, o, new_obj_size, age, true, NULL);
           } else {
             // Flush and fill
             _old_lab.flush();
 
-            HeapWord* lab_base = old_gen()->cas_allocate(OldPLABSize);
+            HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
             if(lab_base != NULL) {
 #ifdef ASSERT
               // Delay the initialization of the promotion lab (plab).
@@ -213,7 +212,7 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
 #endif
               _old_lab.initialize(MemRegion(lab_base, OldPLABSize));
               // Try the old lab allocation again.
-              new_obj = (oop) _old_lab.allocate(new_obj_size);
+              new_obj = cast_to_oop(_old_lab.allocate(new_obj_size));
               promotion_trace_event(new_obj, o, new_obj_size, age, true, &_old_lab);
             }
           }

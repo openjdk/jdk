@@ -38,11 +38,11 @@ import javax.naming.ldap.Control;
 
 import com.sun.jndi.url.ldap.ldapURLContextFactory;
 
-final public class LdapCtxFactory implements ObjectFactory, InitialContextFactory {
+public final class LdapCtxFactory implements ObjectFactory, InitialContextFactory {
     /**
      * The type of each address in an LDAP reference.
      */
-    public final static String ADDRESS_TYPE = "URL";
+    public static final String ADDRESS_TYPE = "URL";
 
     // ----------------- ObjectFactory interface --------------------
 

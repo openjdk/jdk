@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,6 @@ class NativeMovConstReg;
 //    RelocIterator
 //      A StackObj which iterates over the relocations associated with
 //      a range of code addresses.  Can be used to operate a copy of code.
-//    BoundRelocation
-//      An _internal_ type shared by packers and unpackers of relocations.
-//      It pastes together a RelocationHolder with some pointers into
-//      code and relocInfo streams.
 
 
 // Notes on relocType:
@@ -275,27 +271,26 @@ class relocInfo {
     type_mask               = 15  // A mask which selects only the above values
   };
 
- protected:
+ private:
   unsigned short _value;
 
-  enum RawBitsToken { RAW_BITS };
-  relocInfo(relocType type, RawBitsToken ignore, int bits)
+  static const enum class RawBitsToken {} RAW_BITS{};
+
+  relocInfo(relocType type, RawBitsToken, int bits)
     : _value((type << nontype_width) + bits) { }
 
-  relocInfo(relocType type, RawBitsToken ignore, int off, int f)
-    : _value((type << nontype_width) + (off / (unsigned)offset_unit) + (f << offset_width)) { }
+  static relocType check_relocType(relocType type) NOT_DEBUG({ return type; });
+
+  static void check_offset_and_format(int offset, int format) NOT_DEBUG_RETURN;
+
+  static int compute_bits(int offset, int format) {
+    check_offset_and_format(offset, format);
+    return (offset / offset_unit) + (format << offset_width);
+  }
 
  public:
-  // constructor
   relocInfo(relocType type, int offset, int format = 0)
-#ifndef ASSERT
-  {
-    (*this) = relocInfo(type, RAW_BITS, offset, format);
-  }
-#else
-  // Put a bunch of assertions out-of-line.
-  ;
-#endif
+    : relocInfo(check_relocType(type), RAW_BITS, compute_bits(offset, format)) {}
 
   #define APPLY_TO_RELOCATIONS(visitor) \
     visitor(oop) \
@@ -376,7 +371,7 @@ class relocInfo {
 
   inline friend relocInfo prefix_relocInfo(int datalen);
 
- protected:
+ private:
   // an immediate relocInfo optimizes a prefix with one 10-bit unsigned value
   static relocInfo immediate_relocInfo(int data0) {
     assert(fits_into_immediate(data0), "data0 in limits");
@@ -492,8 +487,8 @@ class RelocationHolder {
 };
 
 // A RelocIterator iterates through the relocation information of a CodeBlob.
-// It is a variable BoundRelocation which is able to take on successive
-// values as it is advanced through a code stream.
+// It provides access to successive relocations as it is advanced through a
+// code stream.
 // Usage:
 //   RelocIterator iter(nm);
 //   while (iter.next()) {
@@ -1071,7 +1066,7 @@ class opt_virtual_call_Relocation : public CallRelocation {
   bool clear_inline_cache();
 
   // find the matching static_stub
-  address static_stub(bool is_aot);
+  address static_stub();
 };
 
 
@@ -1103,24 +1098,23 @@ class static_call_Relocation : public CallRelocation {
   bool clear_inline_cache();
 
   // find the matching static_stub
-  address static_stub(bool is_aot);
+  address static_stub();
 };
 
 class static_stub_Relocation : public Relocation {
  public:
-  static RelocationHolder spec(address static_call, bool is_aot = false) {
+  static RelocationHolder spec(address static_call) {
     RelocationHolder rh = newHolder();
-    new(rh) static_stub_Relocation(static_call, is_aot);
+    new(rh) static_stub_Relocation(static_call);
     return rh;
   }
 
  private:
   address _static_call;  // location of corresponding static_call
-  bool _is_aot;          // trampoline to aot code
 
-  static_stub_Relocation(address static_call, bool is_aot)
+  static_stub_Relocation(address static_call)
     : Relocation(relocInfo::static_stub_type),
-      _static_call(static_call), _is_aot(is_aot) { }
+      _static_call(static_call) { }
 
   friend class RelocIterator;
   static_stub_Relocation() : Relocation(relocInfo::static_stub_type) { }
@@ -1129,7 +1123,6 @@ class static_stub_Relocation : public Relocation {
   bool clear_inline_cache();
 
   address static_call() { return _static_call; }
-  bool is_aot() { return _is_aot; }
 
   // data is packed as a scaled offset in "1_int" format:  [c] or [Cc]
   void pack_data_to(CodeSection* dest);

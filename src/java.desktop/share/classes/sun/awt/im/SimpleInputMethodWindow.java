@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.awt.im;
 
 import java.awt.Frame;
+import java.io.Serial;
 
 /**
  * Implements a simple input method window that provides the minimal
@@ -62,6 +63,9 @@ public class SimpleInputMethodWindow
         }
     }
 
-    // Proclaim serial compatibility with 1.7.0
+    /**
+     * Use serialVersionUID from JDK 1.7 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = 5093376647036461555L;
 }

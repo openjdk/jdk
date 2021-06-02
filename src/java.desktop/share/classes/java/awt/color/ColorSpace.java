@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@
 
 package java.awt.color;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.lang.annotation.Native;
-
-import sun.java2d.cmm.CMSManager;
 
 /**
  * This abstract class is used to serve as a color space tag to identify the
@@ -91,20 +91,45 @@ import sun.java2d.cmm.CMSManager;
  *
  * @see ICC_ColorSpace
  */
-public abstract class ColorSpace implements java.io.Serializable {
+public abstract class ColorSpace implements Serializable {
 
-    static final long serialVersionUID = -409452704308689724L;
+    /**
+     * Use serialVersionUID from JDK 1.2 for interoperability.
+     */
+    @Serial
+    private static final long serialVersionUID = -409452704308689724L;
 
-    private int type;
-    private int numComponents;
-    private transient String [] compName = null;
+    /**
+     * One of the {@code ColorSpace} type constants.
+     */
+    private final int type;
 
-    // Cache of singletons for the predefined color spaces.
-    private static ColorSpace sRGBspace;
-    private static ColorSpace XYZspace;
-    private static ColorSpace PYCCspace;
-    private static ColorSpace GRAYspace;
-    private static ColorSpace LINEAR_RGBspace;
+    /**
+     * The number of components in the color space.
+     */
+    private final int numComponents;
+
+    /**
+     * Lazy-initialized names of components in the color space.
+     */
+    private transient volatile String[] compName;
+
+    /**
+     * The lazy cache of singletons for the predefined built-in color spaces.
+     */
+    private interface BuiltInSpace {
+
+        ColorSpace SRGB = new ICC_ColorSpace(ICC_Profile.getInstance(CS_sRGB));
+
+        ColorSpace LRGB =
+                new ICC_ColorSpace(ICC_Profile.getInstance(CS_LINEAR_RGB));
+
+        ColorSpace XYZ = new ICC_ColorSpace(ICC_Profile.getInstance(CS_CIEXYZ));
+
+        ColorSpace PYCC = new ICC_ColorSpace(ICC_Profile.getInstance(CS_PYCC));
+
+        ColorSpace GRAY = new ICC_ColorSpace(ICC_Profile.getInstance(CS_GRAY));
+    }
 
     /**
      * Any of the family of XYZ color spaces.
@@ -231,26 +256,27 @@ public abstract class ColorSpace implements java.io.Serializable {
      */
     @Native public static final int TYPE_FCLR = 25;
 
+
     /**
-     * The sRGB color space defined at
+     * The built-in sRGB color space defined at
      * <a href="http://www.w3.org/pub/WWW/Graphics/Color/sRGB.html">
      * http://www.w3.org/pub/WWW/Graphics/Color/sRGB.html</a>.
      */
     @Native public static final int CS_sRGB = 1000;
 
     /**
-     * A built-in linear RGB color space. This space is based on the same RGB
+     * The built-in linear RGB color space. This space is based on the same RGB
      * primaries as {@code CS_sRGB}, but has a linear tone reproduction curve.
      */
     @Native public static final int CS_LINEAR_RGB = 1004;
 
     /**
-     * The CIEXYZ conversion color space defined above.
+     * The built-in CIEXYZ conversion color space defined above.
      */
     @Native public static final int CS_CIEXYZ = 1001;
 
     /**
-     * The Photo YCC conversion color space.
+     * The built-in Photo YCC conversion color space.
      */
     @Native public static final int CS_PYCC = 1002;
 
@@ -264,99 +290,35 @@ public abstract class ColorSpace implements java.io.Serializable {
      * number of components.
      *
      * @param  type one of the {@code ColorSpace} type constants
-     * @param  numcomponents the number of components in the color space
+     * @param  numComponents the number of components in the color space
      */
-    protected ColorSpace(int type, int numcomponents) {
+    protected ColorSpace(int type, int numComponents) {
         this.type = type;
-        this.numComponents = numcomponents;
+        this.numComponents = numComponents;
     }
 
     /**
      * Returns a {@code ColorSpace} representing one of the specific predefined
      * color spaces.
      *
-     * @param  colorspace a specific color space identified by one of the
-     *         predefined class constants (e.g. {@code CS_sRGB},
-     *         {@code CS_LINEAR_RGB}, {@code CS_CIEXYZ}, {@code CS_GRAY}, or
-     *         {@code CS_PYCC})
+     * @param  cspace a specific color space identified by one of the predefined
+     *         class constants (e.g. {@code CS_sRGB}, {@code CS_LINEAR_RGB},
+     *         {@code CS_CIEXYZ}, {@code CS_GRAY}, or {@code CS_PYCC})
      * @return the requested {@code ColorSpace} object
      */
     // NOTE: This method may be called by privileged threads.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
-    public static ColorSpace getInstance (int colorspace)
-    {
-    ColorSpace    theColorSpace;
-
-        switch (colorspace) {
-        case CS_sRGB:
-            synchronized(ColorSpace.class) {
-                if (sRGBspace == null) {
-                    ICC_Profile theProfile = ICC_Profile.getInstance (CS_sRGB);
-                    sRGBspace = new ICC_ColorSpace (theProfile);
-                }
-
-                theColorSpace = sRGBspace;
+    public static ColorSpace getInstance(int cspace) {
+        return switch (cspace) {
+            case CS_sRGB -> BuiltInSpace.SRGB;
+            case CS_LINEAR_RGB -> BuiltInSpace.LRGB;
+            case CS_CIEXYZ -> BuiltInSpace.XYZ;
+            case CS_PYCC -> BuiltInSpace.PYCC;
+            case CS_GRAY -> BuiltInSpace.GRAY;
+            default -> {
+                throw new IllegalArgumentException("Unknown color space");
             }
-            break;
-
-        case CS_CIEXYZ:
-            synchronized(ColorSpace.class) {
-                if (XYZspace == null) {
-                    ICC_Profile theProfile =
-                        ICC_Profile.getInstance (CS_CIEXYZ);
-                    XYZspace = new ICC_ColorSpace (theProfile);
-                }
-
-                theColorSpace = XYZspace;
-            }
-            break;
-
-        case CS_PYCC:
-            synchronized(ColorSpace.class) {
-                if (PYCCspace == null) {
-                    ICC_Profile theProfile = ICC_Profile.getInstance (CS_PYCC);
-                    PYCCspace = new ICC_ColorSpace (theProfile);
-                }
-
-                theColorSpace = PYCCspace;
-            }
-            break;
-
-
-        case CS_GRAY:
-            synchronized(ColorSpace.class) {
-                if (GRAYspace == null) {
-                    ICC_Profile theProfile = ICC_Profile.getInstance (CS_GRAY);
-                    GRAYspace = new ICC_ColorSpace (theProfile);
-                    /* to allow access from java.awt.ColorModel */
-                    CMSManager.GRAYspace = GRAYspace;
-                }
-
-                theColorSpace = GRAYspace;
-            }
-            break;
-
-
-        case CS_LINEAR_RGB:
-            synchronized(ColorSpace.class) {
-                if (LINEAR_RGBspace == null) {
-                    ICC_Profile theProfile =
-                        ICC_Profile.getInstance(CS_LINEAR_RGB);
-                    LINEAR_RGBspace = new ICC_ColorSpace (theProfile);
-                    /* to allow access from java.awt.ColorModel */
-                    CMSManager.LINEAR_RGBspace = LINEAR_RGBspace;
-                }
-
-                theColorSpace = LINEAR_RGBspace;
-            }
-            break;
-
-
-        default:
-            throw new IllegalArgumentException ("Unknown color space");
-        }
-
-        return theColorSpace;
+        };
     }
 
     /**
@@ -365,9 +327,8 @@ public abstract class ColorSpace implements java.io.Serializable {
      * @return {@code true} if this is a {@code CS_sRGB} color space,
      *         {@code false} if it is not
      */
-    public boolean isCS_sRGB () {
-        /* REMIND - make sure we know sRGBspace exists already */
-        return (this == sRGBspace);
+    public boolean isCS_sRGB() {
+        return this == BuiltInSpace.SRGB;
     }
 
     /**
@@ -430,8 +391,8 @@ public abstract class ColorSpace implements java.io.Serializable {
      * {@link ICC_ColorSpace#toCIEXYZ(float[]) toCIEXYZ} method of
      * {@code ICC_ColorSpace} for further information.
      *
-     * @param colorvalue a float array with length of at least the number of
-     *        components in this {@code ColorSpace}
+     * @param  colorvalue a float array with length of at least the number of
+     *         components in this {@code ColorSpace}
      * @return a float array of length 3
      * @throws ArrayIndexOutOfBoundsException if array length is not at least
      *         the number of components in this {@code ColorSpace}.
@@ -490,64 +451,37 @@ public abstract class ColorSpace implements java.io.Serializable {
     /**
      * Returns the name of the component given the component index.
      *
-     * @param  idx the component index
+     * @param  component the component index
      * @return the name of the component at the specified index
-     * @throws IllegalArgumentException if {@code idx} is less than 0 or greater
-     *         than {@code numComponents - 1}
+     * @throws IllegalArgumentException if {@code component} is less than 0 or
+     *         greater than {@code numComponents - 1}
      */
-    public String getName (int idx) {
-        /* REMIND - handle common cases here */
-        if ((idx < 0) || (idx > numComponents - 1)) {
-            throw new IllegalArgumentException(
-                "Component index out of range: " + idx);
-        }
-
+    public String getName(int component) {
+        rangeCheck(component);
         if (compName == null) {
-            switch (type) {
-                case ColorSpace.TYPE_XYZ:
-                    compName = new String[] {"X", "Y", "Z"};
-                    break;
-                case ColorSpace.TYPE_Lab:
-                    compName = new String[] {"L", "a", "b"};
-                    break;
-                case ColorSpace.TYPE_Luv:
-                    compName = new String[] {"L", "u", "v"};
-                    break;
-                case ColorSpace.TYPE_YCbCr:
-                    compName = new String[] {"Y", "Cb", "Cr"};
-                    break;
-                case ColorSpace.TYPE_Yxy:
-                    compName = new String[] {"Y", "x", "y"};
-                    break;
-                case ColorSpace.TYPE_RGB:
-                    compName = new String[] {"Red", "Green", "Blue"};
-                    break;
-                case ColorSpace.TYPE_GRAY:
-                    compName = new String[] {"Gray"};
-                    break;
-                case ColorSpace.TYPE_HSV:
-                    compName = new String[] {"Hue", "Saturation", "Value"};
-                    break;
-                case ColorSpace.TYPE_HLS:
-                    compName = new String[] {"Hue", "Lightness",
-                                             "Saturation"};
-                    break;
-                case ColorSpace.TYPE_CMYK:
-                    compName = new String[] {"Cyan", "Magenta", "Yellow",
-                                             "Black"};
-                    break;
-                case ColorSpace.TYPE_CMY:
-                    compName = new String[] {"Cyan", "Magenta", "Yellow"};
-                    break;
-                default:
-                    String [] tmp = new String[numComponents];
+            compName = switch (type) {
+                case TYPE_XYZ -> new String[]{"X", "Y", "Z"};
+                case TYPE_Lab -> new String[]{"L", "a", "b"};
+                case TYPE_Luv -> new String[]{"L", "u", "v"};
+                case TYPE_YCbCr -> new String[]{"Y", "Cb", "Cr"};
+                case TYPE_Yxy -> new String[]{"Y", "x", "y"};
+                case TYPE_RGB -> new String[]{"Red", "Green", "Blue"};
+                case TYPE_GRAY -> new String[]{"Gray"};
+                case TYPE_HSV -> new String[]{"Hue", "Saturation", "Value"};
+                case TYPE_HLS -> new String[]{"Hue", "Lightness", "Saturation"};
+                case TYPE_CMYK -> new String[]{"Cyan", "Magenta", "Yellow",
+                                               "Black"};
+                case TYPE_CMY -> new String[]{"Cyan", "Magenta", "Yellow"};
+                default -> {
+                    String[] tmp = new String[getNumComponents()];
                     for (int i = 0; i < tmp.length; i++) {
                         tmp[i] = "Unnamed color component(" + i + ")";
                     }
-                    compName = tmp;
-            }
+                    yield tmp;
+                }
+            };
         }
-        return compName[idx];
+        return compName[component];
     }
 
     /**
@@ -562,10 +496,7 @@ public abstract class ColorSpace implements java.io.Serializable {
      * @since 1.4
      */
     public float getMinValue(int component) {
-        if ((component < 0) || (component > numComponents - 1)) {
-            throw new IllegalArgumentException(
-                "Component index out of range: " + component);
-        }
+        rangeCheck(component);
         return 0.0f;
     }
 
@@ -581,17 +512,21 @@ public abstract class ColorSpace implements java.io.Serializable {
      * @since 1.4
      */
     public float getMaxValue(int component) {
-        if ((component < 0) || (component > numComponents - 1)) {
-            throw new IllegalArgumentException(
-                "Component index out of range: " + component);
-        }
+        rangeCheck(component);
         return 1.0f;
     }
 
-    /*
-     * Returns {@code true} if {@code cspace} is the XYZspace.
+    /**
+     * Checks that {@code component} is in range of the number of components.
+     *
+     * @param  component the component index
+     * @throws IllegalArgumentException if component is less than 0 or greater
+     *         than {@code numComponents - 1}
      */
-    static boolean isCS_CIEXYZ(ColorSpace cspace) {
-        return (cspace == XYZspace);
+    final void rangeCheck(int component) {
+        if (component < 0 || component > getNumComponents() - 1) {
+            throw new IllegalArgumentException(
+                    "Component index out of range: " + component);
+        }
     }
 }

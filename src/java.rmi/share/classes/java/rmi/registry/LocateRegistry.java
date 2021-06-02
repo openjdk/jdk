@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public final class LocateRegistry {
      * the local host on the default registry port of 1099.
      *
      * @return reference (a stub) to the remote object registry
-     * @exception RemoteException if the reference could not be created
+     * @throws RemoteException if the reference could not be created
      * @since 1.1
      */
     public static Registry getRegistry()
@@ -81,7 +81,7 @@ public final class LocateRegistry {
      *
      * @param port port on which the registry accepts requests
      * @return reference (a stub) to the remote object registry
-     * @exception RemoteException if the reference could not be created
+     * @throws RemoteException if the reference could not be created
      * @since 1.1
      */
     public static Registry getRegistry(int port)
@@ -97,7 +97,7 @@ public final class LocateRegistry {
      *
      * @param host host for the remote registry
      * @return reference (a stub) to the remote object registry
-     * @exception RemoteException if the reference could not be created
+     * @throws RemoteException if the reference could not be created
      * @since 1.1
      */
     public static Registry getRegistry(String host)
@@ -114,7 +114,7 @@ public final class LocateRegistry {
      * @param host host for the remote registry
      * @param port port on which the registry accepts requests
      * @return reference (a stub) to the remote object registry
-     * @exception RemoteException if the reference could not be created
+     * @throws RemoteException if the reference could not be created
      * @since 1.1
      */
     public static Registry getRegistry(String host, int port)
@@ -138,7 +138,7 @@ public final class LocateRegistry {
      *      is null, then the default client-side <code>Socket</code>
      *      factory will be used in the registry stub.
      * @return reference (a stub) to the remote registry
-     * @exception RemoteException if the reference could not be created
+     * @throws RemoteException if the reference could not be created
      * @since 1.2
      */
     public static Registry getRegistry(String host, int port,
@@ -196,7 +196,7 @@ public final class LocateRegistry {
      *
      * @param port the port on which the registry accepts requests
      * @return the registry
-     * @exception RemoteException if the registry could not be exported
+     * @throws RemoteException if the registry could not be exported
      * @since 1.1
      **/
     public static Registry createRegistry(int port) throws RemoteException {
@@ -228,7 +228,7 @@ public final class LocateRegistry {
      * @param ssf  server-side <code>ServerSocket</code> factory
      *      used to accept connections to the registry
      * @return the registry
-     * @exception RemoteException if the registry could not be exported
+     * @throws RemoteException if the registry could not be exported
      * @since 1.2
      **/
     public static Registry createRegistry(int port,

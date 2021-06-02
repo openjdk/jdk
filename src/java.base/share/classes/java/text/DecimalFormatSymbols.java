@@ -760,7 +760,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     /**
      * Override hashCode.
      */
-    private volatile int hashCode;
     @Override
     public int hashCode() {
         if (hashCode == 0) {
@@ -1147,6 +1146,11 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     // currency; only the ISO code is serialized.
     private transient Currency currency;
     private transient volatile boolean currencyInitialized;
+
+    /**
+     * Cached hash code.
+     */
+    private transient volatile int hashCode;
 
     // Proclaim JDK 1.1 FCS compatibility
     @java.io.Serial

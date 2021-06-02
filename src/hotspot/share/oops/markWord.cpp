@@ -25,19 +25,55 @@
 #include "precompiled.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitor.inline.hpp"
+#include "utilities/ostream.hpp"
 
-void markWord::print_on(outputStream* st) const {
+markWord markWord::displaced_mark_helper() const {
+  assert(has_displaced_mark_helper(), "check");
+  if (has_monitor()) {
+    // Has an inflated monitor. Must be checked before has_locker().
+    ObjectMonitor* monitor = this->monitor();
+    return monitor->header();
+  }
+  if (has_locker()) {  // has a stack lock
+    BasicLock* locker = this->locker();
+    return locker->displaced_header();
+  }
+  // This should never happen:
+  fatal("bad header=" INTPTR_FORMAT, value());
+  return markWord(value());
+}
+
+void markWord::set_displaced_mark_helper(markWord m) const {
+  assert(has_displaced_mark_helper(), "check");
+  if (has_monitor()) {
+    // Has an inflated monitor. Must be checked before has_locker().
+    ObjectMonitor* monitor = this->monitor();
+    monitor->set_header(m);
+    return;
+  }
+  if (has_locker()) {  // has a stack lock
+    BasicLock* locker = this->locker();
+    locker->set_displaced_header(m);
+    return;
+  }
+  // This should never happen:
+  fatal("bad header=" INTPTR_FORMAT, value());
+}
+
+void markWord::print_on(outputStream* st, bool print_monitor_info) const {
   if (is_marked()) {  // last bits = 11
     st->print(" marked(" INTPTR_FORMAT ")", value());
   } else if (has_monitor()) {  // last bits = 10
     // have to check has_monitor() before is_locked()
     st->print(" monitor(" INTPTR_FORMAT ")=", value());
-    ObjectMonitor* mon = monitor();
-    if (mon == NULL) {
-      st->print("NULL (this should never be seen!)");
-    } else {
-      mon->print_on(st);
+    if (print_monitor_info) {
+      ObjectMonitor* mon = monitor();
+      if (mon == NULL) {
+        st->print("NULL (this should never be seen!)");
+      } else {
+        mon->print_on(st);
+      }
     }
   } else if (is_locked()) {  // last bits != 01 => 00
     // thin locked

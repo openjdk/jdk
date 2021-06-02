@@ -32,8 +32,10 @@ import java.util.HashMap;
 /**
  * @author Michael McMahon
  */
-
 public class AuthCacheImpl implements AuthCache {
+    // No blocking IO is performed within the synchronized code blocks
+    // in this class, so there is no need to convert this class to using
+    // java.util.concurrent.locks
     HashMap<String,LinkedList<AuthCacheValue>> hashtable;
 
     public AuthCacheImpl () {
@@ -46,7 +48,6 @@ public class AuthCacheImpl implements AuthCache {
 
     // put a value in map according to primary key + secondary key which
     // is the path field of AuthenticationInfo
-
     public synchronized void put (String pkey, AuthCacheValue value) {
         LinkedList<AuthCacheValue> list = hashtable.get (pkey);
         String skey = value.getPath();

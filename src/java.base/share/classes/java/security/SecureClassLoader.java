@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,6 @@ public class SecureClassLoader extends ClassLoader {
      *         doesn't allow creation of a class loader.
      *
      * @since 9
-     * @spec JPMS
      */
     protected SecureClassLoader(String name, ClassLoader parent) {
         super(name, parent);
@@ -255,18 +254,17 @@ public class SecureClassLoader extends ClassLoader {
                 return true;
             }
 
-            if (!(obj instanceof CodeSourceKey)) {
-                return false;
-            }
-
-            CodeSourceKey csk = (CodeSourceKey) obj;
-
-            if (!Objects.equals(cs.getLocationNoFragString(),
-                                csk.cs.getLocationNoFragString())) {
-                return false;
-            }
-
-            return cs.matchCerts(csk.cs, true);
+            return obj instanceof CodeSourceKey other
+                    && Objects.equals(cs.getLocationNoFragString(),
+                                other.cs.getLocationNoFragString())
+                    && cs.matchCerts(other.cs, true);
         }
+    }
+
+    /**
+     * Called by the VM, during -Xshare:dump
+     */
+    private void resetArchivedStates() {
+        pdcache.clear();
     }
 }

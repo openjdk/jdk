@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -66,8 +66,6 @@ public class TreeWriter extends AbstractTreeWriter {
      */
     private final boolean classesOnly;
 
-    private final Navigation navBar;
-
     protected BodyContents bodyContents;
 
     /**
@@ -81,7 +79,6 @@ public class TreeWriter extends AbstractTreeWriter {
         super(configuration, filename, classtree);
         packages = configuration.packages;
         classesOnly = packages.isEmpty();
-        this.navBar = new Navigation(null, configuration, PageMode.TREE, path);
         this.bodyContents = new BodyContents();
     }
 
@@ -118,13 +115,9 @@ public class TreeWriter extends AbstractTreeWriter {
         addTree(classtree.baseInterfaces(), "doclet.Interface_Hierarchy", mainContent);
         addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", mainContent);
         addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", mainContent, true);
-        HtmlTree footerTree = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footerTree.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footerTree);
         body.add(bodyContents
                 .addMainContent(mainContent)
-                .setFooter(footerTree));
+                .setFooter(getFooter()));
         printHtmlDocument(null, "class tree", body);
     }
 
@@ -156,7 +149,7 @@ public class TreeWriter extends AbstractTreeWriter {
                 }
                 DocPath link = pathString(pkg, DocPaths.PACKAGE_TREE);
                 Content li = HtmlTree.LI(links.createLink(link,
-                        new StringContent(utils.getPackageName(pkg))));
+                        getLocalizedPackageName(pkg)));
                 if (i < packages.size() - 1) {
                     li.add(", ");
                 }
@@ -175,11 +168,7 @@ public class TreeWriter extends AbstractTreeWriter {
     protected HtmlTree getTreeHeader() {
         String title = resources.getText("doclet.Window_Class_Hierarchy");
         HtmlTree bodyTree = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
-        bodyContents.setHeader(headerContent);
+        bodyContents.setHeader(getHeader(PageMode.TREE));
         return bodyTree;
     }
 

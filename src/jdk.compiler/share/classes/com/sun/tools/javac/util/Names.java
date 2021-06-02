@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class Names {
     public final Name error;
     public final Name finalize;
     public final Name forRemoval;
-    public final Name essentialAPI;
+    public final Name reflective;
     public final Name getClass;
     public final Name hasNext;
     public final Name hashCode;
@@ -117,6 +117,7 @@ public class Names {
     public final Name Method;
 
     // package names
+    public final Name java;
     public final Name java_lang;
 
     // module names
@@ -259,7 +260,7 @@ public class Names {
         error = fromString("<error>");
         finalize = fromString("finalize");
         forRemoval = fromString("forRemoval");
-        essentialAPI = fromString("essentialAPI");
+        reflective = fromString("reflective");
         getClass = fromString("getClass");
         hasNext = fromString("hasNext");
         hashCode = fromString("hashCode");
@@ -291,6 +292,7 @@ public class Names {
         Method = fromString("Method");
 
         // package names
+        java = fromString("java");
         java_lang = fromString("java.lang");
 
         // module names

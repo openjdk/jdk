@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 #ifndef SHARE_MEMORY_PADDED_INLINE_HPP
 #define SHARE_MEMORY_PADDED_INLINE_HPP
 
-#include "memory/allocation.inline.hpp"
 #include "memory/padded.hpp"
+
+#include "memory/allocation.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -36,7 +37,7 @@
 template <class T, MEMFLAGS flags, size_t alignment>
 PaddedEnd<T>* PaddedArray<T, flags, alignment>::create_unfreeable(uint length) {
   // Check that the PaddedEnd class works as intended.
-  STATIC_ASSERT(is_aligned_(sizeof(PaddedEnd<T>), alignment));
+  STATIC_ASSERT(is_aligned(sizeof(PaddedEnd<T>), alignment));
 
   // Allocate a chunk of memory large enough to allow for some alignment.
   void* chunk = AllocateHeap(length * sizeof(PaddedEnd<T, alignment>) + alignment, flags);
@@ -82,11 +83,18 @@ T** Padded2DArray<T, flags, alignment>::create_unfreeable(uint rows, uint column
 
 template <class T, MEMFLAGS flags, size_t alignment>
 T* PaddedPrimitiveArray<T, flags, alignment>::create_unfreeable(size_t length) {
+  void* temp;
+  return create(length, &temp);
+}
+
+template <class T, MEMFLAGS flags, size_t alignment>
+T* PaddedPrimitiveArray<T, flags, alignment>::create(size_t length, void** alloc_base) {
   // Allocate a chunk of memory large enough to allow for some alignment.
   void* chunk = AllocateHeap(length * sizeof(T) + alignment, flags);
 
   memset(chunk, 0, length * sizeof(T) + alignment);
 
+  *alloc_base = chunk;
   return (T*)align_up(chunk, alignment);
 }
 

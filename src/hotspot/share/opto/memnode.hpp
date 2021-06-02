@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ private:
   bool _unaligned_access; // Unaligned access from unsafe
   bool _mismatched_access; // Mismatched access from unsafe: byte read in integer array for instance
   bool _unsafe_access;     // Access of unsafe origin.
-  uint8_t _barrier; // Bit field with barrier information
+  uint8_t _barrier_data;   // Bit field with barrier information
 
 protected:
 #ifdef ASSERT
@@ -69,7 +69,7 @@ protected:
       _unaligned_access(false),
       _mismatched_access(false),
       _unsafe_access(false),
-      _barrier(0) {
+      _barrier_data(0) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
@@ -78,7 +78,7 @@ protected:
       _unaligned_access(false),
       _mismatched_access(false),
       _unsafe_access(false),
-      _barrier(0) {
+      _barrier_data(0) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
@@ -87,7 +87,7 @@ protected:
       _unaligned_access(false),
       _mismatched_access(false),
       _unsafe_access(false),
-      _barrier(0) {
+      _barrier_data(0) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
@@ -140,8 +140,8 @@ public:
 #endif
   }
 
-  uint8_t barrier_data() { return _barrier; }
-  void set_barrier_data(uint8_t barrier_data) { _barrier = barrier_data; }
+  uint8_t barrier_data() { return _barrier_data; }
+  void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
 
   // Search through memory states which precede this node (load or store).
   // Look for an exact match for the address, with no intervening
@@ -248,7 +248,7 @@ public:
   Node* split_through_phi(PhaseGVN *phase);
 
   // Recover original value from boxed values
-  Node *eliminate_autobox(PhaseGVN *phase);
+  Node *eliminate_autobox(PhaseIterGVN *igvn);
 
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.
@@ -281,6 +281,9 @@ public:
 
   Node* convert_to_unsigned_load(PhaseGVN& gvn);
   Node* convert_to_signed_load(PhaseGVN& gvn);
+
+  bool  has_reinterpret_variant(const Type* rt);
+  Node* convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt);
 
   void pin() { _control_dependency = Pinned; }
   bool has_unknown_control_dependency() const { return _control_dependency == UnknownControl; }
@@ -634,6 +637,9 @@ public:
   // have all possible loads of the value stored been optimized away?
   bool value_never_loaded(PhaseTransform *phase) const;
 
+  bool  has_reinterpret_variant(const Type* vt);
+  Node* convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt);
+
   MemBarNode* trailing_membar() const;
 };
 
@@ -833,7 +839,7 @@ class LoadStoreNode : public Node {
 private:
   const Type* const _type;      // What kind of value is loaded?
   const TypePtr* _adr_type;     // What kind of memory is being addressed?
-  uint8_t _barrier; // Bit field with barrier information
+  uint8_t _barrier_data;        // Bit field with barrier information
   virtual uint size_of() const; // Size is bigger
 public:
   LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required );
@@ -843,12 +849,13 @@ public:
   virtual const Type *bottom_type() const { return _type; }
   virtual uint ideal_reg() const;
   virtual const class TypePtr *adr_type() const { return _adr_type; }  // returns bottom_type of address
+  virtual const Type* Value(PhaseGVN* phase) const;
 
   bool result_not_used() const;
   MemBarNode* trailing_membar() const;
 
-  uint8_t barrier_data() { return _barrier; }
-  void set_barrier_data(uint8_t barrier_data) { _barrier = barrier_data; }
+  uint8_t barrier_data() { return _barrier_data; }
+  void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
 };
 
 class LoadStoreConditionalNode : public LoadStoreNode {
@@ -857,6 +864,7 @@ public:
     ExpectedIn = MemNode::ValueIn+1 // One more input than MemNode
   };
   LoadStoreConditionalNode(Node *c, Node *mem, Node *adr, Node *val, Node *ex);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------StorePConditionalNode---------------------------
@@ -1184,7 +1192,8 @@ class MemBarNode: public MultiNode {
     TrailingStore,
     LeadingStore,
     TrailingLoadStore,
-    LeadingLoadStore
+    LeadingLoadStore,
+    TrailingPartialArrayCopy
   } _kind;
 
 #ifdef ASSERT
@@ -1221,6 +1230,8 @@ public:
   bool trailing() const { return _kind == TrailingLoad || _kind == TrailingStore || _kind == TrailingLoadStore; }
   bool leading() const { return _kind == LeadingStore || _kind == LeadingLoadStore; }
   bool standalone() const { return _kind == Standalone; }
+  void set_trailing_partial_array_copy() { _kind = TrailingPartialArrayCopy; }
+  bool trailing_partial_array_copy() const { return _kind == TrailingPartialArrayCopy; }
 
   static void set_store_pair(MemBarNode* leading, MemBarNode* trailing);
   static void set_load_store_pair(MemBarNode* leading, MemBarNode* trailing);
@@ -1324,6 +1335,26 @@ public:
   OnSpinWaitNode(Compile* C, int alias_idx, Node* precedent)
     : MemBarNode(C, alias_idx, precedent) {}
   virtual int Opcode() const;
+};
+
+//------------------------------BlackholeNode----------------------------
+// Blackhole all arguments. This node would survive through the compiler
+// the effects on its arguments, and would be finally matched to nothing.
+class BlackholeNode : public MemBarNode {
+public:
+  BlackholeNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int   Opcode() const;
+  virtual uint ideal_reg() const { return 0; } // not matched in the AD file
+  const RegMask &in_RegMask(uint idx) const {
+    // Fake the incoming arguments mask for blackholes: accept all registers
+    // and all stack slots. This would avoid any redundant register moves
+    // for blackhole inputs.
+    return RegMask::All;
+  }
+#ifndef PRODUCT
+  virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
+#endif
 };
 
 // Isolation of object setup after an AllocateNode and before next safepoint.

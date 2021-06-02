@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@
 #elif _M_AMD64
   #include "sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext.h"
   #define NPRGREG sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_NPRGREG
+#elif _M_ARM64
+  #include "sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext.h"
+  #define NPRGREG sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_NPRGREG
 #else
   #error "SA windbg back-end is not supported for your cpu!"
 #endif
@@ -98,7 +101,7 @@ class AutoJavaString {
 public:
   // check env->ExceptionOccurred() after ctor
   AutoJavaString(JNIEnv* env, jstring str)
-    : m_env(env), m_str(str), m_buf(env->GetStringUTFChars(str, nullptr)) {
+    : m_env(env), m_str(str), m_buf(str == nullptr ? nullptr : env->GetStringUTFChars(str, nullptr)) {
   }
 
   ~AutoJavaString() {
@@ -500,6 +503,7 @@ static bool addLoadObjects(JNIEnv* env, jobject obj) {
     env->CallVoidMethod(obj, addLoadObject_ID, strName, (jlong) params[u].Size,
                         (jlong) params[u].Base);
     CHECK_EXCEPTION_(false);
+    env->DeleteLocalRef(strName);
   }
 
   return true;
@@ -626,6 +630,7 @@ static bool addThreads(JNIEnv* env, jobject obj) {
 
     env->CallVoidMethod(obj, setThreadIntegerRegisterSet_ID, (jlong)ptrThreadIds[t], regs);
     CHECK_EXCEPTION_(false);
+    env->DeleteLocalRef(regs);
 
     ULONG sysId;
     COM_VERIFY_OK_(ptrIDebugSystemObjects->GetCurrentThreadSystemId(&sysId),

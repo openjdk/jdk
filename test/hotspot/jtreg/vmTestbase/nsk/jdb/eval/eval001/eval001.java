@@ -52,7 +52,8 @@
  * @clean nsk.jdb.eval.eval001.eval001a
  * @compile -g:lines,source,vars eval001a.java
  *
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.eval.eval001.eval001
+ * @run main/othervm
+ *      nsk.jdb.eval.eval001.eval001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

@@ -32,6 +32,7 @@
 #include "gc/g1/heapRegion.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
@@ -264,6 +265,8 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                                   Register thread,
                                                   Register tmp,
                                                   Register tmp2) {
+  // Generated code assumes that buffer index is pointer sized.
+  STATIC_ASSERT(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
 #ifdef _LP64
   assert(thread == r15_thread, "must be");
 #endif // _LP64
@@ -314,24 +317,18 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   __ movb(Address(card_addr, 0), (int)G1CardTable::dirty_card_val());
 
-  __ cmpl(queue_index, 0);
-  __ jcc(Assembler::equal, runtime);
-  __ subl(queue_index, wordSize);
-  __ movptr(tmp2, buffer);
-#ifdef _LP64
-  __ movslq(rscratch1, queue_index);
-  __ addq(tmp2, rscratch1);
-  __ movq(Address(tmp2, 0), card_addr);
-#else
-  __ addl(tmp2, queue_index);
-  __ movl(Address(tmp2, 0), card_addr);
-#endif
+  __ movptr(tmp2, queue_index);
+  __ testptr(tmp2, tmp2);
+  __ jcc(Assembler::zero, runtime);
+  __ subptr(tmp2, wordSize);
+  __ movptr(queue_index, tmp2);
+  __ addptr(tmp2, buffer);
+  __ movptr(Address(tmp2, 0), card_addr);
   __ jmp(done);
 
   __ bind(runtime);
   // save the live input values
   __ push(store_addr);
-  __ push(new_val);
 #ifdef _LP64
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, r15_thread);
 #else
@@ -339,7 +336,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, thread);
   __ pop(thread);
 #endif
-  __ pop(new_val);
   __ pop(store_addr);
 
   __ bind(done);
@@ -453,6 +449,9 @@ void G1BarrierSetAssembler::gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarri
 #define __ sasm->
 
 void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm) {
+  // Generated code assumes that buffer index is pointer sized.
+  STATIC_ASSERT(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
+
   __ prologue("g1_pre_barrier", false);
   // arg0 : previous value of memory
 

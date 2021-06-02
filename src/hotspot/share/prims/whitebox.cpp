@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,41 @@
  */
 
 #include "precompiled.hpp"
-
 #include <new>
-
+#include "cds/cdsoffsets.hpp"
+#include "cds/filemap.hpp"
+#include "cds/heapShared.inline.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationPolicy.hpp"
-#include "compiler/methodMatcher.hpp"
 #include "compiler/directivesParser.hpp"
+#include "compiler/methodMatcher.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
-#include "memory/filemap.hpp"
-#include "memory/heapShared.inline.hpp"
-#include "memory/metaspaceShared.hpp"
-#include "memory/metadataFactory.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metadataFactory.hpp"
+#include "memory/metaspace/testHelpers.hpp"
+#include "memory/metaspaceUtils.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "memory/oopFactory.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/constantPool.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -66,6 +71,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/handshake.hpp"
@@ -73,10 +79,12 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/vframe.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
@@ -84,16 +92,14 @@
 #include "utilities/elfFile.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_CDS
-#include "prims/cdsoffsets.hpp"
-#endif // INCLUDE_CDS
+#include "utilities/ostream.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
-#include "gc/g1/g1ConcurrentMarkThread.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
+#include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
-#include "gc/g1/heterogeneousHeapRegionManager.hpp"
 #endif // INCLUDE_G1GC
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
@@ -103,9 +109,10 @@
 #include "services/memTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 #endif // INCLUDE_NMT
-#if INCLUDE_AOT
-#include "aot/aotLoader.hpp"
-#endif // INCLUDE_AOT
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciEnv.hpp"
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 
 #ifdef LINUX
 #include "osContainer_linux.hpp"
@@ -173,6 +180,25 @@ public:
       Symbol* ksym = k->name();
       if (ksym->fast_compare(_name) == 0) {
         _count++;
+      } else if (k->is_instance_klass()) {
+        // Need special handling for hidden classes because the JVM
+        // appends "+<hex-address>" to hidden class names.
+        InstanceKlass *ik = InstanceKlass::cast(k);
+        if (ik->is_hidden()) {
+          ResourceMark rm;
+          char* k_name = ksym->as_C_string();
+          // Find the first '+' char and truncate the string at that point.
+          // NOTE: This will not work correctly if the original hidden class
+          // name contains a '+'.
+          char* plus_char = strchr(k_name, '+');
+          if (plus_char != NULL) {
+            *plus_char = 0;
+            char* c_name = _name->as_C_string();
+            if (strcmp(c_name, k_name) == 0) {
+              _count++;
+            }
+          }
+        }
       }
     }
 
@@ -242,24 +268,9 @@ WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
 }
 WB_END
 
-#ifndef PRODUCT
-// Forward declaration
-void TestReservedSpace_test();
-void TestReserveMemorySpecial_test();
-void TestVirtualSpace_test();
-#endif
-
-WB_ENTRY(void, WB_RunMemoryUnitTests(JNIEnv* env, jobject o))
-#ifndef PRODUCT
-  TestReservedSpace_test();
-  TestReserveMemorySpecial_test();
-  TestVirtualSpace_test();
-#endif
-WB_END
-
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(100 * granularity, granularity, false);
+  ReservedHeapSpace rhs(100 * granularity, granularity, os::vm_page_size());
   VirtualSpace vs;
   vs.initialize(rhs, 50 * granularity);
 
@@ -286,7 +297,7 @@ WB_END
 static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
                                            size_t magnitude, size_t iterations) {
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, false);
+  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, os::vm_page_size());
   VirtualSpace vs;
   if (!vs.initialize(rhs, 0)) {
     tty->print_cr("Failed to initialize VirtualSpace. Can't proceed.");
@@ -295,7 +306,6 @@ static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
 
   int seed = os::random();
   tty->print_cr("Random seed is %d", seed);
-  os::init_random(seed);
 
   for (size_t i = 0; i < iterations; i++) {
 
@@ -350,6 +360,16 @@ WB_ENTRY(jboolean, WB_IsGCSupported(JNIEnv* env, jobject o, jint name))
   return GCConfig::is_gc_supported((CollectedHeap::Name)name);
 WB_END
 
+WB_ENTRY(jboolean, WB_IsGCSupportedByJVMCICompiler(JNIEnv* env, jobject o, jint name))
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    JVMCIEnv jvmciEnv(thread, env, __FILE__, __LINE__);
+    return jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name);
+  }
+#endif
+  return false;
+WB_END
+
 WB_ENTRY(jboolean, WB_IsGCSelected(JNIEnv* env, jobject o, jint name))
   return GCConfig::is_gc_selected((CollectedHeap::Name)name);
 WB_END
@@ -378,6 +398,11 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
 #endif
 #if INCLUDE_ZGC
   if (UseZGC) {
+    return Universe::heap()->is_in(p);
+  }
+#endif
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
     return Universe::heap()->is_in(p);
   }
 #endif
@@ -472,7 +497,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    return g1h->concurrent_mark()->cm_thread()->during_cycle();
+    return g1h->concurrent_mark()->cm_thread()->in_progress();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1InConcurrentMark: G1 GC is not enabled");
 WB_END
@@ -480,7 +505,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (!g1h->concurrent_mark()->cm_thread()->during_cycle()) {
+    if (!g1h->concurrent_mark()->cm_thread()->in_progress()) {
       g1h->collect(GCCause::_wb_conc_mark);
       return true;
     }
@@ -496,116 +521,14 @@ WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1RegionSize: G1 GC is not enabled");
 WB_END
 
-#endif // INCLUDE_G1GC
-
-#if INCLUDE_G1GC || INCLUDE_PARALLELGC
-WB_ENTRY(jlong, WB_DramReservedStart(JNIEnv* env, jobject o))
-#if INCLUDE_G1GC
+WB_ENTRY(jboolean, WB_G1HasRegionsToUncommit(JNIEnv* env, jobject o))
   if (UseG1GC) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    HeapWord* base = g1h->reserved().start();
-    if (g1h->is_heterogeneous_heap()) {
-      uint start_region = HeterogeneousHeapRegionManager::manager()->start_index_of_dram();
-      return (jlong)(base + start_region * HeapRegion::GrainBytes);
-    } else {
-      return (jlong)base;
-    }
+    return G1CollectedHeap::heap()->has_uncommittable_regions();
   }
-#endif // INCLUDE_G1GC
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC) {
-    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
-    if (AllocateOldGenAt != NULL) {
-      MemRegion reserved = ps_heap->young_gen()->reserved();
-      return (jlong)reserved.start();
-    } else {
-      return (jlong)ps_heap->base();
-    }
-  }
-#endif // INCLUDE_PARALLELGC
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_DramReservedStart: enabled only for G1 and Parallel GC");
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1HasRegionsToUncommit: G1 GC is not enabled");
 WB_END
 
-WB_ENTRY(jlong, WB_DramReservedEnd(JNIEnv* env, jobject o))
-#if INCLUDE_G1GC
-  if (UseG1GC) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    HeapWord* base = g1h->reserved().start();
-    if (g1h->is_heterogeneous_heap()) {
-      uint end_region = HeterogeneousHeapRegionManager::manager()->end_index_of_dram();
-      return (jlong)(base + (end_region + 1) * HeapRegion::GrainBytes - 1);
-    } else {
-      return (jlong)base + G1Arguments::heap_max_size_bytes();
-    }
-  }
 #endif // INCLUDE_G1GC
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC) {
-    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
-    if (AllocateOldGenAt != NULL) {
-      MemRegion reserved = ps_heap->young_gen()->reserved();
-      return (jlong)reserved.end();
-    } else {
-      return (jlong)ps_heap->reserved_region().end();
-    }
-  }
-#endif // INCLUDE_PARALLELGC
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_DramReservedEnd: enabled only for G1 and Parallel GC");
-WB_END
-
-WB_ENTRY(jlong, WB_NvdimmReservedStart(JNIEnv* env, jobject o))
-#if INCLUDE_G1GC
-  if (UseG1GC) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->is_heterogeneous_heap()) {
-      uint start_region = HeterogeneousHeapRegionManager::manager()->start_index_of_nvdimm();
-      return (jlong)(g1h->reserved().start() + start_region * HeapRegion::GrainBytes);
-    } else {
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
-    }
-  }
-#endif // INCLUDE_G1GC
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC) {
-    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
-    if (AllocateOldGenAt != NULL) {
-      MemRegion reserved = ps_heap->old_gen()->reserved();
-      return (jlong)reserved.start();
-    } else {
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
-    }
-  }
-#endif // INCLUDE_PARALLELGC
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: enabled only for G1 and Parallel GC");
-WB_END
-
-WB_ENTRY(jlong, WB_NvdimmReservedEnd(JNIEnv* env, jobject o))
-#if INCLUDE_G1GC
-  if (UseG1GC) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->is_heterogeneous_heap()) {
-      uint end_region = HeterogeneousHeapRegionManager::manager()->start_index_of_nvdimm();
-      return (jlong)(g1h->reserved().start() + (end_region + 1) * HeapRegion::GrainBytes - 1);
-    } else {
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
-    }
-  }
-#endif // INCLUDE_G1GC
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC) {
-    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
-    if (AllocateOldGenAt != NULL) {
-      MemRegion reserved = ps_heap->old_gen()->reserved();
-      return (jlong)reserved.end();
-      } else {
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
-    }
-  }
-#endif // INCLUDE_PARALLELGC
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: enabled only for G1 and Parallel GC");
-WB_END
-
-#endif // INCLUDE_G1GC || INCLUDE_PARALLELGC
 
 #if INCLUDE_PARALLELGC
 
@@ -761,7 +684,7 @@ WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
 WB_END
 
 WB_ENTRY(jlong, WB_NMTAttemptReserveMemoryAt(JNIEnv* env, jobject o, jlong addr, jlong size))
-  addr = (jlong)(uintptr_t)os::attempt_reserve_memory_at((size_t)size, (char*)(uintptr_t)addr);
+  addr = (jlong)(uintptr_t)os::attempt_reserve_memory_at((char*)(uintptr_t)addr, (size_t)size);
   MemTracker::record_virtual_memory_type((address)addr, mtTest);
 
   return addr;
@@ -839,10 +762,6 @@ static jmethodID reflected_method_to_jmid(JavaThread* thread, JNIEnv* env, jobje
   return env->FromReflectedMethod(method);
 }
 
-static CompLevel highestCompLevel() {
-  return TieredCompilation ? MIN2((CompLevel) TieredStopAtLevel, CompLevel_highest_tier) : CompLevel_highest_tier;
-}
-
 // Deoptimizes all compiled frames and makes nmethods not entrant if it's requested
 class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
  private:
@@ -856,7 +775,7 @@ class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
   void doit() {
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
       if (t->has_last_Java_frame()) {
-        for (StackFrameStream fst(t, false); !fst.is_done(); fst.next()) {
+        for (StackFrameStream fst(t, false /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
           frame* f = fst.current();
           if (f->can_be_deoptimized() && !f->is_deoptimized_frame()) {
             Deoptimization::deoptimize(t, *f);
@@ -877,6 +796,19 @@ WB_ENTRY(jint, WB_DeoptimizeFrames(JNIEnv* env, jobject o, jboolean make_not_ent
   VM_WhiteBoxDeoptimizeFrames op(make_not_entrant == JNI_TRUE);
   VMThread::execute(&op);
   return op.result();
+WB_END
+
+WB_ENTRY(jboolean, WB_IsFrameDeoptimized(JNIEnv* env, jobject o, jint depth))
+  bool result = false;
+  if (thread->has_last_Java_frame()) {
+    RegisterMap reg_map(thread);
+    javaVFrame *jvf = thread->last_java_vframe(&reg_map);
+    for (jint d = 0; d < depth && jvf != NULL; d++) {
+      jvf = jvf->java_sender();
+    }
+    result = jvf != NULL && jvf->fr().is_deoptimized_frame();
+  }
+  return result;
 WB_END
 
 WB_ENTRY(void, WB_DeoptimizeAll(JNIEnv* env, jobject o))
@@ -915,19 +847,59 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
   return (code->is_alive() && !code->is_marked_for_deoptimization());
 WB_END
 
+static bool is_excluded_for_compiler(AbstractCompiler* comp, methodHandle& mh) {
+  if (comp == NULL) {
+    return true;
+  }
+  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, comp);
+  if (directive->ExcludeOption) {
+    return true;
+  }
+  return false;
+}
+
+static bool can_be_compiled_at_level(methodHandle& mh, jboolean is_osr, int level) {
+  if (is_osr) {
+    return CompilationPolicy::can_be_osr_compiled(mh, level);
+  } else {
+    return CompilationPolicy::can_be_compiled(mh, level);
+  }
+}
+
 WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method, jint comp_level, jboolean is_osr))
-  if (method == NULL || comp_level > highestCompLevel()) {
+  if (method == NULL || comp_level > CompilationPolicy::highest_compile_level()) {
     return false;
   }
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
   MutexLocker mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  if (is_osr) {
-    return CompilationPolicy::can_be_osr_compiled(mh, comp_level);
-  } else {
-    return CompilationPolicy::can_be_compiled(mh, comp_level);
+
+  // The ExcludeOption directive is evaluated lazily upon compilation attempt. If a method was not tried to be compiled by
+  // a compiler, yet, the method object is not set to be not compilable by that compiler. Thus, evaluate the compiler directive
+  // to exclude a compilation of 'method'.
+  if (comp_level == CompLevel_any) {
+    // Both compilers could have ExcludeOption set. Check all combinations.
+    bool excluded_c1 = is_excluded_for_compiler(CompileBroker::compiler1(), mh);
+    bool excluded_c2 = is_excluded_for_compiler(CompileBroker::compiler2(), mh);
+    if (excluded_c1 && excluded_c2) {
+      // Compilation of 'method' excluded by both compilers.
+      return false;
+    }
+
+    if (excluded_c1) {
+      // C1 only has ExcludeOption set: Check if compilable with C2.
+      return can_be_compiled_at_level(mh, is_osr, CompLevel_full_optimization);
+    } else if (excluded_c2) {
+      // C2 only has ExcludeOption set: Check if compilable with C1.
+      return can_be_compiled_at_level(mh, is_osr, CompLevel_simple);
+    }
+  } else if (comp_level > CompLevel_none && is_excluded_for_compiler(CompileBroker::compiler((int)comp_level), mh)) {
+    // Compilation of 'method' excluded by compiler used for 'comp_level'.
+    return false;
   }
+
+  return can_be_compiled_at_level(mh, is_osr, (int)comp_level);
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMethodQueuedForCompilation(JNIEnv* env, jobject o, jobject method))
@@ -939,7 +911,7 @@ WB_ENTRY(jboolean, WB_IsMethodQueuedForCompilation(JNIEnv* env, jobject o, jobje
 WB_END
 
 WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject method, jobject compilation_context, jint compLevel))
-  if (compLevel < CompLevel_none || compLevel > highestCompLevel()) {
+  if (compLevel < CompLevel_none || compLevel > CompilationPolicy::highest_compile_level()) {
     return false; // Intrinsic is not available on a non-existent compilation level.
   }
   jmethodID method_id, compilation_context_id;
@@ -1030,14 +1002,14 @@ bool WhiteBox::validate_cgroup(const char* proc_cgroups,
 }
 #endif
 
-bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* THREAD) {
+bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThread* THREAD) {
   // Screen for unavailable/bad comp level or null method
   AbstractCompiler* comp = CompileBroker::compiler(comp_level);
   if (method == NULL) {
     tty->print_cr("WB error: request to compile NULL method");
     return false;
   }
-  if (comp_level > highestCompLevel()) {
+  if (comp_level > CompilationPolicy::highest_compile_level()) {
     tty->print_cr("WB error: invalid compilation level %d", comp_level);
     return false;
   }
@@ -1053,10 +1025,19 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* T
   DirectivesStack::release(directive);
 
   // Compile method and check result
-  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, THREAD);
+  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, CHECK_false);
   MutexLocker mu(THREAD, Compile_lock);
   bool is_queued = mh->queued_for_compilation();
   if ((!is_blocking && is_queued) || nm != NULL) {
+    return true;
+  }
+  // Check code again because compilation may be finished before Compile_lock is acquired.
+  if (bci == InvocationEntryBci) {
+    CompiledMethod* code = mh->code();
+    if (code != NULL && code->as_nmethod_or_null() != NULL) {
+      return true;
+    }
+  } else if (mh->lookup_osr_nmethod_for(bci, comp_level, false) != NULL) {
     return true;
   }
   tty->print("WB error: failed to %s compile at level %d method ", is_blocking ? "blocking" : "", comp_level);
@@ -1077,7 +1058,7 @@ WB_END
 WB_ENTRY(jboolean, WB_EnqueueInitializerForCompilation(JNIEnv* env, jobject o, jclass klass, jint comp_level))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   Method* clinit = ik->class_initializer();
-  if (clinit == NULL) {
+  if (clinit == NULL || clinit->method_holder()->is_not_initialized()) {
     return false;
   }
   return WhiteBox::compile_method(clinit, comp_level, InvocationEntryBci, THREAD);
@@ -1136,7 +1117,7 @@ WB_ENTRY(jint, WB_MatchesMethod(JNIEnv* env, jobject o, jobject method, jstring 
 
   const char* error_msg = NULL;
 
-  BasicMatcher* m = BasicMatcher::parse_method_pattern(method_str, error_msg);
+  BasicMatcher* m = BasicMatcher::parse_method_pattern(method_str, error_msg, false);
   if (m == NULL) {
     assert(error_msg != NULL, "Must have error_msg");
     tty->print_cr("Got error: %s", error_msg);
@@ -1163,7 +1144,7 @@ WB_ENTRY(void, WB_MarkMethodProfiled(JNIEnv* env, jobject o, jobject method))
   mdo->init();
   InvocationCounter* icnt = mdo->invocation_counter();
   InvocationCounter* bcnt = mdo->backedge_counter();
-  // set i-counter according to TieredThresholdPolicy::is_method_profiled
+  // set i-counter according to CompilationPolicy::is_method_profiled
   icnt->set(Tier4MinInvocationThreshold);
   bcnt->set(Tier4CompileThreshold);
 WB_END
@@ -1192,21 +1173,12 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   mh->clear_not_c2_osr_compilable();
   NOT_PRODUCT(mh->set_compiled_invocation_count(0));
   if (mcs != NULL) {
-    mcs->backedge_counter()->init();
-    mcs->invocation_counter()->init();
-    mcs->set_interpreter_invocation_count(0);
-    mcs->set_interpreter_throwout_count(0);
-
-#ifdef TIERED
-    mcs->set_rate(0.0F);
-    mh->set_prev_event_count(0);
-    mh->set_prev_time(0);
-#endif
+    mcs->clear_counters();
   }
 WB_END
 
-template <typename T>
-static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, JVMFlag::Error (*TAt)(const JVMFlag*, T*)) {
+template <typename T, int type_enum>
+static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value) {
   if (name == NULL) {
     return false;
   }
@@ -1214,13 +1186,13 @@ static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, J
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
   const JVMFlag* flag = JVMFlag::find_declared_flag(flag_name);
-  JVMFlag::Error result = (*TAt)(flag, value);
+  JVMFlag::Error result = JVMFlagAccess::get<T, type_enum>(flag, value);
   env->ReleaseStringUTFChars(name, flag_name);
   return (result == JVMFlag::SUCCESS);
 }
 
-template <typename T>
-static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, JVMFlag::Error (*TAtPut)(JVMFlag* flag, T*, JVMFlag::Flags)) {
+template <typename T, int type_enum>
+static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value) {
   if (name == NULL) {
     return false;
   }
@@ -1228,7 +1200,7 @@ static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, J
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
   JVMFlag* flag = JVMFlag::find_flag(flag_name);
-  JVMFlag::Error result = (*TAtPut)(flag, value, JVMFlag::INTERNAL);
+  JVMFlag::Error result = JVMFlagAccess::set<T, type_enum>(flag, value, JVMFlagOrigin::INTERNAL);
   env->ReleaseStringUTFChars(name, flag_name);
   return (result == JVMFlag::SUCCESS);
 }
@@ -1284,70 +1256,50 @@ WB_END
 
 WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
   bool result;
-  if (GetVMFlag <bool> (thread, env, name, &result, &JVMFlag::boolAt)) {
+  if (GetVMFlag <JVM_FLAG_TYPE(bool)> (thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return booleanBox(thread, env, result);
   }
   return NULL;
 WB_END
 
-WB_ENTRY(jobject, WB_GetIntVMFlag(JNIEnv* env, jobject o, jstring name))
-  int result;
-  if (GetVMFlag <int> (thread, env, name, &result, &JVMFlag::intAt)) {
+template <typename T, int type_enum>
+jobject GetVMFlag_longBox(JNIEnv* env, JavaThread* thread, jstring name) {
+  T result;
+  if (GetVMFlag <T, type_enum> (thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return longBox(thread, env, result);
   }
   return NULL;
+}
+
+WB_ENTRY(jobject, WB_GetIntVMFlag(JNIEnv* env, jobject o, jstring name))
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(int)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetUintVMFlag(JNIEnv* env, jobject o, jstring name))
-  uint result;
-  if (GetVMFlag <uint> (thread, env, name, &result, &JVMFlag::uintAt)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(uint)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetIntxVMFlag(JNIEnv* env, jobject o, jstring name))
-  intx result;
-  if (GetVMFlag <intx> (thread, env, name, &result, &JVMFlag::intxAt)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(intx)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetUintxVMFlag(JNIEnv* env, jobject o, jstring name))
-  uintx result;
-  if (GetVMFlag <uintx> (thread, env, name, &result, &JVMFlag::uintxAt)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(uintx)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetUint64VMFlag(JNIEnv* env, jobject o, jstring name))
-  uint64_t result;
-  if (GetVMFlag <uint64_t> (thread, env, name, &result, &JVMFlag::uint64_tAt)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(uint64_t)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetSizeTVMFlag(JNIEnv* env, jobject o, jstring name))
-  size_t result;
-  if (GetVMFlag <size_t> (thread, env, name, &result, &JVMFlag::size_tAt)) {
-    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-    return longBox(thread, env, result);
-  }
-  return NULL;
+  return GetVMFlag_longBox<JVM_FLAG_TYPE(size_t)>(env, thread, name);
 WB_END
 
 WB_ENTRY(jobject, WB_GetDoubleVMFlag(JNIEnv* env, jobject o, jstring name))
   double result;
-  if (GetVMFlag <double> (thread, env, name, &result, &JVMFlag::doubleAt)) {
+  if (GetVMFlag <JVM_FLAG_TYPE(double)> (thread, env, name, &result)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return doubleBox(thread, env, result);
   }
@@ -1356,7 +1308,7 @@ WB_END
 
 WB_ENTRY(jstring, WB_GetStringVMFlag(JNIEnv* env, jobject o, jstring name))
   ccstr ccstrResult;
-  if (GetVMFlag <ccstr> (thread, env, name, &ccstrResult, &JVMFlag::ccstrAt)) {
+  if (GetVMFlag <JVM_FLAG_TYPE(ccstr)> (thread, env, name, &ccstrResult)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     jstring result = env->NewStringUTF(ccstrResult);
     CHECK_JNI_EXCEPTION_(env, NULL);
@@ -1367,42 +1319,42 @@ WB_END
 
 WB_ENTRY(void, WB_SetBooleanVMFlag(JNIEnv* env, jobject o, jstring name, jboolean value))
   bool result = value == JNI_TRUE ? true : false;
-  SetVMFlag <bool> (thread, env, name, &result, &JVMFlag::boolAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(bool)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetIntVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
   int result = value;
-  SetVMFlag <int> (thread, env, name, &result, &JVMFlag::intAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(int)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetUintVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
   uint result = value;
-  SetVMFlag <uint> (thread, env, name, &result, &JVMFlag::uintAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(uint)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetIntxVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
   intx result = value;
-  SetVMFlag <intx> (thread, env, name, &result, &JVMFlag::intxAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(intx)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetUintxVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
   uintx result = value;
-  SetVMFlag <uintx> (thread, env, name, &result, &JVMFlag::uintxAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(uintx)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetUint64VMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
   uint64_t result = value;
-  SetVMFlag <uint64_t> (thread, env, name, &result, &JVMFlag::uint64_tAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(uint64_t)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetSizeTVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
   size_t result = value;
-  SetVMFlag <size_t> (thread, env, name, &result, &JVMFlag::size_tAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(size_t)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetDoubleVMFlag(JNIEnv* env, jobject o, jstring name, jdouble value))
   double result = value;
-  SetVMFlag <double> (thread, env, name, &result, &JVMFlag::doubleAtPut);
+  SetVMFlag <JVM_FLAG_TYPE(double)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring value))
@@ -1415,17 +1367,15 @@ WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring 
     ccstrValue = env->GetStringUTFChars(value, NULL);
     CHECK_JNI_EXCEPTION(env);
   }
-  ccstr ccstrResult = ccstrValue;
-  bool needFree;
   {
+    ccstr param = ccstrValue;
     ThreadInVMfromNative ttvfn(thread); // back to VM
-    needFree = SetVMFlag <ccstr> (thread, env, name, &ccstrResult, &JVMFlag::ccstrAtPut);
+    if (SetVMFlag <JVM_FLAG_TYPE(ccstr)> (thread, env, name, &param)) {
+      assert(param == NULL, "old value is freed automatically and not returned");
+    }
   }
   if (value != NULL) {
     env->ReleaseStringUTFChars(value, ccstrValue);
-  }
-  if (needFree) {
-    FREE_C_HEAP_ARRAY(char, ccstrResult);
   }
 WB_END
 
@@ -1472,7 +1422,7 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
   static char c;
   static volatile char* p;
 
-  p = os::reserve_memory(os::vm_allocation_granularity(), NULL, 0);
+  p = os::reserve_memory(os::vm_allocation_granularity());
   if (p == NULL) {
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "Failed to reserve memory");
   }
@@ -1492,9 +1442,6 @@ WB_END
 
 int WhiteBox::get_blob_type(const CodeBlob* code) {
   guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
-  if (code->is_aot()) {
-    return -1;
-  }
   return CodeCache::get_code_heap(code)->code_blob_type();
 }
 
@@ -1552,7 +1499,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
     return result;
   }
   int comp_level = code->comp_level();
-  int insts_size = comp_level == CompLevel_aot ? code->code_end() - code->code_begin() : code->insts_size();
+  int insts_size = code->insts_size();
 
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
@@ -1684,13 +1631,73 @@ WB_ENTRY(jlong, WB_GetThreadStackSize(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jlong, WB_GetThreadRemainingStackSize(JNIEnv* env, jobject o))
-  return (jlong) thread->stack_available(os::current_stack_pointer()) - (jlong)JavaThread::stack_shadow_zone_size();
+  return (jlong) thread->stack_overflow_state()->stack_available(
+                   os::current_stack_pointer()) - (jlong)StackOverflow::stack_shadow_zone_size();
 WB_END
 
 
 int WhiteBox::array_bytes_to_length(size_t bytes) {
   return Array<u1>::bytes_to_length(bytes);
 }
+
+///////////////
+// MetaspaceTestContext and MetaspaceTestArena
+WB_ENTRY(jlong, WB_CreateMetaspaceTestContext(JNIEnv* env, jobject wb, jlong commit_limit, jlong reserve_limit))
+  metaspace::MetaspaceTestContext* context =
+      new metaspace::MetaspaceTestContext("whitebox-metaspace-context", (size_t) commit_limit, (size_t) reserve_limit);
+  return (jlong)p2i(context);
+WB_END
+
+WB_ENTRY(void, WB_DestroyMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+  delete (metaspace::MetaspaceTestContext*) context;
+WB_END
+
+WB_ENTRY(void, WB_PurgeMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+  metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
+  context0->purge_area();
+WB_END
+
+WB_ENTRY(void, WB_PrintMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+  metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
+  context0->print_on(tty);
+WB_END
+
+WB_ENTRY(jlong, WB_GetTotalCommittedWordsInMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+  metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
+  return context0->committed_words();
+WB_END
+
+WB_ENTRY(jlong, WB_GetTotalUsedWordsInMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+  metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
+  return context0->used_words();
+WB_END
+
+WB_ENTRY(jlong, WB_CreateArenaInTestContext(JNIEnv* env, jobject wb, jlong context, jboolean is_micro))
+  const Metaspace::MetaspaceType type = is_micro ? Metaspace::ReflectionMetaspaceType : Metaspace::StandardMetaspaceType;
+  metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
+  return (jlong)p2i(context0->create_arena(type));
+WB_END
+
+WB_ENTRY(void, WB_DestroyMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena))
+  delete (metaspace::MetaspaceTestArena*) arena;
+WB_END
+
+WB_ENTRY(jlong, WB_AllocateFromMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong word_size))
+  metaspace::MetaspaceTestArena* arena0 = (metaspace::MetaspaceTestArena*) arena;
+  MetaWord* p = arena0->allocate((size_t) word_size);
+  return (jlong)p2i(p);
+WB_END
+
+WB_ENTRY(void, WB_DeallocateToMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong p, jlong word_size))
+  metaspace::MetaspaceTestArena* arena0 = (metaspace::MetaspaceTestArena*) arena;
+  arena0->deallocate((MetaWord*)p, (size_t) word_size);
+WB_END
+
+WB_ENTRY(jlong, WB_GetMaxMetaspaceAllocationSize(JNIEnv* env, jobject wb))
+  return (jlong) Metaspace::max_allocation_word_size() * BytesPerWord;
+WB_END
+
+//////////////
 
 WB_ENTRY(jlong, WB_AllocateMetaspace(JNIEnv* env, jobject wb, jobject class_loader, jlong size))
   if (size < 0) {
@@ -1708,34 +1715,32 @@ WB_ENTRY(jlong, WB_AllocateMetaspace(JNIEnv* env, jobject wb, jobject class_load
   return (jlong)(uintptr_t)metadata;
 WB_END
 
-WB_ENTRY(void, WB_FreeMetaspace(JNIEnv* env, jobject wb, jobject class_loader, jlong addr, jlong size))
-  oop class_loader_oop = JNIHandles::resolve(class_loader);
-  ClassLoaderData* cld = class_loader_oop != NULL
-      ? java_lang_ClassLoader::loader_data_acquire(class_loader_oop)
-      : ClassLoaderData::the_null_class_loader_data();
-
-  MetadataFactory::free_array(cld, (Array<u1>*)(uintptr_t)addr);
-WB_END
-
 WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jboolean is_open,
                                 jstring version, jstring location, jobjectArray packages))
-  Modules::define_module(module, is_open, version, location, packages, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::define_module(h_module, is_open, version, location, packages, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExports(JNIEnv* env, jobject o, jobject from_module, jstring package, jobject to_module))
-  Modules::add_module_exports_qualified(from_module, package, to_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_to_module (THREAD, JNIHandles::resolve(to_module));
+  Modules::add_module_exports_qualified(h_from_module, package, h_to_module, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExportsToAllUnnamed(JNIEnv* env, jobject o, jclass module, jstring package))
-  Modules::add_module_exports_to_all_unnamed(module, package, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::add_module_exports_to_all_unnamed(h_module, package, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExportsToAll(JNIEnv* env, jobject o, jclass module, jstring package))
-  Modules::add_module_exports(module, package, NULL, CHECK);
+  Handle h_module (THREAD, JNIHandles::resolve(module));
+  Modules::add_module_exports(h_module, package, Handle(), CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddReadsModule(JNIEnv* env, jobject o, jobject from_module, jobject source_module))
-  Modules::add_reads_module(from_module, source_module, CHECK);
+  Handle h_from_module (THREAD, JNIHandles::resolve(from_module));
+  Handle h_source_module (THREAD, JNIHandles::resolve(source_module));
+  Modules::add_reads_module(h_from_module, h_source_module, CHECK);
 WB_END
 
 WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong inc))
@@ -1765,8 +1770,14 @@ WB_ENTRY(jlong, WB_MetaspaceCapacityUntilGC(JNIEnv* env, jobject wb))
   return (jlong) MetaspaceGC::capacity_until_GC();
 WB_END
 
-WB_ENTRY(jlong, WB_MetaspaceReserveAlignment(JNIEnv* env, jobject wb))
-  return (jlong)Metaspace::reserve_alignment();
+// The function is only valid when CDS is available.
+WB_ENTRY(jlong, WB_MetaspaceSharedRegionAlignment(JNIEnv* env, jobject wb))
+#if INCLUDE_CDS
+  return (jlong)MetaspaceShared::core_region_alignment();
+#else
+  ShouldNotReachHere();
+  return 0L;
+#endif
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
@@ -1839,9 +1850,15 @@ static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jst
   ThreadToNativeFromVM ttnfv(thread);
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
-  bool result =  CompilerOracle::has_option_value(mh, flag_name, *value);
+  enum CompileCommand option = CompilerOracle::string_to_option(flag_name);
   env->ReleaseStringUTFChars(name, flag_name);
-  return result;
+  if (option == CompileCommand::Unknown) {
+    return false;
+  }
+  if (!CompilerOracle::option_matches_type(option, *value)) {
+    return false;
+  }
+  return CompilerOracle::has_option_value(mh, option, *value);
 }
 
 WB_ENTRY(jobject, WB_GetMethodBooleaneOption(JNIEnv* env, jobject wb, jobject method, jstring name))
@@ -1952,7 +1969,7 @@ WB_ENTRY(jboolean, WB_AreOpenArchiveHeapObjectsMapped(JNIEnv* env))
   return HeapShared::open_archive_heap_region_mapped();
 WB_END
 
-WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
+WB_ENTRY(jboolean, WB_IsCDSIncluded(JNIEnv* env))
 #if INCLUDE_CDS
   return true;
 #else
@@ -1960,9 +1977,17 @@ WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
 #endif // INCLUDE_CDS
 WB_END
 
-WB_ENTRY(jboolean, WB_isC2OrJVMCIIncludedInVmBuild(JNIEnv* env))
+WB_ENTRY(jboolean, WB_isC2OrJVMCIIncluded(JNIEnv* env))
 #if COMPILER2_OR_JVMCI
   return true;
+#else
+  return false;
+#endif
+WB_END
+
+WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
+#if INCLUDE_JVMCI
+  return JVMCIGlobals::gc_supports_jvmci();
 #else
   return false;
 #endif
@@ -1973,7 +1998,7 @@ WB_ENTRY(jboolean, WB_IsJavaHeapArchiveSupported(JNIEnv* env))
 WB_END
 
 
-WB_ENTRY(jboolean, WB_IsJFRIncludedInVmBuild(JNIEnv* env))
+WB_ENTRY(jboolean, WB_IsJFRIncluded(JNIEnv* env))
 #if INCLUDE_JFR
   return true;
 #else
@@ -1997,8 +2022,7 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
     jint _num_threads_completed;
 
     void do_thread(Thread* th) {
-      assert(th->is_Java_thread(), "sanity");
-      JavaThread* jt = (JavaThread*)th;
+      JavaThread* jt = th->as_Java_thread();
       ResourceMark rm;
 
       jt->print_on(tty);
@@ -2026,11 +2050,36 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
   return tsc.num_threads_completed();
 WB_END
 
+WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_handle))
+  class TraceSelfClosure : public AsyncHandshakeClosure {
+    JavaThread* _self;
+    void do_thread(Thread* th) {
+      assert(th->is_Java_thread(), "sanity");
+      // AsynchHandshake handshakes are only executed by target.
+      assert(_self == th, "Must be");
+      assert(Thread::current() == th, "Must be");
+      JavaThread* jt = th->as_Java_thread();
+      ResourceMark rm;
+      jt->print_on(tty);
+      jt->print_stack_on(tty);
+      tty->cr();
+    }
+
+  public:
+    TraceSelfClosure(JavaThread* self_target) : AsyncHandshakeClosure("WB_TraceSelf"), _self(self_target) {}
+  };
+  oop thread_oop = JNIHandles::resolve(thread_handle);
+  if (thread_oop != NULL) {
+    JavaThread* target = java_lang_Thread::thread(thread_oop);
+    TraceSelfClosure* tsc = new TraceSelfClosure(target);
+    Handshake::execute(tsc, target);
+  }
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
   assert(field_name != NULL && strlen(field_name) > 0, "Field name not valid");
-  Thread* THREAD = Thread::current();
 
   //Get the class of our object
   Klass* arg_klass = object->klass();
@@ -2191,14 +2240,6 @@ WB_ENTRY(jint, WB_ProtectionDomainRemovedCount(JNIEnv* env, jobject o))
   return (jint) SystemDictionary::pd_cache_table()->removed_entries_count();
 WB_END
 
-WB_ENTRY(jint, WB_AotLibrariesCount(JNIEnv* env, jobject o))
-  jint result = 0;
-#if INCLUDE_AOT
-  result = (jint) AOTLoader::heaps_count();
-#endif
-  return result;
-WB_END
-
 WB_ENTRY(jint, WB_GetKlassMetadataSize(JNIEnv* env, jobject wb, jclass mirror))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(mirror));
   // Return size in bytes.
@@ -2259,8 +2300,50 @@ WB_ENTRY(void, WB_CheckThreadObjOfTerminatingThread(JNIEnv* env, jobject wb, job
   }
 WB_END
 
+WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log, jboolean update_map))
+  intx tty_token = -1;
+  if (log) {
+    tty_token = ttyLocker::hold_tty();
+    tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
+  }
+  for (StackFrameStream fst(JavaThread::current(), update_map, true); !fst.is_done(); fst.next()) {
+    frame* current_frame = fst.current();
+    if (log) {
+      current_frame->print_value();
+    }
+    current_frame->verify(fst.register_map());
+  }
+  if (log) {
+    tty->print_cr("[WhiteBox::VerifyFrames] Done");
+    ttyLocker::release_tty(tty_token);
+  }
+WB_END
+
 WB_ENTRY(jboolean, WB_IsJVMTIIncluded(JNIEnv* env, jobject wb))
-  return INCLUDE_JVMTI ? JNI_TRUE : JNI_FALSE;
+#if INCLUDE_JVMTI
+  return JNI_TRUE;
+#else
+  return JNI_FALSE;
+#endif
+WB_END
+
+WB_ENTRY(void, WB_WaitUnsafe(JNIEnv* env, jobject wb, jint time))
+    os::naked_short_sleep(time);
+WB_END
+
+WB_ENTRY(jstring, WB_GetLibcName(JNIEnv* env, jobject o))
+  ThreadToNativeFromVM ttn(thread);
+  jstring info_string = env->NewStringUTF(XSTR(LIBC));
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  return info_string;
+WB_END
+
+WB_ENTRY(void, WB_LockCritical(JNIEnv* env, jobject wb))
+  GCLocker::lock_critical(thread);
+WB_END
+
+WB_ENTRY(void, WB_UnlockCritical(JNIEnv* env, jobject wb))
+  GCLocker::unlock_critical(thread);
 WB_END
 
 #define CC (char*)
@@ -2288,7 +2371,6 @@ static JNINativeMethod methods[] = {
   {CC"getCompressedOopsMaxHeapSize", CC"()J",
       (void*)&WB_GetCompressedOopsMaxHeapSize},
   {CC"printHeapSizes",     CC"()V",                   (void*)&WB_PrintHeapSizes    },
-  {CC"runMemoryUnitTests", CC"()V",                   (void*)&WB_RunMemoryUnitTests},
   {CC"readFromNoaccessArea",CC"()V",                  (void*)&WB_ReadFromNoaccessArea},
   {CC"stressVirtualSpaceResize",CC"(JJJ)I",           (void*)&WB_StressVirtualSpaceResize},
 #if INCLUDE_CDS
@@ -2303,18 +2385,13 @@ static JNINativeMethod methods[] = {
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
   {CC"g1StartConcMarkCycle",       CC"()Z",           (void*)&WB_G1StartMarkCycle  },
+  {CC"g1HasRegionsToUncommit",  CC"()Z",              (void*)&WB_G1HasRegionsToUncommit},
   {CC"g1AuxiliaryMemoryUsage", CC"()Ljava/lang/management/MemoryUsage;",
                                                       (void*)&WB_G1AuxiliaryMemoryUsage  },
   {CC"g1ActiveMemoryNodeCount", CC"()I",              (void*)&WB_G1ActiveMemoryNodeCount },
   {CC"g1MemoryNodeIds",    CC"()[I",                  (void*)&WB_G1MemoryNodeIds },
   {CC"g1GetMixedGCInfo",   CC"(I)[J",                 (void*)&WB_G1GetMixedGCInfo },
 #endif // INCLUDE_G1GC
-#if INCLUDE_G1GC || INCLUDE_PARALLELGC
-  {CC"dramReservedStart",   CC"()J",                  (void*)&WB_DramReservedStart },
-  {CC"dramReservedEnd",     CC"()J",                  (void*)&WB_DramReservedEnd },
-  {CC"nvdimmReservedStart", CC"()J",                  (void*)&WB_NvdimmReservedStart },
-  {CC"nvdimmReservedEnd",   CC"()J",                  (void*)&WB_NvdimmReservedEnd },
-#endif // INCLUDE_G1GC || INCLUDE_PARALLELGC
 #if INCLUDE_PARALLELGC
   {CC"psVirtualSpaceAlignment",CC"()J",               (void*)&WB_PSVirtualSpaceAlignment},
   {CC"psHeapGenerationAlignment",CC"()J",             (void*)&WB_PSHeapGenerationAlignment},
@@ -2336,6 +2413,7 @@ static JNINativeMethod methods[] = {
   {CC"NMTArenaMalloc",      CC"(JJ)V",                (void*)&WB_NMTArenaMalloc     },
 #endif // INCLUDE_NMT
   {CC"deoptimizeFrames",   CC"(Z)I",                  (void*)&WB_DeoptimizeFrames  },
+  {CC"isFrameDeoptimized", CC"(I)Z",                  (void*)&WB_IsFrameDeoptimized},
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
   {CC"deoptimizeMethod0",   CC"(Ljava/lang/reflect/Executable;Z)I",
                                                       (void*)&WB_DeoptimizeMethod  },
@@ -2416,11 +2494,9 @@ static JNINativeMethod methods[] = {
   {CC"readReservedMemory", CC"()V",                   (void*)&WB_ReadReservedMemory },
   {CC"allocateMetaspace",
      CC"(Ljava/lang/ClassLoader;J)J",                 (void*)&WB_AllocateMetaspace },
-  {CC"freeMetaspace",
-     CC"(Ljava/lang/ClassLoader;JJ)V",                (void*)&WB_FreeMetaspace },
   {CC"incMetaspaceCapacityUntilGC", CC"(J)J",         (void*)&WB_IncMetaspaceCapacityUntilGC },
   {CC"metaspaceCapacityUntilGC", CC"()J",             (void*)&WB_MetaspaceCapacityUntilGC },
-  {CC"metaspaceReserveAlignment", CC"()J",            (void*)&WB_MetaspaceReserveAlignment },
+  {CC"metaspaceSharedRegionAlignment", CC"()J",       (void*)&WB_MetaspaceSharedRegionAlignment },
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod0",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
@@ -2479,19 +2555,23 @@ static JNINativeMethod methods[] = {
   {CC"getResolvedReferences", CC"(Ljava/lang/Class;)Ljava/lang/Object;", (void*)&WB_GetResolvedReferences},
   {CC"linkClass",          CC"(Ljava/lang/Class;)V",  (void*)&WB_LinkClass},
   {CC"areOpenArchiveHeapObjectsMapped",   CC"()Z",    (void*)&WB_AreOpenArchiveHeapObjectsMapped},
-  {CC"isCDSIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsCDSIncludedInVmBuild },
-  {CC"isJFRIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsJFRIncludedInVmBuild },
-  {CC"isC2OrJVMCIIncludedInVmBuild",      CC"()Z",    (void*)&WB_isC2OrJVMCIIncludedInVmBuild },
+  {CC"isCDSIncluded",                     CC"()Z",    (void*)&WB_IsCDSIncluded },
+  {CC"isJFRIncluded",                     CC"()Z",    (void*)&WB_IsJFRIncluded },
+  {CC"isC2OrJVMCIIncluded",               CC"()Z",    (void*)&WB_isC2OrJVMCIIncluded },
+  {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
   {CC"isJavaHeapArchiveSupported",        CC"()Z",    (void*)&WB_IsJavaHeapArchiveSupported },
   {CC"cdsMemoryMappingFailed",            CC"()Z",    (void*)&WB_CDSMemoryMappingFailed },
 
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },
   {CC"handshakeWalkStack", CC"(Ljava/lang/Thread;Z)I", (void*)&WB_HandshakeWalkStack },
+  {CC"asyncHandshakeWalkStack", CC"(Ljava/lang/Thread;)V", (void*)&WB_AsyncHandshakeWalkStack },
   {CC"checkThreadObjOfTerminatingThread", CC"(Ljava/lang/Thread;)V", (void*)&WB_CheckThreadObjOfTerminatingThread },
+  {CC"verifyFrames",                CC"(ZZ)V",            (void*)&WB_VerifyFrames },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",
                                                       (void*)&WB_AddCompilerDirective },
   {CC"removeCompilerDirective",   CC"(I)V",           (void*)&WB_RemoveCompilerDirective },
   {CC"isGCSupported",             CC"(I)Z",           (void*)&WB_IsGCSupported},
+  {CC"isGCSupportedByJVMCICompiler", CC"(I)Z",        (void*)&WB_IsGCSupportedByJVMCICompiler},
   {CC"isGCSelected",              CC"(I)Z",           (void*)&WB_IsGCSelected},
   {CC"isGCSelectedErgonomically", CC"()Z",            (void*)&WB_IsGCSelectedErgonomically},
   {CC"supportsConcurrentGCBreakpoints", CC"()Z",      (void*)&WB_SupportsConcurrentGCBreakpoints},
@@ -2510,9 +2590,26 @@ static JNINativeMethod methods[] = {
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
   {CC"resolvedMethodItemsCount",  CC"()J",            (void*)&WB_ResolvedMethodItemsCount },
   {CC"protectionDomainRemovedCount",   CC"()I",       (void*)&WB_ProtectionDomainRemovedCount },
-  {CC"aotLibrariesCount", CC"()I",                    (void*)&WB_AotLibrariesCount },
   {CC"getKlassMetadataSize", CC"(Ljava/lang/Class;)I",(void*)&WB_GetKlassMetadataSize},
+
+  {CC"createMetaspaceTestContext", CC"(JJ)J",         (void*)&WB_CreateMetaspaceTestContext},
+  {CC"destroyMetaspaceTestContext", CC"(J)V",         (void*)&WB_DestroyMetaspaceTestContext},
+  {CC"purgeMetaspaceTestContext", CC"(J)V",           (void*)&WB_PurgeMetaspaceTestContext},
+  {CC"printMetaspaceTestContext", CC"(J)V",           (void*)&WB_PrintMetaspaceTestContext},
+  {CC"getTotalCommittedWordsInMetaspaceTestContext", CC"(J)J",(void*)&WB_GetTotalCommittedWordsInMetaspaceTestContext},
+  {CC"getTotalUsedWordsInMetaspaceTestContext", CC"(J)J", (void*)&WB_GetTotalUsedWordsInMetaspaceTestContext},
+  {CC"createArenaInTestContext", CC"(JZ)J",           (void*)&WB_CreateArenaInTestContext},
+  {CC"destroyMetaspaceTestArena", CC"(J)V",           (void*)&WB_DestroyMetaspaceTestArena},
+  {CC"allocateFromMetaspaceTestArena", CC"(JJ)J",     (void*)&WB_AllocateFromMetaspaceTestArena},
+  {CC"deallocateToMetaspaceTestArena", CC"(JJJ)V",    (void*)&WB_DeallocateToMetaspaceTestArena},
+  {CC"maxMetaspaceAllocationSize", CC"()J",           (void*)&WB_GetMaxMetaspaceAllocationSize},
+
   {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
+  {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
+  {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},
+
+  {CC"lockCritical",    CC"()V",                      (void*)&WB_LockCritical},
+  {CC"unlockCritical",  CC"()V",                      (void*)&WB_UnlockCritical},
 };
 
 

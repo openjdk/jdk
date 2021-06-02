@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public abstract class UnixFileSystemProvider
     extends AbstractFileSystemProvider
 {
     private static final String USER_DIR = "user.dir";
+    private static final byte[] EMPTY_PATH = new byte[0];
     private final UnixFileSystem theFileSystem;
 
     public UnixFileSystemProvider() {
@@ -299,6 +300,7 @@ public abstract class UnixFileSystemProvider
             mode |= W_OK;
         }
         if (x) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 // not cached
@@ -352,7 +354,14 @@ public abstract class UnixFileSystemProvider
         UnixPath name = file.getFileName();
         if (name == null)
             return false;
-        return (name.asByteArray()[0] == '.');
+
+        byte[] path;
+        if (name.isEmpty()) { // corner case for empty paths
+            path = name.getFileSystem().defaultDirectory();
+        } else {
+            path = name.asByteArray();
+        }
+        return path[0] == '.';
     }
 
     /**
@@ -364,6 +373,7 @@ public abstract class UnixFileSystemProvider
     @Override
     public FileStore getFileStore(Path obj) throws IOException {
         UnixPath file = UnixPath.toUnixPath(obj);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("getFileStoreAttributes"));
@@ -448,6 +458,7 @@ public abstract class UnixFileSystemProvider
         }
 
         // permission check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new LinkPermission("symbolic"));
@@ -468,6 +479,7 @@ public abstract class UnixFileSystemProvider
         UnixPath existing = UnixPath.toUnixPath(obj2);
 
         // permission check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new LinkPermission("hard"));
@@ -485,6 +497,7 @@ public abstract class UnixFileSystemProvider
     public Path readSymbolicLink(Path obj1) throws IOException {
         UnixPath link = UnixPath.toUnixPath(obj1);
         // permission check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             FilePermission perm = new FilePermission(link.getPathForPermissionCheck(),
@@ -556,5 +569,14 @@ public abstract class UnixFileSystemProvider
                 return null;
             }
         };
+    }
+
+    @Override
+    public byte[] getSunPathForSocketFile(Path obj) {
+        UnixPath file = UnixPath.toUnixPath(obj);
+        if (file.isEmpty()) {
+            return EMPTY_PATH;
+        }
+        return file.getByteArrayForSysCalls();
     }
 }

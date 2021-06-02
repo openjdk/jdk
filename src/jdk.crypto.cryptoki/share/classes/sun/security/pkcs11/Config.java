@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ final class Config {
     private static final String osArch;
 
     static {
+        @SuppressWarnings("removal")
         List<String> props = AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 @Override
@@ -84,7 +85,7 @@ final class Config {
         osArch = props.get(2);
     }
 
-    private final static boolean DEBUG = false;
+    private static final boolean DEBUG = false;
 
     private static void debug(Object o) {
         if (DEBUG) {
@@ -898,7 +899,7 @@ final class Config {
         });
     }
 
-    private final static CK_ATTRIBUTE[] CK_A0 = new CK_ATTRIBUTE[0];
+    private static final CK_ATTRIBUTE[] CK_A0 = new CK_ATTRIBUTE[0];
 
     private String parseOperation() throws IOException {
         String op = parseWord();

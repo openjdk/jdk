@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,16 @@
 
 package java.nio;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
+import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.misc.ScopedMemoryAccess.Scope;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM.BufferPool;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.FileDescriptor;
 import java.util.Spliterator;
@@ -193,6 +195,8 @@ public abstract class Buffer {
     // Cached unsafe-access object
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
+    static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+
     /**
      * The characteristics of Spliterators that traverse and split elements
      * maintained in Buffers.
@@ -310,8 +314,8 @@ public abstract class Buffer {
     public Buffer position(int newPosition) {
         if (newPosition > limit | newPosition < 0)
             throw createPositionException(newPosition);
+        if (mark > newPosition) mark = -1;
         position = newPosition;
-        if (mark > position) mark = -1;
         return this;
     }
 
@@ -500,7 +504,8 @@ public abstract class Buffer {
      * @return  The number of elements remaining in this buffer
      */
     public final int remaining() {
-        return limit - position;
+        int rem = limit - position;
+        return rem > 0 ? rem : 0;
     }
 
     /**
@@ -732,7 +737,7 @@ public abstract class Buffer {
      * IndexOutOfBoundsException} if it is not smaller than the limit
      * or is smaller than zero.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     final int checkIndex(int i) {                       // package-private
         if ((i < 0) || (i >= limit))
             throw new IndexOutOfBoundsException();
@@ -754,9 +759,18 @@ public abstract class Buffer {
     }
 
     @ForceInline
-    final void checkSegment() {
+    final ScopedMemoryAccess.Scope scope() {
         if (segment != null) {
-            segment.checkValidState();
+            return segment.scope();
+        } else {
+            return null;
+        }
+    }
+
+    final void checkScope() {
+        ScopedMemoryAccess.Scope scope = scope();
+        if (scope != null) {
+            scope.checkValidState();
         }
     }
 
@@ -781,7 +795,7 @@ public abstract class Buffer {
 
                 @Override
                 public ByteBuffer newHeapByteBuffer(byte[] hb, int offset, int capacity, MemorySegmentProxy segment) {
-                    return new HeapByteBuffer(hb, offset, capacity, segment);
+                    return new HeapByteBuffer(hb, -1, 0, capacity, capacity, offset, segment);
                 }
 
                 @Override
@@ -809,6 +823,18 @@ public abstract class Buffer {
                 }
 
                 @Override
+                public Scope.Handle acquireScope(Buffer buffer, boolean async) {
+                    var scope = buffer.scope();
+                    if (scope == null) {
+                        return null;
+                    }
+                    if (async && scope.ownerThread() != null) {
+                        throw new IllegalStateException("Confined scope not supported");
+                    }
+                    return scope.acquire();
+                }
+
+                @Override
                 public void force(FileDescriptor fd, long address, boolean isSync, long offset, long size) {
                     MappedMemoryUtils.force(fd, address, isSync, offset, size);
                 }
@@ -826,6 +852,21 @@ public abstract class Buffer {
                 @Override
                 public boolean isLoaded(long address, boolean isSync, long size) {
                     return MappedMemoryUtils.isLoaded(address, isSync, size);
+                }
+
+                @Override
+                public void reserveMemory(long size, long cap) {
+                    Bits.reserveMemory(size, cap);
+                }
+
+                @Override
+                public void unreserveMemory(long size, long cap) {
+                    Bits.unreserveMemory(size, cap);
+                }
+
+                @Override
+                public int pageSize() {
+                    return Bits.pageSize();
                 }
             });
     }

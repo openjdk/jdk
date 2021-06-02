@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,8 +100,6 @@ import java.beans.PropertyChangeEvent;
  * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
- *
- * @author unattributed
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public abstract class BasicLookAndFeel extends LookAndFeel implements Serializable
@@ -188,6 +186,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("removal")
     public void uninitialize() {
         AppContext context = AppContext.getAppContext();
         synchronized (BasicPopupMenuUI.MOUSE_GRABBER_KEY) {
@@ -2073,6 +2072,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
          * Class.getResourceAsStream just returns raw
          * bytes, which we can convert to a sound.
          */
+        @SuppressWarnings("removal")
         byte[] buffer = AccessController.doPrivileged(
                                                  new PrivilegedAction<byte[]>() {
                 public byte[] run() {
@@ -2082,19 +2082,9 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
                         if (resource == null) {
                             return null;
                         }
-                        BufferedInputStream in =
-                            new BufferedInputStream(resource);
-                        ByteArrayOutputStream out =
-                            new ByteArrayOutputStream(1024);
-                        byte[] buffer = new byte[1024];
-                        int n;
-                        while ((n = in.read(buffer)) > 0) {
-                            out.write(buffer, 0, n);
+                        try (BufferedInputStream in = new BufferedInputStream(resource)) {
+                            return in.readAllBytes();
                         }
-                        in.close();
-                        out.flush();
-                        buffer = out.toByteArray();
-                        return buffer;
                     } catch (IOException ioe) {
                         System.err.println(ioe.toString());
                         return null;
@@ -2191,6 +2181,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
      * events that can possibly invoke popup on the component
      */
     class AWTEventHelper implements AWTEventListener,PrivilegedAction<Object> {
+        @SuppressWarnings("removal")
         AWTEventHelper() {
             super();
             AccessController.doPrivileged(this);

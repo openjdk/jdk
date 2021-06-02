@@ -54,13 +54,9 @@ struct hb_blob_t
   HB_INTERNAL bool try_make_writable_inplace ();
   HB_INTERNAL bool try_make_writable_inplace_unix ();
 
+  hb_bytes_t as_bytes () const { return hb_bytes_t (data, length); }
   template <typename Type>
-  const Type* as () const
-  {
-    return length < hb_null_size (Type) ? &Null(Type) : reinterpret_cast<const Type *> (data);
-  }
-  hb_bytes_t as_bytes () const
-  { return hb_bytes_t (data, length); }
+  const Type* as () const { return as_bytes ().as<Type> (); }
 
   public:
   hb_object_header_t header;
@@ -81,7 +77,7 @@ struct hb_blob_t
 template <typename P>
 struct hb_blob_ptr_t
 {
-  typedef typename hb_remove_pointer (P) T;
+  typedef hb_remove_pointer<P> T;
 
   hb_blob_ptr_t (hb_blob_t *b_ = nullptr) : b (b_) {}
   hb_blob_t * operator = (hb_blob_t *b_) { return b = b_; }
@@ -94,6 +90,7 @@ struct hb_blob_ptr_t
   unsigned int get_length () const { return b.get ()->length; }
   void destroy () { hb_blob_destroy (b.get ()); b = nullptr; }
 
+  private:
   hb_nonnull_ptr_t<hb_blob_t> b;
 };
 

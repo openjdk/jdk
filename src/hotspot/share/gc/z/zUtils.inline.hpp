@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZUTILS_INLINE_HPP
 #define SHARE_GC_Z_ZUTILS_INLINE_HPP
 
-#include "gc/z/zOop.inline.hpp"
 #include "gc/z/zUtils.hpp"
+
+#include "gc/z/zOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -45,8 +46,14 @@ inline size_t ZUtils::object_size(uintptr_t addr) {
   return words_to_bytes(ZOop::from_address(addr)->size());
 }
 
-inline void ZUtils::object_copy(uintptr_t from, uintptr_t to, size_t size) {
+inline void ZUtils::object_copy_disjoint(uintptr_t from, uintptr_t to, size_t size) {
   Copy::aligned_disjoint_words((HeapWord*)from, (HeapWord*)to, bytes_to_words(size));
+}
+
+inline void ZUtils::object_copy_conjoint(uintptr_t from, uintptr_t to, size_t size) {
+  if (from != to) {
+    Copy::aligned_conjoint_words((HeapWord*)from, (HeapWord*)to, bytes_to_words(size));
+  }
 }
 
 #endif // SHARE_GC_Z_ZUTILS_INLINE_HPP

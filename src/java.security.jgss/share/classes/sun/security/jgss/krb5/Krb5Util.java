@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,10 @@ public class Krb5Util {
      */
     static KerberosTicket getServiceTicket(GSSCaller caller,
         String clientPrincipal, String serverPrincipal,
-        AccessControlContext acc) throws LoginException {
+        @SuppressWarnings("removal") AccessControlContext acc) throws LoginException {
 
         // Try to get ticket from acc's Subject
+        @SuppressWarnings("removal")
         Subject accSubj = Subject.getSubject(acc);
         KerberosTicket ticket =
             SubjectComber.find(accSubj, serverPrincipal, clientPrincipal,
@@ -83,9 +84,10 @@ public class Krb5Util {
      */
     static KerberosTicket getInitialTicket(GSSCaller caller,
             String clientPrincipal,
-            AccessControlContext acc) throws LoginException {
+            @SuppressWarnings("removal") AccessControlContext acc) throws LoginException {
 
         // Try to get ticket from acc's Subject
+        @SuppressWarnings("removal")
         Subject accSubj = Subject.getSubject(acc);
         KerberosTicket ticket =
                 SubjectComber.find(accSubj, null, clientPrincipal,
@@ -101,30 +103,6 @@ public class Krb5Util {
     }
 
     /**
-     * Retrieves the caller's Subject, or Subject obtained by logging in
-     * via the specified caller.
-     *
-     * Caller must have permission to:
-     *    - access the Subject
-     *    - create LoginContext
-     *    - read the auth.login.defaultCallbackHandler security property
-     *
-     * NOTE: This method is used by JSSE Kerberos Cipher Suites
-     */
-    public static Subject getSubject(GSSCaller caller,
-        AccessControlContext acc) throws LoginException {
-
-        // Try to get the Subject from acc
-        Subject subject = Subject.getSubject(acc);
-
-        // Try to get Subject obtained from GSSUtil
-        if (subject == null && !GSSUtil.useSubjectCredsOnly(caller)) {
-            subject = GSSUtil.login(caller, GSSUtil.GSS_KRB5_MECH_OID);
-        }
-        return subject;
-    }
-
-    /**
      * Retrieves the ServiceCreds for the specified server principal from
      * the Subject in the specified AccessControlContext. If not found, and if
      * useSubjectCredsOnly is false, then obtain from a LoginContext.
@@ -132,9 +110,10 @@ public class Krb5Util {
      * NOTE: This method is also used by JSSE Kerberos Cipher Suites
      */
     public static ServiceCreds getServiceCreds(GSSCaller caller,
-        String serverPrincipal, AccessControlContext acc)
+        String serverPrincipal, @SuppressWarnings("removal") AccessControlContext acc)
                 throws LoginException {
 
+        @SuppressWarnings("removal")
         Subject accSubj = Subject.getSubject(acc);
         ServiceCreds sc = null;
         if (accSubj != null) {

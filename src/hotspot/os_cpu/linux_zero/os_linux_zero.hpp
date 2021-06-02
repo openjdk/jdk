@@ -28,8 +28,6 @@
 
   static void setup_fpu() {}
 
-  static bool is_allocatable(size_t bytes);
-
   // Used to register dynamic code cache area with the OS
   // Note: Currently only used in 64 bit Windows implementations
   static bool register_code_area(char *low, char *high) { return true; }
@@ -68,15 +66,23 @@
                   : "=&f"(tmp), "=Q"(*(volatile double*)dst)
                   : "Q"(*(volatile double*)src));
 #elif defined(__ARM_ARCH_7A__)
-    // Note that a ldrexd + clrex combination is only needed for
-    // correctness on the OS level (context-switches). In this
-    // case, clrex *may* be beneficial for performance. For now
-    // don't bother with clrex as this is Zero.
-    jlong tmp;
-    asm volatile ("ldrexd  %0, [%1]\n"
-                  : "=r"(tmp)
-                  : "r"(src), "m"(src));
-    *(jlong *) dst = tmp;
+    // The only way to perform the atomic 64-bit load/store
+    // is to use ldrexd/strexd for both reads and writes.
+    // For store, we need to have the matching (fake) load first.
+    // Put clrex between exclusive ops on src and dst for clarity.
+    uint64_t tmp_r, tmp_w;
+    uint32_t flag_w;
+    asm volatile ("ldrexd %[tmp_r], [%[src]]\n"
+                  "clrex\n"
+                  "1:\n"
+                  "ldrexd %[tmp_w], [%[dst]]\n"
+                  "strexd %[flag_w], %[tmp_r], [%[dst]]\n"
+                  "cmp    %[flag_w], 0\n"
+                  "bne    1b\n"
+                  : [tmp_r] "=&r" (tmp_r), [tmp_w] "=&r" (tmp_w),
+                    [flag_w] "=&r" (flag_w)
+                  : [src] "r" (src), [dst] "r" (dst)
+                  : "cc", "memory");
 #else
     *(jlong *) dst = *(const jlong *) src;
 #endif

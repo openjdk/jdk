@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,28 +48,20 @@ import java.util.regex.Pattern;
  * or {@link javax.lang.model.element.Element "language model elements"}.
  * The usage is made explicit when it is not clear from the surrounding context.
  *
- * @see <a href="https://html.spec.whatwg.org/#classes>WhatWG: {@code class} attribute</a>
+ * @see <a href="https://html.spec.whatwg.org/#classes">WhatWG: {@code class} attribute</a>
  */
 public enum HtmlStyle {
     block,
     blockList,
     circle,
     classUses,
-    deprecatedLabel,
-    deprecationBlock,
-    deprecationComment,
-    descfrmTypeLabel,
     externalLink,
-    helpFootnote,
-    helpSection,
-    helpSectionList,
     hierarchy,
     horizontal,
     implementationLabel,
     index,
     inheritance,
     inheritedList,
-    interfaceName,
     legalCopy,
     memberNameLabel,
     memberNameLink,
@@ -77,15 +69,11 @@ public enum HtmlStyle {
     packages,
     packageHierarchyLabel,
     packageUses,
-    permitsNote,
-    searchTagLink,
-    searchTagResult,
     serializedPackageContainer,
     sourceContainer,
     sourceLineNo,
     typeNameLabel,
     typeNameLink,
-    verticalSeparator,
 
     //<editor-fold desc="navigation bar">
     //
@@ -96,11 +84,6 @@ public enum HtmlStyle {
      * The class for the overall {@code div} element containing the {@code header} element for the page.
      */
     topNav,
-
-    /**
-     * The class for the overall {@code div} element containing the {@code footer} element for the page.
-     */
-    bottomNav,
 
     /**
      * The class for the element containing the information (such as the product name and version)
@@ -266,27 +249,9 @@ public enum HtmlStyle {
 
     /**
      * The class for the {@code section} element containing a summary of
-     * the services provided by a module.
-     */
-    providesSummary,
-
-    /**
-     * The class for the {@code section} element containing a summary of
-     * the modules required by a module.
-     */
-    requiresSummary,
-
-    /**
-     * The class for the {@code section} element containing a summary of
      * the services provided or used by a module.
      */
     servicesSummary,
-
-    /**
-     * The class for the {@code section} element containing a summary of
-     * the services used by a module.
-     */
-    usesSummary,
 
     /**
      * The class for a {@code section} element on the "Constants Field Values" page,
@@ -294,37 +259,6 @@ public enum HtmlStyle {
      * the class for the {@code section} element for the enum constants of an enum class.
      */
     constantsSummary,
-
-    /**
-     * The class for a {@code section} element on the "Deprecated"
-     * page.
-     */
-    deprecatedSummary,
-
-    /**
-     * The class for the {@code section} element on the top-level page
-     * summarizing all the modules or packages that are documented.
-     */
-    overviewSummary,
-
-    /**
-     * The class for a {@code section} element on the "System Properties" page.
-     */
-    systemPropertiesSummary,
-
-    /**
-     * The class for the list of packages on the "All Packages" index page,
-     * <i>and</i>
-     * the class for the {@code section} element summarizing the types
-     * in a package.
-     */
-    typeSummary,
-
-    /**
-     * The class for {@code section} elements containing information
-     * about where a package, type or member is used within the API.
-     */
-    useSummary,
     //</editor-fold>
 
     //<editor-fold desc="details">
@@ -394,10 +328,72 @@ public enum HtmlStyle {
     propertyDetails,
 
     /**
+     * The class for the list containing the {@code @see} tags of an element.
+     */
+    seeList,
+
+    /**
+     * The class for the list containing the {@code @see} tags of an element
+     * when some of the tags have longer labels.
+     */
+    seeListLong,
+
+    /**
      * The class for a {@code section} element containing details of the
      * serialized form of an element, on the "Serialized Form" page.
      */
     serializedClassDetails,
+
+    //</editor-fold>
+
+    //<editor-fold desc="additional details">
+    //
+    // The following constants are used for the additional information that may be provided
+    // for a declaration, such as whether it is deprecated or is a "preview" feature.
+
+    /**
+     * The class for the "Deprecated" label in a block describing the "deprecated" status
+     * of a declaration.
+     */
+    deprecatedLabel,
+
+    /**
+     * The class for a block describing the "deprecated" status of a declaration.
+     */
+    deprecationBlock,
+
+    /**
+     * The class for the details in a block describing the "deprecated" status of a declaration.
+     */
+    deprecationComment,
+
+    /**
+     * The class for a label indicating the element from which a description has been copied.
+     */
+    // This should be renamed to something less cryptic
+    descfrmTypeLabel,
+
+    /**
+     * The class for a note providing information about the permitted subtypes of a
+     * sealed class.
+     */
+    permitsNote,
+
+    /**
+     * The class for a block describing the "preview" status of a declaration.
+     */
+    previewBlock,
+
+    /**
+     * The class for the details in a block describing the "preview" status of a declaration.
+     */
+    previewComment,
+
+    /**
+     * The class for the "Preview" label in a block describing the "preview" status
+     * of a declaration.
+     */
+    previewLabel,
 
     //</editor-fold>
 
@@ -408,12 +404,30 @@ public enum HtmlStyle {
     // A module page has details tables containing the details of the directives.
 
     /**
-     * The class of a {@code table} element used to present details of a program element.
+     * The class of a {@code div} element whose content should be rendered as a table
+     * with two columns.
+     */
+    twoColumnSummary,
+
+    /**
+     * The class of a {@code div} element whose content should be rendered as a table
+     * with three columns.
+     */
+    threeColumnSummary,
+
+    /**
+     * The class of a {@code div} element whose content should be rendered as a table
+     * with four columns.
+     */
+    fourColumnSummary,
+
+    /**
+     * The class of a {@code div} element used to present details of a program element.
      */
     detailsTable,
 
     /**
-     * The class of a {@code table} element used to present a summary of the enclosed
+     * The class of a {@code div} element used to present a summary of the enclosed
      * elements of a program element.  A {@code summaryTable} typically references
      * items in a corresponding {@link #detailsList}.
      */
@@ -424,6 +438,17 @@ public enum HtmlStyle {
      * This is used when the table provides filtered views.
      */
     activeTableTab,
+
+    /**
+     * The class for the caption of a table. The caption is displayed as a single
+     * inactive tab above the table.
+     */
+    caption,
+
+    /**
+     * The class of an element that is part of a table header.
+     */
+    tableHeader,
 
     /**
      * The class of a "tab" that indicates an alternate view of the contents of a table.
@@ -444,12 +469,6 @@ public enum HtmlStyle {
     colConstructorName,
 
     /**
-     * The class of the cells in a table column used to display the name
-     * of a deprecated item.
-     */
-    colDeprecatedItemName,
-
-    /**
      * The class of the first column of cells in a table.
      * This is typically the "type and modifiers" column, where the type is
      * the type of a field or the return type of a method.
@@ -464,6 +483,18 @@ public enum HtmlStyle {
     colLast,
 
     /**
+     * The class of the cells in a table column used to display the name
+     * of a summary item.
+     */
+    colSummaryItemName,
+
+    /**
+     * The class of the cells in a table column used to display additional
+     * information without any particular style.
+     */
+    colPlain,
+
+    /**
      * The class of the second column of cells in a table.
      * This is typically the column that defines the name of a field or the
      * name and parameters of a method.
@@ -472,21 +503,21 @@ public enum HtmlStyle {
 
     /**
      * A class used to provide the background for the rows of a table,
-     * to provide a "striped" effect. This class and {@link #rowColor}
+     * to provide a "striped" effect. This class and {@link #oddRowColor}
      * are used on alternating rows.
      * The classes are applied dynamically when table "tabs" are used
      * to filter the set of rows to be displayed
      */
-    altColor,
+    evenRowColor,
 
     /**
      * A class used to provide the background for the rows of a table,
-     * to provide a "striped" effect. This class and {@link #altColor}
+     * to provide a "striped" effect. This class and {@link #evenRowColor}
      * are used on alternating rows.
      * The classes are applied dynamically when table "tabs" are used
      * to filter the set of rows to be displayed
      */
-    rowColor,
+    oddRowColor,
     //</editor-fold>
 
     //<editor-fold desc="documentation comments">
@@ -495,16 +526,14 @@ public enum HtmlStyle {
     // generated from documentation comments.
 
     /**
-     * The class of the element used to present the documentation comment for a type or member
-     * element.
+     * The class of the element used to present the documentation comment for a type element.
      * The content of the block tags will be in a nested element with class {@link #notes}.
      */
-    description,
+    classDescription,
 
     /**
      * The class of the element used to present the documentation comment for a module element,
      * excluding block tags.
-     * The content of the block tags will be in a sibling element with class {@link #moduleTags}.
      */
     moduleDescription,
 
@@ -547,62 +576,112 @@ public enum HtmlStyle {
     flexContent,
     //</editor-fold>
 
-    //<editor-fold desc="member signature">
+    //<editor-fold desc="signatures">
     //
     // The following constants are used for the components of a signature of an element
 
     /**
-     * The class of a {@code span} element for the signature of an element.
+     * The class of an element containing a module signature.
+     */
+    moduleSignature,
+
+    /**
+     * The class of an element containing a package signature.
+     */
+    packageSignature,
+
+    /**
+     * The class of an element containing a type signature.
+     */
+    typeSignature,
+
+    /**
+     * The class of an element containing a member signature.
      * The signature will contain a member name and, depending on the kind of element,
-     * it can contain any of the following:
+     * any of the following:
      * annotations, type parameters, modifiers, return type, parameters, and exceptions.
      */
     memberSignature,
 
     /**
-     * The class of a {@code span} element for any annotations in the signature of an element.
+     * The class of a {@code span} element containing any annotations in the signature of an element.
      */
     annotations,
 
     /**
-     * The class of a {@code span} element for any exceptions in a signature of an executable element.
+     * The class of a {@code span} element containing any exceptions in a signature of an executable element.
      */
     exceptions,
 
     /**
-     * The class of a {@code span} for the member name in the signature of an element.
+     * The class of a {@code span} element containing the {@code extends} or {@code implements} section
+     * in a signature of a type element.
      */
-    memberName,
+    extendsImplements,
 
     /**
-     * The class of a {@code span} for any modifiers in the signature of an element.
+     * The class of a {@code span} containing the element name in the element's signature.
+     */
+    elementName,
+
+    /**
+     * The class of a {@code span} containing any modifiers in the signature of an element.
      */
     modifiers,
 
     /**
-     * The class of a {@code span} for any parameters in the signature of an executable element.
+     * The class of a {@code span} containing any parameters in the signature of an executable element.
      */
     parameters,
 
     /**
-     * The class of a {@code span} for the return type in the signature of an method element.
+     * The class of a {@code span} containing the {@code permits} section of a sealed class element.
+     */
+    permits,
+
+    /**
+     * The class of a {@code span} containing the return type in the signature of a method element.
      */
     returnType,
 
     /**
-     * The class of a {@code span} for type parameters in the signature of an element,
+     * The class of a {@code span} containing type parameters in the signature of an element,
      * used when the type parameters should reasonably be displayed inline.
      */
     typeParameters,
 
     /**
-     * The class of a {@code span} for type parameters in the signature of an element,
+     * The class of a {@code span} containing type parameters in the signature of an element,
      * used when the type parameters are too long to be displayed inline.
      * @implNote
      * The threshold for choosing between {@code typeParameters} and {@code typeParametersLong}
      * is 50 characters.
      */
     typeParametersLong,
+    //</editor-fold>
+
+    //<editor-fold desc="search index and results">
+    //
+    // The following constants are used for items in the static and interactive search indexes.
+
+    /**
+     * The class for a link in the static "Index" pages to a custom searchable item,
+     * such as defined with an {@code @index} tag.
+     */
+    searchTagLink,
+
+    /**
+     * The class for a custom searchable item,
+     * such as defined with an {@code @index} tag.
+     */
+    searchTagResult,
+
+    /**
+     * The class for the separator in the list of pages given at the top of the
+     * static "Index" page(s).
+     */
+    verticalSeparator,
+
     //</editor-fold>
 
     //<editor-fold desc="page styles for <body> elements">
@@ -651,6 +730,11 @@ public enum HtmlStyle {
     helpPage,
 
     /**
+     * The class of the {@code body} element for a page in either the "single" or "split index".
+     */
+    indexPage,
+
+    /**
      * The class of the {@code body} element for the top-level redirect page.
      */
     indexRedirectPage,
@@ -686,24 +770,19 @@ public enum HtmlStyle {
     packageUsePage,
 
     /**
+     * The class of the {@code body} element for the page listing any preview items.
+     */
+    previewListPage,
+
+    /**
      * The class of the {@code body} element for the serialized-forms page.
      */
     serializedFormPage,
 
     /**
-     * The class of the {@code body} element for the full single index page.
-     */
-    singleIndexPage,
-
-    /**
      * The class of the {@code body} element for a page with the source code for a class.
      */
     sourcePage,
-
-    /**
-     * The class of the {@code body} element for a page in a "split index".
-     */
-    splitIndexPage,
 
     /**
      * The class of the {@code body} element for the system-properties page.
@@ -713,7 +792,43 @@ public enum HtmlStyle {
     /**
      * The class of the {@code body} element for the page for the class hierarchy.
      */
-    treePage;
+    treePage,
+    //</editor-fold>
+
+    //<editor-fold desc="help page">
+    //
+    // The following constants are used for the contents of the "Help" page.
+
+    /**
+     * The class of the footnote at the bottom of the page.
+     */
+    helpFootnote,
+
+    /**
+     * The class of the "Note:" prefix.
+     */
+    helpNote,
+
+    /**
+     * The class of each subsection in the page.
+     */
+    helpSection,
+
+    /**
+     * The class of lists in a subsection in the page.
+     */
+    helpSectionList,
+
+    /**
+     * The class of the top level list for the table of contents for the page.
+     */
+    helpTOC("help-toc"),
+
+    /**
+     * The class of the second-level lists in the table of contents for the page.
+     */
+    helpSubTOC("help-subtoc");
+
     //</editor-fold>
 
     private final String cssName;

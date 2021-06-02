@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,14 +83,14 @@ public class DriverManager {
 
 
     // List of registered JDBC drivers
-    private final static CopyOnWriteArrayList<DriverInfo> registeredDrivers = new CopyOnWriteArrayList<>();
+    private static final CopyOnWriteArrayList<DriverInfo> registeredDrivers = new CopyOnWriteArrayList<>();
     private static volatile int loginTimeout = 0;
     private static volatile java.io.PrintWriter logWriter = null;
     private static volatile java.io.PrintStream logStream = null;
     // Used in println() to synchronize logWriter
-    private final static Object logSync = new Object();
+    private static final Object logSync = new Object();
     // Used in ensureDriversInitialized() to synchronize driversInitialized
-    private final static Object lockForInitDrivers = new Object();
+    private static final Object lockForInitDrivers = new Object();
     private static volatile boolean driversInitialized;
     private static final String JDBC_DRIVERS_PROPERTY = "jdbc.drivers";
 
@@ -98,11 +98,11 @@ public class DriverManager {
     private DriverManager(){}
 
     /**
-     * The <code>SQLPermission</code> constant that allows the
+     * The {@code SQLPermission} constant that allows the
      * setting of the logging stream.
      * @since 1.3
      */
-    final static SQLPermission SET_LOG_PERMISSION =
+    static final SQLPermission SET_LOG_PERMISSION =
         new SQLPermission("setLog");
 
     /**
@@ -110,7 +110,7 @@ public class DriverManager {
      * un-register a registered JDBC driver.
      * @since 1.8
      */
-    final static SQLPermission DEREGISTER_DRIVER_PERMISSION =
+    static final SQLPermission DEREGISTER_DRIVER_PERMISSION =
         new SQLPermission("deregisterDriver");
 
     //--------------------------JDBC 2.0-----------------------------
@@ -118,10 +118,10 @@ public class DriverManager {
     /**
      * Retrieves the log writer.
      *
-     * The <code>getLogWriter</code> and <code>setLogWriter</code>
+     * The {@code getLogWriter} and {@code setLogWriter}
      * methods should be used instead
-     * of the <code>get/setlogStream</code> methods, which are deprecated.
-     * @return a <code>java.io.PrintWriter</code> object
+     * of the {@code get/setlogStream} methods, which are deprecated.
+     * @return a {@code java.io.PrintWriter} object
      * @see #setLogWriter
      * @since 1.2
      */
@@ -130,15 +130,15 @@ public class DriverManager {
     }
 
     /**
-     * Sets the logging/tracing <code>PrintWriter</code> object
-     * that is used by the <code>DriverManager</code> and all drivers.
+     * Sets the logging/tracing {@code PrintWriter} object
+     * that is used by the {@code DriverManager} and all drivers.
      *<P>
      * If a security manager exists, its {@code checkPermission}
      * method is first called with a {@code SQLPermission("setLog")}
      * permission to check that the caller is allowed to call {@code setLogWriter}.
      *
-     * @param out the new logging/tracing <code>PrintStream</code> object;
-     *      <code>null</code> to disable logging and tracing
+     * @param out the new logging/tracing {@code PrintStream} object;
+     *      {@code null} to disable logging and tracing
      * @throws SecurityException if a security manager exists and its
      * {@code checkPermission} method denies permission to set the log writer.
      * @see SecurityManager#checkPermission
@@ -147,6 +147,7 @@ public class DriverManager {
      */
     public static void setLogWriter(java.io.PrintWriter out) {
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(SET_LOG_PERMISSION);
@@ -160,7 +161,7 @@ public class DriverManager {
 
     /**
      * Attempts to establish a connection to the given database URL.
-     * The <code>DriverManager</code> attempts to select an appropriate driver from
+     * The {@code DriverManager} attempts to select an appropriate driver from
      * the set of registered JDBC drivers.
      *<p>
      * <B>Note:</B> If a property is specified as part of the {@code url} and
@@ -175,7 +176,7 @@ public class DriverManager {
      * connection arguments; normally at least a "user" and
      * "password" property should be included
      * @return a Connection to the URL
-     * @exception SQLException if a database access error occurs or the url is
+     * @throws SQLException if a database access error occurs or the url is
      * {@code null}
      * @throws SQLTimeoutException  when the driver has determined that the
      * timeout value specified by the {@code setLoginTimeout} method
@@ -191,7 +192,7 @@ public class DriverManager {
 
     /**
      * Attempts to establish a connection to the given database URL.
-     * The <code>DriverManager</code> attempts to select an appropriate driver from
+     * The {@code DriverManager} attempts to select an appropriate driver from
      * the set of registered JDBC drivers.
      *<p>
      * <B>Note:</B> If the {@code user} or {@code password} property are
@@ -206,7 +207,7 @@ public class DriverManager {
      *   made
      * @param password the user's password
      * @return a connection to the URL
-     * @exception SQLException if a database access error occurs or the url is
+     * @throws SQLException if a database access error occurs or the url is
      * {@code null}
      * @throws SQLTimeoutException  when the driver has determined that the
      * timeout value specified by the {@code setLoginTimeout} method
@@ -230,13 +231,13 @@ public class DriverManager {
 
     /**
      * Attempts to establish a connection to the given database URL.
-     * The <code>DriverManager</code> attempts to select an appropriate driver from
+     * The {@code DriverManager} attempts to select an appropriate driver from
      * the set of registered JDBC drivers.
      *
      * @param url a database url of the form
      *  <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @return a connection to the URL
-     * @exception SQLException if a database access error occurs or the url is
+     * @throws SQLException if a database access error occurs or the url is
      * {@code null}
      * @throws SQLTimeoutException  when the driver has determined that the
      * timeout value specified by the {@code setLoginTimeout} method
@@ -253,14 +254,14 @@ public class DriverManager {
 
     /**
      * Attempts to locate a driver that understands the given URL.
-     * The <code>DriverManager</code> attempts to select an appropriate driver from
+     * The {@code DriverManager} attempts to select an appropriate driver from
      * the set of registered JDBC drivers.
      *
      * @param url a database URL of the form
      *     <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
-     * @return a <code>Driver</code> object representing a driver
+     * @return a {@code Driver} object representing a driver
      * that can connect to the given URL
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     @CallerSensitive
     public static Driver getDriver(String url)
@@ -308,8 +309,8 @@ public class DriverManager {
      *
      * @param driver the new JDBC Driver that is to be registered with the
      *               {@code DriverManager}
-     * @exception SQLException if a database access error occurs
-     * @exception NullPointerException if {@code driver} is null
+     * @throws SQLException if a database access error occurs
+     * @throws NullPointerException if {@code driver} is null
      */
     public static void registerDriver(java.sql.Driver driver)
         throws SQLException {
@@ -328,8 +329,8 @@ public class DriverManager {
      *               {@code DriverManager}
      * @param da     the {@code DriverAction} implementation to be used when
      *               {@code DriverManager#deregisterDriver} is called
-     * @exception SQLException if a database access error occurs
-     * @exception NullPointerException if {@code driver} is null
+     * @throws SQLException if a database access error occurs
+     * @throws NullPointerException if {@code driver} is null
      * @since 1.8
      */
     public static void registerDriver(java.sql.Driver driver,
@@ -368,7 +369,7 @@ public class DriverManager {
      * prior to the driver being removed from the list of registered drivers.
      *
      * @param driver the JDBC Driver to remove
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @throws SecurityException if a security manager exists and its
      * {@code checkPermission} method denies permission to deregister a driver.
      *
@@ -380,6 +381,7 @@ public class DriverManager {
             return;
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(DEREGISTER_DRIVER_PERMISSION);
@@ -414,7 +416,7 @@ public class DriverManager {
      * to which the current caller has access.
      *
      * <P><B>Note:</B> The classname of a driver can be found using
-     * <CODE>d.getClass().getName()</CODE>
+     * {@code d.getClass().getName()}
      *
      * @return the list of JDBC Drivers loaded by the caller's class loader
      * @see #drivers()
@@ -480,14 +482,14 @@ public class DriverManager {
 
     /**
      * Sets the logging/tracing PrintStream that is used
-     * by the <code>DriverManager</code>
+     * by the {@code DriverManager}
      * and all drivers.
      *<P>
      * If a security manager exists, its {@code checkPermission}
      * method is first called with a {@code SQLPermission("setLog")}
      * permission to check that the caller is allowed to call {@code setLogStream}.
      *
-     * @param out the new logging/tracing PrintStream; to disable, set to <code>null</code>
+     * @param out the new logging/tracing PrintStream; to disable, set to {@code null}
      * @deprecated Use {@code setLogWriter}
      * @throws SecurityException if a security manager exists and its
      * {@code checkPermission} method denies permission to set the log stream.
@@ -497,6 +499,7 @@ public class DriverManager {
     @Deprecated(since="1.2")
     public static void setLogStream(java.io.PrintStream out) {
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(SET_LOG_PERMISSION);
@@ -510,10 +513,10 @@ public class DriverManager {
     }
 
     /**
-     * Retrieves the logging/tracing PrintStream that is used by the <code>DriverManager</code>
+     * Retrieves the logging/tracing PrintStream that is used by the {@code DriverManager}
      * and all drivers.
      *
-     * @return the logging/tracing PrintStream; if disabled, is <code>null</code>
+     * @return the logging/tracing PrintStream; if disabled, is {@code null}
      * @deprecated  Use {@code getLogWriter}
      * @see #setLogStream
      */
@@ -567,6 +570,7 @@ public class DriverManager {
      * Load the initial JDBC drivers by checking the System property
      * jdbc.drivers and then use the {@code ServiceLoader} mechanism
      */
+    @SuppressWarnings("removal")
     private static void ensureDriversInitialized() {
         if (driversInitialized) {
             return;

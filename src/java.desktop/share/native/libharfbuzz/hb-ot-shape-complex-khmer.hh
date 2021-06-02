@@ -43,11 +43,10 @@ enum khmer_category_t
   OT_Robatic = 20,
   OT_Xgroup  = 21,
   OT_Ygroup  = 22,
-
-  OT_VAbv    = 26,
-  OT_VBlw    = 27,
-  OT_VPre    = 28,
-  OT_VPst    = 29,
+  //OT_VAbv = 26,
+  //OT_VBlw = 27,
+  //OT_VPre = 28,
+  //OT_VPst = 29,
 };
 
 static inline void
@@ -55,7 +54,7 @@ set_khmer_properties (hb_glyph_info_t &info)
 {
   hb_codepoint_t u = info.codepoint;
   unsigned int type = hb_indic_get_categories (u);
-  khmer_category_t cat = (khmer_category_t) (type & 0x7Fu);
+  khmer_category_t cat = (khmer_category_t) (type & 0xFFu);
   indic_position_t pos = (indic_position_t) (type >> 8);
 
 
@@ -100,12 +99,12 @@ set_khmer_properties (hb_glyph_info_t &info)
   if (cat == (khmer_category_t) OT_M)
     switch ((int) pos)
     {
-      case POS_PRE_C:   cat = OT_VPre; break;
-      case POS_BELOW_C: cat = OT_VBlw; break;
-      case POS_ABOVE_C: cat = OT_VAbv; break;
-      case POS_POST_C:  cat = OT_VPst; break;
+      case POS_PRE_C:   cat = (khmer_category_t) OT_VPre; break;
+      case POS_BELOW_C: cat = (khmer_category_t) OT_VBlw; break;
+      case POS_ABOVE_C: cat = (khmer_category_t) OT_VAbv; break;
+      case POS_POST_C:  cat = (khmer_category_t) OT_VPst; break;
       default: assert (0);
-    };
+    }
 
   info.khmer_category() = cat;
 }

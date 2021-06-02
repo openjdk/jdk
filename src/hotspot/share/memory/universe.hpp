@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 class CollectedHeap;
 class DeferredObjAllocEvent;
 class OopStorage;
+class ReservedHeapSpace;
 
 // A helper class for caching a Method* when the user of the cache
 // only cares about the latest version of the Method*.  This cache safely
@@ -83,6 +84,7 @@ class Universe: AllStatic {
   friend class VM_PopulateDumpSharedSpace;
   friend class Metaspace;
   friend class MetaspaceShared;
+  friend class vmClasses;
 
   friend jint  universe_init();
   friend void  universe2_init();
@@ -162,10 +164,6 @@ class Universe: AllStatic {
   // otherwise return the given default error.
   static oop        gen_out_of_memory_error(oop default_err);
 
-  // Historic gc information
-  static size_t _heap_capacity_at_last_gc;
-  static size_t _heap_used_at_last_gc;
-
   static OopStorage* _vm_weak;
   static OopStorage* _vm_global;
 
@@ -174,9 +172,6 @@ class Universe: AllStatic {
   static void initialize_basic_type_mirrors(TRAPS);
   static void fixup_mirrors(TRAPS);
 
-  static void reinitialize_vtable_of(Klass* k, TRAPS);
-  static void reinitialize_vtables(TRAPS);
-  static void reinitialize_itables(TRAPS);
   static void compute_base_vtable_size();             // compute vtable size of class Object
 
   static void genesis(TRAPS);                         // Create the initial world
@@ -236,7 +231,6 @@ class Universe: AllStatic {
 
   static oop java_mirror(BasicType t);
   static void replace_mirror(BasicType t, oop obj);
-  static void clear_basic_type_mirrors();
 
   static oop      main_thread_group();
   static void set_main_thread_group(oop group);
@@ -306,13 +300,12 @@ class Universe: AllStatic {
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
 
+  DEBUG_ONLY(static bool is_gc_active();)
+  DEBUG_ONLY(static bool is_in_heap(const void* p);)
+  DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == NULL || is_in_heap(p); })
+
   // Reserve Java heap and determine CompressedOops mode
   static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);
-
-  // Historic gc information
-  static size_t get_heap_free_at_last_gc()             { return _heap_capacity_at_last_gc - _heap_used_at_last_gc; }
-  static size_t get_heap_used_at_last_gc()             { return _heap_used_at_last_gc; }
-  static void update_heap_info_at_gc();
 
   // Global OopStorages
   static OopStorage* vm_weak();
@@ -350,6 +343,7 @@ class Universe: AllStatic {
     Verify_JNIHandles = 256,
     Verify_CodeCacheOops = 512,
     Verify_ResolvedMethodTable = 1024,
+    Verify_StringDedup = 2048,
     Verify_All = -1
   };
   static void initialize_verify_flags();
@@ -366,14 +360,13 @@ class Universe: AllStatic {
   static int  verify_count()       { return _verify_count; }
   static void print_on(outputStream* st);
   static void print_heap_at_SIGBREAK();
-  static void print_heap_before_gc();
-  static void print_heap_after_gc();
 
   // Change the number of dummy objects kept reachable by the full gc dummy
   // array; this should trigger relocation in a sliding compaction collector.
   debug_only(static bool release_fullgc_alot_dummy();)
   // The non-oop pattern (see compiledIC.hpp, etc)
-  static void*   non_oop_word();
+  static void*         non_oop_word();
+  static bool contains_non_oop_word(void* p);
 
   // Oop verification (see MacroAssembler::verify_oop)
   static uintptr_t verify_oop_mask()          PRODUCT_RETURN0;

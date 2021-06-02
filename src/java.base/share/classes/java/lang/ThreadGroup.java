@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Arrays;
  * group, but not to access information about its thread group's
  * parent thread group or any other thread groups.
  *
- * @author  unascribed
  * @since   1.0
  */
 /* The locking strategy for this code is to try to lock only one level of the
@@ -186,7 +185,13 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @return  {@code true} if this thread group is a daemon thread group;
      *          {@code false} otherwise.
      * @since   1.0
+     *
+     * @deprecated The API and mechanism for destroying a ThreadGroup is inherently
+     *             flawed. The ability to explicitly or automatically destroy a
+     *             thread group, and the concept of daemon thread group, will be
+     *             removed in a future release.
      */
+    @Deprecated(since="16", forRemoval=true)
     public final boolean isDaemon() {
         return daemon;
     }
@@ -196,7 +201,12 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *
      * @return  true if this object is destroyed
      * @since   1.1
+     *
+     * @deprecated The API and mechanism for destroying a ThreadGroup is inherently
+     *             flawed. The ability to explicitly or automatically destroy a
+     *             thread group will be removed in a future release.
      */
+    @Deprecated(since="16", forRemoval=true)
     public synchronized boolean isDestroyed() {
         return destroyed;
     }
@@ -218,7 +228,13 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @see        java.lang.SecurityException
      * @see        java.lang.ThreadGroup#checkAccess()
      * @since      1.0
+     *
+     * @deprecated The API and mechanism for destroying a ThreadGroup is inherently
+     *             flawed. The ability to explicitly or automatically destroy a
+     *             thread group, and the concept of daemon thread group, will be
+     *             removed in a future release.
      */
+    @Deprecated(since="16", forRemoval=true)
     public final void setDaemon(boolean daemon) {
         checkAccess();
         this.daemon = daemon;
@@ -304,8 +320,16 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *               access this thread group.
      * @see        java.lang.SecurityManager#checkAccess(java.lang.ThreadGroup)
      * @since      1.0
+     * @deprecated This method is only useful in conjunction with
+     *       {@linkplain SecurityManager the Security Manager}, which is
+     *       deprecated and subject to removal in a future release.
+     *       Consequently, this method is also deprecated and subject to
+     *       removal. There is no replacement for the Security Manager or this
+     *       method.
      */
+    @Deprecated(since="17", forRemoval=true)
     public final void checkAccess() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkAccess(this);
@@ -603,7 +627,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @deprecated    This method is inherently unsafe.  See
      *     {@link Thread#stop} for details.
      */
-    @Deprecated(since="1.2")
+    @Deprecated(since="1.2", forRemoval=true)
     public final void stop() {
         if (stopOrSuspend(false))
             Thread.currentThread().stop();
@@ -764,7 +788,12 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *               thread group.
      * @see        java.lang.ThreadGroup#checkAccess()
      * @since      1.0
+     *
+     * @deprecated The API and mechanism for destroying a ThreadGroup is inherently
+     *             flawed. The ability to explicitly or automatically destroy a
+     *             thread group will be removed in a future release.
      */
+    @Deprecated(since="16", forRemoval=true)
     public final void destroy() {
         int ngroupsSnapshot;
         ThreadGroup[] groupsSnapshot;

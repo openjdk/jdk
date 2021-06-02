@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ class BCEscapeAnalyzer : public ResourceObj {
   VectorSet         _arg_local;
   VectorSet         _arg_stack;
   VectorSet         _arg_returned;
-  VectorSet         _dirty;
   enum{ ARG_OFFSET_MAX = 31};
   uint              *_arg_modified;
 
@@ -63,7 +62,7 @@ class BCEscapeAnalyzer : public ResourceObj {
   bool              _allocated_escapes;
   bool              _unknown_modified;
 
-  GrowableArray<ciMetadata *> _dependencies;
+  GrowableArray<ciMetadata*> _dependencies;
 
   ciMethodBlocks   *_methodBlocks;
 
@@ -84,12 +83,9 @@ class BCEscapeAnalyzer : public ResourceObj {
   void clear_bits(ArgumentMap vars, VectorSet &bs);
   void set_method_escape(ArgumentMap vars);
   void set_global_escape(ArgumentMap vars, bool merge = false);
-  void set_dirty(ArgumentMap vars);
   void set_modified(ArgumentMap vars, int offs, int size);
 
   bool is_recursive_call(ciMethod* callee);
-  void add_dependence(ciKlass *klass, ciMethod *meth);
-  void propagate_dependencies(ciMethod *meth);
   void invoke(StateInfo &state, Bytecodes::Code code, ciMethod* target, ciKlass* holder);
 
   void iterate_one_block(ciBlock *blk, StateInfo &state, GrowableArray<ciBlock *> &successors);
@@ -100,8 +96,8 @@ class BCEscapeAnalyzer : public ResourceObj {
   void initialize();
   void clear_escape_info();
   void compute_escape_info();
-  vmIntrinsics::ID known_intrinsic();
-  void compute_escape_for_intrinsic(vmIntrinsics::ID iid);
+  vmIntrinsicID known_intrinsic();
+  void compute_escape_for_intrinsic(vmIntrinsicID iid);
   void do_analysis();
 
   void read_escape_info();
@@ -141,7 +137,7 @@ class BCEscapeAnalyzer : public ResourceObj {
     return !_conservative && _return_local;
   }
 
-  // True iff only newly allocated unescaped objects are returned.
+  // True iff only newly allocated non-escaped objects are returned.
   bool is_return_allocated() const {
     return !_conservative && _return_allocated && !_allocated_escapes;
   }

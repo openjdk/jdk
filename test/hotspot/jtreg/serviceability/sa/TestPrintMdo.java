@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class TestPrintMdo {
         LingeredApp app = null;
         try {
             ClhsdbLauncher test = new ClhsdbLauncher();
-            app = LingeredApp.startApp("-XX:+ProfileInterpreter");
+            app = LingeredApp.startApp("-XX:+ProfileInterpreter", "-XX:CompileThreshold=100");
             System.out.println ("Started LingeredApp with pid " + app.getPid());
             List<String> cmds = List.of("printmdo -a");
 
@@ -54,7 +54,6 @@ public class TestPrintMdo {
             expStrMap.put("printmdo -a", List.of(
                 "VirtualCallData",
                 "CounterData",
-                "ReceiverTypeData",
                 "bci",
                 "MethodData",
                 "java/lang/Object"));

@@ -84,6 +84,14 @@ public final class SunRsaSignEntries {
                 "sun.security.rsa.RSASignature$SHA512_224withRSA", attrs);
         addA(p, "Signature", "SHA512/256withRSA",
                 "sun.security.rsa.RSASignature$SHA512_256withRSA", attrs);
+        addA(p, "Signature", "SHA3-224withRSA",
+                "sun.security.rsa.RSASignature$SHA3_224withRSA", attrs);
+        addA(p, "Signature", "SHA3-256withRSA",
+                "sun.security.rsa.RSASignature$SHA3_256withRSA", attrs);
+        addA(p, "Signature", "SHA3-384withRSA",
+               "sun.security.rsa.RSASignature$SHA3_384withRSA", attrs);
+        addA(p, "Signature", "SHA3-512withRSA",
+                "sun.security.rsa.RSASignature$SHA3_512withRSA", attrs);
 
         addA(p, "KeyFactory", "RSASSA-PSS",
                 "sun.security.rsa.RSAKeyFactory$PSS", attrs);
@@ -92,7 +100,7 @@ public final class SunRsaSignEntries {
         addA(p, "Signature", "RSASSA-PSS",
                 "sun.security.rsa.RSAPSSSignature", attrs);
         addA(p, "AlgorithmParameters", "RSASSA-PSS",
-                "sun.security.rsa.PSSParameters", attrs);
+                "sun.security.rsa.PSSParameters", null);
     }
 
     public Iterator<Provider.Service> iterator() {

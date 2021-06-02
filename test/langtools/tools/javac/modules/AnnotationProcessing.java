@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8133884 8162711 8133896 8172158 8172262 8173636 8175119 8189747
+ * @bug 8133884 8162711 8133896 8172158 8172262 8173636 8175119 8189747 8236842 8254023 8263432
  * @summary Verify that annotation processing works.
  * @library /tools/lib
  * @modules
@@ -44,8 +44,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,7 +55,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -78,13 +79,12 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.ElementScanner14;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.FileObject;
+import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileManager;
-import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
-import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import toolbox.JavacTask;
@@ -521,6 +521,66 @@ public class AnnotationProcessing extends ModuleTestBase {
     }
 
     @Test
+    public void testAnnotationsWithoutTargetInModuleInfo(Path base) throws Exception {
+        Path moduleSrc = base.resolve("module-src");
+        Path m1 = moduleSrc.resolve("m1");
+
+        tb.writeJavaFiles(m1,
+                          "@test.A module m1x { exports test; }",
+                          "package test; public @interface A { }",
+                          "package test; public @interface B { }");
+
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        List<String> expectedLog = List.of("Note: m1x/test.A AP Invoked",
+                                           "Note: m1x/test.A AP Invoked");
+
+        List<String> actualLog = new JavacTask(tb)
+                .options("-processor", AnnotationsWithoutTargetInModuleInfo.class.getName()
+                         + "," + AnnotationsWithoutTargetNotInModuleInfo.class.getName())
+                .outdir(classes)
+                .files(findJavaFiles(m1))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        tb.checkEqual(expectedLog, actualLog);
+    }
+
+    @SupportedAnnotationTypes("m1x/test.A")
+    public static final class AnnotationsWithoutTargetInModuleInfo extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            processingEnv.getMessager().printMessage(Kind.NOTE, "m1x/test.A AP Invoked");
+            return false;
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
+    }
+
+    @SupportedAnnotationTypes("m1x/test.B")
+    public static final class AnnotationsWithoutTargetNotInModuleInfo extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            processingEnv.getMessager().printMessage(Kind.NOTE, "m1x/test.B AP Invoked");
+            return false;
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
+    }
+
+    @Test
     public void testGenerateInMultiModeAPI(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
         Path classes = base.resolve("classes");
@@ -849,7 +909,8 @@ public class AnnotationProcessing extends ModuleTestBase {
                     runCompiler(base,
                                 m1,
                                 classes,
-                                "createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, \"impl\", \"impl\"" + originating + "), \"impl\", \"impl\")",
+                                """
+                                    createSource(() -> filer.createResource(StandardLocation.CLASS_OUTPUT, "impl", "impl\"""" + originating + "), \"impl\", \"impl\")",
                                 options);
                     assertFileExists(classes, modulePath, "impl", "impl");
                 }
@@ -987,28 +1048,31 @@ public class AnnotationProcessing extends ModuleTestBase {
 
     private void compileAP(Path target, String code) {
         String processorCode =
-            "import java.util.*;\n" +
-            "import javax.annotation.processing.*;\n" +
-            "import javax.lang.model.*;\n" +
-            "import javax.lang.model.element.*;\n" +
-            "import javax.lang.model.type.*;\n" +
-            "import javax.lang.model.util.*;\n" +
-            "import javax.tools.*;\n" +
-            "@SupportedAnnotationTypes(\"*\")\n" +
-            "public final class AP extends AnnotationProcessing.GeneratingAP {\n" +
-            "\n" +
-            "        int round;\n" +
-            "\n" +
-            "        @Override\n" +
-            "        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {\n" +
-            "            if (round++ != 0)\n" +
-            "                return false;\n" +
-            "            Filer filer = processingEnv.getFiler();\n" +
-            "            TypeElement jlObject = processingEnv.getElementUtils().getTypeElement(\"java.lang.Object\");\n" +
-            code + ";\n" +
-            "            return false;\n" +
-            "        }\n" +
-            "    }\n";
+            """
+                import java.util.*;
+                import javax.annotation.processing.*;
+                import javax.lang.model.*;
+                import javax.lang.model.element.*;
+                import javax.lang.model.type.*;
+                import javax.lang.model.util.*;
+                import javax.tools.*;
+                @SupportedAnnotationTypes("*")
+                public final class AP extends AnnotationProcessing.GeneratingAP {
+
+                        int round;
+
+                        @Override
+                        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+                            if (round++ != 0)
+                                return false;
+                            Filer filer = processingEnv.getFiler();
+                            TypeElement jlObject = processingEnv.getElementUtils().getTypeElement("java.lang.Object");
+                """ + code + """
+                ;
+                            return false;
+                        }
+                    }
+                """;
         new JavacTask(tb)
           .options("-classpath", System.getProperty("test.class.path"))
           .sources(processorCode)
@@ -1300,6 +1364,441 @@ public class AnnotationProcessing extends ModuleTestBase {
     }
 
     @Test
+    public void testUnboundLookupNew(Path base) throws Exception {
+        Path moduleSrc = base.resolve("module-src");
+        Path m1 = moduleSrc.resolve("m1x");
+        Path m2 = moduleSrc.resolve("m2x");
+        Path m3 = moduleSrc.resolve("m3x");
+        Path m4 = moduleSrc.resolve("m4x");
+
+        Path src = base.resolve("src");
+
+        Path classes = base.resolve("classes");
+        Path srcClasses = base.resolve("src-classes");
+
+        Files.createDirectories(classes);
+        Files.createDirectories(srcClasses);
+        Files.createDirectories(moduleSrc);
+
+        {
+            tb.cleanDirectory(classes);
+            tb.cleanDirectory(moduleSrc);
+
+            tb.writeJavaFiles(m1,
+                              "module m1x { exports api; }",
+                              "package test; public class Test { }",
+                              "package api; public class API {}");
+
+            tb.writeJavaFiles(m2,
+                              "module m2x { requires m1x; }",
+                              "package test; public class Test { }",
+                              "package api.impl; public class Impl { }");
+
+            new JavacTask(tb)
+                .options("--module-source-path", moduleSrc.toString())
+                .outdir(classes)
+                .files(findJavaFiles(moduleSrc))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+            List<String> log = new JavacTask(tb)
+                .options("--module-source-path", moduleSrc.toString(),
+                         "-processorpath", System.getProperty("test.class.path"),
+                         "-processor", UnboundLookupNew.class.getName(),
+                         "-AlookupClass=+test.Test",
+                         "-AlookupPackage=+test,+api",
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(m2))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+            List<String> expected = Arrays.asList("- compiler.note.proc.messager: test.Test found in module: m2x",
+                                                  "- compiler.note.proc.messager: test found in module: m2x",
+                                                  "- compiler.note.proc.messager: api found in module: m1x",
+                                                  "- compiler.note.proc.messager: test.Test found in module: m2x",
+                                                  "- compiler.note.proc.messager: test found in module: m2x",
+                                                  "- compiler.note.proc.messager: api found in module: m1x"
+                                                 );
+
+            if (!expected.equals(log)) {
+                throw new AssertionError("Expected output not found: " + log);
+            }
+        }
+
+        {
+            tb.cleanDirectory(classes);
+            tb.cleanDirectory(moduleSrc);
+
+            tb.writeJavaFiles(m1,
+                              "module m1x { exports test; }",
+                              "package test; public class Test { }");
+
+            tb.writeJavaFiles(m2,
+                              "module m2x { requires m1x; }",
+                              "package test; public class Test { }");
+
+            List<String> log = new JavacTask(tb)
+                .options("--module-source-path", moduleSrc.toString(),
+                         "-processorpath", System.getProperty("test.class.path"),
+                         "-processor", UnboundLookupNew.class.getName(),
+                         "-AlookupClass=+test.Test",
+                         "-AlookupPackage=+test",
+                         "-XDrawDiagnostics",
+                         "-XDshould-stop.at=FLOW")
+                .outdir(classes)
+                .files(findJavaFiles(m2))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+            List<String> expected = Arrays.asList(
+                    "Test.java:1:1: compiler.err.package.in.other.module: m1x",
+                    "- compiler.note.proc.messager: test.Test found in module: m2x",
+                    "- compiler.note.proc.messager: test found in module: m1x",
+                    "- compiler.note.proc.messager: test.Test found in module: m2x",
+                    "- compiler.note.proc.messager: test found in module: m1x",
+                    "1 error");
+
+            if (!expected.equals(log)) {
+                throw new AssertionError("Expected output not found: " + log);
+            }
+        }
+
+        {
+            tb.cleanDirectory(classes);
+            tb.cleanDirectory(moduleSrc);
+
+            tb.writeJavaFiles(m1,
+                              "module m1x { }",
+                              "package test; public class Test { }");
+
+            tb.writeJavaFiles(m2,
+                              "module m2x { requires m1x; requires m3x; }",
+                              "package test; public class Test { }");
+
+            tb.writeJavaFiles(m3,
+                              "module m3x { }",
+                              "package test; public class Test { }");
+
+            new JavacTask(tb)
+                .options("--module-source-path", moduleSrc.toString())
+                .outdir(classes)
+                .files(findJavaFiles(moduleSrc))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+            List<String> log = new JavacTask(tb)
+                .options("--module-source-path", moduleSrc.toString(),
+                         "-processorpath", System.getProperty("test.class.path"),
+                         "-processor", UnboundLookupNew.class.getName(),
+                         "-AlookupClass=+test.Test",
+                         "-AlookupPackage=+test",
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(m2))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+            List<String> expected = Arrays.asList(
+                    "- compiler.note.proc.messager: test.Test found in module: m2x",
+                    "- compiler.note.proc.messager: test found in module: m2x",
+                    "- compiler.note.proc.messager: test.Test found in module: m2x",
+                    "- compiler.note.proc.messager: test found in module: m2x"
+            );
+
+            if (!expected.equals(log)) {
+                throw new AssertionError("Expected output not found: " + log);
+            }
+        }
+
+        {
+            tb.cleanDirectory(classes);
+            tb.cleanDirectory(moduleSrc);
+
+            tb.writeJavaFiles(m1,
+                              "module m1x { exports test; }",
+                              "package test; public class Test { }");
+
+            tb.writeJavaFiles(m2,
+                              "module m2x { requires m1x; requires m3x; }");
+
+            tb.writeJavaFiles(m3,
+                              "module m3x { exports test; }",
+                              "package test; public class Test { }");
+
+            tb.writeJavaFiles(m4,
+                              "module m4x { }",
+                              "package test; public class Test { }");
+
+            {
+                List<String> log = new JavacTask(tb)
+                    .options("--module-source-path", moduleSrc.toString(),
+                             "-processorpath", System.getProperty("test.class.path"),
+                             "-processor", UnboundLookupNew.class.getName(),
+                             "-AlookupClass=+test.Test",
+                             "-AlookupPackage=+test",
+                             "-XDrawDiagnostics",
+                             "-XDshould-stop.at=FLOW")
+                    .outdir(classes)
+                    .files(findJavaFiles(m2))
+                    .run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutputLines(OutputKind.DIRECT);
+
+                List<Set<String>> expected = Arrays.asList(
+                        variants("module-info.java:1:1: compiler.err.package.clash.from.requires: m2x, test, m1x, m3x"),
+                        variants("- compiler.note.proc.messager: test.Test found in module: m1x"),
+                        variants("- compiler.note.proc.messager: test found in module: m1x"),
+                        variants("- compiler.note.proc.messager: test.Test found in module: m1x"),
+                        variants("- compiler.note.proc.messager: test found in module: m1x"),
+                        variants("1 error"));
+
+                assertErrorsWithVariants(expected, log);
+            }
+
+            {
+                List<String> log = new JavacTask(tb)
+                    .options("--module-source-path", moduleSrc.toString(),
+                             "-processorpath", System.getProperty("test.class.path"),
+                             "-processor", UnboundLookupNew.class.getName(),
+                             "-AlookupClass=-test.Test",
+                             "-AlookupPackage=-test",
+                             "-XDrawDiagnostics",
+                             "-XDshould-stop.at=FLOW")
+                    .outdir(classes)
+                    .files(findJavaFiles(m2, m4))
+                    .run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutputLines(OutputKind.DIRECT);
+
+                List<String> expected = Arrays.asList(
+                        "module-info.java:1:1: compiler.err.package.clash.from.requires: m2x, test, m1x, m3x",
+                        "- compiler.note.multiple.elements: getTypeElement, test.Test, m1x, m4x",
+                        "- compiler.note.multiple.elements: getPackageElement, test, m1x, m4x",
+                        "1 error");
+
+                if (!expected.equals(log)) {
+                    throw new AssertionError("Expected output not found: " + log);
+                }
+            }
+        }
+
+        {
+            tb.cleanDirectory(classes);
+            tb.cleanDirectory(moduleSrc);
+
+            tb.writeJavaFiles(m1,
+                              "module m1x { exports test; }",
+                              "package test; public class Test { }");
+
+            tb.writeJavaFiles(m2,
+                              "module m2x { requires m1x; }");
+
+            tb.writeJavaFiles(src,
+                              "package test; public class Test { }");
+
+            new JavacTask(tb)
+                .options("--module-source-path", moduleSrc.toString())
+                .outdir(classes)
+                .files(findJavaFiles(moduleSrc))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+            List<String> log = new JavacTask(tb)
+                .options("--module-source-path", moduleSrc.toString(),
+                         "--source-path", src.toString(),
+                         "-processorpath", System.getProperty("test.class.path"),
+                         "-processor", UnboundLookupNew.class.getName(),
+                         "-AlookupClass=+test.Test",
+                         "-AlookupPackage=+test",
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(m2))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+            List<String> expected = Arrays.asList(
+                    "- compiler.note.proc.messager: test.Test found in module: m1x",
+                    "- compiler.note.proc.messager: test found in module: m1x",
+                    "- compiler.note.proc.messager: test.Test found in module: m1x",
+                    "- compiler.note.proc.messager: test found in module: m1x"
+            );
+
+            if (!expected.equals(log)) {
+                throw new AssertionError("Expected output not found: " + log);
+            }
+        }
+
+        {
+            tb.cleanDirectory(classes);
+            tb.cleanDirectory(moduleSrc);
+
+            tb.writeJavaFiles(m1,
+                              "module m1x { exports test; }",
+                              "package test; public class Test { }");
+
+            tb.writeJavaFiles(m2,
+                              "module m2x { requires m1x; }");
+
+            tb.writeJavaFiles(src,
+                              "package test; public class Test { }");
+
+            new JavacTask(tb)
+                .options("--module-source-path", moduleSrc.toString())
+                .outdir(classes)
+                .files(findJavaFiles(moduleSrc))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+            List<String> log = new JavacTask(tb)
+                .options("--module-source-path", moduleSrc.toString(),
+                         "--source-path", src.toString(),
+                         "--add-reads=m2x=ALL-UNNAMED",
+                         "-processorpath", System.getProperty("test.class.path"),
+                         "-processor", UnboundLookupNew.class.getName(),
+                         "-AlookupClass=+test.Test",
+                         "-AlookupPackage=+test",
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(m2))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+            List<String> expected = Arrays.asList(
+                    "- compiler.note.proc.messager: test.Test found in module: m1x",
+                    "- compiler.note.proc.messager: test found in module: m1x",
+                    "- compiler.note.proc.messager: test.Test found in module: m1x",
+                    "- compiler.note.proc.messager: test found in module: m1x"
+            );
+
+            if (!expected.equals(log)) {
+                throw new AssertionError("Expected output not found: " + log);
+            }
+        }
+
+        {
+            tb.cleanDirectory(classes);
+            tb.cleanDirectory(srcClasses);
+            tb.cleanDirectory(moduleSrc);
+
+            tb.writeJavaFiles(m1,
+                              "module m1x { exports test; }",
+                              "package test; public class Test { }");
+
+            tb.writeJavaFiles(m2,
+                              "module m2x { requires m1x; }");
+
+            tb.writeJavaFiles(src,
+                              "package test; public class Test { }");
+
+            new JavacTask(tb)
+                .options("--module-source-path", moduleSrc.toString())
+                .outdir(classes)
+                .files(findJavaFiles(moduleSrc))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+            List<String> log = new JavacTask(tb)
+                .options("--module-path", classes.toString(),
+                         "--source-path", src.toString(),
+                         "-processorpath", System.getProperty("test.class.path"),
+                         "-processor", UnboundLookupNew.class.getName(),
+                         "-AlookupClass=+test.Test",
+                         "-AlookupPackage=+test",
+                         "--add-modules=m2x",
+                         "-XDshould-stop.ifError=ATTR",
+                         "-XDshould-stop.ifNoError=ATTR",
+                         "-XDrawDiagnostics")
+                .outdir(srcClasses)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+            List<String> expected = Arrays.asList("Test.java:1:1: compiler.err.package.in.other.module: m1x",
+                                                  "- compiler.note.proc.messager: test.Test found in module: unnamed module",
+                                                  "- compiler.note.proc.messager: test found in module: m1x",
+                                                  "- compiler.note.proc.messager: test.Test found in module: unnamed module",
+                                                  "- compiler.note.proc.messager: test found in module: m1x",
+                                                  "1 error"
+                                                 );
+
+            if (!expected.equals(log)) {
+                throw new AssertionError("Expected output not found: " + log);
+            }
+        }
+    }
+
+    private Set<String> variants(String... expected) {
+        return new HashSet<>(Arrays.asList(expected));
+    }
+
+    private void assertErrorsWithVariants(List<Set<String>> expectedVariants, List<String> actual) {
+        assertEquals(expectedVariants.size(), actual.size());
+        Iterator<Set<String>> expIt = expectedVariants.iterator();
+        Iterator<String> actIt = actual.iterator();
+
+        while (expIt.hasNext() && actIt.hasNext()) {
+            Set<String> exp = expIt.next();
+            String act = actIt.next();
+
+            if (!exp.contains(act)) {
+                throw new AssertionError("Expected: " + exp + ", actual: " + act);
+            }
+        }
+    }
+
+    @SupportedAnnotationTypes("*")
+    @SupportedOptions({"lookupClass", "lookupPackage"})
+    public static final class UnboundLookupNew extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            performLookup("lookupClass", processingEnv.getElementUtils()::getTypeElement);
+            performLookup("lookupPackage", processingEnv.getElementUtils()::getPackageElement);
+
+            return false;
+        }
+
+        private void performLookup(String optionName, Function<String, Element> name2Element) {
+            String[] lookupList = processingEnv.getOptions().get(optionName).split(",");
+            for (String lookup : lookupList) {
+                boolean shouldExists = lookup.charAt(0) == '+';
+                String name = lookup.substring(1);
+                Element type = name2Element.apply(name);
+
+                if (shouldExists) {
+                    if (type == null) {
+                        throw new AssertionError("Did not find the expected type.");
+                    } else {
+                        processingEnv.getMessager().printMessage(Kind.NOTE, name + " found in module: " + processingEnv.getElementUtils().getModuleOf(type));
+                    }
+                } else {
+                    if (type != null) {
+                        throw new AssertionError("Found the unexpected type.");
+                    }
+                }
+            }
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
+    }
+
+    @Test
     public void testUnboundLookup(Path base) throws Exception {
         Path src = base.resolve("src");
 
@@ -1333,7 +1832,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                           "package nested.pack; public class Impl { }");
 
         //from source:
-        String log = new JavacTask(tb)
+        new JavacTask(tb)
             .options("--module-source-path", moduleSrc.toString(),
                      "--source-path", src.toString(),
                      "-processorpath", System.getProperty("test.class.path"),
@@ -1344,20 +1843,6 @@ public class AnnotationProcessing extends ModuleTestBase {
             .run()
             .writeAll()
             .getOutput(OutputKind.DIRECT);
-
-        String moduleImplConflictString =
-                "- compiler.note.multiple.elements: getTypeElement, impl.conflict.module.Impl, m2x, m1x";
-        String srcConflictString =
-                "- compiler.note.multiple.elements: getTypeElement, impl.conflict.src.Impl, m1x, unnamed module";
-
-        if (!log.contains(moduleImplConflictString) ||
-            !log.contains(srcConflictString)) {
-            throw new AssertionError("Expected output not found: " + log);
-        }
-
-        if (log.split(Pattern.quote(moduleImplConflictString)).length > 2) {
-            throw new AssertionError("Too many warnings in: " + log);
-        }
 
         new JavacTask(tb)
             .options("--source-path", src.toString())
@@ -1373,7 +1858,8 @@ public class AnnotationProcessing extends ModuleTestBase {
                      "--add-modules", "m1x,m2x",
                      "-processorpath", System.getProperty("test.class.path"),
                      "-processor", UnboundLookup.class.getName(),
-                     "-proc:only")
+                     "-proc:only",
+                     "-Aunnamedmodule")
             .classes("java.lang.Object")
             .run()
             .writeAll();
@@ -1405,6 +1891,7 @@ public class AnnotationProcessing extends ModuleTestBase {
     }
 
     @SupportedAnnotationTypes("*")
+    @SupportedOptions("unnamedmodule")
     public static final class UnboundLookup extends AbstractProcessor {
 
         @Override
@@ -1422,8 +1909,8 @@ public class AnnotationProcessing extends ModuleTestBase {
             assertTypeElementNotFound("impl.conflict.module.Impl");
             assertTypeElementNotFound("impl.conflict.module.Impl"); //check that the warning/note is produced only once
             assertPackageElementNotFound("impl.conflict.module");
-            assertTypeElementNotFound("impl.conflict.src.Impl");
-            assertPackageElementNotFound("impl.conflict.src");
+            assertTypeElementExists("impl.conflict.src.Impl", processingEnv.getOptions().containsKey("unnamedmodule") ? "" : "m1x");
+            assertPackageElementExists("impl.conflict.src", processingEnv.getOptions().containsKey("unnamedmodule") ? "" : "m1x");
             assertTypeElementNotFound("impl.conflict.clazz.pkg");
             assertPackageElementNotFound("unique"); //do not return packages without members in module mode
             assertTypeElementNotFound("nested"); //cannot distinguish between m1x and m2x
@@ -1549,6 +2036,101 @@ public class AnnotationProcessing extends ModuleTestBase {
         if (!log.equals(expected)) {
             throw new AssertionError("Expected output not found.");
         }
+    }
+
+    @Test
+    public void testClassPhantomPackageClash(Path base) throws Exception {
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "module m {}",
+                          "package api; public class Nested {}",
+                          "package api.nested; public class C {}");
+
+        class TestFileManager extends ForwardingJavaFileManager<JavaFileManager>
+                              implements StandardJavaFileManager {
+
+            public TestFileManager(StandardJavaFileManager fileManager) {
+                super(fileManager);
+            }
+
+            @Override
+            public Iterable<JavaFileObject> list(Location location, String packageName, Set<JavaFileObject.Kind> kinds, boolean recurse) throws IOException {
+                if ("api.Nested".equals(packageName)) {
+                    //simulate case insensitive filesystem:
+                    packageName = "api.nested";
+                }
+                return super.list(location, packageName, kinds, recurse);
+            }
+
+            @Override
+            public void setLocationFromPaths(Location location, Collection<? extends Path> paths) throws IOException {
+                ((StandardJavaFileManager) fileManager).setLocationFromPaths(location, paths);
+            }
+
+            @Override
+            public Iterable<? extends Path> getLocationAsPaths(Location location) {
+                return ((StandardJavaFileManager) fileManager).getLocationAsPaths(location);
+            }
+
+            @Override
+            public Iterable<? extends JavaFileObject> getJavaFileObjectsFromFiles(Iterable<? extends File> files) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Iterable<? extends JavaFileObject> getJavaFileObjects(File... files) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Iterable<? extends JavaFileObject> getJavaFileObjectsFromStrings(Iterable<String> names) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Iterable<? extends JavaFileObject> getJavaFileObjects(String... names) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void setLocation(Location location, Iterable<? extends File> files) throws IOException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Iterable<? extends File> getLocation(Location location) {
+                throw new UnsupportedOperationException();
+            }
+        }
+
+        try (StandardJavaFileManager fm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null);
+             JavaFileManager testFM = new TestFileManager(fm)) {
+            new JavacTask(tb)
+                .fileManager(testFM)
+                .options("-processor", NoOpTestAP.class.getName(),
+                         "-sourcepath", src.toString())
+                .outdir(classes)
+                .files(src.resolve("module-info.java"),
+                       src.resolve("api").resolve("Nested.java"))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.STDERR);
+        }
+    }
+
+    @SupportedAnnotationTypes("*")
+    public static final class NoOpTestAP extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            return false;
+        }
+
     }
 
     private static void assertNonNull(String msg, Object val) {

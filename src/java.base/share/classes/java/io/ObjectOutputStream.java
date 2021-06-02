@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,8 +150,7 @@ import sun.reflect.misc.ReflectUtil;
  * defaultWriteObject and writeFields initially terminate any existing
  * block-data record.
  *
- * @implSpec
- * Records are serialized differently than ordinary serializable or externalizable
+ * <p>Records are serialized differently than ordinary serializable or externalizable
  * objects, see <a href="ObjectInputStream.html#record-serialization">record serialization</a>.
  *
  * @author      Mike Warres
@@ -161,7 +160,7 @@ import sun.reflect.misc.ReflectUtil;
  * @see java.io.Serializable
  * @see java.io.Externalizable
  * @see <a href="{@docRoot}/../specs/serialization/output.html">
- *     Object Serialization Specification, Section 2, Object Output Classes</a>
+ *      <cite>Java Object Serialization Specification,</cite> Section 2, "Object Output Classes"</a>
  * @since       1.1
  */
 public class ObjectOutputStream
@@ -214,6 +213,7 @@ public class ObjectOutputStream
      * value of "sun.io.serialization.extendedDebugInfo" property,
      * as true or false for extended information about exception's place
      */
+    @SuppressWarnings("removal")
     private static final boolean extendedDebugInfo =
         java.security.AccessController.doPrivileged(
             new sun.security.action.GetBooleanAction(
@@ -275,6 +275,7 @@ public class ObjectOutputStream
      * @see java.io.SerializablePermission
      */
     protected ObjectOutputStream() throws IOException, SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
@@ -622,6 +623,7 @@ public class ObjectOutputStream
             return enable;
         }
         if (enable) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(SUBSTITUTION_PERMISSION);
@@ -1053,6 +1055,7 @@ public class ObjectOutputStream
         if (cl == ObjectOutputStream.class) {
             return;
         }
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
             return;
@@ -1074,6 +1077,7 @@ public class ObjectOutputStream
      * override security-sensitive non-final methods.  Returns TRUE if subclass
      * is "safe", FALSE otherwise.
      */
+    @SuppressWarnings("removal")
     private static Boolean auditSubclass(Class<?> subcl) {
         return AccessController.doPrivileged(
             new PrivilegedAction<>() {
@@ -1483,7 +1487,6 @@ public class ObjectOutputStream
     }
 
     /** Writes the record component values for the given record object. */
-    @SuppressWarnings("preview")
     private void writeRecordData(Object obj, ObjectStreamClass desc)
         throws IOException
     {
