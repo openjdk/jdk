@@ -56,6 +56,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
@@ -5186,133 +5187,130 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
 bool LibraryCallKit::inline_vectorizedMismatch() {
   assert(UseVectorizedMismatchIntrinsic, "not implemented on this platform");
 
-  address stubAddr = StubRoutines::vectorizedMismatch();
-  if (stubAddr == NULL) {
-    return false; // Intrinsic's stub is not implemented on this platform
-  }
-  const char* stubName = "vectorizedMismatch";
-  int size_l = callee()->signature()->size();
   assert(callee()->signature()->size() == 8, "vectorizedMismatch has 6 parameters");
+  Node* obja    = argument(0); // Object
+  Node* aoffset = argument(1); // long
+  Node* objb    = argument(3); // Object
+  Node* boffset = argument(4); // long
+  Node* length  = argument(6); // int
+  Node* scale   = argument(7); // int
 
-  Node* obja = argument(0);
-  Node* aoffset = argument(1);
-  Node* objb = argument(3);
-  Node* boffset = argument(4);
-  Node* length = argument(6);
-  Node* scale = argument(7);
-
-  const Type* a_type = obja->Value(&_gvn);
-  const Type* b_type = objb->Value(&_gvn);
-  const TypeAryPtr* top_a = a_type->isa_aryptr();
-  const TypeAryPtr* top_b = b_type->isa_aryptr();
-  if (top_a == NULL || top_a->klass() == NULL ||
-      top_b == NULL || top_b->klass() == NULL ||
+  const TypeAryPtr* obja_t = _gvn.type(obja)->isa_aryptr();
+  const TypeAryPtr* objb_t = _gvn.type(objb)->isa_aryptr();
+  if (obja_t == NULL || obja_t->klass() == NULL ||
+      objb_t == NULL || objb_t->klass() == NULL ||
       scale == top()) {
-    // failed array check
-    return false;
+    return false; // failed input validation
   }
-  jvms()->set_should_reexecute(true);
 
   Node* obja_adr = make_unsafe_address(obja, aoffset);
   Node* objb_adr = make_unsafe_address(objb, boffset);
 
-  bool enable_pi = false;
-  Node* fast_path = top();
-  Node* fastcomp_result = top();
-  Node* init_mem = map()->memory();
+  // Partial inlining handling for inputs smaller than ArrayOperationPartialInlineSize bytes in size.
+  //
+  //    inline_limit = ArrayOperationPartialInlineSize / element_size;
+  //    if (length <= inline_limit) {
+  //      inline_path:
+  //        vmask   = VectorMaskGen length
+  //        vload1  = LoadVectorMasked obja, vmask
+  //        vload2  = LoadVectorMasked objb, vmask
+  //        result1 = VectorCmpMasked vload1, vload2, vmask
+  //    } else {
+  //      call_stub_path:
+  //        result2 = call vectorizedMismatch_stub(obja, objb, length, scale)
+  //    }
+  //    exit_block:
+  //      return Phi(result1, result2);
+  //
+  enum { inline_path = 1,  // input is small enough to process it all at once
+         stub_path   = 2,  // input is too large; call into the VM
+         PATH_LIMIT  = 3
+  };
 
-  assert(scale->bottom_type()->isa_int(), "scale must be integer");
-  int scale_val = scale->bottom_type()->is_int()->is_con() ?
-                  scale->bottom_type()->is_int()->get_con() :
-                  -1;
-  if (scale_val >= 0 && scale_val < 4) {
-    BasicType prim_types[] = {T_BYTE, T_SHORT, T_INT, T_LONG};
-    BasicType elem_bt = prim_types[scale_val];
-    int vec_len = ArrayOperationPartialInlineSize / type2aelembytes(elem_bt);
+  Node* exit_block = new RegionNode(PATH_LIMIT);
+  Node* result_phi = new PhiNode(exit_block, TypeInt::INT);
+  Node* memory_phi = new PhiNode(exit_block, Type::MEMORY, TypePtr::BOTTOM);
 
-    // Enable partial in-lining if compare size is less than
-    // ArrayOperationPartialInlineSize(default 32 bytes).
-    // If ArrayOperationPartialInlineSize > 32 in-lining is enabled
-    // for all integral types (byte/short/char/int), else for default
-    // value in-lining is enabled for sub-word types (byte/short/char).
-    if (ArrayOperationPartialInlineSize > 32) {
-      enable_pi = is_subword_type(elem_bt) || elem_bt == T_INT;
-    } else if (ArrayOperationPartialInlineSize > 0) {
-      enable_pi = is_subword_type(elem_bt);
-    }
+  Node* call_stub_path = control();
 
-    if (enable_pi &&
-        Matcher::match_rule_supported_vector(Op_VectorMaskGen , vec_len, elem_bt) &&
-        Matcher::match_rule_supported_vector(Op_LoadVectorMasked , vec_len, elem_bt) &&
-        Matcher::match_rule_supported_vector(Op_VectorCmpMasked, vec_len, elem_bt)) {
+  BasicType elem_bt = T_ILLEGAL;
 
-      Node* length_in_bytes = _gvn.transform(new LShiftINode(length, scale));
-      Node* pi_size = intcon(ArrayOperationPartialInlineSize);
-      Node* length_cmp = _gvn.transform(new CmpINode(length_in_bytes, pi_size));
-      Node* cmp_res = _gvn.transform(new BoolNode(length_cmp, BoolTest::le));
+  const TypeInt* scale_t = _gvn.type(scale)->is_int();
+  if (scale_t->is_con()) {
+    switch (scale_t->get_con()) {
+      case 0: elem_bt = T_BYTE;  break;
+      case 1: elem_bt = T_SHORT; break;
+      case 2: elem_bt = T_INT;   break;
+      case 3: elem_bt = T_LONG;  break;
 
-      // When the cmp_res is evaluated to false then fast_path will be NULL
-      // and only slow path exist (i.e. implicit control), so all the nodes control
-      // dependent on fast path will be sweeped out during GVN. When cmp_res is
-      // evaluated to true fast_path is chosen and slow_path (control()) is NULL and
-      // thus before exit control is explicitly set to fast_path.
-      fast_path = generate_guard(cmp_res, NULL, PROB_MAX);
-
-      const TypeVect* vt = TypeVect::make(elem_bt, vec_len);
-      Node* mask_gen = _gvn.transform(new VectorMaskGenNode(ConvI2L(length), TypeVect::VECTMASK, elem_bt));
-
-      const TypePtr* ptr_type_a = obja_adr->Value(&_gvn)->isa_ptr();
-      const TypePtr* ptr_type_b = objb_adr->Value(&_gvn)->isa_ptr();
-
-      int alias_idx = C->get_alias_index(top_a);
-      Node* mm = memory(alias_idx);
-      Node* masked_load1 = _gvn.transform(new LoadVectorMaskedNode(fast_path, mm, obja_adr,
-                                                                   ptr_type_a, vt, mask_gen));
-      alias_idx = C->get_alias_index(top_b);
-      mm = memory(alias_idx);
-      Node* masked_load2 = _gvn.transform(new LoadVectorMaskedNode(fast_path, mm, objb_adr,
-                                                                   ptr_type_b, vt, mask_gen));
-
-      fastcomp_result = _gvn.transform(new VectorCmpMaskedNode(masked_load1, masked_load2,
-                                                               mask_gen, TypeInt::INT));
-      C->set_max_vector_size(MAX2((uint)ArrayOperationPartialInlineSize, C->max_vector_size()));
+      default: elem_bt = T_ILLEGAL; break; // not supported
     }
   }
 
-  if (stopped()) {
-    // Slow path is dead.
-    set_control(fast_path);
-    set_result(fastcomp_result);
-    clear_upper_avx();
-    return true;
+  int inline_limit = 0;
+  bool do_partial_inline = false;
+
+  if (elem_bt != T_ILLEGAL && ArrayOperationPartialInlineSize > 0) {
+    inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(elem_bt);
+    do_partial_inline = inline_limit >= 16;
   }
 
-  // Proceed with expanding slow path.
-  Node* call = make_runtime_call(RC_LEAF,
-                                 OptoRuntime::vectorizedMismatch_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 obja_adr, objb_adr, length, scale);
+  if (do_partial_inline) {
+    assert(elem_bt != T_ILLEGAL, "sanity");
 
-  Node* call_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  Node* call_mem = map()->memory();
+    const TypeVect* vt = TypeVect::make(elem_bt, inline_limit);
 
-  Node* exit_block = new RegionNode(3);
-  exit_block->init_req(1, fast_path);
-  exit_block->init_req(2, control());
+    if (Matcher::match_rule_supported_vector(Op_VectorMaskGen,    inline_limit, elem_bt) &&
+        Matcher::match_rule_supported_vector(Op_LoadVectorMasked, inline_limit, elem_bt) &&
+        Matcher::match_rule_supported_vector(Op_VectorCmpMasked,  inline_limit, elem_bt)) {
+
+      Node* cmp_length = _gvn.transform(new CmpINode(length, intcon(inline_limit)));
+      Node* bol_gt     = _gvn.transform(new BoolNode(cmp_length, BoolTest::gt));
+
+      call_stub_path = generate_guard(bol_gt, NULL, PROB_MIN);
+
+      if (!stopped()) {
+        const TypePtr* obja_adr_t = _gvn.type(obja_adr)->isa_ptr();
+        const TypePtr* objb_adr_t = _gvn.type(objb_adr)->isa_ptr();
+        Node* obja_adr_mem = memory(C->get_alias_index(obja_adr_t));
+        Node* objb_adr_mem = memory(C->get_alias_index(objb_adr_t));
+
+        Node* vmask      = _gvn.transform(new VectorMaskGenNode(ConvI2X(length), TypeVect::VECTMASK, elem_bt));
+        Node* vload_obja = _gvn.transform(new LoadVectorMaskedNode(control(), obja_adr_mem, obja_adr, obja_adr_t, vt, vmask));
+        Node* vload_objb = _gvn.transform(new LoadVectorMaskedNode(control(), objb_adr_mem, objb_adr, objb_adr_t, vt, vmask));
+        Node* result     = _gvn.transform(new VectorCmpMaskedNode(vload_obja, vload_objb, vmask, TypeInt::INT));
+
+        exit_block->init_req(inline_path, control());
+        memory_phi->init_req(inline_path, map()->memory());
+        result_phi->init_req(inline_path, result);
+
+        C->set_max_vector_size(MAX2((uint)ArrayOperationPartialInlineSize, C->max_vector_size()));
+        clear_upper_avx();
+      }
+    }
+  }
+
+  if (call_stub_path != NULL) {
+    set_control(call_stub_path);
+
+    Node* call = make_runtime_call(RC_LEAF,
+                                   OptoRuntime::vectorizedMismatch_Type(),
+                                   StubRoutines::vectorizedMismatch(), "vectorizedMismatch", TypePtr::BOTTOM,
+                                   obja_adr, objb_adr, length, scale);
+
+    exit_block->init_req(stub_path, control());
+    memory_phi->init_req(stub_path, map()->memory());
+    result_phi->init_req(stub_path, _gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  }
+
   exit_block = _gvn.transform(exit_block);
+  memory_phi = _gvn.transform(memory_phi);
+  result_phi = _gvn.transform(result_phi);
 
-  Node* result = new PhiNode(exit_block, TypeInt::INT);
-  result->init_req(1, fastcomp_result);
-  result->init_req(2, call_result);
-  result = _gvn.transform(result);
-
-  Node* mem_phi = new PhiNode(exit_block, Type::MEMORY, TypePtr::BOTTOM);
-  mem_phi->init_req(1, init_mem);
-  mem_phi->init_req(2, call_mem);
-
-  set_all_memory(_gvn.transform(mem_phi));
   set_control(exit_block);
-  set_result(result);
+  set_all_memory(memory_phi);
+  set_result(result_phi);
+
   return true;
 }
 

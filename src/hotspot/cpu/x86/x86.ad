@@ -8054,15 +8054,16 @@ instruct vmask_cmp_node(rRegI dst, vec src1, vec src2, kReg mask, kReg ktmp1, kR
   effect(TEMP_DEF dst, TEMP ktmp1, TEMP ktmp2, KILL cr);
   format %{ "vector_mask_cmp $src1, $src2, $mask \t! vector mask comparison" %}
   ins_encode %{
+    assert(vector_length_encoding(this, $src1) == vector_length_encoding(this, $src2), "mismatch");
+    assert(vector_element_basic_type(this, $src1) == vector_element_basic_type(this, $src2), "mismatch");
+
     Label DONE;
-    const MachNode* src1_node = static_cast<const MachNode*>(this->in(this->operand_index($src1)));
-    const MachNode* src2_node = static_cast<const MachNode*>(this->in(this->operand_index($src2)));
-    assert(0 == Type::cmp(src1_node->bottom_type(), src2_node->bottom_type()), "");
-    int vector_len = vector_length_encoding(src1_node);
-    BasicType elmType =  src1_node->bottom_type()->is_vect()->element_basic_type();
+    int vlen_enc = vector_length_encoding(this, $src1);
+    BasicType elem_bt = vector_element_basic_type(this, $src1);
+
     __ knotql($ktmp2$$KRegister, $mask$$KRegister);
     __ mov64($dst$$Register, -1L);
-    __ evpcmp(elmType, $ktmp1$$KRegister, $mask$$KRegister, $src1$$XMMRegister, $src2$$XMMRegister, Assembler::eq, vector_len);
+    __ evpcmp(elem_bt, $ktmp1$$KRegister, $mask$$KRegister, $src1$$XMMRegister, $src2$$XMMRegister, Assembler::eq, vlen_enc);
     __ kortestql($ktmp2$$KRegister, $ktmp1$$KRegister);
     __ jccb(Assembler::carrySet, DONE);
     __ kmovql($dst$$Register, $ktmp1$$KRegister);
@@ -8072,6 +8073,7 @@ instruct vmask_cmp_node(rRegI dst, vec src1, vec src2, kReg mask, kReg ktmp1, kR
   %}
   ins_pipe( pipe_slow );
 %}
+
 
 instruct vmasked_load64(vec dst, memory mem, kReg mask) %{
   match(Set dst (LoadVectorMasked mem mask));
