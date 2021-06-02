@@ -325,15 +325,24 @@ final class Long64Vector extends LongVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
-    public VectorShuffle<Long> toShuffle() {
+    private final
+    VectorShuffle<Long> toShuffleTemplate(AbstractSpecies<Long> dsp) {
         long[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
         return VectorShuffle.fromArray(VSPECIES, sa, 0);
+    }
+
+    @ForceInline
+    public VectorShuffle<Long> toShuffle() {
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     this.getClass(), ETYPE, VLENGTH,
+                                     Long64Shuffle.class, byte.class, VLENGTH,
+                                     this, VSPECIES,
+                                     Long64Vector::toShuffleTemplate);
     }
 
     // Specialized unary testing

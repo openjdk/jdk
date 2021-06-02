@@ -324,15 +324,24 @@ final class Float128Vector extends FloatVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
-    public VectorShuffle<Float> toShuffle() {
+    private final
+    VectorShuffle<Float> toShuffleTemplate(AbstractSpecies<Float> dsp) {
         float[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
         return VectorShuffle.fromArray(VSPECIES, sa, 0);
+    }
+
+    @ForceInline
+    public VectorShuffle<Float> toShuffle() {
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     this.getClass(), ETYPE, VLENGTH,
+                                     Float128Shuffle.class, byte.class, VLENGTH,
+                                     this, VSPECIES,
+                                     Float128Vector::toShuffleTemplate);
     }
 
     // Specialized unary testing

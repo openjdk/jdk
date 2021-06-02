@@ -330,15 +330,24 @@ final class Short512Vector extends ShortVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
-    public VectorShuffle<Short> toShuffle() {
+    private final
+    VectorShuffle<Short> toShuffleTemplate(AbstractSpecies<Short> dsp) {
         short[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
         return VectorShuffle.fromArray(VSPECIES, sa, 0);
+    }
+
+    @ForceInline
+    public VectorShuffle<Short> toShuffle() {
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     this.getClass(), ETYPE, VLENGTH,
+                                     Short512Shuffle.class, byte.class, VLENGTH,
+                                     this, VSPECIES,
+                                     Short512Vector::toShuffleTemplate);
     }
 
     // Specialized unary testing
