@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,7 +368,7 @@ public class CommentUtils {
         }
 
         for (DocTree t : elemComment.getBlockTags()) {
-            if (t instanceof ParamTree && ((ParamTree) t).getName().getName() == component) {
+            if (t instanceof ParamTree pt && pt.getName().getName() == component) {
                 return true;
             }
         }
@@ -419,8 +419,7 @@ public class CommentUtils {
         PackageElement pe = null;
         switch (e.getKind()) {
             case OTHER:
-                if (e instanceof DocletElement) {
-                    DocletElement de = (DocletElement)e;
+                if (e instanceof DocletElement de) {
                     fo = de.getFileObject();
                     pe = de.getPackageElement();
                 }

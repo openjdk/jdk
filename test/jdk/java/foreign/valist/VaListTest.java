@@ -24,18 +24,18 @@
 
 /*
  * @test
+ * @library ../
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  *          jdk.incubator.foreign/jdk.internal.foreign.abi
  *          jdk.incubator.foreign/jdk.internal.foreign.abi.aarch64
  *          jdk.incubator.foreign/jdk.internal.foreign.abi.x64.windows
  *          jdk.incubator.foreign/jdk.internal.foreign.abi.x64.sysv
- * @run testng/othervm -Dforeign.restricted=permit VaListTest
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED VaListTest
  */
 
 import jdk.incubator.foreign.*;
 import jdk.incubator.foreign.CLinker.VaList;
-import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.aarch64.AArch64Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
@@ -47,9 +47,6 @@ import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -67,7 +64,7 @@ import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
 import static jdk.internal.foreign.PlatformLayouts.*;
 import static org.testng.Assert.*;
 
-public class VaListTest {
+public class VaListTest extends NativeTestHelper {
 
     private static final CLinker abi = CLinker.getInstance();
     private static final LibraryLookup lookup = LibraryLookup.ofLibrary("VaList");
@@ -109,22 +106,22 @@ public class VaListTest {
     }
 
     private static final Function<Consumer<VaList.Builder>, VaList> winVaListFactory
-            = actions -> Windowsx64Linker.newVaList(actions, MemorySegment::allocateNative);
+            = actions -> Windowsx64Linker.newVaList(actions, ResourceScope.newConfinedScope());
     private static final Function<Consumer<VaList.Builder>, VaList> sysvVaListFactory
-            = actions -> SysVx64Linker.newVaList(actions, MemorySegment::allocateNative);
+            = actions -> SysVx64Linker.newVaList(actions, ResourceScope.newConfinedScope());
     private static final Function<Consumer<VaList.Builder>, VaList> aarch64VaListFactory
-            = actions -> AArch64Linker.newVaList(actions, MemorySegment::allocateNative);
+            = actions -> AArch64Linker.newVaList(actions, ResourceScope.newConfinedScope());
     private static final Function<Consumer<VaList.Builder>, VaList> platformVaListFactory
-            = VaList::make;
+            = (builder) -> VaList.make(builder, ResourceScope.newConfinedScope());
 
     private static final BiFunction<Consumer<VaList.Builder>, NativeScope, VaList> winVaListScopedFactory
-            = (actions, scope) -> Windowsx64Linker.newVaList(actions, SharedUtils.Allocator.ofScope(scope));
+            = (builder, scope) -> Windowsx64Linker.newVaList(builder, scope.scope());
     private static final BiFunction<Consumer<VaList.Builder>, NativeScope, VaList> sysvVaListScopedFactory
-            = (actions, scope) -> SysVx64Linker.newVaList(actions, SharedUtils.Allocator.ofScope(scope));
+            = (builder, scope) -> SysVx64Linker.newVaList(builder, scope.scope());
     private static final BiFunction<Consumer<VaList.Builder>, NativeScope, VaList> aarch64VaListScopedFactory
-            = (actions, scope) -> AArch64Linker.newVaList(actions, SharedUtils.Allocator.ofScope(scope));
+            = (builder, scope) -> AArch64Linker.newVaList(builder, scope.scope());
     private static final BiFunction<Consumer<VaList.Builder>, NativeScope, VaList> platformVaListScopedFactory
-            = VaList::make;
+            = (builder, scope) -> VaList.make(builder, scope.scope());
 
     @DataProvider
     @SuppressWarnings("unchecked")
@@ -145,13 +142,13 @@ public class VaListTest {
     public void testIntSum(Function<Consumer<VaList.Builder>, VaList> vaListFactory,
                            BiFunction<Integer, VaList, Integer> sumInts,
                            ValueLayout intLayout) {
-        try (VaList vaList = vaListFactory.apply(b ->
-                b.vargFromInt(intLayout, 10)
-                        .vargFromInt(intLayout, 15)
-                        .vargFromInt(intLayout, 20))) {
-            int x = sumInts.apply(3, vaList);
-            assertEquals(x, 45);
-        }
+        VaList vaList = vaListFactory.apply(b ->
+            b.vargFromInt(intLayout, 10)
+                    .vargFromInt(intLayout, 15)
+                    .vargFromInt(intLayout, 20));
+        int x = sumInts.apply(3, vaList);
+        assertEquals(x, 45);
+        vaList.scope().close();
     }
 
     @DataProvider
@@ -173,13 +170,13 @@ public class VaListTest {
     public void testDoubleSum(Function<Consumer<VaList.Builder>, VaList> vaListFactory,
                               BiFunction<Integer, VaList, Double> sumDoubles,
                               ValueLayout doubleLayout) {
-        try (VaList vaList = vaListFactory.apply(b ->
-                b.vargFromDouble(doubleLayout, 3.0D)
-                        .vargFromDouble(doubleLayout, 4.0D)
-                        .vargFromDouble(doubleLayout, 5.0D))) {
-            double x = sumDoubles.apply(3, vaList);
-            assertEquals(x, 12.0D);
-        }
+        VaList vaList = vaListFactory.apply(b ->
+            b.vargFromDouble(doubleLayout, 3.0D)
+                    .vargFromDouble(doubleLayout, 4.0D)
+                    .vargFromDouble(doubleLayout, 5.0D));
+        double x = sumDoubles.apply(3, vaList);
+        assertEquals(x, 12.0D);
+        vaList.scope().close();
     }
 
     @DataProvider
@@ -188,7 +185,7 @@ public class VaListTest {
         Function<MemoryLayout, Function<VaList, Integer>> getIntJavaFact = layout ->
                 list -> {
                     MemoryAddress ma = list.vargAsAddress(layout);
-                    return MemoryAccess.getIntAtOffset(MemorySegment.ofNativeRestricted(), ma.toRawLongValue());
+                    return MemoryAccess.getIntAtOffset(MemorySegment.globalNativeSegment(), ma.toRawLongValue());
                 };
         Function<VaList, Integer> getIntNative = MethodHandleProxies.asInterfaceInstance(Function.class, MH_getInt);
         return new Object[][]{
@@ -203,12 +200,13 @@ public class VaListTest {
     public void testVaListMemoryAddress(Function<Consumer<VaList.Builder>, VaList> vaListFactory,
                                         Function<VaList, Integer> getFromPointer,
                                         ValueLayout pointerLayout) {
-        try (MemorySegment msInt = MemorySegment.allocateNative(JAVA_INT)) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment msInt = MemorySegment.allocateNative(JAVA_INT, scope);
             MemoryAccess.setInt(msInt, 10);
-            try (VaList vaList = vaListFactory.apply(b -> b.vargFromAddress(pointerLayout, msInt.address()))) {
-                int x = getFromPointer.apply(vaList);
-                assertEquals(x, 10);
-            }
+            VaList vaList = vaListFactory.apply(b -> b.vargFromAddress(pointerLayout, msInt.address()));
+            int x = getFromPointer.apply(vaList);
+            assertEquals(x, 10);
+            vaList.scope().close();
         }
     }
 
@@ -222,7 +220,7 @@ public class VaListTest {
         TriFunction<MemoryLayout, VarHandle, VarHandle, Function<VaList, Integer>> sumStructJavaFact
                 = (pointLayout, VH_Point_x, VH_Point_y) ->
                 list -> {
-                    MemorySegment struct = list.vargAsSegment(pointLayout);
+                    MemorySegment struct = list.vargAsSegment(pointLayout, ResourceScope.newImplicitScope());
                     int x = (int) VH_Point_x.get(struct);
                     int y = (int) VH_Point_y.get(struct);
                     return x + y;
@@ -235,7 +233,7 @@ public class VaListTest {
         TriFunction<Function<Consumer<VaList.Builder>, VaList>, MemoryLayout,
                 TriFunction<MemoryLayout, VarHandle, VarHandle, Function<VaList, Integer>>, Object[]> argsFact
                 = (vaListFact, intLayout, sumStructFact) -> {
-            GroupLayout pointLayout =  MemoryLayout.ofStruct(
+            GroupLayout pointLayout =  MemoryLayout.structLayout(
                     intLayout.withName("x"),
                     intLayout.withName("y")
             );
@@ -256,14 +254,15 @@ public class VaListTest {
     public void testStruct(Function<Consumer<VaList.Builder>, VaList> vaListFactory,
                            Function<VaList, Integer> sumStruct,
                            GroupLayout Point_LAYOUT, VarHandle VH_Point_x, VarHandle VH_Point_y) {
-        try (MemorySegment struct = MemorySegment.allocateNative(Point_LAYOUT)) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment struct = MemorySegment.allocateNative(Point_LAYOUT, scope);
             VH_Point_x.set(struct, 5);
             VH_Point_y.set(struct, 10);
 
-            try (VaList vaList = vaListFactory.apply(b -> b.vargFromSegment(Point_LAYOUT, struct))) {
-                int sum = sumStruct.apply(vaList);
-                assertEquals(sum, 15);
-            }
+            VaList vaList = vaListFactory.apply(b -> b.vargFromSegment(Point_LAYOUT, struct));
+            int sum = sumStruct.apply(vaList);
+            assertEquals(sum, 15);
+            vaList.scope().close();
         }
     }
 
@@ -273,7 +272,7 @@ public class VaListTest {
         TriFunction<MemoryLayout, VarHandle, VarHandle, Function<VaList, Long>> sumStructJavaFact
                 = (BigPoint_LAYOUT, VH_BigPoint_x, VH_BigPoint_y) ->
                 list -> {
-                    MemorySegment struct = list.vargAsSegment(BigPoint_LAYOUT);
+                    MemorySegment struct = list.vargAsSegment(BigPoint_LAYOUT, ResourceScope.newImplicitScope());
                     long x = (long) VH_BigPoint_x.get(struct);
                     long y = (long) VH_BigPoint_y.get(struct);
                     return x + y;
@@ -286,7 +285,7 @@ public class VaListTest {
         TriFunction<Function<Consumer<VaList.Builder>, VaList>, MemoryLayout,
                 TriFunction<MemoryLayout, VarHandle, VarHandle, Function<VaList, Long>>, Object[]> argsFact
                 = (vaListFact, longLongLayout, sumBigStructFact) -> {
-            GroupLayout BigPoint_LAYOUT =  MemoryLayout.ofStruct(
+            GroupLayout BigPoint_LAYOUT =  MemoryLayout.structLayout(
                     longLongLayout.withName("x"),
                     longLongLayout.withName("y")
             );
@@ -307,14 +306,15 @@ public class VaListTest {
     public void testBigStruct(Function<Consumer<VaList.Builder>, VaList> vaListFactory,
                               Function<VaList, Long> sumBigStruct,
                               GroupLayout BigPoint_LAYOUT, VarHandle VH_BigPoint_x, VarHandle VH_BigPoint_y) {
-        try (MemorySegment struct = MemorySegment.allocateNative(BigPoint_LAYOUT)) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment struct = MemorySegment.allocateNative(BigPoint_LAYOUT, scope);
             VH_BigPoint_x.set(struct, 5);
             VH_BigPoint_y.set(struct, 10);
 
-            try (VaList vaList = vaListFactory.apply(b -> b.vargFromSegment(BigPoint_LAYOUT, struct))) {
-                long sum = sumBigStruct.apply(vaList);
-                assertEquals(sum, 15);
-            }
+            VaList vaList = vaListFactory.apply(b -> b.vargFromSegment(BigPoint_LAYOUT, struct));
+            long sum = sumBigStruct.apply(vaList);
+            assertEquals(sum, 15);
+            vaList.scope().close();
         }
     }
 
@@ -324,7 +324,7 @@ public class VaListTest {
         TriFunction<MemoryLayout, VarHandle, VarHandle, Function<VaList, Float>> sumStructJavaFact
                 = (FloatPoint_LAYOUT, VH_FloatPoint_x, VH_FloatPoint_y) ->
                 list -> {
-                    MemorySegment struct = list.vargAsSegment(FloatPoint_LAYOUT);
+                    MemorySegment struct = list.vargAsSegment(FloatPoint_LAYOUT, ResourceScope.newImplicitScope());
                     float x = (float) VH_FloatPoint_x.get(struct);
                     float y = (float) VH_FloatPoint_y.get(struct);
                     return x + y;
@@ -337,7 +337,7 @@ public class VaListTest {
         TriFunction<Function<Consumer<VaList.Builder>, VaList>, MemoryLayout,
                 TriFunction<MemoryLayout, VarHandle, VarHandle, Function<VaList, Float>>, Object[]> argsFact
                 = (vaListFact, floatLayout, sumFloatStructFact) -> {
-            GroupLayout FloatPoint_LAYOUT = MemoryLayout.ofStruct(
+            GroupLayout FloatPoint_LAYOUT = MemoryLayout.structLayout(
                     floatLayout.withName("x"),
                     floatLayout.withName("y")
             );
@@ -359,14 +359,15 @@ public class VaListTest {
                                 Function<VaList, Float> sumFloatStruct,
                                 GroupLayout FloatPoint_LAYOUT,
                                 VarHandle VH_FloatPoint_x, VarHandle VH_FloatPoint_y) {
-        try (MemorySegment struct = MemorySegment.allocateNative(FloatPoint_LAYOUT)) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment struct = MemorySegment.allocateNative(FloatPoint_LAYOUT, scope);
             VH_FloatPoint_x.set(struct, 1.234f);
             VH_FloatPoint_y.set(struct, 3.142f);
 
-            try (VaList vaList = vaListFactory.apply(b -> b.vargFromSegment(FloatPoint_LAYOUT, struct))) {
-                float sum = sumFloatStruct.apply(vaList);
-                assertEquals(sum, 4.376f, 0.00001f);
-            }
+            VaList vaList = vaListFactory.apply(b -> b.vargFromSegment(FloatPoint_LAYOUT, struct));
+            float sum = sumFloatStruct.apply(vaList);
+            assertEquals(sum, 4.376f, 0.00001f);
+            vaList.scope().close();
         }
     }
 
@@ -380,7 +381,7 @@ public class VaListTest {
         QuadFunc<MemoryLayout, VarHandle, VarHandle, VarHandle, Function<VaList, Long>> sumStructJavaFact
                 = (HugePoint_LAYOUT, VH_HugePoint_x, VH_HugePoint_y, VH_HugePoint_z) ->
                 list -> {
-                    MemorySegment struct = list.vargAsSegment(HugePoint_LAYOUT);
+                    MemorySegment struct = list.vargAsSegment(HugePoint_LAYOUT, ResourceScope.newImplicitScope());
                     long x = (long) VH_HugePoint_x.get(struct);
                     long y = (long) VH_HugePoint_y.get(struct);
                     long z = (long) VH_HugePoint_z.get(struct);
@@ -394,7 +395,7 @@ public class VaListTest {
         TriFunction<Function<Consumer<VaList.Builder>, VaList>, MemoryLayout,
                 QuadFunc<MemoryLayout, VarHandle, VarHandle, VarHandle, Function<VaList, Long>>, Object[]> argsFact
                 = (vaListFact, longLongLayout, sumBigStructFact) -> {
-            GroupLayout HugePoint_LAYOUT = MemoryLayout.ofStruct(
+            GroupLayout HugePoint_LAYOUT = MemoryLayout.structLayout(
                     longLongLayout.withName("x"),
                     longLongLayout.withName("y"),
                     longLongLayout.withName("z")
@@ -421,15 +422,16 @@ public class VaListTest {
                                VarHandle VH_HugePoint_x, VarHandle VH_HugePoint_y, VarHandle VH_HugePoint_z) {
         // On AArch64 a struct needs to be larger than 16 bytes to be
         // passed by reference.
-        try (MemorySegment struct = MemorySegment.allocateNative(HugePoint_LAYOUT)) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment struct = MemorySegment.allocateNative(HugePoint_LAYOUT, scope);
             VH_HugePoint_x.set(struct, 1);
             VH_HugePoint_y.set(struct, 2);
             VH_HugePoint_z.set(struct, 3);
 
-            try (VaList vaList = vaListFactory.apply(b -> b.vargFromSegment(HugePoint_LAYOUT, struct))) {
-                long sum = sumHugeStruct.apply(vaList);
-                assertEquals(sum, 6);
-            }
+            VaList vaList = vaListFactory.apply(b -> b.vargFromSegment(HugePoint_LAYOUT, struct));
+            long sum = sumHugeStruct.apply(vaList);
+            assertEquals(sum, 6);
+            vaList.scope().close();
         }
     }
 
@@ -463,7 +465,7 @@ public class VaListTest {
                 { winVaListFactory,      sumStackJavaFact.apply(Win64.C_LONG_LONG, Win64.C_DOUBLE),     Win64.C_LONG_LONG,   Win64.C_DOUBLE   },
                 { sysvVaListFactory,     sumStackJavaFact.apply(SysV.C_LONG_LONG, SysV.C_DOUBLE),       SysV.C_LONG_LONG,    SysV.C_DOUBLE    },
                 { aarch64VaListFactory,  sumStackJavaFact.apply(AArch64.C_LONG_LONG, AArch64.C_DOUBLE), AArch64.C_LONG_LONG, AArch64.C_DOUBLE },
-                { platformVaListFactory, sumStackNative, C_LONG_LONG,         C_DOUBLE         },
+                { platformVaListFactory, sumStackNative,                                                C_LONG_LONG,         C_DOUBLE         },
         };
     }
 
@@ -472,8 +474,9 @@ public class VaListTest {
                           SumStackFunc sumStack,
                           ValueLayout longLayout,
                           ValueLayout doubleLayout) {
-        try (MemorySegment longSum = MemorySegment.allocateNative(longLayout);
-             MemorySegment doubleSum = MemorySegment.allocateNative(doubleLayout)) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment longSum = MemorySegment.allocateNative(longLayout, scope);
+            MemorySegment doubleSum = MemorySegment.allocateNative(doubleLayout, scope);
             MemoryAccess.setLong(longSum, 0L);
             MemoryAccess.setDouble(doubleSum, 0D);
 
@@ -486,8 +489,10 @@ public class VaListTest {
                 }
             });
 
-            try (list) {
+            try {
                 sumStack.invoke(longSum, doubleSum, list);
+            } finally {
+                list.scope().close();
             }
 
             long lSum = MemoryAccess.getLong(longSum);
@@ -501,7 +506,8 @@ public class VaListTest {
     @Test(dataProvider = "upcalls")
     public void testUpcall(MethodHandle target, MethodHandle callback) throws Throwable {
         FunctionDescriptor desc = FunctionDescriptor.ofVoid(C_VA_LIST);
-        try (MemorySegment stub = abi.upcallStub(callback, desc)) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemoryAddress stub = abi.upcallStub(callback, desc, scope);
             target.invokeExact(stub.address());
         }
     }
@@ -519,10 +525,10 @@ public class VaListTest {
     }
 
     @Test(expectedExceptions = UnsupportedOperationException.class,
-            expectedExceptionsMessageRegExp = ".*Empty VaList.*",
+            expectedExceptionsMessageRegExp = ".*Scope cannot be closed.*",
             dataProvider = "emptyVaLists")
     public void testEmptyNotCloseable(VaList emptyList) {
-        emptyList.close();
+        emptyList.scope().close();
     }
 
     @DataProvider
@@ -545,7 +551,7 @@ public class VaListTest {
                                  BiFunction<Integer, VaList, Integer> sumInts,
                                  ValueLayout intLayout) {
         VaList listLeaked;
-        try (NativeScope scope = NativeScope.unboundedScope()) {
+        try (NativeScope scope = new NativeScope()) {
             VaList list = vaListFactory.apply(b -> b.vargFromInt(intLayout, 4)
                             .vargFromInt(intLayout, 8),
                     scope);
@@ -553,7 +559,7 @@ public class VaListTest {
             assertEquals(x, 12);
             listLeaked = list;
         }
-        assertFalse(listLeaked.isAlive());
+        assertFalse(listLeaked.scope().isAlive());
     }
 
     @Test(dataProvider = "structs")
@@ -561,20 +567,21 @@ public class VaListTest {
                                 Function<VaList, Integer> sumStruct, // ignored
                                 GroupLayout Point_LAYOUT, VarHandle VH_Point_x, VarHandle VH_Point_y) {
         MemorySegment pointOut;
-        try (NativeScope scope = NativeScope.unboundedScope()) {
-            try (MemorySegment pointIn = MemorySegment.allocateNative(Point_LAYOUT)) {
+        try (NativeScope scope = new NativeScope()) {
+            try (ResourceScope innerScope = ResourceScope.newConfinedScope()) {
+                MemorySegment pointIn = MemorySegment.allocateNative(Point_LAYOUT, innerScope);
                 VH_Point_x.set(pointIn, 3);
                 VH_Point_y.set(pointIn, 6);
-                try (VaList list = vaListFactory.apply(b -> b.vargFromSegment(Point_LAYOUT, pointIn))) {
-                    pointOut = list.vargAsSegment(Point_LAYOUT, scope);
-                    assertEquals((int) VH_Point_x.get(pointOut), 3);
-                    assertEquals((int) VH_Point_y.get(pointOut), 6);
-                }
-                assertTrue(pointOut.isAlive()); // after VaList freed
+                VaList list = vaListFactory.apply(b -> b.vargFromSegment(Point_LAYOUT, pointIn));
+                pointOut = list.vargAsSegment(Point_LAYOUT, scope);
+                assertEquals((int) VH_Point_x.get(pointOut), 3);
+                assertEquals((int) VH_Point_y.get(pointOut), 6);
+                list.scope().close();
+                assertTrue(pointOut.scope().isAlive()); // after VaList freed
             }
-            assertTrue(pointOut.isAlive()); // after input MS freed
+            assertTrue(pointOut.scope().isAlive()); // after inner scope freed
         }
-        assertFalse(pointOut.isAlive()); // after scope freed
+        assertFalse(pointOut.scope().isAlive()); // after outer scope freed
     }
 
     @DataProvider
@@ -588,36 +595,22 @@ public class VaListTest {
 
     @Test(dataProvider = "copy")
     public void testCopy(Function<Consumer<VaList.Builder>, VaList> vaListFactory, ValueLayout intLayout) {
-        try (VaList list = vaListFactory.apply(b -> b.vargFromInt(intLayout, 4)
-                .vargFromInt(intLayout, 8))) {
-            VaList  copy = list.copy();
-            assertEquals(copy.vargAsInt(intLayout), 4);
-            assertEquals(copy.vargAsInt(intLayout), 8);
-            copy.close();
+        VaList list = vaListFactory.apply(b -> b.vargFromInt(intLayout, 4)
+                .vargFromInt(intLayout, 8));
+        VaList  copy = list.copy();
+        assertEquals(copy.vargAsInt(intLayout), 4);
+        assertEquals(copy.vargAsInt(intLayout), 8);
 
-            assertFalse(copy.isAlive());
+//        try { // this logic only works on Windows!
+//            int x = copy.vargAsInt(intLayout);
+//            fail();
+//        } catch (IndexOutOfBoundsException ex) {
+//            // ok - we exhausted the list
+//        }
 
-            assertEquals(list.vargAsInt(intLayout), 4);
-            assertEquals(list.vargAsInt(intLayout), 8);
-        }
-    }
-
-    @Test(dataProvider = "copy")
-    public void testScopedCopy(Function<Consumer<VaList.Builder>, VaList> vaListFactory, ValueLayout intLayout) {
-        try (VaList list = vaListFactory.apply(b -> b.vargFromInt(intLayout, 4)
-                .vargFromInt(intLayout, 8))) {
-            VaList copy;
-            try (NativeScope scope = NativeScope.unboundedScope()) {
-                copy = list.copy(scope);
-
-                assertEquals(copy.vargAsInt(intLayout), 4);
-                assertEquals(copy.vargAsInt(intLayout), 8);
-            }
-            assertFalse(copy.isAlive());
-
-            assertEquals(list.vargAsInt(intLayout), 4);
-            assertEquals(list.vargAsInt(intLayout), 8);
-        }
+        assertEquals(list.vargAsInt(intLayout), 4);
+        assertEquals(list.vargAsInt(intLayout), 8);
+        list.scope().close();
     }
 
     @Test(dataProvider = "copy",
@@ -626,48 +619,33 @@ public class VaListTest {
                                                     ValueLayout intLayout) {
         VaList list = vaListFactory.apply(b -> b.vargFromInt(intLayout, 4)
                 .vargFromInt(intLayout, 8));
-        try (VaList copy = list.copy()) {
-            list.close();
+        VaList copy = list.copy();
+        list.scope().close();
 
-            copy.vargAsInt(intLayout); // should throw
-        }
-    }
-
-    @Test(dataProvider = "copy",
-            expectedExceptions = IllegalStateException.class)
-    public void testCopyUnusableAfterOriginalClosedScope(Function<Consumer<VaList.Builder>, VaList> vaListFactory,
-                                                         ValueLayout intLayout) {
-        VaList list = vaListFactory.apply(b -> b.vargFromInt(intLayout, 4)
-                .vargFromInt(intLayout, 8));
-        try (NativeScope scope = NativeScope.unboundedScope()) {
-            VaList copy = list.copy(scope);
-            list.close();
-
-            copy.vargAsInt(intLayout); // should throw
-        }
+        copy.vargAsInt(intLayout); // should throw
     }
 
     @DataProvider
     public static Object[][] upcalls() {
-        GroupLayout BigPoint_LAYOUT = MemoryLayout.ofStruct(
+        GroupLayout BigPoint_LAYOUT = MemoryLayout.structLayout(
                 C_LONG_LONG.withName("x"),
                 C_LONG_LONG.withName("y")
         );
         VarHandle VH_BigPoint_x = BigPoint_LAYOUT.varHandle(long.class, groupElement("x"));
         VarHandle VH_BigPoint_y = BigPoint_LAYOUT.varHandle(long.class, groupElement("y"));
-        GroupLayout Point_LAYOUT = MemoryLayout.ofStruct(
+        GroupLayout Point_LAYOUT = MemoryLayout.structLayout(
                 C_INT.withName("x"),
                 C_INT.withName("y")
         );
         VarHandle VH_Point_x = Point_LAYOUT.varHandle(int.class, groupElement("x"));
         VarHandle VH_Point_y = Point_LAYOUT.varHandle(int.class, groupElement("y"));
-        GroupLayout FloatPoint_LAYOUT = MemoryLayout.ofStruct(
+        GroupLayout FloatPoint_LAYOUT = MemoryLayout.structLayout(
                 C_FLOAT.withName("x"),
                 C_FLOAT.withName("y")
         );
         VarHandle VH_FloatPoint_x = FloatPoint_LAYOUT.varHandle(float.class, groupElement("x"));
         VarHandle VH_FloatPoint_y = FloatPoint_LAYOUT.varHandle(float.class, groupElement("y"));
-        GroupLayout HugePoint_LAYOUT = MemoryLayout.ofStruct(
+        GroupLayout HugePoint_LAYOUT = MemoryLayout.structLayout(
                 C_LONG_LONG.withName("x"),
                 C_LONG_LONG.withName("y"),
                 C_LONG_LONG.withName("z")
@@ -678,49 +656,43 @@ public class VaListTest {
 
         return new Object[][]{
                 { linkVaListCB("upcallBigStruct"), VaListConsumer.mh(vaList -> {
-                    try (MemorySegment struct = vaList.vargAsSegment(BigPoint_LAYOUT)) {
-                        assertEquals((long) VH_BigPoint_x.get(struct), 8);
-                        assertEquals((long) VH_BigPoint_y.get(struct), 16);
-                    }
+                    MemorySegment struct = vaList.vargAsSegment(BigPoint_LAYOUT, ResourceScope.newImplicitScope());
+                    assertEquals((long) VH_BigPoint_x.get(struct), 8);
+                    assertEquals((long) VH_BigPoint_y.get(struct), 16);
                 })},
                 { linkVaListCB("upcallBigStruct"), VaListConsumer.mh(vaList -> {
                     VaList copy = vaList.copy();
-                    try (MemorySegment struct = vaList.vargAsSegment(BigPoint_LAYOUT)) {
-                        assertEquals((long) VH_BigPoint_x.get(struct), 8);
-                        assertEquals((long) VH_BigPoint_y.get(struct), 16);
+                    MemorySegment struct = vaList.vargAsSegment(BigPoint_LAYOUT, ResourceScope.newImplicitScope());
+                    assertEquals((long) VH_BigPoint_x.get(struct), 8);
+                    assertEquals((long) VH_BigPoint_y.get(struct), 16);
 
-                        VH_BigPoint_x.set(struct, 0);
-                        VH_BigPoint_y.set(struct, 0);
-                    }
+                    VH_BigPoint_x.set(struct, 0);
+                    VH_BigPoint_y.set(struct, 0);
 
                     // should be independent
-                    try (MemorySegment struct = copy.vargAsSegment(BigPoint_LAYOUT)) {
-                        assertEquals((long) VH_BigPoint_x.get(struct), 8);
-                        assertEquals((long) VH_BigPoint_y.get(struct), 16);
-                    }
+                    struct = copy.vargAsSegment(BigPoint_LAYOUT, ResourceScope.newImplicitScope());
+                    assertEquals((long) VH_BigPoint_x.get(struct), 8);
+                    assertEquals((long) VH_BigPoint_y.get(struct), 16);
                 })},
                 { linkVaListCB("upcallStruct"), VaListConsumer.mh(vaList -> {
-                    try (MemorySegment struct = vaList.vargAsSegment(Point_LAYOUT)) {
-                        assertEquals((int) VH_Point_x.get(struct), 5);
-                        assertEquals((int) VH_Point_y.get(struct), 10);
-                    }
+                    MemorySegment struct = vaList.vargAsSegment(Point_LAYOUT, ResourceScope.newImplicitScope());
+                    assertEquals((int) VH_Point_x.get(struct), 5);
+                    assertEquals((int) VH_Point_y.get(struct), 10);
                 })},
                 { linkVaListCB("upcallHugeStruct"), VaListConsumer.mh(vaList -> {
-                    try (MemorySegment struct = vaList.vargAsSegment(HugePoint_LAYOUT)) {
-                        assertEquals((long) VH_HugePoint_x.get(struct), 1);
-                        assertEquals((long) VH_HugePoint_y.get(struct), 2);
-                        assertEquals((long) VH_HugePoint_z.get(struct), 3);
-                    }
+                    MemorySegment struct = vaList.vargAsSegment(HugePoint_LAYOUT, ResourceScope.newImplicitScope());
+                    assertEquals((long) VH_HugePoint_x.get(struct), 1);
+                    assertEquals((long) VH_HugePoint_y.get(struct), 2);
+                    assertEquals((long) VH_HugePoint_z.get(struct), 3);
                 })},
                 { linkVaListCB("upcallFloatStruct"), VaListConsumer.mh(vaList -> {
-                    try (MemorySegment struct = vaList.vargAsSegment(FloatPoint_LAYOUT)) {
-                        assertEquals((float) VH_FloatPoint_x.get(struct), 1.0f);
-                        assertEquals((float) VH_FloatPoint_y.get(struct), 2.0f);
-                    }
+                    MemorySegment struct = vaList.vargAsSegment(FloatPoint_LAYOUT, ResourceScope.newImplicitScope());
+                    assertEquals((float) VH_FloatPoint_x.get(struct), 1.0f);
+                    assertEquals((float) VH_FloatPoint_y.get(struct), 2.0f);
                 })},
                 { linkVaListCB("upcallMemoryAddress"), VaListConsumer.mh(vaList -> {
                     MemoryAddress intPtr = vaList.vargAsAddress(C_POINTER);
-                    MemorySegment ms = intPtr.asSegmentRestricted(C_INT.byteSize());
+                    MemorySegment ms = intPtr.asSegment(C_INT.byteSize(), ResourceScope.globalScope());
                     int x = MemoryAccess.getInt(ms);
                     assertEquals(x, 10);
                 })},
@@ -759,25 +731,22 @@ public class VaListTest {
                     assertEquals((float) vaList.vargAsDouble(C_DOUBLE), 13.0F);
                     assertEquals(vaList.vargAsDouble(C_DOUBLE), 14.0D);
 
-                    try (MemorySegment point = vaList.vargAsSegment(Point_LAYOUT)) {
-                        assertEquals((int) VH_Point_x.get(point), 5);
-                        assertEquals((int) VH_Point_y.get(point), 10);
-                    }
+                    MemorySegment point = vaList.vargAsSegment(Point_LAYOUT, ResourceScope.newImplicitScope());
+                    assertEquals((int) VH_Point_x.get(point), 5);
+                    assertEquals((int) VH_Point_y.get(point), 10);
 
                     VaList copy = vaList.copy();
-                    try (MemorySegment bigPoint = vaList.vargAsSegment(BigPoint_LAYOUT)) {
-                        assertEquals((long) VH_BigPoint_x.get(bigPoint), 15);
-                        assertEquals((long) VH_BigPoint_y.get(bigPoint), 20);
+                    MemorySegment bigPoint = vaList.vargAsSegment(BigPoint_LAYOUT, ResourceScope.newImplicitScope());
+                    assertEquals((long) VH_BigPoint_x.get(bigPoint), 15);
+                    assertEquals((long) VH_BigPoint_y.get(bigPoint), 20);
 
-                        VH_BigPoint_x.set(bigPoint, 0);
-                        VH_BigPoint_y.set(bigPoint, 0);
-                    }
+                    VH_BigPoint_x.set(bigPoint, 0);
+                    VH_BigPoint_y.set(bigPoint, 0);
 
                     // should be independent
-                    try (MemorySegment struct = copy.vargAsSegment(BigPoint_LAYOUT)) {
-                        assertEquals((long) VH_BigPoint_x.get(struct), 15);
-                        assertEquals((long) VH_BigPoint_y.get(struct), 20);
-                    }
+                    MemorySegment struct = copy.vargAsSegment(BigPoint_LAYOUT, ResourceScope.newImplicitScope());
+                    assertEquals((long) VH_BigPoint_x.get(struct), 15);
+                    assertEquals((long) VH_BigPoint_y.get(struct), 20);
                 })},
                 // test skip
                 { linkVaListCB("upcallStack"), VaListConsumer.mh(vaList -> {

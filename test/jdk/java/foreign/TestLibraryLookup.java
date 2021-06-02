@@ -25,11 +25,15 @@
  * @test
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @modules jdk.incubator.foreign/jdk.internal.foreign
- * @run testng/othervm -Dforeign.restricted=permit TestLibraryLookup
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestLibraryLookup
  */
 
 import jdk.incubator.foreign.LibraryLookup;
+import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryAddress;
+import jdk.incubator.foreign.MemoryLayout;
+import jdk.incubator.foreign.MemoryLayouts;
+import jdk.incubator.foreign.MemorySegment;
 import jdk.internal.foreign.LibrariesHelper;
 import org.testng.annotations.Test;
 
@@ -66,10 +70,9 @@ public class TestLibraryLookup {
 
     @Test
     public void testSimpleLookup() throws Throwable {
-        LibraryLookup.Symbol symbol = null;
+        MemoryAddress symbol = null;
         LibraryLookup lookup = LibraryLookup.ofLibrary("LookupTest");
         symbol = lookup.lookup("f").get();
-        assertEquals(symbol.name(), "f");
         assertEquals(LibrariesHelper.numLoadedLibraries(), 1);
         lookup = null;
         symbol = null;
@@ -78,7 +81,7 @@ public class TestLibraryLookup {
 
     @Test
     public void testInvalidSymbolLookup() throws Throwable {
-        LibraryLookup.Symbol symbol = null;
+        MemoryAddress symbol = null;
         LibraryLookup lookup = LibraryLookup.ofLibrary("LookupTest");
         assertTrue(lookup.lookup("nonExistent").isEmpty());
         assertEquals(LibrariesHelper.numLoadedLibraries(), 1);
@@ -88,12 +91,38 @@ public class TestLibraryLookup {
     }
 
     @Test
+    public void testVariableSymbolLookup() throws Throwable {
+        LibraryLookup lookup = LibraryLookup.ofLibrary("LookupTest");
+        MemorySegment segment = lookup.lookup("c", MemoryLayouts.JAVA_INT).get();
+        assertEquals(MemoryAccess.getInt(segment), 42);
+        lookup = null;
+        segment = null;
+        waitUnload();
+    }
+
+    @Test
+    public void testBadVariableSymbolLookup() {
+        LibraryLookup lookup = LibraryLookup.ofLibrary("LookupTest");
+        try {
+            MemoryLayout layout = MemoryLayouts.JAVA_INT.withBitAlignment(1 << 16);
+            MemorySegment segment = lookup.lookup("c", layout).get();
+            // no exception, check that address is aligned
+            if ((segment.address().toRawLongValue() % layout.byteAlignment()) != 0) {
+                fail("Unaligned address");
+            }
+        } catch (IllegalArgumentException ex) {
+            // ok, means address was not aligned
+        }
+
+    }
+
+    @Test
     public void testMultiLookupSameLoader() throws Throwable {
-        List<LibraryLookup.Symbol> symbols = new ArrayList<>();
+        List<MemoryAddress> symbols = new ArrayList<>();
         List<LibraryLookup> lookups = new ArrayList<>();
         for (int i = 0 ; i < 5 ; i++) {
             LibraryLookup lookup = LibraryLookup.ofLibrary("LookupTest");
-            LibraryLookup.Symbol symbol = lookup.lookup("f").get();
+            MemoryAddress symbol = lookup.lookup("f").get();
             lookups.add(lookup);
             symbols.add(symbol);
             assertEquals(LibrariesHelper.numLoadedLibraries(), 1);
@@ -151,7 +180,7 @@ public class TestLibraryLookup {
 
     static class Holder {
         public static LibraryLookup lookup;
-        public static LibraryLookup.Symbol symbol;
+        public static MemoryAddress symbol;
 
         static {
             try {

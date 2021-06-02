@@ -342,12 +342,16 @@ public class Main {
                     }
                     break;
                 default:
+                    if (opt.startsWith("-agentlib:jdwp=") || opt.startsWith("-Xrunjdwp:")) {
+                        javacOpts.add("-g");
+                    }
                     // ignore all other runtime args
             }
         }
 
         // add implicit options
         javacOpts.add("-proc:none");
+        javacOpts.add("-Xdiags:verbose");
 
         return javacOpts;
     }

@@ -566,6 +566,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
          * @param speciesData what species we are generating
          * @return the generated concrete TopClass class
          */
+        @SuppressWarnings("removal")
         Class<? extends T> generateConcreteSpeciesCode(String className, ClassSpecializer<T,K,S>.SpeciesData speciesData) {
             byte[] classFile = generateConcreteSpeciesCodeFile(className, speciesData);
 

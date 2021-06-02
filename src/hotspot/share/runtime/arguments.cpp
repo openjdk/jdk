@@ -309,6 +309,8 @@ bool needs_module_property_warning = false;
 #define PATH_LEN 4
 #define UPGRADE_PATH "upgrade.path"
 #define UPGRADE_PATH_LEN 12
+#define ENABLE_NATIVE_ACCESS "enable.native.access"
+#define ENABLE_NATIVE_ACCESS_LEN 20
 
 void Arguments::add_init_library(const char* name, char* options) {
   _libraryList.add(new AgentLibrary(name, options, false, NULL));
@@ -347,7 +349,8 @@ bool Arguments::is_internal_module_property(const char* property) {
         matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
         matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
         matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
-        matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN)) {
+        matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN) ||
+        matches_property_suffix(property_suffix, ENABLE_NATIVE_ACCESS, ENABLE_NATIVE_ACCESS_LEN)) {
       return true;
     }
   }
@@ -524,7 +527,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "SuspendRetryCount",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
   { "SuspendRetryDelay",            JDK_Version::undefined(), JDK_Version::jdk(17), JDK_Version::jdk(18) },
-  { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
+  { "CriticalJNINatives",           JDK_Version::jdk(16), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "AlwaysLockClassLoader",        JDK_Version::jdk(17), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "UseBiasedLocking",             JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
   { "BiasedLockingStartupDelay",    JDK_Version::jdk(15), JDK_Version::jdk(18), JDK_Version::jdk(19) },
@@ -1330,7 +1333,6 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
     log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
   }
   if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
-      strcmp(key, "jdk.module.illegalAccess") == 0 ||
       strcmp(key, "jdk.module.validation") == 0 ||
       strcmp(key, "java.system.class.loader") == 0) {
     MetaspaceShared::disable_full_module_graph();
@@ -1965,6 +1967,7 @@ unsigned int addexports_count = 0;
 unsigned int addopens_count = 0;
 unsigned int addmods_count = 0;
 unsigned int patch_mod_count = 0;
+unsigned int enable_native_access_count = 0;
 
 // Check the consistency of vm_init_args
 bool Arguments::check_vm_args_consistency() {
@@ -2061,8 +2064,7 @@ bool Arguments::parse_uintx(const char* value,
 }
 
 bool Arguments::create_module_property(const char* prop_name, const char* prop_value, PropertyInternal internal) {
-  assert(is_internal_module_property(prop_name) ||
-         strcmp(prop_name, "jdk.module.illegalAccess") == 0, "unknown module property: '%s'", prop_name);
+  assert(is_internal_module_property(prop_name), "unknown module property: '%s'", prop_name);
   size_t prop_len = strlen(prop_name) + strlen(prop_value) + 2;
   char* property = AllocateHeap(prop_len, mtArguments);
   int ret = jio_snprintf(property, prop_len, "%s=%s", prop_name, prop_value);
@@ -2408,6 +2410,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (!create_numbered_module_property("jdk.module.addmods", tail, addmods_count++)) {
         return JNI_ENOMEM;
       }
+    } else if (match_option(option, "--enable-native-access=", &tail)) {
+      if (!create_numbered_module_property("jdk.module.enable.native.access", tail, enable_native_access_count++)) {
+        return JNI_ENOMEM;
+      }
     } else if (match_option(option, "--limit-modules=", &tail)) {
       if (!create_module_property("jdk.module.limitmods", tail, InternalProperty)) {
         return JNI_ENOMEM;
@@ -2427,10 +2433,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return res;
       }
     } else if (match_option(option, "--illegal-access=", &tail)) {
-      warning("Option --illegal-access is deprecated and will be removed in a future release.");
-      if (!create_module_property("jdk.module.illegalAccess", tail, ExternalProperty)) {
-        return JNI_ENOMEM;
-      }
+      char version[256];
+      JDK_Version::jdk(17).to_string(version, sizeof(version));
+      warning("Ignoring option %s; support was removed in %s", option->optionString, version);
     // -agentlib and -agentpath
     } else if (match_option(option, "-agentlib:", &tail) ||
           (is_absolute_path = match_option(option, "-agentpath:", &tail))) {
@@ -2747,6 +2752,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         vm_exit(0);
       } else if (strcmp(tail, ":disable") == 0) {
         LogConfiguration::disable_logging();
+        ret = true;
+      } else if (strcmp(tail, ":async") == 0) {
+        LogConfiguration::set_async_mode(true);
         ret = true;
       } else if (*tail == '\0') {
         ret = LogConfiguration::parse_command_line_arguments();

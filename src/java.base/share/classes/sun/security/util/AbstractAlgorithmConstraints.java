@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ public abstract class AbstractAlgorithmConstraints
 
     // Get algorithm constraints from the specified security property.
     static List<String> getAlgorithms(String propertyName) {
+        @SuppressWarnings("removal")
         String property = AccessController.doPrivileged(
                 new PrivilegedAction<String>() {
                     @Override

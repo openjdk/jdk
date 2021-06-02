@@ -142,6 +142,7 @@ public final class RemoteRecordingStream implements EventStream {
     final FlightRecorderMXBean mbean;
     final long recordingId;
     final EventStream stream;
+    @SuppressWarnings("removal")
     final AccessControlContext accessControllerContext;
     final DiskRepository repository;
     final Instant creationTime;
@@ -196,6 +197,7 @@ public final class RemoteRecordingStream implements EventStream {
         this(connection, directory, false);
     }
 
+    @SuppressWarnings("removal")
     private RemoteRecordingStream(MBeanServerConnection connection, Path dir, boolean delete) throws IOException {
         Objects.requireNonNull(connection);
         Objects.requireNonNull(dir);

@@ -2212,22 +2212,16 @@ void Node::verify_edges(Unique_Node_List &visited) {
 }
 
 // Verify all nodes if verify_depth is negative
-void Node::verify(Node* n, int verify_depth) {
+void Node::verify(int verify_depth, VectorSet& visited, Node_List& worklist) {
   assert(verify_depth != 0, "depth should not be 0");
-  ResourceMark rm;
-  VectorSet old_space;
-  VectorSet new_space;
-  Node_List worklist;
-  worklist.push(n);
   Compile* C = Compile::current();
-  uint last_index_on_current_depth = 0;
+  uint last_index_on_current_depth = worklist.size() - 1;
   verify_depth--; // Visiting the first node on depth 1
   // Only add nodes to worklist if verify_depth is negative (visit all nodes) or greater than 0
   bool add_to_worklist = verify_depth != 0;
 
-
   for (uint list_index = 0; list_index < worklist.size(); list_index++) {
-    n = worklist[list_index];
+    Node* n = worklist[list_index];
 
     if (n->is_Con() && n->bottom_type() == Type::TOP) {
       if (C->cached_top_node() == NULL) {
@@ -2236,17 +2230,28 @@ void Node::verify(Node* n, int verify_depth) {
       assert(C->cached_top_node() == n, "TOP node must be unique");
     }
 
-    for (uint i = 0; i < n->len(); i++) {
-      Node* x = n->in(i);
+    uint in_len = n->len();
+    for (uint i = 0; i < in_len; i++) {
+      Node* x = n->_in[i];
       if (!x || x->is_top()) {
         continue;
       }
 
       // Verify my input has a def-use edge to me
       // Count use-def edges from n to x
-      int cnt = 0;
-      for (uint j = 0; j < n->len(); j++) {
-        if (n->in(j) == x) {
+      int cnt = 1;
+      for (uint j = 0; j < i; j++) {
+        if (n->_in[j] == x) {
+          cnt++;
+          break;
+        }
+      }
+      if (cnt == 2) {
+        // x is already checked as n's previous input, skip its duplicated def-use count checking
+        continue;
+      }
+      for (uint j = i + 1; j < in_len; j++) {
+        if (n->_in[j] == x) {
           cnt++;
         }
       }
@@ -2260,11 +2265,7 @@ void Node::verify(Node* n, int verify_depth) {
       }
       assert(cnt == 0, "mismatched def-use edge counts");
 
-      // Contained in new_space or old_space?
-      VectorSet* v = C->node_arena()->contains(x) ? &new_space : &old_space;
-      // Check for visited in the proper space. Numberings are not unique
-      // across spaces so we need a separate VectorSet for each space.
-      if (add_to_worklist && !v->test_set(x->_idx)) {
+      if (add_to_worklist && !visited.test_set(x->_idx)) {
         worklist.push(x);
       }
     }

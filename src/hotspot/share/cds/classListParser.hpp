@@ -35,11 +35,6 @@
 
 class Thread;
 
-class ID2KlassTable : public KVHashtable<int, InstanceKlass*, mtInternal> {
-public:
-  ID2KlassTable() : KVHashtable<int, InstanceKlass*, mtInternal>(1987) {}
-};
-
 class CDSIndyInfo {
   GrowableArray<const char*>* _items;
 public:
@@ -71,6 +66,8 @@ public:
 };
 
 class ClassListParser : public StackObj {
+  typedef KVHashtable<int, InstanceKlass*, mtInternal> ID2KlassTable;
+
   enum {
     _unspecified      = -999,
 
@@ -83,6 +80,7 @@ class ClassListParser : public StackObj {
     _line_buf_size        = _max_allowed_line_len + _line_buf_extra
   };
 
+  static const int INITIAL_TABLE_SIZE = 1987;
   static volatile Thread* _parsing_thread; // the thread that created _instance
   static ClassListParser* _instance; // the singleton.
   const char* _classlist_file;
@@ -108,7 +106,7 @@ class ClassListParser : public StackObj {
   bool parse_int_option(const char* option_name, int* value);
   bool parse_uint_option(const char* option_name, int* value);
   InstanceKlass* load_class_from_source(Symbol* class_name, TRAPS);
-  ID2KlassTable *table() {
+  ID2KlassTable* table() {
     return &_id2klass_table;
   }
   InstanceKlass* lookup_class_by_id(int id);

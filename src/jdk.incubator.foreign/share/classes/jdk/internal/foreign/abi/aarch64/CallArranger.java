@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2020, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,13 +25,11 @@
  */
 package jdk.internal.foreign.abi.aarch64;
 
-import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.FunctionDescriptor;
 import jdk.incubator.foreign.GroupLayout;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.internal.foreign.PlatformLayouts;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.UpcallHandler;
@@ -126,10 +124,10 @@ public class CallArranger {
         return new Bindings(csb.build(), returnInMemory);
     }
 
-    public static MethodHandle arrangeDowncall(Addressable addr, MethodType mt, FunctionDescriptor cDesc) {
+    public static MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc) {
         Bindings bindings = getBindings(mt, cDesc, false);
 
-        MethodHandle handle = new ProgrammableInvoker(C, addr, bindings.callingSequence).getBoundMethodHandle();
+        MethodHandle handle = new ProgrammableInvoker(C, bindings.callingSequence).getBoundMethodHandle();
 
         if (bindings.isInMemoryReturn) {
             handle = SharedUtils.adaptDowncallForIMR(handle, cDesc);
@@ -142,10 +140,10 @@ public class CallArranger {
         Bindings bindings = getBindings(mt, cDesc, true);
 
         if (bindings.isInMemoryReturn) {
-            target = SharedUtils.adaptUpcallForIMR(target);
+            target = SharedUtils.adaptUpcallForIMR(target, true /* drop return, since we don't have bindings for it */);
         }
 
-        return new ProgrammableUpcallHandler(C, target, bindings.callingSequence);
+        return ProgrammableUpcallHandler.make(C, target, bindings.callingSequence);
     }
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
@@ -232,7 +230,7 @@ public class CallArranger {
                 if (offset + STACK_SLOT_SIZE < layout.byteSize()) {
                     bindings.dup();
                 }
-                Class<?> type = SharedUtils.primitiveCarrierForSize(copy);
+                Class<?> type = SharedUtils.primitiveCarrierForSize(copy, false);
                 bindings.bufferLoad(offset, type)
                         .vmStore(storage, type);
                 offset += STACK_SLOT_SIZE;
@@ -250,7 +248,7 @@ public class CallArranger {
                 long copy = Math.min(layout.byteSize() - offset, STACK_SLOT_SIZE);
                 VMStorage storage =
                     storageCalculator.stackAlloc(copy, STACK_SLOT_SIZE);
-                Class<?> type = SharedUtils.primitiveCarrierForSize(copy);
+                Class<?> type = SharedUtils.primitiveCarrierForSize(copy, false);
                 bindings.dup()
                         .vmLoad(storage, type)
                         .bufferStore(offset, type);
@@ -291,7 +289,8 @@ public class CallArranger {
                         while (offset < layout.byteSize()) {
                             final long copy = Math.min(layout.byteSize() - offset, 8);
                             VMStorage storage = regs[regIndex++];
-                            Class<?> type = SharedUtils.primitiveCarrierForSize(copy);
+                            boolean useFloat = storage.type() == StorageClasses.VECTOR;
+                            Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
                             if (offset + copy < layout.byteSize()) {
                                 bindings.dup();
                             }
@@ -324,7 +323,8 @@ public class CallArranger {
                         for (int i = 0; i < group.memberLayouts().size(); i++) {
                             VMStorage storage = regs[i];
                             final long size = group.memberLayouts().get(i).byteSize();
-                            Class<?> type = SharedUtils.primitiveCarrierForSize(size);
+                            boolean useFloat = storage.type() == StorageClasses.VECTOR;
+                            Class<?> type = SharedUtils.primitiveCarrierForSize(size, useFloat);
                             if (i + 1 < group.memberLayouts().size()) {
                                 bindings.dup();
                             }
@@ -393,7 +393,8 @@ public class CallArranger {
                             final long copy = Math.min(layout.byteSize() - offset, 8);
                             VMStorage storage = regs[regIndex++];
                             bindings.dup();
-                            Class<?> type = SharedUtils.primitiveCarrierForSize(copy);
+                            boolean useFloat = storage.type() == StorageClasses.VECTOR;
+                            Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
                             bindings.vmLoad(storage, type)
                                     .bufferStore(offset, type);
                             offset += copy;
@@ -410,9 +411,6 @@ public class CallArranger {
                     bindings.vmLoad(storage, long.class)
                             .boxAddress()
                             .toSegment(layout);
-                    // ASSERT SCOPE OF BOXED ADDRESS HERE
-                    // caveat. buffer should instead go out of scope after call
-                    bindings.copy(layout);
                     break;
                 }
                 case STRUCT_HFA: {
@@ -426,7 +424,8 @@ public class CallArranger {
                         for (int i = 0; i < group.memberLayouts().size(); i++) {
                             VMStorage storage = regs[i];
                             final long size = group.memberLayouts().get(i).byteSize();
-                            Class<?> type = SharedUtils.primitiveCarrierForSize(size);
+                            boolean useFloat = storage.type() == StorageClasses.VECTOR;
+                            Class<?> type = SharedUtils.primitiveCarrierForSize(size, useFloat);
                             bindings.dup()
                                     .vmLoad(storage, type)
                                     .bufferStore(offset, type);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ public class PlatformGraphicsInfo {
       * headless mode, in the case the application did specify
       * a value for the java.awt.headless system property.
       */
+    @SuppressWarnings("removal")
     public static boolean getDefaultHeadlessProperty() {
         return
             AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> {

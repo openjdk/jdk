@@ -62,11 +62,12 @@ import static com.sun.tools.javac.resources.CompilerProperties.Fragments.Implici
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndExplicitNotAllowed;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndImplicitNotAllowed;
 
-/** The parser maps a token sequence into an abstract syntax
- *  tree. It operates by recursive descent, with code derived
- *  systematically from an LL(1) grammar. For efficiency reasons, an
- *  operator precedence scheme is used for parsing binary operation
- *  expressions.
+/**
+ * The parser maps a token sequence into an abstract syntax tree.
+ * The parser is a hand-written recursive-descent parser that
+ * implements the grammar described in the Java Language Specification.
+ * For efficiency reasons, an operator precedence scheme is used
+ * for parsing binary operation expressions.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -183,8 +184,7 @@ public class JavacParser implements Parser {
         this.keepLineMap = keepLineMap;
         this.errorTree = F.Erroneous();
         endPosTable = newEndPosTable(keepEndPositions);
-        this.allowYieldStatement = (!preview.isPreview(Feature.SWITCH_EXPRESSION) || preview.isEnabled()) &&
-                Feature.SWITCH_EXPRESSION.allowedInSource(source);
+        this.allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
         this.allowRecords = Feature.RECORDS.allowedInSource(source);
         this.allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
     }
@@ -309,8 +309,8 @@ public class JavacParser implements Parser {
 
     @SuppressWarnings("unchecked")
     protected boolean peekToken(int lookahead, Predicate<TokenKind>... kinds) {
-        for (; lookahead < kinds.length ; lookahead++) {
-            if (!kinds[lookahead].test(S.token(lookahead + 1).kind)) {
+        for (Predicate<TokenKind> kind : kinds) {
+            if (!kind.test(S.token(++lookahead).kind)) {
                 return false;
             }
         }
@@ -4556,6 +4556,7 @@ public class JavacParser implements Parser {
 
         if (createNewLevel) {
             mostInnerType = to(F.at(token.pos).TypeArray(mostInnerType));
+            origEndPos = getEndPos(mostInnerType);
         }
 
         JCExpression mostInnerTypeToReturn = mostInnerType;

@@ -764,6 +764,11 @@ int InstructForm::memory_operand(FormDict &globals) const {
 bool InstructForm::captures_bottom_type(FormDict &globals) const {
   if (_matrule && _matrule->_rChild &&
       (!strcmp(_matrule->_rChild->_opType,"CastPP")       ||  // new result type
+       !strcmp(_matrule->_rChild->_opType,"CastDD")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastFF")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastII")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastLL")       ||
+       !strcmp(_matrule->_rChild->_opType,"CastVV")       ||
        !strcmp(_matrule->_rChild->_opType,"CastX2P")      ||  // new result type
        !strcmp(_matrule->_rChild->_opType,"DecodeN")      ||
        !strcmp(_matrule->_rChild->_opType,"EncodeP")      ||
