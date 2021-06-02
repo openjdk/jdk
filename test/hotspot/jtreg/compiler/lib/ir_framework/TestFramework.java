@@ -110,6 +110,10 @@ public class TestFramework {
                     "Verify",
                     "TLAB",
                     "UseNewCode",
+                    "Xmn",
+                    "Xms",
+                    "Xmx",
+                    "Xss",
                     // The following substrings are only part of one VM flag (=exact match)
                     "CreateCoredumpOnCrash",
                     "IgnoreUnrecognizedVMOptions",
@@ -117,7 +121,11 @@ public class TestFramework {
                     "UnlockExperimentalVMOptions",
                     "BackgroundCompilation",
                     "Xbatch",
-                    "TieredCompilation"
+                    "TieredCompilation",
+                    "Xmixed",
+                    "server",
+                    "Xlog",
+                    "LogCompilation"
             )
     );
 
