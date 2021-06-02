@@ -123,14 +123,9 @@ Java_jdk_internal_loader_NativeLibraries_load
     if (!initIDs(env))
         return JNI_FALSE;
 
-    const int utf8_len    = (*env)->GetStringUTFLength(env, name);
-    const int chars_count = (*env)->GetStringLength(env, name);
-    char * utf8_name = malloc(utf8_len + 1);
-    if (utf8_name == NULL) {
-      JNU_ThrowOutOfMemoryError(env, NULL);
-      return JNI_FALSE;
-    }
-    (*env)->GetStringUTFRegion(env, name, 0, chars_count, utf8_name);
+    const char * utf8_name = GetStringUTF8Chars(env, name);
+    if (utf8_name == NULL)
+            return JNI_FALSE;
     handle = isBuiltin ? procHandle : JVM_LoadLibrary(utf8_name);
     if (isJNI) {
         if (handle) {
@@ -183,7 +178,7 @@ Java_jdk_internal_loader_NativeLibraries_load
     loaded = JNI_TRUE;
 
  done:
-    free(utf8_name);
+    ReleaseStringUTF8Chars(env, name, utf8_name);
     return loaded;
 }
 

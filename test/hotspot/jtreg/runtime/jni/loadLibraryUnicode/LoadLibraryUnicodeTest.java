@@ -37,6 +37,11 @@ import jdk.test.lib.process.ProcessTools;
 public class LoadLibraryUnicodeTest {
 
     public static void main(String args[]) throws Exception {
+        if (!java.nio.charset.Charset.isSupported("UTF-8")) {
+            System.out.println("Test requires UTF-8 support; will not run and is considered passed.");
+            return;
+        }
+
         String nativePathSetting = "-Dtest.nativepath=" + getSystemProperty("test.nativepath");
         ProcessBuilder pb = ProcessTools.createTestJvm(nativePathSetting, LoadLibraryUnicode.class.getName());
         pb.environment().put("LC_ALL", "en_US.UTF-8");
