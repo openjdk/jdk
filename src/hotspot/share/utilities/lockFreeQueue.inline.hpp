@@ -25,8 +25,9 @@
 #ifndef SHARE_UTILITIES_LOCKFREEQUEUE_INLINE_HPP
 #define SHARE_UTILITIES_LOCKFREEQUEUE_INLINE_HPP
 
-#include "runtime/atomic.hpp"
 #include "utilities/lockFreeQueue.hpp"
+
+#include "runtime/atomic.hpp"
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
 T* LockFreeQueue<T, next_ptr>::next(const T& node) {

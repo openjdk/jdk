@@ -62,7 +62,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
-
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleBootstrap;
@@ -2273,6 +2272,15 @@ public final class System {
             }
             public boolean isReflectivelyOpened(Module m, String pn, Module other) {
                 return m.isReflectivelyOpened(pn, other);
+            }
+            public Module addEnableNativeAccess(Module m) {
+                return m.implAddEnableNativeAccess();
+            }
+            public void addEnableNativeAccessAllUnnamed() {
+                Module.implAddEnableNativeAccessAllUnnamed();
+            }
+            public boolean isEnableNativeAccess(Module m) {
+                return m.implIsEnableNativeAccess();
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();

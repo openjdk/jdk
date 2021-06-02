@@ -67,6 +67,9 @@ ul {
 }
 code, tt {
     font-family:'DejaVu Sans Mono', monospace;
+}
+:not(h1, h2, h3, h4, h5, h6) > code,
+:not(h1, h2, h3, h4, h5, h6) > tt {
     font-size:14px;
     padding-top:4px;
     margin-top:8px;
@@ -281,7 +284,7 @@ dl.notes > dt {
     color:#4E4E4E;
 }
 dl.notes > dd {
-    margin:5px 0 10px 0;
+    margin:5px 10px 10px 0;
     font-size:14px;
     font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
 }

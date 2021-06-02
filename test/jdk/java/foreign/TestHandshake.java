@@ -42,8 +42,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jdk.incubator.foreign.ResourceScope;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -53,30 +55,33 @@ public class TestHandshake {
     static final int ITERATIONS = 5;
     static final int SEGMENT_SIZE = 1_000_000;
     static final int MAX_DELAY_MILLIS = 500;
-    static final int MAX_EXECUTOR_WAIT_SECONDS = 10;
+    static final int MAX_EXECUTOR_WAIT_SECONDS = 20;
     static final int MAX_THREAD_SPIN_WAIT_MILLIS = 200;
 
     static final int NUM_ACCESSORS = Math.min(10, Runtime.getRuntime().availableProcessors());
 
     static final AtomicLong start = new AtomicLong();
+    static final AtomicBoolean started = new AtomicBoolean();
 
     @Test(dataProvider = "accessors")
     public void testHandshake(String testName, AccessorFactory accessorFactory) throws InterruptedException {
         for (int it = 0 ; it < ITERATIONS ; it++) {
-            MemorySegment segment = MemorySegment.allocateNative(SEGMENT_SIZE).share();
+            ResourceScope scope = ResourceScope.newSharedScope();
+            MemorySegment segment = MemorySegment.allocateNative(SEGMENT_SIZE, 1, scope);
             System.out.println("ITERATION " + it);
             ExecutorService accessExecutor = Executors.newCachedThreadPool();
             start.set(System.currentTimeMillis());
+            started.set(false);
             for (int i = 0; i < NUM_ACCESSORS ; i++) {
                 accessExecutor.execute(accessorFactory.make(i, segment));
             }
             int delay = ThreadLocalRandom.current().nextInt(MAX_DELAY_MILLIS);
             System.out.println("Starting handshaker with delay set to " + delay + " millis");
             Thread.sleep(delay);
-            accessExecutor.execute(new Handshaker(segment));
+            accessExecutor.execute(new Handshaker(scope));
             accessExecutor.shutdown();
             assertTrue(accessExecutor.awaitTermination(MAX_EXECUTOR_WAIT_SECONDS, TimeUnit.SECONDS));
-            assertTrue(!segment.isAlive());
+            assertTrue(!segment.scope().isAlive());
         }
     }
 
@@ -91,26 +96,24 @@ public class TestHandshake {
 
         @Override
         public final void run() {
-            outer: while (segment.isAlive()) {
+            start("\"Accessor #\" + id");
+            outer: while (segment.scope().isAlive()) {
                 try {
                     doAccess();
                 } catch (IllegalStateException ex) {
                     long delay = System.currentTimeMillis() - start.get();
-                    System.out.println("Accessor #" + id + " suspending - delay (ms): " + delay);
+                    System.out.println("Accessor #" + id + " suspending - elapsed (ms): " + delay);
                     backoff();
                     delay = System.currentTimeMillis() - start.get();
-                    System.out.println("Accessor #" + id + " resuming - delay (ms): " + delay);
+                    System.out.println("Accessor #" + id + " resuming - elapsed (ms): " + delay);
                     continue outer;
                 }
             }
             long delay = System.currentTimeMillis() - start.get();
-            System.out.println("Accessor #" + id + " terminated - delay (ms): " + delay);
-            cleanup();
+            System.out.println("Accessor #" + id + " terminated - elapsed (ms): " + delay);
         }
 
         abstract void doAccess();
-
-        void cleanup() {}
 
         private void backoff() {
             try {
@@ -118,6 +121,13 @@ public class TestHandshake {
             } catch (InterruptedException ex) {
                 throw new AssertionError(ex);
             }
+        }
+    }
+
+    static void start(String name) {
+        if (started.compareAndSet(false, true)) {
+            long delay = System.currentTimeMillis() - start.get();
+            System.out.println("Started first thread: " + name + " ; elapsed (ms): " + delay);
         }
     }
 
@@ -181,7 +191,7 @@ public class TestHandshake {
 
         SegmentMismatchAccessor(int id, MemorySegment segment) {
             super(id, segment);
-            this.copy = MemorySegment.allocateNative(SEGMENT_SIZE).share();
+            this.copy = MemorySegment.allocateNative(SEGMENT_SIZE, 1, segment.scope());
             copy.copyFrom(segment);
             MemoryAccess.setByteAtOffset(copy, ThreadLocalRandom.current().nextInt(SEGMENT_SIZE), (byte)42);
         }
@@ -189,11 +199,6 @@ public class TestHandshake {
         @Override
         public void doAccess() {
             segment.mismatch(copy);
-        }
-
-        @Override
-        void cleanup() {
-            copy.close();
         }
     }
 
@@ -231,24 +236,25 @@ public class TestHandshake {
 
     static class Handshaker implements Runnable {
 
-        final MemorySegment segment;
+        final ResourceScope scope;
 
-        Handshaker(MemorySegment segment) {
-            this.segment = segment;
+        Handshaker(ResourceScope scope) {
+            this.scope = scope;
         }
 
         @Override
         public void run() {
+            start("Handshaker");
             while (true) {
                 try {
-                    segment.close();
+                    scope.close();
                     break;
                 } catch (IllegalStateException ex) {
                     Thread.onSpinWait();
                 }
             }
             long delay = System.currentTimeMillis() - start.get();
-            System.out.println("Segment closed - delay (ms): " + delay);
+            System.out.println("Segment closed - elapsed (ms): " + delay);
         }
     }
 

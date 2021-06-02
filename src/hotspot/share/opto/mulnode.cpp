@@ -189,7 +189,7 @@ const Type* MulNode::Value(PhaseGVN* phase) const {
 #if defined(IA32)
   // Can't trust native compilers to properly fold strict double
   // multiplication with round-to-zero on this platform.
-  if (op == Op_MulD && phase->C->method()->is_strict()) {
+  if (op == Op_MulD) {
     return TypeD::DOUBLE;
   }
 #endif
