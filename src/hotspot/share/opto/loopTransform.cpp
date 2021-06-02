@@ -2425,6 +2425,25 @@ void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* off
     //     else /* scale > 0 and stride < 0 */
     //       I > (low_limit-(offset+1))/scale
     //   )
+    if (low_limit->get_long() == -max_jint) {
+      // If offset+1 > 0, then low_limit - (offset+1) will either
+      // underflow or if offset = 0, a division by -1 will still be
+      // min_int. To avoid these problems, we replace the positive
+      // "offset+1" (plus_one) with 0. This is done with an AND:
+      // plus_one = "offset+1" & "offset+1" >> 63
+      Node* shift = _igvn.intcon(63);
+      set_ctrl(shift, C->root());
+      Node* sign = new RShiftLNode(plus_one, shift);
+      register_new_node(sign, pre_ctrl);
+      plus_one = new AndLNode(plus_one, sign);
+      register_new_node(plus_one, pre_ctrl);
+    } else {
+      assert(low_limit->get_long() == 0, "wrong low limit for range check");
+      // The only problem here is when offset == max_int:
+      // low_limit - max_int+1 = 0 - min_int = min_int.
+      // But this is fine since the main-loop will either
+      // have less iterations or will be skipped.
+    }
     *main_limit = adjust_limit(is_positive_stride, scale, plus_one, low_limit, *main_limit, pre_ctrl, false);
   }
 }
