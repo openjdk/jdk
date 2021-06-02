@@ -201,7 +201,7 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   Node* inline_block = NULL;
   Node* stub_block = NULL;
 
-  uint const_len = 0;
+  int const_len = -1;
   const TypeInt* lty = NULL;
   uint shift  = exact_log2(type2aelembytes(type));
   if (length->Opcode() == Op_ConvI2L) {
