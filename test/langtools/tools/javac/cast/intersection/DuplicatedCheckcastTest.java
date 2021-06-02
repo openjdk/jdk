@@ -49,6 +49,7 @@ import toolbox.ToolBox;
 
 public class DuplicatedCheckcastTest extends TestRunner {
     ToolBox tb;
+    ClassFile cf;
 
     public DuplicatedCheckcastTest() {
         super(System.err);
@@ -75,7 +76,7 @@ public class DuplicatedCheckcastTest extends TestRunner {
                 .sources(code)
                 .outdir(curPath)
                 .run();
-        ClassFile cf = ClassFile.read(curPath.resolve("IntersectionTypeTest.class"));
+        cf = ClassFile.read(curPath.resolve("IntersectionTypeTest.class"));
         ArrayList<Instruction> checkCastList = new ArrayList<>();
         for (Method method : cf.methods) {
             if ("test".equals(method.getName(cf.constant_pool))) {
@@ -91,21 +92,17 @@ public class DuplicatedCheckcastTest extends TestRunner {
             throw new AssertionError("The number of the instruction 'checkcast' is not right. " +
                     "Expected number: 2, actual number: " + checkCastList.size());
         }
-        // first checkcast
-        int classIndex = checkCastList.get(0).getUnsignedShort(1);
+        checkClassName(checkCastList.get(0), "IntersectionTypeTest$I1");
+        checkClassName(checkCastList.get(1), "IntersectionTypeTest$C1");
+    }
+
+    public void checkClassName(Instruction ins, String expected) throws Exception {
+        int classIndex = ins.getUnsignedShort(1);
         CONSTANT_Class_info classInfo = cf.constant_pool.getClassInfo(classIndex);
         String className = classInfo.getName();
-        if (!"IntersectionTypeTest$I1".equals(className)) {
-            throw new AssertionError("The type of the first 'checkcast' is not right. " +
-                    "Expected: IntersectionTypeTest$I1, actual: " + className);
-        }
-        // second checkcast
-        classIndex = checkCastList.get(1).getUnsignedShort(1);
-        classInfo = cf.constant_pool.getClassInfo(classIndex);
-        className = classInfo.getName();
-        if (!"IntersectionTypeTest$C1".equals(className)) {
-            throw new AssertionError("The type of the second 'checkcast' is not right. " +
-                    "Expected: IntersectionTypeTest$C1, actual: " + className);
+        if (!expected.equals(className)) {
+            throw new AssertionError("The type of the 'checkcast' is not right. Expected: " +
+                    expected + ", actual: " + className);
         }
     }
 }
