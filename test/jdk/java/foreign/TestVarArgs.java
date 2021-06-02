@@ -65,7 +65,7 @@ public class TestVarArgs {
         System.loadLibrary("VarArgs");
     }
 
-    static final MemoryAddress varargsAddr =
+    static final MemoryAddress VARARGS_ADDR =
             SymbolLookup.loaderLookup()
                     .lookup("varargs").get();
 
