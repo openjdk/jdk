@@ -352,6 +352,8 @@ public:
       LambdaProxyClassKey const& k1, LambdaProxyClassKey const& k2) {
     return (k1.equals(k2));
   }
+
+  InstanceKlass* caller_ik() const { return _caller_ik; }
 };
 
 
@@ -1234,6 +1236,11 @@ void SystemDictionaryShared::start_dumping() {
 
 DumpTimeSharedClassInfo* SystemDictionaryShared::find_or_allocate_info_for(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  return find_or_allocate_info_for_locked(k);
+}
+
+DumpTimeSharedClassInfo* SystemDictionaryShared::find_or_allocate_info_for_locked(InstanceKlass* k) {
+  assert_lock_strong(DumpTimeTable_lock);
   if (_dumptime_table == NULL) {
     _dumptime_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeSharedClassTable();
   }
@@ -1467,8 +1474,9 @@ void SystemDictionaryShared::check_excluded_classes() {
 
 bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
   assert(_no_class_loading_should_happen, "sanity");
+  assert_lock_strong(DumpTimeTable_lock);
   Arguments::assert_is_dumping_archive();
-  DumpTimeSharedClassInfo* p = find_or_allocate_info_for(k);
+  DumpTimeSharedClassInfo* p = find_or_allocate_info_for_locked(k);
   return (p == NULL) ? true : p->is_excluded();
 }
 
@@ -1499,13 +1507,18 @@ bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
   return (p == NULL) ? false : p->failed_verification();
 }
 
+static bool is_class_alive(InstanceKlass* k) {
+  assert_lock_strong(DumpTimeTable_lock);
+  return k->class_loader_data()->is_alive();
+}
+
 class IterateDumpTimeSharedClassTable : StackObj {
   MetaspaceClosure *_it;
 public:
   IterateDumpTimeSharedClassTable(MetaspaceClosure* it) : _it(it) {}
 
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
-    if (!info.is_excluded()) {
+    if (is_class_alive(k) && !info.is_excluded()) {
       info.metaspace_pointers_do(_it);
     }
     return true; // keep on iterating
@@ -1518,14 +1531,16 @@ public:
   IterateDumpTimeLambdaProxyClassDictionary(MetaspaceClosure* it) : _it(it) {}
 
   bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
-    info.metaspace_pointers_do(_it);
-    key.metaspace_pointers_do(_it);
-    return true;
+    if (is_class_alive(key.caller_ik())) {
+      info.metaspace_pointers_do(_it);
+      key.metaspace_pointers_do(_it);
+    }
+    return true; // keep on iterating
   }
 };
 
 void SystemDictionaryShared::dumptime_classes_do(class MetaspaceClosure* it) {
-  assert_locked_or_safepoint(DumpTimeTable_lock);
+  assert_lock_strong(DumpTimeTable_lock);
   IterateDumpTimeSharedClassTable iter(it);
   _dumptime_table->iterate(&iter);
   if (_dumptime_lambda_proxy_class_dictionary != NULL) {
@@ -2154,7 +2169,7 @@ void SystemDictionaryShared::write_dictionary(RunTimeSharedDictionary* dictionar
   dictionary->reset();
   CompactHashtableWriter writer(_dumptime_table->count_of(is_builtin), &stats);
   CopySharedClassInfoToArchive copy(&writer, is_builtin);
-  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  assert_lock_strong(DumpTimeTable_lock);
   _dumptime_table->iterate(&copy);
   writer.dump(dictionary, is_builtin ? "builtin dictionary" : "unregistered dictionary");
 }
