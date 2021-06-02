@@ -1507,18 +1507,14 @@ bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
   return (p == NULL) ? false : p->failed_verification();
 }
 
-static bool is_class_alive(InstanceKlass* k) {
-  assert_lock_strong(DumpTimeTable_lock);
-  return k->class_loader_data()->is_alive();
-}
-
 class IterateDumpTimeSharedClassTable : StackObj {
   MetaspaceClosure *_it;
 public:
   IterateDumpTimeSharedClassTable(MetaspaceClosure* it) : _it(it) {}
 
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
-    if (is_class_alive(k) && !info.is_excluded()) {
+    assert_lock_strong(DumpTimeTable_lock);
+    if (k->is_loader_alive() && !info.is_excluded()) {
       info.metaspace_pointers_do(_it);
     }
     return true; // keep on iterating
@@ -1531,7 +1527,8 @@ public:
   IterateDumpTimeLambdaProxyClassDictionary(MetaspaceClosure* it) : _it(it) {}
 
   bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
-    if (is_class_alive(key.caller_ik())) {
+    assert_lock_strong(DumpTimeTable_lock);
+    if (key.caller_ik()->is_loader_alive()) {
       info.metaspace_pointers_do(_it);
       key.metaspace_pointers_do(_it);
     }
