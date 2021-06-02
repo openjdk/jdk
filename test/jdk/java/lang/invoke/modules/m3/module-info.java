@@ -24,7 +24,7 @@
 module m3 {
     requires m4;
     requires m5;
-    requires testng;
+    requires org.testng;
     requires java.management;
     exports c1;
     opens c2 to m5;

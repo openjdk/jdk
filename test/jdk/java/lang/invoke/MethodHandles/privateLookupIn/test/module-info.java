@@ -22,6 +22,6 @@
  */
 
 module test {
-   requires testng;
-   exports p to testng;   // TestNG invokes the public methods
+   requires org.testng;
+   exports p to org.testng;   // TestNG invokes the public methods
 }

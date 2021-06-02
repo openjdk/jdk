@@ -22,6 +22,6 @@
  */
 module m1 {
     requires m2;
-    requires testng;
+    requires org.testng;
     exports p1;
 }

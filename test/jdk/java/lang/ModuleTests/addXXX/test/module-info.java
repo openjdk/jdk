@@ -21,10 +21,10 @@
  * questions.
  */
 module test {
-    exports test to testng;
+    exports test to org.testng;
 
     requires m2;
     requires m3;
     requires m4;
-    requires testng;
+    requires org.testng;
 }

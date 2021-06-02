@@ -36,6 +36,6 @@ module test {
     provides S4 with P4;
     provides S5 with P5;
     provides S6 with P6;
-    requires testng;
-    exports p to testng;
+    requires org.testng;
+    exports p to org.testng;
 }
