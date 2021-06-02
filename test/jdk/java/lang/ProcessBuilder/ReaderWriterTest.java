@@ -271,8 +271,8 @@ public class ReaderWriterTest {
             var writer = p.outputWriter(cs);
             writer = p.outputWriter(cs);        // try again with same
             writer = p.outputWriter(otherCharset);  // this should throw
-            Assert.fail("Process.outputWriter(otherCharset) did not throw IllegalArgumentException");
-        } catch (IllegalArgumentException ile) {
+            Assert.fail("Process.outputWriter(otherCharset) did not throw IllegalStateException");
+        } catch (IllegalStateException ile) {
             // expected, ignore
             System.out.println(ile);
         }
@@ -280,8 +280,8 @@ public class ReaderWriterTest {
             var reader = p.inputReader(cs);
             reader = p.inputReader(cs);             // try again with same
             reader = p.inputReader(otherCharset);   // this should throw
-            Assert.fail("Process.inputReader(otherCharset) did not throw IllegalArgumentException");
-        } catch (IllegalArgumentException ile) {
+            Assert.fail("Process.inputReader(otherCharset) did not throw IllegalStateException");
+        } catch (IllegalStateException ile) {
             // expected, ignore
             System.out.println(ile);
         }
@@ -289,8 +289,8 @@ public class ReaderWriterTest {
             var reader = p.errorReader(cs);
             reader = p.errorReader(cs);             // try again with same
             reader = p.errorReader(otherCharset);   // this should throw
-            Assert.fail("Process.errorReader(otherCharset) did not throw IllegalArgumentException");
-        } catch (IllegalArgumentException ile) {
+            Assert.fail("Process.errorReader(otherCharset) did not throw IllegalStateException");
+        } catch (IllegalStateException ile) {
             // expected, ignore
             System.out.println(ile);
         }

@@ -395,7 +395,7 @@ public abstract class Process {
      * @param charset the {@code Charset} to encode characters to bytes
      * @return a {@code BufferedWriter} to the standard input of the process using the {@code charset}
      * @throws NullPointerException if the {@code charset} is {@code null}
-     * @throws IllegalArgumentException if called more than once with different charset arguments
+     * @throws IllegalStateException if called more than once with different charset arguments
      * @since 17
      */
     public final BufferedWriter outputWriter(Charset charset) {
@@ -406,7 +406,7 @@ public abstract class Process {
                 outputWriter = new BufferedWriter(new OutputStreamWriter(getOutputStream(), charset));
             } else {
                 if (!outputCharset.equals(charset))
-                    throw new IllegalArgumentException("BufferedWriter was created with charset: " + outputCharset);
+                    throw new IllegalStateException("BufferedWriter was created with charset: " + outputCharset);
             }
             return outputWriter;
         }
