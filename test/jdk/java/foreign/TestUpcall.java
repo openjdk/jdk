@@ -28,7 +28,7 @@
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcall
  *
- * @run testng/othervm
+ * @run testng/othervm/timeout=720
  *   --enable-native-access=ALL-UNNAMED
  *   TestUpcall
  */
