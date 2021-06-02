@@ -618,6 +618,14 @@ final class Float256Vector extends FloatVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Float256Mask eq(VectorMask<Float> mask) {
+            Objects.requireNonNull(mask);
+            Float256Mask m = (Float256Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
