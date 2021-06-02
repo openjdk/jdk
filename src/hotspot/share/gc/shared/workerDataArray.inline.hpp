@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_WORKERDATAARRAY_INLINE_HPP
 
 #include "gc/shared/workerDataArray.hpp"
+
 #include "memory/allocation.inline.hpp"
 #include "utilities/ostream.hpp"
 

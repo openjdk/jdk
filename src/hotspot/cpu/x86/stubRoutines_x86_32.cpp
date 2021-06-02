@@ -34,3 +34,6 @@
 address StubRoutines::x86::_verify_fpu_cntrl_wrd_entry = NULL;
 address StubRoutines::x86::_method_entry_barrier = NULL;
 
+jint StubRoutines::x86::_fpu_subnormal_bias1[3] = { 0, 0, 0 };
+jint StubRoutines::x86::_fpu_subnormal_bias2[3] = { 0, 0, 0 };
+

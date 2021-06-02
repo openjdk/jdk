@@ -24,9 +24,10 @@
 #ifndef SHARE_GC_Z_ZRELOCATIONSETSELECTOR_INLINE_HPP
 #define SHARE_GC_Z_ZRELOCATIONSETSELECTOR_INLINE_HPP
 
+#include "gc/z/zRelocationSetSelector.hpp"
+
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
-#include "gc/z/zRelocationSetSelector.hpp"
 
 inline size_t ZRelocationSetSelectorGroupStats::npages() const {
   return _npages;

@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_AGETABLE_INLINE_HPP
 
 #include "gc/shared/ageTable.hpp"
+
 #include "oops/oop.inline.hpp"
 
 // add entry
