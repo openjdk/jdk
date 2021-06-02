@@ -78,7 +78,7 @@ public class Messages {
      * Reports an error message to the doclet's reporter.
      *
      * @param key  the name of a resource containing the message to be printed
-     * @param args optional arguments to be replaced in the message.
+     * @param args optional arguments to be replaced in the message
      */
     public void error(String key, Object... args) {
         report(ERROR, resources.getText(key, args));
@@ -115,7 +115,7 @@ public class Messages {
      * Reports a warning message to the doclet's reporter.
      *
      * @param key  the name of a resource containing the message to be printed
-     * @param args optional arguments to be replaced in the message.
+     * @param args optional arguments to be replaced in the message
      */
     public void warning(String key, Object... args) {
         report(WARNING, resources.getText(key, args));
@@ -126,7 +126,7 @@ public class Messages {
      *
      * @param path a path identifying the position to be included with the message
      * @param key  the name of a resource containing the message to be printed
-     * @param args optional arguments to be replaced in the message.
+     * @param args optional arguments to be replaced in the message
      */
     public void warning(DocTreePath path, String key, Object... args) {
         if (configuration.showMessage(path, key)) {
@@ -140,7 +140,7 @@ public class Messages {
      * @param e    an element identifying the declaration whose position should
      *             be included with the message
      * @param key  the name of a resource containing the message to be printed
-     * @param args optional arguments to be replaced in the message.
+     * @param args optional arguments to be replaced in the message
      */
     public void warning(Element e, String key, Object... args) {
         if (configuration.showMessage(e, key)) {
@@ -156,7 +156,7 @@ public class Messages {
      * @param pos   the position to be associated with the message
      * @param end   the end of a range of characters to be associated with the message
      * @param key   the name of a resource containing the message to be printed
-     * @param args  optional arguments to be replaced in the message.
+     * @param args  optional arguments to be replaced in the message
      */
     public void warning(FileObject fo, int start, int pos, int end, String key, Object... args) {
         report(WARNING, fo, start, pos, end, resources.getText(key, args));
@@ -169,7 +169,7 @@ public class Messages {
      * The message is written directly to the reporter's diagnostic stream.
      *
      * @param key  the name of a resource containing the message to be printed
-     * @param args optional arguments to be replaced in the message.
+     * @param args optional arguments to be replaced in the message
      */
     public void notice(String key, Object... args) {
         if (!configuration.getOptions().quiet()) {
