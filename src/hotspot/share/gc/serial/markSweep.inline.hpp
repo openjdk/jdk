@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
 #define SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
 
-#include "classfile/classLoaderData.inline.hpp"
 #include "gc/serial/markSweep.hpp"
+
+#include "classfile/classLoaderData.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/markWord.inline.hpp"
 #include "oops/access.inline.hpp"

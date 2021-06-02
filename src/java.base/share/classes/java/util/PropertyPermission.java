@@ -326,16 +326,12 @@ public final class PropertyPermission extends BasicPermission {
      * @return the canonical string representation of the actions.
      */
     static String getActions(int mask) {
-        switch (mask & (READ|WRITE)) {
-            case READ:
-                return SecurityConstants.PROPERTY_READ_ACTION;
-            case WRITE:
-                return SecurityConstants.PROPERTY_WRITE_ACTION;
-            case READ|WRITE:
-                return SecurityConstants.PROPERTY_RW_ACTION;
-            default:
-                return "";
-        }
+        return switch (mask & (READ | WRITE)) {
+            case READ         -> SecurityConstants.PROPERTY_READ_ACTION;
+            case WRITE        -> SecurityConstants.PROPERTY_WRITE_ACTION;
+            case READ | WRITE -> SecurityConstants.PROPERTY_RW_ACTION;
+            default           -> "";
+        };
     }
 
     /**

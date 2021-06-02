@@ -1778,21 +1778,13 @@ public class ObjectInputStream
         int oldHandle = passHandle;
         try {
             byte tc = bin.peekByte();
-            switch (tc) {
-                case TC_NULL:
-                    return (String) readNull();
-
-                case TC_REFERENCE:
-                    return (String) readHandle(false);
-
-                case TC_STRING:
-                case TC_LONGSTRING:
-                    return readString(false);
-
-                default:
-                    throw new StreamCorruptedException(
+            return switch (tc) {
+                case TC_NULL                  -> (String) readNull();
+                case TC_REFERENCE             -> (String) readHandle(false);
+                case TC_STRING, TC_LONGSTRING -> readString(false);
+                default                       -> throw new StreamCorruptedException(
                         String.format("invalid type code: %02X", tc));
-            }
+            };
         } finally {
             passHandle = oldHandle;
         }
@@ -1872,27 +1864,20 @@ public class ObjectInputStream
         throws IOException
     {
         byte tc = bin.peekByte();
-        ObjectStreamClass descriptor;
-        switch (tc) {
-            case TC_NULL:
-                descriptor = (ObjectStreamClass) readNull();
-                break;
-            case TC_REFERENCE:
-                descriptor = (ObjectStreamClass) readHandle(unshared);
+
+        return switch (tc) {
+            case TC_NULL            -> (ObjectStreamClass) readNull();
+            case TC_PROXYCLASSDESC  -> readProxyDesc(unshared);
+            case TC_CLASSDESC       -> readNonProxyDesc(unshared);
+            case TC_REFERENCE       -> {
+                var d = (ObjectStreamClass) readHandle(unshared);
                 // Should only reference initialized class descriptors
-                descriptor.checkInitialized();
-                break;
-            case TC_PROXYCLASSDESC:
-                descriptor = readProxyDesc(unshared);
-                break;
-            case TC_CLASSDESC:
-                descriptor = readNonProxyDesc(unshared);
-                break;
-            default:
-                throw new StreamCorruptedException(
+                d.checkInitialized();
+                yield d;
+            }
+            default                 -> throw new StreamCorruptedException(
                     String.format("invalid type code: %02X", tc));
-        }
-        return descriptor;
+        };
     }
 
     private boolean isCustomSubclass() {
@@ -2052,21 +2037,13 @@ public class ObjectInputStream
      * assigned handle.
      */
     private String readString(boolean unshared) throws IOException {
-        String str;
         byte tc = bin.readByte();
-        switch (tc) {
-            case TC_STRING:
-                str = bin.readUTF();
-                break;
-
-            case TC_LONGSTRING:
-                str = bin.readLongUTF();
-                break;
-
-            default:
-                throw new StreamCorruptedException(
+        String str = switch (tc) {
+            case TC_STRING      -> bin.readUTF();
+            case TC_LONGSTRING  -> bin.readLongUTF();
+            default             -> throw new StreamCorruptedException(
                     String.format("invalid type code: %02X", tc));
-        }
+        };
         passHandle = handles.assign(unshared ? unsharedMarker : str);
         handles.finish(passHandle);
         return str;
@@ -3680,28 +3657,17 @@ public class ObjectInputStream
                     int b1, b2, b3;
                     b1 = buf[pos++] & 0xFF;
                     switch (b1 >> 4) {
-                        case 0:
-                        case 1:
-                        case 2:
-                        case 3:
-                        case 4:
-                        case 5:
-                        case 6:
-                        case 7:   // 1 byte format: 0xxxxxxx
+                        case 0, 1, 2, 3, 4, 5, 6, 7 -> // 1 byte format: 0xxxxxxx
                             cbuf[cpos++] = (char) b1;
-                            break;
-
-                        case 12:
-                        case 13:  // 2 byte format: 110xxxxx 10xxxxxx
+                        case 12, 13 -> {  // 2 byte format: 110xxxxx 10xxxxxx
                             b2 = buf[pos++];
                             if ((b2 & 0xC0) != 0x80) {
                                 throw new UTFDataFormatException();
                             }
                             cbuf[cpos++] = (char) (((b1 & 0x1F) << 6) |
                                                    ((b2 & 0x3F) << 0));
-                            break;
-
-                        case 14:  // 3 byte format: 1110xxxx 10xxxxxx 10xxxxxx
+                        }
+                        case 14 -> {  // 3 byte format: 1110xxxx 10xxxxxx 10xxxxxx
                             b3 = buf[pos + 1];
                             b2 = buf[pos + 0];
                             pos += 2;
@@ -3711,10 +3677,8 @@ public class ObjectInputStream
                             cbuf[cpos++] = (char) (((b1 & 0x0F) << 12) |
                                                    ((b2 & 0x3F) << 6) |
                                                    ((b3 & 0x3F) << 0));
-                            break;
-
-                        default:  // 10xx xxxx, 1111 xxxx
-                            throw new UTFDataFormatException();
+                        }
+                        default ->  throw new UTFDataFormatException(); // 10xx xxxx, 1111 xxxx
                     }
                 }
             } catch (ArrayIndexOutOfBoundsException ex) {
@@ -3748,19 +3712,11 @@ public class ObjectInputStream
             int b1, b2, b3;
             b1 = readByte() & 0xFF;
             switch (b1 >> 4) {
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                case 7:     // 1 byte format: 0xxxxxxx
+                case 0, 1, 2, 3, 4, 5, 6, 7 -> {     // 1 byte format: 0xxxxxxx
                     sbuf.append((char) b1);
                     return 1;
-
-                case 12:
-                case 13:    // 2 byte format: 110xxxxx 10xxxxxx
+                }
+                case 12, 13 -> {    // 2 byte format: 110xxxxx 10xxxxxx
                     if (utflen < 2) {
                         throw new UTFDataFormatException();
                     }
@@ -3771,8 +3727,8 @@ public class ObjectInputStream
                     sbuf.append((char) (((b1 & 0x1F) << 6) |
                                         ((b2 & 0x3F) << 0)));
                     return 2;
-
-                case 14:    // 3 byte format: 1110xxxx 10xxxxxx 10xxxxxx
+                }
+                case 14 -> {    // 3 byte format: 1110xxxx 10xxxxxx 10xxxxxx
                     if (utflen < 3) {
                         if (utflen == 2) {
                             readByte();         // consume remaining byte
@@ -3785,12 +3741,11 @@ public class ObjectInputStream
                         throw new UTFDataFormatException();
                     }
                     sbuf.append((char) (((b1 & 0x0F) << 12) |
-                                        ((b2 & 0x3F) << 6) |
+                                        ((b2 & 0x3F) << 6)  |
                                         ((b3 & 0x3F) << 0)));
                     return 3;
-
-                default:   // 10xx xxxx, 1111 xxxx
-                    throw new UTFDataFormatException();
+                }
+                default -> throw new UTFDataFormatException(); // 10xx xxxx, 1111 xxxx
             }
         }
 

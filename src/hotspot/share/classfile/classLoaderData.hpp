@@ -191,9 +191,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void free_deallocate_list();                      // for the classes that are not unloaded
   void free_deallocate_list_C_heap_structures();    // for the classes that are unloaded
 
-  // Allocate out of this class loader data
-  MetaWord* allocate(size_t size);
-
   Dictionary* create_dictionary();
 
   void initialize_name(Handle class_loader);
