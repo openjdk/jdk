@@ -95,7 +95,8 @@ uint G1FullCollector::calc_active_workers() {
   uint active_worker_limit = WorkerPolicy::calc_active_workers(max_worker_count, current_active_workers, 0);
 
   // Finally consider the amount of used regions.
-  uint used_worker_limit = MAX2(heap->num_used_regions(), 1u);
+  uint used_worker_limit = heap->num_used_regions();
+  assert(used_worker_limit > 0, "Should never have zero used regions.");
 
   // Update active workers to the lower of the limits.
   uint worker_count = MIN3(heap_waste_worker_limit, active_worker_limit, used_worker_limit);
