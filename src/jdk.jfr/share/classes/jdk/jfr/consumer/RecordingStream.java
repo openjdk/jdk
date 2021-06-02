@@ -423,7 +423,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      *         have {@code FilePermission} to write to the destination path
      *
      * @see RecordingStream#setMaxAge(Duration)
-     * @see RecordingStream#setMaxSize(Duration)
+     * @see RecordingStream#setMaxSize(long)
      */
     public void dump(Path destination) throws IOException {
         Objects.requireNonNull(destination);
