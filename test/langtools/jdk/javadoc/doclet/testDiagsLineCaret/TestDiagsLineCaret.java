@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8267126
+ * @bug      8267126 8267176
  * @summary  javadoc should show "line and caret" for diagnostics
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
