@@ -82,6 +82,19 @@ G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRe
 {
 }
 
+void G1BlockOffsetTablePart::update() {
+  HeapWord* next_addr = _hr->bottom();
+  HeapWord* const limit = _hr->top();
+
+  HeapWord* prev_addr;
+  while (next_addr < limit) {
+    prev_addr = next_addr;
+    next_addr  = prev_addr + block_size(prev_addr);
+    alloc_block(prev_addr, next_addr);
+  }
+  assert(next_addr == limit, "Should stop the scan at the limit.");
+}
+
 // The arguments follow the normal convention of denoting
 // a right-open interval: [start, end)
 void G1BlockOffsetTablePart:: set_remainder_to_point_to_start(HeapWord* start, HeapWord* end) {
@@ -327,7 +340,8 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, size_t* ind
 void G1BlockOffsetTablePart::verify() const {
   assert(_hr->bottom() < _hr->top(), "Only non-empty regions should be verified.");
   size_t start_card = _bot->index_for(_hr->bottom());
-  size_t end_card = _bot->index_for(_hr->top() - 1);
+  // Do not verify beyond the BOT allocation threshold.
+  size_t end_card = MIN2(_bot->index_for(_hr->top() - 1), _next_offset_index - 1);
 
   for (size_t current_card = start_card; current_card < end_card; current_card++) {
     u_char entry = _bot->offset_array(current_card);

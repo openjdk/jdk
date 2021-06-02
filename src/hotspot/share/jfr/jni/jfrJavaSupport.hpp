@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,21 +33,21 @@ class outputStream;
 
 class JfrJavaSupport : public AllStatic {
  public:
-  static jobject local_jni_handle(const oop obj, Thread* t);
-  static jobject local_jni_handle(const jobject handle, Thread* t);
+  static jobject local_jni_handle(const oop obj, JavaThread* t);
+  static jobject local_jni_handle(const jobject handle, JavaThread* t);
   static void destroy_local_jni_handle(jobject handle);
 
-  static jobject global_jni_handle(const oop obj, Thread* t);
-  static jobject global_jni_handle(const jobject handle, Thread* t);
+  static jobject global_jni_handle(const oop obj, JavaThread* t);
+  static jobject global_jni_handle(const jobject handle, JavaThread* t);
   static void destroy_global_jni_handle(jobject handle);
 
-  static jweak global_weak_jni_handle(const oop obj, Thread* t);
-  static jweak global_weak_jni_handle(const jobject handle, Thread* t);
+  static jweak global_weak_jni_handle(const oop obj, JavaThread* t);
+  static jweak global_weak_jni_handle(const jobject handle, JavaThread* t);
   static void destroy_global_weak_jni_handle(jweak handle);
 
   static oop resolve_non_null(jobject obj);
   static void notify_all(jobject obj, TRAPS);
-  static void set_array_element(jobjectArray arr, jobject element, int index, Thread* t);
+  static void set_array_element(jobjectArray arr, jobject element, int index, JavaThread* t);
 
   // naked oop result
   static void call_static(JfrJavaArguments* args, TRAPS);
@@ -76,7 +76,8 @@ class JfrJavaSupport : public AllStatic {
   // misc
   static Klass* klass(const jobject handle);
   // caller needs ResourceMark
-  static const char* c_str(jstring string, Thread* jt);
+  static const char* c_str(jstring string, JavaThread* jt);
+  static const char* c_str(oop string, JavaThread* t);
 
   // exceptions
   static void throw_illegal_state_exception(const char* message, TRAPS);
@@ -100,11 +101,11 @@ class JfrJavaSupport : public AllStatic {
 
   // critical
   static void abort(jstring errorMsg, TRAPS);
-  static void uncaught_exception(jthrowable throwable, Thread* t);
+  static void uncaught_exception(jthrowable throwable, JavaThread* t);
 
   // asserts
-  DEBUG_ONLY(static void check_java_thread_in_vm(Thread* t);)
-  DEBUG_ONLY(static void check_java_thread_in_native(Thread* t);)
+  DEBUG_ONLY(static void check_java_thread_in_vm(JavaThread* t);)
+  DEBUG_ONLY(static void check_java_thread_in_native(JavaThread* t);)
 
   enum CAUSE {
     VM_ERROR,
@@ -119,7 +120,7 @@ class JfrJavaSupport : public AllStatic {
 
  private:
   static CAUSE _cause;
-  static void set_cause(jthrowable throwable, Thread* t);
+  static void set_cause(jthrowable throwable, JavaThread* t);
 };
 
 #endif // SHARE_JFR_JNI_JFRJAVASUPPORT_HPP

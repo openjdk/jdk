@@ -30,7 +30,7 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestSymmCiphers
- * @run main/othervm TestSymmCiphers sm
+ * @run main/othervm -Djava.security.manager=allow TestSymmCiphers sm
  */
 
 import java.io.ByteArrayOutputStream;

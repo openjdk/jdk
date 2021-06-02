@@ -25,7 +25,8 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "aot/aotLoader.hpp"
+#include "cds/dynamicArchive.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -44,6 +45,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -51,11 +53,11 @@
 #include "jfr/jfrEvents.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -87,7 +89,6 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
-#include "runtime/memprofiler.hpp"
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
@@ -100,6 +101,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/task.hpp"
@@ -261,32 +263,16 @@ Thread::Thread() {
 
   // plain initialization
   debug_only(_owned_locks = NULL;)
-  NOT_PRODUCT(_no_safepoint_count = 0;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
-  _current_pending_monitor = NULL;
-  _current_pending_monitor_is_from_java = true;
-  _current_waiting_monitor = NULL;
   _current_pending_raw_monitor = NULL;
-
-#ifdef ASSERT
-  _visited_for_critical_count = false;
-#endif
-
-  _SR_lock = new Monitor(Mutex::suspend_resume, "SR_lock", true,
-                         Monitor::_safepoint_check_sometimes);
-  _suspend_flags = 0;
 
   // thread-specific hashCode stream generator state - Marsaglia shift-xor form
   _hashStateX = os::random();
   _hashStateY = 842502087;
   _hashStateZ = 0x8767;    // (int)(3579807591LL & 0xffff) ;
   _hashStateW = 273326509;
-
-  _OnTrap   = 0;
-  _Stalled  = 0;
-  _TypeTag  = 0x2BAD;
 
   // Many of the following fields are effectively final - immutable
   // Note that nascent threads can't use the Native Monitor-Mutex
@@ -450,17 +436,12 @@ Thread::~Thread() {
   delete last_handle_mark();
   assert(last_handle_mark() == NULL, "check we have reached the end");
 
-  // It's possible we can encounter a null _ParkEvent, etc., in stillborn threads.
-  // We NULL out the fields for good hygiene.
-  ParkEvent::Release(_ParkEvent); _ParkEvent   = NULL;
+  ParkEvent::Release(_ParkEvent);
+  // Set to NULL as a termination indicator for has_terminated().
+  Atomic::store(&_ParkEvent, (ParkEvent*)NULL);
 
   delete handle_area();
   delete metadata_handles();
-
-  // SR_handler uses this as a termination indicator -
-  // needs to happen before os::free_thread()
-  delete _SR_lock;
-  _SR_lock = NULL;
 
   // osthread() can be NULL, if creation of thread failed.
   if (osthread() != NULL) os::free_thread(osthread());
@@ -559,140 +540,6 @@ void Thread::start(Thread* thread) {
                                         JavaThreadStatus::RUNNABLE);
   }
   os::start_thread(thread);
-}
-
-class InstallAsyncExceptionClosure : public HandshakeClosure {
-  Handle _throwable; // The Throwable thrown at the target Thread
-public:
-  InstallAsyncExceptionClosure(Handle throwable) : HandshakeClosure("InstallAsyncException"), _throwable(throwable) {}
-
-  void do_thread(Thread* thr) {
-    JavaThread* target = thr->as_Java_thread();
-    // Note that this now allows multiple ThreadDeath exceptions to be
-    // thrown at a thread.
-    // The target thread has run and has not exited yet.
-    target->send_thread_stop(_throwable());
-  }
-};
-
-void Thread::send_async_exception(oop java_thread, oop java_throwable) {
-  Handle throwable(Thread::current(), java_throwable);
-  JavaThread* target = java_lang_Thread::thread(java_thread);
-  InstallAsyncExceptionClosure vm_stop(throwable);
-  Handshake::execute(&vm_stop, target);
-}
-
-
-// Check if an external suspend request has completed (or has been
-// cancelled). Returns true if the thread is externally suspended and
-// false otherwise.
-bool JavaThread::is_ext_suspend_completed() {
-  bool did_trans_retry = false;  // only do thread_in_native_trans retry once
-  bool do_trans_retry;           // flag to force the retry
-
-  do {
-    do_trans_retry = false;
-
-    if (is_exiting()) {
-      // Thread is in the process of exiting. This is always checked
-      // first to reduce the risk of dereferencing a freed JavaThread.
-      return false;
-    }
-
-    if (!is_external_suspend()) {
-      // Suspend request is cancelled. This is always checked before
-      // is_ext_suspended() to reduce the risk of a rogue resume
-      // confusing the thread that made the suspend request.
-      return false;
-    }
-
-    if (is_ext_suspended()) {
-      // thread is suspended
-      return true;
-    }
-
-    // Now that we no longer do hard suspends of threads running
-    // native code, the target thread can be changing thread state
-    // while we are in this routine:
-    //
-    //   _thread_in_native -> _thread_in_native_trans -> _thread_blocked
-    //
-    // We save a copy of the thread state as observed at this moment
-    // and make our decision about suspend completeness based on the
-    // copy. This closes the race where the thread state is seen as
-    // _thread_in_native_trans in the if-thread_blocked check, but is
-    // seen as _thread_blocked in if-thread_in_native_trans check.
-    JavaThreadState save_state = thread_state();
-
-    if (save_state == _thread_blocked && is_suspend_equivalent()) {
-      // If the thread's state is _thread_blocked and this blocking
-      // condition is known to be equivalent to a suspend, then we can
-      // consider the thread to be externally suspended. This means that
-      // the code that sets _thread_blocked has been modified to do
-      // self-suspension if the blocking condition releases. We also
-      // used to check for CONDVAR_WAIT here, but that is now covered by
-      // the _thread_blocked with self-suspension check.
-      //
-      // Return true since we wouldn't be here unless there was still an
-      // external suspend request.
-      return true;
-    } else if (save_state == _thread_in_native && frame_anchor()->walkable()) {
-      // Threads running native code will self-suspend on native==>VM/Java
-      // transitions. If its stack is walkable (should always be the case
-      // unless this function is called before the actual java_suspend()
-      // call), then the wait is done.
-      return true;
-    } else if (!did_trans_retry &&
-               save_state == _thread_in_native_trans &&
-               frame_anchor()->walkable()) {
-      // The thread is transitioning from thread_in_native to another
-      // thread state. check_safepoint_and_suspend_for_native_trans()
-      // will force the thread to self-suspend. If it hasn't gotten
-      // there yet we may have caught the thread in-between the native
-      // code check above and the self-suspend.
-      //
-      // Since we use the saved thread state in the if-statement above,
-      // there is a chance that the thread has already transitioned to
-      // _thread_blocked by the time we get here. In that case, we will
-      // make a single unnecessary pass through the logic below. This
-      // doesn't hurt anything since we still do the trans retry.
-
-      // Once the thread leaves thread_in_native_trans for another
-      // thread state, we break out of this retry loop. We shouldn't
-      // need this flag to prevent us from getting back here, but
-      // sometimes paranoia is good.
-      did_trans_retry = true;
-
-      // We wait for the thread to transition to a more usable state.
-      for (int i = 1; i <= SuspendRetryCount; i++) {
-        // We used to do an "os::yield_all(i)" call here with the intention
-        // that yielding would increase on each retry. However, the parameter
-        // is ignored on Linux which means the yield didn't scale up. Waiting
-        // on the SR_lock below provides a much more predictable scale up for
-        // the delay. It also provides a simple/direct point to check for any
-        // safepoint requests from the VMThread
-
-        // temporarily drops SR_lock while doing wait with safepoint check
-        // (if we're a JavaThread - the WatcherThread can also call this)
-        // and increase delay with each retry
-        if (Thread::current()->is_Java_thread()) {
-          SR_lock()->wait(i * SuspendRetryDelay);
-        } else {
-          SR_lock()->wait_without_safepoint_check(i * SuspendRetryDelay);
-        }
-
-        // check the actual thread state instead of what we saved above
-        if (thread_state() != _thread_in_native_trans) {
-          // the thread has transitioned to another thread state so
-          // try all the checks (except this one) one more time.
-          do_trans_retry = true;
-          break;
-        }
-      } // end retry loop
-    }
-  } while (do_trans_retry);
-
-  return false;
 }
 
 // GC Support
@@ -840,38 +687,6 @@ void Thread::print_owned_locks_on(outputStream* st) const {
     }
   }
 }
-
-// Checks safepoint allowed and clears unhandled oops at potential safepoints.
-void Thread::check_possible_safepoint() {
-  if (!is_Java_thread()) return;
-
-  if (_no_safepoint_count > 0) {
-    print_owned_locks();
-    assert(false, "Possible safepoint reached by thread that does not allow it");
-  }
-#ifdef CHECK_UNHANDLED_OOPS
-  // Clear unhandled oops in JavaThreads so we get a crash right away.
-  clear_unhandled_oops();
-#endif // CHECK_UNHANDLED_OOPS
-}
-
-void Thread::check_for_valid_safepoint_state() {
-  if (!is_Java_thread()) return;
-
-  // Check NoSafepointVerifier, which is implied by locks taken that can be
-  // shared with the VM thread.  This makes sure that no locks with allow_vm_block
-  // are held.
-  check_possible_safepoint();
-
-  if (this->as_Java_thread()->thread_state() != _thread_in_vm) {
-    fatal("LEAF method calling lock?");
-  }
-
-  if (GCALotAtAllSafepoints) {
-    // We could enter a safepoint here and thus have a gc
-    InterfaceSupport::check_gc_alot();
-  }
-}
 #endif // ASSERT
 
 // We had to move these methods here, because vm threads get into ObjectSynchronizer::enter
@@ -946,17 +761,12 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
                                       JavaThreadStatus::RUNNABLE);
 }
 
-static char java_version[64] = "";
-static char java_runtime_name[128] = "";
-static char java_runtime_version[128] = "";
-static char java_runtime_vendor_version[128] = "";
-static char java_runtime_vendor_vm_bug_url[128] = "";
-
-// Extract version and vendor specific information.
+// Extract version and vendor specific information from
+// java.lang.VersionProps fields.
+// Returned char* is allocated in the thread's resource area
+// so must be copied for permanency.
 static const char* get_java_version_info(InstanceKlass* ik,
-                                         Symbol* field_name,
-                                         char* buffer,
-                                         int buffer_size) {
+                                         Symbol* field_name) {
   fieldDescriptor fd;
   bool found = ik != NULL &&
                ik->find_local_field(field_name,
@@ -966,9 +776,7 @@ static const char* get_java_version_info(InstanceKlass* ik,
     if (name_oop == NULL) {
       return NULL;
     }
-    const char* name = java_lang_String::as_utf8_string(name_oop,
-                                                        buffer,
-                                                        buffer_size);
+    const char* name = java_lang_String::as_utf8_string(name_oop);
     return name;
   } else {
     return NULL;
@@ -1164,6 +972,36 @@ bool JavaThread::resize_all_jvmci_counters(int new_size) {
 
 #endif // INCLUDE_JVMCI
 
+#ifdef ASSERT
+// Checks safepoint allowed and clears unhandled oops at potential safepoints.
+void JavaThread::check_possible_safepoint() {
+  if (_no_safepoint_count > 0) {
+    print_owned_locks();
+    assert(false, "Possible safepoint reached by thread that does not allow it");
+  }
+#ifdef CHECK_UNHANDLED_OOPS
+  // Clear unhandled oops in JavaThreads so we get a crash right away.
+  clear_unhandled_oops();
+#endif // CHECK_UNHANDLED_OOPS
+}
+
+void JavaThread::check_for_valid_safepoint_state() {
+  // Check NoSafepointVerifier, which is implied by locks taken that can be
+  // shared with the VM thread.  This makes sure that no locks with allow_vm_block
+  // are held.
+  check_possible_safepoint();
+
+  if (thread_state() != _thread_in_vm) {
+    fatal("LEAF method calling lock?");
+  }
+
+  if (GCALotAtAllSafepoints) {
+    // We could enter a safepoint here and thus have a gc
+    InterfaceSupport::check_gc_alot();
+  }
+}
+#endif // ASSERT
+
 // A JavaThread is a normal Java thread
 
 JavaThread::JavaThread() :
@@ -1181,15 +1019,25 @@ JavaThread::JavaThread() :
   _vm_result(nullptr),
   _vm_result_2(nullptr),
 
+  _current_pending_monitor(NULL),
+  _current_pending_monitor_is_from_java(true),
+  _current_waiting_monitor(NULL),
+  _Stalled(0),
+
   _monitor_chunks(nullptr),
-  _special_runtime_exit_condition(_no_async_condition),
+
+  _suspend_flags(0),
+  _async_exception_condition(_no_async_condition),
   _pending_async_exception(nullptr),
 
   _thread_state(_thread_new),
   _saved_exception_pc(nullptr),
+#ifdef ASSERT
+  _no_safepoint_count(0),
+  _visited_for_critical_count(false),
+#endif
 
   _terminated(_not_terminated),
-  _suspend_equivalent(false),
   _in_deopt_handler(0),
   _doing_unsafe_access(false),
   _do_not_unlock_if_synchronized(false),
@@ -1237,7 +1085,6 @@ JavaThread::JavaThread() :
 
   _SleepEvent(ParkEvent::Allocate(this))
 {
-
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
@@ -1563,33 +1410,12 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
       JvmtiExport::post_thread_end(this);
     }
 
-    // We have notified the agents that we are exiting, before we go on,
-    // we must check for a pending external suspend request and honor it
-    // in order to not surprise the thread that made the suspend request.
-    while (true) {
-      {
-        MutexLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-        if (!is_external_suspend()) {
-          set_terminated(_thread_exiting);
-          ThreadService::current_thread_exiting(this, is_daemon(threadObj()));
-          break;
-        }
-        // Implied else:
-        // Things get a little tricky here. We have a pending external
-        // suspend request, but we are holding the SR_lock so we
-        // can't just self-suspend. So we temporarily drop the lock
-        // and then self-suspend.
-      }
+    // The careful dance between thread suspension and exit is handled here.
+    // Since we are in thread_in_vm state and suspension is done with handshakes,
+    // we can just put in the exiting state and it will be correctly handled.
+    set_terminated(_thread_exiting);
 
-      ThreadBlockInVM tbivm(this);
-      java_suspend_self();
-
-      // We're done with this suspend request, but we have to loop around
-      // and check again. Eventually we will get SR_lock without a pending
-      // external suspend request and will be able to mark ourselves as
-      // exiting.
-    }
-    // no more external suspends are allowed at this point
+    ThreadService::current_thread_exiting(this, is_daemon(threadObj()));
   } else {
     assert(!is_terminated() && !is_exiting(), "must not be exiting");
     // before_exit() has already posted JVMTI THREAD_END events
@@ -1762,13 +1588,14 @@ void JavaThread::remove_monitor_chunk(MonitorChunk* chunk) {
   }
 }
 
-// JVM support.
 
+// Asynchronous exceptions support
+//
 // Note: this function shouldn't block if it's called in
 // _thread_in_native_trans state (such as from
 // check_special_condition_for_native_trans()).
-void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
-  if (has_last_Java_frame() && has_async_condition()) {
+void JavaThread::check_and_handle_async_exceptions() {
+  if (has_last_Java_frame() && has_async_exception_condition()) {
     // If we are at a polling page safepoint (not a poll return)
     // then we must defer async exception because live registers
     // will be clobbered by the exception path. Poll return is
@@ -1792,7 +1619,7 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
     }
   }
 
-  JavaThread::AsyncRequests condition = clear_special_runtime_exit_condition();
+  AsyncExceptionCondition condition = clear_async_exception_condition();
   if (condition == _no_async_condition) {
     // Conditions have changed since has_special_runtime_exit_condition()
     // was called:
@@ -1824,15 +1651,14 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
         ls.print_cr(" of type: %s", _pending_async_exception->klass()->external_name());
       }
       _pending_async_exception = NULL;
-      clear_has_async_exception();
+      // Clear condition from _suspend_flags since we have finished processing it.
+      clear_suspend_flag(_has_async_exception);
     }
   }
 
-  if (check_unsafe_error &&
-      condition == _async_unsafe_access_error && !has_pending_exception()) {
+  if (condition == _async_unsafe_access_error && !has_pending_exception()) {
     // We may be at method entry which requires we save the do-not-unlock flag.
     UnlockFlagSaver fs(this);
-    condition = _no_async_condition;  // done
     switch (thread_state()) {
     case _thread_in_vm: {
       JavaThread* THREAD = this;
@@ -1856,18 +1682,10 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
     }
   }
 
-  assert(condition == _no_async_condition || has_pending_exception() ||
-         (!check_unsafe_error && condition == _async_unsafe_access_error),
-         "must have handled the async condition, if no exception");
+  assert(has_pending_exception(), "must have handled the async condition if no exception");
 }
 
 void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
-
-  // Check for pending external suspend.
-  if (is_external_suspend_with_lock()) {
-    frame_anchor()->make_walkable(this);
-    java_suspend_self_with_safepoint_check();
-  }
 
   if (is_obj_deopt_suspend()) {
     frame_anchor()->make_walkable(this);
@@ -1881,6 +1699,27 @@ void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
   }
 
   JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(this);)
+}
+
+class InstallAsyncExceptionClosure : public HandshakeClosure {
+  Handle _throwable; // The Throwable thrown at the target Thread
+public:
+  InstallAsyncExceptionClosure(Handle throwable) : HandshakeClosure("InstallAsyncException"), _throwable(throwable) {}
+
+  void do_thread(Thread* thr) {
+    JavaThread* target = thr->as_Java_thread();
+    // Note that this now allows multiple ThreadDeath exceptions to be
+    // thrown at a thread.
+    // The target thread has run and has not exited yet.
+    target->send_thread_stop(_throwable());
+  }
+};
+
+void JavaThread::send_async_exception(oop java_thread, oop java_throwable) {
+  Handle throwable(Thread::current(), java_throwable);
+  JavaThread* target = java_lang_Thread::thread(java_thread);
+  InstallAsyncExceptionClosure vm_stop(throwable);
+  Handshake::execute(&vm_stop, target);
 }
 
 void JavaThread::send_thread_stop(oop java_throwable)  {
@@ -1930,164 +1769,42 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
   this->interrupt();
 }
 
+
 // External suspension mechanism.
 //
-// Tell the VM to suspend a thread when ever it knows that it does not hold on
-// to any VM_locks and it is at a transition
-// Self-suspension will happen on the transition out of the vm.
-// Catch "this" coming in from JNIEnv pointers when the thread has been freed
+// Guarantees on return (for a valid target thread):
+//   - Target thread will not execute any new bytecode.
+//   - Target thread will not enter any new monitors.
 //
-// Guarantees on return:
-//   + Target thread will not execute any new bytecode (that's why we need to
-//     force a safepoint)
-//   + Target thread will not enter any new monitors
-//
-void JavaThread::java_suspend() {
+bool JavaThread::java_suspend() {
   ThreadsListHandle tlh;
-  if (!tlh.includes(this) || threadObj() == NULL || is_exiting()) {
-    return;
+  if (!tlh.includes(this)) {
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on ThreadsList, no suspension", p2i(this));
+    return false;
   }
-
-  { MutexLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-    if (!is_external_suspend()) {
-      // a racing resume has cancelled us; bail out now
-      return;
-    }
-
-    // suspend is done
-
-    // Warning: is_ext_suspend_completed() may temporarily drop the
-    // SR_lock to allow the thread to reach a stable thread state if
-    // it is currently in a transient thread state.
-    if (is_ext_suspend_completed()) {
-      return;
-    }
-  }
-
-  if (Thread::current() == this) {
-    // Safely self-suspend.
-    // If we don't do this explicitly it will implicitly happen
-    // before we transition back to Java, and on some other thread-state
-    // transition paths, but not as we exit a JVM TI SuspendThread call.
-    // As SuspendThread(current) must not return (until resumed) we must
-    // self-suspend here.
-    ThreadBlockInVM tbivm(this);
-    java_suspend_self();
-  } else {
-    VM_ThreadSuspend vm_suspend;
-    VMThread::execute(&vm_suspend);
-  }
+  return this->handshake_state()->suspend();
 }
 
-// Part II of external suspension.
-// A JavaThread self suspends when it detects a pending external suspend
-// request. This is usually on transitions. It is also done in places
-// where continuing to the next transition would surprise the caller,
-// e.g., monitor entry.
-//
-// Returns the number of times that the thread self-suspended.
-//
-// Note: DO NOT call java_suspend_self() when you just want to block current
-//       thread. java_suspend_self() is the second stage of cooperative
-//       suspension for external suspend requests and should only be used
-//       to complete an external suspend request.
-//
-int JavaThread::java_suspend_self() {
-  assert(thread_state() == _thread_blocked, "wrong state for java_suspend_self()");
-  int ret = 0;
-
-  // we are in the process of exiting so don't suspend
-  if (is_exiting()) {
-    clear_external_suspend();
-    return ret;
+bool JavaThread::java_resume() {
+  ThreadsListHandle tlh;
+  if (!tlh.includes(this)) {
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on ThreadsList, nothing to resume", p2i(this));
+    return false;
   }
-
-  assert(_anchor.walkable() || !has_last_Java_frame(),
-         "must have walkable stack");
-
-  MonitorLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-
-  assert(!this->is_ext_suspended(),
-         "a thread trying to self-suspend should not already be suspended");
-
-  if (this->is_suspend_equivalent()) {
-    // If we are self-suspending as a result of the lifting of a
-    // suspend equivalent condition, then the suspend_equivalent
-    // flag is not cleared until we set the ext_suspended flag.
-    this->clear_suspend_equivalent();
-  }
-
-  // A racing resume may have cancelled us before we grabbed SR_lock
-  // above. Or another external suspend request could be waiting for us
-  // by the time we return from SR_lock()->wait(). The thread
-  // that requested the suspension may already be trying to walk our
-  // stack and if we return now, we can change the stack out from under
-  // it. This would be a "bad thing (TM)" and cause the stack walker
-  // to crash. We stay self-suspended until there are no more pending
-  // external suspend requests.
-  while (is_external_suspend()) {
-    ret++;
-    this->set_ext_suspended();
-
-    // _ext_suspended flag is cleared by java_resume()
-    while (is_ext_suspended()) {
-      ml.wait();
-    }
-  }
-  return ret;
-}
-
-// Helper routine to set up the correct thread state before calling java_suspend_self.
-// This is called when regular thread-state transition helpers can't be used because
-// we can be in various states, in particular _thread_in_native_trans.
-// We have to set the thread state directly to _thread_blocked so that it will
-// be seen to be safepoint/handshake safe whilst suspended. This is also
-// necessary to allow a thread in is_ext_suspend_completed, that observed the
-// _thread_in_native_trans state, to proceed.
-// The problem with setting thread state directly is that a
-// safepoint could happen just after java_suspend_self() returns after being resumed,
-// and the VM thread will see the _thread_blocked state. So we must check for a safepoint
-// after restoring the state to make sure we won't leave while a safepoint is in progress.
-// However, not all initial-states are allowed when performing a safepoint check, as we
-// should never be blocking at a safepoint whilst in those states(*). Of these 'bad' states
-// only _thread_in_native is possible when executing this code (based on our two callers).
-// A thread that is _thread_in_native is already safepoint-safe and so it doesn't matter
-// whether the VMThread sees the _thread_blocked state, or the _thread_in_native state,
-// and so we don't need the explicit safepoint check.
-// (*) See switch statement in SafepointSynchronize::block() for thread states that are
-// allowed when performing a safepoint check.
-
-void JavaThread::java_suspend_self_with_safepoint_check() {
-  assert(this == Thread::current(), "invariant");
-  JavaThreadState state = thread_state();
-
-  do {
-    set_thread_state(_thread_blocked);
-    java_suspend_self();
-    // The current thread could have been suspended again. We have to check for
-    // suspend after restoring the saved state. Without this the current thread
-    // might return to _thread_in_Java and execute bytecodes for an arbitrary
-    // long time.
-    set_thread_state_fence(state);
-
-    if (state != _thread_in_native) {
-      SafepointMechanism::process_if_requested(this);
-    }
-  } while (is_external_suspend());
+  return this->handshake_state()->resume();
 }
 
 // Wait for another thread to perform object reallocation and relocking on behalf of
 // this thread.
-// This method is very similar to JavaThread::java_suspend_self_with_safepoint_check()
-// and has the same callers. It also performs a raw thread state transition to
-// _thread_blocked and back again to the original state before returning. The current
-// thread is required to change to _thread_blocked in order to be seen to be
-// safepoint/handshake safe whilst suspended and only after becoming handshake safe,
-// the other thread can complete the handshake used to synchronize with this thread
-// and then perform the reallocation and relocking. We cannot use the thread state
-// transition helpers because we arrive here in various states and also because the
-// helpers indirectly call this method.  After leaving _thread_blocked we have to
-// check for safepoint/handshake, except if _thread_in_native. The thread is safe
+// Raw thread state transition to _thread_blocked and back again to the original
+// state before returning are performed. The current thread is required to
+// change to _thread_blocked in order to be seen to be safepoint/handshake safe
+// whilst suspended and only after becoming handshake safe, the other thread can
+// complete the handshake used to synchronize with this thread and then perform
+// the reallocation and relocking. We cannot use the thread state transition
+// helpers because we arrive here in various states and also because the helpers
+// indirectly call this method.  After leaving _thread_blocked we have to check
+// for safepoint/handshake, except if _thread_in_native. The thread is safe
 // without blocking then. Allowed states are enumerated in
 // SafepointSynchronize::block(). See also EscapeBarrier::sync_and_suspend_*()
 
@@ -2099,10 +1816,6 @@ void JavaThread::wait_for_object_deoptimization() {
   bool spin_wait = os::is_MP();
   do {
     set_thread_state(_thread_blocked);
-    // Check if _external_suspend was set in the previous loop iteration.
-    if (is_external_suspend()) {
-      java_suspend_self();
-    }
     // Wait for object deoptimization if requested.
     if (spin_wait) {
       // A single deoptimization is typically very short. Microbenchmarks
@@ -2130,7 +1843,7 @@ void JavaThread::wait_for_object_deoptimization() {
     }
     // A handshake for obj. deoptimization suspend could have been processed so
     // we must check after processing.
-  } while (is_obj_deopt_suspend() || is_external_suspend());
+  } while (is_obj_deopt_suspend());
 }
 
 #ifdef ASSERT
@@ -2144,65 +1857,29 @@ void JavaThread::verify_not_published() {
 }
 #endif
 
-// Slow path when the native==>VM/Java barriers detect a safepoint is in
-// progress or when _suspend_flags is non-zero.
-// Current thread needs to self-suspend if there is a suspend request and/or
-// block if a safepoint is in progress.
-// Async exception ISN'T checked.
-// Note only the ThreadInVMfromNative transition can call this function
-// directly and when thread state is _thread_in_native_trans
-void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread) {
-  assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
-  assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->vm transition");
-
-  SafepointMechanism::process_if_requested_with_exit_check(thread, false /* check asyncs */);
-}
-
-// Slow path when the native==>VM/Java barriers detect a safepoint is in
-// progress or when _suspend_flags is non-zero.
-// Current thread needs to self-suspend if there is a suspend request and/or
-// block if a safepoint is in progress.
-// Also check for pending async exception (not including unsafe access error).
-// Note only the native==>VM/Java barriers can call this function and when
-// thread state is _thread_in_native_trans.
+// Slow path when the native==>Java barriers detect a safepoint/handshake is
+// pending, when _suspend_flags is non-zero or when we need to process a stack
+// watermark. Also check for pending async exceptions (except unsafe access error).
+// Note only the native==>Java barriers can call this function when thread state
+// is _thread_in_native_trans.
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
+  assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
+  assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
+
   // Enable WXWrite: called directly from interpreter native wrapper.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
-  check_safepoint_and_suspend_for_native_trans(thread);
+  SafepointMechanism::process_if_requested_with_exit_check(thread, false /* check asyncs */);
 
   // After returning from native, it could be that the stack frames are not
   // yet safe to use. We catch such situations in the subsequent stack watermark
   // barrier, which will trap unsafe stack frames.
   StackWatermarkSet::before_unwind(thread);
 
-  if (thread->has_async_exception()) {
+  if (thread->has_async_exception_condition(false /* check unsafe access error */)) {
     // We are in _thread_in_native_trans state, don't handle unsafe
     // access error since that may block.
-    thread->check_and_handle_async_exceptions(false);
-  }
-}
-
-// We need to guarantee the Threads_lock here, since resumes are not
-// allowed during safepoint synchronization
-// Can only resume from an external suspension
-void JavaThread::java_resume() {
-  assert_locked_or_safepoint(Threads_lock);
-
-  // Sanity check: thread is gone, has started exiting or the thread
-  // was not externally suspended.
-  ThreadsListHandle tlh;
-  if (!tlh.includes(this) || is_exiting() || !is_external_suspend()) {
-    return;
-  }
-
-  MutexLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-
-  clear_external_suspend();
-
-  if (is_ext_suspended()) {
-    clear_ext_suspended();
-    SR_lock()->notify_all();
+    thread->check_and_handle_async_exceptions();
   }
 }
 
@@ -2774,15 +2451,7 @@ bool JavaThread::sleep(jlong millis) {
     {
       ThreadBlockInVM tbivm(this);
       OSThreadWaitState osts(this->osthread(), false /* not Object.wait() */);
-
-      this->set_suspend_equivalent();
-      // cleared by handle_special_suspend_equivalent_condition() or
-      // java_suspend_self() via check_and_wait_while_suspended()
-
       slp->park(millis);
-
-      // were we externally suspended while we were waiting?
-      this->check_and_wait_while_suspended();
     }
 
     // Update elapsed time tracking
@@ -2989,26 +2658,23 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   // Phase 1 of the system initialization in the library, java.lang.System class initialization
   call_initPhase1(CHECK);
 
-  // get the Java runtime name, version, and vendor info after java.lang.System is initialized
+  // Get the Java runtime name, version, and vendor info after java.lang.System is initialized.
+  // Some values are actually configure-time constants but some can be set via the jlink tool and
+  // so must be read dynamically. We treat them all the same.
   InstanceKlass* ik = SystemDictionary::find_instance_klass(vmSymbols::java_lang_VersionProps(),
                                                             Handle(), Handle());
+  {
+    ResourceMark rm(main_thread);
+    JDK_Version::set_java_version(get_java_version_info(ik, vmSymbols::java_version_name()));
 
-  JDK_Version::set_java_version(get_java_version_info(ik, vmSymbols::java_version_name(),
-                                                      java_version, sizeof(java_version)));
+    JDK_Version::set_runtime_name(get_java_version_info(ik, vmSymbols::java_runtime_name_name()));
 
-  JDK_Version::set_runtime_name(get_java_version_info(ik, vmSymbols::java_runtime_name_name(),
-                                                      java_runtime_name, sizeof(java_runtime_name)));
+    JDK_Version::set_runtime_version(get_java_version_info(ik, vmSymbols::java_runtime_version_name()));
 
-  JDK_Version::set_runtime_version(get_java_version_info(ik, vmSymbols::java_runtime_version_name(),
-                                                         java_runtime_version, sizeof(java_runtime_version)));
+    JDK_Version::set_runtime_vendor_version(get_java_version_info(ik, vmSymbols::java_runtime_vendor_version_name()));
 
-  JDK_Version::set_runtime_vendor_version(get_java_version_info(ik, vmSymbols::java_runtime_vendor_version_name(),
-                                                                java_runtime_vendor_version,
-                                                                sizeof(java_runtime_vendor_version)));
-
-  JDK_Version::set_runtime_vendor_vm_bug_url(get_java_version_info(ik, vmSymbols::java_runtime_vendor_vm_bug_url_name(),
-                                                                   java_runtime_vendor_vm_bug_url,
-                                                                   sizeof(java_runtime_vendor_vm_bug_url)));
+    JDK_Version::set_runtime_vendor_vm_bug_url(get_java_version_info(ik, vmSymbols::java_runtime_vendor_vm_bug_url_name()));
+  }
 
   // an instance of OutOfMemory exception has been allocated earlier
   initialize_class(vmSymbols::java_lang_OutOfMemoryError(), CHECK);
@@ -3019,9 +2685,6 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
-
-  // Eager box cache initialization only if AOT is on and any library is loaded.
-  AOTLoader::initialize_box_caches(CHECK);
 }
 
 void Threads::initialize_jsr292_core_classes(TRAPS) {
@@ -3228,14 +2891,14 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   // We need this to update the java.vm.info property in case any flags used
-  // to initially define it have been changed. This is needed for both CDS and
-  // AOT, since UseSharedSpaces and UseAOT may be changed after java.vm.info
+  // to initially define it have been changed. This is needed for both CDS
+  // since UseSharedSpaces may be changed after java.vm.info
   // is initially computed. See Abstract_VM_Version::vm_info_string().
   // This update must happen before we initialize the java classes, but
   // after any initialization logic that might modify the flags.
   Arguments::update_vm_info_property(VM_Version::vm_info_string());
 
-  Thread* THREAD = Thread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   HandleMark hm(THREAD);
 
   // Always call even when there are not JVMTI environments yet, since environments
@@ -3382,7 +3045,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 #endif // INCLUDE_MANAGEMENT
 
-  if (MemProfiling)                   MemProfiler::engage();
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
 
@@ -3633,17 +3295,21 @@ void Threads::create_vm_init_libraries() {
 void JavaThread::invoke_shutdown_hooks() {
   HandleMark hm(this);
 
+  // We could get here with a pending exception, if so clear it now or
+  // it will cause MetaspaceShared::link_and_cleanup_shared_classes to
+  // fail for dynamic dump.
+  if (this->has_pending_exception()) {
+    this->clear_pending_exception();
+  }
+
+#if INCLUDE_CDS
   // Link all classes for dynamic CDS dumping before vm exit.
   // Same operation is being done in JVM_BeforeHalt for handling the
   // case where the application calls System.exit().
   if (DynamicDumpSharedSpaces) {
-    MetaspaceShared::link_and_cleanup_shared_classes(this);
+    DynamicArchive::prepare_for_dynamic_dumping_at_exit();
   }
-
-  // We could get here with a pending exception, if so clear it now.
-  if (this->has_pending_exception()) {
-    this->clear_pending_exception();
-  }
+#endif
 
   EXCEPTION_MARK;
   Klass* shutdown_klass =
@@ -3700,18 +3366,18 @@ void JavaThread::invoke_shutdown_hooks() {
 //   + Delete this thread
 //   + Return to caller
 
-bool Threads::destroy_vm() {
+void Threads::destroy_vm() {
   JavaThread* thread = JavaThread::current();
 
 #ifdef ASSERT
   _vm_complete = false;
 #endif
   // Wait until we are the last non-daemon thread to execute
-  { MonitorLocker nu(Threads_lock);
+  {
+    MonitorLocker nu(Threads_lock);
     while (Threads::number_of_non_daemon_threads() > 1)
-      // This wait should make safepoint checks, wait without a timeout,
-      // and wait as a suspend-equivalent condition.
-      nu.wait(0, Mutex::_as_suspend_equivalent_flag);
+      // This wait should make safepoint checks, wait without a timeout.
+      nu.wait(0);
   }
 
   EventShutdown e;
@@ -3751,8 +3417,12 @@ bool Threads::destroy_vm() {
     // to prevent this. The GC vm_operations will not be able to
     // queue until after the vm thread is dead. After this point,
     // we'll never emerge out of the safepoint before the VM exits.
+    // Assert that the thread is terminated so that acquiring the
+    // Heap_lock doesn't cause the terminated thread to participate in
+    // the safepoint protocol.
 
-    MutexLocker ml(Heap_lock, Mutex::_no_safepoint_check_flag);
+    assert(thread->is_terminated(), "must be terminated here");
+    MutexLocker ml(Heap_lock);
 
     VMThread::wait_for_vm_thread_exit();
     assert(SafepointSynchronize::is_at_safepoint(), "VM thread should exit at Safepoint");
@@ -3793,8 +3463,6 @@ bool Threads::destroy_vm() {
 #endif
 
   LogConfiguration::finalize();
-
-  return true;
 }
 
 
@@ -3882,7 +3550,7 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
     // the thread might mess around with locks after this point. This can cause it
     // to do callbacks into the safepoint code. However, the safepoint code is not aware
     // of this thread since it is removed from the queue.
-    p->set_terminated_value();
+    p->set_terminated(JavaThread::_thread_terminated);
 
     // Notify threads waiting in EscapeBarriers
     EscapeBarrier::thread_removed(p);
@@ -4097,7 +3765,11 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   PrintOnClosure cl(st);
   cl.do_thread(VMThread::vm_thread());
   Universe::heap()->gc_threads_do(&cl);
+  if (StringDedup::is_enabled()) {
+    StringDedup::threads_do(&cl);
+  }
   cl.do_thread(WatcherThread::watcher_thread());
+  cl.do_thread(AsyncLogWriter::instance());
 
   st->flush();
 }
@@ -4151,10 +3823,16 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   st->print_cr("Other Threads:");
   print_on_error(VMThread::vm_thread(), st, current, buf, buflen, &found_current);
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
+  print_on_error(AsyncLogWriter::instance(), st, current, buf, buflen, &found_current);
 
   if (Universe::heap() != NULL) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
     Universe::heap()->gc_threads_do(&print_closure);
+  }
+
+  if (StringDedup::is_enabled()) {
+    PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
+    StringDedup::threads_do(&print_closure);
   }
 
   if (!found_current) {

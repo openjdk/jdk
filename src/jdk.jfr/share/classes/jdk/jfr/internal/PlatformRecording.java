@@ -83,12 +83,14 @@ public final class PlatformRecording implements AutoCloseable {
     private volatile Recording recording;
     private TimerTask stopTask;
     private TimerTask startTask;
+    @SuppressWarnings("removal")
     private AccessControlContext noDestinationDumpOnExitAccessControlContext;
     private boolean shouldWriteActiveRecordingEvent = true;
     private Duration flushInterval = Duration.ofSeconds(1);
     private long finalStartChunkNanos = Long.MIN_VALUE;
     private long startNanos = -1;
 
+    @SuppressWarnings("removal")
     PlatformRecording(PlatformRecorder recorder, long id) {
         // Typically the access control context is taken
         // when you call dump(Path) or setDestination(Path),
@@ -373,7 +375,7 @@ public final class PlatformRecording implements AutoCloseable {
     public void setMaxSize(long maxSize) {
         synchronized (recorder) {
             if (getState() == RecordingState.CLOSED) {
-                throw new IllegalStateException("Can't set max age when recording is closed");
+                throw new IllegalStateException("Can't set max size when recording is closed");
             }
             this.maxSize = maxSize;
             trimToSize();
@@ -686,6 +688,7 @@ public final class PlatformRecording implements AutoCloseable {
         destination = null;
     }
 
+    @SuppressWarnings("removal")
     public AccessControlContext getNoDestinationDumpOnExitAccessControlContext() {
         return noDestinationDumpOnExitAccessControlContext;
     }

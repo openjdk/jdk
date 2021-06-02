@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 4988268
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4988268
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4988268
  * @run testng/othervm validation.Bug4988268
  * @summary Test the schema is valid.
  */

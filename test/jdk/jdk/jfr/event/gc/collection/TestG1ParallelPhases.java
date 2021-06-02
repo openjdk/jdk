@@ -104,10 +104,15 @@ public class TestG1ParallelPhases {
             "CodeRoots",
             "ObjCopy",
             "Termination",
-            "StringDedupQueueFixup",
-            "StringDedupTableFixup",
             "RedirtyCards",
-            "ParFreeCSet",
+            "RecalculateUsed",
+            "ResetHotCardCache",
+            "FreeCSet",
+            "PurgeCodeRoots",
+            "UpdateDerivedPointers",
+            "EagerlyReclaimHumongousObjects",
+            "ClearLoggedCards",
+            "MergePSS",
             "NonYoungFreeCSet",
             "YoungFreeCSet",
             "RebuildFreeList"
@@ -116,6 +121,10 @@ public class TestG1ParallelPhases {
         // Some GC phases may or may not occur depending on environment. Filter them out
         // since we can not reliably guarantee that they occur (or not).
         Set<String> optPhases = of(
+            // The following two phases only occur on evacuation failure.
+            "RemoveSelfForwardingPtr",
+            "RestorePreservedMarks",
+
             "OptScanHR",
             "OptMergeRS",
             "OptCodeRoots",

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -34,7 +35,6 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/monitorChunk.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -102,6 +102,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
     if (is_entry_frame()) {
       // an entry frame must have a valid fp.
       return fp_safe && is_entry_frame_valid(thread);
+    } else if (is_optimized_entry_frame()) {
+      return fp_safe;
     }
 
     intptr_t* sender_sp = NULL;
@@ -199,6 +201,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
       address jcw = (address)sender.entry_frame_call_wrapper();
 
       return thread->is_in_stack_range_excl(jcw, (address)sender.fp());
+    } else if (sender_blob->is_optimized_entry_blob()) {
+      return false;
     }
 
     CompiledMethod* nm = sender_blob->as_compiled_method_or_null();
@@ -349,6 +353,32 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   return fr;
 }
 
+JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
+  // need unextended_sp here, since normal sp is wrong for interpreter callees
+  return reinterpret_cast<JavaFrameAnchor*>(reinterpret_cast<char*>(frame.unextended_sp()) + in_bytes(jfa_sp_offset()));
+}
+
+frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
+  assert(map != NULL, "map must be set");
+  OptimizedEntryBlob* blob = _cb->as_optimized_entry_blob();
+  // Java frame called from C; skip all C frames and return top C
+  // frame of that chunk as the sender
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
+  // Since we are walking the stack now this nested anchor is obviously walkable
+  // even if it wasn't when it was stacked.
+  if (!jfa->walkable()) {
+    // Capture _last_Java_pc (if needed) and mark anchor walkable.
+    jfa->capture_last_Java_pc();
+  }
+  map->clear();
+  assert(map->include_argument_oops(), "should be set by clear");
+  vmassert(jfa->last_Java_pc() != NULL, "not walkable");
+  frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+
+  return fr;
+}
+
 //------------------------------------------------------------------------------
 // frame::verify_deopt_original_pc
 //
@@ -478,8 +508,9 @@ frame frame::sender_raw(RegisterMap* map) const {
   // update it accordingly
   map->set_include_argument_oops(false);
 
-  if (is_entry_frame())       return sender_for_entry_frame(map);
-  if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
+  if (is_entry_frame())        return sender_for_entry_frame(map);
+  if (is_optimized_entry_frame()) return sender_for_optimized_entry_frame(map);
+  if (is_interpreted_frame())  return sender_for_interpreter_frame(map);
   assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
 
   if (_cb != NULL) {

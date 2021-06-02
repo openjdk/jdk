@@ -60,6 +60,8 @@ class CompileLog;
 class CompileTask;
 class DepChange;
 class   KlassDepChange;
+class     NewKlassDepChange;
+class     KlassInitDepChange;
 class   CallSiteDepChange;
 class NoSafepointVerifier;
 
@@ -132,7 +134,14 @@ class Dependencies: public ResourceObj {
     // context class CX.  M1 must be either inherited in CX or defined
     // in a subtype* of CX.  It asserts that MM(CX, M1) is no greater
     // than {M1}.
-    unique_concrete_method,       // one unique concrete method under CX
+    unique_concrete_method_2, // one unique concrete method under CX
+
+    // In addition to the method M1 and the context class CX, the parameters
+    // to this dependency are the resolved class RC1 and the
+    // resolved method RM1. It asserts that MM(CX, M1, RC1, RM1)
+    // is no greater than {M1}. RC1 and RM1 are used to improve the precision
+    // of the analysis.
+    unique_concrete_method_4, // one unique concrete method under CX
 
     // This dependency asserts that no instances of class or it's
     // subclasses require finalization registration.
@@ -156,7 +165,7 @@ class Dependencies: public ResourceObj {
     implicit_ctxk_types = 0,
     explicit_ctxk_types = all_types & ~(non_ctxk_types | implicit_ctxk_types),
 
-    max_arg_count = 3,   // current maximum number of arguments (incl. ctxk)
+    max_arg_count = 4,   // current maximum number of arguments (incl. ctxk)
 
     // A "context type" is a class or interface that
     // provides context for evaluating a dependency.
@@ -325,6 +334,7 @@ class Dependencies: public ResourceObj {
 
   void assert_common_1(DepType dept, ciBaseObject* x);
   void assert_common_2(DepType dept, ciBaseObject* x0, ciBaseObject* x1);
+  void assert_common_4(DepType dept, ciKlass* ctxk, ciBaseObject* x1, ciBaseObject* x2, ciBaseObject* x3);
 
  public:
   // Adding assertions to a new dependency set at compile time:
@@ -332,6 +342,7 @@ class Dependencies: public ResourceObj {
   void assert_leaf_type(ciKlass* ctxk);
   void assert_abstract_with_unique_concrete_subtype(ciKlass* ctxk, ciKlass* conck);
   void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm);
+  void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm, ciKlass* resolved_klass, ciMethod* resolved_method);
   void assert_has_no_finalizable_subclasses(ciKlass* ctxk);
   void assert_call_site_target_value(ciCallSite* call_site, ciMethodHandle* method_handle);
 
@@ -371,7 +382,7 @@ class Dependencies: public ResourceObj {
   // and abstract (as defined by the Java language and VM).
   static bool is_concrete_klass(Klass* k);    // k is instantiable
   static bool is_concrete_method(Method* m, Klass* k);  // m is invocable
-  static Klass* find_finalizable_subclass(Klass* k);
+  static Klass* find_finalizable_subclass(InstanceKlass* ik);
 
   // These versions of the concreteness queries work through the CI.
   // The CI versions are allowed to skew sometimes from the VM
@@ -398,9 +409,10 @@ class Dependencies: public ResourceObj {
   // Checking old assertions at run-time (in the VM only):
   static Klass* check_evol_method(Method* m);
   static Klass* check_leaf_type(InstanceKlass* ctxk);
-  static Klass* check_abstract_with_unique_concrete_subtype(InstanceKlass* ctxk, Klass* conck, KlassDepChange* changes = NULL);
-  static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, KlassDepChange* changes = NULL);
-  static Klass* check_has_no_finalizable_subclasses(InstanceKlass* ctxk, KlassDepChange* changes = NULL);
+  static Klass* check_abstract_with_unique_concrete_subtype(InstanceKlass* ctxk, Klass* conck, NewKlassDepChange* changes = NULL);
+  static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, NewKlassDepChange* changes = NULL);
+  static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, Klass* resolved_klass, Method* resolved_method, KlassDepChange* changes = NULL);
+  static Klass* check_has_no_finalizable_subclasses(InstanceKlass* ctxk, NewKlassDepChange* changes = NULL);
   static Klass* check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
   // A returned Klass* is NULL if the dependency assertion is still
   // valid.  A non-NULL Klass* is a 'witness' to the assertion
@@ -418,7 +430,13 @@ class Dependencies: public ResourceObj {
 
   // Detecting possible new assertions:
   static Klass*  find_unique_concrete_subtype(InstanceKlass* ctxk);
-  static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m);
+  static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m,
+                                             Klass** participant = NULL); // out parameter
+  static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m, Klass* resolved_klass, Method* resolved_method);
+
+#ifdef ASSERT
+  static bool verify_method_context(InstanceKlass* ctxk, Method* m);
+#endif // ASSERT
 
   // Create the encoding which will be stored in an nmethod.
   void encode_content_bytes();
@@ -452,7 +470,8 @@ class Dependencies: public ResourceObj {
   void log_dependency(DepType dept,
                       ciBaseObject* x0,
                       ciBaseObject* x1 = NULL,
-                      ciBaseObject* x2 = NULL) {
+                      ciBaseObject* x2 = NULL,
+                      ciBaseObject* x3 = NULL) {
     if (log() == NULL) {
       return;
     }
@@ -467,6 +486,9 @@ class Dependencies: public ResourceObj {
     }
     if (x2 != NULL) {
       ciargs->push(x2);
+    }
+    if (x3 != NULL) {
+      ciargs->push(x3);
     }
     assert(ciargs->length() == dep_args(dept), "");
     log_dependency(dept, ciargs);
@@ -545,6 +567,8 @@ class Dependencies: public ResourceObj {
     inline oop recorded_oop_at(int i);
 
     Klass* check_klass_dependency(KlassDepChange* changes);
+    Klass* check_new_klass_dependency(NewKlassDepChange* changes);
+    Klass* check_klass_init_dependency(KlassInitDepChange* changes);
     Klass* check_call_site_dependency(CallSiteDepChange* changes);
 
     void trace_and_log_witness(Klass* witness);
@@ -610,7 +634,7 @@ class Dependencies: public ResourceObj {
   };
   friend class Dependencies::DepStream;
 
-  static void print_statistics() PRODUCT_RETURN;
+  static void print_statistics();
 };
 
 
@@ -643,8 +667,10 @@ class DependencySignature : public ResourceObj {
 class DepChange : public StackObj {
  public:
   // What kind of DepChange is this?
-  virtual bool is_klass_change()     const { return false; }
-  virtual bool is_call_site_change() const { return false; }
+  virtual bool is_klass_change()      const { return false; }
+  virtual bool is_new_klass_change()  const { return false; }
+  virtual bool is_klass_init_change() const { return false; }
+  virtual bool is_call_site_change()  const { return false; }
 
   virtual void mark_for_deoptimization(nmethod* nm) = 0;
 
@@ -652,6 +678,14 @@ class DepChange : public StackObj {
   KlassDepChange*    as_klass_change() {
     assert(is_klass_change(), "bad cast");
     return (KlassDepChange*) this;
+  }
+  NewKlassDepChange* as_new_klass_change() {
+    assert(is_new_klass_change(), "bad cast");
+    return (NewKlassDepChange*) this;
+  }
+  KlassInitDepChange* as_klass_init_change() {
+    assert(is_klass_init_change(), "bad cast");
+    return (KlassInitDepChange*) this;
   }
   CallSiteDepChange* as_call_site_change() {
     assert(is_call_site_change(), "bad cast");
@@ -712,28 +746,27 @@ class DepChange : public StackObj {
 
 
 // A class hierarchy change coming through the VM (under the Compile_lock).
-// The change is structured as a single new type with any number of supers
-// and implemented interface types.  Other than the new type, any of the
+// The change is structured as a single type with any number of supers
+// and implemented interface types.  Other than the type, any of the
 // super types can be context types for a relevant dependency, which the
-// new type could invalidate.
+// type could invalidate.
 class KlassDepChange : public DepChange {
  private:
-  // each change set is rooted in exactly one new type (at present):
-  Klass* _new_type;
+  // each change set is rooted in exactly one type (at present):
+  InstanceKlass* _type;
 
   void initialize();
 
- public:
-  // notes the new type, marks it and all its super-types
-  KlassDepChange(Klass* new_type)
-    : _new_type(new_type)
-  {
+ protected:
+  // notes the type, marks it and all its super-types
+  KlassDepChange(InstanceKlass* type) : _type(type) {
     initialize();
   }
 
   // cleans up the marks
   ~KlassDepChange();
 
+ public:
   // What kind of DepChange is this?
   virtual bool is_klass_change() const { return true; }
 
@@ -741,12 +774,31 @@ class KlassDepChange : public DepChange {
     nm->mark_for_deoptimization(/*inc_recompile_counts=*/true);
   }
 
-  Klass* new_type() { return _new_type; }
+  InstanceKlass* type() { return _type; }
 
-  // involves_context(k) is true if k is new_type or any of the super types
+  // involves_context(k) is true if k == _type or any of its super types
   bool involves_context(Klass* k);
 };
 
+// A class hierarchy change: new type is loaded.
+class NewKlassDepChange : public KlassDepChange {
+ public:
+  NewKlassDepChange(InstanceKlass* new_type) : KlassDepChange(new_type) {}
+
+  // What kind of DepChange is this?
+  virtual bool is_new_klass_change() const { return true; }
+
+  InstanceKlass* new_type() { return type(); }
+};
+
+// Change in initialization state of a loaded class.
+class KlassInitDepChange : public KlassDepChange {
+ public:
+  KlassInitDepChange(InstanceKlass* type) : KlassDepChange(type) {}
+
+  // What kind of DepChange is this?
+  virtual bool is_klass_init_change() const { return true; }
+};
 
 // A CallSite has changed its target.
 class CallSiteDepChange : public DepChange {

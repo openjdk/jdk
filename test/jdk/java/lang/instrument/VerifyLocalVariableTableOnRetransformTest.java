@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,30 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 7064927
+ * @summary Verify LocalVariableTable (LVT) exists when passed to transform() on a retransform operation.
+ * @author Daniel D. Daugherty
+ *
+ * @library /test/lib
+ * @run build VerifyLocalVariableTableOnRetransformTest
+ * @run compile -g DummyClassWithLVT.java
+ * @run shell MakeJAR.sh retransformAgent
+ * @run main/othervm -javaagent:retransformAgent.jar VerifyLocalVariableTableOnRetransformTest VerifyLocalVariableTableOnRetransformTest
+ */
+
 import java.io.*;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.ClassFileTransformer;
 import java.net.*;
 import java.security.ProtectionDomain;
+import java.util.List;
+import java.util.regex.Pattern;
+
+import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class
 VerifyLocalVariableTableOnRetransformTest
@@ -34,6 +53,7 @@ VerifyLocalVariableTableOnRetransformTest
     private byte[]  fTargetClassBytes;
     private boolean fTargetClassMatches;
     private String  fTargetClassName = "DummyClassWithLVT";
+    private String  classFileName = fTargetClassName + ".class";
     private boolean fTargetClassSeen;
 
     /**
@@ -44,8 +64,7 @@ VerifyLocalVariableTableOnRetransformTest
     {
         super(name);
 
-        String resourceName = fTargetClassName + ".class";
-        File f = new File(System.getProperty("test.classes", "."), resourceName);
+        File f = originalClassFile();
         System.out.println("Reading test class from " + f);
         try
         {
@@ -55,7 +74,7 @@ VerifyLocalVariableTableOnRetransformTest
         }
         catch (IOException e)
         {
-            fail("Could not load the class: "+resourceName);
+            fail("Could not load the class: " + f.getName());
         }
     }
 
@@ -105,8 +124,7 @@ VerifyLocalVariableTableOnRetransformTest
         // behavior by the HotSpot VM. If this behavior is intentionally
         // changed in the future, then this test will need to be
         // updated.
-        assertTrue(fTargetClassName + " did not match .class file",
-            fTargetClassMatches);
+        compareClassFileBytes(true);
 
         fTargetClassSeen = false;
         fTargetClassMatches = false;
@@ -120,8 +138,88 @@ VerifyLocalVariableTableOnRetransformTest
         // Table (LVT) attribute so the class file bytes seen by the
         // retransformClasses() call will not match the class file bytes
         // seen at initial class load time.
-        assertTrue(fTargetClassName + " did not match .class file",
-            fTargetClassMatches);
+        compareClassFileBytes(false);
+    }
+
+    private File originalClassFile() {
+        return new File(System.getProperty("test.classes", "."), classFileName);
+    }
+
+    private File transformedClassFile() {
+        // This file will get created in the test execution
+        // directory so there is no conflict with the file
+        // in the test classes directory.
+        return new File(classFileName);
+    }
+
+    private static final String[] expectedDifferentStrings = {
+            "^Classfile .+$",
+            "^[\\s]+SHA-256 checksum .[^\\s]+$"
+    };
+
+    private boolean expectedDifferent(String line) {
+        for (String s: expectedDifferentStrings) {
+            Pattern p = Pattern.compile(s);
+            if (p.matcher(line).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void compareClassFileBytes(boolean initialLoad) throws Throwable {
+        if (fTargetClassMatches) {
+            return;
+        }
+        File f1 = originalClassFile();
+        File f2 = transformedClassFile();
+        System.out.println(fTargetClassName + " did not match .class file");
+        System.out.println("Disassembly difference (" + f1 + " vs " + f2 +"):");
+        // compare 'javap -v' output for the class files
+        List<String> out1 = disassembleClassFile(f1);
+        List<String> out2 = disassembleClassFile(f2);
+        boolean different = false;
+        boolean orderChanged = false;
+        int lineNum = 0;
+        for (String line: out1) {
+            if (!expectedDifferent(line)) {
+                if (!out2.contains(line)) {
+                    different = true;
+                    System.out.println("< (" + (lineNum + 1) + ") " + line);
+                } else {
+                    if (lineNum < out2.size() && out1.get(lineNum) != out2.get(lineNum)) {
+                        // out2 contains line, but at different position
+                        orderChanged = true;
+                    }
+                }
+            }
+            lineNum++;
+        }
+        lineNum = 0;
+        for (String line: out2) {
+            if (!expectedDifferent(line)) {
+                if (!out1.contains(line)) {
+                    different = true;
+                    System.out.println("> (" + (lineNum + 1) + ") " + line);
+                }
+            }
+            lineNum++;
+        }
+        // accordingly the spec orderChanged is fine, but we consider it as error
+        // (see comments in verifyClassFileBuffer())
+        if (different || orderChanged) {
+            fail(fTargetClassName + " (" + (initialLoad ? "load" : "retransform") + ") did not match .class file"
+                    + (different ? "" : " (only order changed)"));
+        }
+    }
+
+    private List<String> disassembleClassFile(File file) throws Throwable {
+        JDKToolLauncher javap = JDKToolLauncher.create("javap")
+                                               .addToolArg("-v")
+                                               .addToolArg(file.toString());
+        ProcessBuilder pb = new ProcessBuilder(javap.getCommand());
+        OutputAnalyzer out = ProcessTools.executeProcess(pb);
+        return out.asLines();
     }
 
     public class MyObserver implements ClassFileTransformer {
@@ -134,12 +232,7 @@ VerifyLocalVariableTableOnRetransformTest
 
         private void saveMismatchedBytes(byte[] classfileBuffer) {
             try {
-                FileOutputStream fos = null;
-                // This file will get created in the test execution
-                // directory so there is no conflict with the file
-                // in the test classes directory.
-                String resourceName = fTargetClassName + ".class";
-                fos = new FileOutputStream(resourceName);
+                FileOutputStream fos = new FileOutputStream(transformedClassFile());
                 fos.write(classfileBuffer);
                 fos.close();
             } catch (IOException ex) {

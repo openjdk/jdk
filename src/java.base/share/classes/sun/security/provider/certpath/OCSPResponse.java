@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,6 +160,7 @@ public final class OCSPResponse {
      * value is negative, set the skew to the default.
      */
     private static int initializeClockSkew() {
+        @SuppressWarnings("removal")
         Integer tmp = java.security.AccessController.doPrivileged(
                 new GetIntegerAction("com.sun.security.ocsp.clockSkew"));
         if (tmp == null || tmp < 0) {
@@ -462,6 +463,7 @@ public final class OCSPResponse {
         }
 
         // Check whether the signer cert returned by the responder is trusted
+        boolean signedByTrustedResponder = false;
         if (signerCert != null) {
             // Check if the response is signed by the issuing CA
             if (signerCert.getSubjectX500Principal().equals(
@@ -476,6 +478,7 @@ public final class OCSPResponse {
 
             // Check if the response is signed by a trusted responder
             } else if (signerCert.equals(responderCert)) {
+                signedByTrustedResponder = true;
                 if (debug != null) {
                     debug.println("OCSP response is signed by a Trusted " +
                         "Responder");
@@ -566,7 +569,10 @@ public final class OCSPResponse {
         if (signerCert != null) {
             // Check algorithm constraints specified in security property
             // "jdk.certpath.disabledAlgorithms".
-            AlgorithmChecker.check(signerCert.getPublicKey(), sigAlgId, variant);
+            AlgorithmChecker.check(signerCert.getPublicKey(), sigAlgId, variant,
+                    signedByTrustedResponder
+                        ? new TrustAnchor(responderCert, null)
+                        : issuerInfo.getAnchor());
 
             if (!verifySignature(signerCert)) {
                 throw new CertPathValidatorException(

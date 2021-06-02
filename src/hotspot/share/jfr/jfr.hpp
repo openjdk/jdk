@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 
 class JavaThread;
 class Thread;
+class Klass;
 
 extern "C" void JNICALL jfr_register_natives(JNIEnv*, jclass);
 
@@ -54,6 +55,11 @@ class Jfr : AllStatic {
   static void exclude_thread(Thread* thread);
   static bool is_excluded(Thread* thread);
   static void include_thread(Thread* thread);
+
+  // intrinsic support
+  static void get_class_id_intrinsic(const Klass* klass);
+  static address epoch_address();
+  static address signal_address();
 };
 
 #endif // SHARE_JFR_JFR_HPP

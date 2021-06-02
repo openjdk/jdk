@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,10 @@ private:
   volatile uintptr_t _top;
   volatile uintptr_t _end;
 
-  void expand();
+  size_t used() const;
+
+  size_t expand_space();
+  size_t shrink_space();
 
   uintptr_t alloc_space(size_t size);
   uintptr_t expand_and_alloc_space(size_t size);
@@ -45,7 +48,10 @@ public:
 
   bool is_initialized() const;
 
+  size_t size() const;
+
   uintptr_t alloc(size_t size);
+  void free();
 };
 
 class ZMarkStackAllocator {
@@ -53,7 +59,6 @@ private:
   ZCACHE_ALIGNED ZMarkStackMagazineList _freelist;
   ZCACHE_ALIGNED ZMarkStackSpace        _space;
 
-  void prime_freelist();
   ZMarkStackMagazine* create_magazine_from_space(uintptr_t addr, size_t size);
 
 public:
@@ -61,8 +66,12 @@ public:
 
   bool is_initialized() const;
 
+  size_t size() const;
+
   ZMarkStackMagazine* alloc_magazine();
   void free_magazine(ZMarkStackMagazine* magazine);
+
+  void free();
 };
 
 #endif // SHARE_GC_Z_ZMARKSTACKALLOCATOR_HPP

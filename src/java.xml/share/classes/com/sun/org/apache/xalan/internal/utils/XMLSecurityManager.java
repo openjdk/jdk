@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 
 package com.sun.org.apache.xalan.internal.utils;
 
-import com.sun.org.apache.xalan.internal.XalanConstants;
 import java.util.concurrent.CopyOnWriteArrayList;
+import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkProperty.ImplPropMap;
+import jdk.xml.internal.JdkProperty.State;
 import jdk.xml.internal.SecuritySupport;
 import org.xml.sax.SAXException;
 
@@ -42,50 +44,29 @@ import org.xml.sax.SAXException;
 public final class XMLSecurityManager {
 
     /**
-     * States of the settings of a property, in the order: default value, value
-     * set by FEATURE_SECURE_PROCESSING, jaxp.properties file, jaxp system
-     * properties, and jaxp api properties
-     */
-    public static enum State {
-        //this order reflects the overriding order
-
-        DEFAULT("default"), FSP("FEATURE_SECURE_PROCESSING"),
-        JAXPDOTPROPERTIES("jaxp.properties"), SYSTEMPROPERTY("system property"),
-        APIPROPERTY("property");
-
-        final String literal;
-        State(String literal) {
-            this.literal = literal;
-        }
-
-        String literal() {
-            return literal;
-        }
-    }
-
-    /**
      * Limits managed by the security manager
      */
+    @SuppressWarnings("deprecation")
     public static enum Limit {
 
-        ENTITY_EXPANSION_LIMIT("EntityExpansionLimit", XalanConstants.JDK_ENTITY_EXPANSION_LIMIT,
-                XalanConstants.SP_ENTITY_EXPANSION_LIMIT, 0, 64000),
-        MAX_OCCUR_NODE_LIMIT("MaxOccurLimit", XalanConstants.JDK_MAX_OCCUR_LIMIT,
-                XalanConstants.SP_MAX_OCCUR_LIMIT, 0, 5000),
-        ELEMENT_ATTRIBUTE_LIMIT("ElementAttributeLimit", XalanConstants.JDK_ELEMENT_ATTRIBUTE_LIMIT,
-                XalanConstants.SP_ELEMENT_ATTRIBUTE_LIMIT, 0, 10000),
-        TOTAL_ENTITY_SIZE_LIMIT("TotalEntitySizeLimit", XalanConstants.JDK_TOTAL_ENTITY_SIZE_LIMIT,
-                XalanConstants.SP_TOTAL_ENTITY_SIZE_LIMIT, 0, 50000000),
-        GENERAL_ENTITY_SIZE_LIMIT("MaxEntitySizeLimit", XalanConstants.JDK_GENERAL_ENTITY_SIZE_LIMIT,
-                XalanConstants.SP_GENERAL_ENTITY_SIZE_LIMIT, 0, 0),
-        PARAMETER_ENTITY_SIZE_LIMIT("MaxEntitySizeLimit", XalanConstants.JDK_PARAMETER_ENTITY_SIZE_LIMIT,
-                XalanConstants.SP_PARAMETER_ENTITY_SIZE_LIMIT, 0, 1000000),
-        MAX_ELEMENT_DEPTH_LIMIT("MaxElementDepthLimit", XalanConstants.JDK_MAX_ELEMENT_DEPTH,
-                XalanConstants.SP_MAX_ELEMENT_DEPTH, 0, 0),
-        MAX_NAME_LIMIT("MaxXMLNameLimit", XalanConstants.JDK_XML_NAME_LIMIT,
-                XalanConstants.SP_XML_NAME_LIMIT, 1000, 1000),
-        ENTITY_REPLACEMENT_LIMIT("EntityReplacementLimit", XalanConstants.JDK_ENTITY_REPLACEMENT_LIMIT,
-                XalanConstants.SP_ENTITY_REPLACEMENT_LIMIT, 0, 3000000);
+        ENTITY_EXPANSION_LIMIT("EntityExpansionLimit", JdkConstants.JDK_ENTITY_EXPANSION_LIMIT,
+                JdkConstants.SP_ENTITY_EXPANSION_LIMIT, 0, 64000),
+        MAX_OCCUR_NODE_LIMIT("MaxOccurLimit", JdkConstants.JDK_MAX_OCCUR_LIMIT,
+                JdkConstants.SP_MAX_OCCUR_LIMIT, 0, 5000),
+        ELEMENT_ATTRIBUTE_LIMIT("ElementAttributeLimit", JdkConstants.JDK_ELEMENT_ATTRIBUTE_LIMIT,
+                JdkConstants.SP_ELEMENT_ATTRIBUTE_LIMIT, 0, 10000),
+        TOTAL_ENTITY_SIZE_LIMIT("TotalEntitySizeLimit", JdkConstants.JDK_TOTAL_ENTITY_SIZE_LIMIT,
+                JdkConstants.SP_TOTAL_ENTITY_SIZE_LIMIT, 0, 50000000),
+        GENERAL_ENTITY_SIZE_LIMIT("MaxEntitySizeLimit", JdkConstants.JDK_GENERAL_ENTITY_SIZE_LIMIT,
+                JdkConstants.SP_GENERAL_ENTITY_SIZE_LIMIT, 0, 0),
+        PARAMETER_ENTITY_SIZE_LIMIT("MaxEntitySizeLimit", JdkConstants.JDK_PARAMETER_ENTITY_SIZE_LIMIT,
+                JdkConstants.SP_PARAMETER_ENTITY_SIZE_LIMIT, 0, 1000000),
+        MAX_ELEMENT_DEPTH_LIMIT("MaxElementDepthLimit", JdkConstants.JDK_MAX_ELEMENT_DEPTH,
+                JdkConstants.SP_MAX_ELEMENT_DEPTH, 0, 0),
+        MAX_NAME_LIMIT("MaxXMLNameLimit", JdkConstants.JDK_XML_NAME_LIMIT,
+                JdkConstants.SP_XML_NAME_LIMIT, 1000, 1000),
+        ENTITY_REPLACEMENT_LIMIT("EntityReplacementLimit", JdkConstants.JDK_ENTITY_REPLACEMENT_LIMIT,
+                JdkConstants.SP_ENTITY_REPLACEMENT_LIMIT, 0, 3000000);
 
         final String key;
         final String apiProperty;
@@ -101,12 +82,36 @@ public final class XMLSecurityManager {
             this.secureValue = secureValue;
         }
 
-        public boolean equalsAPIPropertyName(String propertyName) {
-            return (propertyName == null) ? false : apiProperty.equals(propertyName);
+        /**
+         * Checks whether the specified name is a limit. Checks both the
+         * property and System Property which is now the new property name.
+         *
+         * @param name the specified name
+         * @return true if there is a match, false otherwise
+         */
+        public boolean is(String name) {
+            // current spec: new property name == systemProperty
+            return (systemProperty != null && systemProperty.equals(name)) ||
+                   // current spec: apiProperty is legacy
+                   (apiProperty.equals(name));
         }
 
-        public boolean equalsSystemPropertyName(String propertyName) {
-            return (propertyName == null) ? false : systemProperty.equals(propertyName);
+        /**
+         * Returns the state of a property name. By the specification as of JDK 17,
+         * the "jdk.xml." prefixed System property name is also the current API
+         * name. The URI-based qName is legacy.
+         *
+         * @param name the property name
+         * @return the state of the property name, null if no match
+         */
+        public State getState(String name) {
+            if (systemProperty != null && systemProperty.equals(name)) {
+                return State.APIPROPERTY;
+            } else if (apiProperty.equals(name)) {
+                //the URI-style qName is legacy
+                return State.LEGACY_APIPROPERTY;
+            }
+            return null;
         }
 
         public String key() {
@@ -117,7 +122,7 @@ public final class XMLSecurityManager {
             return apiProperty;
         }
 
-        String systemProperty() {
+        public String systemProperty() {
             return systemProperty;
         }
 
@@ -135,12 +140,12 @@ public final class XMLSecurityManager {
      */
     public static enum NameMap {
 
-        ENTITY_EXPANSION_LIMIT(XalanConstants.SP_ENTITY_EXPANSION_LIMIT,
-                XalanConstants.ENTITY_EXPANSION_LIMIT),
-        MAX_OCCUR_NODE_LIMIT(XalanConstants.SP_MAX_OCCUR_LIMIT,
-                XalanConstants.MAX_OCCUR_LIMIT),
-        ELEMENT_ATTRIBUTE_LIMIT(XalanConstants.SP_ELEMENT_ATTRIBUTE_LIMIT,
-                XalanConstants.ELEMENT_ATTRIBUTE_LIMIT);
+        ENTITY_EXPANSION_LIMIT(JdkConstants.SP_ENTITY_EXPANSION_LIMIT,
+                JdkConstants.ENTITY_EXPANSION_LIMIT),
+        MAX_OCCUR_NODE_LIMIT(JdkConstants.SP_MAX_OCCUR_LIMIT,
+                JdkConstants.MAX_OCCUR_LIMIT),
+        ELEMENT_ATTRIBUTE_LIMIT(JdkConstants.SP_ELEMENT_ATTRIBUTE_LIMIT,
+                JdkConstants.ELEMENT_ATTRIBUTE_LIMIT);
         final String newName;
         final String oldName;
 
@@ -230,7 +235,11 @@ public final class XMLSecurityManager {
     public boolean setLimit(String propertyName, State state, Object value) {
         int index = getIndex(propertyName);
         if (index > -1) {
-            setLimit(index, state, value);
+            State pState = state;
+            if (index != indexEntityCountInfo && state == State.APIPROPERTY) {
+                pState = (Limit.values()[index]).getState(propertyName);
+            }
+            setLimit(index, pState, value);
             return true;
         }
         return false;
@@ -259,14 +268,17 @@ public final class XMLSecurityManager {
             //if it's explicitly set, it's treated as yes no matter the value
             printEntityCountInfo = (String)value;
         } else {
-            int temp = 0;
-            try {
+            int temp;
+            if (value instanceof Integer) {
+                temp = (Integer)value;
+            } else {
                 temp = Integer.parseInt((String) value);
                 if (temp < 0) {
                     temp = 0;
                 }
-            } catch (NumberFormatException e) {}
-            setLimit(index, state, temp);        }
+            }
+            setLimit(index, state, temp);
+        }
     }
 
     /**
@@ -279,7 +291,7 @@ public final class XMLSecurityManager {
     public void setLimit(int index, State state, int value) {
         if (index == indexEntityCountInfo) {
             //if it's explicitly set, it's treated as yes no matter the value
-            printEntityCountInfo = XalanConstants.JDK_YES;
+            printEntityCountInfo = JdkConstants.JDK_YES;
         } else {
             //only update if it shall override
             if (state.compareTo(states[index]) >= 0) {
@@ -377,13 +389,14 @@ public final class XMLSecurityManager {
      */
     public int getIndex(String propertyName) {
         for (Limit limit : Limit.values()) {
-            if (limit.equalsAPIPropertyName(propertyName)) {
+            // see JDK-8265248, accept both the URL and jdk.xml as prefix
+            if (limit.is(propertyName)) {
                 //internally, ordinal is used as index
                 return limit.ordinal();
             }
         }
         //special property to return entity count info
-        if (propertyName.equals(XalanConstants.JDK_ENTITY_COUNT_INFO)) {
+        if (ImplPropMap.ENTITYCOUNT.is(propertyName)) {
             return indexEntityCountInfo;
         }
         return -1;
@@ -399,7 +412,7 @@ public final class XMLSecurityManager {
     }
 
     public boolean printEntityCountInfo() {
-        return printEntityCountInfo.equals(XalanConstants.JDK_YES);
+        return printEntityCountInfo.equals(JdkConstants.JDK_YES);
     }
     /**
      * Read from system properties, or those in jaxp.properties

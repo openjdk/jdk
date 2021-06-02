@@ -25,6 +25,7 @@
  * @test
  * @bug 4818598
  * @summary Tests Class value encoding
+ * @run main/othervm -Djava.security.manager=allow java_lang_Class
  * @author Sergey Malenkov
  */
 

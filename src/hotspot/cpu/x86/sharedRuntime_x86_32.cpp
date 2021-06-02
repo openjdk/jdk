@@ -29,6 +29,7 @@
 #include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -1123,7 +1124,7 @@ static void object_move(MacroAssembler* masm,
 }
 
 // A float arg may have to do float reg int reg conversion
-static void float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
+void SharedRuntime::float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   assert(!src.second()->is_valid() && !dst.second()->is_valid(), "bad float_move");
 
   // Because of the calling convention we know that src is either a stack location
@@ -1141,7 +1142,7 @@ static void float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 }
 
 // A long move
-static void long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
+void SharedRuntime::long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 
   // The only legal possibility for a long_move VMRegPair is:
   // 1: two stack slots (possibly unaligned)
@@ -1160,7 +1161,7 @@ static void long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 }
 
 // A double move
-static void double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
+void SharedRuntime::double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 
   // The only legal possibilities for a double_move VMRegPair are:
   // The painful thing here is that like long_move a VMRegPair might be

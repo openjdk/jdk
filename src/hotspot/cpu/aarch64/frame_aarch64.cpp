@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -356,6 +357,16 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
 
   return fr;
+}
+
+JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
+  ShouldNotCallThis();
+  return nullptr;
+}
+
+frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
+  ShouldNotCallThis();
+  return {};
 }
 
 //------------------------------------------------------------------------------

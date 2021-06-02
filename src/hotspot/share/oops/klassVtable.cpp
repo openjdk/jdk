@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -31,7 +32,6 @@
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -51,7 +51,7 @@ inline InstanceKlass* klassVtable::ik() const {
 }
 
 bool klassVtable::is_preinitialized_vtable() {
-  return _klass->is_shared() && !MetaspaceShared::remapped_readwrite();
+  return _klass->is_shared() && !MetaspaceShared::remapped_readwrite() && !_klass->is_shared_old_klass();
 }
 
 
@@ -1088,15 +1088,19 @@ void klassVtable::dump_vtable() {
 // Itable code
 
 // Initialize a itableMethodEntry
-void itableMethodEntry::initialize(Method* m) {
+void itableMethodEntry::initialize(InstanceKlass* klass, Method* m) {
   if (m == NULL) return;
 
 #ifdef ASSERT
   if (MetaspaceShared::is_in_shared_metaspace((void*)&_method) &&
-     !MetaspaceShared::remapped_readwrite()) {
+     !MetaspaceShared::remapped_readwrite() &&
+     !m->method_holder()->can_be_verified_at_dumptime() &&
+     !klass->can_be_verified_at_dumptime()) {
     // At runtime initialize_itable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader.
     // The dumptime itable method entry should be the same as the runtime entry.
+    // For a shared old class which was not linked during dump time, we can't compare the dumptime
+    // itable method entry with the runtime entry.
     assert(_method == m, "sanity");
   }
 #endif
@@ -1335,7 +1339,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
       if (!(target == NULL) && !target->is_public()) {
         // Stuff an IllegalAccessError throwing method in there instead.
         itableOffsetEntry::method_entry(_klass, method_table_offset)[m->itable_index()].
-            initialize(Universe::throw_illegal_access_error());
+            initialize(_klass, Universe::throw_illegal_access_error());
       }
     } else {
 
@@ -1348,7 +1352,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
         supers->at_put(start_offset + ime_num, m);
       }
 
-      itableOffsetEntry::method_entry(_klass, method_table_offset)[ime_num].initialize(target);
+      itableOffsetEntry::method_entry(_klass, method_table_offset)[ime_num].initialize(_klass, target);
       if (log_develop_is_enabled(Trace, itables)) {
         ResourceMark rm;
         if (target != NULL) {
@@ -1380,7 +1384,7 @@ void klassItable::adjust_method_entries(bool * trace_name_printed) {
     }
     assert(!old_method->is_deleted(), "itable methods may not be deleted");
     Method* new_method = old_method->get_new_method();
-    ime->initialize(new_method);
+    ime->initialize(_klass, new_method);
 
     if (!(*trace_name_printed)) {
       log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());

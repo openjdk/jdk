@@ -67,8 +67,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
        access         = event          +   1,
        tty            = access         +   2,
        special        = tty            +   3,
-       suspend_resume = special        +   1,
-       oopstorage     = suspend_resume +   2,
+       oopstorage     = special        +   3,
        leaf           = oopstorage     +   2,
        safepoint      = leaf           +  10,
        barrier        = safepoint      +   1,
@@ -119,11 +118,9 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void check_no_safepoint_state(Thread* thread)                       NOT_DEBUG_RETURN;
   void check_rank              (Thread* thread)                       NOT_DEBUG_RETURN;
   void assert_owner            (Thread* expected)                     NOT_DEBUG_RETURN;
-  void no_safepoint_verifier   (Thread* thread, bool enable)          NOT_DEBUG_RETURN;
 
  public:
   static const bool _allow_vm_block_flag        = true;
-  static const bool _as_suspend_equivalent_flag = true;
 
   // Locks can be acquired with or without a safepoint check. NonJavaThreads do not follow
   // the safepoint protocol when acquiring locks.
@@ -134,11 +131,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // it is done with a safepoint check. In corollary, when the lock is initialized with
   // _safepoint_check_never, that means that whenever the lock is acquired by a JavaThread
   // it will verify that it is done without a safepoint check.
-
-
-  // There are a couple of existing locks that will sometimes have a safepoint check and
-  // sometimes not when acquired by a JavaThread, but these locks are set up carefully
-  // to avoid deadlocks. TODO: Fix these locks and remove _safepoint_check_sometimes.
 
   // TODO: Locks that are shared between JavaThreads and NonJavaThreads
   // should never encounter a safepoint check while they are held, or else a
@@ -158,17 +150,12 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   enum class SafepointCheckRequired {
     _safepoint_check_never,       // Mutexes with this value will cause errors
                                   // when acquired by a JavaThread with a safepoint check.
-    _safepoint_check_sometimes,   // A couple of special locks are acquired by JavaThreads sometimes
-                                  // with and sometimes without safepoint checks. These
-                                  // locks will not produce errors when locked.
     _safepoint_check_always       // Mutexes with this value will cause errors
                                   // when acquired by a JavaThread without a safepoint check.
   };
   // Bring the enumerator names into class scope.
   static const SafepointCheckRequired _safepoint_check_never =
     SafepointCheckRequired::_safepoint_check_never;
-  static const SafepointCheckRequired _safepoint_check_sometimes =
-    SafepointCheckRequired::_safepoint_check_sometimes;
   static const SafepointCheckRequired _safepoint_check_always =
     SafepointCheckRequired::_safepoint_check_always;
 
@@ -222,10 +209,8 @@ class Monitor : public Mutex {
 
   // Wait until monitor is notified (or times out).
   // Defaults are to make safepoint checks, wait time is forever (i.e.,
-  // zero), and not a suspend-equivalent condition. Returns true if wait
-  // times out; otherwise returns false.
-  bool wait(int64_t timeout = 0,
-            bool as_suspend_equivalent = !_as_suspend_equivalent_flag);
+  // zero). Returns true if wait times out; otherwise returns false.
+  bool wait(int64_t timeout = 0);
   bool wait_without_safepoint_check(int64_t timeout = 0);
   void notify();
   void notify_all();

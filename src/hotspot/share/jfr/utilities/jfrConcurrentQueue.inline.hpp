@@ -26,6 +26,7 @@
 #define SHARE_JFR_UTILITIES_JFRCONCURRENTQUEUE_INLINE_HPP
 
 #include "jfr/utilities/jfrConcurrentQueue.hpp"
+
 #include "jfr/utilities/jfrConcurrentLinkedListHost.inline.hpp"
 #include "jfr/utilities/jfrVersionSystem.inline.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,12 +57,13 @@ import jdk.jfr.events.ActiveRecordingEvent;
 import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.SecuritySupport.SecureRecorderListener;
+import jdk.jfr.internal.consumer.EventLog;
 import jdk.jfr.internal.instrument.JDKEvents;
 
 public final class PlatformRecorder {
 
 
-    private final List<PlatformRecording> recordings = new ArrayList<>();
+    private final ArrayList<PlatformRecording> recordings = new ArrayList<>();
     private static final List<SecureRecorderListener> changeListeners = new ArrayList<>();
     private final Repository repository;
     private static final JVM jvm = JVM.getJVM();
@@ -143,6 +144,7 @@ public final class PlatformRecorder {
     }
 
     public synchronized static void addListener(FlightRecorderListener changeListener) {
+        @SuppressWarnings("removal")
         AccessControlContext context = AccessController.getContext();
         SecureRecorderListener sl = new SecureRecorderListener(context, changeListener);
         boolean runInitialized;
@@ -245,6 +247,9 @@ public final class PlatformRecorder {
             RepositoryChunk newChunk = null;
             if (toDisk) {
                 newChunk = repository.newChunk(zdtNow);
+                if (EventLog.shouldLog()) {
+                    EventLog.start();
+                }
                 MetadataRepository.getInstance().setOutput(newChunk.getFile().toString());
             } else {
                 MetadataRepository.getInstance().setOutput(null);
@@ -259,6 +264,9 @@ public final class PlatformRecorder {
             RepositoryChunk newChunk = null;
             if (toDisk) {
                 newChunk = repository.newChunk(zdtNow);
+                if (EventLog.shouldLog()) {
+                    EventLog.start();
+                }
                 RequestEngine.doChunkEnd();
                 MetadataRepository.getInstance().setOutput(newChunk.getFile().toString());
                 startNanos = jvm.getChunkStartNanos();
@@ -347,6 +355,9 @@ public final class PlatformRecorder {
             RequestEngine.setFlushInterval(Long.MAX_VALUE);
         }
         recording.setState(RecordingState.STOPPED);
+        if (!isToDisk()) {
+            EventLog.stop();
+        }
     }
 
     private void dumpMemoryToDestination(PlatformRecording recording)  {
@@ -476,11 +487,26 @@ public final class PlatformRecorder {
                 if (jvm.shouldRotateDisk()) {
                     rotateDisk();
                 }
+                if (isToDisk()) {
+                    EventLog.update();
+                }
             }
             long minDelta = RequestEngine.doPeriodic();
             long wait = Math.min(minDelta, Options.getWaitInterval());
             takeNap(wait);
         }
+    }
+
+    private boolean isToDisk() {
+        // Use indexing to avoid Iterator allocation if nothing happens
+        int count = recordings.size();
+        for (int i = 0; i < count; i++) {
+            PlatformRecording r = recordings.get(i);
+            if (r.isToDisk() && r.getState() == RecordingState.RUNNING) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void takeNap(long duration) {

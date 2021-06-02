@@ -34,7 +34,6 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_linux.inline.hpp"
 #include "os_posix.inline.hpp"
@@ -663,14 +662,20 @@ static void *thread_native_entry(Thread *thread) {
 
   thread->record_stack_base_and_size();
 
+#ifndef __GLIBC__
   // Try to randomize the cache line index of hot stack frames.
   // This helps when threads of the same stack traces evict each other's
   // cache lines. The threads can be either from the same JVM instance, or
   // from different JVM instances. The benefit is especially true for
   // processors with hyperthreading technology.
+  // This code is not needed anymore in glibc because it has MULTI_PAGE_ALIASING
+  // and we did not see any degradation in performance without `alloca()`.
   static int counter = 0;
   int pid = os::current_process_id();
-  alloca(((pid ^ counter++) & 7) * 128);
+  void *stackmem = alloca(((pid ^ counter++) & 7) * 128);
+  // Ensure the alloca result is used in a way that prevents the compiler from eliding it.
+  *(char *)stackmem = 1;
+#endif
 
   thread->initialize_thread_current();
 
@@ -1270,9 +1275,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 // time support
 
 // Time since start-up in seconds to a fine granularity.
-// Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
-
   return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
 }
 
@@ -2343,6 +2346,9 @@ void os::print_memory_info(outputStream* st) {
   st->print("(" UINT64_FORMAT "k free)",
             ((jlong)si.freeswap * si.mem_unit) >> 10);
   st->cr();
+  st->print("Page Sizes: ");
+  _page_sizes.print_on(st);
+  st->cr();
 }
 
 // Print the first "model name" line and the first "flags" line
@@ -2955,8 +2961,24 @@ void* os::Linux::libnuma_v2_dlsym(void* handle, const char* name) {
   return dlvsym(handle, name, "libnuma_1.2");
 }
 
+// Check numa dependent syscalls
+static bool numa_syscall_check() {
+  // NUMA APIs depend on several syscalls. E.g., get_mempolicy is required for numa_get_membind and
+  // numa_get_interleave_mask. But these dependent syscalls can be unsupported for various reasons.
+  // Especially in dockers, get_mempolicy is not allowed with the default configuration. So it's necessary
+  // to check whether the syscalls are available. Currently, only get_mempolicy is checked since checking
+  // others like mbind would cause unexpected side effects.
+  int dummy = 0;
+  if (syscall(SYS_get_mempolicy, &dummy, NULL, 0, (void*)&dummy, 3) == -1) {
+    return false;
+  }
+
+  return true;
+}
+
 bool os::Linux::libnuma_init() {
-  if (sched_getcpu() != -1) { // Requires sched_getcpu() support
+  // Requires sched_getcpu() and numa dependent syscalls support
+  if ((sched_getcpu() != -1) && numa_syscall_check()) {
     void *handle = dlopen("libnuma.so.1", RTLD_LAZY);
     if (handle != NULL) {
       set_numa_node_to_cpus(CAST_TO_FN_PTR(numa_node_to_cpus_func_t,
@@ -3501,6 +3523,25 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
     // Mapping succeeded, sanity check passed.
     munmap(p, page_size);
     return true;
+  } else {
+      log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) failed sanity check, "
+                         "checking if smaller large page sizes are usable",
+                         byte_size_in_exact_unit(page_size),
+                         exact_unit_for_byte_size(page_size));
+      for (size_t page_size_ = _page_sizes.next_smaller(page_size);
+          page_size_ != (size_t)os::vm_page_size();
+          page_size_ = _page_sizes.next_smaller(page_size_)) {
+        flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size_);
+        p = mmap(NULL, page_size_, PROT_READ|PROT_WRITE, flags, -1, 0);
+        if (p != MAP_FAILED) {
+          // Mapping succeeded, sanity check passed.
+          munmap(p, page_size_);
+          log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) passed sanity check",
+                             byte_size_in_exact_unit(page_size_),
+                             exact_unit_for_byte_size(page_size_));
+          return true;
+        }
+      }
   }
 
   if (warn) {
@@ -3575,35 +3616,20 @@ static void set_coredump_filter(CoredumpFilterBit bit) {
 
 static size_t _large_page_size = 0;
 
-size_t os::Linux::find_default_large_page_size() {
-  if (_default_large_page_size != 0) {
-    return _default_large_page_size;
-  }
-  size_t large_page_size = 0;
+static size_t scan_default_large_page_size() {
+  size_t default_large_page_size = 0;
 
   // large_page_size on Linux is used to round up heap size. x86 uses either
   // 2M or 4M page, depending on whether PAE (Physical Address Extensions)
   // mode is enabled. AMD64/EM64T uses 2M page in 64bit mode. IA64 can use
-  // page as large as 256M.
+  // page as large as 1G.
   //
   // Here we try to figure out page size by parsing /proc/meminfo and looking
   // for a line with the following format:
   //    Hugepagesize:     2048 kB
   //
   // If we can't determine the value (e.g. /proc is not mounted, or the text
-  // format has been changed), we'll use the largest page size supported by
-  // the processor.
-
-#ifndef ZERO
-  large_page_size =
-    AARCH64_ONLY(2 * M)
-    AMD64_ONLY(2 * M)
-    ARM32_ONLY(2 * M)
-    IA32_ONLY(4 * M)
-    IA64_ONLY(256 * M)
-    PPC_ONLY(4 * M)
-    S390_ONLY(1 * M);
-#endif // ZERO
+  // format has been changed), we'll set largest page size to 0
 
   FILE *fp = fopen("/proc/meminfo", "r");
   if (fp) {
@@ -3612,7 +3638,7 @@ size_t os::Linux::find_default_large_page_size() {
       char buf[16];
       if (fscanf(fp, "Hugepagesize: %d", &x) == 1) {
         if (x && fgets(buf, sizeof(buf), fp) && strcmp(buf, " kB\n") == 0) {
-          large_page_size = x * K;
+          default_large_page_size = x * K;
           break;
         }
       } else {
@@ -3625,21 +3651,17 @@ size_t os::Linux::find_default_large_page_size() {
     }
     fclose(fp);
   }
-  return large_page_size;
+
+  return default_large_page_size;
 }
 
-size_t os::Linux::find_large_page_size(size_t large_page_size) {
-  if (_default_large_page_size == 0) {
-    _default_large_page_size = Linux::find_default_large_page_size();
-  }
-  // We need to scan /sys/kernel/mm/hugepages
+static os::PageSizes scan_multiple_page_support() {
+  // Scan /sys/kernel/mm/hugepages
   // to discover the available page sizes
   const char* sys_hugepages = "/sys/kernel/mm/hugepages";
+  os::PageSizes page_sizes;
 
   DIR *dir = opendir(sys_hugepages);
-  if (dir == NULL) {
-    return _default_large_page_size;
-  }
 
   struct dirent *entry;
   size_t page_size;
@@ -3647,41 +3669,30 @@ size_t os::Linux::find_large_page_size(size_t large_page_size) {
     if (entry->d_type == DT_DIR &&
         sscanf(entry->d_name, "hugepages-%zukB", &page_size) == 1) {
       // The kernel is using kB, hotspot uses bytes
-      if (large_page_size == page_size * K) {
-        closedir(dir);
-        return large_page_size;
-      }
+      // Add each found Large Page Size to page_sizes
+      page_sizes.add(page_size * K);
     }
   }
   closedir(dir);
-  return _default_large_page_size;
-}
 
-size_t os::Linux::setup_large_page_size() {
-  _default_large_page_size = Linux::find_default_large_page_size();
-
-  if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != _default_large_page_size ) {
-    _large_page_size = find_large_page_size(LargePageSizeInBytes);
-    if (_large_page_size == _default_large_page_size) {
-      warning("Setting LargePageSizeInBytes=" SIZE_FORMAT " has no effect on this OS. Using the default large page size "
-              SIZE_FORMAT "%s.",
-              LargePageSizeInBytes,
-              byte_size_in_proper_unit(_large_page_size), proper_unit_for_byte_size(_large_page_size));
-    }
-  } else {
-    _large_page_size = _default_large_page_size;
+  LogTarget(Debug, pagesize) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print("Large Page sizes: ");
+    page_sizes.print_on(&ls);
   }
 
-  const size_t default_page_size = (size_t)Linux::page_size();
-  if (_large_page_size > default_page_size) {
-    _page_sizes.add(_large_page_size);
-  }
-
-  return _large_page_size;
+  return page_sizes;
 }
 
 size_t os::Linux::default_large_page_size() {
   return _default_large_page_size;
+}
+
+void warn_no_large_pages_configured() {
+  if (!FLAG_IS_DEFAULT(UseLargePages)) {
+    log_warning(pagesize)("UseLargePages disabled, no large pages configured and available on the system.");
+  }
 }
 
 bool os::Linux::setup_large_page_type(size_t page_size) {
@@ -3726,13 +3737,13 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
     UseSHM = false;
   }
 
-  if (!FLAG_IS_DEFAULT(UseLargePages)) {
-    log_warning(pagesize)("UseLargePages disabled, no large pages configured and available on the system.");
-  }
+  warn_no_large_pages_configured();
   return false;
 }
 
 void os::large_page_init() {
+  // 1) Handle the case where we do not want to use huge pages and hence
+  //    there is no need to scan the OS for related info
   if (!UseLargePages &&
       !UseTransparentHugePages &&
       !UseHugeTLBFS &&
@@ -3750,8 +3761,73 @@ void os::large_page_init() {
     return;
   }
 
-  size_t large_page_size = Linux::setup_large_page_size();
-  UseLargePages          = Linux::setup_large_page_type(large_page_size);
+  // 2) Scan OS info
+  size_t default_large_page_size = scan_default_large_page_size();
+  os::Linux::_default_large_page_size = default_large_page_size;
+  if (default_large_page_size == 0) {
+    // No large pages configured, return.
+    warn_no_large_pages_configured();
+    UseLargePages = false;
+    UseTransparentHugePages = false;
+    UseHugeTLBFS = false;
+    UseSHM = false;
+    return;
+  }
+  os::PageSizes all_large_pages = scan_multiple_page_support();
+
+  // 3) Consistency check and post-processing
+
+  // It is unclear if /sys/kernel/mm/hugepages/ and /proc/meminfo could disagree. Manually
+  // re-add the default page size to the list of page sizes to be sure.
+  all_large_pages.add(default_large_page_size);
+
+  // Check LargePageSizeInBytes matches an available page size and if so set _large_page_size
+  // using LargePageSizeInBytes as the maximum allowed large page size. If LargePageSizeInBytes
+  // doesn't match an available page size set _large_page_size to default_large_page_size
+  // and use it as the maximum.
+ if (FLAG_IS_DEFAULT(LargePageSizeInBytes) ||
+      LargePageSizeInBytes == 0 ||
+      LargePageSizeInBytes == default_large_page_size) {
+    _large_page_size = default_large_page_size;
+    log_info(pagesize)("Using the default large page size: " SIZE_FORMAT "%s",
+                       byte_size_in_exact_unit(_large_page_size),
+                       exact_unit_for_byte_size(_large_page_size));
+  } else {
+    if (all_large_pages.contains(LargePageSizeInBytes)) {
+      _large_page_size = LargePageSizeInBytes;
+      log_info(pagesize)("Overriding default large page size (" SIZE_FORMAT "%s) "
+                         "using LargePageSizeInBytes: " SIZE_FORMAT "%s",
+                         byte_size_in_exact_unit(default_large_page_size),
+                         exact_unit_for_byte_size(default_large_page_size),
+                         byte_size_in_exact_unit(_large_page_size),
+                         exact_unit_for_byte_size(_large_page_size));
+    } else {
+      _large_page_size = default_large_page_size;
+      log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (" SIZE_FORMAT "%s) "
+                         "using the default large page size: " SIZE_FORMAT "%s",
+                         byte_size_in_exact_unit(LargePageSizeInBytes),
+                         exact_unit_for_byte_size(LargePageSizeInBytes),
+                         byte_size_in_exact_unit(_large_page_size),
+                         exact_unit_for_byte_size(_large_page_size));
+    }
+  }
+
+  // Populate _page_sizes with large page sizes less than or equal to
+  // _large_page_size.
+  for (size_t page_size = _large_page_size; page_size != 0;
+         page_size = all_large_pages.next_smaller(page_size)) {
+    _page_sizes.add(page_size);
+  }
+
+  LogTarget(Info, pagesize) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print("Usable page sizes: ");
+    _page_sizes.print_on(&ls);
+  }
+
+  // Now determine the type of large pages to use:
+  UseLargePages = os::Linux::setup_large_page_type(_large_page_size);
 
   set_coredump_filter(LARGEPAGES_BIT);
 }
@@ -3900,8 +3976,8 @@ char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
   return addr;
 }
 
-static void warn_on_large_pages_failure(char* req_addr, size_t bytes,
-                                        int error) {
+static void warn_on_commit_special_failure(char* req_addr, size_t bytes,
+                                           size_t page_size, int error) {
   assert(error == ENOMEM, "Only expect to fail if no memory is available");
 
   bool warn_on_failure = UseLargePages &&
@@ -3911,151 +3987,116 @@ static void warn_on_large_pages_failure(char* req_addr, size_t bytes,
 
   if (warn_on_failure) {
     char msg[128];
-    jio_snprintf(msg, sizeof(msg), "Failed to reserve large pages memory req_addr: "
-                 PTR_FORMAT " bytes: " SIZE_FORMAT " (errno = %d).", req_addr, bytes, error);
+    jio_snprintf(msg, sizeof(msg), "Failed to reserve and commit memory. req_addr: "
+                                   PTR_FORMAT " bytes: " SIZE_FORMAT " page size: "
+                                   SIZE_FORMAT " (errno = %d).",
+                                   req_addr, bytes, page_size, error);
     warning("%s", msg);
   }
 }
 
-char* os::Linux::reserve_memory_special_huge_tlbfs_only(size_t bytes,
-                                                        char* req_addr,
-                                                        bool exec) {
-  assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
-  assert(is_aligned(bytes, os::large_page_size()), "Unaligned size");
-  assert(is_aligned(req_addr, os::large_page_size()), "Unaligned address");
-
-  int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
-  int flags = MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB;
-  // Ensure the correct page size flag is used when needed.
-  flags |= hugetlbfs_page_size_flag(os::large_page_size());
-
-  char* addr = (char*)::mmap(req_addr, bytes, prot, flags, -1, 0);
-
-  if (addr == MAP_FAILED) {
-    warn_on_large_pages_failure(req_addr, bytes, errno);
-    return NULL;
-  }
-
-  assert(is_aligned(addr, os::large_page_size()), "Must be");
-
-  return addr;
-}
-
-// Reserve memory using mmap(MAP_HUGETLB).
-//  - bytes shall be a multiple of alignment.
-//  - req_addr can be NULL. If not NULL, it must be a multiple of alignment.
-//  - alignment sets the alignment at which memory shall be allocated.
-//     It must be a multiple of allocation granularity.
-// Returns address of memory or NULL. If req_addr was not NULL, will only return
-//  req_addr or NULL.
-char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
-                                                         size_t alignment,
-                                                         char* req_addr,
-                                                         bool exec) {
-  size_t large_page_size = os::large_page_size();
-  assert(bytes >= large_page_size, "Shouldn't allocate large pages for small sizes");
-
-  assert(is_aligned(req_addr, alignment), "Must be");
-  assert(is_aligned(bytes, alignment), "Must be");
-
-  // First reserve - but not commit - the address range in small pages.
-  char* const start = anon_mmap_aligned(req_addr, bytes, alignment);
-
-  if (start == NULL) {
-    return NULL;
-  }
-
-  assert(is_aligned(start, alignment), "Must be");
-
-  char* end = start + bytes;
-
-  // Find the regions of the allocated chunk that can be promoted to large pages.
-  char* lp_start = align_up(start, large_page_size);
-  char* lp_end   = align_down(end, large_page_size);
-
-  size_t lp_bytes = lp_end - lp_start;
-
-  assert(is_aligned(lp_bytes, large_page_size), "Must be");
-
-  if (lp_bytes == 0) {
-    // The mapped region doesn't even span the start and the end of a large page.
-    // Fall back to allocate a non-special area.
-    ::munmap(start, end - start);
-    return NULL;
-  }
+bool os::Linux::commit_memory_special(size_t bytes,
+                                      size_t page_size,
+                                      char* req_addr,
+                                      bool exec) {
+  assert(UseLargePages && UseHugeTLBFS, "Should only get here when HugeTLBFS large pages are used");
+  assert(is_aligned(bytes, page_size), "Unaligned size");
+  assert(is_aligned(req_addr, page_size), "Unaligned address");
+  assert(req_addr != NULL, "Must have a requested address for special mappings");
 
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   int flags = MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED;
-  void* result;
 
-  // Commit small-paged leading area.
-  if (start != lp_start) {
-    result = ::mmap(start, lp_start - start, prot, flags, -1, 0);
-    if (result == MAP_FAILED) {
-      ::munmap(lp_start, end - lp_start);
-      return NULL;
-    }
+  // For large pages additional flags are required.
+  if (page_size > (size_t) os::vm_page_size()) {
+    flags |= MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
+  }
+  char* addr = (char*)::mmap(req_addr, bytes, prot, flags, -1, 0);
+
+  if (addr == MAP_FAILED) {
+    warn_on_commit_special_failure(req_addr, bytes, page_size, errno);
+    return false;
   }
 
-  // Commit large-paged area.
-  flags |= MAP_HUGETLB | hugetlbfs_page_size_flag(os::large_page_size());
-
-  result = ::mmap(lp_start, lp_bytes, prot, flags, -1, 0);
-  if (result == MAP_FAILED) {
-    warn_on_large_pages_failure(lp_start, lp_bytes, errno);
-    // If the mmap above fails, the large pages region will be unmapped and we
-    // have regions before and after with small pages. Release these regions.
-    //
-    // |  mapped  |  unmapped  |  mapped  |
-    // ^          ^            ^          ^
-    // start      lp_start     lp_end     end
-    //
-    ::munmap(start, lp_start - start);
-    ::munmap(lp_end, end - lp_end);
-    return NULL;
-  }
-
-  // Commit small-paged trailing area.
-  if (lp_end != end) {
-    result = ::mmap(lp_end, end - lp_end, prot,
-                    MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED,
-                    -1, 0);
-    if (result == MAP_FAILED) {
-      ::munmap(start, lp_end - start);
-      return NULL;
-    }
-  }
-
-  return start;
+  log_debug(pagesize)("Commit special mapping: " PTR_FORMAT ", size=" SIZE_FORMAT "%s, page size="
+                      SIZE_FORMAT "%s",
+                      p2i(addr), byte_size_in_exact_unit(bytes),
+                      exact_unit_for_byte_size(bytes),
+                      byte_size_in_exact_unit(page_size),
+                      exact_unit_for_byte_size(page_size));
+  assert(is_aligned(addr, page_size), "Must be");
+  return true;
 }
 
 char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
                                                    size_t alignment,
+                                                   size_t page_size,
                                                    char* req_addr,
                                                    bool exec) {
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
+  assert(is_aligned(req_addr, page_size), "Must be");
   assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
-  assert(is_power_of_2(os::large_page_size()), "Must be");
-  assert(bytes >= os::large_page_size(), "Shouldn't allocate large pages for small sizes");
+  assert(_page_sizes.contains(page_size), "Must be a valid page size");
+  assert(page_size > (size_t)os::vm_page_size(), "Must be a large page size");
+  assert(bytes >= page_size, "Shouldn't allocate large pages for small sizes");
 
-  if (is_aligned(bytes, os::large_page_size()) && alignment <= os::large_page_size()) {
-    return reserve_memory_special_huge_tlbfs_only(bytes, req_addr, exec);
-  } else {
-    return reserve_memory_special_huge_tlbfs_mixed(bytes, alignment, req_addr, exec);
+  // We only end up here when at least 1 large page can be used.
+  // If the size is not a multiple of the large page size, we
+  // will mix the type of pages used, but in a decending order.
+  // Start off by reserving a range of the given size that is
+  // properly aligned. At this point no pages are committed. If
+  // a requested address is given it will be used and it must be
+  // aligned to both the large page size and the given alignment.
+  // The larger of the two will be used.
+  size_t required_alignment = MAX(page_size, alignment);
+  char* const aligned_start = anon_mmap_aligned(req_addr, bytes, required_alignment);
+  if (aligned_start == NULL) {
+    return NULL;
   }
+
+  // First commit using large pages.
+  size_t large_bytes = align_down(bytes, page_size);
+  bool large_committed = commit_memory_special(large_bytes, page_size, aligned_start, exec);
+
+  if (large_committed && bytes == large_bytes) {
+    // The size was large page aligned so no additional work is
+    // needed even if the commit failed.
+    return aligned_start;
+  }
+
+  // The requested size requires some small pages as well.
+  char* small_start = aligned_start + large_bytes;
+  size_t small_size = bytes - large_bytes;
+  if (!large_committed) {
+    // Failed to commit large pages, so we need to unmap the
+    // reminder of the orinal reservation.
+    ::munmap(small_start, small_size);
+    return NULL;
+  }
+
+  // Commit the remaining bytes using small pages.
+  bool small_committed = commit_memory_special(small_size, os::vm_page_size(), small_start, exec);
+  if (!small_committed) {
+    // Failed to commit the remaining size, need to unmap
+    // the large pages part of the reservation.
+    ::munmap(aligned_start, large_bytes);
+    return NULL;
+  }
+  return aligned_start;
 }
 
-char* os::pd_reserve_memory_special(size_t bytes, size_t alignment,
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size,
                                     char* req_addr, bool exec) {
   assert(UseLargePages, "only for large pages");
 
   char* addr;
   if (UseSHM) {
+    // No support for using specific page sizes with SHM.
     addr = os::Linux::reserve_memory_special_shm(bytes, alignment, req_addr, exec);
   } else {
     assert(UseHugeTLBFS, "must be");
-    addr = os::Linux::reserve_memory_special_huge_tlbfs(bytes, alignment, req_addr, exec);
+    addr = os::Linux::reserve_memory_special_huge_tlbfs(bytes, alignment, page_size, req_addr, exec);
   }
 
   if (addr != NULL) {
@@ -4797,7 +4838,7 @@ bool os::find(address addr, outputStream* st) {
 // on, e.g., Win32.
 void
 os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method,
-                         JavaCallArguments* args, Thread* thread) {
+                         JavaCallArguments* args, JavaThread* thread) {
   f(value, method, args, thread);
 }
 

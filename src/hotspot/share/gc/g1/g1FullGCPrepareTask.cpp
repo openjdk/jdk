@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/g1FullCollector.hpp"
+#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
@@ -39,35 +39,60 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 
+template<bool is_humongous>
+void G1FullGCPrepareTask::G1CalculatePointersClosure::free_pinned_region(HeapRegion* hr) {
+  _regions_freed = true;
+  if (is_humongous) {
+    _g1h->free_humongous_region(hr, nullptr);
+  } else {
+    _g1h->free_region(hr, nullptr);
+  }
+  prepare_for_compaction(hr);
+  _collector->set_invalid(hr->hrm_index());
+}
+
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
-  if (hr->is_pinned()) {
+  bool force_not_compacted = false;
+  if (should_compact(hr)) {
+    assert(!hr->is_humongous(), "moving humongous objects not supported.");
+    prepare_for_compaction(hr);
+  } else {
     // There is no need to iterate and forward objects in pinned regions ie.
     // prepare them for compaction. The adjust pointers phase will skip
     // work for them.
+    assert(hr->containing_set() == nullptr, "already cleared by PrepareRegionsClosure");
     if (hr->is_humongous()) {
       oop obj = cast_to_oop(hr->humongous_start_region()->bottom());
       if (!_bitmap->is_marked(obj)) {
-        free_humongous_region(hr);
+        free_pinned_region<true>(hr);
       }
     } else if (hr->is_open_archive()) {
-      bool is_empty = _bitmap->get_next_marked_addr(hr->bottom(), hr->top()) >= hr->top();
+      bool is_empty = _collector->live_words(hr->hrm_index()) == 0;
       if (is_empty) {
-        free_open_archive_region(hr);
+        free_pinned_region<false>(hr);
       }
+    } else if (hr->is_closed_archive()) {
+      // nothing to do with closed archive region
     } else {
-      // There are no other pinned regions than humongous or all kinds of archive regions
-      // at this time.
-      assert(hr->is_closed_archive(), "Only closed archive regions can also be pinned.");
+      assert(MarkSweepDeadRatio > 0,
+             "only skip compaction for other regions when MarkSweepDeadRatio > 0");
+
+      // Too many live objects; skip compacting it.
+      _collector->update_from_compacting_to_skip_compacting(hr->hrm_index());
+      if (hr->is_young()) {
+        // G1 updates the BOT for old region contents incrementally, but young regions
+        // lack BOT information for performance reasons.
+        // Recreate BOT information of high live ratio young regions here to keep expected
+        // performance during scanning their card tables in the collection pauses later.
+        hr->update_bot();
+      }
+      log_trace(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
+                            hr->hrm_index(), _collector->live_words(hr->hrm_index()));
     }
-  } else {
-    assert(!hr->is_humongous(), "moving humongous objects not supported.");
-    prepare_for_compaction(hr);
   }
 
   // Reset data structures not valid after Full GC.
   reset_region_metadata(hr);
-
-  _collector->update_attribute_table(hr);
 
   return false;
 }
@@ -111,33 +136,14 @@ G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1Fu
     _cp(cp),
     _regions_freed(false) { }
 
-void G1FullGCPrepareTask::G1CalculatePointersClosure::free_humongous_region(HeapRegion* hr) {
-  assert(hr->is_humongous(), "must be but region %u is %s", hr->hrm_index(), hr->get_short_type_str());
-
-  FreeRegionList dummy_free_list("Humongous Dummy Free List for G1MarkSweep");
-
-  hr->set_containing_set(NULL);
-  _regions_freed = true;
-
-  _g1h->free_humongous_region(hr, &dummy_free_list);
-  prepare_for_compaction(hr);
-  dummy_free_list.remove_all();
-}
-
-void G1FullGCPrepareTask::G1CalculatePointersClosure::free_open_archive_region(HeapRegion* hr) {
-  assert(hr->is_pinned(), "must be");
-  assert(!hr->is_humongous(), "handled elsewhere");
-  assert(hr->is_open_archive(),
-         "Only Open archive regions may be freed here.");
-
-  FreeRegionList dummy_free_list("Pinned Dummy Free List for G1MarkSweep");
-
-  hr->set_containing_set(NULL);
-  _regions_freed = true;
-
-  _g1h->free_region(hr, &dummy_free_list);
-  prepare_for_compaction(hr);
-  dummy_free_list.remove_all();
+bool G1FullGCPrepareTask::G1CalculatePointersClosure::should_compact(HeapRegion* hr) {
+  if (hr->is_pinned()) {
+    return false;
+  }
+  size_t live_words = _collector->live_words(hr->hrm_index());
+  size_t live_words_threshold = _collector->scope()->region_compaction_threshold();
+  // High live ratio region will not be compacted.
+  return live_words <= live_words_threshold;
 }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(HeapRegion* hr) {

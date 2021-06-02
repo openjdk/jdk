@@ -39,7 +39,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.ValidateCatalogTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.ValidateCatalogTest
  * @run testng/othervm catalog.ValidateCatalogTest
  * @summary A legal catalog file must be well-formed XML, the root element
  *          must be catalog, and the naming space of the root element must be

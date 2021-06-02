@@ -298,8 +298,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
         if (provider == null)
             throw new IllegalArgumentException("missing provider");
         Object[] objs = Security.getImpl(algorithm, "MessageDigest", provider);
-        if (objs[0] instanceof MessageDigest) {
-            MessageDigest md = (MessageDigest)objs[0];
+        if (objs[0] instanceof MessageDigest md) {
             md.provider = (Provider)objs[1];
             return md;
         } else {

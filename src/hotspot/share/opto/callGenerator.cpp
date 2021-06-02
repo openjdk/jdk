@@ -418,8 +418,9 @@ class LateInlineMHCallGenerator : public LateInlineCallGenerator {
 bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms) {
   // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
   bool allow_inline = C->inlining_incrementally();
-  CallGenerator* cg = for_method_handle_inline(jvms, _caller, method(), allow_inline, _input_not_const);
-  assert(!_input_not_const, "sanity"); // shouldn't have been scheduled for inlining in the first place
+  bool input_not_const = true;
+  CallGenerator* cg = for_method_handle_inline(jvms, _caller, method(), allow_inline, input_not_const);
+  assert(!input_not_const, "sanity"); // shouldn't have been scheduled for inlining in the first place
 
   if (cg != NULL) {
     assert(!cg->is_late_inline() || cg->is_mh_late_inline() || AlwaysIncrementalInline, "we're doing late inlining");
@@ -565,6 +566,11 @@ static bool has_non_debug_usages(Node* n) {
   return false;
 }
 
+static bool is_box_cache_valid(CallNode* call) {
+  ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
+  return klass->is_box_cache_valid();
+}
+
 // delay box in runtime, treat box as a scalarized object
 static void scalarize_debug_usages(CallNode* call, Node* resproj) {
   GraphKit kit(call->jvms());
@@ -660,7 +666,7 @@ void CallGenerator::do_late_inline_helper() {
     if (is_boxing_late_inline() && callprojs.resproj != nullptr) {
         // replace box node to scalar node only in case it is directly referenced by debug info
         assert(call->as_CallStaticJava()->is_boxing_method(), "sanity");
-        if (!has_non_debug_usages(callprojs.resproj)) {
+        if (!has_non_debug_usages(callprojs.resproj) && is_box_cache_valid(call)) {
           scalarize_debug_usages(call, callprojs.resproj);
         }
     }
@@ -846,81 +852,6 @@ class LateInlineVectorReboxingCallGenerator : public LateInlineCallGenerator {
 CallGenerator* CallGenerator::for_vector_reboxing_late_inline(ciMethod* method, CallGenerator* inline_cg) {
   return new LateInlineVectorReboxingCallGenerator(method, inline_cg);
 }
-//---------------------------WarmCallGenerator--------------------------------
-// Internal class which handles initial deferral of inlining decisions.
-class WarmCallGenerator : public CallGenerator {
-  WarmCallInfo*   _call_info;
-  CallGenerator*  _if_cold;
-  CallGenerator*  _if_hot;
-  bool            _is_virtual;   // caches virtuality of if_cold
-  bool            _is_inline;    // caches inline-ness of if_hot
-
-public:
-  WarmCallGenerator(WarmCallInfo* ci,
-                    CallGenerator* if_cold,
-                    CallGenerator* if_hot)
-    : CallGenerator(if_cold->method())
-  {
-    assert(method() == if_hot->method(), "consistent choices");
-    _call_info  = ci;
-    _if_cold    = if_cold;
-    _if_hot     = if_hot;
-    _is_virtual = if_cold->is_virtual();
-    _is_inline  = if_hot->is_inline();
-  }
-
-  virtual bool      is_inline() const           { return _is_inline; }
-  virtual bool      is_virtual() const          { return _is_virtual; }
-  virtual bool      is_deferred() const         { return true; }
-
-  virtual JVMState* generate(JVMState* jvms);
-};
-
-
-CallGenerator* CallGenerator::for_warm_call(WarmCallInfo* ci,
-                                            CallGenerator* if_cold,
-                                            CallGenerator* if_hot) {
-  return new WarmCallGenerator(ci, if_cold, if_hot);
-}
-
-JVMState* WarmCallGenerator::generate(JVMState* jvms) {
-  Compile* C = Compile::current();
-  C->print_inlining_update(this);
-
-  if (C->log() != NULL) {
-    C->log()->elem("warm_call bci='%d'", jvms->bci());
-  }
-  jvms = _if_cold->generate(jvms);
-  if (jvms != NULL) {
-    Node* m = jvms->map()->control();
-    if (m->is_CatchProj()) m = m->in(0);  else m = C->top();
-    if (m->is_Catch())     m = m->in(0);  else m = C->top();
-    if (m->is_Proj())      m = m->in(0);  else m = C->top();
-    if (m->is_CallJava()) {
-      _call_info->set_call(m->as_Call());
-      _call_info->set_hot_cg(_if_hot);
-#ifndef PRODUCT
-      if (PrintOpto || PrintOptoInlining) {
-        tty->print_cr("Queueing for warm inlining at bci %d:", jvms->bci());
-        tty->print("WCI: ");
-        _call_info->print();
-      }
-#endif
-      _call_info->set_heat(_call_info->compute_heat());
-      C->set_warm_calls(_call_info->insert_into(C->warm_calls()));
-    }
-  }
-  return jvms;
-}
-
-void WarmCallInfo::make_hot() {
-  Unimplemented();
-}
-
-void WarmCallInfo::make_cold() {
-  // No action:  Just dequeue.
-}
-
 
 //------------------------PredictedCallGenerator------------------------------
 // Internal class which handles all out-of-line calls checking receiver type.
@@ -1124,10 +1055,11 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
 
 class NativeCallGenerator : public CallGenerator {
 private:
+  address _call_addr;
   ciNativeEntryPoint* _nep;
 public:
-  NativeCallGenerator(ciMethod* m, ciNativeEntryPoint* nep)
-   : CallGenerator(m), _nep(nep) {}
+  NativeCallGenerator(ciMethod* m, address call_addr, ciNativeEntryPoint* nep)
+   : CallGenerator(m), _call_addr(call_addr), _nep(nep) {}
 
   virtual JVMState* generate(JVMState* jvms);
 };
@@ -1135,13 +1067,12 @@ public:
 JVMState* NativeCallGenerator::generate(JVMState* jvms) {
   GraphKit kit(jvms);
 
-  Node* call = kit.make_native_call(tf(), method()->arg_size(), _nep); // -fallback, - nep
+  Node* call = kit.make_native_call(_call_addr, tf(), method()->arg_size(), _nep); // -fallback, - nep
   if (call == NULL) return NULL;
 
   kit.C->print_inlining_update(this);
-  address addr = _nep->entry_point();
   if (kit.C->log() != NULL) {
-    kit.C->log()->elem("l2n_intrinsification_success bci='%d' entry_point='" INTPTR_FORMAT "'", jvms->bci(), p2i(addr));
+    kit.C->log()->elem("l2n_intrinsification_success bci='%d' entry_point='" INTPTR_FORMAT "'", jvms->bci(), p2i(_call_addr));
   }
 
   return kit.transfer_exceptions_into_jvms();
@@ -1274,12 +1205,16 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
 
     case vmIntrinsics::_linkToNative:
     {
-      Node* nep = kit.argument(callee->arg_size() - 1);
-      if (nep->Opcode() == Op_ConP) {
+      Node* addr_n = kit.argument(1); // target address
+      Node* nep_n = kit.argument(callee->arg_size() - 1); // NativeEntryPoint
+      // This check needs to be kept in sync with the one in CallStaticJavaNode::Ideal
+      if (addr_n->Opcode() == Op_ConL && nep_n->Opcode() == Op_ConP) {
         input_not_const = false;
-        const TypeOopPtr* oop_ptr = nep->bottom_type()->is_oopptr();
-        ciNativeEntryPoint* nep = oop_ptr->const_oop()->as_native_entry_point();
-        return new NativeCallGenerator(callee, nep);
+        const TypeLong* addr_t = addr_n->bottom_type()->is_long();
+        const TypeOopPtr* nep_t = nep_n->bottom_type()->is_oopptr();
+        address addr = (address) addr_t->get_con();
+        ciNativeEntryPoint* nep = nep_t->const_oop()->as_native_entry_point();
+        return new NativeCallGenerator(callee, addr, nep);
       } else {
         print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
                                "NativeEntryPoint not constant");
@@ -1555,158 +1490,3 @@ JVMState* UncommonTrapCallGenerator::generate(JVMState* jvms) {
 // (Note:  Moved hook_up_call to GraphKit::set_edges_for_java_call.)
 
 // (Node:  Merged hook_up_exits into ParseGenerator::generate.)
-
-#define NODES_OVERHEAD_PER_METHOD (30.0)
-#define NODES_PER_BYTECODE (9.5)
-
-void WarmCallInfo::init(JVMState* call_site, ciMethod* call_method, ciCallProfile& profile, float prof_factor) {
-  int call_count = profile.count();
-  int code_size = call_method->code_size();
-
-  // Expected execution count is based on the historical count:
-  _count = call_count < 0 ? 1 : call_site->method()->scale_count(call_count, prof_factor);
-
-  // Expected profit from inlining, in units of simple call-overheads.
-  _profit = 1.0;
-
-  // Expected work performed by the call in units of call-overheads.
-  // %%% need an empirical curve fit for "work" (time in call)
-  float bytecodes_per_call = 3;
-  _work = 1.0 + code_size / bytecodes_per_call;
-
-  // Expected size of compilation graph:
-  // -XX:+PrintParseStatistics once reported:
-  //  Methods seen: 9184  Methods parsed: 9184  Nodes created: 1582391
-  //  Histogram of 144298 parsed bytecodes:
-  // %%% Need an better predictor for graph size.
-  _size = NODES_OVERHEAD_PER_METHOD + (NODES_PER_BYTECODE * code_size);
-}
-
-// is_cold:  Return true if the node should never be inlined.
-// This is true if any of the key metrics are extreme.
-bool WarmCallInfo::is_cold() const {
-  if (count()  <  WarmCallMinCount)        return true;
-  if (profit() <  WarmCallMinProfit)       return true;
-  if (work()   >  WarmCallMaxWork)         return true;
-  if (size()   >  WarmCallMaxSize)         return true;
-  return false;
-}
-
-// is_hot:  Return true if the node should be inlined immediately.
-// This is true if any of the key metrics are extreme.
-bool WarmCallInfo::is_hot() const {
-  assert(!is_cold(), "eliminate is_cold cases before testing is_hot");
-  if (count()  >= HotCallCountThreshold)   return true;
-  if (profit() >= HotCallProfitThreshold)  return true;
-  if (work()   <= HotCallTrivialWork)      return true;
-  if (size()   <= HotCallTrivialSize)      return true;
-  return false;
-}
-
-// compute_heat:
-float WarmCallInfo::compute_heat() const {
-  assert(!is_cold(), "compute heat only on warm nodes");
-  assert(!is_hot(),  "compute heat only on warm nodes");
-  int min_size = MAX2(0,   (int)HotCallTrivialSize);
-  int max_size = MIN2(500, (int)WarmCallMaxSize);
-  float method_size = (size() - min_size) / MAX2(1, max_size - min_size);
-  float size_factor;
-  if      (method_size < 0.05)  size_factor = 4;   // 2 sigmas better than avg.
-  else if (method_size < 0.15)  size_factor = 2;   // 1 sigma better than avg.
-  else if (method_size < 0.5)   size_factor = 1;   // better than avg.
-  else                          size_factor = 0.5; // worse than avg.
-  return (count() * profit() * size_factor);
-}
-
-bool WarmCallInfo::warmer_than(WarmCallInfo* that) {
-  assert(this != that, "compare only different WCIs");
-  assert(this->heat() != 0 && that->heat() != 0, "call compute_heat 1st");
-  if (this->heat() > that->heat())   return true;
-  if (this->heat() < that->heat())   return false;
-  assert(this->heat() == that->heat(), "no NaN heat allowed");
-  // Equal heat.  Break the tie some other way.
-  if (!this->call() || !that->call())  return (address)this > (address)that;
-  return this->call()->_idx > that->call()->_idx;
-}
-
-//#define UNINIT_NEXT ((WarmCallInfo*)badAddress)
-#define UNINIT_NEXT ((WarmCallInfo*)NULL)
-
-WarmCallInfo* WarmCallInfo::insert_into(WarmCallInfo* head) {
-  assert(next() == UNINIT_NEXT, "not yet on any list");
-  WarmCallInfo* prev_p = NULL;
-  WarmCallInfo* next_p = head;
-  while (next_p != NULL && next_p->warmer_than(this)) {
-    prev_p = next_p;
-    next_p = prev_p->next();
-  }
-  // Install this between prev_p and next_p.
-  this->set_next(next_p);
-  if (prev_p == NULL)
-    head = this;
-  else
-    prev_p->set_next(this);
-  return head;
-}
-
-WarmCallInfo* WarmCallInfo::remove_from(WarmCallInfo* head) {
-  WarmCallInfo* prev_p = NULL;
-  WarmCallInfo* next_p = head;
-  while (next_p != this) {
-    assert(next_p != NULL, "this must be in the list somewhere");
-    prev_p = next_p;
-    next_p = prev_p->next();
-  }
-  next_p = this->next();
-  debug_only(this->set_next(UNINIT_NEXT));
-  // Remove this from between prev_p and next_p.
-  if (prev_p == NULL)
-    head = next_p;
-  else
-    prev_p->set_next(next_p);
-  return head;
-}
-
-WarmCallInfo WarmCallInfo::_always_hot(WarmCallInfo::MAX_VALUE(), WarmCallInfo::MAX_VALUE(),
-                                       WarmCallInfo::MIN_VALUE(), WarmCallInfo::MIN_VALUE());
-WarmCallInfo WarmCallInfo::_always_cold(WarmCallInfo::MIN_VALUE(), WarmCallInfo::MIN_VALUE(),
-                                        WarmCallInfo::MAX_VALUE(), WarmCallInfo::MAX_VALUE());
-
-WarmCallInfo* WarmCallInfo::always_hot() {
-  assert(_always_hot.is_hot(), "must always be hot");
-  return &_always_hot;
-}
-
-WarmCallInfo* WarmCallInfo::always_cold() {
-  assert(_always_cold.is_cold(), "must always be cold");
-  return &_always_cold;
-}
-
-
-#ifndef PRODUCT
-
-void WarmCallInfo::print() const {
-  tty->print("%s : C=%6.1f P=%6.1f W=%6.1f S=%6.1f H=%6.1f -> %p",
-             is_cold() ? "cold" : is_hot() ? "hot " : "warm",
-             count(), profit(), work(), size(), compute_heat(), next());
-  tty->cr();
-  if (call() != NULL)  call()->dump();
-}
-
-void print_wci(WarmCallInfo* ci) {
-  ci->print();
-}
-
-void WarmCallInfo::print_all() const {
-  for (const WarmCallInfo* p = this; p != NULL; p = p->next())
-    p->print();
-}
-
-int WarmCallInfo::count_all() const {
-  int cnt = 0;
-  for (const WarmCallInfo* p = this; p != NULL; p = p->next())
-    cnt++;
-  return cnt;
-}
-
-#endif //PRODUCT

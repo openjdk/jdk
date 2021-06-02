@@ -2343,30 +2343,19 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         boolean done = false;
         while(!done) {
             int ch = peek();
-            switch(ch) {
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                int newRefNum = (refNum * 10) + (ch - '0');
-                // Add another number if it doesn't make a group
-                // that doesn't exist
-                if (capturingGroupCount - 1 < newRefNum) {
-                    done = true;
-                    break;
+            switch (ch) {
+                case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
+                    int newRefNum = (refNum * 10) + (ch - '0');
+                    // Add another number if it doesn't make a group
+                    // that doesn't exist
+                    if (capturingGroupCount - 1 < newRefNum) {
+                        done = true;
+                        break;
+                    }
+                    refNum = newRefNum;
+                    read();
                 }
-                refNum = newRefNum;
-                read();
-                break;
-            default:
-                done = true;
-                break;
+                default -> done = true;
             }
         }
         hasGroupRef = true;
@@ -2663,7 +2652,11 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                                     right = right.union(clazz(true));
                             } else { // abc&&def
                                 unread();
-                                right = clazz(false);
+                                if (right == null) {
+                                    right = clazz(false);
+                                } else {
+                                    right = right.union(clazz(false));
+                                }
                             }
                             ch = peek();
                         }
@@ -2969,89 +2962,86 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         if (ch == '?') {
             ch = skip();
             switch (ch) {
-            case ':':   //  (?:xxx) pure group
-                head = createGroup(true);
-                tail = root;
-                head.next = expr(tail);
-                break;
-            case '=':   // (?=xxx) and (?!xxx) lookahead
-            case '!':
-                head = createGroup(true);
-                tail = root;
-                head.next = expr(tail);
-                if (ch == '=') {
-                    head = tail = new Pos(head);
-                } else {
-                    head = tail = new Neg(head);
-                }
-                break;
-            case '>':   // (?>xxx)  independent group
-                head = createGroup(true);
-                tail = root;
-                head.next = expr(tail);
-                head = tail = new Ques(head, Qtype.INDEPENDENT);
-                break;
-            case '<':   // (?<xxx)  look behind
-                ch = read();
-                if (ch != '=' && ch != '!') {
-                    // named captured group
-                    String name = groupname(ch);
-                    if (namedGroups().containsKey(name))
-                        throw error("Named capturing group <" + name
-                                    + "> is already defined");
-                    capturingGroup = true;
-                    head = createGroup(false);
+                case ':' -> {   //  (?:xxx) pure group
+                    head = createGroup(true);
                     tail = root;
-                    namedGroups().put(name, capturingGroupCount-1);
                     head.next = expr(tail);
-                    break;
                 }
-                int start = cursor;
-                head = createGroup(true);
-                tail = root;
-                head.next = expr(tail);
-                tail.next = LookBehindEndNode.INSTANCE;
-                TreeInfo info = new TreeInfo();
-                head.study(info);
-                if (info.maxValid == false) {
-                    throw error("Look-behind group does not have "
-                                + "an obvious maximum length");
+                case '=', '!' -> {   // (?=xxx) and (?!xxx) lookahead
+                    head = createGroup(true);
+                    tail = root;
+                    head.next = expr(tail);
+                    if (ch == '=') {
+                        head = tail = new Pos(head);
+                    } else {
+                        head = tail = new Neg(head);
+                    }
                 }
-                boolean hasSupplementary = findSupplementary(start, patternLength);
-                if (ch == '=') {
-                    head = tail = (hasSupplementary ?
-                                   new BehindS(head, info.maxLength,
-                                               info.minLength) :
-                                   new Behind(head, info.maxLength,
-                                              info.minLength));
-                } else { // if (ch == '!')
-                    head = tail = (hasSupplementary ?
-                                   new NotBehindS(head, info.maxLength,
-                                                  info.minLength) :
-                                   new NotBehind(head, info.maxLength,
-                                                 info.minLength));
+                case '>' -> {   // (?>xxx)  independent group
+                    head = createGroup(true);
+                    tail = root;
+                    head.next = expr(tail);
+                    head = tail = new Ques(head, Qtype.INDEPENDENT);
                 }
-                // clear all top-closure-nodes inside lookbehind
-                if (saveTCNCount < topClosureNodes.size())
-                    topClosureNodes.subList(saveTCNCount, topClosureNodes.size()).clear();
-                break;
-            case '$':
-            case '@':
-                throw error("Unknown group type");
-            default:    // (?xxx:) inlined match flags
-                unread();
-                addFlag();
-                ch = read();
-                if (ch == ')') {
-                    return null;    // Inline modifier only
+                case '<' -> {   // (?<xxx)  look behind
+                    ch = read();
+                    if (ch != '=' && ch != '!') {
+                        // named captured group
+                        String name = groupname(ch);
+                        if (namedGroups().containsKey(name))
+                            throw error("Named capturing group <" + name
+                                        + "> is already defined");
+                        capturingGroup = true;
+                        head = createGroup(false);
+                        tail = root;
+                        namedGroups().put(name, capturingGroupCount - 1);
+                        head.next = expr(tail);
+                        break;
+                    }
+                    int start = cursor;
+                    head = createGroup(true);
+                    tail = root;
+                    head.next = expr(tail);
+                    tail.next = LookBehindEndNode.INSTANCE;
+                    TreeInfo info = new TreeInfo();
+                    head.study(info);
+                    if (info.maxValid == false) {
+                        throw error("Look-behind group does not have "
+                                    + "an obvious maximum length");
+                    }
+                    boolean hasSupplementary = findSupplementary(start, patternLength);
+                    if (ch == '=') {
+                        head = tail = (hasSupplementary ?
+                            new BehindS(head, info.maxLength,
+                                info.minLength) :
+                            new Behind(head, info.maxLength,
+                                info.minLength));
+                    } else { // if (ch == '!')
+                        head = tail = (hasSupplementary ?
+                            new NotBehindS(head, info.maxLength,
+                                info.minLength) :
+                            new NotBehind(head, info.maxLength,
+                                info.minLength));
+                    }
+                    // clear all top-closure-nodes inside lookbehind
+                    if (saveTCNCount < topClosureNodes.size())
+                        topClosureNodes.subList(saveTCNCount, topClosureNodes.size()).clear();
                 }
-                if (ch != ':') {
-                    throw error("Unknown inline modifier");
+                case '$', '@' -> throw error("Unknown group type");
+                default -> {    // (?xxx:) inlined match flags
+                    unread();
+                    addFlag();
+                    ch = read();
+                    if (ch == ')') {
+                        return null;    // Inline modifier only
+                    }
+                    if (ch != ':') {
+                        throw error("Unknown inline modifier");
+                    }
+                    head = createGroup(true);
+                    tail = root;
+                    head.next = expr(tail);
                 }
-                head = createGroup(true);
-                tail = root;
-                head.next = expr(tail);
-                break;
             }
         } else { // (xxx) a regular group
             capturingGroup = true;
@@ -3079,8 +3069,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         if (saveTCNCount < topClosureNodes.size())
             topClosureNodes.subList(saveTCNCount, topClosureNodes.size()).clear();
 
-        if (node instanceof Ques) {
-            Ques ques = (Ques) node;
+        if (node instanceof Ques ques) {
             if (ques.type == Qtype.POSSESSIVE) {
                 root = node;
                 return node;
@@ -3094,8 +3083,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             }
             root = tail;
             return head;
-        } else if (node instanceof Curly) {
-            Curly curly = (Curly) node;
+        } else if (node instanceof Curly curly) {
             if (curly.type == Qtype.POSSESSIVE) {
                 root = node;
                 return node;

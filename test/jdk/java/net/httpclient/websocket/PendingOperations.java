@@ -21,15 +21,19 @@
  * questions.
  */
 
-import org.testng.annotations.AfterTest;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.DataProvider;
 
 import java.io.IOException;
+import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BooleanSupplier;
+
+import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.newBuilder;
 
 /* Common infrastructure for tests that check pending operations */
 public class PendingOperations {
@@ -45,8 +49,15 @@ public class PendingOperations {
     DummyWebSocketServer server;
     WebSocket webSocket;
 
-    @AfterTest
+    protected HttpClient httpClient() {
+        return newBuilder().proxy(NO_PROXY).build();
+    }
+
+    @AfterMethod
     public void cleanup() {
+        // make sure we have a trace both on System.out and System.err
+        // to help with diagnosis.
+        System.out.println("cleanup: Closing server");
         System.err.println("cleanup: Closing server");
         server.close();
         webSocket.abort();
@@ -81,8 +92,8 @@ public class PendingOperations {
 
     private static final int ITERATIONS = 3;
 
-    static void repeatable(Callable<Void> callable,
-                           BooleanSupplier repeatCondition)
+    void repeatable(Callable<Void> callable,
+                    BooleanSupplier repeatCondition)
         throws Exception
     {
         int iterations = 0;
@@ -101,10 +112,16 @@ public class PendingOperations {
                 if ((isMac || isWindows) && repeat) {
                     // ## This is loathsome, but necessary because of observed
                     // ## automagic socket buffer resizing on recent macOS platforms
+                    try { cleanup(); } catch (Throwable x) {}
                     continue;
                 } else {
                     throw e;
                 }
+            } finally {
+                // gives some time to gc to cleanup any resource that might
+                // be eligible for garbage collection
+                System.gc();
+                Thread.sleep(100);
             }
         } while (iterations <= ITERATIONS);
     }

@@ -156,7 +156,7 @@ public class DynamicCallSiteDesc {
      *                      to the bootstrap, that would appear in the
      *                      {@code BootstrapMethods} attribute
      * @return the nominal descriptor
-     * @throws NullPointerException if any parameter is null
+     * @throws NullPointerException if the argument or its contents are {@code null}
      */
     public DynamicCallSiteDesc withArgs(ConstantDesc... bootstrapArgs) {
         return new DynamicCallSiteDesc(bootstrapMethod, invocationName, invocationType, bootstrapArgs);

@@ -30,9 +30,9 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  * @requires vm.jvmti
- * @compile --enable-preview -source ${jdk.version} RedefinePermittedSubclass.java
- * @run main/othervm --enable-preview RedefinePermittedSubclass buildagent
- * @run main/othervm/timeout=6000 --enable-preview RedefinePermittedSubclass runtest
+ * @compile RedefinePermittedSubclass.java
+ * @run main/othervm RedefinePermittedSubclass buildagent
+ * @run main/othervm/timeout=6000 RedefinePermittedSubclass runtest
  */
 
 import java.io.FileNotFoundException;
@@ -124,8 +124,7 @@ public class RedefinePermittedSubclass {
         }
         if (argv.length == 1 && argv[0].equals("runtest")) {
             String[] javaArgs1 = { "-XX:MetaspaceSize=12m", "-XX:MaxMetaspaceSize=12m",
-                                   "-javaagent:redefineagent.jar", "--enable-preview",
-                                   "RedefinePermittedSubclass"};
+                                   "-javaagent:redefineagent.jar", "RedefinePermittedSubclass"};
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(javaArgs1);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldNotContain("processing of -javaagent failed");
