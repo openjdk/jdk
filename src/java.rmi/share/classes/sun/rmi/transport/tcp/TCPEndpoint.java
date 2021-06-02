@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,12 +80,14 @@ public class TCPEndpoint implements Endpoint {
     private static boolean localHostKnown;
 
     // this should be a *private* method since it is privileged
+    @SuppressWarnings("removal")
     private static int getInt(String name, int def) {
         return AccessController.doPrivileged(
                 (PrivilegedAction<Integer>) () -> Integer.getInteger(name, def));
     }
 
     // this should be a *private* method since it is privileged
+    @SuppressWarnings("removal")
     private static boolean getBoolean(String name) {
         return AccessController.doPrivileged(
                 (PrivilegedAction<Boolean>) () -> Boolean.getBoolean(name));
@@ -94,6 +96,7 @@ public class TCPEndpoint implements Endpoint {
     /**
      * Returns the value of the java.rmi.server.hostname property.
      */
+    @SuppressWarnings("removal")
     private static String getHostnameProperty() {
         return AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty("java.rmi.server.hostname"));
@@ -760,6 +763,7 @@ public class TCPEndpoint implements Endpoint {
         private void getFQDN() {
 
             /* FQDN finder will run in RMI threadgroup. */
+            @SuppressWarnings("removal")
             Thread t = AccessController.doPrivileged(
                 new NewThreadAction(FQDN.this, "FQDN Finder", true));
             t.start();

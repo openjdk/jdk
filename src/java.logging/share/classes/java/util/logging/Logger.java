@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -634,6 +634,7 @@ public class Logger {
     private static class SystemLoggerHelper {
         static boolean disableCallerCheck = getBooleanProperty("sun.util.logging.disableCallerCheck");
         private static boolean getBooleanProperty(final String key) {
+            @SuppressWarnings("removal")
             String s = AccessController.doPrivileged(new PrivilegedAction<String>() {
                 @Override
                 public String run() {
@@ -2206,6 +2207,7 @@ public class Logger {
                         // unnamed module class loader:
                         PrivilegedAction<ClassLoader> getModuleClassLoader =
                                 () -> callerModule.getClassLoader();
+                        @SuppressWarnings("removal")
                         ClassLoader moduleCL =
                                 AccessController.doPrivileged(getModuleClassLoader);
                         // moduleCL can be null if the logger is created by a class

@@ -26,6 +26,7 @@
 #define SHARE_CDS_HEAPSHARED_INLINE_HPP
 
 #include "cds/heapShared.hpp"
+
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "utilities/align.hpp"

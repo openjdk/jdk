@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@
  * </blockquote>
  *
  * <p>
- * This example would select the <code>&lt;bar&gt;</code> element in
+ * This example would select the {@code <bar>} element in
  * an XML document such as the following:
  *
  * <blockquote>
@@ -98,12 +98,12 @@
  * </pre>
  * </blockquote>
  *
- * <p>The expression <code>/foo/bar</code> is an example of a location
+ * <p>The expression {@code /foo/bar} is an example of a location
  * path. While XPath location paths resemble Unix-style file system
  * paths, an important distinction is that XPath expressions return
  * <em>all</em> nodes that match the expression. Thus, all three
- * <code>&lt;bar&gt;</code> elements in the following document would be
- * selected by the <code>/foo/bar</code> expression:
+ * {@code <bar>} elements in the following document would be
+ * selected by the {@code /foo/bar} expression:
  *
  * <blockquote>
  * <pre>
@@ -116,9 +116,9 @@
  * </blockquote>
  *
  * <p>
- * A special location path operator, <code>//</code>, selects nodes at
+ * A special location path operator, {@code //}, selects nodes at
  * any depth in an XML document. The following example selects all
- * <code>&lt;bar&gt;</code> elements regardless of their location in a
+ * {@code <bar>} elements regardless of their location in a
  * document:
  *
  * <blockquote>
@@ -130,7 +130,7 @@
  * <p>
  * A wildcard operator, *, causes all element nodes to be selected.
  * The following example selects all children elements of a
- * <code>&lt;foo&gt;</code> element:
+ * {@code <foo>} element:
  *
  * <blockquote>
  * <pre>
@@ -158,14 +158,14 @@
  *                 <code>/foo/bar/<strong>@id</strong></code>
  *             </th>
  *             <td>
- *                 Selects the attribute <code>id</code> of the <code>&lt;bar&gt;</code> element
+ *                 Selects the attribute {@code id} of the {@code <bar>} element
  *             </td>
  *         </tr>
  *         <tr>
  *             <th scope="row"><code>/foo/bar/<strong>text()</strong></code>
  *             </th>
  *             <td>
- *                 Selects the text nodes of the <code>&lt;bar&gt;</code> element. No
+ *                 Selects the text nodes of the {@code <bar>} element. No
  *                 distinction is made between escaped and non-escaped character data.
  *             </td>
  *         </tr>
@@ -173,7 +173,7 @@
  *             <th scope="row"><code>/foo/bar/<strong>comment()</strong></code>
  *             </th>
  *             <td>
- *                 Selects all comment nodes contained in the <code>&lt;bar&gt;</code> element.
+ *                 Selects all comment nodes contained in the {@code <bar>} element.
  *             </td>
  *         </tr>
  *         <tr>
@@ -181,7 +181,7 @@
  *             </th>
  *             <td>
  *                 Selects all processing-instruction nodes contained in the
- *                 <code>&lt;bar&gt;</code> element.
+ *                 {@code <bar>} element.
  *             </td>
  *         </tr>
  *     </tbody>
@@ -191,8 +191,8 @@
  * Predicates allow for refining the nodes selected by an XPath
  * location path. Predicates are of the form
  * <code>[<em>expression</em>]</code>. The following example selects all
- * <code>&lt;foo&gt;</code> elements that contain an <code>include</code>
- * attribute with the value of <code>true</code>:
+ * {@code <foo>} elements that contain an {@code include}
+ * attribute with the value of {@code true}:
  *
  * <blockquote>
  * <pre>
@@ -219,9 +219,9 @@
  * following data types:
  *
  * <ul>
- *     <li><code>Boolean</code></li>
- *     <li><code>Number</code></li>
- *     <li><code>String</code></li>
+ *     <li>{@code Boolean}</li>
+ *     <li>{@code Number}</li>
+ *     <li>{@code String}</li>
  * </ul>
  *
  * <a id="XPath.Datatypes.QName"></a>
@@ -239,55 +239,70 @@
  * <p>
  * The return type is specified by a {@link javax.xml.namespace.QName} parameter
  * in method call used to evaluate the expression, which is either a call to
- * <code>XPathExpression.evalute(...)</code> or <code>XPath.evaluate(...)</code>
+ * {@code XPathExpression.evalute(...)} or {@code XPath.evaluate(...)}
  * methods.
  *
  * <p>
- * When a <code>Boolean</code> return type is requested,
- * <code>Boolean.TRUE</code> is returned if one or more nodes were
- * selected; otherwise, <code>Boolean.FALSE</code> is returned.
+ * When a {@code Boolean} return type is requested,
+ * {@code Boolean.TRUE} is returned if one or more nodes were
+ * selected; otherwise, {@code Boolean.FALSE} is returned.
  *
  * <p>
- * The <code>String</code> return type is a convenience for retrieving
+ * The {@code String} return type is a convenience for retrieving
  * the character data from a text node, attribute node, comment node, or
  * processing-instruction node. When used on an element node, the value
  * of the child text nodes is returned.
  *
  * <p>
- * The <code>Number</code> return type attempts to coalesce the text
- * of a node to a <code>double</code> data type.
+ * The {@code Number} return type attempts to coalesce the text
+ * of a node to a {@code double} data type.
  *
  * <a id="XPath.Datatypes.Class"></a>
  * <h2>3.2 Class types</h2>
  * In addition to the QName types, the XPath API supports the use of Class types
- * through the <code>XPathExpression.evaluteExpression(...)</code> or
- * <code>XPath.evaluateExpression(...)</code> methods.
+ * through the {@code XPathExpression.evaluateExpression(...)} or
+ * {@code XPath.evaluateExpression(...)} methods.
  *
  * The XPath data types are mapped to Class types as follows:
  * <ul>
- *     <li><code>Boolean</code> -- <code>Boolean.class</code></li>
- *     <li><code>Number</code> -- <code>Number.class</code></li>
- *     <li><code>String</code> -- <code>String.class</code></li>
- *     <li><code>Nodeset</code> -- <code>XPathNodes.class</code></li>
- *     <li><code>Node</code> -- <code>Node.class</code></li>
+ *     <li>{@code Boolean} -- {@code Boolean.class}</li>
+ *     <li>{@code Number} -- {@code Number.class}</li>
+ *     <li>{@code String} -- {@code String.class}</li>
+ *     <li>{@code Nodeset} -- {@code XPathNodes.class}</li>
+ *     <li>{@code Node} -- {@code Node.class}</li>
  * </ul>
  *
  * <p>
- * Of the subtypes of Number, only Double, Integer and Long are supported.
+ * Of the subtypes of {@code Number}, only {@code Double, Integer} and {@code Long} are supported.
  *
  * <a id="XPath.Datatypes.Enum"></a>
  * <h2>3.3 Enum types</h2>
  * Enum types are defined in {@link javax.xml.xpath.XPathEvaluationResult.XPathResultType}
  * that provide mappings between the QName and Class types above. The result of
- * evaluating an expression using the <code>XPathExpression.evaluteExpression(...)</code>
- * or <code>XPath.evaluateExpression(...)</code> methods will be of one of these types.
+ * evaluating an expression using the {@code XPathExpression.evaluateExpression(...)}
+ * or {@code XPath.evaluateExpression(...)} methods will be of one of these types.
+ * <p>
+ * Note the differences between the Enum and <a href="#XPath.Datatypes.QName">QName</a>
+ * mappings:
+ * <ul>
+ * <li>{@link javax.xml.xpath.XPathConstants#NUMBER NUMBER}<br>
+ * The Enum mapping for {@link javax.xml.xpath.XPathConstants#NUMBER NUMBER}
+ * supports {@code Double, Integer} and {@code Long}.<br><br>
+ * </li>
+ * <li>{@link javax.xml.xpath.XPathConstants#NODESET NODESET}<br>
+ * The Enum mapping for {@link javax.xml.xpath.XPathConstants#NODESET NODESET}
+ * is {@link javax.xml.xpath.XPathNodes XPathNodes} instead of
+ * {@link org.w3c.dom.NodeList NodeList} in the
+ * <a href="#XPath.Datatypes.QName">QName</a> mapping.
+ * </li>
+ * </ul>
  *
  * <a id="XPath.Context"></a>
  * <h2>4. XPath Context</h2>
  *
  * <p>
  * XPath location paths may be relative to a particular node in the
- * document, known as the <code>context</code>. A context consists of:
+ * document, known as the {@code context}. A context consists of:
  * <ul>
  *     <li>a node (the context node)</li>
  *     <li>a pair of non-zero positive integers (the context position and the context size)</li>
@@ -316,7 +331,7 @@
  * </blockquote>
  *
  * <p>
- * The <code>&lt;widget&gt;</code> element can be selected with the following process:
+ * The {@code <widget>} element can be selected with the following process:
  *
  * <blockquote>
  * <pre>
@@ -335,9 +350,9 @@
  * </blockquote>
  *
  * <p>
- * With a reference to the <code>&lt;widget&gt;</code> element, a
+ * With a reference to the {@code <widget>} element, a
  * relative XPath expression can be written to select the
- * <code>&lt;manufacturer&gt;</code> child element:
+ * {@code <manufacturer>} child element:
  *
  * <blockquote>
  * <pre>
@@ -363,7 +378,7 @@
  *     NodeList nodes = (NodeList) xpath.evaluate(expression, inputSource, XPathConstants.NODESET);
  *
  *     //or using the evaluateExpression method
- *     XPathNodes nodes = xpath.evaluate(expression, inputSource, XPathNodes.class);
+ *     XPathNodes nodes = xpath.evaluateExpression(expression, inputSource, XPathNodes.class);
  * </pre>
  * </blockquote>
  *
@@ -390,7 +405,7 @@
  * {@code evaluateExpression} method such as the following code:
  * <blockquote>
  * <pre>
- *     int count = xpath.evaluate("count(/widgets/widget)", document, Integer.class);
+ *     int count = xpath.evaluateExpression("count(/widgets/widget)", document, Integer.class);
  * </pre>
  * </blockquote>
  *

@@ -1195,6 +1195,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             this.engine = engineInstance;
         }
 
+        @SuppressWarnings("removal")
         @Override
         public void run() {
             engine.engineLock.lock();

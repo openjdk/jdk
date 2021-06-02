@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@ import java.security.ProtectionDomain;
  * @author  Ann Wollrath
  * @author  Peter Jones
  */
+@SuppressWarnings("removal")
 final class DGCClient {
 
     /** next sequence number for DGC calls (access synchronized on class) */

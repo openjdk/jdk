@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZATTACHEDARRAY_INLINE_HPP
 
 #include "gc/z/zAttachedArray.hpp"
+
 #include "memory/allocation.hpp"
 #include "utilities/align.hpp"
 

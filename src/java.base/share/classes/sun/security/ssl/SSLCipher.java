@@ -415,6 +415,7 @@ enum SSLCipher {
 
     static  {
         final long max = 4611686018427387904L; // 2^62
+        @SuppressWarnings("removal")
         String prop = AccessController.doPrivileged(
                 new PrivilegedAction<String>() {
             @Override
