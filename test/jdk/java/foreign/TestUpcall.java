@@ -92,7 +92,7 @@ public class TestUpcall extends CallGeneratorHelper {
     public void testUpcalls(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> returnChecks = new ArrayList<>();
         List<Consumer<Object[]>> argChecks = new ArrayList<>();
-        MemoryAddress addr = lookup.lookup(fName).get();
+        MemoryAddress addr = LOOKUP.lookup(fName).get();
         MethodType mtype = methodType(ret, paramTypes, fields);
         try (NativeScope scope = new NativeScope()) {
             MethodHandle mh = abi.downcallHandle(addr, scope, mtype, function(ret, paramTypes, fields));
@@ -110,7 +110,7 @@ public class TestUpcall extends CallGeneratorHelper {
     public void testUpcallsNoScope(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> returnChecks = new ArrayList<>();
         List<Consumer<Object[]>> argChecks = new ArrayList<>();
-        MemoryAddress addr = lookup.lookup(fName).get();
+        MemoryAddress addr = LOOKUP.lookup(fName).get();
         MethodType mtype = methodType(ret, paramTypes, fields);
         MethodHandle mh = abi.downcallHandle(addr, IMPLICIT_ALLOCATOR, mtype, function(ret, paramTypes, fields));
         Object[] args = makeArgs(ResourceScope.newImplicitScope(), ret, paramTypes, fields, returnChecks, argChecks);

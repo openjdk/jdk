@@ -417,11 +417,11 @@ public class SharedUtils {
 
         private static final CLinker SYS_LINKER = getSystemLinker();
 
-        static final MethodHandle MH_MALLOC = linker.downcallHandle(CLinker.systemLookup().lookup("malloc").get(),
+        static final MethodHandle MH_MALLOC = SYS_LINKER.downcallHandle(CLinker.systemLookup().lookup("malloc").get(),
                         MethodType.methodType(MemoryAddress.class, long.class),
                 FunctionDescriptor.of(C_POINTER, C_LONG_LONG));
 
-        static final MethodHandle MH_FREE = linker.downcallHandle(CLinker.systemLookup().lookup("free").get(),
+        static final MethodHandle MH_FREE = SYS_LINKER.downcallHandle(CLinker.systemLookup().lookup("free").get(),
                         MethodType.methodType(void.class, MemoryAddress.class),
                 FunctionDescriptor.ofVoid(C_POINTER));
     }

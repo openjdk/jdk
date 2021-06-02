@@ -115,7 +115,7 @@ public sealed interface CLinker permits AbstractCLinker {
      * Returns the C linker for the current platform.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
@@ -135,7 +135,7 @@ public sealed interface CLinker permits AbstractCLinker {
      * available for lookup is unspecified, as it depends on the platform and on the operating system.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      * @return a system-specific library lookup which is suitable to find symbols in the standard C libraries.
@@ -157,14 +157,14 @@ public sealed interface CLinker permits AbstractCLinker {
      * an additional prefix parameter, of type {@link SegmentAllocator}, which will be used by the linker runtime
      * to allocate structs returned by-value.
      *
-     * @see SymbolLookup
-     *
      * @param symbol   downcall symbol.
      * @param type     the method type.
      * @param function the function descriptor.
      * @return the downcall method handle.
      * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch, or if the symbol
      *                                  is {@link MemoryAddress#NULL}
+     *
+     * @see SymbolLookup
      */
     MethodHandle downcallHandle(Addressable symbol, MethodType type, FunctionDescriptor function);
 
@@ -175,8 +175,6 @@ public sealed interface CLinker permits AbstractCLinker {
      * If the provided method type's return type is {@code MemorySegment}, then the provided allocator will be used by
      * the linker runtime to allocate structs returned by-value.
      *
-     * @see SymbolLookup
-     *
      * @param symbol    downcall symbol.
      * @param allocator the segment allocator.
      * @param type      the method type.
@@ -184,6 +182,8 @@ public sealed interface CLinker permits AbstractCLinker {
      * @return the downcall method handle.
      * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch, or if the symbol
      *                                  is {@link MemoryAddress#NULL}
+     *
+     * @see SymbolLookup
      */
     MethodHandle downcallHandle(Addressable symbol, SegmentAllocator allocator, MethodType type, FunctionDescriptor function);
 
@@ -200,12 +200,12 @@ public sealed interface CLinker permits AbstractCLinker {
      * The returned method handle will throw an {@link IllegalArgumentException} if the target address passed to it is
      * {@link MemoryAddress#NULL}, or a {@link NullPointerException} if the target address is {@code null}.
      *
-     * @see SymbolLookup
-     *
      * @param type     the method type.
      * @param function the function descriptor.
      * @return the downcall method handle.
      * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch.
+     *
+     * @see SymbolLookup
      */
     MethodHandle downcallHandle(MethodType type, FunctionDescriptor function);
 
@@ -364,7 +364,7 @@ public sealed interface CLinker permits AbstractCLinker {
      * over the decoding process is required.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
@@ -391,7 +391,7 @@ public sealed interface CLinker permits AbstractCLinker {
      * over the decoding process is required.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
@@ -465,7 +465,7 @@ public sealed interface CLinker permits AbstractCLinker {
      * Allocates memory of given size using malloc.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
@@ -491,7 +491,7 @@ public sealed interface CLinker permits AbstractCLinker {
      * Frees the memory pointed by the given memory address.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
@@ -647,7 +647,7 @@ public sealed interface CLinker permits AbstractCLinker {
          * backed by the {@linkplain ResourceScope#globalScope() global} resource scope.
          * <p>
          * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-         * Restricted method are unsafe, and, if used incorrectly, their use might crash
+         * Restricted methods are unsafe, and, if used incorrectly, their use might crash
          * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
          * restricted methods, and use safe and supported functionalities, where possible.
          *
@@ -668,7 +668,7 @@ public sealed interface CLinker permits AbstractCLinker {
          * with given resource scope.
          * <p>
          * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-         * Restricted method are unsafe, and, if used incorrectly, their use might crash
+         * Restricted methods are unsafe, and, if used incorrectly, their use might crash
          * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
          * restricted methods, and use safe and supported functionalities, where possible.
          *

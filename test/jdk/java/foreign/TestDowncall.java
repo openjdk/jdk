@@ -62,7 +62,7 @@ public class TestDowncall extends CallGeneratorHelper {
     @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
     public void testDowncall(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> checks = new ArrayList<>();
-        MemoryAddress addr = lookup.lookup(fName).get();
+        MemoryAddress addr = LOOKUP.lookup(fName).get();
         MethodType mt = methodType(ret, paramTypes, fields);
         FunctionDescriptor descriptor = function(ret, paramTypes, fields);
         Object[] args = makeArgs(paramTypes, fields, checks);
@@ -89,7 +89,7 @@ public class TestDowncall extends CallGeneratorHelper {
     @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
     public void testDowncallNoScope(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> checks = new ArrayList<>();
-        MemoryAddress addr = lookup.lookup(fName).get();
+        MemoryAddress addr = LOOKUP.lookup(fName).get();
         MethodType mt = methodType(ret, paramTypes, fields);
         FunctionDescriptor descriptor = function(ret, paramTypes, fields);
         Object[] args = makeArgs(paramTypes, fields, checks);

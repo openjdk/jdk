@@ -51,7 +51,7 @@ public class TestIllegalLink {
     @Test(dataProvider = "types")
     public void testTypeMismatch(MethodType mt, FunctionDescriptor desc, String expectedExceptionMessage) {
         try {
-            ABI.downcallHandle(dummyTarget, mt, desc);
+            ABI.downcallHandle(DUMMY_TARGET, mt, desc);
             fail("Expected IllegalArgumentException was not thrown");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains(expectedExceptionMessage));

@@ -58,7 +58,7 @@ public interface SymbolLookup {
      * (that is, libraries loaded using {@link System#loadLibrary} or {@link System#load}).
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted method are unsafe, and, if used incorrectly, their use might crash
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *

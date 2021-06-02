@@ -101,7 +101,7 @@ public class TestVarArgs {
 
             MethodType mt = MethodType.methodType(void.class, carriers);
 
-            MethodHandle downcallHandle = abi.downcallHandle(varargsAddr, mt, desc);
+            MethodHandle downcallHandle = abi.downcallHandle(VARARGS_ADDR, mt, desc);
 
             List<Object> argValues = new ArrayList<>();
             argValues.add(callInfoPtr); // call info

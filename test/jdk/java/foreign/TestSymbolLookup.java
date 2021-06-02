@@ -51,17 +51,17 @@ public class TestSymbolLookup {
 
     @Test
     public void testSimpleLookup() {
-        assertFalse(lookup.lookup("f").isEmpty());
+        assertFalse(LOOKUP.lookup("f").isEmpty());
     }
 
     @Test
     public void testInvalidSymbolLookup() {
-        assertTrue(lookup.lookup("nonExistent").isEmpty());
+        assertTrue(LOOKUP.lookup("nonExistent").isEmpty());
     }
 
     @Test
     public void testVariableSymbolLookup() {
-        MemorySegment segment = lookup.lookup("c").get().asSegment(MemoryLayouts.JAVA_INT.byteSize(), ResourceScope.globalScope());
+        MemorySegment segment = LOOKUP.lookup("c").get().asSegment(MemoryLayouts.JAVA_INT.byteSize(), ResourceScope.globalScope());
         assertEquals(MemoryAccess.getInt(segment), 42);
     }
 }
