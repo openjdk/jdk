@@ -167,6 +167,9 @@ void JfrContext::walk_snapshot_callback(jlong callback, jlong name, jlong value)
 
 bool JfrContext::record_safe(JavaThread* thread, int skip) {
   assert(thread == Thread::current(), "Thread context needs to be accessible");
+  if (thread->thread_state() != _thread_in_vm) {
+    return false;
+  }
   assert(_recordingContext_klass != NULL, "invariant");
   assert(_recordingContext_walkSnapshot_method != NULL, "invariant");
   assert(_recordingContext_walkSnapshot_signature != NULL, "invariant");

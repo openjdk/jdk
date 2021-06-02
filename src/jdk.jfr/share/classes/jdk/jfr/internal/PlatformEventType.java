@@ -77,7 +77,7 @@ public final class PlatformEventType extends Type {
         this.isMethodSampling = isJVM && (name.equals(Type.EVENT_NAME_PREFIX + "ExecutionSample") || name.equals(Type.EVENT_NAME_PREFIX + "NativeMethodSample"));
         this.isJDK = isJDK;
         this.stackTraceOffset = stackTraceOffset(name, isJDK);
-        this.contextOffset = contextOffset(name, isJDK);
+        this.contextOffset = stackTraceOffset + 1;
     }
 
     private static boolean isExceptionEvent(String name) {
@@ -111,10 +111,6 @@ public final class PlatformEventType extends Type {
             }
         }
         return 4;
-    }
-
-    private static int contextOffset(String name, boolean isJDK) {
-        return stackTraceOffset(name, isJDK) + 1;
     }
 
     public void add(SettingDescriptor settingDescriptor) {

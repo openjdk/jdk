@@ -49,7 +49,7 @@ public final class RecordedContext extends RecordedObject {
      */
     @SuppressWarnings("unchecked")
     public List<RecordedContextEntry> getContextEntries() {
-        Object[] array = getTyped("contextentries", Object[].class, null);
+        Object[] array = getTyped("entries", Object[].class, null);
         if (array == null) {
             return new ArrayList<>(0);
         }
