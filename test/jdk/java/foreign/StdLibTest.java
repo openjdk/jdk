@@ -155,7 +155,7 @@ public class StdLibTest {
 
     static class StdLibHelper {
 
-        final static SymbolLookup LOOKUP;
+        static final SymbolLookup LOOKUP;
 
         static {
             System.loadLibrary("StdLib");
