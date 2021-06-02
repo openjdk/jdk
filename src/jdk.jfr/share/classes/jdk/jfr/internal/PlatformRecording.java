@@ -166,7 +166,6 @@ public final class PlatformRecording implements AutoCloseable {
             recorder.stop(this);
             String endText = reason == null ? "" : ". Reason \"" + reason + "\".";
             Logger.log(LogTag.JFR, LogLevel.INFO, "Stopped recording \"" + getName() + "\" (" + getId() + ")" + endText);
-            this.stopTime = Instant.now();
             newState = getState();
         }
         WriteableUserPath dest = getDestination();
@@ -317,10 +316,10 @@ public final class PlatformRecording implements AutoCloseable {
         }
         RecordingState state = getState();
         if (state == RecordingState.CLOSED) {
-            throw new IOException("Recording \"" + name + "\" (id=" + id + ") has been closed, no contents to write");
+            throw new IOException("Recording \"" + name + "\" (id=" + id + ") has been closed, no content to write");
         }
         if (state == RecordingState.DELAYED || state == RecordingState.NEW) {
-            throw new IOException("Recording \"" + name + "\" (id=" + id + ") has not started, no contents to write");
+            throw new IOException("Recording \"" + name + "\" (id=" + id + ") has not started, no content to write");
         }
         if (state == RecordingState.STOPPED) {
             PlatformRecording clone = recorder.newTemporaryRecording();
