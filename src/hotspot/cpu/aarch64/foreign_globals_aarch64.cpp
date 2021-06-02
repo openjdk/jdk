@@ -84,3 +84,8 @@ const BufferLayout ForeignGlobals::parse_buffer_layout_impl(jobject jlayout) con
 
   return layout;
 }
+
+const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
+  ShouldNotCallThis();
+  return {};
+}

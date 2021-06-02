@@ -881,6 +881,14 @@ final class $vectortype$ extends $abstractvectortype$ {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public $masktype$ eq(VectorMask<$Boxtype$> mask) {
+            Objects.requireNonNull(mask);
+            $masktype$ m = ($masktype$)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override

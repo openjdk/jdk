@@ -138,6 +138,11 @@ a .inline.hpp file.
 * .inline.hpp files should only be included in .cpp or .inline.hpp
 files.
 
+* All .inline.hpp files should include their corresponding .hpp file as
+the first include line. Declarations needed by other files should be put
+in the .hpp file, and not in the .inline.hpp file. This rule exists to
+resolve problems with circular dependencies between .inline.hpp files.
+
 * All .cpp files include precompiled.hpp as the first include line.
 
 * precompiled.hpp is just a build time optimization, so don't rely on

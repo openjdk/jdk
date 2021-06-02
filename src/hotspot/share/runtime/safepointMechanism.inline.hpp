@@ -25,8 +25,9 @@
 #ifndef SHARE_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
 #define SHARE_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP
 
-#include "runtime/atomic.hpp"
 #include "runtime/safepointMechanism.hpp"
+
+#include "runtime/atomic.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 

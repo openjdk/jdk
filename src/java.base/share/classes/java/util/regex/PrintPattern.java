@@ -76,23 +76,23 @@ class PrintPattern {
     }
 
     private static String toStringCtype(int type) {
-        switch(type) {
-        case UPPER:  return "ASCII.UPPER";
-        case LOWER:  return "ASCII.LOWER";
-        case DIGIT:  return "ASCII.DIGIT";
-        case SPACE:  return "ASCII.SPACE";
-        case PUNCT:  return "ASCII.PUNCT";
-        case CNTRL:  return "ASCII.CNTRL";
-        case BLANK:  return "ASCII.BLANK";
-        case UNDER:  return "ASCII.UNDER";
-        case ASCII:  return "ASCII.ASCII";
-        case ALPHA:  return "ASCII.ALPHA";
-        case ALNUM:  return "ASCII.ALNUM";
-        case GRAPH:  return "ASCII.GRAPH";
-        case WORD:   return "ASCII.WORD";
-        case XDIGIT: return "ASCII.XDIGIT";
-        default: return "ASCII ?";
-        }
+        return switch (type) {
+            case UPPER  -> "ASCII.UPPER";
+            case LOWER  -> "ASCII.LOWER";
+            case DIGIT  -> "ASCII.DIGIT";
+            case SPACE  -> "ASCII.SPACE";
+            case PUNCT  -> "ASCII.PUNCT";
+            case CNTRL  -> "ASCII.CNTRL";
+            case BLANK  -> "ASCII.BLANK";
+            case UNDER  -> "ASCII.UNDER";
+            case ASCII  -> "ASCII.ASCII";
+            case ALPHA  -> "ASCII.ALPHA";
+            case ALNUM  -> "ASCII.ALNUM";
+            case GRAPH  -> "ASCII.GRAPH";
+            case WORD   -> "ASCII.WORD";
+            case XDIGIT -> "ASCII.XDIGIT";
+            default     -> "ASCII ?";
+        };
     }
 
     private static String toString(Pattern.Node node) {

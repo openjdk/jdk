@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,10 +190,12 @@ public abstract class Configuration {
 
     private static Configuration configuration;
 
+    @SuppressWarnings("removal")
     private final java.security.AccessControlContext acc =
             java.security.AccessController.getContext();
 
     private static void checkPermission(String type) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new AuthPermission
@@ -220,6 +222,7 @@ public abstract class Configuration {
      *
      * @see #setConfiguration
      */
+    @SuppressWarnings("removal")
     public static Configuration getConfiguration() {
 
         SecurityManager sm = System.getSecurityManager();
@@ -296,6 +299,7 @@ public abstract class Configuration {
      * @see #getConfiguration
      */
     public static void setConfiguration(Configuration configuration) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(new AuthPermission("setLoginConfiguration"));

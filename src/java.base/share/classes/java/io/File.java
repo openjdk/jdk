@@ -770,6 +770,7 @@ public class File
      *          method denies read access to the file
      */
     public boolean canRead() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(path);
@@ -798,6 +799,7 @@ public class File
      *          method denies write access to the file
      */
     public boolean canWrite() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkWrite(path);
@@ -821,6 +823,7 @@ public class File
      *          method denies read access to the file or directory
      */
     public boolean exists() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(path);
@@ -851,6 +854,7 @@ public class File
      *          method denies read access to the file
      */
     public boolean isDirectory() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(path);
@@ -883,6 +887,7 @@ public class File
      *          method denies read access to the file
      */
     public boolean isFile() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(path);
@@ -912,6 +917,7 @@ public class File
      * @since 1.2
      */
     public boolean isHidden() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(path);
@@ -955,6 +961,7 @@ public class File
      *          method denies read access to the file
      */
     public long lastModified() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(path);
@@ -986,6 +993,7 @@ public class File
      *          method denies read access to the file
      */
     public long length() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(path);
@@ -1026,6 +1034,7 @@ public class File
      * @since 1.2
      */
     public boolean createNewFile() throws IOException {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) security.checkWrite(path);
         if (isInvalid()) {
@@ -1053,6 +1062,7 @@ public class File
      *          delete access to the file
      */
     public boolean delete() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkDelete(path);
@@ -1091,6 +1101,7 @@ public class File
      * @since 1.2
      */
     public void deleteOnExit() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkDelete(path);
@@ -1154,6 +1165,7 @@ public class File
      *          the directory
      */
     private final String[] normalizedList() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(path);
@@ -1356,6 +1368,7 @@ public class File
      *          method does not permit the named directory to be created
      */
     public boolean mkdir() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkWrite(path);
@@ -1438,6 +1451,7 @@ public class File
         if (dest == null) {
             throw new NullPointerException();
         }
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkWrite(path);
@@ -1477,6 +1491,7 @@ public class File
      */
     public boolean setLastModified(long time) {
         if (time < 0) throw new IllegalArgumentException("Negative time");
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkWrite(path);
@@ -1507,6 +1522,7 @@ public class File
      * @since 1.2
      */
     public boolean setReadOnly() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkWrite(path);
@@ -1550,6 +1566,7 @@ public class File
      * @since 1.6
      */
     public boolean setWritable(boolean writable, boolean ownerOnly) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkWrite(path);
@@ -1628,6 +1645,7 @@ public class File
      * @since 1.6
      */
     public boolean setReadable(boolean readable, boolean ownerOnly) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkWrite(path);
@@ -1709,6 +1727,7 @@ public class File
      * @since 1.6
      */
     public boolean setExecutable(boolean executable, boolean ownerOnly) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkWrite(path);
@@ -1772,6 +1791,7 @@ public class File
      * @since 1.6
      */
     public boolean canExecute() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkExec(path);
@@ -1854,6 +1874,7 @@ public class File
      * @see FileStore#getTotalSpace
      */
     public long getTotalSpace() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("getFileSystemAttributes"));
@@ -1897,6 +1918,7 @@ public class File
      * @see FileStore#getUnallocatedSpace
      */
     public long getFreeSpace() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("getFileSystemAttributes"));
@@ -1943,6 +1965,7 @@ public class File
      * @see FileStore#getUsableSpace
      */
     public long getUsableSpace() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("getFileSystemAttributes"));
@@ -1977,6 +2000,7 @@ public class File
             }
             return subNameLength;
         }
+        @SuppressWarnings("removal")
         static File generateFile(String prefix, String suffix, File dir)
             throws IOException
         {
@@ -2125,6 +2149,7 @@ public class File
 
         File tmpdir = (directory != null) ? directory
                                           : TempDirectory.location();
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         File f;
         do {
@@ -2196,8 +2221,8 @@ public class File
     /**
      * Compares two abstract pathnames lexicographically.  The ordering
      * defined by this method depends upon the underlying system.  On UNIX
-     * systems, alphabetic case is significant in comparing pathnames; on Microsoft Windows
-     * systems it is not.
+     * systems, alphabetic case is significant in comparing pathnames; on
+     * Microsoft Windows systems it is not.
      *
      * @param   pathname  The abstract pathname to be compared to this abstract
      *                    pathname
@@ -2217,16 +2242,23 @@ public class File
     /**
      * Tests this abstract pathname for equality with the given object.
      * Returns {@code true} if and only if the argument is not
-     * {@code null} and is an abstract pathname that denotes the same file
-     * or directory as this abstract pathname.  Whether or not two abstract
-     * pathnames are equal depends upon the underlying system.  On UNIX
-     * systems, alphabetic case is significant in comparing pathnames; on Microsoft Windows
-     * systems it is not.
+     * {@code null} and is an abstract pathname that is the same as this
+     * abstract pathname.  Whether or not two abstract
+     * pathnames are equal depends upon the underlying operating system.
+     * On UNIX systems, alphabetic case is significant in comparing pathnames;
+     * on Microsoft Windows systems it is not.
+     *
+     * @apiNote This method only tests whether the abstract pathnames are equal;
+     *          it does not access the file system and the file is not required
+     *          to exist.
      *
      * @param   obj   The object to be compared with this abstract pathname
      *
      * @return  {@code true} if and only if the objects are the same;
      *          {@code false} otherwise
+     *
+     * @see #compareTo(File)
+     * @see java.nio.file.Files#isSameFile(Path,Path)
      */
     public boolean equals(Object obj) {
         if (obj instanceof File file) {

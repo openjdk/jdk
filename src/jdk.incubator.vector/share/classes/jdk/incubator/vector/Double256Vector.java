@@ -610,6 +610,14 @@ final class Double256Vector extends DoubleVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Double256Mask eq(VectorMask<Double> mask) {
+            Objects.requireNonNull(mask);
+            Double256Mask m = (Double256Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override

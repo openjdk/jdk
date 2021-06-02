@@ -1103,6 +1103,7 @@ public final class Locale implements Cloneable, Serializable {
         if (newLocale == null)
             throw new NullPointerException("Can't set default locale to NULL");
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(new PropertyPermission
                         ("user.language", "write"));
@@ -2257,23 +2258,20 @@ public final class Locale implements Cloneable, Serializable {
             return Arrays.stream(stringList).collect(Collectors.joining(","));
         }
 
-        switch (stringList.length) {
-            case 0:
-                return "";
-            case 1:
-                return stringList[0];
-            default:
-                return Arrays.stream(stringList).reduce("",
-                    (s1, s2) -> {
-                        if (s1.isEmpty()) {
-                            return s2;
-                        }
-                        if (s2.isEmpty()) {
-                            return s1;
-                        }
-                        return MessageFormat.format(pattern, s1, s2);
-                    });
-        }
+        return switch (stringList.length) {
+            case 0 -> "";
+            case 1 -> stringList[0];
+            default -> Arrays.stream(stringList).reduce("",
+                (s1, s2) -> {
+                    if (s1.isEmpty()) {
+                        return s2;
+                    }
+                    if (s2.isEmpty()) {
+                        return s1;
+                    }
+                    return MessageFormat.format(pattern, s1, s2);
+                });
+        };
     }
 
     // Duplicate of sun.util.locale.UnicodeLocaleExtension.isKey in order to

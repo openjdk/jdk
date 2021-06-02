@@ -26,6 +26,7 @@
 #define SHARE_GC_PARALLEL_PSPROMOTIONLAB_INLINE_HPP
 
 #include "gc/parallel/psPromotionLAB.hpp"
+
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "utilities/align.hpp"
 
