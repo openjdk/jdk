@@ -600,6 +600,14 @@ final class Long128Vector extends LongVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Long128Mask eq(VectorMask<Long> mask) {
+            Objects.requireNonNull(mask);
+            Long128Mask m = (Long128Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override

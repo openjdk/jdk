@@ -608,6 +608,14 @@ final class ByteMaxVector extends ByteVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public ByteMaxMask eq(VectorMask<Byte> mask) {
+            Objects.requireNonNull(mask);
+            ByteMaxMask m = (ByteMaxMask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
