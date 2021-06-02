@@ -188,6 +188,56 @@ public class VectorizedMismatchTest {
 
     /* ==================================================================================== */
 
+    static class ClassInitTest {
+        static final int LENGTH = 64;
+        static final int RESULT;
+        static {
+            byte[] arr1 = new byte[LENGTH];
+            byte[] arr2 = new byte[LENGTH];
+            for (int i = 0; i < 20_000; i++) {
+                test(arr1, arr2);
+            }
+            RESULT = test(arr1, arr2);
+        }
+
+        static int test(byte[] obja, byte[] objb) {
+            long offset = Unsafe.ARRAY_BYTE_BASE_OFFSET;
+            int  scale  = ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE;
+            return ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, LENGTH, scale); // LENGTH is not considered a constant
+        }
+    }
+
+    int testConstantBeingInitialized() {
+        return ClassInitTest.RESULT; // trigger class initialization
+    }
+
+    /* ==================================================================================== */
+
+    int testLoopUnswitch(int length) {
+        long offset = Unsafe.ARRAY_BYTE_BASE_OFFSET;
+        int  scale  = ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE;
+
+        int acc = 0;
+        for (int i = 0; i < 32; i++) {
+            acc += ArraysSupport.vectorizedMismatch(byte_a, offset, byte_b, offset, length, scale);
+        }
+        return acc;
+    }
+
+    int testLoopHoist(int length, int stride) {
+        long offset = Unsafe.ARRAY_BYTE_BASE_OFFSET;
+        int  scale  = ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE;
+
+        int acc = 0;
+
+        for (int i = 0; i < 32; i += stride) {
+            acc += ArraysSupport.vectorizedMismatch(byte_a, offset, byte_b, offset, length, scale);
+        }
+        return acc;
+    }
+
+    /* ==================================================================================== */
+
     public static void main(String[] args) {
         VectorizedMismatchTest t = new VectorizedMismatchTest();
         for (int i = 0; i < 20_000; i++) {
@@ -230,6 +280,9 @@ public class VectorizedMismatchTest {
             t.testDoubleConstantLength1();
             t.testDoubleConstantLength8();
             t.testDoubleConstantLength16();
+
+            t.testLoopUnswitch(32);
+            t.testLoopHoist(128);
         }
     }
 }

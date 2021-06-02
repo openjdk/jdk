@@ -1444,7 +1444,7 @@ void VM_Version::get_processor_features() {
         if (ArrayOperationPartialInlineSize) {
           warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
         } else {
-          warning("Setting ArrayOperationPartialInlineSize as " UINT32_FORMAT, ArrayOperationPartialInlineSize);
+          warning("Setting ArrayOperationPartialInlineSize as " INTX_FORMAT, ArrayOperationPartialInlineSize);
         }
       }
     }
