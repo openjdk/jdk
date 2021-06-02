@@ -72,6 +72,8 @@ import jdk.internal.reflect.Reflection;
 import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.LocaleObjectCache;
+import sun.util.resources.Bundles;
+
 import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
 
 
@@ -1827,19 +1829,13 @@ public abstract class ResourceBundle {
         if (bundle == null && !cacheKey.callerHasProvider()) {
             for (String format : formats) {
                 try {
-                    switch (format) {
-                    case "java.class":
-                        bundle = ResourceBundleProviderHelper
-                            .loadResourceBundle(callerModule, module, baseName, targetLocale);
-
-                        break;
-                    case "java.properties":
-                        bundle = ResourceBundleProviderHelper
-                            .loadPropertyResourceBundle(callerModule, module, baseName, targetLocale);
-                        break;
-                    default:
-                        throw new InternalError("unexpected format: " + format);
-                    }
+                    bundle = switch (format) {
+                      case "java.class" -> ResourceBundleProviderHelper
+                          .loadResourceBundle(callerModule, module, baseName, targetLocale);
+                      case "java.properties" -> ResourceBundleProviderHelper
+                          .loadPropertyResourceBundle(callerModule, module, baseName, targetLocale);
+                      default -> throw new InternalError("unexpected format: " + format);
+                    };
 
                     if (bundle != null) {
                         cacheKey.setFormat(format);
@@ -2914,15 +2910,8 @@ public abstract class ResourceBundle {
                         // Supply script for users who want to use zh_Hans/zh_Hant
                         // as bundle names (recommended for Java7+)
                         switch (region) {
-                        case "TW":
-                        case "HK":
-                        case "MO":
-                            script = "Hant";
-                            break;
-                        case "CN":
-                        case "SG":
-                            script = "Hans";
-                            break;
+                            case "TW", "HK", "MO" -> script = "Hant";
+                            case "CN", "SG"       -> script = "Hans";
                         }
                     }
                 }
@@ -2960,12 +2949,8 @@ public abstract class ResourceBundle {
                             // Supply region(country) for users who still package Chinese
                             // bundles using old convension.
                             switch (script) {
-                                case "Hans":
-                                    region = "CN";
-                                    break;
-                                case "Hant":
-                                    region = "TW";
-                                    break;
+                                case "Hans" -> region = "CN";
+                                case "Hant" -> region = "TW";
                             }
                         }
                     }
@@ -3098,6 +3083,12 @@ public abstract class ResourceBundle {
          * nor {@code "java.properties"}, an
          * {@code IllegalArgumentException} is thrown.</li>
          *
+         * <li>If the {@code locale}'s language is one of the
+         * <a href="./Locale.html#legacy_language_codes">Legacy language
+         * codes</a>, either old or new, then repeat the loading process
+         * if needed, with the bundle name with the other language.
+         * For example, "iw" for "he" and vice versa.
+         *
          * </ul>
          *
          * @param baseName
@@ -3152,6 +3143,21 @@ public abstract class ResourceBundle {
              * that is visible to the given loader and accessible to the given caller.
              */
             String bundleName = toBundleName(baseName, locale);
+            var bundle = newBundle0(bundleName, format, loader, reload);
+            if (bundle == null) {
+                // Try loading legacy ISO language's other bundles
+                var otherBundleName = Bundles.toOtherBundleName(baseName, bundleName, locale);
+                if (!bundleName.equals(otherBundleName)) {
+                    bundle = newBundle0(otherBundleName, format, loader, reload);
+                }
+            }
+
+            return bundle;
+        }
+
+        private ResourceBundle newBundle0(String bundleName, String format,
+                    ClassLoader loader, boolean reload)
+                    throws IllegalAccessException, InstantiationException, IOException {
             ResourceBundle bundle = null;
             if (format.equals("java.class")) {
                 try {

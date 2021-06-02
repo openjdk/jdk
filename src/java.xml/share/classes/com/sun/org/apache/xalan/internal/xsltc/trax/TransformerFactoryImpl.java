@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,7 +20,7 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
-import com.sun.org.apache.xalan.internal.XalanConstants;
+import jdk.xml.internal.JdkConstants;
 import com.sun.org.apache.xalan.internal.utils.FeaturePropertyBase;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
@@ -71,8 +71,11 @@ import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stax.*;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import jdk.xml.internal.JdkProperty;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.JdkProperty.ImplPropMap;
+import jdk.xml.internal.JdkProperty.State;
 import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.TransformErrorListener;
 import org.xml.sax.InputSource;
@@ -85,7 +88,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Santiago Pericas-Geertsen
- * @LastModified: Aug 2019
+ * @LastModified: May 2021
  */
 public class TransformerFactoryImpl
     extends SAXTransformerFactory implements SourceLoader
@@ -230,18 +233,18 @@ public class TransformerFactoryImpl
      * protocols allowed for external references set by the stylesheet
      * processing instruction, Import and Include element.
      */
-    private String _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+    private String _accessExternalStylesheet = JdkConstants.EXTERNAL_ACCESS_DEFAULT;
      /**
      * protocols allowed for external DTD references in source file and/or stylesheet.
      */
-    private String _accessExternalDTD = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+    private String _accessExternalDTD = JdkConstants.EXTERNAL_ACCESS_DEFAULT;
 
     private XMLSecurityPropertyManager _xmlSecurityPropertyMgr;
     private XMLSecurityManager _xmlSecurityManager;
 
     private final JdkXmlFeatures _xmlFeatures;
 
-    private ClassLoader _extensionClassLoader = null;
+    private JdkProperty<ClassLoader> _extensionClassLoader = null;
 
     // Unmodifiable view of external extension function from xslt compiler
     // It will be populated by user-specified extension functions during the
@@ -257,7 +260,7 @@ public class TransformerFactoryImpl
     String _catalogPrefer = null;
     String _catalogResolve = null;
 
-    int _cdataChunkSize = JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT;
+    int _cdataChunkSize = JdkConstants.CDATA_CHUNK_SIZE_DEFAULT;
 
     /**
      * javax.xml.transform.sax.TransformerFactory implementation.
@@ -282,6 +285,7 @@ public class TransformerFactoryImpl
         _xmlSecurityManager = new XMLSecurityManager(true);
         //Unmodifiable hash map with loaded external extension functions
         _xsltcExtensionFunctions = null;
+        _extensionClassLoader = new JdkProperty<>(ImplPropMap.EXTCLSLOADER, null, State.DEFAULT);
     }
 
     public Map<String, Class<?>> getExternalExtensionsMap() {
@@ -355,10 +359,10 @@ public class TransformerFactoryImpl
               return Boolean.TRUE;
             else
               return Boolean.FALSE;
-        } else if (name.equals(XalanConstants.SECURITY_MANAGER)) {
+        } else if (name.equals(JdkConstants.SECURITY_MANAGER)) {
             return _xmlSecurityManager;
-        } else if (name.equals(XalanConstants.JDK_EXTENSION_CLASSLOADER)) {
-           return _extensionClassLoader;
+        } else if (ImplPropMap.EXTCLSLOADER.is(name)) {
+           return (_extensionClassLoader == null) ? null : _extensionClassLoader.getValue();
         } else if (JdkXmlUtils.CATALOG_FILES.equals(name)) {
             return _catalogFiles;
         } else if (JdkXmlUtils.CATALOG_DEFER.equals(name)) {
@@ -369,7 +373,7 @@ public class TransformerFactoryImpl
             return _catalogResolve;
         } else if (JdkXmlFeatures.CATALOG_FEATURES.equals(name)) {
             return buildCatalogFeatures();
-        } else if (JdkXmlUtils.CDATA_CHUNK_SIZE.equals(name)) {
+        } else if (ImplPropMap.CDATACHUNKSIZE.is(name)) {
             return _cdataChunkSize;
         }
 
@@ -486,9 +490,9 @@ public class TransformerFactoryImpl
                 return;
             }
         }
-        else if ( name.equals(XalanConstants.JDK_EXTENSION_CLASSLOADER)) {
+        else if (ImplPropMap.EXTCLSLOADER.is(name)) {
             if (value instanceof ClassLoader) {
-                _extensionClassLoader = (ClassLoader) value;
+                _extensionClassLoader.setValue(name, (ClassLoader)value, State.APIPROPERTY);
                 return;
             } else {
                 final ErrorMsg err
@@ -511,13 +515,13 @@ public class TransformerFactoryImpl
             _catalogResolve = (String) value;
             cfBuilder = CatalogFeatures.builder().with(Feature.RESOLVE, _catalogResolve);
             return;
-        } else if (JdkXmlUtils.CDATA_CHUNK_SIZE.equals(name)) {
+        } else if (ImplPropMap.CDATACHUNKSIZE.is(name)) {
             _cdataChunkSize = JdkXmlUtils.getValue(value, _cdataChunkSize);
             return;
         }
 
         if (_xmlSecurityManager != null &&
-                _xmlSecurityManager.setLimit(name, XMLSecurityManager.State.APIPROPERTY, value)) {
+                _xmlSecurityManager.setLimit(name, JdkProperty.State.APIPROPERTY, value)) {
             return;
         }
 
@@ -558,6 +562,7 @@ public class TransformerFactoryImpl
      * @throws NullPointerException If the <code>name</code> parameter is null.
      */
     @Override
+    @SuppressWarnings("deprecation")
     public void setFeature(String name, boolean value)
         throws TransformerConfigurationException {
 
@@ -578,9 +583,9 @@ public class TransformerFactoryImpl
             // set external access restriction when FSP is explicitly set
             if (value) {
                 _xmlSecurityPropertyMgr.setValue(Property.ACCESS_EXTERNAL_DTD,
-                        FeaturePropertyBase.State.FSP, XalanConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                        FeaturePropertyBase.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 _xmlSecurityPropertyMgr.setValue(Property.ACCESS_EXTERNAL_STYLESHEET,
-                        FeaturePropertyBase.State.FSP, XalanConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                        FeaturePropertyBase.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 _accessExternalDTD = _xmlSecurityPropertyMgr.getValue(
                         Property.ACCESS_EXTERNAL_DTD);
                 _accessExternalStylesheet = _xmlSecurityPropertyMgr.getValue(
@@ -589,20 +594,19 @@ public class TransformerFactoryImpl
 
             if (value && _xmlFeatures != null) {
                 _xmlFeatures.setFeature(JdkXmlFeatures.XmlFeature.ENABLE_EXTENSION_FUNCTION,
-                        JdkXmlFeatures.State.FSP, false);
+                        JdkProperty.State.FSP, false);
             }
         }
         else {
-            if (name.equals(XalanConstants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
+            if (name.equals(JdkConstants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
                 // for compatibility, in secure mode, useServicesMechanism is determined by the constructor
                 if (_isSecureMode) {
                     return;
                 }
             }
             if (_xmlFeatures != null &&
-                    _xmlFeatures.setFeature(name, JdkXmlFeatures.State.APIPROPERTY, value)) {
-                if (name.equals(JdkXmlUtils.OVERRIDE_PARSER) ||
-                        name.equals(JdkXmlFeatures.ORACLE_FEATURE_SERVICE_MECHANISM)) {
+                    _xmlFeatures.setFeature(name, JdkProperty.State.APIPROPERTY, value)) {
+                if (ImplPropMap.OVERRIDEPARSER.is(name)) {
                     _overrideDefaultParser = _xmlFeatures.getFeature(
                             JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
                 }
@@ -625,6 +629,7 @@ public class TransformerFactoryImpl
      * @return 'true' if feature is supported, 'false' if not
      */
     @Override
+    @SuppressWarnings("deprecation")
     public boolean getFeature(String name) {
         // All supported features should be listed here
         String[] features = {
@@ -638,7 +643,7 @@ public class TransformerFactoryImpl
             StreamResult.FEATURE,
             SAXTransformerFactory.FEATURE,
             SAXTransformerFactory.FEATURE_XMLFILTER,
-            XalanConstants.ORACLE_FEATURE_SERVICE_MECHANISM
+            JdkConstants.ORACLE_FEATURE_SERVICE_MECHANISM
         };
 
         // feature name cannot be null
@@ -966,8 +971,9 @@ public class TransformerFactoryImpl
         if (!_isNotSecureProcessing) xsltc.setSecureProcessing(true);
         xsltc.setProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, _accessExternalStylesheet);
         xsltc.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
-        xsltc.setProperty(XalanConstants.SECURITY_MANAGER, _xmlSecurityManager);
-        xsltc.setProperty(XalanConstants.JDK_EXTENSION_CLASSLOADER, _extensionClassLoader);
+        xsltc.setProperty(JdkConstants.SECURITY_MANAGER, _xmlSecurityManager);
+        xsltc.setProperty(JdkConstants.JDK_EXT_CLASSLOADER,
+                (_extensionClassLoader == null) ? null : _extensionClassLoader.getValue());
 
         // set Catalog features
         buildCatalogFeatures();

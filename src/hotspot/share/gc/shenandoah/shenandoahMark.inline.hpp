@@ -25,10 +25,11 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARK_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARK_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahMark.hpp"
+
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahMark.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"

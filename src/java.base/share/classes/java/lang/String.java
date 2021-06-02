@@ -3239,8 +3239,12 @@ public final class String
      */
     @ForceInline
     static String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
-        int icoder = prefix.coder() | suffix.coder() | delimiter.coder();
-        long len = (long) prefix.length() + suffix.length() + (long) Math.max(0, size - 1) * delimiter.length();
+        int icoder = prefix.coder() | suffix.coder();
+        long len = (long) prefix.length() + suffix.length();
+        if (size > 1) { // when there are more than one element, size - 1 delimiters will be emitted
+            len += (long) (size - 1) * delimiter.length();
+            icoder |= delimiter.coder();
+        }
         // assert len > 0L; // max: (long) Integer.MAX_VALUE << 32
         // following loop wil add max: (long) Integer.MAX_VALUE * Integer.MAX_VALUE to len
         // so len can overflow at most once

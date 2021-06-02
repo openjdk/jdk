@@ -38,7 +38,7 @@ import java.security.spec.X509EncodedKeySpec;
  * @test
  * @bug 8259319
  * @library /test/lib ..
- * @run main/othervm IllegalPackageAccess
+ * @run main/othervm -Djava.security.manager=allow IllegalPackageAccess
  */
 
 public class IllegalPackageAccess extends PKCS11Test {

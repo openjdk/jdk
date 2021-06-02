@@ -28,7 +28,7 @@
  * @summary Check that Process-related classes have the proper
  *     doPrivileged blocks, and can be initialized with an adversarial
  *     security manager.
- * @run main/othervm SecurityManagerClinit
+ * @run main/othervm -Djava.security.manager=allow SecurityManagerClinit
  * @author Martin Buchholz
  */
 

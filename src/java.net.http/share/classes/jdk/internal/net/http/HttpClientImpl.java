@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1286,6 +1286,14 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     int getReceiveBufferSize() {
         return Utils.getIntegerNetProperty(
                 "jdk.httpclient.receiveBufferSize",
+                0 // only set the size if > 0
+        );
+    }
+
+    // used for testing
+    int getSendBufferSize() {
+        return Utils.getIntegerNetProperty(
+                "jdk.httpclient.sendBufferSize",
                 0 // only set the size if > 0
         );
     }

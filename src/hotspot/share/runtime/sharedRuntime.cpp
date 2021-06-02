@@ -986,7 +986,6 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* current, 
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END
 
-
 jlong SharedRuntime::get_java_tid(Thread* thread) {
   if (thread != NULL) {
     if (thread->is_Java_thread()) {

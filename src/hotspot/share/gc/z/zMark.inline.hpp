@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZMARK_INLINE_HPP
 #define SHARE_GC_Z_ZMARK_INLINE_HPP
 
-#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zMark.hpp"
+
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"

@@ -73,7 +73,6 @@ void ConstantPool::copy_fields(const ConstantPool* orig) {
     set_has_dynamic_constant();
   }
 
-  // Copy class version
   set_major_version(orig->major_version());
   set_minor_version(orig->minor_version());
 

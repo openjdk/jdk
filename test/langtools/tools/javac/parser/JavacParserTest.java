@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -1773,6 +1773,27 @@ public class JavacParserTest extends TestCase {
         ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
         MethodTree constr = (MethodTree) clazz.getMembers().get(0);
         assertEquals("expected null as constructor return type", constr.getReturnType(), null);
+    }
+
+    @Test //JDK-8267221
+    void testVarArgArrayParameter() throws IOException {
+        String code = """
+                      package test;
+                      public class Test {
+                           private void test(int[]... p) {}
+                      }
+                      """;
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
+                null, null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
+        MethodTree constr = (MethodTree) clazz.getMembers().get(0);
+        VariableTree param = constr.getParameters().get(0);
+        SourcePositions sp = Trees.instance(ct).getSourcePositions();
+        int typeStart = (int) sp.getStartPosition(cut, param.getType());
+        int typeEnd   = (int) sp.getEndPosition(cut, param.getType());
+        assertEquals("correct parameter type span", code.substring(typeStart, typeEnd), "int[]...");
     }
 
     void run(String[] args) throws Exception {
