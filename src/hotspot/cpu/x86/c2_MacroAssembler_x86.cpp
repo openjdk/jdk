@@ -1923,7 +1923,7 @@ void C2_MacroAssembler::reduce8L(int opcode, Register dst, Register src1, XMMReg
 }
 
 void C2_MacroAssembler::genmask(KRegister dst, Register len, Register temp) {
-  assert(ArrayOperationPartailInlineSize <= 64,"");
+  assert(ArrayOperationPartialInlineSize <= 64,"");
   mov64(temp, -1L);
   bzhiq(temp, temp, len);
   kmovql(dst, temp);

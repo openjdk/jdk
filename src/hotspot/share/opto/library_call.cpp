@@ -5228,16 +5228,16 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   if (scale_val >= 0 && scale_val < 4) {
     BasicType prim_types[] = {T_BYTE, T_SHORT, T_INT, T_LONG};
     BasicType elem_bt = prim_types[scale_val];
-    int vec_len = ArrayOperationPartailInlineSize / type2aelembytes(elem_bt);
+    int vec_len = ArrayOperationPartialInlineSize / type2aelembytes(elem_bt);
 
     // Enable partial in-lining if compare size is less than
-    // ArrayOperationPartailInlineSize(default 32 bytes).
-    // If ArrayOperationPartailInlineSize > 32 in-lining is enabled
+    // ArrayOperationPartialInlineSize(default 32 bytes).
+    // If ArrayOperationPartialInlineSize > 32 in-lining is enabled
     // for all integral types (byte/short/char/int), else for default
     // value in-lining is enabled for sub-word types (byte/short/char).
-    if (ArrayOperationPartailInlineSize > 32) {
+    if (ArrayOperationPartialInlineSize > 32) {
       enable_pi = is_subword_type(elem_bt) || elem_bt == T_INT;
-    } else if (ArrayOperationPartailInlineSize > 0) {
+    } else if (ArrayOperationPartialInlineSize > 0) {
       enable_pi = is_subword_type(elem_bt);
     }
 
@@ -5247,7 +5247,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
         Matcher::match_rule_supported_vector(Op_VectorCmpMasked, vec_len, elem_bt)) {
 
       Node* length_in_bytes = _gvn.transform(new LShiftINode(length, scale));
-      Node* pi_size = intcon(ArrayOperationPartailInlineSize);
+      Node* pi_size = intcon(ArrayOperationPartialInlineSize);
       Node* length_cmp = _gvn.transform(new CmpINode(length_in_bytes, pi_size));
       Node* cmp_res = _gvn.transform(new BoolNode(length_cmp, BoolTest::le));
 
@@ -5275,7 +5275,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
       fastcomp_result = _gvn.transform(new VectorCmpMaskedNode(masked_load1, masked_load2,
                                                                mask_gen, TypeInt::INT));
-      C->set_max_vector_size(MAX2((uint)ArrayOperationPartailInlineSize, C->max_vector_size()));
+      C->set_max_vector_size(MAX2((uint)ArrayOperationPartialInlineSize, C->max_vector_size()));
     }
   }
 
