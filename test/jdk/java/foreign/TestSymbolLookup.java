@@ -47,7 +47,7 @@ public class TestSymbolLookup {
         System.loadLibrary("LookupTest");
     }
 
-    static SymbolLookup lookup = SymbolLookup.loaderLookup();
+    static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
 
     @Test
     public void testSimpleLookup() {
