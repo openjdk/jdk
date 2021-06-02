@@ -604,6 +604,14 @@ final class Double64Vector extends DoubleVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Double64Mask eq(VectorMask<Double> mask) {
+            Objects.requireNonNull(mask);
+            Double64Mask m = (Double64Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override

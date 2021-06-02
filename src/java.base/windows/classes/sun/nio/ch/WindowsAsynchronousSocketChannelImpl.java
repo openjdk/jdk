@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,6 +402,7 @@ class WindowsAsynchronousSocketChannelImpl
 
         // set by run method
         private ByteBuffer[] shadow;
+        private Runnable scopeHandleReleasers;
 
         ReadTask(ByteBuffer[] bufs,
                  boolean scatteringRead,
@@ -418,6 +419,7 @@ class WindowsAsynchronousSocketChannelImpl
          * it substitutes non-direct buffers with direct buffers.
          */
         void prepareBuffers() {
+            scopeHandleReleasers = IOUtil.acquireScopes(bufs);
             shadow = new ByteBuffer[numBufs];
             long address = readBufferArray;
             for (int i=0; i<numBufs; i++) {
@@ -431,10 +433,10 @@ class WindowsAsynchronousSocketChannelImpl
                     // substitute with direct buffer
                     ByteBuffer bb = Util.getTemporaryDirectBuffer(rem);
                     shadow[i] = bb;
-                    a = ((DirectBuffer)bb).address();
+                    a = IOUtil.bufferAddress(bb);
                 } else {
                     shadow[i] = dst;
-                    a = ((DirectBuffer)dst).address() + pos;
+                    a = IOUtil.bufferAddress(dst) + pos;
                 }
                 unsafe.putAddress(address + OFFSETOF_BUF, a);
                 unsafe.putInt(address + OFFSETOF_LEN, rem);
@@ -492,6 +494,7 @@ class WindowsAsynchronousSocketChannelImpl
                     Util.releaseTemporaryDirectBuffer(shadow[i]);
                 }
             }
+            IOUtil.releaseScopes(scopeHandleReleasers);
         }
 
         @Override
@@ -673,6 +676,7 @@ class WindowsAsynchronousSocketChannelImpl
 
         // set by run method
         private ByteBuffer[] shadow;
+        private Runnable scopeHandleReleasers;
 
         WriteTask(ByteBuffer[] bufs,
                   boolean gatheringWrite,
@@ -689,6 +693,7 @@ class WindowsAsynchronousSocketChannelImpl
          * it substitutes non-direct buffers with direct buffers.
          */
         void prepareBuffers() {
+            scopeHandleReleasers = IOUtil.acquireScopes(bufs);
             shadow = new ByteBuffer[numBufs];
             long address = writeBufferArray;
             for (int i=0; i<numBufs; i++) {
@@ -705,10 +710,10 @@ class WindowsAsynchronousSocketChannelImpl
                     bb.flip();
                     src.position(pos);  // leave heap buffer untouched for now
                     shadow[i] = bb;
-                    a = ((DirectBuffer)bb).address();
+                    a = IOUtil.bufferAddress(bb);
                 } else {
                     shadow[i] = src;
-                    a = ((DirectBuffer)src).address() + pos;
+                    a = IOUtil.bufferAddress(src) + pos;
                 }
                 unsafe.putAddress(address + OFFSETOF_BUF, a);
                 unsafe.putInt(address + OFFSETOF_LEN, rem);
@@ -756,6 +761,7 @@ class WindowsAsynchronousSocketChannelImpl
                     Util.releaseTemporaryDirectBuffer(shadow[i]);
                 }
             }
+            IOUtil.releaseScopes(scopeHandleReleasers);
         }
 
         @Override

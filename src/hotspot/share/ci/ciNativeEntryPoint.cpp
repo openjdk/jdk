@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,11 +58,6 @@ ciNativeEntryPoint::ciNativeEntryPoint(instanceHandle h_i) : ciInstance(h_i), _n
 
   _arg_moves = getVMRegArray(CURRENT_ENV->get_object(jdk_internal_invoke_NativeEntryPoint::argMoves(get_oop()))->as_array());
   _ret_moves = getVMRegArray(CURRENT_ENV->get_object(jdk_internal_invoke_NativeEntryPoint::returnMoves(get_oop()))->as_array());
-}
-
-address ciNativeEntryPoint::entry_point() const {
-  VM_ENTRY_MARK;
-  return jdk_internal_invoke_NativeEntryPoint::addr(get_oop());
 }
 
 jint ciNativeEntryPoint::shadow_space() const {

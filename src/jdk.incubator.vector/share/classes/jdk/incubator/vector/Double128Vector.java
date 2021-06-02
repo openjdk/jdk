@@ -606,6 +606,14 @@ final class Double128Vector extends DoubleVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Double128Mask eq(VectorMask<Double> mask) {
+            Objects.requireNonNull(mask);
+            Double128Mask m = (Double128Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
