@@ -86,7 +86,7 @@ class HandshakeState {
   // JavaThread suspend/resume operations.
   Monitor _lock;
   // Set to the thread executing the handshake operation.
-  Thread* _active_handshaker;
+  Thread* volatile _active_handshaker;
 
   bool claim_handshake();
   bool possibly_can_process_handshake();

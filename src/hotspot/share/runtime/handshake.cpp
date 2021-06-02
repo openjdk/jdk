@@ -449,7 +449,7 @@ void HandshakeState::remove_op(HandshakeOperation* op) {
   assert(_lock.owned_by_self(), "Lock must be held");
   MatchOp mo(op);
   HandshakeOperation* ret = _queue.pop(mo);
-  assert(ret == op, "OP missing from queue");
+  assert(ret == op, "Popped op must match requested op");
 };
 
 bool HandshakeState::process_by_self() {
