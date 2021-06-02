@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
  *
  * @since 1.4
  */
-
+@SuppressWarnings("removal")
 final class JceSecurityManager {
 
     private static final CryptoPermissions defaultPolicy;
@@ -73,6 +73,7 @@ final class JceSecurityManager {
                         return new JceSecurityManager();
                     }
                 });
+
     }
 
     private JceSecurityManager() {
