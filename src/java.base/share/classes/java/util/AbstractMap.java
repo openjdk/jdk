@@ -741,7 +741,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * <p>
      * This class may be convenient in methods that return thread-safe snapshots of
      * key-value mappings. For alternatives, see the
-     * {@link Map#entry Map.entry} and {@link Map.Entry#copyOf Entry.copyOf}
+     * {@link Map#entry Map::entry} and {@link Map.Entry#copyOf Map.Entry::copyOf}
      * methods.
      *
      * @since 1.6

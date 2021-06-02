@@ -393,9 +393,9 @@ public interface Map<K, V> {
     Set<Map.Entry<K, V>> entrySet();
 
     /**
-     * A map entry (key-value pair). The entry may be unmodifiable, or the
+     * A map entry (key-value pair). The Entry may be unmodifiable, or the
      * value may be modifiable if the optional {@code setValue} method is
-     * implemented. The entry may be independent of any map, or it may represent
+     * implemented. The Entry may be independent of any map, or it may represent
      * an entry of the entry-set view of a map.
      * <p>
      * Instances of the {@code Map.Entry} interface may be obtained by iterating
