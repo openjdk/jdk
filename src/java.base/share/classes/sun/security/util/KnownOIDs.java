@@ -119,7 +119,8 @@ public enum KnownOIDs {
     AES_128$KW$NoPadding("2.16.840.1.101.3.4.1.5", "AES_128/KW/NoPadding",
             "AESWrap_128"),
     AES_128$GCM$NoPadding("2.16.840.1.101.3.4.1.6", "AES_128/GCM/NoPadding"),
-    AES_128$KWP$NoPadding("2.16.840.1.101.3.4.1.8", "AES_128/KWP/NoPadding"),
+    AES_128$KWP$NoPadding("2.16.840.1.101.3.4.1.8", "AES_128/KWP/NoPadding",
+            "AESWrapPad_128"),
 
     AES_192$ECB$NoPadding("2.16.840.1.101.3.4.1.21", "AES_192/ECB/NoPadding"),
     AES_192$CBC$NoPadding("2.16.840.1.101.3.4.1.22", "AES_192/CBC/NoPadding"),
@@ -128,7 +129,8 @@ public enum KnownOIDs {
     AES_192$KW$NoPadding("2.16.840.1.101.3.4.1.25", "AES_192/KW/NoPadding",
             "AESWrap_192"),
     AES_192$GCM$NoPadding("2.16.840.1.101.3.4.1.26", "AES_192/GCM/NoPadding"),
-    AES_192$KWP$NoPadding("2.16.840.1.101.3.4.1.28", "AES_192/KWP/NoPadding"),
+    AES_192$KWP$NoPadding("2.16.840.1.101.3.4.1.28", "AES_192/KWP/NoPadding",
+            "AESWrapPad_192"),
 
     AES_256$ECB$NoPadding("2.16.840.1.101.3.4.1.41", "AES_256/ECB/NoPadding"),
     AES_256$CBC$NoPadding("2.16.840.1.101.3.4.1.42", "AES_256/CBC/NoPadding"),
@@ -137,7 +139,8 @@ public enum KnownOIDs {
     AES_256$KW$NoPadding("2.16.840.1.101.3.4.1.45", "AES_256/KW/NoPadding",
             "AESWrap_256"),
     AES_256$GCM$NoPadding("2.16.840.1.101.3.4.1.46", "AES_256/GCM/NoPadding"),
-    AES_256$KWP$NoPadding("2.16.840.1.101.3.4.1.48", "AES_256/KWP/NoPadding"),
+    AES_256$KWP$NoPadding("2.16.840.1.101.3.4.1.48", "AES_256/KWP/NoPadding",
+            "AESWrapPad_256"),
 
     // hashAlgs 2.16.840.1.101.3.4.2.*
     SHA_256("2.16.840.1.101.3.4.2.1", "SHA-256", "SHA256"),

@@ -197,9 +197,9 @@ public final class SunJCE extends Provider {
         ps("Cipher", "AES/KW/PKCS5Padding",
                 "com.sun.crypto.provider.KeyWrapCipher$AES_KW_PKCS5Padding",
                 null, attrs);
-        ps("Cipher", "AES/KWP/NoPadding",
+        psA("Cipher", "AES/KWP/NoPadding",
                 "com.sun.crypto.provider.KeyWrapCipher$AES_KWP_NoPadding",
-                null, attrs);
+                attrs);
 
         psA("Cipher", "AES_128/ECB/NoPadding",
                 "com.sun.crypto.provider.AESCipher$AES128_ECB_NoPadding",
