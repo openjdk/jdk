@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -264,7 +265,9 @@ public final class ModuleBootstrap {
         if (baseUri == null)
             throw new InternalError(JAVA_BASE + " does not have a location");
         BootLoader.loadModule(base);
-        Modules.defineModule(null, base.descriptor(), baseUri);
+
+        Module baseModule = Modules.defineModule(null, base.descriptor(), baseUri);
+        JLA.addEnableNativeAccess(baseModule);
 
         // Step 2a: Scan all modules when --validate-modules specified
 
@@ -454,6 +457,9 @@ public final class ModuleBootstrap {
         // --add-reads, --add-exports/--add-opens
         addExtraReads(bootLayer);
         boolean extraExportsOrOpens = addExtraExportsAndOpens(bootLayer);
+
+        // add enable native access
+        addEnableNativeAccess(bootLayer);
 
         Counters.add("jdk.module.boot.7.adjustModulesTime");
 
@@ -767,6 +773,47 @@ public final class ModuleBootstrap {
     }
 
     /**
+     * Process the --enable-native-access option to grant access to restricted methods to selected modules.
+     */
+    private static void addEnableNativeAccess(ModuleLayer layer) {
+        for (String name : decodeEnableNativeAccess()) {
+            if (name.equals("ALL-UNNAMED")) {
+                JLA.addEnableNativeAccessAllUnnamed();
+            } else {
+                Optional<Module> module = layer.findModule(name);
+                if (module.isPresent()) {
+                    JLA.addEnableNativeAccess(module.get());
+                } else {
+                    warnUnknownModule(ENABLE_NATIVE_ACCESS, name);
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the set of module names specified by --enable-native-access options.
+     */
+    private static Set<String> decodeEnableNativeAccess() {
+        String prefix = "jdk.module.enable.native.access.";
+        int index = 0;
+        // the system property is removed after decoding
+        String value = getAndRemoveProperty(prefix + index);
+        Set<String> modules = new HashSet<>();
+        if (value == null) {
+            return modules;
+        }
+        while (value != null) {
+            for (String s : value.split(",")) {
+                if (!s.isEmpty())
+                    modules.add(s);
+            }
+            index++;
+            value = getAndRemoveProperty(prefix + index);
+        }
+        return modules;
+    }
+
+    /**
      * Decodes the values of --add-reads, -add-exports, --add-opens or
      * --patch-modules options that are encoded in system properties.
      *
@@ -889,7 +936,7 @@ public final class ModuleBootstrap {
     private static final String ADD_OPENS    = "--add-opens";
     private static final String ADD_READS    = "--add-reads";
     private static final String PATCH_MODULE = "--patch-module";
-
+    private static final String ENABLE_NATIVE_ACCESS = "--enable-native-access";
 
     /*
      * Returns the command-line option name corresponds to the specified

@@ -132,7 +132,7 @@ public interface JavaLangAccess {
      * Returns a new Thread with the given Runnable and an
      * inherited AccessControlContext.
      */
-    Thread newThreadWithAcc(Runnable target, AccessControlContext acc);
+    Thread newThreadWithAcc(Runnable target, @SuppressWarnings("removal") AccessControlContext acc);
 
     /**
      * Invokes the finalize method of the given object.
@@ -255,6 +255,21 @@ public interface JavaLangAccess {
      * Returns true if module m reflectively opens a package to other
      */
     boolean isReflectivelyOpened(Module module, String pn, Module other);
+
+    /**
+     * Updates module m to allow access to restricted methods.
+     */
+    Module addEnableNativeAccess(Module m);
+
+    /**
+     * Updates all unnamed modules to allow access to restricted methods.
+     */
+    void addEnableNativeAccessAllUnnamed();
+
+    /**
+     * Returns true if module m can access restricted methods.
+     */
+    boolean isEnableNativeAccess(Module m);
 
     /**
      * Returns the ServicesCatalog for the given Layer.

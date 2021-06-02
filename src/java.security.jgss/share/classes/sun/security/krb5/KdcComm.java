@@ -95,6 +95,7 @@ public final class KdcComm {
      * Read global settings
      */
     public static void initStatic() {
+        @SuppressWarnings("removal")
         String value = AccessController.doPrivileged(
         new PrivilegedAction<String>() {
             public String run() {
@@ -343,6 +344,7 @@ public final class KdcComm {
         KdcCommunication kdcCommunication =
             new KdcCommunication(kdc, port, useTCP, timeout, retries, obuf);
         try {
+            @SuppressWarnings("removal")
             byte[] ibuf = AccessController.doPrivileged(kdcCommunication);
             if (DEBUG) {
                 System.out.println(">>> KrbKdcReq send: #bytes read="

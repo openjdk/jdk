@@ -734,6 +734,14 @@ final class Byte512Vector extends ByteVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Byte512Mask eq(VectorMask<Byte> mask) {
+            Objects.requireNonNull(mask);
+            Byte512Mask m = (Byte512Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override

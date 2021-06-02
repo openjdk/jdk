@@ -219,11 +219,13 @@ public class StartTlsRequest implements ExtendedRequest {
     /*
      * Acquire the class loader associated with this thread.
      */
+    @SuppressWarnings("removal")
     private final ClassLoader getContextClassLoader() {
         PrivilegedAction<ClassLoader> pa = Thread.currentThread()::getContextClassLoader;
         return AccessController.doPrivileged(pa);
     }
 
+    @SuppressWarnings("removal")
     private static final boolean privilegedHasNext(final Iterator<StartTlsResponse> iter) {
         PrivilegedAction<Boolean> pa = iter::hasNext;
         return AccessController.doPrivileged(pa);

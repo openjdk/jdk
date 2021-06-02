@@ -603,6 +603,14 @@ final class DoubleMaxVector extends DoubleVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public DoubleMaxMask eq(VectorMask<Double> mask) {
+            Objects.requireNonNull(mask);
+            DoubleMaxMask m = (DoubleMaxMask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override

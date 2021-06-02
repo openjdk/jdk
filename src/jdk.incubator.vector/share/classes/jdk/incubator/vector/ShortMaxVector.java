@@ -608,6 +608,14 @@ final class ShortMaxVector extends ShortVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public ShortMaxMask eq(VectorMask<Short> mask) {
+            Objects.requireNonNull(mask);
+            ShortMaxMask m = (ShortMaxMask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override

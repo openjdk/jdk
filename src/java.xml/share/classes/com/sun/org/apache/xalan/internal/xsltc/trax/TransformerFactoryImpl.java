@@ -265,6 +265,7 @@ public class TransformerFactoryImpl
     /**
      * javax.xml.transform.sax.TransformerFactory implementation.
      */
+    @SuppressWarnings("removal")
     public TransformerFactoryImpl() {
 
         if (System.getSecurityManager() != null) {

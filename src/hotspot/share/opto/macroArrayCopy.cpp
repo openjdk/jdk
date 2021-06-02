@@ -656,7 +656,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     // At this point we know we do not need type checks on oop stores.
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    if (!bs->array_copy_requires_gc_barriers(alloc != NULL, copy_type, false, BarrierSetC2::Expansion)) {
+    if (!bs->array_copy_requires_gc_barriers(alloc != NULL, copy_type, false, false, BarrierSetC2::Expansion)) {
       // If we do not need gc barriers, copy using the jint or jlong stub.
       copy_type = LP64_ONLY(UseCompressedOops ? T_INT : T_LONG) NOT_LP64(T_INT);
       assert(type2aelembytes(basic_elem_type) == type2aelembytes(copy_type),

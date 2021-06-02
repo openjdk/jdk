@@ -85,7 +85,7 @@ import sun.awt.AppContext;
  * @author Lynn Monsanto
  * @since 1.2
  */
-@SuppressWarnings("serial") // Same-version serialization only
+@SuppressWarnings({"removal","serial"}) // Same-version serialization only
 public class ImageIcon implements Icon, Serializable, Accessible {
     /* Keep references to the filename and location so that
      * alternate persistence schemes have the option to archive
