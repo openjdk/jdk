@@ -841,9 +841,7 @@ public final class Utils {
     }
 
     public static Instant epochNanosToInstant(long epochNanos) {
-        long epochSeconds = epochNanos / 1_000_000_000L;
-        long nanoAdjustment = epochNanos - 1_000_000_000L * epochSeconds;
-        return Instant.ofEpochSecond(epochSeconds, nanoAdjustment);
+        return Instant.ofEpochSecond(0, epochNanos);
     }
 
     public static long timeToNanos(Instant timestamp) {
