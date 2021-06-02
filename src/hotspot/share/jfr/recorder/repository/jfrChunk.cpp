@@ -127,7 +127,6 @@ int64_t JfrChunk::start_ticks() const {
 }
 
 int64_t JfrChunk::start_nanos() const {
-  assert(_start_nanos != 0, "invariant");
   return _start_nanos;
 }
 
@@ -147,14 +146,14 @@ void JfrChunk::update_start_ticks() {
 
 void JfrChunk::update_start_nanos() {
   const jlong now = nanos_now();
-  assert(now > _start_nanos, "invariant");
-  assert(now > _last_update_nanos, "invariant");
+  assert(now >= _start_nanos, "invariant");
+  assert(now >= _last_update_nanos, "invariant");
   _start_nanos = _last_update_nanos = now;
 }
 
 void JfrChunk::update_current_nanos() {
   const jlong now = nanos_now();
-  assert(now > _last_update_nanos, "invariant");
+  assert(now >= _last_update_nanos, "invariant");
   _last_update_nanos = now;
 }
 
