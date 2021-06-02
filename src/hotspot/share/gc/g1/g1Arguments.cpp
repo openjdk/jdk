@@ -58,6 +58,11 @@ void G1Arguments::initialize_alignments() {
   // We need to initialize card set configuration as soon as heap region size is
   // known as it depends on it and is used really early.
   initialize_card_set_configuration();
+  // Needs remembered set initialization as the ergonomics are based
+  // on it.
+  if (FLAG_IS_DEFAULT(G1EagerReclaimRemSetThreshold)) {
+    FLAG_SET_ERGO(G1EagerReclaimRemSetThreshold, G1RemSetArrayOfCardsEntries);
+  }
 }
 
 size_t G1Arguments::conservative_max_heap_alignment() {

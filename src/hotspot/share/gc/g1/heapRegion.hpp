@@ -196,6 +196,10 @@ public:
     _bot_part.reset_bot();
   }
 
+  void update_bot() {
+    _bot_part.update();
+  }
+
 private:
   // The remembered set for this region.
   HeapRegionRemSet* _rem_set;

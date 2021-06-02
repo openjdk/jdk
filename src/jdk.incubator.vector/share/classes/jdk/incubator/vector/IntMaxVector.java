@@ -608,6 +608,14 @@ final class IntMaxVector extends IntVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public IntMaxMask eq(VectorMask<Integer> mask) {
+            Objects.requireNonNull(mask);
+            IntMaxMask m = (IntMaxMask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
