@@ -5240,22 +5240,22 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
       case 0: elem_bt = T_BYTE;  break;
       case 1: elem_bt = T_SHORT; break;
       case 2: elem_bt = T_INT;   break;
-      // case 3: elem_bt = T_LONG; break; // FIXME: no performance gains?
+      case 3: elem_bt = T_LONG;  break;
 
       default: elem_bt = T_ILLEGAL; break; // not supported
     }
   }
 
-  bool do_partial_inline = (elem_bt != T_ILLEGAL); // scale is a constant (0, 1, or 2)
-
-  if (ArrayOperationPartialInlineSize <= 32 && elem_bt == T_INT) {
-    do_partial_inline = false; // FIXME: no performance gains?
+  int inline_limit = 0; // max array length to process inline
+  if (elem_bt != T_ILLEGAL) {
+    inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(elem_bt);
   }
+
+  bool do_partial_inline = (inline_limit >= 16); // no performance gains for smaller arrays
 
   if (do_partial_inline) {
     assert(elem_bt != T_ILLEGAL, "sanity");
 
-    int inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(elem_bt);
     const TypeVect* vt = TypeVect::make(elem_bt, inline_limit);
 
     if (Matcher::match_rule_supported_vector(Op_VectorMaskGen,    inline_limit, elem_bt) &&
