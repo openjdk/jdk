@@ -818,11 +818,8 @@ public final class ServiceLoader<S>
 
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof ProviderImpl))
-                return false;
-            @SuppressWarnings("unchecked")
-            ProviderImpl<?> that = (ProviderImpl<?>)ob;
-            return this.service == that.service
+            return ob instanceof @SuppressWarnings("unchecked")ProviderImpl<?> that
+                    && this.service == that.service
                     && this.type == that.type
                     && Objects.equals(this.acc, that.acc);
         }

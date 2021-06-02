@@ -559,10 +559,6 @@ const Type *AddFNode::add_ring( const Type *t0, const Type *t1 ) const {
 
 //------------------------------Ideal------------------------------------------
 Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if( IdealizedNumerics && !phase->C->method()->is_strict() ) {
-    return AddNode::Ideal(phase, can_reshape); // commutative and associative transforms
-  }
-
   // Floating point additions are not associative because of boundary conditions (infinity)
   return commute(phase, this) ? this : NULL;
 }
@@ -594,10 +590,6 @@ const Type *AddDNode::add_ring( const Type *t0, const Type *t1 ) const {
 
 //------------------------------Ideal------------------------------------------
 Node *AddDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if( IdealizedNumerics && !phase->C->method()->is_strict() ) {
-    return AddNode::Ideal(phase, can_reshape); // commutative and associative transforms
-  }
-
   // Floating point additions are not associative because of boundary conditions (infinity)
   return commute(phase, this) ? this : NULL;
 }

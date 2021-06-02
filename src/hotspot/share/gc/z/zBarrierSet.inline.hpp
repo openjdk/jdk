@@ -24,9 +24,10 @@
 #ifndef SHARE_GC_Z_ZBARRIERSET_INLINE_HPP
 #define SHARE_GC_Z_ZBARRIERSET_INLINE_HPP
 
+#include "gc/z/zBarrierSet.hpp"
+
 #include "gc/shared/accessBarrierSupport.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
-#include "gc/z/zBarrierSet.hpp"
 #include "utilities/debug.hpp"
 
 template <DecoratorSet decorators, typename BarrierSetT>

@@ -318,12 +318,12 @@ public class TagletWriterImpl extends TagletWriter {
             links.add(htmlWriter.seeTagToContent(holder, dt, context.within(dt)));
         }
         if (utils.isVariableElement(holder) && ((VariableElement)holder).getConstantValue() != null &&
-                htmlWriter instanceof ClassWriterImpl) {
+                htmlWriter instanceof ClassWriterImpl writer) {
             //Automatically add link to constant values page for constant fields.
             DocPath constantsPath =
                     htmlWriter.pathToRoot.resolve(DocPaths.CONSTANT_VALUES);
             String whichConstant =
-                    ((ClassWriterImpl) htmlWriter).getTypeElement().getQualifiedName() + "." +
+                    writer.getTypeElement().getQualifiedName() + "." +
                     utils.getSimpleName(holder);
             DocLink link = constantsPath.fragment(whichConstant);
             links.add(htmlWriter.links.createLink(link,
@@ -503,8 +503,7 @@ public class TagletWriterImpl extends TagletWriter {
 
                     @Override
                     public String visitUnknown(Element e, Void p) {
-                        if (e instanceof DocletElement) {
-                            DocletElement de = (DocletElement) e;
+                        if (e instanceof DocletElement de) {
                             return switch (de.getSubKind()) {
                                 case OVERVIEW -> resources.getText("doclet.Overview");
                                 case DOCFILE -> getHolderName(de);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,6 @@ import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.CDS;
-import jdk.internal.misc.VM;
-import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.module.Resources;
@@ -903,27 +901,8 @@ public final class Module implements AnnotatedElement {
             return;
 
         // check if the package is already exported/open to other
-        if (implIsExportedOrOpen(pn, other, open)) {
-
-            // if the package is exported/open for illegal access then we need
-            // to record that it has also been exported/opened reflectively so
-            // that the IllegalAccessLogger doesn't emit a warning.
-            boolean needToAdd = false;
-            if (!other.isNamed()) {
-                IllegalAccessLogger l = IllegalAccessLogger.illegalAccessLogger();
-                if (l != null) {
-                    if (open) {
-                        needToAdd = l.isOpenForIllegalAccess(this, pn);
-                    } else {
-                        needToAdd = l.isExportedForIllegalAccess(this, pn);
-                    }
-                }
-            }
-            if (!needToAdd) {
-                // nothing to do
-                return;
-            }
-        }
+        if (implIsExportedOrOpen(pn, other, open))
+            return;
 
         // can only export a package in the module
         if (!descriptor.packages().contains(pn)) {

@@ -35,6 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPairGenerator;
@@ -71,6 +72,8 @@ public abstract class PKCS11Test {
 
     // directory of the test source
     static final String BASE = System.getProperty("test.src", ".");
+
+    static final String TEST_CLASSES = System.getProperty("test.classes", ".");
 
     static final char SEP = File.separatorChar;
 
@@ -690,7 +693,8 @@ public abstract class PKCS11Test {
                 "/usr/lib/arm-linux-gnueabihf/nss/" });
         osMap.put("Linux-aarch64-64", new String[] {
                 "/usr/lib/aarch64-linux-gnu/",
-                "/usr/lib/aarch64-linux-gnu/nss/" });
+                "/usr/lib/aarch64-linux-gnu/nss/",
+                "/usr/lib64/" });
         return osMap;
     }
 
@@ -858,6 +862,31 @@ public abstract class PKCS11Test {
         }
         Policy.setPolicy(null); // Clear the policy created by JIB if any
         return path;
+    }
+
+    protected void setCommonSystemProps() {
+        System.setProperty("java.security.debug", "true");
+        System.setProperty("NO_DEIMOS", "true");
+        System.setProperty("NO_DEFAULT", "true");
+        System.setProperty("CUSTOM_DB_DIR", TEST_CLASSES);
+    }
+
+    protected void copyNssCertKeyToClassesDir() throws IOException {
+        Path dbPath = Path.of(BASE).getParent().resolve("nss").resolve("db");
+        copyNssCertKeyToClassesDir(dbPath);
+    }
+
+    protected void copyNssCertKeyToClassesDir(Path dbPath) throws IOException {
+        Path destinationPath = Path.of(TEST_CLASSES);
+        String keyDbFile = "key3.db";
+        String certDbFile = "cert8.db";
+
+        Files.copy(dbPath.resolve(certDbFile),
+                destinationPath.resolve(certDbFile),
+                StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(dbPath.resolve(keyDbFile),
+                destinationPath.resolve(keyDbFile),
+                StandardCopyOption.REPLACE_EXISTING);
     }
 
     @Artifact(

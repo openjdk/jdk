@@ -79,8 +79,6 @@ jint    StubRoutines::_fpu_cntrl_wrd_std                        = 0;
 jint    StubRoutines::_fpu_cntrl_wrd_24                         = 0;
 jint    StubRoutines::_fpu_cntrl_wrd_trunc                      = 0;
 jint    StubRoutines::_mxcsr_std                                = 0;
-jint    StubRoutines::_fpu_subnormal_bias1[3]                   = { 0, 0, 0 };
-jint    StubRoutines::_fpu_subnormal_bias2[3]                   = { 0, 0, 0 };
 
 // Compiled code entry points default values
 // The default functions don't have separate disjoint versions.

@@ -610,6 +610,14 @@ final class Int64Vector extends IntVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Int64Mask eq(VectorMask<Integer> mask) {
+            Objects.requireNonNull(mask);
+            Int64Mask m = (Int64Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override

@@ -32,9 +32,9 @@
  */
 @implementation ScrollBarAccessibility
 
-- (NSString * _Nonnull)accessibilityRole
+- (NSAccessibilityRole _Nonnull)accessibilityRole
 {
-    return [self accessibilityRoleAttribute];
+    return NSAccessibilityScrollBarRole;
 }
 
 - (NSAccessibilityOrientation) accessibilityOrientation

@@ -53,7 +53,7 @@ import java.util.logging.LoggingPermission;
  * @bug 8033661 8189291
  * @summary tests LogManager.updateConfiguration(InputStream, Function) method
  * @run main/othervm SimpleUpdateConfigWithInputStreamTest UNSECURE
- * @run main/othervm SimpleUpdateConfigWithInputStreamTest SECURE
+ * @run main/othervm -Djava.security.manager=allow SimpleUpdateConfigWithInputStreamTest SECURE
  * @author danielfuchs
  */
 public class SimpleUpdateConfigWithInputStreamTest {

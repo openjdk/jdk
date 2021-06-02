@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_INLINE_HPP
 
-#include "classfile/javaClasses.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
+
+#include "classfile/javaClasses.inline.hpp"
 
 bool ShenandoahStringDedup::is_string_candidate(oop obj) {
   assert(Thread::current()->is_Worker_thread(),

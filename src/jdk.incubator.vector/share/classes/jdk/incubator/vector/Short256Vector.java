@@ -638,6 +638,14 @@ final class Short256Vector extends ShortVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Short256Mask eq(VectorMask<Short> mask) {
+            Objects.requireNonNull(mask);
+            Short256Mask m = (Short256Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override

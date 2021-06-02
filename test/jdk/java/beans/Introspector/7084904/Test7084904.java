@@ -26,8 +26,9 @@ import java.lang.reflect.Method;
  * @test
  * @bug 7084904
  * @summary Compares reflection and bean introspection
- * @author Sergey Malenkov
  * @library ..
+ * @run main/othervm -Djava.security.manager=allow Test7084904
+ * @author Sergey Malenkov
  */
 public class Test7084904 {
     public static void main(String[] args) throws Exception {

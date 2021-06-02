@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZFUTURE_INLINE_HPP
 
 #include "gc/z/zFuture.hpp"
+
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/thread.hpp"
 
