@@ -179,10 +179,11 @@ jint ShenandoahHeap::initialize() {
   size_t bitmap_page_size = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();
   size_t region_page_size = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();
 
+  log_info(gc)("Setup heap, size: " SIZE_FORMAT "K, region size: " SIZE_FORMAT "K and region count: " SIZE_FORMAT,
+              max_byte_size / K, reg_size_bytes / K, _num_regions);
   //
   // Reserve and commit memory for heap
   //
-
   ReservedHeapSpace heap_rs = Universe::reserve_heap(max_byte_size, heap_alignment);
   initialize_reserved_region(heap_rs);
   _heap_region = MemRegion((HeapWord*)heap_rs.base(), heap_rs.size() / HeapWordSize);

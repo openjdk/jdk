@@ -54,11 +54,13 @@ void ShenandoahArguments::initialize() {
 
   FLAG_SET_DEFAULT(ShenandoahVerifyOptoBarriers,     false);
 #endif
-
-  if (UseLargePages && (MaxHeapSize / os::large_page_size()) < ShenandoahHeapRegion::MIN_NUM_REGIONS) {
-    warning("Large pages size (" SIZE_FORMAT "K) is too large to afford page-sized regions, disabling large pages",
-            os::large_page_size() / K);
-    FLAG_SET_DEFAULT(UseLargePages, false);
+  if (UseLargePages) {
+    int large_page_size = os::large_page_size();
+    if ((align_up(MaxHeapSize, large_page_size) / large_page_size) < ShenandoahHeapRegion::MIN_NUM_REGIONS) {
+      warning("Large pages size (" SIZE_FORMAT "K) is too large to afford page-sized regions, disabling uncommit",
+              os::large_page_size() / K);
+      FLAG_SET_DEFAULT(ShenandoahUncommit, false);
+    }
   }
 
   // Enable NUMA by default. While Shenandoah is not NUMA-aware, enabling NUMA makes
