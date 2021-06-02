@@ -177,7 +177,7 @@ public class Messager extends Log implements Reporter {
      * @param programName  Name of the program (for error messages).
      */
     public Messager(Context context, String programName) {
-        // use the current values of System.out, System,err, in case they have been redirected
+        // use the current values of System.out, System.err, in case they have been redirected
         this(context, programName,
                 createPrintWriter(System.out, false),
                 createPrintWriter(System.err, true));
