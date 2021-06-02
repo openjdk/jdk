@@ -216,7 +216,7 @@ JvmtiEnv::GetAllModules(jint* module_count_ptr, jobject** modules_ptr) {
 // module_ptr - pre-checked for NULL
 jvmtiError
 JvmtiEnv::GetNamedModule(jobject class_loader, const char* package_name, jobject* module_ptr) {
-  JavaThread* THREAD = JavaThread::current(); // pass to macros
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   ResourceMark rm(THREAD);
   Handle h_loader (THREAD, JNIHandles::resolve(class_loader));
   // Check that loader is a subclass of java.lang.ClassLoader.
@@ -233,7 +233,7 @@ JvmtiEnv::GetNamedModule(jobject class_loader, const char* package_name, jobject
 // to_module - pre-checked for NULL
 jvmtiError
 JvmtiEnv::AddModuleReads(jobject module, jobject to_module) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
   // check module
   Handle h_module(THREAD, JNIHandles::resolve(module));
@@ -254,7 +254,7 @@ JvmtiEnv::AddModuleReads(jobject module, jobject to_module) {
 // to_module - pre-checked for NULL
 jvmtiError
 JvmtiEnv::AddModuleExports(jobject module, const char* pkg_name, jobject to_module) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   Handle h_pkg = java_lang_String::create_from_str(pkg_name, THREAD);
 
   // check module
@@ -276,7 +276,7 @@ JvmtiEnv::AddModuleExports(jobject module, const char* pkg_name, jobject to_modu
 // to_module - pre-checked for NULL
 jvmtiError
 JvmtiEnv::AddModuleOpens(jobject module, const char* pkg_name, jobject to_module) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   Handle h_pkg = java_lang_String::create_from_str(pkg_name, THREAD);
 
   // check module
@@ -297,7 +297,7 @@ JvmtiEnv::AddModuleOpens(jobject module, const char* pkg_name, jobject to_module
 // service - pre-checked for NULL
 jvmtiError
 JvmtiEnv::AddModuleUses(jobject module, jclass service) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
   // check module
   Handle h_module(THREAD, JNIHandles::resolve(module));
@@ -319,7 +319,7 @@ JvmtiEnv::AddModuleUses(jobject module, jclass service) {
 // impl_class - pre-checked for NULL
 jvmtiError
 JvmtiEnv::AddModuleProvides(jobject module, jclass service, jclass impl_class) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
   // check module
   Handle h_module(THREAD, JNIHandles::resolve(module));
@@ -345,10 +345,10 @@ JvmtiEnv::AddModuleProvides(jobject module, jclass service, jclass impl_class) {
 // is_modifiable_class_ptr - pre-checked for NULL
 jvmtiError
 JvmtiEnv::IsModifiableModule(jobject module, jboolean* is_modifiable_module_ptr) {
-  JavaThread* THREAD = JavaThread::current();
+  JavaThread* current = JavaThread::current();
 
   // check module
-  Handle h_module(THREAD, JNIHandles::resolve(module));
+  Handle h_module(current, JNIHandles::resolve(module));
   if (!java_lang_Module::is_instance(h_module())) {
     return JVMTI_ERROR_INVALID_MODULE;
   }
@@ -690,7 +690,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     // The phase is checked by the wrapper that called this function,
     // but this thread could be racing with the thread that is
     // terminating the VM so we check one more time.
-    JavaThread* THREAD = JavaThread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     HandleMark hm(THREAD);
 
     // create the zip entry (which will open the zip file and hence
@@ -3191,31 +3191,7 @@ JvmtiEnv::RawMonitorEnter(JvmtiRawMonitor * rmonitor) {
     // in thread.cpp.
     JvmtiPendingMonitors::enter(rmonitor);
   } else {
-    Thread* thread = Thread::current();
-    if (thread->is_Java_thread()) {
-      JavaThread* current_thread = thread->as_Java_thread();
-
-      /* Transition to thread_blocked without entering vm state          */
-      /* This is really evil. Normally you can't undo _thread_blocked    */
-      /* transitions like this because it would cause us to miss a       */
-      /* safepoint but since the thread was already in _thread_in_native */
-      /* the thread is not leaving a safepoint safe state and it will    */
-      /* block when it tries to return from native. We can't safepoint   */
-      /* block in here because we could deadlock the vmthread. Blech.    */
-
-      JavaThreadState state = current_thread->thread_state();
-      assert(state == _thread_in_native, "Must be _thread_in_native");
-      // frame should already be walkable since we are in native
-      assert(!current_thread->has_last_Java_frame() ||
-             current_thread->frame_anchor()->walkable(), "Must be walkable");
-      current_thread->set_thread_state(_thread_blocked);
-
-      rmonitor->raw_enter(current_thread);
-      // restore state, still at a safepoint safe state
-      current_thread->set_thread_state(state);
-    } else {
-      rmonitor->raw_enter(thread);
-    }
+    rmonitor->raw_enter(Thread::current());
   }
   return JVMTI_ERROR_NONE;
 } /* end RawMonitorEnter */

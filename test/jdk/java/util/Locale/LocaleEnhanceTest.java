@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.Set;
 /**
  * @test
  * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
- *    7044019 8008577 8176853 8255086
+ *    7044019 8008577 8176853 8255086 8263202
  * @summary test API changes to Locale
  * @library /java/text/testlib
  * @modules jdk.localedata
@@ -292,12 +292,12 @@ public class LocaleEnhanceTest extends IntlTest {
             { "xXxXxXxXxXxX", "yYyYyYyYyYyYyYyY", "zZzZzZzZzZzZzZzZ",
               "xxxxxxxxxxxx", "YYYYYYYYYYYYYYYY" },
             // mapped language ids
-            { "he", "IW", "", "iw" },
-            { "iw", "IW", "", "iw" },
-            { "yi", "DE", "", "ji" },
-            { "ji", "DE", "", "ji" },
-            { "id", "ID", "", "in" },
-            { "in", "ID", "", "in" },
+            { "he", "IL", "", "he" },
+            { "iw", "IL", "", "he" },
+            { "yi", "DE", "", "yi" },
+            { "ji", "DE", "", "yi" },
+            { "id", "ID", "", "id" },
+            { "in", "ID", "", "id" },
             // special variants
             { "ja", "JP", "JP" },
             { "th", "TH", "TH" },
@@ -467,8 +467,8 @@ public class LocaleEnhanceTest extends IntlTest {
             // three-letter language tags are not canonicalized
             { "Eng", "", "", "eng" },
             // legacy languages canonicalize to modern equivalents
-            { "he", "IW", "", "he-IW" },
-            { "iw", "IW", "", "he-IW" },
+            { "he", "IL", "", "he-IL" },
+            { "iw", "IL", "", "he-IL" },
             { "yi", "DE", "", "yi-DE" },
             { "ji", "DE", "", "yi-DE" },
             { "id", "ID", "", "id-ID" },

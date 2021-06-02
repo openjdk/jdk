@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,8 +158,8 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         ListBuffer<JCCompilationUnit> classTrees = new ListBuffer<>();
 
         try {
-            StandardJavaFileManager fm = toolEnv.fileManager instanceof StandardJavaFileManager
-                    ? (StandardJavaFileManager) toolEnv.fileManager
+            StandardJavaFileManager fm = toolEnv.fileManager instanceof StandardJavaFileManager sfm
+                    ? sfm
                     : null;
             Set<String> packageNames = new LinkedHashSet<>();
             // Normally, the args should be a series of package names or file names.

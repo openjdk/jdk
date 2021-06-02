@@ -31,7 +31,7 @@
  *          java.base/sun.security.internal.spec
  *          jdk.crypto.cryptoki
  * @run main/othervm TestMasterSecret
- * @run main/othervm TestMasterSecret sm TestMasterSecret.policy
+ * @run main/othervm -Djava.security.manager=allow TestMasterSecret sm TestMasterSecret.policy
  */
 
 import java.io.BufferedReader;

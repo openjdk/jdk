@@ -1294,6 +1294,21 @@ Node* ShiftVNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
+Node* VectorMaskOpNode::make(Node* mask, const Type* ty, int mopc) {
+  switch(mopc) {
+    case Op_VectorMaskTrueCount:
+      return new VectorMaskTrueCountNode(mask, ty);
+    case Op_VectorMaskLastTrue:
+      return new VectorMaskLastTrueNode(mask, ty);
+    case Op_VectorMaskFirstTrue:
+      return new VectorMaskFirstTrueNode(mask, ty);
+    default:
+      assert(false, "Unhandled operation");
+  }
+  return NULL;
+}
+
+
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);

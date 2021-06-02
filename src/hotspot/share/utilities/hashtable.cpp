@@ -198,13 +198,8 @@ template <class T, MEMFLAGS F> void Hashtable<T, F>::print_table_statistics(outp
 }
 
 #ifndef PRODUCT
-template <class T> void print_literal(T l) {
-  l->print();
-}
-
-static void print_literal(WeakHandle l) {
-  l.print();
-}
+template <class T> static void print_literal(T const& l) { l.print(); }
+template <class T> static void print_literal(T* l) { print_literal(*l); }
 
 template <class T, MEMFLAGS F> void Hashtable<T, F>::print() {
   ResourceMark rm;
@@ -284,6 +279,7 @@ template class BasicHashtable<mtModule>;
 template class BasicHashtable<mtCompiler>;
 template class BasicHashtable<mtTracing>;
 template class BasicHashtable<mtServiceability>;
+template class BasicHashtable<mtLogging>;
 
 template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
 template void BasicHashtable<mtModule>::verify_table<ModuleEntry>(char const*);

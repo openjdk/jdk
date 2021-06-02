@@ -259,6 +259,7 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   log_info(cds)("    instance classes   = %5d", _num_instance_klasses);
   log_info(cds)("    obj array classes  = %5d", _num_obj_array_klasses);
   log_info(cds)("    type array classes = %5d", _num_type_array_klasses);
+  log_info(cds)("               symbols = %5d", _symbols->length());
 
   if (DumpSharedSpaces) {
     // To ensure deterministic contents in the static archive, we need to ensure that
@@ -899,13 +900,13 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
 #define _LOG_PREFIX PTR_FORMAT ": @@ %-17s %d"
 
-  static void write_klass(Klass* k, address runtime_dest, const char* type_name, int bytes, Thread* THREAD) {
-    ResourceMark rm(THREAD);
+  static void write_klass(Klass* k, address runtime_dest, const char* type_name, int bytes, Thread* current) {
+    ResourceMark rm(current);
     log_debug(cds, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes, k->external_name());
   }
-  static void write_method(Method* m, address runtime_dest, const char* type_name, int bytes, Thread* THREAD) {
-    ResourceMark rm(THREAD);
+  static void write_method(Method* m, address runtime_dest, const char* type_name, int bytes, Thread* current) {
+    ResourceMark rm(current);
     log_debug(cds, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes,  m->external_name());
   }
@@ -915,7 +916,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     address last_obj_base = address(region->base());
     address last_obj_end  = address(region->base());
     address region_end    = address(region->end());
-    Thread* THREAD = Thread::current();
+    Thread* current = Thread::current();
     for (int i = 0; i < src_objs->objs()->length(); i++) {
       SourceObjInfo* src_info = src_objs->at(i);
       address src = src_info->orig_obj();
@@ -929,25 +930,25 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
       switch (type) {
       case MetaspaceObj::ClassType:
-        write_klass((Klass*)src, runtime_dest, type_name, bytes, THREAD);
+        write_klass((Klass*)src, runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::ConstantPoolType:
         write_klass(((ConstantPool*)src)->pool_holder(),
-                    runtime_dest, type_name, bytes, THREAD);
+                    runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::ConstantPoolCacheType:
         write_klass(((ConstantPoolCache*)src)->constant_pool()->pool_holder(),
-                    runtime_dest, type_name, bytes, THREAD);
+                    runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::MethodType:
-        write_method((Method*)src, runtime_dest, type_name, bytes, THREAD);
+        write_method((Method*)src, runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::ConstMethodType:
-        write_method(((ConstMethod*)src)->method(), runtime_dest, type_name, bytes, THREAD);
+        write_method(((ConstMethod*)src)->method(), runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::SymbolType:
         {
-          ResourceMark rm(THREAD);
+          ResourceMark rm(current);
           Symbol* s = (Symbol*)src;
           log_debug(cds, map)(_LOG_PREFIX " %s", p2i(runtime_dest), type_name, bytes,
                               s->as_quoted_ascii());

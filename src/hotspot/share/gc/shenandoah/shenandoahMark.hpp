@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
 
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
@@ -45,7 +46,7 @@ protected:
 
 public:
   template<class T, StringDedupMode STRING_DEDUP>
-  static inline void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
+  static inline void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, StringDedup::Requests* const req, bool weak);
 
   static void clear();
 
@@ -69,12 +70,12 @@ private:
   template <class T, bool CANCELLABLE>
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t);
 
-  template <bool CANCELLABLE>
-  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor *rp, bool strdedup);
+  template <bool CANCELLABLE, StringDedupMode STRING_DEDUP>
+  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor *rp);
 
 protected:
   void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
-                 bool cancellable, bool strdedup);
+                 bool cancellable, StringDedupMode dedup_mode);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP

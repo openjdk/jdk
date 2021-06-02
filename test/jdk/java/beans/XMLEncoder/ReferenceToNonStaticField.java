@@ -26,6 +26,7 @@ import java.awt.font.TextAttribute;
 /**
  * @test
  * @bug 8060027
+ * @run main/othervm -Djava.security.manager=allow ReferenceToNonStaticField
  */
 public final class ReferenceToNonStaticField
         extends AbstractTest<ReferenceToNonStaticField.TestValue> {

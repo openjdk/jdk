@@ -47,7 +47,7 @@ import org.w3c.dom.traversal.NodeFilter;
  * @test
  * @bug 6290947
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.ls.Bug6290947
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.ls.Bug6290947
  * @run testng/othervm dom.ls.Bug6290947
  * @summary Test LSSerializer writes the XML declaration when LSSerializerFilter is set that rejects all nodes and
  * LSSerializer's configuration set parameter "xml-declaration" to "true".

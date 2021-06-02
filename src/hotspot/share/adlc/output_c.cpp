@@ -1792,7 +1792,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     if (node->is_ideal_call() != Form::invalid_type &&
         node->is_ideal_call() != Form::JAVA_LEAF) {
       fprintf(fp, "  // MachConstantBaseNode added in matcher.\n");
-      _needs_clone_jvms = true;
+      _needs_deep_clone_jvms = true;
     } else {
       fprintf(fp, "  add_req(C->mach_constant_base_node());\n");
     }
@@ -3603,9 +3603,9 @@ char reg_save_policy(const char *calling_convention) {
   return callconv;
 }
 
-void ArchDesc::generate_needs_clone_jvms(FILE *fp_cpp) {
-  fprintf(fp_cpp, "bool Compile::needs_clone_jvms() { return %s; }\n\n",
-          _needs_clone_jvms ? "true" : "false");
+void ArchDesc::generate_needs_deep_clone_jvms(FILE *fp_cpp) {
+  fprintf(fp_cpp, "bool Compile::needs_deep_clone_jvms() { return %s; }\n\n",
+          _needs_deep_clone_jvms ? "true" : "false");
 }
 
 //---------------------------generate_assertion_checks-------------------

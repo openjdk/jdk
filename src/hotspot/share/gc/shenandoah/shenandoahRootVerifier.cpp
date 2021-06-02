@@ -62,10 +62,6 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::cld_do(&clds);
 
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::oops_do_slow(oops);
-  }
-
   for (auto id : EnumRange<OopStorageSet::StrongId>()) {
     OopStorageSet::storage(id)->oops_do(oops);
   }
@@ -82,10 +78,6 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
 
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&clds);
-
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::oops_do_slow(oops);
-  }
 
   for (auto id : EnumRange<OopStorageSet::StrongId>()) {
     OopStorageSet::storage(id)->oops_do(oops);

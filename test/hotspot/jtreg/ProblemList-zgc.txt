@@ -40,4 +40,5 @@ serviceability/sa/ClhsdbSymbol.java                           8220624   generic-
 serviceability/sa/TestHeapDumpForInvokeDynamic.java           8220624   generic-all
 serviceability/sa/TestHeapDumpForLargeArray.java              8220624   generic-all
 serviceability/sa/TestJmapCore.java                           8220624   generic-all
+serviceability/sa/TestJmapCoreMetaspace.java                  8267045   generic-all
 vmTestbase/jit/escape/AdaptiveBlocking/AdaptiveBlocking001/AdaptiveBlocking001.java 8260303 windows-x64
