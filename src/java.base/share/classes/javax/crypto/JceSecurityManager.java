@@ -103,9 +103,11 @@ final class JceSecurityManager {
         // javax.crypto.* packages.
         // NOTE: javax.crypto.* package maybe subject to package
         // insertion, so need to check its classloader as well.
-        List<StackFrame> stack = StackWalker.getInstance(
-                StackWalker.Option.RETAIN_CLASS_REFERENCE)
-                .walk((s) -> s.collect(Collectors.toList()));
+        final List<StackFrame> stack = AccessController.doPrivileged(
+                (PrivilegedAction<List<StackFrame>>)
+                        () -> StackWalker.getInstance(
+                                Option.RETAIN_CLASS_REFERENCE)
+                                .walk((s) -> s.collect(Collectors.toList())));
 
         URL callerCodeBase = null;
         for (StackFrame stackFrame : stack) {
@@ -238,9 +240,11 @@ final class JceSecurityManager {
     // 4334690 for more info).
     boolean isCallerTrusted(Provider provider) {
         // Get the caller and its codebase.
-        Optional<StackFrame> stackFrame = StackWalker.getInstance(
-                StackWalker.Option.RETAIN_CLASS_REFERENCE)
-                .walk((s) -> s.skip(2).findFirst());
+        final Optional<StackFrame> stackFrame = AccessController.doPrivileged(
+                (PrivilegedAction<Optional<StackFrame>>)
+                        () -> StackWalker.getInstance(
+                                Option.RETAIN_CLASS_REFERENCE)
+                                .walk((s) -> s.skip(2).findFirst()));
 
         if (stackFrame.isPresent()) {
             // context[0]: class javax.crypto.JceSecurityManager
