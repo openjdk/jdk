@@ -59,7 +59,7 @@ public class PanamaPoint implements AutoCloseable {
             FunctionDescriptor.of(C_DOUBLE, LAYOUT, LAYOUT)
         );
         MH_distance_ptrs = abi.downcallHandle(
-                lookup.lookup("distance_ptrs").get(),
+            lookup.lookup("distance_ptrs").get(),
             methodType(double.class, MemoryAddress.class, MemoryAddress.class),
             FunctionDescriptor.of(C_DOUBLE, C_POINTER, C_POINTER)
         );
