@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
     }
 
     public static CompositeData toCompositeData(final GcInfo info) {
+        @SuppressWarnings("removal")
         final GcInfoBuilder builder = AccessController.doPrivileged (new PrivilegedAction<GcInfoBuilder>() {
                         public GcInfoBuilder run() {
                             try {
@@ -80,6 +81,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
                             }
                         }
                     });
+        @SuppressWarnings("removal")
         final Object[] extAttr = AccessController.doPrivileged (new PrivilegedAction<Object[]>() {
                         public Object[] run() {
                             try {

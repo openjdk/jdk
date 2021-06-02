@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,6 +455,7 @@ public class FileCredentialsCache extends CredentialsCache
      * 4. <user.home>/krb5cc (if can't get <user.name>)
      */
 
+    @SuppressWarnings("removal")
     public static String getDefaultCacheName() {
 
         String stdCacheNameComponent = "krb5cc";
@@ -575,6 +576,7 @@ public class FileCredentialsCache extends CredentialsCache
         v.copyInto(command);
         try {
 
+            @SuppressWarnings("removal")
             Process p =
                 java.security.AccessController.doPrivileged
                 (new java.security.PrivilegedAction<Process> () {

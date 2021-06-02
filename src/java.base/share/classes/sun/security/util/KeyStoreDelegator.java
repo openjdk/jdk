@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ public class KeyStoreDelegator extends KeyStoreSpi {
     private KeyStoreSpi keystore; // the delegate
     private boolean compatModeEnabled = true;
 
+    @SuppressWarnings("removal")
     public KeyStoreDelegator(
         String primaryType,
         Class<? extends KeyStoreSpi> primaryKeyStore,

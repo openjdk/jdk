@@ -98,6 +98,7 @@ public final class Utils {
     private static Metrics[] metrics;
 
     public static void checkAccessFlightRecorder() throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new FlightRecorderPermission(ACCESS_FLIGHT_RECORDER));
@@ -105,6 +106,7 @@ public final class Utils {
     }
 
     public static void checkRegisterPermission() throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new FlightRecorderPermission(REGISTER_EVENT));

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,7 @@ public interface LibraryLookup {
     @CallerSensitive
     static LibraryLookup ofDefault() {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(new RuntimePermission("java.foreign.getDefaultLibrary"));
@@ -131,6 +132,7 @@ public interface LibraryLookup {
             throw new IllegalArgumentException("Not an absolute path: " + path.toString());
         }
         String absolutePath = path.toString();
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkLink(absolutePath);
@@ -159,6 +161,7 @@ public interface LibraryLookup {
     static LibraryLookup ofLibrary(String libName) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass());
         Objects.requireNonNull(libName);
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkLink(libName);

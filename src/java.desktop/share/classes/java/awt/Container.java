@@ -94,6 +94,7 @@ import sun.util.logging.PlatformLogger;
  * @see       LayoutManager
  * @since     1.0
  */
+@SuppressWarnings("removal")
 public class Container extends Component {
 
     private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.Container");
@@ -4738,6 +4739,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
      * from other heavyweight containers will generate enter/exit
      * events in this container
      */
+    @SuppressWarnings("removal")
     private void startListeningForOtherDrags() {
         //System.out.println("Adding AWTEventListener");
         java.security.AccessController.doPrivileged(
@@ -4753,6 +4755,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
         );
     }
 
+    @SuppressWarnings("removal")
     private void stopListeningForOtherDrags() {
         //System.out.println("Removing AWTEventListener");
         java.security.AccessController.doPrivileged(

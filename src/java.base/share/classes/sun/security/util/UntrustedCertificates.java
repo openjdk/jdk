@@ -42,6 +42,7 @@ import sun.security.x509.X509CertImpl;
  * <b>Attention</b>: This check is NOT meant to replace the standard PKI-defined
  * validation check, neither is it used as an alternative to CRL.
  */
+@SuppressWarnings("removal")
 public final class UntrustedCertificates {
 
     private static final Debug debug = Debug.getInstance("certpath");

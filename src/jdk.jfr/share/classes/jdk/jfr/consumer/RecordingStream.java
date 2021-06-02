@@ -102,6 +102,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      */
     public RecordingStream() {
         Utils.checkAccessFlightRecorder();
+        @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
         this.recording = new Recording();
         this.creationTime = Instant.now();

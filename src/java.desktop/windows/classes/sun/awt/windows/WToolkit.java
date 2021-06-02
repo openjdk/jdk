@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,6 +173,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
      */
     private static native void initIDs();
     private static boolean loaded = false;
+    @SuppressWarnings("removal")
     public static void loadLibraries() {
         if (!loaded) {
             java.security.AccessController.doPrivileged(
@@ -275,6 +276,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     private static native boolean startToolkitThread(Runnable thread, ThreadGroup rootThreadGroup);
 
+    @SuppressWarnings("removal")
     public WToolkit() {
         // Startup toolkit threads
         if (PerformanceLogger.loggingEnabled()) {
@@ -327,6 +329,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
         setExtraMouseButtonsEnabledNative(areExtraMouseButtonsEnabled);
     }
 
+    @SuppressWarnings("removal")
     private void registerShutdownHook() {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             Thread shutdown = new Thread(
@@ -338,6 +341,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
         });
      }
 
+    @SuppressWarnings("removal")
     @Override
     public void run() {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
@@ -779,6 +783,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     @Override
     public Clipboard getSystemClipboard() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);

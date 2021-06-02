@@ -810,6 +810,7 @@ public abstract class Provider extends Properties {
 
     private void check(String directive) {
         checkInitialized();
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSecurityAccess(directive);

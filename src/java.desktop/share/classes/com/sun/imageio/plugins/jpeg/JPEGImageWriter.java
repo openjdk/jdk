@@ -63,6 +63,7 @@ import org.w3c.dom.Node;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
+@SuppressWarnings("removal")
 public class JPEGImageWriter extends ImageWriter {
 
     ///////// Private variables

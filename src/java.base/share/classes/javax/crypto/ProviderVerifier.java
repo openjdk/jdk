@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,7 @@ final class ProviderVerifier {
      * In OpenJDK, we just need to examine the "cryptoperms" file to see
      * if any permissions were bundled together with this jar file.
      */
+    @SuppressWarnings("removal")
     void verify() throws IOException {
 
         // Short-circuit.  If we weren't asked to save any, we're done.

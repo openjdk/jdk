@@ -683,6 +683,7 @@ public final class JceKeyStore extends KeyStoreSpi {
      * @exception CertificateException if any of the certificates in the
      * keystore could not be loaded
      */
+    @SuppressWarnings("removal")
     public void engineLoad(InputStream stream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
