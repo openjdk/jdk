@@ -42,7 +42,6 @@ import sun.security.x509.X509CertImpl;
  * <b>Attention</b>: This check is NOT meant to replace the standard PKI-defined
  * validation check, neither is it used as an alternative to CRL.
  */
-@SuppressWarnings("removal")
 public final class UntrustedCertificates {
 
     private static final Debug debug = Debug.getInstance("certpath");
@@ -52,7 +51,8 @@ public final class UntrustedCertificates {
     private static final String algorithm;
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
             public Void run() {
                 File f = new File(StaticProperty.javaHome(),

@@ -83,7 +83,6 @@ final class ProviderVerifier {
      * In OpenJDK, we just need to examine the "cryptoperms" file to see
      * if any permissions were bundled together with this jar file.
      */
-    @SuppressWarnings("removal")
     void verify() throws IOException {
 
         // Short-circuit.  If we weren't asked to save any, we're done.
@@ -102,7 +101,8 @@ final class ProviderVerifier {
 
             // Get a link to the Jarfile to search.
             try {
-                jf = AccessController.doPrivileged(
+                @SuppressWarnings("removal")
+                var tmp = AccessController.doPrivileged(
                          new PrivilegedExceptionAction<JarFile>() {
                              public JarFile run() throws Exception {
                                  JarURLConnection conn =
@@ -113,6 +113,7 @@ final class ProviderVerifier {
                                  return conn.getJarFile();
                              }
                          });
+                jf = tmp;
             } catch (java.security.PrivilegedActionException pae) {
                 throw new SecurityException("Cannot load " + url.toString(),
                     pae.getCause());

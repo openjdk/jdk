@@ -1195,7 +1195,6 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             this.engine = engineInstance;
         }
 
-        @SuppressWarnings("removal")
         @Override
         public void run() {
             engine.engineLock.lock();
@@ -1206,7 +1205,8 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                 }
 
                 try {
-                    AccessController.doPrivileged(
+                    @SuppressWarnings("removal")
+                    var dummy = AccessController.doPrivileged(
                             new DelegatedAction(hc), engine.conContext.acc);
                 } catch (PrivilegedActionException pae) {
                     // Get the handshake context again in case the
