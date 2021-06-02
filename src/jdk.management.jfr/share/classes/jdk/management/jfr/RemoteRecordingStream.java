@@ -582,7 +582,7 @@ public final class RemoteRecordingStream implements EventStream {
      *         have {@code FilePermission} to write to the destination path
      *
      * @see RemoteRecordingStream#setMaxAge(Duration)
-     * @see RemoteRecordingStream#setMaxSize(Duration)
+     * @see RemoteRecordingStream#setMaxSize(long)
      */
     public void dump(Path destination) throws IOException {
         Objects.requireNonNull(destination);
