@@ -99,9 +99,9 @@ public class Messages {
      * Reports an error message to the doclet's reporter.
      *
      * @param fo    the file object to be associated with the message
-     * @param start the start of a range of characters to be associated with the end
-     * @param pos   the position to be associated with the end
-     * @param end   the end of a range of characters to be associated with the end
+     * @param start the start of a range of characters to be associated with the message
+     * @param pos   the position to be associated with the message
+     * @param end   the end of a range of characters to be associated with the message
      * @param key   the name of a resource containing the message to be printed
      * @param args  optional arguments to be replaced in the message
      */
