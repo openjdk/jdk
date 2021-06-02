@@ -153,9 +153,9 @@ inline intptr_t* frame::unextended_sp() const     { return _unextended_sp; }
 
 // Return address:
 
-inline address* frame::sender_pc_addr()      const { return (address*) addr_at( return_addr_offset); }
-inline address  frame::sender_pc_raw()       const { return *sender_pc_addr(); }
-inline address  frame::sender_pc()           const { return pauth_strip_pointer(sender_pc_raw()); }
+inline address* frame::sender_pc_addr()         const { return (address*) addr_at( return_addr_offset); }
+inline address  frame::sender_pc_maybe_signed() const { return *sender_pc_addr(); }
+inline address  frame::sender_pc()              const { return pauth_strip_pointer(sender_pc_maybe_signed()); }
 
 inline intptr_t*    frame::sender_sp()        const { return            addr_at(   sender_sp_offset); }
 

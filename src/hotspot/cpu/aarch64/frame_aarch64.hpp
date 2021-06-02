@@ -149,7 +149,7 @@
   intptr_t*   fp() const { return _fp; }
 
   inline address* sender_pc_addr() const;
-  inline address  sender_pc_raw() const;
+  inline address  sender_pc_maybe_signed() const;
 
   // expression stack tos if we are nested in a java call
   intptr_t* interpreter_frame_last_sp() const;

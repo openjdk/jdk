@@ -441,7 +441,7 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
 
   // Use the raw version of pc - the interpreter should not have signed it.
 
-  return frame(sender_sp, unextended_sp, link(), sender_pc_raw());
+  return frame(sender_sp, unextended_sp, link(), sender_pc_maybe_signed());
 }
 
 
