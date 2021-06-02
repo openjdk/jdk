@@ -2335,7 +2335,7 @@ encode %{
   enc_class strictfp_bias1( regDPR dst ) %{
     emit_opcode( cbuf, 0xDB );           // FLD m80real
     emit_opcode( cbuf, 0x2D );
-    emit_d32( cbuf, (int)StubRoutines::addr_fpu_subnormal_bias1() );
+    emit_d32( cbuf, (int)StubRoutines::x86::addr_fpu_subnormal_bias1() );
     emit_opcode( cbuf, 0xDE );           // FMULP ST(dst), ST0
     emit_opcode( cbuf, 0xC8+$dst$$reg );
   %}
@@ -2343,7 +2343,7 @@ encode %{
   enc_class strictfp_bias2( regDPR dst ) %{
     emit_opcode( cbuf, 0xDB );           // FLD m80real
     emit_opcode( cbuf, 0x2D );
-    emit_d32( cbuf, (int)StubRoutines::addr_fpu_subnormal_bias2() );
+    emit_d32( cbuf, (int)StubRoutines::x86::addr_fpu_subnormal_bias2() );
     emit_opcode( cbuf, 0xDE );           // FMULP ST(dst), ST0
     emit_opcode( cbuf, 0xC8+$dst$$reg );
   %}
@@ -9793,15 +9793,15 @@ instruct mulDPR_reg(regDPR dst, regDPR src) %{
 // rescale product by 2^(15360)
 //
 instruct strictfp_mulDPR_reg(regDPR1 dst, regnotDPR1 src) %{
-  predicate( UseSSE<=1 && Compile::current()->has_method() && Compile::current()->method()->is_strict() );
+  predicate( UseSSE<=1 && Compile::current()->has_method() );
   match(Set dst (MulD dst src));
-  ins_cost(1);   // Select this instruction for all strict FP double multiplies
+  ins_cost(1);   // Select this instruction for all FP double multiplies
 
-  format %{ "FLD    StubRoutines::_fpu_subnormal_bias1\n\t"
+  format %{ "FLD    StubRoutines::x86::_fpu_subnormal_bias1\n\t"
             "DMULp  $dst,ST\n\t"
             "FLD    $src\n\t"
             "DMULp  $dst,ST\n\t"
-            "FLD    StubRoutines::_fpu_subnormal_bias2\n\t"
+            "FLD    StubRoutines::x86::_fpu_subnormal_bias2\n\t"
             "DMULp  $dst,ST\n\t" %}
   opcode(0xDE, 0x1); /* DE C8+i or DE /1*/
   ins_encode( strictfp_bias1(dst),
@@ -9912,14 +9912,14 @@ instruct divDPR_reg(regDPR dst, regDPR src) %{
 instruct strictfp_divDPR_reg(regDPR1 dst, regnotDPR1 src) %{
   predicate (UseSSE<=1);
   match(Set dst (DivD dst src));
-  predicate( UseSSE<=1 && Compile::current()->has_method() && Compile::current()->method()->is_strict() );
+  predicate( UseSSE<=1 && Compile::current()->has_method() );
   ins_cost(01);
 
-  format %{ "FLD    StubRoutines::_fpu_subnormal_bias1\n\t"
+  format %{ "FLD    StubRoutines::x86::_fpu_subnormal_bias1\n\t"
             "DMULp  $dst,ST\n\t"
             "FLD    $src\n\t"
             "FDIVp  $dst,ST\n\t"
-            "FLD    StubRoutines::_fpu_subnormal_bias2\n\t"
+            "FLD    StubRoutines::x86::_fpu_subnormal_bias2\n\t"
             "DMULp  $dst,ST\n\t" %}
   opcode(0xDE, 0x7); /* DE F8+i or DE /7*/
   ins_encode( strictfp_bias1(dst),
@@ -9928,20 +9928,6 @@ instruct strictfp_divDPR_reg(regDPR1 dst, regnotDPR1 src) %{
               strictfp_bias2(dst) );
   ins_pipe( fpu_reg_reg );
 %}
-
-instruct divDPR_reg_round(stackSlotD dst, regDPR src1, regDPR src2) %{
-  predicate( UseSSE<=1 && !(Compile::current()->has_method() && Compile::current()->method()->is_strict()) );
-  match(Set dst (RoundDouble (DivD src1 src2)));
-
-  format %{ "FLD    $src1\n\t"
-            "FDIV   ST,$src2\n\t"
-            "FSTP_D $dst\t# D-round" %}
-  opcode(0xD8, 0x6); /* D8 F0+i or D8 /6 */
-  ins_encode( Push_Reg_DPR(src1),
-              OpcP, RegOpc(src2), Pop_Mem_DPR(dst) );
-  ins_pipe( fpu_mem_reg_reg );
-%}
-
 
 instruct modDPR_reg(regDPR dst, regDPR src, eAXRegI rax, eFlagsReg cr) %{
   predicate(UseSSE<=1);

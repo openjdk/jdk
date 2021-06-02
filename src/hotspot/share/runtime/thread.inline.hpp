@@ -26,12 +26,13 @@
 #ifndef SHARE_RUNTIME_THREAD_INLINE_HPP
 #define SHARE_RUNTIME_THREAD_INLINE_HPP
 
+#include "runtime/thread.hpp"
+
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
-#include "runtime/nonJavaThread.hpp"
 
 #if defined(__APPLE__) && defined(AARCH64)
 #include "runtime/os.hpp"
