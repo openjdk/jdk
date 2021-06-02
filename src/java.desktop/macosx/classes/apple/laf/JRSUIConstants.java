@@ -111,8 +111,7 @@ public final class JRSUIConstants {
         }
 
         public int hashCode() {
-            final long bits = Double.doubleToLongBits(doubleValue);
-            return Long.hashCode(bits);
+            return Double.hashCode(doubleValue);
         }
 
         public String toString() {
