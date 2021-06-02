@@ -26,7 +26,8 @@ package compiler.intrinsics;
 /*
  * @test
  * @bug 8130832
- * @modules java.base/jdk.internal.util
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.util
  *
  *  @run main/othervm
  *       -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*::test*
@@ -47,7 +48,6 @@ public class VectorizedMismatchTest {
         int  scale  = ArraysSupport.LOG2_ARRAY_BOOLEAN_INDEX_SCALE;
         return ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  0, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  1, scale) +
-               ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 63, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 64, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,128, scale);
     }
@@ -63,7 +63,6 @@ public class VectorizedMismatchTest {
         return ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  0, scale) +
                 ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  1, scale) +
                 ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 63, scale) +
-                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 64, scale) +
                 ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,128, scale);
     }
 
@@ -77,7 +76,6 @@ public class VectorizedMismatchTest {
         int  scale  = ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE;
         return ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  0, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  1, scale) +
-               ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 31, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 32, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 64, scale);
     }
@@ -92,7 +90,6 @@ public class VectorizedMismatchTest {
         int  scale  = ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE;
         return ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  0, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  1, scale) +
-               ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 31, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 32, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 64, scale);
     }
@@ -107,7 +104,6 @@ public class VectorizedMismatchTest {
         int  scale  = ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE;
         return ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  0, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  1, scale) +
-               ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 15, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 16, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 32, scale);
     }
@@ -122,7 +118,6 @@ public class VectorizedMismatchTest {
         int  scale  = ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE;
         return ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  0, scale) +
                 ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  1, scale) +
-                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 15, scale) +
                 ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 16, scale) +
                 ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 32, scale);
     }
@@ -137,7 +132,6 @@ public class VectorizedMismatchTest {
         int  scale  = ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE;
         return ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  0, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  1, scale) +
-               ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  7, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  8, scale) +
                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 16, scale);
     }
@@ -152,7 +146,6 @@ public class VectorizedMismatchTest {
         int  scale  = ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE;
         return ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  0, scale) +
                 ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  1, scale) +
-                ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  7, scale) +
                 ArraysSupport.vectorizedMismatch(obja, offset, objb, offset,  8, scale) +
                 ArraysSupport.vectorizedMismatch(obja, offset, objb, offset, 16, scale);
     }

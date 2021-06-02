@@ -8063,7 +8063,7 @@ instruct vmask_cmp_node(rRegI dst, vec src1, vec src2, kReg mask, kReg ktmp1, kR
 
     __ knotql($ktmp2$$KRegister, $mask$$KRegister);
     __ mov64($dst$$Register, -1L);
-    __ evpcmp(elmType, $ktmp1$$KRegister, $mask$$KRegister, $src1$$XMMRegister, $src2$$XMMRegister, Assembler::eq, vector_len);
+    __ evpcmp(elem_bt, $ktmp1$$KRegister, $mask$$KRegister, $src1$$XMMRegister, $src2$$XMMRegister, Assembler::eq, vlen_enc);
     __ kortestql($ktmp2$$KRegister, $ktmp1$$KRegister);
     __ jccb(Assembler::carrySet, DONE);
     __ kmovql($dst$$Register, $ktmp1$$KRegister);

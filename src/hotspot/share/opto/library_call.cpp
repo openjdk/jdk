@@ -5282,7 +5282,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
         memory_phi->init_req(inline_path, map()->memory());
         result_phi->init_req(inline_path, result);
 
-        C->set_max_vector_size(MAX2(ArrayOperationPartialInlineSize, C->max_vector_size()));
+        C->set_max_vector_size(MAX2(vt->length_in_bytes(), C->max_vector_size()));
         clear_upper_avx();
       }
     }
