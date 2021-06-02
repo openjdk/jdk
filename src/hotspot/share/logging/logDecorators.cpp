@@ -27,7 +27,7 @@
 
 template <LogDecorators::Decorator d>
 struct AllBitmask {
-  // Use recursive template deduction to calculcate the bitmask of all decorations.
+  // Use recursive template deduction to calculate the bitmask of all decorations.
   static const uint _value = (1 << d) | AllBitmask<static_cast<LogDecorators::Decorator>(d + 1)>::_value;
 };
 

@@ -36,6 +36,16 @@
 #include "unittest.hpp"
 #include "utilities/ostream.hpp"
 
+LogTagSet* find_tagset(LogTagType tt) {
+  // Update the decorators on all tagsets to get rid of unused decorators
+  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    if (ts->ntags() == 1 && ts->tag(0) == tt) {
+      return ts;
+    }
+  }
+  return NULL;
+}
+
 class LogConfigurationTest : public LogTestFixture {
  protected:
   static char _all_decorators[256];
@@ -247,7 +257,7 @@ TEST_VM_F(LogConfigurationTest, reconfigure_decorators_MT) {
   const long testDurationMillis = 3000;
   UnitTestThread* t[nrOfThreads];
 
-  set_log_config(TestLogFileName, "logging=debug", "none");
+  set_log_config(TestLogFileName, "logging=debug", "none", "filecount=0");
   set_log_config("stdout", "all=off", "none");
   set_log_config("stderr", "all=off", "none");
   for (int i = 0; i < nrOfThreads; ++i) {
@@ -268,6 +278,44 @@ TEST_VM_F(LogConfigurationTest, reconfigure_decorators_MT) {
     // Take turn logging with different decorators, either None or All.
     set_log_config(TestLogFileName, "logging=debug", "none");
     set_log_config(TestLogFileName, "logging=debug", _all_decorators);
+  }
+
+  for (int i = 0; i < nrOfThreads; ++i) {
+    done.wait();
+  }
+}
+
+// Dynamically change decorators while loggings are emitting.
+TEST_VM_F(LogConfigurationTest, reconfigure_tags_MT) {
+  const int nrOfThreads = 4;
+  ConcurrentLogsite logsites[nrOfThreads] = {0, 1, 2, 3};
+  Semaphore done(0);
+  const long testDurationMillis = 5000;
+  UnitTestThread* t[nrOfThreads];
+
+  set_log_config(TestLogFileName, "logging=debug", "", "filecount=0");
+  set_log_config("stdout", "all=off", "none");
+  set_log_config("stderr", "all=off", "none");
+
+  for (int i = 0; i < nrOfThreads; ++i) {
+    t[i] = new UnitTestThread(&logsites[i], &done, testDurationMillis);
+  }
+
+  for (int i = 0; i < nrOfThreads; i++) {
+    t[i]->doit();
+  }
+
+  jlong time_start = os::elapsed_counter();
+  while (true) {
+    jlong elapsed = (jlong)TimeHelper::counter_to_millis(os::elapsed_counter() - time_start);
+    if (elapsed > testDurationMillis) {
+      break;
+    }
+
+    // Take turn logging with different decorators, either None or All.
+    set_log_config(TestLogFileName, "logging=off");
+    set_log_config(TestLogFileName, "logging=debug", "", "filecount=0");
+    os::naked_short_nanosleep(137);
   }
 
   for (int i = 0; i < nrOfThreads; ++i) {

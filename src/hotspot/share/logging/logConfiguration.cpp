@@ -263,7 +263,7 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   // if setting has changed. It guarantees that all logs either synchronous writing or enqueuing to the async buffer
   // see the new tags and decorators. It's worth noting that the synchronization happens even level doesn't change.
   //
-  // LogDecorator is a set of decorators represented in a uint. sizeof(uinit) is not greater than a machine word,
+  // LogDecorator is a set of decorators represented in a uint. sizeof(uint) is not greater than a machine word,
   // so store of it is atomic on the mainstream processors. I.e. readers see either its older value or new value.
   // ts->update_decorators(decorators) above is a union operation of the existing decorators at different levels.
   // It's safe to do output->set_decorators(decorators) because decorators is a subset of relevant Tagsets' decorators.
@@ -288,6 +288,10 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   }
 
   if (!enabled && idx > 1) {
+    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+        assert(!ts->has_output(output), "broken");
+    }
+
     // Output is unused and should be removed, unless it is stdout/stderr (idx < 2)
     delete_output(idx);
     return;
