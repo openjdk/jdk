@@ -101,6 +101,7 @@ public class ObjectStreamClass implements Serializable {
         NO_FIELDS;
 
     /** reflection factory for obtaining serialization constructors */
+    @SuppressWarnings("removal")
     private static final ReflectionFactory reflFactory =
         AccessController.doPrivileged(
             new ReflectionFactory.GetReflectionFactoryAction());
@@ -278,6 +279,7 @@ public class ObjectStreamClass implements Serializable {
      *
      * @return  the SUID of the class described by this descriptor
      */
+    @SuppressWarnings("removal")
     public long getSerialVersionUID() {
         // REMIND: synchronize instead of relying on volatile?
         if (suid == null) {
@@ -301,6 +303,7 @@ public class ObjectStreamClass implements Serializable {
      *
      * @return  the {@code Class} instance that this descriptor represents
      */
+    @SuppressWarnings("removal")
     @CallerSensitive
     public Class<?> forClass() {
         if (cl == null) {
@@ -460,6 +463,7 @@ public class ObjectStreamClass implements Serializable {
          * Returns the value contained by this EntryFuture, blocking if
          * necessary until a value is set.
          */
+        @SuppressWarnings("removal")
         synchronized Object get() {
             boolean interrupted = false;
             while (entry == unset) {
@@ -493,6 +497,7 @@ public class ObjectStreamClass implements Serializable {
     /**
      * Creates local class descriptor representing given class.
      */
+    @SuppressWarnings("removal")
     private ObjectStreamClass(final Class<?> cl) {
         this.cl = cl;
         name = cl.getName();
@@ -620,6 +625,7 @@ public class ObjectStreamClass implements Serializable {
      *         ProtectionDomain that separate the concrete class {@code cl}
      *         from its ancestor's declaring {@code cons}, or {@code null}.
      */
+    @SuppressWarnings("removal")
     private ProtectionDomain[] getProtectionDomains(Constructor<?> cons,
                                                     Class<?> cl) {
         ProtectionDomain[] domains = null;
@@ -1130,6 +1136,7 @@ public class ObjectStreamClass implements Serializable {
      * class is non-serializable or if the appropriate no-arg constructor is
      * inaccessible/unavailable.
      */
+    @SuppressWarnings("removal")
     Object newInstance()
         throws InstantiationException, InvocationTargetException,
                UnsupportedOperationException
@@ -1572,6 +1579,7 @@ public class ObjectStreamClass implements Serializable {
      * the not found ( which should never happen for correctly generated record
      * classes ).
      */
+    @SuppressWarnings("removal")
     private static MethodHandle canonicalRecordCtr(Class<?> cls) {
         assert cls.isRecord() : "Expected record, got: " + cls;
         PrivilegedAction<MethodHandle> pa = () -> {
@@ -2584,6 +2592,7 @@ public class ObjectStreamClass implements Serializable {
          * and return
          * {@code Object}
          */
+        @SuppressWarnings("removal")
         static MethodHandle deserializationCtr(ObjectStreamClass desc) {
             // check the cached value 1st
             MethodHandle mh = desc.deserializationCtr;

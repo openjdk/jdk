@@ -310,6 +310,7 @@ class UnixAsynchronousSocketChannelImpl
         InetSocketAddress isa = Net.checkAddress(remote);
 
         // permission check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkConnect(isa.getAddress().getHostAddress(), isa.getPort());

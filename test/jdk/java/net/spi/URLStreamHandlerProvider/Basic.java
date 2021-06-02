@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,8 +83,12 @@ public class Basic {
         viaBadProvider("jerry", SCE);
     }
 
+    static final String SECURITY_MANAGER_DEPRECATED
+            = "WARNING: The Security Manager is deprecated and will be removed in a future release."
+                    + System.getProperty("line.separator");
     static final Consumer<Result> KNOWN = r -> {
-        if (r.exitValue != 0 || !r.output.isEmpty())
+        if (r.exitValue != 0 ||
+                (!r.output.isEmpty() && !r.output.equals(SECURITY_MANAGER_DEPRECATED)))
             throw new RuntimeException(r.output);
     };
     static final Consumer<Result> UNKNOWN = r -> {

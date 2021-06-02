@@ -115,12 +115,14 @@ public abstract class AWTEvent extends EventObject {
    /*
     * The event's AccessControlContext.
     */
+    @SuppressWarnings("removal")
     private transient volatile AccessControlContext acc =
         AccessController.getContext();
 
    /*
     * Returns the acc this event was constructed with.
     */
+    @SuppressWarnings("removal")
     final AccessControlContext getAccessControlContext() {
         if (acc == null) {
             throw new SecurityException("AWTEvent is missing AccessControlContext");
@@ -279,6 +281,7 @@ public abstract class AWTEvent extends EventObject {
                     return ev.isSystemGenerated;
                 }
 
+                @SuppressWarnings("removal")
                 public AccessControlContext getAccessControlContext(AWTEvent ev) {
                     return ev.getAccessControlContext();
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,7 @@ final class ProviderConfig {
     // avoid if not available (pre Solaris 10) to reduce startup time
     // or if disabled via system property
     private void checkSunPKCS11Solaris() {
+        @SuppressWarnings("removal")
         Boolean o = AccessController.doPrivileged(
                                 new PrivilegedAction<Boolean>() {
             public Boolean run() {
@@ -159,7 +160,7 @@ final class ProviderConfig {
     /**
      * Get the provider object. Loads the provider if it is not already loaded.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"removal","deprecation"})
     Provider getProvider() {
         // volatile variable load
         Provider p = provider;
@@ -240,6 +241,7 @@ final class ProviderConfig {
      * @throws ProviderException if executing the Provider's constructor
      * throws a ProviderException. All other Exceptions are ignored.
      */
+    @SuppressWarnings("removal")
     private Provider doLoadProvider() {
         return AccessController.doPrivileged(new PrivilegedAction<Provider>() {
             public Provider run() {
@@ -294,6 +296,7 @@ final class ProviderConfig {
      *
      * NOTE use of doPrivileged().
      */
+    @SuppressWarnings("removal")
     private static String expand(final String value) {
         // shortcut if value does not contain any properties
         if (value.contains("${") == false) {
@@ -394,6 +397,7 @@ final class ProviderConfig {
                     return null;
                 }
 
+                @SuppressWarnings("removal")
                 Provider p = AccessController.doPrivileged
                     (new PrivilegedExceptionAction<Provider>() {
                     @SuppressWarnings("deprecation") // Class.newInstance

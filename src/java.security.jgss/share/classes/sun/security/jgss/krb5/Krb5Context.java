@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -592,6 +592,7 @@ class Krb5Context implements GSSContextSpi {
      *    to send the token to its peer for processing.
      * @exception GSSException
      */
+    @SuppressWarnings("removal")
     public final byte[] initSecContext(InputStream is, int mechTokenSize)
         throws GSSException {
 
@@ -1344,6 +1345,7 @@ class Krb5Context implements GSSContextSpi {
     }
 
     private void checkPermission(String principal, String action) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             ServicePermission perm =

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,6 +147,7 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-Djdk.internal.lambda.dumpProxyClasses=notExist",
                                "com.example.TestLambda");
         assertEquals(tr.testOutput.stream()
+                                  .filter(s -> !s.contains("setSecurityManager is deprecated"))
                                   .filter(s -> s.startsWith("WARNING"))
                                   .peek(s -> assertTrue(s.contains("does not exist")))
                                   .count(),
@@ -163,6 +164,7 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-Djdk.internal.lambda.dumpProxyClasses=file",
                                "com.example.TestLambda");
         assertEquals(tr.testOutput.stream()
+                                  .filter(s -> !s.contains("setSecurityManager is deprecated"))
                                   .filter(s -> s.startsWith("WARNING"))
                                   .peek(s -> assertTrue(s.contains("not a directory")))
                                   .count(),
@@ -222,6 +224,7 @@ public class LogGeneratedClassesTest extends LUtils {
                                    "-Djdk.internal.lambda.dumpProxyClasses=readOnly",
                                    "com.example.TestLambda");
             assertEquals(tr.testOutput.stream()
+                                      .filter(s -> !s.contains("setSecurityManager is deprecated"))
                                       .filter(s -> s.startsWith("WARNING"))
                                       .peek(s -> assertTrue(s.contains("not writable")))
                                       .count(),

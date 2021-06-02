@@ -116,6 +116,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             namePrefix = "HttpClient-" + clientID + "-Worker-";
         }
 
+        @SuppressWarnings("removal")
         @Override
         public Thread newThread(Runnable r) {
             String name = namePrefix + nextId.getAndIncrement();
@@ -157,6 +158,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             }
         }
 
+        @SuppressWarnings("removal")
         private void shutdown() {
             if (delegate instanceof ExecutorService service) {
                 PrivilegedAction<?> action = () -> {
@@ -353,6 +355,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return params;
     }
 
+    @SuppressWarnings("removal")
     private static ProxySelector getDefaultProxySelector() {
         PrivilegedAction<ProxySelector> action = ProxySelector::getDefault;
         return AccessController.doPrivileged(action);
@@ -604,6 +607,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return sendAsync(userRequest, responseHandler, pushPromiseHandler, delegatingExecutor.delegate);
     }
 
+    @SuppressWarnings("removal")
     private <T> CompletableFuture<HttpResponse<T>>
     sendAsync(HttpRequest userRequest,
               BodyHandler<T> responseHandler,

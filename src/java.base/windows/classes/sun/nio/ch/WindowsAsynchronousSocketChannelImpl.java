@@ -309,6 +309,7 @@ class WindowsAsynchronousSocketChannelImpl
         }
     }
 
+    @SuppressWarnings("removal")
     private void doPrivilegedBind(final SocketAddress sa) throws IOException {
         try {
             AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
@@ -338,6 +339,7 @@ class WindowsAsynchronousSocketChannelImpl
         InetSocketAddress isa = Net.checkAddress(remote);
 
         // permission check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkConnect(isa.getAddress().getHostAddress(), isa.getPort());

@@ -64,6 +64,7 @@ import sun.util.logging.PlatformLogger;
  * @see Component#getFocusTraversalKeys
  * @since 1.4
  */
+@SuppressWarnings("removal")
 public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     private static final PlatformLogger focusLog = PlatformLogger.getLogger("java.awt.focus.DefaultKeyboardFocusManager");
 
