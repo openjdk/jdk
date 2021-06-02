@@ -415,7 +415,7 @@ public class SharedUtils {
     // lazy init MH_ALLOC and MH_FREE handles
     private static class AllocHolder {
 
-        private static final CLinker linker = getSystemLinker();
+        private static final CLinker SYS_LINKER = getSystemLinker();
 
         static final MethodHandle MH_MALLOC = linker.downcallHandle(CLinker.systemLookup().lookup("malloc").get(),
                         MethodType.methodType(MemoryAddress.class, long.class),
