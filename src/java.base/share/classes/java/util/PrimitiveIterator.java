@@ -74,8 +74,8 @@ public interface PrimitiveIterator<T, T_CONS> extends Iterator<T> {
      * Exceptions thrown by the action are relayed to the caller.
      * <p>
      * The behavior of an iterator is unspecified if the action modifies the
-     * collection in any way (even by calling the {@link #remove remove} method
-     * or other mutator methods of {@code Iterator} subtypes),
+     * source of elements in any way (even by calling the {@link #remove remove}
+     * method or other mutator methods of {@code Iterator} subtypes),
      * unless an overriding class has specified a concurrent modification policy.
      * <p>
      * Subsequent behavior of an iterator is unspecified if the action throws an
