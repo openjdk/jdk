@@ -225,7 +225,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             if (disableEagerInitialization) {
                 try {
                     return new ConstantCallSite(caller.findStaticGetter(innerClass, LAMBDA_INSTANCE_FIELD,
-                            invokedType.returnType()));
+                            factoryType.returnType()));
                 } catch (ReflectiveOperationException e) {
                     throw new LambdaConversionException(
                             "Exception finding " +  LAMBDA_INSTANCE_FIELD + " static field", e);
@@ -281,28 +281,28 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             if (CDS.isDumpingArchive()) {
                 Class<?> innerClass = generateInnerClass();
                 LambdaProxyClassArchive.register(targetClass,
-                                                 samMethodName,
-                                                 invokedType,
-                                                 samMethodType,
-                                                 implMethod,
-                                                 instantiatedMethodType,
+                                                 interfaceMethodName,
+                                                 factoryType,
+                                                 interfaceMethodType,
+                                                 implementation,
+                                                 dynamicMethodType,
                                                  isSerializable,
-                                                 markerInterfaces,
-                                                 additionalBridges,
+                                                 interfaces,
+                                                 bridges,
                                                  innerClass);
                 return innerClass;
             }
 
             // load from CDS archive if present
             Class<?> innerClass = LambdaProxyClassArchive.find(targetClass,
-                                                               samMethodName,
-                                                               invokedType,
-                                                               samMethodType,
-                                                               implMethod,
-                                                               instantiatedMethodType,
+                                                               interfaceMethodName,
+                                                               factoryType,
+                                                               interfaceMethodType,
+                                                               implementation,
+                                                               dynamicMethodType,
                                                                isSerializable,
-                                                               markerInterfaces,
-                                                               additionalBridges);
+                                                               interfaces,
+                                                               bridges);
             if (innerClass != null) return innerClass;
         }
         return generateInnerClass();
@@ -349,7 +349,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         generateConstructor();
 
-        if (invokedType.parameterCount() == 0 && disableEagerInitialization) {
+        if (factoryType.parameterCount() == 0 && disableEagerInitialization) {
             generateClassInitializer();
         }
 
@@ -418,7 +418,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * Generate a static field and a static initializer that sets this field to an instance of the lambda
      */
     private void generateClassInitializer() {
-        String lambdaTypeDescriptor = invokedType.returnType().descriptorString();
+        String lambdaTypeDescriptor = factoryType.returnType().descriptorString();
 
         // Generate the static final field that holds the lambda singleton
         FieldVisitor fv = cw.visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL,
@@ -431,7 +431,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         clinit.visitTypeInsn(NEW, lambdaClassName);
         clinit.visitInsn(Opcodes.DUP);
-        assert invokedType.parameterCount() == 0;
+        assert factoryType.parameterCount() == 0;
         clinit.visitMethodInsn(INVOKESPECIAL, lambdaClassName, NAME_CTOR, constructorType.toMethodDescriptorString(), false);
         clinit.visitFieldInsn(PUTSTATIC, lambdaClassName, LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor);
 
