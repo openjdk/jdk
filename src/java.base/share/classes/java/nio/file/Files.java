@@ -2801,36 +2801,37 @@ public final class Files {
         try (FileTreeWalker walker = new FileTreeWalker(options, maxDepth)) {
             FileTreeWalker.Event ev = walker.walk(start);
             do {
-                FileVisitResult result;
-                switch (ev.type()) {
+                FileVisitResult result = switch (ev.type()) {
                     case ENTRY -> {
                         IOException ioe = ev.ioeException();
                         if (ioe == null) {
                             assert ev.attributes() != null;
-                            result = visitor.visitFile(ev.file(), ev.attributes());
+                            yield visitor.visitFile(ev.file(), ev.attributes());
                         } else {
-                            result = visitor.visitFileFailed(ev.file(), ioe);
+                            yield visitor.visitFileFailed(ev.file(), ioe);
                         }
                     }
                     case START_DIRECTORY -> {
-                        result = visitor.preVisitDirectory(ev.file(), ev.attributes());
+                        var r = visitor.preVisitDirectory(ev.file(), ev.attributes());
 
                         // if SKIP_SIBLINGS and SKIP_SUBTREE is returned then
                         // there shouldn't be any more events for the current
                         // directory.
-                        if (result == FileVisitResult.SKIP_SUBTREE ||
-                                result == FileVisitResult.SKIP_SIBLINGS)
+                        if (r == FileVisitResult.SKIP_SUBTREE ||
+                            r == FileVisitResult.SKIP_SIBLINGS)
                             walker.pop();
+                        yield r;
                     }
                     case END_DIRECTORY -> {
-                        result = visitor.postVisitDirectory(ev.file(), ev.ioeException());
+                        var r = visitor.postVisitDirectory(ev.file(), ev.ioeException());
 
                         // SKIP_SIBLINGS is a no-op for postVisitDirectory
-                        if (result == FileVisitResult.SKIP_SIBLINGS)
-                            result = FileVisitResult.CONTINUE;
+                        if (r == FileVisitResult.SKIP_SIBLINGS)
+                            r = FileVisitResult.CONTINUE;
+                        yield r;
                     }
                     default -> throw new AssertionError("Should not get here");
-                }
+                };
 
                 if (Objects.requireNonNull(result) != FileVisitResult.CONTINUE) {
                     if (result == FileVisitResult.TERMINATE) {
