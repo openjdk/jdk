@@ -593,7 +593,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     /**
      * An Entry maintaining a key and a value.  The value may be
      * changed using the {@code setValue} method. Instances of
-     * this class are not associated with any map's entry set view.
+     * this class are not associated with any map's entry-set view.
      *
      * @apiNote
      * This class facilitates the process of building custom map
@@ -730,7 +730,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     /**
      * An unmodifiable Entry maintaining a key and a value.  This class
      * does not support the {@code setValue} method. Instances of
-     * this class are not associated with any map's entry set view.
+     * this class are not associated with any map's entry-set view.
      *
      * @apiNote
      * Instances of this class are not necessarily immutable, as the key
@@ -802,7 +802,10 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
          * Replaces the value corresponding to this entry with the specified
          * value (optional operation).  This implementation simply throws
          * {@code UnsupportedOperationException}, as this class implements
-         * an <i>immutable</i> map entry.
+         * an unmodifiable map entry.
+         *
+         * @implSpec
+         * The implementation in this class always throws {@code UnsupportedOperationException}.
          *
          * @param value new value to be stored in this entry
          * @return (Does not return)

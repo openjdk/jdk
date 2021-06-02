@@ -481,9 +481,10 @@ public class MapFactories {
         Map.Entry<Integer,String> e = Map.entry(0, null);
     }
 
-    @Test(expectedExceptions=UnsupportedOperationException.class)
+    @Test
     public void entrySetValueDisallowed() {
-        Map.entry("a", "b").setValue("x");
+        var e = Map.entry("a", "b");
+        assertThrows(UnsupportedOperationException.class, () -> e.setValue("x"));
     }
 
     @Test

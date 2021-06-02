@@ -405,7 +405,6 @@ public interface Map<K, V> {
      * During iteration of the entry-set view, if supported by the backing map,
      * a change to a {@code Map.Entry}'s value via the
      * {@link Map.Entry#setValue setValue} method will be visible in the backing map.
-     * <p>
      * The behavior of such a {@code Map.Entry} instance is undefined outside of
      * iteration of the map's entry-set view. It is also undefined if the backing
      * map has been modified after the {@code Map.Entry} was returned by the
@@ -414,8 +413,13 @@ public interface Map<K, V> {
      * visible in the corresponding {@code Map.Entry} element of the entry-set view.
      *
      * @apiNote
-     * A {@code Map.Entry} obtained from a map's entry-set view can be disconnected
-     * from the backing map through use of the {@link Map.Entry#copyOf copyOf} method.
+     * It is possible to create a {@code Map.Entry} instance that is disconnected
+     * from a backing map by using the {@link Map.Entry#copyOf copyOf} method. For example,
+     * the following creates a snapshot of a map's entries that is guaranteed not to
+     * change even if the original map is modified:
+     * <pre> {@code
+     * var entries = map.entrySet().stream().map(Map.Entry::copyOf).toList()
+     * }</pre>
      *
      * @see Map#entrySet()
      * @since 1.2
@@ -578,7 +582,7 @@ public interface Map<K, V> {
         /**
          * Returns a copy of the given {@code Map.Entry}. The returned instance is not
          * associated with any map. The returned instance has the same characteristics
-         * as instances returned by the {@link Map#entry Map.entry} method.
+         * as instances returned by the {@link Map#entry Map::entry} method.
          *
          * @apiNote
          * An instance obtained from a map's entry-set view has a connection to that map.
@@ -586,7 +590,7 @@ public interface Map<K, V> {
          * containing the same key and value, that is independent of any map.
          *
          * @implNote
-         * If the given entry was obtained from a call to {@code copyOf} or {@code Map.entry},
+         * If the given entry was obtained from a call to {@code copyOf} or {@code Map::entry},
          * calling {@code copyOf} will generally not create another copy.
          *
          * @param <K> the type of the key
