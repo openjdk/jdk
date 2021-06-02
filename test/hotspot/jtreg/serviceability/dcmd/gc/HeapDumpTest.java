@@ -50,15 +50,15 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
 public class HeapDumpTest {
     protected String heapDumpArgs = "";
 
-    public void run(CommandExecutor executor, boolean rewrite) throws IOException {
+    public void run(CommandExecutor executor, boolean overwrite) throws IOException {
         File dump = new File("jcmd.gc.heap_dump." + System.currentTimeMillis() + ".hprof");
-        if (!rewrite && dump.exists()) {
+        if (!overwrite && dump.exists()) {
             dump.delete();
-        } else if (rewrite) {
+        } else if (overwrite) {
             dump.createNewFile();
         }
 
-        String cmd = "GC.heap_dump " + (rewrite ? "-rewrite " : "") + heapDumpArgs + " " + dump.getAbsolutePath();
+        String cmd = "GC.heap_dump " + (overwrite ? "-overwrite " : "") + heapDumpArgs + " " + dump.getAbsolutePath();
         executor.execute(cmd);
 
         verifyHeapDump(dump);

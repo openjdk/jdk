@@ -61,11 +61,11 @@ public:
 class FileWriter : public AbstractWriter {
 private:
   char const* _path;
-  bool _rewrite;
+  bool _overwrite;
   int _fd;
 
 public:
-  FileWriter(char const* path, bool rewrite) : _path(path), _rewrite(rewrite), _fd(-1) { }
+  FileWriter(char const* path, bool overwrite) : _path(path), _overwrite(overwrite), _fd(-1) { }
 
   ~FileWriter();
 

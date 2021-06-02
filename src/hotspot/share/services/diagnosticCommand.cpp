@@ -469,12 +469,12 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
   _gzip("-gz", "If specified, the heap dump is written in gzipped format "
                "using the given compression level. 1 (recommended) is the fastest, "
                "9 the strongest compression.", "INT", false, "1"),
-  _rewrite("-rewrite", "If specified, the dump file will be rewritten if it exists",
+  _overwrite("-overwrite", "If specified, the dump file will be overwritten if it exists",
            "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_argument(&_filename);
   _dcmdparser.add_dcmd_option(&_gzip);
-  _dcmdparser.add_dcmd_option(&_rewrite);
+  _dcmdparser.add_dcmd_option(&_overwrite);
 }
 
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
@@ -493,7 +493,7 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int) level, _rewrite.value());
+  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value());
 }
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
