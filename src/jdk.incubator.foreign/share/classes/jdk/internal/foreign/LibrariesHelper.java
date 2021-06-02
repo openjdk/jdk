@@ -29,27 +29,27 @@ import jdk.incubator.foreign.MemoryAddress;
 
 import java.io.File;
 import jdk.incubator.foreign.LibraryLookup;
+import jdk.incubator.foreign.MemoryLayout;
+import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 import jdk.internal.loader.NativeLibraries;
 import jdk.internal.loader.NativeLibrary;
-import jdk.internal.ref.CleanerFactory;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.IdentityHashMap;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 public final class LibrariesHelper {
     private LibrariesHelper() {}
 
-    private final static NativeLibraries nativeLibraries =
+    private static final NativeLibraries nativeLibraries =
             NativeLibraries.rawNativeLibraries(LibrariesHelper.class, true);
 
-    private final static Map<NativeLibrary, AtomicInteger> loadedLibraries = new IdentityHashMap<>();
+    private static final Map<NativeLibrary, WeakReference<ResourceScope>> loadedLibraries = new ConcurrentHashMap<>();
 
     /**
      * Load the specified shared library.
@@ -76,67 +76,69 @@ public final class LibrariesHelper {
                 "Library not found: " + path);
     }
 
-    // return the absolute path of the library of given name by searching
-    // in the given array of paths.
-    private static Optional<Path> findLibraryPath(Path[] paths, String libName) {
-         return Arrays.stream(paths).
-              map(p -> p.resolve(System.mapLibraryName(libName))).
-              filter(Files::isRegularFile).map(Path::toAbsolutePath).findFirst();
-    }
-
     public static LibraryLookup getDefaultLibrary() {
         return LibraryLookupImpl.DEFAULT_LOOKUP;
     }
 
-    synchronized static LibraryLookupImpl lookup(Supplier<NativeLibrary> librarySupplier, String notFoundMsg) {
+    static LibraryLookupImpl lookup(Supplier<NativeLibrary> librarySupplier, String notFoundMsg) {
         NativeLibrary library = librarySupplier.get();
         if (library == null) {
             throw new IllegalArgumentException(notFoundMsg);
         }
-        AtomicInteger refCount = loadedLibraries.computeIfAbsent(library, lib -> new AtomicInteger());
-        refCount.incrementAndGet();
-        LibraryLookupImpl lookup = new LibraryLookupImpl(library);
-        CleanerFactory.cleaner().register(lookup, () -> tryUnload(library));
-        return lookup;
-    }
-
-    synchronized static void tryUnload(NativeLibrary library) {
-        AtomicInteger refCount = loadedLibraries.get(library);
-        if (refCount.decrementAndGet() == 0) {
-            loadedLibraries.remove(library);
-            nativeLibraries.unload(library);
+        ResourceScope[] holder = new ResourceScope[1];
+        try {
+            WeakReference<ResourceScope> scopeRef = loadedLibraries.computeIfAbsent(library, lib -> {
+                ResourceScopeImpl s = ResourceScopeImpl.createImplicitScope();
+                holder[0] = s; // keep the scope alive at least until the outer method returns
+                s.addOrCleanupIfFail(ResourceScopeImpl.ResourceList.ResourceCleanup.ofRunnable(() -> {
+                    nativeLibraries.unload(library);
+                    loadedLibraries.remove(library);
+                }));
+                return new WeakReference<>(s);
+            });
+            return new LibraryLookupImpl(library, scopeRef.get());
+        } finally {
+            Reference.reachabilityFence(holder);
         }
     }
 
-    static class LibraryLookupImpl implements LibraryLookup {
+    //Todo: in principle we could expose a scope accessor, so that users could unload libraries at will
+    static final class LibraryLookupImpl implements LibraryLookup {
         final NativeLibrary library;
+        final MemorySegment librarySegment;
 
-        LibraryLookupImpl(NativeLibrary library) {
+        LibraryLookupImpl(NativeLibrary library, ResourceScope scope) {
             this.library = library;
+            this.librarySegment = MemoryAddress.NULL.asSegment(Long.MAX_VALUE, scope);
         }
 
         @Override
-        public Optional<Symbol> lookup(String name) {
+        public final Optional<MemoryAddress> lookup(String name) {
             try {
                 Objects.requireNonNull(name);
                 MemoryAddress addr = MemoryAddress.ofLong(library.lookup(name));
-                return Optional.of(new Symbol() { // inner class - retains a link to enclosing lookup
-                    @Override
-                    public String name() {
-                        return name;
-                    }
-
-                    @Override
-                    public MemoryAddress address() {
-                        return addr;
-                    }
-                });
+                return Optional.of(librarySegment.asSlice(addr).address());
             } catch (NoSuchMethodException ex) {
                 return Optional.empty();
             }
         }
 
-        static LibraryLookup DEFAULT_LOOKUP = new LibraryLookupImpl(NativeLibraries.defaultLibrary);
+        @Override
+        public final Optional<MemorySegment> lookup(String name, MemoryLayout layout) {
+            try {
+                Objects.requireNonNull(name);
+                Objects.requireNonNull(layout);
+                MemoryAddress addr = MemoryAddress.ofLong(library.lookup(name));
+                if (addr.toRawLongValue() % layout.byteAlignment() != 0) {
+                    throw new IllegalArgumentException("Bad layout alignment constraints: " + layout.byteAlignment());
+                }
+                return Optional.of(librarySegment.asSlice(addr, layout.byteSize()));
+            } catch (NoSuchMethodException ex) {
+                return Optional.empty();
+            }
+        }
+
+        static LibraryLookup DEFAULT_LOOKUP = new LibraryLookupImpl(NativeLibraries.defaultLibrary, ResourceScopeImpl.GLOBAL);
     }
 
     /* used for testing */

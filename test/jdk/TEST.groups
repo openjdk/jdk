@@ -333,7 +333,8 @@ jdk_svc = \
     :svc_tools
 
 jdk_foreign = \
-    java/foreign
+    java/foreign \
+    -java/foreign/TestMatrix.java
 
 jdk_vector = \
     jdk/incubator/vector
