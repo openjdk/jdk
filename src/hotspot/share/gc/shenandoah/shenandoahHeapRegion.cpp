@@ -553,7 +553,7 @@ void ShenandoahHeapRegion::setup_sizes(size_t& max_heap_size) {
     int large_page_size = os::large_page_size();
     max_heap_size = align_up(max_heap_size, large_page_size);
     if ((max_heap_size / align_up(region_size, large_page_size)) >= MIN_NUM_REGIONS) {
-      page_size = large_page_size;
+      page_size = (int)large_page_size;
     } else {
       // Should have been checked during argument initialization
       assert(!ShenandoahUncommit, "Uncommit requires region size aligns to underline page size");
