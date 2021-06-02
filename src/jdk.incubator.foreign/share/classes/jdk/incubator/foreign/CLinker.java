@@ -139,6 +139,9 @@ public sealed interface CLinker permits AbstractCLinker {
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      * @return a system-specific library lookup which is suitable to find symbols in the standard C libraries.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
      */
     @CallerSensitive
     static SymbolLookup systemLookup() {
@@ -196,7 +199,6 @@ public sealed interface CLinker permits AbstractCLinker {
      * <p>
      * The returned method handle will throw an {@link IllegalArgumentException} if the target address passed to it is
      * {@link MemoryAddress#NULL}, or a {@link NullPointerException} if the target address is {@code null}.
-     * <p>
      *
      * @see SymbolLookup
      *

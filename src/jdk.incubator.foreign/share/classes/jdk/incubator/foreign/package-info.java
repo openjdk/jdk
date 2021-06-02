@@ -118,7 +118,7 @@ try (ResourceScope scope = ResourceScope.newConfinedScope()) {
       }
  * }</pre>
  *
- * Here, we lookup the {@code strlen} symbol in the <em>default</em> library lookup (see {@link jdk.incubator.foreign.LibraryLookup#ofDefault()}).
+ * Here, we lookup the {@code strlen} symbol in the {@linkplain jdk.incubator.foreign.CLinker#systemLookup() system lookup}.
  * Then, we obtain a linker instance (see {@link jdk.incubator.foreign.CLinker#getInstance()}) and we use it to
  * obtain a method handle which targets the {@code strlen} library symbol. To complete the linking successfully,
  * we must provide (i) a {@link java.lang.invoke.MethodType} instance, describing the type of the resulting method handle
