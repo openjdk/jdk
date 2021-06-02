@@ -662,7 +662,7 @@ javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x
 
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
 
-sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8209398 generic-all
+sun/security/pkcs11/KeyStore/SecretKeysBasic.java                 8209398 generic-all
 
 security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java  8224768 generic-all
 security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java  8243543 generic-all

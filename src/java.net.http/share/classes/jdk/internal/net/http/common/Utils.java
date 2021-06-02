@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -655,33 +655,33 @@ public final class Utils {
     }
 
     public static boolean hasRemaining(List<ByteBuffer> bufs) {
-        synchronized (bufs) {
-            for (ByteBuffer buf : bufs) {
-                if (buf.hasRemaining())
-                    return true;
-            }
+        for (ByteBuffer buf : bufs) {
+            if (buf.hasRemaining())
+                return true;
         }
         return false;
     }
 
     public static long remaining(List<ByteBuffer> bufs) {
         long remain = 0;
-        synchronized (bufs) {
-            for (ByteBuffer buf : bufs) {
-                remain += buf.remaining();
-            }
+        for (ByteBuffer buf : bufs) {
+            remain += buf.remaining();
         }
         return remain;
     }
 
+    public static long synchronizedRemaining(List<ByteBuffer> bufs) {
+        synchronized (bufs) {
+            return remaining(bufs);
+        }
+    }
+
     public static int remaining(List<ByteBuffer> bufs, int max) {
         long remain = 0;
-        synchronized (bufs) {
-            for (ByteBuffer buf : bufs) {
-                remain += buf.remaining();
-                if (remain > max) {
-                    throw new IllegalArgumentException("too many bytes");
-                }
+        for (ByteBuffer buf : bufs) {
+            remain += buf.remaining();
+            if (remain > max) {
+                throw new IllegalArgumentException("too many bytes");
             }
         }
         return (int) remain;
