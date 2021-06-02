@@ -276,7 +276,8 @@ class Selector {
 
     @Override
     public int hashCode() {
-        return (int) (asBits() ^ (asBits() >>> 32));
+        long bits = asBits();
+        return Long.hashCode(bits);
     }
 
     /**

@@ -124,7 +124,7 @@ public class DoubleDV extends TypeValidator {
                 return 0;
             }
             long v = Double.doubleToLongBits(value);
-            return (int) (v ^ (v >>> 32));
+            return Long.hashCode(v);
         }
 
         // NOTE: 0.0 is equal but not identical to -0.0
