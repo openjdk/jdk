@@ -41,9 +41,11 @@ import java.util.zip.GZIPInputStream;
 public class ToolKit implements EnvironmentInfoGatherer, ProcessInfoGatherer, CoreInfoGatherer {
     private final List<ActionSet> actions = new ArrayList<>();
     private final ActionHelper helper;
+    private final PrintWriter log;
 
     public ToolKit(ActionHelper helper, PrintWriter log, String... names) {
         this.helper = helper;
+        this.log = log;
         for (String name : names) {
             actions.add(new ActionSet(helper, log, name));
         }
@@ -65,10 +67,11 @@ public class ToolKit implements EnvironmentInfoGatherer, ProcessInfoGatherer, Co
                 for (ActionSet set : actions) {
                     set.gatherCoreInfo(section, unpackedCore);
                 }
+                Files.delete(unpackedCore);
             } catch (IOException ioe) {
-                // just silently skip gzipped core processing
+                log.printf("Unexpected exception whilc opening %s", core.getFileName().toString());
+                ioe.printStackTrace(log);
             }
-            unpackedCore.toFile().delete();
         } else {
             for (ActionSet set : actions) {
                 set.gatherCoreInfo(section, core);

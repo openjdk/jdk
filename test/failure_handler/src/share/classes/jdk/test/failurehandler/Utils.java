@@ -69,16 +69,6 @@ public final class Utils {
         String resourceName = String.format(
                 "/%s.%s", name.toLowerCase(), "properties");
         InputStream stream = Utils.class.getResourceAsStream(resourceName);
-
-        // EFH_CONF_DIR might re-defined to load custom configs for development purposes
-        if (System.getenv("EFH_CONF_DIR") != null) {
-            String confPath = System.getenv("EFH_CONF_DIR");
-            try {
-                stream = new FileInputStream(Path.of(confPath,resourceName).toFile());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
         if (stream == null) {
             throw new IllegalStateException(String.format(
                     "resource '%s' doesn't exist%n", resourceName));
