@@ -34,12 +34,14 @@
  */
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.Method;
 import com.sun.tools.classfile.Attribute;
 import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.Instruction;
+import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
 
 import toolbox.JavacTask;
 import toolbox.TestRunner;
@@ -74,20 +76,36 @@ public class DuplicatedCheckcastTest extends TestRunner {
                 .outdir(curPath)
                 .run();
         ClassFile cf = ClassFile.read(curPath.resolve("IntersectionTypeTest.class"));
-        int checkcastNumber = 0;
+        ArrayList<Instruction> checkCastList = new ArrayList<>();
         for (Method method : cf.methods) {
             if ("test".equals(method.getName(cf.constant_pool))) {
                 Code_attribute code_attribute = (Code_attribute) method.attributes.get(Attribute.Code);
                 for (Instruction instruction : code_attribute.getInstructions()) {
                     if ("checkcast".equals(instruction.getMnemonic())) {
-                        checkcastNumber++;
+                        checkCastList.add(instruction);
                     }
                 }
             }
         }
-        if (checkcastNumber != 2) {
+        if (checkCastList.size() != 2) {
             throw new AssertionError("The number of the instruction 'checkcast' is not right. " +
-                    "Expected number: 2, actual number: " + checkcastNumber);
+                    "Expected number: 2, actual number: " + checkCastList.size());
+        }
+        // first checkcast
+        int classIndex = checkCastList.get(0).getUnsignedShort(1);
+        CONSTANT_Class_info classInfo = cf.constant_pool.getClassInfo(classIndex);
+        String className = classInfo.getName();
+        if (!"IntersectionTypeTest$I1".equals(className)) {
+            throw new AssertionError("The type of the first 'checkcast' is not right. " +
+                    "Expected: IntersectionTypeTest$I1, actual: " + className);
+        }
+        // second checkcast
+        classIndex = checkCastList.get(1).getUnsignedShort(1);
+        classInfo = cf.constant_pool.getClassInfo(classIndex);
+        className = classInfo.getName();
+        if (!"IntersectionTypeTest$C1".equals(className)) {
+            throw new AssertionError("The type of the second 'checkcast' is not right. " +
+                    "Expected: IntersectionTypeTest$C1, actual: " + className);
         }
     }
 }
