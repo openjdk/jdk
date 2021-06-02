@@ -50,7 +50,7 @@ public class SafeFunctionAccessTest {
             CLinker.C_INT, CLinker.C_INT
     );
 
-    static SymbolLookup lookup = SymbolLookup.loaderLookup();
+    static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void testClosedStruct() throws Throwable {
