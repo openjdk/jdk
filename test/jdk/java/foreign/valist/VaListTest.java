@@ -67,7 +67,11 @@ import static org.testng.Assert.*;
 public class VaListTest extends NativeTestHelper {
 
     private static final CLinker abi = CLinker.getInstance();
-    private static final LibraryLookup lookup = LibraryLookup.ofLibrary("VaList");
+    static {
+        System.loadLibrary("VaList");
+    }
+
+    static SymbolLookup lookup = SymbolLookup.loaderLookup();
 
     private static final MethodHandle MH_sumInts = link("sumInts",
             MethodType.methodType(int.class, int.class, VaList.class),

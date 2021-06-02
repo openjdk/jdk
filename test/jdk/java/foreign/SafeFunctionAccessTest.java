@@ -29,7 +29,7 @@
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
+import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
@@ -42,12 +42,15 @@ import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
 public class SafeFunctionAccessTest {
-
-    LibraryLookup lookup = LibraryLookup.ofLibrary("SafeAccess");
+    static {
+        System.loadLibrary("SafeAccess");
+    }
 
     static MemoryLayout POINT = MemoryLayout.structLayout(
             CLinker.C_INT, CLinker.C_INT
     );
+
+    static SymbolLookup lookup = SymbolLookup.loaderLookup();
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void testClosedStruct() throws Throwable {
