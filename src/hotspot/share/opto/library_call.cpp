@@ -5260,7 +5260,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   // Partial inlining handling for inputs smaller than ArrayOperationPartialInlineSize bytes in size.
   //
   //    inline_limit = ArrayOperationPartialInlineSize / element_size;
-  //    if (length <= inline_limit) {
+  //    if ((uint)length <= inline_limit) {
   //      inline_path:
   //        vmask   = VectorMaskGen length
   //        vload1  = LoadVectorMasked obja, vmask
@@ -5305,40 +5305,36 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
   bool do_partial_inline = (inline_limit >= 16); // no performance gains for smaller arrays
 
-  if (do_partial_inline) {
-    assert(elem_bt != T_ILLEGAL, "sanity");
+  if (do_partial_inline &&
+      Matcher::match_rule_supported_vector(Op_VectorMaskGen,    inline_limit, elem_bt) &&
+      Matcher::match_rule_supported_vector(Op_LoadVectorMasked, inline_limit, elem_bt) &&
+      Matcher::match_rule_supported_vector(Op_VectorCmpMasked,  inline_limit, elem_bt)) {
 
-    const TypeVect* vt = TypeVect::make(elem_bt, inline_limit);
+    Node* cmp_length = _gvn.transform(new CmpUNode(length, intcon(inline_limit)));
+    Node* bol_gt     = _gvn.transform(new BoolNode(cmp_length, BoolTest::gt));
 
-    if (Matcher::match_rule_supported_vector(Op_VectorMaskGen,    inline_limit, elem_bt) &&
-        Matcher::match_rule_supported_vector(Op_LoadVectorMasked, inline_limit, elem_bt) &&
-        Matcher::match_rule_supported_vector(Op_VectorCmpMasked,  inline_limit, elem_bt)) {
+    call_stub_path = generate_guard(bol_gt, NULL, PROB_MIN);
 
-      Node* cmp_length = _gvn.transform(new CmpUNode(length, intcon(inline_limit)));
-      Node* bol_gt     = _gvn.transform(new BoolNode(cmp_length, BoolTest::gt));
+    if (!stopped()) {
+      Node* casted_length = _gvn.transform(new CastIINode(control(), length, TypeInt::make(0, inline_limit, Type::WidenMin)));
 
-      call_stub_path = generate_guard(bol_gt, NULL, PROB_MIN);
+      const TypeVect* vt = TypeVect::make(elem_bt, inline_limit);
+      const TypePtr* obja_adr_t = _gvn.type(obja_adr)->isa_ptr();
+      const TypePtr* objb_adr_t = _gvn.type(objb_adr)->isa_ptr();
+      Node* obja_adr_mem = memory(C->get_alias_index(obja_adr_t));
+      Node* objb_adr_mem = memory(C->get_alias_index(objb_adr_t));
 
-      if (!stopped()) {
-        Node* casted_length = _gvn.transform(new CastIINode(control(), length, TypeInt::make(0, inline_limit, Type::WidenMin)));
+      Node* vmask      = _gvn.transform(new VectorMaskGenNode(ConvI2X(casted_length), TypeVect::VECTMASK, elem_bt));
+      Node* vload_obja = _gvn.transform(new LoadVectorMaskedNode(control(), obja_adr_mem, obja_adr, obja_adr_t, vt, vmask));
+      Node* vload_objb = _gvn.transform(new LoadVectorMaskedNode(control(), objb_adr_mem, objb_adr, objb_adr_t, vt, vmask));
+      Node* result     = _gvn.transform(new VectorCmpMaskedNode(vload_obja, vload_objb, vmask, TypeInt::INT));
 
-        const TypePtr* obja_adr_t = _gvn.type(obja_adr)->isa_ptr();
-        const TypePtr* objb_adr_t = _gvn.type(objb_adr)->isa_ptr();
-        Node* obja_adr_mem = memory(C->get_alias_index(obja_adr_t));
-        Node* objb_adr_mem = memory(C->get_alias_index(objb_adr_t));
+      exit_block->init_req(inline_path, control());
+      memory_phi->init_req(inline_path, map()->memory());
+      result_phi->init_req(inline_path, result);
 
-        Node* vmask      = _gvn.transform(new VectorMaskGenNode(ConvI2X(casted_length), TypeVect::VECTMASK, elem_bt));
-        Node* vload_obja = _gvn.transform(new LoadVectorMaskedNode(control(), obja_adr_mem, obja_adr, obja_adr_t, vt, vmask));
-        Node* vload_objb = _gvn.transform(new LoadVectorMaskedNode(control(), objb_adr_mem, objb_adr, objb_adr_t, vt, vmask));
-        Node* result     = _gvn.transform(new VectorCmpMaskedNode(vload_obja, vload_objb, vmask, TypeInt::INT));
-
-        exit_block->init_req(inline_path, control());
-        memory_phi->init_req(inline_path, map()->memory());
-        result_phi->init_req(inline_path, result);
-
-        C->set_max_vector_size(MAX2(vt->length_in_bytes(), C->max_vector_size()));
-        clear_upper_avx();
-      }
+      C->set_max_vector_size(MAX2(vt->length_in_bytes(), C->max_vector_size()));
+      clear_upper_avx();
     }
   }
 
