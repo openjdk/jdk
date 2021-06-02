@@ -59,7 +59,6 @@ import java.util.NoSuchElementException;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
-@SuppressWarnings("removal")
 public class JPEGImageReader extends ImageReader {
 
     private boolean debug = false;
@@ -87,6 +86,11 @@ public class JPEGImageReader extends ImageReader {
     private int numImages = 0;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 @Override

@@ -104,7 +104,6 @@ import javax.print.attribute.standard.Media;
  *
  * @author Richard Blanchard
  */
-@SuppressWarnings("removal")
 public class PSPrinterJob extends RasterPrinterJob {
 
  /* Class Constants */
@@ -335,6 +334,11 @@ public class PSPrinterJob extends RasterPrinterJob {
 
     /* Class static initialiser block */
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
        //enable priviledges so initProps can access system properties,
         // open the property file, etc.
         java.security.AccessController.doPrivileged(
@@ -504,6 +508,7 @@ public class PSPrinterJob extends RasterPrinterJob {
      * this method is called to mark the start of a
      * document.
      */
+    @SuppressWarnings("removal")
     protected void startDoc() throws PrinterException {
 
         // A security check has been performed in the
@@ -758,6 +763,7 @@ public class PSPrinterJob extends RasterPrinterJob {
     /**
      * Invoked if the application cancelled the printjob.
      */
+    @SuppressWarnings("removal")
     protected void abortDoc() {
         if (mPSStream != null && mDestType != RasterPrinterJob.STREAM) {
             mPSStream.close();
@@ -779,6 +785,7 @@ public class PSPrinterJob extends RasterPrinterJob {
      * this method is called after that last page
      * has been imaged.
      */
+    @SuppressWarnings("removal")
     protected void endDoc() throws PrinterException {
         if (mPSStream != null) {
             mPSStream.println(EOF_COMMENT);
@@ -848,6 +855,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                             paperWidth + " " + paperHeight + "]");
 
             final PrintService pservice = getPrintService();
+            @SuppressWarnings("removal")
             Boolean isPS = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Boolean>() {
                     public Boolean run() {
