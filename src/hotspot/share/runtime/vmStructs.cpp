@@ -1401,6 +1401,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_type(MethodHandlesAdapterBlob, BufferBlob)                      \
   declare_type(VtableBlob,               BufferBlob)                      \
   declare_type(InterpreterBlob,          BufferBlob)                      \
+  declare_type(StubRoutinesBlob,         BufferBlob)                      \
   declare_type(CompiledMethod,           CodeBlob)                        \
   declare_type(nmethod,                  CompiledMethod)                  \
   declare_type(RuntimeStub,              RuntimeBlob)                     \

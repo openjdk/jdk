@@ -40,3 +40,9 @@ bool InterpreterBlob::FrameParser::sender_frame(JavaThread *thread, bool check, 
   return CodeBlob::FrameParser::sender_frame(thread, pc, sp, unextended_sp, fp, fp_safe,
                                              sender_pc, sender_sp, sender_unextended_sp, saved_fp);
 }
+
+bool StubRoutinesBlob::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+    address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
+  return CodeBlob::FrameParser::sender_frame(thread, pc, sp, unextended_sp, fp, fp_safe,
+                                             sender_pc, sender_sp, sender_unextended_sp, saved_fp);
+}

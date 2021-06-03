@@ -332,6 +332,31 @@ InterpreterBlob* InterpreterBlob::create(int buffer_size) {
 }
 
 //----------------------------------------------------------------------------------------------------
+// Implementation of StubRoutinesBlob
+
+StubRoutinesBlob* StubRoutinesBlob::create(const char* name, int buffer_size) {
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+
+  StubRoutinesBlob* blob = NULL;
+  unsigned int size = sizeof(StubRoutinesBlob);
+  // align the size to CodeEntryAlignment
+  size = CodeBlob::align_code_offset(size);
+  size += align_up(buffer_size, oopSize);
+  assert(name != NULL, "must provide a name");
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    blob = new (size) StubRoutinesBlob(name, size);
+    if (blob == NULL) {
+      vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", name);
+    }
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+
+  return blob;
+}
+
+//----------------------------------------------------------------------------------------------------
 // Implementation of VtableBlob
 
 void* VtableBlob::operator new(size_t s, unsigned size) throw() {

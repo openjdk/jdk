@@ -89,17 +89,6 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return fp_safe && is_entry_frame_valid(thread);
     }
 
-    // Now check if the frame is complete and the test is
-    // reliable. Unfortunately we can only check frame completeness for
-    // runtime stubs and nmethods. Other generic buffer blobs are more
-    // problematic so we just assume they are OK. Adapter blobs never have a
-    // complete frame and are never OK
-    if (!_cb->is_frame_complete_at(_pc)) {
-      if (_cb->is_compiled() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
-        return false;
-      }
-    }
-
     // Could just be some random pointer within the codeBlob.
     if (!_cb->code_contains(_pc)) {
       return false;

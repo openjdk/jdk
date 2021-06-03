@@ -653,6 +653,8 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       st->print("v  ~VtableBlob");
     } else if (_cb->is_interpreter_blob()) {
       st->print("v  ~InterpreterBlob");
+    } else if (_cb->is_stub_routines_blob()) {
+      st->print("v  ~StubRoutinesBlob");
     } else if (_cb->is_method_handles_adapter_blob()) {
       st->print("v  ~MethodHandlesAdapterBlob");
     } else if (_cb->is_uncommon_trap_stub()) {

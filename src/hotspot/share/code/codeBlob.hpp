@@ -60,6 +60,7 @@ struct CodeBlobType {
 //    MethodHandlesAdapterBlob : Used to hold MethodHandles adapters
 //    OptimizedEntryBlob : Used for upcalls from native code
 //    InterpreterBlob    : Used to hold Interpreter
+//    StubRoutinesBlob   : Used for stubroutines
 //   RuntimeStub         : Call to VM runtime methods
 //   SingletonBlob       : Super-class for all blobs that exist in only one instance
 //    DeoptimizationBlob : Used for deoptimization
@@ -140,6 +141,7 @@ public:
   virtual bool is_vtable_blob() const                 { return false; }
   virtual bool is_method_handles_adapter_blob() const { return false; }
   virtual bool is_interpreter_blob() const            { return false; }
+  virtual bool is_stub_routines_blob() const          { return false; }
   virtual bool is_compiled() const                    { return false; }
   virtual bool is_optimized_entry_blob() const                  { return false; }
 
@@ -405,6 +407,7 @@ class BufferBlob: public RuntimeBlob {
   friend class MethodHandlesAdapterBlob;
   friend class OptimizedEntryBlob;
   friend class InterpreterBlob;
+  friend class StubRoutinesBlob;
   friend class WhiteBox;
 
  private:
@@ -509,6 +512,32 @@ public:
    public:
     FrameParser(const InterpreterBlob* cb) : BufferBlob::FrameParser(cb) {}
     virtual bool sender_frame(JavaThread *thread, bool check_frame_complete, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+      address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
+  };
+
+  virtual FrameParser* frame_parser() const { return new FrameParser(this); }
+};
+
+
+//----------------------------------------------------------------------------------------------------
+// StubRoutinesBlob: used to hold stubroutines
+
+class StubRoutinesBlob: public BufferBlob {
+private:
+  StubRoutinesBlob(const char* name, int size)        : BufferBlob(name, size) {}
+
+public:
+  // Creation
+  static StubRoutinesBlob* create(const char* name, int buffer_size);
+
+  // Typing
+  virtual bool is_stub_routines_blob() const { return true; }
+
+  // Profiling/safepoint support
+  class FrameParser : public BufferBlob::FrameParser {
+   public:
+    FrameParser(const StubRoutinesBlob* cb) : BufferBlob::FrameParser(cb) {}
+    virtual bool sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
       address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
   };
 

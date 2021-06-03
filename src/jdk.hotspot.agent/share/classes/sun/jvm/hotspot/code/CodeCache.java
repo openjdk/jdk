@@ -68,6 +68,7 @@ public class CodeCache {
     virtualConstructor.addMapping("SafepointBlob", SafepointBlob.class);
     virtualConstructor.addMapping("DeoptimizationBlob", DeoptimizationBlob.class);
     virtualConstructor.addMapping("InterpreterBlob", InterpreterBlob.class);
+    virtualConstructor.addMapping("StubRoutinesBlob", StubRoutinesBlob.class);
     if (VM.getVM().isServerCompiler()) {
       virtualConstructor.addMapping("ExceptionBlob", ExceptionBlob.class);
       virtualConstructor.addMapping("UncommonTrapBlob", UncommonTrapBlob.class);

@@ -37,6 +37,17 @@ bool CodeBlob::FrameParser::sender_frame(JavaThread *thread, bool check, address
   assert(sender_pc != NULL, "invariant");
   assert(sender_sp != NULL, "invariant");
 
+  // First check if frame is complete and tester is reliable
+  // Unfortunately we can only check frame complete for runtime stubs and nmethod
+  // other generic buffer blobs are more problematic so we just assume they are
+  // ok. adapter blobs never have a frame complete and are never ok.
+
+  if (!_cb->is_frame_complete_at(pc)) {
+    if (_cb->is_compiled() || _cb->is_adapter_blob()) {
+      return false;
+    }
+  }
+
   // check for a valid frame_size, otherwise we are unlikely to get a valid sender_pc
   if (check && _cb->frame_size() <= 0) {
     return false;
@@ -77,4 +88,19 @@ bool InterpreterBlob::FrameParser::sender_frame(JavaThread *thread, bool check, 
   if (saved_fp) *saved_fp = (intptr_t**)(fp + frame::link_offset);
 
   return true;
+}
+
+bool StubRoutinesBlob::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+    address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
+
+  assert(sender_pc != NULL, "invariant");
+  assert(sender_sp != NULL, "invariant");
+
+  // First check if frame is complete and tester is reliable
+  if (!_cb->is_frame_complete_at(pc)) {
+    return false;
+  }
+
+  return CodeBlob::FrameParser::sender_frame(thread, pc, sp, unextended_sp, fp, fp_safe,
+                                             sender_pc, sender_sp, sender_unextended_sp, saved_fp);
 }

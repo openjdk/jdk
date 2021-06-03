@@ -71,9 +71,11 @@ bool frame::safe_for_sender(JavaThread *thread) {
     return false;
   }
 
-  // an fp must be within the stack and above (but not equal) sp
+  // an fp must be within the stack and above or equal to sp
+  //  it may be equal when the stack frame size is 0 which is the case
+  //  for some stubs for example.
   // second evaluation on fp+ is added to handle situation where fp is -1
-  bool fp_safe = thread->is_in_stack_range_excl(fp, sp) &&
+  bool fp_safe = thread->is_in_stack_range_incl(fp, sp) &&
                  thread->is_in_full_stack_checked(fp + (return_addr_offset * sizeof(void*)));
 
   // We know sp/unextended_sp are safe only fp is questionable here
@@ -83,17 +85,6 @@ bool frame::safe_for_sender(JavaThread *thread) {
   // toward eliminating issues when we get in frame construction code
 
   if (_cb != NULL ) {
-
-    // First check if frame is complete and tester is reliable
-    // Unfortunately we can only check frame complete for runtime stubs and nmethod
-    // other generic buffer blobs are more problematic so we just assume they are
-    // ok. adapter blobs never have a frame complete and are never ok.
-
-    if (!_cb->is_frame_complete_at(_pc)) {
-      if (_cb->is_compiled() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
-        return false;
-      }
-    }
 
     // Could just be some random pointer within the codeBlob
     if (!_cb->code_contains(_pc)) {
@@ -469,7 +460,6 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
     update_map_with_saved_link(map, l_saved_fp);
   }
 
-  assert(l_sender_sp != sp(), "must have changed");
   return frame(l_sender_sp, l_unextended_sp, *l_saved_fp, l_sender_pc);
 }
 
