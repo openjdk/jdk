@@ -127,7 +127,14 @@ public class TestResourceScope {
         // if no cleaner, close - not all segments might have been added to the scope!
         // if cleaner, don't unset the scope - after all, the scope is kept alive by threads
         if (cleaner == null) {
-            scope.close();
+            while (true) {
+                try {
+                    scope.close();
+                    break;
+                } catch (IllegalStateException ise) {
+                    // scope is acquired (by add) - wait some more
+                }
+            }
         }
 
         threads.forEach(t -> {
