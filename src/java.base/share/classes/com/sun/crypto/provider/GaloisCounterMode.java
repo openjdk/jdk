@@ -81,7 +81,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     // can only be returned by the doFinal(...) call.
     private static final int MAX_BUF_SIZE = Integer.MAX_VALUE;
     // data size when buffer is divided up to aid in intrinsics
-    private static final int TRIGGERLEN = 65536;  // 64k
+    private static final int TRIGGERLEN = 4096;  // 64k
 
     static final byte[] EMPTY_BUF = new byte[0];
 
@@ -783,7 +783,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             // en/decrypt whatever remains in src.
             // If src has been consumed, this will be a no-op
             if (src.remaining() > TRIGGERLEN) {
-                throttleData(op, src, dst);
+                resultLen += throttleData(op, src, dst);
             }
 
             resultLen += op.doFinal(src, dst);
@@ -1406,17 +1406,6 @@ abstract class GaloisCounterMode extends CipherSpi {
             throws IllegalBlockSizeException, AEADBadTagException,
             ShortBufferException {
             GHASH save = null;
-
-            // If these are array backed ByteBuffers, use the underlying array
-            if (src.hasArray() && dst.hasArray()) {
-                int len = doFinal(src.array(),
-                    src.arrayOffset() + src.position(),
-                    src.remaining(), dst.array(),
-                    dst.arrayOffset() + dst.position());
-                src.position(src.limit());
-                dst.position(dst.position() + len);
-                return len;
-            }
 
             ByteBuffer tag;
             ByteBuffer ct = src.duplicate();
