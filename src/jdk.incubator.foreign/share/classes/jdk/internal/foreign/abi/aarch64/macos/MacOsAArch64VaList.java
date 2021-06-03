@@ -26,33 +26,26 @@
 package jdk.internal.foreign.abi.aarch64.macos;
 
 import jdk.incubator.foreign.*;
-import jdk.internal.foreign.NativeMemorySegmentImpl;
-import jdk.internal.foreign.Utils;
+import jdk.incubator.foreign.CLinker.VaList;
+import jdk.internal.foreign.ResourceScopeImpl;
 import jdk.internal.foreign.abi.SharedUtils;
+import jdk.internal.foreign.abi.SharedUtils.SimpleVaArg;
 import jdk.internal.foreign.abi.aarch64.*;
-import jdk.internal.misc.Unsafe;
 
 import java.lang.invoke.VarHandle;
-import java.lang.ref.Cleaner;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static jdk.internal.foreign.PlatformLayouts.AArch64.C_POINTER;
-import static jdk.incubator.foreign.CLinker.VaList;
 import static jdk.internal.foreign.abi.SharedUtils.alignUp;
-import static jdk.internal.foreign.abi.SharedUtils.SimpleVaArg;
-import static jdk.internal.foreign.abi.SharedUtils.checkCompatibleType;
-import static jdk.internal.foreign.abi.SharedUtils.vhPrimitiveOrAddress;
 
 /**
- * Simplified va_list implementation used on macOS and Windows where all
- * variadic parameters are passed on the stack and the type of va_list decays to
+ * Simplified va_list implementation used on macOS where all variadic
+ * parameters are passed on the stack and the type of va_list decays to
  * char* instead of the structure defined in the AAPCS.
  */
-class StackVaList implements VaList {
+public non-sealed class MacOsAArch64VaList implements VaList {
     public static final Class<?> CARRIER = MemoryAddress.class;
     private static final long VA_SLOT_SIZE_BYTES = 8;
     private static final VarHandle VH_address = MemoryHandles.asAddressVarHandle(C_POINTER.varHandle(long.class));
@@ -60,13 +53,11 @@ class StackVaList implements VaList {
     private static final VaList EMPTY = new SharedUtils.EmptyVaList(MemoryAddress.NULL);
 
     private MemorySegment segment;
-    private final List<MemorySegment> attachedSegments;
-    private final MemorySegment livenessCheck;
+    private final ResourceScope scope;
 
-    private StackVaList(MemorySegment segment, List<MemorySegment> attachedSegments, MemorySegment livenessCheck) {
+    private MacOsAArch64VaList(MemorySegment segment, ResourceScope scope) {
         this.segment = segment;
-        this.attachedSegments = attachedSegments;
-        this.livenessCheck = livenessCheck;
+        this.scope = scope;
     }
 
     public static final VaList empty() {
@@ -94,21 +85,21 @@ class StackVaList implements VaList {
     }
 
     @Override
-    public MemorySegment vargAsSegment(MemoryLayout layout) {
-        return (MemorySegment) read(MemorySegment.class, layout);
+    public MemorySegment vargAsSegment(MemoryLayout layout, SegmentAllocator allocator) {
+        Objects.requireNonNull(allocator);
+        return (MemorySegment) read(MemorySegment.class, layout, allocator);
     }
 
     @Override
-    public MemorySegment vargAsSegment(MemoryLayout layout, NativeScope scope) {
-        Objects.requireNonNull(scope);
-        return (MemorySegment) read(MemorySegment.class, layout, SharedUtils.Allocator.ofScope(scope));
+    public MemorySegment vargAsSegment(MemoryLayout layout, ResourceScope scope) {
+        return vargAsSegment(layout, SegmentAllocator.ofScope(scope));
     }
 
     private Object read(Class<?> carrier, MemoryLayout layout) {
-        return read(carrier, layout, MemorySegment::allocateNative);
+        return read(carrier, layout, SharedUtils.THROWING_ALLOCATOR);
     }
 
-    private Object read(Class<?> carrier, MemoryLayout layout, SharedUtils.Allocator allocator) {
+    private Object read(Class<?> carrier, MemoryLayout layout, SegmentAllocator allocator) {
         Objects.requireNonNull(layout);
         SharedUtils.checkCompatibleType(carrier, layout, MacOsAArch64Linker.ADDRESS_SIZE);
         Object res;
@@ -117,18 +108,16 @@ class StackVaList implements VaList {
             res = switch (typeClass) {
                 case STRUCT_REFERENCE -> {
                     MemoryAddress structAddr = (MemoryAddress) VH_address.get(segment);
-                    try (MemorySegment struct = handoffIfNeeded(structAddr.asSegmentRestricted(layout.byteSize()),
-                         segment.ownerThread())) {
-                        MemorySegment seg = allocator.allocate(layout.byteSize());
-                        seg.copyFrom(struct);
-                        segment = segment.asSlice(VA_SLOT_SIZE_BYTES);
-                        yield seg;
-                    }
+                    MemorySegment struct = structAddr.asSegment(layout.byteSize(), scope());
+                    MemorySegment seg = allocator.allocate(layout);
+                    seg.copyFrom(struct);
+                    segment = segment.asSlice(VA_SLOT_SIZE_BYTES);
+                    yield seg;
                 }
                 case STRUCT_REGISTER, STRUCT_HFA -> {
                     MemorySegment struct = allocator.allocate(layout);
                     struct.copyFrom(segment.asSlice(0L, layout.byteSize()));
-                    segment = segment.asSlice(VA_SLOT_SIZE_BYTES);
+                    segment = segment.asSlice(alignUp(layout.byteSize(), VA_SLOT_SIZE_BYTES));
                     yield struct;
                 }
                 default -> throw new IllegalStateException("Unexpected TypeClass: " + typeClass);
@@ -144,40 +133,34 @@ class StackVaList implements VaList {
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        Stream.of(layouts).forEach(Objects::requireNonNull);
-        segment = segment.asSlice(layouts.length * VA_SLOT_SIZE_BYTES);
+
+        for (MemoryLayout layout : layouts) {
+            Objects.requireNonNull(layout);
+            segment = segment.asSlice(switch (TypeClass.classifyLayout(layout)) {
+                case STRUCT_REGISTER, STRUCT_HFA -> alignUp(layout.byteSize(), VA_SLOT_SIZE_BYTES);
+                default -> VA_SLOT_SIZE_BYTES;
+            });
+        }
     }
 
-    static StackVaList ofAddress(MemoryAddress addr) {
-        MemorySegment segment = addr.asSegmentRestricted(Long.MAX_VALUE);
-        return new StackVaList(segment, List.of(segment), null);
+    static MacOsAArch64VaList ofAddress(MemoryAddress addr, ResourceScope scope) {
+        MemorySegment segment = addr.asSegment(Long.MAX_VALUE, scope);
+        return new MacOsAArch64VaList(segment, scope);
     }
 
-    static Builder builder(SharedUtils.Allocator allocator) {
-        return new Builder(allocator);
+    static Builder builder(ResourceScope scope) {
+        return new Builder(scope);
     }
 
     @Override
-    public void close() {
-        if (livenessCheck != null)
-            livenessCheck.close();
-        attachedSegments.forEach(MemorySegment::close);
+    public ResourceScope scope() {
+        return scope;
     }
 
     @Override
     public VaList copy() {
-        MemorySegment liveness = handoffIfNeeded(MemoryAddress.NULL.asSegmentRestricted(1),
-                segment.ownerThread());
-        return new StackVaList(segment, List.of(), liveness);
-    }
-
-    @Override
-    public VaList copy(NativeScope scope) {
-        Objects.requireNonNull(scope);
-        MemorySegment liveness = handoffIfNeeded(MemoryAddress.NULL.asSegmentRestricted(1),
-                segment.ownerThread());
-        liveness = liveness.handoff(scope);
-        return new StackVaList(segment, List.of(), liveness);
+        ((ResourceScopeImpl)scope).checkValidStateSlow();
+        return new MacOsAArch64VaList(segment, scope);
     }
 
     @Override
@@ -185,20 +168,14 @@ class StackVaList implements VaList {
         return segment.address();
     }
 
-    @Override
-    public boolean isAlive() {
-        if (livenessCheck != null)
-            return livenessCheck.isAlive();
-        return segment.isAlive();
-    }
+    public static non-sealed class Builder implements VaList.Builder {
 
-    static class Builder implements VaList.Builder {
-
-        private final SharedUtils.Allocator allocator;
+        private final ResourceScope scope;
         private final List<SimpleVaArg> args = new ArrayList<>();
 
-        public Builder(SharedUtils.Allocator allocator) {
-            this.allocator = allocator;
+        public Builder(ResourceScope scope) {
+            ((ResourceScopeImpl)scope).checkValidStateSlow();
+            this.scope = scope;
         }
 
         private Builder arg(Class<?> carrier, MemoryLayout layout, Object value) {
@@ -239,6 +216,8 @@ class StackVaList implements VaList {
                 return EMPTY;
             }
 
+            SegmentAllocator allocator = SegmentAllocator.arenaAllocator(scope);
+
             // Each argument may occupy up to four slots
             MemorySegment segment = allocator.allocate(VA_SLOT_SIZE_BYTES * args.size() * 4);
 
@@ -271,12 +250,7 @@ class StackVaList implements VaList {
                 }
             }
 
-            return new StackVaList(segment, attachedSegments, null);
+            return new MacOsAArch64VaList(segment, scope);
         }
-    }
-
-    private static MemorySegment handoffIfNeeded(MemorySegment segment, Thread thread) {
-        return segment.ownerThread() == thread ?
-                segment : segment.handoff(thread);
     }
 }

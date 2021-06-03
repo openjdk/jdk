@@ -38,7 +38,7 @@ public class PlatformLayouts {
         return switch (CABI.current()) {
             case SysV -> sysv;
             case Win64 -> win64;
-            case AArch64, MacOsAArch64 -> aarch64;
+            case LinuxAArch64, MacOsAArch64 -> aarch64;
         };
     }
 

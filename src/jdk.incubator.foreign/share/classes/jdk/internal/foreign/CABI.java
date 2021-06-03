@@ -32,7 +32,7 @@ import static jdk.incubator.foreign.MemoryLayouts.ADDRESS;
 public enum CABI {
     SysV,
     Win64,
-    AArch64,
+    LinuxAArch64,
     MacOsAArch64;
 
     private static final CABI current;
@@ -53,7 +53,8 @@ public enum CABI {
             if (os.startsWith("Mac")) {
                 current = MacOsAArch64;
             } else {
-                current = AArch64;
+                // The Linux ABI follows the standard AAPCS ABI
+                current = LinuxAArch64;
             }
         } else {
             throw new ExceptionInInitializerError(
