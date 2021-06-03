@@ -245,6 +245,7 @@ final class JceSecurityManager {
         @SuppressWarnings("removal")
         Optional<StackFrame> stackFrame = AccessController.doPrivileged(pa)
                 .walk((s) -> s.skip(2).findFirst());
+
         if (stackFrame.isPresent()) {
             // context[0]: class javax.crypto.JceSecurityManager
             // context[1]: class javax.crypto.Cipher (or other JCE API class)
