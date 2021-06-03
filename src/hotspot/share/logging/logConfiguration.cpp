@@ -275,6 +275,15 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   // 2. asynclog buffer may be holding some log messages targeting to the output 'idx'. It has been disabled by new setting,
   // eg. all=off and is about to be purged in delete_output(idx).
   //
+
+#ifdef ASSERT
+  if (!enabled) {
+    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+      assert(!ts->has_output(output), "The node of output should been removed in ts->set_output_level.");
+    }
+  }
+#endif
+
   AsyncLogWriter::flush();
 
   // It is now safe to set the new decorators for the actual output
@@ -288,10 +297,6 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   }
 
   if (!enabled && idx > 1) {
-    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
-        assert(!ts->has_output(output), "broken");
-    }
-
     // Output is unused and should be removed, unless it is stdout/stderr (idx < 2)
     delete_output(idx);
     return;

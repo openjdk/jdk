@@ -36,16 +36,6 @@
 #include "unittest.hpp"
 #include "utilities/ostream.hpp"
 
-LogTagSet* find_tagset(LogTagType tt) {
-  // Update the decorators on all tagsets to get rid of unused decorators
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
-    if (ts->ntags() == 1 && ts->tag(0) == tt) {
-      return ts;
-    }
-  }
-  return NULL;
-}
-
 class LogConfigurationTest : public LogTestFixture {
  protected:
   static char _all_decorators[256];
@@ -285,12 +275,12 @@ TEST_VM_F(LogConfigurationTest, reconfigure_decorators_MT) {
   }
 }
 
-// Dynamically change decorators while loggings are emitting.
+// Dynamically change tags while loggings are emitting.
 TEST_VM_F(LogConfigurationTest, reconfigure_tags_MT) {
   const int nrOfThreads = 4;
   ConcurrentLogsite logsites[nrOfThreads] = {0, 1, 2, 3};
   Semaphore done(0);
-  const long testDurationMillis = 5000;
+  const long testDurationMillis = 3000;
   UnitTestThread* t[nrOfThreads];
 
   set_log_config(TestLogFileName, "logging=debug", "", "filecount=0");
