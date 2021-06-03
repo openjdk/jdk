@@ -302,9 +302,10 @@ TEST_VM_F(LogConfigurationTest, reconfigure_tags_MT) {
       break;
     }
 
-    // Take turn logging with different decorators, either None or All.
+    // turn on/off the tagset 'logging'.
     set_log_config(TestLogFileName, "logging=off");
     set_log_config(TestLogFileName, "logging=debug", "", "filecount=0");
+    // sleep a prime number milliseconds to allow concurrent logsites write logs
     os::naked_short_nanosleep(137);
   }
 
