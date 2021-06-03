@@ -72,36 +72,58 @@ public class SwitchBootstraps {
 
     /**
      * Bootstrap method for linking an {@code invokedynamic} call site that
-     * implements a {@code switch} on a reference-typed target.  The static
-     * arguments are a varargs array of case labels. Constants of type {@code String} or
-     * {@code Integer} and {@code Class} instances are accepted.
+     * implements a {@code switch} on a target of a reference type.  The static
+     * arguments are an array of case labels which must be non-null and of type
+     * {@code String} or {@code Integer} and {@code Class}.
+     * <p>
+     * The type of the returned {@code CallSite}'s method handle will have
+     * a return type of {@code int}.   It has two parameters: the first argument
+     * will be an {@code Object} instance ({@code target}) and the second
+     * will be {@code int} ({@code restart}).
+     * <p>
+     * If the {@code target} is {@code null}, then the method of the call site
+     * returns {@literal -1}.
+     * <p>
+     * the {@code target} is not {@code null}, then the method of the call site
+     * returns the index of the first element in the {@code labels} array starting from
+     * the {@code restart} index matching one of the following conditions:
+     * <ul>
+     *   <li>the element is of type {@code Class} and the target value
+     *       is a subtype of this {@code Class}; or</li>
+     *   <li>the element is of type {@code String} or {@code Integer} and
+     *       equals to the target.</li>
+     * </ul>
+     * <p>
+     * If no element in the {@code labels} array matches the target, then
+     * the method of the call site return the length of the {@code labels} array.
      *
      * @param lookup Represents a lookup context with the accessibility
      *               privileges of the caller.  When used with {@code invokedynamic},
      *               this is stacked automatically by the VM.
      * @param invocationName The invocation name, which is ignored.  When used with
      *                       {@code invokedynamic}, this is provided by the
-     *                       {@code NameAndType} of the {@code InvokeDynamic}
+     *                       {@code CONSTANT_NameAndType_info} of the
+     *                       {@code CONSTANT_InvokeDynamic_info}
      *                       structure and is stacked automatically by the VM.
-     * @param invocationType The invocation type of the {@code CallSite}.  This
-     *                       method type should have a single parameter of
-     *                       a reference type, and return {@code int}.  When
-     *                       used with {@code invokedynamic}, this is provided by
-     *                       the {@code NameAndType} of the {@code InvokeDynamic}
+     * @param invocationType The invocation type of the {@code CallSite} with two parameters,
+     *                       a reference type, an {@code int}, and {@code int} as a return type.
+     *                       When used with {@code invokedynamic}, this is provided by
+     *                       the {@code CONSTANT_NameAndType_info} of the
+     *                       {@code CONSTANT_InvokeDynamic_info}
      *                       structure and is stacked automatically by the VM.
-     * @param labels non-null case labels - {@code String} and {@code Integer} constants
-     *                        and {@code Class} instances, in any combination
-     * @return a {@code CallSite}, which accepts two parameters: one is an instance
-     *         of the target type, and second is a restart index. It returns the
-     *         index into {@code labels} of the target value, if the target
-     *         is an instance of any of the types or equal to any of the constants, {@literal -1} if the target
-     *         value is {@code null}, or {@code types.length} if the target value
-     *         is not an instance of any of the types or equal to any of the constants. Will return
-     *         an index that is greater or equal to the restart index provided.
-     * @throws NullPointerException if any required argument is null
-     * @throws IllegalArgumentException if any labels are null, or if the
-     * invocation type is not {@code (T)int for some reference type {@code T}}
+     * @param labels case labels - {@code String} and {@code Integer} constants
+     *               and {@code Class} instances, in any combination
+     * @return a {@code CallSite} returning the first matching element as described above
+     *
+     * @throws NullPointerException if any argument is null
+     * @throws IllegalArgumentException if any element in the labels array is null, if the
+     * invocation type is not not a method type of first parameter of a reference type,
+     * second parameter of type {@code int} and with {@code int} as its return type,
+     * or if {@code labels} contains an element that is not of type {@code String},
+     * {@code Integer} or {@code Class}.
      * @throws Throwable if there is any error linking the call site
+     * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
+     * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
     public static CallSite typeSwitch(MethodHandles.Lookup lookup,
                                       String invocationName,
