@@ -106,6 +106,13 @@ public class Reflection {
         }
     }
 
+    public static void ensureNativeAccess(Class<?> currentClass) {
+        Module module = currentClass.getModule();
+        if (!SharedSecrets.getJavaLangAccess().isEnableNativeAccess(module)) {
+            throw new IllegalCallerException("Illegal native access from: " + module);
+        }
+    }
+
     /**
      * Verify access to a member and return {@code true} if it is granted.
      *

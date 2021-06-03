@@ -86,7 +86,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @author  Joseph D. Darcy
  * @since   1.3
  */
-
 public final class StrictMath {
 
     /**
@@ -207,10 +206,8 @@ public final class StrictMath {
      * @return  the measurement of the angle {@code angdeg}
      *          in radians.
      */
-    public static strictfp double toRadians(double angdeg) {
-        // Do not delegate to Math.toRadians(angdeg) because
-        // this method has the strictfp modifier.
-        return angdeg * DEGREES_TO_RADIANS;
+    public static double toRadians(double angdeg) {
+        return Math.toRadians(angdeg);
     }
 
     /**
@@ -224,10 +221,8 @@ public final class StrictMath {
      * @return  the measurement of the angle {@code angrad}
      *          in degrees.
      */
-    public static strictfp double toDegrees(double angrad) {
-        // Do not delegate to Math.toDegrees(angrad) because
-        // this method has the strictfp modifier.
-        return angrad * RADIANS_TO_DEGREES;
+    public static double toDegrees(double angrad) {
+        return Math.toDegrees(angrad);
     }
 
     /**

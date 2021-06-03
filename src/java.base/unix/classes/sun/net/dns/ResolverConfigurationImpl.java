@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,7 @@ public class ResolverConfigurationImpl
 
     // Load DNS configuration from OS
 
+    @SuppressWarnings("removal")
     private void loadConfig() {
         assert Thread.holdsLock(lock);
 
@@ -149,6 +150,7 @@ public class ResolverConfigurationImpl
 
     // obtain search list or local domain
 
+    @SuppressWarnings("removal")
     private LinkedList<String> getSearchList() {
 
         LinkedList<String> sl;

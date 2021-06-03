@@ -31,13 +31,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
-import jdk.incubator.foreign.MemoryAddress;
+
 import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static jdk.incubator.foreign.MemorySegment.READ;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
 
@@ -101,7 +101,8 @@ public class TestMismatch {
     public void testEmpty() {
         var s1 = MemorySegment.ofArray(new byte[0]);
         assertEquals(s1.mismatch(s1), -1);
-        try (var nativeSegment = MemorySegment.allocateNative(4)) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            var nativeSegment = MemorySegment.allocateNative(4, 4, scope);
             var s2 = nativeSegment.asSlice(0, 0);
             assertEquals(s1.mismatch(s2), -1);
             assertEquals(s2.mismatch(s1), -1);
@@ -112,8 +113,9 @@ public class TestMismatch {
     public void testLarge() {
         // skip if not on 64 bits
         if (MemoryLayouts.ADDRESS.byteSize() > 32) {
-            try (var s1 = MemorySegment.allocateNative((long) Integer.MAX_VALUE + 10L);
-                 var s2 = MemorySegment.allocateNative((long) Integer.MAX_VALUE + 10L)) {
+            try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+                var s1 = MemorySegment.allocateNative((long) Integer.MAX_VALUE + 10L, 8, scope);
+                var s2 = MemorySegment.allocateNative((long) Integer.MAX_VALUE + 10L, 8, scope);
                 assertEquals(s1.mismatch(s1), -1);
                 assertEquals(s1.mismatch(s2), -1);
                 assertEquals(s2.mismatch(s1), -1);
@@ -149,69 +151,61 @@ public class TestMismatch {
 
     @Test
     public void testClosed() {
-        var s1 = MemorySegment.ofArray(new byte[4]);
-        var s2 = MemorySegment.ofArray(new byte[4]);
-        s1.close();
+        MemorySegment s1, s2;
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            s1 = MemorySegment.allocateNative(4, 1, scope);
+            s2 = MemorySegment.allocateNative(4, 1, scope);
+        }
         assertThrows(ISE, () -> s1.mismatch(s1));
         assertThrows(ISE, () -> s1.mismatch(s2));
         assertThrows(ISE, () -> s2.mismatch(s1));
     }
 
     @Test
-    public void testInsufficientAccessModes() {
-        var s1 = MemorySegment.ofArray(new byte[4]);
-        var s2 = MemorySegment.ofArray(new byte[4]);
-        var s1WithoutRead = s1.withAccessModes(s1.accessModes() & ~READ);
-        var s2WithoutRead = s2.withAccessModes(s2.accessModes() & ~READ);
-
-        assertThrows(UOE, () -> s1.mismatch(s2WithoutRead));
-        assertThrows(UOE, () -> s1WithoutRead.mismatch(s2));
-        assertThrows(UOE, () -> s1WithoutRead.mismatch(s2WithoutRead));
-    }
-
-    @Test
     public void testThreadAccess() throws Exception {
-        var segment = MemorySegment.ofArray(new byte[4]);
-        {
-            AtomicReference<RuntimeException> exception = new AtomicReference<>();
-            Runnable action = () -> {
-                try {
-                    MemorySegment.ofArray(new byte[4]).mismatch(segment);
-                } catch (RuntimeException e) {
-                    exception.set(e);
-                }
-            };
-            Thread thread = new Thread(action);
-            thread.start();
-            thread.join();
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            var segment = MemorySegment.allocateNative(4, 1, scope);
+            {
+                AtomicReference<RuntimeException> exception = new AtomicReference<>();
+                Runnable action = () -> {
+                    try {
+                        MemorySegment.ofArray(new byte[4]).mismatch(segment);
+                    } catch (RuntimeException e) {
+                        exception.set(e);
+                    }
+                };
+                Thread thread = new Thread(action);
+                thread.start();
+                thread.join();
 
-            RuntimeException e = exception.get();
-            if (!(e instanceof IllegalStateException)) {
-                throw e;
+                RuntimeException e = exception.get();
+                if (!(e instanceof IllegalStateException)) {
+                    throw e;
+                }
             }
-        }
-        {
-            AtomicReference<RuntimeException> exception = new AtomicReference<>();
-            Runnable action = () -> {
-                try {
-                    segment.mismatch(MemorySegment.ofArray(new byte[4]));
-                } catch (RuntimeException e) {
-                    exception.set(e);
-                }
-            };
-            Thread thread = new Thread(action);
-            thread.start();
-            thread.join();
+            {
+                AtomicReference<RuntimeException> exception = new AtomicReference<>();
+                Runnable action = () -> {
+                    try {
+                        segment.mismatch(MemorySegment.ofArray(new byte[4]));
+                    } catch (RuntimeException e) {
+                        exception.set(e);
+                    }
+                };
+                Thread thread = new Thread(action);
+                thread.start();
+                thread.join();
 
-            RuntimeException e = exception.get();
-            if (!(e instanceof IllegalStateException)) {
-                throw e;
+                RuntimeException e = exception.get();
+                if (!(e instanceof IllegalStateException)) {
+                    throw e;
+                }
             }
         }
     }
 
     enum SegmentKind {
-        NATIVE(MemorySegment::allocateNative),
+        NATIVE(i -> MemorySegment.allocateNative(i, ResourceScope.newImplicitScope())),
         ARRAY(i -> MemorySegment.ofArray(new byte[i]));
 
         final IntFunction<MemorySegment> segmentFactory;

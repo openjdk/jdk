@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,6 +276,7 @@ class ImageFetcher extends Thread {
     /**
       * Create and start ImageFetcher threads in the appropriate ThreadGroup.
       */
+    @SuppressWarnings("removal")
     private static void createFetchers(final FetcherInfo info) {
        // We need to instantiate a new ImageFetcher thread.
        // First, figure out which ThreadGroup we'll put the

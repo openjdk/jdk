@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPADDING_INLINE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHPADDING_INLINE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPADDING_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHPADDING_HPP
 
 // 64 bytes is enough to cover all existing architectures. If we have some
 // other platforms, we would need to provide the architecture-specific
@@ -35,4 +35,4 @@
 #define shenandoah_padding(id) \
   DEFINE_PAD_MINUS_SIZE(id, SHENANDOAH_CACHE_LINE_SIZE, 0)
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHPADDING_INLINE_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHPADDING_HPP
