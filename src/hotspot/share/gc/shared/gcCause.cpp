@@ -99,6 +99,9 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _g1_periodic_collection:
       return "G1 Periodic Collection";
 
+    case _g1_compaction_pause:
+      return "G1 Compaction Pause";
+
     case _dcmd_gc_run:
       return "Diagnostic Command";
 
