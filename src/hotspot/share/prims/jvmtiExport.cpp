@@ -2289,8 +2289,8 @@ void JvmtiExport::post_dynamic_code_generated_while_holding_locks(const char* na
   // register the stub with the current dynamic code event collector
   // Cannot take safepoint here so do not use state_for to get
   // jvmti thread state.
-  // The collector and/or state might be NULL if JvmtiDynamicCodeEventCollector has been initialized
-  // while JVMTI_EVENT_DYNAMIC_CODE_GENERATED was disabled
+  // The collector and/or state might be NULL if JvmtiDynamicCodeEventCollector
+  // has been initialized while JVMTI_EVENT_DYNAMIC_CODE_GENERATED was disabled.
   JvmtiThreadState* state = JavaThread::current()->jvmti_thread_state();
   if (state != NULL) {
     JvmtiDynamicCodeEventCollector *collector = state->get_dynamic_code_event_collector();
