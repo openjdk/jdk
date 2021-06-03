@@ -53,10 +53,10 @@ void ZeroInterpreter::initialize_stub() {
   if (_code != NULL) return;
 
   // generate interpreter
-  int code_size = InterpreterCodeSize;
-  NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
-  _code = new StubQueue(new InterpreterCodeletInterface, code_size, NULL,
-                         "Interpreter");
+  // debug uses extra interpreter code space
+  BufferBlob* blob = InterpreterBlob::create(InterpreterCodeSize NOT_PRODUCT( * 4));
+  assert(blob != NULL, "invariant");
+  _code = new StubQueue(new InterpreterCodeletInterface, blob, NULL);
 }
 
 void ZeroInterpreter::initialize_code() {

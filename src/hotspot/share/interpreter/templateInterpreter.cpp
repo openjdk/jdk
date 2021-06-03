@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "code/codeBlob.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -45,10 +46,10 @@ void TemplateInterpreter::initialize_stub() {
          "dispatch table too small");
 
   // allocate interpreter
-  int code_size = InterpreterCodeSize;
-  NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
-  _code = new StubQueue(new InterpreterCodeletInterface, code_size, NULL,
-                        "Interpreter");
+  // debug uses extra interpreter code space
+  BufferBlob* blob = InterpreterBlob::create(InterpreterCodeSize NOT_PRODUCT( * 4));
+  assert(blob != NULL, "invariant");
+  _code = new StubQueue(new InterpreterCodeletInterface, blob, NULL);
 }
 
 void TemplateInterpreter::initialize_code() {

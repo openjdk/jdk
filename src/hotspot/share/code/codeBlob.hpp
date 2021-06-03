@@ -59,6 +59,7 @@ struct CodeBlobType {
 //    VtableBlob         : Used for holding vtable chunks
 //    MethodHandlesAdapterBlob : Used to hold MethodHandles adapters
 //    OptimizedEntryBlob : Used for upcalls from native code
+//    InterpreterBlob    : Used to hold Interpreter
 //   RuntimeStub         : Call to VM runtime methods
 //   SingletonBlob       : Super-class for all blobs that exist in only one instance
 //    DeoptimizationBlob : Used for deoptimization
@@ -138,6 +139,7 @@ public:
   virtual bool is_adapter_blob() const                { return false; }
   virtual bool is_vtable_blob() const                 { return false; }
   virtual bool is_method_handles_adapter_blob() const { return false; }
+  virtual bool is_interpreter_blob() const            { return false; }
   virtual bool is_compiled() const                    { return false; }
   virtual bool is_optimized_entry_blob() const                  { return false; }
 
@@ -192,6 +194,18 @@ public:
   bool is_frame_complete_at(address addr) const  { return _frame_complete_offset != CodeOffsets::frame_never_safe &&
                                                           code_contains(addr) && addr >= code_begin() + _frame_complete_offset; }
   int frame_complete_offset() const              { return _frame_complete_offset; }
+
+  // Profiling/safepoint support
+  class FrameParser: public ResourceObj {
+   protected:
+    const CodeBlob* _cb;
+   public:
+    FrameParser(const CodeBlob* cb) : _cb(cb) {}
+    virtual bool sender_frame(JavaThread *thread, bool check_frame_complete, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+      address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
+  };
+
+  virtual FrameParser* frame_parser() const { return new FrameParser(this); }
 
   // CodeCache support: really only used by the nmethods, but in order to get
   // asserts and certain bookkeeping to work in the CodeCache they are defined
@@ -336,7 +350,6 @@ public:
   address content_end() const { return _content_end; }
 };
 
-
 class RuntimeBlob : public CodeBlob {
   friend class VMStructs;
  public:
@@ -358,6 +371,12 @@ class RuntimeBlob : public CodeBlob {
     OopMapSet*  oop_maps,
     bool        caller_must_gc_arguments = false
   );
+
+  // Profiling/safepoint support
+  class FrameParser : public CodeBlob::FrameParser {
+   public:
+    FrameParser(const RuntimeBlob* cb) : CodeBlob::FrameParser(cb) {}
+  };
 
   // GC support
   virtual bool is_alive() const                  = 0;
@@ -385,6 +404,7 @@ class BufferBlob: public RuntimeBlob {
   friend class VtableBlob;
   friend class MethodHandlesAdapterBlob;
   friend class OptimizedEntryBlob;
+  friend class InterpreterBlob;
   friend class WhiteBox;
 
  private:
@@ -407,6 +427,12 @@ class BufferBlob: public RuntimeBlob {
 
   // Typing
   virtual bool is_buffer_blob() const            { return true; }
+
+  // Profiling/safepoint support
+  class FrameParser : public RuntimeBlob::FrameParser {
+   public:
+    FrameParser(const BufferBlob* cb) : RuntimeBlob::FrameParser(cb) {}
+  };
 
   // GC/Verification support
   void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f)  { /* nothing to do */ }
@@ -461,6 +487,32 @@ public:
 
   // Typing
   virtual bool is_method_handles_adapter_blob() const { return true; }
+};
+
+
+//----------------------------------------------------------------------------------------------------
+// InterpreterBlob: used to hold Interpreter
+
+class InterpreterBlob: public BufferBlob {
+private:
+  InterpreterBlob(int size)                          : BufferBlob("Interpreter", size) {}
+
+public:
+  // Creation
+  static InterpreterBlob* create(int buffer_size);
+
+  // Typing
+  virtual bool is_interpreter_blob() const { return true; }
+
+  // Profiling/safepoint support
+  class FrameParser : public BufferBlob::FrameParser {
+   public:
+    FrameParser(const InterpreterBlob* cb) : BufferBlob::FrameParser(cb) {}
+    virtual bool sender_frame(JavaThread *thread, bool check_frame_complete, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+      address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
+  };
+
+  virtual FrameParser* frame_parser() const { return new FrameParser(this); }
 };
 
 
