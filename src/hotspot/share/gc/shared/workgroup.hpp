@@ -40,26 +40,21 @@
 //   AbstractGangTask
 //
 // Gang/Group class hierarchy:
-//   AbstractWorkGang
-//     WorkGang
-//     YieldingFlexibleWorkGang (defined in another file)
+//   WorkGang
 //
 // Worker class hierarchy:
-//   AbstractGangWorker (subclass of WorkerThread)
-//     GangWorker
-//     YieldingFlexibleGangWorker   (defined in another file)
+//   GangWorker (subclass of WorkerThread)
 
 // Forward declarations of classes defined here
 
-class AbstractGangWorker;
+class GangWorker;
 class Semaphore;
 class ThreadClosure;
-class WorkGang;
 class GangTaskDispatcher;
 
 // An abstract task to be worked on by a gang.
 // You subclass this to supply your own work() method
-class AbstractGangTask {
+class AbstractGangTask : public CHeapObj<mtInternal> {
   const char* _name;
   const uint _gc_id;
 
@@ -86,11 +81,10 @@ struct WorkData {
 
 // The work gang is the collection of workers to execute tasks.
 // The number of workers run for a task is "_active_workers"
-// while "_total_workers" is the number of available of workers.
-class AbstractWorkGang : public CHeapObj<mtInternal> {
- protected:
+// while "_total_workers" is the number of available workers.
+class WorkGang : public CHeapObj<mtInternal> {
   // The array of worker threads for this gang.
-  AbstractGangWorker** _workers;
+  GangWorker** _workers;
   // The count of the number of workers in the gang.
   uint _total_workers;
   // The currently active workers in this gang.
@@ -100,19 +94,32 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   // Printing support.
   const char* _name;
 
-  ~AbstractWorkGang() {}
-
- private:
   // Initialize only instance data.
   const bool _are_GC_task_threads;
   const bool _are_ConcurrentGC_threads;
 
-  void set_thread(uint worker_id, AbstractGangWorker* worker) {
+  // To get access to the GangTaskDispatcher instance.
+  friend class GangWorker;
+  GangTaskDispatcher* const _dispatcher;
+
+  GangTaskDispatcher* dispatcher() const { return _dispatcher; }
+
+  void set_thread(uint worker_id, GangWorker* worker) {
     _workers[worker_id] = worker;
   }
 
+  // Add GC workers when _created_workers < _active_workers; otherwise, no-op.
+  // If there's no memory/thread allocation failure, _created_worker is
+  // adjusted to match _active_workers (_created_worker == _active_workers).
+  void add_workers(bool initializing);
+
+  GangWorker* allocate_worker(uint which);
+
  public:
-  AbstractWorkGang(const char* name, uint workers, bool are_GC_task_threads, bool are_ConcurrentGC_threads);
+  WorkGang(const char* name, uint workers, bool are_GC_task_threads, bool are_ConcurrentGC_threads);
+
+  ~WorkGang();
+
   // Initialize workers in the gang.  Return true if initialization succeeded.
   void initialize_workers();
 
@@ -125,7 +132,8 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
     return _created_workers;
   }
 
-  virtual uint active_workers() const {
+  uint active_workers() const {
+    assert(_active_workers != 0, "zero active workers");
     assert(_active_workers <= _total_workers,
            "_active_workers: %u > _total_workers: %u", _active_workers, _total_workers);
     return _active_workers;
@@ -134,21 +142,15 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   uint update_active_workers(uint v) {
     assert(v <= _total_workers,
            "Trying to set more workers active than there are");
-    _active_workers = MIN2(v, _total_workers);
-    add_workers(false /* exit_on_failure */);
     assert(v != 0, "Trying to set active workers to 0");
+    _active_workers = v;
+    add_workers(false /* initializing */);
     log_trace(gc, task)("%s: using %d out of %d workers", name(), _active_workers, _total_workers);
     return _active_workers;
   }
 
-  // Add GC workers as needed.
-  void add_workers(bool initializing);
-
-  // Add GC workers as needed to reach the specified number of workers.
-  void add_workers(uint active_workers, bool initializing);
-
   // Return the Ith worker.
-  AbstractGangWorker* worker(uint i) const;
+  GangWorker* worker(uint i) const;
 
   // Base name (without worker id #) of threads.
   const char* group_name() { return name(); }
@@ -156,44 +158,20 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   void threads_do(ThreadClosure* tc) const;
 
   // Create a GC worker and install it into the work gang.
-  virtual AbstractGangWorker* install_worker(uint which);
+  virtual GangWorker* install_worker(uint which);
 
   // Debugging.
   const char* name() const { return _name; }
 
- protected:
-  virtual AbstractGangWorker* allocate_worker(uint which) = 0;
-};
-
-// An class representing a gang of workers.
-class WorkGang: public AbstractWorkGang {
-  // To get access to the GangTaskDispatcher instance.
-  friend class GangWorker;
-
-  GangTaskDispatcher* const _dispatcher;
-  GangTaskDispatcher* dispatcher() const {
-    return _dispatcher;
-  }
-
-public:
-  WorkGang(const char* name,
-           uint workers,
-           bool are_GC_task_threads,
-           bool are_ConcurrentGC_threads);
-
-  ~WorkGang();
-
   // Run a task using the current active number of workers, returns when the task is done.
-  virtual void run_task(AbstractGangTask* task);
+  void run_task(AbstractGangTask* task);
+
   // Run a task with the given number of workers, returns
   // when the task is done. The number of workers must be at most the number of
   // active workers.  Additional workers may be created if an insufficient
   // number currently exists. If the add_foreground_work flag is true, the current thread
   // is used to run the task too.
   void run_task(AbstractGangTask* task, uint num_workers, bool add_foreground_work = false);
-
-protected:
-  virtual AbstractGangWorker* allocate_worker(uint which);
 };
 
 // Temporarily try to set the number of active workers.
@@ -201,11 +179,11 @@ protected:
 // query the number of active workers.
 class WithUpdatedActiveWorkers : public StackObj {
 private:
-  AbstractWorkGang* const _gang;
+  WorkGang* const _gang;
   const uint              _old_active_workers;
 
 public:
-  WithUpdatedActiveWorkers(AbstractWorkGang* gang, uint requested_num_workers) :
+  WithUpdatedActiveWorkers(WorkGang* gang, uint requested_num_workers) :
       _gang(gang),
       _old_active_workers(gang->active_workers()) {
     uint capped_num_workers = MIN2(requested_num_workers, gang->total_workers());
@@ -218,41 +196,29 @@ public:
 };
 
 // Several instances of this class run in parallel as workers for a gang.
-class AbstractGangWorker: public WorkerThread {
-public:
-  AbstractGangWorker(AbstractWorkGang* gang, uint id);
-
-  // The only real method: run a task for the gang.
-  virtual void run();
-  // Predicate for Thread
-  virtual bool is_GC_task_thread() const;
-  virtual bool is_ConcurrentGC_thread() const;
-  // Printing
-  void print_on(outputStream* st) const;
-  virtual void print() const;
-
-protected:
-  AbstractWorkGang* _gang;
-
-  virtual void initialize();
-  virtual void loop() = 0;
-
-  AbstractWorkGang* gang() const { return _gang; }
-};
-
-class GangWorker: public AbstractGangWorker {
-public:
-  GangWorker(WorkGang* gang, uint id) : AbstractGangWorker(gang, id) {}
-
-protected:
-  virtual void loop();
-
+class GangWorker: public WorkerThread {
 private:
+  WorkGang* _gang;
+
+  void initialize();
+  void loop();
+
+  WorkGang* gang() const { return _gang; }
+
   WorkData wait_for_task();
   void run_task(WorkData work);
   void signal_task_done();
 
-  WorkGang* gang() const { return (WorkGang*)_gang; }
+protected:
+  // The only real method: run a task for the gang.
+  void run() override;
+
+public:
+  GangWorker(WorkGang* gang, uint id);
+
+  // Predicate for Thread
+  bool is_GC_task_thread() const override { return gang()->are_GC_task_threads(); }
+  bool is_ConcurrentGC_thread() const override { return gang()->are_ConcurrentGC_threads(); }
 };
 
 // A class that acts as a synchronisation barrier. Workers enter

@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_WORKERDATAARRAY_INLINE_HPP
 
 #include "gc/shared/workerDataArray.hpp"
+
 #include "memory/allocation.inline.hpp"
 #include "utilities/ostream.hpp"
 
@@ -150,7 +151,7 @@ void WorkerDataArray<T>::print_summary_on(outputStream* out, bool print_sum) con
   if (_is_serial) {
     out->print("%s:", title());
   } else {
-    out->print("%-25s", title());
+    out->print("%-30s", title());
   }
 
   uint start = 0;

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, 2021, Arm Limited. All rights reserved.
+ * Copyright (c) 2019, 2020, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.foreign.abi.aarch64.aapcs;
+package jdk.internal.foreign.abi.aarch64;
 
-import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.FunctionDescriptor;
 import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.CLinker;
+import jdk.incubator.foreign.ResourceScope;
+import jdk.internal.foreign.AbstractCLinker;
+import jdk.internal.foreign.ResourceScopeImpl;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.UpcallStubs;
-import jdk.internal.foreign.abi.aarch64.CallArranger;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -41,14 +40,12 @@ import java.lang.invoke.MethodType;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import static jdk.internal.foreign.PlatformLayouts.*;
-
 /**
  * ABI implementation based on ARM document "Procedure Call Standard for
  * the ARM 64-bit Architecture".
  */
-public class AapcsLinker implements CLinker {
-    private static AapcsLinker instance;
+public final class AArch64Linker extends AbstractCLinker {
+    private static AArch64Linker instance;
 
     static final long ADDRESS_SIZE = 64; // bits
 
@@ -60,51 +57,55 @@ public class AapcsLinker implements CLinker {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
             MH_unboxVaList = lookup.findVirtual(VaList.class, "address",
                 MethodType.methodType(MemoryAddress.class));
-            MH_boxVaList = lookup.findStatic(AapcsLinker.class, "newVaListOfAddress",
-                MethodType.methodType(VaList.class, MemoryAddress.class));
+            MH_boxVaList = MethodHandles.insertArguments(lookup.findStatic(AArch64Linker.class, "newVaListOfAddress",
+                MethodType.methodType(VaList.class, MemoryAddress.class, ResourceScope.class)), 1, ResourceScope.globalScope());
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
     }
 
-    public static AapcsLinker getInstance() {
+    public static AArch64Linker getInstance() {
         if (instance == null) {
-            instance = new AapcsLinker();
+            instance = new AArch64Linker();
         }
         return instance;
     }
 
     @Override
-    public MethodHandle downcallHandle(Addressable symbol, MethodType type, FunctionDescriptor function) {
-        Objects.requireNonNull(symbol);
+    public final MethodHandle downcallHandle(MethodType type, FunctionDescriptor function) {
         Objects.requireNonNull(type);
         Objects.requireNonNull(function);
-        MethodType llMt = SharedUtils.convertVaListCarriers(type, AapcsVaList.CARRIER);
-        MethodHandle handle = CallArranger.arrangeDowncall(symbol, llMt, function);
+        MethodType llMt = SharedUtils.convertVaListCarriers(type, AArch64VaList.CARRIER);
+        MethodHandle handle = CallArranger.arrangeDowncall(llMt, function);
+        if (!type.returnType().equals(MemorySegment.class)) {
+            // not returning segment, just insert a throwing allocator
+            handle = MethodHandles.insertArguments(handle, 1, SharedUtils.THROWING_ALLOCATOR);
+        }
         handle = SharedUtils.unboxVaLists(type, handle, MH_unboxVaList);
         return handle;
     }
 
     @Override
-    public MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function) {
+    public final MemoryAddress upcallStub(MethodHandle target, FunctionDescriptor function, ResourceScope scope) {
+        Objects.requireNonNull(scope);
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
         target = SharedUtils.boxVaLists(target, MH_boxVaList);
-        return UpcallStubs.upcallAddress(CallArranger.arrangeUpcall(target, target.type(), function));
+        return UpcallStubs.upcallAddress(CallArranger.arrangeUpcall(target, target.type(), function), (ResourceScopeImpl) scope);
     }
 
-    public static VaList newVaList(Consumer<VaList.Builder> actions, SharedUtils.Allocator allocator) {
-        AapcsVaList.Builder builder = AapcsVaList.builder(allocator);
+    public static VaList newVaList(Consumer<VaList.Builder> actions, ResourceScope scope) {
+        AArch64VaList.Builder builder = AArch64VaList.builder(scope);
         actions.accept(builder);
         return builder.build();
     }
 
-    public static VaList newVaListOfAddress(MemoryAddress ma) {
-        return AapcsVaList.ofAddress(ma);
+    public static VaList newVaListOfAddress(MemoryAddress ma, ResourceScope scope) {
+        return AArch64VaList.ofAddress(ma, scope);
     }
 
     public static VaList emptyVaList() {
-        return AapcsVaList.empty();
+        return AArch64VaList.empty();
     }
 
 }

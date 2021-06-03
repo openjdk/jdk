@@ -3602,7 +3602,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
       if (UseJVMCICompiler) {
         // JVMCI is initialized on a CompilerThread
         if (BootstrapJVMCI) {
-          JavaThread* THREAD = thread;
+          JavaThread* THREAD = thread; // For exception macros.
           JVMCICompiler* compiler = JVMCICompiler::instance(true, CATCH);
           compiler->bootstrap(THREAD);
           if (HAS_PENDING_EXCEPTION) {
@@ -3643,7 +3643,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     // to continue.
     if (Universe::is_fully_initialized()) {
       // otherwise no pending exception possible - VM will already have aborted
-      JavaThread* THREAD = JavaThread::current();
+      JavaThread* THREAD = JavaThread::current(); // For exception macros.
       if (HAS_PENDING_EXCEPTION) {
         HandleMark hm(THREAD);
         vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));

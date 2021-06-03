@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import static jdk.jfr.internal.LogTag.JFR_SYSTEM;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -62,6 +63,7 @@ public final class MetadataRepository {
     private boolean staleMetadata = true;
     private boolean unregistered;
     private long lastUnloaded = -1;
+    private Instant outputChange;
 
     public MetadataRepository() {
         initializeJVMEventTypes();
@@ -263,11 +265,13 @@ public final class MetadataRepository {
     // Lock around setOutput ensures that other threads don't
     // emit events after setOutput and unregister the event class, before a call
     // to storeDescriptorInJVM
-    synchronized void setOutput(String filename) {
+    synchronized Instant setOutput(String filename) {
         if (staleMetadata) {
             storeDescriptorInJVM();
         }
+        awaitUniqueTimestamp();
         jvm.setOutput(filename);
+        long nanos = jvm.getChunkStartNanos();
         if (filename != null) {
             RepositoryFiles.notifyNewFile();
         }
@@ -277,6 +281,29 @@ public final class MetadataRepository {
                 storeDescriptorInJVM();
             }
             unregistered = false;
+        }
+        return Utils.epochNanosToInstant(nanos);
+    }
+
+    // Each chunk needs a unique start timestamp and
+    // if the clock resolution is low, two chunks may
+    // get the same timestamp.
+    private void awaitUniqueTimestamp() {
+        if (outputChange == null) {
+            outputChange = Instant.now();
+            return;
+        }
+        while (true) {
+            Instant time = Instant.now();
+            if (!time.equals(outputChange)) {
+                outputChange = time;
+                return;
+            }
+            try {
+                Thread.sleep(0, 100);
+            } catch (InterruptedException iex) {
+                // ignore
+            }
         }
     }
 

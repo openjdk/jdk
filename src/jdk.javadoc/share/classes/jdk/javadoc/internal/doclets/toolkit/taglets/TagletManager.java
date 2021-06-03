@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ import static com.sun.source.doctree.DocTree.Kind.EXCEPTION;
 import static com.sun.source.doctree.DocTree.Kind.HIDDEN;
 import static com.sun.source.doctree.DocTree.Kind.LINK;
 import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
+import static com.sun.source.doctree.DocTree.Kind.PARAM;
 import static com.sun.source.doctree.DocTree.Kind.PROVIDES;
 import static com.sun.source.doctree.DocTree.Kind.SEE;
 import static com.sun.source.doctree.DocTree.Kind.SERIAL;
@@ -184,6 +185,8 @@ public class TagletManager {
 
     private final String tagletPath;
 
+    private final BaseConfiguration configuration;
+
     /**
      * Constructs a new {@code TagletManager}.
      *
@@ -196,6 +199,7 @@ public class TagletManager {
         standardTagsLowercase = new HashSet<>();
         unseenCustomTags = new HashSet<>();
         allTaglets = new LinkedHashMap<>();
+        this.configuration = configuration;
         BaseOptions options = configuration.getOptions();
         this.nosince = options.noSince();
         this.showversion = options.showVersion();
@@ -222,8 +226,7 @@ public class TagletManager {
      * @throws IOException if an error occurs while setting the location
      */
     public void initTagletPath(JavaFileManager fileManager) throws IOException {
-        if (fileManager instanceof StandardJavaFileManager) {
-            StandardJavaFileManager sfm = (StandardJavaFileManager)fileManager;
+        if (fileManager instanceof StandardJavaFileManager sfm) {
             if (tagletPath != null) {
                 List<File> paths = new ArrayList<>();
                 for (String pathname : tagletPath.split(File.pathSeparator)) {
@@ -250,6 +253,15 @@ public class TagletManager {
         try {
             ClassLoader tagClassLoader;
             tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
+            if (configuration.workArounds.accessInternalAPI()) {
+                Module thisModule = getClass().getModule();
+                Module tagletLoaderUnnamedModule = tagClassLoader.getUnnamedModule();
+                List<String> pkgs = List.of(
+                        "jdk.javadoc.doclet",
+                        "jdk.javadoc.internal.doclets.toolkit",
+                        "jdk.javadoc.internal.doclets.formats.html");
+                pkgs.forEach(p -> thisModule.addOpens(p, tagletLoaderUnnamedModule));
+            }
             Class<? extends jdk.javadoc.doclet.Taglet> customTagClass =
                     tagClassLoader.loadClass(classname).asSubclass(jdk.javadoc.doclet.Taglet.class);
             jdk.javadoc.doclet.Taglet instance = customTagClass.getConstructor().newInstance();
@@ -352,7 +364,6 @@ public class TagletManager {
      * @param trees the trees containing the comments
      * @param inlineTrees true if the trees are inline and false otherwise
      */
-    @SuppressWarnings("preview")
     public void checkTags(Element element, Iterable<? extends DocTree> trees, boolean inlineTrees) {
         if (trees == null) {
             return;
@@ -552,8 +563,7 @@ public class TagletManager {
             case PACKAGE:
                 return blockTagletsByLocation.get(Location.PACKAGE);
             case OTHER:
-                if (e instanceof DocletElement) {
-                    DocletElement de = (DocletElement) e;
+                if (e instanceof DocletElement de) {
                     switch (de.getSubKind()) {
                         case DOCFILE:
                             return blockTagletsByLocation.get(Location.PACKAGE);
@@ -594,6 +604,7 @@ public class TagletManager {
         // init the serialized form tags for the serialized form page
         serializedFormTags = new ArrayList<>();
         serializedFormTags.add(allTaglets.get(SERIAL_DATA.tagName));
+        serializedFormTags.add(allTaglets.get(PARAM.tagName));
         serializedFormTags.add(allTaglets.get(THROWS.tagName));
         if (!nosince)
             serializedFormTags.add(allTaglets.get(SINCE.tagName));
@@ -751,7 +762,7 @@ public class TagletManager {
                     + format(t.inMethod(), "method") + " "
                     + format(t.inField(), "field") + " "
                     + format(t.isInlineTag(), "inline")+ " "
-                    + format((t instanceof SimpleTaglet) && !((SimpleTaglet) t).enabled, "disabled"));
+                    + format((t instanceof SimpleTaglet st) && !st.enabled, "disabled"));
         });
     }
 

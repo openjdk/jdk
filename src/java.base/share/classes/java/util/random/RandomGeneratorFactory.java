@@ -284,6 +284,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                 if (ctor == null) {
                     PrivilegedExceptionAction<Constructor<?>[]> ctorAction = randomGeneratorClass::getConstructors;
                     try {
+                        @SuppressWarnings("removal")
                         Constructor<?>[] ctors = AccessController.doPrivileged(ctorAction);
 
                         Constructor<T> tmpCtor = null;
@@ -368,31 +369,6 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      */
     public static RandomGeneratorFactory<RandomGenerator> getDefault() {
         return factoryOf("L32X64MixRandom", RandomGenerator.class);
-    }
-
-    /**
-     * Returns a stream of matching Providers.
-     *
-     * @param category  {@link RandomGenerator} sub-interface class to filter
-     * @param <T>       {@link RandomGenerator} sub-interface return type
-     *
-     * RandomGenerators that are marked as deprecated or are not properly configured are not included in the result.
-     *
-     * @implSpec Availability is determined by RandomGeneratorFactory using the service provider API
-     * to locate implementations of the RandomGenerator interface.
-     *
-     * @return Stream of matching {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
-     *
-     * @hidden
-     */
-    public static <T extends RandomGenerator> Stream<RandomGeneratorFactory<T>> all(Class<T> category) {
-        Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
-        return fm.values()
-                 .stream()
-                 .filter(p -> isSubclass(category, p) &&
-                              !p.type().isAnnotationPresent(Deprecated.class) &&
-                              p.type().isAnnotationPresent(RandomGeneratorProperties.class))
-                 .map(RandomGeneratorFactory::new);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package sun.security.util;
+
+import jdk.internal.access.SharedSecrets;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -122,8 +124,11 @@ public final class ECUtil {
             throws InvalidKeySpecException {
         KeyFactory keyFactory = getKeyFactory();
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
-
-        return (ECPrivateKey)keyFactory.generatePrivate(keySpec);
+        try {
+            return (ECPrivateKey) keyFactory.generatePrivate(keySpec);
+        } finally {
+            SharedSecrets.getJavaSecuritySpecAccess().clearEncodedKeySpec(keySpec);
+        }
     }
 
     public static ECPrivateKey generateECPrivateKey(BigInteger s,

@@ -28,7 +28,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm HmacDefKeySizeTest
- * @run main/othervm HmacDefKeySizeTest sm
+ * @run main/othervm -Djava.security.manager=allow HmacDefKeySizeTest sm
  */
 
 import java.security.InvalidKeyException;

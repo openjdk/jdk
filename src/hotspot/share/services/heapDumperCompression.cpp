@@ -250,48 +250,30 @@ void CompressionBackend::deactivate() {
     ml.notify_all();
   }
 
-  // Wait for the threads to drain the compression work list.
+  // Wait for the threads to drain the compression work list and do some work yourself.
   while (!_to_compress.is_empty()) {
-    // If we have no threads, compress the current one itself.
-    if (_nr_of_threads == 0) {
-      MutexUnlocker mu(_lock, Mutex::_no_safepoint_check_flag);
-      thread_loop(true);
-    } else {
-      ml.wait();
-    }
+    do_foreground_work();
   }
 
   _active = false;
   ml.notify_all();
 }
 
-void CompressionBackend::thread_loop(bool single_run) {
-  // Register if this is a worker thread.
-  if (!single_run) {
+void CompressionBackend::thread_loop() {
+  {
     MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
     _nr_of_threads++;
   }
 
-  while (true) {
-    WriteWork* work = get_work();
-
-    if (work == NULL) {
-      assert(!single_run, "Should never happen for single thread");
-      MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-      _nr_of_threads--;
-      assert(_nr_of_threads >= 0, "Too many threads finished");
-      ml.notify_all();
-
-      return;
-    } else {
-      do_compress(work);
-      finish_work(work);
-    }
-
-    if (single_run) {
-      return;
-    }
+  WriteWork* work;
+  while ((work = get_work()) != NULL) {
+    do_compress(work);
+    finish_work(work);
   }
+
+  MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+  _nr_of_threads--;
+  assert(_nr_of_threads >= 0, "Too many threads finished");
 }
 
 void CompressionBackend::set_error(char const* new_error) {
@@ -363,6 +345,16 @@ void CompressionBackend::free_work_list(WorkList* list) {
   }
 }
 
+void CompressionBackend::do_foreground_work() {
+  assert(!_to_compress.is_empty(), "Must have work to do");
+  assert(_lock->owned_by_self(), "Must have the lock");
+
+  WriteWork* work = _to_compress.remove_first();
+  MutexUnlocker mu(_lock, Mutex::_no_safepoint_check_flag);
+  do_compress(work);
+  finish_work(work);
+}
+
 WriteWork* CompressionBackend::get_work() {
   MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
 
@@ -405,9 +397,7 @@ void CompressionBackend::get_new_buffer(char** buffer, size_t* used, size_t* max
           _unused.add_first(work);
         }
       } else if (!_to_compress.is_empty() && (_nr_of_threads == 0)) {
-        // If we have no threads, compress the current one itself.
-        MutexUnlocker mu(_lock, Mutex::_no_safepoint_check_flag);
-        thread_loop(true);
+        do_foreground_work();
       } else {
         ml.wait();
       }

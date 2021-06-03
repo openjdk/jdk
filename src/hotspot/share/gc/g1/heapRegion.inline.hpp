@@ -25,11 +25,12 @@
 #ifndef SHARE_GC_G1_HEAPREGION_INLINE_HPP
 #define SHARE_GC_G1_HEAPREGION_INLINE_HPP
 
+#include "gc/g1/heapRegion.hpp"
+
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1Predictions.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -205,8 +206,8 @@ inline void HeapRegion::reset_compacted_after_full_gc() {
   reset_after_full_gc_common();
 }
 
-inline void HeapRegion::reset_not_compacted_after_full_gc() {
-  assert(!is_free(), "should not have compacted free region");
+inline void HeapRegion::reset_skip_compacting_after_full_gc() {
+  assert(!is_free(), "must be");
 
   assert(compaction_top() == bottom(),
          "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,
@@ -449,6 +450,18 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   assert(has_valid_age_in_surv_rate(), "pre-condition");
   int age_in_group = age_in_surv_rate_group();
   _surv_rate_group->record_surviving_words(age_in_group, words_survived);
+}
+
+inline bool HeapRegion::evacuation_failed() const {
+  return Atomic::load(&_evacuation_failed);
+}
+
+inline bool HeapRegion::set_evacuation_failed() {
+  return !Atomic::load(&_evacuation_failed) && !Atomic::cmpxchg(&_evacuation_failed, false, true, memory_order_relaxed);
+}
+
+inline void HeapRegion::reset_evacuation_failed() {
+  Atomic::store(&_evacuation_failed, false);
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP

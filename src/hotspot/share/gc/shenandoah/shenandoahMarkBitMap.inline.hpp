@@ -27,6 +27,7 @@
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHMARKBITMAP_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahMarkBitMap.hpp"
+
 #include "runtime/atomic.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package java.lang;
 
 import java.lang.annotation.Native;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.time.Instant;
@@ -39,8 +40,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import static java.security.AccessController.doPrivileged;
 
 /**
  * ProcessHandleImpl is the implementation of ProcessHandle.
@@ -83,8 +82,9 @@ final class ProcessHandleImpl implements ProcessHandle {
     /**
      * The thread pool of "process reaper" daemon threads.
      */
+    @SuppressWarnings("removal")
     private static final Executor processReaperExecutor =
-            doPrivileged((PrivilegedAction<Executor>) () -> {
+            AccessController.doPrivileged((PrivilegedAction<Executor>) () -> {
                 // Initialize ThreadLocalRandom now to avoid using the smaller stack
                 // of the processReaper threads.
                 ThreadLocalRandom.current();
@@ -238,6 +238,7 @@ final class ProcessHandleImpl implements ProcessHandle {
      * @throws SecurityException if RuntimePermission("manageProcess") is not granted
      */
     static Optional<ProcessHandle> get(long pid) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("manageProcess"));
@@ -278,6 +279,7 @@ final class ProcessHandleImpl implements ProcessHandle {
      * @throws SecurityException if RuntimePermission("manageProcess") is not granted
      */
     public static ProcessHandleImpl current() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("manageProcess"));
@@ -301,6 +303,7 @@ final class ProcessHandleImpl implements ProcessHandle {
      *                                     security policy
      */
     public Optional<ProcessHandle> parent() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("manageProcess"));
@@ -419,6 +422,7 @@ final class ProcessHandleImpl implements ProcessHandle {
      * @return a stream of ProcessHandles
      */
     static Stream<ProcessHandle> children(long pid) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("manageProcess"));
@@ -439,6 +443,7 @@ final class ProcessHandleImpl implements ProcessHandle {
 
     @Override
     public Stream<ProcessHandle> descendants() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("manageProcess"));

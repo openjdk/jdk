@@ -198,13 +198,6 @@ class NativeCall: public NativeInstruction {
       nativeCall_at(instr)->destination() == target;
   }
 
-#if INCLUDE_AOT
-  static bool is_far_call(address instr, address target) {
-    intptr_t disp = target - (instr + sizeof(int32_t));
-    return !Assembler::is_simm32(disp);
-  }
-#endif
-
   // MT-safe patching of a call instruction.
   static void insert(address code_pos, address entry);
 

@@ -264,8 +264,7 @@ void Space::clear(bool mangle_space) {
   }
 }
 
-ContiguousSpace::ContiguousSpace(): CompactibleSpace(), _top(NULL),
-    _concurrent_iteration_safe_limit(NULL) {
+ContiguousSpace::ContiguousSpace(): CompactibleSpace(), _top(NULL) {
   _mangler = new GenSpaceMangler(this);
 }
 
@@ -278,7 +277,6 @@ void ContiguousSpace::initialize(MemRegion mr,
                                  bool mangle_space)
 {
   CompactibleSpace::initialize(mr, clear_space, mangle_space);
-  set_concurrent_iteration_safe_limit(top());
 }
 
 void ContiguousSpace::clear(bool mangle_space) {

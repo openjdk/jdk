@@ -115,42 +115,6 @@ abstract class AbstractMask<E> extends VectorMask<E> {
     }
 
     @Override
-    public int trueCount() {
-        //FIXME: use a population count intrinsic here
-        int c = 0;
-        for (boolean i : getBits()) {
-            if (i) c++;
-        }
-        return c;
-    }
-
-    @Override
-    public int firstTrue() {
-        //FIXME: use a count trailing zeros intrinsic here
-        boolean[] bits = getBits();
-        for (int i = 0; i < bits.length; i++) {
-            if (bits[i])  return i;
-        }
-        return bits.length;
-    }
-
-    @Override
-    public int lastTrue() {
-        //FIXME: use a count leading zeros intrinsic here
-        boolean[] bits = getBits();
-        for (int i = bits.length-1; i >= 0; i--) {
-            if (bits[i])  return i;
-        }
-        return -1;
-    }
-
-    @Override
-    public VectorMask<E> eq(VectorMask<E> m) {
-        // FIXME: Generate good code here.
-        return bOp(m, (i, a, b) -> a == b);
-    }
-
-    @Override
     public VectorMask<E> andNot(VectorMask<E> m) {
         return and(m.not());
     }
@@ -171,6 +135,31 @@ abstract class AbstractMask<E> extends VectorMask<E> {
             if (!i) return false;
         }
         return true;
+    }
+
+    /*package-private*/
+    static int trueCountHelper(boolean[] bits) {
+        int c = 0;
+        for (boolean i : bits) {
+            if (i) c++;
+        }
+        return c;
+    }
+
+    /*package-private*/
+    static int firstTrueHelper(boolean[] bits) {
+        for (int i = 0; i < bits.length; i++) {
+            if (bits[i])  return i;
+        }
+        return bits.length;
+    }
+
+    /*package-private*/
+    static int lastTrueHelper(boolean[] bits) {
+        for (int i = bits.length-1; i >= 0; i--) {
+            if (bits[i])  return i;
+        }
+        return -1;
     }
 
     @Override

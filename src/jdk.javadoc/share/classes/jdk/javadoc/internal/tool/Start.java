@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,8 +140,8 @@ public class Start {
         this.locale = Locale.getDefault();
 
         Log log = context.get(Log.logKey);
-        if (log instanceof Messager) {
-            messager = (Messager) log;
+        if (log instanceof Messager m){
+            messager = m;
         } else {
             PrintWriter out = context.get(Log.errKey);
             messager = (out == null)
@@ -327,13 +327,7 @@ public class Start {
 
 
     /**
-     * Main program - external wrapper. In order to maintain backward
-     * CLI compatibility, the execution is dispatched to the appropriate
-     * Start mechanism, depending on the doclet variant.
-     *
-     * The doclet tests are performed in the begin method, further on,
-     * this is to minimize argument processing and most importantly the impact
-     * of class loader creation, needed to detect the doclet class variants.
+     * Main program - external wrapper.
      */
     @SuppressWarnings("deprecation")
     Result begin(String... argv) {
@@ -366,8 +360,8 @@ public class Start {
         if (fileManager == null) {
             JavacFileManager.preRegister(context);
             fileManager = context.get(JavaFileManager.class);
-            if (fileManager instanceof BaseFileManager) {
-                ((BaseFileManager) fileManager).autoClose = true;
+            if (fileManager instanceof BaseFileManager bfm) {
+                bfm.autoClose = true;
             }
         }
 
@@ -398,11 +392,19 @@ public class Start {
         try {
             result = parseAndExecute(options, fileObjects);
         } catch (com.sun.tools.javac.main.Option.InvalidValueException e) {
-            messager.printError(e.getMessage());
+            // The detail message from javac already includes a localized "error: " prefix,
+            // so print the message directly.
+            // It would be even better to rethrow this as IllegalArgumentException
+            // when invoked via the API.
+            // See javac Arguments.error(InvalidValueException) for an example
+            messager.printRawLines(e.getMessage());
             Throwable t = e.getCause();
             dumpStack(t == null ? e : t);
             return ERROR;
         } catch (OptionException oe) {
+            // It would be even better to rethrow this as IllegalArgumentException
+            // when invoked via the API.
+            // See javac Arguments.error(InvalidValueException) for an example
             if (oe.message != null)
                 messager.printError(oe.message);
 
@@ -433,9 +435,8 @@ public class Start {
             reportInternalError(ee);
             result = ABNORMAL;
         } finally {
-            if (fileManager != null
-                    && fileManager instanceof BaseFileManager
-                    && ((BaseFileManager) fileManager).autoClose) {
+            if (fileManager instanceof BaseFileManager bfm
+                    && bfm.autoClose) {
                 try {
                     fileManager.close();
                 } catch (IOException ignore) {}
@@ -518,8 +519,8 @@ public class Start {
             return CMDERR;
         }
 
-        if (fileManager instanceof BaseFileManager) {
-            ((BaseFileManager) fileManager).handleOptions(options.fileManagerOptions());
+        if (fileManager instanceof BaseFileManager bfm) {
+            bfm.handleOptions(options.fileManagerOptions());
         }
 
         String mr = com.sun.tools.javac.main.Option.MULTIRELEASE.primaryName;
