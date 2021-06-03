@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.lang.StackWalker.*;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The JCE security manager.
@@ -103,11 +103,10 @@ final class JceSecurityManager {
         // javax.crypto.* packages.
         // NOTE: javax.crypto.* package maybe subject to package
         // insertion, so need to check its classloader as well.
-        final List<StackFrame> stack = AccessController.doPrivileged(
-                (PrivilegedAction<List<StackFrame>>)
-                        () -> StackWalker.getInstance(
-                                Option.RETAIN_CLASS_REFERENCE)
-                                .walk((s) -> s.collect(Collectors.toList())));
+        PrivilegedAction<StackWalker> pa =
+                () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
+        List<StackFrame> stack =
+                AccessController.doPrivileged(pa).walk(Stream::toList);
 
         URL callerCodeBase = null;
         for (StackFrame stackFrame : stack) {
@@ -239,13 +238,10 @@ final class JceSecurityManager {
     // objects being constructed by untrusted code (See bug 4341369 &
     // 4334690 for more info).
     boolean isCallerTrusted(Provider provider) {
-        // Get the caller and its codebase.
-        final Optional<StackFrame> stackFrame = AccessController.doPrivileged(
-                (PrivilegedAction<Optional<StackFrame>>)
-                        () -> StackWalker.getInstance(
-                                Option.RETAIN_CLASS_REFERENCE)
-                                .walk((s) -> s.skip(2).findFirst()));
-
+        PrivilegedAction<StackWalker> pa =
+                () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
+        Optional<StackFrame> stackFrame = AccessController.doPrivileged(pa)
+                .walk((s) -> s.skip(2).findFirst());
         if (stackFrame.isPresent()) {
             // context[0]: class javax.crypto.JceSecurityManager
             // context[1]: class javax.crypto.Cipher (or other JCE API class)
