@@ -2814,23 +2814,23 @@ public final class Files {
                         }
                     }
                     case START_DIRECTORY -> {
-                        var r = visitor.preVisitDirectory(ev.file(), ev.attributes());
+                        var res = visitor.preVisitDirectory(ev.file(), ev.attributes());
 
                         // if SKIP_SIBLINGS and SKIP_SUBTREE is returned then
                         // there shouldn't be any more events for the current
                         // directory.
-                        if (r == FileVisitResult.SKIP_SUBTREE ||
-                            r == FileVisitResult.SKIP_SIBLINGS)
+                        if (res == FileVisitResult.SKIP_SUBTREE ||
+                            res == FileVisitResult.SKIP_SIBLINGS)
                             walker.pop();
-                        yield r;
+                        yield res;
                     }
                     case END_DIRECTORY -> {
-                        var r = visitor.postVisitDirectory(ev.file(), ev.ioeException());
+                        var res = visitor.postVisitDirectory(ev.file(), ev.ioeException());
 
                         // SKIP_SIBLINGS is a no-op for postVisitDirectory
-                        if (r == FileVisitResult.SKIP_SIBLINGS)
-                            r = FileVisitResult.CONTINUE;
-                        yield r;
+                        if (res == FileVisitResult.SKIP_SIBLINGS)
+                            res = FileVisitResult.CONTINUE;
+                        yield res;
                     }
                     default -> throw new AssertionError("Should not get here");
                 };
