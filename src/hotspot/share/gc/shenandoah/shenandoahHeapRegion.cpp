@@ -550,7 +550,7 @@ void ShenandoahHeapRegion::setup_sizes(size_t& max_heap_size) {
   // Figure out page size to use, and aligns up heap to page size
   int page_size = os::vm_page_size();
   if (UseLargePages) {
-    int large_page_size = os::large_page_size();
+    size_t large_page_size = os::large_page_size();
     max_heap_size = align_up(max_heap_size, large_page_size);
     if ((max_heap_size / align_up(region_size, large_page_size)) >= MIN_NUM_REGIONS) {
       page_size = (int)large_page_size;
