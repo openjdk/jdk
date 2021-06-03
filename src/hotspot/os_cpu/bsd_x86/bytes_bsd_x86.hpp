@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_BSD_X86_BYTES_BSD_X86_INLINE_HPP
-#define OS_CPU_BSD_X86_BYTES_BSD_X86_INLINE_HPP
+#ifndef OS_CPU_BSD_X86_BYTES_BSD_X86_HPP
+#define OS_CPU_BSD_X86_BYTES_BSD_X86_HPP
 
 #ifdef __APPLE__
 #include <libkern/OSByteOrder.h>
@@ -98,4 +98,4 @@ inline u8 Bytes::swap_u8(u8 x) {
 }
 #endif // !AMD64
 
-#endif // OS_CPU_BSD_X86_BYTES_BSD_X86_INLINE_HPP
+#endif // OS_CPU_BSD_X86_BYTES_BSD_X86_HPP

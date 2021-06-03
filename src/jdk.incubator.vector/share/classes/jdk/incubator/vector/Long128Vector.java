@@ -796,6 +796,8 @@ final class Long128Vector extends LongVector {
         return super.fromArray0Template(a, offset);  // specialize
     }
 
+
+
     @ForceInline
     @Override
     final
