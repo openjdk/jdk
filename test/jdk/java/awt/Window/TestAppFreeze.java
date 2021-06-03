@@ -61,14 +61,15 @@ public class TestAppFreeze {
 
     private static void createInstructionUI() {
         SwingUtilities.invokeLater(() -> {
-            String instruction = "1. This test is only for Mac OS Version 11 " +
+            String instruction = "1. This test is only for Mac OS Version 10.12 " +
                     "or later, on other Mac OS just press PASS\n" +
-                    "2. Go to System Preference -> General\n"+
-                    "3. Set prefer tab while opening document to Always.\n" +
-                    "4. Then click on the click button of the test frame\n" +
-                    "5. The dialog should open in new window and Application " +
+                    "2. Go to System Preference -> General on Mac OS 11 or later\n" +
+                    "3. Go to System Preference -> Dock on Mac OS 10.12 to 10.15\n" +
+                    "4. Set Prefer tabs when opening documents to Always.\n" +
+                    "5. Then click on the click button of the test frame\n" +
+                    "6. The dialog should open in new window and Application " +
                     "should not freeze\n" +
-                    "6. IF the conditions are met then press PASS else " +
+                    "7. IF the conditions are met then press PASS else " +
                     "press FAIL";
             instructionFrame = new JFrame("Instruction Frame");
             JTextArea  textArea = new JTextArea(instruction);
@@ -104,7 +105,7 @@ public class TestAppFreeze {
 
     private static void testApp() {
         testFrame = new JFrame("TestFrame");
-        testFrame.setBounds(600,0,1000,200);
+        testFrame.setBounds(600, 0, 1000, 200);
         testFrame.getContentPane().add(new JButton(new AbstractAction("Click") {
             @Override
             public void actionPerformed(ActionEvent e) {

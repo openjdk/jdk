@@ -129,6 +129,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     // This system property is named as jdk.* because it is not specific to AWT
     // and it is also used in JavaFX
+    @SuppressWarnings("removal")
     public static final String MAC_OS_TABBED_WINDOW = AccessController.doPrivileged(
             new GetPropertyAction("jdk.allowMacOSTabbedWindows"));
 
