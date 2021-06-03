@@ -391,7 +391,7 @@ public class CallArranger {
         List<Binding> getBindings(Class<?> carrier, MemoryLayout layout) {
             TypeClass argumentClass = TypeClass.classifyLayout(layout);
             Binding.Builder bindings = Binding.builder();
-            storageCalculator.adjustForVarArgs(layout);
+            assert !layout.attribute(AArch64.STACK_VARARGS_ATTRIBUTE_NAME).isPresent() : "no variadic upcalls";
             switch (argumentClass) {
                 case STRUCT_REGISTER: {
                     assert carrier == MemorySegment.class;
