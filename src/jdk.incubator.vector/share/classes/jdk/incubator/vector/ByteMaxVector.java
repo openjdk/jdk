@@ -331,23 +331,8 @@ final class ByteMaxVector extends ByteVector {
     }
 
     @ForceInline
-    private final
-    VectorShuffle<Byte> toShuffleTemplate(AbstractSpecies<Byte> dsp) {
-        byte[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
-    }
-
-    @ForceInline
     public VectorShuffle<Byte> toShuffle() {
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     this.getClass(), ETYPE, VLENGTH,
-                                     ByteMaxShuffle.class, byte.class, VLENGTH,
-                                     this, VSPECIES,
-                                     ByteMaxVector::toShuffleTemplate);
+        return super.toShuffleTemplate(ByteMaxShuffle.class); // specialize
     }
 
     // Specialized unary testing

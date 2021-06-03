@@ -331,23 +331,8 @@ final class Int512Vector extends IntVector {
     }
 
     @ForceInline
-    private final
-    VectorShuffle<Integer> toShuffleTemplate(AbstractSpecies<Integer> dsp) {
-        int[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
-    }
-
-    @ForceInline
     public VectorShuffle<Integer> toShuffle() {
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     this.getClass(), ETYPE, VLENGTH,
-                                     Int512Shuffle.class, byte.class, VLENGTH,
-                                     this, VSPECIES,
-                                     Int512Vector::toShuffleTemplate);
+        return super.toShuffleTemplate(Int512Shuffle.class); // specialize
     }
 
     // Specialized unary testing

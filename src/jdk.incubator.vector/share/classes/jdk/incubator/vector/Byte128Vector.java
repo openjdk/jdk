@@ -331,23 +331,8 @@ final class Byte128Vector extends ByteVector {
     }
 
     @ForceInline
-    private final
-    VectorShuffle<Byte> toShuffleTemplate(AbstractSpecies<Byte> dsp) {
-        byte[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
-    }
-
-    @ForceInline
     public VectorShuffle<Byte> toShuffle() {
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     this.getClass(), ETYPE, VLENGTH,
-                                     Byte128Shuffle.class, byte.class, VLENGTH,
-                                     this, VSPECIES,
-                                     Byte128Vector::toShuffleTemplate);
+        return super.toShuffleTemplate(Byte128Shuffle.class); // specialize
     }
 
     // Specialized unary testing

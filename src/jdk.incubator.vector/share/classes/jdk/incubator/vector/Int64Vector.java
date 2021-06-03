@@ -331,23 +331,8 @@ final class Int64Vector extends IntVector {
     }
 
     @ForceInline
-    private final
-    VectorShuffle<Integer> toShuffleTemplate(AbstractSpecies<Integer> dsp) {
-        int[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
-    }
-
-    @ForceInline
     public VectorShuffle<Integer> toShuffle() {
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     this.getClass(), ETYPE, VLENGTH,
-                                     Int64Shuffle.class, byte.class, VLENGTH,
-                                     this, VSPECIES,
-                                     Int64Vector::toShuffleTemplate);
+        return super.toShuffleTemplate(Int64Shuffle.class); // specialize
     }
 
     // Specialized unary testing

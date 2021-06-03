@@ -335,23 +335,8 @@ final class $vectortype$ extends $abstractvectortype$ {
     }
 
     @ForceInline
-    private final
-    VectorShuffle<$Boxtype$> toShuffleTemplate(AbstractSpecies<$Boxtype$> dsp) {
-        $type$[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
-    }
-
-    @ForceInline
     public VectorShuffle<$Boxtype$> toShuffle() {
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     this.getClass(), ETYPE, VLENGTH,
-                                     $shuffletype$.class, byte.class, VLENGTH,
-                                     this, VSPECIES,
-                                     $vectortype$::toShuffleTemplate);
+        return super.toShuffleTemplate($shuffletype$.class); // specialize
     }
 
     // Specialized unary testing

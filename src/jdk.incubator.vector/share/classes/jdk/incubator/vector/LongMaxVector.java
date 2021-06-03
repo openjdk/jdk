@@ -326,23 +326,8 @@ final class LongMaxVector extends LongVector {
     }
 
     @ForceInline
-    private final
-    VectorShuffle<Long> toShuffleTemplate(AbstractSpecies<Long> dsp) {
-        long[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
-    }
-
-    @ForceInline
     public VectorShuffle<Long> toShuffle() {
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     this.getClass(), ETYPE, VLENGTH,
-                                     LongMaxShuffle.class, byte.class, VLENGTH,
-                                     this, VSPECIES,
-                                     LongMaxVector::toShuffleTemplate);
+        return super.toShuffleTemplate(LongMaxShuffle.class); // specialize
     }
 
     // Specialized unary testing

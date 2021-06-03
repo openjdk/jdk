@@ -325,23 +325,8 @@ final class Double512Vector extends DoubleVector {
     }
 
     @ForceInline
-    private final
-    VectorShuffle<Double> toShuffleTemplate(AbstractSpecies<Double> dsp) {
-        double[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
-    }
-
-    @ForceInline
     public VectorShuffle<Double> toShuffle() {
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     this.getClass(), ETYPE, VLENGTH,
-                                     Double512Shuffle.class, byte.class, VLENGTH,
-                                     this, VSPECIES,
-                                     Double512Vector::toShuffleTemplate);
+        return super.toShuffleTemplate(Double512Shuffle.class); // specialize
     }
 
     // Specialized unary testing

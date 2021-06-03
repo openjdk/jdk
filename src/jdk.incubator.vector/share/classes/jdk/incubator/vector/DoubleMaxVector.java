@@ -325,23 +325,8 @@ final class DoubleMaxVector extends DoubleVector {
     }
 
     @ForceInline
-    private final
-    VectorShuffle<Double> toShuffleTemplate(AbstractSpecies<Double> dsp) {
-        double[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
-    }
-
-    @ForceInline
     public VectorShuffle<Double> toShuffle() {
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     this.getClass(), ETYPE, VLENGTH,
-                                     DoubleMaxShuffle.class, byte.class, VLENGTH,
-                                     this, VSPECIES,
-                                     DoubleMaxVector::toShuffleTemplate);
+        return super.toShuffleTemplate(DoubleMaxShuffle.class); // specialize
     }
 
     // Specialized unary testing

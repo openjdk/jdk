@@ -331,23 +331,8 @@ final class Short64Vector extends ShortVector {
     }
 
     @ForceInline
-    private final
-    VectorShuffle<Short> toShuffleTemplate(AbstractSpecies<Short> dsp) {
-        short[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
-    }
-
-    @ForceInline
     public VectorShuffle<Short> toShuffle() {
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     this.getClass(), ETYPE, VLENGTH,
-                                     Short64Shuffle.class, byte.class, VLENGTH,
-                                     this, VSPECIES,
-                                     Short64Vector::toShuffleTemplate);
+        return super.toShuffleTemplate(Short64Shuffle.class); // specialize
     }
 
     // Specialized unary testing
