@@ -307,6 +307,33 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   return blob;
 }
 
+//----------------------------------------------------------------------------------------------------
+// Implementation of InterpreterBlob
+
+InterpreterBlob* InterpreterBlob::create(int buffer_size) {
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+
+  InterpreterBlob* blob = NULL;
+  unsigned int size = sizeof(InterpreterBlob);
+  // align the size to CodeEntryAlignment
+  size = CodeBlob::align_code_offset(size);
+  size += align_up(buffer_size, 2 * oopSize);
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    blob = new (size) InterpreterBlob(size);
+    if (blob == NULL) {
+      vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "CodeCache: no room for Interpreter blob");
+    }
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+
+  return blob;
+}
+
+//----------------------------------------------------------------------------------------------------
+// Implementation of VtableBlob
+
 void* VtableBlob::operator new(size_t s, unsigned size) throw() {
   // Handling of allocation failure stops compilation and prints a bunch of
   // stuff, which requires unlocking the CodeCache_lock, so that the Compile_lock

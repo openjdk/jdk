@@ -384,14 +384,6 @@
   inline frame(intptr_t* sp, address pc);
   inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp);
 
- private:
-
-  intptr_t* compiled_sender_sp(CodeBlob* cb) const;
-  address*  compiled_sender_pc_addr(CodeBlob* cb) const;
-  address*  sender_pc_addr(void) const;
-
- public:
-
   inline ijava_state* get_ijava_state() const;
   // Some convenient register frame setters/getters for deoptimization.
   inline intptr_t* interpreter_frame_esp() const;

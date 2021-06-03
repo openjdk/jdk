@@ -173,8 +173,7 @@ class StubQueue: public CHeapObj<mtCode> {
   void  stub_print(Stub* s)                      { _stub_interface->print(s); }
 
  public:
-  StubQueue(StubInterface* stub_interface, int buffer_size, Mutex* lock,
-            const char* name);
+  StubQueue(StubInterface* stub_interface, BufferBlob* blob, Mutex* lock);
   ~StubQueue();
 
   // General queue info

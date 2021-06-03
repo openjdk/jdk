@@ -52,6 +52,8 @@ void RegisterMap::check_location_valid() {
 #endif // ASSERT
 
 bool frame::safe_for_sender(JavaThread *thread) {
+  ResourceMark rm;
+
   bool safe = false;
   address sp = (address)_sp;
   address fp = (address)_fp;
@@ -107,9 +109,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
-    abi_minframe* sender_abi = (abi_minframe*) fp;
-    intptr_t* sender_sp = (intptr_t*) fp;
-    address   sender_pc = (address) sender_abi->lr;;
+    intptr_t* sender_sp = NULL;
+    address   sender_pc = NULL;
+    if (!_cb->frame_parser()->sender_frame(
+          thread, _pc, (intptr_t*)sp, (intptr_t*)unextended_sp, (intptr_t*)fp, fp_safe,
+            &sender_pc, &sender_sp, NULL, NULL)) {
+      return false;
+    }
 
     // We must always be able to find a recognizable pc.
     CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
@@ -203,11 +209,17 @@ frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
 }
 
 frame frame::sender_for_compiled_frame(RegisterMap *map) const {
+  ResourceMark rm;
+
   assert(map != NULL, "map must be set");
 
   // Frame owned by compiler.
-  address pc = *compiled_sender_pc_addr(_cb);
-  frame caller(compiled_sender_sp(_cb), pc);
+
+  intptr_t*  l_sender_sp;
+  address    l_sender_pc;
+  _cb->frame_parser()->sender_frame(
+    NULL, pc(), sp(), unextended_sp(), fp(), true,
+      &l_sender_pc, &l_sender_sp, NULL, NULL);
 
   // Now adjust the map.
 
@@ -220,15 +232,7 @@ frame frame::sender_for_compiled_frame(RegisterMap *map) const {
     }
   }
 
-  return caller;
-}
-
-intptr_t* frame::compiled_sender_sp(CodeBlob* cb) const {
-  return sender_sp();
-}
-
-address* frame::compiled_sender_pc_addr(CodeBlob* cb) const {
-  return sender_pc_addr();
+  return frame(l_sender_sp, l_sender_pc);
 }
 
 frame frame::sender_raw(RegisterMap* map) const {

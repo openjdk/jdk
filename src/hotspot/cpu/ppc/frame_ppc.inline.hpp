@@ -103,9 +103,6 @@ inline intptr_t* frame::unextended_sp() const {
 inline address frame::sender_pc() const {
   return (address)callers_abi()->lr;
 }
-inline address* frame::sender_pc_addr() const {
-  return (address*)&(callers_abi()->lr);
-}
 
 // All frames have this field.
 inline intptr_t* frame::sender_sp() const {

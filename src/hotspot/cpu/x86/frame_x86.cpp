@@ -54,6 +54,8 @@ void RegisterMap::check_location_valid() {
 // Profiling/safepoint support
 
 bool frame::safe_for_sender(JavaThread *thread) {
+  ResourceMark rm;
+
   address   sp = (address)_sp;
   address   fp = (address)_fp;
   address   unextended_sp = (address)_unextended_sp;
@@ -106,46 +108,15 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return fp_safe;
     }
 
-    intptr_t* sender_sp = NULL;
-    intptr_t* sender_unextended_sp = NULL;
-    address   sender_pc = NULL;
-    intptr_t* saved_fp =  NULL;
-
-    if (is_interpreted_frame()) {
-      // fp must be safe
-      if (!fp_safe) {
-        return false;
-      }
-
-      sender_pc = (address) this->fp()[return_addr_offset];
-      // for interpreted frames, the value below is the sender "raw" sp,
-      // which can be different from the sender unextended sp (the sp seen
-      // by the sender) because of current frame local variables
-      sender_sp = (intptr_t*) addr_at(sender_sp_offset);
-      sender_unextended_sp = (intptr_t*) this->fp()[interpreter_frame_sender_sp_offset];
-      saved_fp = (intptr_t*) this->fp()[link_offset];
-
-    } else {
-      // must be some sort of compiled/runtime frame
-      // fp does not have to be safe (although it could be check for c1?)
-
-      // check for a valid frame_size, otherwise we are unlikely to get a valid sender_pc
-      if (_cb->frame_size() <= 0) {
-        return false;
-      }
-
-      sender_sp = _unextended_sp + _cb->frame_size();
-      // Is sender_sp safe?
-      if (!thread->is_in_full_stack_checked((address)sender_sp)) {
-        return false;
-      }
-      sender_unextended_sp = sender_sp;
-      // On Intel the return_address is always the word on the stack
-      sender_pc = (address) *(sender_sp-1);
-      // Note: frame::sender_sp_offset is only valid for compiled frame
-      saved_fp = (intptr_t*) *(sender_sp - frame::sender_sp_offset);
+    intptr_t*  sender_sp = NULL;
+    intptr_t*  sender_unextended_sp = NULL;
+    address    sender_pc = NULL;
+    intptr_t** saved_fp =  NULL;
+    if (!_cb->frame_parser()->sender_frame(
+          thread, _pc, (intptr_t*)sp, (intptr_t*)unextended_sp, (intptr_t*)fp, fp_safe,
+            &sender_pc, &sender_sp, &sender_unextended_sp, &saved_fp)) {
+      return false;
     }
-
 
     // If the potential sender is the interpreter then we can do some more checking
     if (Interpreter::contains(sender_pc)) {
@@ -154,13 +125,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
       // only if the sender is interpreted/call_stub (c1 too?) are we certain that the saved ebp
       // is really a frame pointer.
 
-      if (!thread->is_in_stack_range_excl((address)saved_fp, (address)sender_sp)) {
+      if (!thread->is_in_stack_range_excl((address)*saved_fp, (address)sender_sp)) {
         return false;
       }
 
       // construct the potential sender
 
-      frame sender(sender_sp, sender_unextended_sp, saved_fp, sender_pc);
+      frame sender(sender_sp, sender_unextended_sp, *saved_fp, sender_pc);
 
       return sender.is_interpreted_frame_valid(thread);
 
@@ -189,13 +160,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     // Could be the call_stub
     if (StubRoutines::returns_to_call_stub(sender_pc)) {
-      if (!thread->is_in_stack_range_excl((address)saved_fp, (address)sender_sp)) {
+      if (!thread->is_in_stack_range_excl((address)*saved_fp, (address)sender_sp)) {
         return false;
       }
 
       // construct the potential sender
 
-      frame sender(sender_sp, sender_unextended_sp, saved_fp, sender_pc);
+      frame sender(sender_sp, sender_unextended_sp, *saved_fp, sender_pc);
 
       // Validate the JavaCallWrapper an entry frame must have
       address jcw = (address)sender.entry_frame_call_wrapper();
@@ -467,19 +438,21 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
 //------------------------------------------------------------------------------
 // frame::sender_for_compiled_frame
 frame frame::sender_for_compiled_frame(RegisterMap* map) const {
+  ResourceMark rm;
+
   assert(map != NULL, "map must be set");
 
   // frame owned by optimizing compiler
+
   assert(_cb->frame_size() >= 0, "must have non-zero frame size");
-  intptr_t* sender_sp = unextended_sp() + _cb->frame_size();
-  intptr_t* unextended_sp = sender_sp;
 
-  // On Intel the return_address is always the word on the stack
-  address sender_pc = (address) *(sender_sp-1);
-
-  // This is the saved value of EBP which may or may not really be an FP.
-  // It is only an FP if the sender is an interpreter frame (or C1?).
-  intptr_t** saved_fp_addr = (intptr_t**) (sender_sp - frame::sender_sp_offset);
+  intptr_t*  l_sender_sp = NULL;
+  intptr_t*  l_unextended_sp = NULL;
+  address    l_sender_pc = NULL;
+  intptr_t** l_saved_fp = NULL;
+  _cb->frame_parser()->sender_frame(
+    NULL, pc(), sp(), unextended_sp(), fp(), true,
+      &l_sender_pc, &l_sender_sp, &l_unextended_sp, &l_saved_fp);
 
   if (map->update_map()) {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
@@ -493,11 +466,11 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
     // Since the prolog does the save and restore of EBP there is no oopmap
     // for it so we must fill in its location as if there was an oopmap entry
     // since if our caller was compiled code there could be live jvm state in it.
-    update_map_with_saved_link(map, saved_fp_addr);
+    update_map_with_saved_link(map, l_saved_fp);
   }
 
-  assert(sender_sp != sp(), "must have changed");
-  return frame(sender_sp, unextended_sp, *saved_fp_addr, sender_pc);
+  assert(l_sender_sp != sp(), "must have changed");
+  return frame(l_sender_sp, l_unextended_sp, *l_saved_fp, l_sender_pc);
 }
 
 
