@@ -491,6 +491,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: ["devkit", "gtest", "build_devkit", "pandoc"],
             configure_args: [
                 "--openjdk-target=aarch64-linux-gnu",
+                "--with-zlib=system",
+                "--disable-dtrace",
 		"--enable-compatible-cds-alignment",
             ],
         },
