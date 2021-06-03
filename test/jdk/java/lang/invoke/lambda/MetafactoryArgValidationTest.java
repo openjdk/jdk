@@ -32,8 +32,8 @@ import java.util.*;
 public class MetafactoryArgValidationTest {
 
     public static void main(String... args) {
-        //testNPE();
-        //testIAE();
+        testNPE();
+        testIAE();
         testLCE();
     }
 
