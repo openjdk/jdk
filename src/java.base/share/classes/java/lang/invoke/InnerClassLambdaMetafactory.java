@@ -361,7 +361,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         // Forward the bridges
         if (bridges != null) {
             for (MethodType mt : bridges) {
-                mv = cw.visitMethod(ACC_PUBLIC|ACC_BRIDGE, interfaceMethodName,
+                mv = cw.visitMethod(ACC_PUBLIC, interfaceMethodName,
                                     mt.toMethodDescriptorString(), null, null);
                 new ForwardingMethodGenerator(mv).generate(mt);
             }
