@@ -244,7 +244,7 @@ TEST_VM_F(LogConfigurationTest, reconfigure_decorators_MT) {
   const int nrOfThreads = 2;
   ConcurrentLogsite logsites[nrOfThreads] = {0, 1};
   Semaphore done(0);
-  const long testDurationMillis = 3000;
+  const long testDurationMillis = 1000;
   UnitTestThread* t[nrOfThreads];
 
   set_log_config(TestLogFileName, "logging=debug", "none", "filecount=0");
@@ -280,7 +280,7 @@ TEST_VM_F(LogConfigurationTest, reconfigure_tags_MT) {
   const int nrOfThreads = 4;
   ConcurrentLogsite logsites[nrOfThreads] = {0, 1, 2, 3};
   Semaphore done(0);
-  const long testDurationMillis = 3000;
+  const long testDurationMillis = 1000;
   UnitTestThread* t[nrOfThreads];
 
   set_log_config(TestLogFileName, "logging=debug", "", "filecount=0");

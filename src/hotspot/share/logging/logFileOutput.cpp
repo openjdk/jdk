@@ -287,6 +287,11 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
 
 int LogFileOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
   _rotation_semaphore.wait();
+  if (_stream == NULL) {
+    // An error has occurred with this output, avoid writing to it.
+    return 0;
+  }
+
   int written = LogFileStreamOutput::write(decorations, msg);
   if (written > 0) {
     _current_size += written;
