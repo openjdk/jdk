@@ -27,27 +27,27 @@ include LibCommon.gmk
 
 ifeq ($(call isTargetOs, linux), true)
 
-$(eval $(call SetupJdkLibrary, BUILD_LIBCSTDLIB, \
-    NAME := syslookup, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
-    CXXFLAGS := $(CXXFLAGS_JDKLIB), \
-    LDFLAGS := -Wl$(COMMA)--no-as-needed -lc -lm -ldl $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS := $(LIBCXX), \
-))
+  $(eval $(call SetupJdkLibrary, BUILD_SYSLOOKUPLIB, \
+      NAME := syslookup, \
+      CFLAGS := $(CFLAGS_JDKLIB), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
+      LDFLAGS := $(LDFLAGS_JDKLIB) -Wl$(COMMA)--no-as-needed, \
+      LIBS := $(LIBCXX) -lc -lm -ldl, \
+  ))
 
 else ifeq ($(call isTargetOs, windows), false)
 
-$(eval $(call SetupJdkLibrary, BUILD_LIBCSTDLIB, \
-    NAME := syslookup, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
-    CXXFLAGS := $(CXXFLAGS_JDKLIB), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS := $(LIBCXX), \
-))
+  $(eval $(call SetupJdkLibrary, BUILD_SYSLOOKUPLIB, \
+      NAME := syslookup, \
+      CFLAGS := $(CFLAGS_JDKLIB), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
+      LDFLAGS := $(LDFLAGS_JDKLIB), \
+      LIBS := $(LIBCXX), \
+  ))
 
 
 endif
 
-TARGETS += $(BUILD_LIBCSTDLIB)
+TARGETS += $(BUILD_SYSLOOKUPLIB)
 
 ################################################################################
