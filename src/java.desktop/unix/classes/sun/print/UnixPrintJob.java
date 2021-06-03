@@ -309,6 +309,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @SuppressWarnings("removal")
     public void print(Doc doc, PrintRequestAttributeSet attributes)
         throws PrintException {
 
@@ -803,6 +804,7 @@ public class UnixPrintJob implements CancelablePrintJob {
                         throw new PrintException(e);
                     }
                     // check write access
+                    @SuppressWarnings("removal")
                     SecurityManager security = System.getSecurityManager();
                     if (security != null) {
                       try {

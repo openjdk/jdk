@@ -240,6 +240,11 @@
           "Try to reclaim dead large objects that have a few stale "        \
           "references at every young GC.")                                  \
                                                                             \
+  product(uint, G1EagerReclaimRemSetThreshold, 0, EXPERIMENTAL,             \
+          "Maximum number of remembered set entries a humongous region "    \
+          "otherwise eligible for eager reclaim may have to be a candidate "\
+          "for eager reclaim. Will be selected ergonomically by default.")  \
+                                                                            \
   product(size_t, G1RebuildRemSetChunkSize, 256 * K, EXPERIMENTAL,          \
           "Chunk size used for rebuilding the remembered set.")             \
           range(4 * K, 32 * M)                                              \

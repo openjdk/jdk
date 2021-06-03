@@ -26,49 +26,17 @@
 #ifndef SHARE_RUNTIME_THREAD_INLINE_HPP
 #define SHARE_RUNTIME_THREAD_INLINE_HPP
 
+#include "runtime/thread.hpp"
+
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 
 #if defined(__APPLE__) && defined(AARCH64)
 #include "runtime/os.hpp"
 #endif
-
-inline void Thread::set_suspend_flag(SuspendFlags f) {
-  uint32_t flags;
-  do {
-    flags = _suspend_flags;
-  }
-  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags | f)) != flags);
-}
-inline void Thread::clear_suspend_flag(SuspendFlags f) {
-  uint32_t flags;
-  do {
-    flags = _suspend_flags;
-  }
-  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags & ~f)) != flags);
-}
-
-inline void Thread::set_has_async_exception() {
-  set_suspend_flag(_has_async_exception);
-}
-inline void Thread::clear_has_async_exception() {
-  clear_suspend_flag(_has_async_exception);
-}
-inline void Thread::set_trace_flag() {
-  set_suspend_flag(_trace_flag);
-}
-inline void Thread::clear_trace_flag() {
-  clear_suspend_flag(_trace_flag);
-}
-inline void Thread::set_obj_deopt_flag() {
-  set_suspend_flag(_obj_deopt);
-}
-inline void Thread::clear_obj_deopt_flag() {
-  clear_suspend_flag(_obj_deopt);
-}
 
 inline jlong Thread::cooked_allocated_bytes() {
   jlong allocated_bytes = Atomic::load_acquire(&_allocated_bytes);
@@ -98,6 +66,11 @@ inline void Thread::set_threads_hazard_ptr(ThreadsList* new_list) {
   Atomic::release_store_fence(&_threads_hazard_ptr, new_list);
 }
 
+inline const WorkerThread* Thread::as_Worker_thread() const {
+  assert(is_Worker_thread(), "incorrect cast to const WorkerThread");
+  return static_cast<const WorkerThread*>(this);
+}
+
 #if defined(__APPLE__) && defined(AARCH64)
 inline void Thread::init_wx() {
   assert(this == Thread::current(), "should only be called for current thread");
@@ -119,10 +92,41 @@ inline WXMode Thread::enable_wx(WXMode new_state) {
 }
 #endif // __APPLE__ && AARCH64
 
+inline void JavaThread::set_suspend_flag(SuspendFlags f) {
+  uint32_t flags;
+  do {
+    flags = _suspend_flags;
+  }
+  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags | f)) != flags);
+}
+inline void JavaThread::clear_suspend_flag(SuspendFlags f) {
+  uint32_t flags;
+  do {
+    flags = _suspend_flags;
+  }
+  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags & ~f)) != flags);
+}
+
+inline void JavaThread::set_trace_flag() {
+  set_suspend_flag(_trace_flag);
+}
+inline void JavaThread::clear_trace_flag() {
+  clear_suspend_flag(_trace_flag);
+}
+inline void JavaThread::set_obj_deopt_flag() {
+  set_suspend_flag(_obj_deopt);
+}
+inline void JavaThread::clear_obj_deopt_flag() {
+  clear_suspend_flag(_obj_deopt);
+}
+
 inline void JavaThread::set_pending_async_exception(oop e) {
   _pending_async_exception = e;
-  _special_runtime_exit_condition = _async_exception;
-  set_has_async_exception();
+  set_async_exception_condition(_async_exception);
+  // Set _suspend_flags too so we save a comparison in the transition from native to Java
+  // in the native wrappers. It will be cleared in check_and_handle_async_exceptions()
+  // when we actually install the exception.
+  set_suspend_flag(_has_async_exception);
 }
 
 inline JavaThreadState JavaThread::thread_state() const    {

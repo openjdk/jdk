@@ -32,7 +32,7 @@
  *
  * @modules jdk.incubator.foreign
  *
- * @run main/othervm -Dforeign.restricted=permit -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm --enable-native-access=ALL-UNNAMED -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive TestLinkToNativeRBP
  *
  */

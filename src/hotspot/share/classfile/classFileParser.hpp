@@ -113,14 +113,9 @@ class ClassFileParser {
   const ClassFileStream* _stream; // Actual input stream
   Symbol* _class_name;
   mutable ClassLoaderData* _loader_data;
-  const InstanceKlass* _unsafe_anonymous_host;
-  GrowableArray<Handle>* _cp_patches; // overrides for CP entries
   const bool _is_hidden;
   const bool _can_access_vm_annotations;
-  int _num_patched_klasses;
-  int _max_num_patched_klasses;
   int _orig_cp_size;
-  int _first_patched_klass_resolved_index;
 
   // Metadata created before the instance klass is created.  Must be deallocated
   // if not transferred to the InstanceKlass upon successful class loading
@@ -210,9 +205,6 @@ class ClassFileParser {
   void post_process_parsed_stream(const ClassFileStream* const stream,
                                   ConstantPool* cp,
                                   TRAPS);
-
-  void prepend_host_package_name(Thread* current, const InstanceKlass* unsafe_anonymous_host);
-  void fix_unsafe_anonymous_class_name(TRAPS);
 
   void fill_instance_klass(InstanceKlass* ik, bool cf_changed_in_CFLH,
                            const ClassInstanceInfo& cl_inst_info, TRAPS);
@@ -340,9 +332,6 @@ class ClassFileParser {
                                       const ConstantPool* cp,
                                       const u1* const record_attribute_start,
                                       TRAPS);
-
-  bool supports_sealed_types();
-  bool supports_records();
 
   void parse_classfile_attributes(const ClassFileStream* const cfs,
                                   ConstantPool* cp,
@@ -494,26 +483,6 @@ class ClassFileParser {
                                         unsigned int length,
                                         TRAPS) const;
 
-  bool has_cp_patch_at(int index) const {
-    assert(index >= 0, "oob");
-    return (_cp_patches != NULL
-            && index < _cp_patches->length()
-            && _cp_patches->adr_at(index)->not_null());
-  }
-
-  Handle cp_patch_at(int index) const {
-    assert(has_cp_patch_at(index), "oob");
-    return _cp_patches->at(index);
-  }
-
-  Handle clear_cp_patch_at(int index);
-
-  void patch_class(ConstantPool* cp, int class_index, Klass* k, Symbol* name);
-  void patch_constant_pool(ConstantPool* cp,
-                           int index,
-                           Handle patch,
-                           TRAPS);
-
   // Wrapper for constantTag.is_klass_[or_]reference.
   // In older versions of the VM, Klass*s cannot sneak into early phases of
   // constant pool construction, but in later versions they can.
@@ -582,12 +551,9 @@ class ClassFileParser {
 
   u2 this_class_index() const { return _this_class_index; }
 
-  bool is_unsafe_anonymous() const { return _unsafe_anonymous_host != NULL; }
   bool is_hidden() const { return _is_hidden; }
   bool is_interface() const { return _access_flags.is_interface(); }
 
-  const InstanceKlass* unsafe_anonymous_host() const { return _unsafe_anonymous_host; }
-  const GrowableArray<Handle>* cp_patches() const { return _cp_patches; }
   ClassLoaderData* loader_data() const { return _loader_data; }
   const Symbol* class_name() const { return _class_name; }
   const InstanceKlass* super_klass() const { return _super_klass; }

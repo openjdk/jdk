@@ -133,7 +133,6 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    @SuppressWarnings("preview")
     public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         if (utils.isExecutableElement(holder)) {

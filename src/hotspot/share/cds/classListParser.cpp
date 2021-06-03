@@ -54,7 +54,7 @@
 volatile Thread* ClassListParser::_parsing_thread = NULL;
 ClassListParser* ClassListParser::_instance = NULL;
 
-ClassListParser::ClassListParser(const char* file) {
+ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TABLE_SIZE) {
   _classlist_file = file;
   _file = NULL;
   // Use os::open() because neither fopen() nor os::fopen()
@@ -522,9 +522,9 @@ bool ClassListParser::is_matching_cp_entry(constantPoolHandle &pool, int cp_inde
   return true;
 }
 
-void ClassListParser::resolve_indy(Thread* current, Symbol* class_name_symbol) {
+void ClassListParser::resolve_indy(JavaThread* current, Symbol* class_name_symbol) {
   ExceptionMark em(current);
-  Thread* THREAD = current; // For exception macros.
+  JavaThread* THREAD = current; // For exception macros.
   ClassListParser::resolve_indy_impl(class_name_symbol, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     ResourceMark rm(current);

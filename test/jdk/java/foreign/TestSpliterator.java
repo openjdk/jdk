@@ -29,63 +29,63 @@
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SequenceLayout;
 
 import java.lang.invoke.VarHandle;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Spliterator;
 import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
 
 import org.testng.annotations.*;
-import static jdk.incubator.foreign.MemorySegment.*;
+
 import static org.testng.Assert.*;
 
 public class TestSpliterator {
 
-    static final VarHandle INT_HANDLE = MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT)
+    static final VarHandle INT_HANDLE = MemoryLayout.sequenceLayout(MemoryLayouts.JAVA_INT)
             .varHandle(int.class, MemoryLayout.PathElement.sequenceElement());
 
     final static int CARRIER_SIZE = 4;
 
     @Test(dataProvider = "splits")
     public void testSum(int size, int threshold) {
-        SequenceLayout layout = MemoryLayout.ofSequence(size, MemoryLayouts.JAVA_INT);
+        SequenceLayout layout = MemoryLayout.sequenceLayout(size, MemoryLayouts.JAVA_INT);
 
         //setup
-        MemorySegment segment = MemorySegment.allocateNative(layout).share();
-        for (int i = 0; i < layout.elementCount().getAsLong(); i++) {
-            INT_HANDLE.set(segment, (long) i, i);
+        try (ResourceScope scope = ResourceScope.newSharedScope()) {
+            MemorySegment segment = MemorySegment.allocateNative(layout, scope);
+            for (int i = 0; i < layout.elementCount().getAsLong(); i++) {
+                INT_HANDLE.set(segment, (long) i, i);
+            }
+            long expected = LongStream.range(0, layout.elementCount().getAsLong()).sum();
+            //serial
+            long serial = sum(0, segment);
+            assertEquals(serial, expected);
+            //parallel counted completer
+            long parallelCounted = new SumSegmentCounted(null, segment.spliterator(layout.elementLayout()), threshold).invoke();
+            assertEquals(parallelCounted, expected);
+            //parallel recursive action
+            long parallelRecursive = new SumSegmentRecursive(segment.spliterator(layout.elementLayout()), threshold).invoke();
+            assertEquals(parallelRecursive, expected);
+            //parallel stream
+            long streamParallel = segment.elements(layout.elementLayout()).parallel()
+                    .reduce(0L, TestSpliterator::sumSingle, Long::sum);
+            assertEquals(streamParallel, expected);
         }
-        long expected = LongStream.range(0, layout.elementCount().getAsLong()).sum();
-        //serial
-        long serial = sum(0, segment);
-        assertEquals(serial, expected);
-        //parallel counted completer
-        long parallelCounted = new SumSegmentCounted(null, segment.spliterator(layout), threshold).invoke();
-        assertEquals(parallelCounted, expected);
-        //parallel recursive action
-        long parallelRecursive = new SumSegmentRecursive(segment.spliterator(layout), threshold).invoke();
-        assertEquals(parallelRecursive, expected);
-        //parallel stream
-        long streamParallel = StreamSupport.stream(segment.spliterator(layout), true)
-                .reduce(0L, TestSpliterator::sumSingle, Long::sum);
-        assertEquals(streamParallel, expected);
-        segment.close();
     }
 
+    @Test
     public void testSumSameThread() {
-        SequenceLayout layout = MemoryLayout.ofSequence(1024, MemoryLayouts.JAVA_INT);
+        SequenceLayout layout = MemoryLayout.sequenceLayout(1024, MemoryLayouts.JAVA_INT);
 
         //setup
-        MemorySegment segment = MemorySegment.allocateNative(layout);
+        MemorySegment segment = MemorySegment.allocateNative(layout, ResourceScope.newImplicitScope());
         for (int i = 0; i < layout.elementCount().getAsLong(); i++) {
             INT_HANDLE.set(segment, (long) i, i);
         }
@@ -93,9 +93,39 @@ public class TestSpliterator {
 
         //check that a segment w/o ACQUIRE access mode can still be used from same thread
         AtomicLong spliteratorSum = new AtomicLong();
-        segment.withAccessModes(MemorySegment.READ).spliterator(layout)
+        segment.spliterator(layout.elementLayout())
                 .forEachRemaining(s -> spliteratorSum.addAndGet(sumSingle(0L, s)));
         assertEquals(spliteratorSum.get(), expected);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadSpliteratorElementSizeTooBig() {
+        MemorySegment.ofArray(new byte[2]).spliterator(MemoryLayouts.JAVA_INT);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadStreamElementSizeTooBig() {
+        MemorySegment.ofArray(new byte[2]).elements(MemoryLayouts.JAVA_INT);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadSpliteratorElementSizeNotMultiple() {
+        MemorySegment.ofArray(new byte[7]).spliterator(MemoryLayouts.JAVA_INT);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadStreamElementSizeNotMultiple() {
+        MemorySegment.ofArray(new byte[7]).elements(MemoryLayouts.JAVA_INT);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadSpliteratorElementSizeZero() {
+        MemorySegment.ofArray(new byte[7]).spliterator(MemoryLayout.sequenceLayout(0, MemoryLayouts.JAVA_INT));
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testBadStreamElementSizeZero() {
+        MemorySegment.ofArray(new byte[7]).elements(MemoryLayout.sequenceLayout(0, MemoryLayouts.JAVA_INT));
     }
 
     static long sumSingle(long acc, MemorySegment segment) {
@@ -201,53 +231,5 @@ public class TestSpliterator {
                 { 1000, 10000 },
                 { 10000, 10000 },
         };
-    }
-
-    @DataProvider(name = "accessScenarios")
-    public Object[][] accessScenarios() {
-        SequenceLayout layout = MemoryLayout.ofSequence(16, MemoryLayouts.JAVA_INT);
-        var mallocSegment = MemorySegment.allocateNative(layout);
-
-        Map<Supplier<Spliterator<MemorySegment>>,Integer> l = Map.of(
-            () -> mallocSegment.withAccessModes(ALL_ACCESS).spliterator(layout), ALL_ACCESS,
-            () -> mallocSegment.withAccessModes(0).spliterator(layout), 0,
-            () -> mallocSegment.withAccessModes(READ).spliterator(layout), READ,
-            () -> mallocSegment.withAccessModes(CLOSE).spliterator(layout), 0,
-            () -> mallocSegment.withAccessModes(READ|WRITE).spliterator(layout), READ|WRITE,
-            () -> mallocSegment.withAccessModes(READ|WRITE| SHARE).spliterator(layout), READ|WRITE| SHARE,
-            () -> mallocSegment.withAccessModes(READ|WRITE| SHARE |HANDOFF).spliterator(layout), READ|WRITE| SHARE |HANDOFF
-
-        );
-        return l.entrySet().stream().map(e -> new Object[] { e.getKey(), e.getValue() }).toArray(Object[][]::new);
-    }
-
-    static Consumer<MemorySegment> assertAccessModes(int accessModes) {
-        return segment -> {
-            assertTrue(segment.hasAccessModes(accessModes & ~CLOSE));
-            assertEquals(segment.accessModes(), accessModes & ~CLOSE);
-        };
-    }
-
-    @Test(dataProvider = "accessScenarios")
-    public void testAccessModes(Supplier<Spliterator<MemorySegment>> spliteratorSupplier,
-                                int expectedAccessModes) {
-        Spliterator<MemorySegment> spliterator = spliteratorSupplier.get();
-        spliterator.forEachRemaining(assertAccessModes(expectedAccessModes));
-
-        spliterator = spliteratorSupplier.get();
-        do { } while (spliterator.tryAdvance(assertAccessModes(expectedAccessModes)));
-
-        splitOrConsume(spliteratorSupplier.get(), assertAccessModes(expectedAccessModes));
-    }
-
-    static void splitOrConsume(Spliterator<MemorySegment> spliterator,
-                               Consumer<MemorySegment> consumer) {
-        var s1 = spliterator.trySplit();
-        if (s1 != null) {
-            splitOrConsume(s1, consumer);
-            splitOrConsume(spliterator, consumer);
-        } else {
-            spliterator.forEachRemaining(consumer);
-        }
     }
 }

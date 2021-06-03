@@ -581,7 +581,6 @@ public:
   bool is_synchronized() const                   { return access_flags().is_synchronized();}
   bool is_native() const                         { return access_flags().is_native();      }
   bool is_abstract() const                       { return access_flags().is_abstract();    }
-  bool is_strict() const                         { return access_flags().is_strict();      }
   bool is_synthetic() const                      { return access_flags().is_synthetic();   }
 
   // returns true if contains only return operation
@@ -665,7 +664,7 @@ public:
   }
   static int size(bool is_native);
   int size() const                               { return method_size(); }
-  void log_touched(TRAPS);
+  void log_touched(Thread* current);
   static void print_touched_methods(outputStream* out);
 
   // interpreter support

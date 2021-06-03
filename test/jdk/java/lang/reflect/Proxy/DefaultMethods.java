@@ -333,17 +333,17 @@ public class DefaultMethods {
     @DataProvider(name = "illegalArguments")
     private Object[][] illegalArguments() {
         return new Object[][] {
-            new Object[] {},
-            new Object[] { 100 },
-            new Object[] { 100, "foo", 100 },
-            new Object[] { 100L, "foo" },
-            new Object[] { "foo", 100},
-            new Object[] { null, "foo" }
+            new Object[] { new Object[0]},
+            new Object[] { new Object[] { 100 }},
+            new Object[] { new Object[] { 100, "foo", 100 }},
+            new Object[] { new Object[] { 100L, "foo" }},
+            new Object[] { new Object[] { "foo", 100 }},
+            new Object[] { new Object[] { null, "foo" }}
         };
     }
 
     @Test(dataProvider = "illegalArguments", expectedExceptions = {IllegalArgumentException.class})
-    public void testIllegalArgument(Object... args) throws Throwable {
+    public void testIllegalArgument(Object[] args) throws Throwable {
         ClassLoader loader = DefaultMethods.class.getClassLoader();
         I4 proxy = (I4)Proxy.newProxyInstance(loader, new Class<?>[]{I4.class}, HANDLER);
         Method m = I4.class.getMethod("mix", int.class, String.class);

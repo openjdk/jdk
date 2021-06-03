@@ -1066,6 +1066,12 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         phase->C->prepend_late_inline(cg);
         set_generator(NULL);
       }
+    } else if (iid == vmIntrinsics::_linkToNative) {
+      if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP /* NEP */
+          && in(TypeFunc::Parms + 1)->Opcode() == Op_ConL /* address */) {
+        phase->C->prepend_late_inline(cg);
+        set_generator(NULL);
+      }
     } else {
       assert(callee->has_member_arg(), "wrong type of call?");
       if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP) {
@@ -1362,6 +1368,7 @@ SafePointNode* SafePointNode::next_exception() const {
 //------------------------------Ideal------------------------------------------
 // Skip over any collapsed Regions
 Node *SafePointNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  assert(_jvms == NULL || ((uintptr_t)_jvms->map() & 1) || _jvms->map() == this, "inconsistent JVMState");
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 

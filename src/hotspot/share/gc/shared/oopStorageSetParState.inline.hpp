@@ -25,9 +25,10 @@
 #ifndef SHARE_GC_SHARED_OOPSTORAGESETPARSTATE_INLINE_HPP
 #define SHARE_GC_SHARED_OOPSTORAGESETPARSTATE_INLINE_HPP
 
+#include "gc/shared/oopStorageSetParState.hpp"
+
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "gc/shared/oopStorageSetParState.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
