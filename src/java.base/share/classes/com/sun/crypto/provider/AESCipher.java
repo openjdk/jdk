@@ -138,22 +138,7 @@ abstract class AESCipher extends CipherSpi {
             super(32, "CFB", "NOPADDING");
         }
     }
-/*    public static final class AES128_GCM_NoPadding extends GaloisCounterMode {
-        public AES128_GCM_NoPadding() {
-            super(16, new AESCrypt());
-        }
-    }
-    public static final class AES192_GCM_NoPadding extends GaloisCounterMode {
-        public AES192_GCM_NoPadding() {
-            super(24, new AESCrypt());
-        }
-    }
-    public static final class AES256_GCM_NoPadding extends GaloisCounterMode {
-        public AES256_GCM_NoPadding() {
-            super(32, new AESCrypt());
-        }
-    }
-*/
+
     // utility method used by AESCipher and AESWrapCipher
     static final void checkKeySize(Key key, int fixedKeySize)
         throws InvalidKeyException {

@@ -26,13 +26,10 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.Arrays;
 import java.util.HexFormat;
-import java.util.Random;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
@@ -64,8 +61,6 @@ public class TestAESCipher {
     static byte[] key = new byte[KEY_LENGTH];
 
     public static void main(String argv[]) throws Exception {
-        plainText = makeData(plainText.length);
-        key = makeData(KEY_LENGTH);
         TestAESCipher test = new TestAESCipher();
         for (String mode : MODES) {
             int padKinds = 1;
@@ -80,21 +75,12 @@ public class TestAESCipher {
         }
     }
 
-    static byte[] makeData(int len) {
-        int i = 0;
-        byte[] b = new byte[len];
-        while (i < len) {
-            b[i] = (byte)(i % 255);
-            i++;
-        }
-        return b;
-    }
 
     public void runTest(String algo, String mo, String pad) throws Exception {
         Cipher ci;
         System.out.println("Testing " + algo + "/" + mo + "/" + pad);
 
-        byte[] iv = makeData(16);
+        byte[] iv = new byte[16];
         AlgorithmParameterSpec aps = new GCMParameterSpec(128, iv);
         SecretKey key = new SecretKeySpec(this.key, 0, KEY_LENGTH,"AES");
 
