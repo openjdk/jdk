@@ -794,6 +794,8 @@ final class LongMaxVector extends LongVector {
         return super.fromArray0Template(a, offset);  // specialize
     }
 
+
+
     @ForceInline
     @Override
     final

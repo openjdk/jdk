@@ -813,6 +813,14 @@ final class Short64Vector extends ShortVector {
     @ForceInline
     @Override
     final
+    ShortVector fromCharArray0(char[] a, int offset) {
+        return super.fromCharArray0Template(a, offset);  // specialize
+    }
+
+
+    @ForceInline
+    @Override
+    final
     ShortVector fromByteArray0(byte[] a, int offset) {
         return super.fromByteArray0Template(a, offset);  // specialize
     }
