@@ -144,7 +144,15 @@ final class Config {
     // how often to test for token insertion, if no token is present
     private int insertionCheckInterval = 2000;
 
-    // flag inidicating whether to omit the call to C_Initialize()
+    // short ms value to indicate how often native cleaner thread is called
+    private int resourceCleanerShortInterval = 2_000;
+    // long ms value to indicate how often native cleaner thread is called
+    private int resourceCleanerLongInterval = 60_000;
+
+    // should Token be destroyed after logout()
+    private boolean destroyTokenAfterLogout;
+
+    // flag indicating whether to omit the call to C_Initialize()
     // should be used only if we are running within a process that
     // has already called it (e.g. Plugin inside of Mozilla/NSS)
     private boolean omitInitialize = false;
@@ -276,6 +284,18 @@ final class Config {
 
     boolean getExplicitCancel() {
         return explicitCancel;
+    }
+
+    boolean getDestroyTokenAfterLogout() {
+        return destroyTokenAfterLogout;
+    }
+
+    int getResourceCleanerShortInterval() {
+        return resourceCleanerShortInterval;
+    }
+
+    int getResourceCleanerLongInterval() {
+        return resourceCleanerLongInterval;
     }
 
     int getInsertionCheckInterval() {
@@ -412,6 +432,18 @@ final class Config {
                 if (insertionCheckInterval < 100) {
                     throw excLine(word + " must be at least 100 ms");
                 }
+            } else if (word.equals("cleaner.shortInterval")) {
+                resourceCleanerShortInterval = parseIntegerEntry(word);
+                if (resourceCleanerShortInterval < 1_000) {
+                    throw excLine(word + " must be at least 1000 ms");
+                }
+            } else if (word.equals("cleaner.longInterval")) {
+                resourceCleanerLongInterval = parseIntegerEntry(word);
+                if (resourceCleanerLongInterval < 1_000) {
+                    throw excLine(word + " must be at least 1000 ms");
+                }
+            } else if (word.equals("destroyTokenAfterLogout")) {
+                destroyTokenAfterLogout = parseBooleanEntry(word);
             } else if (word.equals("showInfo")) {
                 showInfo = parseBooleanEntry(word);
             } else if (word.equals("keyStoreCompatibilityMode")) {
