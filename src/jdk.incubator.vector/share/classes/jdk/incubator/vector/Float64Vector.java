@@ -802,6 +802,8 @@ final class Float64Vector extends FloatVector {
         return super.fromArray0Template(a, offset);  // specialize
     }
 
+
+
     @ForceInline
     @Override
     final

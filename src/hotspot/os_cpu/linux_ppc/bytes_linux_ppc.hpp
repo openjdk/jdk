@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2014 Google Inc.  All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,17 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_S390_BYTES_LINUX_S390_INLINE_HPP
-#define OS_CPU_LINUX_S390_BYTES_LINUX_S390_INLINE_HPP
+#ifndef OS_CPU_LINUX_PPC_BYTES_LINUX_PPC_HPP
+#define OS_CPU_LINUX_PPC_BYTES_LINUX_PPC_HPP
+
+#if defined(VM_LITTLE_ENDIAN)
+#include <byteswap.h>
 
 // Efficient swapping of data bytes from Java byte
 // ordering to native byte ordering and vice versa.
+inline u2 Bytes::swap_u2(u2 x) { return bswap_16(x); }
+inline u4 Bytes::swap_u4(u4 x) { return bswap_32(x); }
+inline u8 Bytes::swap_u8(u8 x) { return bswap_64(x); }
+#endif // VM_LITTLE_ENDIAN
 
-#include <byteswap.h>
-
-inline u2 swap_u2(u2 x) {
-  return bswap_16(x);
-}
-
-inline u4 swap_u4(u4 x) {
-  return bswap_32(x);
-}
-
-inline u8 swap_u8(u8 x) {
-  return bswap_64(x);
-}
-
-#endif // OS_CPU_LINUX_S390_BYTES_LINUX_S390_INLINE_HPP
+#endif // OS_CPU_LINUX_PPC_BYTES_LINUX_PPC_HPP
