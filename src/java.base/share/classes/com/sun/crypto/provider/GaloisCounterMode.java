@@ -81,7 +81,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     // can only be returned by the doFinal(...) call.
     private static final int MAX_BUF_SIZE = Integer.MAX_VALUE;
     // data size when buffer is divided up to aid in intrinsics
-    private static final int TRIGGERLEN = 4096;  // 64k
+    private static final int TRIGGERLEN = 65535;  // 64k
 
     static final byte[] EMPTY_BUF = new byte[0];
 
