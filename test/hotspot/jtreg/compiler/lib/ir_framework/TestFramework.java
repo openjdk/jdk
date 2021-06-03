@@ -133,6 +133,8 @@ public class TestFramework {
     public static final boolean TESTLIST = !System.getProperty("Test", "").isEmpty();
     public static final boolean EXCLUDELIST = !System.getProperty("Exclude", "").isEmpty();
     private static final boolean REPORT_STDOUT = Boolean.getBoolean("ReportStdout");
+    // Only used for internal testing and should not be used for normal user testing.
+    private static final boolean SKIP_WHITEBOX_INSTALL = Boolean.getBoolean("SkipWhiteBoxInstall");
 
     private static final String RERUN_HINT = """
                                                #############################################################
@@ -309,7 +311,9 @@ public class TestFramework {
      * set test class.
      */
     public void start() {
-        installWhiteBox();
+        if (!SKIP_WHITEBOX_INSTALL) {
+            installWhiteBox();
+        }
         disableIRVerificationIfNotFeasible();
 
         if (scenarios == null) {

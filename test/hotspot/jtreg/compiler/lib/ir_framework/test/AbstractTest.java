@@ -129,6 +129,7 @@ abstract class AbstractTest {
         final boolean maybeCodeBufferOverflow = (TestVM.TEST_C1 && VERIFY_OOPS);
         final long started = System.currentTimeMillis();
         long elapsed = 0;
+        int lastCompilationLevel = -10;
         enqueueMethodForCompilation(test);
 
         do {
@@ -149,13 +150,15 @@ abstract class AbstractTest {
                 WHITE_BOX.setBooleanVMFlag("VerifyOops", true);
             }
 
-            if (WHITE_BOX.getMethodCompilationLevel(testMethod, false) == test.getCompLevel().getValue()) {
+            lastCompilationLevel = WHITE_BOX.getMethodCompilationLevel(testMethod, false);
+            if (lastCompilationLevel == test.getCompLevel().getValue()) {
                 break;
             }
             elapsed = System.currentTimeMillis() - started;
         } while (elapsed < TEST_COMPILATION_TIMEOUT);
         TestRun.check(elapsed < TEST_COMPILATION_TIMEOUT,
-                      "Could not compile " + testMethod + " after " + TEST_COMPILATION_TIMEOUT/1000 + "s");
+                      "Could not compile " + testMethod + " at level " + test.getCompLevel() + " after "
+                      + TEST_COMPILATION_TIMEOUT/1000 + "s. Last compilation level: " + lastCompilationLevel);
         checkCompilationLevel(test);
     }
 

@@ -31,12 +31,12 @@ import java.lang.reflect.Method;
  * @test
  * @requires vm.flagless
  * @summary Test if compilation levels are used correctly in the framework.
- *          This test runs directly the test VM which normally does not happen.
+ *          This test partly runs directly the test VM which normally does and should not happen in user tests.
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   compiler.lib.ir_framework.TestCompLevels
+ * @run main/othervm -Xbootclasspath/a:. -DSkipWhiteBoxInstall=true -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI compiler.lib.ir_framework.TestCompLevels
  */
 
 public class TestCompLevels {
@@ -46,6 +46,7 @@ public class TestCompLevels {
         Method runTestsOnSameVM = TestVM.class.getDeclaredMethod("runTestsOnSameVM", Class.class);
         runTestsOnSameVM.setAccessible(true);
         runTestsOnSameVM.invoke(null, new Object[]{null});
+
         for (int i = 0; i < testExecuted.length; i++) {
             int value = testExecuted[i];
             if (value != TestVM.WARMUP_ITERATIONS + 1) {
