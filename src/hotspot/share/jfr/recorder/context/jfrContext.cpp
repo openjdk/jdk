@@ -181,5 +181,5 @@ bool JfrContext::record_safe(JavaThread* thread, int skip) {
   if (thread->has_pending_exception()) {
     return false;
   }
-  return true;
+  return _nr_of_entries > 0;
 }
