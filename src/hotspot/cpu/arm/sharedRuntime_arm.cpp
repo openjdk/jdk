@@ -23,8 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_arm.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"

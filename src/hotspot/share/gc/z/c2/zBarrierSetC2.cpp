@@ -224,7 +224,15 @@ Node* ZBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* 
 }
 
 bool ZBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type,
-                                                    bool is_clone, ArrayCopyPhase phase) const {
+                                                    bool is_clone, bool is_clone_instance,
+                                                    ArrayCopyPhase phase) const {
+  if (phase == ArrayCopyPhase::Parsing) {
+    return false;
+  }
+  if (phase == ArrayCopyPhase::Optimization) {
+    return is_clone_instance;
+  }
+  // else ArrayCopyPhase::Expansion
   return type == T_OBJECT || type == T_ARRAY;
 }
 

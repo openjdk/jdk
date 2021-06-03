@@ -25,12 +25,13 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahRootProcessor.hpp"
+
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/resourceArea.hpp"

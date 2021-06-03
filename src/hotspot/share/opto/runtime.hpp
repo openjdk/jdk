@@ -305,6 +305,8 @@ private:
 
   static const TypeFunc* register_finalizer_Type();
 
+  JFR_ONLY(static const TypeFunc* get_class_id_intrinsic_Type();)
+
   // Dtrace support
   static const TypeFunc* dtrace_method_entry_exit_Type();
   static const TypeFunc* dtrace_object_alloc_Type();

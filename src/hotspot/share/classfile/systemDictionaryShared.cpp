@@ -1386,7 +1386,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     if (has_class_failed_verification(k)) {
       return warn_excluded(k, "Failed verification");
     } else {
-      if (!k->has_old_class_version()) {
+      if (!k->can_be_verified_at_dumptime()) {
         return warn_excluded(k, "Not linked");
       }
     }
@@ -1400,7 +1400,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     return true;
   }
 
-  if (k->has_old_class_version() && k->is_linked()) {
+  if (k->can_be_verified_at_dumptime() && k->is_linked()) {
     return warn_excluded(k, "Old class has been linked");
   }
 
@@ -1855,8 +1855,6 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
   // either of these two loaders. The check itself does not
   // try to resolve T.
   oop klass_loader = klass->class_loader();
-  assert(klass_loader != NULL, "should not be called for boot loader");
-  assert(loader1 != loader2, "must be");
 
   if (!is_system_class_loader(klass_loader) &&
       !is_platform_class_loader(klass_loader)) {
@@ -1871,6 +1869,17 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
     // loaders, so we bail.
     return;
   }
+
+  if (DumpSharedSpaces && !is_builtin(klass)) {
+    // During static dump, unregistered classes (those intended for
+    // custom loaders) are loaded by the boot loader. Need to
+    // exclude these for the same reason as above.
+    // This should be fixed by JDK-8261941.
+    return;
+  }
+
+  assert(klass_loader != NULL, "should not be called for boot loader");
+  assert(loader1 != loader2, "must be");
 
   if (DynamicDumpSharedSpaces && Thread::current()->is_VM_thread()) {
     // We are re-laying out the vtable/itables of the *copy* of

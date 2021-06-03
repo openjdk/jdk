@@ -127,10 +127,6 @@
   notproduct(bool, PrintIdealNodeCount, false,                              \
           "Print liveness counts of ideal nodes")                           \
                                                                             \
-  develop(bool, IdealizedNumerics, false,                                   \
-          "Check performance difference allowing FP "                       \
-          "associativity and commutativity...")                             \
-                                                                            \
   product_pd(bool, IdealizeClearArrayNode, DIAGNOSTIC,                      \
           "Replace ClearArrayNode by subgraph of basic operations.")        \
                                                                             \

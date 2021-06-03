@@ -1125,6 +1125,7 @@ size_t ZStatMark::_nproactiveflush;
 size_t ZStatMark::_nterminateflush;
 size_t ZStatMark::_ntrycomplete;
 size_t ZStatMark::_ncontinue;
+size_t ZStatMark::_mark_stack_usage;
 
 void ZStatMark::set_at_mark_start(size_t nstripes) {
   _nstripes = nstripes;
@@ -1140,6 +1141,10 @@ void ZStatMark::set_at_mark_end(size_t nproactiveflush,
   _ncontinue = ncontinue;
 }
 
+void ZStatMark::set_at_mark_free(size_t mark_stack_usage) {
+  _mark_stack_usage = mark_stack_usage;
+}
+
 void ZStatMark::print() {
   log_info(gc, marking)("Mark: "
                         SIZE_FORMAT " stripe(s), "
@@ -1152,6 +1157,8 @@ void ZStatMark::print() {
                         _nterminateflush,
                         _ntrycomplete,
                         _ncontinue);
+
+  log_info(gc, marking)("Mark Stack Usage: " SIZE_FORMAT "M", _mark_stack_usage / M);
 }
 
 //

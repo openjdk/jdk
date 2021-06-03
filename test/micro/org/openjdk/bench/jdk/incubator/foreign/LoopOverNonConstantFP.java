@@ -23,9 +23,8 @@
 package org.openjdk.bench.jdk.incubator.foreign;
 
 import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -38,7 +37,6 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
-import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
@@ -74,8 +72,8 @@ public class LoopOverNonConstantFP {
         for (int i = 0; i < ELEM_SIZE; i++) {
             unsafe.putDouble(unsafe_addrOut + (i * CARRIER_SIZE), i);
         }
-        segmentIn = MemorySegment.allocateNative(ALLOC_SIZE);
-        segmentOut = MemorySegment.allocateNative(ALLOC_SIZE);
+        segmentIn = MemorySegment.allocateNative(ALLOC_SIZE, ResourceScope.newConfinedScope());
+        segmentOut = MemorySegment.allocateNative(ALLOC_SIZE, ResourceScope.newConfinedScope());
         for (int i = 0; i < ELEM_SIZE; i++) {
             MemoryAccess.setDoubleAtIndex(segmentIn, i, i);
         }
@@ -94,8 +92,8 @@ public class LoopOverNonConstantFP {
 
     @TearDown
     public void tearDown() {
-        segmentIn.close();
-        segmentOut.close();
+        segmentIn.scope().close();
+        segmentOut.scope().close();
         unsafe.invokeCleaner(byteBufferIn);
         unsafe.invokeCleaner(byteBufferOut);
         unsafe.freeMemory(unsafe_addrIn);

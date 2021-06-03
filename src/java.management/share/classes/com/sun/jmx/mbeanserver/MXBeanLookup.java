@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,7 @@ public class MXBeanLookup {
     throws InstanceAlreadyExistsException {
         ObjectName existing = mxbeanToObjectName.get(mxbean);
         if (existing != null) {
+            @SuppressWarnings("removal")
             String multiname = AccessController.doPrivileged(
                     new GetPropertyAction("jmx.mxbean.multiname"));
             if (!"true".equalsIgnoreCase(multiname)) {

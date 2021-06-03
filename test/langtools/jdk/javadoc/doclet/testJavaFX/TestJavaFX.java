@@ -374,7 +374,7 @@ public class TestJavaFX extends JavadocTester {
         checkExit(Exit.OK);
 
         // make sure the doclet indeed emits the warning
-        checkOutput(Output.OUT, true, "C.java:0: warning - invalid usage of tag <");
+        checkOutput(Output.OUT, true, "C.java:31: warning: invalid usage of tag <");
     }
 
     /*
@@ -419,6 +419,7 @@ public class TestJavaFX extends JavadocTester {
         javadoc("-d", "out5",
                 "--javafx",
                 "--disable-javafx-strict-checks",
+                "--no-platform-links",
                 "-Xdoclint:all",
                 "--source-path", "src5",
                 "pkg");

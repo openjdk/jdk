@@ -517,6 +517,12 @@ class SharedRuntime: AllStatic {
                                           const GrowableArray<VMReg>& output_registers);
 #endif
 
+  static void compute_move_order(const BasicType* in_sig_bt,
+                                 int total_in_args, const VMRegPair* in_regs,
+                                 int total_out_args, VMRegPair* out_regs,
+                                 GrowableArray<int>& arg_order,
+                                 VMRegPair tmp_vmreg);
+
 #ifndef PRODUCT
 
   // Collect and print inline cache miss statistics

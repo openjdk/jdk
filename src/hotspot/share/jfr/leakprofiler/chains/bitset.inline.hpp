@@ -26,6 +26,7 @@
 #define SHARE_JFR_LEAKPROFILER_CHAINS_BITSET_INLINE_HPP
 
 #include "jfr/leakprofiler/chains/bitset.hpp"
+
 #include "jfr/recorder/storage/jfrVirtualMemory.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/bitMap.inline.hpp"
