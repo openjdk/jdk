@@ -108,7 +108,7 @@ class WorkerThread: public NamedThread {
   }
 
   static WorkerThread* cast(Thread* t) {
-    assert(t->is_Worker_thread(), "incorrect cast to const WorkerThread");
+    assert(t->is_Worker_thread(), "incorrect cast to WorkerThread");
     return static_cast<WorkerThread*>(t);
   }
 
