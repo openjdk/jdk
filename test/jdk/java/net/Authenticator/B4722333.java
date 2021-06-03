@@ -69,32 +69,29 @@ public class B4722333 implements HttpHandler {
                 switch (count) {
                     case 0:
                         req.getResponseHeaders().set("Connection", "close");
-                        req.getResponseHeaders().add("WWW-Authenticate", "Basic realm=\"foo\"");
+                        req.getResponseHeaders().set("WWW-Authenticate", "Basic realm=\"foo\"");
                         req.getResponseHeaders().add("WWW-Authenticate", "Foo realm=\"bar\"");
                         req.sendResponseHeaders(401, -1);
                         break;
                     case 2:
                         req.getResponseHeaders().set("Connection", "close");
-                        req.getResponseHeaders().add("WWW-Authenticate", "Basic realm=\"foobar\"");
-                        req.getResponseHeaders().add("WWW-Authenticate", "Foo realm=\"bar\"");
+                        req.getResponseHeaders().set("WWW-Authenticate", "Basic realm=\"foobar\" Foo realm=\"bar\"");
                         req.sendResponseHeaders(401, -1);
                         break;
                     case 4:
                         req.getResponseHeaders().set("Connection", "close");
-                        req.getResponseHeaders().set("WWW-Authenticate", "Digest realm=\"biz\" domain=/foo nonce=\"thisisnonce \"");
+                        req.getResponseHeaders().set("WWW-Authenticate", "Digest realm=biz domain=/foo nonce=thisisanonce ");
                         req.getResponseHeaders().add("WWW-Authenticate", "Basic realm=bizbar");
                         req.sendResponseHeaders(401, -1);
                         break;
                     case 6:
                         req.getResponseHeaders().set("Connection", "close");
-                        req.getResponseHeaders().set("WWW-Authenticate", "Digest realm=\"bizbar\" domain=/biz nonce=\"hereisanonce\"");
-                        req.getResponseHeaders().add("WWW-Authenticate", "Basic realm=\"foobar\" Foo realm=\"bar\"");
+                        req.getResponseHeaders().set("WWW-Authenticate", "Digest realm=\"bizbar\" domain=/biz nonce=\"hereisanonce\" Basic realm=\"foobar\" Foo realm=\"bar\"");
                         req.sendResponseHeaders(401, -1);
                         break;
                     case 8:
                         req.getResponseHeaders().set("Connection", "close");
-                        req.getResponseHeaders().set("WWW-Authenticate", "Foo p1=1 p2=2 p3=3 p4=4 p5=5 p6=6 p7=7 p8=8 p9=10");
-                        req.getResponseHeaders().add("WWW-Authenticate", "Digest realm=foobiz domain=/foobiz nonce=newnonce");
+                        req.getResponseHeaders().set("WWW-Authenticate", "Foo p1=1 p2=2 p3=3 p4=4 p5=5 p6=6 p7=7 p8=8 p9=10 Digest realm=foobiz domain=/foobiz nonce=newnonce");
                         req.getResponseHeaders().add("WWW-Authenticate", "Basic realm=bizbar");
                         req.sendResponseHeaders(401, -1);
                         break;
