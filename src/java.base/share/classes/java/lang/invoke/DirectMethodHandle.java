@@ -87,7 +87,7 @@ class DirectMethodHandle extends MethodHandle {
             // refKind reflects the original type of lookup via findSpecial or
             // findVirtual etc.
             return switch (refKind) {
-                case REF_invokeSpecial: {
+                case REF_invokeSpecial -> {
                     member = member.asSpecial();
                     // if caller is an interface we need to adapt to get the
                     // receiver check inserted
@@ -97,14 +97,14 @@ class DirectMethodHandle extends MethodHandle {
                     LambdaForm lform = preparedLambdaForm(member, callerClass.isInterface());
                     yield new Special(mtype, lform, member, true, callerClass);
                 }
-                case REF_invokeInterface: {
+                case REF_invokeInterface -> {
                     // for interfaces we always need the receiver typecheck,
                     // so we always pass 'true' to ensure we adapt if needed
                     // to include the REF_invokeSpecial case
                     LambdaForm lform = preparedLambdaForm(member, true);
                     yield new Interface(mtype, lform, member, true, refc);
                 }
-                default: {
+                default -> {
                     LambdaForm lform = preparedLambdaForm(member);
                     yield new DirectMethodHandle(mtype, lform, member, true);
                 }

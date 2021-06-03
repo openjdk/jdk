@@ -275,13 +275,13 @@ public class MethodHandleProxies {
 
     private static boolean isObjectMethod(Method m) {
         return switch (m.getName()) {
-            case "toString" -> (m.getReturnType() == String.class
-                                && m.getParameterCount() == 0);
-            case "hashCode" -> (m.getReturnType() == int.class
-                                && m.getParameterCount() == 0);
-            case "equals"   -> (m.getReturnType() == boolean.class
-                                && m.getParameterCount() == 1
-                                && m.getParameterTypes()[0] == Object.class);
+            case "toString" -> m.getReturnType() == String.class
+                               && m.getParameterCount() == 0;
+            case "hashCode" -> m.getReturnType() == int.class
+                               && m.getParameterCount() == 0;
+            case "equals"   -> m.getReturnType() == boolean.class
+                               && m.getParameterCount() == 1
+                               && m.getParameterTypes()[0] == Object.class;
             default -> false;
         };
     }

@@ -77,8 +77,8 @@ abstract class CharacterData {
                 case 1 -> CharacterData01.instance;
                 case 2 -> CharacterData02.instance;
                 case 3 -> CharacterData03.instance;
-                case 14 -> CharacterData0E.instance; // Private Use
-                case 15, 16 -> CharacterDataPrivateUse.instance; // Private Use
+                case 14 -> CharacterData0E.instance;
+                case 15, 16 -> CharacterDataPrivateUse.instance; // Both cases Private Use
                 default -> CharacterDataUndefined.instance;
             };
         }

@@ -313,23 +313,23 @@ final class MemberName implements Member, Cloneable {
     /*non-public*/
     boolean referenceKindIsConsistentWith(int originalRefKind) {
         int refKind = getReferenceKind();
-        if (refKind == originalRefKind)  return true;
-        return switch (originalRefKind) {
-            case REF_invokeInterface -> {
-                // Looking up an interface method, can get (e.g.) Object.hashCode
-                assert (refKind == REF_invokeVirtual || refKind == REF_invokeSpecial) : this;
-                yield true;
+        if (refKind == originalRefKind) return true;
+        if (getClass().desiredAssertionStatus()) {
+            switch (originalRefKind) {
+                case REF_invokeInterface -> {
+                    // Looking up an interface method, can get (e.g.) Object.hashCode
+                    assert (refKind == REF_invokeVirtual || refKind == REF_invokeSpecial) : this;
+                }
+                case REF_invokeVirtual, REF_newInvokeSpecial -> {
+                    // Looked up a virtual, can get (e.g.) final String.hashCode.
+                    assert (refKind == REF_invokeSpecial) : this;
+                }
+                default -> {
+                    assert (false) : this + " != " + MethodHandleNatives.refKindName((byte) originalRefKind);
+                }
             }
-            case REF_invokeVirtual, REF_newInvokeSpecial -> {
-                // Looked up a virtual, can get (e.g.) final String.hashCode.
-                assert (refKind == REF_invokeSpecial) : this;
-                yield true;
-            }
-            default -> {
-                assert(false) : this+" != "+MethodHandleNatives.refKindName((byte)originalRefKind);
-                yield true;
-            }
-        };
+        }
+        return true;
     }
     private boolean staticIsConsistent() {
         byte refKind = getReferenceKind();

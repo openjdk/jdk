@@ -1654,14 +1654,14 @@ class InvokerBytecodeGenerator {
     }
 
     private void emitZero(BasicType type) {
-        switch (type) {
-            case I_TYPE -> mv.visitInsn(Opcodes.ICONST_0);
-            case J_TYPE -> mv.visitInsn(Opcodes.LCONST_0);
-            case F_TYPE -> mv.visitInsn(Opcodes.FCONST_0);
-            case D_TYPE -> mv.visitInsn(Opcodes.DCONST_0);
-            case L_TYPE -> mv.visitInsn(Opcodes.ACONST_NULL);
+        mv.visitInsn(switch (type) {
+            case I_TYPE -> Opcodes.ICONST_0;
+            case J_TYPE -> Opcodes.LCONST_0;
+            case F_TYPE -> Opcodes.FCONST_0;
+            case D_TYPE -> Opcodes.DCONST_0;
+            case L_TYPE -> Opcodes.ACONST_NULL;
             default -> throw new InternalError("unknown type: " + type);
-        }
+        });
     }
 
     private void emitPushArguments(Name args, int start) {
