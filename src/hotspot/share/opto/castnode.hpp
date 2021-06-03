@@ -108,6 +108,11 @@ class CastIINode: public ConstraintCastNode {
 
 class CastLLNode: public ConstraintCastNode {
 public:
+  CastLLNode(Node* ctrl, Node* n, const Type* t, bool carry_dependency = false)
+    : ConstraintCastNode(n, t, carry_dependency) {
+    init_class_id(Class_CastLL);
+    init_req(0, ctrl);
+  }
   CastLLNode(Node* n, const Type* t, bool carry_dependency = false)
           : ConstraintCastNode(n, t, carry_dependency){
     init_class_id(Class_CastLL);

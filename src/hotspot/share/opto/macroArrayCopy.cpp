@@ -32,6 +32,7 @@
 #include "opto/graphKit.hpp"
 #include "opto/macro.hpp"
 #include "opto/runtime.hpp"
+#include "opto/castnode.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -223,6 +224,9 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
     return;
   }
 
+  int inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(type);
+  Node* casted_length = new CastLLNode(*ctrl, length, TypeLong::make(0, inline_limit, Type::WidenMin));
+  transform_later(casted_length);
   Node* copy_bytes = new LShiftXNode(length, intcon(shift));
   transform_later(copy_bytes);
 
@@ -233,7 +237,7 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   inline_block  = generate_guard(ctrl, bol_le, NULL, PROB_FAIR);
   stub_block = *ctrl;
 
-  Node* mask_gen =  new VectorMaskGenNode(length, TypeVect::VECTMASK, type);
+  Node* mask_gen =  new VectorMaskGenNode(casted_length, TypeVect::VECTMASK, type);
   transform_later(mask_gen);
 
   unsigned vec_size = lane_count *  type2aelembytes(type);

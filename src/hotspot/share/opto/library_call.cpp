@@ -5270,12 +5270,14 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
       call_stub_path = generate_guard(bol_gt, NULL, PROB_MIN);
 
       if (!stopped()) {
+        Node* casted_length = _gvn.transform(new CastIINode(control(), length, TypeInt::make(0, inline_limit, Type::WidenMin)));
+
         const TypePtr* obja_adr_t = _gvn.type(obja_adr)->isa_ptr();
         const TypePtr* objb_adr_t = _gvn.type(objb_adr)->isa_ptr();
         Node* obja_adr_mem = memory(C->get_alias_index(obja_adr_t));
         Node* objb_adr_mem = memory(C->get_alias_index(objb_adr_t));
 
-        Node* vmask      = _gvn.transform(new VectorMaskGenNode(ConvI2X(length), TypeVect::VECTMASK, elem_bt));
+        Node* vmask      = _gvn.transform(new VectorMaskGenNode(ConvI2X(casted_length), TypeVect::VECTMASK, elem_bt));
         Node* vload_obja = _gvn.transform(new LoadVectorMaskedNode(control(), obja_adr_mem, obja_adr, obja_adr_t, vt, vmask));
         Node* vload_objb = _gvn.transform(new LoadVectorMaskedNode(control(), objb_adr_mem, objb_adr, objb_adr_t, vt, vmask));
         Node* result     = _gvn.transform(new VectorCmpMaskedNode(vload_obja, vload_objb, vmask, TypeInt::INT));
