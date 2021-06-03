@@ -646,8 +646,6 @@ public:
   }
 
   virtual void work() {
-    SuspendibleThreadSetJoiner sts_joiner;
-
     {
       ZStatTimerMajor timer(ZSubPhaseConcurrentMajorRemapRootUncolored);
       _roots_colored.apply(&_cl_colored,
@@ -663,8 +661,9 @@ public:
 };
 
 void ZMajorCycle::roots_remap() {
+  SuspendibleThreadSetJoiner sts_joiner;
+
   {
-    SuspendibleThreadSetJoiner sts_joiner;
     ZGenerationPagesIterator iter(_page_table, ZGenerationId::old, _page_allocator);
     for (ZPage* page; iter.next(&page);) {
       if (!ZRemember::should_scan(page)) {
@@ -676,6 +675,9 @@ void ZMajorCycle::roots_remap() {
       });
     }
   }
+
+  sts_joiner.yield();
+
   ZRemapRootsTask task;
   workers()->run_concurrent(&task);
 }
