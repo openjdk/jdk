@@ -52,6 +52,10 @@ public class Switches {
         runEnumTest(this::testEnumWithGuards2);
         runEnumTest(this::testEnumWithGuardsExpression1);
         runEnumTest(this::testEnumWithGuardsExpression2);
+        runEnumTest(this::testStringWithGuards1);
+        runEnumTest(this::testStringWithGuardsExpression1);
+        runEnumTest(this::testIntegerWithGuards1);
+        runEnumTest(this::testIntegerWithGuardsExpression1);
         runStringWithConstant(this::testStringWithConstant);
         runStringWithConstant(this::testStringWithConstantExpression);
         npeTest(this::npeTestStatement);
@@ -237,6 +241,46 @@ public class Switches {
             case E x && "C".equals(x.name()) -> "C";
             case C -> "broken";
             case null, E x -> String.valueOf(x);
+        };
+    }
+
+    String testStringWithGuards1(E e) {
+        switch (e != null ? e.name() : null) {
+            case "A": return "a";
+            case "B": return "b";
+            case String x && "C".equals(x): return "C";
+            case "C": return "broken";
+            case null, String x: return String.valueOf(x);
+        }
+    }
+
+    String testStringWithGuardsExpression1(E e) {
+        return switch (e != null ? e.name() : null) {
+            case "A" -> "a";
+            case "B" -> "b";
+            case String x && "C".equals(x) -> "C";
+            case "C" -> "broken";
+            case null, String x -> String.valueOf(x);
+        };
+    }
+
+    String testIntegerWithGuards1(E e) {
+        switch (e != null ? e.ordinal() : null) {
+            case 0: return "a";
+            case 1: return "b";
+            case Integer x && x.equals(2): return "C";
+            case 2: return "broken";
+            case null, Integer x: return String.valueOf(x);
+        }
+    }
+
+    String testIntegerWithGuardsExpression1(E e) {
+        return switch (e != null ? e.ordinal() : null) {
+            case 0 -> "a";
+            case 1 -> "b";
+            case Integer x && x.equals(2) -> "C";
+            case 2 -> "broken";
+            case null, Integer x -> String.valueOf(x);
         };
     }
 
