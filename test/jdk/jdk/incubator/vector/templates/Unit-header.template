@@ -1184,8 +1184,13 @@ public class $vectorteststype$ extends AbstractVectorTest {
     static final List<BiFunction<Integer,Integer,$type$[]>> $TYPE$_SHUFFLE_GENERATORS = List.of(
             withToStringBi("shuffle[random]", (Integer l, Integer m) -> {
                 $type$[] a = new $type$[l];
+#if[ByteMax]
+                int upper = Math.min(Byte.MAX_VALUE + 1, m);
+#else[ByteMax]
+                int upper = m;
+#end[ByteMax]
                 for (int i = 0; i < 1; i++) {
-                    a[i] = ($type$)RAND.nextInt(m);
+                    a[i] = ($type$)RAND.nextInt(upper);
                 }
                 return a;
             })
@@ -1246,6 +1251,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
             withToString("$type$[i]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)i);
+            }),
+            withToString("$type$[i - length / 2]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(i - (s * BUFFER_REPS / 2)));
             }),
             withToString("$type$[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1392,6 +1401,48 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 #end[BITWISE]
+
+    static boolean eq($type$ a, $type$ b) {
+        return a == b;
+    }
+
+    static boolean neq($type$ a, $type$ b) {
+        return a != b;
+    }
+
+    static boolean lt($type$ a, $type$ b) {
+        return a < b;
+    }
+
+    static boolean le($type$ a, $type$ b) {
+        return a <= b;
+    }
+
+    static boolean gt($type$ a, $type$ b) {
+        return a > b;
+    }
+
+    static boolean ge($type$ a, $type$ b) {
+        return a >= b;
+    }
+
+#if[!FP]
+    static boolean ult($type$ a, $type$ b) {
+        return $Boxtype$.compareUnsigned(a, b) < 0;
+    }
+
+    static boolean ule($type$ a, $type$ b) {
+        return $Boxtype$.compareUnsigned(a, b) <= 0;
+    }
+
+    static boolean ugt($type$ a, $type$ b) {
+        return $Boxtype$.compareUnsigned(a, b) > 0;
+    }
+
+    static boolean uge($type$ a, $type$ b) {
+        return $Boxtype$.compareUnsigned(a, b) >= 0;
+    }
+#end[!FP]
 
     @Test
     static void smokeTest1() {
