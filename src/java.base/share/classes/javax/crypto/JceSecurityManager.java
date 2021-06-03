@@ -41,8 +41,6 @@ import java.util.stream.Stream;
  * algorithm, by consulting the configured jurisdiction policy files and
  * the cryptographic permissions bundled with the applet/application.
  *
- * <p>Note that this security manager is never installed, only instantiated.
- *
  * @author Jan Luehe
  *
  * @since 1.4
