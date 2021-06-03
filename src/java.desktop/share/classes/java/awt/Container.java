@@ -94,7 +94,6 @@ import sun.util.logging.PlatformLogger;
  * @see       LayoutManager
  * @since     1.0
  */
-@SuppressWarnings("removal")
 public class Container extends Component {
 
     private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.Container");
@@ -1576,12 +1575,11 @@ public class Container extends Component {
         return false;
     }
 
-    private static final boolean isJavaAwtSmartInvalidate;
-    static {
-        // Don't lazy-read because every app uses invalidate()
-        isJavaAwtSmartInvalidate = AccessController.doPrivileged(
+    // Don't lazy-read because every app uses invalidate()
+    @SuppressWarnings("removal")
+    private static final boolean isJavaAwtSmartInvalidate
+            = AccessController.doPrivileged(
                 new GetBooleanAction("java.awt.smartInvalidate"));
-    }
 
     /**
      * Invalidates the parent of the container unless the container
@@ -2634,6 +2632,7 @@ public class Container extends Component {
         if (GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
         }
+        @SuppressWarnings("removal")
         PointerInfo pi = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<PointerInfo>() {
                 public PointerInfo run() {

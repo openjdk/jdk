@@ -43,7 +43,6 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  *
  * @author      Andreas Sterbenz
  */
-@SuppressWarnings("removal")
 public final class MD4 extends DigestBase {
 
     // state of this object
@@ -71,7 +70,8 @@ public final class MD4 extends DigestBase {
             @java.io.Serial
             private static final long serialVersionUID = -8850464997518327965L;
         };
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 md4Provider.put("MessageDigest.MD4", "sun.security.provider.MD4");
                 return null;

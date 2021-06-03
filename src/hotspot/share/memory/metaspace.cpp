@@ -535,8 +535,6 @@ void MetaspaceGC::compute_new_size() {
 
 const MetaspaceTracer* Metaspace::_tracer = NULL;
 
-DEBUG_ONLY(bool Metaspace::_frozen = false;)
-
 bool Metaspace::initialized() {
   return metaspace::MetaspaceContext::context_nonclass() != NULL
       LP64_ONLY(&& (using_class_space() ? Metaspace::class_space_is_initialized() : true));
@@ -851,7 +849,6 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
                               MetaspaceObj::Type type) {
   assert(word_size <= Metaspace::max_allocation_word_size(),
          "allocation size too large (" SIZE_FORMAT ")", word_size);
-  assert(!_frozen, "sanity");
 
   assert(loader_data != NULL, "Should never pass around a NULL loader_data. "
         "ClassLoaderData::the_null_class_loader_data() should have been used.");

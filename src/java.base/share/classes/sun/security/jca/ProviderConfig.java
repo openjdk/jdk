@@ -160,7 +160,7 @@ final class ProviderConfig {
     /**
      * Get the provider object. Loads the provider if it is not already loaded.
      */
-    @SuppressWarnings({"removal","deprecation"})
+    @SuppressWarnings("deprecation")
     Provider getProvider() {
         // volatile variable load
         Provider p = provider;
@@ -188,7 +188,8 @@ final class ProviderConfig {
                 p = new sun.security.ssl.SunJSSE();
             } else if (provName.equals("Apple") || provName.equals("apple.security.AppleProvider")) {
                 // need to use reflection since this class only exists on MacOsx
-                p = AccessController.doPrivileged(new PrivilegedAction<Provider>() {
+                @SuppressWarnings("removal")
+                var tmp = AccessController.doPrivileged(new PrivilegedAction<Provider>() {
                     public Provider run() {
                         try {
                             Class<?> c = Class.forName("apple.security.AppleProvider");
@@ -208,6 +209,7 @@ final class ProviderConfig {
                         }
                     }
                 });
+                p = tmp;
             } else {
                 if (isLoading) {
                     // because this method is synchronized, this can only

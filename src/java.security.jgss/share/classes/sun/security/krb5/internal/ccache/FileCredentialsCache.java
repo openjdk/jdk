@@ -455,15 +455,14 @@ public class FileCredentialsCache extends CredentialsCache
      * 4. <user.home>/krb5cc (if can't get <user.name>)
      */
 
-    @SuppressWarnings("removal")
     public static String getDefaultCacheName() {
 
         String stdCacheNameComponent = "krb5cc";
-        String name;
 
         // The env var can start with TYPE:, we only support FILE: here.
         // http://docs.oracle.com/cd/E19082-01/819-2252/6n4i8rtr3/index.html
-        name = java.security.AccessController.doPrivileged(
+        @SuppressWarnings("removal")
+        String name = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<String>() {
             @Override
             public String run() {

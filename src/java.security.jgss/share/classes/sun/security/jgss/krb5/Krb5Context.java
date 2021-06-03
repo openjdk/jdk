@@ -592,7 +592,6 @@ class Krb5Context implements GSSContextSpi {
      *    to send the token to its peer for processing.
      * @exception GSSException
      */
-    @SuppressWarnings("removal")
     public final byte[] initSecContext(InputStream is, int mechTokenSize)
         throws GSSException {
 
@@ -642,6 +641,7 @@ class Krb5Context implements GSSContextSpi {
                      * for this service in the Subject and reuse it
                      */
 
+                    @SuppressWarnings("removal")
                     final AccessControlContext acc =
                         AccessController.getContext();
 
@@ -649,7 +649,8 @@ class Krb5Context implements GSSContextSpi {
                         KerberosTicket kerbTicket = null;
                         try {
                            // get service ticket from caller's subject
-                           kerbTicket = AccessController.doPrivileged(
+                           @SuppressWarnings("removal")
+                           var tmp = AccessController.doPrivileged(
                                 new PrivilegedExceptionAction<KerberosTicket>() {
                                 public KerberosTicket run() throws Exception {
                                     // XXX to be cleaned
@@ -667,6 +668,7 @@ class Krb5Context implements GSSContextSpi {
                                         peerName.getKrb5PrincipalName().getName(),
                                         acc);
                                 }});
+                            kerbTicket = tmp;
                         } catch (PrivilegedActionException e) {
                             if (DEBUG) {
                                 System.out.println("Attempt to obtain service"
@@ -706,6 +708,7 @@ class Krb5Context implements GSSContextSpi {
                                     tgt);
                         }
                         if (GSSUtil.useSubjectCredsOnly(caller)) {
+                            @SuppressWarnings("removal")
                             final Subject subject =
                                 AccessController.doPrivileged(
                                 new java.security.PrivilegedAction<Subject>() {
@@ -724,7 +727,8 @@ class Krb5Context implements GSSContextSpi {
                                  */
                                 final KerberosTicket kt =
                                         Krb5Util.credsToTicket(serviceCreds);
-                                AccessController.doPrivileged (
+                                @SuppressWarnings("removal")
+                                var dummy = AccessController.doPrivileged (
                                     new java.security.PrivilegedAction<Void>() {
                                       public Void run() {
                                         subject.getPrivateCredentials().add(kt);

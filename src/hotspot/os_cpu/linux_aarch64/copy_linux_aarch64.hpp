@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_AARCH64_COPY_LINUX_AARCH64_INLINE_HPP
-#define OS_CPU_LINUX_AARCH64_COPY_LINUX_AARCH64_INLINE_HPP
+#ifndef OS_CPU_LINUX_AARCH64_COPY_LINUX_AARCH64_HPP
+#define OS_CPU_LINUX_AARCH64_COPY_LINUX_AARCH64_HPP
 
 #define COPY_SMALL(from, to, count)                                     \
 {                                                                       \
@@ -185,4 +185,4 @@ static void pd_arrayof_conjoint_oops(const HeapWord* from, HeapWord* to, size_t 
   _Copy_arrayof_conjoint_jlongs(from, to, count);
 }
 
-#endif // OS_CPU_LINUX_AARCH64_COPY_LINUX_AARCH64_INLINE_HPP
+#endif // OS_CPU_LINUX_AARCH64_COPY_LINUX_AARCH64_HPP

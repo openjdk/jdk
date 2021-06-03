@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,16 @@
  *
  */
 
-#ifndef OS_CPU_WINDOWS_X86_COPY_WINDOWS_X86_INLINE_HPP
-#define OS_CPU_WINDOWS_X86_COPY_WINDOWS_X86_INLINE_HPP
+#ifndef OS_CPU_WINDOWS_AARCH64_COPY_WINDOWS_AARCH64_HPP
+#define OS_CPU_WINDOWS_AARCH64_COPY_WINDOWS_AARCH64_HPP
+
+#include <string.h>
 
 static void pd_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   (void)memmove(to, from, count * HeapWordSize);
 }
 
 static void pd_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
-#ifdef AMD64
   switch (count) {
   case 8:  to[7] = from[7];
   case 7:  to[6] = from[6];
@@ -45,9 +46,6 @@ static void pd_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) 
     (void)memcpy(to, from, count * HeapWordSize);
     break;
   }
-#else
-  (void)memcpy(to, from, count * HeapWordSize);
-#endif // AMD64
 }
 
 static void pd_disjoint_words_atomic(const HeapWord* from, HeapWord* to, size_t count) {
@@ -69,6 +67,7 @@ static void pd_disjoint_words_atomic(const HeapWord* from, HeapWord* to, size_t 
 }
 
 static void pd_aligned_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
+ // pd_conjoint_words(from, to, count);
   (void)memmove(to, from, count * HeapWordSize);
 }
 
@@ -117,41 +116,11 @@ static void pd_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
 }
 
 static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
-#ifdef AMD64
-  assert(BytesPerLong == BytesPerOop, "jlongs and oops must be the same size");
   pd_conjoint_oops_atomic((const oop*)from, (oop*)to, count);
-#else
-  // Guarantee use of fild/fistp or xmm regs via some asm code, because compilers won't.
-  __asm {
-    mov    eax, from;
-    mov    edx, to;
-    mov    ecx, count;
-    cmp    eax, edx;
-    jbe    downtest;
-    jmp    uptest;
-  up:
-    fild   qword ptr [eax];
-    fistp  qword ptr [edx];
-    add    eax, 8;
-    add    edx, 8;
-  uptest:
-    sub    ecx, 1;
-    jge    up;
-    jmp    done;
-  down:
-    fild   qword ptr [eax][ecx*8];
-    fistp  qword ptr [edx][ecx*8];
-  downtest:
-    sub    ecx, 1;
-    jge    down;
-  done:;
-  }
-#endif // AMD64
 }
 
 static void pd_conjoint_oops_atomic(const oop* from, oop* to, size_t count) {
-  // Do better than this: inline memmove body  NEEDS CLEANUP
-  if (from > to) {
+ if (from > to) {
     while (count-- > 0) {
       // Copy forwards
       *to++ = *from++;
@@ -167,11 +136,7 @@ static void pd_conjoint_oops_atomic(const oop* from, oop* to, size_t count) {
 }
 
 static void pd_arrayof_conjoint_bytes(const HeapWord* from, HeapWord* to, size_t count) {
-#ifdef AMD64
   pd_conjoint_bytes_atomic(from, to, count);
-#else
-  pd_conjoint_bytes(from, to, count);
-#endif // AMD64
 }
 
 static void pd_arrayof_conjoint_jshorts(const HeapWord* from, HeapWord* to, size_t count) {
@@ -187,7 +152,7 @@ static void pd_arrayof_conjoint_jlongs(const HeapWord* from, HeapWord* to, size_
 }
 
 static void pd_arrayof_conjoint_oops(const HeapWord* from, HeapWord* to, size_t count) {
-  pd_conjoint_oops_atomic((const oop*)from, (oop*)to, count);
+ pd_conjoint_oops_atomic((const oop*)from, (oop*)to, count);
 }
 
-#endif // OS_CPU_WINDOWS_X86_COPY_WINDOWS_X86_INLINE_HPP
+#endif // OS_CPU_WINDOWS_AARCH64_COPY_WINDOWS_AARCH64_HPP
