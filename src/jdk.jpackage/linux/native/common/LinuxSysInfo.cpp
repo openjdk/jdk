@@ -51,14 +51,4 @@ tstring_array getCommandArgs(CommandArgProgramNameMode progNameMode) {
     return result;
 }
 
-tstring addLibPath(tstring path) {
-    char *value = ::getenv("LD_LIBRARY_PATH");
-    tstring env = path;
-    if (value) {
-        env = tstring(value) + _T(";") + path;
-    }
-    ::setenv("LD_LIBRARY_PATH", env.c_str(), 1);
-    return env;
-}
-
 } // end of namespace SysInfo

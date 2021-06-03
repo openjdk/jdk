@@ -112,7 +112,8 @@ Jvm* AppLauncher::createJvmLauncher() const {
             PropertyName::arguments, args);
     }
 
-    SysInfo::addLibPath(appDirPath);
+    SysInfo::setEnvVariable(libEnvVarName, SysInfo::getEnvVariable(
+            std::nothrow, libEnvVarName) + _T(";") + appDirPath);
 
     std::unique_ptr<Jvm> jvm(new Jvm());
 

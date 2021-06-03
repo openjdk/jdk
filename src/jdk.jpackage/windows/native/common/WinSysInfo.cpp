@@ -209,17 +209,4 @@ bool isEnvVariableSet(const tstring& name) {
     return GetLastError() != ERROR_ENVVAR_NOT_FOUND;
 }
 
-tstring addLibPath(tstring path) {
-    bool errorOccured = false;
-    tstring env = getEnvVariableImpl(_T("PATH"), &errorOccured)
-            + _T(";")
-            + path;
-
-    if (errorOccured) {
-        env = path;
-    }
-    setEnvVariable(_T("PATH"), env);
-    return env;
-}
-
 } // end of namespace SysInfo
