@@ -28,6 +28,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/vectorSupport.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/safefetch.inline.hpp"
@@ -179,6 +180,9 @@ address StubRoutines::_safefetch32_continuation_pc       = NULL;
 address StubRoutines::_safefetchN_entry                  = NULL;
 address StubRoutines::_safefetchN_fault_pc               = NULL;
 address StubRoutines::_safefetchN_continuation_pc        = NULL;
+
+address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{NULL}, {NULL}};
+address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{NULL}, {NULL}};
 
 // Initialization
 //

@@ -535,37 +535,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-            if (op == SIN) {
-                return uOp((i, a) -> (double) Math.sin(a));
-            } else if (op == COS) {
-                return uOp((i, a) -> (double) Math.cos(a));
-            } else if (op == TAN) {
-                return uOp((i, a) -> (double) Math.tan(a));
-            } else if (op == ASIN) {
-                return uOp((i, a) -> (double) Math.asin(a));
-            } else if (op == ACOS) {
-                return uOp((i, a) -> (double) Math.acos(a));
-            } else if (op == ATAN) {
-                return uOp((i, a) -> (double) Math.atan(a));
-            } else if (op == EXP) {
-                return uOp((i, a) -> (double) Math.exp(a));
-            } else if (op == LOG) {
-                return uOp((i, a) -> (double) Math.log(a));
-            } else if (op == LOG10) {
-                return uOp((i, a) -> (double) Math.log10(a));
-            } else if (op == CBRT) {
-                return uOp((i, a) -> (double) Math.cbrt(a));
-            } else if (op == SINH) {
-                return uOp((i, a) -> (double) Math.sinh(a));
-            } else if (op == COSH) {
-                return uOp((i, a) -> (double) Math.cosh(a));
-            } else if (op == TANH) {
-                return uOp((i, a) -> (double) Math.tanh(a));
-            } else if (op == EXPM1) {
-                return uOp((i, a) -> (double) Math.expm1(a));
-            } else if (op == LOG1P) {
-                return uOp((i, a) -> (double) Math.log1p(a));
-            }
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
@@ -577,8 +546,38 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                         v0.uOp((i, a) -> (double) -a);
                 case VECTOR_OP_ABS: return v0 ->
                         v0.uOp((i, a) -> (double) Math.abs(a));
+                case VECTOR_OP_SIN: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.sin(a));
+                case VECTOR_OP_COS: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.cos(a));
+                case VECTOR_OP_TAN: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.tan(a));
+                case VECTOR_OP_ASIN: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.asin(a));
+                case VECTOR_OP_ACOS: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.acos(a));
+                case VECTOR_OP_ATAN: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.atan(a));
+                case VECTOR_OP_EXP: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.exp(a));
+                case VECTOR_OP_LOG: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.log(a));
+                case VECTOR_OP_LOG10: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.log10(a));
                 case VECTOR_OP_SQRT: return v0 ->
                         v0.uOp((i, a) -> (double) Math.sqrt(a));
+                case VECTOR_OP_CBRT: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.cbrt(a));
+                case VECTOR_OP_SINH: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.sinh(a));
+                case VECTOR_OP_COSH: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.cosh(a));
+                case VECTOR_OP_TANH: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.tanh(a));
+                case VECTOR_OP_EXPM1: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.expm1(a));
+                case VECTOR_OP_LOG1P: return v0 ->
+                        v0.uOp((i, a) -> (double) Math.log1p(a));
                 default: return null;
               }}));
     }
@@ -625,13 +624,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                     .lanewise(op, that.viewAsIntegralLanes())
                     .viewAsFloatingLanes();
             }
-            if (op == ATAN2) {
-                return bOp(that, (i, a, b) -> (double) Math.atan2(a, b));
-            } else if (op == POW) {
-                return bOp(that, (i, a, b) -> (double) Math.pow(a, b));
-            } else if (op == HYPOT) {
-                return bOp(that, (i, a, b) -> (double) Math.hypot(a, b));
-            }
         }
         int opc = opCode(op);
         return VectorSupport.binaryOp(
@@ -651,6 +643,12 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                         v0.bOp(v1, (i, a, b) -> (double)Math.max(a, b));
                 case VECTOR_OP_MIN: return (v0, v1) ->
                         v0.bOp(v1, (i, a, b) -> (double)Math.min(a, b));
+                case VECTOR_OP_ATAN2: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, b) -> (double) Math.atan2(a, b));
+                case VECTOR_OP_POW: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, b) -> (double) Math.pow(a, b));
+                case VECTOR_OP_HYPOT: return (v0, v1) ->
+                        v0.bOp(v1, (i, a, b) -> (double) Math.hypot(a, b));
                 default: return null;
                 }}));
     }
