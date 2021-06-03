@@ -47,7 +47,7 @@ public class DynamicCodeGeneratedTest {
         t.setDaemon(true);
         t.start();
 
-        for (int i = 0; i < 10_000; i++) {
+        for (int i = 0; i < 2000; i++) {
             new Thread(() -> {
                 String result = "string" + System.currentTimeMillis();
                 Reference.reachabilityFence(result);
