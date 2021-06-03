@@ -60,11 +60,11 @@ import javax.swing.text.Segment;
  * If an application needs the input methods support, please use the
  * inherited method, <code>enableInputMethods(true)</code>.
  * <p>
- * <strong>Warning:</strong> The text entered in {@code JPasswordField} displays
- * something that was typed and does not show the original characters. This
- * doesn't prevent the password from appearing in the system memory. For
- * handling confidential information such as the password text, refer to the
- * relevant section at
+ * <strong>Warning:</strong> The {@code JPasswordField} will not show the
+ * original characters that were typed, instead displaying alternative text or
+ * graphics. However this doesn't prevent the password from appearing in the
+ * system memory. For handling confidential information such as the password
+ * text, refer to the relevant section at
  * <a href="https://www.oracle.com/java/technologies/javase/seccodeguide.html">
  * Secure Coding Guidelines</a>.
  * <p>
