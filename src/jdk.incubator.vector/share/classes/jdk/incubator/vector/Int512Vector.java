@@ -638,6 +638,14 @@ final class Int512Vector extends IntVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Int512Mask eq(VectorMask<Integer> mask) {
+            Objects.requireNonNull(mask);
+            Int512Mask m = (Int512Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -825,6 +833,8 @@ final class Int512Vector extends IntVector {
     IntVector fromArray0(int[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

@@ -182,6 +182,7 @@ public final class Connection implements Runnable {
     private static boolean hostnameVerificationDisabledValue() {
         PrivilegedAction<String> act = () -> System.getProperty(
                 "com.sun.jndi.ldap.object.disableEndpointIdentification");
+        @SuppressWarnings("removal")
         String prop = AccessController.doPrivileged(act);
         if (prop == null) {
             return false;

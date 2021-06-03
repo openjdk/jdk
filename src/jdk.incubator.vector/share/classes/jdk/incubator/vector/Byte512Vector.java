@@ -734,6 +734,14 @@ final class Byte512Vector extends ByteVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Byte512Mask eq(VectorMask<Byte> mask) {
+            Objects.requireNonNull(mask);
+            Byte512Mask m = (Byte512Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -920,6 +928,14 @@ final class Byte512Vector extends ByteVector {
     final
     ByteVector fromArray0(byte[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
+    }
+
+
+    @ForceInline
+    @Override
+    final
+    ByteVector fromBooleanArray0(boolean[] a, int offset) {
+        return super.fromBooleanArray0Template(a, offset);  // specialize
     }
 
     @ForceInline

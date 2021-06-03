@@ -612,6 +612,14 @@ final class Long512Vector extends LongVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Long512Mask eq(VectorMask<Long> mask) {
+            Objects.requireNonNull(mask);
+            Long512Mask m = (Long512Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -799,6 +807,8 @@ final class Long512Vector extends LongVector {
     LongVector fromArray0(long[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

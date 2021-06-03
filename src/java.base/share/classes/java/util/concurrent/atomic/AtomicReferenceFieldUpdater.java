@@ -320,6 +320,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
          * screenings fail.
          */
 
+        @SuppressWarnings("removal")
         AtomicReferenceFieldUpdaterImpl(final Class<T> tclass,
                                         final Class<V> vclass,
                                         final String fieldName,

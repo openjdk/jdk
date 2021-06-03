@@ -228,6 +228,7 @@ public class MethodHandles {
             return new Lookup(targetClass);
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(ACCESS_PERMISSION);
         if (targetClass.isPrimitive())
@@ -440,6 +441,7 @@ public class MethodHandles {
      * @since 1.8
      */
     public static <T extends Member> T reflectAs(Class<T> expected, MethodHandle target) {
+        @SuppressWarnings("removal")
         SecurityManager smgr = System.getSecurityManager();
         if (smgr != null)  smgr.checkPermission(ACCESS_PERMISSION);
         Lookup lookup = Lookup.IMPL_LOOKUP;  // use maximally privileged lookup
@@ -1845,6 +1847,7 @@ public class MethodHandles {
             if (allowedModes == TRUSTED)  return;
 
             if (!hasFullPrivilegeAccess()) {
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null)
                     sm.checkPermission(new RuntimePermission("defineClass"));
@@ -3740,6 +3743,7 @@ return mh1;
         void checkSecurityManager(Class<?> refc) {
             if (allowedModes == TRUSTED)  return;
 
+            @SuppressWarnings("removal")
             SecurityManager smgr = System.getSecurityManager();
             if (smgr == null)  return;
 
@@ -3771,6 +3775,7 @@ return mh1;
 
             if (allowedModes == TRUSTED)  return;
 
+            @SuppressWarnings("removal")
             SecurityManager smgr = System.getSecurityManager();
             if (smgr == null)  return;
 

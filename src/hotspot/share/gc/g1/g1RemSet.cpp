@@ -1284,7 +1284,7 @@ class G1MergeHeapRootsTask : public AbstractGangTask {
         return false;
       }
 
-      guarantee(r->rem_set()->occupancy_less_or_equal_than(G1RSetSparseRegionEntries),
+      guarantee(r->rem_set()->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold),
                 "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
 
       _cl.dump_rem_set_for_region(r);

@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @run testng/othervm -Dforeign.restricted=permit TestSharedAccess
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestSharedAccess
  */
 
 import jdk.incubator.foreign.*;
@@ -38,7 +38,6 @@ import java.util.Spliterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.*;
 
@@ -47,41 +46,16 @@ public class TestSharedAccess {
     static final VarHandle intHandle = MemoryLayouts.JAVA_INT.varHandle(int.class);
 
     @Test
-    public void testConfined() throws Throwable {
-        Thread owner = Thread.currentThread();
-        MemorySegment s = MemorySegment.allocateNative(4);
-        AtomicReference<MemorySegment> confined = new AtomicReference<>(s);
-        setInt(s, 42);
-        assertEquals(getInt(s), 42);
-        List<Thread> threads = new ArrayList<>();
-        for (int i = 0 ; i < 1000 ; i++) {
-            threads.add(new Thread(() -> {
-                assertEquals(getInt(confined.get()), 42);
-                confined.set(confined.get().handoff(owner));
-            }));
-        }
-        threads.forEach(t -> {
-            confined.set(confined.get().handoff(t));
-            t.start();
-            try {
-                t.join();
-            } catch (Throwable e) {
-                throw new IllegalStateException(e);
-            }
-        });
-        confined.get().close();
-    }
-
-    @Test
     public void testShared() throws Throwable {
-        SequenceLayout layout = MemoryLayout.ofSequence(1024, MemoryLayouts.JAVA_INT);
-        try (MemorySegment s = MemorySegment.allocateNative(layout).share()) {
+        SequenceLayout layout = MemoryLayout.sequenceLayout(1024, MemoryLayouts.JAVA_INT);
+        try (ResourceScope scope = ResourceScope.newSharedScope()) {
+            MemorySegment s = MemorySegment.allocateNative(layout, scope);
             for (int i = 0 ; i < layout.elementCount().getAsLong() ; i++) {
                 setInt(s.asSlice(i * 4), 42);
             }
             List<Thread> threads = new ArrayList<>();
             List<Spliterator<MemorySegment>> spliterators = new ArrayList<>();
-            spliterators.add(s.spliterator(layout));
+            spliterators.add(s.spliterator(layout.elementLayout()));
             while (true) {
                 boolean progress = false;
                 List<Spliterator<MemorySegment>> newSpliterators = new ArrayList<>();
@@ -119,11 +93,12 @@ public class TestSharedAccess {
 
     @Test
     public void testSharedUnsafe() throws Throwable {
-        try (MemorySegment s = MemorySegment.allocateNative(4)) {
+        try (ResourceScope scope = ResourceScope.newSharedScope()) {
+            MemorySegment s = MemorySegment.allocateNative(4, 1, scope);
             setInt(s, 42);
             assertEquals(getInt(s), 42);
             List<Thread> threads = new ArrayList<>();
-            MemorySegment sharedSegment = s.address().asSegmentRestricted(s.byteSize()).share();
+            MemorySegment sharedSegment = s.address().asSegment(s.byteSize(), scope);
             for (int i = 0 ; i < 1000 ; i++) {
                 threads.add(new Thread(() -> {
                     assertEquals(getInt(sharedSegment), 42);
@@ -141,39 +116,12 @@ public class TestSharedAccess {
     }
 
     @Test
-    public void testHandoffToSelf() {
-        MemorySegment s1 = MemorySegment.ofArray(new int[4]);
-        MemorySegment s2 = s1.handoff(Thread.currentThread());
-        assertFalse(s1.isAlive());
-        assertTrue(s2.isAlive());
-    }
-
-    @Test
-    public void testShareTwice() {
-        MemorySegment s1 = MemorySegment.ofArray(new int[4]).share();
-        MemorySegment s2 = s1.share();
-        assertFalse(s1.isAlive());
-        assertTrue(s2.isAlive());
-    }
-
-    @Test(expectedExceptions=UnsupportedOperationException.class)
-    public void testBadHandoffNoAccess() {
-        MemorySegment.ofArray(new int[4])
-            .withAccessModes(MemorySegment.CLOSE).handoff(new Thread());
-    }
-
-    @Test(expectedExceptions=UnsupportedOperationException.class)
-    public void testBadShareNoAccess() {
-        MemorySegment.ofArray(new int[4])
-                .withAccessModes(MemorySegment.CLOSE).share();
-    }
-
-    @Test
     public void testOutsideConfinementThread() throws Throwable {
         CountDownLatch a = new CountDownLatch(1);
         CountDownLatch b = new CountDownLatch(1);
         CompletableFuture<?> r;
-        try (MemorySegment s1 = MemorySegment.allocateNative(MemoryLayout.ofSequence(2, MemoryLayouts.JAVA_INT))) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment s1 = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(2, MemoryLayouts.JAVA_INT), scope);
             r = CompletableFuture.runAsync(() -> {
                 try {
                     ByteBuffer bb = s1.asByteBuffer();

@@ -622,6 +622,14 @@ final class Short128Vector extends ShortVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Short128Mask eq(VectorMask<Short> mask) {
+            Objects.requireNonNull(mask);
+            Short128Mask m = (Short128Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -809,6 +817,14 @@ final class Short128Vector extends ShortVector {
     ShortVector fromArray0(short[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+    @ForceInline
+    @Override
+    final
+    ShortVector fromCharArray0(char[] a, int offset) {
+        return super.fromCharArray0Template(a, offset);  // specialize
+    }
+
 
     @ForceInline
     @Override

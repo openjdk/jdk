@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3547,6 +3547,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         }
     }
 
+    @SuppressWarnings("removal")
     private static class CalendarAccessControlContext {
         private static final AccessControlContext INSTANCE;
         static {
@@ -3564,6 +3565,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * Reconstitutes this object from a stream (i.e., deserialize it).
      */
+    @SuppressWarnings("removal")
     @java.io.Serial
     private void readObject(ObjectInputStream stream)
          throws IOException, ClassNotFoundException

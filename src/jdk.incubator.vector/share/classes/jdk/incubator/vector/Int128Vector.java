@@ -614,6 +614,14 @@ final class Int128Vector extends IntVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Int128Mask eq(VectorMask<Integer> mask) {
+            Objects.requireNonNull(mask);
+            Int128Mask m = (Int128Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -801,6 +809,8 @@ final class Int128Vector extends IntVector {
     IntVector fromArray0(int[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

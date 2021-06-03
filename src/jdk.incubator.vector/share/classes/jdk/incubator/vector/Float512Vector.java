@@ -634,6 +634,14 @@ final class Float512Vector extends FloatVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Float512Mask eq(VectorMask<Float> mask) {
+            Objects.requireNonNull(mask);
+            Float512Mask m = (Float512Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -821,6 +829,8 @@ final class Float512Vector extends FloatVector {
     FloatVector fromArray0(float[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

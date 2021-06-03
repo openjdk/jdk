@@ -598,6 +598,14 @@ final class LongMaxVector extends LongVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public LongMaxMask eq(VectorMask<Long> mask) {
+            Objects.requireNonNull(mask);
+            LongMaxMask m = (LongMaxMask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -785,6 +793,8 @@ final class LongMaxVector extends LongVector {
     LongVector fromArray0(long[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override
