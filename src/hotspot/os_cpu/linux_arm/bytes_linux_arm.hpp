@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,26 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_ZERO_BYTES_LINUX_ZERO_INLINE_HPP
-#define OS_CPU_LINUX_ZERO_BYTES_LINUX_ZERO_INLINE_HPP
-
-// Efficient swapping of data bytes from Java byte
-// ordering to native byte ordering and vice versa.
+#ifndef OS_CPU_LINUX_ARM_BYTES_LINUX_ARM_HPP
+#define OS_CPU_LINUX_ARM_BYTES_LINUX_ARM_HPP
 
 #include <byteswap.h>
 
+// Efficient swapping of data bytes from Java byte
+// ordering to native byte ordering and vice versa.
 inline u2 Bytes::swap_u2(u2 x) {
+  // TODO: ARM - optimize
   return bswap_16(x);
 }
 
 inline u4 Bytes::swap_u4(u4 x) {
+  // TODO: ARM - optimize
   return bswap_32(x);
 }
 
 inline u8 Bytes::swap_u8(u8 x) {
+  // TODO: ARM - optimize
   return bswap_64(x);
 }
 
-#endif // OS_CPU_LINUX_ZERO_BYTES_LINUX_ZERO_INLINE_HPP
+#endif // OS_CPU_LINUX_ARM_BYTES_LINUX_ARM_HPP
