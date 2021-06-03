@@ -64,7 +64,6 @@ import sun.util.logging.PlatformLogger;
  * @see Component#getFocusTraversalKeys
  * @since 1.4
  */
-@SuppressWarnings("removal")
 public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     private static final PlatformLogger focusLog = PlatformLogger.getLogger("java.awt.focus.DefaultKeyboardFocusManager");
 
@@ -84,6 +83,11 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     private static boolean fxAppThreadIsDispatchThread;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         AWTAccessor.setDefaultKeyboardFocusManagerAccessor(
             new AWTAccessor.DefaultKeyboardFocusManagerAccessor() {
                 public void consumeNextKeyTyped(DefaultKeyboardFocusManager dkfm, KeyEvent e) {

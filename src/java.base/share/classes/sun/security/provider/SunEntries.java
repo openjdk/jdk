@@ -81,7 +81,6 @@ import static sun.security.util.SecurityProviderConstants.getAliases;
  * - JavaLoginConfig is the default file-based LoginModule Configuration type.
  */
 
-@SuppressWarnings("removal")
 public final class SunEntries {
 
     // the default algo used by SecureRandom class for new SecureRandom() calls
@@ -325,10 +324,8 @@ public final class SunEntries {
     static final String URL_DEV_RANDOM = "file:/dev/random";
     static final String URL_DEV_URANDOM = "file:/dev/urandom";
 
-    private static final String seedSource;
-
-    static {
-        seedSource = AccessController.doPrivileged(
+    @SuppressWarnings("removal")
+    private static final String seedSource = AccessController.doPrivileged(
                 new PrivilegedAction<String>() {
 
             @Override
@@ -345,6 +342,7 @@ public final class SunEntries {
             }
         });
 
+    static {
         DEF_SECURE_RANDOM_ALGO  = (NativePRNG.isAvailable() &&
             (seedSource.equals(URL_DEV_URANDOM) ||
              seedSource.equals(URL_DEV_RANDOM)) ?

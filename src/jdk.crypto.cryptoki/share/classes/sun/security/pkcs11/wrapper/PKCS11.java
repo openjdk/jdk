@@ -70,7 +70,6 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
  * @author Martin Schlaeffer <schlaeff@sbox.tugraz.at>
  * @invariants (pkcs11ModulePath_ <> null)
  */
-@SuppressWarnings("removal")
 public class PKCS11 {
 
     /**
@@ -83,7 +82,8 @@ public class PKCS11 {
         // cannot use LoadLibraryAction because that would make the native
         // library available to the bootclassloader, but we run in the
         // extension classloader.
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
                 System.loadLibrary(PKCS11_WRAPPER);
                 return null;

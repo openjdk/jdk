@@ -119,7 +119,6 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  *
  * @since 1.5
  */
-@SuppressWarnings("removal")
 public class RMIConnector implements JMXConnector, Serializable, JMXAddressable {
 
     private static final ClassLogger logger =
@@ -2066,7 +2065,9 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         Constructor<?> constr;
         try {
             stubClass = Class.forName(rmiConnectionImplStubClassName);
-            constr = (Constructor<?>) AccessController.doPrivileged(action);
+            @SuppressWarnings("removal")
+            Constructor<?> tmp = (Constructor<?>) AccessController.doPrivileged(action);
+            constr = tmp;
         } catch (Exception e) {
             logger.error("<clinit>",
                     "Failed to initialize proxy reference constructor "+
@@ -2210,6 +2211,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     //--------------------------------------------------------------------
     // Private stuff - Find / Set default class loader
     //--------------------------------------------------------------------
+    @SuppressWarnings("removal")
     private ClassLoader pushDefaultClassLoader() {
         final Thread t = Thread.currentThread();
         final ClassLoader old =  t.getContextClassLoader();
@@ -2223,6 +2225,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             return old;
     }
 
+    @SuppressWarnings("removal")
     private void popDefaultClassLoader(final ClassLoader old) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {

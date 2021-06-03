@@ -85,7 +85,6 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
      * @exception SecurityException if the authentication mechanism cannot be
      *            initialized.
      */
-    @SuppressWarnings("removal")
     public JMXPluggableAuthenticator(Map<?, ?> env) {
 
         String loginConfigName = null;
@@ -107,6 +106,7 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
 
             } else {
                 // use the default JAAS login configuration (file-based)
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     sm.checkPermission(
@@ -117,7 +117,8 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
                 final String pf = passwordFile;
                 final String hashPass = hashPasswords;
                 try {
-                    loginContext = AccessController.doPrivileged(
+                    @SuppressWarnings("removal")
+                    var tmp = AccessController.doPrivileged(
                         new PrivilegedExceptionAction<LoginContext>() {
                             public LoginContext run() throws LoginException {
                                 return new LoginContext(
@@ -127,6 +128,7 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
                                                 new FileLoginConfig(pf, hashPass));
                             }
                         });
+                    loginContext = tmp;
                 } catch (PrivilegedActionException pae) {
                     throw (LoginException) pae.getException();
                 }
@@ -156,7 +158,6 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
      * @exception SecurityException if the server cannot authenticate the user
      * with the provided credentials.
      */
-    @SuppressWarnings("removal")
     public Subject authenticate(Object credentials) {
         // Verify that credentials is of type String[].
         //
@@ -193,7 +194,8 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
         try {
             loginContext.login();
             final Subject subject = loginContext.getSubject();
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @SuppressWarnings("removal")
+            var dummy = AccessController.doPrivileged(new PrivilegedAction<Void>() {
                     public Void run() {
                         subject.setReadOnly();
                         return null;

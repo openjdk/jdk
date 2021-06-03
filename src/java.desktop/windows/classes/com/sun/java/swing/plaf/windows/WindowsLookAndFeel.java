@@ -313,7 +313,6 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
     // XXX - there are probably a lot of redundant values that could be removed.
     // ie. Take a look at RadioButtonBorder, etc...
-    @SuppressWarnings("removal")
     protected void initComponentDefaults(UIDefaults table)
     {
         super.initComponentDefaults( table );
@@ -594,16 +593,19 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
 
         if (!(this instanceof WindowsClassicLookAndFeel) &&
-            (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
-             OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) >= 0) &&
-            AccessController.doPrivileged(new GetPropertyAction("swing.noxp")) == null) {
+                (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
+                OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) >= 0)) {
+            @SuppressWarnings("removal")
+            String prop = AccessController.doPrivileged(new GetPropertyAction("swing.noxp"));
+            if (prop == null) {
 
-            // These desktop properties are not used directly, but are needed to
-            // trigger realoading of UI's.
-            this.themeActive = new TriggerDesktopProperty("win.xpstyle.themeActive");
-            this.dllName     = new TriggerDesktopProperty("win.xpstyle.dllName");
-            this.colorName   = new TriggerDesktopProperty("win.xpstyle.colorName");
-            this.sizeName    = new TriggerDesktopProperty("win.xpstyle.sizeName");
+                // These desktop properties are not used directly, but are needed to
+                // trigger realoading of UI's.
+                this.themeActive = new TriggerDesktopProperty("win.xpstyle.themeActive");
+                this.dllName = new TriggerDesktopProperty("win.xpstyle.dllName");
+                this.colorName = new TriggerDesktopProperty("win.xpstyle.colorName");
+                this.sizeName = new TriggerDesktopProperty("win.xpstyle.sizeName");
+            }
         }
 
 
