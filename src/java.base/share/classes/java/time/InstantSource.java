@@ -217,7 +217,8 @@ public interface InstantSource {
      * an instant on the time-line rather than a raw millisecond value.
      * This method is provided to allow the use of the source in high performance use cases
      * where the creation of an object would be unacceptable.
-     * <p>
+     *
+     * @implSpec
      * The default implementation calls {@link #instant()}.
      *
      * @return the current millisecond instant from this source, measured from
@@ -237,6 +238,11 @@ public interface InstantSource {
      * <p>
      * The returned implementation is immutable, thread-safe and {@code Serializable}
      * providing that this source is.
+     *
+     * @implSpec
+     * The default implementation returns an immutable, thread-safe and
+     * {@code Serializable} subclass of {@link Clock} that combines this
+     * source and the specified zone.
      *
      * @param zone  the time-zone to use, not null
      * @return a clock based on this source with the specified time-zone, not null
