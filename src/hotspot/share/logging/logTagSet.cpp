@@ -73,19 +73,15 @@ bool LogTagSet::has_output(const LogOutput* output) {
 }
 
 void LogTagSet::log(LogLevelType level, const char* msg) {
-  LogOutputList::Iterator it = _output_list.iterator(level);
   LogDecorations decorations(level, *this, _decorators);
-
-  for (; it != _output_list.end(); it++) {
+  for (LogOutputList::Iterator it = _output_list.iterator(level); it != _output_list.end(); it++) {
     (*it)->write(decorations, msg);
   }
 }
 
 void LogTagSet::log(const LogMessageBuffer& msg) {
-  LogOutputList::Iterator it = _output_list.iterator(msg.least_detailed_level());
   LogDecorations decorations(LogLevel::Invalid, *this, _decorators);
-
-  for (; it != _output_list.end(); it++) {
+  for (LogOutputList::Iterator it = _output_list.iterator(msg.least_detailed_level()); it != _output_list.end(); it++) {
     (*it)->write(msg.iterator(it.level(), decorations));
   }
 }
