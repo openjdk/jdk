@@ -47,7 +47,6 @@ import java.util.stream.Stream;
  *
  * @since 1.4
  */
-@SuppressWarnings("removal")
 final class JceSecurityManager {
 
     private static final CryptoPermissions defaultPolicy;
@@ -67,13 +66,15 @@ final class JceSecurityManager {
         defaultPolicy = JceSecurity.getDefaultPolicy();
         exemptPolicy = JceSecurity.getExemptPolicy();
         allPerm = CryptoAllPermission.INSTANCE;
-        INSTANCE = AccessController.doPrivileged(
+
+        @SuppressWarnings("removal")
+        JceSecurityManager dummy = AccessController.doPrivileged(
                 new PrivilegedAction<>() {
                     public JceSecurityManager run() {
                         return new JceSecurityManager();
                     }
                 });
-
+        INSTANCE = dummy;
     }
 
     private JceSecurityManager() {
@@ -105,6 +106,7 @@ final class JceSecurityManager {
         // insertion, so need to check its classloader as well.
         PrivilegedAction<StackWalker> pa =
                 () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
+        @SuppressWarnings("removal")
         List<StackFrame> stack =
                 AccessController.doPrivileged(pa).walk(Stream::toList);
 
@@ -240,6 +242,7 @@ final class JceSecurityManager {
     boolean isCallerTrusted(Provider provider) {
         PrivilegedAction<StackWalker> pa =
                 () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
+        @SuppressWarnings("removal")
         Optional<StackFrame> stackFrame = AccessController.doPrivileged(pa)
                 .walk((s) -> s.skip(2).findFirst());
         if (stackFrame.isPresent()) {
