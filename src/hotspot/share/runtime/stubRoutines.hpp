@@ -27,6 +27,7 @@
 
 #include "code/codeBlob.hpp"
 #include "memory/allocation.hpp"
+#include "prims/vectorSupport.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -262,6 +263,10 @@ class StubRoutines: AllStatic {
   static address _safefetchN_entry;
   static address _safefetchN_fault_pc;
   static address _safefetchN_continuation_pc;
+
+  // Vector Math Routines
+  static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
+  static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
 
  public:
   // Initialization/Testing
