@@ -917,6 +917,13 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 }
 #endif // COMPILER2
 
+int SharedRuntime::vector_calling_convention(VMRegPair *regs,
+                                             uint num_bits,
+                                             uint total_args_passed) {
+  Unimplemented();
+  return 0;
+}
+
 static address gen_c2i_adapter(MacroAssembler *masm,
                             int total_args_passed,
                             int comp_args_on_stack,

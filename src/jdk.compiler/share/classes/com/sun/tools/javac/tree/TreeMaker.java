@@ -227,6 +227,12 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCVariableDecl VarDef(JCModifiers mods, Name name, JCExpression vartype, JCExpression init, boolean declaredUsingVar) {
+        JCVariableDecl tree = new JCVariableDecl(mods, name, vartype, init, null, declaredUsingVar);
+        tree.pos = pos;
+        return tree;
+    }
+
     public JCVariableDecl ReceiverVarDef(JCModifiers mods, JCExpression name, JCExpression vartype) {
         JCVariableDecl tree = new JCVariableDecl(mods, name, vartype);
         tree.pos = pos;
@@ -996,7 +1002,7 @@ public class TreeMaker implements JCTree.Factory {
             new JCMethodDecl(
                 Modifiers(m.flags(), Annotations(m.getRawAttributes())),
                 m.name,
-                Type(mtype.getReturnType()),
+                m.name != names.init ? Type(mtype.getReturnType()) : null,
                 TypeParams(mtype.getTypeArguments()),
                 null, // receiver type
                 Params(mtype.getParameterTypes(), m),

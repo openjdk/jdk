@@ -26,6 +26,7 @@
 #define SHARE_OOPS_CPCACHE_INLINE_HPP
 
 #include "oops/cpCache.hpp"
+
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/atomic.hpp"
 

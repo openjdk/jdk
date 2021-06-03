@@ -57,7 +57,6 @@
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/iterator.hpp"
-#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
@@ -172,7 +171,7 @@ ReservedHeapSpace GenCollectedHeap::allocate(size_t alignment) {
          SIZE_FORMAT, total_reserved, alignment);
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(total_reserved, alignment);
-  size_t used_page_size = ReservedSpace::actual_reserved_page_size(heap_rs);
+  size_t used_page_size = heap_rs.page_size();
 
   os::trace_page_sizes("Heap",
                        MinHeapSize,
@@ -1228,7 +1227,6 @@ void GenCollectedHeap::gc_epilogue(bool full) {
   generation_iterate(&blk, false);  // not old-to-young.
 
   MetaspaceCounters::update_performance_counters();
-  CompressedClassSpaceCounters::update_performance_counters();
 };
 
 #ifndef PRODUCT

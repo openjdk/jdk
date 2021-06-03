@@ -114,8 +114,6 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // Special case the handling of certain common, profitable library
   // methods.  If these methods are replaced with specialized code,
   // then we return it as the inlined version of the call.
-  // We do this before the strict f.p. check below because the
-  // intrinsics handle strict f.p. correctly.
   CallGenerator* cg_intrinsic = NULL;
   if (allow_inline && allow_intrinsics) {
     CallGenerator* cg = find_intrinsic(callee, call_does_dispatch);
@@ -152,12 +150,6 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     return cg;
   }
 
-  // If explicit rounding is required, do not inline strict into non-strict code (or the reverse).
-  if (Matcher::strict_fp_requires_explicit_rounding &&
-      caller->is_strict() != callee->is_strict()) {
-    allow_inline = false;
-  }
-
   // Attempt to inline...
   if (allow_inline) {
     // The profile data is only partly attributable to this caller,
@@ -169,17 +161,10 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // Try inlining a bytecoded method:
     if (!call_does_dispatch) {
       InlineTree* ilt = InlineTree::find_subtree_from_root(this->ilt(), jvms->caller(), jvms->method());
-      WarmCallInfo scratch_ci;
       bool should_delay = false;
-      WarmCallInfo* ci = ilt->ok_to_inline(callee, jvms, profile, &scratch_ci, should_delay);
-      assert(ci != &scratch_ci, "do not let this pointer escape");
-      bool allow_inline   = (ci != NULL && !ci->is_cold());
-      bool require_inline = (allow_inline && ci->is_hot());
-
-      if (allow_inline) {
+      if (ilt->ok_to_inline(callee, jvms, profile, should_delay)) {
         CallGenerator* cg = CallGenerator::for_inline(callee, expected_uses);
-
-        if (require_inline && cg != NULL) {
+        if (cg != NULL) {
           // Delay the inlining of this method to give us the
           // opportunity to perform some high level optimizations
           // first.
@@ -191,15 +176,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             return CallGenerator::for_vector_reboxing_late_inline(callee, cg);
           } else if ((should_delay || AlwaysIncrementalInline)) {
             return CallGenerator::for_late_inline(callee, cg);
+          } else {
+            return cg;
           }
-        }
-        if (cg == NULL || should_delay) {
-          // Fall through.
-        } else if (require_inline || !InlineWarmCalls) {
-          return cg;
-        } else {
-          CallGenerator* cold_cg = call_generator(callee, vtable_index, call_does_dispatch, jvms, false, prof_factor);
-          return CallGenerator::for_warm_call(ci, cold_cg, cg);
         }
       }
     }
@@ -316,8 +295,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           caller->get_declared_method_holder_at_bci(bci)->as_instance_klass();
       ciInstanceKlass* singleton = declared_interface->unique_implementor();
 
-      if (singleton != NULL &&
-          (!callee->is_default_method() || callee->is_overpass()) /* CHA doesn't support default methods yet */) {
+      if (singleton != NULL) {
         assert(singleton != declared_interface, "not a unique implementor");
 
         ciMethod* cha_monomorphic_target =
@@ -337,7 +315,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
 
           CallGenerator* cg = CallGenerator::for_guarded_call(holder, miss_cg, hit_cg);
           if (hit_cg != NULL && cg != NULL) {
-            dependencies()->assert_unique_concrete_method(declared_interface, cha_monomorphic_target);
+            dependencies()->assert_unique_concrete_method(declared_interface, cha_monomorphic_target, declared_interface, callee);
             return cg;
           }
         }
@@ -575,9 +553,7 @@ void Parse::do_call() {
   ciKlass* receiver_constraint = NULL;
   if (iter().cur_bc_raw() == Bytecodes::_invokespecial && !orig_callee->is_object_initializer()) {
     ciInstanceKlass* calling_klass = method()->holder();
-    ciInstanceKlass* sender_klass =
-        calling_klass->is_unsafe_anonymous() ? calling_klass->unsafe_anonymous_host() :
-                                               calling_klass;
+    ciInstanceKlass* sender_klass = calling_klass;
     if (sender_klass->is_interface()) {
       receiver_constraint = sender_klass;
     }
@@ -695,9 +671,6 @@ void Parse::do_call() {
       Node* cast = cast_not_null(receiver);
       // %%% assert(receiver == cast, "should already have cast the receiver");
     }
-
-    // Round double result after a call from strict to non-strict code
-    round_double_result(cg->method());
 
     ciType* rtype = cg->method()->return_type();
     ciType* ctype = declared_signature->return_type();
@@ -1084,7 +1057,7 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klas
   vtable_index       = Method::invalid_vtable_index;
 
   // Choose call strategy.
-  ciMethod* optimized_virtual_method = optimize_inlining(caller, klass, callee,
+  ciMethod* optimized_virtual_method = optimize_inlining(caller, klass, holder, callee,
                                                          receiver_type, check_access);
 
   // Have the call been sufficiently improved such that it is no longer a virtual?
@@ -1099,7 +1072,7 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klas
 }
 
 // Identify possible target method and inlining style
-ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass,
+ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass, ciKlass* holder,
                                      ciMethod* callee, const TypeOopPtr* receiver_type,
                                      bool check_access) {
   // only use for virtual or interface calls
@@ -1112,59 +1085,47 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass,
     return callee;
   }
 
+  if (receiver_type == NULL) {
+    return NULL; // no receiver type info
+  }
+
   // Attempt to improve the receiver
   bool actual_receiver_is_exact = false;
   ciInstanceKlass* actual_receiver = klass;
-  if (receiver_type != NULL) {
-    // Array methods are all inherited from Object, and are monomorphic.
-    // finalize() call on array is not allowed.
-    if (receiver_type->isa_aryptr() &&
-        callee->holder() == env()->Object_klass() &&
-        callee->name() != ciSymbols::finalize_method_name()) {
-      return callee;
-    }
+  // Array methods are all inherited from Object, and are monomorphic.
+  // finalize() call on array is not allowed.
+  if (receiver_type->isa_aryptr() &&
+      callee->holder() == env()->Object_klass() &&
+      callee->name() != ciSymbols::finalize_method_name()) {
+    return callee;
+  }
 
-    // All other interesting cases are instance klasses.
-    if (!receiver_type->isa_instptr()) {
-      return NULL;
-    }
+  // All other interesting cases are instance klasses.
+  if (!receiver_type->isa_instptr()) {
+    return NULL;
+  }
 
-    ciInstanceKlass *ikl = receiver_type->klass()->as_instance_klass();
-    if (ikl->is_loaded() && ikl->is_initialized() && !ikl->is_interface() &&
-        (ikl == actual_receiver || ikl->is_subtype_of(actual_receiver))) {
-      // ikl is a same or better type than the original actual_receiver,
-      // e.g. static receiver from bytecodes.
-      actual_receiver = ikl;
-      // Is the actual_receiver exact?
-      actual_receiver_is_exact = receiver_type->klass_is_exact();
-    }
+  ciInstanceKlass *ikl = receiver_type->klass()->as_instance_klass();
+  if (ikl->is_loaded() && ikl->is_initialized() && !ikl->is_interface() &&
+      (ikl == actual_receiver || ikl->is_subtype_of(actual_receiver))) {
+    // ikl is a same or better type than the original actual_receiver,
+    // e.g. static receiver from bytecodes.
+    actual_receiver = ikl;
+    // Is the actual_receiver exact?
+    actual_receiver_is_exact = receiver_type->klass_is_exact();
   }
 
   ciInstanceKlass*   calling_klass = caller->holder();
   ciMethod* cha_monomorphic_target = callee->find_monomorphic_target(calling_klass, klass, actual_receiver, check_access);
+
+  // Validate receiver info against target method.
   if (cha_monomorphic_target != NULL) {
-    assert(!cha_monomorphic_target->is_abstract(), "");
-    // Look at the method-receiver type.  Does it add "too much information"?
-    ciKlass*    mr_klass = cha_monomorphic_target->holder();
-    const Type* mr_type  = TypeInstPtr::make(TypePtr::BotPTR, mr_klass);
-    if (receiver_type == NULL || !receiver_type->higher_equal(mr_type)) {
-      // Calling this method would include an implicit cast to its holder.
-      // %%% Not yet implemented.  Would throw minor asserts at present.
-      // %%% The most common wins are already gained by +UseUniqueSubclasses.
-      // To fix, put the higher_equal check at the call of this routine,
-      // and add a CheckCastPP to the receiver.
-      if (TraceDependencies) {
-        tty->print_cr("found unique CHA method, but could not cast up");
-        tty->print("  method  = ");
-        cha_monomorphic_target->print();
-        tty->cr();
+    bool has_receiver = !cha_monomorphic_target->is_static();
+    bool is_interface_holder = cha_monomorphic_target->holder()->is_interface();
+    if (has_receiver && !is_interface_holder) {
+      if (!cha_monomorphic_target->holder()->is_subtype_of(receiver_type->klass())) {
+        cha_monomorphic_target = NULL; // not a subtype
       }
-      if (log() != NULL) {
-        log()->elem("missed_CHA_opportunity klass='%d' method='%d'",
-                       log()->identify(klass),
-                       log()->identify(cha_monomorphic_target));
-      }
-      cha_monomorphic_target = NULL;
     }
   }
 
@@ -1178,7 +1139,7 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass,
       // by dynamic class loading.  Be sure to test the "static" receiver
       // dest_method here, as opposed to the actual receiver, which may
       // falsely lead us to believe that the receiver is final or private.
-      dependencies()->assert_unique_concrete_method(actual_receiver, cha_monomorphic_target);
+      dependencies()->assert_unique_concrete_method(actual_receiver, cha_monomorphic_target, holder, callee);
     }
     return cha_monomorphic_target;
   }

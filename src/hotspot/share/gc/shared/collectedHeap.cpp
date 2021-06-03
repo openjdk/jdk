@@ -31,6 +31,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -127,25 +128,12 @@ GCHeapSummary CollectedHeap::create_heap_summary() {
 }
 
 MetaspaceSummary CollectedHeap::create_metaspace_summary() {
-  const MetaspaceSizes meta_space(
-      MetaspaceUtils::committed_bytes(),
-      MetaspaceUtils::used_bytes(),
-      MetaspaceUtils::reserved_bytes());
-  const MetaspaceSizes data_space(
-      MetaspaceUtils::committed_bytes(Metaspace::NonClassType),
-      MetaspaceUtils::used_bytes(Metaspace::NonClassType),
-      MetaspaceUtils::reserved_bytes(Metaspace::NonClassType));
-  const MetaspaceSizes class_space(
-      MetaspaceUtils::committed_bytes(Metaspace::ClassType),
-      MetaspaceUtils::used_bytes(Metaspace::ClassType),
-      MetaspaceUtils::reserved_bytes(Metaspace::ClassType));
-
   const MetaspaceChunkFreeListSummary& ms_chunk_free_list_summary =
     MetaspaceUtils::chunk_free_list_summary(Metaspace::NonClassType);
   const MetaspaceChunkFreeListSummary& class_chunk_free_list_summary =
     MetaspaceUtils::chunk_free_list_summary(Metaspace::ClassType);
-
-  return MetaspaceSummary(MetaspaceGC::capacity_until_GC(), meta_space, data_space, class_space,
+  return MetaspaceSummary(MetaspaceGC::capacity_until_GC(),
+                          MetaspaceUtils::get_combined_statistics(),
                           ms_chunk_free_list_summary, class_chunk_free_list_summary);
 }
 
@@ -582,6 +570,7 @@ void CollectedHeap::initialize_reserved_region(const ReservedHeapSpace& rs) {
 }
 
 void CollectedHeap::post_initialize() {
+  StringDedup::initialize();
   initialize_serviceability();
 }
 
@@ -635,10 +624,6 @@ void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
 
 bool CollectedHeap::is_archived_object(oop object) const {
   return false;
-}
-
-void CollectedHeap::deduplicate_string(oop str) {
-  // Do nothing, unless overridden in subclass.
 }
 
 uint32_t CollectedHeap::hash_oop(oop obj) const {

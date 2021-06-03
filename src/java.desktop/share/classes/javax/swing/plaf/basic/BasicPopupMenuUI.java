@@ -778,6 +778,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
+        @SuppressWarnings("removal")
         void grabWindow(MenuElement[] newPath) {
             // A grab needs to be added
             final Toolkit tk = Toolkit.getDefaultToolkit();
@@ -813,6 +814,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
+        @SuppressWarnings("removal")
         void ungrabWindow() {
             final Toolkit tk = Toolkit.getDefaultToolkit();
             // The grab should be removed

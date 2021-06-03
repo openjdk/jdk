@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,7 @@ import java.util.function.BiFunction;
  * <pre>{@code
  *   SSLEngineResult r = engine.unwrap(src, dst);
  *   switch (r.getStatus()) {
- *   BUFFER_OVERFLOW:
+ *   case BUFFER_OVERFLOW:
  *       // Could attempt to drain the dst buffer of any already obtained
  *       // data, but we'll just increase it to the size needed.
  *       int appSize = engine.getSession().getApplicationBufferSize();
@@ -234,7 +234,7 @@ import java.util.function.BiFunction;
  *       dst = b;
  *       // retry the operation.
  *       break;
- *   BUFFER_UNDERFLOW:
+ *   case BUFFER_UNDERFLOW:
  *       int netSize = engine.getSession().getPacketBufferSize();
  *       // Resize buffer if needed.
  *       if (netSize > src.capacity()) {

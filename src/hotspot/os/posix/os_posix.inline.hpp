@@ -25,6 +25,8 @@
 #ifndef OS_POSIX_OS_POSIX_INLINE_HPP
 #define OS_POSIX_OS_POSIX_INLINE_HPP
 
+// os_posix.hpp included by os.hpp
+
 #include "runtime/os.hpp"
 
 #include <unistd.h>

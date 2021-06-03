@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.dcmd.CommandExecutorException;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 import jtreg.SkippedException;
@@ -73,6 +74,18 @@ public abstract class JCmdTestDumpBase {
     public static final boolean noBoot = !useBoot;
     public static final boolean EXPECT_PASS = true;
     public static final boolean EXPECT_FAIL = !EXPECT_PASS;
+
+    // If delete the created archive after test.
+    private static boolean keepArchive = false;
+    public static void setKeepArchive(boolean v) { keepArchive = v; }
+    public static void checkFileExistence(String fileName, boolean checkExist) throws Exception {
+        File file = new File(fileName);
+        boolean exist = file.exists();
+        boolean resultIsTrue = checkExist ? exist : !exist;
+        if (!resultIsTrue) {
+            throw new RuntimeException("File " + fileName +  " should " + (checkExist ?  "exist" : "not exist"));
+        }
+    }
 
     protected static void buildJars() throws Exception {
         testJar = JarBuilder.build("test", TEST_CLASSES);
@@ -147,7 +160,7 @@ public abstract class JCmdTestDumpBase {
         args.add("-Xlog:class+load");
 
         LingeredApp app = createLingeredApp(args.toArray(new String[0]));
-        app.setLogFileName("JCmdTestDynamicDump.log." + (logFileCount++));
+        app.setLogFileName("JCmdTest-Run-" + (isStatic ? "Static.log" : "Dynamic.log.") + (logFileCount++));
         app.stopApp();
         String output = app.getOutput().getStdout();
         if (messages != null) {
@@ -159,19 +172,17 @@ public abstract class JCmdTestDumpBase {
         }
     }
 
-    protected static void test(String archiveFile, long pid,
+    protected static void test(String fileName, long pid,
                              boolean useBoot, boolean expectOK, String... messages) throws Exception {
         System.out.println("Expected: " + (expectOK ? "SUCCESS" : "FAIL"));
-        String fileName = archiveFile != null ? archiveFile :
+        String archiveFileName = fileName != null ? fileName :
             ("java_pid" + pid + (isStatic ? "_static.jsa" : "_dynamic.jsa"));
-        File file = new File(fileName);
-        if (file.exists()) {
-            file.delete();
-        }
+
+        File archiveFile = new File(archiveFileName);
 
         String jcmd = "VM.cds " + (isStatic ? "static_dump" : "dynamic_dump");
-        if (archiveFile  != null) {
-          jcmd +=  " " + archiveFile;
+        if (archiveFileName  != null) {
+          jcmd +=  " " + archiveFileName;
         }
 
         PidJcmdExecutor cmdExecutor = new PidJcmdExecutor(String.valueOf(pid));
@@ -179,15 +190,14 @@ public abstract class JCmdTestDumpBase {
 
         if (expectOK) {
             output.shouldHaveExitValue(0);
-            if (!file.exists()) {
-                throw new RuntimeException("Could not create shared archive: " + fileName);
-            } else {
-                runWithArchiveFile(fileName, useBoot, messages);
-                file.delete();
+            checkFileExistence(archiveFileName, true);
+            runWithArchiveFile(archiveFileName, useBoot, messages);
+            if (!keepArchive) {
+                archiveFile.delete();
             }
         } else {
-            if (file.exists()) {
-                throw new RuntimeException("Should not create shared archive " + fileName);
+            if (!keepArchive) {
+                checkFileExistence(archiveFileName, false);
             }
         }
     }

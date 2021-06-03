@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 #define SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 
-#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -310,10 +311,6 @@ inline void G1CollectedHeap::set_humongous_reclaim_candidate(uint region, bool v
 inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
   assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
   return _humongous_reclaim_candidates.is_candidate(region);
-}
-
-inline void G1CollectedHeap::set_has_humongous_reclaim_candidate(bool value) {
-  _has_humongous_reclaim_candidates = value;
 }
 
 inline void G1CollectedHeap::set_humongous_is_live(oop obj) {

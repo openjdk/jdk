@@ -166,9 +166,15 @@ public final class JavacTool implements JavaCompiler {
             if (diagnosticListener != null)
                 context.put(DiagnosticListener.class, ccw.wrap(diagnosticListener));
 
-            if (out == null)
+            // If out is null and the value is set in the context, we need to do nothing.
+            if (out == null && context.get(Log.errKey) == null)
+                // Situation: out is null and the value is not set in the context.
                 context.put(Log.errKey, new PrintWriter(System.err, true));
-            else
+            else if (out instanceof PrintWriter pw)
+                // Situation: out is not null and out is a PrintWriter.
+                context.put(Log.errKey, pw);
+            else if (out != null)
+                // Situation: out is not null and out is not a PrintWriter.
                 context.put(Log.errKey, new PrintWriter(out, true));
 
             if (fileManager == null) {

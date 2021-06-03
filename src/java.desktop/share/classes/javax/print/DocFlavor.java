@@ -385,6 +385,7 @@ import java.io.Serializable;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("removal")
 public class DocFlavor implements Serializable, Cloneable {
 
     /**
