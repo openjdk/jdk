@@ -167,19 +167,19 @@ void JfrContext::walk_snapshot_callback(jlong callback, jlong name, jlong value)
 
 bool JfrContext::record_safe(JavaThread* thread, int skip) {
   assert(thread == Thread::current(), "Thread context needs to be accessible");
-  if (thread->thread_state() != _thread_in_vm) {
-    return false;
-  }
-  assert(_recordingContext_klass != NULL, "invariant");
-  assert(_recordingContext_walkSnapshot_method != NULL, "invariant");
-  assert(_recordingContext_walkSnapshot_signature != NULL, "invariant");
-  JfrContextSnapshotWalker sw(_entries, _max_entries, &_nr_of_entries);
-  JavaValue _(T_OBJECT);
-  JfrJavaArguments args(&_, _recordingContext_klass, _recordingContext_walkSnapshot_method, _recordingContext_walkSnapshot_signature);
-  args.push_long((jlong)&sw);
-  JfrJavaSupport::call_static(&args, thread);
-  if (thread->has_pending_exception()) {
-    return false;
-  }
+  // if (thread->thread_state() != _thread_in_vm) {
+  //   return false;
+  // }
+  // assert(_recordingContext_klass != NULL, "invariant");
+  // assert(_recordingContext_walkSnapshot_method != NULL, "invariant");
+  // assert(_recordingContext_walkSnapshot_signature != NULL, "invariant");
+  // JfrContextSnapshotWalker sw(_entries, _max_entries, &_nr_of_entries);
+  // JavaValue _(T_OBJECT);
+  // JfrJavaArguments args(&_, _recordingContext_klass, _recordingContext_walkSnapshot_method, _recordingContext_walkSnapshot_signature);
+  // args.push_long((jlong)&sw);
+  // JfrJavaSupport::call_static(&args, thread);
+  // if (thread->has_pending_exception()) {
+  //   return false;
+  // }
   return _nr_of_entries > 0;
 }

@@ -50,7 +50,7 @@ public class TestGetName {
         Events.getSetting(type, "publicBase");
         Events.getSetting(type, "packageProtectedBase");
 
-        int defaultNumberOfSettings = 3; // Enabled , Stack Trace, Threshold
+        int defaultNumberOfSettings = 4; // Enabled , Stack Trace, Context, Threshold
         if (type.getSettingDescriptors().size() != 8 + defaultNumberOfSettings) {
             for (SettingDescriptor s : type.getSettingDescriptors()) {
                 System.out.println(s.getName());

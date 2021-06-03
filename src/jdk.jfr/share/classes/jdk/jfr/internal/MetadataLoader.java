@@ -221,7 +221,7 @@ public final class MetadataLoader {
             Type type = lookup.get(te.name);
             if (te.isEvent) {
                 boolean periodic = !te.period.isEmpty();
-                TypeLibrary.addImplicitFields(type, periodic, te.startTime && !periodic, te.thread, te.stackTrace && !periodic, te.context && !periodic, te.cutoff);
+                TypeLibrary.addImplicitFields(type, periodic, te.startTime && !periodic, te.thread, te.stackTrace && !periodic, te.context, te.cutoff);
             }
             for (FieldElement f : te.fields) {
                 Type fieldType = Type.getKnownType(f.typeName);

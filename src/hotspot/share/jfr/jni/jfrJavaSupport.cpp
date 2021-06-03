@@ -52,7 +52,7 @@
 #ifdef ASSERT
 void JfrJavaSupport::check_java_thread_in_vm(JavaThread* t) {
   assert(t != NULL, "invariant");
-  assert(t->thread_state() == _thread_in_vm, "invariant");
+  assert(t->thread_state() == _thread_in_vm, "invariant, thread_state = %d", t->thread_state());
 }
 
 void JfrJavaSupport::check_java_thread_in_native(JavaThread* t) {

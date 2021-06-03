@@ -225,11 +225,11 @@ public final class PrettyWriter extends EventPrintWriter {
             print(STACK_TRACE_FIELD + " = ");
             printStackTrace(event.getStackTrace());
         }
-        if (event.getContext() != null) {
+        // if (event.getContext() != null) {
             printIndent();
             print(CONTEXT_FIELD + " = ");
             printContext(event.getContext());
-        }
+        // }
         retract();
         printIndent();
         println("}");
@@ -266,6 +266,10 @@ public final class PrettyWriter extends EventPrintWriter {
     }
 
     private void printContext(RecordedContext context) {
+        if (context == null) {
+            println("[]");
+            return;
+        }
         println("[");
         List<RecordedContextEntry> entries = context.getContextEntries();
         indent();
