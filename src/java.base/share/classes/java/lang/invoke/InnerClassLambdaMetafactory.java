@@ -187,8 +187,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         // to invoke directly. (javac prefers to avoid this situation by
         // generating bridges in the target class)
         useImplMethodHandle = (Modifier.isProtected(implInfo.getModifiers()) &&
-                               !VerifyAccess.isSamePackage(implClass, implInfo.getDeclaringClass()) ||
-                               implKind == REF_invokeSpecial;
+                               !VerifyAccess.isSamePackage(implClass, implInfo.getDeclaringClass())) ||
+                               implKind == H_INVOKESPECIAL;
         cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         int parameterCount = factoryType.parameterCount();
         if (parameterCount > 0) {
