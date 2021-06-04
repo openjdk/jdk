@@ -104,18 +104,20 @@ public class TestAppFreeze {
     }
 
     private static void testApp() {
-        testFrame = new JFrame("TestFrame");
-        testFrame.setBounds(600, 0, 1000, 200);
-        testFrame.getContentPane().add(new JButton(new AbstractAction("Click") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JDialog dlg = new JDialog(testFrame, false);
-                dlg.setSize(500, 500);
-                dlg.getContentPane().add(new JTextArea());
-                dlg.setVisible(true);
-            }
-        }));
-        testFrame.setVisible(true);
+        SwingUtilities.invokeLater(() ->{
+            testFrame = new JFrame("TestFrame");
+            testFrame.setBounds(600, 0, 1000, 200);
+            testFrame.getContentPane().add(new JButton(new AbstractAction("Click") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    JDialog dlg = new JDialog(testFrame, false);
+                    dlg.setSize(500, 500);
+                    dlg.getContentPane().add(new JTextArea());
+                    dlg.setVisible(true);
+                }
+            }));
+            testFrame.setVisible(true);
+        });
     }
 
     public static void main(String[] args) throws Exception{
