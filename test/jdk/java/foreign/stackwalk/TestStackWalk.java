@@ -49,9 +49,8 @@
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
+import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemorySegment;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -73,7 +72,8 @@ public class TestStackWalk {
 
     static {
         try {
-            LibraryLookup lookup = LibraryLookup.ofLibrary("StackWalk");
+            System.loadLibrary("StackWalk");
+            SymbolLookup lookup = SymbolLookup.loaderLookup();
             MH_foo = linker.downcallHandle(
                     lookup.lookup("foo").get(),
                     MethodType.methodType(void.class, MemoryAddress.class),

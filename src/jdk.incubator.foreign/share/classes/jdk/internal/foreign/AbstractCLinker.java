@@ -30,6 +30,7 @@ import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.SegmentAllocator;
+import jdk.internal.foreign.abi.SharedUtils;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -39,12 +40,12 @@ import java.util.Objects;
 public abstract non-sealed class AbstractCLinker implements CLinker {
 
     public final MethodHandle downcallHandle(Addressable symbol, MethodType type, FunctionDescriptor function) {
-        Objects.requireNonNull(symbol);
+        SharedUtils.checkSymbol(symbol);
         return MethodHandles.insertArguments(downcallHandle(type, function), 0, symbol);
     }
 
     public final MethodHandle downcallHandle(Addressable symbol, SegmentAllocator allocator, MethodType type, FunctionDescriptor function) {
-        Objects.requireNonNull(symbol);
+        SharedUtils.checkSymbol(symbol);
         Objects.requireNonNull(allocator);
         MethodHandle downcall = MethodHandles.insertArguments(downcallHandle(type, function), 0, symbol);
         if (type.returnType().equals(MemorySegment.class)) {
