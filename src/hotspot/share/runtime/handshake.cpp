@@ -328,6 +328,8 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
   // closure are visible to the VMThread/Handshaker after it reads
   // that the operation has completed.
   Atomic::dec(&_pending_threads);
+  // Trailing fence, used to make sure removal of the operation strictly
+  // happened after we completed the operation.
 
   // It is no longer safe to refer to 'this' as the VMThread/Handshaker may have destroyed this operation
 }
