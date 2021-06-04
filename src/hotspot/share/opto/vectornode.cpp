@@ -1243,10 +1243,7 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
           value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
           return new VectorLoadMaskNode(value, out_vt);
         } else if (is_vector_shuffle) {
-          if (is_shuffle_to_vector()) {
-            // VectorUnbox (VectorBox vshuffle) ==> VectorCastB2X vshuffle
-            return new VectorCastB2XNode(value, out_vt);
-          } else {
+          if (!is_shuffle_to_vector()) {
             // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
             return new VectorLoadShuffleNode(value, out_vt);
           }

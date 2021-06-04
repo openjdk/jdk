@@ -379,6 +379,10 @@ class SharedRuntime: AllStatic {
   static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, VMRegPair *regs2,
                                   int total_args_passed);
 
+  static int vector_calling_convention(VMRegPair *regs,
+                                       uint num_bits,
+                                       uint total_args_passed);
+
   static size_t trampoline_size();
 
   // Generate I2C and C2I adapters. These adapters are simple argument marshalling
@@ -461,11 +465,6 @@ class SharedRuntime: AllStatic {
   // Save and restore a native result
   static void    save_native_result(MacroAssembler *_masm, BasicType ret_type, int frame_slots);
   static void restore_native_result(MacroAssembler *_masm, BasicType ret_type, int frame_slots);
-
-  static void   move32_64(MacroAssembler* masm, VMRegPair src, VMRegPair dst);
-  static void   long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst);
-  static void  float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst);
-  static void double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst);
 
   // Generate a native wrapper for a given method.  The method takes arguments
   // in the Java compiled code convention, marshals them to the native

@@ -2432,7 +2432,7 @@ public abstract class ClassLoader {
     /*
      * Invoked in the VM class linking code.
      */
-    private static long findNative(ClassLoader loader, String entryName) {
+    static long findNative(ClassLoader loader, String entryName) {
         if (loader == null) {
             return BootLoader.getNativeLibraries().find(entryName);
         } else {
