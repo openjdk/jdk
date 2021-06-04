@@ -92,4 +92,46 @@ public class ModPowerOf2 {
         }
         return sum;
     }
+
+    @Benchmark
+    public int testMixedPowerOf2() {
+        int sum = 0;
+        for (int i = 0; i < 1000; i++) {
+            sum += i % -1;
+            sum += i % 1;
+            sum += i % -2;
+            sum += i % 2;
+            sum += i % -4;
+            sum += i % 4;
+            sum += i % -8;
+            sum += i % 8;
+            sum += i % -16;
+            sum += i % 16;
+            sum += i % -32;
+            sum += i % 32;
+            sum += i % -64;
+            sum += i % 64;
+            sum += i % -128;
+            sum += i % 128;
+            sum += i % -256;
+            sum += i % 256;
+            sum += i % -512;
+            sum += i % 512;
+            sum += i % -1024;
+            sum += i % 1024;
+            sum += i % -2048;
+            sum += i % 2048;
+            sum += i % -4096;
+            sum += i % 4096;
+            sum += i % -8192;
+            sum += i % 8192;
+            sum += i % -16384;
+            sum += i % 16384;
+            sum += i % -32768;
+            sum += i % 32768;
+            sum += i % -65536;
+            sum += i % 65536;
+        }
+        return sum;
+    }
 }
