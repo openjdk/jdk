@@ -1398,6 +1398,16 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 
 //=============================================================================
 
+// Vector calling convention not supported.
+const bool Matcher::supports_vector_calling_convention() {
+  return false;
+}
+
+OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
+  Unimplemented();
+  return OptoRegPair(0, 0);
+}
+
 // Is this branch offset short enough that a short branch can be used?
 //
 // NOTE: If the platform does not provide any short branch variants, then

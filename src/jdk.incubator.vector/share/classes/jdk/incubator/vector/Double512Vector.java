@@ -618,6 +618,14 @@ final class Double512Vector extends DoubleVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Double512Mask eq(VectorMask<Double> mask) {
+            Objects.requireNonNull(mask);
+            Double512Mask m = (Double512Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -805,6 +813,8 @@ final class Double512Vector extends DoubleVector {
     DoubleVector fromArray0(double[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

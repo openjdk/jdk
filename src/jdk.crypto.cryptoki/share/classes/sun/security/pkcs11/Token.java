@@ -292,8 +292,12 @@ class Token implements Serializable {
     }
 
     void destroy() {
-        valid = false;
+        secretCache.clear();
+        privateCache.clear();
+
+        sessionManager.clearPools();
         provider.uninitToken(this);
+        valid = false;
     }
 
     Session getObjSession() throws PKCS11Exception {

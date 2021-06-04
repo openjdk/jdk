@@ -670,6 +670,14 @@ final class Short512Vector extends ShortVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Short512Mask eq(VectorMask<Short> mask) {
+            Objects.requireNonNull(mask);
+            Short512Mask m = (Short512Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -857,6 +865,14 @@ final class Short512Vector extends ShortVector {
     ShortVector fromArray0(short[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+    @ForceInline
+    @Override
+    final
+    ShortVector fromCharArray0(char[] a, int offset) {
+        return super.fromCharArray0Template(a, offset);  // specialize
+    }
+
 
     @ForceInline
     @Override

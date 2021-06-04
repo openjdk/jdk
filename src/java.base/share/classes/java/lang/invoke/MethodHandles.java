@@ -228,6 +228,7 @@ public class MethodHandles {
             return new Lookup(targetClass);
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(ACCESS_PERMISSION);
         if (targetClass.isPrimitive())
@@ -440,6 +441,7 @@ public class MethodHandles {
      * @since 1.8
      */
     public static <T extends Member> T reflectAs(Class<T> expected, MethodHandle target) {
+        @SuppressWarnings("removal")
         SecurityManager smgr = System.getSecurityManager();
         if (smgr != null)  smgr.checkPermission(ACCESS_PERMISSION);
         Lookup lookup = Lookup.IMPL_LOOKUP;  // use maximally privileged lookup
@@ -1845,6 +1847,7 @@ public class MethodHandles {
             if (allowedModes == TRUSTED)  return;
 
             if (!hasFullPrivilegeAccess()) {
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null)
                     sm.checkPermission(new RuntimePermission("defineClass"));
@@ -1930,9 +1933,9 @@ public class MethodHandles {
          * of the lookup class of this {@code Lookup}.</li>
          *
          * <li> The purported representation in {@code bytes} must be a {@code ClassFile}
-         * structure of a supported major and minor version. The major and minor version
-         * may differ from the {@code class} file version of the lookup class of this
-         * {@code Lookup}.</li>
+         * structure (JVMS {@jvms 4.1}) of a supported major and minor version.
+         * The major and minor version may differ from the {@code class} file version
+         * of the lookup class of this {@code Lookup}.</li>
          *
          * <li> The value of {@code this_class} must be a valid index in the
          * {@code constant_pool} table, and the entry at that index must be a valid
@@ -3740,6 +3743,7 @@ return mh1;
         void checkSecurityManager(Class<?> refc) {
             if (allowedModes == TRUSTED)  return;
 
+            @SuppressWarnings("removal")
             SecurityManager smgr = System.getSecurityManager();
             if (smgr == null)  return;
 
@@ -3771,6 +3775,7 @@ return mh1;
 
             if (allowedModes == TRUSTED)  return;
 
+            @SuppressWarnings("removal")
             SecurityManager smgr = System.getSecurityManager();
             if (smgr == null)  return;
 

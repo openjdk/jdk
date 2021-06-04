@@ -22,10 +22,9 @@
  */
 
 /**
- * @test
+ * @test id=default-cl
  * @requires vm.cds
  * @summary Test class loader constraint checks for archived classes (dynamic archive)
- * @bug 8267347
  * @library /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
@@ -35,6 +34,22 @@
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicLoaderConstraintsTest
+ */
+
+/**
+ * @test id=custom-cl
+ * @requires vm.cds.custom.loaders
+ * @summary Test class loader constraint checks for archived classes (dynamic archive) with custom class loader
+ * @bug 8267347
+ * @library /test/lib
+ *          /test/hotspot/jtreg/runtime/cds/appcds
+ *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive
+ * @modules java.base/jdk.internal.misc
+ *          jdk.httpserver
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicLoaderConstraintsTest custom
  */
 
 import com.sun.net.httpserver.HttpExchange;
@@ -63,21 +78,24 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
         loaderMainClass
     };
 
+    /*
+     * useCustomLoader: if true, load the LoaderConstraintsApp in a custom loader before executing it.
+     *                  if false, LoaderConstraintsApp will be loaded by the built-in AppClassLoader.
+     */
+    static boolean useCustomLoader;
+
     public static void main(String[] args) throws Exception {
+        useCustomLoader = (args.length != 0);
         runTest(DynamicLoaderConstraintsTest::doTest);
     }
 
     static void doTest() throws Exception  {
         appJar = ClassFileInstaller.writeJar("loader_constraints.jar", appClasses);
-        doTest(false, false);
-        doTest(true,  false);
-
-        if (!Platform.isWindows()) {
-            // custom loaders are not supported on Windows yet.
+        if (useCustomLoader) {
             loaderJar = ClassFileInstaller.writeJar("custom_app_loader.jar", loaderClasses);
-            doTest(false, true);
-            doTest(true,  true);
         }
+        doTest(false);
+        doTest(true);
     }
 
     /*
@@ -89,11 +107,8 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
      *        causing LinkageError. This ensures the test classes will be
      *        archived so we can test CDS's handling of loader constraints during
      *        run time.
-     *
-     * useCustomLoader: if true, load the LoaderConstraintsApp in a custom loader before executing it.
-     *                  if false, LoaderConstraintsApp will be loaded by the built-in AppClassLoader.
      */
-  static void doTest(boolean errorInDump, boolean useCustomLoader) throws Exception  {
+  static void doTest(boolean errorInDump) throws Exception  {
         for (int i = 1; i <= 3; i++) {
             System.out.println("========================================");
             System.out.println("errorInDump: " + errorInDump + ", useCustomLoader: " + useCustomLoader + ", case: " + i);

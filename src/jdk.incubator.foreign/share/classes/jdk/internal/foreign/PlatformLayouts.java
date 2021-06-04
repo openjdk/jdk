@@ -32,7 +32,6 @@ import jdk.incubator.foreign.ValueLayout;
 import java.nio.ByteOrder;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
-import static jdk.incubator.foreign.MemoryLayouts.ADDRESS;
 
 public class PlatformLayouts {
     public static <Z extends MemoryLayout> Z pick(Z sysv, Z win64, Z aarch64) {
@@ -51,42 +50,42 @@ public class PlatformLayouts {
     }
 
     private static ValueLayout ofChar(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.CHAR);
     }
 
     private static ValueLayout ofShort(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.SHORT);
     }
 
     private static ValueLayout ofInt(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.INT);
     }
 
     private static ValueLayout ofLong(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.LONG);
     }
 
     private static ValueLayout ofLongLong(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.LONG_LONG);
     }
 
     private static ValueLayout ofFloat(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.FLOAT);
     }
 
     private static ValueLayout ofDouble(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.DOUBLE);
     }
 
     private static ValueLayout ofPointer(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.POINTER);
     }
 
@@ -162,7 +161,7 @@ public class PlatformLayouts {
          * The name of the layout attribute (see {@link MemoryLayout#attributes()} used to mark variadic parameters. The
          * attribute value must be a boolean.
          */
-        public final static String VARARGS_ATTRIBUTE_NAME = "abi/windows/varargs";
+        public static final String VARARGS_ATTRIBUTE_NAME = "abi/windows/varargs";
 
         /**
          * The {@code char} native type.

@@ -568,7 +568,7 @@ public class ClassReader {
                         public Type getEnclosingType() {
                             if (!completed) {
                                 completed = true;
-                                tsym.complete();
+                                tsym.apiComplete();
                                 Type enclosingType = tsym.type.getEnclosingType();
                                 if (enclosingType != Type.noType) {
                                     List<Type> typeArgs =

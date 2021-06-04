@@ -598,6 +598,14 @@ final class Long64Vector extends LongVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Long64Mask eq(VectorMask<Long> mask) {
+            Objects.requireNonNull(mask);
+            Long64Mask m = (Long64Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -785,6 +793,8 @@ final class Long64Vector extends LongVector {
     LongVector fromArray0(long[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

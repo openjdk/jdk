@@ -603,6 +603,14 @@ final class FloatMaxVector extends FloatVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public FloatMaxMask eq(VectorMask<Float> mask) {
+            Objects.requireNonNull(mask);
+            FloatMaxMask m = (FloatMaxMask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -790,6 +798,8 @@ final class FloatMaxVector extends FloatVector {
     FloatVector fromArray0(float[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

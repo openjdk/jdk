@@ -109,6 +109,8 @@ public final class Module implements AnnotatedElement {
     // the module descriptor
     private final ModuleDescriptor descriptor;
 
+    // true, if this module allows restricted native access
+    private volatile boolean enableNativeAccess;
 
     /**
      * Creates a new named Module. The resulting Module will be defined to the
@@ -133,6 +135,10 @@ public final class Module implements AnnotatedElement {
         String loc = Objects.toString(uri, null);
         Object[] packages = descriptor.packages().toArray();
         defineModule0(this, isOpen, vs, loc, packages);
+        if (loader == null || loader == ClassLoaders.platformClassLoader()) {
+            // boot/builtin modules are always native
+            implAddEnableNativeAccess();
+        }
     }
 
 
@@ -198,6 +204,7 @@ public final class Module implements AnnotatedElement {
      *         If denied by the security manager
      */
     public ClassLoader getClassLoader() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
@@ -242,6 +249,30 @@ public final class Module implements AnnotatedElement {
             }
         }
         return null;
+    }
+
+    /**
+     * Update this module to allow access to restricted methods.
+     */
+    Module implAddEnableNativeAccess() {
+        enableNativeAccess = true;
+        return this;
+    }
+
+    /**
+     * Update all unnamed modules to allow access to restricted methods.
+     */
+    static void implAddEnableNativeAccessAllUnnamed() {
+        ALL_UNNAMED_MODULE.enableNativeAccess = true;
+    }
+
+    /**
+     * Returns true if module m can access restricted methods.
+     */
+    boolean implIsEnableNativeAccess() {
+        return isNamed() ?
+                enableNativeAccess :
+                ALL_UNNAMED_MODULE.enableNativeAccess;
     }
 
     // --
@@ -1441,6 +1472,7 @@ public final class Module implements AnnotatedElement {
     // cached class file with annotations
     private volatile Class<?> moduleInfoClass;
 
+    @SuppressWarnings("removal")
     private Class<?> moduleInfoClass() {
         Class<?> clazz = this.moduleInfoClass;
         if (clazz != null)

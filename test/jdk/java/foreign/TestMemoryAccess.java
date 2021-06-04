@@ -34,6 +34,7 @@ import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayout.PathElement;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SequenceLayout;
 import jdk.incubator.foreign.ValueLayout;
 
@@ -53,38 +54,39 @@ public class TestMemoryAccess {
 
     @Test(dataProvider = "elements")
     public void testPaddedAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, Checker checker) {
-        GroupLayout layout = MemoryLayout.ofStruct(MemoryLayout.ofPaddingBits(elemLayout.bitSize()), elemLayout.withName("elem"));
+        GroupLayout layout = MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem"));
         testAccessInternal(viewFactory, layout, layout.varHandle(carrier, PathElement.groupElement("elem")), checker);
     }
 
     @Test(dataProvider = "elements")
     public void testPaddedAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, Checker checker) {
-        SequenceLayout layout = MemoryLayout.ofSequence(2, elemLayout);
+        SequenceLayout layout = MemoryLayout.sequenceLayout(2, elemLayout);
         testAccessInternal(viewFactory, layout, layout.varHandle(carrier, PathElement.sequenceElement(1)), checker);
     }
 
     @Test(dataProvider = "arrayElements")
     public void testArrayAccess(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, ArrayChecker checker) {
-        SequenceLayout seq = MemoryLayout.ofSequence(10, elemLayout.withName("elem"));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(10, elemLayout.withName("elem"));
         testArrayAccessInternal(viewFactory, seq, seq.varHandle(carrier, PathElement.sequenceElement()), checker);
     }
 
     @Test(dataProvider = "arrayElements")
     public void testPaddedArrayAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, ArrayChecker checker) {
-        SequenceLayout seq = MemoryLayout.ofSequence(10, MemoryLayout.ofStruct(MemoryLayout.ofPaddingBits(elemLayout.bitSize()), elemLayout.withName("elem")));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem")));
         testArrayAccessInternal(viewFactory, seq, seq.varHandle(carrier, MemoryLayout.PathElement.sequenceElement(), MemoryLayout.PathElement.groupElement("elem")), checker);
     }
 
     @Test(dataProvider = "arrayElements")
     public void testPaddedArrayAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, ArrayChecker checker) {
-        SequenceLayout seq = MemoryLayout.ofSequence(10, MemoryLayout.ofSequence(2, elemLayout));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(10, MemoryLayout.sequenceLayout(2, elemLayout));
         testArrayAccessInternal(viewFactory, seq, seq.varHandle(carrier, PathElement.sequenceElement(), MemoryLayout.PathElement.sequenceElement(1)), checker);
     }
 
     private void testAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout layout, VarHandle handle, Checker checker) {
         MemorySegment outer_segment;
-        try (MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(layout))) {
-            boolean isRO = !segment.hasAccessModes(MemorySegment.WRITE);
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(layout, scope));
+            boolean isRO = segment.isReadOnly();
             try {
                 checker.check(handle, segment);
                 if (isRO) {
@@ -114,8 +116,9 @@ public class TestMemoryAccess {
 
     private void testArrayAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, ArrayChecker checker) {
         MemorySegment outer_segment;
-        try (MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq))) {
-            boolean isRO = !segment.hasAccessModes(MemorySegment.WRITE);
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, scope));
+            boolean isRO = segment.isReadOnly();
             try {
                 for (int i = 0; i < seq.elementCount().getAsLong(); i++) {
                     checker.check(handle, segment, i);
@@ -147,16 +150,16 @@ public class TestMemoryAccess {
 
     @Test(dataProvider = "matrixElements")
     public void testMatrixAccess(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, MatrixChecker checker) {
-        SequenceLayout seq = MemoryLayout.ofSequence(20,
-                MemoryLayout.ofSequence(10, elemLayout.withName("elem")));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(20,
+                MemoryLayout.sequenceLayout(10, elemLayout.withName("elem")));
         testMatrixAccessInternal(viewFactory, seq, seq.varHandle(carrier,
                 PathElement.sequenceElement(), PathElement.sequenceElement()), checker);
     }
 
     @Test(dataProvider = "matrixElements")
     public void testPaddedMatrixAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, MatrixChecker checker) {
-        SequenceLayout seq = MemoryLayout.ofSequence(20,
-                MemoryLayout.ofSequence(10, MemoryLayout.ofStruct(MemoryLayout.ofPaddingBits(elemLayout.bitSize()), elemLayout.withName("elem"))));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(20,
+                MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem"))));
         testMatrixAccessInternal(viewFactory, seq,
                 seq.varHandle(carrier,
                         PathElement.sequenceElement(), PathElement.sequenceElement(), PathElement.groupElement("elem")),
@@ -165,8 +168,8 @@ public class TestMemoryAccess {
 
     @Test(dataProvider = "matrixElements")
     public void testPaddedMatrixAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, MatrixChecker checker) {
-        SequenceLayout seq = MemoryLayout.ofSequence(20,
-                MemoryLayout.ofSequence(10, MemoryLayout.ofSequence(2, elemLayout)));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(20,
+                MemoryLayout.sequenceLayout(10, MemoryLayout.sequenceLayout(2, elemLayout)));
         testMatrixAccessInternal(viewFactory, seq,
                 seq.varHandle(carrier,
                         PathElement.sequenceElement(), PathElement.sequenceElement(), PathElement.sequenceElement(1)),
@@ -182,8 +185,9 @@ public class TestMemoryAccess {
 
     private void testMatrixAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, MatrixChecker checker) {
         MemorySegment outer_segment;
-        try (MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq))) {
-            boolean isRO = !segment.hasAccessModes(MemorySegment.WRITE);
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, scope));
+            boolean isRO = segment.isReadOnly();
             try {
                 for (int i = 0; i < seq.elementCount().getAsLong(); i++) {
                     for (int j = 0; j < ((SequenceLayout) seq.elementLayout()).elementCount().getAsLong(); j++) {
@@ -217,7 +221,7 @@ public class TestMemoryAccess {
     }
 
     static Function<MemorySegment, MemorySegment> ID = Function.identity();
-    static Function<MemorySegment, MemorySegment> IMMUTABLE = ms -> ms.withAccessModes(MemorySegment.READ | MemorySegment.CLOSE);
+    static Function<MemorySegment, MemorySegment> IMMUTABLE = MemorySegment::asReadOnly;
 
     @DataProvider(name = "elements")
     public Object[][] createData() {
