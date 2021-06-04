@@ -104,7 +104,7 @@ static int cmpGuid(GUID *g1, GUID *g2) {
 static WSAPROTOCOL_INFOW provider;
 
 JNIEXPORT jboolean JNICALL
-Java_sun_nio_ch_UnixDomainSockets_socketSupported(JNIEnv *env, jclass cl)
+Java_sun_nio_ch_UnixDomainSockets_init(JNIEnv *env, jclass cl)
 {
     WSAPROTOCOL_INFOW info[5]; // if not large enough, a buffer is malloc'd
     LPWSAPROTOCOL_INFOW infoPtr = &info[0];
