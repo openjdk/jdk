@@ -667,6 +667,7 @@ final class Win32ShellFolder2 extends ShellFolder {
             }
         }, IOException.class);
         if (path != null) {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 security.checkRead(path);
@@ -749,6 +750,7 @@ final class Win32ShellFolder2 extends ShellFolder {
      *         {@code null} if this shellfolder does not denote a directory.
      */
     public File[] listFiles(final boolean includeHiddenFiles) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(getPath());

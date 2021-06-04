@@ -138,6 +138,7 @@ class frame {
   bool is_compiled_frame()       const;
   bool is_safepoint_blob_frame() const;
   bool is_deoptimized_frame()    const;
+  bool is_optimized_entry_frame()         const;
 
   // testers
   bool is_first_frame() const; // oldest frame? (has no sender)
@@ -172,6 +173,7 @@ class frame {
   frame sender_for_entry_frame(RegisterMap* map) const;
   frame sender_for_interpreter_frame(RegisterMap* map) const;
   frame sender_for_native_frame(RegisterMap* map) const;
+  frame sender_for_optimized_entry_frame(RegisterMap* map) const;
 
   bool is_entry_frame_valid(JavaThread* thread) const;
 

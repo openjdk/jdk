@@ -834,6 +834,8 @@ final class Int512Vector extends IntVector {
         return super.fromArray0Template(a, offset);  // specialize
     }
 
+
+
     @ForceInline
     @Override
     final

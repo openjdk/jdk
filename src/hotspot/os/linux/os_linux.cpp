@@ -2968,10 +2968,12 @@ static bool numa_syscall_check() {
   // Especially in dockers, get_mempolicy is not allowed with the default configuration. So it's necessary
   // to check whether the syscalls are available. Currently, only get_mempolicy is checked since checking
   // others like mbind would cause unexpected side effects.
+#ifdef SYS_get_mempolicy
   int dummy = 0;
   if (syscall(SYS_get_mempolicy, &dummy, NULL, 0, (void*)&dummy, 3) == -1) {
     return false;
   }
+#endif
 
   return true;
 }

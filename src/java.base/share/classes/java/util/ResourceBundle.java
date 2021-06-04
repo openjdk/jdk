@@ -579,6 +579,7 @@ public abstract class ResourceBundle {
         return locale;
     }
 
+    @SuppressWarnings("removal")
     private static ClassLoader getLoader(Module module) {
         PrivilegedAction<ClassLoader> pa = module::getClassLoader;
         return AccessController.doPrivileged(pa);
@@ -1520,6 +1521,7 @@ public abstract class ResourceBundle {
                              .map(ServiceLoader.Provider::get)
                              .toList();
 
+        @SuppressWarnings("removal")
         private static final List<ResourceBundleControlProvider> CONTROL_PROVIDERS =
             AccessController.doPrivileged(pa);
 
@@ -1592,6 +1594,7 @@ public abstract class ResourceBundle {
         Objects.requireNonNull(module);
         Module callerModule = caller.getModule();
         if (callerModule != module) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(GET_CLASSLOADER_PERMISSION);
@@ -1881,6 +1884,7 @@ public abstract class ResourceBundle {
      * Returns the service type of the given baseName that is visible
      * to the given class loader
      */
+    @SuppressWarnings("removal")
     private static Class<ResourceBundleProvider>
             getResourceBundleProviderType(String baseName, ClassLoader loader)
     {
@@ -1915,6 +1919,7 @@ public abstract class ResourceBundle {
     /**
      * Loads ResourceBundle from service providers.
      */
+    @SuppressWarnings("removal")
     private static ResourceBundle loadBundleFromProviders(String baseName,
                                                           Locale locale,
                                                           ServiceLoader<ResourceBundleProvider> providers,
@@ -3155,6 +3160,7 @@ public abstract class ResourceBundle {
             return bundle;
         }
 
+        @SuppressWarnings("removal")
         private ResourceBundle newBundle0(String bundleName, String format,
                     ClassLoader loader, boolean reload)
                     throws IllegalAccessException, InstantiationException, IOException {
@@ -3564,6 +3570,7 @@ public abstract class ResourceBundle {
         /**
          * Returns a new ResourceBundle instance of the given bundleClass
          */
+        @SuppressWarnings("removal")
         static ResourceBundle newResourceBundle(Class<? extends ResourceBundle> bundleClass) {
             try {
                 @SuppressWarnings("unchecked")
@@ -3603,6 +3610,7 @@ public abstract class ResourceBundle {
             String bundleName = Control.INSTANCE.toBundleName(baseName, locale);
             try {
                 PrivilegedAction<Class<?>> pa = () -> Class.forName(module, bundleName);
+                @SuppressWarnings("removal")
                 Class<?> c = AccessController.doPrivileged(pa, null, GET_CLASSLOADER_PERMISSION);
                 trace("local in %s %s caller %s: %s%n", module, bundleName, callerModule, c);
 
@@ -3703,7 +3711,7 @@ public abstract class ResourceBundle {
                 }
             };
 
-            try (InputStream stream = AccessController.doPrivileged(pa)) {
+            try (@SuppressWarnings("removal") InputStream stream = AccessController.doPrivileged(pa)) {
                 if (stream != null) {
                     return new PropertyResourceBundle(stream);
                 } else {

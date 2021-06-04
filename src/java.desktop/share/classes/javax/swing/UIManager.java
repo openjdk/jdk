@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,6 +381,7 @@ public class UIManager implements Serializable
                   "com.sun.java.swing.plaf.motif.MotifLookAndFeel"));
 
         // Only include windows on Windows boxs.
+        @SuppressWarnings("removal")
         OSInfo.OSType osType = AccessController.doPrivileged(OSInfo.getOSTypeAction());
         if (osType == OSInfo.OSType.WINDOWS) {
             iLAFs.add(new LookAndFeelInfo("Windows",
@@ -653,11 +654,13 @@ public class UIManager implements Serializable
      * @see #getCrossPlatformLookAndFeelClassName
      */
     public static String getSystemLookAndFeelClassName() {
+        @SuppressWarnings("removal")
         String systemLAF = AccessController.doPrivileged(
                              new GetPropertyAction("swing.systemlaf"));
         if (systemLAF != null) {
             return systemLAF;
         }
+        @SuppressWarnings("removal")
         OSInfo.OSType osType = AccessController.doPrivileged(OSInfo.getOSTypeAction());
         if (osType == OSInfo.OSType.WINDOWS) {
             return "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
@@ -693,6 +696,7 @@ public class UIManager implements Serializable
      * @see #getSystemLookAndFeelClassName
      */
     public static String getCrossPlatformLookAndFeelClassName() {
+        @SuppressWarnings("removal")
         String laf = AccessController.doPrivileged(
                              new GetPropertyAction("swing.crossplatformlaf"));
         if (laf != null) {
@@ -1271,6 +1275,7 @@ public class UIManager implements Serializable
         }
     }
 
+    @SuppressWarnings("removal")
     private static Properties loadSwingProperties()
     {
         /* Don't bother checking for Swing properties if untrusted, as

@@ -218,6 +218,7 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
         }
     }
 
+    @SuppressWarnings("removal")
     public void setFeature(String name, boolean value)
         throws ParserConfigurationException {
         if (features == null) {
