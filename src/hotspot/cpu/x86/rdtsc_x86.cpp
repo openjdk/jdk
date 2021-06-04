@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,8 @@ static jlong initialize_frequency() {
     // for invariant tsc platforms, take the maximum qualified cpu frequency
     tsc_freq = (double)VM_Version_Ext::maximum_qualified_cpu_frequency();
     os_to_tsc_conv_factor = tsc_freq / os_freq;
-  } else {
+  }
+  if (tsc_freq == 0.0f) {
     // use measurements to estimate
     // a conversion factor and the tsc frequency
 
