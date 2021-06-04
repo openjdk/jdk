@@ -260,7 +260,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
   Node* const src = ac->in(ArrayCopyNode::Src);
 
   if (ac->is_clone_array()) {
-    BasicType bt = src->get_ptr_type()->isa_aryptr()->array_element_basic_type();
+    BasicType bt = src->get_ptr_type()->isa_aryptr()->elem()->array_element_basic_type();
     if (is_reference_type(bt)) {
       // Clone object array
       bt = T_OBJECT;

@@ -26,7 +26,11 @@
  * @bug 8155643
  * @summary Test Object.clone() intrinsic if ReduceInitialCardMarks is disabled.
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-ReduceInitialCardMarks
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-ReduceInitialCardMarks
+ *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::test
+ *                   compiler.arraycopy.TestObjectArrayClone
+ *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseZGC
  *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::test
  *                   compiler.arraycopy.TestObjectArrayClone
  */
@@ -35,12 +39,22 @@ package compiler.arraycopy;
 
 public class TestObjectArrayClone {
 
-    public static TestObjectArrayClone[] test(TestObjectArrayClone[] arr) {
+    public static TestObjectArrayClone[] testObjectArrayClone(TestObjectArrayClone[] arr) {
+        return arr.clone();
+    }
+
+    public static int[] testPrimitiveArrayClone(int[] arr) {
         return arr.clone();
     }
 
     public static void main(String[] args) {
-        test(new TestObjectArrayClone[42]);
+        for (int i = 0; i < 50_000; i++) {
+            testObjectArrayClone(new TestObjectArrayClone[42]);
+        }
+
+        for (int i = 0; i < 50_000; i++) {
+            testPrimitiveArrayClone(new int[42]);
+        }
     }
 }
 
