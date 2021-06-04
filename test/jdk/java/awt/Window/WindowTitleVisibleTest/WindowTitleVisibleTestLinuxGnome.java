@@ -107,9 +107,7 @@ public class WindowTitleVisibleTestLinuxGnome
     }
 
     private void captureTitleBarNotVisible() {
-        runSwing( () -> {
-            titleBarImageNotVisible = robot.createScreenCapture(titleBarBounds);
-        });
+        titleBarImageNotVisible = robot.createScreenCapture(titleBarBounds);
     }
 
     private void hideTitleBar() {
@@ -121,9 +119,7 @@ public class WindowTitleVisibleTestLinuxGnome
     }
 
     private void captureTitleBarVisible() {
-        runSwing( () -> {
-            titleBarImageVisible = robot.createScreenCapture(titleBarBounds);
-        });
+        titleBarImageVisible = robot.createScreenCapture(titleBarBounds);
     }
 
     private void constructAndShowFrame() {

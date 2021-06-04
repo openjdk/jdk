@@ -34,6 +34,7 @@ import java.awt.Insets;
 import java.awt.MenuBar;
 import java.awt.Rectangle;
 import java.awt.peer.FramePeer;
+import sun.awt.SunToolkit;
 import sun.util.logging.PlatformLogger;
 import sun.awt.AWTAccessor;
 
@@ -81,7 +82,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
     }
 
     private void registerWindowDecorationChangeListener() {
-        if (target instanceof javax.swing.RootPaneContainer) {
+        if (SunToolkit.isInstanceOf(target, "javax.swing.RootPaneContainer")) { // avoid unnecessary class loading
             javax.swing.JRootPane rootpane = ((javax.swing.RootPaneContainer) target).getRootPane();
             rootpane.addPropertyChangeListener(MWM_DECOR_TITLE_PROPERTY_NAME, e -> winAttr.decorations = getWindowDecorationBits() );
         }
