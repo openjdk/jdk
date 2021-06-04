@@ -51,7 +51,6 @@ import sun.security.jca.*;
  * @since 1.1
  */
 
-@SuppressWarnings("removal")
 public final class Security {
 
     /* Are we debugging? -- for developers */
@@ -72,7 +71,8 @@ public final class Security {
         // things in initialize that might require privs.
         // (the FileInputStream call and the File.exists call,
         // the securityPropFile call, etc)
-        AccessController.doPrivileged(new PrivilegedAction<>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<>() {
             public Void run() {
                 initialize();
                 return null;
@@ -761,6 +761,7 @@ public final class Security {
      * @see java.security.SecurityPermission
      */
     public static String getProperty(String key) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new SecurityPermission("getProperty."+
@@ -828,6 +829,7 @@ public final class Security {
     }
 
     private static void check(String directive) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSecurityAccess(directive);
@@ -835,6 +837,7 @@ public final class Security {
     }
 
     private static void checkInsertProvider(String name) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             try {

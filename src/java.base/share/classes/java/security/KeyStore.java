@@ -987,10 +987,9 @@ public class KeyStore {
      * if no such property exists.
      * @see java.security.Security security properties
      */
-    @SuppressWarnings("removal")
     public static final String getDefaultType() {
-        String kstype;
-        kstype = AccessController.doPrivileged(new PrivilegedAction<>() {
+        @SuppressWarnings("removal")
+        String kstype = AccessController.doPrivileged(new PrivilegedAction<>() {
             public String run() {
                 return Security.getProperty(KEYSTORE_TYPE);
             }
@@ -1957,7 +1956,6 @@ public class KeyStore {
          *   of either PasswordProtection or CallbackHandlerProtection; or
          *   if file does not exist or does not refer to a normal file
          */
-        @SuppressWarnings("removal")
         public static Builder newInstance(String type, Provider provider,
                 File file, ProtectionParameter protection) {
             if ((type == null) || (file == null) || (protection == null)) {
@@ -1974,8 +1972,9 @@ public class KeyStore {
                     ("File does not exist or it does not refer " +
                      "to a normal file: " + file);
             }
-            return new FileBuilder(type, provider, file, protection,
-                AccessController.getContext());
+            @SuppressWarnings("removal")
+            var acc = AccessController.getContext();
+            return new FileBuilder(type, provider, file, protection, acc);
         }
 
         /**

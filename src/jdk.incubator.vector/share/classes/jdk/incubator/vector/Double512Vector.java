@@ -814,6 +814,8 @@ final class Double512Vector extends DoubleVector {
         return super.fromArray0Template(a, offset);  // specialize
     }
 
+
+
     @ForceInline
     @Override
     final

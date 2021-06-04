@@ -55,21 +55,7 @@ public class MyTaglet implements Taglet {
         Taglet.super.init(env, doclet);
         docEnv = env;
 
-        // The following should be as simple as
-        //      reporter = ((StandardDoclet) doclet).getReporter();
-        // JDK-8267176
-        try {
-            StandardDoclet sd = (StandardDoclet) doclet;
-            Field htmlDocletField = sd.getClass().getDeclaredField("htmlDoclet");
-            htmlDocletField.setAccessible(true);
-            Object htmlDoclet = htmlDocletField.get(sd);
-            Method getConfigurationMethod = htmlDoclet.getClass().getDeclaredMethod("getConfiguration");
-            Object config = getConfigurationMethod.invoke(htmlDoclet);
-            Method getReporterMethod = config.getClass().getMethod(("getReporter"));
-            reporter = (Reporter) getReporterMethod.invoke(config);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException(e);
-        }
+        reporter = ((StandardDoclet) doclet).getReporter();
     }
 
     @Override

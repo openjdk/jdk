@@ -22,10 +22,9 @@
  */
 
 /**
- * @test
+ * @test id=default-cl
  * @requires vm.cds
  * @summary Test class loader constraint checks for archived classes
- * @bug 8267347 8267754
  * @library /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
@@ -33,6 +32,20 @@
  *          jdk.httpserver
  * @run driver LoaderConstraintsTest
  */
+
+/**
+ * @test id=custom-cl
+ * @requires vm.cds.custom.loaders
+ * @summary Test class loader constraint checks for archived classes with custom class loader
+ * @bug 8267347
+ * @library /test/lib
+ *          /test/hotspot/jtreg/runtime/cds/appcds
+ *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @modules java.base/jdk.internal.misc
+ *          jdk.httpserver
+ * @run driver LoaderConstraintsTest custom
+ */
+
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -109,8 +122,9 @@ public class LoaderConstraintsTest  {
 
     public static void main(String... args) throws Exception {
         appJar = ClassFileInstaller.writeJar("loader_constraints.jar", appClasses);
-        doTest();
-        if (Platform.areCustomLoadersSupportedForCDS()) {
+        if (args.length == 0) {
+            doTest();
+        } else {
             loaderJar = ClassFileInstaller.writeJar("custom_app_loader.jar", loaderClasses);
             doTestCustomLoader();
         }

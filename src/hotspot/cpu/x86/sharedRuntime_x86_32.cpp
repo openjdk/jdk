@@ -175,7 +175,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 #ifdef ASSERT
     // Make sure the control word has the expected value
     Label ok;
-    __ cmpw(Address(rsp, 0), StubRoutines::fpu_cntrl_wrd_std());
+    __ cmpw(Address(rsp, 0), StubRoutines::x86::fpu_cntrl_wrd_std());
     __ jccb(Assembler::equal, ok);
     __ stop("corrupted control word detected");
     __ bind(ok);
@@ -185,14 +185,14 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     // since fstp_d can cause FPU stack underflow exceptions.  Write it
     // into the on stack copy and then reload that to make sure that the
     // current and future values are correct.
-    __ movw(Address(rsp, 0), StubRoutines::fpu_cntrl_wrd_std());
+    __ movw(Address(rsp, 0), StubRoutines::x86::fpu_cntrl_wrd_std());
   }
 
   __ frstor(Address(rsp, 0));
   if (!verify_fpu) {
     // Set the control word so that exceptions are masked for the
     // following code.
-    __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+    __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
   }
 
   int off = st0_off;
@@ -1044,6 +1044,13 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   return stack;
 }
 
+int SharedRuntime::vector_calling_convention(VMRegPair *regs,
+                                             uint num_bits,
+                                             uint total_args_passed) {
+  Unimplemented();
+  return 0;
+}
+
 // A simple move of integer like type
 static void simple_move32(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   if (src.first()->is_stack()) {
@@ -1124,7 +1131,7 @@ static void object_move(MacroAssembler* masm,
 }
 
 // A float arg may have to do float reg int reg conversion
-void SharedRuntime::float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
+static void float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   assert(!src.second()->is_valid() && !dst.second()->is_valid(), "bad float_move");
 
   // Because of the calling convention we know that src is either a stack location
@@ -1142,7 +1149,7 @@ void SharedRuntime::float_move(MacroAssembler* masm, VMRegPair src, VMRegPair ds
 }
 
 // A long move
-void SharedRuntime::long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
+static void long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 
   // The only legal possibility for a long_move VMRegPair is:
   // 1: two stack slots (possibly unaligned)
@@ -1161,7 +1168,7 @@ void SharedRuntime::long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst
 }
 
 // A double move
-void SharedRuntime::double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
+static void double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 
   // The only legal possibilities for a double_move VMRegPair are:
   // The painful thing here is that like long_move a VMRegPair might be
@@ -1930,7 +1937,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   if (AlwaysRestoreFPU) {
     // Make sure the control word is correct.
-    __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+    __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
   }
 
   // check for safepoint operation in progress and/or pending suspend requests
@@ -2409,7 +2416,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Non standard control word may be leaked out through a safepoint blob, and we can
   // deopt at a poll point with the non standard control word. However, we should make
   // sure the control word is correct after restore_result_registers.
-  __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+  __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
 
   // All of the register save area has been popped of the stack. Only the
   // return address remains.

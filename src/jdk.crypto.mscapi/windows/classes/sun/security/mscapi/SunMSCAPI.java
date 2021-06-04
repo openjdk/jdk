@@ -43,7 +43,6 @@ import static sun.security.util.SecurityProviderConstants.getAliases;
  * @since 1.6
  */
 
-@SuppressWarnings("removal")
 public final class SunMSCAPI extends Provider {
 
     private static final long serialVersionUID = 8622598936488630849L; //TODO
@@ -51,7 +50,8 @@ public final class SunMSCAPI extends Provider {
     private static final String INFO = "Sun's Microsoft Crypto API provider";
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 System.loadLibrary("sunmscapi");
                 return null;
@@ -144,6 +144,7 @@ public final class SunMSCAPI extends Provider {
         }
     }
 
+    @SuppressWarnings("removal")
     public SunMSCAPI() {
         super("SunMSCAPI", PROVIDER_VER, INFO);
 
