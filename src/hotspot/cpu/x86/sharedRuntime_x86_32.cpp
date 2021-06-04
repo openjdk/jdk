@@ -1044,6 +1044,13 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   return stack;
 }
 
+int SharedRuntime::vector_calling_convention(VMRegPair *regs,
+                                             uint num_bits,
+                                             uint total_args_passed) {
+  Unimplemented();
+  return 0;
+}
+
 // A simple move of integer like type
 static void simple_move32(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   if (src.first()->is_stack()) {
@@ -1124,7 +1131,7 @@ static void object_move(MacroAssembler* masm,
 }
 
 // A float arg may have to do float reg int reg conversion
-void SharedRuntime::float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
+static void float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   assert(!src.second()->is_valid() && !dst.second()->is_valid(), "bad float_move");
 
   // Because of the calling convention we know that src is either a stack location
@@ -1142,7 +1149,7 @@ void SharedRuntime::float_move(MacroAssembler* masm, VMRegPair src, VMRegPair ds
 }
 
 // A long move
-void SharedRuntime::long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
+static void long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 
   // The only legal possibility for a long_move VMRegPair is:
   // 1: two stack slots (possibly unaligned)
@@ -1161,7 +1168,7 @@ void SharedRuntime::long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst
 }
 
 // A double move
-void SharedRuntime::double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
+static void double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 
   // The only legal possibilities for a double_move VMRegPair are:
   // The painful thing here is that like long_move a VMRegPair might be

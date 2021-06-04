@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,10 @@ package javax.xml.transform.stream;
 import javax.xml.transform.Result;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.Writer;
-import java.net.MalformedURLException;
 
 /**
  * <p>Acts as an holder for a transformation result,
@@ -95,10 +96,12 @@ public class StreamResult implements Result {
      * @param f Must a non-null File reference.
      */
     public StreamResult(File f) {
-        //convert file to appropriate URI, f.toURI().toASCIIString()
-        //converts the URI to string as per rule specified in
-        //RFC 2396,
-        setSystemId(f.toURI().toASCIIString());
+        try {
+            outputStream = new FileOutputStream(f);
+        } catch (FileNotFoundException ex) {
+            // fall back to the original implementation for compatibility
+            setSystemId(f.toURI().toASCIIString());
+        }
     }
 
     /**
