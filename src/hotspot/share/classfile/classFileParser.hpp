@@ -333,9 +333,6 @@ class ClassFileParser {
                                       const u1* const record_attribute_start,
                                       TRAPS);
 
-  bool supports_sealed_types();
-  bool supports_records();
-
   void parse_classfile_attributes(const ClassFileStream* const cfs,
                                   ConstantPool* cp,
                                   ClassAnnotationCollector* parsed_annotations,

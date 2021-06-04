@@ -56,6 +56,7 @@ import java.util.Objects;
 
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
+import jdk.internal.platform.Metrics;
 import jdk.jfr.Event;
 import jdk.jfr.FlightRecorderPermission;
 import jdk.jfr.Recording;
@@ -90,8 +91,14 @@ public final class Utils {
     private static final int BASE = 10;
     private static long THROTTLE_OFF = -2;
 
+    /*
+     * This field will be lazily initialized and the access is not synchronized.
+     * The possible data race is benign and is worth of not introducing any contention here.
+     */
+    private static Metrics[] metrics;
 
     public static void checkAccessFlightRecorder() throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new FlightRecorderPermission(ACCESS_FLIGHT_RECORDER));
@@ -99,6 +106,7 @@ public final class Utils {
     }
 
     public static void checkRegisterPermission() throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new FlightRecorderPermission(REGISTER_EVENT));
@@ -720,6 +728,20 @@ public final class Utils {
         }
     }
 
+    public static boolean shouldSkipBytecode(String eventName, Class<?> superClass) {
+        if (superClass.getClassLoader() != null || !superClass.getName().equals("jdk.jfr.events.AbstractJDKEvent")) {
+            return false;
+        }
+        return eventName.startsWith("jdk.Container") && getMetrics() == null;
+    }
+
+    private static Metrics getMetrics() {
+        if (metrics == null) {
+            metrics = new Metrics[]{Metrics.systemMetrics()};
+        }
+        return metrics[0];
+    }
+
     private static String formatPositiveDuration(Duration d){
         if (d.compareTo(MICRO_SECOND) < 0) {
             // 0.000001 ms - 0.000999 ms
@@ -819,9 +841,7 @@ public final class Utils {
     }
 
     public static Instant epochNanosToInstant(long epochNanos) {
-        long epochSeconds = epochNanos / 1_000_000_000L;
-        long nanoAdjustment = epochNanos - 1_000_000_000L * epochSeconds;
-        return Instant.ofEpochSecond(epochSeconds, nanoAdjustment);
+        return Instant.ofEpochSecond(0, epochNanos);
     }
 
     public static long timeToNanos(Instant timestamp) {

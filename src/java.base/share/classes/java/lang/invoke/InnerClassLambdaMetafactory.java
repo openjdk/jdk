@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,6 +228,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                             "Exception finding " +  LAMBDA_INSTANCE_FIELD + " static field", e);
                 }
             } else {
+                @SuppressWarnings("removal")
                 final Constructor<?>[] ctrs = AccessController.doPrivileged(
                         new PrivilegedAction<>() {
                             @Override
@@ -319,6 +320,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * @throws LambdaConversionException If properly formed functional interface
      * is not found
      */
+    @SuppressWarnings("removal")
     private Class<?> generateInnerClass() throws LambdaConversionException {
         String[] interfaces;
         String samIntf = samBase.getName().replace('.', '/');

@@ -358,13 +358,11 @@ class Instruction: public CompilationResourceObj {
     IsEliminatedFlag,
     IsSafepointFlag,
     IsStaticFlag,
-    IsStrictfpFlag,
     NeedsStoreCheckFlag,
     NeedsWriteBarrierFlag,
     PreservesStateFlag,
     TargetIsFinalFlag,
     TargetIsLoadedFlag,
-    TargetIsStrictfpFlag,
     UnorderedIsTrueFlag,
     NeedsPatchingFlag,
     ThrowIncompatibleClassChangeErrorFlag,
@@ -1059,15 +1057,11 @@ BASE(Op2, Instruction)
 LEAF(ArithmeticOp, Op2)
  public:
   // creation
-  ArithmeticOp(Bytecodes::Code op, Value x, Value y, bool is_strictfp, ValueStack* state_before)
+  ArithmeticOp(Bytecodes::Code op, Value x, Value y, ValueStack* state_before)
   : Op2(x->type()->meet(y->type()), op, x, y, state_before)
   {
-    set_flag(IsStrictfpFlag, is_strictfp);
     if (can_trap()) pin();
   }
-
-  // accessors
-  bool        is_strictfp() const                { return check_flag(IsStrictfpFlag); }
 
   // generic
   virtual bool is_commutative() const;
@@ -1266,8 +1260,6 @@ LEAF(Invoke, StateSplit)
   // Returns false if target is not loaded
   bool target_is_final() const                   { return check_flag(TargetIsFinalFlag); }
   bool target_is_loaded() const                  { return check_flag(TargetIsLoadedFlag); }
-  // Returns false if target is not loaded
-  bool target_is_strictfp() const                { return check_flag(TargetIsStrictfpFlag); }
 
   // JSR 292 support
   bool is_invokedynamic() const                  { return code() == Bytecodes::_invokedynamic; }

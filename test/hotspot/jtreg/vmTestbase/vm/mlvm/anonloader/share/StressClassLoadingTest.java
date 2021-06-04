@@ -70,12 +70,6 @@ import vm.share.UnsafeAccess;
  * Class saving is controlled by -saveClassFile option.
  * A prefix can be added to the file name using {@link #setFileNamePrefix}
  * function.
- *
- * <p>There is a tool to load the saved .class file.
- * The tool tries to load class using a number of class loaders. For more
- * information, please see tool documentation: {@link vm.mlvm.tools.LoadClass}.
- *
- * @see vm.mlvm.tools.LoadClass
  */
 public abstract class StressClassLoadingTest extends MlvmTest {
     private static final String RESCUE_FILE_NAME = "_AnonkTestee01.class";

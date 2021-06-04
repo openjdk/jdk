@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8206986 8222169 8224031 8240964
+ * @bug 8206986 8222169 8224031 8240964 8267119
  * @summary Check expression switch works.
  * @compile/fail/ref=ExpressionSwitch-old.out -source 9 -Xlint:-options -XDrawDiagnostics ExpressionSwitch.java
  * @compile ExpressionSwitch.java
@@ -34,6 +34,7 @@ public class ExpressionSwitch {
         assertEquals(convert2(""), -1);
         localClass(T.A);
         assertEquals(castSwitchExpressions(T.A), "A");
+        testTypeInference(true, 0);
     }
 
     private String print(T t) {
@@ -144,6 +145,17 @@ public class ExpressionSwitch {
         };
     }
 
+    private void testTypeInference(boolean b, int i) {
+        m(s -> s.length(), String.class);
+        m(b ? s -> s.length() : s -> s.length(), String.class);
+        m(switch (i) {
+            case 0 -> s -> s.length();
+            default -> s -> s.length();
+        }, String.class);
+    }
+
+    <Z> void m(Consumer<Z> c, Class<Z> cl) {}
+
     private void check(T t, String expected) {
         String result = print(t);
         assertEquals(result, expected);
@@ -161,5 +173,9 @@ public class ExpressionSwitch {
     void t() {
         Runnable r = () -> {};
         r.run();
+    }
+
+    interface Consumer<Z> {
+        public void consume(Z z);
     }
 }

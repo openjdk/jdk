@@ -138,6 +138,8 @@ import static jdk.internal.jshell.tool.ContinuousCompletionProvider.STARTSWITH_M
  */
 public class JShellTool implements MessageHandler {
 
+    private static String PROMPT = "\u0005";
+    private static String CONTINUATION_PROMPT = "\u0006";
     private static final Pattern LINEBREAK = Pattern.compile("\\R");
     private static final Pattern ID = Pattern.compile("[se]?\\d+([-\\s].*)?");
     private static final Pattern RERUN_ID = Pattern.compile("/" + ID.pattern());
@@ -158,6 +160,7 @@ public class JShellTool implements MessageHandler {
     final PersistentStorage prefs;
     final Map<String, String> envvars;
     final Locale locale;
+    final boolean interactiveTerminal;
 
     final Feedback feedback = new Feedback();
 
@@ -177,7 +180,8 @@ public class JShellTool implements MessageHandler {
     JShellTool(InputStream cmdin, PrintStream cmdout, PrintStream cmderr,
             PrintStream console,
             InputStream userin, PrintStream userout, PrintStream usererr,
-            PersistentStorage prefs, Map<String, String> envvars, Locale locale) {
+            PersistentStorage prefs, Map<String, String> envvars, Locale locale,
+            boolean interactiveTerminal) {
         this.cmdin = cmdin;
         this.cmdout = cmdout;
         this.cmderr = cmderr;
@@ -193,6 +197,7 @@ public class JShellTool implements MessageHandler {
         this.prefs = prefs;
         this.envvars = envvars;
         this.locale = locale;
+        this.interactiveTerminal = interactiveTerminal;
     }
 
     private ResourceBundle versionRB = null;
@@ -974,7 +979,7 @@ public class JShellTool implements MessageHandler {
             };
             Runtime.getRuntime().addShutdownHook(shutdownHook);
             // execute from user input
-            try (IOContext in = new ConsoleIOContext(this, cmdin, console)) {
+            try (IOContext in = new ConsoleIOContext(this, cmdin, console, interactiveTerminal)) {
                 int indent;
                 try {
                     String indentValue = indent();
@@ -1256,12 +1261,12 @@ public class JShellTool implements MessageHandler {
                 return src;
             }
             String firstLinePrompt = interactive()
-                    ? testPrompt ? " \005"
+                    ? testPrompt ? PROMPT
                                  : feedback.getPrompt(currentNameSpace.tidNext())
                     : "" // Non-interactive -- no prompt
                     ;
             String continuationPrompt = interactive()
-                    ? testPrompt ? " \006"
+                    ? testPrompt ? CONTINUATION_PROMPT
                                  : feedback.getContinuationPrompt(currentNameSpace.tidNext())
                     : "" // Non-interactive -- no prompt
                     ;

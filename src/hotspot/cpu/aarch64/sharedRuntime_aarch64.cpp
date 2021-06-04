@@ -864,6 +864,13 @@ static int c_calling_convention_priv(const BasicType *sig_bt,
   return stk_args;
 }
 
+int SharedRuntime::vector_calling_convention(VMRegPair *regs,
+                                             uint num_bits,
+                                             uint total_args_passed) {
+  Unimplemented();
+  return 0;
+}
+
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,
                                          VMRegPair *regs2,

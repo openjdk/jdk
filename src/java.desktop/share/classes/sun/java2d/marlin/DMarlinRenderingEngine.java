@@ -1119,6 +1119,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         USE_THREAD_LOCAL = MarlinProperties.isUseThreadLocal();
 
         // Soft reference by default:
+        @SuppressWarnings("removal")
         final String refType = AccessController.doPrivileged(
                             new GetPropertyAction("sun.java2d.renderer.useRef",
                             "soft"));

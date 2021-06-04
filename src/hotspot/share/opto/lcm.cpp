@@ -412,7 +412,8 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
 
   // Move the control dependence if it is pinned to not-null block.
   // Don't change it in other cases: NULL or dominating control.
-  if (best->in(0) == not_null_block->head()) {
+  Node* ctrl = best->in(0);
+  if (get_block_for_node(ctrl) == not_null_block) {
     // Set it to control edge of null check.
     best->set_req(0, proj->in(0)->in(0));
   }
@@ -869,6 +870,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
     case Op_CallRuntime:
     case Op_CallLeaf:
     case Op_CallLeafNoFP:
+    case Op_CallLeafVector:
       // Calling C code so use C calling convention
       save_policy = _matcher._c_reg_save_policy;
       break;
@@ -879,7 +881,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       save_policy = _matcher._register_save_policy;
       break;
     case Op_CallNative:
-      // We use the c reg save policy here since Panama
+      // We use the c reg save policy here since Foreign Linker
       // only supports the C ABI currently.
       // TODO compute actual save policy based on nep->abi
       save_policy = _matcher._c_reg_save_policy;

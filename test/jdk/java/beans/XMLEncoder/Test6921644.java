@@ -25,6 +25,7 @@
  * @test
  * @bug 6921644
  * @summary Tests references to cached integer
+ * @run main/othervm -Djava.security.manager=allow Test6921644
  * @author Sergey Malenkov
  */
 

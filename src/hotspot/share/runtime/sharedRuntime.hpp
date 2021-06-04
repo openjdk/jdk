@@ -379,6 +379,10 @@ class SharedRuntime: AllStatic {
   static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, VMRegPair *regs2,
                                   int total_args_passed);
 
+  static int vector_calling_convention(VMRegPair *regs,
+                                       uint num_bits,
+                                       uint total_args_passed);
+
   static size_t trampoline_size();
 
   // Generate I2C and C2I adapters. These adapters are simple argument marshalling
@@ -512,6 +516,12 @@ class SharedRuntime: AllStatic {
                                           const GrowableArray<VMReg>& input_registers,
                                           const GrowableArray<VMReg>& output_registers);
 #endif
+
+  static void compute_move_order(const BasicType* in_sig_bt,
+                                 int total_in_args, const VMRegPair* in_regs,
+                                 int total_out_args, VMRegPair* out_regs,
+                                 GrowableArray<int>& arg_order,
+                                 VMRegPair tmp_vmreg);
 
 #ifndef PRODUCT
 

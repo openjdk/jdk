@@ -594,7 +594,7 @@ void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
 
 // NOTE: must use heavy weight monitor to handle jni monitor exit
 void ObjectSynchronizer::jni_exit(oop obj, TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   if (UseBiasedLocking) {
     Handle h_obj(current, obj);
     BiasedLocking::revoke(current, h_obj);
@@ -637,7 +637,7 @@ ObjectLocker::~ObjectLocker() {
 //  Wait/Notify/NotifyAll
 // NOTE: must use heavy weight monitor to handle wait()
 int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   if (UseBiasedLocking) {
     BiasedLocking::revoke(current, obj);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
@@ -676,7 +676,7 @@ void ObjectSynchronizer::wait_uninterruptibly(Handle obj, JavaThread* current) {
 }
 
 void ObjectSynchronizer::notify(Handle obj, TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   if (UseBiasedLocking) {
     BiasedLocking::revoke(current, obj);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
@@ -695,7 +695,7 @@ void ObjectSynchronizer::notify(Handle obj, TRAPS) {
 
 // NOTE: see comment of notify()
 void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
-  JavaThread* current = THREAD->as_Java_thread();
+  JavaThread* current = THREAD;
   if (UseBiasedLocking) {
     BiasedLocking::revoke(current, obj);
     assert(!obj->mark().has_bias_pattern(), "biases should be revoked by now");
@@ -1771,9 +1771,9 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out) {
       const markWord mark = mid->header();
       ResourceMark rm;
       out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(mid),
-                 mid->is_busy() != 0, mark.hash() != 0, mid->owner() != NULL,
+                 mid->is_busy(), mark.hash() != 0, mid->owner() != NULL,
                  p2i(obj), obj == NULL ? "" : obj->klass()->external_name());
-      if (mid->is_busy() != 0) {
+      if (mid->is_busy()) {
         out->print(" (%s)", mid->is_busy_to_string(&ss));
         ss.reset();
       }

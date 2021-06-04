@@ -24,8 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_zero.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -123,6 +122,13 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,
                                          VMRegPair *regs2,
                                          int total_args_passed) {
+  ShouldNotCallThis();
+  return 0;
+}
+
+int SharedRuntime::vector_calling_convention(VMRegPair *regs,
+                                             uint num_bits,
+                                             uint total_args_passed) {
   ShouldNotCallThis();
   return 0;
 }

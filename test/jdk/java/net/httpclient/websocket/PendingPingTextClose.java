@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,6 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static java.net.http.HttpClient.newBuilder;
 
 public class PendingPingTextClose extends PendingOperations {
 
@@ -55,9 +53,8 @@ public class PendingPingTextClose extends PendingOperations {
             repeatable(() -> {
                 server = Support.notReadingServer();
                 server.open();
-                webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
-                        .buildAsync(server.getURI(), new WebSocket.Listener() {
-                        })
+                webSocket = httpClient().newWebSocketBuilder()
+                        .buildAsync(server.getURI(), new WebSocket.Listener() { })
                         .join();
                 ByteBuffer data = ByteBuffer.allocate(125);
                 boolean done = false;

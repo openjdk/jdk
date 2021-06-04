@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,12 @@ public final class RequestEngine {
     static final class RequestHook {
         private final Runnable hook;
         private final PlatformEventType type;
+        @SuppressWarnings("removal")
         private final AccessControlContext accessControllerContext;
         private long delta;
 
         // Java events
-        private RequestHook(AccessControlContext acc, PlatformEventType eventType, Runnable hook) {
+        private RequestHook(@SuppressWarnings("removal") AccessControlContext acc, PlatformEventType eventType, Runnable hook) {
             this.hook = hook;
             this.type = eventType;
             this.accessControllerContext = acc;
@@ -80,6 +81,7 @@ public final class RequestEngine {
             }
         }
 
+        @SuppressWarnings("removal")
         private void executeSecure() {
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 @Override
@@ -104,12 +106,12 @@ public final class RequestEngine {
     private static long flushInterval = Long.MAX_VALUE;
     private static long streamDelta;
 
-    public static void addHook(AccessControlContext acc, PlatformEventType type, Runnable hook) {
+    public static void addHook(@SuppressWarnings("removal") AccessControlContext acc, PlatformEventType type, Runnable hook) {
         Objects.requireNonNull(acc);
         addHookInternal(acc, type, hook);
     }
 
-    private static void addHookInternal(AccessControlContext acc, PlatformEventType type, Runnable hook) {
+    private static void addHookInternal(@SuppressWarnings("removal") AccessControlContext acc, PlatformEventType type, Runnable hook) {
         RequestHook he = new RequestHook(acc, type, hook);
         for (RequestHook e : entries) {
             if (e.hook == hook) {

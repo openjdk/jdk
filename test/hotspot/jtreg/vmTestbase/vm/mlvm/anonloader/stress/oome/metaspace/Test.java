@@ -24,69 +24,38 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.misc
  *
  * @summary converted from VM Testbase vm/mlvm/anonloader/stress/oome/metaspace.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent]
  *
- * @library /vmTestbase
- *          /test/lib
+ * @library /test/lib
  *
- * @comment build test class and indify classes
- * @build vm.mlvm.anonloader.stress.oome.metaspace.Test
- * @run driver vm.mlvm.share.IndifiedClassesBuilder
- *
- * @run main/othervm -XX:-UseGCOverheadLimit -XX:MetaspaceSize=10m -XX:MaxMetaspaceSize=20m vm.mlvm.anonloader.stress.oome.metaspace.Test
+ * @run driver vm.mlvm.anonloader.stress.oome.metaspace.Test
  */
 
 package vm.mlvm.anonloader.stress.oome.metaspace;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
-import java.util.List;
-import java.io.IOException;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
-import vm.mlvm.anonloader.share.AnonkTestee01;
-import vm.mlvm.share.MlvmOOMTest;
-import vm.mlvm.share.MlvmTestExecutor;
-import vm.mlvm.share.Env;
-import vm.share.FileUtils;
+public class Test {
 
-/**
- * This test loads classes using defineHiddenClass and stores them,
- * expecting Metaspace OOME.
- *
- */
-public class Test extends MlvmOOMTest {
-    @Override
-    protected void checkOOME(OutOfMemoryError oome) {
-        String message = oome.getMessage();
-        if (!"Metaspace".equals(message) && !"Compressed class space".equals(message)) {
-            throw new RuntimeException("TEST FAIL : wrong OOME", oome);
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-Xshare:off", "-XX:MaxMetaspaceSize=512k", "-version");
+
+        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+
+        analyzer.shouldNotHaveExitValue(0);
+
+        if (!analyzer.getStdout().contains("OutOfMemoryError")) {
+            throw new RuntimeException("TEST FAIL : no OOME");
+        }
+
+        if (!analyzer.getStdout().contains("Metaspace") &&
+            !analyzer.getStdout().contains("Compressed class space")) {
+            throw new RuntimeException("TEST FAIL : wrong OOME");
         }
     }
 
-    @Override
-    protected void eatMemory(List<Object> list) {
-        byte[] classBytes = null;
-        try {
-            classBytes = FileUtils.readClass(AnonkTestee01.class.getName());
-        } catch (IOException e) {
-            Env.throwAsUncheckedException(e);
-        }
-        try {
-            while (true) {
-                Lookup lookup = MethodHandles.lookup();
-                Lookup ank_lookup = MethodHandles.privateLookupIn(AnonkTestee01.class, lookup);
-                Class<?> c = ank_lookup.defineHiddenClass(classBytes, true).lookupClass();
-                list.add(c.newInstance());
-             }
-         } catch (InstantiationException | IllegalAccessException e) {
-             Env.throwAsUncheckedException(e);
-         }
-    }
-
-    public static void main(String[] args) {
-        MlvmTestExecutor.launch(args);
-    }
 }

@@ -119,7 +119,7 @@ void VMThread::create() {
 
   if (UsePerfData) {
     // jvmstat performance counters
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     _perf_accumulated_vm_operation_time =
                  PerfDataManager::create_counter(SUN_THREADS, "vmOperationTime",
                                                  PerfData::U_Ticks, CHECK);
@@ -395,7 +395,7 @@ void VMThread::inner_execute(VM_Operation* op) {
   _cur_vm_operation = op;
 
   HandleMark hm(VMThread::vm_thread());
-  EventMark em("Executing %s VM operation: %s", prev_vm_operation != NULL ? "nested" : "", op->name());
+  EventMarkVMOperation em("Executing %sVM operation: %s", prev_vm_operation != NULL ? "nested " : "", op->name());
 
   log_debug(vmthread)("Evaluating %s %s VM operation: %s",
                        prev_vm_operation != NULL ? "nested" : "",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,7 @@ public final class NativeLibraries {
      * @param file the path of the native library
      * @throws UnsatisfiedLinkError if any error in loading the native library
      */
+    @SuppressWarnings("removal")
     public NativeLibrary loadLibrary(Class<?> fromClass, File file) {
         // Check to see if we're attempting to access a static library
         String name = findBuiltinLib(file.getName());
