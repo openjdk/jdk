@@ -35,7 +35,7 @@
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
+import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
@@ -66,7 +66,8 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
 
     static {
         try {
-            LibraryLookup lookup = LibraryLookup.ofLibrary("TestUpcallHighArity");
+            System.loadLibrary("TestUpcallHighArity");
+            SymbolLookup lookup = SymbolLookup.loaderLookup();
             MH_do_upcall = LINKER.downcallHandle(
                 lookup.lookup("do_upcall").get(),
                 MethodType.methodType(void.class, MemoryAddress.class,
