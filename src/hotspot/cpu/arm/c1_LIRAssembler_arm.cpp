@@ -1628,9 +1628,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     switch (code) {
       case lir_add: __ add_float(res, lreg, rreg); break;
       case lir_sub: __ sub_float(res, lreg, rreg); break;
-      case lir_mul_strictfp: // fall through
       case lir_mul: __ mul_float(res, lreg, rreg); break;
-      case lir_div_strictfp: // fall through
       case lir_div: __ div_float(res, lreg, rreg); break;
       default: ShouldNotReachHere();
     }
@@ -1643,9 +1641,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     switch (code) {
       case lir_add: __ add_double(res, lreg, rreg); break;
       case lir_sub: __ sub_double(res, lreg, rreg); break;
-      case lir_mul_strictfp: // fall through
       case lir_mul: __ mul_double(res, lreg, rreg); break;
-      case lir_div_strictfp: // fall through
       case lir_div: __ div_double(res, lreg, rreg); break;
       default: ShouldNotReachHere();
     }

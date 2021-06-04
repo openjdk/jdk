@@ -82,6 +82,19 @@ G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRe
 {
 }
 
+void G1BlockOffsetTablePart::update() {
+  HeapWord* next_addr = _hr->bottom();
+  HeapWord* const limit = _hr->top();
+
+  HeapWord* prev_addr;
+  while (next_addr < limit) {
+    prev_addr = next_addr;
+    next_addr  = prev_addr + block_size(prev_addr);
+    alloc_block(prev_addr, next_addr);
+  }
+  assert(next_addr == limit, "Should stop the scan at the limit.");
+}
+
 // The arguments follow the normal convention of denoting
 // a right-open interval: [start, end)
 void G1BlockOffsetTablePart:: set_remainder_to_point_to_start(HeapWord* start, HeapWord* end) {

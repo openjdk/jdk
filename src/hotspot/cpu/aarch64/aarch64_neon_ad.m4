@@ -496,21 +496,19 @@ REDUCE_MAX_MIN_INT(min, 8,  S, X, Min, s, LT)
 REDUCE_MAX_MIN_INT(min, 4,  I, X, Min, u, LT)
 dnl
 define(`REDUCE_MAX_MIN_2I', `
-instruct reduce_$1`'2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecX tmp, rFlagsReg cr)
+instruct reduce_$1`'2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecD tmp, rFlagsReg cr)
 %{
   predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst ($2ReductionV isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
-  format %{ "dup   $tmp, T2D, $vsrc\n\t"
-            "s$1v $tmp, T4S, $tmp\n\t"
+  format %{ "s$1p $tmp, T2S, $vsrc, $vsrc\n\t"
             "umov  $dst, $tmp, S, 0\n\t"
             "cmpw  $dst, $isrc\n\t"
             "cselw $dst, $dst, $isrc $3\t# $1 reduction2I"
   %}
   ins_encode %{
-    __ dup(as_FloatRegister($tmp$$reg), __ T2D, as_FloatRegister($vsrc$$reg));
-    __ s$1v(as_FloatRegister($tmp$$reg), __ T4S, as_FloatRegister($tmp$$reg));
+    __ s$1p(as_FloatRegister($tmp$$reg), __ T2S, as_FloatRegister($vsrc$$reg), as_FloatRegister($vsrc$$reg));
     __ umov(as_Register($dst$$reg), as_FloatRegister($tmp$$reg), __ S, 0);
     __ cmpw(as_Register($dst$$reg), as_Register($isrc$$reg));
     __ cselw(as_Register($dst$$reg), as_Register($dst$$reg), as_Register($isrc$$reg), Assembler::$3);
@@ -1603,27 +1601,22 @@ dnl
 // ====================REDUCTION ARITHMETIC====================================
 dnl
 define(`REDUCE_ADD_INT', `
-instruct reduce_add$1$2`'(iRegINoSp dst, iRegIorL2I isrc, vec$3 vsrc, ifelse($1, 2, iRegINoSp tmp, vecX vtmp), iRegINoSp ifelse($1, 2, tmp2, itmp))
+instruct reduce_add$1$2`'(iRegINoSp dst, iRegIorL2I isrc, vec$3 vsrc, vec$3 vtmp, iRegINoSp itmp)
 %{
   predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (AddReductionVI isrc vsrc));
   ins_cost(INSN_COST);
-  effect(TEMP ifelse($1, 2, tmp, vtmp), TEMP ifelse($1, 2, tmp2, itmp));
-  format %{ ifelse($1, 2, `"umov  $tmp, $vsrc, S, 0\n\t"
-            "umov  $tmp2, $vsrc, S, 1\n\t"
-            "addw  $tmp, $isrc, $tmp\n\t"
-            "addw  $dst, $tmp, $tmp2\t# add reduction2I"',`"addv  $vtmp, T4S, $vsrc\n\t"
+  effect(TEMP vtmp, TEMP itmp);
+  format %{ ifelse($1, 2, `"addpv  $vtmp, T2S, $vsrc, $vsrc\n\t"',`"addv  $vtmp, T4S, $vsrc\n\t"')
             "umov  $itmp, $vtmp, S, 0\n\t"
-            "addw  $dst, $itmp, $isrc\t# add reduction4I"')
+            "addw  $dst, $itmp, $isrc\t# add reduction$1I"
   %}
   ins_encode %{
-    ifelse($1, 2, `__ umov($tmp$$Register, as_FloatRegister($vsrc$$reg), __ S, 0);
-    __ umov($tmp2$$Register, as_FloatRegister($vsrc$$reg), __ S, 1);
-    __ addw($tmp$$Register, $isrc$$Register, $tmp$$Register);
-    __ addw($dst$$Register, $tmp$$Register, $tmp2$$Register);', `__ addv(as_FloatRegister($vtmp$$reg), __ T4S,
-            as_FloatRegister($vsrc$$reg));
+    ifelse($1, 2, `__ addpv(as_FloatRegister($vtmp$$reg), __ T2S,
+             as_FloatRegister($vsrc$$reg), as_FloatRegister($vsrc$$reg));', `__ addv(as_FloatRegister($vtmp$$reg), __ T4S,
+            as_FloatRegister($vsrc$$reg));')
     __ umov($itmp$$Register, as_FloatRegister($vtmp$$reg), __ S, 0);
-    __ addw($dst$$Register, $itmp$$Register, $isrc$$Register);')
+    __ addw($dst$$Register, $itmp$$Register, $isrc$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}')dnl

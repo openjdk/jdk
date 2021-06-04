@@ -623,12 +623,12 @@ loop:   while (true) {
         while (count < utflen) {
             c = (int) bytearr[count] & 0xff;
             switch (c >> 4) {
-                case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
+                case 0, 1, 2, 3, 4, 5, 6, 7 -> {
                     /* 0xxxxxxx*/
                     count++;
                     chararr[chararr_count++]=(char)c;
-                    break;
-                case 12: case 13:
+                }
+                case 12, 13 -> {
                     /* 110x xxxx   10xx xxxx*/
                     count += 2;
                     if (count > utflen)
@@ -640,8 +640,8 @@ loop:   while (true) {
                             "malformed input around byte " + count);
                     chararr[chararr_count++]=(char)(((c & 0x1F) << 6) |
                                                     (char2 & 0x3F));
-                    break;
-                case 14:
+                }
+                case 14 -> {
                     /* 1110 xxxx  10xx xxxx  10xx xxxx */
                     count += 3;
                     if (count > utflen)
@@ -655,8 +655,8 @@ loop:   while (true) {
                     chararr[chararr_count++]=(char)(((c     & 0x0F) << 12) |
                                                     ((char2 & 0x3F) << 6)  |
                                                     ((char3 & 0x3F) << 0));
-                    break;
-                default:
+                }
+                default ->
                     /* 10xx xxxx,  1111 xxxx */
                     throw new UTFDataFormatException(
                         "malformed input around byte " + count);

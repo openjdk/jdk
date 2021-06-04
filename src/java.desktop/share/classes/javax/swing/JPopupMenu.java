@@ -101,7 +101,7 @@ import sun.awt.SunToolkit;
  */
 @JavaBean(defaultProperty = "UI", description = "A small window that pops up and displays a series of choices.")
 @SwingContainer(false)
-@SuppressWarnings("serial")
+@SuppressWarnings({"removal","serial"})
 public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
     /**

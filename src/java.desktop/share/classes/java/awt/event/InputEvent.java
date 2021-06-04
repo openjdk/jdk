@@ -385,6 +385,7 @@ public abstract class InputEvent extends ComponentEvent {
         boolean b = false;
 
         if (!GraphicsEnvironment.isHeadless()) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 try {

@@ -55,8 +55,8 @@ class Invokers {
             INV_GENERIC        =  1,  // MethodHandles.invoker (generic invocation)
             INV_BASIC          =  2,  // MethodHandles.basicInvoker
             VH_INV_EXACT       =  3,  // MethodHandles.varHandleExactInvoker
-            VH_INV_GENERIC     =  VH_INV_EXACT   + VarHandle.AccessMode.values().length,  // MethodHandles.varHandleInvoker
-            INV_LIMIT          =  VH_INV_GENERIC + VarHandle.AccessMode.values().length;
+            VH_INV_GENERIC     =  VH_INV_EXACT   + VarHandle.AccessMode.COUNT,  // MethodHandles.varHandleInvoker
+            INV_LIMIT          =  VH_INV_GENERIC + VarHandle.AccessMode.COUNT;
 
     /** Compute and cache information common to all collecting adapters
      *  that implement members of the erasure-family of the given erased type.

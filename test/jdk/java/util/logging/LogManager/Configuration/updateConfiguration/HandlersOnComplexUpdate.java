@@ -59,7 +59,7 @@ import java.util.logging.LoggingPermission;
  *          suddenly appears in the hierarchy between a child logger and the
  *          root logger.
  * @run main/othervm HandlersOnComplexUpdate UNSECURE
- * @run main/othervm HandlersOnComplexUpdate SECURE
+ * @run main/othervm -Djava.security.manager=allow HandlersOnComplexUpdate SECURE
  * @author danielfuchs
  */
 public class HandlersOnComplexUpdate {

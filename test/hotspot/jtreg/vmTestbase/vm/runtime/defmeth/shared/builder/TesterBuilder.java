@@ -215,7 +215,7 @@ public class TesterBuilder implements Builder<Tester> {
     }
 
     public TesterBuilder loadClass(Clazz clz) {
-        return static_(builder.clazz("java.lang.Class").build())
+        return static_(builder.toClazz(Class.class))
                 .callee("forName", "(Ljava/lang/String;)Ljava/lang/Class;", ACC_STATIC)
                 .params(clz.name());
     }

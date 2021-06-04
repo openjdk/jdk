@@ -260,6 +260,7 @@ public final class CGraphicsDevice extends GraphicsDevice
     }
 
     private static boolean isFSExclusiveModeAllowed() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             if (fullScreenExclusivePermission == null) {

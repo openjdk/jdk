@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,13 @@ import sun.rmi.runtime.RuntimeUtil;
 public class DGCAckHandler {
 
     /** timeout for holding references without receiving an acknowledgment */
+    @SuppressWarnings("removal")
     private static final long dgcAckTimeout =           // default 5 minutes
         AccessController.doPrivileged((PrivilegedAction<Long>) () ->
             Long.getLong("sun.rmi.dgc.ackTimeout", 300000));
 
     /** thread pool for scheduling delayed tasks */
+    @SuppressWarnings("removal")
     private static final ScheduledExecutorService scheduler =
         AccessController.doPrivileged(
             new RuntimeUtil.GetInstanceAction()).getScheduler();
