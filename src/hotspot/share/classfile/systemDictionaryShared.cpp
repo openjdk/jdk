@@ -429,7 +429,7 @@ DumpTimeLambdaProxyClassDictionary* _dumptime_lambda_proxy_class_dictionary = NU
 
 static void add_to_dump_time_lambda_proxy_class_dictionary(LambdaProxyClassKey key,
                                                            InstanceKlass* proxy_klass) {
-  assert(DumpTimeTable_lock->owned_by_self(), "sanity");
+  assert_lock_strong(DumpTimeTable_lock);
   if (_dumptime_lambda_proxy_class_dictionary == NULL) {
     _dumptime_lambda_proxy_class_dictionary =
       new (ResourceObj::C_HEAP, mtClass)DumpTimeLambdaProxyClassDictionary();
