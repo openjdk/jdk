@@ -5976,264 +5976,268 @@ address generate_avx_ghash_processBlocks() {
 
     Label L_process256, L_process64, L_exit, L_processdata, L_loadURL;
     Label L_continue, L_finalBit, L_padding, L_donePadding, L_bruteForce;
-    Label L_forceLoop, L_bottomLoop, L_checkMIME;
+    Label L_forceLoop, L_bottomLoop, L_checkMIME, L_exit_no_vzero;
 
     // calculate length from offsets
     __ movq(length, end_offset);
     __ subq(length, start_offset);
     __ push(dest);          // Save for return value calc
-    __ cmpq(length, 128);     // 128-bytes is break-even for AVX-512
-    __ jcc(Assembler::lessEqual, L_bruteForce);
 
-    __ cmpl(isMIME, 0);
-    __ jcc(Assembler::notEqual, L_bruteForce);
+    // If AVX512 VBMI not supported, just compile non-AVX code
+    if(VM_Version::supports_avx512_vbmi()) {
+      __ cmpq(length, 128);     // 128-bytes is break-even for AVX-512
+      __ jcc(Assembler::lessEqual, L_bruteForce);
 
-    // Load lookup tables based on isURL
-    __ cmpl(isURL, 0);
-    __ jcc(Assembler::notZero, L_loadURL);
+      __ cmpl(isMIME, 0);
+      __ jcc(Assembler::notEqual, L_bruteForce);
 
-    __ evmovdquq(lookup_lo, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_addr()), Assembler::AVX_512bit, r13);
-    __ evmovdquq(lookup_hi, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_addr()), Assembler::AVX_512bit, r13);
+      // Load lookup tables based on isURL
+      __ cmpl(isURL, 0);
+      __ jcc(Assembler::notZero, L_loadURL);
 
-    __ BIND(L_continue);
+      __ evmovdquq(lookup_lo, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_addr()), Assembler::AVX_512bit, r13);
+      __ evmovdquq(lookup_hi, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_addr()), Assembler::AVX_512bit, r13);
 
-    __ vpxor(errorvec, errorvec, errorvec, Assembler::AVX_512bit);
+      __ BIND(L_continue);
 
-    __ movl(r15, 0x01400140);
-    __ evpbroadcastd(pack16_op, r15, Assembler::AVX_512bit);
+      __ vpxor(errorvec, errorvec, errorvec, Assembler::AVX_512bit);
 
-    __ movl(r15, 0x00011000);
-    __ evpbroadcastd(pack32_op, r15, Assembler::AVX_512bit);
+      __ movl(r15, 0x01400140);
+      __ evpbroadcastd(pack16_op, r15, Assembler::AVX_512bit);
 
-    __ cmpq(length, 0xff);
-    __ jcc(Assembler::lessEqual, L_process64);
+      __ movl(r15, 0x00011000);
+      __ evpbroadcastd(pack32_op, r15, Assembler::AVX_512bit);
 
-    // load masks required for decoding data
-    __ BIND(L_processdata);
-    __ evmovdquq(join01, ExternalAddress(StubRoutines::x86::base64_vbmi_join_0_1_addr()), Assembler::AVX_512bit,r13);
-    __ evmovdquq(join12, ExternalAddress(StubRoutines::x86::base64_vbmi_join_1_2_addr()), Assembler::AVX_512bit, r13);
-    __ evmovdquq(join23, ExternalAddress(StubRoutines::x86::base64_vbmi_join_2_3_addr()), Assembler::AVX_512bit, r13);
+      __ cmpq(length, 0xff);
+      __ jcc(Assembler::lessEqual, L_process64);
 
-    __ evmovdquq(tmp16_op3, pack16_op, Assembler::AVX_512bit);
-    __ evmovdquq(tmp16_op2, pack16_op, Assembler::AVX_512bit);
-    __ evmovdquq(tmp16_op1, pack16_op, Assembler::AVX_512bit);
-    __ evmovdquq(tmp32_op3, pack32_op, Assembler::AVX_512bit);
-    __ evmovdquq(tmp32_op2, pack32_op, Assembler::AVX_512bit);
-    __ evmovdquq(tmp32_op1, pack32_op, Assembler::AVX_512bit);
+      // load masks required for decoding data
+      __ BIND(L_processdata);
+      __ evmovdquq(join01, ExternalAddress(StubRoutines::x86::base64_vbmi_join_0_1_addr()), Assembler::AVX_512bit,r13);
+      __ evmovdquq(join12, ExternalAddress(StubRoutines::x86::base64_vbmi_join_1_2_addr()), Assembler::AVX_512bit, r13);
+      __ evmovdquq(join23, ExternalAddress(StubRoutines::x86::base64_vbmi_join_2_3_addr()), Assembler::AVX_512bit, r13);
 
-    __ align(32);
-    __ BIND(L_process256);
-    // Grab input data
-    __ evmovdquq(input0, Address(source, start_offset, Address::times_1, 0x00), Assembler::AVX_512bit);
-    __ evmovdquq(input1, Address(source, start_offset, Address::times_1, 0x40), Assembler::AVX_512bit);
-    __ evmovdquq(input2, Address(source, start_offset, Address::times_1, 0x80), Assembler::AVX_512bit);
-    __ evmovdquq(input3, Address(source, start_offset, Address::times_1, 0xc0), Assembler::AVX_512bit);
+      __ evmovdquq(tmp16_op3, pack16_op, Assembler::AVX_512bit);
+      __ evmovdquq(tmp16_op2, pack16_op, Assembler::AVX_512bit);
+      __ evmovdquq(tmp16_op1, pack16_op, Assembler::AVX_512bit);
+      __ evmovdquq(tmp32_op3, pack32_op, Assembler::AVX_512bit);
+      __ evmovdquq(tmp32_op2, pack32_op, Assembler::AVX_512bit);
+      __ evmovdquq(tmp32_op1, pack32_op, Assembler::AVX_512bit);
 
-    // Copy the low part of the lookup table into the destination of the permutation
-    __ evmovdquq(translated0, lookup_lo, Assembler::AVX_512bit);
-    __ evmovdquq(translated1, lookup_lo, Assembler::AVX_512bit);
-    __ evmovdquq(translated2, lookup_lo, Assembler::AVX_512bit);
-    __ evmovdquq(translated3, lookup_lo, Assembler::AVX_512bit);
+      __ align(32);
+      __ BIND(L_process256);
+      // Grab input data
+      __ evmovdquq(input0, Address(source, start_offset, Address::times_1, 0x00), Assembler::AVX_512bit);
+      __ evmovdquq(input1, Address(source, start_offset, Address::times_1, 0x40), Assembler::AVX_512bit);
+      __ evmovdquq(input2, Address(source, start_offset, Address::times_1, 0x80), Assembler::AVX_512bit);
+      __ evmovdquq(input3, Address(source, start_offset, Address::times_1, 0xc0), Assembler::AVX_512bit);
 
-    // Translate the base64 input into "decoded" bytes
-    __ evpermt2b(translated0, input0, lookup_hi, Assembler::AVX_512bit);
-    __ evpermt2b(translated1, input1, lookup_hi, Assembler::AVX_512bit);
-    __ evpermt2b(translated2, input2, lookup_hi, Assembler::AVX_512bit);
-    __ evpermt2b(translated3, input3, lookup_hi, Assembler::AVX_512bit);
+      // Copy the low part of the lookup table into the destination of the permutation
+      __ evmovdquq(translated0, lookup_lo, Assembler::AVX_512bit);
+      __ evmovdquq(translated1, lookup_lo, Assembler::AVX_512bit);
+      __ evmovdquq(translated2, lookup_lo, Assembler::AVX_512bit);
+      __ evmovdquq(translated3, lookup_lo, Assembler::AVX_512bit);
 
-    // OR all of the translations together to check for errors (high-order bit of byte set)
-    __ vpternlogd(t0, 0xfe, input1, input2, Assembler::AVX_512bit);
+      // Translate the base64 input into "decoded" bytes
+      __ evpermt2b(translated0, input0, lookup_hi, Assembler::AVX_512bit);
+      __ evpermt2b(translated1, input1, lookup_hi, Assembler::AVX_512bit);
+      __ evpermt2b(translated2, input2, lookup_hi, Assembler::AVX_512bit);
+      __ evpermt2b(translated3, input3, lookup_hi, Assembler::AVX_512bit);
 
-    __ vpternlogd(t1, 0xfe, translated0, translated1, Assembler::AVX_512bit);
-    __ evmovdquq(t2, translated2, Assembler::AVX_512bit);
-    __ vpternlogd(t2, 0xfe, translated3, t0, Assembler::AVX_512bit);
-    __ evmovdquq(errorvec, t0, Assembler::AVX_512bit);
-    __ vpternlogd(errorvec, 0xfe, t1, t2, Assembler::AVX_512bit);
+      // OR all of the translations together to check for errors (high-order bit of byte set)
+      __ vpternlogd(t0, 0xfe, input1, input2, Assembler::AVX_512bit);
 
-    // Check if there was an error - if so, try 64-byte chunks - may be MIME
-    __ evpmovb2m(k3, errorvec, Assembler::AVX_512bit);
-    __ kortestql(k3, k3);
-    __ vpxor(errorvec, errorvec, errorvec, Assembler::AVX_512bit);
-    __ jcc(Assembler::notZero, L_process64);
+      __ vpternlogd(t1, 0xfe, translated0, translated1, Assembler::AVX_512bit);
+      __ evmovdquq(t2, translated2, Assembler::AVX_512bit);
+      __ vpternlogd(t2, 0xfe, translated3, t0, Assembler::AVX_512bit);
+      __ evmovdquq(errorvec, t0, Assembler::AVX_512bit);
+      __ vpternlogd(errorvec, 0xfe, t1, t2, Assembler::AVX_512bit);
 
-    // The merging and shuffling happens here
-    // We multiply each byte pair [00dddddd | 00cccccc | 00bbbbbb | 00aaaaaa]
-    // Multiply [00cccccc] by 2^6 added to [00dddddd] to get [0000cccc | ccdddddd]
-    // The pack16_op is a vector of 0x01400140, so multiply D by 1 and C by 0x40
-    __ evpmaddubsw(merge_ab_bc0, translated0, tmp16_op3, Assembler::AVX_512bit);
-    __ evpmaddubsw(merge_ab_bc1, translated1, tmp16_op2, Assembler::AVX_512bit);
-    __ evpmaddubsw(merge_ab_bc2, translated2, tmp16_op1, Assembler::AVX_512bit);
-    __ evpmaddubsw(merge_ab_bc3, translated3, pack16_op, Assembler::AVX_512bit);
+      // Check if there was an error - if so, try 64-byte chunks - may be MIME
+      __ evpmovb2m(k3, errorvec, Assembler::AVX_512bit);
+      __ kortestql(k3, k3);
+      __ vpxor(errorvec, errorvec, errorvec, Assembler::AVX_512bit);
+      __ jcc(Assembler::notZero, L_process64);
 
-    // Now do the same with packed 16-bit values.
-    // We start with [0000cccc | ccdddddd | 0000aaaa | aabbbbbb]
-    // pack32_op is 0x00011000 (2^12, 1), so this multiplies [0000aaaa | aabbbbbb] by 2^12
-    // and adds [0000cccc | ccdddddd] to yield [00000000 | aaaaaabb | bbbbcccc | ccdddddd]
-    __ vpmaddwd(merged0, merge_ab_bc0, tmp32_op2, Assembler::AVX_512bit);
-    __ vpmaddwd(merged1, merge_ab_bc1, tmp32_op1, Assembler::AVX_512bit);
-    __ vpmaddwd(merged2, merge_ab_bc2, tmp32_op3, Assembler::AVX_512bit);
-    __ vpmaddwd(merged3, merge_ab_bc3, pack32_op, Assembler::AVX_512bit);
+      // The merging and shuffling happens here
+      // We multiply each byte pair [00dddddd | 00cccccc | 00bbbbbb | 00aaaaaa]
+      // Multiply [00cccccc] by 2^6 added to [00dddddd] to get [0000cccc | ccdddddd]
+      // The pack16_op is a vector of 0x01400140, so multiply D by 1 and C by 0x40
+      __ evpmaddubsw(merge_ab_bc0, translated0, tmp16_op3, Assembler::AVX_512bit);
+      __ evpmaddubsw(merge_ab_bc1, translated1, tmp16_op2, Assembler::AVX_512bit);
+      __ evpmaddubsw(merge_ab_bc2, translated2, tmp16_op1, Assembler::AVX_512bit);
+      __ evpmaddubsw(merge_ab_bc3, translated3, pack16_op, Assembler::AVX_512bit);
 
-    // The join vectors specify which byte from which vector goes into the outputs
-    // One of every 4 bytes in the extended vector is zero, so we pack them into their
-    // final positions in the register for storing (256 bytes in, 192 bytes out)
-    __ evpermt2b(arr01, join01, merged1, Assembler::AVX_512bit);
-    __ evpermt2b(arr12, join12, merged2, Assembler::AVX_512bit);
-    __ evpermt2b(arr23, join23, merged3, Assembler::AVX_512bit);
+      // Now do the same with packed 16-bit values.
+      // We start with [0000cccc | ccdddddd | 0000aaaa | aabbbbbb]
+      // pack32_op is 0x00011000 (2^12, 1), so this multiplies [0000aaaa | aabbbbbb] by 2^12
+      // and adds [0000cccc | ccdddddd] to yield [00000000 | aaaaaabb | bbbbcccc | ccdddddd]
+      __ vpmaddwd(merged0, merge_ab_bc0, tmp32_op2, Assembler::AVX_512bit);
+      __ vpmaddwd(merged1, merge_ab_bc1, tmp32_op1, Assembler::AVX_512bit);
+      __ vpmaddwd(merged2, merge_ab_bc2, tmp32_op3, Assembler::AVX_512bit);
+      __ vpmaddwd(merged3, merge_ab_bc3, pack32_op, Assembler::AVX_512bit);
 
-    // Store result
-    __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), arr01, Assembler::AVX_512bit);
-    __ evmovdquq(Address(dest, dp, Address::times_1, 0x40), arr12, Assembler::AVX_512bit);
-    __ evmovdquq(Address(dest, dp, Address::times_1, 0x80), arr23, Assembler::AVX_512bit);
+      // The join vectors specify which byte from which vector goes into the outputs
+      // One of every 4 bytes in the extended vector is zero, so we pack them into their
+      // final positions in the register for storing (256 bytes in, 192 bytes out)
+      __ evpermt2b(arr01, join01, merged1, Assembler::AVX_512bit);
+      __ evpermt2b(arr12, join12, merged2, Assembler::AVX_512bit);
+      __ evpermt2b(arr23, join23, merged3, Assembler::AVX_512bit);
 
-    __ addq(source, 0x100);
-    __ addq(dest, 0xc0);
-    __ subq(length, 0x100);
-    __ cmpq(length, 64 * 4);
-    __ jcc(Assembler::greaterEqual, L_process256);
-    
-    // At this point, we've decoded 64 * 4 * n bytes.
-    // The remaining length will be <= 64 * 4 - 1.
-    // UNLESS there was an error decoding the first 256-byte chunk.  In this
-    // case, the length will be arbitrarily long.
-    //
-    // Note that this will be the path for MIME-encoded strings.
+      // Store result
+      __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), arr01, Assembler::AVX_512bit);
+      __ evmovdquq(Address(dest, dp, Address::times_1, 0x40), arr12, Assembler::AVX_512bit);
+      __ evmovdquq(Address(dest, dp, Address::times_1, 0x80), arr23, Assembler::AVX_512bit);
 
-    __ cmpq(length, 63);
-    __ jcc(Assembler::lessEqual, L_finalBit);
+      __ addq(source, 0x100);
+      __ addq(dest, 0xc0);
+      __ subq(length, 0x100);
+      __ cmpq(length, 64 * 4);
+      __ jcc(Assembler::greaterEqual, L_process256);
 
-    __ align(32);
-    __ BIND(L_process64);
+      // At this point, we've decoded 64 * 4 * n bytes.
+      // The remaining length will be <= 64 * 4 - 1.
+      // UNLESS there was an error decoding the first 256-byte chunk.  In this
+      // case, the length will be arbitrarily long.
+      //
+      // Note that this will be the path for MIME-encoded strings.
 
-    // Handle first 64-byte block
+      __ cmpq(length, 63);
+      __ jcc(Assembler::lessEqual, L_finalBit);
 
-    __ evmovdquq(input0, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
-    __ evmovdquq(translated0, lookup_lo, Assembler::AVX_512bit);
-    __ evpermt2b(translated0, input0, lookup_hi, Assembler::AVX_512bit);
+      __ align(32);
+      __ BIND(L_process64);
 
-    __ vpternlogd(errorvec, 0xfe, translated0, input0, Assembler::AVX_512bit);
+      // Handle first 64-byte block
 
-    // Check for error and bomb out before updating dest
-    __ evpmovb2m(k3, errorvec, Assembler::AVX_512bit);
-    __ kortestql(k3, k3);
-    __ jcc(Assembler::notZero, L_exit);
+      __ evmovdquq(input0, Address(source, start_offset, Address::times_1, 0x0), Assembler::AVX_512bit);
+      __ evmovdquq(translated0, lookup_lo, Assembler::AVX_512bit);
+      __ evpermt2b(translated0, input0, lookup_hi, Assembler::AVX_512bit);
 
-    __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
+      __ vpternlogd(errorvec, 0xfe, translated0, input0, Assembler::AVX_512bit);
 
-    __ evpmaddubsw(merge_ab_bc0, translated0, pack16_op, Assembler::AVX_512bit);
-    __ vpmaddwd(merged0, merge_ab_bc0, pack32_op, Assembler::AVX_512bit);
-    __ vpermb(merged0, pack24bits, merged0, Assembler::AVX_512bit);
+      // Check for error and bomb out before updating dest
+      __ evpmovb2m(k3, errorvec, Assembler::AVX_512bit);
+      __ kortestql(k3, k3);
+      __ jcc(Assembler::notZero, L_exit);
 
-    __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), merged0, Assembler::AVX_512bit);
+      __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
 
-    __ subq(length, 64);
-    __ addq(source, 64);
-    __ addq(dest, 48);
+      __ evpmaddubsw(merge_ab_bc0, translated0, pack16_op, Assembler::AVX_512bit);
+      __ vpmaddwd(merged0, merge_ab_bc0, pack32_op, Assembler::AVX_512bit);
+      __ vpermb(merged0, pack24bits, merged0, Assembler::AVX_512bit);
 
-    __ cmpq(length, 64);
-    __ jcc(Assembler::greaterEqual, L_process64);
+      __ evmovdquq(Address(dest, dp, Address::times_1, 0x00), merged0, Assembler::AVX_512bit);
 
-    __ cmpq(length, 0);
-    __ jcc(Assembler::lessEqual, L_exit);
+      __ subq(length, 64);
+      __ addq(source, 64);
+      __ addq(dest, 48);
 
-    __ BIND(L_finalBit);
-    // Now have < 64 bytes left to decode
+      __ cmpq(length, 64);
+      __ jcc(Assembler::greaterEqual, L_process64);
 
-    // I was going to let Java take care of the final fragment
-    // however it will repeatedly call this routine for every 4 bytes
-    // of input data, so handle the rest here.
-    __ movq(output_size, 0x40);
-    __ subq(output_size, length);
-    __ movq(rax, -1);
-    __ shrxq(rax, rax, output_size);    // Input mask in rax
+      __ cmpq(length, 0);
+      __ jcc(Assembler::lessEqual, L_exit);
 
-    __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
+      __ BIND(L_finalBit);
+      // Now have < 64 bytes left to decode
 
-    __ movq(output_size, length);
-    __ shrq(output_size, 2);   // Find (len / 4) * 3 (output length)
-    __ lea(output_size, Address(output_size, output_size, Address::times_2, 0));
-    // output_size in r13
+      // I was going to let Java take care of the final fragment
+      // however it will repeatedly call this routine for every 4 bytes
+      // of input data, so handle the rest here.
+      __ movq(output_size, 0x40);
+      __ subq(output_size, length);
+      __ movq(rax, -1);
+      __ shrxq(rax, rax, output_size);    // Input mask in rax
 
-    __ cmpb(Address(source, length, Address::times_1, -1), '=');
-    __ jcc(Assembler::equal, L_padding);
+      __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
 
-    __ BIND(L_donePadding);
+      __ movq(output_size, length);
+      __ shrq(output_size, 2);   // Find (len / 4) * 3 (output length)
+      __ lea(output_size, Address(output_size, output_size, Address::times_2, 0));
+      // output_size in r13
 
-    __ movq(output_mask, -1);
-    __ kmovql(input_mask, rax);
-    __ movq(rax, 64);
-    __ subq(rax, output_size);
-    __ shrxq(output_mask, output_mask, rax);
-    __ movl(rax, 0x61616161);
-    __ evpbroadcastd(input_initial_valid_b64, rax, Assembler::AVX_512bit);
-    __ movl(rax, 0x80808080);
-    __ evpbroadcastd(invalid_b64, rax, Assembler::AVX_512bit);
+      __ cmpb(Address(source, length, Address::times_1, -1), '=');
+      __ jcc(Assembler::equal, L_padding);
 
-    // input_mask is in k1
-    // output_size is in r13
-    // output_mask is in r15
-    // zmm0 - free
-    // zmm1 - 0x00011000
-    // zmm2 - 0x01400140
-    // zmm3 - errorvec
-    // zmm4 - pack vector
-    // zmm5 - lookup_lo
-    // zmm6 - lookup_hi
-    // zmm7 - errorvec
-    // zmm8 - 0x61616161
-    // zmm9 - 0x80808080
+      __ BIND(L_donePadding);
 
-    __ evmovdqub(input_initial_valid_b64, input_mask, Address(source, start_offset, Address::times_1, 0x0), true, Assembler::AVX_512bit);
+      __ movq(output_mask, -1);
+      __ kmovql(input_mask, rax);
+      __ movq(rax, 64);
+      __ subq(rax, output_size);
+      __ shrxq(output_mask, output_mask, rax);
+      __ movl(rax, 0x61616161);
+      __ evpbroadcastd(input_initial_valid_b64, rax, Assembler::AVX_512bit);
+      __ movl(rax, 0x80808080);
+      __ evpbroadcastd(invalid_b64, rax, Assembler::AVX_512bit);
 
-    __ evmovdquq(tmp, lookup_lo, Assembler::AVX_512bit);
-    __ evpermt2b(tmp, input_initial_valid_b64, lookup_hi, Assembler::AVX_512bit);
-    __ vporq(mask, tmp, input_initial_valid_b64, Assembler::AVX_512bit);
+      // input_mask is in k1
+      // output_size is in r13
+      // output_mask is in r15
+      // zmm0 - free
+      // zmm1 - 0x00011000
+      // zmm2 - 0x01400140
+      // zmm3 - errorvec
+      // zmm4 - pack vector
+      // zmm5 - lookup_lo
+      // zmm6 - lookup_hi
+      // zmm7 - errorvec
+      // zmm8 - 0x61616161
+      // zmm9 - 0x80808080
 
-    // Check for error
-    __ evptestmb(k2, mask, invalid_b64, Assembler::AVX_512bit);
-    __ kortestql(k2, k2);
-    __ jcc(Assembler::notZero, L_exit);
+      __ evmovdqub(input_initial_valid_b64, input_mask, Address(source, start_offset, Address::times_1, 0x0), true, Assembler::AVX_512bit);
 
-    __ evpmaddubsw(tmp, tmp, pack16_op, Assembler::AVX_512bit);
-    __ vpmaddwd(tmp, tmp, pack32_op, Assembler::AVX_512bit);
+      __ evmovdquq(tmp, lookup_lo, Assembler::AVX_512bit);
+      __ evpermt2b(tmp, input_initial_valid_b64, lookup_hi, Assembler::AVX_512bit);
+      __ vporq(mask, tmp, input_initial_valid_b64, Assembler::AVX_512bit);
 
-    __ vpermb(tmp, pack24bits, tmp, Assembler::AVX_512bit);
-    __ kmovql(k1, output_mask);
-    __ evmovdqub(Address(dest, dp, Address::times_1, 0x00), k1, tmp, true, Assembler::AVX_512bit);
+      // Check for error
+      __ evptestmb(k2, mask, invalid_b64, Assembler::AVX_512bit);
+      __ kortestql(k2, k2);
+      __ jcc(Assembler::notZero, L_exit);
 
-    __ addq(dest, output_size);
+      __ evpmaddubsw(tmp, tmp, pack16_op, Assembler::AVX_512bit);
+      __ vpmaddwd(tmp, tmp, pack32_op, Assembler::AVX_512bit);
 
-    __ BIND(L_exit);
-    __ vzeroupper();
-    __ pop(rax);             // Get original dest value
-    __ subq(dest, rax);      // Number of bytes converted
-    __ movq(rax, dest);
-    __ pop(rbx);
-    __ pop(r15);
-    __ pop(r14);
-    __ pop(r13);
-    __ pop(r12);
-    __ leave();
-    __ ret(0);
+      __ vpermb(tmp, pack24bits, tmp, Assembler::AVX_512bit);
+      __ kmovql(k1, output_mask);
+      __ evmovdqub(Address(dest, dp, Address::times_1, 0x00), k1, tmp, true, Assembler::AVX_512bit);
 
-    __ BIND(L_loadURL);
-    __ evmovdquq(lookup_lo, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_url_addr()), Assembler::AVX_512bit, r13);
-    __ evmovdquq(lookup_hi, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_url_addr()), Assembler::AVX_512bit, r13);
-    __ jmp(L_continue);
+      __ addq(dest, output_size);
 
-    __ BIND(L_padding);
-    __ decrementq(r13, 1);
-    __ shrq(rax, 1);
+      __ BIND(L_exit);
+      __ vzeroupper();
+      __ pop(rax);             // Get original dest value
+      __ subq(dest, rax);      // Number of bytes converted
+      __ movq(rax, dest);
+      __ pop(rbx);
+      __ pop(r15);
+      __ pop(r14);
+      __ pop(r13);
+      __ pop(r12);
+      __ leave();
+      __ ret(0);
 
-    __ cmpb(Address(source, length, Address::times_1, -2), '=');
-    __ jcc(Assembler::notEqual, L_donePadding);
+      __ BIND(L_loadURL);
+      __ evmovdquq(lookup_lo, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_url_addr()), Assembler::AVX_512bit, r13);
+      __ evmovdquq(lookup_hi, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_url_addr()), Assembler::AVX_512bit, r13);
+      __ jmp(L_continue);
 
-    __ decrementq(r13, 1);
-    __ shrq(rax, 1);
-    __ jmp(L_donePadding);
+      __ BIND(L_padding);
+      __ decrementq(r13, 1);
+      __ shrq(rax, 1);
 
-    __ align(32);
-    __ BIND(L_bruteForce);
+      __ cmpb(Address(source, length, Address::times_1, -2), '=');
+      __ jcc(Assembler::notEqual, L_donePadding);
+
+      __ decrementq(r13, 1);
+      __ shrq(rax, 1);
+      __ jmp(L_donePadding);
+
+      __ align(32);
+      __ BIND(L_bruteForce);
+    }   // End of if(avx512_vbmi)
 
     // Use non-AVX code to decode 4-byte chunks into 3 bytes of output
 
@@ -6267,12 +6271,12 @@ address generate_avx_ghash_processBlocks() {
 
     __ shrq(length, 2);    // Multiple of 4 bytes only - length is # 4-byte chunks
     __ cmpq(length, 0);
-    __ jcc(Assembler::lessEqual, L_exit);
+    __ jcc(Assembler::lessEqual, L_exit_no_vzero);
 
     // Set up src and dst pointers properly
     __ addq(source, start_offset);     // Initial offset
     __ addq(dest, dp);
-    __ pop(byte2);    // Clear old dest from stack  TODO:
+    __ pop(byte2);    // Clear old dest from stack
     __ push(dest);
 
     __ shll(isURL, 8);    // index into decode table based on isURL
@@ -6300,7 +6304,7 @@ address generate_avx_ghash_processBlocks() {
 
     __ incrementq(dest, 3);
     __ decrementl(length, 1);
-    __ jcc(Assembler::zero, L_exit);
+    __ jcc(Assembler::zero, L_exit_no_vzero);
 
     __ BIND(L_bottomLoop);
     __ load_signed_byte(byte1, Address(source, RegisterOrConstant(), Address::times_1, 0));
@@ -6318,7 +6322,17 @@ address generate_avx_ghash_processBlocks() {
     __ orl(rax, byte4);
     __ jcc(Assembler::positive, L_forceLoop);
 
-    __ jmp(L_exit);
+    __ BIND(L_exit_no_vzero);
+    __ pop(rax);             // Get original dest value
+    __ subq(dest, rax);      // Number of bytes converted
+    __ movq(rax, dest);
+    __ pop(rbx);
+    __ pop(r15);
+    __ pop(r14);
+    __ pop(r13);
+    __ pop(r12);
+    __ leave();
+    __ ret(0);
 
     return start;
   }
@@ -7589,9 +7603,9 @@ address generate_avx_ghash_processBlocks() {
         StubRoutines::x86::_join_0_1 = base64_vbmi_join_0_1_addr();
         StubRoutines::x86::_join_1_2 = base64_vbmi_join_1_2_addr();
         StubRoutines::x86::_join_2_3 = base64_vbmi_join_2_3_addr();
-        StubRoutines::x86::_decoding_table = base64_decoding_table_addr();
-        StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
       }
+      StubRoutines::x86::_decoding_table = base64_decoding_table_addr();
+      StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
     }
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
