@@ -324,15 +324,9 @@ final class Double64Vector extends DoubleVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Double> toShuffle() {
-        double[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(Double64Shuffle.class); // specialize
     }
 
     // Specialized unary testing

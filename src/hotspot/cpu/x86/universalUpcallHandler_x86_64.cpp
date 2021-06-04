@@ -483,7 +483,7 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
     __ stmxcsr(mxcsr_save);
     __ movl(rax, mxcsr_save);
     __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
-    ExternalAddress mxcsr_std(StubRoutines::addr_mxcsr_std());
+    ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
     __ cmp32(rax, mxcsr_std);
     __ jcc(Assembler::equal, skip_ldmx);
     __ ldmxcsr(mxcsr_std);
