@@ -405,7 +405,7 @@ public class Messager extends Log implements Reporter {
      * @param args the arguments for the message
      */
     public void noticeUsingKey(String key, Object... args) {
-        getStandardWriter().println(getText(key, args));
+        printRawLines(getStandardWriter(), getText(key, args));
     }
 
     /**
@@ -414,7 +414,7 @@ public class Messager extends Log implements Reporter {
      * @param message the message
      */
     public void notice(String message) {
-        getStandardWriter().println(message);
+        printRawLines(getStandardWriter(), message);
     }
 
     /**
@@ -445,7 +445,7 @@ public class Messager extends Log implements Reporter {
             if (diagListener != null) {
                 report(DiagnosticType.NOTE, null, null, message);
             } else {
-                getDiagnosticWriter().println(message);
+                printRawLines(getDiagnosticWriter(), message);
             }
         }
     }

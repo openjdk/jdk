@@ -39,7 +39,7 @@ import com.sun.source.util.DocTreePath;
  * <p>Diagnostics consist of a {@link Diagnostic.Kind diagnostic kind} and a message,
  * and may additionally be associated with an {@link Element element},
  * a {@link DocTreePath tree node} in a documentation comment,
- * or at an arbitrary position in a given {@link FileObject file}.
+ * or an arbitrary position in a given {@link FileObject file}.
  * Other messages may be written directly to one of two streams that are informally
  * for use by "standard output" and "diagnostic output", where "standard output"
  * means the output that is the expected result of executing some operation,
@@ -104,7 +104,6 @@ public interface Reporter {
      * @since 17
      */
     void print(Diagnostic.Kind kind, FileObject file, int start, int pos, int end, String message);
-
 
     /**
      * Returns a writer that can be used to write non-diagnostic output,

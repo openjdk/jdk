@@ -137,8 +137,7 @@ public class Messages {
     /**
      * Reports a warning message to the doclet's reporter.
      *
-     * @param e    an element identifying the declaration whose position should
-     *             be included with the message
+     * @param e    an element identifying the position to be included with the message
      * @param key  the name of a resource containing the message to be printed
      * @param args optional arguments to be replaced in the message
      */
