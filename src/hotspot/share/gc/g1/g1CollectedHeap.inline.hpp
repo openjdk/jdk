@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 #define SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 
-#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"

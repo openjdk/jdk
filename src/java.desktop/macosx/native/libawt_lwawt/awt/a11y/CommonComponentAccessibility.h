@@ -41,7 +41,7 @@
 + (void) initializeRolesMap;
 + (JavaComponentAccessibility * _Nullable) getComponentAccessibility:(NSString * _Nonnull)role;
 - (NSRect)accessibilityFrame;
-- (nullable id)accessibilityParent;
+- (id _Nullable)accessibilityParent;
 - (BOOL)performAccessibleAction:(int)index;
 - (BOOL)isAccessibilityElement;
 @end

@@ -172,6 +172,11 @@ public class JPEGImageWriter extends ImageWriter {
     ///////// static initializer
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 @Override

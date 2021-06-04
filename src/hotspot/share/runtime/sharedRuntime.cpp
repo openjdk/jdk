@@ -512,6 +512,9 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     // JavaCallWrapper::~JavaCallWrapper
     return StubRoutines::catch_exception_entry();
   }
+  if (blob != NULL && blob->is_optimized_entry_blob()) {
+    return ((OptimizedEntryBlob*)blob)->exception_handler();
+  }
   // Interpreted code
   if (Interpreter::contains(return_address)) {
     // The deferred StackWatermarkSet::after_unwind check will be performed in
@@ -986,7 +989,6 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* current, 
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END
 
-
 jlong SharedRuntime::get_java_tid(Thread* thread) {
   if (thread != NULL) {
     if (thread->is_Java_thread()) {
@@ -1440,7 +1442,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_ic_miss(JavaThread* 
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
-  assert(!caller_frame.is_interpreted_frame() && !caller_frame.is_entry_frame(), "unexpected frame");
+  assert(!caller_frame.is_interpreted_frame() && !caller_frame.is_entry_frame() && !caller_frame.is_optimized_entry_frame(), "unexpected frame");
 #endif /* ASSERT */
 
   methodHandle callee_method;
@@ -1472,7 +1474,8 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* current)
   frame caller_frame = stub_frame.sender(&reg_map);
 
   if (caller_frame.is_interpreted_frame() ||
-      caller_frame.is_entry_frame()) {
+      caller_frame.is_entry_frame() ||
+      caller_frame.is_optimized_entry_frame()) {
     Method* callee = current->callee_target();
     guarantee(callee != NULL && callee->is_method(), "bad handshake");
     current->set_vm_result_2(callee);

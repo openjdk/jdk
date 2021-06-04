@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,7 @@ public class ReliableLog {
      * if an exception occurs during invocation of the handler's
      * snapshot method or if other IOException occurs.
      */
+    @SuppressWarnings("removal")
     public ReliableLog(String dirPath,
                      LogHandler handler,
                      boolean pad)
@@ -331,10 +332,12 @@ public class ReliableLog {
     private static Constructor<? extends LogFile>
         getLogClassConstructor() {
 
+        @SuppressWarnings("removal")
         String logClassName = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.log.class"));
         if (logClassName != null) {
             try {
+                @SuppressWarnings("removal")
                 ClassLoader loader =
                     AccessController.doPrivileged(
                         new PrivilegedAction<ClassLoader>() {

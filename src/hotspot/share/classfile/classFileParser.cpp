@@ -2276,7 +2276,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
     if (_major_version < 51) { // backward compatibility
       flags = JVM_ACC_STATIC;
     } else if ((flags & JVM_ACC_STATIC) == JVM_ACC_STATIC) {
-      flags &= JVM_ACC_STATIC | JVM_ACC_STRICT;
+      flags &= JVM_ACC_STATIC | (_major_version <= JAVA_16_VERSION ? JVM_ACC_STRICT : 0);
     } else {
       classfile_parse_error("Method <clinit> is not static in class file %s", THREAD);
       return NULL;
@@ -3532,12 +3532,6 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
                      CHECK);
 }
 
-bool ClassFileParser::supports_sealed_types() {
-  return _major_version == JVM_CLASSFILE_MAJOR_VERSION &&
-         _minor_version == JAVA_PREVIEW_MINOR_VERSION &&
-         Arguments::enable_preview();
-}
-
 void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cfs,
                                                  ConstantPool* cp,
                  ClassFileParser::ClassAnnotationCollector* parsed_annotations,
@@ -3794,8 +3788,8 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
             parsed_record_attribute = true;
             record_attribute_start = cfs->current();
             record_attribute_length = attribute_length;
-          } else if (tag == vmSymbols::tag_permitted_subclasses()) {
-            if (supports_sealed_types()) {
+          } else if (_major_version >= JAVA_17_VERSION) {
+            if (tag == vmSymbols::tag_permitted_subclasses()) {
               if (parsed_permitted_subclasses_attribute) {
                 classfile_parse_error("Multiple PermittedSubclasses attributes in class file %s", CHECK);
                 return;
@@ -3810,7 +3804,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
               permitted_subclasses_attribute_length = attribute_length;
             }
           }
-          // Skip attribute_length for any attribute where major_verson >= JAVA_16_VERSION
+          // Skip attribute_length for any attribute where major_verson >= JAVA_17_VERSION
           cfs->skip_u1(attribute_length, CHECK);
         } else {
           // Unknown attribute
@@ -4655,6 +4649,7 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
   const bool is_protected    = (flags & JVM_ACC_PROTECTED)    != 0;
   const bool major_gte_1_5   = _major_version >= JAVA_1_5_VERSION;
   const bool major_gte_8     = _major_version >= JAVA_8_VERSION;
+  const bool major_gte_17    = _major_version >= JAVA_17_VERSION;
   const bool is_initializer  = (name == vmSymbols::object_initializer_name());
 
   bool is_illegal = false;
@@ -4673,7 +4668,7 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
           // ACC_STRICT, or ACC_SYNCHRONIZED flags set.  No need to
           // check for ACC_FINAL, ACC_NATIVE or ACC_SYNCHRONIZED as
           // those flags are illegal irrespective of ACC_ABSTRACT being set or not.
-          (is_abstract && (is_private || is_static || is_strict))) {
+          (is_abstract && (is_private || is_static || (!major_gte_17 && is_strict)))) {
         is_illegal = true;
       }
     } else if (major_gte_1_5) {
@@ -4700,7 +4695,7 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
       } else { // not initializer
         if (is_abstract) {
           if ((is_final || is_native || is_private || is_static ||
-              (major_gte_1_5 && (is_synchronized || is_strict)))) {
+              (major_gte_1_5 && (is_synchronized || (!major_gte_17 && is_strict))))) {
             is_illegal = true;
           }
         }

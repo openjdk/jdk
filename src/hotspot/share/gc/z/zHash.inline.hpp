@@ -58,6 +58,8 @@
 
 #include "gc/z/zHash.hpp"
 
+#include "gc/z/zAddress.inline.hpp"
+
 inline uint32_t ZHash::uint32_to_uint32(uint32_t key) {
   key = ~key + (key << 15);
   key = key ^ (key >> 12);

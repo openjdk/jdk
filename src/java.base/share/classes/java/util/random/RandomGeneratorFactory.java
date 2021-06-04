@@ -284,6 +284,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                 if (ctor == null) {
                     PrivilegedExceptionAction<Constructor<?>[]> ctorAction = randomGeneratorClass::getConstructors;
                     try {
+                        @SuppressWarnings("removal")
                         Constructor<?>[] ctors = AccessController.doPrivileged(ctorAction);
 
                         Constructor<T> tmpCtor = null;
