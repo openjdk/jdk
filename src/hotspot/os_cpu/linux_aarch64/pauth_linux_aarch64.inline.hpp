@@ -32,10 +32,9 @@
 #define XPACLRI "hint #0x7;"
 
 inline address pauth_strip_pointer(address ptr) {
-  asm ("mov x30, %0;"
-       XPACLRI
-       "mov %0, x30;" : "+r"(ptr) : : "x30");
-  return ptr;
+  register address result __asm__("x30") = ptr;
+  asm (XPACLRI : "+r"(result));
+  return result;
 }
 
 #undef XPACLRI
