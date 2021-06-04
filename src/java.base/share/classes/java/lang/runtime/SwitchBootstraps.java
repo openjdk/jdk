@@ -74,7 +74,7 @@ public class SwitchBootstraps {
      * Bootstrap method for linking an {@code invokedynamic} call site that
      * implements a {@code switch} on a target of a reference type.  The static
      * arguments are an array of case labels which must be non-null and of type
-     * {@code String} or {@code Integer} and {@code Class}.
+     * {@code String} or {@code Integer} or {@code Class}.
      * <p>
      * The type of the returned {@code CallSite}'s method handle will have
      * a return type of {@code int}.   It has two parameters: the first argument
