@@ -27,7 +27,7 @@
  * @library /test/lib /javax/net/ssl/templates ../../
  * @summary Checks for clarified exception messages for non-fatal SSLSocketImpl exceptions which
  *          can be ignored by the user
- * @run main/othervm IgnorableExceptionMessages
+ * @run main IgnorableExceptionMessages
  */
 
 /*
