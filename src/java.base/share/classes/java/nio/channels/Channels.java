@@ -152,7 +152,7 @@ public final class Channels {
         /**
          * @param ch The channel wrapped by this stream.
          */
-        public ChannelOutputStream(final WritableByteChannel ch) {
+        public ChannelOutputStream(WritableByteChannel ch) {
             this.ch = ch;
         }
 

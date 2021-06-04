@@ -145,37 +145,37 @@ public class ChannelInputStream
     private static final int TRANSFER_SIZE = 8192;
 
     @Override
-    public long transferTo(final OutputStream out) throws IOException {
+    public long transferTo(OutputStream out) throws IOException {
         if (out instanceof Channels.ChannelOutputStream) {
-            final var oc = ((Channels.ChannelOutputStream) out).channel();
+            var oc = ((Channels.ChannelOutputStream) out).channel();
 
             if (ch instanceof FileChannel) {
-                final var fc = (FileChannel) ch;
-                final var pos = fc.position();
-                final var size = fc.size();
+                var fc = (FileChannel) ch;
+                var pos = fc.position();
+                var size = fc.size();
                 var i = 0L;
-                for (final var n = size - pos; i < n;
+                for (var n = size - pos; i < n;
                   i += fc.transferTo(pos + i, Long.MAX_VALUE, oc));
                 fc.position(size);
                 return i;
             }
 
             if (oc instanceof FileChannel) {
-                final var fc = (FileChannel) oc;
-                final var fcpos = fc.position();
+                var fc = (FileChannel) oc;
+                var fcpos = fc.position();
 
                 if (ch instanceof SeekableByteChannel) {
-                    final var pos = ((SeekableByteChannel) ch).position();
-                    final var size = ((SeekableByteChannel) ch).size();
+                    var pos = ((SeekableByteChannel) ch).position();
+                    var size = ((SeekableByteChannel) ch).size();
                     var i = 0L;
-                    for (final var n = size - pos; i < n;
+                    for (var n = size - pos; i < n;
                       i += fc.transferFrom(ch, fcpos + i, Long.MAX_VALUE));
                     fc.position(fcpos + i);
                     return i;
                 }
 
                 try {
-                    final var bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
+                    var bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
                     var i = 0L;
                     int r;
                     do {
@@ -197,7 +197,7 @@ public class ChannelInputStream
             }
 
             try {
-                final var bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
+                var bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
                 var i = 0L;
                 for (var r = ch.read(bb); r > -1; r = ch.read(bb)) {
                     bb.flip();
