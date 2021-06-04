@@ -698,11 +698,11 @@ public class VaListTest extends NativeTestHelper {
                     assertEquals((long) VH_BigPoint_x.get(struct), 8);
                     assertEquals((long) VH_BigPoint_y.get(struct), 16);
 
-                    assertEquals((long) vaList.vargAsLong(C_LONG_LONG), 42);
+                    assertEquals(vaList.vargAsLong(C_LONG_LONG), 42);
                 })},
                 { linkVaListCB("upcallBigStructPlusScalar"), VaListConsumer.mh(vaList -> {
                     vaList.skip(BigPoint_LAYOUT);
-                    assertEquals((long) vaList.vargAsLong(C_LONG_LONG), 42);
+                    assertEquals(vaList.vargAsLong(C_LONG_LONG), 42);
                 })},
                 { linkVaListCB("upcallStruct"), VaListConsumer.mh(vaList -> {
                     MemorySegment struct = vaList.vargAsSegment(Point_LAYOUT, ResourceScope.newImplicitScope());
