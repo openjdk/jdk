@@ -106,7 +106,10 @@ static jlong initialize_frequency() {
     tsc_freq = (double)VM_Version_Ext::maximum_qualified_cpu_frequency();
     os_to_tsc_conv_factor = tsc_freq / os_freq;
   }
-  if (tsc_freq == 0.0f) {
+
+  // If no invariant TSC, or the system failed to report a useful maximum frequency,
+  // use an estimation.
+  if (tsc_freq == 0.0) {
     // use measurements to estimate
     // a conversion factor and the tsc frequency
 
