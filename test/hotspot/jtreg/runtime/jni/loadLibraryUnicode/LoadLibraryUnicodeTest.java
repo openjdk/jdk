@@ -26,7 +26,7 @@
  * @bug 8195129
  * @summary regression test for 8195129,
  *          verifies the ability to System.load() from a location containing non-Latin characters
- * @requires (os.family == "windows") | (os.family == "mac") | (os.family == "linux")
+ * @requires (os.family == "windows")
  * @library /test/lib
  * @build LoadLibraryUnicode
  * @run main/native LoadLibraryUnicodeTest
@@ -37,11 +37,6 @@ import jdk.test.lib.process.ProcessTools;
 public class LoadLibraryUnicodeTest {
 
     public static void main(String args[]) throws Exception {
-        if (!java.nio.charset.Charset.isSupported("UTF-8")) {
-            System.out.println("Test requires UTF-8 support; will not run and is considered passed.");
-            return;
-        }
-
         String nativePathSetting = "-Dtest.nativepath=" + getSystemProperty("test.nativepath");
         ProcessBuilder pb = ProcessTools.createTestJvm(nativePathSetting, LoadLibraryUnicode.class.getName());
         pb.environment().put("LC_ALL", "en_US.UTF-8");

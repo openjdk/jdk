@@ -33,7 +33,8 @@ public class LoadLibraryUnicode {
 
     static native int giveANumber();
 
-    private static final String NON_LATIN_PATH_NAME = "ka-\u1889-omega-\u03c9";
+    // Use non-Latin characters from basic (\u1889) and supplementary (\uD844\uDDD9) Unicode planes
+    private static final String NON_LATIN_PATH_NAME = "ka-\u1889-supp-\uD844\uDDD9";
 
     private static String toPlatformLibraryName(String name) {
         return (Platform.isWindows() ? "" : "lib") + name + "." + Platform.sharedLibraryExt();
