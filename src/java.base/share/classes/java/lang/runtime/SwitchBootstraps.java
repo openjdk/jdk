@@ -100,17 +100,9 @@ public class SwitchBootstraps {
      * @param lookup Represents a lookup context with the accessibility
      *               privileges of the caller.  When used with {@code invokedynamic},
      *               this is stacked automatically by the VM.
-     * @param invocationName The invocation name, which is ignored.  When used with
-     *                       {@code invokedynamic}, this is provided by the
-     *                       {@code CONSTANT_NameAndType_info} of the
-     *                       {@code CONSTANT_InvokeDynamic_info}
-     *                       structure and is stacked automatically by the VM.
+     * @param invocationName unused
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
      *                       a reference type, an {@code int}, and {@code int} as a return type.
-     *                       When used with {@code invokedynamic}, this is provided by
-     *                       the {@code CONSTANT_NameAndType_info} of the
-     *                       {@code CONSTANT_InvokeDynamic_info}
-     *                       structure and is stacked automatically by the VM.
      * @param labels case labels - {@code String} and {@code Integer} constants
      *               and {@code Class} instances, in any combination
      * @return a {@code CallSite} returning the first matching element as described above
@@ -131,7 +123,8 @@ public class SwitchBootstraps {
                                       Object... labels) throws Throwable {
         if (invocationType.parameterCount() != 2
             || (!invocationType.returnType().equals(int.class))
-            || invocationType.parameterType(0).isPrimitive())
+            || invocationType.parameterType(0).isPrimitive()
+            || !invocationType.parameterType(1).equals(int.class))
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
         requireNonNull(labels);
 
