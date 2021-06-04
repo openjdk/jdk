@@ -328,10 +328,20 @@ public final class EventWriter {
     }
 
     private void putUncheckedLong(long v) {
-        int length = VARINT_LENGTHS[Long.numberOfLeadingZeros(v)];
-        for (int i = 0; i < length; i++) {
-            putUncheckedByte(((byte) ((v & 0x7F) | 0x80)));
+        if ((v & ~0x7FL) != 0) {
+            putUncheckedByte((byte)((v & 0x7F) | 0x80));
             v >>>= 7;
+            if ((v & ~0x7FL) != 0) {
+                putUncheckedByte((byte)((v & 0x7F) | 0x80));
+                v >>>= 7;
+                if ((v & ~0x7FL) != 0) {
+                    int length = VARINT_LENGTHS[Long.numberOfLeadingZeros(v)];
+                    for (int i = 0; i < length; i++) {
+                        putUncheckedByte(((byte) ((v & 0x7F) | 0x80)));
+                        v >>>= 7;
+                    }
+                }
+            }
         }
         putUncheckedByte((byte) v);
     }
