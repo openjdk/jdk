@@ -46,7 +46,7 @@ public class SystemLookup implements SymbolLookup {
      * on Windows. For this reason, on Windows we do not generate any side-library, and load msvcrt.dll directly instead.
      */
     final NativeLibrary syslookup = switch (CABI.current()) {
-        case SysV, AArch64 -> NativeLibraries.rawNativeLibraries(SystemLookup.class, false).loadLibrary("syslookup");
+        case SysV, LinuxAArch64, MacOsAArch64 -> NativeLibraries.rawNativeLibraries(SystemLookup.class, false).loadLibrary("syslookup");
         case Win64 -> {
             Path system32 = Path.of(System.getenv("SystemRoot"), "System32");
             Path ucrtbase = system32.resolve("ucrtbase.dll");
