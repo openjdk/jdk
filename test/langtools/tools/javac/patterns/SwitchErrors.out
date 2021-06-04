@@ -38,6 +38,7 @@ SwitchErrors.java:109:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:114:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:120:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:127:9: compiler.err.not.exhaustive.statement
+SwitchErrors.java:187:9: compiler.err.not.exhaustive.statement
 - compiler.note.preview.filename: SwitchErrors.java, DEFAULT
 - compiler.note.preview.recompile
-40 errors
+41 errors

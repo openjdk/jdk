@@ -153,17 +153,14 @@ public class SwitchBootstraps {
             if (label instanceof Class<?> c) {
                 if (c.isAssignableFrom(targetClass))
                     return i;
-            } else {
-                if (label instanceof Integer constant) {
-                    if (target instanceof Number input && constant.intValue() == input.intValue()) {
-                        return i;
-                    }
-                    if (target instanceof Character input && constant.intValue() == input.charValue()) {
-                        return i;
-                    }
-                } else if (label.equals(target)) {
+            } else if (label instanceof Integer constant) {
+                if (target instanceof Number input && constant.intValue() == input.intValue()) {
+                    return i;
+                } else if (target instanceof Character input && constant.intValue() == input.charValue()) {
                     return i;
                 }
+            } else if (label.equals(target)) {
+                return i;
             }
         }
 

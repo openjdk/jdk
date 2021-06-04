@@ -183,4 +183,11 @@ public class SwitchErrors {
             case null: break;
         }
     }
+    void sealedNonAbstract(SealedNonAbstract obj) {
+        switch (obj) {//does not cover SealedNonAbstract
+            case A a -> {}
+        }
+    }
+    sealed class SealedNonAbstract permits A {}
+    final class A extends SealedNonAbstract {}
 }

@@ -50,8 +50,8 @@ public class SwitchBootstrapsTest {
             BSM_TYPE_SWITCH = MethodHandles.lookup().findStatic(SwitchBootstraps.class, "typeSwitch",
                                                                 MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class));
         }
-        catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+        catch (ReflectiveOperationException e) {
+            throw new AssertionError("Should not happen", e);
         }
     }
 
@@ -111,6 +111,23 @@ public class SwitchBootstrapsTest {
             } catch (IllegalArgumentException ex) {
                 //OK, expected
             }
+        }
+    }
+
+    public void testNullLabels() throws Throwable {
+        MethodType switchType = MethodType.methodType(int.class, Object.class, int.class);
+        try {
+            BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, (Object[]) null);
+            fail("Didn't get the expected exception.");
+        } catch (NullPointerException ex) {
+            //OK
+        }
+        try {
+            BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType,
+                                   new Object[] {1, null, String.class});
+            fail("Didn't get the expected exception.");
+        } catch (IllegalArgumentException ex) {
+            //OK
         }
     }
 }
