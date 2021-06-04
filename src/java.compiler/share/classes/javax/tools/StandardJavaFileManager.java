@@ -190,10 +190,10 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Returns file objects representing the given paths.
      *
      * @implSpec
-     * The default implementation converts each path to a file and calls
-     * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
+     * The default implementation lazily converts each path to a file and calls
+     * {@link #getJavaFileObjectsFromFiles(Iterable) getJavaFileObjectsFromFiles}.
      * IllegalArgumentException will be thrown if any of the paths
-     * cannot be converted to a file.
+     * cannot be converted to a file at the point the conversion happens.
      *
      * @param paths a list of paths
      * @return a list of file objects
@@ -212,10 +212,10 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Returns file objects representing the given paths.
      *
      * @implSpec
-     * The default implementation converts each path to a file and calls
-     * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
+     * The default implementation lazily converts each path to a file and calls
+     * {@link #getJavaFileObjectsFromPaths(Collection) getJavaFileObjectsFromPaths}.
      * IllegalArgumentException will be thrown if any of the paths
-     * cannot be converted to a file.
+     * cannot be converted to a file at the point the conversion happens.
      *
      * @param paths a list of paths
      * @return a list of file objects
@@ -267,7 +267,8 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * @throws IllegalArgumentException if the array of files includes
      * a directory
      * @throws NullPointerException if the given array contains null
-     * elements
+     * elements and the given element is used by
+     * {@linkplain #getJavaFileObjectsFromPaths(Collection)}.
      *
      * @since 9
      */
@@ -332,10 +333,11 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * will be cancelled.
      *
      * @implSpec
-     * The default implementation converts each path to a file and calls
-     * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
+     * The default implementation lazily converts each path to a file and calls
+     * {@link #setLocation setLocation}.
      * {@linkplain IllegalArgumentException IllegalArgumentException}
-     * will be thrown if any of the paths cannot be converted to a file.
+     * will be thrown if any of the paths cannot be converted to a file at
+     * the point the conversion happens.
      *
      * @param location a location
      * @param paths a list of paths, if {@code null} use the default
