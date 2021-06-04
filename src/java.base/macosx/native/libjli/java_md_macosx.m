@@ -723,13 +723,17 @@ static void* ThreadJavaMain(void* args) {
     return (void*)(intptr_t)JavaMain(args);
 }
 
-static size_t alignUp(size_t stack_size) {
-    long page_size = sysconf(_SC_PAGESIZE);
+static size_t adjustStackSize(size_t stack_size) {
+    long page_size = getpagesize();
     if (stack_size % page_size == 0) {
         return stack_size;
     } else {
         long pages = stack_size / page_size;
-        return page_size * (pages + 1);
+        // Ensure we don't go over limit
+        if (stack_size <= SIZE_MAX - page_size) {
+            pages++;
+        }
+        return page_size * pages;
     }
 }
 
@@ -745,7 +749,7 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     if (stack_size > 0) {
-        pthread_attr_setstacksize(&attr, alignUp(stack_size));
+        pthread_attr_setstacksize(&attr, adjustStackSize(stack_size));
     }
     pthread_attr_setguardsize(&attr, 0); // no pthread guard page on java threads
 
