@@ -1480,6 +1480,7 @@ private:
   void kmovql(Register dst, KRegister src);
 
   void knotwl(KRegister dst, KRegister src);
+  void knotql(KRegister dst, KRegister src);
 
   void kortestbl(KRegister dst, KRegister src);
   void kortestwl(KRegister dst, KRegister src);
