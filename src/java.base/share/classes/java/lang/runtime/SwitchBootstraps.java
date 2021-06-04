@@ -44,11 +44,6 @@ import static java.util.Objects.requireNonNull;
  * take additional static arguments corresponding to the {@code case} labels
  * of the {@code switch}, implicitly numbered sequentially from {@code [0..N)}.
  *
- * <p>The bootstrap call site accepts a single parameter of the type of the
- * operand of the {@code switch}, and return an {@code int} that is the index of
- * the matched {@code case} label, {@code -1} if the target is {@code null},
- * or {@code N} if the target is not null but matches no {@code case} label.
- *
  * @since 17
  */
 @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING)
@@ -84,12 +79,12 @@ public class SwitchBootstraps {
      * If the {@code target} is {@code null}, then the method of the call site
      * returns {@literal -1}.
      * <p>
-     * the {@code target} is not {@code null}, then the method of the call site
+     * If the {@code target} is not {@code null}, then the method of the call site
      * returns the index of the first element in the {@code labels} array starting from
      * the {@code restart} index matching one of the following conditions:
      * <ul>
-     *   <li>the element is of type {@code Class} and the target value
-     *       is a subtype of this {@code Class}; or</li>
+     *   <li>the element is of type {@code Class} that is assignable
+     *       from the target's class; or</li>
      *   <li>the element is of type {@code String} or {@code Integer} and
      *       equals to the target.</li>
      * </ul>
@@ -107,7 +102,7 @@ public class SwitchBootstraps {
      *               and {@code Class} instances, in any combination
      * @return a {@code CallSite} returning the first matching element as described above
      *
-     * @throws NullPointerException if any argument is null
+     * @throws NullPointerException if any argument is {@code null}
      * @throws IllegalArgumentException if any element in the labels array is null, if the
      * invocation type is not not a method type of first parameter of a reference type,
      * second parameter of type {@code int} and with {@code int} as its return type,
