@@ -80,8 +80,8 @@ public final class SetPositionHang implements Runnable {
     public void run() {
         System.out.println("Thread " + thread + " Start");
         for (int i = 0; i < 100; i++) {
-            System.out.println("Thread " + thread + " Play "
-                                       + System.currentTimeMillis() % 100000);
+//            System.out.println("Thread " + thread + " Play " +
+//                               System.currentTimeMillis() % 100000);
             playSound();
             try {
                 Thread.sleep(i);
@@ -92,7 +92,7 @@ public final class SetPositionHang implements Runnable {
         System.out.println("Thread " + thread + " Finish");
     }
 
-    void playSound() {
+    private void playSound() {
         if (clip.isRunning()) {
             clip.stop();
         }
