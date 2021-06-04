@@ -174,34 +174,42 @@ public class ChannelInputStream
                     return i;
                 }
 
-                final var bb = ByteBuffer.allocateDirect(TRANSFER_SIZE);
-                var i = 0L;
-                int r;
-                do {
-                    i += fc.transferFrom(ch, fcpos + i, Long.MAX_VALUE);
-                    r = ch.read(bb); // detect end-of-stream
-                    if (r > -1) {
-                        bb.flip();
-                        while (bb.hasRemaining())
-                          oc.write(bb);
-                        bb.clear();
-                        i += r;
-                    }
-                } while (r > -1);
-                fc.position(fcpos + i);
-                return i;
+                try {
+                    final var bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
+                    var i = 0L;
+                    int r;
+                    do {
+                        i += fc.transferFrom(ch, fcpos + i, Long.MAX_VALUE);
+                        r = ch.read(bb); // detect end-of-stream
+                        if (r > -1) {
+                            bb.flip();
+                            while (bb.hasRemaining())
+                              oc.write(bb);
+                            bb.clear();
+                            i += r;
+                        }
+                    } while (r > -1);
+                    fc.position(fcpos + i);
+                    return i;
+                } finally {
+                    Util.releaseTemporaryDirectBuffer(bb);
+                }
             }
 
-            final var bb = ByteBuffer.allocateDirect(TRANSFER_SIZE);
-            var i = 0L;
-            for (var r = ch.read(bb); r > -1; r = ch.read(bb)) {
-                bb.flip();
-                while (bb.hasRemaining())
-                  oc.write(bb);
-                bb.clear();
-                i += r;
+            try {
+                final var bb = Util.getTemporaryDirectBuffer(TRANSFER_SIZE);
+                var i = 0L;
+                for (var r = ch.read(bb); r > -1; r = ch.read(bb)) {
+                    bb.flip();
+                    while (bb.hasRemaining())
+                      oc.write(bb);
+                    bb.clear();
+                    i += r;
+                }
+                return i;
+            } finally {
+                Util.releaseTemporaryDirectBuffer(bb);
             }
-            return i;
         }
 
         return super.transferTo(out);
