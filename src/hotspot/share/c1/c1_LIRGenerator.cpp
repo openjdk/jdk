@@ -1863,40 +1863,44 @@ void LIRGenerator::do_PreconditionsCheckIndex(Intrinsic* x, BasicType type) {
     state->push(arg->type(), arg);
   }
   CodeEmitInfo* info = state_for(x, state);
-  CodeStub* deopt = new DeoptimizeStub(info, Deoptimization::Reason_range_check,
-                                       Deoptimization::Action_make_not_entrant);
 
-  if (length.result()->is_constant()) {
-#if defined(X86) && !defined(_LP64)
-    // BEWARE! On 32-bit x86 cmp clobbers its left argument so we need a temp copy.
-    LIR_Opr index_copy = new_register(index.type());
-    __ move(index.result(), index_copy);
-    if (type == T_INT) {
-      __ cmp(lir_cond_aboveEqual, index_copy, LIR_OprFact::intConst(length.result()->as_jint()));
-    } else {
-      assert(type == T_LONG, "sanity check");
-      __ cmp(lir_cond_aboveEqual, index_copy, LIR_OprFact::longConst(length.result()->as_jlong()));
+  LIR_Opr len = length.result();
+  LIR_Opr zero = NULL;
+  if (type == T_INT) {
+    zero = LIR_OprFact::intConst(0);
+    if (length.result()->is_constant()){
+      len = LIR_OprFact::intConst(length.result()->as_jint());
     }
-#else
-    if (type == T_INT) {
-      __ cmp(lir_cond_aboveEqual, index.result(), LIR_OprFact::intConst(length.result()->as_jint()));
-    } else {
-      assert(type == T_LONG, "sanity check");
-      __ cmp(lir_cond_aboveEqual, index.result(), LIR_OprFact::longConst(length.result()->as_jlong()));
-    }
-#endif
-    __ branch(lir_cond_aboveEqual, deopt);
   } else {
-#if defined(X86) && !defined(_LP64)
-    // BEWARE! On 32-bit x86 cmp clobbers its left argument so we need a temp copy.
-    LIR_Opr index_copy = new_register(index.type());
-    __ move(index.result(), index_copy);
-    __ cmp(lir_cond_aboveEqual, index_copy, length.result());
-#else
-    __ cmp(lir_cond_aboveEqual, index.result(), length.result());
-#endif
-    __ branch(lir_cond_aboveEqual, deopt);
+    assert(type == T_LONG, "sanity check");
+    zero = LIR_OprFact::longConst(0);
+    if (length.result()->is_constant()){
+      len = LIR_OprFact::longConst(length.result()->as_jlong());
+    }
   }
+#if defined(X86) && !defined(_LP64)
+  // BEWARE! On 32-bit x86 cmp clobbers its left argument so we need a temp copy.
+  LIR_Opr index_copy = new_register(index.type());
+  // index >= 0
+  __ move(index.result(), index_copy);
+  __ cmp(lir_cond_less, index_copy, zero);
+  __ branch(lir_cond_less, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
+                                                    Deoptimization::Action_make_not_entrant));
+  // index < length
+  __ move(index.result(), index_copy);
+  __ cmp(lir_cond_greaterEqual, index_copy, len);
+  __ branch(lir_cond_greaterEqual, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
+                                                          Deoptimization::Action_make_not_entrant));
+#else
+  // index >= 0
+  __ cmp(lir_cond_less, index.result(), zero);
+  __ branch(lir_cond_less, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
+                                                    Deoptimization::Action_make_not_entrant));
+  // index < length
+  __ cmp(lir_cond_greaterEqual, index.result(), len);
+  __ branch(lir_cond_greaterEqual, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
+                                                            Deoptimization::Action_make_not_entrant));
+#endif
   __ move(index.result(), result);
 }
 
