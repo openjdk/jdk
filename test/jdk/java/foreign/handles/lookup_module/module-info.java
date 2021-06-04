@@ -22,7 +22,7 @@
  */
 
 open module lookup_module {
-    requires testng;
+    requires org.testng;
     requires jdk.incubator.foreign;
     requires invoker_module;
     exports handle.lookup;
