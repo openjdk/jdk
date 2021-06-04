@@ -2393,6 +2393,11 @@ public final class System {
             public Object classData(Class<?> c) {
                 return c.getClassData();
             }
+
+            @Override
+            public long findNative(ClassLoader loader, String entry) {
+                return ClassLoader.findNative(loader, entry);
+            }
         });
     }
 }
