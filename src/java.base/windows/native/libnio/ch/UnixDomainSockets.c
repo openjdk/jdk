@@ -23,10 +23,6 @@
  * questions.
  */
 
-#ifndef UNICODE
-#define UNICODE 1
-#endif
-
 #include <windows.h>
 #include <winsock2.h>
 
@@ -93,32 +89,36 @@ jint unixSocketAddressToSockaddr(JNIEnv *env, jbyteArray addr, struct sockaddr_u
 
 static int cmpGuid(GUID *g1, GUID *g2) {
     if (g1->Data1 != g2->Data1)
-        return 0;
+        return JNI_FALSE;
     if (g1->Data2 != g2->Data2)
-        return 0;
+        return JNI_FALSE;
     if (g1->Data3 != g2->Data3)
-        return 0;
-    return !memcmp(g1->Data4, g2->Data4, 8);
+        return JNI_FALSE;
+    for (int i=0; i<8; i++) {
+        if (g1->Data4[i] != g2->Data4[i])
+            return JNI_FALSE;
+    }
+    return JNI_TRUE;
 }
 
-static WSAPROTOCOL_INFO provider;
+static WSAPROTOCOL_INFOW provider;
 
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_UnixDomainSockets_socketSupported(JNIEnv *env, jclass cl)
 {
-    WSAPROTOCOL_INFO info[5]; // if not large enough, a buffer is malloc'd
-    LPWSAPROTOCOL_INFO infoPtr = &info[0];
+    WSAPROTOCOL_INFOW info[5]; // if not large enough, a buffer is malloc'd
+    LPWSAPROTOCOL_INFOW infoPtr = &info[0];
     DWORD len = sizeof(info);
-    jboolean found;
+    jboolean found = JNI_FALSE;
 
     /*
      * First locate the Microsoft AF_UNIX Winsock provider
      */
-    int result = WSAEnumProtocols(0, infoPtr, &len);
+    int result = WSAEnumProtocolsW(0, infoPtr, &len);
     if (result == SOCKET_ERROR) {
         if (GetLastError() == WSAENOBUFS) {
-            infoPtr = (LPWSAPROTOCOL_INFO)malloc(len);
-            result = WSAEnumProtocols(0, infoPtr, &len);
+            infoPtr = (LPWSAPROTOCOL_INFOW)malloc(len);
+            result = WSAEnumProtocolsW(0, infoPtr, &len);
             if (result == SOCKET_ERROR) {
                 free(infoPtr);
                 return JNI_FALSE;
@@ -127,15 +127,14 @@ Java_sun_nio_ch_UnixDomainSockets_socketSupported(JNIEnv *env, jclass cl)
             return JNI_FALSE;
         }
     }
-    found = JNI_FALSE;
     for (int i=0; i<result;  i++) {
-        if (infoPtr[i].iAddressFamily != AF_UNIX)
-            continue;
-        GUID g = infoPtr[i].ProviderId;
-        if (cmpGuid(&g, &MS_PROVIDER_ID)) {
-            found = JNI_TRUE;
-            provider = infoPtr[i];
-            break;
+        if (infoPtr[i].iAddressFamily == AF_UNIX) {
+            GUID g = infoPtr[i].ProviderId;
+            if (cmpGuid(&g, &MS_PROVIDER_ID)) {
+                found = JNI_TRUE;
+                provider = infoPtr[i];
+                break;
+            }
         }
     }
     if (infoPtr != &info[0]) {
@@ -145,7 +144,7 @@ Java_sun_nio_ch_UnixDomainSockets_socketSupported(JNIEnv *env, jclass cl)
      * check we can create a socket
      */
     if (found) {
-        SOCKET s = WSASocket(PF_UNIX, SOCK_STREAM, 0, &provider, 0, WSA_FLAG_OVERLAPPED);
+        SOCKET s = WSASocketW(PF_UNIX, SOCK_STREAM, 0, &provider, 0, WSA_FLAG_OVERLAPPED);
         if (s == INVALID_SOCKET) {
             return JNI_FALSE;
         }
@@ -157,7 +156,7 @@ Java_sun_nio_ch_UnixDomainSockets_socketSupported(JNIEnv *env, jclass cl)
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_UnixDomainSockets_socket0(JNIEnv *env, jclass cl)
 {
-    SOCKET s = WSASocket(PF_UNIX, SOCK_STREAM, 0, &provider, 0, WSA_FLAG_OVERLAPPED);
+    SOCKET s = WSASocketW(PF_UNIX, SOCK_STREAM, 0, &provider, 0, WSA_FLAG_OVERLAPPED);
     if (s == INVALID_SOCKET) {
         return handleSocketError(env, WSAGetLastError());
     }
