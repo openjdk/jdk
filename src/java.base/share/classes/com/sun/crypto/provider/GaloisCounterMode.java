@@ -81,7 +81,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     // can only be returned by the doFinal(...) call.
     private static final int MAX_BUF_SIZE = Integer.MAX_VALUE;
     // data size when buffer is divided up to aid in intrinsics
-    private static final int TRIGGERLEN = 65535;  // 64k
+    private static final int TRIGGERLEN = 65536;  // 64k
 
     static final byte[] EMPTY_BUF = new byte[0];
 
@@ -464,7 +464,9 @@ abstract class GaloisCounterMode extends CipherSpi {
         } finally {
             // Release crypto engine
             engine = null;
-            Arrays.fill(encodedKey, (byte)0);
+            if (encodedKey != null) {
+                Arrays.fill(encodedKey, (byte) 0);
+            }
         }
         return null;
     }
@@ -939,6 +941,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             dst.flip();
             originalDst.put(dst);
+            originalDst = null;
         }
 
         /**
@@ -952,6 +955,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             System.arraycopy(out, originalOutOfs, originalOut, originalOutOfs,
                 len);
+            originalOut = null;
         }
     }
 
