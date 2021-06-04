@@ -1,7 +1,5 @@
 # Framework internal tests
-This folder contains tests which test the functionality of the framework. These should be run with JTreg and without additional VM and Javaopts flags whenever the framework is modified. 
-
-These tests are not part of the normal tier testing as they only should be run when the framework is changed in any way.
+This folder contains tests which test the functionality of the framework. These are run with JTreg and are part of tier testing. All tests are run without additional VM and Javaopts flags. These tests must pass whenever the framework is updated.
 
 Additional testing should be performed with the converted Valhalla tests to make sure a changeset is correct (these are part of the Valhalla CI).
 

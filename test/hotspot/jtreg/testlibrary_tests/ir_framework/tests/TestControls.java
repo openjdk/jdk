@@ -21,8 +21,10 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package ir_framework.tests;
 
+import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.Compiler;
 import compiler.lib.ir_framework.test.TestVM;
 import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
@@ -40,7 +42,7 @@ import java.util.regex.Pattern;
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -DSkipWhiteBoxInstall=true -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI compiler.lib.ir_framework.TestControls
+ *                   -Xbatch -XX:+WhiteBoxAPI ir_framework.tests.TestControls
  */
 
 public class TestControls {

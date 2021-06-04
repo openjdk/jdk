@@ -21,8 +21,9 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package ir_framework.tests;
 
+import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.test.TestVM;
 
 import java.lang.reflect.Method;
@@ -36,7 +37,7 @@ import java.lang.reflect.Method;
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -DSkipWhiteBoxInstall=true -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI compiler.lib.ir_framework.TestCompLevels
+ *                   -Xbatch -XX:+WhiteBoxAPI ir_framework.tests.TestCompLevels
  */
 
 public class TestCompLevels {

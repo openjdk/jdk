@@ -21,24 +21,26 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package ir_framework.tests;
 
+import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.TestFramework;
 /*
  * @test
  * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
  * @summary Sanity test remaining framework property flags.
  * @library /test/lib /
- * @run main/othervm -DFlipC1C2=true compiler.lib.ir_framework.TestDFlags
- * @run main/othervm -DExcludeRandom=true compiler.lib.ir_framework.TestDFlags
- * @run main/othervm -DVerifyVM=true compiler.lib.ir_framework.TestDFlags
- * @run main/othervm -DDumpReplay=true compiler.lib.ir_framework.TestDFlags
- * @run main/othervm -DVerbose=true compiler.lib.ir_framework.TestDFlags
- * @run main/othervm -DShuffleTests=false compiler.lib.ir_framework.TestDFlags
- * @run main/othervm -DReproduce=true compiler.lib.ir_framework.TestDFlags
- * @run main/othervm -DReportStdout=true compiler.lib.ir_framework.TestDFlags
- * @run main/othervm -DGCAfter=true compiler.lib.ir_framework.TestDFlags
- * @run main/othervm -DPrintTimes=true compiler.lib.ir_framework.TestDFlags
- * @run main/othervm -DVerifyIR=false compiler.lib.ir_framework.TestDFlags
+ * @run main/othervm -DFlipC1C2=true ir_framework.tests.TestDFlags
+ * @run main/othervm -DExcludeRandom=true ir_framework.tests.TestDFlags
+ * @run main/othervm -DVerifyVM=true ir_framework.tests.TestDFlags
+ * @run main/othervm -DDumpReplay=true ir_framework.tests.TestDFlags
+ * @run main/othervm -DVerbose=true ir_framework.tests.TestDFlags
+ * @run main/othervm -DShuffleTests=false ir_framework.tests.TestDFlags
+ * @run main/othervm -DReproduce=true ir_framework.tests.TestDFlags
+ * @run main/othervm -DReportStdout=true ir_framework.tests.TestDFlags
+ * @run main/othervm -DGCAfter=true ir_framework.tests.TestDFlags
+ * @run main/othervm -DPrintTimes=true ir_framework.tests.TestDFlags
+ * @run main/othervm -DVerifyIR=false ir_framework.tests.TestDFlags
  */
 
 public class TestDFlags {

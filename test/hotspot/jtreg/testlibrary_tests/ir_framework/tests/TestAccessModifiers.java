@@ -21,14 +21,16 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package ir_framework.tests;
+
+import compiler.lib.ir_framework.*;
 
 /*
  * @test
  * @requires vm.flagless
  * @summary Test different access modifiers an make sure, the framework can access all methods.
  * @library /test/lib /
- * @run driver compiler.lib.ir_framework.TestAccessModifiers
+ * @run driver ir_framework.tests.TestAccessModifiers
  */
 
 public class TestAccessModifiers {

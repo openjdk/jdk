@@ -21,14 +21,18 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package ir_framework.tests;
+
+import compiler.lib.ir_framework.Scenario;
+import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.TestFramework;
 
 /*
  * @test
  * @requires vm.flagless
  * @summary Sanity test the different ways to start the test framework.
  * @library /test/lib /
- * @run driver compiler.lib.ir_framework.TestSanity
+ * @run driver ir_framework.tests.TestSanity
  */
 
 public class TestSanity {

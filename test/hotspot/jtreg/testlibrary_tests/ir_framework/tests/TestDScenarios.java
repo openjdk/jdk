@@ -21,11 +21,14 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package ir_framework.tests;
 
+import compiler.lib.ir_framework.Scenario;
+import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.TestVMException;
-import jdk.test.lib.Utils;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -34,11 +37,11 @@ import jdk.test.lib.process.ProcessTools;
  * @requires vm.debug == true & vm.flagless
  * @summary Test -DScenarios property flag. Run with othervm which should not be done when writing tests using the framework.
  * @library /test/lib /
- * @run main/othervm -DScenarios=1,5,10 compiler.lib.ir_framework.TestDScenarios test
- * @run main/othervm -DScenarios=1,4 compiler.lib.ir_framework.TestDScenarios test
- * @run main/othervm -DScenarios=3,4,9 compiler.lib.ir_framework.TestDScenarios test
- * @run driver compiler.lib.ir_framework.TestDScenarios test2
- * @run driver compiler.lib.ir_framework.TestDScenarios
+ * @run main/othervm -DScenarios=1,5,10 ir_framework.tests.TestDScenarios test
+ * @run main/othervm -DScenarios=1,4 ir_framework.tests.TestDScenarios test
+ * @run main/othervm -DScenarios=3,4,9 ir_framework.tests.TestDScenarios test
+ * @run driver ir_framework.tests.TestDScenarios test2
+ * @run driver ir_framework.tests.TestDScenarios
  */
 
 public class TestDScenarios {
@@ -72,7 +75,7 @@ public class TestDScenarios {
             OutputAnalyzer oa;
             ProcessBuilder process = ProcessTools.createJavaProcessBuilder(
                     "-Dtest.jdk=" + Utils.TEST_JDK, "-DScenarios=a,1,b,10",
-                    "compiler.lib.ir_framework.TestDScenarios", " test3");
+                    "ir_framework.tests.TestDScenarios", " test3");
             oa = ProcessTools.executeProcess(process);
             oa.shouldNotHaveExitValue(0);
             System.out.println(oa.getOutput());

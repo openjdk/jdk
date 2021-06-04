@@ -21,8 +21,10 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package ir_framework.tests;
 
+import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.Compiler;
 import compiler.lib.ir_framework.shared.TestFormatException;
 import jdk.test.lib.Asserts;
 
@@ -37,10 +39,10 @@ import java.util.regex.Pattern;
 
 /*
  * @test
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.debug == true & vm.compiler2.enabled & vm.flagless
  * @summary Test test format violations.
  * @library /test/lib /
- * @run driver compiler.lib.ir_framework.TestBadFormat
+ * @run driver ir_framework.tests.TestBadFormat
  */
 
 public class TestBadFormat {

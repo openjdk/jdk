@@ -21,8 +21,9 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package ir_framework.tests;
 
+import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.TestVMException;
 import compiler.lib.ir_framework.shared.TestFormatException;
 import jdk.test.lib.Asserts;
@@ -32,7 +33,7 @@ import jdk.test.lib.Asserts;
  * @requires vm.flagless
  * @summary Test the framework with helper classes.
  * @library /test/lib /
- * @run driver compiler.lib.ir_framework.TestWithHelperClasses
+ * @run driver ir_framework.tests.TestWithHelperClasses
  */
 
 public class TestWithHelperClasses {
@@ -43,10 +44,10 @@ public class TestWithHelperClasses {
             new TestFramework().addHelperClasses(Helper1.class).start();
             shouldNotReach();
         } catch (TestVMException e) {
-            Asserts.assertFalse(e.getExceptionInfo().contains("public static void compiler.lib.ir_framework.Helper1.foo() should have been C2 compiled"));
-            Asserts.assertFalse(TestFramework.getLastTestVMOutput().contains("public static void compiler.lib.ir_framework.Helper1.foo() should have been C2 compiled"));
-            Asserts.assertTrue(TestFramework.getLastTestVMOutput().contains("public static void compiler.lib.ir_framework.Helper2.foo() should have been C2 compiled"));
-            Asserts.assertTrue(e.getExceptionInfo().contains("public static void compiler.lib.ir_framework.Helper2.foo() should have been C2 compiled"));
+            Asserts.assertFalse(e.getExceptionInfo().contains("public static void ir_framework.tests.Helper1.foo() should have been C2 compiled"));
+            Asserts.assertFalse(TestFramework.getLastTestVMOutput().contains("public static void ir_framework.tests.Helper1.foo() should have been C2 compiled"));
+            Asserts.assertTrue(TestFramework.getLastTestVMOutput().contains("public static void ir_framework.tests.Helper2.foo() should have been C2 compiled"));
+            Asserts.assertTrue(e.getExceptionInfo().contains("public static void ir_framework.tests.Helper2.foo() should have been C2 compiled"));
             Asserts.assertFalse(TestFramework.getLastTestVMOutput().contains("Should not be executed"));
             Asserts.assertFalse(e.getExceptionInfo().contains("Should not be executed"));
         }
@@ -69,7 +70,7 @@ public class TestWithHelperClasses {
             new TestFramework(TestAsHelper.class).addHelperClasses(TestAsHelper.class).start();
             shouldNotReach();
         } catch (TestFormatException e) {
-            Asserts.assertTrue(e.getMessage().contains("Cannot specify test class compiler.lib.ir_framework." +
+            Asserts.assertTrue(e.getMessage().contains("Cannot specify test class ir_framework.tests." +
                                                        "TestAsHelper as helper class, too"));
         }
 

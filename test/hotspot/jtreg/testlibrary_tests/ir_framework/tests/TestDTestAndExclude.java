@@ -21,12 +21,16 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package ir_framework.tests;
 
+import compiler.lib.ir_framework.Check;
+import compiler.lib.ir_framework.Run;
+import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.TestVMException;
 import compiler.lib.ir_framework.shared.NoTestsRunException;
-import jdk.test.lib.Utils;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -35,7 +39,7 @@ import jdk.test.lib.process.ProcessTools;
  * @requires vm.flagless
  * @summary Test -DTest and -DExclude property flag.
  * @library /test/lib /
- * @run driver compiler.lib.ir_framework.TestDTestAndExclude
+ * @run driver ir_framework.tests.TestDTestAndExclude
  */
 
 public class TestDTestAndExclude {
@@ -96,7 +100,7 @@ public class TestDTestAndExclude {
         ProcessBuilder process = ProcessTools.createJavaProcessBuilder(
                 "-Dtest.class.path=" + Utils.TEST_CLASS_PATH, "-Dtest.jdk=" + Utils.TEST_JDK,
                 "-Dtest.vm.opts=-DTest=" + dTest + " -DExclude=" + dExclude,
-                "compiler.lib.ir_framework.TestDTestAndExclude", arg);
+                "ir_framework.tests.TestDTestAndExclude", arg);
         oa = ProcessTools.executeProcess(process);
         oa.shouldHaveExitValue(0);
     }

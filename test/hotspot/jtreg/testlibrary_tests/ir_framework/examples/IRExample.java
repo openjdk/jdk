@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.examples;
+package ir_framework.examples;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.IRViolationException;
@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.driver.IRViolationException;
  * @test
  * @summary Example test to use the new test framework.
  * @library /test/lib /
- * @run driver compiler.lib.ir_framework.examples.IRExample
+ * @run driver ir_framework.examples.IRExample
  */
 
 /**

@@ -31,24 +31,24 @@ The framework is intended to be used in JTreg tests. The JTreg header of the tes
 There are various ways how to set up and run a test within the `main()` method of a JTreg test. These are described and can be found in the [TestFramework](./TestFramework.java) class.
    
 ## 2. Features
- The framework offers various annotations and flags to control how your test code should be invoked and being checked. This section gives an overview over all these features.
+The framework offers various annotations and flags to control how your test code should be invoked and being checked. This section gives an overview over all these features.
 
 ### 2.1 Different Tests
 There are three kinds of tests depending on how much control is needed over the test invocation.
 #### Base Tests
 The simplest form of testing provides a single `@Test` annotated method which the framework will invoke as part of the testing. The test method has no or well-defined arguments that the framework can automatically provide. 
 
-More information on base tests with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a base test can be found in [BaseTestsExample](../../../testlibrary_tests/compiler/lib/ir_framework/examples/BaseTestExample.java).
+More information on base tests with a precise definition can be found in the Javadocs of [Test](./Test.java). Concrete examples on how to specify a base test can be found in [BaseTestsExample](../../../testlibrary_tests/ir_framework/examples/BaseTestExample.java).
 
 #### Checked Tests
 The base tests do not provide any way of verification by user code. A checked test enables this by allowing the user to define an additional `@Check` annotated method which is invoked directly after the `@Test` annotated method. This allows the user to perform various checks about the test method including return value verification.
 
-More information on checked tests with a precise definition can be found in the Javadocs of [Check](./Check.java). Concrete examples on how to specify a checked test can be found in [CheckedTestsExample](../../../testlibrary_tests/compiler/lib/ir_framework/examples/CheckedTestExample.java).
+More information on checked tests with a precise definition can be found in the Javadocs of [Check](./Check.java). Concrete examples on how to specify a checked test can be found in [CheckedTestsExample](../../../testlibrary_tests/ir_framework/examples/CheckedTestExample.java).
 
 #### Custom Run Tests
 Neither the base nor the checked tests provide any control over how a `@Test` annotated method is invoked in terms of customized argument values and/or conditions for the invocation itself. A custom run test gives full control over the invocation of the `@Test` annotated method to the user. The framework calls a dedicated `@Run` annotated method from which the user can invoke the `@Test` method according to his/her needs.
 
-More information on checked tests with a precise definition can be found in the Javadocs of [Run](./Run.java). Concrete examples on how to specify a custom run test can be found in [CustomRunTestsExample](../../../testlibrary_tests/compiler/lib/ir_framework/examples/CustomRunTestExample.java).
+More information on checked tests with a precise definition can be found in the Javadocs of [Run](./Run.java). Concrete examples on how to specify a custom run test can be found in [CustomRunTestsExample](../../../testlibrary_tests/ir_framework/examples/CustomRunTestExample.java).
 
 ### 2.2 IR Verification
 The main feature of this framework is to perform a simple but yet powerful regex-based C2 IR matching on the output of _-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_. For simplicity, we will refer to the "IR" or "IR matching" when actually meaning the combined output of _-XX:+PrintIdeal_ and _-XX:+PrintOptoAssembly_ for a C2 compilation.
@@ -66,7 +66,7 @@ In general, the framework will only perform IR verification if the used VM flags
 
 An `@IR` annotation allows additional preconditions/restrictions on the currently present VM flags to enable or disable rules when certain flags are present or have a specific value (see `applyIfXX` properties of an `@IR` annotation).
 
-More information about IR matching can be found in the Javadocs of [IR](./IR.java). Concrete examples on how to specify IR constraint/rules can be found in [IRExample](../../../testlibrary_tests/compiler/lib/ir_framework/examples/IRExample.java) and [TestIRMatching](../../../testlibrary_tests/compiler/lib/ir_framework/TestIRMatching.java) (an internal framework test).
+More information about IR matching can be found in the Javadocs of [IR](./IR.java). Concrete examples on how to specify IR constraint/rules can be found in [IRExample](../../../testlibrary_tests/ir_framework/examples/IRExample.java) and [TestIRMatching](../../../testlibrary_tests/ir_framework/tests/TestIRMatching.java) (an internal framework test).
 
 ### 2.3 Test VM Flags and Scenarios
 The recommended way to use the framework is by defining a single `@run driver` statement in the JTreg header which, however, does not allow the specification of additional test VM flags. Instead, the user has the possibility to provide VM flags by calling `TestFramework.runWithFlags()` or by creating a `TestFramework` builder object on which `addFlags()` can be called.
@@ -119,7 +119,7 @@ Some of the steps above can be different due to the kind of the test or due to u
 More information about the internals and the workflow of the framework can be found in the Javadocs of [TestFramework](./TestFramework.java).  
  
 ## 4. Internal Framework Tests
-There are various tests to verify the correctness of the test framework. These tests can be found in [ir_framework](../../../testlibrary_tests/compiler/lib/ir_framework) and can directly be run with JTreg. The tests are part of the normal JTreg tests of HotSpot and should be run upon changing the framework code as a minimal form of testing.
+There are various tests to verify the correctness of the test framework. These tests can be found in [ir_framework](../../../testlibrary_tests/ir_framework) and can directly be run with JTreg. The tests are part of the normal JTreg tests of HotSpot and should be run upon changing the framework code as a minimal form of testing.
 
 Additional testing was performed by converting all compiler Inline Types tests that used the currently present IR test framework in Valhalla (see [JDK-8263024](https://bugs.openjdk.java.net/browse/JDK-8263024)). It is strongly advised to make sure a change to the framework still lets these converted tests in Valhalla pass as part of an additional testing step.
 
@@ -132,4 +132,4 @@ A user only needs to import classes from the package `compiler.lib.ir_framework`
 - `compiler.lib.ir_framework.shared`: These classes can be called from either the driver, flag, or test VM.
 
 ## 6. Summary
- The initial design and feature set was kept simple and straight forward and serves well for small to medium sized tests. There are a lot of possibilities to further enhance the framework and make it more powerful. This can be tackled in additional RFEs. A few ideas can be found as subtasks of the [initial RFE](https://bugs.openjdk.java.net/browse/JDK-8254129) for this framework.
+The initial design and feature set was kept simple and straight forward and serves well for small to medium sized tests. There are a lot of possibilities to further enhance the framework and make it more powerful. This can be tackled in additional RFEs. A few ideas can be found as subtasks of the [initial RFE](https://bugs.openjdk.java.net/browse/JDK-8254129) for this framework.

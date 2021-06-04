@@ -21,16 +21,16 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.examples;
+package ir_framework.examples;
 
 import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.test.TestVM;
+import compiler.lib.ir_framework.test.TestVM; // Only used for Javadocs
 
 /*
  * @test
  * @summary Example test to use the new test framework.
  * @library /test/lib /
- * @run driver compiler.lib.ir_framework.examples.CheckedTestExample
+ * @run driver ir_framework.examples.CheckedTestExample
  */
 
 /**

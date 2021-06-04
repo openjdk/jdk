@@ -21,8 +21,9 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package ir_framework.tests;
 
+import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.IRViolationException;
 import compiler.lib.ir_framework.shared.TestRunException;
 import jdk.test.lib.Asserts;
@@ -31,10 +32,10 @@ import java.util.Arrays;
 
 /*
  * @test
- * @requires vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
+ * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
  * @summary Test different custom run tests.
  * @library /test/lib /
- * @run driver compiler.lib.ir_framework.TestRunTests
+ * @run driver ir_framework.tests.TestRunTests
  */
 
 public class TestRunTests {

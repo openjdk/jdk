@@ -21,8 +21,9 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package ir_framework.tests;
 
+import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.IRViolationException;
 import jdk.test.lib.Asserts;
 
@@ -40,7 +41,7 @@ import java.util.regex.Pattern;
  * @summary Test IR matcher with different default IR node regexes. Use -DPrintIREncoding.
  *          Normally, the framework should be called with driver.
  * @library /test/lib /
- * @run main/othervm -DPrintIREncoding=true compiler.lib.ir_framework.TestIRMatching
+ * @run main/othervm -DPrintIREncoding=true ir_framework.tests.TestIRMatching
  */
 
 public class TestIRMatching {
@@ -185,7 +186,7 @@ public class TestIRMatching {
         runCheck(BadFailOnConstraint.create(Membar.class, "membar()", 1, "MemBar"));
         runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array()", 1, "cmp", "precise klass"),
                  BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 1,"cmp", "precise klass", "MyClass"),
-                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 2,"cmp", "precise klass", "ir_framework/MyClass"),
+                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 2,"cmp", "precise klass", "ir_framework/tests/MyClass"),
                  GoodFailOnConstraint.create(CheckCastArray.class, "array()", 3),
                  BadFailOnConstraint.create(CheckCastArray.class, "arrayCopy(java.lang.Object[],java.lang.Class)", 1, "checkcast_arraycopy")
         );
@@ -413,7 +414,7 @@ class MultipleFailOnBad {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_OF_CLASS, "compiler/lib/ir_framework/MultipleFailOnBad", IRNode.CALL, IRNode.ALLOC})
+    @IR(failOn = {IRNode.STORE_OF_CLASS, "ir_framework/tests/MultipleFailOnBad", IRNode.CALL, IRNode.ALLOC})
     public void fail4() {
         iFld = 42;
     }
@@ -437,7 +438,7 @@ class MultipleFailOnBad {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_OF_CLASS, "UnknownClass", IRNode.ALLOC_OF, "compiler/lib/ir_framework/MyClassSub"})
+    @IR(failOn = {IRNode.STORE_OF_CLASS, "UnknownClass", IRNode.ALLOC_OF, "ir_framework/tests/MyClassSub"})
     public void fail8() {
         myClass = new MyClassSub();
     }
@@ -635,10 +636,10 @@ class GoodCount {
     @Test
     @IR(counts = {IRNode.STORE, "2", IRNode.STORE_I, "1", IRNode.STORE_L, "1",
                   IRNode.STORE_OF_CLASS, "GoodCount", "1", IRNode.STORE_L_OF_CLASS, "GoodCount", "1",
-                  IRNode.STORE_OF_CLASS, "compiler/lib/ir_framework/MyClass", "1",
-                  IRNode.STORE_I_OF_CLASS, "compiler/lib/ir_framework/MyClass", "1",
-                  IRNode.STORE_OF_CLASS, "compiler/lib/ir_framework/GoodCount", "1",
-                  IRNode.STORE_L_OF_CLASS, "compiler/lib/ir_framework/GoodCount", "1",
+                  IRNode.STORE_OF_CLASS, "ir_framework/tests/MyClass", "1",
+                  IRNode.STORE_I_OF_CLASS, "ir_framework/tests/MyClass", "1",
+                  IRNode.STORE_OF_CLASS, "ir_framework/tests/GoodCount", "1",
+                  IRNode.STORE_L_OF_CLASS, "ir_framework/tests/GoodCount", "1",
                   IRNode.STORE_OF_FIELD, "x", "2"})
     public void good5() {
         x = 3; // long
@@ -803,8 +804,8 @@ class AllocArray {
     @IR(failOn = {IRNode.ALLOC_ARRAY})
     @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "MyClass"})
     @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "MyClasss"}) // Does not fail
-    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "compiler/lib/ir_framework/MySubClass"}) // Does not fail
-    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "compiler/lib/ir_framework/MyClass"})
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "ir_framework/tests/MySubClass"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "ir_framework/tests/MyClass"})
     public void allocArray() {
         myClassArray = new MyClass[2];
     }
@@ -820,7 +821,7 @@ class Loads {
     @IR(failOn = {IRNode.LOOP, IRNode.LOOP}, counts = {IRNode.LOOP, "0", IRNode.LOAD, "1"}) // Does not fail
     @IR(failOn = {IRNode.LOOP, IRNode.LOOP}, counts = {IRNode.LOOP, "0", IRNode.STORE, "1"})
     @IR(failOn = {IRNode.LOOP, IRNode.STORE}, counts = {IRNode.LOOP, "0", IRNode.LOAD, "1"})
-    @IR(failOn = {IRNode.LOAD_OF_CLASS, "compiler/lib/ir_framework/Loads"})
+    @IR(failOn = {IRNode.LOAD_OF_CLASS, "ir_framework/tests/Loads"})
     @IR(failOn = {IRNode.LOAD_OF_CLASS, "Loads"})
     @IR(failOn = {IRNode.LOAD_OF_FIELD, "iFld"})
     @IR(failOn = {IRNode.LOAD_OF_FIELD, "iFld2", IRNode.LOAD_OF_CLASS, "Load"}) // Does not fail
@@ -1105,7 +1106,7 @@ class CheckCastArray {
     @Test
     @IR(failOn = IRNode.CHECKCAST_ARRAY) // fails
     @IR(failOn = {IRNode.CHECKCAST_ARRAY_OF, "MyClass", // fails
-                  IRNode.CHECKCAST_ARRAY_OF, "ir_framework/MyClass"}) // fails
+                  IRNode.CHECKCAST_ARRAY_OF, "ir_framework/tests/MyClass"}) // fails
     @IR(failOn = {IRNode.CHECKCAST_ARRAY_OF, "MyClasss", IRNode.CHECKCAST_ARRAY_OF, "Object"})
     public boolean array() {
         return oArr instanceof MyClass[];

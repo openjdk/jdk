@@ -21,8 +21,9 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package ir_framework.tests;
 
+import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -34,7 +35,7 @@ import sun.hotspot.WhiteBox;
  * @requires vm.debug == true & vm.flagless
  * @summary Test -DIgnoreCompilerControls property flag.
  * @library /test/lib /
- * @run driver compiler.lib.ir_framework.TestDIgnoreCompilerControls
+ * @run driver ir_framework.tests.TestDIgnoreCompilerControls
  */
 
 public class TestDIgnoreCompilerControls {
@@ -56,7 +57,7 @@ public class TestDIgnoreCompilerControls {
         ProcessBuilder process = ProcessTools.createJavaProcessBuilder(
                 "-Dtest.class.path=" + Utils.TEST_CLASS_PATH, "-Dtest.jdk=" + Utils.TEST_JDK,
                 "-Dtest.vm.opts=-DIgnoreCompilerControls=" + flagValue,
-                "compiler.lib.ir_framework.TestDIgnoreCompilerControls", flagValue);
+                "ir_framework.tests.TestDIgnoreCompilerControls", flagValue);
         oa = ProcessTools.executeProcess(process);
         return oa;
     }
