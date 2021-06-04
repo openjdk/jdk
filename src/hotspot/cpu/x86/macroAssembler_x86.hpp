@@ -949,15 +949,14 @@ private:
   void ghash16_encrypt16_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx,
                                   XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
                                   XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
-                                  bool final_reduction, int index, Register isEncrypt, XMMRegister counter_inc_mask);
+                                  bool final_reduction, int index, XMMRegister counter_inc_mask);
 public:
   void aesecb_encrypt(Register source_addr, Register dest_addr, Register key, Register len);
   void aesecb_decrypt(Register source_addr, Register dest_addr, Register key, Register len);
   void aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
                       Register len_reg, Register used, Register used_addr, Register saved_encCounter_start);
   void aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
-                      Register processInChunks, Register isEncrypt, Register state,
-                      Register subkeyHtbl, Register counter);
+                      Register processInChunks, Register state, Register subkeyHtbl, Register counter);
 
 #endif
 

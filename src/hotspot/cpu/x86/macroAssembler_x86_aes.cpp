@@ -1435,7 +1435,7 @@ vpternlogq(dst3, 0x96, src32, src33, Assembler::AVX_512bit); \
 
 void MacroAssembler::ghash16_encrypt16_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx, XMMRegister aad_hashx,
     Register in, Register out, Register data, Register pos, bool first_time_reduction, XMMRegister addmask, bool ghash_input, Register rounds,
-    Register ghash_pos, bool final_reduction, int i, Register isEncrypt, XMMRegister counter_inc_mask) {
+    Register ghash_pos, bool final_reduction, int i, XMMRegister counter_inc_mask) {
 
     Label AES_192, AES_256, LAST_AES_RND;
     const XMMRegister ZTMP0 = xmm0;
@@ -1628,8 +1628,7 @@ void MacroAssembler::ghash16_encrypt16_parallel(Register key, Register subkeyHtb
 }
 
 void MacroAssembler::aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
-                                    Register processInChunks, Register isEncrypt, Register state,
-                                    Register subkeyHtbl, Register counter) {
+                                    Register processInChunks, Register state, Register subkeyHtbl, Register counter) {
 
     Label ENC_DEC_DONE, GENERATE_HTBL_48_BLKS, AES_192, AES_256, STORE_CT, GHASH_LAST_32,
           AES_32_BLOCKS, GHASH_AES_PARALLEL, LOOP, ACCUMULATE, GHASH_16_AES_16;
@@ -1762,7 +1761,7 @@ void MacroAssembler::aesgcm_encrypt(Register in, Register len, Register ct, Regi
     // 2) No reduction -> accumulate multiplication values
     // 3) Final reduction post 48 blocks -> new ghash value is computed for the next round
     // Reduction value = first time
-    ghash16_encrypt16_parallel(key, subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, true, xmm24, true, rounds, ghash_pos, false, index, isEncrypt, COUNTER_INC_MASK);
+    ghash16_encrypt16_parallel(key, subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, true, xmm24, true, rounds, ghash_pos, false, index, COUNTER_INC_MASK);
     addl(pos, 256);
     addl(ghash_pos, 256);
     index += 4;
@@ -1779,12 +1778,12 @@ void MacroAssembler::aesgcm_encrypt(Register in, Register len, Register ct, Regi
     // Each call uses 4 subkeyHtbl values, so increment the index by 4.
     bind(GHASH_16_AES_16);
     // Reduction value = no reduction
-    ghash16_encrypt16_parallel(key, subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, false, xmm24, false, rounds, ghash_pos, false, index, isEncrypt, COUNTER_INC_MASK);
+    ghash16_encrypt16_parallel(key, subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, false, xmm24, false, rounds, ghash_pos, false, index, COUNTER_INC_MASK);
     addl(pos, 256);
     addl(ghash_pos, 256);
     index += 4;
     // Reduction value = final reduction means that the accumulated values have to be reduced as we have completed 48 blocks of ghash
-    ghash16_encrypt16_parallel(key, subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, false, xmm24, false, rounds, ghash_pos, true, index, isEncrypt, COUNTER_INC_MASK);
+    ghash16_encrypt16_parallel(key, subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, false, xmm24, false, rounds, ghash_pos, true, index, COUNTER_INC_MASK);
     addl(pos, 256);
     addl(ghash_pos, 256);
     // Calculated ghash value needs to be moved to AAD_HASHX so that we can restart the ghash16-aes16 pipeline
@@ -1793,7 +1792,7 @@ void MacroAssembler::aesgcm_encrypt(Register in, Register len, Register ct, Regi
 
     // Restart the pipeline
     // Reduction value = first time
-    ghash16_encrypt16_parallel(key, subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, true, xmm24, true, rounds, ghash_pos, false, index, isEncrypt, COUNTER_INC_MASK);
+    ghash16_encrypt16_parallel(key, subkeyHtbl, CTR_BLOCKx, AAD_HASHx, in, out, ct, pos, true, xmm24, true, rounds, ghash_pos, false, index, COUNTER_INC_MASK);
     addl(pos, 256);
     addl(ghash_pos, 256);
     index += 4;

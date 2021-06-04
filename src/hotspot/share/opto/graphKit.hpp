@@ -798,7 +798,7 @@ class GraphKit : public Phase {
                           Node* parm2 = NULL, Node* parm3 = NULL,
                           Node* parm4 = NULL, Node* parm5 = NULL,
                           Node* parm6 = NULL, Node* parm7 = NULL,
-                          Node* parm8 = NULL, Node* parm9 = NULL);
+                          Node* parm8 = NULL);
 
   Node* sign_extend_byte(Node* in);
   Node* sign_extend_short(Node* in);

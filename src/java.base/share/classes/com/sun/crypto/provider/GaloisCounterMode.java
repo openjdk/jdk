@@ -90,9 +90,6 @@ final class GaloisCounterMode extends FeedbackCipher {
     // called, e.g. after cipher key k is set, and STAY UNCHANGED
     private byte[] subkeyH = null;
     private byte[] preCounterBlock = null;
-    private long[] subkeyHtbl = null;
-    private long[] state = null;
-    private byte[] counter = null;
 
     private GCTR gctrPAndC = null;
     private GHASH ghashAllToS = null;
@@ -334,10 +331,6 @@ final class GaloisCounterMode extends FeedbackCipher {
         gctrPAndC = new GCTR(embeddedCipher, j0Plus1);
         ghashAllToS = new GHASH(subkeyH);
 
-        this.subkeyHtbl = ghashAllToS.getSubkeyHtbl();
-        this.state = ghashAllToS.getState();
-        this.counter = gctrPAndC.counter;
-
         this.tagLenBytes = tagLenBytes;
         if (aadBuffer == null) {
             aadBuffer = new ByteArrayOutputStream();
@@ -422,7 +415,7 @@ final class GaloisCounterMode extends FeedbackCipher {
         }
 
           if (len > TRIGGERLEN) {
-              tlen = implGCMCrypt(in, inOfs, len, ct, ctOfs, out, outOfs, true, isEncrypt, state, subkeyHtbl, counter);
+              tlen = implGCMCrypt(in, inOfs, ilen, ct, ctOfs, out, outOfs, true, gctrPAndC, ghashAllToS);
               inOfs += tlen;
               outOfs += tlen;
               ctOfs += tlen;
@@ -506,8 +499,7 @@ final class GaloisCounterMode extends FeedbackCipher {
     // AES and GHASH operations are interleaved in the intrinsic implementation.
     // return - number of processed bytes
     @IntrinsicCandidate
-    private int implGCMCrypt(byte[] in, int inOfs, int len, byte[] ct, int ctOfs, byte[] out, int outOfs, boolean processInChunks, boolean isEncrypt,
-                             long[] state, long[] subkeyHtbl, byte[] counter) {
+    private int implGCMCrypt(byte[] in, int inOfs, int len, byte[] ct, int ctOfs, byte[] out, int outOfs, boolean processInChunks, GCTR gctrPAndC, GHASH ghashAllToS) {
         int processedBytes = 0;
         if (processInChunks) {
             int i = 0;
@@ -623,7 +615,7 @@ final class GaloisCounterMode extends FeedbackCipher {
 
     void encryptBlocks(byte[] in, int inOfs, int len, byte[] out, int outOfs) {
         //intrinsic processes 768 bytes or multiples of 768 bytes of data. Remaining length to be processed outside intrinsic.
-        int tlen = implGCMCrypt(in, inOfs, len, out, outOfs, out, outOfs, false, true, state, subkeyHtbl, counter);
+        int tlen = implGCMCrypt(in, inOfs, len, out, outOfs, out, outOfs, false, gctrPAndC, ghashAllToS);
         processed += tlen;
         inOfs += tlen;
         outOfs += tlen;

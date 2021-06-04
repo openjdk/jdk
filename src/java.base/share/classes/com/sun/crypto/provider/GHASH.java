@@ -279,12 +279,4 @@ final class GHASH {
         reset();
         return result;
     }
-
-    long[] getState() {
-        return state;
-    }
-
-    long[] getSubkeyHtbl() {
-        return subkeyHtbl;
-    }
 }

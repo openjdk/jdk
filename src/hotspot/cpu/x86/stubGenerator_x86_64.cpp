@@ -4411,26 +4411,22 @@ class StubGenerator: public StubCodeGenerator {
 #ifndef _WIN64
     const Register key = c_rarg4;
     const Register processInChunks = c_rarg5;
-    const Register isEncrypt = r10;
-    const Address isEncrypt_mem(rbp, 2 * wordSize);
-    const Address state_mem(rbp, 3 * wordSize);
+    const Address state_mem(rbp, 2 * wordSize);
     const Register state = r13;
-    const Address subkeyH_mem(rbp, 4 * wordSize);
+    const Address subkeyH_mem(rbp, 3 * wordSize);
     const Register subkeyHtbl = r11;
-    const Address counter_mem(rbp, 5 * wordSize);
+    const Address counter_mem(rbp, 4 * wordSize);
     const Register counter = r12;
 #else
     const Address key_mem(rbp, 6 * wordSize);
     const Register key = r10;
     const Register processInChunks = r11;
     const Address partial_mem(rbp, 7 * wordSize);
-    const Address isEncrypt_mem(rbp, 8 * wordSize);
-    const Register isEncrypt = r12;
-    const Address state_mem(rbp, 9 * wordSize);
+    const Address state_mem(rbp, 8 * wordSize);
     const Register state = r13;
-    const Address subkeyH_mem(rbp, 10 * wordSize);
+    const Address subkeyH_mem(rbp, 9 * wordSize);
     const Register subkeyHtbl = r14;
-    const Address counter_mem(rbp, 11 * wordSize);
+    const Address counter_mem(rbp, 10 * wordSize);
     const Register counter = rsi;
 #endif
     __ enter();
@@ -4445,17 +4441,15 @@ class StubGenerator: public StubCodeGenerator {
     __ push(rsi);
     __ movptr(key, key_mem);
     __ movl(processInChunks, partial_mem);
-    __ movl(isEncrypt, isEncrypt_mem);
     __ movptr(state, state_mem);
     __ movptr(subkeyHtbl, subkeyH_mem);
     __ movptr(counter, counter_mem);
 #else
-    __ movptr(isEncrypt, isEncrypt_mem);
     __ movptr(state, state_mem);
     __ movptr(subkeyHtbl, subkeyH_mem);
     __ movptr(counter, counter_mem);
 #endif
-    __ aesgcm_encrypt(in, len, ct, out, key, processInChunks, isEncrypt, state, subkeyHtbl, counter);
+    __ aesgcm_encrypt(in, len, ct, out, key, processInChunks, state, subkeyHtbl, counter);
 
     // Restore state before leaving routine
 #ifdef _WIN64

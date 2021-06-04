@@ -6528,10 +6528,8 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt(vmIntrinsics::ID id) {
   Node* out     = argument(6);
   Node* outOfs  = argument(7);
   Node* processInChunks = argument(8);
-  Node* isEncrypt = argument(9);
-  Node* state   = argument(10);
-  Node* subkeyHtbl = argument(11);
-  Node* counter = argument(12);
+  Node* gctr_object = argument(9);
+  Node* ghash_object = argument(10);
 
   // (1) in, ct and out are arrays.
   const Type* in_type = in->Value(&_gvn);
@@ -6560,7 +6558,10 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt(vmIntrinsics::ID id) {
   // so we cast it here safely.
   // this requires a newer class file that has this array as littleEndian ints, otherwise we revert to java
   Node* embeddedCipherObj = load_field_from_object(galoisCounterMode_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
-  if (embeddedCipherObj == NULL) return false;
+  Node* counter = load_field_from_object(gctr_object, "counter", "[B");
+  Node* subkeyHtbl = load_field_from_object(ghash_object, "subkeyHtbl", "[J");
+  Node* state = load_field_from_object(ghash_object, "state", "[J");
+  if (embeddedCipherObj == NULL || counter == NULL || subkeyHtbl == NULL || state == NULL) return false;
   // cast it to what we know it will be at runtime
   const TypeInstPtr* tinst = _gvn.type(galoisCounterMode_object)->isa_instptr();
   assert(tinst != NULL, "GCM obj is null");
@@ -6585,7 +6586,7 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt(vmIntrinsics::ID id) {
   Node* gcmCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
                                OptoRuntime::galoisCounterMode_aescrypt_Type(),
                                stubAddr, stubName, TypePtr::BOTTOM,
-                               in_start, len, ct_start, out_start, k_start, processInChunks, isEncrypt, state_start, subkeyHtbl_start, cnt_start);
+                               in_start, len, ct_start, out_start, k_start, processInChunks, state_start, subkeyHtbl_start, cnt_start);
 
   // return cipher length (int)
   Node* retvalue = _gvn.transform(new ProjNode(gcmCrypt, TypeFunc::Parms));
