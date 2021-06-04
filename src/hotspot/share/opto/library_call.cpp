@@ -4465,7 +4465,6 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
         }
 #endif
         C->gvn_replace_by(init_out, alloc_length);
-        record_for_igvn(init_out);
       }
     }
     C->gvn_replace_by(init->proj_out(TypeFunc::Control), alloc->in(0));
