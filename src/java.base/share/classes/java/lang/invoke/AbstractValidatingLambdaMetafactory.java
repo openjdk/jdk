@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,8 @@ import static sun.invoke.util.Wrapper.isWrapperType;
     final Class<?> implClass;                 // Class for referencing the implementation method "class CC"
     final MethodType dynamicMethodType;       // Dynamically checked method type "(Integer)Object"
     final boolean isSerializable;             // Should the returned instance be serializable
-    final Class<?>[] interfaces;              // Additional interfaces to be implemented
-    final MethodType[] bridges;               // Signatures of additional methods to bridge
+    final Class<?>[] altInterfaces;           // Additional interfaces to be implemented
+    final MethodType[] altMethods;            // Signatures of additional methods to bridge
 
 
     /**
@@ -99,10 +99,10 @@ import static sun.invoke.util.Wrapper.isWrapperType;
      * @param isSerializable Should the lambda be made serializable?  If set,
      *                       either the target type or one of the additional SAM
      *                       types must extend {@code Serializable}.
-     * @param interfaces Additional interfaces which the lambda object
-     *                   should implement.
-     * @param bridges Method types for additional signatures to be
-     *                bridged to the implementation method
+     * @param altInterfaces Additional interfaces which the lambda object
+     *                      should implement.
+     * @param altMethods Method types for additional signatures to be
+     *                   implemented by invoking the implementation method
      * @throws LambdaConversionException If any of the meta-factory protocol
      *         invariants are violated
      * @throws SecurityException If a security manager is present, and it
@@ -116,10 +116,10 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                                         MethodHandle implementation,
                                         MethodType dynamicMethodType,
                                         boolean isSerializable,
-                                        Class<?>[] interfaces,
-                                        MethodType[] bridges)
+                                        Class<?>[] altInterfaces,
+                                        MethodType[] altMethods)
             throws LambdaConversionException {
-        if ((caller.lookupModes() & MethodHandles.Lookup.PRIVATE) == 0) {
+        if (!caller.hasFullPrivilegeAccess()) {
             throw new LambdaConversionException(String.format(
                     "Invalid caller: %s",
                     caller.lookupClass().getName()));
@@ -180,8 +180,8 @@ import static sun.invoke.util.Wrapper.isWrapperType;
 
         this.dynamicMethodType = dynamicMethodType;
         this.isSerializable = isSerializable;
-        this.interfaces = interfaces;
-        this.bridges = bridges;
+        this.altInterfaces = altInterfaces;
+        this.altMethods = altMethods;
 
         if (interfaceMethodName.isEmpty() ||
                 interfaceMethodName.indexOf('.') >= 0 ||
@@ -201,7 +201,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                     interfaceClass.getName()));
         }
 
-        for (Class<?> c : interfaces) {
+        for (Class<?> c : altInterfaces) {
             if (!c.isInterface()) {
                 throw new LambdaConversionException(String.format(
                         "%s is not an interface",
@@ -242,7 +242,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                                   implIsInstanceMethod ? "instance" : "static", implInfo,
                                   dynamicArity, samArity));
         }
-        for (MethodType bridgeMT : bridges) {
+        for (MethodType bridgeMT : altMethods) {
             if (bridgeMT.parameterCount() != samArity) {
                 throw new LambdaConversionException(
                         String.format("Incorrect number of parameters for bridge signature %s; incompatible with %s",
@@ -313,7 +313,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
 
         // Check descriptors of generated methods
         checkDescriptor(interfaceMethodType);
-        for (MethodType bridgeMT : bridges) {
+        for (MethodType bridgeMT : altMethods) {
             checkDescriptor(bridgeMT);
         }
     }

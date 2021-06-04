@@ -152,10 +152,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * @param isSerializable Should the lambda be made serializable?  If set,
      *                       either the target type or one of the additional SAM
      *                       types must extend {@code Serializable}.
-     * @param interfaces Additional interfaces which the lambda object
-     *                   should implement.
-     * @param bridges Method types for additional signatures to be
-     *                bridged to the implementation method
+     * @param altInterfaces Additional interfaces which the lambda object
+     *                      should implement.
+     * @param altMethods Method types for additional signatures to be
+     *                   implemented by invoking the implementation method
      * @throws LambdaConversionException If any of the meta-factory protocol
      *         invariants are violated
      * @throws SecurityException If a security manager is present, and it
@@ -169,12 +169,12 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                                        MethodHandle implementation,
                                        MethodType dynamicMethodType,
                                        boolean isSerializable,
-                                       Class<?>[] interfaces,
-                                       MethodType[] bridges)
+                                       Class<?>[] altInterfaces,
+                                       MethodType[] altMethods)
             throws LambdaConversionException {
         super(caller, factoryType, interfaceMethodName, interfaceMethodType,
               implementation, dynamicMethodType,
-              isSerializable, interfaces, bridges);
+              isSerializable, altInterfaces, altMethods);
         implMethodClassName = implClass.getName().replace('.', '/');
         implMethodName = implInfo.getName();
         implMethodDesc = implInfo.getMethodType().toMethodDescriptorString();
@@ -287,8 +287,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                                                  implementation,
                                                  dynamicMethodType,
                                                  isSerializable,
-                                                 interfaces,
-                                                 bridges,
+                                                 altInterfaces,
+                                                 altMethods,
                                                  innerClass);
                 return innerClass;
             }
@@ -301,8 +301,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                                                                implementation,
                                                                dynamicMethodType,
                                                                isSerializable,
-                                                               interfaces,
-                                                               bridges);
+                                                               altInterfaces,
+                                                               altMethods);
             if (innerClass != null) return innerClass;
         }
         return generateInnerClass();
@@ -321,13 +321,13 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         String[] interfaceNames;
         String interfaceName = interfaceClass.getName().replace('.', '/');
         boolean accidentallySerializable = !isSerializable && Serializable.class.isAssignableFrom(interfaceClass);
-        if (interfaces.length == 0) {
+        if (altInterfaces.length == 0) {
             interfaceNames = new String[]{interfaceName};
         } else {
             // Assure no duplicate interfaces (ClassFormatError)
-            Set<String> itfs = new LinkedHashSet<>(interfaces.length + 1);
+            Set<String> itfs = new LinkedHashSet<>(altInterfaces.length + 1);
             itfs.add(interfaceName);
-            for (Class<?> i : interfaces) {
+            for (Class<?> i : altInterfaces) {
                 itfs.add(i.getName().replace('.', '/'));
                 accidentallySerializable |= !isSerializable && Serializable.class.isAssignableFrom(i);
             }
@@ -358,9 +358,9 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                                           interfaceMethodType.toMethodDescriptorString(), null, null);
         new ForwardingMethodGenerator(mv).generate(interfaceMethodType);
 
-        // Forward the bridges
-        if (bridges != null) {
-            for (MethodType mt : bridges) {
+        // Forward the altMethods
+        if (altMethods != null) {
+            for (MethodType mt : altMethods) {
                 mv = cw.visitMethod(ACC_PUBLIC, interfaceMethodName,
                                     mt.toMethodDescriptorString(), null, null);
                 new ForwardingMethodGenerator(mv).generate(mt);

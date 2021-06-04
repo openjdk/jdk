@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ import java.util.Objects;
  * manage the following attributes of function objects:
  *
  * <ul>
- *     <li><em>Bridging.</em>  It is sometimes useful to implement multiple
+ *     <li><em>Multiple methods.</em>  It is sometimes useful to implement multiple
  *     variations of the method signature, involving argument or return type
  *     adaptation.  This occurs when multiple distinct VM signatures for a method
  *     are logically considered to be the same method by the language.  The
@@ -247,7 +247,7 @@ public final class LambdaMetafactory {
 
     /**
      * Flag for alternate metafactories indicating the lambda object requires
-     * additional bridge methods
+     * additional methods that invoke the {@code implementation}
      */
     public static final int FLAG_BRIDGES = 1 << 2;
 
@@ -309,8 +309,8 @@ public final class LambdaMetafactory {
      *                          {@code interfaceMethodType}.
      * @return a CallSite whose target can be used to perform capture, generating
      *         instances of the interface named by {@code factoryType}
-     * @throws LambdaConversionException If {@code caller} does not have private
-     *         access privileges, or if {@code interfaceMethodName} is not a valid JVM
+     * @throws LambdaConversionException If {@code caller} does not have full privilege
+     *         access, or if {@code interfaceMethodName} is not a valid JVM
      *         method name, or if the return type of {@code factoryType} is not
      *         an interface, or if {@code implementation} is not a direct method
      *         handle referencing a method or constructor, or if the linkage
@@ -378,10 +378,10 @@ public final class LambdaMetafactory {
      *                          MethodHandle implementation,
      *                          MethodType dynamicMethodType,
      *                          int flags,
-     *                          int interfaceCount,        // IF flags has MARKERS set
-     *                          Class... interfaces,       // IF flags has MARKERS set
-     *                          int bridgeCount,           // IF flags has BRIDGES set
-     *                          MethodType... bridges      // IF flags has BRIDGES set
+     *                          int altInterfaceCount,        // IF flags has MARKERS set
+     *                          Class... altInterfaces,       // IF flags has MARKERS set
+     *                          int altMethodCount,           // IF flags has BRIDGES set
+     *                          MethodType... altMethods      // IF flags has BRIDGES set
      *                          )
      * }</pre>
      *
@@ -393,24 +393,24 @@ public final class LambdaMetafactory {
      *     <li>{@code flags} indicates additional options; this is a bitwise
      *     OR of desired flags.  Defined flags are {@link #FLAG_BRIDGES},
      *     {@link #FLAG_MARKERS}, and {@link #FLAG_SERIALIZABLE}.</li>
-     *     <li>{@code interfaceCount} is the number of additional interfaces
+     *     <li>{@code altInterfaceCount} is the number of additional interfaces
      *     the function object should implement, and is present if and only if the
      *     {@code FLAG_MARKERS} flag is set.</li>
-     *     <li>{@code interfaces} is a variable-length list of additional
-     *     interfaces to implement, whose length equals {@code interfaceCount},
+     *     <li>{@code altInterfaces} is a variable-length list of additional
+     *     interfaces to implement, whose length equals {@code altInterfaceCount},
      *     and is present if and only if the {@code FLAG_MARKERS} flag is set.</li>
-     *     <li>{@code bridgeCount} is the number of additional method signatures
+     *     <li>{@code altMethodCount} is the number of additional method signatures
      *     the function object should implement, and is present if and only if
      *     the {@code FLAG_BRIDGES} flag is set.</li>
-     *     <li>{@code bridges} is a variable-length list of additional
-     *     methods signatures to implement, whose length equals {@code bridgeCount},
+     *     <li>{@code altMethods} is a variable-length list of additional
+     *     methods signatures to implement, whose length equals {@code altMethodCount},
      *     and is present if and only if the {@code FLAG_BRIDGES} flag is set.</li>
      * </ul>
      *
-     * <p>Each class named by {@code interfaces} is subject to the same
+     * <p>Each class named by {@code altInterfaces} is subject to the same
      * restrictions as {@code Rd}, the return type of {@code factoryType},
      * as described {@link LambdaMetafactory above}.  Each {@code MethodType}
-     * named by {@code bridges} is subject to the same restrictions as
+     * named by {@code altMethods} is subject to the same restrictions as
      * {@code interfaceMethodType}, as described {@link LambdaMetafactory above}.
      *
      * <p>When FLAG_SERIALIZABLE is set in {@code flags}, the function objects
@@ -424,10 +424,10 @@ public final class LambdaMetafactory {
      * the following properties:
      * <ul>
      *     <li>The class implements the interface named by the return type
-     *     of {@code factoryType} and any interfaces named by {@code interfaces}</li>
+     *     of {@code factoryType} and any interfaces named by {@code altInterfaces}</li>
      *     <li>The class declares methods with the name given by {@code interfaceMethodName},
      *     and the signature given by {@code interfaceMethodType} and additional signatures
-     *     given by {@code bridges}</li>
+     *     given by {@code altMethods}</li>
      *     <li>The class may override methods from {@code Object}, and may
      *     implement methods related to serialization.</li>
      * </ul>
@@ -454,10 +454,10 @@ public final class LambdaMetafactory {
      *              optional arguments, as described above
      * @return a CallSite whose target can be used to perform capture, generating
      *         instances of the interface named by {@code factoryType}
-     * @throws LambdaConversionException If {@code caller} does not have private
-     *         access privileges, or if {@code interfaceMethodName} is not a valid JVM
+     * @throws LambdaConversionException If {@code caller} does not have full privilege
+     *         access, or if {@code interfaceMethodName} is not a valid JVM
      *         method name, or if the return type of {@code factoryType} is not
-     *         an interface, or if any of {@code interfaces} is not an
+     *         an interface, or if any of {@code altInterfaces} is not an
      *         interface, or if {@code implementation} is not a direct method
      *         handle referencing a method or constructor, or if the linkage
      *         invariants are violated, as defined {@link LambdaMetafactory above}.
@@ -465,7 +465,7 @@ public final class LambdaMetafactory {
      *         is {@code null}.
      * @throws IllegalArgumentException If the number or types of the components
      *         of {@code args} do not follow the above rules, or if
-     *         {@code interfaceCount} or {@code bridgeCount} are negative
+     *         {@code altInterfaceCount} or {@code altMethodCount} are negative
      *         integers.
      * @throws SecurityException If a security manager is present, and it
      *         <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
@@ -485,26 +485,26 @@ public final class LambdaMetafactory {
         MethodHandle implementation = extractArg(args, argIndex++, MethodHandle.class);
         MethodType dynamicMethodType = extractArg(args, argIndex++, MethodType.class);
         int flags = extractArg(args, argIndex++, Integer.class);
-        Class<?>[] interfaces = EMPTY_CLASS_ARRAY;
-        MethodType[] bridges = EMPTY_MT_ARRAY;
+        Class<?>[] altInterfaces = EMPTY_CLASS_ARRAY;
+        MethodType[] altMethods = EMPTY_MT_ARRAY;
         if ((flags & FLAG_MARKERS) != 0) {
-            int interfaceCount = extractArg(args, argIndex++, Integer.class);
-            if (interfaceCount < 0) {
+            int altInterfaceCount = extractArg(args, argIndex++, Integer.class);
+            if (altInterfaceCount < 0) {
                 throw new IllegalArgumentException("negative argument count");
             }
-            if (interfaceCount > 0) {
-                interfaces = extractArgs(args, argIndex, Class.class, interfaceCount);
-                argIndex += interfaceCount;
+            if (altInterfaceCount > 0) {
+                altInterfaces = extractArgs(args, argIndex, Class.class, altInterfaceCount);
+                argIndex += altInterfaceCount;
             }
         }
         if ((flags & FLAG_BRIDGES) != 0) {
-            int bridgeCount = extractArg(args, argIndex++, Integer.class);
-            if (bridgeCount < 0) {
+            int altMethodCount = extractArg(args, argIndex++, Integer.class);
+            if (altMethodCount < 0) {
                 throw new IllegalArgumentException("negative argument count");
             }
-            if (bridgeCount > 0) {
-                bridges = extractArgs(args, argIndex, MethodType.class, bridgeCount);
-                argIndex += bridgeCount;
+            if (altMethodCount > 0) {
+                altMethods = extractArgs(args, argIndex, MethodType.class, altMethodCount);
+                argIndex += altMethodCount;
             }
         }
         if (argIndex < args.length) {
@@ -514,11 +514,11 @@ public final class LambdaMetafactory {
         boolean isSerializable = ((flags & FLAG_SERIALIZABLE) != 0);
         if (isSerializable) {
             boolean foundSerializableSupertype = Serializable.class.isAssignableFrom(factoryType.returnType());
-            for (Class<?> c : interfaces)
+            for (Class<?> c : altInterfaces)
                 foundSerializableSupertype |= Serializable.class.isAssignableFrom(c);
             if (!foundSerializableSupertype) {
-                interfaces = Arrays.copyOf(interfaces, interfaces.length + 1);
-                interfaces[interfaces.length-1] = Serializable.class;
+                altInterfaces = Arrays.copyOf(altInterfaces, altInterfaces.length + 1);
+                altInterfaces[altInterfaces.length-1] = Serializable.class;
             }
         }
 
@@ -530,8 +530,8 @@ public final class LambdaMetafactory {
                                                   implementation,
                                                   dynamicMethodType,
                                                   isSerializable,
-                                                  interfaces,
-                                                  bridges);
+                                                  altInterfaces,
+                                                  altMethods);
         mf.validateMetafactoryArgs();
         return mf.buildCallSite();
     }
