@@ -96,19 +96,32 @@ class x86 {
 
  private:
   static address _verify_fpu_cntrl_wrd_entry;
+  static address _d2i_wrapper;
+  static address _d2l_wrapper;
+
+  static jint    _fpu_cntrl_wrd_std;
+  static jint    _fpu_cntrl_wrd_24;
+  static jint    _fpu_cntrl_wrd_trunc;
 
   static jint    _fpu_subnormal_bias1[3];
   static jint    _fpu_subnormal_bias2[3];
 
  public:
   static address verify_fpu_cntrl_wrd_entry() { return _verify_fpu_cntrl_wrd_entry; }
-
+  static address d2i_wrapper()                { return _d2i_wrapper; }
+  static address d2l_wrapper()                { return _d2l_wrapper; }
+  static address addr_fpu_cntrl_wrd_std()     { return (address)&_fpu_cntrl_wrd_std;   }
+  static address addr_fpu_cntrl_wrd_24()      { return (address)&_fpu_cntrl_wrd_24;    }
+  static address addr_fpu_cntrl_wrd_trunc()   { return (address)&_fpu_cntrl_wrd_trunc; }
   static address addr_fpu_subnormal_bias1()   { return (address)&_fpu_subnormal_bias1; }
   static address addr_fpu_subnormal_bias2()   { return (address)&_fpu_subnormal_bias2; }
 
+  static jint    fpu_cntrl_wrd_std()          { return _fpu_cntrl_wrd_std; }
 #endif // !LP64
 
  private:
+  static jint    _mxcsr_std;
+
   static address _verify_mxcsr_entry;
   // shuffle mask for fixing up 128-bit words consisting of big-endian 32-bit integers
   static address _key_shuffle_mask_addr;
@@ -225,6 +238,7 @@ class x86 {
   static address _ones_adr;
 
  public:
+  static address addr_mxcsr_std()        { return (address)&_mxcsr_std; }
   static address verify_mxcsr_entry()    { return _verify_mxcsr_entry; }
   static address key_shuffle_mask_addr() { return _key_shuffle_mask_addr; }
   static address counter_shuffle_mask_addr() { return _counter_shuffle_mask_addr; }

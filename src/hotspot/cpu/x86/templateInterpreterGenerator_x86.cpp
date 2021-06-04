@@ -1050,7 +1050,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 #ifndef _LP64
   if (AlwaysRestoreFPU) {
     //  Make sure the control word is correct.
-    __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+    __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
   }
 #endif // _LP64
 

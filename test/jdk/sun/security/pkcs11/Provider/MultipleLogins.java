@@ -50,7 +50,9 @@ public class MultipleLogins {
         for (int i =0; i < NUM_PROVIDERS; i++) {
             String nssConfig = PKCS11Test.getNssConfig();
             if (nssConfig == null) {
-                throw new RuntimeException("issue setting up config");
+                // No test framework support yet. Ignore
+                System.out.println("No NSS config found. Skipping.");
+                return;
             }
             providers[i] =
                     (SunPKCS11)PKCS11Test.newPKCS11Provider()

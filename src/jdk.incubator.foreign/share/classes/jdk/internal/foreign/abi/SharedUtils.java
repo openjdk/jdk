@@ -32,7 +32,6 @@ import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.LibraryLookup;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SegmentAllocator;
 import jdk.incubator.foreign.SequenceLayout;
@@ -53,6 +52,7 @@ import java.lang.ref.Reference;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -415,15 +415,23 @@ public class SharedUtils {
     // lazy init MH_ALLOC and MH_FREE handles
     private static class AllocHolder {
 
-        static final LibraryLookup LOOKUP = LibraryLookup.ofDefault();
+        private static final CLinker SYS_LINKER = getSystemLinker();
 
-        static final MethodHandle MH_MALLOC = getSystemLinker().downcallHandle(LOOKUP.lookup("malloc").get(),
+        static final MethodHandle MH_MALLOC = SYS_LINKER.downcallHandle(CLinker.systemLookup().lookup("malloc").get(),
                         MethodType.methodType(MemoryAddress.class, long.class),
                 FunctionDescriptor.of(C_POINTER, C_LONG_LONG));
 
-        static final MethodHandle MH_FREE = getSystemLinker().downcallHandle(LOOKUP.lookup("free").get(),
+        static final MethodHandle MH_FREE = SYS_LINKER.downcallHandle(CLinker.systemLookup().lookup("free").get(),
                         MethodType.methodType(void.class, MemoryAddress.class),
                 FunctionDescriptor.ofVoid(C_POINTER));
+    }
+
+    public static MemoryAddress checkSymbol(Addressable symbol) {
+        Objects.requireNonNull(symbol);
+        MemoryAddress symbolAddr = symbol.address();
+        if (symbolAddr.equals(MemoryAddress.NULL))
+            throw new IllegalArgumentException("Symbol is NULL: " + symbolAddr);
+        return symbolAddr;
     }
 
     public static MemoryAddress allocateMemoryInternal(long size) {

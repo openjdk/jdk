@@ -67,7 +67,7 @@ jobs:
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Determine the jtreg ref to checkout
-        run: "echo JTREG_REF=jtreg${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_VERSION }}-${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_BUILD }} >> $GITHUB_ENV"
+        run: "echo JTREG_REF=jtreg-${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_VERSION }}+${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_BUILD }} >> $GITHUB_ENV"
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Check if a jtreg image is present in the cache
@@ -87,7 +87,7 @@ jobs:
         if: steps.check_submit.outputs.should_run != 'false' && steps.jtreg.outputs.cache-hit != 'true'
 
       - name: Build jtreg
-        run: sh make/build-all.sh ${JAVA_HOME_8_X64}
+        run: bash make/build.sh --jdk ${JAVA_HOME_8_X64}
         working-directory: jtreg
         if: steps.check_submit.outputs.should_run != 'false' && steps.jtreg.outputs.cache-hit != 'true'
 
