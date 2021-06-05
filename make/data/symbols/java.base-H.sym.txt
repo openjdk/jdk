@@ -58,8 +58,8 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 class name java/lang/Class
 -method name isSealed descriptor ()Z
 -method name getPermittedSubclasses descriptor ()[Ljava/lang/Class;
-method name getPermittedSubclasses descriptor ()[Ljava/lang/Class; flags 1 signature ()[Ljava/lang/Class<*>; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SEALED_CLASSES;,reflective=Ztrue) runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
-method name isSealed descriptor ()Z flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SEALED_CLASSES;,reflective=Ztrue)
+method name getPermittedSubclasses descriptor ()[Ljava/lang/Class; flags 1 signature ()[Ljava/lang/Class<*>; runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name isSealed descriptor ()Z flags 1
 
 class name java/lang/Compiler
 header extends java/lang/Object flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="9")
@@ -76,14 +76,64 @@ header extends java/lang/RuntimeException flags 21
 class name java/lang/NamedPackage
 header extends java/lang/Object flags 20
 
+class name java/lang/SecurityManager
+header extends java/lang/Object flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+innerclass innerClass java/lang/module/ModuleDescriptor$Opens outerClass java/lang/module/ModuleDescriptor innerClassName Opens flags 19
+innerclass innerClass java/lang/module/ModuleDescriptor$Exports outerClass java/lang/module/ModuleDescriptor innerClassName Exports flags 19
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name checkMulticast descriptor (Ljava/net/InetAddress;B)V
+method name checkMulticast descriptor (Ljava/net/InetAddress;B)V flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.4")
+
+class name java/lang/StrictMath
+-method name toRadians descriptor (D)D
+-method name toDegrees descriptor (D)D
+method name toRadians descriptor (D)D flags 9
+method name toDegrees descriptor (D)D flags 9
+
 class name java/lang/SuppressWarnings
 header extends java/lang/Object implements java/lang/annotation/Annotation flags 2601 runtimeAnnotations @Ljava/lang/annotation/Target;(value={eLjava/lang/annotation/ElementType;TYPE;eLjava/lang/annotation/ElementType;FIELD;eLjava/lang/annotation/ElementType;METHOD;eLjava/lang/annotation/ElementType;PARAMETER;eLjava/lang/annotation/ElementType;CONSTRUCTOR;eLjava/lang/annotation/ElementType;LOCAL_VARIABLE;eLjava/lang/annotation/ElementType;MODULE;})@Ljava/lang/annotation/Retention;(value=eLjava/lang/annotation/RetentionPolicy;SOURCE;)
+
+class name java/lang/System
+-method name setSecurityManager descriptor (Ljava/lang/SecurityManager;)V
+-method name getSecurityManager descriptor ()Ljava/lang/SecurityManager;
+method name setSecurityManager descriptor (Ljava/lang/SecurityManager;)V flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+method name getSecurityManager descriptor ()Ljava/lang/SecurityManager; flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+
+class name java/lang/Thread
+-method name checkAccess descriptor ()V
+method name checkAccess descriptor ()V flags 11 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+
+class name java/lang/ThreadGroup
+-method name checkAccess descriptor ()V
+method name checkAccess descriptor ()V flags 11 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+
+class name java/lang/constant/ClassDesc
+header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/lang/invoke/TypeDescriptor$OfField sealed true flags 601 signature Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;Ljava/lang/invoke/TypeDescriptor$OfField<Ljava/lang/constant/ClassDesc;>;
+innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
+
+class name java/lang/constant/ConstantDesc
+header extends java/lang/Object sealed true flags 601
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name java/lang/constant/DirectMethodHandleDesc
+header extends java/lang/Object implements java/lang/constant/MethodHandleDesc nestMembers java/lang/constant/DirectMethodHandleDesc$Kind sealed true flags 601
+innerclass innerClass java/lang/constant/DirectMethodHandleDesc$Kind outerClass java/lang/constant/DirectMethodHandleDesc innerClassName Kind flags 4019
 
 class name java/lang/constant/DynamicConstantDesc
 header extends java/lang/Object implements java/lang/constant/ConstantDesc flags 421 signature <T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 innerclass innerClass java/lang/Enum$EnumDesc outerClass java/lang/Enum innerClassName EnumDesc flags 19
 innerclass innerClass java/lang/invoke/VarHandle$VarHandleDesc outerClass java/lang/invoke/VarHandle innerClassName VarHandleDesc flags 19
+
+class name java/lang/constant/MethodHandleDesc
+header extends java/lang/Object implements java/lang/constant/ConstantDesc sealed true flags 601
+innerclass innerClass java/lang/constant/DirectMethodHandleDesc$Kind outerClass java/lang/constant/DirectMethodHandleDesc innerClassName Kind flags 4019
+
+class name java/lang/constant/MethodTypeDesc
+header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/lang/invoke/TypeDescriptor$OfMethod sealed true flags 601 signature Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;Ljava/lang/invoke/TypeDescriptor$OfMethod<Ljava/lang/constant/ClassDesc;Ljava/lang/constant/MethodTypeDesc;>;
+innerclass innerClass java/lang/invoke/TypeDescriptor$OfMethod outerClass java/lang/invoke/TypeDescriptor innerClassName OfMethod flags 609
+innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name java/lang/invoke/CallSite
 header extends java/lang/Object flags 421
@@ -92,6 +142,9 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 class name java/lang/invoke/LambdaMetafactory
 header extends java/lang/Object flags 31
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name java/lang/invoke/MethodHandles
+method name tableSwitch descriptor (Ljava/lang/invoke/MethodHandle;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle; flags 89
 
 class name java/lang/invoke/StringConcatException
 header extends java/lang/Exception flags 21
@@ -120,11 +173,16 @@ class name java/lang/module/ResolvedModule
 header extends java/lang/Object flags 31
 
 class name java/lang/reflect/AccessibleObject
-header extends java/lang/Object implements java/lang/reflect/AnnotatedElement flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+header extends java/lang/Object implements java/lang/reflect/AnnotatedElement flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
+-method name <init> descriptor ()V
+method name <init> descriptor ()V flags 4 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="17")
 
 class name java/lang/reflect/AnnotatedElement
 header extends java/lang/Object flags 601
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name java/lang/reflect/Executable
+header extends java/lang/reflect/AccessibleObject implements java/lang/reflect/Member,java/lang/reflect/GenericDeclaration sealed true flags 421
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name java/lang/reflect/InaccessibleObjectException
@@ -172,11 +230,34 @@ method name duplicate descriptor ()Ljava/nio/Buffer; flags 1041
 method name slice descriptor (II)Ljava/nio/Buffer; flags 1041
 method name slice descriptor ()Ljava/nio/Buffer; flags 1041
 
+class name java/security/AccessControlContext
+header extends java/lang/Object flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+
+class name java/security/AccessControlException
+header extends java/lang/SecurityException flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+
+class name java/security/AccessController
+header extends java/lang/Object flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+
 class name java/security/Certificate
 header extends java/lang/Object flags 601 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
 
+class name java/security/DomainCombiner
+header extends java/lang/Object flags 601 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+
 class name java/security/Identity
 header extends java/lang/Object implements java/security/Principal,java/io/Serializable flags 421 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
+
+class name java/security/Policy
+header extends java/lang/Object nestMembers java/security/Policy$Parameters flags 421 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+innerclass innerClass java/security/Policy$Parameters outerClass java/security/Policy innerClassName Parameters flags 609
+
+class name java/security/Policy$Parameters
+header extends java/lang/Object nestHost java/security/Policy flags 601 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+innerclass innerClass java/security/Policy$Parameters outerClass java/security/Policy innerClassName Parameters flags 609
+
+class name java/security/PolicySpi
+header extends java/lang/Object flags 421 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
 
 class name java/security/SecureRandom
 header extends java/util/Random flags 21 runtimeAnnotations @Ljdk/internal/util/random/RandomSupport$RandomGeneratorProperties;(name="SecureRandom",isStochastic=Ztrue)
@@ -197,46 +278,46 @@ class name java/security/cert/URICertStoreParameters
 header extends java/lang/Object implements java/security/cert/CertStoreParameters flags 31
 
 class name java/security/interfaces/RSAKey
-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 -method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 
 class name java/security/spec/MGF1ParameterSpec
-field name SHA512_224 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
-field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
 -field name SHA512_224 descriptor Ljava/security/spec/MGF1ParameterSpec;
 -field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec;
+field name SHA512_224 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
+field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
 
 class name java/security/spec/PSSParameterSpec
-field name TRAILER_FIELD_BC descriptor I constantValue 1 flags 19
 -field name TRAILER_FIELD_BC descriptor I
-method name toString descriptor ()Ljava/lang/String; flags 1
+field name TRAILER_FIELD_BC descriptor I constantValue 1 flags 19
 -method name toString descriptor ()Ljava/lang/String;
+method name toString descriptor ()Ljava/lang/String; flags 1
 
 class name java/security/spec/RSAKeyGenParameterSpec
-method name <init> descriptor (ILjava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-method name getKeyParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 -method name <init> descriptor (ILjava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
 -method name getKeyParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+method name <init> descriptor (ILjava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
+method name getKeyParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 
 class name java/security/spec/RSAMultiPrimePrivateCrtKeySpec
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;[Ljava/security/spec/RSAOtherPrimeInfo;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
 -method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;[Ljava/security/spec/RSAOtherPrimeInfo;Ljava/security/spec/AlgorithmParameterSpec;)V
+method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;[Ljava/security/spec/RSAOtherPrimeInfo;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
 
 class name java/security/spec/RSAPrivateCrtKeySpec
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
 -method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
+method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
 
 class name java/security/spec/RSAPrivateKeySpec
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 -method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
 -method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
+method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 
 class name java/security/spec/RSAPublicKeySpec
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 -method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
 -method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
+method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
+method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
 
 class name java/text/DateFormatSymbols
 header extends java/lang/Object implements java/io/Serializable,java/lang/Cloneable flags 21
@@ -317,6 +398,11 @@ method name equals descriptor (Ljava/lang/Object;)Z flags 1
 method name hashCode descriptor ()I flags 1
 method name toString descriptor ()Ljava/lang/String; flags 1
 
+class name java/util/Locale$IsoCountryCode
+header extends java/lang/Enum nestHost java/util/Locale sealed true flags 4421 signature Ljava/lang/Enum<Ljava/util/Locale$IsoCountryCode;>;
+innerclass innerClass java/util/Locale$IsoCountryCode outerClass java/util/Locale innerClassName IsoCountryCode flags 4409
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
 class name java/util/Observable
 header extends java/lang/Object flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 
@@ -374,6 +460,14 @@ class name java/util/concurrent/CountedCompleter
 header extends java/util/concurrent/ForkJoinTask flags 421 signature <T:Ljava/lang/Object;>Ljava/util/concurrent/ForkJoinTask<TT;>;
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name java/util/concurrent/Executors
+-method name privilegedThreadFactory descriptor ()Ljava/util/concurrent/ThreadFactory;
+-method name privilegedCallable descriptor (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Callable;
+-method name privilegedCallableUsingCurrentClassLoader descriptor (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Callable;
+method name privilegedThreadFactory descriptor ()Ljava/util/concurrent/ThreadFactory; flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+method name privilegedCallable descriptor (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Callable; flags 9 deprecated true signature <T:Ljava/lang/Object;>(Ljava/util/concurrent/Callable<TT;>;)Ljava/util/concurrent/Callable<TT;>; runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+method name privilegedCallableUsingCurrentClassLoader descriptor (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Callable; flags 9 deprecated true signature <T:Ljava/lang/Object;>(Ljava/util/concurrent/Callable<TT;>;)Ljava/util/concurrent/Callable<TT;>; runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+
 class name java/util/concurrent/ForkJoinPool
 header extends java/util/concurrent/AbstractExecutorService nestMembers java/util/concurrent/ForkJoinPool$ManagedBlocker,java/util/concurrent/ForkJoinPool$ForkJoinWorkerThreadFactory flags 21
 innerclass innerClass java/util/concurrent/ForkJoinPool$ForkJoinWorkerThreadFactory outerClass java/util/concurrent/ForkJoinPool innerClassName ForkJoinWorkerThreadFactory flags 609
@@ -415,18 +509,18 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 
 class name java/util/concurrent/locks/StampedLock
 header extends java/lang/Object implements java/io/Serializable flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
-method name tryWriteLock descriptor ()J flags 1
-method name writeLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
-method name tryReadLock descriptor ()J flags 1
-method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J thrownTypes java/lang/InterruptedException flags 1
-method name readLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
-method name unlock descriptor (J)V flags 1
 -method name tryWriteLock descriptor ()J
 -method name writeLockInterruptibly descriptor ()J
 -method name tryReadLock descriptor ()J
 -method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J
 -method name readLockInterruptibly descriptor ()J
 -method name unlock descriptor (J)V
+method name tryWriteLock descriptor ()J flags 1
+method name writeLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
+method name tryReadLock descriptor ()J flags 1
+method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J thrownTypes java/lang/InterruptedException flags 1
+method name readLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
+method name unlock descriptor (J)V flags 1
 
 class name java/util/function/BiConsumer
 header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;U:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
@@ -783,4 +877,15 @@ header extends java/lang/Object implements java/security/spec/AlgorithmParameter
 
 class name javax/crypto/spec/SecretKeySpec
 header extends java/lang/Object implements java/security/spec/KeySpec,javax/crypto/SecretKey flags 21
+
+class name javax/security/auth/Subject
+-method name getSubject descriptor (Ljava/security/AccessControlContext;)Ljavax/security/auth/Subject;
+-method name doAsPrivileged descriptor (Ljavax/security/auth/Subject;Ljava/security/PrivilegedAction;Ljava/security/AccessControlContext;)Ljava/lang/Object;
+-method name doAsPrivileged descriptor (Ljavax/security/auth/Subject;Ljava/security/PrivilegedExceptionAction;Ljava/security/AccessControlContext;)Ljava/lang/Object;
+method name getSubject descriptor (Ljava/security/AccessControlContext;)Ljavax/security/auth/Subject; flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+method name doAsPrivileged descriptor (Ljavax/security/auth/Subject;Ljava/security/PrivilegedAction;Ljava/security/AccessControlContext;)Ljava/lang/Object; flags 9 deprecated true signature <T:Ljava/lang/Object;>(Ljavax/security/auth/Subject;Ljava/security/PrivilegedAction<TT;>;Ljava/security/AccessControlContext;)TT; runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+method name doAsPrivileged descriptor (Ljavax/security/auth/Subject;Ljava/security/PrivilegedExceptionAction;Ljava/security/AccessControlContext;)Ljava/lang/Object; thrownTypes java/security/PrivilegedActionException flags 9 deprecated true signature <T:Ljava/lang/Object;>(Ljavax/security/auth/Subject;Ljava/security/PrivilegedExceptionAction<TT;>;Ljava/security/AccessControlContext;)TT; runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+
+class name javax/security/auth/SubjectDomainCombiner
+header extends java/lang/Object implements java/security/DomainCombiner flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
 

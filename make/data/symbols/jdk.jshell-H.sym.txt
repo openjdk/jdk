@@ -109,4 +109,5 @@ header extends java/lang/RuntimeException flags 21
 
 class name jdk/jshell/tool/JavaShellToolBuilder
 header extends java/lang/Object flags 601
+method name interactiveTerminal descriptor (Z)Ljdk/jshell/tool/JavaShellToolBuilder; flags 1
 

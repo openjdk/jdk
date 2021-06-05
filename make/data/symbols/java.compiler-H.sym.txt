@@ -38,14 +38,15 @@ class name javax/lang/model/SourceVersion
 field name RELEASE_17 descriptor Ljavax/lang/model/SourceVersion; flags 4019
 
 class name javax/lang/model/element/Modifier
+header extends java/lang/Enum sealed true flags 4021 signature Ljava/lang/Enum<Ljavax/lang/model/element/Modifier;>;
 -field name SEALED descriptor Ljavax/lang/model/element/Modifier;
 -field name NON_SEALED descriptor Ljavax/lang/model/element/Modifier;
-field name SEALED descriptor Ljavax/lang/model/element/Modifier; flags 4019 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SEALED_CLASSES;,reflective=Ztrue)
-field name NON_SEALED descriptor Ljavax/lang/model/element/Modifier; flags 4019 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SEALED_CLASSES;,reflective=Ztrue)
+field name SEALED descriptor Ljavax/lang/model/element/Modifier; flags 4019
+field name NON_SEALED descriptor Ljavax/lang/model/element/Modifier; flags 4019
 
 class name javax/lang/model/element/TypeElement
 -method name getPermittedSubclasses descriptor ()Ljava/util/List;
-method name getPermittedSubclasses descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/List<+Ljavax/lang/model/type/TypeMirror;>; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SEALED_CLASSES;,reflective=Ztrue)
+method name getPermittedSubclasses descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/List<+Ljavax/lang/model/type/TypeMirror;>;
 
 class name javax/lang/model/element/UnknownAnnotationValueException
 header extends javax/lang/model/UnknownEntityException flags 21

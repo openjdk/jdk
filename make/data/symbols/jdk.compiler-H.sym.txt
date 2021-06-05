@@ -164,7 +164,7 @@ header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
 class name com/sun/source/tree/ClassTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
 -method name getPermitsClause descriptor ()Ljava/util/List;
-method name getPermitsClause descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/List<+Lcom/sun/source/tree/Tree;>; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SEALED_CLASSES;,reflective=Ztrue)
+method name getPermitsClause descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/List<+Lcom/sun/source/tree/Tree;>;
 
 class name com/sun/source/tree/CompilationUnitTree
 header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
