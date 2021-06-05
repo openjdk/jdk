@@ -146,8 +146,8 @@ public class ChannelInputStream
 
     @Override
     public long transferTo(OutputStream out) throws IOException {
-        if (out instanceof Channels.ChannelOutputStream) {
-            var oc = ((Channels.ChannelOutputStream) out).channel();
+        if (out instanceof ChannelOutputStream) {
+            var oc = ((ChannelOutputStream) out).channel();
 
             if (ch instanceof FileChannel) {
                 var fc = (FileChannel) ch;
