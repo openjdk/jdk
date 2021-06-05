@@ -3575,8 +3575,8 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
                                                         jobject dynamicMethodType))
 #if INCLUDE_CDS
 
-  if (invokedName == NULL || invokedType == NULL || methodType == NULL ||
-      implMethodMember == NULL || instantiatedMethodType == NULL) {
+  if (interfaceMethodName == NULL || factoryType == NULL || interfaceMethodType == NULL ||
+      implementationMember == NULL || dynamicMethodType == NULL) {
     THROW_(vmSymbols::java_lang_NullPointerException(), NULL);
   }
 
