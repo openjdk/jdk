@@ -2408,16 +2408,12 @@ public class JavacParser implements Parser {
                 List<JCAnnotation> maybeDimAnnos = typeAnnotationsOpt();
                 int pos = token.pos;
                 nextToken();
-                if (token.kind == RBRACKET) {
+                if (token.kind == RBRACKET) { // no dimension
                     elemtype = bracketsOptCont(elemtype, pos, maybeDimAnnos);
                 } else {
-                    if (token.kind == RBRACKET) { // no dimension
-                        elemtype = bracketsOptCont(elemtype, pos, maybeDimAnnos);
-                    } else {
-                        dimAnnotations.append(maybeDimAnnos);
-                        dims.append(parseExpression());
-                        accept(RBRACKET);
-                    }
+                    dimAnnotations.append(maybeDimAnnos);
+                    dims.append(parseExpression());
+                    accept(RBRACKET);
                 }
             }
 
