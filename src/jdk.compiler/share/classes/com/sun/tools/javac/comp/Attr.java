@@ -3593,6 +3593,9 @@ public class Attr extends JCTree.Visitor {
                 if (!refSym.isStatic() && that.kind == JCMemberReference.ReferenceKind.SUPER) {
                     // Check that super-qualified symbols are not abstract (JLS)
                     rs.checkNonAbstract(that.pos(), that.sym);
+                    if (localEnv.info.isSelfCall) {
+                        log.error(that.pos(), Errors.SuperMrefCantOccurStaticContext);
+                    }
                 }
 
                 if (isTargetSerializable) {
