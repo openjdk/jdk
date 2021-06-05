@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,33 +29,43 @@ import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObject;
 import sun.jvm.hotspot.runtime.VMObjectFactory;
-import sun.jvm.hotspot.types.AddressField;
 import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 
-public class ZForwardingTable extends VMObject {
-    private static long mapFieldOffset;
+public class ZAttachedArrayForForwarding extends VMObject {
+    private static CIntegerField lengthField;
 
     static {
         VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
     }
 
     static private synchronized void initialize(TypeDataBase db) {
-        Type type = db.lookupType("ZForwardingTable");
+        Type type = db.lookupType("ZAttachedArrayForForwarding");
 
-        mapFieldOffset = type.getAddressField("_map").getOffset();
+        lengthField = type.getCIntegerField("_length");
     }
 
-    public ZForwardingTable(Address addr) {
+    public ZAttachedArrayForForwarding(Address addr) {
         super(addr);
     }
 
-    private ZGranuleMapForForwarding map() {
-        return VMObjectFactory.newObject(ZGranuleMapForForwarding.class, addr.addOffsetTo(mapFieldOffset));
+    public long length() {
+        return lengthField.getValue(addr);
     }
 
-    public ZForwarding get(Address o) {
-        return VMObjectFactory.newObject(ZForwarding.class, map().get(ZAddress.offset(o)));
+    // ObjectT: ZForwarding
+    //  ArrayT: ZForwardingEntry
+    //
+    // template <typename ObjectT, typename ArrayT>
+    // inline size_t ZAttachedArray<ObjectT, ArrayT>::object_size()
+    private long objectSize() {
+        return ZUtils.alignUp(ZForwarding.getSize(), ZForwardingEntry.getSize());
+    }
+
+    // ArrayT* operator()(const ObjectT* obj) const
+    public ZForwardingEntry get(ZForwarding obj) {
+        Address o = obj.getAddress().addOffsetTo(objectSize());
+        return VMObjectFactory.newObject(ZForwardingEntry.class, o);
     }
 }
