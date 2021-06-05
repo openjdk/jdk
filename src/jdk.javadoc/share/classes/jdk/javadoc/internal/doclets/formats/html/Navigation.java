@@ -38,9 +38,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -620,7 +620,7 @@ public class Navigation {
         tree.add(subDiv);
 
         tree.add(MarkerComments.END_OF_TOP_NAVBAR);
-        tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, HtmlTree.EMPTY)
+        tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, Text.VALID_EMPTY)
                 .setId(HtmlIds.SKIP_NAVBAR_TOP));
 
         return tree;
