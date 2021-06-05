@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ public class RowSetProvider {
         }
         try {
             ReflectUtil.checkPackageAccess(factoryClassName);
-        } catch (java.security.AccessControlException e) {
+        } catch (@SuppressWarnings("removal") java.security.AccessControlException e) {
             throw new SQLException("Access Exception",e);
         }
 
@@ -225,6 +225,7 @@ public class RowSetProvider {
      * @return The ClassLoader to use.
      *
      */
+    @SuppressWarnings("removal")
     static private ClassLoader getContextClassLoader() throws SecurityException {
         return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
 
@@ -308,6 +309,7 @@ public class RowSetProvider {
      * @return The System property value or NULL if the property does not exist
      * or a {@code SecurityException} occurs.
      */
+    @SuppressWarnings("removal")
     static private String getSystemProperty(final String propName) {
         String property = null;
         try {

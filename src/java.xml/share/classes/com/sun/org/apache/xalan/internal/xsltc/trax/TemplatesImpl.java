@@ -262,6 +262,7 @@ public final class TemplatesImpl implements Templates, Serializable {
     private void  readObject(ObjectInputStream is)
       throws IOException, ClassNotFoundException
     {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null){
             String temp = SecuritySupport.getSystemProperty(DESERIALIZE_TRANSLET);
@@ -441,6 +442,7 @@ public final class TemplatesImpl implements Templates, Serializable {
                 .resolve(finder, ModuleFinder.of(), Set.of(mn));
 
         PrivilegedAction<ModuleLayer> pa = () -> bootLayer.defineModules(cf, name -> loader);
+        @SuppressWarnings("removal")
         ModuleLayer layer = AccessController.doPrivileged(pa);
 
         Module m = layer.findModule(mn).get();
@@ -461,6 +463,7 @@ public final class TemplatesImpl implements Templates, Serializable {
             throw new TransformerConfigurationException(err.toString());
         }
 
+        @SuppressWarnings("removal")
         TransletClassLoader loader =
                 AccessController.doPrivileged(new PrivilegedAction<TransletClassLoader>() {
                 public TransletClassLoader run() {

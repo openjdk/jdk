@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,6 +327,7 @@ public final class LazyLoggers {
 
     // Do not expose this outside of this package.
     private static volatile LoggerFinder provider;
+    @SuppressWarnings("removal")
     private static LoggerFinder accessLoggerFinder() {
         LoggerFinder prov = provider;
         if (prov == null) {
@@ -383,6 +384,7 @@ public final class LazyLoggers {
      * @param module  module on behalf of which the logger is created
      * @return  The logger returned by the LoggerFinder.
      */
+    @SuppressWarnings("removal")
     static Logger getLoggerFromFinder(String name, Module module) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm == null) {

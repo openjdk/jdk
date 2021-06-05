@@ -939,7 +939,7 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
 
       new_thread->set_threadObj(JNIHandles::resolve_non_null(thread_handle));
       if (type == compiler_t) {
-        new_thread->as_CompilerThread()->set_compiler(comp);
+        CompilerThread::cast(new_thread)->set_compiler(comp);
       }
       Threads::add(new_thread);
       Thread::start(new_thread);

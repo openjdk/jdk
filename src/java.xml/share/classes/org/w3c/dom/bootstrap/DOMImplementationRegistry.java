@@ -143,6 +143,7 @@ public final class DOMImplementationRegistry {
      *     If any specified class does not implement
      * <code>DOMImplementationSource</code>
      */
+    @SuppressWarnings("removal")
     public static DOMImplementationRegistry newInstance()
         throws
         ClassNotFoundException,
@@ -340,6 +341,7 @@ public final class DOMImplementationRegistry {
      *
      * @return The Context Classloader
      */
+    @SuppressWarnings("removal")
     private static ClassLoader getContextClassLoader() {
         return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
                 @Override
@@ -362,6 +364,7 @@ public final class DOMImplementationRegistry {
      * @param name the name of the system property
      * @return the system property
      */
+    @SuppressWarnings("removal")
     private static String getSystemProperty(final String name) {
         return AccessController.doPrivileged(new PrivilegedAction<String>() {
                     @Override
@@ -380,6 +383,7 @@ public final class DOMImplementationRegistry {
      * @param name the resource
      * @return an Inputstream for the resource specified
      */
+    @SuppressWarnings("removal")
     private static InputStream getResourceAsStream(final ClassLoader classLoader,
                                                    final String name) {
         return AccessController.doPrivileged(new PrivilegedAction<InputStream>() {

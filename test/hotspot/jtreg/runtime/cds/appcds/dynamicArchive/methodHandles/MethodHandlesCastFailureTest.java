@@ -47,6 +47,7 @@
 import org.junit.Test;
 
 import java.io.File;
+import jdk.test.lib.Platform;
 
 public class MethodHandlesCastFailureTest extends DynamicArchiveTestBase {
     @Test
@@ -64,6 +65,10 @@ public class MethodHandlesCastFailureTest extends DynamicArchiveTestBase {
     static void testImpl() throws Exception {
         String topArchiveName = getNewArchiveName();
         String appJar = JarBuilder.build("MH", new File(classDir), null);
+        // Disable VerifyDpendencies when running with debug build because
+        // the test requires a lot more time to execute with the option enabled.
+        String verifyOpt =
+            Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-showversion";
 
         String[] classPaths = javaClassPath.split(File.pathSeparator);
         String junitJar = null;
@@ -75,7 +80,7 @@ public class MethodHandlesCastFailureTest extends DynamicArchiveTestBase {
         }
 
         dumpAndRun(topArchiveName, "-Xlog:cds,cds+dynamic=debug,class+load=trace",
-            "-cp", appJar + ps + junitJar,
+            "-cp", appJar + ps + junitJar, verifyOpt,
             mainClass, testPackageName + "." + testClassName);
     }
 }

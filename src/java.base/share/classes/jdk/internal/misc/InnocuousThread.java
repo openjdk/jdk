@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A thread that has no permissions, is not a member of any user-defined
  * ThreadGroup and supports the ability to erase ThreadLocals.
  */
+@SuppressWarnings("removal")
 public final class InnocuousThread extends Thread {
     private static final jdk.internal.misc.Unsafe UNSAFE;
     private static final long THREAD_LOCALS;

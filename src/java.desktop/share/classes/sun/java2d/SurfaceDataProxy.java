@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ public abstract class SurfaceDataProxy
 
     static {
         cachingAllowed = true;
+        @SuppressWarnings("removal")
         String manimg = AccessController.doPrivileged(
             new GetPropertyAction("sun.java2d.managedimages"));
         if (manimg != null && manimg.equals("false")) {
@@ -79,6 +80,7 @@ public abstract class SurfaceDataProxy
         }
 
         defaultThreshold = 1;
+        @SuppressWarnings("removal")
         String num = AccessController.doPrivileged(
             new GetPropertyAction("sun.java2d.accthreshold"));
         if (num != null) {

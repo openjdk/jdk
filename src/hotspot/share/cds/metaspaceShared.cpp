@@ -478,13 +478,6 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 void VM_PopulateDumpSharedSpace::doit() {
   HeapShared::run_full_gc_in_vm_thread();
 
-  // We should no longer allocate anything from the metaspace, so that:
-  //
-  // (1) Metaspace::allocate might trigger GC if we have run out of
-  //     committed metaspace, but we can't GC because we're running
-  //     in the VM thread.
-  // (2) ArchiveBuilder needs to work with a stable set of MetaspaceObjs.
-  Metaspace::freeze();
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
   FileMapInfo::check_nonempty_dir_in_shared_path_table();

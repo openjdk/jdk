@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -107,6 +107,7 @@ public class SAXParserFactoryImpl extends SAXParserFactory {
      * Sets the particular feature in the underlying implementation of
      * org.xml.sax.XMLReader.
      */
+    @SuppressWarnings("removal")
     public void setFeature(String name, boolean value)
         throws ParserConfigurationException, SAXNotRecognizedException,
                 SAXNotSupportedException {

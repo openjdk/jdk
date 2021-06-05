@@ -740,9 +740,9 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _vm_result_2,                                  Metadata*)                             \
-  nonstatic_field(JavaThread,                  _current_pending_monitor,                      ObjectMonitor*)                        \
+  volatile_nonstatic_field(JavaThread,         _current_pending_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(JavaThread,                  _current_pending_monitor_is_from_java,         bool)                                  \
-  nonstatic_field(JavaThread,                  _current_waiting_monitor,                      ObjectMonitor*)                        \
+  volatile_nonstatic_field(JavaThread,         _current_waiting_monitor,                      ObjectMonitor*)                        \
   volatile_nonstatic_field(JavaThread,         _suspend_flags,                                uint32_t)                              \
   nonstatic_field(JavaThread,                  _async_exception_condition,                    JavaThread::AsyncExceptionCondition)   \
   nonstatic_field(JavaThread,                  _pending_async_exception,                      oop)                                   \
@@ -1527,6 +1527,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_c2_type(CallLeafNode, CallRuntimeNode)                          \
   declare_c2_type(CallNativeNode, CallNode)                               \
   declare_c2_type(CallLeafNoFPNode, CallLeafNode)                         \
+  declare_c2_type(CallLeafVectorNode, CallLeafNode)                       \
   declare_c2_type(AllocateNode, CallNode)                                 \
   declare_c2_type(AllocateArrayNode, AllocateNode)                        \
   declare_c2_type(LockNode, AbstractLockNode)                             \

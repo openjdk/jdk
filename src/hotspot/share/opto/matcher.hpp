@@ -415,6 +415,10 @@ public:
   OptoReg::Name  c_frame_pointer() const;
   static RegMask c_frame_ptr_mask;
 
+  // Java-Native vector calling convention
+  static const bool supports_vector_calling_convention();
+  static OptoRegPair vector_return_value(uint ideal_reg);
+
   // Is this branch offset small enough to be addressed by a short branch?
   bool is_short_branch_offset(int rule, int br_size, int offset);
 
