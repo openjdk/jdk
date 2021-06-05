@@ -65,9 +65,11 @@ public final class CGraphicsDevice extends GraphicsDevice
 
     // Save/restore DisplayMode for the Full Screen mode
     private DisplayMode originalMode;
+    private DisplayMode initialMode;
 
     public CGraphicsDevice(final int displayID) {
         this.displayID = displayID;
+        this.initialMode = getDisplayMode();
 
         if (MacOSFlags.isMetalEnabled()) {
             // Try to create MTLGraphicsConfig, if it fails,
@@ -306,14 +308,47 @@ public final class CGraphicsDevice extends GraphicsDevice
         return true;
     }
 
+    /* If the modes are the same or the only difference is that
+     * the new mode will match any refresh rate, no need to change.
+     */
+    private boolean isSameMode(final DisplayMode newMode,
+                               final DisplayMode oldMode) {
+
+        return (Objects.equals(newMode, oldMode) ||
+                (newMode.getRefreshRate() == DisplayMode.REFRESH_RATE_UNKNOWN &&
+                 newMode.getWidth() == oldMode.getWidth() &&
+                 newMode.getHeight() == oldMode.getHeight() &&
+                 newMode.getBitDepth() == oldMode.getBitDepth()));
+    }
+
     @Override
     public void setDisplayMode(final DisplayMode dm) {
         if (dm == null) {
             throw new IllegalArgumentException("Invalid display mode");
         }
-        if (!Objects.equals(dm, getDisplayMode())) {
-            nativeSetDisplayMode(displayID, dm.getWidth(), dm.getHeight(),
-                                 dm.getBitDepth(), dm.getRefreshRate());
+        if (!isSameMode(dm, getDisplayMode())) {
+            try {
+                nativeSetDisplayMode(displayID, dm.getWidth(), dm.getHeight(),
+                                    dm.getBitDepth(), dm.getRefreshRate());
+            } catch (Throwable t) {
+                /* In some cases macOS doesn't report the initial mode
+                 * in the list of supported modes.
+                 * If trying to reset to that mode causes an exception
+                 * try one more time to reset using a different API.
+                 * This does not fix everything, such as it doesn't make
+                 * that mode reported and it restores all devices, but
+                 * this seems a better compromise than failing to restore
+                 */
+                if (isSameMode(dm, initialMode)) {
+                    nativeResetDisplayMode();
+                    if (!isSameMode(initialMode, getDisplayMode())) {
+                        throw new IllegalArgumentException(
+                            "Could not reset to initial mode");
+                    }
+                } else {
+                   throw t;
+                }
+            }
         }
     }
 
@@ -343,6 +378,8 @@ public final class CGraphicsDevice extends GraphicsDevice
     }
 
     private static native double nativeGetScaleFactor(int displayID);
+
+    private static native void nativeResetDisplayMode();
 
     private static native void nativeSetDisplayMode(int displayID, int w, int h, int bpp, int refrate);
 
