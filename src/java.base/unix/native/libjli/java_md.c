@@ -675,9 +675,17 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    size_t adjusted_stack_size;
 
     if (stack_size > 0) {
-        pthread_attr_setstacksize(&attr, adjustStackSize(stack_size));
+        if (EINVAL == pthread_attr_setstacksize(&attr, stack_size)) {
+            // System may require stack size to be multiple of page size
+            // Retry with adjusted value
+            adjusted_stack_size = adjustStackSize(stack_size);
+            if (adjusted_stack_size != stack_size) {
+                pthread_attr_setstacksize(&attr, adjusted_stack_size);
+            }
+        }
     }
     pthread_attr_setguardsize(&attr, 0); // no pthread guard page on java threads
 
