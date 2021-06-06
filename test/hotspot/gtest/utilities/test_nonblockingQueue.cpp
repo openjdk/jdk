@@ -25,14 +25,14 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/lockFreeQueue.inline.hpp"
+#include "utilities/nonblockingQueue.inline.hpp"
 #include "utilities/pair.hpp"
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 #include <new>
 
-class LockFreeQueueTestElement {
-  typedef LockFreeQueueTestElement Element;
+class NonblockingQueueTestElement {
+  typedef NonblockingQueueTestElement Element;
 
   Element* volatile _entry;
   Element* volatile _entry1;
@@ -42,17 +42,17 @@ class LockFreeQueueTestElement {
   static Element* volatile* entry1_ptr(Element& e) { return &e._entry1; }
 
 public:
-  using TestQueue = LockFreeQueue<Element, &entry_ptr>;
-  using TestQueue1 = LockFreeQueue<Element, &entry1_ptr>;
+  using TestQueue = NonblockingQueue<Element, &entry_ptr>;
+  using TestQueue1 = NonblockingQueue<Element, &entry1_ptr>;
 
-  LockFreeQueueTestElement(size_t id = 0) : _entry(), _entry1(), _id(id) {}
+  NonblockingQueueTestElement(size_t id = 0) : _entry(), _entry1(), _id(id) {}
   size_t id() const { return _id; }
   void set_id(size_t value) { _id = value; }
   Element* next() { return _entry; }
   Element* next1() { return _entry1; }
 };
 
-typedef LockFreeQueueTestElement Element;
+typedef NonblockingQueueTestElement Element;
 typedef Element::TestQueue TestQueue;
 typedef Element::TestQueue1 TestQueue1;
 
@@ -76,22 +76,22 @@ static void initialize(Element* elements, size_t size, TestQueue* queue) {
   }
 }
 
-class LockFreeQueueTestBasics : public ::testing::Test {
+class NonblockingQueueTestBasics : public ::testing::Test {
 public:
-  LockFreeQueueTestBasics();
+  NonblockingQueueTestBasics();
 
   static const size_t nelements = 10;
   Element elements[nelements];
   TestQueue queue;
 };
 
-const size_t LockFreeQueueTestBasics::nelements;
+const size_t NonblockingQueueTestBasics::nelements;
 
-LockFreeQueueTestBasics::LockFreeQueueTestBasics() : queue() {
+NonblockingQueueTestBasics::NonblockingQueueTestBasics() : queue() {
   initialize(elements, nelements, &queue);
 }
 
-TEST_F(LockFreeQueueTestBasics, pop) {
+TEST_F(NonblockingQueueTestBasics, pop) {
   for (size_t i = 0; i < nelements; ++i) {
     ASSERT_FALSE(queue.empty());
     ASSERT_EQ(nelements - i, queue.length());
@@ -105,7 +105,7 @@ TEST_F(LockFreeQueueTestBasics, pop) {
   ASSERT_TRUE(queue.pop() == NULL);
 }
 
-TEST_F(LockFreeQueueTestBasics, append) {
+TEST_F(NonblockingQueueTestBasics, append) {
   TestQueue other_queue;
   ASSERT_TRUE(other_queue.empty());
   ASSERT_EQ(0u, other_queue.length());
@@ -131,7 +131,7 @@ TEST_F(LockFreeQueueTestBasics, append) {
   ASSERT_TRUE(other_queue.pop() == NULL);
 }
 
-TEST_F(LockFreeQueueTestBasics, two_queues) {
+TEST_F(NonblockingQueueTestBasics, two_queues) {
   TestQueue1 queue1;
   ASSERT_TRUE(queue1.pop() == NULL);
 
@@ -175,7 +175,7 @@ TEST_F(LockFreeQueueTestBasics, two_queues) {
   ASSERT_TRUE(queue1.pop() == NULL);
 }
 
-class LockFreeQueueTestThread : public JavaTestThread {
+class NonblockingQueueTestThread : public JavaTestThread {
   uint _id;
   TestQueue* _from;
   TestQueue* _to;
@@ -185,12 +185,12 @@ class LockFreeQueueTestThread : public JavaTestThread {
   volatile bool _ready;
 
 public:
-  LockFreeQueueTestThread(Semaphore* post,
-                          uint id,
-                          TestQueue* from,
-                          TestQueue* to,
-                          volatile size_t* processed,
-                          size_t process_limit) :
+  NonblockingQueueTestThread(Semaphore* post,
+                             uint id,
+                             TestQueue* from,
+                             TestQueue* to,
+                             volatile size_t* processed,
+                             size_t process_limit) :
     JavaTestThread(post),
     _id(id),
     _from(from),
@@ -219,7 +219,7 @@ public:
   bool ready() const { return Atomic::load_acquire(&_ready); }
 };
 
-TEST_VM(LockFreeQueueTest, stress) {
+TEST_VM(NonblockingQueueTest, stress) {
   Semaphore post;
   TestQueue initial_queue;
   TestQueue start_queue;
@@ -244,7 +244,7 @@ TEST_VM(LockFreeQueueTest, stress) {
   const uint stage1_threads = 2;
   const uint stage2_threads = 2;
   const uint nthreads = stage1_threads + stage2_threads;
-  LockFreeQueueTestThread* threads[nthreads] = {};
+  NonblockingQueueTestThread* threads[nthreads] = {};
 
   for (uint i = 0; i < ARRAY_SIZE(threads); ++i) {
     TestQueue* from = &start_queue;
@@ -256,7 +256,7 @@ TEST_VM(LockFreeQueueTest, stress) {
       processed = &stage2_processed;
     }
     threads[i] =
-      new LockFreeQueueTestThread(&post, i, from, to, processed, nelements);
+      new NonblockingQueueTestThread(&post, i, from, to, processed, nelements);
     threads[i]->doit();
     while (!threads[i]->ready()) {} // Wait until ready to start test.
   }

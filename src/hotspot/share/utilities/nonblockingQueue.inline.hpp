@@ -22,29 +22,29 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_LOCKFREEQUEUE_INLINE_HPP
-#define SHARE_UTILITIES_LOCKFREEQUEUE_INLINE_HPP
+#ifndef SHARE_UTILITIES_NONBLOCKINGQUEUE_INLINE_HPP
+#define SHARE_UTILITIES_NONBLOCKINGQUEUE_INLINE_HPP
 
-#include "utilities/lockFreeQueue.hpp"
+#include "utilities/nonblockingQueue.hpp"
 
 #include "runtime/atomic.hpp"
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
-T* LockFreeQueue<T, next_ptr>::next(const T& node) {
+T* NonblockingQueue<T, next_ptr>::next(const T& node) {
   return Atomic::load(next_ptr(const_cast<T&>(node)));
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
-void LockFreeQueue<T, next_ptr>::set_next(T& node, T* new_next) {
-    Atomic::store(next_ptr(node), new_next);
+void NonblockingQueue<T, next_ptr>::set_next(T& node, T* new_next) {
+  Atomic::store(next_ptr(node), new_next);
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
-LockFreeQueue<T, next_ptr>::LockFreeQueue() : _head(NULL), _tail(NULL) {}
+NonblockingQueue<T, next_ptr>::NonblockingQueue() : _head(NULL), _tail(NULL) {}
 
 #ifdef ASSERT
 template<typename T, T* volatile* (*next_ptr)(T&)>
-LockFreeQueue<T, next_ptr>::~LockFreeQueue() {
+NonblockingQueue<T, next_ptr>::~NonblockingQueue() {
   assert(_head == NULL, "precondition");
   assert(_tail == NULL, "precondition");
 }
@@ -54,28 +54,28 @@ LockFreeQueue<T, next_ptr>::~LockFreeQueue() {
 // case queue elements can make their way through multiple queues.  A
 // pointer to the queue itself (after casting) satisfies that requirement.
 template<typename T, T* volatile* (*next_ptr)(T&)>
-T* LockFreeQueue<T, next_ptr>::end_marker() const {
+T* NonblockingQueue<T, next_ptr>::end_marker() const {
   return const_cast<T*>(reinterpret_cast<const T*>(this));
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
-T* LockFreeQueue<T, next_ptr>::first() const {
+T* NonblockingQueue<T, next_ptr>::first() const {
   T* head = Atomic::load(&_head);
   return head == NULL ? end_marker() : head;
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
-bool LockFreeQueue<T, next_ptr>::is_end(const T* entry) const {
+bool NonblockingQueue<T, next_ptr>::is_end(const T* entry) const {
   return entry == end_marker();
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
-bool LockFreeQueue<T, next_ptr>::empty() const {
+bool NonblockingQueue<T, next_ptr>::empty() const {
   return Atomic::load(&_head) == NULL;
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
-size_t LockFreeQueue<T, next_ptr>::length() const {
+size_t NonblockingQueue<T, next_ptr>::length() const {
   size_t result = 0;
   for (T* cur = first(); !is_end(cur); cur = next(*cur)) {
     ++result;
@@ -101,7 +101,7 @@ size_t LockFreeQueue<T, next_ptr>::length() const {
 // A push operation is just a degenerate append, where the object being pushed
 // is both the head and the tail of the list being appended.
 template<typename T, T* volatile* (*next_ptr)(T&)>
-void LockFreeQueue<T, next_ptr>::append(T& first, T& last) {
+void NonblockingQueue<T, next_ptr>::append(T& first, T& last) {
   assert(next(last) == NULL, "precondition");
   set_next(last, end_marker());
   T* old_tail = Atomic::xchg(&_tail, &last);
@@ -116,7 +116,7 @@ void LockFreeQueue<T, next_ptr>::append(T& first, T& last) {
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
-bool LockFreeQueue<T, next_ptr>::try_pop(T** node_ptr) {
+bool NonblockingQueue<T, next_ptr>::try_pop(T** node_ptr) {
   // We only need memory_order_consume. Upgrade it to "load_acquire"
   // as the memory_order_consume API is not ready for use yet.
   T* result = Atomic::load_acquire(&_head);
@@ -177,7 +177,7 @@ bool LockFreeQueue<T, next_ptr>::try_pop(T** node_ptr) {
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
-T* LockFreeQueue<T, next_ptr>::pop() {
+T* NonblockingQueue<T, next_ptr>::pop() {
   T* result = NULL;
   while (!try_pop(&result)) {}
   return result;
@@ -185,7 +185,7 @@ T* LockFreeQueue<T, next_ptr>::pop() {
 
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
-Pair<T*, T*> LockFreeQueue<T, next_ptr>::take_all() {
+Pair<T*, T*> NonblockingQueue<T, next_ptr>::take_all() {
   T* tail = Atomic::load(&_tail);
   if (tail != NULL) set_next(*tail, NULL); // Clear end marker.
   Pair<T*, T*> result(Atomic::load(&_head), tail);
@@ -194,4 +194,4 @@ Pair<T*, T*> LockFreeQueue<T, next_ptr>::take_all() {
   return result;
 }
 
-#endif // SHARE_UTILITIES_LOCKFREEQUEUE_INLINE_HPP
+#endif // SHARE_UTILITIES_NONBLOCKINGQUEUE_INLINE_HPP

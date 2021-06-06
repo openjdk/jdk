@@ -22,25 +22,28 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_LOCKFREEQUEUE_HPP
-#define SHARE_UTILITIES_LOCKFREEQUEUE_HPP
+#ifndef SHARE_UTILITIES_NONBLOCKINGQUEUE_HPP
+#define SHARE_UTILITIES_NONBLOCKINGQUEUE_HPP
 
 #include "memory/padded.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/pair.hpp"
 
-// The LockFreeQueue template provides a non-blocking FIFO. Its structure
-// and usage is similar to LockFreeStack. It provides a try_pop() function
-// for the client to implement pop() according to its need (e.g., whether
-// or not to retry or prevent ABA problem). It has inner padding of one
-// cache line between its two internal pointer fields.
+// The NonblockingQueue template provides a non-blocking FIFO. It provides a
+// try_pop() function for the client to implement pop() according to its
+// need (e.g., whether or not to retry or prevent ABA problem). It has inner
+// padding of one cache line between its two internal pointer fields.
 //
-// Internally the queue has a special pseudo-element that marks the end of
-// the linked list representing the queue contents.  Each queue has its own
-// unique special element.  A pointer to this element can be recognized
-// using the is_end() function.  Such a pointer must never be dereferenced.
-// This end marker is the value of the next member of the last element in
-// the queue, and possibly other elements during modification of the queue.
+// The queue is internally represented by a linked list of elements, with
+// the link to the next element provided by a member of each element.
+// Access to this member is provided by the next_ptr function.
+//
+// The queue has a special pseudo-element that marks the end of the list.
+// Each queue has its own unique special element.  A pointer to this element
+// can be recognized using the is_end() function.  Such a pointer must never
+// be dereferenced.  This end marker is the value of the next member of the
+// last element in the queue, and possibly other elements while modifying
+// the queue.
 //
 // A queue may temporarily appear to be empty even though elements have been
 // added and not removed.  For example, after running the following program,
@@ -56,22 +59,22 @@
 //
 // \tparam next_ptr is a function pointer.  Applying this function to
 // an object of type T must return a pointer to the list entry member
-// of the object associated with the LockFreeQueue type.
+// of the object associated with the NonblockingQueue type.
 template<typename T, T* volatile* (*next_ptr)(T&)>
-class LockFreeQueue {
+class NonblockingQueue {
   T* volatile _head;
   // Padding of one cache line to avoid false sharing.
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(T*));
   T* volatile _tail;
 
-  NONCOPYABLE(LockFreeQueue);
+  NONCOPYABLE(NonblockingQueue);
 
   // Return the entry following node in the list used by the
-  // specialized LockFreeQueue class.
+  // specialized NonblockingQueue class.
   static inline T* next(const T& node);
 
   // Set the entry following node to new_next in the list used by the
-  // specialized LockFreeQueue class. Not thread-safe, as it cannot
+  // specialized NonblockingQueue class. Not thread-safe, as it cannot
   // concurrently run with push or try_pop operations that modify this
   // node.
   static inline void set_next(T& node, T* new_next);
@@ -81,8 +84,8 @@ class LockFreeQueue {
   inline T* end_marker() const;
 
 public:
-  inline LockFreeQueue();
-  inline ~LockFreeQueue() NOT_DEBUG(= default);
+  inline NonblockingQueue();
+  inline ~NonblockingQueue() NOT_DEBUG(= default);
 
   // Return true if the queue is empty.
   // Not thread-safe.  There must be no concurrent modification while the
@@ -130,4 +133,4 @@ public:
   inline bool is_end(const T* entry) const;
 };
 
-#endif // SHARE_UTILITIES_LOCKFREEQUEUE_HPP
+#endif // SHARE_UTILITIES_NONBLOCKINGQUEUE_HPP

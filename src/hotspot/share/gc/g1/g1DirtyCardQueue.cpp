@@ -45,8 +45,8 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/globalCounter.inline.hpp"
-#include "utilities/lockFreeQueue.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/nonblockingQueue.inline.hpp"
 #include "utilities/pair.hpp"
 #include "utilities/quickSort.hpp"
 #include "utilities/ticks.hpp"
@@ -131,8 +131,8 @@ void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
 }
 
 // Thread-safe attempt to remove and return the first buffer from
-// the _completed queue, using the LockFreeQueue::try_pop() underneath.
-// It has a restriction that it may return NULL when there are objects
+// the _completed queue, using the NonblockingQueue::try_pop() underneath.
+// It has a limitation that it may return NULL when there are objects
 // in the queue if there is a concurrent push/append operation.
 BufferNode* G1DirtyCardQueueSet::dequeue_completed_buffer() {
   Thread* current_thread = Thread::current();
