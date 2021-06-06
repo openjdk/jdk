@@ -4435,7 +4435,12 @@ public final class Class<T> implements java.io.Serializable,
      * Returns a {@code Class} for an array type whose component type
      * is described by this {@linkplain Class}.
      *
+     * @throws IllegalArgumentException if this component type is {@linkplain
+     *         Void#TYPE void} or if the number of dimensions of the resulting array
+     *         type would exceed 255.
      * @return a {@code Class} describing the array type
+     * @jvms 4.3.2 Field Descriptors
+     * @jvms 4.4.1 The {@code CONSTANT_Class_info} Structure
      * @since 12
      */
     @Override
