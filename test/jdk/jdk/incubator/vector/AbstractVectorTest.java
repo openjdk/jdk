@@ -251,6 +251,28 @@ public class AbstractVectorTest {
         boolean apply(boolean a, boolean b);
     }
 
+    static void assertArraysEquals(int[] r, int[] a, int offs) {
+        int i = 0;
+        try {
+            for (; i < r.length; i++) {
+                Assert.assertEquals(r[i], a[i+offs]);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], a[i+offs], "at index #" + i + ", input = " + a[i+offs]);
+        }
+    }
+
+    static void assertArraysEquals(boolean[] r, boolean[] a, int offs) {
+        int i = 0;
+        try {
+            for (; i < r.length; i++) {
+                Assert.assertEquals(r[i], a[i+offs]);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], a[i+offs], "at index #" + i + ", input = " + a[i+offs]);
+        }
+    }
+
     static void assertArraysEquals(boolean[] r, boolean[] a, boolean[] b, FBooleanBinOp f) {
         int i = 0;
         try {

@@ -36,7 +36,12 @@ import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.Vector;
 
+import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.FloatVector;
+import jdk.incubator.vector.IntVector;
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.ShortVector;
+import jdk.incubator.vector.LongVector;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -4907,23 +4912,7 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
         }
     }
 
-    @Test(dataProvider = "maskProvider")
-    static void maskFirstTrueFloatMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa) {
-        boolean[] a = fa.apply(SPECIES.length());
 
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var vmask = SPECIES.loadMask(a, i);
-            int ftrue = vmask.firstTrue();
-            int j = i;
-            for (; j < i + SPECIES.length() ; j++) {
-                if (a[j]) break;
-            }
-            int expectedFtrue = j - i;
-
-            Assert.assertTrue(ftrue == expectedFtrue, "at index " + i +
-                ", firstTrue should be = " + expectedFtrue + ", but is = " + ftrue);
-        }
-    }
 
 
     @DataProvider

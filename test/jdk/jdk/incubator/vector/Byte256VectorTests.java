@@ -37,6 +37,11 @@ import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.Vector;
 
 import jdk.incubator.vector.ByteVector;
+import jdk.incubator.vector.FloatVector;
+import jdk.incubator.vector.IntVector;
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.ShortVector;
+import jdk.incubator.vector.LongVector;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -5179,22 +5184,51 @@ public class Byte256VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "maskProvider")
-    static void maskFirstTrueByte256VectorTestsSmokeTest(IntFunction<boolean[]> fa) {
+    static void maskCastByte256VectorTestsByteTest(IntFunction<boolean[]> fa) {
         boolean[] a = fa.apply(SPECIES.length());
-
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            var vmask = SPECIES.loadMask(a, i);
-            int ftrue = vmask.firstTrue();
-            int j = i;
-            for (; j < i + SPECIES.length() ; j++) {
-                if (a[j]) break;
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var vmask = SPECIES.loadMask(a, i);
+                var res = vmask.cast(ByteVector.SPECIES_256);
+                assertArraysEquals(res.toArray(), a, i);
             }
-            int expectedFtrue = j - i;
-
-            Assert.assertTrue(ftrue == expectedFtrue, "at index " + i +
-                ", firstTrue should be = " + expectedFtrue + ", but is = " + ftrue);
         }
     }
+    @Test(dataProvider = "maskProvider")
+    static void maskCastByte256VectorTestsShortTest(IntFunction<boolean[]> fa) {
+        boolean[] a = fa.apply(SPECIES.length());
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var vmask = SPECIES.loadMask(a, i);
+                var res = vmask.cast(ShortVector.SPECIES_512);
+                assertArraysEquals(res.toArray(), a, i);
+            }
+        }
+    }
+
+    @Test(dataProvider = "shuffleProvider")
+    static void shuffleCastByte256VectorTestsByteTest(BiFunction<Integer,Integer,int[]> fa) {
+        int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
+                var res = vshuffle.cast(ByteVector.SPECIES_256);
+                assertArraysEquals(res.toArray(), a, i);
+            }
+        }
+    }
+    @Test(dataProvider = "shuffleProvider")
+    static void shuffleCastByte256VectorTestsShortTest(BiFunction<Integer,Integer,int[]> fa) {
+        int[] a = fa.apply(SPECIES.length() * BUFFER_REPS, SPECIES.length());
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var vshuffle = VectorShuffle.fromArray(SPECIES, a, i);
+                var res = vshuffle.cast(ShortVector.SPECIES_512);
+                assertArraysEquals(res.toArray(), a, i);
+            }
+        }
+    }
+
 
     @DataProvider
     public static Object[][] longMaskProvider() {

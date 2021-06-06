@@ -36,24 +36,12 @@ import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.Vector;
 
-#if[Byte]
 import jdk.incubator.vector.ByteVector;
-#end[Byte]
-#if[Float]
 import jdk.incubator.vector.FloatVector;
-#end[Float]
-#if[Int]
 import jdk.incubator.vector.IntVector;
-#end[Int]
-#if[Double]
 import jdk.incubator.vector.DoubleVector;
-#end[Double]
-#if[Short]
 import jdk.incubator.vector.ShortVector;
-#end[Short]
-#if[Long]
 import jdk.incubator.vector.LongVector;
-#end[Long]
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
