@@ -287,8 +287,9 @@ bool MacroAssembler::is_load_const_from_method_toc_at(address a) {
      const address inst2_addr = inst1_addr + BytesPerInstWord;
      const int inst2 = *(int *)inst2_addr;
 
-     // The relocation points to the pld.  Currently, CallDynamicJavaDirectSched_ExNode and
-     // CallLeaf(NoFP)Direct_ExNode are the only nodes that require relocation and use pld
+     // The case a relocation points to a pld.  Currently, CallDynamicJavaDirectSched_ExNode and
+     // CallLeaf(NoFP)Direct_ExNode are the only nodes that require relocation and use pld, and
+     // call this function
      if (is_pld_prefix(inst1) && is_pld_suffix(inst2)) {
        return true;
      }
@@ -308,6 +309,9 @@ int MacroAssembler::get_offset_of_load_const_from_method_toc_at(address a) {
   if (is_ld(inst1)) {
     return inv_d1_field(inst1);
   } else if (PowerArchitecturePPC64 >= 10 && is_pld_prefix(inst1)) {
+    // The case a relocation points to a pld.  Currently, CallDynamicJavaDirectSched_ExNode and
+    // CallLeaf(NoFP)Direct_ExNode are the only nodes that require relocation and use pld, and
+    // call this function
     return (get_imm18(inst1_addr, 0) << 16) + (get_imm(inst1_addr, 1) & 0xffff);
   } else if (is_addis(inst1)) {
     const int dst = inv_rt_field(inst1);
