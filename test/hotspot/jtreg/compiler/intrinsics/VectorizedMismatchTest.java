@@ -36,7 +36,7 @@ package compiler.intrinsics;
  *
  *  @run main/othervm -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*::test*
  *                    -Xbatch -XX:-TieredCompilation
- *                    -XX:UseAVX=3 -XX:AVX3Threshold=0
+ *                    -XX:+UnlockDiagnosticVMOptions -XX:UseAVX=3 -XX:AVX3Threshold=0
  *                     compiler.intrinsics.VectorizedMismatchTest
  */
 
