@@ -2144,19 +2144,19 @@ void C2_MacroAssembler::evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask
   switch(typ) {
     case T_BYTE:
     case T_BOOLEAN:
-      evpcmpb(kdmask, ksmask, src1, src2, comparison, vector_len);
+      evpcmpb(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len);
       break;
     case T_SHORT:
     case T_CHAR:
-      evpcmpw(kdmask, ksmask, src1, src2, comparison, vector_len);
+      evpcmpw(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len);
       break;
     case T_INT:
     case T_FLOAT:
-      evpcmpd(kdmask, ksmask, src1, src2, comparison, vector_len);
+      evpcmpd(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len);
       break;
     case T_LONG:
     case T_DOUBLE:
-      evpcmpq(kdmask, ksmask, src1, src2, comparison, vector_len);
+      evpcmpq(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len);
       break;
     default:
       assert(false,"Should not reach here.");
