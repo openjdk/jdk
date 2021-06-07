@@ -648,7 +648,7 @@ public class SealedCompilationTests extends CompilationTestCase {
 
         List<String> output = new JavacTask(tb)
             .outdir(out)
-            .options("--enable-preview", "-source", Integer.toString(Runtime.version().feature()), "-Xprint")
+            .options("-Xprint")
             .files(findJavaFiles(test))
             .run()
             .writeAll()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,8 +140,8 @@ public class Start {
         this.locale = Locale.getDefault();
 
         Log log = context.get(Log.logKey);
-        if (log instanceof Messager) {
-            messager = (Messager) log;
+        if (log instanceof Messager m){
+            messager = m;
         } else {
             PrintWriter out = context.get(Log.errKey);
             messager = (out == null)
@@ -195,7 +195,7 @@ public class Start {
     }
 
     private void showUsage(String headerKey, ToolOption.Kind kind, String footerKey) {
-        messager.notice(headerKey);
+        messager.noticeUsingKey(headerKey);
         showToolOptions(kind);
 
         // let doclet print usage information
@@ -205,11 +205,11 @@ public class Start {
                     : Option.Kind.STANDARD);
         }
         if (footerKey != null)
-            messager.notice(footerKey);
+            messager.noticeUsingKey(footerKey);
     }
 
     private void showVersion(String labelKey, String value) {
-        messager.notice(labelKey, messager.programName, value);
+        messager.noticeUsingKey(labelKey, messager.programName, value);
     }
 
     private void showToolOptions(ToolOption.Kind kind) {
@@ -252,7 +252,7 @@ public class Start {
         if (options.isEmpty()) {
             return;
         }
-        messager.notice("main.doclet.usage.header", name);
+        messager.noticeUsingKey("main.doclet.usage.header", name);
 
         Comparator<Doclet.Option> comp = new Comparator<Doclet.Option>() {
             final Collator collator = Collator.getInstance(Locale.US);
@@ -307,33 +307,27 @@ public class Start {
         if (synopses.length() < DEFAULT_SYNOPSIS_WIDTH
                 && !description.contains("\n")
                 && (SMALL_INDENT.length() + DEFAULT_SYNOPSIS_WIDTH + 1 + description.length() <= DEFAULT_MAX_LINE_LENGTH)) {
-            messager.printNotice(String.format(COMPACT_FORMAT, synopses, description));
+            messager.notice(String.format(COMPACT_FORMAT, synopses, description));
             return;
         }
 
         // If option synopses fit on a single line of reasonable length, show that;
         // otherwise, show 1 per line
         if (synopses.length() <= DEFAULT_MAX_LINE_LENGTH) {
-            messager.printNotice(SMALL_INDENT + synopses);
+            messager.notice(SMALL_INDENT + synopses);
         } else {
             for (String name: names) {
-                messager.printNotice(SMALL_INDENT + name + parameters);
+                messager.notice(SMALL_INDENT + name + parameters);
             }
         }
 
         // Finally, show the description
-        messager.printNotice(LARGE_INDENT + description.replace("\n", "\n" + LARGE_INDENT));
+        messager.notice(LARGE_INDENT + description.replace("\n", "\n" + LARGE_INDENT));
     }
 
 
     /**
-     * Main program - external wrapper. In order to maintain backward
-     * CLI compatibility, the execution is dispatched to the appropriate
-     * Start mechanism, depending on the doclet variant.
-     *
-     * The doclet tests are performed in the begin method, further on,
-     * this is to minimize argument processing and most importantly the impact
-     * of class loader creation, needed to detect the doclet class variants.
+     * Main program - external wrapper.
      */
     @SuppressWarnings("deprecation")
     Result begin(String... argv) {
@@ -366,8 +360,8 @@ public class Start {
         if (fileManager == null) {
             JavacFileManager.preRegister(context);
             fileManager = context.get(JavaFileManager.class);
-            if (fileManager instanceof BaseFileManager) {
-                ((BaseFileManager) fileManager).autoClose = true;
+            if (fileManager instanceof BaseFileManager bfm) {
+                bfm.autoClose = true;
             }
         }
 
@@ -398,11 +392,19 @@ public class Start {
         try {
             result = parseAndExecute(options, fileObjects);
         } catch (com.sun.tools.javac.main.Option.InvalidValueException e) {
-            messager.printError(e.getMessage());
+            // The detail message from javac already includes a localized "error: " prefix,
+            // so print the message directly.
+            // It would be even better to rethrow this as IllegalArgumentException
+            // when invoked via the API.
+            // See javac Arguments.error(InvalidValueException) for an example
+            messager.printRawLines(e.getMessage());
             Throwable t = e.getCause();
             dumpStack(t == null ? e : t);
             return ERROR;
         } catch (OptionException oe) {
+            // It would be even better to rethrow this as IllegalArgumentException
+            // when invoked via the API.
+            // See javac Arguments.error(InvalidValueException) for an example
             if (oe.message != null)
                 messager.printError(oe.message);
 
@@ -433,9 +435,8 @@ public class Start {
             reportInternalError(ee);
             result = ABNORMAL;
         } finally {
-            if (fileManager != null
-                    && fileManager instanceof BaseFileManager
-                    && ((BaseFileManager) fileManager).autoClose) {
+            if (fileManager instanceof BaseFileManager bfm
+                    && bfm.autoClose) {
                 try {
                     fileManager.close();
                 } catch (IOException ignore) {}
@@ -518,8 +519,8 @@ public class Start {
             return CMDERR;
         }
 
-        if (fileManager instanceof BaseFileManager) {
-            ((BaseFileManager) fileManager).handleOptions(options.fileManagerOptions());
+        if (fileManager instanceof BaseFileManager bfm) {
+            bfm.handleOptions(options.fileManagerOptions());
         }
 
         String mr = com.sun.tools.javac.main.Option.MULTIRELEASE.primaryName;
@@ -559,7 +560,7 @@ public class Start {
         // We're done.
         if (options.verbose()) {
             long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000;
-            messager.notice("main.done_in", Long.toString(elapsedMillis));
+            messager.noticeUsingKey("main.done_in", Long.toString(elapsedMillis));
         }
 
         return returnStatus;

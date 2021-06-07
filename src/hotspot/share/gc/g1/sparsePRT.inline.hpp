@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_G1_SPARSEPRT_INLINE_HPP
 #define SHARE_GC_G1_SPARSEPRT_INLINE_HPP
 
-#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/sparsePRT.hpp"
+
+#include "gc/g1/g1CollectedHeap.hpp"
 
 inline bool SparsePRT::contains_card(RegionIdx_t region_id, CardIdx_t card_index) const {
   return _table->contains_card(region_id, card_index);

@@ -1151,6 +1151,7 @@ public class DatagramSocket implements java.io.Closeable {
         if (factory != null) {
             throw new SocketException("factory already defined");
         }
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSetFactory();
@@ -1341,6 +1342,7 @@ public class DatagramSocket implements java.io.Closeable {
 
     private static boolean usePlainDatagramSocketImpl() {
         PrivilegedAction<String> pa = () -> NetProperties.get("jdk.net.usePlainDatagramSocketImpl");
+        @SuppressWarnings("removal")
         String s = AccessController.doPrivileged(pa);
         return (s != null) && (s.isEmpty() || s.equalsIgnoreCase("true"));
     }

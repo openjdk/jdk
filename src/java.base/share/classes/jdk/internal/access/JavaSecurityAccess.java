@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,13 @@ import java.security.ProtectionDomain;
 public interface JavaSecurityAccess {
 
     <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
-                                  AccessControlContext stack,
-                                  AccessControlContext context);
+                                  @SuppressWarnings("removal") AccessControlContext stack,
+                                  @SuppressWarnings("removal") AccessControlContext context);
 
     <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
-                                  AccessControlContext context);
+                                  @SuppressWarnings("removal") AccessControlContext context);
 
-    ProtectionDomain[] getProtectDomains(AccessControlContext context);
+    ProtectionDomain[] getProtectDomains(@SuppressWarnings("removal") AccessControlContext context);
 
     interface ProtectionDomainCache {
         void put(ProtectionDomain pd, PermissionCollection pc);

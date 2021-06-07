@@ -276,7 +276,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     }
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    if (bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), dest_elem, false, BarrierSetC2::Optimization)) {
+    if (bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), dest_elem, false, false, BarrierSetC2::Optimization)) {
       // It's an object array copy but we can't emit the card marking
       // that is needed
       return false;
@@ -319,7 +319,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     }
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    if (bs->array_copy_requires_gc_barriers(true, elem, true, BarrierSetC2::Optimization)) {
+    if (bs->array_copy_requires_gc_barriers(true, elem, true, is_clone_inst(), BarrierSetC2::Optimization)) {
       return false;
     }
 
@@ -423,7 +423,7 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
     MergeMemNode* mm = MergeMemNode::make(mem);
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    assert(copy_type != T_OBJECT || !bs->array_copy_requires_gc_barriers(false, T_OBJECT, false, BarrierSetC2::Optimization), "only tightly coupled allocations for object arrays");
+    assert(copy_type != T_OBJECT || !bs->array_copy_requires_gc_barriers(false, T_OBJECT, false, false, BarrierSetC2::Optimization), "only tightly coupled allocations for object arrays");
 
     if (count > 0) {
       for (int i = count-1; i >= 1; i--) {
@@ -456,7 +456,7 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       if (out_mem->outcnt() != 1 || !out_mem->raw_out(0)->is_MergeMem() ||
           out_mem->raw_out(0)->outcnt() != 1 || !out_mem->raw_out(0)->raw_out(0)->is_MemBar()) {
-        assert(bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, BarrierSetC2::Optimization), "can only happen with card marking");
+        assert(bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, is_clone_inst(), BarrierSetC2::Optimization), "can only happen with card marking");
         return false;
       }
 
@@ -738,7 +738,7 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransf
 
 // As an optimization, choose optimum vector size for copy length known at compile time.
 int ArrayCopyNode::get_partial_inline_vector_lane_count(BasicType type, int const_len) {
-  int lane_count = ArrayCopyPartialInlineSize/type2aelembytes(type);
+  int lane_count = ArrayOperationPartialInlineSize/type2aelembytes(type);
   if (const_len > 0) {
     int size_in_bytes = const_len * type2aelembytes(type);
     if (size_in_bytes <= 16)

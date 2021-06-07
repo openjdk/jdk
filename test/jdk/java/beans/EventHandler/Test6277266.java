@@ -25,7 +25,7 @@
  * @test
  * @bug 6277266
  * @summary Tests access control issue in EventHandler
- * @run main/othervm Test6277266
+ * @run main/othervm -Djava.security.manager=allow Test6277266
  * @author Jeff Nisewanger
  */
 

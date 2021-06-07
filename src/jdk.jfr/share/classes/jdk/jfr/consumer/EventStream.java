@@ -136,6 +136,7 @@ public interface EventStream extends AutoCloseable {
      *         does not have
      *         {@code FlightRecorderPermission("accessFlightRecorder")}
      */
+    @SuppressWarnings("removal")
     public static EventStream openRepository() throws IOException {
         Utils.checkAccessFlightRecorder();
         return new EventDirectoryStream(
@@ -167,6 +168,7 @@ public interface EventStream extends AutoCloseable {
      */
     public static EventStream openRepository(Path directory) throws IOException {
         Objects.requireNonNull(directory);
+        @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
         return new EventDirectoryStream(
             acc,
@@ -193,6 +195,7 @@ public interface EventStream extends AutoCloseable {
      * @throws SecurityException if a security manager exists and its
      *         {@code checkRead} method denies read access to the file
      */
+    @SuppressWarnings("removal")
     static EventStream openFile(Path file) throws IOException {
         return new EventFileStream(AccessController.getContext(), file);
     }

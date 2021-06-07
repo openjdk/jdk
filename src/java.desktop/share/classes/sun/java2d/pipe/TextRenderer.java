@@ -51,7 +51,8 @@ public class TextRenderer extends GlyphListPipe {
         int cy2 = clipRegion.getHiY();
         Object ctx = null;
         try {
-            int[] bounds = gl.getBounds();
+            gl.startGlyphIteration();
+            int[] bounds = gl.getBounds(num);
             Rectangle r = new Rectangle(bounds[0], bounds[1],
                                         bounds[2] - bounds[0],
                                         bounds[3] - bounds[1]);
@@ -76,7 +77,7 @@ public class TextRenderer extends GlyphListPipe {
                 }
                 if (gx2 > cx2) gx2 = cx2;
                 if (gy2 > cy2) gy2 = cy2;
-                if (gx2 > gx1 && gy2 > gy1 &&
+                if (gx2 > gx1 && gy2 > gy1 && !gl.isColorGlyph(i) &&
                     outpipe.needTile(ctx, gx1, gy1, gx2 - gx1, gy2 - gy1))
                 {
                     byte[] alpha = gl.getGrayBits();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public class Platform {
     private static final String compiler    = privilegedGetProperty("sun.management.compiler");
     private static final String testJdk     = privilegedGetProperty("test.jdk");
 
+    @SuppressWarnings("removal")
     private static String privilegedGetProperty(String key) {
         return AccessController.doPrivileged((
                 PrivilegedAction<String>) () -> System.getProperty(key));

@@ -228,5 +228,8 @@ public final class SecurityProviderConstants {
         // For backward compatility, refer to PKCS1 mapping for RSA
         // KeyPairGenerator and KeyFactory
         store("PKCS1", KnownOIDs.PKCS1, KnownOIDs.RSA.value());
+
+        store("AES/KW/NoPadding", null, "AESWrap");
+        store("AES/KWP/NoPadding", null, "AESWrapPad");
     }
 }

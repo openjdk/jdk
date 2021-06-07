@@ -103,6 +103,7 @@ class JavaThread;
 //         - GangWorker
 //     - WatcherThread
 //     - JfrThreadSampler
+//     - LogAsyncWriter
 //
 // All Thread subclasses must be either JavaThread or NonJavaThread.
 // This means !t->is_Java_thread() iff t is a NonJavaThread, or t is
@@ -355,7 +356,6 @@ class Thread: public ThreadShadow {
   virtual bool is_active_Java_thread() const         { return false; }
 
   // Casts
-  virtual WorkerThread* as_Worker_thread() const     { return NULL; }
   inline JavaThread* as_Java_thread();
   inline const JavaThread* as_Java_thread() const;
 
@@ -745,18 +745,21 @@ class JavaThread: public Thread {
   // elided card-marks for performance along the fast-path.
   MemRegion     _deferred_card_mark;
 
-  ObjectMonitor* _current_pending_monitor;              // ObjectMonitor this thread is waiting to lock
+  ObjectMonitor* volatile _current_pending_monitor;     // ObjectMonitor this thread is waiting to lock
   bool           _current_pending_monitor_is_from_java; // locking is from Java code
-  ObjectMonitor* _current_waiting_monitor;              // ObjectMonitor on which this thread called Object.wait()
+  ObjectMonitor* volatile _current_waiting_monitor;     // ObjectMonitor on which this thread called Object.wait()
  public:
   volatile intptr_t _Stalled;
 
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
-    return _current_pending_monitor;
+    // Use Atomic::load() to prevent data race between concurrent modification and
+    // concurrent readers, e.g. ThreadService::get_current_contended_monitor().
+    // Especially, reloading pointer from thread after NULL check must be prevented.
+    return Atomic::load(&_current_pending_monitor);
   }
   void set_current_pending_monitor(ObjectMonitor* monitor) {
-    _current_pending_monitor = monitor;
+    Atomic::store(&_current_pending_monitor, monitor);
   }
   void set_current_pending_monitor_is_from_java(bool from_java) {
     _current_pending_monitor_is_from_java = from_java;
@@ -765,10 +768,11 @@ class JavaThread: public Thread {
     return _current_pending_monitor_is_from_java;
   }
   ObjectMonitor* current_waiting_monitor() {
-    return _current_waiting_monitor;
+    // See the comment in current_pending_monitor() above.
+    return Atomic::load(&_current_waiting_monitor);
   }
   void set_current_waiting_monitor(ObjectMonitor* monitor) {
-    _current_waiting_monitor = monitor;
+    Atomic::store(&_current_waiting_monitor, monitor);
   }
 
  private:
@@ -1423,8 +1427,6 @@ class JavaThread: public Thread {
   // the VMThread, it also returns the JavaThread that instigated the VMThread's
   // operation.  You may not want that either.
   static JavaThread* active();
-
-  inline CompilerThread* as_CompilerThread();
 
  protected:
   virtual void pre_run();

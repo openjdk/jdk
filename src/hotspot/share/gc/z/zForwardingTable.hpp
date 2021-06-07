@@ -29,6 +29,8 @@
 class ZForwarding;
 
 class ZForwardingTable {
+  friend class VMStructs;
+
 private:
   ZGranuleMap<ZForwarding*> _map;
 

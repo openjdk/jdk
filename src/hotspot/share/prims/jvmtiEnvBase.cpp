@@ -1364,8 +1364,7 @@ JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
 // The ForceEarlyReturn forces return from method so the execution
 // continues at the bytecode following the method call.
 
-// Threads_lock NOT held, java_thread not protected by lock
-// java_thread - pre-checked
+// java_thread - protected by ThreadsListHandle and pre-checked
 
 jvmtiError
 JvmtiEnvBase::force_early_return(JavaThread* java_thread, jvalue value, TosState tos) {

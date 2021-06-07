@@ -93,6 +93,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
+import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
@@ -1753,11 +1754,11 @@ public class Utils {
 
         private Collator createCollator(Locale locale) {
             Collator baseCollator = Collator.getInstance(locale);
-            if (baseCollator instanceof RuleBasedCollator) {
+            if (baseCollator instanceof RuleBasedCollator rbc) {
                 // Extend collator to sort signatures with additional args and var-args in a well-defined order:
                 // () < (int) < (int, int) < (int...)
                 try {
-                    return new RuleBasedCollator(((RuleBasedCollator) baseCollator).getRules()
+                    return new RuleBasedCollator(rbc.getRules()
                             + "& ')' < ',' < '.','['");
                 } catch (ParseException e) {
                     throw new RuntimeException(e);
@@ -2349,8 +2350,8 @@ public class Utils {
         protected String defaultAction(TypeMirror e, Object val) {
             if (val == null)
                 return null;
-            else if (val instanceof String)
-                return sourceForm((String) val);
+            else if (val instanceof String s)
+                return sourceForm(s);
             return val.toString(); // covers int, short
         }
 
@@ -2648,10 +2649,10 @@ public class Utils {
 
     public List<? extends DocTree> getBlockTags(Element element, Taglet taglet) {
         return getBlockTags(element, t -> {
-            if (taglet instanceof BaseTaglet) {
-                return ((BaseTaglet) taglet).accepts(t);
-            } else if (t instanceof UnknownBlockTagTree) {
-                return ((UnknownBlockTagTree) t).getTagName().equals(taglet.getName());
+            if (taglet instanceof BaseTaglet baseTaglet) {
+                return baseTaglet.accepts(t);
+            } else if (t instanceof BlockTagTree blockTagTree) {
+                return blockTagTree.getTagName().equals(taglet.getName());
             } else {
                 return false;
             }
@@ -3211,11 +3212,12 @@ public class Utils {
             flags.add(ElementFlag.DEPRECATED);
         }
 
-        if (!previewLanguageFeaturesUsed(el).isEmpty() ||
-            configuration.workArounds.isPreviewAPI(el) ||
-            !previewAPIs.previewAPI.isEmpty() ||
-            !previewAPIs.reflectivePreviewAPI.isEmpty() ||
-            !previewAPIs.declaredUsingPreviewFeature.isEmpty())  {
+        if ((!previewLanguageFeaturesUsed(el).isEmpty() ||
+             configuration.workArounds.isPreviewAPI(el) ||
+             !previewAPIs.previewAPI.isEmpty() ||
+             !previewAPIs.reflectivePreviewAPI.isEmpty() ||
+             !previewAPIs.declaredUsingPreviewFeature.isEmpty()) &&
+            !hasNoProviewAnnotation(el)) {
             flags.add(ElementFlag.PREVIEW);
         }
 
@@ -3231,4 +3233,9 @@ public class Utils {
         PREVIEW
     }
 
+    private boolean hasNoProviewAnnotation(Element el) {
+        return el.getAnnotationMirrors()
+                 .stream()
+                 .anyMatch(am -> "jdk.internal.javac.NoPreview".equals(getQualifiedTypeName(am.getAnnotationType())));
+    }
 }

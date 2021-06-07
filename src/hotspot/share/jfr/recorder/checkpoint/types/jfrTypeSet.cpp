@@ -863,12 +863,11 @@ class MethodIteratorHost {
   bool operator()(KlassPtr klass) {
     if (_method_used_predicate(klass)) {
       const InstanceKlass* ik = InstanceKlass::cast(klass);
-      const int len = ik->methods()->length();
-      Filter filter(ik->previous_versions() != NULL ? len : 0);
       while (ik != NULL) {
+        const int len = ik->methods()->length();
         for (int i = 0; i < len; ++i) {
           MethodPtr method = ik->methods()->at(i);
-          if (_method_flag_predicate(method) && filter(i)) {
+          if (_method_flag_predicate(method)) {
             _method_cb(method);
           }
         }

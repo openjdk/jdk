@@ -30,7 +30,7 @@
  * @library ../../../../java/security/testlibrary
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestECDH
- * @run main/othervm TestECDH sm policy
+ * @run main/othervm -Djava.security.manager=allow TestECDH sm policy
  */
 
 import java.security.KeyFactory;
