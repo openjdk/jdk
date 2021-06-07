@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary jpackage unit tests
- * @library ${jtreg.home}/lib/junit.jar
+ * @library ${jtreg.home}/lib/junit.jar ${jtreg.home}/lib/hamcrest.jar
  * @modules jdk.jpackage
  * @run shell run_junit.sh
  */

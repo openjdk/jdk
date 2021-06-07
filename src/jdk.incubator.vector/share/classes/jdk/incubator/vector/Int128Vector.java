@@ -330,15 +330,9 @@ final class Int128Vector extends IntVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Integer> toShuffle() {
-        int[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(Int128Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -809,6 +803,8 @@ final class Int128Vector extends IntVector {
     IntVector fromArray0(int[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

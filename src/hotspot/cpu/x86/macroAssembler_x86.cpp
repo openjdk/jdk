@@ -913,6 +913,221 @@ void MacroAssembler::print_state64(int64_t pc, int64_t regs[]) {
   Disassembler::decode((address)pc, (address)pc+32);
 }
 
+// The java_calling_convention describes stack locations as ideal slots on
+// a frame with no abi restrictions. Since we must observe abi restrictions
+// (like the placement of the register window) the slots must be biased by
+// the following value.
+static int reg2offset_in(VMReg r) {
+  // Account for saved rbp and return address
+  // This should really be in_preserve_stack_slots
+  return (r->reg2stack() + 4) * VMRegImpl::stack_slot_size;
+}
+
+static int reg2offset_out(VMReg r) {
+  return (r->reg2stack() + SharedRuntime::out_preserve_stack_slots()) * VMRegImpl::stack_slot_size;
+}
+
+// A long move
+void MacroAssembler::long_move(VMRegPair src, VMRegPair dst) {
+
+  // The calling conventions assures us that each VMregpair is either
+  // all really one physical register or adjacent stack slots.
+
+  if (src.is_single_phys_reg() ) {
+    if (dst.is_single_phys_reg()) {
+      if (dst.first() != src.first()) {
+        mov(dst.first()->as_Register(), src.first()->as_Register());
+      }
+    } else {
+      assert(dst.is_single_reg(), "not a stack pair");
+      movq(Address(rsp, reg2offset_out(dst.first())), src.first()->as_Register());
+    }
+  } else if (dst.is_single_phys_reg()) {
+    assert(src.is_single_reg(),  "not a stack pair");
+    movq(dst.first()->as_Register(), Address(rbp, reg2offset_out(src.first())));
+  } else {
+    assert(src.is_single_reg() && dst.is_single_reg(), "not stack pairs");
+    movq(rax, Address(rbp, reg2offset_in(src.first())));
+    movq(Address(rsp, reg2offset_out(dst.first())), rax);
+  }
+}
+
+// A double move
+void MacroAssembler::double_move(VMRegPair src, VMRegPair dst) {
+
+  // The calling conventions assures us that each VMregpair is either
+  // all really one physical register or adjacent stack slots.
+
+  if (src.is_single_phys_reg() ) {
+    if (dst.is_single_phys_reg()) {
+      // In theory these overlap but the ordering is such that this is likely a nop
+      if ( src.first() != dst.first()) {
+        movdbl(dst.first()->as_XMMRegister(), src.first()->as_XMMRegister());
+      }
+    } else {
+      assert(dst.is_single_reg(), "not a stack pair");
+      movdbl(Address(rsp, reg2offset_out(dst.first())), src.first()->as_XMMRegister());
+    }
+  } else if (dst.is_single_phys_reg()) {
+    assert(src.is_single_reg(),  "not a stack pair");
+    movdbl(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_out(src.first())));
+  } else {
+    assert(src.is_single_reg() && dst.is_single_reg(), "not stack pairs");
+    movq(rax, Address(rbp, reg2offset_in(src.first())));
+    movq(Address(rsp, reg2offset_out(dst.first())), rax);
+  }
+}
+
+
+// A float arg may have to do float reg int reg conversion
+void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
+  assert(!src.second()->is_valid() && !dst.second()->is_valid(), "bad float_move");
+
+  // The calling conventions assures us that each VMregpair is either
+  // all really one physical register or adjacent stack slots.
+
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      movl(rax, Address(rbp, reg2offset_in(src.first())));
+      movptr(Address(rsp, reg2offset_out(dst.first())), rax);
+    } else {
+      // stack to reg
+      assert(dst.first()->is_XMMRegister(), "only expect xmm registers as parameters");
+      movflt(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_in(src.first())));
+    }
+  } else if (dst.first()->is_stack()) {
+    // reg to stack
+    assert(src.first()->is_XMMRegister(), "only expect xmm registers as parameters");
+    movflt(Address(rsp, reg2offset_out(dst.first())), src.first()->as_XMMRegister());
+  } else {
+    // reg to reg
+    // In theory these overlap but the ordering is such that this is likely a nop
+    if ( src.first() != dst.first()) {
+      movdbl(dst.first()->as_XMMRegister(),  src.first()->as_XMMRegister());
+    }
+  }
+}
+
+// On 64 bit we will store integer like items to the stack as
+// 64 bits items (x86_32/64 abi) even though java would only store
+// 32bits for a parameter. On 32bit it will simply be 32 bits
+// So this routine will do 32->32 on 32bit and 32->64 on 64bit
+void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      // stack to stack
+      movslq(rax, Address(rbp, reg2offset_in(src.first())));
+      movq(Address(rsp, reg2offset_out(dst.first())), rax);
+    } else {
+      // stack to reg
+      movslq(dst.first()->as_Register(), Address(rbp, reg2offset_in(src.first())));
+    }
+  } else if (dst.first()->is_stack()) {
+    // reg to stack
+    // Do we really have to sign extend???
+    // __ movslq(src.first()->as_Register(), src.first()->as_Register());
+    movq(Address(rsp, reg2offset_out(dst.first())), src.first()->as_Register());
+  } else {
+    // Do we really have to sign extend???
+    // __ movslq(dst.first()->as_Register(), src.first()->as_Register());
+    if (dst.first() != src.first()) {
+      movq(dst.first()->as_Register(), src.first()->as_Register());
+    }
+  }
+}
+
+void MacroAssembler::move_ptr(VMRegPair src, VMRegPair dst) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      // stack to stack
+      movq(rax, Address(rbp, reg2offset_in(src.first())));
+      movq(Address(rsp, reg2offset_out(dst.first())), rax);
+    } else {
+      // stack to reg
+      movq(dst.first()->as_Register(), Address(rbp, reg2offset_in(src.first())));
+    }
+  } else if (dst.first()->is_stack()) {
+    // reg to stack
+    movq(Address(rsp, reg2offset_out(dst.first())), src.first()->as_Register());
+  } else {
+    if (dst.first() != src.first()) {
+      movq(dst.first()->as_Register(), src.first()->as_Register());
+    }
+  }
+}
+
+// An oop arg. Must pass a handle not the oop itself
+void MacroAssembler::object_move(OopMap* map,
+                        int oop_handle_offset,
+                        int framesize_in_slots,
+                        VMRegPair src,
+                        VMRegPair dst,
+                        bool is_receiver,
+                        int* receiver_offset) {
+
+  // must pass a handle. First figure out the location we use as a handle
+
+  Register rHandle = dst.first()->is_stack() ? rax : dst.first()->as_Register();
+
+  // See if oop is NULL if it is we need no handle
+
+  if (src.first()->is_stack()) {
+
+    // Oop is already on the stack as an argument
+    int offset_in_older_frame = src.first()->reg2stack() + SharedRuntime::out_preserve_stack_slots();
+    map->set_oop(VMRegImpl::stack2reg(offset_in_older_frame + framesize_in_slots));
+    if (is_receiver) {
+      *receiver_offset = (offset_in_older_frame + framesize_in_slots) * VMRegImpl::stack_slot_size;
+    }
+
+    cmpptr(Address(rbp, reg2offset_in(src.first())), (int32_t)NULL_WORD);
+    lea(rHandle, Address(rbp, reg2offset_in(src.first())));
+    // conditionally move a NULL
+    cmovptr(Assembler::equal, rHandle, Address(rbp, reg2offset_in(src.first())));
+  } else {
+
+    // Oop is in an a register we must store it to the space we reserve
+    // on the stack for oop_handles and pass a handle if oop is non-NULL
+
+    const Register rOop = src.first()->as_Register();
+    int oop_slot;
+    if (rOop == j_rarg0)
+      oop_slot = 0;
+    else if (rOop == j_rarg1)
+      oop_slot = 1;
+    else if (rOop == j_rarg2)
+      oop_slot = 2;
+    else if (rOop == j_rarg3)
+      oop_slot = 3;
+    else if (rOop == j_rarg4)
+      oop_slot = 4;
+    else {
+      assert(rOop == j_rarg5, "wrong register");
+      oop_slot = 5;
+    }
+
+    oop_slot = oop_slot * VMRegImpl::slots_per_word + oop_handle_offset;
+    int offset = oop_slot*VMRegImpl::stack_slot_size;
+
+    map->set_oop(VMRegImpl::stack2reg(oop_slot));
+    // Store oop in handle area, may be NULL
+    movptr(Address(rsp, offset), rOop);
+    if (is_receiver) {
+      *receiver_offset = offset;
+    }
+
+    cmpptr(rOop, (int32_t)NULL_WORD);
+    lea(rHandle, Address(rsp, offset));
+    // conditionally move a NULL from the handle area where it was just stored
+    cmovptr(Assembler::equal, rHandle, Address(rsp, offset));
+  }
+
+  // If arg is on the stack then place it otherwise it is already in correct reg.
+  if (dst.first()->is_stack()) {
+    movptr(Address(rsp, reg2offset_out(dst.first())), rHandle);
+  }
+}
+
 #endif // _LP64
 
 // Now versions that are common to 32/64 bit
@@ -3130,42 +3345,42 @@ void MacroAssembler::evpcmpeqd(KRegister kdst, KRegister mask, XMMRegister nds,
 }
 
 void MacroAssembler::evpcmpd(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-                             int comparison, int vector_len, Register scratch_reg) {
+                             int comparison, bool is_signed, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
-    Assembler::evpcmpd(kdst, mask, nds, as_Address(src), comparison, vector_len);
+    Assembler::evpcmpd(kdst, mask, nds, as_Address(src), comparison, is_signed, vector_len);
   } else {
     lea(scratch_reg, src);
-    Assembler::evpcmpd(kdst, mask, nds, Address(scratch_reg, 0), comparison, vector_len);
+    Assembler::evpcmpd(kdst, mask, nds, Address(scratch_reg, 0), comparison, is_signed, vector_len);
   }
 }
 
 void MacroAssembler::evpcmpq(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-                             int comparison, int vector_len, Register scratch_reg) {
+                             int comparison, bool is_signed, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
-    Assembler::evpcmpq(kdst, mask, nds, as_Address(src), comparison, vector_len);
+    Assembler::evpcmpq(kdst, mask, nds, as_Address(src), comparison, is_signed, vector_len);
   } else {
     lea(scratch_reg, src);
-    Assembler::evpcmpq(kdst, mask, nds, Address(scratch_reg, 0), comparison, vector_len);
+    Assembler::evpcmpq(kdst, mask, nds, Address(scratch_reg, 0), comparison, is_signed, vector_len);
   }
 }
 
 void MacroAssembler::evpcmpb(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-                             int comparison, int vector_len, Register scratch_reg) {
+                             int comparison, bool is_signed, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
-    Assembler::evpcmpb(kdst, mask, nds, as_Address(src), comparison, vector_len);
+    Assembler::evpcmpb(kdst, mask, nds, as_Address(src), comparison, is_signed, vector_len);
   } else {
     lea(scratch_reg, src);
-    Assembler::evpcmpb(kdst, mask, nds, Address(scratch_reg, 0), comparison, vector_len);
+    Assembler::evpcmpb(kdst, mask, nds, Address(scratch_reg, 0), comparison, is_signed, vector_len);
   }
 }
 
 void MacroAssembler::evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-                             int comparison, int vector_len, Register scratch_reg) {
+                             int comparison, bool is_signed, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
-    Assembler::evpcmpw(kdst, mask, nds, as_Address(src), comparison, vector_len);
+    Assembler::evpcmpw(kdst, mask, nds, as_Address(src), comparison, is_signed, vector_len);
   } else {
     lea(scratch_reg, src);
-    Assembler::evpcmpw(kdst, mask, nds, Address(scratch_reg, 0), comparison, vector_len);
+    Assembler::evpcmpw(kdst, mask, nds, Address(scratch_reg, 0), comparison, is_signed, vector_len);
   }
 }
 
@@ -4365,7 +4580,7 @@ static bool _verify_FPU(int stack_depth, char* s, CPU_State* state) {
     return true;                // All other stack states do not matter
   }
 
-  assert((fs->_control_word._value & 0xffff) == StubRoutines::_fpu_cntrl_wrd_std,
+  assert((fs->_control_word._value & 0xffff) == StubRoutines::x86::fpu_cntrl_wrd_std(),
          "bad FPU control word");
 
   // compute stack depth
@@ -4431,7 +4646,7 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
   // or verify that it wasn't changed (with -Xcheck:jni flag).
   if (VM_Version::supports_sse()) {
     if (RestoreMXCSROnJNICalls) {
-      ldmxcsr(ExternalAddress(StubRoutines::addr_mxcsr_std()));
+      ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()));
     } else if (CheckJNICalls) {
       call(RuntimeAddress(StubRoutines::x86::verify_mxcsr_entry()));
     }
@@ -4952,7 +5167,7 @@ void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_
 #ifndef _LP64
   // If method sets FPU control word do it now
   if (fp_mode_24b) {
-    fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
+    fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
   }
   if (UseSSE >= 2 && VerifyFPU) {
     verify_FPU(0, "FPU stack must be clean on entry");
@@ -7846,7 +8061,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     kmovdl(mask2, result);
 
     evmovdquw(tmp1Reg, mask2, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
-    evpcmpuw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
+    evpcmpw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, /*signed*/ false, Assembler::AVX_512bit);
     ktestd(mask1, mask2);
     jcc(Assembler::carryClear, return_zero);
 
@@ -7896,7 +8111,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     kmovdl(mask2, result);
 
     evmovdquw(tmp1Reg, mask2, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
-    evpcmpuw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
+    evpcmpw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, /*signed*/ false, Assembler::AVX_512bit);
     ktestd(mask1, mask2);
     jcc(Assembler::carryClear, return_zero);
 
