@@ -39,8 +39,11 @@ import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -225,6 +228,7 @@ public class JlinkTask {
             setLog(new PrintWriter(System.out, true),
                    new PrintWriter(System.err, true));
         }
+        Path outputPath = null;
         try {
             List<String> remaining = optionsHelper.handleOptions(this, args);
             if (remaining.size() > 0 && !options.suggestProviders) {
@@ -265,6 +269,7 @@ public class JlinkTask {
             }
 
             JlinkConfiguration config = initJlinkConfig();
+            outputPath = config.getOutput();
             if (options.suggestProviders) {
                 suggestProviders(config, remaining);
             } else {
@@ -285,6 +290,7 @@ public class JlinkTask {
             if (DEBUG) {
                 e.printStackTrace(log);
             }
+            cleanupOutput(outputPath);
             return EXIT_ERROR;
         } catch (BadArgs e) {
             taskHelper.reportError(e.key, e.args);
@@ -298,9 +304,21 @@ public class JlinkTask {
         } catch (Throwable x) {
             log.println(taskHelper.getMessage("error.prefix") + " " + x.getMessage());
             x.printStackTrace(log);
+            cleanupOutput(outputPath);
             return EXIT_ABNORMAL;
         } finally {
             log.flush();
+        }
+    }
+
+    private void cleanupOutput(Path dir) {
+        try {
+            deleteDirectory(dir);
+        } catch (IOException io) {
+            log.println(taskHelper.getMessage("error.prefix") + " " + io.getMessage());
+            if (DEBUG) {
+                io.printStackTrace(log);
+            }
         }
     }
 
@@ -466,6 +484,30 @@ public class JlinkTask {
             finder = limitFinder(finder, limitMods, Objects.requireNonNull(roots));
         }
         return finder;
+    }
+
+    private static void deleteDirectory(Path dir) throws IOException {
+        if (dir != null && Files.isDirectory(dir)) {
+            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                        throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException e)
+                        throws IOException {
+                    if (e == null) {
+                        Files.delete(dir);
+                        return FileVisitResult.CONTINUE;
+                    } else {
+                        // directory iteration failed.
+                        throw e;
+                    }
+                }
+            });
+        }
     }
 
     private static Path toPathLocation(ResolvedModule m) {
