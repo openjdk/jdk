@@ -324,15 +324,9 @@ final class Float128Vector extends FloatVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Float> toShuffle() {
-        float[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(Float128Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -610,6 +604,14 @@ final class Float128Vector extends FloatVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Float128Mask eq(VectorMask<Float> mask) {
+            Objects.requireNonNull(mask);
+            Float128Mask m = (Float128Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -797,6 +799,8 @@ final class Float128Vector extends FloatVector {
     FloatVector fromArray0(float[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

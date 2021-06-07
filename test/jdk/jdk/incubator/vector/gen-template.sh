@@ -481,12 +481,19 @@ gen_op_tmpl $test_template "IS_NAN" "\$Boxtype\$.isNaN(a)" "FP"
 gen_op_tmpl $test_template "IS_INFINITE" "\$Boxtype\$.isInfinite(a)" "FP"
 
 # Compares
-gen_compare_op "LT+lt" "<"
-gen_compare_op "GT" ">"
-gen_compare_op "EQ+eq" "=="
-gen_compare_op "NE" "!="
-gen_compare_op "LE" "<="
-gen_compare_op "GE" ">="
+gen_compare_op "LT+lt" "lt"
+gen_compare_op "GT" "gt"
+gen_compare_op "EQ+eq" "eq"
+gen_compare_op "NE" "neq"
+gen_compare_op "LE" "le"
+gen_compare_op "GE" "ge"
+
+gen_compare_op "UNSIGNED_LT" "ult" "BITWISE"
+gen_compare_op "UNSIGNED_GT" "ugt" "BITWISE"
+gen_compare_op "UNSIGNED_LE" "ule" "BITWISE"
+gen_compare_op "UNSIGNED_GE" "uge" "BITWISE"
+
+
 gen_compare_bcst_op "LT" "<"
 gen_compare_bcst_op "EQ" "=="
 

@@ -332,7 +332,6 @@ Invoke::Invoke(Bytecodes::Code code, ValueType* result_type, Value recv, Values*
 {
   set_flag(TargetIsLoadedFlag,   target->is_loaded());
   set_flag(TargetIsFinalFlag,    target_is_loaded() && target->is_final_method());
-  set_flag(TargetIsStrictfpFlag, target_is_loaded() && target->is_strict());
 
   assert(args != NULL, "args must exist");
 #ifdef ASSERT

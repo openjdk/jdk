@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ extern "C" {
 #define ACC_NATIVE      0x0100
 #define ACC_INTERFACE   0x0200
 #define ACC_ABSTRACT    0x0400
-#define ACC_STRICT      0x0800
 
 typedef struct {
     const char *name;
@@ -146,7 +145,6 @@ void printModifiers(jint mod) {
     if (mod & ACC_NATIVE) printf(" NATIVE");
     if (mod & ACC_INTERFACE) printf(" INTERFACE");
     if (mod & ACC_ABSTRACT) printf(" ABSTRACT");
-    if (mod & ACC_STRICT) printf(" STRICT");
     printf(" (0x%0x)\n", mod);
 }
 

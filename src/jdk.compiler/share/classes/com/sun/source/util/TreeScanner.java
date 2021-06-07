@@ -26,6 +26,7 @@
 package com.sun.source.util;
 
 import com.sun.source.tree.*;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A TreeVisitor that visits all the child tree nodes.
@@ -34,6 +35,21 @@ import com.sun.source.tree.*;
  * Inside your method, call super.visitXYZ to visit descendant
  * nodes.
  *
+ * <p>Here is an example to count the number of identifier nodes in a tree:
+ * <pre>
+ *   class CountIdentifiers extends TreeScanner&lt;Integer,Void&gt; {
+ *      {@literal @}Override
+ *      public Integer visitIdentifier(IdentifierTree node, Void p) {
+ *          return 1;
+ *      }
+ *      {@literal @}Override
+ *      public Integer reduce(Integer r1, Integer r2) {
+ *          return (r1 == null ? 0 : r1) + (r2 == null ? 0 : r2);
+ *      }
+ *   }
+ * </pre>
+ *
+ * @implSpec
  * <p>The default implementation of the visitXYZ methods will determine
  * a result as follows:
  * <ul>
@@ -49,20 +65,6 @@ import com.sun.source.tree.*;
  * method is such that the result of the visitXYZ method will be the result of
  * the last child scanned.
  * </ul>
- *
- * <p>Here is an example to count the number of identifier nodes in a tree:
- * <pre>
- *   class CountIdentifiers extends TreeScanner&lt;Integer,Void&gt; {
- *      {@literal @}Override
- *      public Integer visitIdentifier(IdentifierTree node, Void p) {
- *          return 1;
- *      }
- *      {@literal @}Override
- *      public Integer reduce(Integer r1, Integer r2) {
- *          return (r1 == null ? 0 : r1) + (r2 == null ? 0 : r2);
- *      }
- *   }
- * </pre>
  *
  * @param <R> the return type of this visitor's methods.  Use {@link
  *            Void} for visitors that do not need to return results.
@@ -135,7 +137,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
  ****************************************************************************/
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -151,7 +155,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -165,7 +171,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -177,7 +185,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -196,7 +206,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -216,7 +228,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -232,7 +246,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation returns {@code null}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -244,7 +260,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -256,7 +274,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -270,7 +290,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -284,7 +306,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -300,7 +324,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -315,7 +341,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -327,7 +355,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -341,7 +371,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -355,7 +387,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -372,7 +406,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -386,7 +422,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -402,7 +440,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -416,7 +456,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -431,7 +473,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -446,7 +490,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -458,7 +504,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation returns {@code null}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -470,7 +518,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation returns {@code null}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -482,7 +532,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -494,7 +546,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -506,7 +560,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -520,7 +576,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -535,7 +593,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -552,7 +612,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -571,7 +633,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -585,7 +649,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -597,7 +663,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -611,7 +679,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -625,7 +695,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -637,7 +709,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -651,7 +725,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -665,7 +741,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -683,7 +761,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -696,7 +776,25 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     * @since 17
+     */
+    @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    public R visitDefaultCaseLabel(DefaultCaseLabelTree node, P p) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -710,7 +808,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -722,7 +822,42 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     * @since 17
+     */
+    @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    public R visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
+        return scan(node.getPattern(), p);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     * @since 17
+     */
+    @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    public R visitGuardedPattern(GuardedPatternTree node, P p) {
+        R r = scan(node.getPattern(), p);
+        return scanAndReduce(node.getExpression(), p, r);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -736,7 +871,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation returns {@code null}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -748,7 +885,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation returns {@code null}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -760,7 +899,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation returns {@code null}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -772,7 +913,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -784,7 +927,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -798,7 +943,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -810,7 +957,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -822,7 +971,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -836,7 +987,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -848,7 +1001,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -860,7 +1015,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -874,7 +1031,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -887,6 +1046,15 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         return r;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitModule(ModuleTree node, P p) {
         R r = scan(node.getAnnotations(), p);
@@ -895,6 +1063,15 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         return r;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitExports(ExportsTree node, P p) {
         R r = scan(node.getPackageName(), p);
@@ -902,6 +1079,15 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         return r;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitOpens(OpensTree node, P p) {
         R r = scan(node.getPackageName(), p);
@@ -909,6 +1095,15 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         return r;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitProvides(ProvidesTree node, P p) {
         R r = scan(node.getServiceName(), p);
@@ -916,18 +1111,38 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         return r;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitRequires(RequiresTree node, P p) {
         return scan(node.getModuleName(), p);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitUses(UsesTree node, P p) {
         return scan(node.getServiceName(), p);
     }
 
     /**
-     * {@inheritDoc} This implementation returns {@code null}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -939,7 +1154,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation returns {@code null}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -951,7 +1168,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}

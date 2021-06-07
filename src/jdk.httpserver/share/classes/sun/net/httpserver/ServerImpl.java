@@ -258,6 +258,7 @@ class ServerImpl implements TimeSource {
         logger.log (Level.DEBUG, "context removed: " + context.getPath());
     }
 
+    @SuppressWarnings("removal")
     public InetSocketAddress getAddress() {
         return AccessController.doPrivileged(
                 new PrivilegedAction<InetSocketAddress>() {

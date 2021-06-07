@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -988,8 +988,8 @@ public class KeyStore {
      * @see java.security.Security security properties
      */
     public static final String getDefaultType() {
-        String kstype;
-        kstype = AccessController.doPrivileged(new PrivilegedAction<>() {
+        @SuppressWarnings("removal")
+        String kstype = AccessController.doPrivileged(new PrivilegedAction<>() {
             public String run() {
                 return Security.getProperty(KEYSTORE_TYPE);
             }
@@ -1972,8 +1972,9 @@ public class KeyStore {
                     ("File does not exist or it does not refer " +
                      "to a normal file: " + file);
             }
-            return new FileBuilder(type, provider, file, protection,
-                AccessController.getContext());
+            @SuppressWarnings("removal")
+            var acc = AccessController.getContext();
+            return new FileBuilder(type, provider, file, protection, acc);
         }
 
         /**
@@ -2027,6 +2028,7 @@ public class KeyStore {
             private final File file;
             private ProtectionParameter protection;
             private ProtectionParameter keyProtection;
+            @SuppressWarnings("removal")
             private final AccessControlContext context;
 
             private KeyStore keyStore;
@@ -2035,7 +2037,7 @@ public class KeyStore {
 
             FileBuilder(String type, Provider provider, File file,
                     ProtectionParameter protection,
-                    AccessControlContext context) {
+                    @SuppressWarnings("removal") AccessControlContext context) {
                 this.type = type;
                 this.provider = provider;
                 this.file = file;
@@ -2043,6 +2045,7 @@ public class KeyStore {
                 this.context = context;
             }
 
+            @SuppressWarnings("removal")
             public synchronized KeyStore getKeyStore() throws KeyStoreException
             {
                 if (keyStore != null) {
@@ -2174,6 +2177,7 @@ public class KeyStore {
             if ((type == null) || (protection == null)) {
                 throw new NullPointerException();
             }
+            @SuppressWarnings("removal")
             final AccessControlContext context = AccessController.getContext();
             return new Builder() {
                 private volatile boolean getCalled;
@@ -2218,6 +2222,7 @@ public class KeyStore {
                     }
                 };
 
+                @SuppressWarnings("removal")
                 public synchronized KeyStore getKeyStore()
                         throws KeyStoreException {
                     if (oldException != null) {

@@ -81,6 +81,7 @@ public abstract class AbstractAction implements Action, Cloneable, Serializable
      * Whether or not to reconfigure all action properties from the
      * specified event.
      */
+    @SuppressWarnings("removal")
     static boolean shouldReconfigure(PropertyChangeEvent e) {
         if (e.getPropertyName() == null) {
             synchronized(AbstractAction.class) {

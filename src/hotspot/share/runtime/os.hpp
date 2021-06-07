@@ -450,6 +450,7 @@ class os: AllStatic {
     java_thread,       // Java, CodeCacheSweeper, JVMTIAgent and Service threads.
     compiler_thread,
     watcher_thread,
+    asynclog_thread,   // dedicated to flushing logs
     os_thread
   };
 

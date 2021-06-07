@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.tool;
 
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -36,8 +37,12 @@ import java.util.ResourceBundle;
 import java.util.Set;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.NestingKind;
 import javax.tools.Diagnostic;
 import javax.tools.Diagnostic.Kind;
+import javax.tools.FileObject;
+import javax.tools.ForwardingFileObject;
 import javax.tools.JavaFileObject;
 
 import jdk.javadoc.doclet.Reporter;
@@ -157,17 +162,25 @@ public class Messager extends Log implements Reporter {
     private final JavacMessages messages;
     private final JCDiagnostic.Factory javadocDiags;
 
-    /** The default writer for notes. */
-    private static final PrintWriter defaultOutWriter = new PrintWriter(System.out);
-    /** The default writer for errors and warnings. */
-    private static final PrintWriter defaultErrWriter = new PrintWriter(System.err);
+    private static PrintWriter createPrintWriter(PrintStream ps, boolean autoflush) {
+        return new PrintWriter(ps, autoflush) {
+            // avoid closing system streams
+            @Override
+            public void close() {
+                super.flush();
+            }
+        };
+    }
 
     /**
      * Constructor
      * @param programName  Name of the program (for error messages).
      */
     public Messager(Context context, String programName) {
-        this(context, programName, defaultOutWriter, defaultErrWriter);
+        // use the current values of System.out, System.err, in case they have been redirected
+        this(context, programName,
+                createPrintWriter(System.out, false),
+                createPrintWriter(System.err, true));
     }
 
     /**
@@ -176,9 +189,8 @@ public class Messager extends Log implements Reporter {
      * @param outWriter    Stream for notices etc.
      * @param errWriter    Stream for errors and warnings
      */
-    @SuppressWarnings("deprecation")
     public Messager(Context context, String programName, PrintWriter outWriter, PrintWriter errWriter) {
-        super(context, errWriter, errWriter, outWriter);
+        super(context, outWriter, errWriter);
         messages = JavacMessages.instance(context);
         messages.add(locale -> ResourceBundle.getBundle("jdk.javadoc.internal.tool.resources.javadoc",
                                                          locale));
@@ -195,6 +207,16 @@ public class Messager extends Log implements Reporter {
                 return size() > MAX_ENTRIES;
             }
         };
+    }
+
+    @Override // Reporter
+    public PrintWriter getStandardWriter() {
+        return getWriter(Log.WriterKind.STDOUT);
+    }
+
+    @Override // Reporter
+    public PrintWriter getDiagnosticWriter() {
+        return getWriter(Log.WriterKind.STDERR);
     }
 
     public void setLocale(Locale locale) {
@@ -232,6 +254,51 @@ public class Messager extends Log implements Reporter {
         DiagnosticSource ds = getDiagnosticSource(element);
         DiagnosticPosition dp = getDiagnosticPosition(element);
         report(dt, flags, ds, dp, message);
+    }
+
+    @Override // Reporter
+    public void print(Kind kind, FileObject file, int start, int pos, int end, String message) throws IllegalArgumentException {
+        DiagnosticType dt = getDiagnosticType(kind);
+        Set<DiagnosticFlag> flags = getDiagnosticFlags(kind);
+        // Although not required to do so, it is the case that any file object returned from the
+        // javac impl of JavaFileManager will return an object that implements JavaFileObject.
+        // See PathFileObject, which provides the primary impls of (Java)FileObject.
+        JavaFileObject fo = file instanceof JavaFileObject _fo ? _fo : new WrappingJavaFileObject(file);
+        DiagnosticSource ds = new DiagnosticSource(fo, this);
+        DiagnosticPosition dp = createDiagnosticPosition(null, start, pos, end);
+        report(dt, flags, ds, dp, message);
+    }
+
+    private class WrappingJavaFileObject
+            extends ForwardingFileObject<FileObject> implements JavaFileObject {
+
+        WrappingJavaFileObject(FileObject fo) {
+            super(fo);
+            assert !(fo instanceof JavaFileObject);
+        }
+
+        @Override
+        public Kind getKind() {
+            String name = fileObject.getName();
+            return name.endsWith(Kind.HTML.extension)
+                    ? JavaFileObject.Kind.HTML
+                    : JavaFileObject.Kind.OTHER;
+        }
+
+        @Override
+        public boolean isNameCompatible(String simpleName, Kind kind) {
+            return false;
+        }
+
+        @Override
+        public NestingKind getNestingKind() {
+            return null;
+        }
+
+        @Override
+        public Modifier getAccessLevel() {
+            return null;
+        }
     }
 
     /**
@@ -332,46 +399,22 @@ public class Messager extends Log implements Reporter {
     }
 
     /**
-     * Prints a "notice" message.
-     *
-     * @param message the message
-     */
-    public void printNotice(String message) {
-        report(DiagnosticType.NOTE, null, null, message);
-    }
-
-    /**
-     * Prints a "notice" message for a given documentation tree node.
-     *
-     * @param path    the path for the documentation tree node
-     * @param message the message
-     */
-    public void printNotice(DocTreePath path, String message) {
-        DiagnosticSource ds = getDiagnosticSource(path);
-        DiagnosticPosition dp = getDiagnosticPosition(path);
-        report(DiagnosticType.NOTE, EnumSet.noneOf(DiagnosticFlag.class), ds, dp, message);
-    }
-
-    /**
-     * Prints a "notice" message for a given element.
-     *
-     * @param element the element
-     * @param message the message
-     */
-    public void printNotice(Element element, String message) {
-        DiagnosticSource ds = getDiagnosticSource(element);
-        DiagnosticPosition dp = getDiagnosticPosition(element);
-        report(DiagnosticType.NOTE, EnumSet.noneOf(DiagnosticFlag.class), ds, dp, message);
-    }
-
-    /**
-     * Prints a "notice" message.
+     * Prints a "notice" message to the standard writer.
      *
      * @param key  the resource key for the message
      * @param args the arguments for the message
      */
-    public void notice(String key, Object... args) {
-        printNotice(getText(key, args));
+    public void noticeUsingKey(String key, Object... args) {
+        printRawLines(getStandardWriter(), getText(key, args));
+    }
+
+    /**
+     * Prints a "notice" message to the standard writer.
+     *
+     * @param message the message
+     */
+    public void notice(String message) {
+        printRawLines(getStandardWriter(), message);
     }
 
     /**
@@ -389,16 +432,21 @@ public class Messager extends Log implements Reporter {
     }
 
     /**
-     * Prints the error and warning counts, if any.
+     * Prints the error and warning counts, if any, to the diagnostic writer.
      */
     public void printErrorWarningCounts() {
-        if (nerrors > 0) {
-            notice((nerrors > 1) ? "main.errors" : "main.error",
-                   "" + nerrors);
-        }
-        if (nwarnings > 0) {
-            notice((nwarnings > 1) ?  "main.warnings" : "main.warning",
-                   "" + nwarnings);
+        printCount(nerrors, "main.error", "main.errors");
+        printCount(nwarnings, "main.warning", "main.warnings");
+    }
+
+    private void printCount(int count, String singleKey, String pluralKey) {
+        if (count > 0) {
+            String message = getText(count > 1 ? pluralKey : singleKey, count);
+            if (diagListener != null) {
+                report(DiagnosticType.NOTE, null, null, message);
+            } else {
+                printRawLines(getDiagnosticWriter(), message);
+            }
         }
     }
 
@@ -446,9 +494,10 @@ public class Messager extends Log implements Reporter {
      *
      * {@code Log} reports all notes with a "Note:" prefix. That's not good for the
      * standard doclet, which uses notes to report the various "progress" messages,
-     * such as  "Generating class ...".  Therefore, for now, we detect and report those
-     * messages directly. (A better solution would be to expose access to the output
-     * and error streams via {@code Reporter}).
+     * such as  "Generating class ...".  They can be written directly to the diagnostic
+     * writer, but that bypasses low-level checks about whether to suppress notes,
+     * and bypasses the diagnostic listener for API clients.
+     * Overall, it's an over-constrained problem with no obvious good solution.
      *
      * Note: there is an intentional difference in behavior between the diagnostic source
      * being set to {@code null} (no source intended) and {@code NO_SOURCE} (no source available).
@@ -459,12 +508,7 @@ public class Messager extends Log implements Reporter {
      * @param message the message
      */
     private void report(DiagnosticType dt, Set<DiagnosticFlag> flags, DiagnosticSource ds, DiagnosticPosition dp, String message) {
-        if (dt == DiagnosticType.NOTE && ds == null && !hasDiagnosticListener()) {
-            printRawLines(WriterKind.STDOUT, message);
-            getWriter(WriterKind.STDOUT).flush();
-        } else {
-            report(javadocDiags.create(dt, null, flags, ds, dp, "message", message));
-        }
+        report(javadocDiags.create(dt, null, flags, ds, dp, "message", message));
     }
 
     /**

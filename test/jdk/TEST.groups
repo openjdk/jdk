@@ -333,7 +333,8 @@ jdk_svc = \
     :svc_tools
 
 jdk_foreign = \
-    java/foreign
+    java/foreign \
+    -java/foreign/TestMatrix.java
 
 jdk_vector = \
     jdk/incubator/vector
@@ -517,7 +518,6 @@ jdk_core_manual_no_input = \
     java/net/httpclient/BodyProcessorInputStreamTest.java \
     java/net/httpclient/HttpInputStreamTest.java \
     java/nio/MappedByteBuffer/PmemTest.java \
-    java/rmi/activation/nonLocalActivation/NonLocalActivationTest.java \
     java/rmi/registry/nonLocalRegistry/NonLocalRegistryTest.java \
     java/util/zip/ZipFile/TestZipFile.java \
     javax/net/ssl/compatibility/AlpnTest.java \

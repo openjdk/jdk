@@ -62,8 +62,6 @@ public:
 
 private:
 
-  DEBUG_ONLY(static bool   _frozen;)
-
   static const MetaspaceTracer* _tracer;
 
   static bool _initialized;
@@ -71,13 +69,6 @@ private:
 public:
 
   static const MetaspaceTracer* tracer() { return _tracer; }
-  static void freeze() {
-    assert(DumpSharedSpaces, "sanity");
-    DEBUG_ONLY(_frozen = true;)
-  }
-  static void assert_not_frozen() {
-    assert(!_frozen, "sanity");
-  }
 
  private:
 

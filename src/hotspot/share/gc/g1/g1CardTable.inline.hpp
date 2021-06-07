@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1CARDTABLE_INLINE_HPP
 
 #include "gc/g1/g1CardTable.hpp"
+
 #include "gc/g1/heapRegion.hpp"
 
 inline uint G1CardTable::region_idx_for(CardValue* p) {

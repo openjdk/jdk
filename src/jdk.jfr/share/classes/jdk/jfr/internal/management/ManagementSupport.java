@@ -171,6 +171,7 @@ public final class ManagementSupport {
     // EventStream::onMetadataData need to supply MetadataEvent
     // with configuration objects
     public static EventStream newEventDirectoryStream(
+            @SuppressWarnings("removal")
             AccessControlContext acc,
             Path directory,
             List<Configuration> confs) throws IOException {

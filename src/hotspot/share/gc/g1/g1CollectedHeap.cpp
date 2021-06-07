@@ -712,6 +712,27 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
   return result;
 }
 
+void G1CollectedHeap::populate_archive_regions_bot_part(MemRegion* ranges, size_t count) {
+  assert(!is_init_completed(), "Expect to be called at JVM init time");
+  assert(ranges != NULL, "MemRegion array NULL");
+  assert(count != 0, "No MemRegions provided");
+
+  HeapWord* st = ranges[0].start();
+  HeapWord* last = ranges[count-1].last();
+  HeapRegion* hr_st = _hrm.addr_to_region(st);
+  HeapRegion* hr_last = _hrm.addr_to_region(last);
+
+  HeapRegion* hr_curr = hr_st;
+  while (hr_curr != NULL) {
+    hr_curr->update_bot();
+    if (hr_curr != hr_last) {
+      hr_curr = _hrm.next_region_in_heap(hr_curr);
+    } else {
+      hr_curr = NULL;
+    }
+  }
+}
+
 void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   assert(ranges != NULL, "MemRegion array NULL");
@@ -1779,8 +1800,7 @@ void G1CollectedHeap::ref_processing_init() {
                            (ParallelGCThreads > 1) || (ConcGCThreads > 1), // mt discovery
                            MAX2(ParallelGCThreads, ConcGCThreads),         // degree of mt discovery
                            false,                                          // Reference discovery is not atomic
-                           &_is_alive_closure_cm,                          // is alive closure
-                           true);                                          // allow changes to number of processing threads
+                           &_is_alive_closure_cm);                         // is alive closure
 
   // STW ref processor
   _ref_processor_stw =
@@ -1789,8 +1809,7 @@ void G1CollectedHeap::ref_processing_init() {
                            (ParallelGCThreads > 1),              // mt discovery
                            ParallelGCThreads,                    // degree of mt discovery
                            true,                                 // Reference discovery is atomic
-                           &_is_alive_closure_stw,               // is alive closure
-                           true);                                // allow changes to number of processing threads
+                           &_is_alive_closure_stw);              // is alive closure
 }
 
 SoftRefPolicy* G1CollectedHeap::soft_ref_policy() {
@@ -2638,7 +2657,7 @@ bool G1CollectedHeap::is_potential_eager_reclaim_candidate(HeapRegion* r) const 
   HeapRegionRemSet* rem_set = r->rem_set();
 
   return G1EagerReclaimHumongousObjectsWithStaleRefs ?
-         rem_set->occupancy_less_or_equal_than(G1RSetSparseRegionEntries) :
+         rem_set->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold) :
          G1EagerReclaimHumongousObjects && rem_set->is_empty();
 }
 
