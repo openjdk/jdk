@@ -40,7 +40,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "runtime/thread.inline.hpp"
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
@@ -929,8 +928,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
   if (_discovery_is_mt) {
     // During a multi-threaded discovery phase,
     // each thread saves to its "own" list.
-    Thread* thr = Thread::current();
-    id = thr->as_Worker_thread()->id();
+    id = WorkerThread::current()->id();
   } else {
     // single-threaded discovery, we save in round-robin
     // fashion to each of the lists.
