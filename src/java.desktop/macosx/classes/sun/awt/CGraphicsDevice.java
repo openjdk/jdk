@@ -34,6 +34,7 @@ import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.geom.Rectangle2D;
 import java.awt.peer.WindowPeer;
+import java.util.Arrays;
 import java.util.Objects;
 
 import sun.java2d.SunGraphicsEnvironment;
@@ -203,6 +204,7 @@ public final class CGraphicsDevice extends GraphicsDevice
     public void invalidate(CGraphicsDevice device) {
         //TODO do we need to restore the full-screen window/modes on old device?
         displayID = device.displayID;
+        initialMode = device.initialMode;
     }
 
     @Override
@@ -359,7 +361,22 @@ public final class CGraphicsDevice extends GraphicsDevice
 
     @Override
     public DisplayMode[] getDisplayModes() {
-        return nativeGetDisplayModes(displayID);
+        DisplayMode[] nativeModes = nativeGetDisplayModes(displayID);
+        boolean match = false;
+        for (DisplayMode mode : nativeModes) {
+            if (initialMode.equals(mode)) {
+                match = true;
+                break;
+            }
+        }
+        if (match) {
+            return nativeModes;
+        } else {
+          int len = nativeModes.length;
+          DisplayMode[] modes = Arrays.copyOf(nativeModes, len+1, DisplayMode[].class);
+          modes[len] = initialMode;
+          return modes; 
+        }
     }
 
     public static boolean usingMetalPipeline() {
