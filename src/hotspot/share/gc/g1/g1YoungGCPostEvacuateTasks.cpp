@@ -91,8 +91,43 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
   uint _humongous_objects_reclaimed;
   uint _humongous_regions_reclaimed;
   size_t _freed_bytes;
-public:
 
+  // Returns whether the given humongous object defined by the start region index
+  // is reclaimable.
+  //
+  // At this point in the garbage collection, checking whether the humongous object
+  // is still a candidate is sufficient because:
+  //
+  // - if it has not been a candidate at the start of collection, it will never
+  // changed to be a candidate during the gc (and live).
+  // - any found outstanding (i.e. in the DCQ, or in its remembered set)
+  // references will set the candidate state to false.
+  // - there can be no references from within humongous starts regions referencing
+  // the object because we never allocate other objects into them.
+  // (I.e. there can be no intra-region references)
+  //
+  // It is not required to check whether the object has been found dead by marking
+  // or not, in fact it would prevent reclamation within a concurrent cycle, as
+  // all objects allocated during that time are considered live.
+  // SATB marking is even more conservative than the remembered set.
+  // So if at this point in the collection we did not find a reference during gc
+  // (or it had enough references to not be a candidate, having many remembered
+  // set entries), nobody has a reference to it.
+  // At the start of collection we flush all refinement logs, and remembered sets
+  // are completely up-to-date wrt to references to the humongous object.
+  //
+  // So there is no need to re-check remembered set size of the humongous region.
+  //
+  // Other implementation considerations:
+  // - never consider object arrays at this time because they would pose
+  // considerable effort for cleaning up the the remembered sets. This is
+  // required because stale remembered sets might reference locations that
+  // are currently allocated into.
+  bool is_reclaimable(uint region_idx) const {
+    return G1CollectedHeap::heap()->is_humongous_reclaim_candidate(region_idx);
+  }
+
+public:
   G1FreeHumongousRegionClosure() :
     _humongous_objects_reclaimed(0),
     _humongous_regions_reclaimed(0),
@@ -104,48 +139,17 @@ public:
       return false;
     }
 
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-    oop obj = cast_to_oop(r->bottom());
-
-    // The following check whether the humongous object is live is sufficient.
-    //
-    // A humongous object can only be live if it is (still) a humongous reclaim
-    // candidate because:
-    // - if it has not been a candidate at the start of collection, it will never
-    // be a candidate (and live).
-    // - any found outstanding (i.e. in the DCQ, or in its remembered set)
-    // references will set the candidate state to false.
-    // - there can be no references from within humongous starts regions referencing
-    // the object because we never allocate other objects into them.
-    // (I.e. there can be no intra-region references)
-    //
-    // It is not required to check whether the object has been found dead by marking
-    // or not, in fact it would prevent reclamation within a concurrent cycle, as
-    // all objects allocated during that time are considered live.
-    // SATB marking is even more conservative than the remembered set.
-    // So if at this point in the collection we did not find a reference during gc
-    // (or it had enough references to not be a candidate, having many remembered
-    // set entries), nobody has a reference to it.
-    // At the start of collection we flush all refinement logs, and remembered sets
-    // are completely up-to-date wrt to references to the humongous object.
-    //
-    // So there is no need to re-check remembered set size of the humongous region.
-    //
-    // Other implementation considerations:
-    // - never consider object arrays at this time because they would pose
-    // considerable effort for cleaning up the the remembered sets. This is
-    // required because stale remembered sets might reference locations that
-    // are currently allocated into.
     uint region_idx = r->hrm_index();
-    if (!g1h->is_humongous_reclaim_candidate(region_idx)) {
+    if (!is_reclaimable(region_idx)) {
       return false;
     }
 
+    oop obj = cast_to_oop(r->bottom());
     guarantee(obj->is_typeArray(),
               "Only eagerly reclaiming type arrays is supported, but the object "
               PTR_FORMAT " is not.", p2i(r->bottom()));
 
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1ConcurrentMark* const cm = g1h->concurrent_mark();
     cm->humongous_object_eagerly_reclaimed(r);
     assert(!cm->is_marked_in_prev_bitmap(obj) && !cm->is_marked_in_next_bitmap(obj),
