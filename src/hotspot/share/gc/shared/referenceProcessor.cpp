@@ -98,13 +98,11 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
                                        bool      mt_discovery,
                                        uint      mt_discovery_degree,
                                        bool      atomic_discovery,
-                                       BoolObjectClosure* is_alive_non_header,
-                                       bool      adjust_no_of_processing_threads)  :
+                                       BoolObjectClosure* is_alive_non_header)  :
   _is_subject_to_discovery(is_subject_to_discovery),
   _discovering_refs(false),
   _enqueuing_is_done(false),
   _next_id(0),
-  _adjust_no_of_processing_threads(adjust_no_of_processing_threads),
   _is_alive_non_header(is_alive_non_header)
 {
   assert(is_subject_to_discovery != NULL, "must be set");
@@ -1320,12 +1318,7 @@ RefProcMTDegreeAdjuster::RefProcMTDegreeAdjuster(ReferenceProcessor* rp,
                                                  size_t ref_count):
     _rp(rp),
     _saved_num_queues(_rp->num_queues()) {
-  if (!_rp->adjust_no_of_processing_threads() || (ReferencesPerThread == 0)) {
-    return;
-  }
-
   uint workers = ergo_proc_thread_count(ref_count, _rp->num_queues(), phase);
-
   _rp->set_active_mt_degree(workers);
 }
 
