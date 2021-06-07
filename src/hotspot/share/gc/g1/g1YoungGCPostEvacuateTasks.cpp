@@ -149,6 +149,12 @@ public:
               "Only eagerly reclaiming type arrays is supported, but the object "
               PTR_FORMAT " is not.", p2i(r->bottom()));
 
+    log_debug(gc, humongous)("Reclaimed humongous region %u (object size " SIZE_FORMAT " @ " PTR_FORMAT ")",
+                             region_idx,
+                             (size_t)obj->size() * HeapWordSize,
+                             p2i(r->bottom())
+                            );
+
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1ConcurrentMark* const cm = g1h->concurrent_mark();
     cm->humongous_object_eagerly_reclaimed(r);
@@ -168,11 +174,6 @@ public:
       r = next;
     } while (r != nullptr);
 
-    log_debug(gc, humongous)("Reclaimed humongous region %u (object size " SIZE_FORMAT " @ " PTR_FORMAT ")",
-                             region_idx,
-                             (size_t)obj->size() * HeapWordSize,
-                             p2i(r->bottom())
-                            );
     return false;
   }
 
