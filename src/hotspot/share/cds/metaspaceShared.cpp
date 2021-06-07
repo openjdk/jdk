@@ -489,6 +489,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   // that so we don't have to walk the SystemDictionary again.
   SystemDictionaryShared::check_excluded_classes();
 
+  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   StaticArchiveBuilder builder;
   builder.gather_source_objs();
   builder.reserve_buffer();

@@ -48,6 +48,8 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownServiceException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -99,7 +101,7 @@ import org.xml.sax.ext.LexicalHandler;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author Santiago Pericas-Geertsen
- * @LastModified: May 2021
+ * @LastModified: June 2021
  */
 public final class TransformerImpl extends Transformer
     implements DOMCache
@@ -510,35 +512,15 @@ public final class TransformerImpl extends Transformer
                 // or (3) just a filename on the local system.
                 URL url;
                 if (systemId.startsWith("file:")) {
-                    // if StreamResult(File) or setSystemID(File) was used,
-                    // the systemId will be URI encoded as a result of File.toURI(),
-                    // it must be decoded for use by URL
                     try{
-                        URI uri = new URI(systemId) ;
-                        systemId = "file:";
-
-                        String host = uri.getHost(); // decoded String
-                        String path = uri.getPath(); //decoded String
-                        if (path == null) {
-                         path = "";
-                        }
-
-                        // if host (URI authority) then file:// + host + path
-                        // else just path (may be absolute or relative)
-                        if (host != null) {
-                         systemId += "//" + host + path;
-                        } else {
-                         systemId += "//" + path;
-                        }
+                        Path p = Paths.get(new URI(systemId));
+                        _ostream = new FileOutputStream(p.toFile());
+                        _tohFactory.setOutputStream(_ostream);
+                        return _tohFactory.getSerializationHandler();
                     }
-                    catch (Exception  exception) {
-                        // URI exception which means nothing can be done so OK to ignore
+                    catch (Exception e) {
+                        throw new TransformerException(e);
                     }
-
-                    url = new URL(systemId);
-                    _ostream = new FileOutputStream(url.getFile());
-                    _tohFactory.setOutputStream(_ostream);
-                    return _tohFactory.getSerializationHandler();
                 }
                 else if (systemId.startsWith("http:")) {
                     url = new URL(systemId);

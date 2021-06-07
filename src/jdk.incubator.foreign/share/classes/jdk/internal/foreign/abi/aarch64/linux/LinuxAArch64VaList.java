@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, Arm Limited. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.foreign.abi.aarch64;
+package jdk.internal.foreign.abi.aarch64.linux;
 
 import jdk.incubator.foreign.*;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.SharedUtils;
+import jdk.internal.foreign.abi.aarch64.*;
 import jdk.internal.misc.Unsafe;
 
 import java.lang.invoke.VarHandle;
@@ -46,7 +47,11 @@ import static jdk.internal.foreign.abi.SharedUtils.checkCompatibleType;
 import static jdk.internal.foreign.abi.SharedUtils.vhPrimitiveOrAddress;
 import static jdk.internal.foreign.abi.aarch64.CallArranger.MAX_REGISTER_ARGUMENTS;
 
-public non-sealed class AArch64VaList implements VaList {
+/**
+ * Standard va_list implementation as defined by AAPCS document and used on
+ * Linux. Variadic parameters may be passed in registers or on the stack.
+ */
+public non-sealed class LinuxAArch64VaList implements VaList {
     private static final Unsafe U = Unsafe.getUnsafe();
 
     static final Class<?> CARRIER = MemoryAddress.class;
@@ -105,26 +110,26 @@ public non-sealed class AArch64VaList implements VaList {
     private final MemorySegment gpRegsArea;
     private final MemorySegment fpRegsArea;
 
-    private AArch64VaList(MemorySegment segment, MemorySegment gpRegsArea, MemorySegment fpRegsArea) {
+    private LinuxAArch64VaList(MemorySegment segment, MemorySegment gpRegsArea, MemorySegment fpRegsArea) {
         this.segment = segment;
         this.gpRegsArea = gpRegsArea;
         this.fpRegsArea = fpRegsArea;
     }
 
-    private static AArch64VaList readFromSegment(MemorySegment segment) {
+    private static LinuxAArch64VaList readFromSegment(MemorySegment segment) {
         MemorySegment gpRegsArea = grTop(segment).addOffset(-MAX_GP_OFFSET).asSegment(
                 MAX_GP_OFFSET, segment.scope());
 
         MemorySegment fpRegsArea = vrTop(segment).addOffset(-MAX_FP_OFFSET).asSegment(
                 MAX_FP_OFFSET, segment.scope());
-        return new AArch64VaList(segment, gpRegsArea, fpRegsArea);
+        return new LinuxAArch64VaList(segment, gpRegsArea, fpRegsArea);
     }
 
     private static MemoryAddress emptyListAddress() {
         long ptr = U.allocateMemory(LAYOUT.byteSize());
         MemorySegment ms = MemoryAddress.ofLong(ptr).asSegment(
                 LAYOUT.byteSize(), () -> U.freeMemory(ptr), ResourceScope.newSharedScope());
-        cleaner.register(AArch64VaList.class, () -> ms.scope().close());
+        cleaner.register(LinuxAArch64VaList.class, () -> ms.scope().close());
         VH_stack.set(ms, MemoryAddress.NULL);
         VH_gr_top.set(ms, MemoryAddress.NULL);
         VH_vr_top.set(ms, MemoryAddress.NULL);
@@ -246,7 +251,7 @@ public non-sealed class AArch64VaList implements VaList {
 
     private Object read(Class<?> carrier, MemoryLayout layout, SegmentAllocator allocator) {
         Objects.requireNonNull(layout);
-        checkCompatibleType(carrier, layout, AArch64Linker.ADDRESS_SIZE);
+        checkCompatibleType(carrier, layout, LinuxAArch64Linker.ADDRESS_SIZE);
 
         TypeClass typeClass = TypeClass.classifyLayout(layout);
         if (isRegOverflow(currentGPOffset(), currentFPOffset(), typeClass, layout)) {
@@ -346,8 +351,8 @@ public non-sealed class AArch64VaList implements VaList {
         }
     }
 
-    static AArch64VaList.Builder builder(ResourceScope scope) {
-        return new AArch64VaList.Builder(scope);
+    static LinuxAArch64VaList.Builder builder(ResourceScope scope) {
+        return new LinuxAArch64VaList.Builder(scope);
     }
 
     public static VaList ofAddress(MemoryAddress ma, ResourceScope scope) {
@@ -363,7 +368,7 @@ public non-sealed class AArch64VaList implements VaList {
     public VaList copy() {
         MemorySegment copy = MemorySegment.allocateNative(LAYOUT, segment.scope());
         copy.copyFrom(segment);
-        return new AArch64VaList(copy, gpRegsArea, fpRegsArea);
+        return new LinuxAArch64VaList(copy, gpRegsArea, fpRegsArea);
     }
 
     @Override
@@ -388,7 +393,7 @@ public non-sealed class AArch64VaList implements VaList {
 
     @Override
     public String toString() {
-        return "AArch64VaList{"
+        return "LinuxAArch64VaList{"
             + "__stack=" + stackPtr()
             + ", __gr_top=" + grTop()
             + ", __vr_top=" + vrTop()
@@ -440,7 +445,7 @@ public non-sealed class AArch64VaList implements VaList {
         private Builder arg(Class<?> carrier, MemoryLayout layout, Object value) {
             Objects.requireNonNull(layout);
             Objects.requireNonNull(value);
-            checkCompatibleType(carrier, layout, AArch64Linker.ADDRESS_SIZE);
+            checkCompatibleType(carrier, layout, LinuxAArch64Linker.ADDRESS_SIZE);
 
             TypeClass typeClass = TypeClass.classifyLayout(layout);
             if (isRegOverflow(currentGPOffset, currentFPOffset, typeClass, layout)) {
@@ -533,7 +538,7 @@ public non-sealed class AArch64VaList implements VaList {
 
             assert gpRegs.scope().ownerThread() == vaListSegment.scope().ownerThread();
             assert fpRegs.scope().ownerThread() == vaListSegment.scope().ownerThread();
-            return new AArch64VaList(vaListSegment, gpRegs, fpRegs);
+            return new LinuxAArch64VaList(vaListSegment, gpRegs, fpRegs);
         }
     }
 }

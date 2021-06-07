@@ -28,8 +28,6 @@ package javax.xml.transform.stream;
 import javax.xml.transform.Result;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.Writer;
 
@@ -96,12 +94,10 @@ public class StreamResult implements Result {
      * @param f Must a non-null File reference.
      */
     public StreamResult(File f) {
-        try {
-            outputStream = new FileOutputStream(f);
-        } catch (FileNotFoundException ex) {
-            // fall back to the original implementation for compatibility
-            setSystemId(f.toURI().toASCIIString());
-        }
+        //convert file to appropriate URI, f.toURI().toASCIIString()
+        //converts the URI to string as per rule specified in
+        //RFC 2396,
+        setSystemId(f.toURI().toASCIIString());
     }
 
     /**
