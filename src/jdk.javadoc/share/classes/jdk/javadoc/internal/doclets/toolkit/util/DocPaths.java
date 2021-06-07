@@ -142,10 +142,10 @@ public class DocPaths {
     /** The name of the file for the package usage info. */
     public static final DocPath PACKAGE_USE = DocPath.create("package-use.html");
 
-    /** The name of the fie for preview elements. */
+    /** The name of the file for preview elements. */
     public static final DocPath PREVIEW_LIST = DocPath.create("preview-list.html");
 
-    /** The name of the fie for new elements. */
+    /** The name of the file for new elements. */
     public static final DocPath NEW_LIST = DocPath.create("new-list.html");
 
     /** The name of the file for all system properties. */

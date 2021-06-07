@@ -45,8 +45,7 @@ import java.util.ListIterator;
 import static com.sun.source.doctree.DocTree.Kind.SINCE;
 
 /**
- * Generate File to list all the new API elements with the
- * appropriate links.
+ * Generates a file containing a list of new API elements with the appropriate links.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -68,8 +67,8 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
     }
 
     /**
-     * Get list of all the new elements.
-     * Then instantiate NewAPIListWriter and generate File.
+     * If the "New API" page is configured this method instantiates a NewAPIListWriter
+     * and generates the file.
      *
      * @param configuration the current configuration of the doclet.
      * @throws DocFileIOException if there is a problem writing the new API list

@@ -121,9 +121,9 @@ public class TestNewApiList extends JavadocTester {
                 </ul>
                 </div>
                 <span class="help-note">(The leftmost tab "New ..." indicates all the new elements, \
-                regardless of the releases in which they were added. Each of the righthand tabs "Add\
-                ed in ..." indicates the new elements added in a specific release. Any element shown\
-                 under the leftmost tab is also shown under one of the righthand tabs.)</span>""");
+                regardless of the releases in which they were added. Each of the other tabs "Added i\
+                n ..." indicates the new elements added in a specific release. Any element shown und\
+                er the leftmost tab is also shown under one of the righthand tabs.)</span>""");
     }
 
     private void checkMultiReleaseNewElements() {
@@ -746,9 +746,9 @@ public class TestNewApiList extends JavadocTester {
                 </ul>
                 </div>
                 <span class="help-note">(The leftmost tab "New ..." indicates all the new elements, \
-                regardless of the releases in which they were added. Each of the righthand tabs "Add\
-                ed in ..." indicates the new elements added in a specific release. Any element shown\
-                 under the leftmost tab is also shown under one of the righthand tabs.)</span>""");
+                regardless of the releases in which they were added. Each of the other tabs "Added i\
+                n ..." indicates the new elements added in a specific release. Any element shown und\
+                er the leftmost tab is also shown under one of the righthand tabs.)</span>""");
     }
 
     private void checkPackageNewElements() {
@@ -860,8 +860,8 @@ public class TestNewApiList extends JavadocTester {
                 </div>
                 <span class="help-note">(The leftmost tab "Deprecated ..." indicates all the depreca\
                 ted elements, regardless of the releases in which they were deprecated. Each of the \
-                righthand tabs "Deprecated in ..." indicates the elements deprecated in a specific r\
-                elease.)</span>
+                other tabs "Deprecated in ..." indicates the elements deprecated in a specific relea\
+                se.)</span>
                 """,
             """
                 <div id="constructor">

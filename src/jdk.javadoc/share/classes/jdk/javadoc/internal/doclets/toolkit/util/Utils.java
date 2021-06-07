@@ -1523,7 +1523,9 @@ public class Utils {
         return (String) getDeprecatedElement(e, "since");
     }
 
-    // Returns the Deprecated annotation element value of the given element, or null.
+    /**
+     * Returns the Deprecated annotation element value of the given element, or null.
+     */
     private Object getDeprecatedElement(Element e, String elementName) {
         List<? extends AnnotationMirror> annotationList = e.getAnnotationMirrors();
         JavacTypes jctypes = ((DocEnvImpl) configuration.docEnv).toolEnv.typeutils;
