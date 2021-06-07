@@ -330,15 +330,9 @@ final class Int512Vector extends IntVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Integer> toShuffle() {
-        int[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(Int512Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -638,6 +632,14 @@ final class Int512Vector extends IntVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Int512Mask eq(VectorMask<Integer> mask) {
+            Objects.requireNonNull(mask);
+            Int512Mask m = (Int512Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -825,6 +827,8 @@ final class Int512Vector extends IntVector {
     IntVector fromArray0(int[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

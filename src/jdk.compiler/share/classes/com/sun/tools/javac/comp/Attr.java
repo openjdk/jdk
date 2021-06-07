@@ -1689,6 +1689,7 @@ public class Attr extends JCTree.Visitor {
                     wasError = true;
                 }
                 MatchBindings currentBindings = prevBindings;
+                boolean wasTotalPattern = hasTotalPattern;
                 for (JCCaseLabel pat : c.labels) {
                     if (pat.isExpression()) {
                         JCExpression expr = (JCExpression) pat;
@@ -1696,6 +1697,8 @@ public class Attr extends JCTree.Visitor {
                             preview.checkSourceLevel(expr.pos(), Feature.CASE_NULL);
                             if (hasNullPattern) {
                                 log.error(c.pos(), Errors.DuplicateCaseLabel);
+                            } else if (wasTotalPattern) {
+                                log.error(c.pos(), Errors.PatternDominated);
                             }
                             hasNullPattern = true;
                             attribExpr(expr, switchEnv, seltype);
@@ -1741,9 +1744,11 @@ public class Attr extends JCTree.Visitor {
                             log.error(pat.pos(), Errors.DuplicateDefaultLabel);
                         } else if (hasTotalPattern) {
                             log.error(pat.pos(), Errors.TotalPatternAndDefault);
-                        } else {
-                            hasDefault = true;
+                        } else if (matchBindings.bindingsWhenTrue.nonEmpty()) {
+                            //there was a pattern, and the execution flows into a default:
+                            log.error(pat.pos(), Errors.FlowsThroughFromPattern);
                         }
+                        hasDefault = true;
                         matchBindings = MatchBindingsComputer.EMPTY;
                     } else {
                         if (prevCompletedNormally) {
@@ -1775,6 +1780,7 @@ public class Attr extends JCTree.Visitor {
                         }
                     }
                     currentBindings = matchBindingsComputer.switchCase(pat, currentBindings, matchBindings);
+                    prevCompletedNormally = !TreeInfo.isNull(pat);
                 }
                 Env<AttrContext> caseEnv =
                         bindingEnv(switchEnv, c, currentBindings.bindingsWhenTrue);
@@ -4142,7 +4148,7 @@ public class Attr extends JCTree.Visitor {
         MatchBindings afterPattern = matchBindings;
         Env<AttrContext> bodyEnv = bindingEnv(env, matchBindings.bindingsWhenTrue);
         try {
-            attribExpr(tree.expr, env, syms.booleanType);
+            attribExpr(tree.expr, bodyEnv, syms.booleanType);
         } finally {
             bodyEnv.info.scope.leave();
         }

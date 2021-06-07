@@ -39,33 +39,93 @@ public class SealedTypeChanges {
     }
 
     void run() throws Exception {
-        doRun(this::expression);
-        doRun(this::statement);
+        doRun(this::expressionIntf, this::validateIncompatibleClassChangeError);
+        doRun(this::statementIntf, this::validateIncompatibleClassChangeError);
+        doRun(this::expressionCls, this::validateIncompatibleClassChangeError);
+        doRun(this::statementCls, this::validateIncompatibleClassChangeError);
+        doRun(this::expressionCoveredIntf, this::validateTestException);
+        doRun(this::statementCoveredIntf, this::validateTestException);
+        doRun(this::expressionCoveredCls, this::validateTestException);
+        doRun(this::statementCoveredCls, this::validateTestException);
     }
 
-    void doRun(Consumer<SealedTypeChangesIntf> t) throws Exception {
-        t.accept(new A());
+    <T> void doRun(Consumer<T> t, Consumer<Throwable> validateException) throws Exception {
+        t.accept((T) new A());
         try {
-            t.accept((SealedTypeChangesIntf) Class.forName("SealedTypeChangesClass").newInstance());
+            t.accept((T) Class.forName("SealedTypeChangesClass").newInstance());
             throw new AssertionError("Expected an exception, but none thrown.");
-        } catch (IncompatibleClassChangeError ex) {
-            //OK
+        } catch (Throwable ex) {
+            validateException.accept(ex);
         }
     }
 
-    void statement(SealedTypeChangesIntf obj) {
+    void validateIncompatibleClassChangeError(Throwable t) {
+        if (!(t instanceof IncompatibleClassChangeError)) {
+            throw new AssertionError("Unexpected exception", t);
+        }
+    }
+
+    void validateTestException(Throwable t) {
+        if (!(t instanceof TestException)) {
+            throw new AssertionError("Unexpected exception", t);
+        }
+    }
+
+    void statementIntf(SealedTypeChangesIntf obj) {
         switch (obj) {
             case A a -> System.err.println(1);
         }
     }
 
-    int expression(SealedTypeChangesIntf obj) {
+    int expressionIntf(SealedTypeChangesIntf obj) {
         return switch (obj) {
             case A a -> 0;
         };
     }
 
-    final static class A implements SealedTypeChangesIntf {}
+    void statementCls(SealedTypeChangesCls obj) {
+        switch (obj) {
+            case A a -> System.err.println(1);
+        }
+    }
+
+    int expressionCls(SealedTypeChangesCls obj) {
+        return switch (obj) {
+            case A a -> 0;
+        };
+    }
+
+    void statementCoveredIntf(SealedTypeChangesIntf obj) {
+        switch (obj) {
+            case A a -> System.err.println(1);
+            case SealedTypeChangesIntf o -> throw new TestException();
+        }
+    }
+
+    int expressionCoveredIntf(SealedTypeChangesIntf obj) {
+        return switch (obj) {
+            case A a -> 0;
+            case SealedTypeChangesIntf o -> throw new TestException();
+        };
+    }
+
+    void statementCoveredCls(SealedTypeChangesCls obj) {
+        switch (obj) {
+            case A a -> System.err.println(1);
+            case SealedTypeChangesCls o -> throw new TestException();
+        }
+    }
+
+    int expressionCoveredCls(SealedTypeChangesCls obj) {
+        return switch (obj) {
+            case A a -> 0;
+            case SealedTypeChangesCls o -> throw new TestException();
+        };
+    }
+
+    final static class A extends SealedTypeChangesCls implements SealedTypeChangesIntf {}
+    class TestException extends RuntimeException {}
 }
 
 sealed interface SealedTypeChangesIntf permits SealedTypeChanges.A {}
+sealed abstract class SealedTypeChangesCls permits SealedTypeChanges.A {}

@@ -50,8 +50,8 @@ public class SwitchBootstrapsTest {
             BSM_TYPE_SWITCH = MethodHandles.lookup().findStatic(SwitchBootstraps.class, "typeSwitch",
                                                                 MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class));
         }
-        catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+        catch (ReflectiveOperationException e) {
+            throw new AssertionError("Should not happen", e);
         }
     }
 
@@ -96,5 +96,38 @@ public class SwitchBootstrapsTest {
         testType("", 0, 0, String.class, String.class, String.class);
         testType("", 1, 1, String.class, String.class, String.class);
         testType("", 2, 2, String.class, String.class, String.class);
+    }
+
+    public void testWrongSwitchTypes() throws Throwable {
+        MethodType[] switchTypes = new MethodType[] {
+            MethodType.methodType(int.class, Object.class),
+            MethodType.methodType(int.class, double.class, int.class),
+            MethodType.methodType(int.class, Object.class, Integer.class)
+        };
+        for (MethodType switchType : switchTypes) {
+            try {
+                BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType);
+                fail("Didn't get the expected exception.");
+            } catch (IllegalArgumentException ex) {
+                //OK, expected
+            }
+        }
+    }
+
+    public void testNullLabels() throws Throwable {
+        MethodType switchType = MethodType.methodType(int.class, Object.class, int.class);
+        try {
+            BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, (Object[]) null);
+            fail("Didn't get the expected exception.");
+        } catch (NullPointerException ex) {
+            //OK
+        }
+        try {
+            BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType,
+                                   new Object[] {1, null, String.class});
+            fail("Didn't get the expected exception.");
+        } catch (IllegalArgumentException ex) {
+            //OK
+        }
     }
 }

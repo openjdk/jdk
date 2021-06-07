@@ -61,6 +61,7 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -309,7 +310,7 @@ public class TransPatterns extends TreeTranslator {
             // return -1 when the input is null
             //
             //a special case for switches over enums with pattern case
-            //only a single (type) pattern case is valid, which is equivalent
+            //with only a single unguarded (type) pattern case, which is equivalent
             //to a default with additional binding variable assignment:
             //switch ($enum) {
             //    case $constant1: $stats$
@@ -322,6 +323,13 @@ public class TransPatterns extends TreeTranslator {
             //    case $constant2: $stats$
             //    default: typeof($enum) e = $enum; $stats$
             //}
+            //constant labels in switches over enums with one or more pattern cases
+            //with guards are desugared into guards:
+            //case $constant1: $stats$
+            //=>
+            //case typeof($enum) e && e == $constant1: $stats$
+            //and handled as a normal pattern matching switch
+            //
             //note the selector is evaluated only once and stored in a temporary variable
             ListBuffer<JCCase> newCases = new ListBuffer<>();
             for (List<JCCase> c = cases; c.nonEmpty(); c = c.tail) {
@@ -330,6 +338,27 @@ public class TransPatterns extends TreeTranslator {
                 } else {
                     newCases.add(c.head);
                 }
+            }
+            if (enumSwitch && hasGuards(newCases)) {
+                for (JCCase c : newCases) {
+                    for (List<JCCaseLabel> l = c.labels; l.nonEmpty(); l = l.tail) {
+                        if (l.head.isExpression() && !TreeInfo.isNull(l.head)) {
+                            BindingSymbol temp = new BindingSymbol(Flags.SYNTHETIC,
+                                    names.fromString("enumGuard" + c.pos +
+                                                     target.syntheticNameChar() + "temp"),
+                                    seltype,
+                                    currentMethodSym);
+                            JCBindingPattern binding =
+                                    make.at(l.head.pos()).BindingPattern(make.VarDef(temp, null));
+                            binding.setType(seltype);
+                            l.head = make.GuardPattern(binding,
+                                                       makeBinary(Tag.EQ,
+                                                                  make.Ident(temp),
+                                                                  (JCExpression) l.head));
+                        }
+                    }
+                }
+                enumSwitch = false;
             }
             cases = newCases.toList();
             ListBuffer<JCStatement> statements = new ListBuffer<>();
@@ -495,6 +524,13 @@ public class TransPatterns extends TreeTranslator {
         } else {
             super.visitSwitchExpression((JCSwitchExpression) tree);
         }
+    }
+
+    private boolean hasGuards(Collection<JCCase> cases) {
+        return cases.stream()
+                    .flatMap(c -> c.labels.stream())
+                    .filter(JCCaseLabel::isPattern)
+                    .anyMatch(l -> !TreeInfo.primaryPatternType((JCPattern) l).unconditional());
     }
 
     private Type principalType(JCPattern p) {

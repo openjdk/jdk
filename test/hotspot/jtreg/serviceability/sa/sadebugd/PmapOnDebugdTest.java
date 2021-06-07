@@ -49,7 +49,7 @@ public class PmapOnDebugdTest {
         try {
             theApp = LingeredApp.startApp();
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
-            debugd = new DebugdUtils(null);
+            debugd = new DebugdUtils();
             debugd.attach(theApp.getPid());
 
             JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");

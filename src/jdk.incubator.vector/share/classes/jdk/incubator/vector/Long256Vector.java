@@ -325,15 +325,9 @@ final class Long256Vector extends LongVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Long> toShuffle() {
-        long[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(Long256Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -604,6 +598,14 @@ final class Long256Vector extends LongVector {
             return this.defaultMaskCast(species);
         }
 
+        @Override
+        @ForceInline
+        public Long256Mask eq(VectorMask<Long> mask) {
+            Objects.requireNonNull(mask);
+            Long256Mask m = (Long256Mask)mask;
+            return xor(m.not());
+        }
+
         // Unary operations
 
         @Override
@@ -791,6 +793,8 @@ final class Long256Vector extends LongVector {
     LongVector fromArray0(long[] a, int offset) {
         return super.fromArray0Template(a, offset);  // specialize
     }
+
+
 
     @ForceInline
     @Override

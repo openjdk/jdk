@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,30 @@
  * questions.
  */
 
+/* @test
+ * @bug 4938185
+ * @summary KeyStore support for NSS cert/key databases
+ * To run manually:
+ *    set environment variable:
+ *     <token>     [activcard|ibutton|nss|sca1000]
+ *     <command>   [list|basic]
+ *
+ * Note:
+ *    . 'list' lists the token aliases
+ *    . 'basic' does not run with activcard,
+ * @library /test/lib ..
+ * @run testng/othervm Basic
+ */
+
 import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.KeyFactory;
-import java.security.KeyPairGenerator;
-import java.security.KeyPair;
-import java.security.SecureRandom;
-import java.security.AuthProvider;
 import java.security.PrivateKey;
 import java.security.Provider;
-import java.security.ProviderException;
 import java.security.Signature;
 import java.security.Security;
 
@@ -44,17 +55,18 @@ import java.security.interfaces.*;
 import javax.crypto.SecretKey;
 
 import javax.security.auth.Subject;
-import javax.security.auth.login.LoginException;
 
 import com.sun.security.auth.module.*;
 import com.sun.security.auth.callback.*;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 
 public class Basic extends PKCS11Test {
 
-    private static final char SEP = File.separatorChar;
-
-    private static String DIR = System.getProperty("DIR");
+    private static final Path TEST_DATA_PATH = Path.of(BASE)
+            .resolve("BasicData");
+    private static final String DIR = TEST_DATA_PATH.toString();
     private static char[] tokenPwd;
     private static final char[] ibuttonPwd =
                         new char[0];
@@ -88,6 +100,22 @@ public class Basic extends PKCS11Test {
     private static final String KS_TYPE = "PKCS11";
     private static Provider provider;
 
+    @BeforeClass
+    public void setUp() throws Exception {
+        copyNssCertKeyToClassesDir();
+        setCommonSystemProps();
+        System.setProperty("CUSTOM_P11_CONFIG",
+                TEST_DATA_PATH.resolve("p11-nss.txt").toString());
+        System.setProperty("TOKEN", "nss");
+        System.setProperty("TEST", "basic");
+    }
+
+    @Test
+    public void testBasic() throws Exception {
+        String[] args = {"sm", "Basic.policy"};
+        main(new Basic(), args);
+    }
+
     private static class FooEntry implements KeyStore.Entry { }
 
     private static class P11SecretKey implements SecretKey {
@@ -100,10 +128,6 @@ public class Basic extends PKCS11Test {
         public String getAlgorithm() { return alg; }
         public String getFormat() { return "raw"; }
         public byte[] getEncoded() { return new byte[length/8]; }
-    }
-
-    public static void main(String[] args) throws Exception {
-        main(new Basic(), args);
     }
 
     public void main(Provider p) throws Exception {
@@ -136,17 +160,17 @@ public class Basic extends PKCS11Test {
 
         // get cert chains for private keys
         CertificateFactory cf = CertificateFactory.getInstance("X.509", "SUN");
-        Certificate caCert = (X509Certificate)cf.generateCertificate
+        Certificate caCert = cf.generateCertificate
                         (new FileInputStream(new File(DIR, "ca.cert")));
-        Certificate ca2Cert = (X509Certificate)cf.generateCertificate
+        Certificate ca2Cert = cf.generateCertificate
                         (new FileInputStream(new File(DIR, "ca2.cert")));
-        Certificate pk1cert = (X509Certificate)cf.generateCertificate
+        Certificate pk1cert = cf.generateCertificate
                         (new FileInputStream(new File(DIR, "pk1.cert")));
-        Certificate pk1cert2 = (X509Certificate)cf.generateCertificate
+        Certificate pk1cert2 = cf.generateCertificate
                         (new FileInputStream(new File(DIR, "pk1.cert2")));
-        Certificate pk2cert = (X509Certificate)cf.generateCertificate
+        Certificate pk2cert = cf.generateCertificate
                         (new FileInputStream(new File(DIR, "pk2.cert")));
-        Certificate pk3cert = (X509Certificate)cf.generateCertificate
+        Certificate pk3cert = cf.generateCertificate
                         (new FileInputStream(new File(DIR, "pk3.cert")));
         chain1 = new Certificate[] { pk1cert, caCert };
         chain2 = new Certificate[] { pk2cert, caCert };
@@ -373,12 +397,12 @@ public class Basic extends PKCS11Test {
 
         KeyStoreLoginModule m = new KeyStoreLoginModule();
         Subject s = new Subject();
-        Map options = new HashMap();
+        Map<String, String> options = new HashMap<>();
         options.put("keyStoreURL", "NONE");
         options.put("keyStoreType", KS_TYPE);
         options.put("keyStoreProvider", KS_PROVIDER);
         options.put("debug", "true");
-        m.initialize(s, new TextCallbackHandler(), new HashMap(), options);
+        m.initialize(s, new TextCallbackHandler(), new HashMap<>(), options);
         m.login();
         m.commit();
         System.out.println("authenticated subject = " + s);

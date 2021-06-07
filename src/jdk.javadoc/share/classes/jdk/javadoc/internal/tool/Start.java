@@ -195,7 +195,7 @@ public class Start {
     }
 
     private void showUsage(String headerKey, ToolOption.Kind kind, String footerKey) {
-        messager.notice(headerKey);
+        messager.noticeUsingKey(headerKey);
         showToolOptions(kind);
 
         // let doclet print usage information
@@ -205,11 +205,11 @@ public class Start {
                     : Option.Kind.STANDARD);
         }
         if (footerKey != null)
-            messager.notice(footerKey);
+            messager.noticeUsingKey(footerKey);
     }
 
     private void showVersion(String labelKey, String value) {
-        messager.notice(labelKey, messager.programName, value);
+        messager.noticeUsingKey(labelKey, messager.programName, value);
     }
 
     private void showToolOptions(ToolOption.Kind kind) {
@@ -252,7 +252,7 @@ public class Start {
         if (options.isEmpty()) {
             return;
         }
-        messager.notice("main.doclet.usage.header", name);
+        messager.noticeUsingKey("main.doclet.usage.header", name);
 
         Comparator<Doclet.Option> comp = new Comparator<Doclet.Option>() {
             final Collator collator = Collator.getInstance(Locale.US);
@@ -307,22 +307,22 @@ public class Start {
         if (synopses.length() < DEFAULT_SYNOPSIS_WIDTH
                 && !description.contains("\n")
                 && (SMALL_INDENT.length() + DEFAULT_SYNOPSIS_WIDTH + 1 + description.length() <= DEFAULT_MAX_LINE_LENGTH)) {
-            messager.printNotice(String.format(COMPACT_FORMAT, synopses, description));
+            messager.notice(String.format(COMPACT_FORMAT, synopses, description));
             return;
         }
 
         // If option synopses fit on a single line of reasonable length, show that;
         // otherwise, show 1 per line
         if (synopses.length() <= DEFAULT_MAX_LINE_LENGTH) {
-            messager.printNotice(SMALL_INDENT + synopses);
+            messager.notice(SMALL_INDENT + synopses);
         } else {
             for (String name: names) {
-                messager.printNotice(SMALL_INDENT + name + parameters);
+                messager.notice(SMALL_INDENT + name + parameters);
             }
         }
 
         // Finally, show the description
-        messager.printNotice(LARGE_INDENT + description.replace("\n", "\n" + LARGE_INDENT));
+        messager.notice(LARGE_INDENT + description.replace("\n", "\n" + LARGE_INDENT));
     }
 
 
@@ -560,7 +560,7 @@ public class Start {
         // We're done.
         if (options.verbose()) {
             long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000;
-            messager.notice("main.done_in", Long.toString(elapsedMillis));
+            messager.noticeUsingKey("main.done_in", Long.toString(elapsedMillis));
         }
 
         return returnStatus;

@@ -1355,6 +1355,7 @@ public class ICC_Profile implements Serializable {
      * fileName. If there is no built-in profile with such name, then the method
      * returns {@code null}.
      */
+    @SuppressWarnings("removal")
     private static InputStream getStandardProfileInputStream(String fileName) {
         return AccessController.doPrivileged(
             (PrivilegedAction<InputStream>) () -> {

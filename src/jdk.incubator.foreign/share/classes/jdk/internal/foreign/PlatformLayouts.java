@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -32,61 +32,61 @@ import jdk.incubator.foreign.ValueLayout;
 import java.nio.ByteOrder;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
-import static jdk.incubator.foreign.MemoryLayouts.ADDRESS;
 
 public class PlatformLayouts {
     public static <Z extends MemoryLayout> Z pick(Z sysv, Z win64, Z aarch64) {
         return switch (CABI.current()) {
             case SysV -> sysv;
             case Win64 -> win64;
-            case AArch64 -> aarch64;
+            case LinuxAArch64, MacOsAArch64 -> aarch64;
         };
     }
 
     public static MemoryLayout asVarArg(MemoryLayout ml) {
-        if (CABI.current() == CABI.Win64) {
-            return Win64.asVarArg(ml);
-        }
-        return ml;
+        return switch (CABI.current()) {
+            case Win64 -> Win64.asVarArg(ml);
+            case MacOsAArch64 -> AArch64.asVarArg(ml);
+            default -> ml;
+        };
     }
 
     private static ValueLayout ofChar(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.CHAR);
     }
 
     private static ValueLayout ofShort(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.SHORT);
     }
 
     private static ValueLayout ofInt(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.INT);
     }
 
     private static ValueLayout ofLong(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.LONG);
     }
 
     private static ValueLayout ofLongLong(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.LONG_LONG);
     }
 
     private static ValueLayout ofFloat(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.FLOAT);
     }
 
     private static ValueLayout ofDouble(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.DOUBLE);
     }
 
     private static ValueLayout ofPointer(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
+        return MemoryLayout.valueLayout(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.POINTER);
     }
 
@@ -159,10 +159,10 @@ public class PlatformLayouts {
         }
 
         /**
-         * The name of the layout attribute (see {@link MemoryLayout#attributes()} used to mark variadic parameters. The
+         * The name of the layout attribute (see {@link MemoryLayout#attributes()}) used to mark variadic parameters. The
          * attribute value must be a boolean.
          */
-        public final static String VARARGS_ATTRIBUTE_NAME = "abi/windows/varargs";
+        public static final String VARARGS_ATTRIBUTE_NAME = "abi/windows/varargs";
 
         /**
          * The {@code char} native type.
@@ -272,5 +272,25 @@ public class PlatformLayouts {
          * The {@code va_list} native type, as it is passed to a function.
          */
         public static final MemoryLayout C_VA_LIST = AArch64.C_POINTER;
+
+        /**
+         * The name of the layout attribute (see {@link MemoryLayout#attributes()})
+         * used to mark variadic parameters on systems such as macOS which pass these
+         * entirely on the stack. The attribute value must be a boolean.
+         */
+        public final static String STACK_VARARGS_ATTRIBUTE_NAME = "abi/aarch64/stack_varargs";
+
+        /**
+         * Return a new memory layout which describes a variadic parameter to be
+         * passed to a function. This is only required on platforms such as macOS
+         * which pass variadic parameters entirely on the stack.
+         * @param layout the original parameter layout.
+         * @return a layout which is the same as {@code layout}, except for
+         * the extra attribute {@link #STACK_VARARGS_ATTRIBUTE_NAME}, which is set
+         * to {@code true}.
+         */
+        public static MemoryLayout asVarArg(MemoryLayout layout) {
+            return layout.withAttribute(STACK_VARARGS_ATTRIBUTE_NAME, true);
+        }
     }
 }

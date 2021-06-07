@@ -109,6 +109,7 @@ public:
     DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
     SystemDictionaryShared::check_excluded_classes();
 
+    MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
     init_header();
     gather_source_objs();
     reserve_buffer();
