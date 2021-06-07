@@ -206,7 +206,6 @@ private:
   uint        _next_id;                 // round-robin mod _num_queues counter in
                                         // support of work distribution
 
-  bool        _adjust_no_of_processing_threads; // allow dynamic adjustment of processing threads
   // For collectors that do not keep GC liveness information
   // in the object header, this field holds a closure that
   // helps the reference processor determine the reachability
@@ -368,8 +367,7 @@ public:
                      uint mt_processing_degree = 1,
                      bool mt_discovery  = false, uint mt_discovery_degree  = 1,
                      bool atomic_discovery = true,
-                     BoolObjectClosure* is_alive_non_header = NULL,
-                     bool adjust_no_of_processing_threads = false);
+                     BoolObjectClosure* is_alive_non_header = NULL);
 
   // RefDiscoveryPolicy values
   enum DiscoveryPolicy {
@@ -438,8 +436,6 @@ public:
   // debugging
   void verify_no_references_recorded() PRODUCT_RETURN;
   void verify_referent(oop obj)        PRODUCT_RETURN;
-
-  bool adjust_no_of_processing_threads() const { return _adjust_no_of_processing_threads; }
 };
 
 // A subject-to-discovery closure that uses a single memory span to determine the area that
