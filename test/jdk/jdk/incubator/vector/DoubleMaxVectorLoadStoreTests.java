@@ -968,4 +968,7 @@ public class DoubleMaxVectorLoadStoreTests extends AbstractVectorTest {
             Assert.assertEquals(r, a);
        }
     }
+
+
+
 }

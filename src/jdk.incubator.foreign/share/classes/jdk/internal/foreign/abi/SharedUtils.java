@@ -32,7 +32,6 @@ import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.LibraryLookup;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SegmentAllocator;
 import jdk.incubator.foreign.SequenceLayout;
@@ -41,7 +40,8 @@ import jdk.incubator.foreign.ValueLayout;
 import jdk.internal.foreign.CABI;
 import jdk.internal.foreign.MemoryAddressImpl;
 import jdk.internal.foreign.Utils;
-import jdk.internal.foreign.abi.aarch64.AArch64Linker;
+import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
+import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 
@@ -53,6 +53,7 @@ import java.lang.ref.Reference;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -269,7 +270,8 @@ public class SharedUtils {
         return switch (CABI.current()) {
             case Win64 -> Windowsx64Linker.getInstance();
             case SysV -> SysVx64Linker.getInstance();
-            case AArch64 -> AArch64Linker.getInstance();
+            case LinuxAArch64 -> LinuxAArch64Linker.getInstance();
+            case MacOsAArch64 -> MacOsAArch64Linker.getInstance();
         };
     }
 
@@ -415,15 +417,23 @@ public class SharedUtils {
     // lazy init MH_ALLOC and MH_FREE handles
     private static class AllocHolder {
 
-        static final LibraryLookup LOOKUP = LibraryLookup.ofDefault();
+        private static final CLinker SYS_LINKER = getSystemLinker();
 
-        static final MethodHandle MH_MALLOC = getSystemLinker().downcallHandle(LOOKUP.lookup("malloc").get(),
+        static final MethodHandle MH_MALLOC = SYS_LINKER.downcallHandle(CLinker.systemLookup().lookup("malloc").get(),
                         MethodType.methodType(MemoryAddress.class, long.class),
                 FunctionDescriptor.of(C_POINTER, C_LONG_LONG));
 
-        static final MethodHandle MH_FREE = getSystemLinker().downcallHandle(LOOKUP.lookup("free").get(),
+        static final MethodHandle MH_FREE = SYS_LINKER.downcallHandle(CLinker.systemLookup().lookup("free").get(),
                         MethodType.methodType(void.class, MemoryAddress.class),
                 FunctionDescriptor.ofVoid(C_POINTER));
+    }
+
+    public static MemoryAddress checkSymbol(Addressable symbol) {
+        Objects.requireNonNull(symbol);
+        MemoryAddress symbolAddr = symbol.address();
+        if (symbolAddr.equals(MemoryAddress.NULL))
+            throw new IllegalArgumentException("Symbol is NULL: " + symbolAddr);
+        return symbolAddr;
     }
 
     public static MemoryAddress allocateMemoryInternal(long size) {
@@ -446,7 +456,8 @@ public class SharedUtils {
         return switch (CABI.current()) {
             case Win64 -> Windowsx64Linker.newVaList(actions, scope);
             case SysV -> SysVx64Linker.newVaList(actions, scope);
-            case AArch64 -> AArch64Linker.newVaList(actions, scope);
+            case LinuxAArch64 -> LinuxAArch64Linker.newVaList(actions, scope);
+            case MacOsAArch64 -> MacOsAArch64Linker.newVaList(actions, scope);
         };
     }
 
@@ -460,7 +471,8 @@ public class SharedUtils {
         return switch (CABI.current()) {
             case Win64 -> Windowsx64Linker.newVaListOfAddress(ma, scope);
             case SysV -> SysVx64Linker.newVaListOfAddress(ma, scope);
-            case AArch64 -> AArch64Linker.newVaListOfAddress(ma, scope);
+            case LinuxAArch64 -> LinuxAArch64Linker.newVaListOfAddress(ma, scope);
+            case MacOsAArch64 -> MacOsAArch64Linker.newVaListOfAddress(ma, scope);
         };
     }
 
@@ -468,7 +480,8 @@ public class SharedUtils {
         return switch (CABI.current()) {
             case Win64 -> Windowsx64Linker.emptyVaList();
             case SysV -> SysVx64Linker.emptyVaList();
-            case AArch64 -> AArch64Linker.emptyVaList();
+            case LinuxAArch64 -> LinuxAArch64Linker.emptyVaList();
+            case MacOsAArch64 -> MacOsAArch64Linker.emptyVaList();
         };
     }
 

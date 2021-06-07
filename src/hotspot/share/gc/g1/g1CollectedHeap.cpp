@@ -1800,8 +1800,7 @@ void G1CollectedHeap::ref_processing_init() {
                            (ParallelGCThreads > 1) || (ConcGCThreads > 1), // mt discovery
                            MAX2(ParallelGCThreads, ConcGCThreads),         // degree of mt discovery
                            false,                                          // Reference discovery is not atomic
-                           &_is_alive_closure_cm,                          // is alive closure
-                           true);                                          // allow changes to number of processing threads
+                           &_is_alive_closure_cm);                         // is alive closure
 
   // STW ref processor
   _ref_processor_stw =
@@ -1810,8 +1809,7 @@ void G1CollectedHeap::ref_processing_init() {
                            (ParallelGCThreads > 1),              // mt discovery
                            ParallelGCThreads,                    // degree of mt discovery
                            true,                                 // Reference discovery is atomic
-                           &_is_alive_closure_stw,               // is alive closure
-                           true);                                // allow changes to number of processing threads
+                           &_is_alive_closure_stw);              // is alive closure
 }
 
 SoftRefPolicy* G1CollectedHeap::soft_ref_policy() {
@@ -3393,6 +3391,16 @@ class G1PrepareEvacuationTask : public AbstractGangTask {
         _g1h->set_humongous_reclaim_candidate(index, false);
         _g1h->register_region_with_region_attr(hr);
       }
+      log_debug(gc, humongous)("Humongous region %u (object size " SIZE_FORMAT " @ " PTR_FORMAT ") remset " SIZE_FORMAT " code roots " SIZE_FORMAT " marked %d reclaim candidate %d type array %d",
+                               index,
+                               (size_t)cast_to_oop(hr->bottom())->size() * HeapWordSize,
+                               p2i(hr->bottom()),
+                               hr->rem_set()->occupied(),
+                               hr->rem_set()->strong_code_roots_list_length(),
+                               _g1h->concurrent_mark()->next_mark_bitmap()->is_marked(hr->bottom()),
+                               _g1h->is_humongous_reclaim_candidate(index),
+                               cast_to_oop(hr->bottom())->is_typeArray()
+                              );
       _worker_humongous_total++;
 
       return false;
