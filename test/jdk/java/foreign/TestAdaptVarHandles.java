@@ -189,16 +189,25 @@ public class TestAdaptVarHandles {
         MemoryHandles.filterValue(intHandle, S2L_EX, I2S);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void testBadFilterBoxHandleException() {
         VarHandle intHandle = MemoryLayouts.JAVA_INT.varHandle(int.class);
-        MemoryHandles.filterValue(intHandle, S2I, I2S_EX);
+        VarHandle vh = MemoryHandles.filterValue(intHandle, S2I, I2S_EX);
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment seg = MemorySegment.allocateNative(MemoryLayouts.JAVA_INT, scope);
+            vh.set(seg, "42");
+            String x = (String) vh.get(seg); // should throw
+        }
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void testBadFilterUnboxHandleException() {
         VarHandle intHandle = MemoryLayouts.JAVA_INT.varHandle(int.class);
-        MemoryHandles.filterValue(intHandle, S2I_EX, I2S);
+        VarHandle vh = MemoryHandles.filterValue(intHandle, S2I_EX, I2S);
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemorySegment seg = MemorySegment.allocateNative(MemoryLayouts.JAVA_INT, scope);
+            vh.set(seg, "42"); // should throw
+        }
     }
 
     @Test

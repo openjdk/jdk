@@ -329,6 +329,9 @@ public final class MemoryHandles {
      * the resulting var handle will have type {@code S} and will feature the additional coordinates {@code A...} (which
      * will be appended to the coordinates of the target var handle).
      * <p>
+     * If the boxing and unboxing filters throw any checked exceptions when invoked, the resulting var handle will
+     * throw an {@link IllegalStateException}.
+     * <p>
      * The resulting var handle will feature the same access modes (see {@link java.lang.invoke.VarHandle.AccessMode} and
      * atomic access guarantees as those featured by the target var handle.
      *
@@ -338,7 +341,7 @@ public final class MemoryHandles {
      * @return an adapter var handle which accepts a new type, performing the provided boxing/unboxing conversions.
      * @throws IllegalArgumentException if {@code filterFromTarget} and {@code filterToTarget} are not well-formed, that is, they have types
      * other than {@code (A... , S) -> T} and {@code (A... , T) -> S}, respectively, where {@code T} is the type of the target var handle,
-     * or if either {@code filterFromTarget} or {@code filterToTarget} throws any checked exceptions.
+     * or if it's determined that either {@code filterFromTarget} or {@code filterToTarget} throws any checked exceptions.
      */
     public static VarHandle filterValue(VarHandle target, MethodHandle filterToTarget, MethodHandle filterFromTarget) {
         return JLI.filterValue(target, filterToTarget, filterFromTarget);
@@ -356,6 +359,9 @@ public final class MemoryHandles {
      * For the coordinate filters to be well formed, their types must be of the form {@code S1 -> T1, S2 -> T1 ... Sn -> Tn},
      * where {@code T1, T2 ... Tn} are the coordinate types starting at position {@code pos} of the target var handle.
      * <p>
+     * If any of the filters throws a checked exception when invoked, the resulting var handle will
+     * throw an {@link IllegalStateException}.
+     * <p>
      * The resulting var handle will feature the same access modes (see {@link java.lang.invoke.VarHandle.AccessMode}) and
      * atomic access guarantees as those featured by the target var handle.
      *
@@ -368,7 +374,7 @@ public final class MemoryHandles {
      * other than {@code S1 -> T1, S2 -> T2, ... Sn -> Tn} where {@code T1, T2 ... Tn} are the coordinate types starting
      * at position {@code pos} of the target var handle, if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
      * or if more filters are provided than the actual number of coordinate types available starting at {@code pos},
-     * or if any of the filters throws any checked exceptions.
+     * or if it's determined that any of the filters throws any checked exceptions.
      */
     public static VarHandle filterCoordinates(VarHandle target, int pos, MethodHandle... filters) {
         return JLI.filterCoordinates(target, pos, filters);
@@ -464,6 +470,9 @@ public final class MemoryHandles {
      * coordinate type of the target var handle at position {@code pos}, and that target var handle
      * coordinate is supplied by the return value of the filter.
      * <p>
+     * If any of the filters throws a checked exception when invoked, the resulting var handle will
+     * throw an {@link IllegalStateException}.
+     * <p>
      * The resulting var handle will feature the same access modes (see {@link java.lang.invoke.VarHandle.AccessMode}) and
      * atomic access guarantees as those featured by the target var handle.
      *
@@ -476,7 +485,7 @@ public final class MemoryHandles {
      * is void, or it is not the same as the {@code pos} coordinate of the target var handle,
      * if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
      * if the resulting var handle's type would have <a href="MethodHandle.html#maxarity">too many coordinates</a>,
-     * or if {@code filter} throws any checked exceptions.
+     * or if it's determined that {@code filter} throws any checked exceptions.
      */
     public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter) {
         return JLI.collectCoordinates(target, pos, filter);
