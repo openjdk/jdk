@@ -736,6 +736,9 @@ ClassPathEntry* ClassLoader::create_class_path_entry(JavaThread* current,
     if (zip != NULL && error_msg == NULL) {
       new_entry = new ClassPathZipEntry(zip, path, is_boot_append, from_class_path_attr);
     } else {
+#if INCLUDE_CDS
+      ClassLoaderExt::set_has_non_jar_in_classpath();
+#endif
       return NULL;
     }
     log_info(class, path)("opened: %s", path);
