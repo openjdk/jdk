@@ -263,7 +263,7 @@ JNI_COCOA_EXIT(env);
 
 /*
  * Class:     sun_awt_CGraphicsDevice
- * Method:    nativeSetDisplayMode
+ * Method:    nativeResetDisplayMode
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
