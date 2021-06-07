@@ -26,8 +26,7 @@
 #import "MTLTexturePool.h"
 #import "Trace.h"
 
-#define SCREEN_MEMORY_SIZE_4K (4096*2160*4) //~33,7 mb
-#define MAX_POOL_MEMORY SCREEN_MEMORY_SIZE_4K/2
+#define SCREEN_MEMORY_SIZE_5K (5120*4096*4) //~84 mb
 #define MAX_POOL_ITEM_LIFETIME_SEC 30
 
 #define CELL_WIDTH_BITS 5 // ~ 32 pixel
@@ -321,10 +320,14 @@
     _cells = (void **)malloc(cellsCount * sizeof(void*));
     memset(_cells, 0, cellsCount * sizeof(void*));
     self.device = dev;
+
+    // recommendedMaxWorkingSetSize typically greatly exceeds SCREEN_MEMORY_SIZE_5K constant.
+    // It usually corresponds to the VRAM available to the graphics card
     _maxPoolMemory = self.device.recommendedMaxWorkingSetSize/2;
 
-    if (_maxPoolMemory < MAX_POOL_MEMORY) {
-        _maxPoolMemory = MAX_POOL_MEMORY;
+    // Set maximum to handle at least 5K screen size
+    if (_maxPoolMemory < SCREEN_MEMORY_SIZE_5K) {
+        _maxPoolMemory = SCREEN_MEMORY_SIZE_5K;
     }
 
     return self;
