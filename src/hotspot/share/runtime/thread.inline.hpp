@@ -43,8 +43,8 @@ inline jlong Thread::cooked_allocated_bytes() {
   if (UseTLAB) {
     // These reads are unsynchronized and unordered with the thread updating its tlab pointers.
     // Use only if top > start && used_bytes <= max_tlab_size_bytes.
-    const HeapWord* const top = tlab().top();
-    const HeapWord* const start = tlab().start();
+    const HeapWord* const top = tlab().top_relaxed();
+    const HeapWord* const start = tlab().start_relaxed();
     if (top <= start) {
       return allocated_bytes;
     }
