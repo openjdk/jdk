@@ -31,6 +31,8 @@
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.security.Permission;
 
 public class SecurityManagerWarnings {
@@ -39,36 +41,56 @@ public class SecurityManagerWarnings {
             run(null)
                     .shouldHaveExitValue(0)
                     .shouldContain("SM is enabled: false")
-                    .shouldNotContain("Security Manager is deprecated")
-                    .shouldContain("setSecurityManager is deprecated");
+                    .shouldNotContain("-Djava.security.manager")
+                    .shouldContain("java.lang.System::setSecurityManager will be removed in a future release")
+                    .shouldNotMatch("(?s)setSecurityManager will be removed.*setSecurityManager will be removed"); // only one "will be removed" warning
             run("allow")
                     .shouldHaveExitValue(0)
                     .shouldContain("SM is enabled: false")
-                    .shouldNotContain("Security Manager is deprecated")
-                    .shouldContain("setSecurityManager is deprecated");
+                    .shouldNotContain("-Djava.security.manager")
+                    .shouldContain("java.lang.System::setSecurityManager will be removed in a future release")
+                    .shouldNotMatch("(?s)setSecurityManager will be removed.*setSecurityManager will be removed"); // only one "will be removed" warning
             run("disallow")
                     .shouldNotHaveExitValue(0)
                     .shouldContain("SM is enabled: false")
-                    .shouldNotContain("Security Manager is deprecated")
+                    .shouldNotContain("-Djava.security.manager")
                     .shouldContain("UnsupportedOperationException");
             run("SecurityManagerWarnings$MySM")
                     .shouldHaveExitValue(0)
                     .shouldContain("SM is enabled: true")
-                    .shouldContain("Security Manager is deprecated")
-                    .shouldContain("setSecurityManager is deprecated");
+                    .shouldContain("-Djava.security.manager")
+                    .shouldContain("java.lang.System::setSecurityManager will be removed in a future release")
+                    .shouldNotMatch("(?s)setSecurityManager will be removed.*setSecurityManager will be removed"); // only one "will be removed" warning
             run("")
                     .shouldNotHaveExitValue(0)
                     .shouldContain("SM is enabled: true")
-                    .shouldContain("Security Manager is deprecated")
+                    .shouldContain("-Djava.security.manager")
                     .shouldContain("AccessControlException");
             run("default")
                     .shouldNotHaveExitValue(0)
                     .shouldContain("SM is enabled: true")
-                    .shouldContain("Security Manager is deprecated")
+                    .shouldContain("-Djava.security.manager")
                     .shouldContain("AccessControlException");
         } else {
             System.out.println("SM is enabled: " + (System.getSecurityManager() != null));
-            System.setSecurityManager(new SecurityManager());
+            PrintStream oldErr = System.err;
+            // Modify System.err, make sure warnings are printed to the
+            // original System.err and will not be swallowed.
+            System.setErr(new PrintStream(new ByteArrayOutputStream()));
+            Exception ex = null;
+            try {
+                System.setSecurityManager(new MySM());
+                System.setSecurityManager(new MySM());
+            } catch (Exception e) {
+                ex = e;
+            } finally {
+                System.setErr(oldErr);
+            }
+            // Revert System.err to make sure the exception is
+            // printed to the original System.err.
+            if (ex != null) {
+                throw ex;
+            }
         }
     }
 
