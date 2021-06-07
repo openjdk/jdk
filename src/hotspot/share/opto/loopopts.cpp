@@ -1503,6 +1503,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
           assert(!n_loop->is_member(get_loop(x_ctrl)), "should have moved out of loop");
           register_new_node(x, x_ctrl);
 
+          // Chain of AddP: (AddP base (AddP base )) must keep the same base after sinking. We don't add a CastPP here
+          // when the first one is sunk so if the second one is not, their bases remain the same. A CastPP of the base
+          // is only added once both AddP nodes are sunk (see special code for AddP after the cast is created).
           if (x->in(0) == NULL && !x->is_DecodeNarrowPtr() && (!x->is_AddP() || !x->in(AddPNode::Address)->is_AddP())) {
             assert(!x->is_Load(), "load should be pinned");
             // Use a cast node to pin clone out of loop
@@ -1512,17 +1515,17 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
               if (in != NULL && n_loop->is_member(get_loop(get_ctrl(in)))) {
                 const Type* in_t = _igvn.type(in);
                 if (in_t->isa_int()) {
-                  cast = new CastIINode(in, in_t, ConstraintCastNode::VeryStrongDependency);
+                  cast = new CastIINode(in, in_t, ConstraintCastNode::UnconditionalDependency);
                 } else if (in_t->isa_long()) {
-                  cast = new CastLLNode(in, in_t, ConstraintCastNode::VeryStrongDependency);
+                  cast = new CastLLNode(in, in_t, ConstraintCastNode::UnconditionalDependency);
                 } else if (in_t->isa_ptr()) {
-                  cast = new CastPPNode(in, in_t, ConstraintCastNode::VeryStrongDependency);
+                  cast = new CastPPNode(in, in_t, ConstraintCastNode::UnconditionalDependency);
                 } else if (in_t->isa_float()) {
-                  cast = new CastFFNode(in, in_t, ConstraintCastNode::VeryStrongDependency);
+                  cast = new CastFFNode(in, in_t, ConstraintCastNode::UnconditionalDependency);
                 } else if (in_t->isa_double()) {
-                  cast = new CastDDNode(in, in_t, ConstraintCastNode::VeryStrongDependency);
+                  cast = new CastDDNode(in, in_t, ConstraintCastNode::UnconditionalDependency);
                 } else if (in_t->isa_vect()) {
-                  cast = new CastVVNode(in, in_t, ConstraintCastNode::VeryStrongDependency);
+                  cast = new CastVVNode(in, in_t, ConstraintCastNode::UnconditionalDependency);
                 }
               }
               if (cast != NULL) {

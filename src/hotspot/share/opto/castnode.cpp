@@ -128,7 +128,7 @@ Node* ConstraintCastNode::make(Node* c, Node *n, const Type *t, BasicType bt) {
 }
 
 TypeNode* ConstraintCastNode::dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const {
-  if (_dependency == VeryStrongDependency) {
+  if (_dependency == UnconditionalDependency) {
     return NULL;
   }
   Node* val = in(1);
@@ -172,7 +172,7 @@ TypeNode* ConstraintCastNode::dominating_cast(PhaseGVN* gvn, PhaseTransform* pt)
 void ConstraintCastNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
   if (_dependency != RegularDependency) {
-    st->print(" %s dependency", _dependency == StrongDependency ? "strong" : "very strong");
+    st->print(" %s dependency", _dependency == StrongDependency ? "strong" : "unconditional");
   }
 }
 #endif

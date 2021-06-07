@@ -36,7 +36,7 @@ public:
   enum DependencyType {
     RegularDependency, // if cast doesn't improve input type, cast can be removed
     StrongDependency,  // leave cast in even if _type doesn't improve input type, can be replaced by stricter dominating cast if one exist
-    VeryStrongDependency // leave cast in unconditionally
+    UnconditionalDependency // leave cast in unconditionally
   };
 
   protected:
