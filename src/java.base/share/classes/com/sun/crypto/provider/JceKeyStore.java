@@ -837,7 +837,8 @@ public final class JceKeyStore extends KeyStoreSpi {
                             ois = new ObjectInputStream(dis);
                             final ObjectInputStream ois2 = ois;
                             // Set a deserialization checker
-                            AccessController.doPrivileged(
+                            @SuppressWarnings("removal")
+                            var dummy = AccessController.doPrivileged(
                                 (PrivilegedAction<Void>)() -> {
                                     ois2.setObjectInputFilter(
                                         new DeserializationChecker(fullLength));

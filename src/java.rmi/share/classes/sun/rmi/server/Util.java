@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ import sun.rmi.transport.tcp.TCPEndpoint;
 public final class Util {
 
     /** "server" package log level */
+    @SuppressWarnings("removal")
     static final int logLevel = LogStream.parseLevel(
         AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.server.logLevel")));
@@ -75,6 +76,7 @@ public final class Util {
         Log.getLog("sun.rmi.server.ref", "transport", Util.logLevel);
 
     /** cached value of property java.rmi.server.ignoreStubClasses */
+    @SuppressWarnings("removal")
     private static final boolean ignoreStubClasses =
         AccessController.doPrivileged(
             (PrivilegedAction<Boolean>) () -> Boolean.getBoolean("java.rmi.server.ignoreStubClasses"));
@@ -118,6 +120,7 @@ public final class Util {
      * @throws StubNotFoundException if problem locating/creating stub or
      * creating the dynamic proxy instance
      **/
+    @SuppressWarnings("removal")
     public static Remote createProxy(Class<?> implClass,
                                      RemoteRef clientRef,
                                      boolean forceStubUse)

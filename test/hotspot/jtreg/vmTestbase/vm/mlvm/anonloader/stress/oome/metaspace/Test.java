@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,62 +24,38 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.misc
  *
  * @summary converted from VM Testbase vm/mlvm/anonloader/stress/oome/metaspace.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent]
  *
- * @library /vmTestbase
- *          /test/lib
+ * @library /test/lib
  *
- * @comment build test class and indify classes
- * @build vm.mlvm.anonloader.stress.oome.metaspace.Test
- * @run driver vm.mlvm.share.IndifiedClassesBuilder
- *
- * @run main/othervm -XX:-UseGCOverheadLimit -XX:MetaspaceSize=10m -XX:MaxMetaspaceSize=20m vm.mlvm.anonloader.stress.oome.metaspace.Test
+ * @run driver vm.mlvm.anonloader.stress.oome.metaspace.Test
  */
 
 package vm.mlvm.anonloader.stress.oome.metaspace;
 
-import java.util.List;
-import java.io.IOException;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
-import vm.mlvm.anonloader.share.AnonkTestee01;
-import vm.mlvm.share.MlvmOOMTest;
-import vm.mlvm.share.MlvmTestExecutor;
-import vm.mlvm.share.Env;
-import vm.share.FileUtils;
-import vm.share.UnsafeAccess;
+public class Test {
 
-/**
- * This test loads classes using Unsafe.defineAnonymousClass and stores them,
- * expecting Metaspace OOME.
- *
- */
-public class Test extends MlvmOOMTest {
-    @Override
-    protected void checkOOME(OutOfMemoryError oome) {
-        String message = oome.getMessage();
-        if (!"Metaspace".equals(message) && !"Compressed class space".equals(message)) {
-            throw new RuntimeException("TEST FAIL : wrong OOME", oome);
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-Xshare:off", "-XX:MaxMetaspaceSize=512k", "-version");
+
+        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+
+        analyzer.shouldNotHaveExitValue(0);
+
+        if (!analyzer.getStdout().contains("OutOfMemoryError")) {
+            throw new RuntimeException("TEST FAIL : no OOME");
+        }
+
+        if (!analyzer.getStdout().contains("Metaspace") &&
+            !analyzer.getStdout().contains("Compressed class space")) {
+            throw new RuntimeException("TEST FAIL : wrong OOME");
         }
     }
 
-    @Override
-    protected void eatMemory(List<Object> list) {
-        byte[] classBytes = null;
-        try {
-            classBytes = FileUtils.readClass(AnonkTestee01.class.getName());
-        } catch (IOException e) {
-            Env.throwAsUncheckedException(e);
-        }
-        while (true) {
-            list.add(UnsafeAccess.unsafe.defineAnonymousClass(AnonkTestee01.class,
-                    classBytes, null));
-        }
-    }
-
-    public static void main(String[] args) {
-        MlvmTestExecutor.launch(args);
-    }
 }

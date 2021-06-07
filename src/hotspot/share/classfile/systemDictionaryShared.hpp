@@ -207,13 +207,14 @@ private:
                                  const ClassFileStream* cfs,
                                  TRAPS);
   static DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k);
+  static DumpTimeSharedClassInfo* find_or_allocate_info_for_locked(InstanceKlass* k);
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
   static bool is_jfr_event_class(InstanceKlass *k);
   static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
-  static void warn_excluded(InstanceKlass* k, const char* reason);
-  static bool should_be_excluded(InstanceKlass* k);
+  static bool warn_excluded(InstanceKlass* k, const char* reason);
+  static bool check_for_exclusion_impl(InstanceKlass* k);
 
   static bool _dump_in_progress;
   DEBUG_ONLY(static bool _no_class_loading_should_happen;)
@@ -304,6 +305,7 @@ public:
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }
   static void check_excluded_classes();
+  static bool check_for_exclusion(InstanceKlass* k, DumpTimeSharedClassInfo* info);
   static void validate_before_archiving(InstanceKlass* k);
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);

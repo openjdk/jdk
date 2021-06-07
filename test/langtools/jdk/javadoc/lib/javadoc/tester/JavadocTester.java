@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,6 +236,7 @@ public abstract class JavadocTester {
     private boolean automaticCheckAccessibility = true;
     private boolean automaticCheckLinks = true;
     private boolean automaticCheckUniqueOUT = true;
+    private boolean useStandardStreams = false;
 
     /** The current subtest number. Incremented when checking(...) is called. */
     private int numTestsRun = 0;
@@ -338,7 +339,7 @@ public abstract class JavadocTester {
                 cs = charsetArg;
             }
         } else {
-           cs = docencodingArg;
+            cs = docencodingArg;
         }
         try {
             charset = Charset.forName(cs);
@@ -351,7 +352,7 @@ public abstract class JavadocTester {
 
         outputDirectoryCheck.check(outputDir);
 
-        // This is the sole stream used by javadoc
+        // This is the sole stream normally used by javadoc
         WriterOutput outOut = new WriterOutput();
 
         // These are to catch output to System.out and System.err,
@@ -360,7 +361,9 @@ public abstract class JavadocTester {
         StreamOutput sysErr = new StreamOutput(System.err, System::setErr);
 
         try {
-            exitCode = jdk.javadoc.internal.tool.Main.execute(args, outOut.pw);
+            exitCode = useStandardStreams
+                    ? jdk.javadoc.internal.tool.Main.execute(args)              // use sysOut, sysErr
+                    : jdk.javadoc.internal.tool.Main.execute(args, outOut.pw);  // default
         } finally {
             outputMap.put(Output.STDOUT, sysOut.close());
             outputMap.put(Output.STDERR, sysErr.close());
@@ -416,6 +419,16 @@ public abstract class JavadocTester {
      */
     public void setAutomaticCheckUniqueOUT(boolean b) {
         automaticCheckUniqueOUT = b;
+    }
+
+    /**
+     * Sets whether to use standard output streams (stdout and stderr)
+     * instead of a single temporary stream.
+     * Tests using standard streams should generally take care to avoid
+     * conflicting use of stdout and stderr.
+     */
+    public void setUseStandardStreams(boolean b) {
+        useStandardStreams = b;
     }
 
     /**

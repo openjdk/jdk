@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -932,7 +932,7 @@ public abstract class BaseOptions {
         protected Option(Resources resources, String keyBase, String name, int argCount) {
             this.names = name.trim().split("\\s+");
             if (keyBase == null) {
-                keyBase = "doclet.usage." + names[0].toLowerCase().replaceAll("^-+", "");
+                keyBase = "doclet.usage." + Utils.toLowerCase(names[0]).replaceAll("^-+", "");
             }
             String desc = getOptionsMessage(resources, keyBase + ".description");
             if (desc.isEmpty()) {
@@ -995,7 +995,7 @@ public abstract class BaseOptions {
                 } else if (matchCase) {
                     return name.equals(option);
                 }
-                return name.toLowerCase().equals(option.toLowerCase());
+                return name.equalsIgnoreCase(option);
             }
             return false;
         }

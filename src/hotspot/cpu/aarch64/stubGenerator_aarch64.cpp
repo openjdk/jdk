@@ -2658,7 +2658,7 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg2   - K (key) in little endian int array
   //
   address generate_aescrypt_decryptBlock() {
-    assert(UseAES, "need AES instructions and misaligned SSE support");
+    assert(UseAES, "need AES cryptographic extension support");
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "aescrypt_decryptBlock");
     Label L_doLast;
@@ -2765,7 +2765,7 @@ class StubGenerator: public StubCodeGenerator {
   //   x0        - input length
   //
   address generate_cipherBlockChaining_encryptAESCrypt() {
-    assert(UseAES, "need AES instructions and misaligned SSE support");
+    assert(UseAES, "need AES cryptographic extension support");
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_encryptAESCrypt");
 
@@ -2869,7 +2869,7 @@ class StubGenerator: public StubCodeGenerator {
   //   r0        - input length
   //
   address generate_cipherBlockChaining_decryptAESCrypt() {
-    assert(UseAES, "need AES instructions and misaligned SSE support");
+    assert(UseAES, "need AES cryptographic extension support");
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_decryptAESCrypt");
 

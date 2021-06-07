@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@
 // push_jni_handle_block
 //
 // Push on a new block of JNI handles.
-static void push_jni_handle_block(Thread* const thread) {
+static void push_jni_handle_block(JavaThread* const thread) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
 
   // Allocate a new block for JNI handles.
@@ -77,7 +77,7 @@ static void push_jni_handle_block(Thread* const thread) {
 // pop_jni_handle_block
 //
 // Pop off the current block of JNI handles.
-static void pop_jni_handle_block(Thread* const thread) {
+static void pop_jni_handle_block(JavaThread* const thread) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
 
   // Release our JNI handle block
@@ -91,9 +91,9 @@ static void pop_jni_handle_block(Thread* const thread) {
 
 class JNIHandleBlockManager : public StackObj {
  private:
-  Thread* const _thread;
+  JavaThread* const _thread;
  public:
-  JNIHandleBlockManager(Thread* thread) : _thread(thread) {
+  JNIHandleBlockManager(JavaThread* thread) : _thread(thread) {
     push_jni_handle_block(_thread);
   }
 
@@ -731,4 +731,3 @@ bool register_jfr_dcmds() {
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrConfigureFlightRecorderDCmd>(full_export, true, false));
   return true;
 }
-

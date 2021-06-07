@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm AddTrustedCert
- * @run main/othervm AddTrustedCert sm policy
+ * @run main/othervm -Djava.security.manager=allow AddTrustedCert sm policy
  */
 
 import java.io.File;

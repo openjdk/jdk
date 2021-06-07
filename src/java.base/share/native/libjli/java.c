@@ -599,6 +599,7 @@ IsModuleOption(const char* name) {
            JLI_StrCmp(name, "-p") == 0 ||
            JLI_StrCmp(name, "--upgrade-module-path") == 0 ||
            JLI_StrCmp(name, "--add-modules") == 0 ||
+           JLI_StrCmp(name, "--enable-native-access") == 0 ||
            JLI_StrCmp(name, "--limit-modules") == 0 ||
            JLI_StrCmp(name, "--add-exports") == 0 ||
            JLI_StrCmp(name, "--add-opens") == 0 ||
@@ -611,6 +612,7 @@ IsLongFormModuleOption(const char* name) {
     return JLI_StrCCmp(name, "--module-path=") == 0 ||
            JLI_StrCCmp(name, "--upgrade-module-path=") == 0 ||
            JLI_StrCCmp(name, "--add-modules=") == 0 ||
+           JLI_StrCCmp(name, "--enable-native-access=") == 0 ||
            JLI_StrCCmp(name, "--limit-modules=") == 0 ||
            JLI_StrCCmp(name, "--add-exports=") == 0 ||
            JLI_StrCCmp(name, "--add-reads=") == 0 ||

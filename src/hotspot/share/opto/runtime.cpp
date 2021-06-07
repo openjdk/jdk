@@ -663,6 +663,25 @@ const TypeFunc *OptoRuntime::Math_D_D_Type() {
   return TypeFunc::make(domain, range);
 }
 
+const TypeFunc *OptoRuntime::Math_Vector_Vector_Type(uint num_arg, const TypeVect* in_type, const TypeVect* out_type) {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(num_arg);
+  // Symbol* name of class to be loaded
+  assert(num_arg > 0, "must have at least 1 input");
+  for (uint i = 0; i < num_arg; i++) {
+    fields[TypeFunc::Parms+i] = in_type;
+  }
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+num_arg, fields);
+
+  // create result type (range)
+  const uint num_ret = 1;
+  fields = TypeTuple::fields(num_ret);
+  fields[TypeFunc::Parms+0] = out_type;
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+num_ret, fields);
+
+  return TypeFunc::make(domain, range);
+}
+
 const TypeFunc* OptoRuntime::Math_DD_D_Type() {
   const Type **fields = TypeTuple::fields(4);
   fields[TypeFunc::Parms+0] = Type::DOUBLE;
@@ -1498,6 +1517,21 @@ const TypeFunc *OptoRuntime::register_finalizer_Type() {
   return TypeFunc::make(domain,range);
 }
 
+#if INCLUDE_JFR
+const TypeFunc *OptoRuntime::get_class_id_intrinsic_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::KLASS;
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms + 1, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(0);
+
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms + 0, fields);
+
+  return TypeFunc::make(domain,range);
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Dtrace support.  entry and exit probes have the same signature

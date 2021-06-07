@@ -160,11 +160,9 @@ public:
 
 // Highest level time tracker.
 class RefProcTotalPhaseTimesTracker : public RefProcPhaseTimeBaseTracker {
-  ReferenceProcessor* _rp;
 public:
   RefProcTotalPhaseTimesTracker(ReferenceProcessor::RefProcPhases phase_number,
-                                ReferenceProcessorPhaseTimes* phase_times,
-                                ReferenceProcessor* rp);
+                                ReferenceProcessorPhaseTimes* phase_times);
   ~RefProcTotalPhaseTimesTracker();
 };
 

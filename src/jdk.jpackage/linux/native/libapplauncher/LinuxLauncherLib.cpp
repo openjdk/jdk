@@ -66,6 +66,7 @@ void launchApp() {
         appLauncher
             .setImageRoot(appImageRoot)
             .setAppDir(FileUtils::mkpath() << appImageRoot << _T("lib/app"))
+            .setLibEnvVariableName(_T("LD_LIBRARY_PATH"))
             .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
                     << _T("lib/runtime"));
     } else {

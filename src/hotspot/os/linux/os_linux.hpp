@@ -78,9 +78,8 @@ class Linux {
   static GrowableArray<int>* nindex_to_node()  { return _nindex_to_node; }
 
   static size_t default_large_page_size();
-  static size_t find_default_large_page_size();
-  static size_t find_large_page_size(size_t page_size);
-  static size_t setup_large_page_size();
+  static size_t scan_default_large_page_size();
+  static os::PageSizes scan_multiple_page_support();
 
   static bool setup_large_page_type(size_t page_size);
   static bool transparent_huge_pages_sanity_check(bool warn, size_t pages_size);
@@ -386,19 +385,17 @@ class Linux {
   // Returns true if bound to a single numa node, otherwise returns false.
   static bool is_bound_to_single_node() {
     int nodes = 0;
-    struct bitmask* bmp = NULL;
     unsigned int node = 0;
     unsigned int highest_node_number = 0;
 
-    if (_numa_get_membind != NULL && _numa_max_node != NULL && _numa_bitmask_isbitset != NULL) {
-      bmp = _numa_get_membind();
+    if (_numa_membind_bitmask != NULL && _numa_max_node != NULL && _numa_bitmask_isbitset != NULL) {
       highest_node_number = _numa_max_node();
     } else {
       return false;
     }
 
     for (node = 0; node <= highest_node_number; node++) {
-      if (_numa_bitmask_isbitset(bmp, node)) {
+      if (_numa_bitmask_isbitset(_numa_membind_bitmask, node)) {
         nodes++;
       }
     }

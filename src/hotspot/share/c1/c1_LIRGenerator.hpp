@@ -251,6 +251,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_RegisterFinalizer(Intrinsic* x);
   void do_isInstance(Intrinsic* x);
   void do_isPrimitive(Intrinsic* x);
+  void do_getModifiers(Intrinsic* x);
   void do_getClass(Intrinsic* x);
   void do_currentThread(Intrinsic* x);
   void do_getObjectSize(Intrinsic* x);
@@ -337,8 +338,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void increment_counter(address counter, BasicType type, int step = 1);
   void increment_counter(LIR_Address* addr, int step = 1);
 
-  // is_strictfp is only needed for mul and div (and only generates different code on i486)
-  void arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, bool is_strictfp, LIR_Opr tmp, CodeEmitInfo* info = NULL);
+  void arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp, CodeEmitInfo* info = NULL);
   // machine dependent.  returns true if it emitted code for the multiply
   bool strength_reduce_multiply(LIR_Opr left, jint constant, LIR_Opr result, LIR_Opr tmp);
 
@@ -353,7 +353,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void arithmetic_op_int  (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp);
   void arithmetic_op_long (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info = NULL);
-  void arithmetic_op_fpu  (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, bool is_strictfp, LIR_Opr tmp = LIR_OprFact::illegalOpr);
+  void arithmetic_op_fpu  (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp = LIR_OprFact::illegalOpr);
 
   void shift_op   (Bytecodes::Code code, LIR_Opr dst_reg, LIR_Opr value, LIR_Opr count, LIR_Opr tmp);
 

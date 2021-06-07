@@ -57,7 +57,6 @@
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/iterator.hpp"
-#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
@@ -1228,7 +1227,6 @@ void GenCollectedHeap::gc_epilogue(bool full) {
   generation_iterate(&blk, false);  // not old-to-young.
 
   MetaspaceCounters::update_performance_counters();
-  CompressedClassSpaceCounters::update_performance_counters();
 };
 
 #ifndef PRODUCT

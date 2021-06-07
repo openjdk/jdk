@@ -26,6 +26,7 @@
 #define SHARE_GC_PARALLEL_PARALLELSCAVENGEHEAP_INLINE_HPP
 
 #include "gc/parallel/parallelScavengeHeap.hpp"
+
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psScavenge.hpp"
 

@@ -261,11 +261,6 @@ Mutex::~Mutex() {
   os::free(const_cast<char*>(_name));
 }
 
-// Only Threads_lock and Heap_lock may be safepoint_check_sometimes.
-bool is_sometimes_ok(const char* name) {
-  return (strcmp(name, "Threads_lock") == 0 || strcmp(name, "Heap_lock") == 0);
-}
-
 Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
              SafepointCheckRequired safepoint_check_required) : _owner(NULL) {
   assert(os::mutex_init_done(), "Too early!");
@@ -276,9 +271,6 @@ Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
   _rank            = Rank;
   _safepoint_check_required = safepoint_check_required;
   _skip_rank_check = false;
-
-  assert(_safepoint_check_required != _safepoint_check_sometimes || is_sometimes_ok(name),
-         "Lock has _safepoint_check_sometimes %s", name);
 
   assert(_rank > special || _safepoint_check_required == _safepoint_check_never,
          "Special locks or below should never safepoint");
@@ -306,7 +298,6 @@ void Mutex::print_on_error(outputStream* st) const {
 const char* print_safepoint_check(Mutex::SafepointCheckRequired safepoint_check) {
   switch (safepoint_check) {
   case Mutex::_safepoint_check_never:     return "safepoint_check_never";
-  case Mutex::_safepoint_check_sometimes: return "safepoint_check_sometimes";
   case Mutex::_safepoint_check_always:    return "safepoint_check_always";
   default: return "";
   }

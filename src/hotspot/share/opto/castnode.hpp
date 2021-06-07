@@ -78,6 +78,11 @@ class CastIINode: public ConstraintCastNode {
     : ConstraintCastNode(n, t, carry_dependency), _range_check_dependency(range_check_dependency) {
     init_class_id(Class_CastII);
   }
+  CastIINode(Node* ctrl, Node* n, const Type* t, bool carry_dependency = false, bool range_check_dependency = false)
+    : ConstraintCastNode(n, t, carry_dependency), _range_check_dependency(range_check_dependency) {
+    init_class_id(Class_CastII);
+    init_req(0, ctrl);
+  }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Identity(PhaseGVN* phase);
@@ -103,6 +108,11 @@ class CastIINode: public ConstraintCastNode {
 
 class CastLLNode: public ConstraintCastNode {
 public:
+  CastLLNode(Node* ctrl, Node* n, const Type* t, bool carry_dependency = false)
+    : ConstraintCastNode(n, t, carry_dependency) {
+    init_class_id(Class_CastLL);
+    init_req(0, ctrl);
+  }
   CastLLNode(Node* n, const Type* t, bool carry_dependency = false)
           : ConstraintCastNode(n, t, carry_dependency){
     init_class_id(Class_CastLL);
@@ -114,6 +124,37 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegL; }
 };
+
+class CastFFNode: public ConstraintCastNode {
+public:
+  CastFFNode(Node* n, const Type* t, bool carry_dependency = false)
+          : ConstraintCastNode(n, t, carry_dependency){
+    init_class_id(Class_CastFF);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegF; }
+};
+
+class CastDDNode: public ConstraintCastNode {
+public:
+  CastDDNode(Node* n, const Type* t, bool carry_dependency = false)
+          : ConstraintCastNode(n, t, carry_dependency){
+    init_class_id(Class_CastDD);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegD; }
+};
+
+class CastVVNode: public ConstraintCastNode {
+public:
+  CastVVNode(Node* n, const Type* t, bool carry_dependency = false)
+          : ConstraintCastNode(n, t, carry_dependency){
+    init_class_id(Class_CastVV);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return in(1)->ideal_reg(); }
+};
+
 
 //------------------------------CastPPNode-------------------------------------
 // cast pointer to pointer (different type)

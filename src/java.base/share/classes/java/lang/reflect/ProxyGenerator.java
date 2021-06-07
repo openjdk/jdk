@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,7 @@ final class ProxyGenerator extends ClassWriter {
     /**
      * debugging flag for saving generated class files
      */
+    @SuppressWarnings("removal")
     private static final boolean saveGeneratedFiles =
             java.security.AccessController.doPrivileged(
                     new GetBooleanAction(
@@ -168,6 +169,7 @@ final class ProxyGenerator extends ClassWriter {
      * @param interfaces  proxy interfaces
      * @param accessFlags access flags of the proxy class
      */
+    @SuppressWarnings("removal")
     static byte[] generateProxyClass(ClassLoader loader,
                                      final String name,
                                      List<Class<?>> interfaces,

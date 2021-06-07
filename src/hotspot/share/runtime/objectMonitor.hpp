@@ -147,13 +147,13 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
                         sizeof(WeakHandle));
   // Used by async deflation as a marker in the _owner field:
   #define DEFLATER_MARKER reinterpret_cast<void*>(-1)
-  void* _owner;                     // pointer to owning thread OR BasicLock
+  void* volatile _owner;            // pointer to owning thread OR BasicLock
   volatile jlong _previous_owner_tid;  // thread id of the previous owner of the monitor
   // Separate _owner and _next_om on different cache lines since
   // both can have busy multi-threaded access. _previous_owner_tid is only
   // changed by ObjectMonitor::exit() so it is a good choice to share the
   // cache line with _owner.
-  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void*) +
+  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +
                         sizeof(volatile jlong));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
@@ -236,7 +236,7 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   volatile markWord* header_addr();
   void               set_header(markWord hdr);
 
-  intptr_t is_busy() const {
+  bool is_busy() const {
     // TODO-FIXME: assert _owner == null implies _recursions = 0
     intptr_t ret_code = _waiters | intptr_t(_cxq) | intptr_t(_EntryList);
     if (contentions() > 0) {
@@ -245,7 +245,7 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
     if (!owner_is_DEFLATER_MARKER()) {
       ret_code |= intptr_t(owner_raw());
     }
-    return ret_code;
+    return ret_code != 0;
   }
   const char* is_busy_to_string(stringStream* ss);
 
@@ -302,6 +302,24 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   // returns false and throws IllegalMonitorStateException (IMSE).
   bool      check_owner(TRAPS);
 
+ private:
+  class ExitOnSuspend {
+   protected:
+    ObjectMonitor* _om;
+    bool _om_exited;
+   public:
+    ExitOnSuspend(ObjectMonitor* om) : _om(om), _om_exited(false) {}
+    void operator()(JavaThread* current);
+    bool exited() { return _om_exited; }
+  };
+  class ClearSuccOnSuspend {
+   protected:
+    ObjectMonitor* _om;
+   public:
+    ClearSuccOnSuspend(ObjectMonitor* om) : _om(om)  {}
+    void operator()(JavaThread* current);
+  };
+ public:
   bool      enter(JavaThread* current);
   void      exit(JavaThread* current, bool not_suspended = true);
   void      wait(jlong millis, bool interruptible, TRAPS);
