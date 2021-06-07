@@ -1511,22 +1511,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
               Node* in = x->in(k);
               if (in != NULL && n_loop->is_member(get_loop(get_ctrl(in)))) {
                 const Type* in_t = _igvn.type(in);
-                if (in_t->isa_int()) {
-                  cast = new CastIINode(in, in_t, true);
-                } else if (in_t->isa_long()) {
-                  cast = new CastLLNode(in, in_t, true);
-                } else if (in_t->isa_ptr()) {
-                  cast = new CastPPNode(in, in_t, true);
-                } else if (in_t->isa_float()) {
-                  cast = new CastFFNode(in, in_t, true);
-                } else if (in_t->isa_double()) {
-                  cast = new CastDDNode(in, in_t, true);
-                } else if (in_t->isa_vect()) {
-                  cast = new CastVVNode(in, in_t, true);
-                }
+                cast = ConstraintCastNode::make_cast_for_type(x_ctrl, in, in_t);
               }
               if (cast != NULL) {
-                cast->set_req(0, x_ctrl);
                 register_new_node(cast, x_ctrl);
                 x->replace_edge(in, cast);
                 break;
