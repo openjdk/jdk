@@ -26,6 +26,7 @@
 package com.sun.source.util;
 
 import com.sun.source.tree.*;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A TreeVisitor that visits all the child tree nodes.
@@ -696,6 +697,20 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     }
 
     /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     * @since 17
+     */
+    @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    public R visitDefaultCaseLabel(DefaultCaseLabelTree node, P p) {
+        return null;
+    }
+
+    /**
      * {@inheritDoc} This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
@@ -719,6 +734,35 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     @Override
     public R visitMemberSelect(MemberSelectTree node, P p) {
         return scan(node.getExpression(), p);
+    }
+
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     * @since 17
+     */
+    @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    public R visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
+        return scan(node.getPattern(), p);
+    }
+
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     * @since 17
+     */
+    @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    public R visitGuardedPattern(GuardedPatternTree node, P p) {
+        R r = scan(node.getPattern(), p);
+        return scanAndReduce(node.getExpression(), p, r);
     }
 
     /**
