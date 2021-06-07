@@ -1843,69 +1843,6 @@ instruct extract2D(vRegD dst, vecX src, immI idx)
 
 // ------------------------------ Vector comparison ---------------------------------
 
-source %{
-
-static Assembler::SIMD_Arrangement elemBytes_to_Arrangement(int esize, bool isX) {
-  switch(esize) {
-    case 1:
-      return isX ? Assembler::T16B : Assembler::T8B;
-    case 2:
-      return isX ? Assembler::T8H : Assembler::T4H;
-    case 4:
-      return isX ? Assembler::T4S : Assembler::T2S;
-    case 8:
-      assert(isX, "unsupported");
-      return Assembler::T2D;
-    default:
-      assert(false, "unsupported");
-      ShouldNotReachHere();
-  }
-  return Assembler::INVALID_ARRANGEMENT;
-}
-
-static void neon_compare(C2_MacroAssembler masm, FloatRegister dst, BasicType bt,
-                         FloatRegister src1, FloatRegister src2, int cond, bool isX) {
-  Assembler::SIMD_Arrangement size = elemBytes_to_Arrangement(type2aelembytes(bt), isX);
-  if (bt == T_FLOAT || bt == T_DOUBLE) {
-    switch (cond) {
-      case BoolTest::eq: masm.fcmeq(dst, size, src1, src2); break;
-      case BoolTest::ne: {
-        masm.fcmeq(dst, size, src1, src2);
-        masm.notr(dst, Assembler::T16B, dst);
-        break;
-      }
-      case BoolTest::ge: masm.fcmge(dst, size, src1, src2); break;
-      case BoolTest::gt: masm.fcmgt(dst, size, src1, src2); break;
-      case BoolTest::le: masm.fcmge(dst, size, src2, src1); break;
-      case BoolTest::lt: masm.fcmgt(dst, size, src2, src1); break;
-      default:
-        assert(false, "unsupported");
-        ShouldNotReachHere();
-    }
-  } else {
-    switch (cond) {
-      case BoolTest::eq: masm.cmeq(dst, size, src1, src2); break;
-      case BoolTest::ne: {
-        masm.cmeq(dst, size, src1, src2);
-        masm.notr(dst, Assembler::T16B, dst);
-        break;
-      }
-      case BoolTest::ge: masm.cmge(dst, size, src1, src2); break;
-      case BoolTest::gt: masm.cmgt(dst, size, src1, src2); break;
-      case BoolTest::le: masm.cmge(dst, size, src2, src1); break;
-      case BoolTest::lt: masm.cmgt(dst, size, src2, src1); break;
-      case BoolTest::uge: masm.cmhs(dst, size, src1, src2); break;
-      case BoolTest::ugt: masm.cmhi(dst, size, src1, src2); break;
-      case BoolTest::ult: masm.cmhi(dst, size, src2, src1); break;
-      case BoolTest::ule: masm.cmhs(dst, size, src2, src1); break;
-      default:
-        assert(false, "unsupported");
-        ShouldNotReachHere();
-    }
-  }
-}
-%}
-
 instruct vcmpD(vecD dst, vecD src1, vecD src2, immI cond)
 %{
   predicate(n->as_Vector()->length_in_bytes() == 8);
@@ -1914,8 +1851,9 @@ instruct vcmpD(vecD dst, vecD src1, vecD src2, immI cond)
   ins_cost(INSN_COST);
   ins_encode %{
     BasicType bt = vector_element_basic_type(this);
-    neon_compare(C2_MacroAssembler(&cbuf), as_FloatRegister($dst$$reg), bt,
-                 as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg), (int)$cond$$constant, /*isX*/ false);
+    assert(type2aelembytes(bt) != 8, "not supported");
+    __ neon_compare(as_FloatRegister($dst$$reg), bt, as_FloatRegister($src1$$reg),
+                    as_FloatRegister($src2$$reg), (int)$cond$$constant, /*isQ*/ false);
   %}
   ins_pipe(vdop64);
 %}
@@ -1928,8 +1866,8 @@ instruct vcmpX(vecX dst, vecX src1, vecX src2, immI cond)
   ins_cost(INSN_COST);
   ins_encode %{
     BasicType bt = vector_element_basic_type(this);
-    neon_compare(C2_MacroAssembler(&cbuf), as_FloatRegister($dst$$reg), bt,
-                 as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg), (int)$cond$$constant, /*isX*/ true);
+    __ neon_compare(as_FloatRegister($dst$$reg), bt, as_FloatRegister($src1$$reg),
+                    as_FloatRegister($src2$$reg), (int)$cond$$constant, /*isQ*/ true);
   %}
   ins_pipe(vdop128);
 %}
