@@ -696,7 +696,7 @@ ClassLoaderData::~ClassLoaderData() {
   }
   // Method::clear_jmethod_ids only sets the jmethod_ids to NULL without
   // releasing the memory for related JNIMethodBlocks and JNIMethodBlockNodes.
-  // This is done intentionally because native code (e.g. JVMTI agent) holding 
+  // This is done intentionally because native code (e.g. JVMTI agent) holding
   // jmethod_ids may access them after the associated classes and class loader
   // are unloaded. The Java Native Interface Specification says "method ID
   // does not prevent the VM from unloading the class from which the ID has
