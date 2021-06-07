@@ -467,7 +467,7 @@ size_t ShenandoahHeapRegion::block_size(const HeapWord* p) const {
   }
 }
 
-void ShenandoahHeapRegion::setup_sizes(size_t& max_heap_size) {
+size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   // Absolute minimums we should not ever break.
   static const size_t MIN_REGION_SIZE = 256*K;
 
@@ -627,6 +627,8 @@ void ShenandoahHeapRegion::setup_sizes(size_t& max_heap_size) {
   guarantee(MaxTLABSizeBytes == 0, "we should only set it once");
   MaxTLABSizeBytes = MaxTLABSizeWords * HeapWordSize;
   assert (MaxTLABSizeBytes > MinTLABSize, "should be larger");
+
+  return max_heap_size;
 }
 
 void ShenandoahHeapRegion::do_commit() {
