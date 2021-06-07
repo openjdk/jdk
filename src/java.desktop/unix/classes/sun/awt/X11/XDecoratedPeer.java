@@ -1324,7 +1324,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
     public final Optional<Boolean> getMWMDecorTitleProperty() {
         Optional<Boolean> res = Optional.empty();
 
-        if (target instanceof javax.swing.RootPaneContainer) {
+        if (SunToolkit.isInstanceOf(target, "javax.swing.RootPaneContainer")) {
             javax.swing.JRootPane rootpane = ((javax.swing.RootPaneContainer) target).getRootPane();
             Object prop = rootpane.getClientProperty(MWM_DECOR_TITLE_PROPERTY_NAME);
             if (prop != null) {
