@@ -207,6 +207,7 @@ private:
                                  const ClassFileStream* cfs,
                                  TRAPS);
   static DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k);
+  static DumpTimeSharedClassInfo* find_or_allocate_info_for_locked(InstanceKlass* k);
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);

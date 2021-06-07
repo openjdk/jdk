@@ -1582,10 +1582,10 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
         __ cvttsd2sil(dest->as_register(), src->as_xmm_double_reg());
       } else {
         assert(src->fpu() == 0, "input must be on TOS");
-        __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_trunc()));
+        __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_trunc()));
         __ fist_s(Address(rsp, 0));
         __ movl(dest->as_register(), Address(rsp, 0));
-        __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+        __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
       }
       // IA32 conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
       assert(op->stub() != NULL, "stub required");

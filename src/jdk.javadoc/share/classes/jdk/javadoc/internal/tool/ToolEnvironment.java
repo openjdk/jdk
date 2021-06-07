@@ -199,7 +199,7 @@ public class ToolEnvironment {
         if (quiet) {
             return;
         }
-        messager.notice(key);
+        messager.noticeUsingKey(key);
     }
 
     /**
@@ -212,7 +212,7 @@ public class ToolEnvironment {
         if (quiet) {
             return;
         }
-        messager.notice(key, a1);
+        messager.noticeUsingKey(key, a1);
     }
 
     TreePath getTreePath(JCCompilationUnit tree) {

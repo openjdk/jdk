@@ -330,15 +330,9 @@ final class ByteMaxVector extends ByteVector {
         return (long) super.reduceLanesTemplate(op, m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Byte> toShuffle() {
-        byte[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(ByteMaxShuffle.class); // specialize
     }
 
     // Specialized unary testing
