@@ -1061,7 +1061,6 @@ jdk.xml.dsig.secureValidationPolicy=\
 #    sun.rmi.server.UnicastRef;\
 #    sun.rmi.server.RMIClientSocketFactory;\
 #    sun.rmi.server.RMIServerSocketFactory;\
-#    java.rmi.activation.ActivationID;\
 #    java.rmi.server.UID
 #
 # RMI Distributed Garbage Collector (DGC) Serial Filter

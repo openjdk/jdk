@@ -158,7 +158,7 @@ void frame::set_pc(address   newpc ) {
   }
 #endif // ASSERT
 
-  // Unsafe to use the is_deoptimzed tester after changing pc
+  // Unsafe to use the is_deoptimized tester after changing pc
   _deopt_state = unknown;
   _pc = newpc;
   _cb = CodeCache::find_blob_unsafe(_pc);
@@ -1067,6 +1067,10 @@ void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterM
     oops_interpreted_do(f, map, use_interpreter_oop_map_cache);
   } else if (is_entry_frame()) {
     oops_entry_do(f, map);
+  } else if (is_optimized_entry_frame()) {
+   // Nothing to do
+   // receiver is a global ref
+   // handle block is for JNI
   } else if (CodeCache::contains(pc())) {
     oops_code_blob_do(f, cf, map, derived_mode);
   } else {
@@ -1105,7 +1109,9 @@ void frame::verify(const RegisterMap* map) const {
 #if COMPILER2_OR_JVMCI
   assert(DerivedPointerTable::is_empty(), "must be empty before verify");
 #endif
-  oops_do_internal(&VerifyOopClosure::verify_oop, NULL, map, false, DerivedPointerIterationMode::_ignore);
+  if (map->update_map()) { // The map has to be up-to-date for the current frame
+    oops_do_internal(&VerifyOopClosure::verify_oop, NULL, map, false, DerivedPointerIterationMode::_ignore);
+  }
 }
 
 

@@ -1852,9 +1852,12 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
     return JVMTI_ERROR_INTERNAL;
   }
 
-  // Save fields from the old_cp.
-  merge_cp->copy_fields(old_cp());
-  scratch_cp->copy_fields(old_cp());
+  // Set dynamic constants attribute from the original CP.
+  if (old_cp->has_dynamic_constant()) {
+    scratch_cp->set_has_dynamic_constant();
+  }
+  // Copy attributes from scratch_cp to merge_cp
+  merge_cp->copy_fields(scratch_cp());
 
   log_info(redefine, class, constantpool)("merge_cp_len=%d, index_map_len=%d", merge_cp_length, _index_map_count);
 
@@ -4395,6 +4398,16 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   }
 
   swap_annotations(the_class, scratch_class);
+
+  // Replace minor version number of class file
+  u2 old_minor_version = the_class->constants()->minor_version();
+  the_class->constants()->set_minor_version(scratch_class->constants()->minor_version());
+  scratch_class->constants()->set_minor_version(old_minor_version);
+
+  // Replace major version number of class file
+  u2 old_major_version = the_class->constants()->major_version();
+  the_class->constants()->set_major_version(scratch_class->constants()->major_version());
+  scratch_class->constants()->set_major_version(old_major_version);
 
   // Replace CP indexes for class and name+type of enclosing method
   u2 old_class_idx  = the_class->enclosing_method_class_index();

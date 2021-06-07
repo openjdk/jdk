@@ -381,20 +381,6 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     /*package-private*/
     @ForceInline
-    static boolean doBinTest(int cond, long a, long b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a < b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a > b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError(Integer.toHexString(cond));
-    }
-
-    /*package-private*/
-    @ForceInline
     static long rotateLeft(long a, int n) {
         return Long.rotateLeft(a, n);
     }
@@ -1694,17 +1680,20 @@ public abstract class LongVector extends AbstractVector<Long> {
     }
 
     @ForceInline
-    private static
-    boolean compareWithOp(int cond, long a, long b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a <  b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a >  b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError();
+    private static boolean compareWithOp(int cond, long a, long b) {
+        return switch (cond) {
+            case BT_eq -> a == b;
+            case BT_ne -> a != b;
+            case BT_lt -> a < b;
+            case BT_le -> a <= b;
+            case BT_gt -> a > b;
+            case BT_ge -> a >= b;
+            case BT_ult -> Long.compareUnsigned(a, b) < 0;
+            case BT_ule -> Long.compareUnsigned(a, b) <= 0;
+            case BT_ugt -> Long.compareUnsigned(a, b) > 0;
+            case BT_uge -> Long.compareUnsigned(a, b) >= 0;
+            default -> throw new AssertionError();
+        };
     }
 
     /**
@@ -2055,6 +2044,29 @@ public abstract class LongVector extends AbstractVector<Long> {
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
+    }
+
+    @ForceInline
+    private final
+    VectorShuffle<Long> toShuffle0(LongSpecies dsp) {
+        long[] a = toArray();
+        int[] sa = new int[a.length];
+        for (int i = 0; i < a.length; i++) {
+            sa[i] = (int) a[i];
+        }
+        return VectorShuffle.fromArray(dsp, sa, 0);
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    VectorShuffle<Long> toShuffleTemplate(Class<?> shuffleType) {
+        LongSpecies vsp = vspecies();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), long.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     LongVector::toShuffle0);
     }
 
     /**
@@ -2745,6 +2757,8 @@ public abstract class LongVector extends AbstractVector<Long> {
         }
     }
 
+
+
     /**
      * Loads a vector from a {@linkplain ByteBuffer byte buffer}
      * starting at an offset into the byte buffer.
@@ -2877,7 +2891,7 @@ public abstract class LongVector extends AbstractVector<Long> {
     }
 
     /**
-     * Stores this vector into an array of {@code long}
+     * Stores this vector into an array of type {@code long[]}
      * starting at offset and using a mask.
      * <p>
      * For each vector lane, where {@code N} is the vector lane index,
@@ -3034,6 +3048,8 @@ public abstract class LongVector extends AbstractVector<Long> {
         }
     }
 
+
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -3139,6 +3155,8 @@ public abstract class LongVector extends AbstractVector<Long> {
             (arr, off, s) -> s.ldOp(arr, off,
                                     (arr_, off_, i) -> arr_[off_ + i]));
     }
+
+
 
     @Override
     abstract
@@ -3274,6 +3292,8 @@ public abstract class LongVector extends AbstractVector<Long> {
     static long arrayAddress(long[] a, int index) {
         return ARRAY_BASE + (((long)index) << ARRAY_SHIFT);
     }
+
+
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {

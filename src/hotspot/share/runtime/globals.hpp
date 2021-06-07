@@ -2016,6 +2016,11 @@ const intx ObjectAlignmentInBytes = 8;
              "Use the FP register for holding the frame pointer "           \
              "and not as a general purpose register.")                      \
                                                                             \
+  product(size_t, AsyncLogBufferSize, 2*M,                                  \
+          "Memory budget (in bytes) for the buffer of Asynchronous "        \
+          "Logging (-Xlog:async).")                                         \
+          range(100*K, 50*M)                                                \
+                                                                            \
   product(bool, CheckIntrinsics, true, DIAGNOSTIC,                          \
              "When a class C is loaded, check that "                        \
              "(1) all intrinsics defined by the VM for class C are present "\
@@ -2075,6 +2080,9 @@ const intx ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
+                                                                            \
+  develop(bool, TraceOptimizedUpcallStubs, false,                              \
+                "Trace optimized upcall stub generation")                      \
 
 // end of RUNTIME_FLAGS
 

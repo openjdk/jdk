@@ -390,7 +390,7 @@ static void rewrite_nofast_bytecode(const methodHandle& method) {
 void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik) {
   for (int i = 0; i < ik->methods()->length(); i++) {
     methodHandle m(thread, ik->methods()->at(i));
-    if (!ik->has_old_class_version()) {
+    if (!ik->can_be_verified_at_dumptime()) {
       rewrite_nofast_bytecode(m);
     }
     Fingerprinter fp(m);
@@ -478,13 +478,6 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 void VM_PopulateDumpSharedSpace::doit() {
   HeapShared::run_full_gc_in_vm_thread();
 
-  // We should no longer allocate anything from the metaspace, so that:
-  //
-  // (1) Metaspace::allocate might trigger GC if we have run out of
-  //     committed metaspace, but we can't GC because we're running
-  //     in the VM thread.
-  // (2) ArchiveBuilder needs to work with a stable set of MetaspaceObjs.
-  Metaspace::freeze();
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
   FileMapInfo::check_nonempty_dir_in_shared_path_table();
@@ -496,6 +489,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   // that so we don't have to walk the SystemDictionary again.
   SystemDictionaryShared::check_excluded_classes();
 
+  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   StaticArchiveBuilder builder;
   builder.gather_source_objs();
   builder.reserve_buffer();
@@ -580,7 +574,7 @@ public:
 bool MetaspaceShared::linking_required(InstanceKlass* ik) {
   // For static CDS dump, do not link old classes.
   // For dynamic CDS dump, only link classes loaded by the builtin class loaders.
-  return DumpSharedSpaces ? !ik->has_old_class_version() : !ik->is_shared_unregistered_class();
+  return DumpSharedSpaces ? !ik->can_be_verified_at_dumptime() : !ik->is_shared_unregistered_class();
 }
 
 bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
@@ -756,7 +750,7 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
   JavaThread* THREAD = current; // For exception macros.
   Arguments::assert_is_dumping_archive();
-  if (ik->is_loaded() && !ik->is_linked() && !ik->has_old_class_version() &&
+  if (ik->is_loaded() && !ik->is_linked() && !ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == NULL) {

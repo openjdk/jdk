@@ -29,6 +29,7 @@
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compiler/compilerThread.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/stack.hpp"

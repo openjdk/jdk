@@ -2428,6 +2428,16 @@ const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return new TypeVectMask(elemTy, length);
 }
 
+// Vector calling convention not yet implemented.
+const bool Matcher::supports_vector_calling_convention(void) {
+  return false;
+}
+
+OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
+  Unimplemented();
+  return OptoRegPair(0, 0);
+}
+
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }
@@ -8730,6 +8740,61 @@ instruct castLL(iRegL dst)
 
   size(0);
   format %{ "# castLL of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castFF(vRegF dst)
+%{
+  match(Set dst (CastFF dst));
+
+  size(0);
+  format %{ "# castFF of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castDD(vRegD dst)
+%{
+  match(Set dst (CastDD dst));
+
+  size(0);
+  format %{ "# castDD of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castVVD(vecD dst)
+%{
+  match(Set dst (CastVV dst));
+
+  size(0);
+  format %{ "# castVV of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castVVX(vecX dst)
+%{
+  match(Set dst (CastVV dst));
+
+  size(0);
+  format %{ "# castVV of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castVV(vReg dst)
+%{
+  match(Set dst (CastVV dst));
+
+  size(0);
+  format %{ "# castVV of $dst" %}
   ins_encode(/* empty encoding */);
   ins_cost(0);
   ins_pipe(pipe_class_empty);

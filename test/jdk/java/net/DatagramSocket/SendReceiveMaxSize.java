@@ -79,6 +79,7 @@ public class SendReceiveMaxSize {
         IPSupport.throwSkippedExceptionIfNonOperational();
         HOST_ADDR = InetAddress.getLocalHost();
         BUF_LIMIT = (HOST_ADDR instanceof Inet6Address) ? IPV6_SNDBUF : IPV4_SNDBUF;
+        System.out.printf("Host address: %s, Buffer limit: %d%n", HOST_ADDR, BUF_LIMIT);
     }
 
     @DataProvider

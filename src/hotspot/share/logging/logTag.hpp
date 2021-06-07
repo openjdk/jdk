@@ -73,6 +73,7 @@
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
   LOG_TAG(fingerprint) \
+  DEBUG_ONLY(LOG_TAG(foreign)) \
   LOG_TAG(free) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \

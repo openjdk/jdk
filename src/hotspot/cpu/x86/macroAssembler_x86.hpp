@@ -26,6 +26,8 @@
 #define CPU_X86_MACROASSEMBLER_X86_HPP
 
 #include "asm/assembler.hpp"
+#include "code/vmreg.inline.hpp"
+#include "compiler/oopMap.hpp"
 #include "utilities/macros.hpp"
 #include "runtime/rtmLocking.hpp"
 #include "runtime/vm_version.hpp"
@@ -206,6 +208,22 @@ class MacroAssembler: public Assembler {
   // The pointer will be loaded into the thread register.
   void get_thread(Register thread);
 
+#ifdef _LP64
+  // Support for argument shuffling
+
+  void move32_64(VMRegPair src, VMRegPair dst);
+  void long_move(VMRegPair src, VMRegPair dst);
+  void float_move(VMRegPair src, VMRegPair dst);
+  void double_move(VMRegPair src, VMRegPair dst);
+  void move_ptr(VMRegPair src, VMRegPair dst);
+  void object_move(OopMap* map,
+                   int oop_handle_offset,
+                   int framesize_in_slots,
+                   VMRegPair src,
+                   VMRegPair dst,
+                   bool is_receiver,
+                   int* receiver_offset);
+#endif // _LP64
 
   // Support for VM calls
   //
@@ -1279,21 +1297,21 @@ public:
 
   // Vector compares
   void evpcmpd(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
-               int comparison, int vector_len) { Assembler::evpcmpd(kdst, mask, nds, src, comparison, vector_len); }
+               int comparison, bool is_signed, int vector_len) { Assembler::evpcmpd(kdst, mask, nds, src, comparison, is_signed, vector_len); }
   void evpcmpd(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-               int comparison, int vector_len, Register scratch_reg);
+               int comparison, bool is_signed, int vector_len, Register scratch_reg);
   void evpcmpq(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
-               int comparison, int vector_len) { Assembler::evpcmpq(kdst, mask, nds, src, comparison, vector_len); }
+               int comparison, bool is_signed, int vector_len) { Assembler::evpcmpq(kdst, mask, nds, src, comparison, is_signed, vector_len); }
   void evpcmpq(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-               int comparison, int vector_len, Register scratch_reg);
+               int comparison, bool is_signed, int vector_len, Register scratch_reg);
   void evpcmpb(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
-               int comparison, int vector_len) { Assembler::evpcmpb(kdst, mask, nds, src, comparison, vector_len); }
+               int comparison, bool is_signed, int vector_len) { Assembler::evpcmpb(kdst, mask, nds, src, comparison, is_signed, vector_len); }
   void evpcmpb(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-               int comparison, int vector_len, Register scratch_reg);
+               int comparison, bool is_signed, int vector_len, Register scratch_reg);
   void evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
-               int comparison, int vector_len) { Assembler::evpcmpw(kdst, mask, nds, src, comparison, vector_len); }
+               int comparison, bool is_signed, int vector_len) { Assembler::evpcmpw(kdst, mask, nds, src, comparison, is_signed, vector_len); }
   void evpcmpw(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src,
-               int comparison, int vector_len, Register scratch_reg);
+               int comparison, bool is_signed, int vector_len, Register scratch_reg);
 
 
   // Emit comparison instruction for the specified comparison predicate.

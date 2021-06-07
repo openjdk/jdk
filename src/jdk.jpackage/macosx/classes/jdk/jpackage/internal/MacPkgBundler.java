@@ -451,7 +451,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     "--analyze",
                     cpl.toAbsolutePath().toString());
 
-            IOUtils.exec(pb);
+            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
 
             patchCPLFile(cpl);
 
@@ -467,7 +467,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                         "--identifier",
                          MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params),
                         appPKG.toAbsolutePath().toString());
-                IOUtils.exec(pb);
+                IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
             } else {
                 preparePackageScripts(params);
                 pb = new ProcessBuilder("/usr/bin/pkgbuild",
@@ -483,7 +483,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                         "--identifier",
                          MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params),
                         appPKG.toAbsolutePath().toString());
-                IOUtils.exec(pb);
+                IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
             }
 
             // build final package
@@ -541,7 +541,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             commandLine.add(finalPKG.toAbsolutePath().toString());
 
             pb = new ProcessBuilder(commandLine);
-            IOUtils.exec(pb);
+            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
 
             return finalPKG;
         } catch (Exception ignored) {

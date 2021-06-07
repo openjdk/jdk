@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_FILTERQUEUE_INLINE_HPP
 
 #include "utilities/filterQueue.hpp"
+
 #include "utilities/spinYield.hpp"
 
 template <class E>

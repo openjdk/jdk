@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,32 +66,32 @@ import jdk.internal.logger.SimpleConsoleLogger;
  * @build AccessSystemLogger LoggerFinderLoaderTest CustomSystemClassLoader BaseLoggerFinder BaseLoggerFinder2
  * @run  driver AccessSystemLogger
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader LoggerFinderLoaderTest NOSECURITY
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader LoggerFinderLoaderTest NOPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader LoggerFinderLoaderTest WITHPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader LoggerFinderLoaderTest NOPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader LoggerFinderLoaderTest WITHPERMISSIONS
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true LoggerFinderLoaderTest NOSECURITY
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true LoggerFinderLoaderTest NOPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true LoggerFinderLoaderTest WITHPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true LoggerFinderLoaderTest NOPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true LoggerFinderLoaderTest WITHPERMISSIONS
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=ERROR LoggerFinderLoaderTest NOSECURITY
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=ERROR LoggerFinderLoaderTest NOPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=ERROR LoggerFinderLoaderTest WITHPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=ERROR LoggerFinderLoaderTest NOPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=ERROR LoggerFinderLoaderTest WITHPERMISSIONS
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=DEBUG LoggerFinderLoaderTest NOSECURITY
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=DEBUG LoggerFinderLoaderTest NOPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=DEBUG LoggerFinderLoaderTest WITHPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=DEBUG LoggerFinderLoaderTest NOPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=DEBUG LoggerFinderLoaderTest WITHPERMISSIONS
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=QUIET LoggerFinderLoaderTest NOSECURITY
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=QUIET LoggerFinderLoaderTest NOPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=QUIET LoggerFinderLoaderTest WITHPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=QUIET LoggerFinderLoaderTest NOPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Dtest.fails=true -Djdk.logger.finder.error=QUIET LoggerFinderLoaderTest WITHPERMISSIONS
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true LoggerFinderLoaderTest NOSECURITY
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true LoggerFinderLoaderTest NOPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true LoggerFinderLoaderTest WITHPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true LoggerFinderLoaderTest NOPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true LoggerFinderLoaderTest WITHPERMISSIONS
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=ERROR LoggerFinderLoaderTest NOSECURITY
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=ERROR LoggerFinderLoaderTest NOPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=ERROR LoggerFinderLoaderTest WITHPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=ERROR LoggerFinderLoaderTest NOPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=ERROR LoggerFinderLoaderTest WITHPERMISSIONS
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=DEBUG LoggerFinderLoaderTest NOSECURITY
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=DEBUG LoggerFinderLoaderTest NOPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=DEBUG LoggerFinderLoaderTest WITHPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=DEBUG LoggerFinderLoaderTest NOPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=DEBUG LoggerFinderLoaderTest WITHPERMISSIONS
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=QUIET LoggerFinderLoaderTest NOSECURITY
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=QUIET LoggerFinderLoaderTest NOPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=QUIET LoggerFinderLoaderTest WITHPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=QUIET LoggerFinderLoaderTest NOPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader -Djdk.logger.finder.singleton=true -Djdk.logger.finder.error=QUIET LoggerFinderLoaderTest WITHPERMISSIONS
  * @author danielfuchs
  */
 public class LoggerFinderLoaderTest {
@@ -234,7 +234,14 @@ public class LoggerFinderLoaderTest {
                         }
                     }
                 } else if ("QUIET".equals(errorPolicy.toUpperCase(Locale.ROOT))) {
-                    if (!ErrorStream.errorStream.peek().isEmpty()) {
+                    String warning = ErrorStream.errorStream.peek();
+                    String smDeprecationWarning
+                            = "WARNING: java.lang.System::setSecurityManager is deprecated and will be removed in a future release."
+                            + System.getProperty("line.separator");
+                    if (warning.startsWith(smDeprecationWarning)) {
+                        warning = warning.substring(smDeprecationWarning.length());
+                    }
+                    if (!warning.isEmpty()) {
                         throw new RuntimeException("Unexpected error message found: "
                                 + ErrorStream.errorStream.peek());
                     }

@@ -18,6 +18,6 @@ grant {
   permission java.util.PropertyPermission "java.security.policy", "read";
   permission java.util.PropertyPermission "java.security.manager", "read";
 
-  // test needs to export rmid and communicate with objects on arbitrary ports
+  // test needs to communicate with objects on arbitrary ports
   permission java.net.SocketPermission "*:1024-", "connect,accept";
 };

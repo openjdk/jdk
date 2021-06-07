@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,9 @@ public class Lint
             Source source = Source.instance(context);
             if (source.compareTo(Source.JDK9) >= 0) {
                 values.add(LintCategory.DEP_ANN);
+            }
+            if (Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source)) {
+                values.add(LintCategory.STRICTFP);
             }
             values.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
             values.add(LintCategory.OPENS);
@@ -282,6 +285,11 @@ public class Lint
          * Warn about issues relating to use of statics
          */
         STATIC("static"),
+
+        /**
+         * Warn about unnecessary uses of the strictfp modifier
+         */
+        STRICTFP("strictfp"),
 
         /**
          * Warn about synchronization attempts on instances of @ValueBased classes.
