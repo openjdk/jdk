@@ -682,7 +682,7 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
             // System may require stack size to be multiple of page size
             // Retry with adjusted value
             adjusted_stack_size = adjustStackSize(stack_size);
-            if (adjusted_stack_size != stack_size) {
+            if (adjusted_stack_size != (size_t) stack_size) {
                 pthread_attr_setstacksize(&attr, adjusted_stack_size);
             }
         }
