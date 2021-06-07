@@ -131,7 +131,7 @@ public class Signatures {
 
             HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
             Content className = Text.of(utils.getSimpleName(typeElement));
-            if (writer.options.linkSource()) {
+            if (configuration.getOptions().linkSource()) {
                 writer.addSrcLink(typeElement, className, nameSpan);
             } else {
                 nameSpan.addStyle(HtmlStyle.typeNameLabel).add(className);
@@ -207,7 +207,7 @@ public class Signatures {
                     permitsSpan.add(link);
                 }
                 if (linkablePermits.size() < permits.size()) {
-                    Content c = Text.of(writer.resources.getText("doclet.not.exhaustive"));
+                    Content c = Text.of(configuration.getDocResources().getText("doclet.not.exhaustive"));
                     permitsSpan.add(" ");
                     permitsSpan.add(HtmlTree.SPAN(HtmlStyle.permitsNote, c));
                 }
@@ -245,8 +245,8 @@ public class Signatures {
                  content.add(modifier);
                  if (previewModifiers.contains(modifier)) {
                      content.add(HtmlTree.SUP(writer.links.createLink(
-                             writer.htmlIds.forPreviewSection(typeElement),
-                             writer.contents.previewMark)));
+                             configuration.htmlIds.forPreviewSection(typeElement),
+                             configuration.contents.previewMark)));
                  }
                  sep = " ";
              }
