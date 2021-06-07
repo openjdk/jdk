@@ -107,30 +107,30 @@ public:
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
     oop obj = cast_to_oop(r->bottom());
-    G1CMBitMap* next_bitmap = g1h->concurrent_mark()->next_mark_bitmap();
 
-    // The following checks whether the humongous object is live are sufficient.
-    // The main additional check (in addition to having a reference from the roots
-    // or the young gen) is whether the humongous object has a remembered set entry.
+    // The following check whether the humongous object is live is sufficient.
     //
-    // A humongous object cannot be live if there is no remembered set for it
-    // because:
+    // A humongous object can only be live if it is (still) a humongous reclaim
+    // candidate because:
+    // - if it has not been a candidate at the start of collection, it will never
+    // be a candidate (and live).
+    // - any found outstanding (i.e. in the DCQ, or in its remembered set)
+    // references will set the candidate state to false.
     // - there can be no references from within humongous starts regions referencing
     // the object because we never allocate other objects into them.
-    // (I.e. there are no intra-region references that may be missed by the
-    // remembered set)
-    // - as soon there is a remembered set entry to the humongous starts region
-    // (i.e. it has "escaped" to an old object) this remembered set entry will stay
-    // until the end of a concurrent mark.
+    // (I.e. there can be no intra-region references)
     //
     // It is not required to check whether the object has been found dead by marking
     // or not, in fact it would prevent reclamation within a concurrent cycle, as
     // all objects allocated during that time are considered live.
     // SATB marking is even more conservative than the remembered set.
-    // So if at this point in the collection there is no remembered set entry,
-    // nobody has a reference to it.
+    // So if at this point in the collection we did not find a reference during gc
+    // (or it had enough references to not be a candidate, having many remembered
+    // set entries), nobody has a reference to it.
     // At the start of collection we flush all refinement logs, and remembered sets
     // are completely up-to-date wrt to references to the humongous object.
+    //
+    // So there is no need to re-check remembered set size of the humongous region.
     //
     // Other implementation considerations:
     // - never consider object arrays at this time because they would pose
