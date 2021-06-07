@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,22 @@
  * questions.
  */
 
-// key: compiler.err.switch.null.not.allowed
+/*
+ * @test
+ * @bug 8262891
+ * @summary Check errors reported for guarded patterns.
+ * @compile/fail/ref=GuardsErrors.out -XDrawDiagnostics --enable-preview -source ${jdk.version} GuardsErrors.java
+ */
 
-class SwitchNullNotAllowed {
+public class GuardsErrors {
 
-    void test(Integer i) {
-        switch (i) {
-            case null: break;
-            case 0: break;
+    void typeTestPatternSwitchTest(Object o, int check) {
+        switch (o) {
+            case Integer i && i == check -> System.err.println(); //error: check is not effectivelly final
+            default -> {}
         }
+        check = 0;
+
     }
+
 }

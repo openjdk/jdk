@@ -2398,7 +2398,7 @@ LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // See also CR 6192333
   //
   jint MxCsr = INITIAL_MXCSR;
-  // we can't use StubRoutines::addr_mxcsr_std()
+  // we can't use StubRoutines::x86::addr_mxcsr_std()
   // because in Win64 mxcsr is not saved there
   if (MxCsr != ctx->MxCsr) {
     ctx->MxCsr = MxCsr;

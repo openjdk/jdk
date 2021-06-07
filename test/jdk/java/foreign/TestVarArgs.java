@@ -30,11 +30,11 @@
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -61,8 +61,13 @@ public class TestVarArgs {
     static final VarHandle VH_IntArray = MemoryLayout.sequenceLayout(C_INT).varHandle(int.class, sequenceElement());
 
     static final CLinker abi = CLinker.getInstance();
-    static final MemoryAddress varargsAddr = LibraryLookup.ofLibrary("VarArgs")
-            .lookup("varargs").get();
+    static {
+        System.loadLibrary("VarArgs");
+    }
+
+    static final MemoryAddress VARARGS_ADDR =
+            SymbolLookup.loaderLookup()
+                    .lookup("varargs").get();
 
     static final int WRITEBACK_BYTES_PER_ARG = 8;
 
@@ -96,7 +101,7 @@ public class TestVarArgs {
 
             MethodType mt = MethodType.methodType(void.class, carriers);
 
-            MethodHandle downcallHandle = abi.downcallHandle(varargsAddr, mt, desc);
+            MethodHandle downcallHandle = abi.downcallHandle(VARARGS_ADDR, mt, desc);
 
             List<Object> argValues = new ArrayList<>();
             argValues.add(callInfoPtr); // call info

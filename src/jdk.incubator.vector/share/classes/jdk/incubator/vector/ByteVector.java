@@ -2166,6 +2166,29 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return r1.blend(r0, valid);
     }
 
+    @ForceInline
+    private final
+    VectorShuffle<Byte> toShuffle0(ByteSpecies dsp) {
+        byte[] a = toArray();
+        int[] sa = new int[a.length];
+        for (int i = 0; i < a.length; i++) {
+            sa[i] = (int) a[i];
+        }
+        return VectorShuffle.fromArray(dsp, sa, 0);
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    VectorShuffle<Byte> toShuffleTemplate(Class<?> shuffleType) {
+        ByteSpecies vsp = vspecies();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), byte.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     ByteVector::toShuffle0);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
