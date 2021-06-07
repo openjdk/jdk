@@ -1758,7 +1758,7 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
       InitializeNode* init = initialization();
       assert(init != NULL, "initialization not found");
       length = new CastIINode(length, narrow_length_type);
-      length->set_req(0, init->proj_out_or_null(0));
+      length->set_req(TypeFunc::Control, init->proj_out_or_null(TypeFunc::Control));
     }
   }
 
