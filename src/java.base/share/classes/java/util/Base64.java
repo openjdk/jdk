@@ -753,16 +753,15 @@ public class Base64 {
          * chunks of the src that are of a favorable size for the specific
          * processor it's running on.
          *
-         * If the intrinsic function does not process all of the bytes in
-         * src, it must process a multiple of four of them, making the
-         * returned destination length a multiple of three.
-         *
          * If any illegal base64 bytes are encountered in src by the
          * intrinsic, the intrinsic must return the actual number of valid
          * data bytes already written to dst.  Note that the '=' pad
          * character is treated as an illegal Base64 character by
          * decodeBlock, so it will not process a block of 4 bytes
-         * containing pad characters.
+         * containing pad characters.  However, MIME decoding ignores
+         * illegal characters, so any intrinsic overriding decodeBlock
+         * can choose how to handle illegal characters based on the isMIME
+         * parameter.
          *
          * Given the parameters, no length check is possible on dst, so dst
          * is assumed to be large enough to store the decoded bytes.
@@ -779,6 +778,8 @@ public class Base64 {
          *         the offset into dst array to begin writing
          * @param  isURL
          *         boolean, when true decode RFC4648 URL-safe base64 characters
+         * @param  isMIME
+         *         boolean, when true decode according to RFC2045 (ignore illegal chars)
          * @return the number of destination data bytes produced
          */
         @IntrinsicCandidate
