@@ -4204,53 +4204,43 @@ class RegisterNMethodOopClosure: public OopClosure {
   G1CollectedHeap* _g1h;
   nmethod* _nm;
 
-  template <class T> void do_oop_work(T* p) {
-    T heap_oop = RawAccess<>::oop_load(p);
+public:
+  RegisterNMethodOopClosure(G1CollectedHeap* g1h, nmethod* nm) :
+    _g1h(g1h), _nm(nm) {}
+
+  void do_oop(oop* p) {
+    oop heap_oop = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(heap_oop)) {
       oop obj = CompressedOops::decode_not_null(heap_oop);
       HeapRegion* hr = _g1h->heap_region_containing(obj);
-      assert(!hr->is_continues_humongous(),
-             "trying to add code root " PTR_FORMAT " in continuation of humongous region " HR_FORMAT
-             " starting at " HR_FORMAT,
-             p2i(_nm), HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()));
 
       // HeapRegion::add_strong_code_root_locked() avoids adding duplicate entries.
       hr->add_strong_code_root_locked(_nm);
     }
   }
 
-public:
-  RegisterNMethodOopClosure(G1CollectedHeap* g1h, nmethod* nm) :
-    _g1h(g1h), _nm(nm) {}
-
-  void do_oop(oop* p)       { do_oop_work(p); }
-  void do_oop(narrowOop* p) { do_oop_work(p); }
+  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 
 class UnregisterNMethodOopClosure: public OopClosure {
   G1CollectedHeap* _g1h;
   nmethod* _nm;
 
-  template <class T> void do_oop_work(T* p) {
-    T heap_oop = RawAccess<>::oop_load(p);
+public:
+  UnregisterNMethodOopClosure(G1CollectedHeap* g1h, nmethod* nm) :
+    _g1h(g1h), _nm(nm) {}
+
+  void do_oop(oop* p) {
+    oop heap_oop = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(heap_oop)) {
       oop obj = CompressedOops::decode_not_null(heap_oop);
       HeapRegion* hr = _g1h->heap_region_containing(obj);
-      assert(!hr->is_continues_humongous(),
-             "trying to remove code root " PTR_FORMAT " in continuation of humongous region " HR_FORMAT
-             " starting at " HR_FORMAT,
-             p2i(_nm), HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()));
 
       hr->remove_strong_code_root(_nm);
     }
   }
 
-public:
-  UnregisterNMethodOopClosure(G1CollectedHeap* g1h, nmethod* nm) :
-    _g1h(g1h), _nm(nm) {}
-
-  void do_oop(oop* p)       { do_oop_work(p); }
-  void do_oop(narrowOop* p) { do_oop_work(p); }
+  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 
 void G1CollectedHeap::register_nmethod(nmethod* nm) {
