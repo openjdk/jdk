@@ -1320,6 +1320,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
         } catch (ArithmeticException e) {
         }
     }
+
     static byte ADD(byte a, byte b) {
         return (byte)(a + b);
     }

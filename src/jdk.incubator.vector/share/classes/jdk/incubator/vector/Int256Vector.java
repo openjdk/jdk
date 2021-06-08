@@ -584,10 +584,9 @@ final class Int256Vector extends IntVector {
         @ForceInline
         private final <E>
         VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
-            assert(length() == dsp.laneCount());
-            System.out.println(dsp);
+            if (length() != dsp.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
             return  dsp.maskFactory(maskArray).check(dsp);
         }
 
@@ -595,7 +594,6 @@ final class Int256Vector extends IntVector {
         @ForceInline
         public <E> VectorMask<E> cast(VectorSpecies<E> dsp) {
             AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
-            System.out.println(dsp);
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorMask length and species length differ");
             if (VSIZE == species.vectorBitSize()) {

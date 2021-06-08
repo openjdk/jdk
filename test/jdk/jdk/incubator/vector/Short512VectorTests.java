@@ -1310,6 +1310,16 @@ public class Short512VectorTests extends AbstractVectorTest {
         } catch (ArithmeticException e) {
         }
     }
+
+    @Test
+    static void vectorMaskCastIllegalArgumentSmokeTest() {
+        try {
+            VectorMask<Byte> m = VectorMask.fromLong(ByteVector.SPECIES_512, -1);
+            m.cast(ShortVector.SPECIES_512);
+            Assert.fail();
+        } catch (IllegalArgumentException e) {
+        }
+    }
     static short ADD(short a, short b) {
         return (short)(a + b);
     }

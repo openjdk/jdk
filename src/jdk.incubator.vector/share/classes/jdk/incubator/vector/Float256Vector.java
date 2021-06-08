@@ -580,9 +580,9 @@ final class Float256Vector extends FloatVector {
         @ForceInline
         private final <E>
         VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
-            assert(length() == dsp.laneCount());
+            if (length() != dsp.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
             return  dsp.maskFactory(maskArray).check(dsp);
         }
 

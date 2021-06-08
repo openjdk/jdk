@@ -1423,6 +1423,16 @@ public class Float128VectorTests extends AbstractVectorTest {
         Assert.assertEquals(asFloating.species(), SPECIES);
     }
 
+
+    @Test
+    static void vectorMaskCastIllegalArgumentSmokeTest() {
+        try {
+            VectorMask<Byte> m = VectorMask.fromLong(ByteVector.SPECIES_512, -1);
+            m.cast(FloatVector.SPECIES_128);
+            Assert.fail();
+        } catch (IllegalArgumentException e) {
+        }
+    }
     static float ADD(float a, float b) {
         return (float)(a + b);
     }

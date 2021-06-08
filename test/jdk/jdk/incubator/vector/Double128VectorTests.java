@@ -1413,6 +1413,16 @@ public class Double128VectorTests extends AbstractVectorTest {
         Assert.assertEquals(asFloating.species(), SPECIES);
     }
 
+
+    @Test
+    static void vectorMaskCastIllegalArgumentSmokeTest() {
+        try {
+            VectorMask<Byte> m = VectorMask.fromLong(ByteVector.SPECIES_512, -1);
+            m.cast(DoubleVector.SPECIES_128);
+            Assert.fail();
+        } catch (IllegalArgumentException e) {
+        }
+    }
     static double ADD(double a, double b) {
         return (double)(a + b);
     }

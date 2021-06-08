@@ -1315,6 +1315,16 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
         } catch (ArithmeticException e) {
         }
     }
+
+    @Test
+    static void vectorMaskCastIllegalArgumentSmokeTest() {
+        try {
+            VectorMask<Byte> m = VectorMask.fromLong(ByteVector.SPECIES_512, -1);
+            m.cast(ShortVector.SPECIES_MAX);
+            Assert.fail();
+        } catch (IllegalArgumentException e) {
+        }
+    }
     static short ADD(short a, short b) {
         return (short)(a + b);
     }

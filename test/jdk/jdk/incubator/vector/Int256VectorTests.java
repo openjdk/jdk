@@ -1285,6 +1285,16 @@ public class Int256VectorTests extends AbstractVectorTest {
         } catch (ArithmeticException e) {
         }
     }
+
+    @Test
+    static void vectorMaskCastIllegalArgumentSmokeTest() {
+        try {
+            VectorMask<Byte> m = VectorMask.fromLong(ByteVector.SPECIES_512, -1);
+            m.cast(IntVector.SPECIES_256);
+            Assert.fail();
+        } catch (IllegalArgumentException e) {
+        }
+    }
     static int ADD(int a, int b) {
         return (int)(a + b);
     }

@@ -1307,6 +1307,16 @@ public class Long64VectorTests extends AbstractVectorTest {
         } catch (ArithmeticException e) {
         }
     }
+
+    @Test
+    static void vectorMaskCastIllegalArgumentSmokeTest() {
+        try {
+            VectorMask<Byte> m = VectorMask.fromLong(ByteVector.SPECIES_512, -1);
+            m.cast(LongVector.SPECIES_64);
+            Assert.fail();
+        } catch (IllegalArgumentException e) {
+        }
+    }
     static long ADD(long a, long b) {
         return (long)(a + b);
     }

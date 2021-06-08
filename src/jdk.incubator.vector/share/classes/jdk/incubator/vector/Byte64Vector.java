@@ -584,7 +584,8 @@ final class Byte64Vector extends ByteVector {
         @ForceInline
         private final <E>
         VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
-            assert(length() == dsp.laneCount());
+            if (length() != dsp.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
             return  dsp.maskFactory(maskArray).check(dsp);
         }
