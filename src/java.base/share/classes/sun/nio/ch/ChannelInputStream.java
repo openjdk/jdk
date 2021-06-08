@@ -146,11 +146,10 @@ public class ChannelInputStream
 
     @Override
     public long transferTo(OutputStream out) throws IOException {
-        if (out instanceof ChannelOutputStream) {
-            WritableByteChannel oc = ((ChannelOutputStream) out).channel();
+        if (out instanceof ChannelOutputStream cos) {
+            WritableByteChannel oc = cos.channel();
 
-            if (ch instanceof FileChannel) {
-                FileChannel fc = (FileChannel) ch;
+            if (ch instanceof FileChannel fc) {
                 long pos = fc.position();
                 long size = fc.size();
                 long i = 0L;
@@ -160,13 +159,12 @@ public class ChannelInputStream
                 return i;
             }
 
-            if (oc instanceof FileChannel) {
-                FileChannel fc = (FileChannel) oc;
+            if (oc instanceof FileChannel fc) {
                 long fcpos = fc.position();
 
-                if (ch instanceof SeekableByteChannel) {
-                    long pos = ((SeekableByteChannel) ch).position();
-                    long size = ((SeekableByteChannel) ch).size();
+                if (ch instanceof SeekableByteChannel sbc) {
+                    long pos = sbc.position();
+                    long size = sbc.size();
                     long i = 0L;
                     for (long n = size - pos; i < n;
                       i += fc.transferFrom(ch, fcpos + i, Long.MAX_VALUE));
