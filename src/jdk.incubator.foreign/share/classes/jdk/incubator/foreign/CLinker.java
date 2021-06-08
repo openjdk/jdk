@@ -219,7 +219,10 @@ public sealed interface CLinker permits AbstractCLinker {
      * the corresponding native stub will be deallocated.
      * <p>
      * The target method handle should not throw any exceptions. If the target method handle does throw an exception,
-     * the VM will exit with a non-zero exit code.
+     * the VM will exit with a non-zero exit code. To avoid the VM aborting due to an uncaught exception, clients
+     * could wrap all code in the target method handle in a try/catch block that catches any {@link Throwable}, for
+     * instance by using the {@link java.lang.invoke.MethodHandles#catchException(MethodHandle, Class, MethodHandle)}
+     * method handle combinator, and handle exceptions as desired in the corresponding catch block.
      *
      * @param target   the target method handle.
      * @param function the function descriptor.
