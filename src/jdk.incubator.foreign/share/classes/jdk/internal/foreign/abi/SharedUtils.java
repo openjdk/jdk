@@ -38,7 +38,6 @@ import jdk.incubator.foreign.SequenceLayout;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.ValueLayout;
 import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.CABI;
 import jdk.internal.foreign.MemoryAddressImpl;
