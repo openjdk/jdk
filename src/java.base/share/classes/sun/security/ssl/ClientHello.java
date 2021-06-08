@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -177,7 +179,25 @@ final class ClientHello {
                 this.cookie = null;
             }
 
-            byte[] encodedIds = Record.getBytes16(m);
+            //byte[] encodedIds = Record.getBytes16(m);
+            int csLen = Short.toUnsignedInt(m.getShort());
+            if (csLen == 0 || (csLen & 0x01) != 0) {
+                throw handshakeContext.conContext.fatal(
+                        Alert.ILLEGAL_PARAMETER,
+                        "Invalid ClientHello message");
+            }
+            Stream.Builder<CipherSuite> sb = Stream.builder();
+            for (int i=0; i < csLen; i+=2) {
+                CipherSuite cs = CipherSuite.valueOf(
+                                Short.toUnsignedInt(m.getShort()));
+                if (cs != null) {
+                    sb.add(cs);
+                }
+           }
+            Stream<CipherSuite> strm = sb.build();
+            this.cipherSuites = strm.distinct().collect(Collectors.toList());
+            this.cipherSuiteIds = getCipherSuiteIds(cipherSuites);
+            /*
             if (encodedIds.length == 0 || (encodedIds.length & 0x01) != 0) {
                 throw handshakeContext.conContext.fatal(
                         Alert.ILLEGAL_PARAMETER,
@@ -190,7 +210,7 @@ final class ClientHello {
                     ((encodedIds[i++] & 0xFF) << 8) | (encodedIds[i] & 0xFF);
             }
             this.cipherSuites = getCipherSuites(cipherSuiteIds);
-
+            */
             this.compressionMethod = Record.getBytes8(m);
             // In TLS 1.3, use of certain extensions is mandatory.
             if (m.hasRemaining()) {
