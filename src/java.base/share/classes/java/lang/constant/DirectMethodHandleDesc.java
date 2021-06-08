@@ -105,7 +105,7 @@ public sealed interface DirectMethodHandleDesc
          * @throws IllegalArgumentException if there is no such member
          */
         public static Kind valueOf(int refKind) {
-            return valueOf(refKind, false);
+            return valueOf(refKind, refKind == REF_invokeInterface);
         }
 
         /**

@@ -359,6 +359,7 @@ public class MethodHandleDescTest extends SymbolicDescTest {
 
     public void testKind() {
         for (Kind k : Kind.values()) {
+            assertEquals(Kind.valueOf(k.refKind), Kind.valueOf(k.refKind, k.refKind == MethodHandleInfo.REF_invokeInterface));
             assertEquals(Kind.valueOf(k.refKind, k.isInterface), k);
         }
     }
