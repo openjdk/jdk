@@ -108,10 +108,8 @@ public class ChannelOutputStream extends OutputStream {
     @Override
     public synchronized void write(byte[] bs, int off, int len)
         throws IOException {
-        if ((off < 0) || (off > bs.length) || (len < 0) ||
-            ((off + len) > bs.length) || ((off + len) < 0)) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        Objects.checkFromIndexSize(off, len, bs.length);
+        if (len == 0) {
             return;
         }
         ByteBuffer bb = ((this.bs == bs)

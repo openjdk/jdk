@@ -143,10 +143,8 @@ public final class Channels {
             public synchronized int read(byte[] bs, int off, int len)
                     throws IOException
             {
-                if ((off < 0) || (off > bs.length) || (len < 0) ||
-                    ((off + len) > bs.length) || ((off + len) < 0)) {
-                    throw new IndexOutOfBoundsException();
-                } else if (len == 0) {
+                Objects.checkFromIndexSize(off, len, bs.length);
+                if (len == 0) {
                     return 0;
                 }
 
