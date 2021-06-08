@@ -42,6 +42,9 @@ public class ImageTest {
                     new RuntimeException("jlink tool not found")
             );
 
+    static final Path SVML_LIBRARY_PATH = System.getProperty("os.name").startsWith("Windows")
+            ? Path.of("bin/svml.dll")    // Path on windows
+            : Path.of("lib/libsvml.so"); // Path on linux
 
     static void link(String module, Path output) {
         int e = JLINK_TOOL.run(System.out, System.err,
@@ -54,13 +57,13 @@ public class ImageTest {
     }
 
     static void checkSVML(Path image, boolean shouldBepresent) {
-        Path libsvml = image.resolve("lib/libsvml.so");
+        Path libsvml = image.resolve(SVML_LIBRARY_PATH);
 
         boolean exists = Files.exists(libsvml);
         if (shouldBepresent) {
-            Assert.assertTrue(exists, "lib/libsvml.so should be present");
+            Assert.assertTrue(exists, SVML_LIBRARY_PATH + " should be present");
         } else {
-            Assert.assertFalse(exists, "lib/libsvml.so should be absent");
+            Assert.assertFalse(exists, SVML_LIBRARY_PATH + "should be absent");
         }
     }
 
