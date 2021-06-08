@@ -713,7 +713,7 @@ void Metaspace::global_initialize() {
     // the given address. This is a debug-only feature aiding tests. Due to the ASLR lottery
     // this may fail, in which case the VM will exit after printing an appropiate message.
     // Tests using this switch should cope with that.
-    if (!FLAG_IS_DEFAULT(CompressedClassSpaceBaseAddress) && CompressedClassSpaceBaseAddress != 0) {
+    if (CompressedClassSpaceBaseAddress != 0) {
       base = (address)CompressedClassSpaceBaseAddress;
       if (!is_aligned(base, Metaspace::reserve_alignment())) {
         vm_exit_during_initialization(
