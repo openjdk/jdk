@@ -67,7 +67,7 @@ static void next_line(FILE *f) {
     int c;
     do {
         c = fgetc(f);
-    } while(c != '\n' && c != EOF);
+    } while (c != '\n' && c != EOF);
 }
 
 /**
