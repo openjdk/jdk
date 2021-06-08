@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <ignored path="jdk.iws" />
-    <ignored path="$PROJECT_DIR$/build/idea/out/" />
+    <ignored path="###PROJECT_DIR###/build/idea/out/" />
     <ignored path=".idea/" />
   </component>
   <component name="StructureViewFactory">
@@ -15,7 +15,7 @@
       <option name="SCRIPT_PATH" value="" />
       <option name="SCRIPT_OPTIONS" value="" />
       <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
-      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="###PROJECT_DIR###" />
       <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
       <option name="INTERPRETER_PATH" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -30,7 +30,7 @@
       <option name="SCRIPT_PATH" value="" />
       <option name="SCRIPT_OPTIONS" value="" />
       <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
-      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="###PROJECT_DIR###" />
       <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
       <option name="INTERPRETER_PATH" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -45,7 +45,7 @@
       <option name="SCRIPT_PATH" value="" />
       <option name="SCRIPT_OPTIONS" value="" />
       <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
-      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="###PROJECT_DIR###" />
       <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
       <option name="INTERPRETER_PATH" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />

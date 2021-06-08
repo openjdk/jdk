@@ -155,23 +155,7 @@ public class StdLibTest {
 
     static class StdLibHelper {
 
-        static final SymbolLookup LOOKUP;
-
-        static {
-            System.loadLibrary("StdLib");
-            SymbolLookup stdLibLookup = SymbolLookup.loaderLookup();
-            MemorySegment funcs = stdLibLookup.lookup("funcs").get()
-                    .asSegment(C_POINTER.byteSize() * 3, ResourceScope.newImplicitScope());
-
-            SymbolLookup fallbackLookup = name -> switch (name) {
-                    case "printf" -> Optional.of(MemoryAccess.getAddressAtIndex(funcs, 0));
-                    case "vprintf" -> Optional.of(MemoryAccess.getAddressAtIndex(funcs, 1));
-                    case "gmtime" -> Optional.of(MemoryAccess.getAddressAtIndex(funcs, 2));
-                    default -> Optional.empty();
-                };
-
-            LOOKUP = name -> CLinker.systemLookup().lookup(name).or(() -> fallbackLookup.lookup(name));
-        }
+        static final SymbolLookup LOOKUP = CLinker.systemLookup();
 
         final static MethodHandle strcat = abi.downcallHandle(LOOKUP.lookup("strcat").get(),
                 MethodType.methodType(MemoryAddress.class, MemoryAddress.class, MemoryAddress.class),
