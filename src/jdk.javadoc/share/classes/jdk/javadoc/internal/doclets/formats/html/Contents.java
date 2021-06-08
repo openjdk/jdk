@@ -51,7 +51,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
  */
 public class Contents {
 
-    public final Content allClassesLabel;
     public final Content allClassesAndInterfacesLabel;
     public final Content allImplementedInterfacesLabel;
     public final Content allModulesLabel;
@@ -198,7 +197,6 @@ public class Contents {
     Contents(HtmlConfiguration configuration) {
         this.resources = configuration.getDocResources();
 
-        allClassesLabel = getNonBreakResource("doclet.All_Classes");
         this.allClassesAndInterfacesLabel = getContent("doclet.All_Classes_And_Interfaces");
         allImplementedInterfacesLabel = getContent("doclet.All_Implemented_Interfaces");
         allModulesLabel = getNonBreakResource("doclet.All_Modules");
