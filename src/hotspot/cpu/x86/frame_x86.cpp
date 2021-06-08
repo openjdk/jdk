@@ -124,7 +124,22 @@ bool frame::safe_for_sender(JavaThread *thread) {
       sender_sp = (intptr_t*) addr_at(sender_sp_offset);
       sender_unextended_sp = (intptr_t*) this->fp()[interpreter_frame_sender_sp_offset];
       saved_fp = (intptr_t*) this->fp()[link_offset];
+    } else if (StubRoutines::is_stub_code(pc())) {
+      // fp must be safe
+      if (!thread->is_in_full_stack_checked((address)this->fp())) {
+        return false;
+      }
 
+      sender_sp = (intptr_t*) addr_at(sender_sp_offset);
+      // Is sender_sp safe?
+      if (!thread->is_in_full_stack_checked((address)sender_sp)) {
+        return false;
+      }
+      sender_unextended_sp = sender_sp;
+      // On Intel the return_address is always the word on the stack
+      sender_pc = (address) this->fp()[return_addr_offset];
+      // Note: frame::sender_sp_offset is only valid for compiled frame
+      saved_fp = (intptr_t*) this->fp()[link_offset];
     } else {
       // must be some sort of compiled/runtime frame
       // fp does not have to be safe (although it could be check for c1?)
@@ -469,17 +484,33 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
 frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
 
-  // frame owned by optimizing compiler
-  assert(_cb->frame_size() >= 0, "must have non-zero frame size");
-  intptr_t* sender_sp = unextended_sp() + _cb->frame_size();
-  intptr_t* unextended_sp = sender_sp;
+  intptr_t* sender_sp;
+  intptr_t* sender_unextended_sp;
+  address sender_pc;
+  intptr_t** saved_fp_addr;
+  if (StubRoutines::is_stub_code(pc())) {
+    sender_sp = (intptr_t*) addr_at(sender_sp_offset);
+    sender_unextended_sp = sender_sp;
 
-  // On Intel the return_address is always the word on the stack
-  address sender_pc = (address) *(sender_sp-1);
+    // On Intel the return_address is always the word on the stack
+    sender_pc = (address) fp()[return_addr_offset];
 
-  // This is the saved value of EBP which may or may not really be an FP.
-  // It is only an FP if the sender is an interpreter frame (or C1?).
-  intptr_t** saved_fp_addr = (intptr_t**) (sender_sp - frame::sender_sp_offset);
+    // This is the saved value of EBP which may or may not really be an FP.
+    // It is only an FP if the sender is an interpreter frame (or C1?).
+    saved_fp_addr = (intptr_t**) addr_at(link_offset);
+  } else {
+    // frame owned by optimizing compiler
+    assert(_cb->frame_size() >= 0, "must have non-zero frame size");
+    sender_sp = unextended_sp() + _cb->frame_size();
+    sender_unextended_sp = sender_sp;
+
+    // On Intel the return_address is always the word on the stack
+    sender_pc = (address) *(sender_sp-1);
+
+    // This is the saved value of EBP which may or may not really be an FP.
+    // It is only an FP if the sender is an interpreter frame (or C1?).
+    saved_fp_addr = (intptr_t**) (sender_sp - frame::sender_sp_offset);
+  }
 
   if (map->update_map()) {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
@@ -497,7 +528,7 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   }
 
   assert(sender_sp != sp(), "must have changed");
-  return frame(sender_sp, unextended_sp, *saved_fp_addr, sender_pc);
+  return frame(sender_sp, sender_unextended_sp, *saved_fp_addr, sender_pc);
 }
 
 
