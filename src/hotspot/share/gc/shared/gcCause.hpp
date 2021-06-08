@@ -73,6 +73,7 @@ class GCCause : public AllStatic {
     _g1_inc_collection_pause,
     _g1_humongous_allocation,
     _g1_periodic_collection,
+    _g1_preventive_collection,
 
     _dcmd_gc_run,
 
