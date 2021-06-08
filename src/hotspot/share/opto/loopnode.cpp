@@ -832,8 +832,6 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
   Node_List range_checks;
   iters_limit = extract_long_range_checks(loop, stride_con, iters_limit, phi, range_checks);
 
-  Node* long_stride = head->stride();
-
   // Clone the control flow of the loop to build an outer loop
   Node* outer_back_branch = back_control->clone();
   Node* outer_exit_test = new IfNode(exit_test->in(0), exit_test->in(1), exit_test->_prob, exit_test->_fcnt);
@@ -985,7 +983,7 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
   //     exit_branch: break;  //in(0) := outer_exit_test
   // }
 
-  transform_long_range_checks(stride_con, range_checks, outer_phi, inner_iters_actual_int,
+  transform_long_range_checks(checked_cast<int>(stride_con), range_checks, outer_phi, inner_iters_actual_int,
                               inner_phi, iv_add, inner_head);
   // Peel one iteration of the loop and use the safepoint at the end
   // of the peeled iteration to insert empty predicates. If no well
@@ -1020,12 +1018,40 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
   return true;
 }
 
-void PhaseIdealLoop::transform_long_range_checks(jlong stride_con, const Node_List &range_checks, Node* outer_phi,
+int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
+                                              Node_List& range_checks) {
+  const jlong min_iters = 2;
+  jlong reduced_iters_limit = iters_limit;
+  jlong original_iters_limit = iters_limit;
+  for (uint i = 0; i < loop->_body.size(); i++) {
+    Node* c = loop->_body.at(i);
+    if (c->is_IfProj() && c->in(0)->is_RangeCheck()) {
+      CallStaticJavaNode* call = c->as_IfProj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+      if (call != NULL) {
+        Node* range = NULL;
+        Node* offset = NULL;
+        jlong scale = 0;
+        RangeCheckNode* rc = c->in(0)->as_RangeCheck();
+        if (loop->is_range_check_if(rc, this, T_LONG, phi, range, offset, scale) &&
+            loop->is_invariant(range) && loop->is_invariant(offset)) {
+          if (original_iters_limit / ABS(scale * stride_con) >= min_iters) {
+            reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
+            range_checks.push(c);
+          }
+        }
+      }
+    }
+  }
+
+  return checked_cast<int>(reduced_iters_limit);
+}
+
+void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List &range_checks, Node* outer_phi,
                                                  Node* inner_iters_actual_int, Node* inner_phi,
                                                  Node* iv_add, LoopNode* inner_head) {
   Node* int_zero = _igvn.intcon(0);
   set_ctrl(int_zero, C->root());
-  Node* int_stride = _igvn.intcon(checked_cast<int>(stride_con));
+  Node* int_stride = _igvn.intcon(stride_con);
   set_ctrl(int_stride, C->root());
 
   // A range check is: 0 <=? scale * outer_iv + offset <? range
@@ -1127,7 +1153,7 @@ void PhaseIdealLoop::transform_long_range_checks(jlong stride_con, const Node_Li
     lower = new AddLNode(lower, offset);
     register_new_node(lower, entry_control);
 
-    if (scale > 0 != stride_con > 0) {
+    if ((scale > 0) != (stride_con > 0)) {
       swap(lower, upper);
     }
 
@@ -1198,38 +1224,6 @@ void PhaseIdealLoop::transform_long_range_checks(jlong stride_con, const Node_Li
 
     _igvn.replace_input_of(rc_bol, 1, new_rc_cmp);
   }
-}
-
-int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
-                                              Node_List& range_checks) {
-  const jlong min_iters = 2;
-  jlong iters_limit_as_long = iters_limit;
-  jlong max_scale = 1;
-  for (uint i = 0; i < loop->_body.size(); i++) {
-    Node* c = loop->_body.at(i);
-    if (c->is_IfProj() && c->in(0)->is_RangeCheck()) {
-      CallStaticJavaNode* call = c->as_IfProj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
-      if (call != NULL) {
-        Node* range = NULL;
-        Node* offset = NULL;
-        jlong scale = 0;
-        RangeCheckNode* rc = c->in(0)->as_RangeCheck();
-        if (loop->is_range_check_if(rc, this, T_LONG, phi, range, offset, scale) &&
-            loop->is_invariant(range) && loop->is_invariant(offset)) {
-          if (iters_limit_as_long / ABS(scale * stride_con) > min_iters) {
-            max_scale = MAX2(max_scale, scale);
-            range_checks.push(c);
-          }
-        }
-      }
-    }
-  }
-
-  iters_limit_as_long = iters_limit_as_long / max_scale;
-  assert(iters_limit_as_long >= min_iters, "too few iterations");
-  iters_limit = checked_cast<int>(iters_limit_as_long);
-
-  return iters_limit;
 }
 
 LoopNode* PhaseIdealLoop::create_inner_head(IdealLoopTree* loop, LongCountedLoopNode* head,
@@ -4220,7 +4214,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
       // Because RCE opportunities can be masked by split_thru_phi,
       // look for RCE candidates and inhibit split_thru_phi
       // on just their loop-phi's for this pass of loop opts
-      if (SplitIfBlocks && do_split_ifs && lpt->may_have_range_check(this)) {
+      if (SplitIfBlocks && do_split_ifs && lpt->policy_range_check(this, true)) {
         lpt->_rce_candidate = 1; // = true
       }
     }

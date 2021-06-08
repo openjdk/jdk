@@ -732,8 +732,7 @@ public:
   // Return TRUE or FALSE if the loop should be range-check-eliminated.
   // Gather a list of IF tests that are dominated by iteration splitting;
   // also gather the end of the first split and the start of the 2nd split.
-  bool policy_range_check(PhaseIdealLoop *phase) const;
-  bool may_have_range_check(PhaseIdealLoop *phase) const;
+  bool policy_range_check(PhaseIdealLoop* phase, bool provisional) const;
 
   // Return TRUE if "iff" is a range check.
   bool is_range_check_if(IfNode* iff, PhaseIdealLoop* phase, Invariance& invar) const;
@@ -1629,7 +1628,7 @@ public:
   int extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
                                       Node_List &range_checks);
 
-  void transform_long_range_checks(jlong stride_con, const Node_List &range_checks, Node* outer_phi,
+  void transform_long_range_checks(int stride_con, const Node_List &range_checks, Node* outer_phi,
                                    Node* inner_iters_actual_int, Node* inner_phi,
                                    Node* iv_add, LoopNode* inner_head);
 

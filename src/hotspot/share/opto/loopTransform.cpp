@@ -1050,9 +1050,18 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
   }
 }
 
-// Slightly different from IdealLoopTree::policy_range_check(): doesn't test for a loop invariant range as hoisting
-// may not have happened yet.
-bool IdealLoopTree::may_have_range_check(PhaseIdealLoop *phase) const {
+
+//------------------------------policy_range_check-----------------------------
+// Return TRUE or FALSE if the loop should be range-check-eliminated or not.
+// When TRUE, the estimated node budget is also requested.
+//
+// We will actually perform iteration-splitting, a more powerful form of RCE.
+bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional) const {
+  if (!provisional && !RangeCheckElimination) return false;
+
+  // If nodes are depleted, some transform has miscalculated its needs.
+  assert(provisional || !phase->exceeding_node_budget(), "sanity");
+
   if (_head->is_CountedLoop()) {
     CountedLoopNode *cl = _head->as_CountedLoop();
     // If we unrolled  with no intention of doing RCE and we  later changed our
@@ -1063,72 +1072,13 @@ bool IdealLoopTree::may_have_range_check(PhaseIdealLoop *phase) const {
     // check for vectorized loops, some opts are no longer needed
     // RCE needs pre/main/post loops. Don't apply it on a single iteration loop.
     if (cl->is_unroll_only() || (cl->is_normal_loop() && cl->trip_count() == 1)) return false;
+  } else {
+    assert(provisional, "no long counted loop expected");
   }
+
   BaseCountedLoopNode* cl = _head->as_BaseCountedLoop();
   Node *trip_counter = cl->phi();
   BasicType bt = cl->bt();
-
-  // Check loop body for tests of trip-counter plus loop-invariant
-  for (uint i = 0; i < _body.size(); i++) {
-    Node *iff = _body[i];
-    if (iff->Opcode() == Op_If ||
-        iff->Opcode() == Op_RangeCheck) { // Test?
-
-      // Comparing trip+off vs limit
-      Node *bol = iff->in(1);
-      if (bol->req() != 2) {
-        continue; // dead constant test
-      }
-      if (!bol->is_Bool()) {
-        assert(bol->Opcode() == Op_Conv2B, "predicate check only");
-        continue;
-      }
-      if (bol->as_Bool()->_test._test == BoolTest::ne) {
-        continue; // not RC
-      }
-      Node *cmp = bol->in(1);
-
-      // Try to pattern match with either cmp inputs, do not check whether one of the inputs is loop independent as it
-      // may not have had a change to be hoisted yet.
-      if (!phase->is_scaled_iv_plus_offset(cmp->in(1), trip_counter, NULL, NULL, bt) &&
-          !phase->is_scaled_iv_plus_offset(cmp->in(2), trip_counter, NULL, NULL, bt)) {
-        continue;
-      }
-      // Found a test like 'trip+off vs limit'. Test is an IfNode, has two (2)
-      // projections. If BOTH are in the loop we need loop unswitching instead
-      // of iteration splitting.
-      if (is_loop_exit(iff)) {
-        // Found valid reason to split iterations
-        return true;
-      }
-    } // End of is IF
-  }
-
-  return false;
-}
-
-
-//------------------------------policy_range_check-----------------------------
-// Return TRUE or FALSE if the loop should be range-check-eliminated or not.
-// When TRUE, the estimated node budget is also requested.
-//
-// We will actually perform iteration-splitting, a more powerful form of RCE.
-bool IdealLoopTree::policy_range_check(PhaseIdealLoop *phase) const {
-  if (!RangeCheckElimination) return false;
-
-  // If nodes are depleted, some transform has miscalculated its needs.
-  assert(!phase->exceeding_node_budget(), "sanity");
-
-  CountedLoopNode *cl = _head->as_CountedLoop();
-  // If we unrolled  with no intention of doing RCE and we  later changed our
-  // minds, we got no pre-loop.  Either we need to make a new pre-loop, or we
-  // have to disallow RCE.
-  if (cl->is_main_no_pre_loop()) return false; // Disallowed for now.
-  Node *trip_counter = cl->phi();
-
-  // check for vectorized loops, some opts are no longer needed
-  // RCE needs pre/main/post loops. Don't apply it on a single iteration loop.
-  if (cl->is_unroll_only() || (cl->is_normal_loop() && cl->trip_count() == 1)) return false;
 
   // Check loop body for tests of trip-counter plus loop-invariant vs
   // loop-invariant.
@@ -1153,22 +1103,32 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop *phase) const {
       Node *rc_exp = cmp->in(1);
       Node *limit = cmp->in(2);
 
-      Node *limit_c = phase->get_ctrl(limit);
-      if (limit_c == phase->C->top()) {
-        return false;           // Found dead test on live IF?  No RCE!
-      }
-      if (is_member(phase->get_loop(limit_c))) {
-        // Compare might have operands swapped; commute them
-        rc_exp = cmp->in(2);
-        limit  = cmp->in(1);
-        limit_c = phase->get_ctrl(limit);
-        if (is_member(phase->get_loop(limit_c))) {
-          continue;             // Both inputs are loop varying; cannot RCE
+      if (provisional) {
+        // Try to pattern match with either cmp inputs, do not check
+        // whether one of the inputs is loop independent as it may not
+        // have had a chance to be hoisted yet.
+        if (!phase->is_scaled_iv_plus_offset(cmp->in(1), trip_counter, NULL, NULL, bt) &&
+            !phase->is_scaled_iv_plus_offset(cmp->in(2), trip_counter, NULL, NULL, bt)) {
+          continue;
         }
-      }
-
-      if (!phase->is_scaled_iv_plus_offset(rc_exp, trip_counter, NULL, NULL)) {
-        continue;
+      } else {
+        Node *limit_c = phase->get_ctrl(limit);
+        if (limit_c == phase->C->top()) {
+          return false;           // Found dead test on live IF?  No RCE!
+        }
+        if (is_member(phase->get_loop(limit_c))) {
+          // Compare might have operands swapped; commute them
+          rc_exp = cmp->in(2);
+          limit  = cmp->in(1);
+          limit_c = phase->get_ctrl(limit);
+          if (is_member(phase->get_loop(limit_c))) {
+            continue;             // Both inputs are loop varying; cannot RCE
+          }
+        }
+        
+        if (!phase->is_scaled_iv_plus_offset(rc_exp, trip_counter, NULL, NULL)) {
+          continue;
+        }
       }
       // Found a test like 'trip+off vs limit'. Test is an IfNode, has two (2)
       // projections. If BOTH are in the loop we need loop unswitching instead
@@ -1176,7 +1136,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop *phase) const {
       if (is_loop_exit(iff)) {
         // Found valid reason to split iterations (if there is room).
         // NOTE: Usually a gross overestimate.
-        return phase->may_require_nodes(est_loop_clone_sz(2));
+        return provisional || phase->may_require_nodes(est_loop_clone_sz(2));
       }
     } // End of is IF
   }
@@ -2517,11 +2477,10 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType
     if (exp->in(1)->uncast() == iv && exp->in(2)->is_Con()) {
       if (p_scale != NULL) {
         jint shift_amount = exp->in(2)->get_int();
-        if (shift_amount == 31 && bt == T_INT) {
-          // min_jint = ((jint)1) << 31 which is different from (jint)(((jlong)1) << 31)
-          *p_scale = min_jint;
-        } else {
-          *p_scale = ((jlong)1) << shift_amount;
+        if (bt == T_INT) {
+          *p_scale = java_shift_left(1, shift_amount);
+        } else if (bt == T_LONG) {
+          *p_scale = java_shift_left((jlong)1, shift_amount);
         }
       }
       return true;
@@ -3440,7 +3399,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   // unrolling), plus any needed for RCE purposes.
 
   bool should_unroll = policy_unroll(phase);
-  bool should_rce    = policy_range_check(phase);
+  bool should_rce    = policy_range_check(phase, false);
 
   // If not RCE'ing (iteration splitting), then we do not need a pre-loop.
   // We may still need to peel an initial iteration but we will not

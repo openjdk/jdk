@@ -792,9 +792,7 @@ ConLNode* PhaseTransform::longcon(jlong l) {
 }
 ConNode* PhaseTransform::integercon(jlong l, BasicType bt) {
   if (bt == T_INT) {
-    jint int_con = (jint)l;
-    assert(((long)int_con) == l, "not an int");
-    return intcon(int_con);
+    return intcon(checked_cast<jint>(l));
   }
   assert(bt == T_LONG, "not an integer");
   return longcon(l);
