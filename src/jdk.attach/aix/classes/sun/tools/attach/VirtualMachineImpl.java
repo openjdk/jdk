@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -72,6 +72,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         socket_path = socket_file.getPath();
         if (!socket_file.exists()) {
             File f = createAttachFile(pid);
+            // Keep a canonical version of File, to delete, in case target process ends and /proc link has gone:
+            File f2 = f.getCanonicalFile();
             try {
                 sendQuitTo(pid);
 
@@ -101,7 +103,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                                       time_spend));
                 }
             } finally {
-                f.delete();
+                f2.delete();
             }
         }
 
@@ -275,7 +277,6 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         String path = "/proc/" + pid + "/cwd/" + fn;
         File f = new File(path);
         try {
-            f = f.getCanonicalFile();
             f.createNewFile();
         } catch (IOException x) {
             f = new File(tmpdir, fn);
