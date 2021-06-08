@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdLoadBarrier.inline.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdKlassQueue.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrEpochQueue.inline.hpp"
-#include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 
@@ -69,12 +67,4 @@ void JfrTraceIdLoadBarrier::enqueue(const Klass* klass) {
 void JfrTraceIdLoadBarrier::do_klasses(klass_callback callback, bool previous_epoch) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   klass_queue().iterate(callback, previous_epoch);
-}
-
-traceid JfrTraceIdLoadBarrier::load(jclass jc) {
-  assert(jc != NULL, "invariant");
-  assert(JavaThread::current()->thread_state() == _thread_in_vm, "invariant");
-  const oop my_oop = JNIHandles::resolve(jc);
-  assert(my_oop != NULL, "invariant");
-  return load(java_lang_Class::as_Klass(my_oop));
 }

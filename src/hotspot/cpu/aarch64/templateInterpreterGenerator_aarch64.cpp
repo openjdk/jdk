@@ -45,6 +45,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
@@ -501,7 +502,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
 #if INCLUDE_JVMCI
   // Check if we need to take lock at entry of synchronized method.  This can
   // only occur on method entry so emit it only for vtos with step 0.
-  if ((EnableJVMCI || UseAOT) && state == vtos && step == 0) {
+  if (EnableJVMCI && state == vtos && step == 0) {
     Label L;
     __ ldrb(rscratch1, Address(rthread, JavaThread::pending_monitorenter_offset()));
     __ cbz(rscratch1, L);
@@ -589,82 +590,31 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
 //
 // rmethod: method
 //
-void TemplateInterpreterGenerator::generate_counter_incr(
-        Label* overflow,
-        Label* profile_method,
-        Label* profile_method_continue) {
+void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
   Label done;
   // Note: In tiered we increment either counters in Method* or in MDO depending if we're profiling or not.
-  if (TieredCompilation) {
-    int increment = InvocationCounter::count_increment;
-    Label no_mdo;
-    if (ProfileInterpreter) {
-      // Are we profiling?
-      __ ldr(r0, Address(rmethod, Method::method_data_offset()));
-      __ cbz(r0, no_mdo);
-      // Increment counter in the MDO
-      const Address mdo_invocation_counter(r0, in_bytes(MethodData::invocation_counter_offset()) +
-                                                in_bytes(InvocationCounter::counter_offset()));
-      const Address mask(r0, in_bytes(MethodData::invoke_mask_offset()));
-      __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, rscratch1, rscratch2, false, Assembler::EQ, overflow);
-      __ b(done);
-    }
-    __ bind(no_mdo);
-    // Increment counter in MethodCounters
-    const Address invocation_counter(rscratch2,
-                  MethodCounters::invocation_counter_offset() +
-                  InvocationCounter::counter_offset());
-    __ get_method_counters(rmethod, rscratch2, done);
-    const Address mask(rscratch2, in_bytes(MethodCounters::invoke_mask_offset()));
-    __ increment_mask_and_jump(invocation_counter, increment, mask, rscratch1, r1, false, Assembler::EQ, overflow);
-    __ bind(done);
-  } else { // not TieredCompilation
-    const Address backedge_counter(rscratch2,
-                  MethodCounters::backedge_counter_offset() +
-                  InvocationCounter::counter_offset());
-    const Address invocation_counter(rscratch2,
-                  MethodCounters::invocation_counter_offset() +
-                  InvocationCounter::counter_offset());
-
-    __ get_method_counters(rmethod, rscratch2, done);
-
-    if (ProfileInterpreter) { // %%% Merge this into MethodData*
-      __ ldrw(r1, Address(rscratch2, MethodCounters::interpreter_invocation_counter_offset()));
-      __ addw(r1, r1, 1);
-      __ strw(r1, Address(rscratch2, MethodCounters::interpreter_invocation_counter_offset()));
-    }
-    // Update standard invocation counters
-    __ ldrw(r1, invocation_counter);
-    __ ldrw(r0, backedge_counter);
-
-    __ addw(r1, r1, InvocationCounter::count_increment);
-    __ andw(r0, r0, InvocationCounter::count_mask_value);
-
-    __ strw(r1, invocation_counter);
-    __ addw(r0, r0, r1);                // add both counters
-
-    // profile_method is non-null only for interpreted method so
-    // profile_method != NULL == !native_call
-
-    if (ProfileInterpreter && profile_method != NULL) {
-      // Test to see if we should create a method data oop
-      __ ldr(rscratch2, Address(rmethod, Method::method_counters_offset()));
-      __ ldrw(rscratch2, Address(rscratch2, in_bytes(MethodCounters::interpreter_profile_limit_offset())));
-      __ cmpw(r0, rscratch2);
-      __ br(Assembler::LT, *profile_method_continue);
-
-      // if no method data exists, go to profile_method
-      __ test_method_data_pointer(rscratch2, *profile_method);
-    }
-
-    {
-      __ ldr(rscratch2, Address(rmethod, Method::method_counters_offset()));
-      __ ldrw(rscratch2, Address(rscratch2, in_bytes(MethodCounters::interpreter_invocation_limit_offset())));
-      __ cmpw(r0, rscratch2);
-      __ br(Assembler::HS, *overflow);
-    }
-    __ bind(done);
+  int increment = InvocationCounter::count_increment;
+  Label no_mdo;
+  if (ProfileInterpreter) {
+    // Are we profiling?
+    __ ldr(r0, Address(rmethod, Method::method_data_offset()));
+    __ cbz(r0, no_mdo);
+    // Increment counter in the MDO
+    const Address mdo_invocation_counter(r0, in_bytes(MethodData::invocation_counter_offset()) +
+                                              in_bytes(InvocationCounter::counter_offset()));
+    const Address mask(r0, in_bytes(MethodData::invoke_mask_offset()));
+    __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, rscratch1, rscratch2, false, Assembler::EQ, overflow);
+    __ b(done);
   }
+  __ bind(no_mdo);
+  // Increment counter in MethodCounters
+  const Address invocation_counter(rscratch2,
+                MethodCounters::invocation_counter_offset() +
+                InvocationCounter::counter_offset());
+  __ get_method_counters(rmethod, rscratch2, done);
+  const Address mask(rscratch2, in_bytes(MethodCounters::invoke_mask_offset()));
+  __ increment_mask_and_jump(invocation_counter, increment, mask, rscratch1, r1, false, Assembler::EQ, overflow);
+  __ bind(done);
 }
 
 void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue) {
@@ -825,7 +775,6 @@ void TemplateInterpreterGenerator::lock_method() {
 #endif // ASSERT
 
     __ bind(done);
-    __ resolve(IS_NOT_NULL, r0);
   }
 
   // add space for monitor & lock
@@ -1051,7 +1000,6 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
       __ ldrw(crc,   Address(esp, 4*wordSize)); // Initial CRC
     } else {
       __ ldr(buf, Address(esp, 2*wordSize)); // byte[] array
-      __ resolve(IS_NOT_NULL | ACCESS_READ, buf);
       __ add(buf, buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
       __ ldrw(off, Address(esp, wordSize)); // offset
       __ add(buf, buf, off); // + offset
@@ -1096,9 +1044,6 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
     __ ldrw(off, Address(esp, wordSize)); // int offset
     __ sub(len, end, off);
     __ ldr(buf, Address(esp, 2*wordSize)); // byte[] buf | long buf
-    if (kind == Interpreter::java_util_zip_CRC32C_updateBytes) {
-      __ resolve(IS_NOT_NULL | ACCESS_READ, buf);
-    }
     __ add(buf, buf, off); // + offset
     if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
       __ ldrw(crc, Address(esp, 4*wordSize)); // long crc
@@ -1205,7 +1150,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // increment invocation count & check for overflow
   Label invocation_counter_overflow;
   if (inc_counter) {
-    generate_counter_incr(&invocation_counter_overflow, NULL, NULL);
+    generate_counter_incr(&invocation_counter_overflow);
   }
 
   Label continue_after_compile;
@@ -1587,26 +1532,29 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   __ add(rlocals, esp, r2, ext::uxtx, 3);
   __ sub(rlocals, rlocals, wordSize);
 
-  // Make room for locals
-  __ sub(rscratch1, esp, r3, ext::uxtx, 3);
-
-  // Padding between locals and fixed part of activation frame to ensure
-  // SP is always 16-byte aligned.
-  __ andr(sp, rscratch1, -16);
+  __ mov(rscratch1, esp);
 
   // r3 - # of additional locals
   // allocate space for locals
   // explicitly initialize locals
+  // Initializing memory allocated for locals in the same direction as
+  // the stack grows to ensure page initialization order according
+  // to windows-aarch64 stack page growth requirement (see
+  // https://docs.microsoft.com/en-us/cpp/build/arm64-windows-abi-conventions?view=msvc-160#stack)
   {
     Label exit, loop;
     __ ands(zr, r3, r3);
     __ br(Assembler::LE, exit); // do nothing if r3 <= 0
     __ bind(loop);
-    __ str(zr, Address(__ post(rscratch1, wordSize)));
+    __ str(zr, Address(__ pre(rscratch1, -wordSize)));
     __ sub(r3, r3, 1); // until everything initialized
     __ cbnz(r3, loop);
     __ bind(exit);
   }
+
+  // Padding between locals and fixed part of activation frame to ensure
+  // SP is always 16-byte aligned.
+  __ andr(sp, rscratch1, -16);
 
   // And the base dispatch table
   __ get_dispatch();
@@ -1649,15 +1597,8 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // increment invocation count & check for overflow
   Label invocation_counter_overflow;
-  Label profile_method;
-  Label profile_method_continue;
   if (inc_counter) {
-    generate_counter_incr(&invocation_counter_overflow,
-                          &profile_method,
-                          &profile_method_continue);
-    if (ProfileInterpreter) {
-      __ bind(profile_method_continue);
-    }
+    generate_counter_incr(&invocation_counter_overflow);
   }
 
   Label continue_after_compile;
@@ -1709,15 +1650,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // invocation counter overflow
   if (inc_counter) {
-    if (ProfileInterpreter) {
-      // We have decided to profile this method in the interpreter
-      __ bind(profile_method);
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
-      __ set_method_data_pointer_for_bcp();
-      // don't think we need this
-      __ get_method(r1);
-      __ b(profile_method_continue);
-    }
     // Handle overflow of counter and compile method
     __ bind(invocation_counter_overflow);
     generate_counter_overflow(continue_after_compile);

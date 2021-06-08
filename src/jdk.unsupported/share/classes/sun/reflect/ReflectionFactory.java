@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.security.PrivilegedAction;
 public class ReflectionFactory {
 
     private static final ReflectionFactory soleInstance = new ReflectionFactory();
+    @SuppressWarnings("removal")
     private static final jdk.internal.reflect.ReflectionFactory delegate = AccessController.doPrivileged(
             new PrivilegedAction<jdk.internal.reflect.ReflectionFactory>() {
                 public jdk.internal.reflect.ReflectionFactory run() {
@@ -77,6 +78,7 @@ public class ReflectionFactory {
      *         the RuntimePermission "reflectionFactoryAccess".
      */
     public static ReflectionFactory getReflectionFactory() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(REFLECTION_FACTORY_ACCESS_PERM);

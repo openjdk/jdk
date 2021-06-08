@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/signature.hpp"
 
 class OopMapCacheEntry: private InterpreterOopMap {
@@ -89,7 +90,7 @@ class OopMapForCacheEntry: public GenerateOopMap {
   OopMapForCacheEntry(const methodHandle& method, int bci, OopMapCacheEntry *entry);
 
   // Computes stack map for (method,bci) and initialize entry
-  void compute_map(TRAPS);
+  bool compute_map(Thread* current);
   int  size();
 };
 
@@ -101,16 +102,20 @@ OopMapForCacheEntry::OopMapForCacheEntry(const methodHandle& method, int bci, Oo
 }
 
 
-void OopMapForCacheEntry::compute_map(TRAPS) {
+bool OopMapForCacheEntry::compute_map(Thread* current) {
   assert(!method()->is_native(), "cannot compute oop map for native methods");
   // First check if it is a method where the stackmap is always empty
   if (method()->code_size() == 0 || method()->max_locals() + method()->max_stack() == 0) {
     _entry->set_mask_size(0);
   } else {
     ResourceMark rm;
-    GenerateOopMap::compute_map(CATCH);
+    if (!GenerateOopMap::compute_map(current)) {
+      fatal("Unrecoverable verification or out-of-memory error");
+      return false;
+    }
     result_for_basicblock(_bci);
   }
+  return true;
 }
 
 
@@ -242,6 +247,8 @@ class MaskFillerForNative: public NativeSignatureIterator {
   }
 
  public:
+  void pass_byte()                               { /* ignore */ }
+  void pass_short()                              { /* ignore */ }
   void pass_int()                                { /* ignore */ }
   void pass_long()                               { /* ignore */ }
   void pass_float()                              { /* ignore */ }
@@ -330,9 +337,10 @@ void OopMapCacheEntry::fill(const methodHandle& method, int bci) {
     // extra oop following the parameters (the mirror for static native methods).
     fill_for_native(method);
   } else {
-    EXCEPTION_MARK;
     OopMapForCacheEntry gen(method, bci, this);
-    gen.compute_map(CATCH);
+    if (!gen.compute_map(Thread::current())) {
+      fatal("Unrecoverable verification or out-of-memory error");
+    }
   }
 }
 

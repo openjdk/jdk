@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_BLOCKOFFSETTABLE_INLINE_HPP
 
 #include "gc/shared/blockOffsetTable.hpp"
+
 #include "gc/shared/space.hpp"
 #include "runtime/safepoint.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.TemplateManager.O_GENERATE;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
-import sun.security.util.Debug;
 import sun.security.util.DerValue;
 import sun.security.util.Length;
 import sun.security.util.ECUtil;
@@ -72,9 +71,9 @@ abstract class P11Key implements Key, Length {
 
     private static final long serialVersionUID = -2575874101938349339L;
 
-    private final static String PUBLIC = "public";
-    private final static String PRIVATE = "private";
-    private final static String SECRET = "secret";
+    private static final String PUBLIC = "public";
+    private static final String PRIVATE = "private";
+    private static final String SECRET = "secret";
 
     // type of key, one of (PUBLIC, PRIVATE, SECRET)
     final String type;
@@ -107,6 +106,7 @@ abstract class P11Key implements Key, Length {
         PrivilegedAction<String> getKeyExtractionProp =
                 () -> System.getProperty(
                         "sun.security.pkcs11.disableKeyExtraction", "false");
+        @SuppressWarnings("removal")
         String disableKeyExtraction =
                 AccessController.doPrivileged(getKeyExtractionProp);
         DISABLE_NATIVE_KEYS_EXTRACTION =
@@ -141,8 +141,8 @@ abstract class P11Key implements Key, Length {
                 && tokenLabel[2] == 'S');
         boolean extractKeyInfo = (!DISABLE_NATIVE_KEYS_EXTRACTION && isNSS &&
                 extractable && !tokenObject);
-        this.keyIDHolder = new NativeKeyHolder(this, keyID, session, extractKeyInfo,
-            tokenObject);
+        this.keyIDHolder = new NativeKeyHolder(this, keyID, session,
+                extractKeyInfo, tokenObject);
     }
 
     public long getKeyID() {
@@ -163,6 +163,18 @@ abstract class P11Key implements Key, Length {
     public final byte[] getEncoded() {
         byte[] b = getEncodedInternal();
         return (b == null) ? null : b.clone();
+    }
+
+    // Called by the NativeResourceCleaner at specified intervals
+    // See NativeResourceCleaner for more information
+    static boolean drainRefQueue() {
+        boolean found = false;
+        SessionKeyRef next;
+        while ((next = (SessionKeyRef) SessionKeyRef.refQueue.poll()) != null) {
+            found = true;
+            next.dispose();
+        }
+        return found;
     }
 
     abstract byte[] getEncodedInternal();
@@ -228,7 +240,7 @@ abstract class P11Key implements Key, Length {
             throw new NotSerializableException
                 ("Cannot serialize sensitive and unextractable keys");
         }
-        return new KeyRep(type, getAlgorithm(), format, getEncoded());
+        return new KeyRep(type, getAlgorithm(), format, getEncodedInternal());
     }
 
     public String toString() {
@@ -280,7 +292,7 @@ abstract class P11Key implements Key, Length {
         }
     }
 
-    private final static CK_ATTRIBUTE[] A0 = new CK_ATTRIBUTE[0];
+    private static final CK_ATTRIBUTE[] A0 = new CK_ATTRIBUTE[0];
 
     private static CK_ATTRIBUTE[] getAttributes(Session session, long keyID,
             CK_ATTRIBUTE[] knownAttributes, CK_ATTRIBUTE[] desiredAttributes) {
@@ -881,7 +893,7 @@ abstract class P11Key implements Key, Length {
             return params;
         }
         public int hashCode() {
-            if (token.isValid() == false) {
+            if (!token.isValid()) {
                 return 0;
             }
             fetchValues();
@@ -890,7 +902,7 @@ abstract class P11Key implements Key, Length {
         public boolean equals(Object obj) {
             if (this == obj) return true;
             // equals() should never throw exceptions
-            if (token.isValid() == false) {
+            if (!token.isValid()) {
                 return false;
             }
             if (!(obj instanceof DHPrivateKey)) {
@@ -1128,7 +1140,6 @@ abstract class P11Key implements Key, Length {
         }
     }
 }
-
 final class NativeKeyHolder {
 
     private static long nativeKeyWrapperKeyID = 0;
@@ -1253,6 +1264,7 @@ final class NativeKeyHolder {
             this.ref = new SessionKeyRef(p11Key, keyID, wrapperKeyUsed,
                     keySession);
         }
+
         this.nativeKeyInfo = ((ki == null || ki.length == 0)? null : ki);
     }
 
@@ -1326,24 +1338,9 @@ final class NativeKeyHolder {
  * still use these keys during finalization such as SSLSocket.
  */
 final class SessionKeyRef extends PhantomReference<P11Key> {
-    private static ReferenceQueue<P11Key> refQueue =
-        new ReferenceQueue<P11Key>();
+    static ReferenceQueue<P11Key> refQueue = new ReferenceQueue<>();
     private static Set<SessionKeyRef> refSet =
-        Collections.synchronizedSet(new HashSet<SessionKeyRef>());
-
-    static ReferenceQueue<P11Key> referenceQueue() {
-        return refQueue;
-    }
-
-    private static void drainRefQueueBounded() {
-        while (true) {
-            SessionKeyRef next = (SessionKeyRef) refQueue.poll();
-            if (next == null) {
-                break;
-            }
-            next.dispose();
-        }
-    }
+        Collections.synchronizedSet(new HashSet<>());
 
     // handle to the native key and the session it is generated under
     private long keyID;
@@ -1354,13 +1351,13 @@ final class SessionKeyRef extends PhantomReference<P11Key> {
             Session session) {
         super(p11Key, refQueue);
         if (session == null) {
-            throw new ProviderException("key must be associated with a session");
+            throw new ProviderException
+                    ("key must be associated with a session");
         }
         registerNativeKey(keyID, session);
         this.wrapperKeyUsed = wrapperKeyUsed;
 
         refSet.add(this);
-        drainRefQueueBounded();
     }
 
     void registerNativeKey(long newKeyID, Session newSession) {

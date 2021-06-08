@@ -54,7 +54,7 @@ import java.util.logging.LoggingPermission;
  * @summary tests that FileHandler can accept a long limit.
  * @modules java.logging/java.util.logging:open
  * @run main/othervm FileHandlerLongLimit UNSECURE
- * @run main/othervm FileHandlerLongLimit SECURE
+ * @run main/othervm -Djava.security.manager=allow FileHandlerLongLimit SECURE
  * @author danielfuchs
  * @key randomness
  */

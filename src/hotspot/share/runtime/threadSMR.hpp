@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,11 +162,13 @@ class ThreadsSMRSupport : AllStatic {
 // A fast list of JavaThreads.
 //
 class ThreadsList : public CHeapObj<mtThread> {
+  enum { THREADS_LIST_MAGIC = (int)(('T' << 24) | ('L' << 16) | ('S' << 8) | 'T') };
   friend class VMStructs;
   friend class SafeThreadsListPtr;  // for {dec,inc}_nested_handle_cnt() access
   friend class ThreadsSMRSupport;  // for _nested_handle_cnt, {add,remove}_thread(), {,set_}next_list() access
   friend class ThreadsListHandleTest;  // for _nested_handle_cnt access
 
+  uint _magic;
   const uint _length;
   ThreadsList* _next_list;
   JavaThread *const *const _threads;
@@ -203,6 +205,10 @@ public:
   int find_index_of_JavaThread(JavaThread* target);
   JavaThread* find_JavaThread_from_java_tid(jlong java_tid) const;
   bool includes(const JavaThread * const p) const;
+
+#ifdef ASSERT
+  static bool is_valid(ThreadsList* list) { return list->_magic == THREADS_LIST_MAGIC; }
+#endif
 };
 
 // An abstract safe ptr to a ThreadsList comprising either a stable hazard ptr

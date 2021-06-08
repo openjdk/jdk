@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.security.auth.x500.X500Principal;
 import sun.security.x509.X509CertImpl;
 
 /**
@@ -47,9 +48,11 @@ public class AnchorCertificates {
     private static final Debug debug = Debug.getInstance("certpath");
     private static final String HASH = "SHA-256";
     private static Set<String> certs = Collections.emptySet();
+    private static Set<X500Principal> certIssuers = Collections.emptySet();
 
     static  {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Void run() {
                 File f = new File(FilePaths.cacerts());
@@ -59,15 +62,16 @@ public class AnchorCertificates {
                     try (FileInputStream fis = new FileInputStream(f)) {
                         cacerts.load(fis, null);
                         certs = new HashSet<>();
+                        certIssuers = new HashSet<>();
                         Enumeration<String> list = cacerts.aliases();
-                        String alias;
                         while (list.hasMoreElements()) {
-                            alias = list.nextElement();
+                            String alias = list.nextElement();
                             // Check if this cert is labeled a trust anchor.
                             if (alias.contains(" [jdk")) {
                                 X509Certificate cert = (X509Certificate) cacerts
                                         .getCertificate(alias);
                                 certs.add(X509CertImpl.getFingerprint(HASH, cert));
+                                certIssuers.add(cert.getSubjectX500Principal());
                             }
                         }
                     }
@@ -83,10 +87,10 @@ public class AnchorCertificates {
     }
 
     /**
-     * Checks if a certificate is a trust anchor.
+     * Checks if a certificate is a JDK trust anchor.
      *
      * @param cert the certificate to check
-     * @return true if the certificate is trusted.
+     * @return true if the certificate is a JDK trust anchor
      */
     public static boolean contains(X509Certificate cert) {
         String key = X509CertImpl.getFingerprint(HASH, cert);
@@ -96,6 +100,16 @@ public class AnchorCertificates {
                     cert.getSubjectX500Principal());
         }
         return result;
+    }
+
+    /**
+     * Checks if a JDK trust anchor is the issuer of a certificate.
+     *
+     * @param cert the certificate to check
+     * @return true if the certificate is issued by a trust anchor
+     */
+    public static boolean issuerOf(X509Certificate cert) {
+        return certIssuers.contains(cert.getIssuerX500Principal());
     }
 
     private AnchorCertificates() {}

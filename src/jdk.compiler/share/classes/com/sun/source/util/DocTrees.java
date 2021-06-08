@@ -232,6 +232,7 @@ public abstract class DocTrees extends Trees {
      * <a href="https://www.w3.org/TR/html52/syntax.html#character-references">8.1.4. Character references</a>
      * in the HTML 5.2 specification.</p>
      *
+     * @param tree the tree containing the entity
      * @return a string containing the characters
      */
     public abstract String getCharacters(EntityTree tree);

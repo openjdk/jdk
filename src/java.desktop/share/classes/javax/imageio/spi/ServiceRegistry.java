@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -736,6 +736,7 @@ class SubRegistry {
     // No way to express heterogeneous map, we want
     // Map<Class<T>, T>, where T is ?
     final Map<Class<?>, Object> map = new HashMap<>();
+    @SuppressWarnings("removal")
     final Map<Class<?>, AccessControlContext> accMap = new HashMap<>();
 
     public SubRegistry(ServiceRegistry registry, Class<?> category) {
@@ -743,6 +744,7 @@ class SubRegistry {
         this.category = category;
     }
 
+    @SuppressWarnings("removal")
     public synchronized boolean registerServiceProvider(Object provider) {
         Object oprovider = map.get(provider.getClass());
         boolean present =  oprovider != null;
@@ -818,6 +820,7 @@ class SubRegistry {
         return (T)map.get(providerClass);
     }
 
+    @SuppressWarnings("removal")
     public synchronized void clear() {
         Iterator<Object> iter = map.values().iterator();
         while (iter.hasNext()) {

@@ -56,7 +56,6 @@ private:
   SubklassValue          _has_subklass;
   bool                   _has_nonstatic_fields;
   bool                   _has_nonstatic_concrete_methods;
-  bool                   _is_unsafe_anonymous;
   bool                   _is_hidden;
   bool                   _is_record;
 
@@ -153,16 +152,19 @@ public:
     return _has_finalizer; }
   bool                   has_subklass()   {
     assert(is_loaded(), "must be loaded");
-    if (_has_subklass == subklass_unknown ||
-        (_is_shared && _has_subklass == subklass_false)) {
-      if (flags().is_final()) {
-        return false;
-      } else {
-        return compute_shared_has_subklass();
-      }
+    // Ignore cached subklass_false case.
+    // It could be invalidated by concurrent class loading and
+    // can result in type paradoxes during compilation when
+    // a subclass is observed, but has_subklass() returns false.
+    if (_has_subklass == subklass_true) {
+      return true;
     }
-    return _has_subklass == subklass_true;
+    if (flags().is_final()) {
+      return false;
+    }
+    return compute_shared_has_subklass();
   }
+
   jint                   size_helper()  {
     return (Klass::layout_helper_size_in_bytes(layout_helper())
             >> LogHeapWordSize);
@@ -192,10 +194,6 @@ public:
   bool has_nonstatic_concrete_methods()  {
     assert(is_loaded(), "must be loaded");
     return _has_nonstatic_concrete_methods;
-  }
-
-  bool is_unsafe_anonymous() const {
-    return _is_unsafe_anonymous;
   }
 
   bool is_hidden() const {
@@ -271,6 +269,7 @@ public:
   BasicType box_klass_type() const;
   bool is_box_klass() const;
   bool is_boxed_value_offset(int offset) const;
+  bool is_box_cache_valid() const;
 
   // Is this klass in the given package?
   bool is_in_package(const char* packagename) {
@@ -288,8 +287,6 @@ public:
     }
     return NULL;
   }
-
-  ciInstanceKlass* unsafe_anonymous_host();
 
   bool can_be_instantiated() {
     assert(is_loaded(), "must be loaded");

@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.stream.LongStream;
 
 /**
  * A sequence layout. A sequence layout is used to denote a repetition of a given layout, also called the sequence layout's <em>element layout</em>.
@@ -41,16 +40,16 @@ import java.util.stream.LongStream;
  * that is equal to the sequence layout's element count. In other words this layout:
  *
  * <pre>{@code
-MemoryLayout.ofSequence(3, MemoryLayout.ofValueBits(32, ByteOrder.BIG_ENDIAN));
+MemoryLayout.sequenceLayout(3, MemoryLayout.valueLayout(32, ByteOrder.BIG_ENDIAN));
  * }</pre>
  *
  * is equivalent to the following layout:
  *
  * <pre>{@code
-MemoryLayout.ofStruct(
-    MemoryLayout.ofValueBits(32, ByteOrder.BIG_ENDIAN),
-    MemoryLayout.ofValueBits(32, ByteOrder.BIG_ENDIAN),
-    MemoryLayout.ofValueBits(32, ByteOrder.BIG_ENDIAN));
+MemoryLayout.structLayout(
+    MemoryLayout.valueLayout(32, ByteOrder.BIG_ENDIAN),
+    MemoryLayout.valueLayout(32, ByteOrder.BIG_ENDIAN),
+    MemoryLayout.valueLayout(32, ByteOrder.BIG_ENDIAN));
  * }</pre>
  *
  * <p>
@@ -67,7 +66,7 @@ MemoryLayout.ofStruct(
  * @implSpec
  * This class is immutable and thread-safe.
  */
-public final class SequenceLayout extends AbstractLayout {
+public final class SequenceLayout extends AbstractLayout implements MemoryLayout {
 
     private final OptionalLong elemCount;
     private final MemoryLayout elementLayout;
@@ -123,11 +122,11 @@ public final class SequenceLayout extends AbstractLayout {
      * <p>
      * For instance, given a sequence layout of the kind:
      * <pre>{@code
-    var seq = MemoryLayout.ofSequence(4, MemoryLayout.ofSequence(3, MemoryLayouts.JAVA_INT));
+    var seq = MemoryLayout.sequenceLayout(4, MemoryLayout.sequenceLayout(3, MemoryLayouts.JAVA_INT));
      * }</pre>
      * calling {@code seq.reshape(2, 6)} will yield the following sequence layout:
      * <pre>{@code
-    var reshapeSeq = MemoryLayout.ofSequence(2, MemoryLayout.ofSequence(6, MemoryLayouts.JAVA_INT));
+    var reshapeSeq = MemoryLayout.sequenceLayout(2, MemoryLayout.sequenceLayout(6, MemoryLayouts.JAVA_INT));
      * }</pre>
      * <p>
      * If one of the provided element count is the special value {@code -1}, then the element
@@ -187,7 +186,7 @@ public final class SequenceLayout extends AbstractLayout {
 
         MemoryLayout res = flat.elementLayout();
         for (int i = elementCounts.length - 1 ; i >= 0 ; i--) {
-            res = MemoryLayout.ofSequence(elementCounts[i], res);
+            res = MemoryLayout.sequenceLayout(elementCounts[i], res);
         }
         return (SequenceLayout)res;
     }
@@ -199,11 +198,11 @@ public final class SequenceLayout extends AbstractLayout {
      * be dropped and their element counts will be incorporated into that of the returned sequence layout.
      * For instance, given a sequence layout of the kind:
      * <pre>{@code
-    var seq = MemoryLayout.ofSequence(4, MemoryLayout.ofSequence(3, MemoryLayouts.JAVA_INT));
+    var seq = MemoryLayout.sequenceLayout(4, MemoryLayout.sequenceLayout(3, MemoryLayouts.JAVA_INT));
      * }</pre>
      * calling {@code seq.flatten()} will yield the following sequence layout:
      * <pre>{@code
-    var flattenedSeq = MemoryLayout.ofSequence(12, MemoryLayouts.JAVA_INT);
+    var flattenedSeq = MemoryLayout.sequenceLayout(12, MemoryLayouts.JAVA_INT);
      * }</pre>
      * @return a new sequence layout with the same size as this layout (but, possibly, with different
      * element count), whose element layout is not a sequence layout.
@@ -221,7 +220,7 @@ public final class SequenceLayout extends AbstractLayout {
             count = count * elemSeq.elementCount().orElseThrow(this::badUnboundSequenceLayout);
             elemLayout = elemSeq.elementLayout();
         }
-        return MemoryLayout.ofSequence(count, elemLayout);
+        return MemoryLayout.sequenceLayout(count, elemLayout);
     }
 
     private UnsupportedOperationException badUnboundSequenceLayout() {

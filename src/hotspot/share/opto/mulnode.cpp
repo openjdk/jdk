@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,31 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
   Node *progress = NULL;        // Progress flag
+
+  // convert "max(a,b) * min(a,b)" into "a*b".
+  Node *in1 = in(1);
+  Node *in2 = in(2);
+  if ((in(1)->Opcode() == max_opcode() && in(2)->Opcode() == min_opcode())
+      || (in(1)->Opcode() == min_opcode() && in(2)->Opcode() == max_opcode())) {
+    Node *in11 = in(1)->in(1);
+    Node *in12 = in(1)->in(2);
+
+    Node *in21 = in(2)->in(1);
+    Node *in22 = in(2)->in(2);
+
+    if ((in11 == in21 && in12 == in22) ||
+        (in11 == in22 && in12 == in21)) {
+      set_req(1, in11);
+      set_req(2, in12);
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      if (igvn) {
+        igvn->_worklist.push(in1);
+        igvn->_worklist.push(in2);
+      }
+      progress = this;
+    }
+  }
+
   // We are OK if right is a constant, or right is a load and
   // left is a non-constant.
   if( !(t2->singleton() ||
@@ -104,8 +129,8 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         const Type *tcon01 = ((MulNode*)mul1)->mul_ring(t2,t12);
         if( tcon01->singleton() ) {
           // The Mul of the flattened expression
-          set_req(1, mul1->in(1));
-          set_req(2, phase->makecon( tcon01 ));
+          set_req_X(1, mul1->in(1), phase);
+          set_req_X(2, phase->makecon(tcon01), phase);
           t2 = tcon01;
           progress = this;      // Made progress
         }
@@ -164,7 +189,7 @@ const Type* MulNode::Value(PhaseGVN* phase) const {
 #if defined(IA32)
   // Can't trust native compilers to properly fold strict double
   // multiplication with round-to-zero on this platform.
-  if (op == Op_MulD && phase->C->method()->is_strict()) {
+  if (op == Op_MulD) {
     return TypeD::DOUBLE;
   }
 #endif
@@ -955,11 +980,11 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // that is the job of 'Identity' calls and Identity calls only work on
       // direct inputs ('ld' is an extra Node removed from 'this').  The
       // combined optimization requires Identity only return direct inputs.
-      set_req(1, ld);
-      set_req(2, phase->intcon(0));
+      set_req_X(1, ld, phase);
+      set_req_X(2, phase->intcon(0), phase);
       return this;
     }
-    else if( can_reshape &&
+    else if (can_reshape &&
              ld->Opcode() == Op_LoadUS &&
              ld->outcnt() == 1 && ld->unique_out() == shl)
       // Replace zero-extension-load with sign-extension-load
@@ -971,10 +996,10 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       (t3 = phase->type(shl->in(2))->isa_int()) &&
       t3->is_con(24) ) {
     Node *ld = shl->in(1);
-    if( ld->Opcode() == Op_LoadB ) {
+    if (ld->Opcode() == Op_LoadB) {
       // Sign extension is just useless here
-      set_req(1, ld);
-      set_req(2, phase->intcon(0));
+      set_req_X(1, ld, phase);
+      set_req_X(2, phase->intcon(0), phase);
       return this;
     }
   }

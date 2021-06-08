@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZFORWARDING_INLINE_HPP
 #define SHARE_GC_Z_ZFORWARDING_INLINE_HPP
 
-#include "gc/z/zAttachedArray.inline.hpp"
 #include "gc/z/zForwarding.hpp"
+
+#include "gc/z/zAttachedArray.inline.hpp"
 #include "gc/z/zForwardingAllocator.inline.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zHeap.hpp"
@@ -59,6 +60,7 @@ inline ZForwarding::ZForwarding(ZPage* page, size_t nentries) :
     _page(page),
     _ref_lock(),
     _ref_count(1),
+    _ref_abort(false),
     _in_place(false) {}
 
 inline uint8_t ZForwarding::type() const {

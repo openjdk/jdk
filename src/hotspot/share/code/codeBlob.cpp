@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "code/relocInfo.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
@@ -707,4 +708,31 @@ void SingletonBlob::print_value_on(outputStream* st) const {
 
 void DeoptimizationBlob::print_value_on(outputStream* st) const {
   st->print_cr("Deoptimization (frame not available)");
+}
+
+// Implementation of OptimizedEntryBlob
+
+OptimizedEntryBlob::OptimizedEntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t exception_handler_offset,
+                     jobject receiver, ByteSize jfa_sp_offset) :
+  BufferBlob(name, size, cb),
+  _exception_handler_offset(exception_handler_offset),
+  _receiver(receiver),
+  _jfa_sp_offset(jfa_sp_offset) {
+  CodeCache::commit(this);
+}
+
+OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb, intptr_t exception_handler_offset,
+                             jobject receiver, ByteSize jfa_sp_offset) {
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+
+  OptimizedEntryBlob* blob = nullptr;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(OptimizedEntryBlob));
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    blob = new (size) OptimizedEntryBlob(name, size, cb, exception_handler_offset, receiver, jfa_sp_offset);
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+
+  return blob;
 }

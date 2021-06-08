@@ -297,13 +297,13 @@ abstract class HandshakeContext implements ConnectionContext {
                 } else if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
                     SSLLogger.fine(
                         "Ignore unsupported cipher suite: " + suite +
-                             " for " + protocol);
+                             " for " + protocol.name);
                 }
             }
 
             if (!found && (SSLLogger.isOn) && SSLLogger.isOn("handshake")) {
                 SSLLogger.fine(
-                    "No available cipher suite for " + protocol);
+                    "No available cipher suite for " + protocol.name);
             }
         }
 

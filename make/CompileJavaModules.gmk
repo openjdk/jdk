@@ -86,7 +86,7 @@ CreateHkTargets = \
 ################################################################################
 # Include module specific build settings
 
--include $(TOPDIR)/make/modules/$(MODULE)/Java.gmk
+-include Java.gmk
 
 ################################################################################
 # Setup the main compilation

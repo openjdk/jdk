@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,9 +235,10 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     return new SubINode(phase->intcon(0), in2->in(1));
   }
 
-  // Convert "0 - (x-y)" into "y-x"
-  if( t1 == TypeInt::ZERO && op2 == Op_SubI )
-    return new SubINode( in2->in(2), in2->in(1) );
+  // Convert "0 - (x-y)" into "y-x", leave the double negation "-(-y)" to SubNode::Identity().
+  if (t1 == TypeInt::ZERO && op2 == Op_SubI && phase->type(in2->in(1)) != TypeInt::ZERO) {
+    return new SubINode(in2->in(2), in2->in(1));
+  }
 
   // Convert "0 - (x+con)" into "-con-x"
   jint con;
@@ -373,9 +374,10 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new SubLNode(phase->makecon(TypeLong::ZERO), in2->in(1));
   }
 
-  // Convert "0 - (x-y)" into "y-x"
-  if( phase->type( in1 ) == TypeLong::ZERO && op2 == Op_SubL )
-    return new SubLNode( in2->in(2), in2->in(1) );
+  // Convert "0 - (x-y)" into "y-x", leave the double negation "-(-y)" to SubNode::Identity.
+  if (t1 == TypeLong::ZERO && op2 == Op_SubL && phase->type(in2->in(1)) != TypeLong::ZERO) {
+    return new SubLNode(in2->in(2), in2->in(1));
+  }
 
   // Convert "(X+A) - (X+B)" into "A - B"
   if( op1 == Op_AddL && op2 == Op_AddL && in1->in(1) == in2->in(1) )
@@ -462,13 +464,6 @@ Node *SubFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // return new (phase->C, 3) AddFNode(in(1), phase->makecon( TypeF::make(-t2->getf()) ) );
   }
 
-  // Not associative because of boundary conditions (infinity)
-  if (IdealizedNumerics && !phase->C->method()->is_strict() &&
-      in(2)->is_Add() && in(1) == in(2)->in(1)) {
-    // Convert "x - (x+y)" into "-y"
-    return new SubFNode(phase->makecon(TypeF::ZERO), in(2)->in(2));
-  }
-
   // Cannot replace 0.0-X with -X because a 'fsub' bytecode computes
   // 0.0-0.0 as +0.0, while a 'fneg' bytecode computes -0.0.
   //if( phase->type(in(1)) == TypeF::ZERO )
@@ -502,13 +497,6 @@ Node *SubDNode::Ideal(PhaseGVN *phase, bool can_reshape){
   // Convert "x-c0" into "x+ -c0".
   if( t2->base() == Type::DoubleCon ) { // Might be bottom or top...
     // return new (phase->C, 3) AddDNode(in(1), phase->makecon( TypeD::make(-t2->getd()) ) );
-  }
-
-  // Not associative because of boundary conditions (infinity)
-  if (IdealizedNumerics && !phase->C->method()->is_strict() &&
-      in(2)->is_Add() && in(1) == in(2)->in(1)) {
-    // Convert "x - (x+y)" into "-y"
-    return new SubDNode(phase->makecon(TypeD::ZERO), in(2)->in(2));
   }
 
   // Cannot replace 0.0-X with -X because a 'dsub' bytecode computes
@@ -1057,14 +1045,8 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
     if (k1 && (k2 || conk2)) {
       Node* lhs = k1;
       Node* rhs = (k2 != NULL) ? k2 : conk2;
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn != NULL) {
-        set_req_X(1, lhs, igvn);
-        set_req_X(2, rhs, igvn);
-      } else {
-        set_req(1, lhs);
-        set_req(2, rhs);
-      }
+      set_req_X(1, lhs, phase);
+      set_req_X(2, rhs, phase);
       return this;
     }
   }

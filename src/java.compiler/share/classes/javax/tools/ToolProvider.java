@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,7 @@ public class ToolProvider {
      * @param moduleName        the name of the module containing the desired implementation
      * @return true if and only if the tool matches the specified criteria
      */
+    @SuppressWarnings("removal")
     private static <T> boolean matches(T tool, String moduleName) {
         PrivilegedAction<Boolean> pa = () -> {
             Module toolModule = tool.getClass().getModule();

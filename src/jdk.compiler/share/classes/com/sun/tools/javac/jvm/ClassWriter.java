@@ -40,6 +40,7 @@ import javax.tools.JavaFileObject;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Directive.*;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Types.SignatureGenerator.InvalidSignatureException;
@@ -231,7 +232,7 @@ public class ClassWriter extends ClassFile {
         return sbuf.toString();
     }
     //where
-        private final static String[] flagName = {
+        private static final String[] flagName = {
             "PUBLIC", "PRIVATE", "PROTECTED", "STATIC", "FINAL",
             "SUPER", "VOLATILE", "TRANSIENT", "NATIVE", "INTERFACE",
             "ABSTRACT", "STRICTFP"};
@@ -1696,6 +1697,10 @@ public class ClassWriter extends ClassFile {
 
     int adjustFlags(final long flags) {
         int result = (int)flags;
+
+        // Elide strictfp bit in class files
+        if (target.obsoleteAccStrict())
+            result &= ~STRICTFP;
 
         if ((flags & BRIDGE) != 0)
             result |= ACC_BRIDGE;

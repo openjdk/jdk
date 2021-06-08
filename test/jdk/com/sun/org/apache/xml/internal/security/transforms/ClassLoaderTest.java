@@ -27,6 +27,7 @@
  * @bug 6461674 8009217 7147060
  * @modules java.xml.crypto/com.sun.org.apache.xml.internal.security.exceptions
  *          java.xml.crypto/com.sun.org.apache.xml.internal.security.transforms
+ *          java.xml.crypto/com.sun.org.apache.xml.internal.security.signature
  * @compile -XDignore.symbol.file ClassLoaderTest.java MyTransform.java
  * @run main/othervm ClassLoaderTest
  * @summary Ensure Transform.register works with transform implementations

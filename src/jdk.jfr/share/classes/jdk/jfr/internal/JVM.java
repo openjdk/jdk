@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,9 +142,6 @@ public final class JVM {
     @IntrinsicCandidate
     public static native long getClassId(Class<?> clazz);
 
-    // temporary workaround until we solve intrinsics supporting epoch shift tagging
-    public static native long getClassIdNonIntrinsic(Class<?> clazz);
-
     /**
      * Return process identifier.
      *
@@ -187,6 +184,17 @@ public final class JVM {
      *
      */
     public static native void log(int tagSetId, int level, String message);
+
+    /**
+     * Log an event to jfr+event or jfr+event+system.
+     * <p>
+     * Caller should ensure that message is not null or too large to handle.
+     *
+     * @param level log level
+     * @param lines lines to log
+     * @param system if lines should be written to jfr+event+system
+     */
+    public static native void logEvent(int level, String[] lines, boolean system);
 
     /**
      * Subscribe to LogLevel updates for LogTag

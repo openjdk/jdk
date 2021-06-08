@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,11 @@
 
 package com.sun.tools.javac.comp;
 
-import java.util.*;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.code.Type.IntersectionClassType;
-import com.sun.tools.javac.code.Types.FunctionDescriptorLookupError;
-import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
@@ -562,7 +558,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitCase(JCCase tree) {
-        tree.pats = translate(tree.pats, null);
+        tree.labels = translate(tree.labels, null);
         tree.stats = translate(tree.stats);
         result = tree;
     }
@@ -581,6 +577,19 @@ public class TransTypes extends TreeTranslator {
         tree.cases = translate(tree.cases);
         tree.type = erasure(tree.type);
         result = retype(tree, tree.type, pt);
+    }
+
+    @Override
+    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
+        tree.pattern = translate(tree.pattern, null);
+        result = tree;
+    }
+
+    @Override
+    public void visitGuardPattern(JCGuardPattern tree) {
+        tree.patt = translate(tree.patt, null);
+        tree.expr = translate(tree.expr, syms.booleanType);
+        result = tree;
     }
 
     public void visitSynchronized(JCSynchronized tree) {
@@ -767,7 +776,7 @@ public class TransTypes extends TreeTranslator {
             JCTypeCast typeCast = newExpression.hasTag(Tag.TYPECAST)
                 ? (JCTypeCast) newExpression
                 : null;
-            tree.expr = typeCast != null && types.isSameType(typeCast.type, originalTarget)
+            tree.expr = typeCast != null && types.isSameType(typeCast.type, tree.type)
                 ? typeCast.expr
                 : newExpression;
         }

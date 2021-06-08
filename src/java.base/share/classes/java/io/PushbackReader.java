@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.util.Objects;
 
 /**
  * A character-stream reader that allows characters to be pushed back into the
@@ -92,28 +93,14 @@ public class PushbackReader extends FilterReader {
     }
 
     /**
-     * Reads characters into a portion of an array.
-     *
-     * @param      cbuf  Destination buffer
-     * @param      off   Offset at which to start writing characters
-     * @param      len   Maximum number of characters to read
-     *
-     * @return     The number of characters read, or -1 if the end of the
-     *             stream has been reached
-     *
-     * @throws     IOException  If an I/O error occurs
-     * @throws     IndexOutOfBoundsException {@inheritDoc}
+     * {@inheritDoc}
      */
-    public int read(char cbuf[], int off, int len) throws IOException {
+    public int read(char[] cbuf, int off, int len) throws IOException {
         synchronized (lock) {
             ensureOpen();
             try {
-                if (len <= 0) {
-                    if (len < 0) {
-                        throw new IndexOutOfBoundsException();
-                    } else if ((off < 0) || (off > cbuf.length)) {
-                        throw new IndexOutOfBoundsException();
-                    }
+                Objects.checkFromIndexSize(off, len, cbuf.length);
+                if (len == 0) {
                     return 0;
                 }
                 int avail = buf.length - pos;
@@ -172,7 +159,7 @@ public class PushbackReader extends FilterReader {
      * @throws     IOException  If there is insufficient room in the pushback
      *                          buffer, or if some other I/O error occurs
      */
-    public void unread(char cbuf[], int off, int len) throws IOException {
+    public void unread(char[] cbuf, int off, int len) throws IOException {
         synchronized (lock) {
             ensureOpen();
             if (len > pos)
@@ -193,7 +180,7 @@ public class PushbackReader extends FilterReader {
      * @throws     IOException  If there is insufficient room in the pushback
      *                          buffer, or if some other I/O error occurs
      */
-    public void unread(char cbuf[]) throws IOException {
+    public void unread(char[] cbuf) throws IOException {
         unread(cbuf, 0, cbuf.length);
     }
 
@@ -254,15 +241,7 @@ public class PushbackReader extends FilterReader {
     }
 
     /**
-     * Skips characters.  This method will block until some characters are
-     * available, an I/O error occurs, or the end of the stream is reached.
-     *
-     * @param     n  The number of characters to skip
-     *
-     * @return    The number of characters actually skipped
-     *
-     * @throws    IllegalArgumentException  If {@code n} is negative.
-     * @throws    IOException  If an I/O error occurs
+     * {@inheritDoc}
      */
     public long skip(long n) throws IOException {
         if (n < 0L)

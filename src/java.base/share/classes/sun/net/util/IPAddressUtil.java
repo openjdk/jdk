@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.security.PrivilegedActionException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class IPAddressUtil {
     private static final int INADDR4SZ = 4;
@@ -307,7 +306,7 @@ public class IPAddressUtil {
      * Mapping from unscoped local Inet(6)Address to the same address
      * including the correct scope-id, determined from NetworkInterface.
      */
-    private final static ConcurrentHashMap<InetAddress,InetAddress>
+    private static final ConcurrentHashMap<InetAddress,InetAddress>
         cache = new ConcurrentHashMap<>();
 
     /**
@@ -353,13 +352,14 @@ public class IPAddressUtil {
         }
     }
 
+    @SuppressWarnings("removal")
     private static InetAddress findScopedAddress(InetAddress address) {
         PrivilegedExceptionAction<List<InetAddress>> pa = () -> NetworkInterface.networkInterfaces()
                 .flatMap(NetworkInterface::inetAddresses)
                 .filter(a -> (a instanceof Inet6Address)
                         && address.equals(a)
                         && ((Inet6Address) a).getScopeId() != 0)
-                .collect(Collectors.toList());
+                .toList();
         List<InetAddress> result;
         try {
             result = AccessController.doPrivileged(pa);

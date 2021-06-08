@@ -41,21 +41,24 @@
  *          while others also test implementation details.
  * @build *
  * @modules java.management
- * @run junit/othervm/timeout=1000 JSR166TestCase
+ * @run junit/othervm/timeout=1000 -Djava.security.manager=allow JSR166TestCase
  * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
+ *      -Djava.security.manager=allow
  *      -Djsr166.testImplementationDetails=true
  *      JSR166TestCase
  * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
+ *      -Djava.security.manager=allow
  *      -Djsr166.testImplementationDetails=true
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=0
  *      JSR166TestCase
  * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
+ *      -Djava.security.manager=allow
  *      -Djsr166.testImplementationDetails=true
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
  *      -Djava.util.secureRandomSeed=true
@@ -101,6 +104,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.PropertyPermission;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -176,6 +180,11 @@ import junit.framework.TestSuite;
  * MEDIUM.  And so on. These constants are set to conservative values,
  * but even so, if there is ever any doubt, they can all be increased
  * in one spot to rerun tests on slower platforms.
+ *
+ * Class Item is used for elements of collections and related
+ * purposes. Many tests rely on their keys being equal to ints. To
+ * check these, methods mustEqual, mustContain, etc adapt the JUnit
+ * assert methods to intercept ints.
  *
  * <li>All threads generated must be joined inside each test case
  * method (or {@code fail} to do so) before returning from the
@@ -738,6 +747,7 @@ public class JSR166TestCase extends TestCase {
     /**
      * Returns a random element from given choices.
      */
+    @SuppressWarnings("unchecked")
     <T> T chooseRandomly(T... choices) {
         return choices[ThreadLocalRandom.current().nextInt(choices.length)];
     }
@@ -1212,14 +1222,14 @@ public class JSR166TestCase extends TestCase {
      * Checks that future.get times out, with the default timeout of
      * {@code timeoutMillis()}.
      */
-    void assertFutureTimesOut(Future future) {
+    void assertFutureTimesOut(Future<?> future) {
         assertFutureTimesOut(future, timeoutMillis());
     }
 
     /**
      * Checks that future.get times out, with the given millisecond timeout.
      */
-    void assertFutureTimesOut(Future future, long timeoutMillis) {
+    void assertFutureTimesOut(Future<?> future, long timeoutMillis) {
         long startTime = System.nanoTime();
         try {
             future.get(timeoutMillis, MILLISECONDS);
@@ -1254,28 +1264,137 @@ public class JSR166TestCase extends TestCase {
 
     /**
      * The number of elements to place in collections, arrays, etc.
+     * Must be at least ten;
      */
-    public static final int SIZE = 20;
+    public static final int SIZE = 32;
 
-    // Some convenient Integer constants
+    static Item[] seqItems(int size) {
+        Item[] s = new Item[size];
+        for (int i = 0; i < size; ++i)
+            s[i] = new Item(i);
+        return s;
+    }
+    static Item[] negativeSeqItems(int size) {
+        Item[] s = new Item[size];
+        for (int i = 0; i < size; ++i)
+            s[i] = new Item(-i);
+        return s;
+    }
 
-    public static final Integer zero  = new Integer(0);
-    public static final Integer one   = new Integer(1);
-    public static final Integer two   = new Integer(2);
-    public static final Integer three = new Integer(3);
-    public static final Integer four  = new Integer(4);
-    public static final Integer five  = new Integer(5);
-    public static final Integer six   = new Integer(6);
-    public static final Integer seven = new Integer(7);
-    public static final Integer eight = new Integer(8);
-    public static final Integer nine  = new Integer(9);
-    public static final Integer m1  = new Integer(-1);
-    public static final Integer m2  = new Integer(-2);
-    public static final Integer m3  = new Integer(-3);
-    public static final Integer m4  = new Integer(-4);
-    public static final Integer m5  = new Integer(-5);
-    public static final Integer m6  = new Integer(-6);
-    public static final Integer m10 = new Integer(-10);
+    // Many tests rely on defaultItems all being sequential nonnegative
+    public static final Item[] defaultItems = seqItems(SIZE);
+
+    static Item itemFor(int i) { // check cache for defaultItems
+        Item[] items = defaultItems;
+        return (i >= 0 && i < items.length) ? items[i] : new Item(i);
+    }
+
+    public static final Item zero  = defaultItems[0];
+    public static final Item one   = defaultItems[1];
+    public static final Item two   = defaultItems[2];
+    public static final Item three = defaultItems[3];
+    public static final Item four  = defaultItems[4];
+    public static final Item five  = defaultItems[5];
+    public static final Item six   = defaultItems[6];
+    public static final Item seven = defaultItems[7];
+    public static final Item eight = defaultItems[8];
+    public static final Item nine  = defaultItems[9];
+    public static final Item ten   = defaultItems[10];
+
+    public static final Item[] negativeItems = negativeSeqItems(SIZE);
+
+    public static final Item minusOne   = negativeItems[1];
+    public static final Item minusTwo   = negativeItems[2];
+    public static final Item minusThree = negativeItems[3];
+    public static final Item minusFour  = negativeItems[4];
+    public static final Item minusFive  = negativeItems[5];
+    public static final Item minusSix   = negativeItems[6];
+    public static final Item minusSeven = negativeItems[7];
+    public static final Item minusEight = negativeItems[8];
+    public static final Item minusNone  = negativeItems[9];
+    public static final Item minusTen   = negativeItems[10];
+
+    // elements expected to be missing
+    public static final Item fortytwo = new Item(42);
+    public static final Item eightysix = new Item(86);
+    public static final Item ninetynine = new Item(99);
+
+    // Interop across Item, int
+
+    static void mustEqual(Item x, Item y) {
+        if (x != y)
+            assertEquals(x.value, y.value);
+    }
+    static void mustEqual(Item x, int y) {
+        assertEquals(x.value, y);
+    }
+    static void mustEqual(int x, Item y) {
+        assertEquals(x, y.value);
+    }
+    static void mustEqual(int x, int y) {
+        assertEquals(x, y);
+    }
+    static void mustEqual(Object x, Object y) {
+        if (x != y)
+            assertEquals(x, y);
+    }
+    static void mustEqual(int x, Object y) {
+        if (y instanceof Item)
+            assertEquals(x, ((Item)y).value);
+        else fail();
+    }
+    static void mustEqual(Object x, int y) {
+        if (x instanceof Item)
+            assertEquals(((Item)x).value, y);
+        else fail();
+    }
+    static void mustEqual(boolean x, boolean y) {
+        assertEquals(x, y);
+    }
+    static void mustEqual(long x, long y) {
+        assertEquals(x, y);
+    }
+    static void mustEqual(double x, double y) {
+        assertEquals(x, y);
+    }
+    static void mustContain(Collection<Item> c, int i) {
+        assertTrue(c.contains(itemFor(i)));
+    }
+    static void mustContain(Collection<Item> c, Item i) {
+        assertTrue(c.contains(i));
+    }
+    static void mustNotContain(Collection<Item> c, int i) {
+        assertFalse(c.contains(itemFor(i)));
+    }
+    static void mustNotContain(Collection<Item> c, Item i) {
+        assertFalse(c.contains(i));
+    }
+    static void mustRemove(Collection<Item> c, int i) {
+        assertTrue(c.remove(itemFor(i)));
+    }
+    static void mustRemove(Collection<Item> c, Item i) {
+        assertTrue(c.remove(i));
+    }
+    static void mustNotRemove(Collection<Item> c, int i) {
+        Item[] items = defaultItems;
+        Item x = (i >= 0 && i < items.length) ? items[i] : new Item(i);
+        assertFalse(c.remove(x));
+    }
+    static void mustNotRemove(Collection<Item> c, Item i) {
+        assertFalse(c.remove(i));
+    }
+    static void mustAdd(Collection<Item> c, int i) {
+        assertTrue(c.add(itemFor(i)));
+    }
+    static void mustAdd(Collection<Item> c, Item i) {
+        assertTrue(c.add(i));
+    }
+    static void mustOffer(Queue<Item> c, int i) {
+        assertTrue(c.offer(itemFor(i)));
+    }
+    static void mustOffer(Queue<Item> c, Item i) {
+        assertTrue(c.offer(i));
+    }
 
     /**
      * Runs Runnable r with a security policy that permits precisely
@@ -1623,7 +1742,7 @@ public class JSR166TestCase extends TestCase {
         public void run() {}
     }
 
-    public static class NoOpCallable implements Callable {
+    public static class NoOpCallable implements Callable<Object> {
         public Object call() { return Boolean.TRUE; }
     }
 
@@ -1816,7 +1935,7 @@ public class JSR166TestCase extends TestCase {
         }
     }
 
-    void checkEmpty(BlockingQueue q) {
+    void checkEmpty(BlockingQueue<?> q) {
         try {
             assertTrue(q.isEmpty());
             assertEquals(0, q.size());
@@ -1863,6 +1982,7 @@ public class JSR166TestCase extends TestCase {
         }
     }
 
+    @SuppressWarnings("unchecked")
     void assertImmutable(Object o) {
         if (o instanceof Collection) {
             assertThrows(
@@ -2012,7 +2132,7 @@ public class JSR166TestCase extends TestCase {
             shouldThrow();
         } catch (NullPointerException success) {}
         try {
-            es.submit((Callable) null);
+            es.submit((Callable<?>) null);
             shouldThrow();
         } catch (NullPointerException success) {}
 
@@ -2024,7 +2144,7 @@ public class JSR166TestCase extends TestCase {
             shouldThrow();
         } catch (NullPointerException success) {}
         try {
-            ses.schedule((Callable) null,
+            ses.schedule((Callable<?>) null,
                          randomTimeout(), randomTimeUnit());
             shouldThrow();
         } catch (NullPointerException success) {}
@@ -2183,7 +2303,7 @@ public class JSR166TestCase extends TestCase {
         else {
             assertEquals(x.isEmpty(), y.isEmpty());
             assertEquals(x.size(), y.size());
-            assertEquals(new HashSet(x), new HashSet(y));
+            assertEquals(new HashSet<Object>(x), new HashSet<Object>(y));
             if (x instanceof Deque) {
                 assertTrue(Arrays.equals(x.toArray(), y.toArray()));
                 assertTrue(Arrays.equals(x.toArray(new Object[0]),

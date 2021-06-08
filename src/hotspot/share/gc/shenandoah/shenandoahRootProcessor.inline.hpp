@@ -25,13 +25,13 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahRootProcessor.hpp"
+
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/resourceArea.hpp"
@@ -163,11 +163,9 @@ void ShenandoahSTWRootScanner::roots_do(T* oops, uint worker_id) {
     _thread_roots.oops_do(oops, &blobs_cl, worker_id);
     _cld_roots.always_strong_cld_do(&clds, worker_id);
   } else {
-    AlwaysTrueClosure always_true;
     _thread_roots.oops_do(oops, NULL, worker_id);
     _code_roots.code_blobs_do(&blobs_cl, worker_id);
     _cld_roots.cld_do(&clds, worker_id);
-    _dedup_roots.oops_do(&always_true, oops, worker_id);
   }
 
   _vm_roots.oops_do<T>(oops, worker_id);
@@ -177,16 +175,15 @@ template <typename IsAlive, typename KeepAlive>
 void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive) {
   CodeBlobToOopClosure update_blobs(keep_alive, CodeBlobToOopClosure::FixRelocations);
   ShenandoahCodeBlobAndDisarmClosure blobs_and_disarm_Cl(keep_alive);
-  CodeBlobToOopClosure* codes_cl = ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() ?
-                                  static_cast<CodeBlobToOopClosure*>(&blobs_and_disarm_Cl) :
-                                  static_cast<CodeBlobToOopClosure*>(&update_blobs);
+  CodeBlobToOopClosure* codes_cl = (ClassUnloading && ShenandoahNMethodBarrier) ?
+                                   static_cast<CodeBlobToOopClosure*>(&blobs_and_disarm_Cl) :
+                                   static_cast<CodeBlobToOopClosure*>(&update_blobs);
 
   CLDToOopClosure clds(keep_alive, ClassLoaderData::_claim_strong);
 
   // Process light-weight/limited parallel roots then
   _vm_roots.oops_do(keep_alive, worker_id);
   _weak_roots.weak_oops_do<IsAlive, KeepAlive>(is_alive, keep_alive, worker_id);
-  _dedup_roots.oops_do(is_alive, keep_alive, worker_id);
   _cld_roots.cld_do(&clds, worker_id);
 
   // Process heavy-weight/fully parallel roots the last

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,6 +20,7 @@
 
 package com.sun.org.apache.xml.internal.serializer;
 
+import com.sun.org.apache.xml.internal.serializer.dom3.DOMConstants;
 import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
 import com.sun.org.apache.xml.internal.serializer.utils.Utils;
 import com.sun.org.apache.xml.internal.serializer.utils.WrappedRuntimeException;
@@ -41,6 +42,7 @@ import javax.xml.transform.ErrorListener;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
+import jdk.xml.internal.JdkConstants;
 import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -51,7 +53,7 @@ import org.xml.sax.SAXException;
  * serializers (xml, html, text ...) that write output to a stream.
  *
  * @xsl.usage internal
- * @LastModified: June 2020
+ * @LastModified: May 2021
  */
 abstract public class ToStream extends SerializerBase {
 
@@ -492,10 +494,11 @@ abstract public class ToStream extends SerializerBase {
                 if (OutputPropertiesFactory.S_KEY_INDENT_AMOUNT.equals(name)) {
                     setIndentAmount(Integer.parseInt(val));
                 } else if (OutputKeys.INDENT.equals(name)) {
-                    boolean b = val.endsWith("yes") ? true : false;
-                    m_doIndent = b;
+                    m_doIndent = val.endsWith("yes");
+                } else if ((DOMConstants.S_JDK_PROPERTIES_NS + JdkConstants.S_IS_STANDALONE)
+                        .equals(name)) {
+                    m_isStandalone = val.endsWith("yes");
                 }
-
                 break;
             case 'l':
                 if (OutputPropertiesFactory.S_KEY_LINE_SEPARATOR.equals(name)) {

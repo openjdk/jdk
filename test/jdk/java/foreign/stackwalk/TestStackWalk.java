@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,14 @@
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm
  *   -Xbootclasspath/a:.
  *   -XX:+UnlockDiagnosticVMOptions
  *   -XX:+WhiteBoxAPI
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
- *   -Dforeign.restricted=permit
+ *   --enable-native-access=ALL-UNNAMED
  *   -Xbatch
  *   TestStackWalk
  *
@@ -42,21 +42,21 @@
  *   -XX:+UnlockDiagnosticVMOptions
  *   -XX:+WhiteBoxAPI
  *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
- *   -Dforeign.restricted=permit
+ *   --enable-native-access=ALL-UNNAMED
  *   -Xbatch
  *   TestStackWalk
  */
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
+import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemorySegment;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.ref.Reference;
 
+import jdk.incubator.foreign.ResourceScope;
 import sun.hotspot.WhiteBox;
 
 import static java.lang.invoke.MethodHandles.lookup;
@@ -72,7 +72,8 @@ public class TestStackWalk {
 
     static {
         try {
-            LibraryLookup lookup = LibraryLookup.ofLibrary("StackWalk");
+            System.loadLibrary("StackWalk");
+            SymbolLookup lookup = SymbolLookup.loaderLookup();
             MH_foo = linker.downcallHandle(
                     lookup.lookup("foo").get(),
                     MethodType.methodType(void.class, MemoryAddress.class),
@@ -86,7 +87,8 @@ public class TestStackWalk {
     static boolean armed;
 
     public static void main(String[] args) throws Throwable {
-        try (MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid())) {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            MemoryAddress stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), scope);
             MemoryAddress stubAddress = stub.address();
             armed = false;
             for (int i = 0; i < 20_000; i++) {
@@ -105,7 +107,8 @@ public class TestStackWalk {
 
     static void m() {
         if (armed) {
-            WB.verifyFrames(true);
+            WB.verifyFrames(/*log=*/true, /*updateRegisterMap=*/true);
+            WB.verifyFrames(/*log=*/true, /*updateRegisterMap=*/false); // triggers different code paths
         }
     }
 

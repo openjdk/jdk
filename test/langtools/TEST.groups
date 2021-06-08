@@ -20,29 +20,27 @@
 #  questions.
 #
 
-# Tiered testing definitions
+# Langtools-specific test groups
 
-# (Nearly) all langtools tests are tier 1.
-tier1 = \
-    jdk \
-    lib \
-    tools \
-    -jdk/jshell/ExternalEditorTest.java \
-    -jdk/jshell/FailOverDirectExecutionControlTest.java \
-    -jdk/jshell/FailOverExecutionControlDyingLaunchTest.java \
-    -jdk/jshell/FailOverExecutionControlHangingListenTest.java \
-    -jdk/jshell/JdiHangingListenExecutionControlTest.java \
-    -jdk/jshell/JdiLaunchingExecutionControlTest.java \
-    -jdk/jshell/JdiListeningExecutionControlTest.java \
-    -jdk/jshell/JdiListeningLocalhostExecutionControlTest.java  \
-    -jdk/jshell/ToolBasicTest.java \
-    -jdk/jshell/ToolLocaleMessageTest.java \
-    -jdk/jshell/ToolReloadTest.java \
-    -jdk/jshell/UserInputTest.java \
-    -jdk/jshell/UserJdiUserRemoteTest.java
+langtools_javac = \
+    tools/all \
+    tools/javac
 
-# (Almost) no langtools tests are tier 2.
-tier2 = \
+langtools_javap = \
+    tools/all \
+    tools/javap
+
+langtools_javadoc = \
+    tools/all \
+    tools/doclint \
+    tools/javac/doctree \
+    jdk/javadoc
+
+langtools_jshell = \
+    tools/all \
+    jdk/jshell
+
+langtools_jshell_unstable = \
     jdk/jshell/ExternalEditorTest.java \
     jdk/jshell/FailOverDirectExecutionControlTest.java \
     jdk/jshell/FailOverExecutionControlDyingLaunchTest.java \
@@ -57,5 +55,35 @@ tier2 = \
     jdk/jshell/UserInputTest.java \
     jdk/jshell/UserJdiUserRemoteTest.java
 
+langtools_jdeprscan = \
+    tools/all \
+    tools/jdeprscan
+
+langtools_jdeps = \
+    tools/all \
+    tools/jdeps
+
+langtools_sjavac = \
+    tools/all \
+    tools/sjavac
+
+langtools_all = \
+    jdk \
+    lib \
+    tools
+
+# Tiered testing definitions
+
+# (Nearly) all langtools tests are tier 1.
+tier1 = \
+    :langtools_all \
+    lib \
+    tools \
+    -:langtools_jshell_unstable
+
+# (Almost) no langtools tests are tier 2.
+tier2 = \
+    :langtools_jshell_unstable
+
 # No langtools tests are tier 3 either.
-tier3 = 
+tier3 =

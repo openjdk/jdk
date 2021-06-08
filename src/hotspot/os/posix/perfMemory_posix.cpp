@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -529,6 +530,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   int searchpid;
   char* tmpdirname = (char *)os::get_temp_directory();
 #if defined(LINUX)
+  char buffer[MAXPATHLEN + 1];
   assert(strlen(tmpdirname) == 4, "No longer using /tmp - update buffer size");
 
   // On Linux, if nspid != -1, look in /proc/{vmid}/root/tmp for directories
@@ -536,7 +538,6 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   if (nspid == -1) {
     searchpid = vmid;
   } else {
-    char buffer[MAXPATHLEN + 1];
     jio_snprintf(buffer, MAXPATHLEN, "/proc/%d/root%s", vmid, tmpdirname);
     tmpdirname = buffer;
     searchpid = nspid;
@@ -1310,7 +1311,7 @@ void PerfMemory::attach(const char* user, int vmid, PerfMemoryMode mode, char** 
 // the indicated process's PerfData memory region from this
 // process's address space.
 //
-void PerfMemory::detach(char* addr, size_t bytes, TRAPS) {
+void PerfMemory::detach(char* addr, size_t bytes) {
 
   assert(addr != 0, "address sanity check");
   assert(bytes > 0, "capacity sanity check");

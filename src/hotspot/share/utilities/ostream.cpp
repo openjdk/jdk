@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,14 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "classfile/classListWriter.hpp"
+#include "cds/classListWriter.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -588,8 +589,11 @@ char* fileStream::readln(char *data, int count ) {
   char * ret = NULL;
   if (_file != NULL) {
     ret = ::fgets(data, count, _file);
-    //Get rid of annoying \n char
-    data[::strlen(data)-1] = '\0';
+    // Get rid of annoying \n char only if it is present.
+    size_t len = ::strlen(data);
+    if (len > 0 && data[len - 1] == '\n') {
+      data[len - 1] = '\0';
+    }
   }
   return ret;
 }

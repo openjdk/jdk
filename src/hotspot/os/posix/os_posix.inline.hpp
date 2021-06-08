@@ -25,9 +25,13 @@
 #ifndef OS_POSIX_OS_POSIX_INLINE_HPP
 #define OS_POSIX_OS_POSIX_INLINE_HPP
 
+// os_posix.hpp included by os.hpp
+
 #include "runtime/os.hpp"
 
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 // macros for restartable system calls
 
@@ -41,32 +45,9 @@
   return _result; \
 } while(false)
 
-
-inline int os::close(int fd) {
-  return ::close(fd);
-}
-
-#ifdef SUPPORTS_CLOCK_MONOTONIC
-
-// Exported clock functionality
-
-inline bool os::Posix::supports_monotonic_clock() {
-  return _supports_monotonic_clock;
-}
-
-inline bool os::Posix::supports_clock_gettime() {
-  return _clock_gettime != NULL;
-}
-
-inline int os::Posix::clock_gettime(clockid_t clock_id, struct timespec *tp) {
-  return _clock_gettime != NULL ? _clock_gettime(clock_id, tp) : -1;
-}
-
-inline int os::Posix::clock_getres(clockid_t clock_id, struct timespec *tp) {
-  return _clock_getres != NULL ? _clock_getres(clock_id, tp) : -1;
-}
-
-#endif // SUPPORTS_CLOCK_MONOTONIC
+// Aix does not have NUMA support but need these for compilation.
+inline bool os::numa_has_static_binding()   { AIX_ONLY(ShouldNotReachHere();) return true; }
+inline bool os::numa_has_group_homing()     { AIX_ONLY(ShouldNotReachHere();) return false;  }
 
 // Platform Mutex/Monitor implementation
 

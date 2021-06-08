@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     private static final String FORCE_PIPE_PROP = "sun.print.ippdebug";
 
     static {
+        @SuppressWarnings("removal")
         String debugStr = java.security.AccessController.doPrivileged(
                   new sun.security.action.GetPropertyAction(FORCE_PIPE_PROP));
 
@@ -465,6 +466,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
 
     public DocPrintJob createPrintJob() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPrintJobAccess();
@@ -569,6 +571,9 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                         Finishings[] fAll = (Finishings[])
                             (new ExtFinishing(100)).getAll();
                         for (int j=0; j<fAll.length; j++) {
+                            if (fAll[j] == null) {
+                                continue;
+                            }
                             if (finArray[i] == fAll[j].getValue()) {
                                 finSup[i] = fAll[j];
                                 break;
@@ -1769,6 +1774,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                                    AttributeClass.TAG_URI,
                                    ""+myURI)};
 
+            @SuppressWarnings("removal")
             OutputStream os = java.security.AccessController.
                 doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
                     public OutputStream run() {

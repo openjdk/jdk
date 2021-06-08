@@ -26,14 +26,39 @@
 #include "precompiled.hpp"
 
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 
+class ShenandoahInitMarkRootsClosure : public OopClosure {
+private:
+  ShenandoahObjToScanQueue* const _queue;
+  ShenandoahMarkingContext* const _mark_context;
+
+  template <class T>
+  inline void do_oop_work(T* p);
+public:
+  ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q);
+
+  void do_oop(narrowOop* p) { do_oop_work(p); }
+  void do_oop(oop* p)       { do_oop_work(p); }
+};
+
+ShenandoahInitMarkRootsClosure::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
+  _queue(q),
+  _mark_context(ShenandoahHeap::heap()->marking_context()) {
+}
+
+template <class T>
+void ShenandoahInitMarkRootsClosure::do_oop_work(T* p) {
+  ShenandoahMark::mark_through_ref<T, NO_DEDUP>(p, _queue, _mark_context, NULL, false);
+}
 
 class ShenandoahSTWMarkTask : public AbstractGangTask {
 private:
@@ -108,7 +133,7 @@ void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->ref_processor();
 
   mark_loop(worker_id, &_terminator, rp,
-            false, // not cancellable
-            ShenandoahStringDedup::is_enabled());
+            false /* not cancellable */,
+            ShenandoahStringDedup::is_enabled() ? ALWAYS_DEDUP : NO_DEDUP);
 }
 

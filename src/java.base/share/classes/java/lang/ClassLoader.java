@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -365,6 +365,7 @@ public abstract class ClassLoader {
             throw new IllegalArgumentException("name must be non-empty or null");
         }
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkCreateClassLoader();
@@ -671,6 +672,7 @@ public abstract class ClassLoader {
     }
 
     // Invoked by the VM after loading class with this loader.
+    @SuppressWarnings("removal")
     private void checkPackageAccess(Class<?> cls, ProtectionDomain pd) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -1134,7 +1136,7 @@ public abstract class ClassLoader {
                                         Object classData);
 
     // true if the name is null or has the potential to be a valid binary name
-    private boolean checkName(String name) {
+    private static boolean checkName(String name) {
         if ((name == null) || (name.isEmpty()))
             return true;
         if ((name.indexOf('/') != -1) || (name.charAt(0) == '['))
@@ -1254,14 +1256,14 @@ public abstract class ClassLoader {
      * Returns a class loaded by the bootstrap class loader;
      * or return null if not found.
      */
-    Class<?> findBootstrapClassOrNull(String name) {
+    static Class<?> findBootstrapClassOrNull(String name) {
         if (!checkName(name)) return null;
 
         return findBootstrapClass(name);
     }
 
     // return null if not found
-    private native Class<?> findBootstrapClass(String name);
+    private static native Class<?> findBootstrapClass(String name);
 
     /**
      * Returns the class with the given <a href="#binary-name">binary name</a> if this
@@ -1791,6 +1793,7 @@ public abstract class ClassLoader {
     public final ClassLoader getParent() {
         if (parent == null)
             return null;
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             // Check access to the parent class loader
@@ -1834,6 +1837,7 @@ public abstract class ClassLoader {
      */
     @CallerSensitive
     public static ClassLoader getPlatformClassLoader() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         ClassLoader loader = getBuiltinPlatformClassLoader();
         if (sm != null) {
@@ -1933,6 +1937,7 @@ public abstract class ClassLoader {
             default:
                 // system fully initialized
                 assert VM.isBooted() && scl != null;
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     checkClassLoaderPermission(scl, Reflection.getCallerClass());
@@ -2041,6 +2046,7 @@ public abstract class ClassLoader {
      * is not the same as or an ancestor of the given cl argument.
      */
     static void checkClassLoaderPermission(ClassLoader cl, Class<?> caller) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             // caller can be null if the VM is requesting it
@@ -2426,7 +2432,7 @@ public abstract class ClassLoader {
     /*
      * Invoked in the VM class linking code.
      */
-    private static long findNative(ClassLoader loader, String entryName) {
+    static long findNative(ClassLoader loader, String entryName) {
         if (loader == null) {
             return BootLoader.getNativeLibraries().find(entryName);
         } else {

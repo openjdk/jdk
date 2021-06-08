@@ -42,6 +42,7 @@
 #include "gc/z/zWorkers.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/handshake.hpp"
@@ -283,6 +284,10 @@ bool ZHeap::mark_end() {
   return true;
 }
 
+void ZHeap::mark_free() {
+  _mark.free();
+}
+
 void ZHeap::keep_alive(oop obj) {
   ZBarrier::keep_alive_barrier_on_oop(obj);
 }
@@ -428,7 +433,7 @@ void ZHeap::relocate() {
   _relocate.relocate(&_relocation_set);
 
   // Update statistics
-  ZStatHeap::set_at_relocate_end(_page_allocator.stats());
+  ZStatHeap::set_at_relocate_end(_page_allocator.stats(), _object_allocator.relocated());
 }
 
 void ZHeap::object_iterate(ObjectClosure* cl, bool visit_weaks) {
@@ -454,8 +459,12 @@ void ZHeap::serviceability_initialize() {
   _serviceability.initialize();
 }
 
-GCMemoryManager* ZHeap::serviceability_memory_manager() {
-  return _serviceability.memory_manager();
+GCMemoryManager* ZHeap::serviceability_cycle_memory_manager() {
+  return _serviceability.cycle_memory_manager();
+}
+
+GCMemoryManager* ZHeap::serviceability_pause_memory_manager() {
+  return _serviceability.pause_memory_manager();
 }
 
 MemoryPool* ZHeap::serviceability_memory_pool() {
@@ -489,7 +498,7 @@ void ZHeap::print_extended_on(outputStream* st) const {
   }
 
   // Allow pages to be deleted
-  _page_allocator.enable_deferred_delete();
+  _page_allocator.disable_deferred_delete();
 }
 
 bool ZHeap::print_location(outputStream* st, uintptr_t addr) const {

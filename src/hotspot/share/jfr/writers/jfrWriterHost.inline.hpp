@@ -25,15 +25,17 @@
 #ifndef SHARE_JFR_WRITERS_JFRWRITERHOST_INLINE_HPP
 #define SHARE_JFR_WRITERS_JFRWRITERHOST_INLINE_HPP
 
+#include "jfr/writers/jfrWriterHost.hpp"
+
 #include "classfile/javaClasses.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/writers/jfrEncoding.hpp"
-#include "jfr/writers/jfrWriterHost.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "runtime/jniHandles.hpp"
 
 inline bool compressed_integers() {
   static const bool comp_integers = JfrOptionSet::compressed_integers();

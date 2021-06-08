@@ -431,6 +431,10 @@ class WindowsFileAttributes
         return reparseTag == IO_REPARSE_TAG_SYMLINK;
     }
 
+    boolean isUnixDomainSocket() {
+        return reparseTag == IO_REPARSE_TAG_AF_UNIX;
+    }
+
     @Override
     public boolean isDirectory() {
         // ignore FILE_ATTRIBUTE_DIRECTORY attribute if file is a sym link
