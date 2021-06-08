@@ -376,7 +376,7 @@ public class JLinkTest {
                     .addMods("java.base")
                     .option("--vm=client")
                     .call().assertFailure("Error: Selected VM client doesn't exist");
-            if (Files.isDirectory(imagePath)) {
+            if (!Files.notExists(imagePath)) {
                 throw new RuntimeException("bug8240349 directory not deleted");
             }
         }

@@ -284,13 +284,18 @@ public class JlinkTask {
             log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
             e.printStackTrace(log);
             return EXIT_ERROR;
-        } catch (PluginException | IllegalArgumentException |
-                 UncheckedIOException |IOException | ResolutionException e) {
+        } catch (PluginException | UncheckedIOException | IOException e) {
             log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
             if (DEBUG) {
                 e.printStackTrace(log);
             }
             cleanupOutput(outputPath);
+            return EXIT_ERROR;
+        } catch (IllegalArgumentException | ResolutionException e) {
+            log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
+            if (DEBUG) {
+                e.printStackTrace(log);
+            }
             return EXIT_ERROR;
         } catch (BadArgs e) {
             taskHelper.reportError(e.key, e.args);
@@ -313,7 +318,9 @@ public class JlinkTask {
 
     private void cleanupOutput(Path dir) {
         try {
-            deleteDirectory(dir);
+            if (dir != null && Files.isDirectory(dir)) {
+                deleteDirectory(dir);
+            }
         } catch (IOException io) {
             log.println(taskHelper.getMessage("error.prefix") + " " + io.getMessage());
             if (DEBUG) {
@@ -487,27 +494,25 @@ public class JlinkTask {
     }
 
     private static void deleteDirectory(Path dir) throws IOException {
-        if (dir != null && Files.isDirectory(dir)) {
-            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException {
-                    Files.delete(file);
+        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException e)
+                    throws IOException {
+                if (e == null) {
+                    Files.delete(dir);
                     return FileVisitResult.CONTINUE;
+                } else {
+                    // directory iteration failed.
+                    throw e;
                 }
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException e)
-                        throws IOException {
-                    if (e == null) {
-                        Files.delete(dir);
-                        return FileVisitResult.CONTINUE;
-                    } else {
-                        // directory iteration failed.
-                        throw e;
-                    }
-                }
-            });
-        }
+            }
+        });
     }
 
     private static Path toPathLocation(ResolvedModule m) {
