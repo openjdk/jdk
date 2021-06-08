@@ -2166,6 +2166,29 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return r1.blend(r0, valid);
     }
 
+    @ForceInline
+    private final
+    VectorShuffle<Short> toShuffle0(ShortSpecies dsp) {
+        short[] a = toArray();
+        int[] sa = new int[a.length];
+        for (int i = 0; i < a.length; i++) {
+            sa[i] = (int) a[i];
+        }
+        return VectorShuffle.fromArray(dsp, sa, 0);
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    VectorShuffle<Short> toShuffleTemplate(Class<?> shuffleType) {
+        ShortSpecies vsp = vspecies();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), short.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     ShortVector::toShuffle0);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
