@@ -2073,6 +2073,29 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         return r1.blend(r0, valid);
     }
 
+    @ForceInline
+    private final
+    VectorShuffle<Double> toShuffle0(DoubleSpecies dsp) {
+        double[] a = toArray();
+        int[] sa = new int[a.length];
+        for (int i = 0; i < a.length; i++) {
+            sa[i] = (int) a[i];
+        }
+        return VectorShuffle.fromArray(dsp, sa, 0);
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    VectorShuffle<Double> toShuffleTemplate(Class<?> shuffleType) {
+        DoubleSpecies vsp = vspecies();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), double.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     DoubleVector::toShuffle0);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */

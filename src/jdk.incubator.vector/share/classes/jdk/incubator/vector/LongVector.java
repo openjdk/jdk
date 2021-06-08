@@ -2036,6 +2036,29 @@ public abstract class LongVector extends AbstractVector<Long> {
         return r1.blend(r0, valid);
     }
 
+    @ForceInline
+    private final
+    VectorShuffle<Long> toShuffle0(LongSpecies dsp) {
+        long[] a = toArray();
+        int[] sa = new int[a.length];
+        for (int i = 0; i < a.length; i++) {
+            sa[i] = (int) a[i];
+        }
+        return VectorShuffle.fromArray(dsp, sa, 0);
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    VectorShuffle<Long> toShuffleTemplate(Class<?> shuffleType) {
+        LongSpecies vsp = vspecies();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), long.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     LongVector::toShuffle0);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
