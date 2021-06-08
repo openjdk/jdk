@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,82 +215,88 @@ public class CreateSymbolsTestImpl {
 
     @Test
     void testAnnotations() throws Exception {
-        doPrintElementTest("package t;" +
-                           "import java.lang.annotation.*;" +
-                           "public @Visible @Invisible class T { public void extra() { } }" +
-                           "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
-                           "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
-                           "package t;" +
-                           "import java.lang.annotation.*;" +
-                           "public @Visible @Invisible class T { }" +
-                           "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
-                           "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
-                           "t.T",
-                           "package t;\n\n" +
-                           "@t.Invisible\n" +
-                           "@t.Visible\n" +
-                           "public class T {\n\n" +
-                           "  public T();\n\n" +
-                           "  public void extra();\n" +
-                           "}\n",
-                           "t.Visible",
-                           "package t;\n\n" +
-                           "@java.lang.annotation.Retention(RUNTIME)\n" +
-                           "@interface Visible {\n" +
-                           "}\n");
-        doPrintElementTest("package t;" +
-                           "import java.lang.annotation.*;" +
-                           "import java.util.*;" +
-                           "public class T {" +
-                           "    public void test(int h, @Invisible int i, @Visible List<String> j, int k) { }" +
-                           "}" +
-                           "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
-                           "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
-                           "package t;" +
-                           "import java.lang.annotation.*;" +
-                           "import java.util.*;" +
-                           "public class T {" +
-                           "    public void test(int h, @Invisible int i, @Visible List<String> j, int k) { }" +
-                           "    public void extra() { }" +
-                           "}" +
-                           "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
-                           "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
-                           "t.T",
-                           "package t;\n\n" +
-                           "public class T {\n\n" +
-                           "  public T();\n\n" +
-                           "  public void test(int arg0,\n" +
-                           "    @t.Invisible int arg1,\n" +
-                           "    @t.Visible java.util.List<java.lang.String> arg2,\n" +
-                           "    int arg3);\n" +
-                           "}\n",
-                           "t.Visible",
-                           "package t;\n\n" +
-                           "@java.lang.annotation.Retention(RUNTIME)\n" +
-                           "@interface Visible {\n" +
-                           "}\n");
-        doPrintElementTest("package t;" +
-                           "import java.lang.annotation.*;" +
-                           "public class T {" +
-                           "    public void test(@Ann(v=\"url\", dv=\"\\\"\\\"\") String str) { }" +
-                           "}" +
-                           "@Retention(RetentionPolicy.RUNTIME) @interface Ann {" +
-                           "    public String v();" +
-                           "    public String dv();" +
-                           "}",
-                           "package t;" +
-                           "public class T { }",
-                           "t.T",
-                           "package t;\n\n" +
-                           "public class T {\n\n" +
-                           "  public T();\n\n" +
-                           "  public void test(@t.Ann(dv=\"\\\"\\\"\", v=\"url\") java.lang.String arg0);\n" +
-                           "}\n",
-                           "t.T",
-                           "package t;\n\n" +
-                           "public class T {\n\n" +
-                           "  public T();\n" +
-                           "}\n");
+        Set<String> extraAnnotations = Set.of("Ljava/lang/annotation/Retention;");
+        CreateSymbols.HARDCODED_ANNOTATIONS.addAll(extraAnnotations);
+        try {
+            doPrintElementTest("package t;" +
+                               "import java.lang.annotation.*;" +
+                               "public @Visible @Invisible class T { public void extra() { } }" +
+                               "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
+                               "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
+                               "package t;" +
+                               "import java.lang.annotation.*;" +
+                               "public @Visible @Invisible class T { }" +
+                               "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
+                               "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
+                               "t.T",
+                               "package t;\n\n" +
+                               "@t.Invisible\n" +
+                               "@t.Visible\n" +
+                               "public class T {\n\n" +
+                               "  public T();\n\n" +
+                               "  public void extra();\n" +
+                               "}\n",
+                               "t.Visible",
+                               "package t;\n\n" +
+                               "@java.lang.annotation.Retention(RUNTIME)\n" +
+                               "@interface Visible {\n" +
+                               "}\n");
+            doPrintElementTest("package t;" +
+                               "import java.lang.annotation.*;" +
+                               "import java.util.*;" +
+                               "public class T {" +
+                               "    public void test(int h, @Invisible int i, @Visible List<String> j, int k) { }" +
+                               "}" +
+                               "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
+                               "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
+                               "package t;" +
+                               "import java.lang.annotation.*;" +
+                               "import java.util.*;" +
+                               "public class T {" +
+                               "    public void test(int h, @Invisible int i, @Visible List<String> j, int k) { }" +
+                               "    public void extra() { }" +
+                               "}" +
+                               "@Retention(RetentionPolicy.RUNTIME) @interface Visible { }" +
+                               "@Retention(RetentionPolicy.CLASS) @interface Invisible { }",
+                               "t.T",
+                               "package t;\n\n" +
+                               "public class T {\n\n" +
+                               "  public T();\n\n" +
+                               "  public void test(int arg0,\n" +
+                               "    @t.Invisible int arg1,\n" +
+                               "    @t.Visible java.util.List<java.lang.String> arg2,\n" +
+                               "    int arg3);\n" +
+                               "}\n",
+                               "t.Visible",
+                               "package t;\n\n" +
+                               "@java.lang.annotation.Retention(RUNTIME)\n" +
+                               "@interface Visible {\n" +
+                               "}\n");
+            doPrintElementTest("package t;" +
+                               "import java.lang.annotation.*;" +
+                               "public class T {" +
+                               "    public void test(@Ann(v=\"url\", dv=\"\\\"\\\"\") String str) { }" +
+                               "}" +
+                               "@Retention(RetentionPolicy.RUNTIME) @interface Ann {" +
+                               "    public String v();" +
+                               "    public String dv();" +
+                               "}",
+                               "package t;" +
+                               "public class T { }",
+                               "t.T",
+                               "package t;\n\n" +
+                               "public class T {\n\n" +
+                               "  public T();\n\n" +
+                               "  public void test(@t.Ann(dv=\"\\\"\\\"\", v=\"url\") java.lang.String arg0);\n" +
+                               "}\n",
+                               "t.T",
+                               "package t;\n\n" +
+                               "public class T {\n\n" +
+                               "  public T();\n" +
+                               "}\n");
+        } finally {
+            CreateSymbols.HARDCODED_ANNOTATIONS.removeAll(extraAnnotations);
+        }
     }
 
     @Test
@@ -360,11 +366,70 @@ public class CreateSymbolsTestImpl {
                Expect.SUCCESS);
     }
 
+    @Test
+    void testClearMissingAnnotations() throws Exception {
+        doPrintElementTest(new String[] {
+                               """
+                               package t;
+                               import t.impl.HC;
+                               import t.impl.HR;
+                               @HC @HR public class T {
+                                   @HC @HR public static final int i = 0;
+                                   @HC @HR public void t() {}
+                               }
+                               """,
+                               """
+                               package t.impl;
+                               import java.lang.annotation.*;
+                               @Retention(RetentionPolicy.CLASS)
+                               public @interface HC {
+                               }
+                               """,
+                               """
+                               package t.impl;
+                               import java.lang.annotation.*;
+                               @Retention(RetentionPolicy.RUNTIME)
+                               public @interface HR {
+                               }
+                               """
+                           },
+                           new String[] {
+                               """
+                               package t;
+                               public class T {
+                                   public static final int i = 0;
+                               }
+                               """
+                           },
+                           "t.T",
+                           """
+                           package t;
+
+                           public class T {
+                             public static final int i = 0;
+
+                             public T();
+
+                             public void t();
+                           }
+                           """,
+                           "t.T",
+                           """
+                           package t;
+
+                           public class T {
+                             public static final int i = 0;
+
+                             public T();
+                           }
+                           """);
+    }
+
     int i = 0;
 
     void doTest(String code7, String code8, String testCode, Expect result7, Expect result8) throws Exception {
         ToolBox tb = new ToolBox();
-        Path classes = prepareVersionedCTSym(code7, code8);
+        Path classes = prepareVersionedCTSym(new String[] {code7}, new String[] {code8});
         Path output = classes.getParent();
         Path scratch = output.resolve("scratch");
 
@@ -392,6 +457,10 @@ public class CreateSymbolsTestImpl {
     }
 
     void doPrintElementTest(String code7, String code8, String className7, String printed7, String className8, String printed8) throws Exception {
+        doPrintElementTest(new String[] {code7}, new String[] {code8}, className7, printed7, className8, printed8);
+    }
+
+    void doPrintElementTest(String[] code7, String[] code8, String className7, String printed7, String className8, String printed8) throws Exception {
         ToolBox tb = new ToolBox();
         Path classes = prepareVersionedCTSym(code7, code8);
         Path output = classes.getParent();
@@ -419,7 +488,7 @@ public class CreateSymbolsTestImpl {
     }
 
     void doTestEquivalence(String code7, String code8, String testClass) throws Exception {
-        Path classes = prepareVersionedCTSym(code7, code8);
+        Path classes = prepareVersionedCTSym(new String[] {code7}, new String[] {code8});
         Path classfile = classes.resolve("78").resolve("java.base").resolve(testClass.replace('.', '/') + ".class");
 
         if (!Files.isReadable(classfile)) {
@@ -576,7 +645,7 @@ public class CreateSymbolsTestImpl {
         boolean oldIncludeAll = includeAll;
         try {
             includeAll = false;
-            Path classes = prepareVersionedCTSym(code, "package other; public class Other {}");
+            Path classes = prepareVersionedCTSym(new String[] {code}, new String[] {"package other; public class Other {}"});
             Path root = classes.resolve("7").resolve("java.base");
             try (Stream<Path> classFiles = Files.walk(root)) {
                 Set<String> names = classFiles.map(p -> root.relativize(p))
@@ -595,7 +664,7 @@ public class CreateSymbolsTestImpl {
         }
     }
 
-    Path prepareVersionedCTSym(String code7, String code8) throws Exception {
+    Path prepareVersionedCTSym(String[] code7, String[] code8) throws Exception {
         String testClasses = System.getProperty("test.classes");
         Path output = Paths.get(testClasses, "test-data" + i++);
         deleteRecursively(output);
@@ -694,6 +763,7 @@ public class CreateSymbolsTestImpl {
             return files.filter(p -> Files.isRegularFile(p))
                         .filter(p -> p.getFileName().toString().endsWith(".class"))
                         .map(p -> root.relativize(p).toString())
+                        .filter(p -> !p.contains("impl"))
                         .collect(Collectors.toList());
         }
     }

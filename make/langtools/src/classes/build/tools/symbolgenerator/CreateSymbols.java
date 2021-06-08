@@ -229,6 +229,7 @@ public class CreateSymbols {
                                                                     : null,
                                      Paths.get(ctDescriptionFile));
 
+        stripNonExistentAnnotations(data);
         splitHeaders(data.classes);
 
         Map<String, Map<Character, String>> package2Version2Module = new HashMap<>();
@@ -299,6 +300,45 @@ public class CreateSymbols {
                 }
             }
         }
+    }
+
+    private static final String PREVIEW_FEATURE_ANNOTATION_OLD =
+            "Ljdk/internal/PreviewFeature;";
+    private static final String PREVIEW_FEATURE_ANNOTATION_NEW =
+            "Ljdk/internal/javac/PreviewFeature;";
+    private static final String PREVIEW_FEATURE_ANNOTATION_INTERNAL =
+            "Ljdk/internal/PreviewFeature+Annotation;";
+    public static final Set<String> HARDCODED_ANNOTATIONS = new HashSet<>(
+            List.of("Ljdk/Profile+Annotation;",
+                    "Lsun/Proprietary+Annotation;",
+                    PREVIEW_FEATURE_ANNOTATION_OLD,
+                    PREVIEW_FEATURE_ANNOTATION_NEW));
+
+    private void stripNonExistentAnnotations(LoadDescriptions data) {
+        Set<String> allClasses = data.classes.name2Class.keySet();
+        data.modules.values().forEach(mod -> {
+            stripNonExistentAnnotations(allClasses, mod.header);
+        });
+        data.classes.classes.forEach(clazz -> {
+            stripNonExistentAnnotations(allClasses, clazz.header);
+            stripNonExistentAnnotations(allClasses, clazz.fields);
+            stripNonExistentAnnotations(allClasses, clazz.methods);
+        });
+    }
+
+    private void stripNonExistentAnnotations(Set<String> allClasses, Iterable<? extends FeatureDescription> descs) {
+        descs.forEach(d -> stripNonExistentAnnotations(allClasses, d));
+    }
+
+    private void stripNonExistentAnnotations(Set<String> allClasses, FeatureDescription d) {
+        stripNonExistentAnnotations(allClasses, d.classAnnotations);
+        stripNonExistentAnnotations(allClasses, d.runtimeAnnotations);
+    }
+
+    private void stripNonExistentAnnotations(Set<String> allClasses, List<AnnotationDescription> annotations) {
+        if (annotations != null)
+            annotations.removeIf(ann -> !HARDCODED_ANNOTATIONS.contains(ann.annotationType) &&
+                                        !allClasses.contains(ann.annotationType.substring(1, ann.annotationType.length() - 1)));
     }
 
     private ZipEntry createZipEntry(String name, long timestamp) {
@@ -1144,13 +1184,6 @@ public class CreateSymbols {
                               addString(constantPool, annotationType),
                               createElementPairs(constantPool, values));
     }
-    //where:
-        private static final String PREVIEW_FEATURE_ANNOTATION_OLD =
-                "Ljdk/internal/PreviewFeature;";
-        private static final String PREVIEW_FEATURE_ANNOTATION_NEW =
-                "Ljdk/internal/javac/PreviewFeature;";
-        private static final String PREVIEW_FEATURE_ANNOTATION_INTERNAL =
-                "Ljdk/internal/PreviewFeature+Annotation;";
 
     private element_value_pair[] createElementPairs(List<CPInfo> constantPool, Map<String, Object> annotationAttributes) {
         element_value_pair[] pairs = new element_value_pair[annotationAttributes.size()];
