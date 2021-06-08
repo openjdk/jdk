@@ -83,7 +83,7 @@ public class ToolEnvironment {
         return instance;
     }
 
-    final Messager messager;
+    final JavadocLog log;
 
     /** Predefined symbols known to the compiler. */
     public final Symtab syms;
@@ -137,7 +137,7 @@ public class ToolEnvironment {
         context.put(ToolEnvKey, this);
         this.context = context;
 
-        messager = Messager.instance0(context);
+        log = JavadocLog.instance0(context);
         syms = Symtab.instance(context);
         finder = JavadocClassFinder.instance(context);
         enter = JavadocEnter.instance(context);
@@ -199,7 +199,7 @@ public class ToolEnvironment {
         if (quiet) {
             return;
         }
-        messager.noticeUsingKey(key);
+        log.noticeUsingKey(key);
     }
 
     /**
@@ -212,7 +212,7 @@ public class ToolEnvironment {
         if (quiet) {
             return;
         }
-        messager.noticeUsingKey(key, a1);
+        log.noticeUsingKey(key, a1);
     }
 
     TreePath getTreePath(JCCompilationUnit tree) {
