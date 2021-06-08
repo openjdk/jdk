@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -15035,6 +15035,9 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Minor update for new class file PermittedSubclasses attribute:
         - Specify that RedefineClasses and RetransformClasses are not allowed
           to change the class file PermittedSubclasses attribute.
+  </change>
+  <change date="8 June 2021" version="17.0.0">
+      Minor update to deprecate Heap functions 1.0.
   </change>
 </changehistory>
 
