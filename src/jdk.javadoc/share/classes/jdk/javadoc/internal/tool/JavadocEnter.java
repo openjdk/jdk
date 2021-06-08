@@ -61,24 +61,24 @@ public class JavadocEnter extends Enter {
 
     protected JavadocEnter(Context context) {
         super(context);
-        messager = Messager.instance0(context);
+        log = JavadocLog.instance0(context);
         toolEnv = ToolEnvironment.instance(context);
         compiler = JavaCompiler.instance(context);
     }
 
-    final Messager messager;
+    final JavadocLog log;
     final ToolEnvironment toolEnv;
     final JavaCompiler compiler;
 
     @Override
     public void main(List<JCCompilationUnit> trees) {
         // cache the error count if we need to convert Enter errors as warnings.
-        int nerrors = messager.nerrors;
+        int nerrors = log.nerrors;
         super.main(trees);
         compiler.enterDone();
         if (toolEnv.ignoreSourceErrors) {
-            messager.nwarnings += (messager.nerrors - nerrors);
-            messager.nerrors = nerrors;
+            log.nwarnings += (log.nerrors - nerrors);
+            log.nerrors = nerrors;
         }
     }
 
