@@ -1111,7 +1111,7 @@ public class TestModules extends JavadocTester {
         checkOutput("deprecated-list.html", found,
                 """
                     <ul>
-                    <li><a href="#for-removal">For Removal</a></li>
+                    <li><a href="#for-removal">Terminally Deprecated</a></li>
                     <li><a href="#module">Modules</a></li>
                     </ul>""",
                 """
