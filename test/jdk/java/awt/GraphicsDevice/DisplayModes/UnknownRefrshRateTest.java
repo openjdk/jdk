@@ -65,6 +65,7 @@ public class UnknownRefrshRateTest {
              } finally {
                  System.out.println("restoring original mode"+odm);
                  d.setDisplayMode(odm);
+                 Thread.sleep(10000);
              }
        }
     }

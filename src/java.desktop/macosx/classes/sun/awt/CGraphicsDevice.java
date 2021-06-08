@@ -375,7 +375,7 @@ public final class CGraphicsDevice extends GraphicsDevice
           int len = nativeModes.length;
           DisplayMode[] modes = Arrays.copyOf(nativeModes, len+1, DisplayMode[].class);
           modes[len] = initialMode;
-          return modes; 
+          return modes;
         }
     }
 
