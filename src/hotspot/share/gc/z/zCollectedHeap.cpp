@@ -50,8 +50,8 @@ ZCollectedHeap::ZCollectedHeap() :
     _barrier_set(),
     _initialize(&_barrier_set),
     _heap(),
-    _director(new ZDirector()),
     _driver(new ZDriver()),
+    _director(new ZDirector(_driver)),
     _stat(new ZStat()),
     _runtime_workers() {}
 
