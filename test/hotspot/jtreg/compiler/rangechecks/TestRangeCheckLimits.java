@@ -39,6 +39,7 @@
 
     public static void main(String[] k) {
         test();
+        test2();
     }
 
     public static void test() {
@@ -51,8 +52,32 @@
                 b = e;
             }
             i[1] = b;
+            // In RC: flipped to negative stride*scale
             for (g = 8; 168 > g; g += 2) {
                 j = g;
+                if (j < 3) {
+                    switch (3) {
+                        case 3:
+                    }
+                }
+            }
+        }
+        lFld = j;
+    }
+
+    public static void test2() {
+        int e, f, g, h[] = new int[a];
+        double i[] = new double[a];
+        long j = 9;
+        Helper.init(h, 3);
+        for (e = 5; e < 154; e++) {
+            for (f = 1; f < 169; f += 2) {
+                b = e;
+            }
+            i[1] = b;
+            // In RC: flipped to positive stride*scale
+            for (g = 168; 8 < g; g -= 2) {
+                j = g - 1;
                 if (j < 3) {
                     switch (3) {
                         case 3:
