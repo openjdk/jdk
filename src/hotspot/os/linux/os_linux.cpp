@@ -672,7 +672,8 @@ static void *thread_native_entry(Thread *thread) {
   // and we did not see any degradation in performance without `alloca()`.
   static int counter = 0;
   int pid = os::current_process_id();
-  void *stackmem = alloca(((pid ^ counter++) & 7) * 128);
+  int random = ((pid ^ counter++) & 7) * 128;
+  void *stackmem = alloca(random != 0 ? random : 1); // ensure we allocate > 0
   // Ensure the alloca result is used in a way that prevents the compiler from eliding it.
   *(char *)stackmem = 1;
 #endif
