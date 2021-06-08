@@ -49,9 +49,14 @@ public class DrawOvalTest {
         VolatileImage vi = gc.createCompatibleVolatileImage(10, 10, Transparency.TRANSLUCENT);
 
         // Draw test rendering sequence
-        render(vi.createGraphics());
+        BufferedImage snapshot = null;
+        Graphics2D g2 = vi.createGraphics();
 
-        BufferedImage snapshot = vi.getSnapshot();
+        do {
+            vi.validate(gc);
+            render(g2);
+            snapshot = vi.getSnapshot();
+        } while (vi.contentsLost());
 
         // Pixel color sequence expected after test rendering is complete
         // Blue color = -16776961
