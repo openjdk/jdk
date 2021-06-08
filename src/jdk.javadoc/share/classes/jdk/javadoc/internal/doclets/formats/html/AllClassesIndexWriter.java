@@ -92,7 +92,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * Print all the classes in the file.
      */
     protected void buildAllClassesFile() throws DocFileIOException {
-        String label = resources.getText("doclet.All_Classes");
+        String label = resources.getText("doclet.All_Classes_And_Interfaces");
         Content allClassesContent = new ContentBuilder();
         addContents(allClassesContent);
         Content mainContent = new ContentBuilder();
@@ -131,7 +131,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 }
             }
         }
-        Content titleContent = contents.allClassesLabel;
+        Content titleContent = contents.allClassesAndInterfacesLabel;
         Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
