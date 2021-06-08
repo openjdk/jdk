@@ -102,7 +102,7 @@ class AsyncLogMapIterator {
     using none = LogTagSetMapping<LogTag::__NO_TAG>;
 
     if (*counter > 0) {
-      LogDecorations decorations(LogLevel::Warning, none::tagset(), output->decorators());
+      LogDecorations decorations(LogLevel::Warning, none::tagset(), LogDecorators::All);
       stringStream ss;
       ss.print(UINT32_FORMAT_W(6) " messages dropped due to async logging", *counter);
       AsyncLogMessage msg(*output, decorations, ss.as_string(true /*c_heap*/));
