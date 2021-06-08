@@ -60,3 +60,5 @@ void JavaAccessibilitySetAttributeValue(id element, NSString *attribute, id valu
 void JavaAccessibilityRaiseSetAttributeToIllegalTypeException(const char *functionName, id element, NSString *attribute, id value);
 void JavaAccessibilityRaiseUnimplementedAttributeException(const char *functionName, id element, NSString *attribute);
 void JavaAccessibilityRaiseIllegalParameterTypeException(const char *functionName, id element, NSString *attribute, id parameter);
+BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component);
+NSNumber* JavaNumberToNSNumber(JNIEnv *env, jobject jnumber);

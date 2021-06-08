@@ -27,6 +27,7 @@
 #import "JNIUtilities.h"
 
 #import <AppKit/AppKit.h>
+#import "ThreadUtilities.h"
 
 static BOOL JavaAccessibilityIsSupportedAttribute(id element, NSString *attribute);
 static void JavaAccessibilityLogError(NSString *message);
@@ -346,6 +347,59 @@ static void _JavaAccessibilityRaiseException(NSString *reason, SInt32 errorCode)
 static void JavaAccessibilityLogError(NSString *message)
 {
     NSLog(@"!!! %@", message);
+}
+
+/*
+ * Returns Object.equals for the two items
+ * This may use LWCToolkit.invokeAndWait(); don't call while holding fLock
+ * and try to pass a component so the event happens on the correct thread.
+ */
+BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component)
+{
+    DECLARE_CLASS_RETURN(sjc_Object, "java/lang/Object", NO);
+    DECLARE_METHOD_RETURN(jm_equals, sjc_Object, "equals", "(Ljava/lang/Object;)Z", NO);
+
+    if ((a == NULL) && (b == NULL)) return YES;
+    if ((a == NULL) || (b == NULL)) return NO;
+
+    if (pthread_main_np() != 0) {
+        // If we are on the AppKit thread
+        DECLARE_CLASS_RETURN(sjc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit", NO);
+        DECLARE_STATIC_METHOD_RETURN(jm_doEquals, sjc_LWCToolkit, "doEquals",
+                                     "(Ljava/lang/Object;Ljava/lang/Object;Ljava/awt/Component;)Z", NO);
+        return (*env)->CallStaticBooleanMethod(env, sjc_LWCToolkit, jm_doEquals, a, b, component);
+        CHECK_EXCEPTION();
+    }
+
+    jboolean jb = (*env)->CallBooleanMethod(env, a, jm_equals, b);
+    CHECK_EXCEPTION();
+    return jb;
+}
+
+/*
+ * The java/lang/Number concrete class could be for any of the Java primitive
+ * numerical types or some other subclass.
+ * All existing A11Y code uses Integer so that is what we look for first
+ * But all must be able to return a double and NSNumber accepts a double,
+ * so that's the fall back.
+ */
+NSNumber* JavaNumberToNSNumber(JNIEnv *env, jobject jnumber) {
+    if (jnumber == NULL) {
+        return nil;
+    }
+    DECLARE_CLASS_RETURN(jnumber_Class, "java/lang/Number", nil);
+    DECLARE_CLASS_RETURN(jinteger_Class, "java/lang/Integer", nil);
+    DECLARE_METHOD_RETURN(jm_intValue, jnumber_Class, "intValue", "()I", nil);
+    DECLARE_METHOD_RETURN(jm_doubleValue, jnumber_Class, "doubleValue", "()D", nil);
+    if ((*env)->IsInstanceOf(env, jnumber, jinteger_Class)) {
+        jint i = (*env)->CallIntMethod(env, jnumber, jm_intValue);
+        CHECK_EXCEPTION();
+        return [NSNumber numberWithInteger:i];
+    } else {
+        jdouble d = (*env)->CallDoubleMethod(env, jnumber, jm_doubleValue);
+        CHECK_EXCEPTION();
+        return [NSNumber numberWithDouble:d];
+    }
 }
 
 // end appKit copies

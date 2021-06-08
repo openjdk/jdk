@@ -43,7 +43,7 @@
 - (NSArray *)accessibilityChildren {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 
-    NSArray *children = [JavaComponentAccessibility childrenOfParent:self
+    NSArray *children = [CommonComponentAccessibility childrenOfParent:self
                                                              withEnv:env
                                                     withChildrenCode:JAVA_AX_ALL_CHILDREN
                                                         allowIgnored:NO];
@@ -53,6 +53,16 @@
     } else {
         return children;
     }
+}
+
+- (NSRect)accessibilityFrame
+{
+    return [super accessibilityFrame];
+}
+
+- (id)accessibilityParent
+{
+    return [super accessibilityParent];
 }
 
 @end
