@@ -758,6 +758,17 @@ public:
   virtual CompiledStaticCall* compiledStaticCall_at(Relocation* call_site) const;
   virtual CompiledStaticCall* compiledStaticCall_at(address addr) const;
   virtual CompiledStaticCall* compiledStaticCall_before(address addr) const;
+
+ public:
+  // Profiling/safepoint support
+  class FrameParser : public CompiledMethod::FrameParser {
+   public:
+    FrameParser(const nmethod* cb) : CompiledMethod::FrameParser(cb) {}
+    virtual bool sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+      address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
+  };
+
+  virtual FrameParser* frame_parser() const { return new FrameParser(this); }
 };
 
 // Locks an nmethod so its code will not get removed and it will not

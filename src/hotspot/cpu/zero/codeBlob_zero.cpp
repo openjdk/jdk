@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "code/compiledMethod.hpp"
+#include "code/nmethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "runtime/frame.hpp"
 
@@ -37,12 +38,24 @@ bool CodeBlob::FrameParser::sender_frame(JavaThread *thread, bool check, address
 
 bool InterpreterBlob::FrameParser::sender_frame(JavaThread *thread, bool check, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
     address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
-  return CodeBlob::FrameParser::sender_frame(thread, pc, sp, unextended_sp, fp, fp_safe,
-                                             sender_pc, sender_sp, sender_unextended_sp, saved_fp);
+  ShouldNotCallThis();
+  return false;
 }
 
 bool StubRoutinesBlob::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
     address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
-  return CodeBlob::FrameParser::sender_frame(thread, pc, sp, unextended_sp, fp, fp_safe,
-                                             sender_pc, sender_sp, sender_unextended_sp, saved_fp);
+  ShouldNotCallThis();
+  return false;
+}
+
+bool CompiledMethod::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+    address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
+  ShouldNotCallThis();
+  return false;
+}
+
+bool nmethod::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+    address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
+  ShouldNotCallThis();
+  return false;
 }

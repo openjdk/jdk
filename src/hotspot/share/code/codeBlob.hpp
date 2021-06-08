@@ -152,12 +152,12 @@ public:
   CompilerType compiler_type() const { return _type; }
 
   // Casting
-  nmethod* as_nmethod_or_null()                { return is_nmethod() ? (nmethod*) this : NULL; }
-  nmethod* as_nmethod()                        { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
-  CompiledMethod* as_compiled_method_or_null() { return is_compiled() ? (CompiledMethod*) this : NULL; }
-  CompiledMethod* as_compiled_method()         { assert(is_compiled(), "must be compiled"); return (CompiledMethod*) this; }
-  CodeBlob* as_codeblob_or_null() const        { return (CodeBlob*) this; }
-  OptimizedEntryBlob* as_optimized_entry_blob() const             { assert(is_optimized_entry_blob(), "must be entry blob"); return (OptimizedEntryBlob*) this; }
+  nmethod* as_nmethod_or_null() const                 { return is_nmethod() ? (nmethod*) this : NULL; }
+  nmethod* as_nmethod() const                         { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
+  CompiledMethod* as_compiled_method_or_null() const  { return is_compiled() ? (CompiledMethod*) this : NULL; }
+  CompiledMethod* as_compiled_method() const          { assert(is_compiled(), "must be compiled"); return (CompiledMethod*) this; }
+  CodeBlob* as_codeblob_or_null() const               { return (CodeBlob*) this; }
+  OptimizedEntryBlob* as_optimized_entry_blob() const { assert(is_optimized_entry_blob(), "must be entry blob"); return (OptimizedEntryBlob*) this; }
 
   // Boundaries
   address header_begin() const        { return (address) this; }

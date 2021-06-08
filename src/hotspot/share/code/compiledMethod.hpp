@@ -399,6 +399,17 @@ public:
   bool unload_nmethod_caches(bool class_unloading_occurred);
   virtual void do_unloading(bool unloading_occurred) = 0;
 
+ public:
+  // Profiling/safepoint support
+  class FrameParser : public CodeBlob::FrameParser {
+   public:
+    FrameParser(const CompiledMethod* cb) : CodeBlob::FrameParser(cb) {}
+    virtual bool sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+      address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp);
+  };
+
+  virtual FrameParser* frame_parser() const { return new FrameParser(this); }
+
 private:
   PcDesc* find_pc_desc(address pc, bool approximate) {
     return _pc_desc_container.find_pc_desc(pc, approximate, PcDescSearch(code_begin(), scopes_pcs_begin(), scopes_pcs_end()));

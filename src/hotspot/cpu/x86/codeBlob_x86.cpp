@@ -25,7 +25,9 @@
 
 #include "precompiled.hpp"
 #include "code/codeBlob.hpp"
+#include "code/codeCache.hpp"
 #include "code/compiledMethod.hpp"
+#include "code/nmethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "runtime/frame.hpp"
 
@@ -43,7 +45,7 @@ bool CodeBlob::FrameParser::sender_frame(JavaThread *thread, bool check, address
   // ok. adapter blobs never have a frame complete and are never ok.
 
   if (!_cb->is_frame_complete_at(pc)) {
-    if (_cb->is_compiled() || _cb->is_adapter_blob()) {
+    if (_cb->is_adapter_blob()) {
       return false;
     }
   }
@@ -115,4 +117,75 @@ bool StubRoutinesBlob::FrameParser::sender_frame(JavaThread *thread, address pc,
   *saved_fp = (intptr_t**)(fp + frame::link_offset);
 
   return true;
+}
+
+bool CompiledMethod::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+    address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
+
+  assert(sender_pc != NULL, "invariant");
+  assert(sender_sp != NULL, "invariant");
+
+  if (!_cb->is_frame_complete_at(pc)) {
+    return false;
+  }
+
+  return CodeBlob::FrameParser::sender_frame(thread, pc, sp, unextended_sp, fp, fp_safe,
+                                             sender_pc, sender_sp, sender_unextended_sp, saved_fp);
+}
+
+bool nmethod::FrameParser::sender_frame(JavaThread *thread, address pc, intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, bool fp_safe,
+    address* sender_pc, intptr_t** sender_sp, intptr_t** sender_unextended_sp, intptr_t*** saved_fp) {
+
+  assert(sender_pc != NULL, "invariant");
+  assert(sender_sp != NULL, "invariant");
+
+  if (_cb->is_compiled_by_c1() || _cb->is_compiled_by_c2()) {
+    // We landed on the prolog which looks like:
+    //  mov %eax,-0x16000(%rsp) == stack banging
+    //  push %rbp
+    //  sub N, %rsp
+    // Let's first figure out which instruction we're on
+    int offset = pc - _cb->as_nmethod()->verified_entry_point();
+    // If it's stack banging or `push %rbp`, %rsp hasn't been modified by this method
+    if (offset == 0 /* stack banging */ || offset == 7 /* `push %rbp` */) {
+      if (!thread->is_in_full_stack_checked((address)sp)) {
+        return false;
+      }
+
+      *sender_sp = sp;
+      *sender_unextended_sp = *sender_sp;
+      *sender_pc = (address)*(*sender_sp);
+
+      CodeBlob *sender_cb = CodeCache::find_blob_unsafe(*sender_pc);
+      if (*sender_pc == NULL ||  sender_cb == NULL) {
+        return false;
+      }
+      // Could be a zombie method
+      if (sender_cb->is_zombie() || sender_cb->is_unloaded()) {
+        return false;
+      }
+      // Could just be some random pointer within the codeBlob
+      if (!sender_cb->code_contains(*sender_pc)) {
+        return false;
+      }
+
+      *saved_fp = (intptr_t**)((*sender_sp) + sender_cb->frame_size() - frame::sender_sp_offset);
+      return true;
+    // If it's `sub N, %rsp`, %rsp has been incremented by `push %rbp` already
+    // but the stack frame hasn't been allocated
+    } else if (offset == 8 /* `sub N, %rsp` */) {
+      if (!thread->is_in_full_stack_checked((address)sp)) {
+        return false;
+      }
+
+      *sender_sp = sp;
+      *sender_unextended_sp = *sender_sp;
+      *sender_pc = (address)*((*sender_sp) + frame::return_addr_offset);
+      *saved_fp = (intptr_t**)((*sender_sp) + frame::link_offset);
+      return true;
+    }
+  }
+
+  return CompiledMethod::FrameParser::sender_frame(thread, pc, sp, unextended_sp, fp, fp_safe,
+                                                   sender_pc, sender_sp, sender_unextended_sp, saved_fp);
 }
