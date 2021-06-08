@@ -1533,6 +1533,14 @@ public:
     T8B, T16B, T4H, T8H, T2S, T4S, T1D, T2D, T1Q, INVALID_ARRANGEMENT
   };
 
+private:
+
+  static SIMD_Arrangement _esize2arrangement_table[9][2];
+
+public:
+
+  static SIMD_Arrangement esize2arrangement(int esize, bool isQ);
+
   enum SIMD_RegVariant {
     B, H, S, D, Q, INVALID
   };

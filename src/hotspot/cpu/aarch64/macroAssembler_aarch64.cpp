@@ -5339,26 +5339,9 @@ void MacroAssembler::safepoint_isb() {
 #endif
 }
 
-Assembler::SIMD_Arrangement elemBytes_to_Arrangement(int esize, bool isQ) {
-  switch(esize) {
-    case 1:
-      return isQ ? Assembler::T16B : Assembler::T8B;
-    case 2:
-      return isQ ? Assembler::T8H : Assembler::T4H;
-    case 4:
-      return isQ ? Assembler::T4S : Assembler::T2S;
-    case 8:
-      return isQ ? Assembler::T2D : Assembler::T1D;
-    default:
-      assert(false, "unsupported");
-      ShouldNotReachHere();
-  }
-  return Assembler::INVALID_ARRANGEMENT;
-}
-
 void MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
                                   FloatRegister src2, int cond, bool isQ) {
-  SIMD_Arrangement size = elemBytes_to_Arrangement(type2aelembytes(bt), isQ);
+  SIMD_Arrangement size = esize2arrangement(type2aelembytes(bt), isQ);
   if (bt == T_FLOAT || bt == T_DOUBLE) {
     switch (cond) {
       case BoolTest::eq: fcmeq(dst, size, src1, src2); break;
