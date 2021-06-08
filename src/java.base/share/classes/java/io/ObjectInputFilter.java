@@ -389,12 +389,11 @@ public interface ObjectInputFilter {
     /**
      * Returns a filter that invokes a given filter and maps {@code UNDECIDED} to {@code REJECTED}
      * for classes, with some special cases, and otherwise returns the status.
-     * The filter returned checks that classes not {@code ALLOWED} by the filter
-     * are {@code REJECTED}.  Either the class is not {@code ALLOWED} or
-     * the class is an array and the base component type is not {@code ALLOWED},
-     * otherwise the result is {@code UNDECIDED}.
-     * <p>
-     * Object deserialization accepts a class if the filter returns {@code UNDECIDED}.
+     * If the class is not a primitive class and not an array, the status returned is REJECTED.
+     * If the class is a primitive class or an array class additional checks are performed;
+     * see the list below for details.
+     *
+     * <p>Object deserialization accepts a class if the filter returns {@code UNDECIDED}.
      * Adding a filter to reject undecided results for classes that have not been
      * either allowed or rejected can prevent classes from slipping through the filter.
      *
@@ -406,6 +405,7 @@ public interface ObjectInputFilter {
      *     <li>Return the {@code status} if the status is {@code REJECTED} or {@code ALLOWED};
      *     <li>Return {@code UNDECIDED} if the {@code filterInfo.getSerialClass() serialClass}
      *          is {@code null};
+     *     <li>Return {@code REJECTED} if the class is not an {@linkplain Class#isArray() array};
      *     <li>Determine the base component type if the {@code serialClass} is
      *          an {@linkplain Class#isArray() array};
      *     <li>Return {@code UNDECIDED} if the base component type is
@@ -546,6 +546,8 @@ public interface ObjectInputFilter {
      * <p>If not `OVERRIDE`, the class must be public, must have a public zero-argument constructor, implement the
      * {@link BinaryOperator {@literal BinaryOperator<ObjectInputFilter>}} interface, provide its implementation and
      * be accessible via the {@linkplain ClassLoader#getSystemClassLoader() application class loader}.
+     * If the filter factory constructor is not invoked successfully, an {@link ExceptionInInitializerError}
+     * is thrown.
      * The filter factory configured using the system or security property during initialization
      * can NOT be replaced with {@link #setSerialFilterFactory(BinaryOperator) Config.setSerialFilterFactory}.
      * This ensures that a filter factory set on the command line is not overridden accidentally
@@ -598,7 +600,7 @@ public interface ObjectInputFilter {
          * - jdk.serialFilter is set and jdk.serialFilterFactory is unset, the builtin can not be replaced
          * @see Config#setSerialFilterFactory(BinaryOperator)
          */
-        private static final AtomicBoolean filterFactoryNoReplace = new AtomicBoolean(false);
+        private static final AtomicBoolean filterFactoryNoReplace = new AtomicBoolean();
 
         /**
          * Debug: Logger
