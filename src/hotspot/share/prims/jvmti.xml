@@ -4965,7 +4965,7 @@ class C2 extends C1 implements I2 {
         These functions and data types were introduced in the original
         <jvmti/> version 1.0. They are deprecated and will be changed 
         to return an error in a future release. They were superseded in
-        <jvmti/> version 1.2 (Java SE6) by more 
+        <jvmti/> version 1.2 (Java SE 6) by more 
       </b>
       <internallink id="Heap"><b>powerful and flexible versions</b></internallink>
       <b>
